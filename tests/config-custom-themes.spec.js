@@ -42,7 +42,7 @@ async function openCustomThemes(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
-    await page.locator('[data-appearance-tab="custom-themes"]').click();
+    await page.locator('[data-appearance-goto="custom-themes"]').click();
     await expect(page.locator('[data-theme-add]')).toBeVisible();
 }
 
@@ -53,7 +53,8 @@ test.describe('custom theme editor', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
-        await expect(page.locator('[data-appearance-tab]')).toHaveCount(7);
+        // Six on the strip; Custom themes is a page of Look, reached from it.
+        await expect(page.locator('[data-appearance-tab]')).toHaveCount(6);
         await expect(page.locator('[data-appearance-tab="general"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="layout"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="display"]')).toBeVisible();
@@ -61,7 +62,7 @@ test.describe('custom theme editor', () => {
         // Branding is one panel — a toggle, a text field and an upload — so it
         // lives on Display rather than owning a tab of its own.
         await expect(page.locator('[data-appearance-tab="branding"]')).toHaveCount(0);
-        await expect(page.locator('[data-appearance-tab="custom-themes"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-goto="custom-themes"]')).toBeVisible();
     });
 
     test('adding a theme copies a full palette and opens its editor', async ({ page }) => {
@@ -213,7 +214,6 @@ test.describe('custom theme editor', () => {
         await page.locator('[data-theme-add]').click();
         await expect(page.locator('[data-theme-row]')).toHaveCount(1);
 
-        await page.locator('[data-appearance-tab="custom-themes"]').click();
         await page.selectOption('[data-theme-base-select]', 'dark');
         await expect(page.locator('#config-theme-editor[data-theme-editing="dark"]')).toBeVisible({ timeout: 10_000 });
         await page.locator('[data-theme-color="accentSuccess"]').fill('#aa3366');
@@ -244,50 +244,25 @@ test.describe('custom theme editor', () => {
             window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');
     });
 
-    test('the appearance tiles summarise the whole section', async ({ page }) => {
+    test('Look opens Custom themes as a page of its own, with a way back', async ({ page }) => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
-        /*
-         * Five tiles on one row, each naming a setting this section holds.
-         *
-         * It was six: the sixth read the layout version, and there is one
-         * layout now (v1.10.0). What the row is for is unchanged -- the state
-         * of the section at a glance, before opening a tab.
-         */
-        const tiles = page.locator('.config-tiles--text .config-tile');
-        await expect(tiles).toHaveCount(5);
-        const labels = await page.locator('.config-tiles--text .config-tile-label').allTextContents();
-        expect(labels.join(' | ')).toMatch(/theme/i);
-        expect(labels.join(' | ')).toMatch(/typeface/i);
-        expect(labels.join(' | ')).toMatch(/background/i);
-        expect(labels.join(' | ')).toMatch(/density/i);
-
-        // Values are words, not the short numbers the stats tiles size for, so
-        // they must wrap rather than overflow their box.
-        const overflowing = await tiles.evaluateAll(
-            (els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).length);
-        expect(overflowing).toBe(0);
-    });
-
-    test('the custom themes tile opens its tab', async ({ page }) => {
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
-        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
-
-        // Only actionable once the colour document has loaded, since that is
-        // what the count comes from.
-        const tile = page.locator('[data-tile-appearance-tab]');
-        await expect(tile).toHaveCount(1);
-        await tile.click();
+        await page.locator('[data-appearance-goto="custom-themes"]').click();
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');
         await expect(page.locator('[data-theme-add]')).toBeVisible();
+        // Not a tab on the strip: Look stays lit, since that is where it lives.
+        await expect(page.locator('[data-appearance-tab="custom-themes"]')).toHaveCount(0);
+        await expect(page.locator('[data-appearance-tab="general"]')).toHaveAttribute('aria-selected', 'true');
+
+        await page.locator('.config-subpage-back').click();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.appearanceTab)).toBe('general');
+        await expect(page.locator('[data-theme-add]')).toHaveCount(0);
     });
 
     test('favicon harmonization persists for a custom theme with auto dark mode', async ({ page }) => {
@@ -337,7 +312,7 @@ test.describe('custom theme editor', () => {
         await expect.poll(() => page.evaluate((id) =>
             window.dashboardInstance.config.iconStylingEntry()?.enabled === true)).toBe(true);
 
-        await page.locator('[data-appearance-tab="custom-themes"]').click();
+        await page.locator('[data-appearance-goto="custom-themes"]').click();
         await expect(page.locator('[data-theme-add]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="general"]').click();

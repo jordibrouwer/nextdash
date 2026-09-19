@@ -163,10 +163,10 @@ test.describe('dashboard shortcut popovers: one switch', () => {
 });
 
 test.describe('the switch is reachable from both places', () => {
-    test('Config → Behavior → General has the toggle and it saves', async ({ page }) => {
+    test('Config → Behavior → Keyboard & search has the toggle and it saves', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
-        await page.locator('[data-behavior-tab="general"]').click();
+        await page.locator('[data-behavior-tab="search"]').click();
 
         const toggle = page.locator('[data-behavior-field="showShortcutTooltips"]');
         await expect(toggle).toBeVisible();
@@ -200,7 +200,7 @@ test.describe('the switch is reachable from both places', () => {
     test('the info modal has a title and body, not just a button', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
-        await page.locator('[data-behavior-tab="general"]').click();
+        await page.locator('[data-behavior-tab="search"]').click();
 
         // Both strings must resolve. An unresolved key renders as empty here,
         // which is how this surfaced: a modal with "Got it" and nothing above.
@@ -248,7 +248,7 @@ test.describe('the switch is reachable from both places', () => {
 
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.evaluate(() => {
-            window.dashboardInstance.config.behaviorTab = 'general';
+            window.dashboardInstance.config.behaviorTab = 'search';
             window.dashboardInstance.config.render();
         });
         const toggle = page.locator('[data-behavior-field="showShortcutTooltips"]');

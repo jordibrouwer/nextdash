@@ -141,14 +141,11 @@ class DashboardConfig {
         // Tags default to 'name': they are derived from bookmarks and have no
         // stored order of their own, so there is no "manual" to fall back to.
         this.ptSort = { categories: 'manual', tags: 'name', pages: 'manual', finders: 'manual' };
-        // Appearance sub-tab.
-        this.appearanceTab = 'general';
+        // Appearance sub-tab: the one last looked at, else Look.
+        this._appearanceTab = DashboardConfig.readRememberedTab('appearance') || 'general';
         this._finders = null;
-        // Behavior sub-tab.
-        this.behaviorTab = 'general';
-        // Appearance and Behavior open on a start screen of tiles; a tile opens
-        // its group. False means the start screen is showing.
-        this.hubOpen = { appearance: false, behavior: false };
+        // Behavior sub-tab, remembered the same way.
+        this._behaviorTab = DashboardConfig.readRememberedTab('behavior') || 'general';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -348,7 +345,8 @@ class DashboardConfig {
         if (raw === 'config/behavior/layout') return 'layout';
         if (raw === 'config/behavior/display') return 'display';
         if (raw === 'config/behavior/datetime') return 'datetime';
-        if (raw === 'config/appearance/branding') return 'display';
+        // Branding lived on Display, then moved to Header with the browser tab.
+        if (raw === 'config/appearance/branding') return 'header';
         // Same move as sectionFromHash above: the tab it lands on now.
         if (raw === 'config/data-backups/logs') return 'server';
         // Tags left Pages & tags for Bookmarks; an old link to it lands on the
@@ -373,9 +371,9 @@ class DashboardConfig {
             return DashboardConfig.BM_TABS.includes(match[2]) ? match[2] : null;
         }
         const tabs = DashboardConfig.SUB_TABS[match[1]];
-        const tab = match[1] === 'appearance'
-            ? (DashboardConfig.APPEARANCE_TAB_ALIASES[match[2]] || match[2])
-            : match[2];
+        const aliases = match[1] === 'appearance' ? DashboardConfig.APPEARANCE_TAB_ALIASES
+            : match[1] === 'behavior' ? DashboardConfig.BEHAVIOR_TAB_ALIASES : {};
+        const tab = aliases[match[2]] || match[2];
         return tabs && tabs.includes(tab) ? tab : null;
     }
 
@@ -457,8 +455,34 @@ class DashboardConfig {
 
     static ABOUT_TABS = ['colophon', 'news'];
 
-    /** Sections drawn as a start screen of tiles by ConfigHub. */
-    static HUB_SECTIONS = ['appearance', 'behavior'];
+    /**
+     * The tab Appearance and Behavior last showed, kept in this browser.
+     *
+     * The five-minute config location (CONFIG_LAST_KEY) answers "where was I
+     * a moment ago"; this answers "which tab of this section do I usually
+     * want", which outlives it. A new browser opens on the first tab.
+     */
+    static REMEMBERED_TAB_KEY = 'nextdash:config-tab-v1';
+
+    static readRememberedTab(section) {
+        try {
+            const stored = JSON.parse(localStorage.getItem(DashboardConfig.REMEMBERED_TAB_KEY) || '{}');
+            const tab = stored?.[section];
+            const tabs = section === 'appearance' ? DashboardConfig.APPEARANCE_TABS : DashboardConfig.BEHAVIOR_TABS;
+            return typeof tab === 'string' && tabs.includes(tab) ? tab : null;
+        } catch {
+            return null;
+        }
+    }
+
+    static rememberTab(section, tab) {
+        try {
+            const stored = JSON.parse(localStorage.getItem(DashboardConfig.REMEMBERED_TAB_KEY) || '{}') || {};
+            if (stored[section] === tab) return;
+            stored[section] = tab;
+            localStorage.setItem(DashboardConfig.REMEMBERED_TAB_KEY, JSON.stringify(stored));
+        } catch { /* a browser refusing storage opens on the first tab next time */ }
+    }
 
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
@@ -509,15 +533,7 @@ class DashboardConfig {
         const section = DashboardConfig.sectionFromHash(hash);
         let tab = DashboardConfig.subTabFromHash(hash);
         const prop = DashboardConfig.SUB_TAB_STATE[section];
-        // A hub section's bare hash is its start screen, and a tab in it is
-        // the group that holds the tab.
-        let hubChanged = false;
-        if (DashboardConfig.HUB_SECTIONS.includes(section) && window.ConfigHub) {
-            const open = Boolean(tab);
-            hubChanged = this.hubOpen[section] !== open;
-            this.hubOpen[section] = open;
-        }
-        if (!tab || !prop) return hubChanged;
+        if (!tab || !prop) return false;
         if (section === 'help') {
             const moved = DashboardConfig.HELP_PANEL_MOVED[DashboardConfig.helpPanelFromHash(hash)];
             if (moved && moved.from === tab) tab = moved.to;
@@ -525,7 +541,7 @@ class DashboardConfig {
         // A sub-tab named in the URL is as deliberate as clicking one, so a
         // promo's ensureSubTab must not steer away from it.
         window.ConfigSettingPromo?.markSubTabChosen?.();
-        if (this[prop] === tab) return hubChanged;
+        if (this[prop] === tab) return false;
         this[prop] = tab;
         return true;
     }
@@ -617,12 +633,11 @@ class DashboardConfig {
         const prop = DashboardConfig.SUB_TAB_STATE[section];
         const tab = prop ? this[prop] : null;
         const tabs = DashboardConfig.SUB_TABS[section];
-        // On a hub the first tab is a group like any other, so it is always
-        // named; leaving it out is what means the start screen.
-        if (DashboardConfig.HUB_SECTIONS.includes(section) && window.ConfigHub) {
-            return this.hubOpen[section] && tab ? `config/${section}/${tab}` : `config/${section}`;
-        }
-        if (tab && tabs && tabs.includes(tab) && tab !== tabs[0]) {
+        // Appearance and Behavior open on the tab last looked at, so a bare
+        // link to them lands differently for everyone: their first tab is
+        // named too, or the address bar would not be a link to what is shown.
+        const remembers = section === 'appearance' || section === 'behavior';
+        if (tab && tabs && tabs.includes(tab) && (tab !== tabs[0] || remembers)) {
             return `config/${section}/${tab}`;
         }
         return `config/${section}`;
@@ -1143,14 +1158,6 @@ class DashboardConfig {
                 this._logSettingsPopoverClose();
                 return;
             }
-            // Inside a hub group Escape goes back to the tiles first.
-            if (DashboardConfig.HUB_SECTIONS.includes(this.section) && this.hubOpen?.[this.section]
-                && window.ConfigHub) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                this.closeHub(this.section);
-                return;
-            }
             e.preventDefault();
             // Stop here rather than letting the event bubble on. The tag-filter
             // shortcut listens on document too and registers first, so without
@@ -1484,11 +1491,18 @@ class DashboardConfig {
     /** Active sub-tab strip for the current section, if any. */
     getSubTabContext() {
         const section = this.section;
-        const tabs = DashboardConfig.SUB_TABS[section];
+        // A sub-page (Custom themes) is not on the strip, so the keys that
+        // step along the strip step past it, and from it count as its owner.
+        const tabs = section === 'appearance'
+            ? DashboardConfig.APPEARANCE_TABS.filter((tab) => !DashboardConfig.APPEARANCE_SUBPAGES[tab])
+            : DashboardConfig.SUB_TABS[section];
         const prop = DashboardConfig.SUB_TAB_STATE[section];
         const attr = DashboardConfig.SUB_TAB_ATTR[section];
         if (!tabs?.length || !prop || !attr) return null;
-        return { section, tabs, prop, attr, current: this[prop] };
+        const current = section === 'appearance'
+            ? (DashboardConfig.APPEARANCE_SUBPAGES[this[prop]] || this[prop])
+            : this[prop];
+        return { section, tabs, prop, attr, current };
     }
 
     /**
@@ -1615,9 +1629,6 @@ class DashboardConfig {
             }
             btn.addEventListener('click', () => activateTracked(btn.getAttribute(attr), 'click'));
             btn.addEventListener('keydown', (e) => {
-                // Hub tiles are a grid of links, not a tablist: an arrow key
-                // must not open a group.
-                if (btn.closest('[data-hub-start]')) return;
                 const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
                 if (!keys.includes(e.key)) return;
                 e.preventDefault();
@@ -2865,10 +2876,10 @@ class DashboardConfig {
         { field: 'themeBackdrop', labelKey: 'themeBackdropLabel', fallback: 'Theme backdrop', section: 'appearance', subTab: 'general' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
-        { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'display' },
-        { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'display' },
-        { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'display' },
-        { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'display' },
+        { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'general' },
+        { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'header' },
+        { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'header' },
+        { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'header' },
         { field: 'faviconRefreshPolicy', labelKey: 'faviconRefreshPolicyLabel', fallback: 'Refresh favicons', section: 'data-backups', subTab: 'icons' },
         { field: 'autoBackupEnabled', labelKey: 'autoBackupLabel', fallback: 'Automatic backups', section: 'data-backups', subTab: 'backups' },
         { field: 'backupExcludeArchives', labelKey: 'backupIncludeArchivesLabel', fallback: 'Local copies of pages', section: 'data-backups', subTab: 'backups' },
@@ -8455,93 +8466,15 @@ class DashboardConfig {
         return DashboardConfig.FONT_SIZES.includes(size) ? size : 'm';
     }
 
-    /**
-     * A summary of everything the section controls, not just the theme.
-     *
-     * Six tiles cover each Appearance panel below; the grid keeps them on one
-     * row at common widths (see config-tiles--text in config-view.css).
-     */
-    appearanceTiles() {
-        const s = this.dash.settings || {};
-        const themeId = s.theme || 'dark';
-        const theme = this.themeDisplayName(themeId, this._themeList?.[themeId]);
-
-        const bgType = s.backgroundType || 'none';
-        const bgLabel = {
-            auto: this.t('config.backgroundAuto', 'Auto'),
-            none: this.t('config.backgroundNone', 'None'),
-            gradient: this.t('config.backgroundGradient', 'Gradient'),
-            image: this.t('config.backgroundImage', 'Image'),
-        }[bgType] || bgType;
-
-        const density = s.densityMode || 'comfortable';
-        const densityLabel = {
-            comfortable: this.t('config.densityComfortable', 'Comfortable'),
-            compact: this.t('config.densityCompact', 'Compact'),
-            dense: this.t('config.densityDense', 'Dense'),
-            auto: this.t('config.densityAuto', 'Auto'),
-        }[density] || density;
-
-        const preset = window.DashboardFont?.resolveActiveFontPreset?.(s) || s.fontPreset || 'source-code-pro';
-        const customThemeCount = Object.keys(this._colorsData?.custom || {}).length;
-
-        return [
-            {
-                key: 'theme', tone: 'accent',
-                label: this.t('config.tileActiveTheme', 'Active theme'),
-                value: theme,
-                detail: s.autoDarkMode ? this.t('config.autoDarkOn', 'Auto dark mode on') : '',
-            },
-            {
-                key: 'font', tone: 'neutral',
-                label: this.t('config.tileTypeface', 'Typeface'),
-                value: this.fontPresetLabel(preset),
-                detail: this.t('config.tileFontSizeDetail', 'Size {size}')
-                    .replace('{size}', this.fontSizeLabel(this.currentFontSize())),
-            },
-            {
-                key: 'background', tone: 'neutral',
-                label: this.t('config.tileBackground', 'Background'),
-                value: bgLabel,
-                // Opacity only means something once there is something to fade.
-                detail: bgType !== 'none' && Number.isFinite(Number(s.backgroundOpacity))
-                    ? `${Math.round(Number(s.backgroundOpacity) * 100)}%`
-                    : '',
-            },
-            {
-                key: 'density', tone: 'neutral',
-                label: this.t('config.tileDensity', 'Density'),
-                value: densityLabel,
-                detail: this.t('config.tileColumnsDetail', '{n} columns')
-                    .replace('{n}', String(Number(s.columnsPerRow) || 4)),
-            },
-            {
-                key: 'custom-themes', tone: 'neutral',
-                label: this.t('config.tileCustomThemes', 'Custom themes'),
-                value: customThemeCount,
-                // Only offered once the colour document has actually loaded.
-                action: this._colorsData ? { appearanceTab: 'custom-themes' } : null,
-                detail: customThemeCount === 0
-                    ? this.t('config.tileCustomThemesNone', 'None yet')
-                    : '',
-            },
-        ];
-    }
-
     renderAppearance() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const hub = window.ConfigHub;
         const apIntro = `<p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>`;
-        if (hub && !this.hubOpen.appearance) {
-            return apIntro + this.renderHubStart('appearance');
-        }
         // Which half of the current family is showing, so Quick mode marks the
         // right button whatever theme is picked. Reading s.theme directly only
         // ever matched the two legacy ids, leaving both buttons unlit on every
         // other theme.
         const theme = String(s.theme || 'dark').endsWith('-light') || s.theme === 'light' ? 'light' : 'dark';
-        const tiles = `<div class="config-tiles config-tiles--text" role="list">${this.appearanceTiles().map((t) => this.renderTile(t)).join('')}</div>`;
 
         // Small / Medium / Large names a size without showing one, so each
         // button carries the letters at the size it sets. Hovering still applies
@@ -8619,21 +8552,36 @@ class DashboardConfig {
                    </div>`
                 : '';
 
-        const apTabs = DashboardConfig.APPEARANCE_TABS.map((tab) => {
-            const active = tab === this.appearanceTab;
-            const isNew = DashboardConfig.NEW_THIS_RELEASE.section === 'appearance'
-                && tab === DashboardConfig.NEW_THIS_RELEASE.tab;
-            const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-appearance-body" data-appearance-tab="${esc(tab)}">${esc(this.appearanceTabLabel(tab))}${stars}</button>`;
-        }).join('');
-
-        const shell = (body) => (hub
-            ? hub.renderGroup(this, 'appearance', this.appearanceTab,
-                `<div id="config-appearance-body" role="tabpanel" tabindex="0">${body}</div>`)
-            : `
+        /*
+         * One column of settings with the live preview beside it.
+         *
+         * No start screen and no second layer: the tab strip is the way in,
+         * and every setting of the tab is on it. The preview follows the tab
+         * -- the grid on Grid, a few rows on Rows -- so a choice is seen where
+         * it lands. Custom themes is a page of Look with a way back to it, and
+         * is its own editor, so it gets the whole width.
+         */
+        const subpageOf = DashboardConfig.APPEARANCE_SUBPAGES[this.appearanceTab];
+        const back = subpageOf
+            ? `<button type="button" class="config-subpage-back" data-appearance-goto="${esc(subpageOf)}">← ${esc(this.appearanceTabLabel(subpageOf))}</button>`
+            : '';
+        const preview = !subpageOf && window.ConfigPreview
+            ? `<aside class="config-tabpage-side" aria-label="${esc(this.t('config.previewLabel', 'Preview'))}">
+                   <p class="config-tabpage-side-label">${esc(this.t('config.previewLabel', 'Preview'))}</p>
+                   <div data-config-preview>${window.ConfigPreview.render(this, this.appearanceTab)}</div>
+               </aside>`
+            : '';
+        const shell = (body) => `
             ${apIntro}
-            <div class="config-subtabs" role="tablist">${apTabs}</div>
-            <div id="config-appearance-body" role="tabpanel" tabindex="0">${body}</div>`);
+            ${this.renderSectionTabStrip('appearance')}
+            <div class="config-tabpage${preview ? ' config-tabpage--preview' : ''}">
+                <div class="config-tabpage-main">
+                    ${back}
+                    <div id="config-appearance-body" role="tabpanel" tabindex="0">${body}</div>
+                    <div data-filter-elsewhere-host>${this.renderFilterElsewhere('appearance')}</div>
+                </div>
+                ${preview}
+            </div>`;
 
         if (this.appearanceTab === 'custom-themes') {
             return shell(this.renderCustomThemes());
@@ -8655,8 +8603,6 @@ class DashboardConfig {
         }
 
         return shell(`
-            ${tiles}
-
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceThemeTitle', 'Theme'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceThemeNote', 'Pick a built-in theme or follow your system. Edit the colours of any theme, or build your own, in the theme editor.'))}</p>
@@ -8691,6 +8637,7 @@ class DashboardConfig {
                 </div>
                 <div class="config-actions" style="margin-top:14px">
                     <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openBuiltInColorsLink', 'Open the theme editor…'))}</button>
+                    <button type="button" class="config-btn" data-appearance-goto="custom-themes">${esc(this.t('config.makeOwnTheme', 'Make your own theme…'))}</button>
                 </div>
             </div>
 
@@ -8720,6 +8667,13 @@ class DashboardConfig {
                     </select>
                     <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
                     ${this.appearanceAff('inkGap')}
+                </div>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="animationsEnabled" ${s.animationsEnabled !== false ? 'checked' : ''}>
+                        <span>${esc(this.t('config.enableAnimations', 'Enable animations'))}</span>
+                    </label>
+                    ${this.appearanceAff('animationsEnabled')}
                 </div>
             </div>
 
@@ -8798,7 +8752,10 @@ class DashboardConfig {
      * position buried the three everyday row options they sat beneath.
      */
     renderAppearanceToolbarBody() {
-        return this.renderControlPanels(this.panelsFor('appearance', 'header'), 'behavior');
+        // The browser tab's title and favicon came over from Display: they are
+        // the other half of what the page says about itself.
+        return this.renderControlPanels(this.panelsFor('appearance', 'header'), 'behavior')
+            + this.renderAppearanceBrandingBody();
     }
 
     /** The branding panel, appended to Display since it lost its own tab. */
@@ -8878,16 +8835,8 @@ class DashboardConfig {
                     </label>
                     ${this.appearanceAff('colorizeStatus')}
                 </div>
-                <div class="config-field-row">
-                    <label class="config-toggle">
-                        <input type="checkbox" data-appearance-toggle="animationsEnabled" ${s.animationsEnabled !== false ? 'checked' : ''}>
-                        <span>${esc(this.t('config.enableAnimations', 'Enable animations'))}</span>
-                    </label>
-                    ${this.appearanceAff('animationsEnabled')}
-                </div>
             </div>
-            ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}
-            ${this.renderAppearanceBrandingBody()}`;
+            ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}`;
     }
 
     /** Friendly name for a theme id, matching the old config's labels. */
@@ -9224,7 +9173,6 @@ class DashboardConfig {
         this.bindSubTabStrip(container, 'data-appearance-tab', (tab) => {
             void this.switchAppearanceTab(tab);
         });
-        this.bindHubControls(container);
         // The filter field is rendered by the shared bar, but this section is
         // hand-written markup — so it is applied to the DOM after each render
         // rather than while the controls are built.
@@ -9254,6 +9202,16 @@ class DashboardConfig {
                 void this.switchAppearanceTab(btn.getAttribute('data-tile-appearance-tab'));
             });
         });
+        // Into Custom themes from Look, and back out of it. Not tab-strip
+        // buttons, so they stay out of the strip's arrow-key order.
+        (container.closest?.('#dashboard-layout') || container).querySelectorAll('[data-appearance-goto]').forEach((btn) => {
+            if (btn.dataset.gotoBound === '1') return;
+            btn.dataset.gotoBound = '1';
+            btn.addEventListener('click', () => {
+                void this.switchAppearanceTab(btn.getAttribute('data-appearance-goto'));
+            });
+        });
+        this.bindFilterElsewhere(container);
         this.bindCustomThemes(container);
         container.querySelectorAll('[data-appearance-theme]').forEach((btn) => {
             btn.addEventListener('click', () => this.setQuickMode(btn.getAttribute('data-appearance-theme')));
@@ -9428,8 +9386,7 @@ class DashboardConfig {
 
     /** Wait for any in-flight settings write before swapping appearance tabs. */
     async switchAppearanceTab(tab) {
-        const hubClosed = window.ConfigHub && !this.hubOpen.appearance;
-        if (tab === this.appearanceTab && !hubClosed) return;
+        if (tab === this.appearanceTab) return;
         if (this._settingsSavePromise) {
             await this._settingsSavePromise;
         }
@@ -9448,7 +9405,6 @@ class DashboardConfig {
             await this.applyThemeChoice(this._themeSelected);
         }
         this.appearanceTab = tab;
-        if (window.ConfigHub) this.hubOpen.appearance = true;
         this.restoreConfigHash();
         // Leaving the tab drops any unsaved preview so the dashboard
         // does not keep showing colours from a theme you stopped editing.
@@ -9532,12 +9488,12 @@ class DashboardConfig {
 
     appearanceTabLabel(tab) {
         const map = {
-            general: ['config.appearanceTabGeneral', 'Theme'],
-            layout: ['config.appearanceTabLayout', 'Layout'],
+            general: ['config.appearanceTabLook', 'Look'],
+            layout: ['config.appearanceTabGrid', 'Grid'],
+            display: ['config.appearanceTabRows', 'Rows'],
+            header: ['config.appearanceTabHeader', 'Header'],
             buttonbar: ['config.appearanceTabActionBar', 'Action bar'],
             datetime: ['config.appearanceTabDateTime', 'Date & weather'],
-            display: ['config.appearanceTabDisplay', 'Display'],
-            header: ['config.appearanceTabHeaderButtons', 'Header and buttons'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -10611,8 +10567,15 @@ class DashboardConfig {
     appearanceAff(field) {
         const esc = (v) => this.dash.escapeHtml(v);
         const aff = this.renderFieldAffordances(field, this.dash.settings?.[field]);
-        return `<span class="config-field-affordances" data-appearance-aff="${esc(field)}">${aff}</span>`;
+        // The same short line the schema rows carry, for the hand-written ones
+        // that have no note of their own under them.
+        const summary = DashboardConfig.APPEARANCE_OWN_NOTES.has(field) ? '' : this.fieldSummary(field);
+        const hint = summary ? `<p class="config-field-hint config-field-hint--inline">${esc(summary)}</p>` : '';
+        return `<span class="config-field-affordances" data-appearance-aff="${esc(field)}">${aff}</span>${hint}`;
     }
+
+    /** Hand-written Appearance fields that already explain themselves in a note. */
+    static APPEARANCE_OWN_NOTES = new Set(['themeDepth', 'glowStrength', 'inkGap', 'themeBackdrop', 'backgroundPattern']);
 
     /**
      * The theme whose icon styling is being edited. The dashboard reads the entry
@@ -11050,9 +11013,6 @@ class DashboardConfig {
      * midpoints of the bands inkGapLabelFor already named, so a dashboard that
      * was set with the slider keeps the word it had.
      */
-    /** How long a typed setting waits before it is saved. */
-    static HUB_TEXT_SAVE_MS = 450;
-
     static INK_GAP_STEPS = [
         [0.34, 'inkGapSoft', 'Soft'],
         [0.44, 'inkGapNormal', 'Normal'],
@@ -11226,7 +11186,7 @@ class DashboardConfig {
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
         shortcutDisplay: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: 'always' },
-        rowHighlight: { def: 'subtle' },
+        rowHighlight: { hint: 'rowHighlightHint', def: 'subtle' },
         showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
@@ -11237,7 +11197,7 @@ class DashboardConfig {
         showPageNamesInTabs: { info: ['showPageNamesInTabsInfoTitle', 'showPageNamesInTabsInfoMessage'], def: false },
         maxPageTabs: { info: ['maxPageTabsInfoTitle', 'maxPageTabsInfoMessage'], def: 4 },
         maxHeaderActions: { info: ['maxHeaderActionsInfoTitle', 'maxHeaderActionsInfoMessage'], def: 2 },
-        headerClockPlacement: { def: 'classic' },
+        headerClockPlacement: { hint: 'headerClockPlacementHint', def: 'classic' },
         pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'classic' },
         headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
         actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'right' },
@@ -11291,8 +11251,8 @@ class DashboardConfig {
         bookmarkStaleDays: { info: ['bookmarkStaleDaysInfoTitle', 'bookmarkStaleDaysInfoMessage'], def: 90 },
         bulkFaviconConfirmFrom: { info: ['bulkFaviconConfirmFromInfoTitle', 'bulkFaviconConfirmFromInfoMessage'], def: 0 },
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
-        pasteDestination: { def: 'ask' },
-        monitorEmphasis: { def: 'problems' },
+        pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
+        monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
         theme: { def: 'tarnished-brass-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
@@ -11306,9 +11266,9 @@ class DashboardConfig {
         customTitle: { def: '' },
         monitorNotifyRetries: { info: ['monitorNotifyRetriesInfoTitle', 'monitorNotifyRetriesInfoMessage'], def: 3 },
         pushNotifyEnabled: { info: ['pushNotifyInfoTitle', 'pushNotifyInfoMessage'], def: false },
-        pushNotifyMonitor: { def: false },
-        pushNotifyBackup: { def: false },
-        pushNotifySubject: { def: '' },
+        pushNotifyMonitor: { hint: 'pushNotifyMonitorHint', def: false },
+        pushNotifyBackup: { hint: 'pushNotifyBackupHint', def: false },
+        pushNotifySubject: { hint: 'pushNotifySubjectHint', def: '' },
         // Toolbar & chrome
         showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
         showCheatSheetButton: { info: ['showCheatSheetButtonInfoTitle', 'showCheatSheetButtonInfoMessage'], def: true },
@@ -11351,7 +11311,7 @@ class DashboardConfig {
         showSmartStaleCollection: { def: false },
         showSmartMostUsedCollection: { def: false },
         showRowTags: { info: ['showRowTagsInfoTitle', 'showRowTagsInfoMessage'], def: false },
-        rowTagsMax: { def: 2 },
+        rowTagsMax: { hint: 'rowTagsMaxHint', def: 2 },
         showSmartAddedCollection: { def: false },
         smartAddedLimit: { def: 20 },
         smartTodayLimit: { info: ['smartTodayLimitInfoTitle', 'smartTodayLimitInfoMessage'], def: 8 },
@@ -11361,14 +11321,14 @@ class DashboardConfig {
         // Data
         deviceSpecificSettings: { info: ['deviceSpecificSettingsInfoTitle', 'deviceSpecificSettingsInfoMessage'] },
         autoBackupEnabled: { info: ['autoBackupInfoTitle', 'autoBackupInfoMessage'], def: true },
-        monitorNotifyPreset: { def: '' },
+        monitorNotifyPreset: { hint: 'monitorNotifyPresetHint', def: '' },
         monitorNotifyDashboardUrl: { def: '' },
         monitorNotifyPushoverToken: { def: '' },
         monitorNotifyPushoverUserKey: { def: '' },
         monitorNotifyTelegramChatId: { def: '' },
         backupExcludeArchives: { def: false },
         backupExcludeSecrets: { def: false },
-        healthCheckTimeoutSeconds: { def: 0 },
+        healthCheckTimeoutSeconds: { hint: 'healthCheckTimeoutHint', def: 0 },
     };
 
     fieldMeta(field) {
@@ -11638,8 +11598,13 @@ class DashboardConfig {
                 ],
             },
             {
+                // With search since the tabs were redrawn: the keys are how the
+                // search panel is reached, and "Keyboard" under General was a
+                // place nobody looked. After the search panels, which say what
+                // typing does.
                 section: 'behavior',
-                tab: 'general',
+                tab: 'search',
+                order: 10,
                 title: t('config.generalGroupKeyboard', 'Keyboard'),
                 note: t('config.generalGroupKeyboardNote', 'Whether the keyboard works outside the dashboard, and whether it explains itself.'),
                 controls: [
@@ -11665,8 +11630,12 @@ class DashboardConfig {
                 // The old config kept the tips toggle beside the quick-start and
                 // what's-new actions, which is where people look for it. Split
                 // across two sections it read as a stray General option.
+                //
+                // On Privacy & sync now, after the privacy panel: both answer
+                // "what does this app do without being asked".
                 section: 'behavior',
-                tab: 'general',
+                tab: 'privacy',
+                order: 10,
                 title: t('config.generalGroupOnboarding', 'Onboarding'),
                 note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, the release summary, and the two review offers.'),
                 controls: [
@@ -11720,9 +11689,13 @@ class DashboardConfig {
                 // Where the line is drawn, as against what it says: the three
                 // groups around this one set the date, the temperature and the
                 // feed, and this one is about the header that carries them.
+                //
+                // On the Header tab now, which is where the header is set; Date
+                // & weather keeps what the line says.
                 section: 'appearance',
-                tab: 'datetime',
-                title: t('config.generalGroupHeaderClock', 'Header'),
+                tab: 'header',
+                order: 10,
+                title: t('config.appearanceClockPlacementTitle', 'Clock & weather'),
                 note: t('config.generalGroupHeaderClockNote', 'Where the clock and the weather stand in the header above the bookmarks.'),
                 controls: [
                     { field: 'headerClockPlacement', type: 'select', special: 'chrome',
@@ -11912,10 +11885,20 @@ class DashboardConfig {
                     bool('showStatus', 'config.showStatusLabel', 'Show online/offline status'),
                     bool('showStatusLoading', 'config.showStatusLoadingLabel', 'Show a loading state while checking'),
                     bool('showPing', 'config.showPingLabel', 'Show ping times'),
-                    bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
                     { ...bool('showRowTags', 'config.showRowTagsLabel', 'Show tags on bookmark rows'), special: 'render' },
                     { field: 'rowTagsMax', type: 'number', min: 1, max: 5, step: 1, special: 'render',
                         label: t('config.rowTagsMaxLabel', 'Tags shown before “+N”') },
+                ],
+            },
+            {
+                // What the browser's own tab says, beside the custom title and
+                // favicon that Header draws under it.
+                section: 'appearance',
+                tab: 'header',
+                order: 20,
+                title: t('config.appearanceBrowserTabTitle', 'Browser tab'),
+                controls: [
+                    bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
                 ],
             },
             {
@@ -12248,8 +12231,9 @@ class DashboardConfig {
                 ],
             },
             {
+                // Shares a tab with the inbox: both are about what arrives.
                 section: 'behavior',
-                tab: 'fresh',
+                tab: 'inbox',
                 title: t('config.feedsTitle', 'Fresh'),
                 note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
                 controls: [
@@ -12300,7 +12284,8 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'general',
+                tab: 'privacy',
+                order: 5,
                 title: t('config.generalGroupSync', 'Sync & feedback'),
                 note: t('config.generalGroupSyncNote', 'Settings normally follow you to every browser. Keep them on this device to give this one its own appearance and layout.'),
                 controls: [
@@ -12331,9 +12316,11 @@ class DashboardConfig {
      * `section` is treated as Behavior's, matching the old bare-tab behaviour.
      */
     panelsFor(section, tab) {
+        // `order` moves a panel back on its tab without moving it in the
+        // schema: the sort is stable, so panels without one keep their place.
         return this.behaviorSchema().filter((p) => (
             (p.section || 'behavior') === section && (p.tab || 'general') === tab
-        ));
+        )).sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 
     /**
@@ -12389,6 +12376,30 @@ class DashboardConfig {
                 showReset ? '' : ' tabindex="-1" aria-hidden="true"'} aria-label="${esc(this.t('config.settingResetAria', 'Reset to default'))}" title="${esc(this.t('config.settingResetTitle', 'Reset to default'))}">↺</button>`;
         }
         return out;
+    }
+
+    /**
+     * One short line saying what a setting does, drawn under it.
+     *
+     * A new reader should not have to press ⓘ on every row to learn what it
+     * is for. A declared `hint` wins; otherwise it is the first sentence of the
+     * ⓘ text, which every setting with an explanation already has -- so the
+     * line and the dialog cannot disagree, and no second copy is kept.
+     */
+    fieldSummary(field) {
+        const meta = this.fieldMeta(field);
+        if (!meta) return '';
+        if (meta.hint) {
+            const hint = this.t(`config.${meta.hint}`, '');
+            if (hint && hint !== `config.${meta.hint}`) return hint;
+        }
+        const messageKey = Array.isArray(meta.info) ? meta.info[1] : null;
+        if (!messageKey) return '';
+        const message = this.t(`config.${messageKey}`, '');
+        if (!message || message === `config.${messageKey}`) return '';
+        const para = String(message).split(/\n\s*\n|\n•|\n-/)[0].replace(/\s+/g, ' ').trim();
+        const sentence = para.match(/^.+?[.!?。！？](?=\s|$)/);
+        return (sentence ? sentence[0] : para).trim();
     }
 
     /** Whether an [titleKey, messageKey] pair resolves to real text. */
@@ -12494,8 +12505,8 @@ class DashboardConfig {
                 : s[c.field];
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
             const aff = this.renderFieldAffordances(c.field, val);
-            const hintKey = this.fieldMeta(c.field)?.hint;
-            const hint = hintKey ? `<p class="config-field-hint">${esc(this.t(`config.${hintKey}`, ''))}</p>` : '';
+            const summary = this.fieldSummary(c.field);
+            const hint = summary ? `<p class="config-field-hint">${esc(summary)}</p>` : '';
             // A drawing of what the current value does, for the settings whose
             // difference is a shape rather than a word. It repaints on change
             // (see bindControlPanels), so it is the answer to "what will this
@@ -13558,7 +13569,16 @@ class DashboardConfig {
     // "has this moved on", and the two were only neighbours because both talk to
     // the internet on a schedule. Four panels down a tab named after something
     // else is also where a reader stops looking.
-    static BEHAVIOR_TABS = ['general', 'search', 'inbox', 'fresh', 'status', 'privacy'];
+    //
+    // Five rather than six: Inbox held three settings and Fresh two, and both
+    // are about what arrives, so they share a tab. The keys moved in with
+    // search (the keys are how search is reached), and onboarding and the
+    // device-only switch joined privacy, which is where "what does this app do
+    // on its own" is already answered.
+    static BEHAVIOR_TABS = ['general', 'search', 'inbox', 'status', 'privacy'];
+
+    /** Behavior tabs that were folded into another one still open it. */
+    static BEHAVIOR_TAB_ALIASES = { fresh: 'inbox' };
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -13571,16 +13591,10 @@ class DashboardConfig {
         const map = {
             general: ['config.behaviorTabGeneral', 'General'],
             datetime: ['config.behaviorTabDateTime', 'Date & weather'],
-            // Was "Search & inbox": the inbox had four settings living under a
-            // tab named after something else, where nobody looking for the inbox
-            // would think to open them.
-            search: ['config.behaviorTabSearch', 'Search'],
-            inbox: ['config.behaviorTabInbox', 'Inbox'],
-            // The tab and the panel on it are the same subject, so they share
-            // the name rather than carrying two translations of one word.
-            fresh: ['config.feedsTitle', 'Fresh'],
-            status: ['config.behaviorTabStatus', 'Status & health'],
-            privacy: ['config.behaviorTabPrivacy', 'Privacy'],
+            search: ['config.behaviorTabKeyboardSearch', 'Keyboard & search'],
+            inbox: ['config.behaviorTabInboxFresh', 'Inbox & Fresh'],
+            status: ['config.behaviorTabStatusAlerts', 'Status & alerts'],
+            privacy: ['config.behaviorTabPrivacySync', 'Privacy & sync'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -13588,24 +13602,18 @@ class DashboardConfig {
 
     renderBehavior() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const hub = window.ConfigHub;
-        const intro = `<p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>`;
-        if (hub) {
-            if (!this.hubOpen.behavior) return intro + this.renderHubStart('behavior');
-            return hub.renderGroup(this, 'behavior', this.behaviorTab,
-                `<div id="config-behavior-body" role="tabpanel" tabindex="0">${this.renderBehaviorBody()}</div>`);
-        }
-        const tabs = DashboardConfig.BEHAVIOR_TABS.map((tab) => {
-            const active = tab === this.behaviorTab;
-            const isNew = DashboardConfig.NEW_THIS_RELEASE.section === 'behavior'
-                && tab === DashboardConfig.NEW_THIS_RELEASE.tab;
-            const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-behavior-body" data-behavior-tab="${esc(tab)}">${esc(this.behaviorTabLabel(tab))}${stars}</button>`;
-        }).join('');
+        // The strip and the whole tab under it, at full width: Behavior has no
+        // preview to put beside it, and the short line under each setting is
+        // the explanation the hub drew as a picture.
         return `
             <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>
-            <div class="config-subtabs" role="tablist">${tabs}</div>
-            <div id="config-behavior-body" role="tabpanel" tabindex="0">${this.renderBehaviorBody()}</div>
+            ${this.renderSectionTabStrip('behavior')}
+            <div class="config-tabpage">
+                <div class="config-tabpage-main">
+                    <div id="config-behavior-body" role="tabpanel" tabindex="0">${this.renderBehaviorBody()}</div>
+                    <div data-filter-elsewhere-host>${this.renderFilterElsewhere('behavior')}</div>
+                </div>
+            </div>
         `;
     }
 
@@ -13615,9 +13623,10 @@ class DashboardConfig {
         // the full view and are dropped when only changed settings are wanted.
         const lead = (this.behaviorTab === 'status' && !this.changedOnly) ? this.renderStatusModesLead() : '';
         // The two onboarding actions are buttons rather than settings, so they
-        // cannot come from the schema; they are appended to the General tab so
-        // the whole of onboarding sits together as it did in the old config.
-        const trailing = (this.behaviorTab === 'general' && !this.changedOnly) ? this.renderOnboardingActions() : '';
+        // cannot come from the schema; they follow the Onboarding panel on
+        // Privacy & sync so the whole of onboarding sits together.
+        const trailing = (this.behaviorTab === 'privacy' && !this.changedOnly && !String(this.settingsFilter || '').trim())
+            ? this.renderOnboardingActions() : '';
         return lead
             + this.renderControlPanels(panels, 'behavior')
             + trailing;
@@ -13692,6 +13701,7 @@ class DashboardConfig {
         const host = container.querySelector('#config-appearance-body');
         if (!host) return;
         const query = String(this.settingsFilter || '').trim().toLowerCase();
+        this.repaintFilterElsewhere('appearance');
         host.querySelectorAll('[data-filter-empty]').forEach((el) => el.remove());
         // Only the outermost rows: a toggle or a field nested inside another row
         // is carried by its parent, and hiding the two independently left the
@@ -13835,13 +13845,6 @@ class DashboardConfig {
 
     bindBehaviorControls(container) {
         this.bindSubTabStrip(container, 'data-behavior-tab', (tab) => {
-            if (window.ConfigHub) {
-                this.behaviorTab = tab;
-                this.hubOpen.behavior = true;
-                this.restoreConfigHash();
-                this.render();
-                return;
-            }
             if (tab === this.behaviorTab) return;
             this.behaviorTab = tab;
             this.restoreConfigHash();
@@ -13849,6 +13852,9 @@ class DashboardConfig {
             if (!body) { this.render(); return; }
             body.innerHTML = this.renderBehaviorBody();
             this.syncSubTabStrip('data-behavior-tab', this.behaviorTab);
+            this.repaintFilterElsewhere('behavior');
+            // The band's changed count answers for the tab, so it follows it.
+            this._fillShellHeadFromSection(document.getElementById('dashboard-layout') || document);
             this.bindControlPanels(container, 'behavior');
             this.bindBehaviorActions(container);
             this.bindFormKeyboard(container);
@@ -13856,7 +13862,7 @@ class DashboardConfig {
         });
         this.bindControlPanels(container, 'behavior');
         this.bindBehaviorActions(container);
-        this.bindHubControls(container);
+        this.bindFilterElsewhere(container);
         this.bindFormKeyboard(container);
     }
 
@@ -14080,164 +14086,147 @@ class DashboardConfig {
         this.repaintActiveControlPanels();
     }
 
-    /* ── Config hub (Appearance and Behavior) ──────────────────────────────── */
+    /* ── Appearance and Behavior tabs ─────────────────────────────────────── */
 
     /*
-     * Choosing a tab — a notice sending the reader to Privacy, a remembered
-     * location, a settings-search jump — means showing it, so on a hub it also
-     * opens the group that holds it. Only Back and a bare hash show the tiles.
+     * The tab each section shows, remembered in this browser as it changes, so
+     * the next visit opens where the reader usually works rather than on the
+     * first tab every time.
      */
     get appearanceTab() { return this._appearanceTab; }
 
     set appearanceTab(tab) {
         this._appearanceTab = tab;
-        if (this.hubOpen) this.hubOpen.appearance = true;
+        DashboardConfig.rememberTab('appearance', tab);
     }
 
     get behaviorTab() { return this._behaviorTab; }
 
     set behaviorTab(tab) {
         this._behaviorTab = tab;
-        if (this.hubOpen) this.hubOpen.behavior = true;
+        DashboardConfig.rememberTab('behavior', tab);
     }
 
     /**
-     * The tiles, or — while a search or "Only changed" is on — the matching
-     * settings of every group, each under the group it lives in.
+     * The tab strip of Appearance or Behavior.
+     *
+     * A sub-page (Custom themes) is not drawn on it; while one is open, the tab
+     * it belongs to is the one lit, because that is where the reader came from
+     * and where "← Look" takes them back to.
      */
-    renderHubStart(section) {
-        const hub = window.ConfigHub;
-        const searching = String(this.settingsFilter || '').trim() || this.changedOnly;
-        if (!searching) return hub.renderStart(this, section);
+    renderSectionTabStrip(section) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const attr = DashboardConfig.SUB_TAB_ATTR[section];
-        const hits = hub.groups(section).map((g) => {
-            const panels = g.tabs.flatMap((tab) => this.panelsFor(section, tab));
-            if (!panels.length) return '';
-            const html = this.renderControlPanels(panels, 'behavior');
-            if (!html.trim() || html.includes('config-panel-empty')) return '';
-            return `
-                <section class="hub-hits" data-hub-hits="${esc(g.id)}">
-                    <button type="button" class="hub-hits-title" ${attr}="${esc(g.tabs[0])}">${esc(this.t(g.titleKey, g.title))} →</button>
-                    ${html}
-                </section>`;
+        const isAppearance = section === 'appearance';
+        const current = isAppearance ? this.appearanceTab : this.behaviorTab;
+        const owner = isAppearance ? (DashboardConfig.APPEARANCE_SUBPAGES[current] || current) : current;
+        const tabs = (isAppearance ? DashboardConfig.APPEARANCE_TABS : DashboardConfig.BEHAVIOR_TABS)
+            .filter((tab) => !(isAppearance && DashboardConfig.APPEARANCE_SUBPAGES[tab]));
+        const attr = isAppearance ? 'data-appearance-tab' : 'data-behavior-tab';
+        const buttons = tabs.map((tab) => {
+            const active = tab === owner;
+            const isNew = DashboardConfig.NEW_THIS_RELEASE.section === section
+                && tab === DashboardConfig.NEW_THIS_RELEASE.tab;
+            const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
+            const label = isAppearance ? this.appearanceTabLabel(tab) : this.behaviorTabLabel(tab);
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-${section}-body" ${attr}="${esc(tab)}">${esc(label)}${stars}</button>`;
         }).join('');
-        const empty = this.changedOnly
-            ? this.t('config.hubChangedNone', 'Nothing here differs from its default.')
-            : this.t('config.hubSearchNone', 'No setting matches that.');
-        return `<div class="hub-start hub-start--hits" data-hub-start="${esc(section)}">${hits || `<p class="config-panel-empty">${esc(empty)}</p>`}</div>`;
+        return `<div class="config-subtabs" role="tablist">${buttons}</div>`;
     }
 
-    closeHub(section) {
-        if (!this.hubOpen?.[section]) return;
-        // A field typed into is saved a moment after the last keystroke, and
-        // leaving the group inside that moment used to write anyway -- from an
-        // input that is no longer on screen.
-        clearTimeout(this._hubTextTimer);
-        this._hubTextTimer = null;
-        this.hubOpen[section] = false;
-        if (section === 'appearance') this.clearThemePreview?.();
-        this.restoreConfigHash();
-        this.render();
-        document.querySelector(`[data-hub-start="${section}"] button`)?.focus();
+    /**
+     * Where else in this section the filter finds something.
+     *
+     * The filter narrows the tab in front of the reader, and a setting that
+     * lives one tab over answered "no setting matches" -- the one thing the
+     * old hub's search did better. Each other tab with a hit is named with its
+     * count, and choosing it keeps the filter, so the hit is on screen.
+     *
+     * "Only changed" gets the same line: a tab with nothing changed says so,
+     * and the reader should not have to open five tabs to learn where the
+     * changes are.
+     */
+    renderFilterElsewhere(section) {
+        const query = String(this.settingsFilter || '').trim().toLowerCase();
+        if (!query && !this.changedOnly) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const isAppearance = section === 'appearance';
+        const current = isAppearance ? this.appearanceTab : this.behaviorTab;
+        const tabs = (isAppearance ? DashboardConfig.APPEARANCE_TABS : DashboardConfig.BEHAVIOR_TABS)
+            .filter((tab) => tab !== current && !(isAppearance && DashboardConfig.APPEARANCE_SUBPAGES[tab]));
+        const hits = tabs.map((tab) => {
+            const n = this.countTabMatches(section, tab, query);
+            if (!n) return '';
+            const label = isAppearance ? this.appearanceTabLabel(tab) : this.behaviorTabLabel(tab);
+            return `<button type="button" class="config-btn config-btn--small config-filter-elsewhere-tab" data-filter-elsewhere="${esc(tab)}">${esc(label)} <span class="config-filter-elsewhere-count">${n}</span></button>`;
+        }).join('');
+        if (!hits) return '';
+        const lead = this.changedOnly && !query
+            ? this.t('config.changedElsewhere', 'Also changed on:')
+            : this.t('config.filterElsewhere', 'Also found on:');
+        return `<div class="config-filter-elsewhere" data-filter-elsewhere-row><span class="config-filter-elsewhere-lead">${esc(lead)}</span>${hits}</div>`;
     }
 
-    /** Back, the basics cards and the More settings fold. Safe to call twice. */
-    bindHubControls(container) {
+    /** How many settings on one tab the filter (and "Only changed") keep. */
+    countTabMatches(section, tab, query) {
+        const s = this.dash.settings || {};
+        let n = 0;
+        this.panelsFor(section, tab).forEach((panel) => {
+            const changed = this.changedOnly ? this.panelChangedFields(panel) : null;
+            (panel.controls || []).forEach((c) => {
+                if (!c || !c.field) return;
+                if (changed && !changed.includes(c.field)) return;
+                if (query && !this.controlMatchesFilter(c)) return;
+                n += 1;
+            });
+        });
+        // The hand-written controls (Look, parts of Rows and Header) are not in
+        // the schema; MANUAL_JUMP_FIELDS is their only declaration.
+        DashboardConfig.MANUAL_JUMP_FIELDS
+            .filter((e) => e.section === section && e.subTab === tab)
+            .forEach((entry) => {
+                if (this.changedOnly && (this.fieldMeta(entry.field)?.def === undefined
+                    || this.isFieldDefault(entry.field, s[entry.field]))) return;
+                if (query) {
+                    const words = [this.t(`config.${entry.labelKey}`, entry.fallback),
+                        ...(DashboardConfig.FIELD_KEYWORDS[entry.field] || [])];
+                    if (!words.some((w) => String(w).toLowerCase().includes(query))) return;
+                }
+                n += 1;
+            });
+        return n;
+    }
+
+    /** Wire the "Also found on" buttons: open that tab, keeping the filter. */
+    bindFilterElsewhere(container) {
         const root = container.closest?.('#dashboard-layout') || container;
-        root.querySelectorAll('[data-hub-back]').forEach((btn) => {
-            if (btn.dataset.hubBound === '1') return;
-            btn.dataset.hubBound = '1';
-            btn.addEventListener('click', () => this.closeHub(btn.dataset.hubBack));
-        });
-        root.querySelectorAll('[data-hub-field]').forEach((btn) => {
-            if (btn.dataset.hubBound === '1') return;
-            btn.dataset.hubBound = '1';
+        const scope = root.contains?.(container) && root !== container ? root : container;
+        scope.querySelectorAll('[data-filter-elsewhere]').forEach((btn) => {
+            if (btn.dataset.elsewhereBound === '1') return;
+            btn.dataset.elsewhereBound = '1';
             btn.addEventListener('click', () => {
-                const raw = btn.dataset.hubValue;
-                const type = btn.dataset.hubType;
-                const value = type === 'bool' ? raw === 'true' : type === 'number' ? Number(raw) : raw;
-                void this.setBehavior(btn.dataset.hubField, value, btn.dataset.hubSpecial || undefined);
-            });
-        });
-        root.querySelectorAll('[data-hub-text]').forEach((input) => {
-            if (input.dataset.hubBound === '1') return;
-            input.dataset.hubBound = '1';
-            /*
-             * While it is typed, not only when it is left.
-             *
-             * The weather line answers to this field, and waiting for a blur
-             * meant typing a town and seeing nothing happen. Each keystroke
-             * restarts a short timer, so one word is one save and one fetch
-             * rather than five; the repaint that follows puts the cursor back
-             * where it was (repaintHubBasics).
-             */
-            const save = () => {
-                clearTimeout(this._hubTextTimer);
-                this._hubTextTimer = null;
-                void this.setBehavior(input.dataset.hubText, input.value.trim(),
-                    input.dataset.hubSpecial || undefined);
-            };
-            input.addEventListener('input', () => {
-                clearTimeout(this._hubTextTimer);
-                this._hubTextTimer = setTimeout(save, DashboardConfig.HUB_TEXT_SAVE_MS);
-            });
-            // Leaving the field, or pressing Enter, is not something to wait out.
-            input.addEventListener('change', save);
-            input.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter') save();
-            });
-        });
-        root.querySelectorAll('[data-hub-more]').forEach((fold) => {
-            if (fold.dataset.hubBound === '1') return;
-            fold.dataset.hubBound = '1';
-            fold.addEventListener('toggle', () => {
-                try {
-                    localStorage.setItem(`nextdash.hubMore.${fold.dataset.hubMore}`, fold.open ? '1' : '0');
-                } catch { /* a browser refusing storage just forgets the fold */ }
+                const tab = btn.dataset.filterElsewhere;
+                if (this.section === 'appearance') {
+                    void this.switchAppearanceTab(tab);
+                } else {
+                    this.behaviorTab = tab;
+                    this.restoreConfigHash();
+                    this.render();
+                }
             });
         });
     }
 
-    /** Redraw the basics cards and the preview after a setting changed. */
-    repaintHubBasics(container) {
-        const hub = window.ConfigHub;
-        const section = this.section;
-        const tab = section === 'appearance' ? this.appearanceTab : this.behaviorTab;
-        const basics = container.querySelector('.hub-basics');
-        if (basics) {
-            const focused = document.activeElement?.closest?.('[data-hub-field]');
-            const key = focused ? [focused.dataset.hubField, focused.dataset.hubValue] : null;
-            // A field being typed into is redrawn under the reader's hands:
-            // what it holds and where the cursor sits have to survive that, or
-            // a saved keystroke sends the caret to the end of the word.
-            const typing = document.activeElement?.closest?.('[data-hub-text]');
-            const text = typing ? {
-                field: typing.dataset.hubText,
-                value: typing.value,
-                start: typing.selectionStart,
-                end: typing.selectionEnd,
-            } : null;
-            const tmp = document.createElement('div');
-            tmp.innerHTML = hub.renderBasics(this, section, tab);
-            const fresh = tmp.firstElementChild;
-            if (fresh) {
-                basics.replaceWith(fresh);
-                this.bindHubControls(container);
-                if (key) {
-                    fresh.querySelector(`[data-hub-field="${CSS.escape(key[0])}"][data-hub-value="${CSS.escape(key[1])}"]`)?.focus();
-                }
-                if (text) {
-                    const back = fresh.querySelector(`[data-hub-text="${CSS.escape(text.field)}"]`);
-                    if (back) {
-                        back.value = text.value;
-                        back.focus();
-                        back.setSelectionRange(text.start, text.end);
-                    }
-                }
-            }
-        }
-        if (section === 'appearance') hub.repaintPreview(this);
+    /** Redraw the "Also found on" line after the filter or a setting changed. */
+    repaintFilterElsewhere(section) {
+        document.querySelectorAll('[data-filter-elsewhere-host]').forEach((host) => {
+            host.innerHTML = this.renderFilterElsewhere(section);
+            this.bindFilterElsewhere(host);
+        });
+    }
+
+    /** The live preview beside Appearance, redrawn after a setting changed. */
+    repaintAppearancePreview() {
+        window.ConfigPreview?.repaint?.(this, this.appearanceTab);
     }
 
     /**
@@ -14422,10 +14411,9 @@ class DashboardConfig {
         // while, with a comment explaining exactly this hazard; the settings
         // panels never got it.
         const restoreFocus = this.captureControlPanelFocus();
-        if (window.ConfigHub && DashboardConfig.HUB_SECTIONS.includes(this.section)) {
-            // The start screen's summaries and search hits are one block.
-            if (!this.hubOpen[this.section]) { this.render(); return; }
-            this.repaintHubBasics(container);
+        if (this.section === 'appearance') this.repaintAppearancePreview();
+        if (this.section === 'appearance' || this.section === 'behavior') {
+            this.repaintFilterElsewhere(this.section);
         }
         if (this.section === 'behavior') {
             const body = document.getElementById('config-behavior-body');
@@ -14444,11 +14432,10 @@ class DashboardConfig {
                 layout: () => this.renderAppearanceLayoutBody(),
                 buttonbar: () => this.renderAppearanceActionBarBody(),
                 display: () => this.renderAppearanceDisplayBody(),
-                branding: () => this.renderAppearanceBrandingBody(),
+                datetime: () => this.renderControlPanels(this.panelsFor('appearance', 'datetime'), 'behavior'),
             }[this.appearanceTab];
             // General is rebuilt through render(): its body is one block from
-            // renderAppearance, tiles and all, with no renderer of its own to
-            // call here.
+            // renderAppearance, with no renderer of its own to call here.
             if (this.appearanceTab === 'general') { this.render(); return; }
             if (body && render) {
                 body.innerHTML = render();
@@ -14532,7 +14519,15 @@ class DashboardConfig {
     // changing the bar meant finding it twice.
     // Date & weather came over from Behavior: the clock, the date line and the
     // weather are things on screen, and the header they sit in is set here.
-    static APPEARANCE_TABS = ['general', 'layout', 'header', 'buttonbar', 'datetime', 'display', 'custom-themes'];
+    //
+    // The ids stay what they were so every saved link still opens; the names
+    // on the strip are Look, Grid, Rows, Header, Action bar and Date & weather.
+    // Custom themes is last and is not on the strip: it is a page inside Look,
+    // reached from Look's own button, with a way back to it.
+    static APPEARANCE_TABS = ['general', 'layout', 'display', 'header', 'buttonbar', 'datetime', 'custom-themes'];
+
+    /** Tabs a section keeps addressable but does not draw on its strip. */
+    static APPEARANCE_SUBPAGES = { 'custom-themes': 'general' };
 
     /*
      * What a tab used to be called still opens it.
@@ -14542,7 +14537,18 @@ class DashboardConfig {
      * remembers between visits, and in the address bar of a tab left open
      * across the change.
      */
-    static APPEARANCE_TAB_ALIASES = { toolbar: 'header' };
+    //
+    // The same goes for the words on the strip and the hub's tile names, which
+    // is what a reader types when they write a link by hand.
+    static APPEARANCE_TAB_ALIASES = {
+        toolbar: 'header',
+        look: 'general',
+        theme: 'general',
+        grid: 'layout',
+        rows: 'display',
+        'action-bar': 'buttonbar',
+        custom: 'custom-themes',
+    };
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
 
@@ -26944,7 +26950,7 @@ class DashboardConfig {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [pageId] });
             this.notify(this.t('config.aboutTrackAdded',
-                'nextdash.cc is on your dashboard. Turn Fresh on under Behavior → Fresh to see what it publishes.'), 'success');
+                'nextdash.cc is on your dashboard. Turn Fresh on under Behavior → Inbox & Fresh to see what it publishes.'), 'success');
             this.render();
         } catch (_error) {
             this.notify(this.t('config.aboutTrackFailed', 'Could not add the bookmark.'), 'error');

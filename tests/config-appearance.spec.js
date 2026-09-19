@@ -21,7 +21,10 @@ async function openAppearance(page, tab) {
     await dismissBlockingOverlays(page);
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('#config-appearance-body', { timeout: 15_000 });
-    if (tab) {
+    if (tab === 'custom-themes') {
+        await page.click('[data-appearance-goto="custom-themes"]');
+        await page.waitForTimeout(900);
+    } else if (tab) {
         await page.click(`[data-appearance-tab="${tab}"]`);
         await page.waitForTimeout(900);
     }
@@ -76,7 +79,7 @@ test.describe('the tabs carry their own weight', () => {
         expect(tabs).toContain('display');
     });
 
-    test('its panel is on Display, and the old link still lands on it', async ({ page }) => {
+    test('its panel is on Header, and the old link still lands on it', async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/#config/appearance/branding');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -84,7 +87,7 @@ test.describe('the tabs carry their own weight', () => {
         await dismissBlockingOverlays(page);
 
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config?.appearanceTab),
-            { timeout: 15_000 }).toBe('display');
+            { timeout: 15_000 }).toBe('header');
         await expect(page.locator('[data-appearance-toggle="enableCustomTitle"]')).toBeVisible();
     });
 

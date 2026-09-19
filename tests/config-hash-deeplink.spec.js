@@ -28,7 +28,7 @@ test.describe('config deep links', () => {
         await page.goto('/#config/appearance');
         await waitReady(page);
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
-        expect(await page.evaluate(() => window.location.hash)).toBe('#config/appearance');
+        expect(await page.evaluate(() => window.location.hash)).toBe('#config/appearance/general');
     });
 
     test('the legacy /config URL redirects into the view', async ({ page }) => {

@@ -113,9 +113,11 @@ test.describe('behavior panels', () => {
     test('the keyboard and link settings have headings of their own', async ({ page }) => {
         await openTab(page, 'behavior', null);
         const titles = (await panels(page)).map((p) => p.title);
-
-        expect(titles, 'the keyboard settings are still filed under General').toContain('Keyboard');
         expect(titles, 'opening a link has no heading of its own').toContain('Opening links');
+
+        // The keys moved in with search, which is what they reach.
+        await page.click('[data-behavior-tab="search"]');
+        await expect.poll(async () => (await panels(page)).map((p) => p.title)).toContain('Keyboard');
     });
 
     test('and General is no longer whatever was left over', async ({ page }) => {
@@ -130,12 +132,15 @@ test.describe('behavior panels', () => {
         await openTab(page, 'behavior', null);
 
         // Named rather than counted: a split that quietly dropped one would
-        // pass a count, and these are the eight that shared the old panel.
-        const present = await page.evaluate(() => [
-            'language', 'rememberScrollPosition', 'lockLayout', 'globalShortcuts',
-            'showShortcutTooltips', 'showGridKeyLegend', 'openInNewTab', 'allowLocalBookmarks',
-        ].filter((field) => document.querySelector(`[data-behavior-field="${field}"]`) === null));
+        // pass a count, and these are the eight that shared the old panel --
+        // five on General, and the three keys on Keyboard & search.
+        const missing = (fields) => page.evaluate((list) => list.filter((field) =>
+            document.querySelector(`[data-behavior-field="${field}"]`) === null), fields);
 
-        expect(present, 'settings lost in the split').toEqual([]);
+        expect(await missing(['language', 'rememberScrollPosition', 'lockLayout', 'openInNewTab',
+            'allowLocalBookmarks']), 'settings lost from General').toEqual([]);
+        await page.click('[data-behavior-tab="search"]');
+        await expect.poll(() => missing(['globalShortcuts', 'showShortcutTooltips', 'showGridKeyLegend']),
+            { message: 'settings lost from Keyboard & search' }).toEqual([]);
     });
 });

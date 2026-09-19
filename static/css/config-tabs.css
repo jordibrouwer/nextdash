@@ -1,0 +1,452 @@
+/*
+ * Config → Appearance and Behavior: one tab of settings, with the live
+ * preview beside Appearance.
+ *
+ * A tab is one column of settings under small headings -- not a stack of
+ * boxed panels -- so the eye runs down one list. The panel markup stays (it
+ * carries the reset button, the bulk toggles and the changed filter); only
+ * its box is taken away here.
+ */
+
+.config-tabpage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+}
+
+.config-tabpage--preview {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+}
+
+.config-tabpage-main {
+    min-width: 0;
+}
+
+/*
+ * Flat panels. Doubled class so it outranks the depth and character rules,
+ * which give every .config-panel a raised surface through a selector of
+ * three attributes.
+ */
+.config-tabpage .config-tabpage-main .config-panel.config-panel {
+    margin-top: 0;
+    padding: 0 0 18px;
+    border: 0;
+    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+}
+
+.config-tabpage .config-tabpage-main .config-panel.config-panel + .config-panel {
+    margin-top: 22px;
+}
+
+.config-tabpage .config-tabpage-main .config-panel.config-panel:last-child {
+    border-bottom: 0;
+}
+
+.config-tabpage .config-panel-title {
+    margin: 0 0 6px;
+    font-size: calc(var(--font-size-text) * 0.857);
+    font-weight: 600;
+    color: var(--text-muted, #888);
+}
+
+.config-tabpage .config-panel-note {
+    margin-bottom: 10px;
+}
+
+/* The short line under a setting sits close to it, not half-way to the next. */
+.config-tabpage .config-field-hint {
+    margin: 2px 0 12px;
+}
+
+/* ← Look, above the Custom themes page. */
+.config-subpage-back {
+    margin: 0 0 12px;
+    padding: 2px 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.config-subpage-back:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* Also found on: Grid 2 · Header 1 */
+.config-filter-elsewhere {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
+}
+
+.config-filter-elsewhere-lead {
+    color: var(--text-muted, #888);
+    margin-right: 4px;
+}
+
+.config-filter-elsewhere-count {
+    margin-left: 4px;
+    opacity: 0.7;
+}
+
+/* ── The preview column ──────────────────────────────────────────────────── */
+
+.config-tabpage-side {
+    position: sticky;
+    top: 12px;
+}
+
+.config-tabpage-side-label {
+    margin: 0 0 6px;
+    font-size: 0.8em;
+    color: var(--text-muted, inherit);
+}
+
+.config-preview {
+    position: relative;
+    padding: 10px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: var(--radius-7, 12px);
+    background: var(--background-primary, transparent);
+    font-size: 10px;
+    line-height: 1.3;
+}
+
+/* The part the open tab changes stays at full strength; the rest steps back. */
+.config-preview [data-pv-part] {
+    transition: opacity 0.15s ease;
+}
+
+.config-preview:not([data-preview-focus="all"]) [data-pv-part] {
+    opacity: 0.35;
+}
+
+.config-preview[data-preview-focus="head"] [data-pv-part="head"],
+.config-preview[data-preview-focus="head"] [data-pv-part="head"] [data-pv-part],
+.config-preview[data-preview-focus="grid"] [data-pv-part="grid"],
+.config-preview[data-preview-focus="rows"] [data-pv-part="rows"],
+.config-preview[data-preview-focus="clock"] [data-pv-part="clock"],
+.config-preview[data-preview-focus="actions"] [data-pv-part="actions"] {
+    opacity: 1;
+}
+
+/* The header itself stays readable around the clock and the buttons. */
+.config-preview[data-preview-focus="clock"] [data-pv-part="head"],
+.config-preview[data-preview-focus="actions"] [data-pv-part="head"] {
+    opacity: 1;
+}
+
+.config-preview[data-preview-focus="clock"] [data-pv-part="head"] > :not(.config-pv-name-block),
+.config-preview[data-preview-focus="clock"] .config-pv-title,
+.config-preview[data-preview-focus="actions"] [data-pv-part="head"] > :not([data-pv-part="actions"]) {
+    opacity: 0.35;
+}
+
+.config-pv-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.config-pv-name-block {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+/* Classic puts the clock on its own line above the name. */
+.config-preview[data-preview-clock="classic"] .config-pv-clock {
+    order: -1;
+}
+
+.config-preview[data-preview-clock="beside-name"] .config-pv-name-block,
+.config-preview[data-preview-clock="own-zone"] .config-pv-name-block {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.config-preview[data-preview-clock="own-zone"] .config-pv-clock {
+    padding-left: 6px;
+    border-left: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+}
+
+.config-pv-title {
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-pv-clock {
+    color: var(--text-muted, inherit);
+    white-space: nowrap;
+}
+
+.config-pv-tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.config-pv-tab {
+    color: var(--text-muted, inherit);
+}
+
+.config-pv-tab.is-on {
+    color: var(--accent-primary);
+}
+
+.config-preview[data-preview-switcher="segmented"] .config-pv-tabs {
+    padding: 1px;
+    border-radius: 4px;
+    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+}
+
+.config-preview[data-preview-switcher="segmented"] .config-pv-tab {
+    padding: 0 4px;
+}
+
+.config-preview[data-preview-switcher="segmented"] .config-pv-tab.is-on {
+    border-radius: 3px;
+    background: var(--accent-soft, transparent);
+}
+
+/* Classic stands the pages at the right, beside the destinations. */
+.config-preview[data-preview-switcher="classic"] .config-pv-head {
+    justify-content: flex-start;
+}
+
+.config-preview[data-preview-switcher="classic"] .config-pv-tabs {
+    margin-left: auto;
+}
+
+.config-pv-dest {
+    display: flex;
+    gap: 3px;
+}
+
+.config-pv-dest b,
+.config-pv-dest em {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary, currentColor) 35%, transparent);
+}
+
+.config-pv-dest b {
+    background: var(--accent-primary);
+}
+
+.config-preview[data-preview-buttons="plated"] .config-pv-dest b,
+.config-preview[data-preview-buttons="plated"] .config-pv-dest em {
+    outline: 1px solid color-mix(in srgb, var(--text-primary, currentColor) 45%, transparent);
+    outline-offset: 1px;
+}
+
+.config-pv-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--pv-cols, 4), 1fr);
+    gap: 5px;
+}
+
+.config-preview[data-preview-density="compact"] .config-pv-grid {
+    gap: 2px;
+}
+
+.config-preview[data-preview-density="spacious"] .config-pv-grid {
+    gap: 8px;
+}
+
+.config-pv-grid i {
+    height: 22px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--background-secondary, #888) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border-primary, #888) 50%, transparent);
+}
+
+.config-preview[data-preview-density="compact"] .config-pv-grid i {
+    height: 16px;
+}
+
+/* A few bookmark rows, as Rows draws them. */
+.config-pv-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 8px;
+}
+
+.config-pv-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    border-left: 2px solid transparent;
+}
+
+.config-pv-row.is-cursor {
+    border-left-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.config-preview[data-preview-highlight="strong"] .config-pv-row.is-cursor {
+    background: color-mix(in srgb, var(--accent-primary) 26%, transparent);
+}
+
+.config-pv-row.is-down .config-pv-name {
+    color: var(--status-offline, #d1493f);
+}
+
+.config-pv-icon {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary, currentColor) 45%, transparent);
+}
+
+.config-pv-name {
+    white-space: nowrap;
+}
+
+.config-pv-tags {
+    display: flex;
+    gap: 2px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.config-pv-tags em {
+    padding: 0 3px;
+    border-radius: 3px;
+    font-style: normal;
+    font-size: 0.85em;
+    background: var(--hover-bg, rgba(128, 128, 128, 0.14));
+    color: var(--text-muted, inherit);
+}
+
+.config-pv-end {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.config-pv-ping,
+.config-pv-key {
+    color: var(--text-muted, inherit);
+}
+
+.config-pv-key {
+    padding: 0 2px;
+    border: 1px solid color-mix(in srgb, var(--text-primary, currentColor) 25%, transparent);
+    border-radius: 2px;
+    font-size: 0.85em;
+}
+
+.config-pv-status {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--status-online, #3fa34d);
+}
+
+.config-pv-status.is-down {
+    background: var(--status-offline, #d1493f);
+}
+
+.config-pv-dock {
+    display: none;
+    background: var(--accent-primary);
+    border-radius: 3px;
+    opacity: 0.7;
+}
+
+.config-preview[data-preview-actions="bottom"] .config-pv-dock {
+    display: block;
+    width: 45%;
+    height: 7px;
+    margin: 8px auto 0;
+}
+
+.config-preview[data-preview-actions="left"],
+.config-preview[data-preview-actions="right"] {
+    padding-inline: 20px;
+}
+
+.config-preview[data-preview-actions="left"] .config-pv-dock,
+.config-preview[data-preview-actions="right"] .config-pv-dock {
+    display: block;
+    position: absolute;
+    top: 30%;
+    width: 6px;
+    height: 40%;
+}
+
+.config-preview[data-preview-actions="left"] .config-pv-dock {
+    left: 6px;
+}
+
+.config-preview[data-preview-actions="right"] .config-pv-dock {
+    right: 6px;
+}
+
+/* The dock half inside its edge when it slides away; gone when switched off. */
+.config-preview[data-preview-bar="sliding"] .config-pv-dock {
+    opacity: 0.35;
+}
+
+.config-preview[data-preview-bar="sliding"][data-preview-actions="left"] .config-pv-dock {
+    left: 1px;
+}
+
+.config-preview[data-preview-bar="sliding"][data-preview-actions="right"] .config-pv-dock {
+    right: 1px;
+}
+
+.config-preview[data-preview-bar="off"] .config-pv-dock,
+.config-preview[data-preview-bar="off"] .config-pv-dest b {
+    display: none;
+}
+
+/* Narrow screens: the preview becomes a strip above the settings. */
+@media (max-width: 900px) {
+    .config-tabpage--preview {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .config-tabpage-side {
+        position: static;
+        order: -1;
+    }
+}
+
+/* The short line under a hand-written Appearance row, across the whole row. */
+.config-field > .config-field-hint--inline {
+    grid-column: 1 / -1;
+    margin: -8px 0 0;
+}
+
+.config-field-row > .config-field-hint--inline {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+.config-field-row:has(> .config-field-hint--inline) {
+    flex-wrap: wrap;
+    row-gap: 2px;
+}

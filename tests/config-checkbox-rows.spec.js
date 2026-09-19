@@ -42,8 +42,8 @@ test.describe('checkboxes use one row shape', () => {
         // checkboxes and only one of them goes through the schema.
         const offenders = [];
         for (const [section, tabs, attr] of [
-            ['appearance', ['general', 'layout', 'datetime', 'display', 'header'], 'data-appearance-tab'],
-            ['behavior', ['general', 'search', 'inbox', 'fresh', 'status', 'privacy'], 'data-behavior-tab'],
+            ['appearance', ['general', 'layout', 'display', 'header', 'buttonbar', 'datetime'], 'data-appearance-tab'],
+            ['behavior', ['general', 'search', 'inbox', 'status', 'privacy'], 'data-behavior-tab'],
         ]) {
             await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
             for (const tab of tabs) {

@@ -21,21 +21,10 @@ async function openConfig(page, section = 'overview') {
     await page.waitForSelector('.config-view', { timeout: 15_000 });
 }
 
-/**
- * Open a settings group.
- *
- * Appearance and Behavior land on a hub of tiles, and a hub carries no fields —
- * so the "Only changed" filter has nothing to act on until a group is open. The
- * tests below drove the filter straight from the section and saw it refuse,
- * which read as the filter being broken rather than as nothing being there yet.
- */
+/** Wait for the open tab's settings: the section opens straight on one. */
 async function openFirstGroup(page) {
-    const tile = page.locator('#config-view-body .hub-tile .hub-tile-main').first();
-    if (await tile.count()) {
-        await tile.click();
-        await page.waitForSelector('#config-view-body [data-behavior-field], #config-view-body .config-field',
-            { timeout: 10_000 });
-    }
+    await page.waitForSelector('#config-view-body [data-behavior-field], #config-view-body .config-field',
+        { timeout: 10_000 });
 }
 
 /** Drive real setting changes through the same path the controls use. */
@@ -128,10 +117,10 @@ test.describe('the "Only changed" filter', () => {
 
     test('the bar counts what differs on this tab', async ({ page }) => {
         await openConfig(page, 'behavior');
-        await change(page, [['openInNewTab', false], ['globalShortcuts', false]]);
+        await change(page, [['openInNewTab', false], ['allowLocalBookmarks', false]]);
 
         await expect(page.locator('.config-changed-count')).toHaveText(/\b2\b/);
-        await restore(page, ['openInNewTab', 'globalShortcuts']);
+        await restore(page, ['openInNewTab', 'allowLocalBookmarks']);
     });
 
     test('with nothing changed the toggle is offered but disabled', async ({ page }) => {
@@ -184,12 +173,9 @@ test.describe('reset a whole panel', () => {
 
     test('it restores every changed field in that panel at once', async ({ page }) => {
         await openConfig(page, 'behavior');
-        // Two fields from the same panel. They used to be openInNewTab and
-        // globalShortcuts, which shared the old catch-all General; the two are
-        // under Opening links and Keyboard now, so a reset of one panel is
-        // correctly not a reset of the other. Both of these default to on, so
-        // a restore is something the test can see.
-        await change(page, [['globalShortcuts', false], ['showGridKeyLegend', false]]);
+        // Two fields from the same panel, Opening links. Both default to on,
+        // so a restore is something the test can see.
+        await change(page, [['openInNewTab', false], ['allowLocalBookmarks', false]]);
 
         await page.locator('[data-panel-reset]').click();
         // AppModal is in-page rather than a native dialog; the confirm button
@@ -198,14 +184,14 @@ test.describe('reset a whole panel', () => {
 
         await expect.poll(() => page.evaluate(() => {
             const s = window.dashboardInstance.settings;
-            return [s.globalShortcuts, s.showGridKeyLegend];
+            return [s.openInNewTab, s.allowLocalBookmarks];
         }), { timeout: 10_000 }).toEqual([true, true]);
     });
 
     /** One write for the panel, not one per field. */
     test('resetting a panel saves once', async ({ page }) => {
         await openConfig(page, 'behavior');
-        await change(page, [['globalShortcuts', false], ['showGridKeyLegend', false]]);
+        await change(page, [['openInNewTab', false], ['allowLocalBookmarks', false]]);
 
         let saves = 0;
         await page.route('**/api/settings', (route) => {
@@ -217,7 +203,7 @@ test.describe('reset a whole panel', () => {
         await page.locator('#app-modal .modal-button').first().click();
 
         await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.settings.globalShortcuts), { timeout: 10_000 }).toBe(true);
+            window.dashboardInstance.settings.openInNewTab), { timeout: 10_000 }).toBe(true);
         await page.waitForTimeout(500);
 
         expect(saves, `two fields must not mean two writes (saw ${saves})`).toBe(1);

@@ -120,10 +120,10 @@ test('the delay is chosen in config and survives a reload', async ({ page }) => 
     await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 0 });
     await page.keyboard.press('Shift+S');
     await page.click('[data-config-section="appearance"]');
-    await page.locator('[data-hub-group="header"] [data-appearance-tab="buttonbar"]').click();
-    await page.locator('[data-hub-field="actionBarAutoHideSeconds"][data-hub-value="5"]').click();
+    await page.locator('[data-appearance-tab="buttonbar"]').click();
+    await page.locator('select[data-behavior-field="actionBarAutoHideSeconds"]').selectOption('5');
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.actionBarAutoHideSeconds)).toBe(5);
-    await expect(page.locator('.hub-preview')).toHaveAttribute('data-preview-bar', 'sliding');
+    await expect(page.locator('.config-preview')).toHaveAttribute('data-preview-bar', 'sliding');
 
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
@@ -137,7 +137,7 @@ test('the key chips switch off in config, and the keys keep working', async ({ p
 
     await page.keyboard.press('Shift+S');
     await page.click('[data-config-section="appearance"]');
-    await page.locator('[data-hub-group="header"] [data-appearance-tab="buttonbar"]').click();
+    await page.locator('[data-appearance-tab="buttonbar"]').click();
     await page.locator('[data-behavior-field="showActionKeys"]').uncheck();
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.showActionKeys)).toBe(false);
 

@@ -32,7 +32,7 @@ async function openEditor(page) {
         cfg.appearanceTab = 'general';
         await cfg.openConfigView('appearance');
     });
-    await page.locator('[data-appearance-tab="custom-themes"]').click();
+    await page.locator('[data-appearance-goto="custom-themes"]').click();
     await page.locator('[data-theme-add]').click();
     await expect(page.locator('#config-theme-editor')).toBeVisible();
     await page.locator('[data-theme-character] > summary').click();
@@ -130,7 +130,7 @@ test('a light/dark pair is made, and Quick mode switches between its halves', as
     const pair = page.locator('[data-theme-action="pair"]');
     if (!(await pair.isVisible())) {
         if (!(await page.locator('[data-theme-add]').isVisible())) {
-            await page.locator('[data-appearance-tab="custom-themes"]').click();
+            await page.evaluate(() => window.dashboardInstance.config.switchAppearanceTab('custom-themes'));
         }
         if (!(await pair.isVisible())) await page.locator(`[data-theme-edit="${id}"]`).click();
     }

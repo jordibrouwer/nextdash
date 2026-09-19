@@ -408,9 +408,6 @@ html[data-theme] body:not([data-depth="flat"]) :is(
     .config-tile,
     .config-panel,
     .config-choices,
-    .hub-tile,
-    .hub-card,
-    .hub-ill,
     .lvs-summary,
     .quickstart-card,
     .health-monitor-stat

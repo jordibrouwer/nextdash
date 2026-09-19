@@ -642,7 +642,7 @@ test.describe('onboarding settings', () => {
     test('the tips toggle sits with the onboarding actions and explains itself', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="general"]').click();
+        await page.locator('[data-behavior-tab="privacy"]').click();
 
         const toggle = page.locator('[data-behavior-field="enableSessionTips"]');
         await expect(toggle).toBeVisible();
@@ -658,7 +658,7 @@ test.describe('onboarding settings', () => {
     test('the tips toggle saves and its actions survive a tab switch', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="general"]').click();
+        await page.locator('[data-behavior-tab="privacy"]').click();
         const toggle = page.locator('[data-behavior-field="enableSessionTips"]');
         const start = await toggle.isChecked();
 
@@ -668,8 +668,8 @@ test.describe('onboarding settings', () => {
 
         // The body is replaced wholesale on a tab switch, so the buttons have to
         // be rebound or they go dead.
-        await page.locator('[data-behavior-tab="privacy"]').click();
         await page.locator('[data-behavior-tab="general"]').click();
+        await page.locator('[data-behavior-tab="privacy"]').click();
         await expect(page.locator('[data-behavior-action]')).toHaveCount(2);
 
         await toggle.setChecked(start);

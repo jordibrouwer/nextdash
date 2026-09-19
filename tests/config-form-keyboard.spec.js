@@ -41,7 +41,7 @@ test.describe('config form keyboard controls', () => {
         const light = page.locator('[data-appearance-theme="light"]').first();
         await light.focus();
         await page.keyboard.press(']');
-        await expect(page.locator('[data-appearance-tab="custom-themes"][aria-selected="true"]')).toHaveCount(0);
+        await expect(page.locator('[data-appearance-tab="general"][aria-selected="true"]')).toHaveCount(1);
     });
 
     test('stats period choices respond to arrow keys', async ({ page }) => {

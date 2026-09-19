@@ -94,18 +94,10 @@ test.describe('toolbar button visibility', () => {
         const toggle = page.locator('[data-behavior-field="showCollapseAllButton"]');
         await expect(toggle).toHaveCount(1);
         /*
-         * Appearance opens on a hub of tiles, so the field can be in the page
-         * and still folded away inside a group. It is on screen without this on
-         * a fast machine and was not on a loaded runner, where the click waited
-         * thirty seconds for an element that was never going to be visible.
-         *
-         * Called before each click rather than once: toggling the setting
-         * repaints the body, and the field can fold away again with it.
+         * Called before each click: toggling the setting repaints the body, and
+         * on a loaded runner the new input can arrive a moment after the click.
          */
         const reveal = async () => {
-            if (await toggle.isVisible()) return;
-            const tile = page.locator('#config-view-body .hub-tile .hub-tile-main').first();
-            if (await tile.count()) await tile.click();
             await expect(toggle).toBeVisible({ timeout: 15_000 });
         };
         /*

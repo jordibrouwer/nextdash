@@ -30,7 +30,7 @@ async function openBehavior(page, tab = 'general') {
 
 test.describe('a control writes something that survives', () => {
     test('the device toggle reaches the storage it lives in', async ({ page }) => {
-        await openBehavior(page);
+        await openBehavior(page, 'privacy');
         await page.evaluate(() => localStorage.removeItem('deviceSpecificSettings'));
 
         const box = page.locator('[data-behavior-field="deviceSpecificSettings"]');
@@ -49,7 +49,7 @@ test.describe('a control writes something that survives', () => {
     });
 
     test('it is offered in one place, not two', async ({ page }) => {
-        await openBehavior(page);
+        await openBehavior(page, 'privacy');
         await expect(page.locator('[data-behavior-field="deviceSpecificSettings"]')).toHaveCount(1);
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));

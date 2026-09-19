@@ -198,7 +198,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
 
         expect(await page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
-        expect(await page.evaluate(() => window.location.hash)).toBe('#config/appearance');
+        expect(await page.evaluate(() => window.location.hash)).toBe('#config/appearance/general');
     });
 
     /**
@@ -243,7 +243,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.locator('[data-config-section="appearance"]').click();
 
         expect(await page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
-        expect(await page.evaluate(() => window.location.hash)).toBe('#config/appearance');
+        expect(await page.evaluate(() => window.location.hash)).toBe('#config/appearance/general');
         await expect(page.locator('[data-config-section="appearance"]')).toHaveClass(/is-active/);
     });
 
@@ -396,13 +396,12 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
-        await expect(page.locator('.config-tile-label', { hasText: /active theme/i })).toBeVisible();
         await expect(page.locator('[data-appearance-theme="light"]')).toBeVisible();
         await expect(page.locator('[data-appearance-theme="dark"]')).toBeVisible();
         await expect(page.locator('[data-appearance-font="m"]')).toBeVisible();
     });
 
-    test('switching theme applies live, saves, and updates the tile', async ({ page }) => {
+    test('switching theme applies live and saves', async ({ page }) => {
         let saved = null;
         await page.route('**/api/settings', async (route) => {
             if (route.request().method() === 'POST') {
@@ -425,8 +424,6 @@ test.describe('config dashboard view (scaffold)', () => {
             .toBe('light');
         // Persisted.
         await expect.poll(() => saved && saved.theme).toBe('light');
-        // Tile reflects the new theme.
-        await expect(page.locator('.config-tile-value', { hasText: /light/i })).toBeVisible();
         // The light button is now the active choice.
         await expect(page.locator('[data-appearance-theme="light"]')).toHaveClass(/is-active/);
     });
@@ -581,12 +578,15 @@ test.describe('config dashboard view (scaffold)', () => {
         // layout, so it is a schema select now rather than a button group.
         await expect(page.locator('[data-behavior-field="launcherIconSize"]')).toBeVisible();
 
-        await page.locator('[data-appearance-tab="display"]').click();
-        await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
+        await page.locator('[data-appearance-tab="general"]').click();
         await expect(page.locator('[data-appearance-toggle="animationsEnabled"]')).toBeVisible();
 
-        // Branding (page title + favicon) is the tail of Display now: one panel
-        // with one toggle, a text field and an upload did not earn a tab.
+        await page.locator('[data-appearance-tab="display"]').click();
+        await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
+
+        // Branding (page title + favicon) sits on Header, with what the
+        // browser tab says of the page.
+        await page.locator('[data-appearance-tab="header"]').click();
         await expect(page.locator('[data-appearance-tab="branding"]')).toHaveCount(0);
         await expect(page.locator('[data-appearance-toggle="enableCustomTitle"]')).toBeVisible();
         await expect(page.locator('[data-appearance-text="customTitle"]')).toBeVisible();
@@ -1042,7 +1042,8 @@ test.describe('sub-tab deep links', () => {
         await expect.poll(() => page.evaluate(() => window.location.hash))
             .toBe('#config/behavior/privacy');
 
-        // On the hub every group is named; the bare hash is the tiles.
+        // The first tab is named too: a bare hash opens whichever tab the
+        // reader last looked at, which is not a link to anything.
         await page.locator('[data-behavior-tab="general"]').click();
         await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config/behavior/general');
     });

@@ -45,9 +45,22 @@ const glowTokens = (page) => page.evaluate(() => {
 });
 
 /** What a panel in the config view actually paints. */
+/*
+ * The shadow a config panel gets from the theme.
+ *
+ * Measured on a panel of its own rather than on one in Appearance: the tabs
+ * there draw their panels flat, as headings over a list, so the first panel on
+ * screen no longer carries the surface this is about. A probe beside the
+ * config view gets exactly the theme's rule and nothing a tab adds.
+ */
 const panelShadow = (page) => page.evaluate(() => {
-    const panel = document.querySelector('.config-panel');
-    return panel ? getComputedStyle(panel).boxShadow : '';
+    const host = document.querySelector('#config-view-body') || document.body;
+    const probe = document.createElement('div');
+    probe.className = 'config-panel';
+    host.appendChild(probe);
+    const shadow = getComputedStyle(probe).boxShadow;
+    probe.remove();
+    return shadow;
 });
 
 test.describe('theme glow', () => {

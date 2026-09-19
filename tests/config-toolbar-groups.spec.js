@@ -40,20 +40,25 @@ async function openButtonBarTab(page) {
 }
 
 test.describe('the chrome toggles are grouped', () => {
-    test('two panels, and every toggle kept', async ({ page }) => {
+    test('the chrome toggles are one panel per tab, and every toggle kept', async ({ page }) => {
         await openToolbarTab(page);
 
+        // The Header tab also carries the clock's placement and the browser
+        // tab's title, each under a heading of its own; those are not chrome
+        // toggles, so they are left out of the count.
         const panels = await page.evaluate(() => [
             ...window.dashboardInstance.config.panelsFor('appearance', 'header'),
             ...window.dashboardInstance.config.panelsFor('appearance', 'buttonbar'),
-        ].map((p) => ({ title: p.title, fields: p.controls.map((c) => c.field) })));
+        ].map((p) => ({ title: p.title, fields: p.controls.map((c) => c.field) }))
+            .filter((p) => !p.fields.includes('headerClockPlacement') && !p.fields.includes('showPageInTitle')));
 
         expect(panels).toHaveLength(2);
         // One panel for the header strip, one for the actions in it. The
         // actions were two groups — "main buttons" and "extras" — which was the
         // floating bar's own split into a row and a second row beside it.
         const perTab = await page.evaluate(() => ({
-            toolbar: window.dashboardInstance.config.panelsFor('appearance', 'header').length,
+            toolbar: window.dashboardInstance.config.panelsFor('appearance', 'header')
+                .filter((p) => p.bulk).length,
             buttonbar: window.dashboardInstance.config.panelsFor('appearance', 'buttonbar').length,
         }));
         expect(perTab).toEqual({ toolbar: 1, buttonbar: 1 });

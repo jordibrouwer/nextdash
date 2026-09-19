@@ -136,13 +136,12 @@ test.describe('config info + reset affordances', () => {
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });
 
-    test('date & weather sits under Appearance, between Action bar and Display', async ({ page }) => {
+    test('date & weather sits under Appearance, after Action bar', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         const order = await page.locator('[data-appearance-tab]').evaluateAll((els) =>
             els.map((el) => el.getAttribute('data-appearance-tab')));
         expect(order.indexOf('datetime')).toBe(order.indexOf('buttonbar') + 1);
-        expect(order.indexOf('display')).toBe(order.indexOf('datetime') + 1);
 
         await page.locator('[data-appearance-tab="datetime"]').click();
         await expect(page.locator('[data-behavior-field="weatherLocation"]')).toBeVisible();

@@ -273,8 +273,10 @@
      */
     function bindAnchorClickDelegate() {
         document.addEventListener('click', (e) => {
-            // A sub-tab the user picked themselves outranks ensureSubTab.
-            if (e.target?.closest?.('.config-subtab')) markSubTabChosen();
+            // A sub-tab the user picked themselves outranks ensureSubTab --
+            // from the strip, or from a button that opens a page of a tab
+            // (Look → Custom themes and back).
+            if (e.target?.closest?.('.config-subtab, [data-appearance-goto], [data-filter-elsewhere]')) markSubTabChosen();
             const btn = e.target?.closest?.(`[${ANCHOR_ATTR}] .config-choices button`);
             if (!btn) return;
             const anchor = btn.closest(`[${ANCHOR_ATTR}]`)?.getAttribute(ANCHOR_ATTR);
