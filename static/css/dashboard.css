@@ -9194,33 +9194,37 @@ body[data-action-bar="bottom"] #dashboard-layout {
 .unsorted-move-back {
     color: var(--text-muted, #888);
 }
+
 /*
- * What a kept row says about itself: how long it has waited, and whether the
- * collection already holds the address. Beside the row for the reason the
- * suggestion chips are -- the row is a subgrid with no cell to spare -- and
- * quiet, because both are footnotes to the link rather than facts about it.
+ * Suggested tags, on the row that has none.
+ *
+ * Two halves of one chip: the tag, which takes it, and a × that turns it down
+ * for good. Drawn quietly -- an offer is not a fact about the link, and a row
+ * of loud chips over an untagged list reads as tags that are already there.
+ * Shared by the inbox queue and the kept list, which draw the same offer.
  */
-.unsorted-view .unsorted-row-hints {
-    grid-column: 1 / -1;
+.tag-suggest-chips {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
     gap: var(--space-1, 0.25rem);
-    margin: 0 0 0.1rem var(--bookmark-row-start-pad, 6px);
+    align-items: center;
+}
+
+.inbox-item .tag-suggest-chips {
+    margin-top: var(--space-1, 0.25rem);
+}
+
+.unsorted-view .tag-suggest-chips {
+    grid-column: 1 / -1;
+    margin: 0 0 var(--space-1, 0.25rem) var(--bookmark-row-start-pad, 6px);
     padding-left: 1.5rem;
-    font-size: var(--font-size-small, 0.75rem);
-    color: var(--text-secondary);
 }
 
-.unsorted-view .unsorted-row-age {
-    opacity: 0.75;
-}
-
-.unsorted-view .unsorted-row-filed {
-    border: 1px solid var(--border-primary);
+.tag-suggest-chip {
+    display: inline-flex;
+    align-items: center;
+    border: 1px dashed var(--border-primary);
     border-radius: var(--radius-pill, 999px);
-    padding: 0.05rem 0.4rem;
-}radius: var(--radius-pill, 999px);
     background: transparent;
     line-height: 1;
 }
@@ -9252,6 +9256,7 @@ body[data-action-bar="bottom"] #dashboard-layout {
     opacity: 1;
     color: var(--danger, #d24545);
 }
+
 /* The preview of what a selection would be tagged, in the Move to… shape. */
 .unsorted-suggest-list {
     display: flex;
@@ -9289,7 +9294,37 @@ body[data-action-bar="bottom"] #dashboard-layout {
 .unsorted-suggest-apply:focus-visible {
     border-color: var(--accent-primary);
     color: var(--accent-primary);
-}/* The destination a kept row's neighbours agree on: a button, because taking
+}
+
+/*
+ * What a kept row says about itself: how long it has waited, and whether the
+ * collection already holds the address. Beside the row for the reason the
+ * suggestion chips are -- the row is a subgrid with no cell to spare -- and
+ * quiet, because both are footnotes to the link rather than facts about it.
+ */
+.unsorted-view .unsorted-row-hints {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    margin: 0 0 0.1rem var(--bookmark-row-start-pad, 6px);
+    padding-left: 1.5rem;
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-secondary);
+}
+
+.unsorted-view .unsorted-row-age {
+    opacity: 0.75;
+}
+
+.unsorted-view .unsorted-row-filed {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    padding: 0.05rem 0.4rem;
+}
+
+/* The destination a kept row's neighbours agree on: a button, because taking
    it is one click, unlike the two facts beside it. */
 .unsorted-view .unsorted-row-destination {
     border: 1px dashed var(--border-primary);
@@ -9306,7 +9341,9 @@ body[data-action-bar="bottom"] #dashboard-layout {
 .unsorted-view .unsorted-row-destination:focus-visible {
     color: var(--accent-primary);
     border-color: var(--accent-primary);
-}/* The run over the kept list borrows the triage card; only the tag row and the
+}
+
+/* The run over the kept list borrows the triage card; only the tag row and the
    wider action strip are its own. */
 .unsorted-review-tags {
     display: flex;
@@ -9315,6 +9352,7 @@ body[data-action-bar="bottom"] #dashboard-layout {
     gap: var(--space-1, 0.25rem);
     padding: 0 var(--space-4, 1rem) var(--space-2, 0.5rem);
 }
+
 /* Said, not implied: a proposed tag beside the ones a link already carries
    reads as a fourth tag it has. */
 .unsorted-review-tags-lead {
@@ -9326,6 +9364,7 @@ body[data-action-bar="bottom"] #dashboard-layout {
 .unsorted-review-actions {
     flex-wrap: wrap;
 }
+
 /* A card with no picture gives its whole width to the text: the queue's body is
    a two-column grid whose first track is the thumbnail, and a lone text block
    landed in it. */
