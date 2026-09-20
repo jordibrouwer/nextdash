@@ -2060,7 +2060,10 @@
     "tagSuggestDismiss": "#{tag} hier nicht mehr vorschlagen",
     "unsortedSuggestNone": "Hierfür gibt es nichts vorzuschlagen",
     "unsortedSuggestTitle": "Vorgeschlagene Tags",
-    "unsortedSuggestDone": "{count} Lesezeichen getaggt"
+    "unsortedSuggestDone": "{count} Lesezeichen getaggt",
+    "unsortedRowDestination": "auf {place} ablegen",
+    "unsortedRowDestinationHint": "{have} Links dieser Website liegen auf {place}",
+    "inboxAutoFiled": "Auf {place} abgelegt"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -5612,7 +5615,9 @@
     "unsortedEnabledHint": "Fügt dem Posteingang den Tab Behalten hinzu; Behalten in der Sichtung legt den Link dort ab, statt ihn als gelesen zu markieren.",
     "refreshAllPreviewsStop": "Stopp",
     "refreshAllPreviewsStopping": "Wird gestoppt…",
-    "refreshAllPreviewsWaiting": "Limit erreicht — {seconds}s Wartezeit"
+    "refreshAllPreviewsWaiting": "Limit erreicht — {seconds}s Wartezeit",
+    "keepAutoFileHint": "Liegt der Rest einer Website bereits auf einer Seite und in einer Kategorie, legt Behalten den Link dort ab statt auf dem Tab Behalten.",
+    "keepAutoFileLabel": "Behaltenen Link dort ablegen, wo seine Nachbarn liegen"
   },
   "colors": {
     "title": "themenanpassung",

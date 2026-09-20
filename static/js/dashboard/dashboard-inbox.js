@@ -1802,6 +1802,51 @@ class DashboardInbox {
         }
     }
 
+    /**
+     * File a kept link where its neighbours are, if they agree on a place.
+     *
+     * @returns {Promise<boolean>} true when the link was filed and the inbox
+     *   entry dealt with; false when nothing agreed and the ordinary Keep must
+     *   run instead.
+     */
+    async autoFileKept(item) {
+        const d = this.dash;
+        const found = window.DestinationSuggest?.forBookmark?.(d, { url: item?.url });
+        if (!found) return false;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/bookmarks/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: found.pageId,
+                    bookmark: {
+                        name: item.previewTitle || item.title || item.url,
+                        url: item.url,
+                        category: found.category || '',
+                        note: item.note || '',
+                        tags: Array.isArray(item.tags) ? item.tags : [],
+                        icon: item.icon || '',
+                        previewTitle: item.previewTitle || '',
+                        previewDesc: item.previewDesc || '',
+                    },
+                }),
+            });
+            if (res.status !== 409 && !res.ok) return false;
+            const place = found.categoryLabel
+                ? `${found.pageLabel} / ${found.categoryLabel}`
+                : found.pageLabel;
+            await this.completePromote(item.id);
+            await d.loadAllBookmarks?.();
+            this.syncTabStrip();
+            d.showNotification(
+                this.t('dashboard.inboxAutoFiled', `Filed on ${place}`, { place }),
+                'success', { duration: 5000 });
+            return true;
+        } catch {
+            return false;
+        }
+    }
 
     /** The shipped catalogue, once per tab, shared with config's own panel. */
     ensureSuggestCatalogue() {
@@ -4878,6 +4923,20 @@ class DashboardInbox {
         // nowhere for this to land that the reader can reach.
         if (!this.keptEnabled()) return false;
         this._trackAction('keep');
+        /*
+         * Straight to where the rest of the site lives, when the reader asked
+         * for that.
+         *
+         * Keeping is a decision postponed, and for a link from a site whose
+         * other dozen links all sit in one category the postponement is
+         * bookkeeping: the answer is already in the collection. With the
+         * setting off -- the default -- nothing here changes, and a link the
+         * collection says nothing about lands on the kept page either way.
+         */
+        if (d.settings?.keepAutoFile) {
+            const filed = await this.autoFileKept(item);
+            if (filed) return true;
+        }
         try {
             if (!d._unsortedPageId) {
                 const res = await fetch('/api/unsorted');

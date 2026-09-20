@@ -955,6 +955,26 @@ class DashboardUnsorted {
                 `Kept ${age} ago, still without a page`);
             parts.push(chip);
         }
+        const destination = window.DestinationSuggest?.forBookmark?.(this.dash, bookmark);
+        if (destination) {
+            const label = destination.categoryLabel
+                ? `${destination.pageLabel} / ${destination.categoryLabel}`
+                : destination.pageLabel;
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'unsorted-row-destination';
+            chip.textContent = this.dash.formatDashboardLabel('unsortedRowDestination', { place: label },
+                `file on ${label}`);
+            chip.title = this.dash.formatDashboardLabel('unsortedRowDestinationHint',
+                { have: destination.have, place: label },
+                `${destination.have} links from this site are filed on ${label}`);
+            chip.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                void this.select?.fileWhereNeighboursAre(bookmark, destination);
+            });
+            parts.push(chip);
+        }
         const filedOn = this._filedElsewhere(bookmark);
         if (filedOn) {
             const chip = document.createElement('span');

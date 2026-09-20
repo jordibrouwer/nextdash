@@ -11294,6 +11294,7 @@ class DashboardConfig {
         pasteUrlQuickAdd: { info: ['pasteUrlQuickAddInfoTitle', 'pasteUrlQuickAddInfoMessage'], def: true },
         inboxEnabled: { info: ['inboxEnabledInfoTitle', 'inboxEnabledInfoMessage'], def: true },
         unsortedEnabled: { hint: 'unsortedEnabledHint', def: true },
+        keepAutoFile: { hint: 'keepAutoFileHint', def: false },
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
@@ -12196,6 +12197,9 @@ class DashboardConfig {
                     // icons, where it used to read as "show an icon" while it
                     // also decided whether Keep worked at all.
                     { ...bool('unsortedEnabled', 'config.unsortedEnabledLabel', 'Keep links without filing them'), special: 'render' },
+                    // What Keep does with a link whose site the collection has
+                    // already settled: file it there instead of parking it.
+                    bool('keepAutoFile', 'config.keepAutoFileLabel', 'File a kept link where its neighbours are'),
                     { field: 'pasteDestination', type: 'select', label: t('config.pasteDestinationLabel', 'Paste destination'), art: 'flow', options: [
                         opt('ask', t('config.pasteDestinationAsk', 'Ask each time')), opt('bookmark', t('config.pasteDestinationBookmark', 'New bookmark')),
                         opt('inbox', t('config.pasteDestinationInbox', 'Inbox')),

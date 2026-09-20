@@ -2060,7 +2060,10 @@
     "tagSuggestDismiss": "Stop proposing #{tag} here",
     "unsortedSuggestNone": "Nothing to propose for these",
     "unsortedSuggestTitle": "Suggested tags",
-    "unsortedSuggestDone": "Tagged {count} bookmark(s)"
+    "unsortedSuggestDone": "Tagged {count} bookmark(s)",
+    "unsortedRowDestination": "file on {place}",
+    "unsortedRowDestinationHint": "{have} links from this site are filed on {place}",
+    "inboxAutoFiled": "Filed on {place}"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -5644,7 +5647,9 @@
     "unsortedEnabledHint": "Adds a Kept tab to the inbox, and makes Keep in triage put a link there instead of marking it read.",
     "refreshAllPreviewsStop": "Stop",
     "refreshAllPreviewsStopping": "Stopping…",
-    "refreshAllPreviewsWaiting": "Rate limit reached — waiting {seconds}s"
+    "refreshAllPreviewsWaiting": "Rate limit reached — waiting {seconds}s",
+    "keepAutoFileHint": "When the rest of a site is already filed under one page and category, Keep puts the link there instead of on the Kept tab.",
+    "keepAutoFileLabel": "File a kept link where its neighbours are"
   },
   "colors": {
     "title": "theme customization",

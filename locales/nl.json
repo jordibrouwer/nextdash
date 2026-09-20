@@ -2060,7 +2060,10 @@
     "tagSuggestDismiss": "Stel #{tag} hier niet meer voor",
     "unsortedSuggestNone": "Niets voor te stellen hiervoor",
     "unsortedSuggestTitle": "Voorgestelde tags",
-    "unsortedSuggestDone": "{count} bookmark(s) getagd"
+    "unsortedSuggestDone": "{count} bookmark(s) getagd",
+    "unsortedRowDestination": "opbergen op {place}",
+    "unsortedRowDestinationHint": "{have} links van deze site staan op {place}",
+    "inboxAutoFiled": "Opgeborgen op {place}"
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -5612,7 +5615,9 @@
     "unsortedEnabledHint": "Voegt het tabblad Bewaard toe aan de inbox, en laat Keep in de triage een link daar neerzetten in plaats van hem als gelezen te markeren.",
     "refreshAllPreviewsStop": "Stoppen",
     "refreshAllPreviewsStopping": "Stoppen…",
-    "refreshAllPreviewsWaiting": "Limiet bereikt — {seconds}s wachten"
+    "refreshAllPreviewsWaiting": "Limiet bereikt — {seconds}s wachten",
+    "keepAutoFileHint": "Staat de rest van een site al op één pagina en categorie, dan zet Bewaren de link daar neer in plaats van op het tabblad Bewaard.",
+    "keepAutoFileLabel": "Bewaarde link opbergen waar zijn buren staan"
   },
   "colors": {
     "title": "thema-aanpassing",

@@ -2060,7 +2060,10 @@
     "tagSuggestDismiss": "不再在这里建议 #{tag}",
     "unsortedSuggestNone": "这些暂无可建议的标签",
     "unsortedSuggestTitle": "建议的标签",
-    "unsortedSuggestDone": "已为 {count} 条书签加标签"
+    "unsortedSuggestDone": "已为 {count} 条书签加标签",
+    "unsortedRowDestination": "归档到 {place}",
+    "unsortedRowDestinationHint": "该站点有 {have} 个链接已归档在 {place}",
+    "inboxAutoFiled": "已归档到 {place}"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -5612,7 +5615,9 @@
     "unsortedEnabledHint": "在收件箱里增加「已保留」标签页；整理时的“保留”会把链接放到那里，而不是标记为已读。",
     "refreshAllPreviewsStop": "停止",
     "refreshAllPreviewsStopping": "正在停止…",
-    "refreshAllPreviewsWaiting": "已达速率上限 — 等待 {seconds} 秒"
+    "refreshAllPreviewsWaiting": "已达速率上限 — 等待 {seconds} 秒",
+    "keepAutoFileHint": "当某站点的其他链接已集中在一个页面和分类时，「保留」会直接放到那里，而不是「已保留」标签页。",
+    "keepAutoFileLabel": "把保留的链接放到同站点的归属处"
   },
   "colors": {
     "title": "主题自定义",

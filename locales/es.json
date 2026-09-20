@@ -2060,7 +2060,10 @@
     "tagSuggestDismiss": "No proponer #{tag} aquí",
     "unsortedSuggestNone": "No hay nada que proponer para estos",
     "unsortedSuggestTitle": "Etiquetas propuestas",
-    "unsortedSuggestDone": "{count} marcador(es) etiquetados"
+    "unsortedSuggestDone": "{count} marcador(es) etiquetados",
+    "unsortedRowDestination": "archivar en {place}",
+    "unsortedRowDestinationHint": "{have} enlaces de este sitio están en {place}",
+    "inboxAutoFiled": "Archivado en {place}"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -5612,7 +5615,9 @@
     "unsortedEnabledHint": "Añade una pestaña Guardados a la bandeja, y hace que Guardar en el triaje deje el enlace ahí en vez de marcarlo como leído.",
     "refreshAllPreviewsStop": "Detener",
     "refreshAllPreviewsStopping": "Deteniendo…",
-    "refreshAllPreviewsWaiting": "Límite alcanzado — esperando {seconds}s"
+    "refreshAllPreviewsWaiting": "Límite alcanzado — esperando {seconds}s",
+    "keepAutoFileHint": "Si el resto de un sitio ya está archivado en una página y categoría, Guardar coloca el enlace ahí en vez de en la pestaña Guardados.",
+    "keepAutoFileLabel": "Archivar un enlace guardado donde están sus vecinos"
   },
   "colors": {
     "title": "personalización del tema",

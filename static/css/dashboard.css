@@ -9289,4 +9289,21 @@ body[data-action-bar="bottom"] #dashboard-layout {
 .unsorted-suggest-apply:focus-visible {
     border-color: var(--accent-primary);
     color: var(--accent-primary);
+}/* The destination a kept row's neighbours agree on: a button, because taking
+   it is one click, unlike the two facts beside it. */
+.unsorted-view .unsorted-row-destination {
+    border: 1px dashed var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0.05rem 0.45rem;
+    cursor: pointer;
+}
+
+.unsorted-view .unsorted-row-destination:hover,
+.unsorted-view .unsorted-row-destination:focus-visible {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
 }

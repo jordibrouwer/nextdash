@@ -675,6 +675,11 @@ type Settings struct {
 	// carries nothing.
 	UnsortedSort            string `json:"unsortedSort,omitempty"`
 	UnsortedGroup           string `json:"unsortedGroup,omitempty"`
+	// Keep files the link straight onto the page and category the rest of its
+	// site is already filed under, when the collection agrees on one, instead
+	// of leaving it on the kept page. Off by default: filing without being
+	// asked is only welcome once the reader trusts where it lands.
+	KeepAutoFile            bool   `json:"keepAutoFile"`
 	SearchUnsorted          bool   `json:"searchUnsorted"`          // Let search reach bookmarks kept in Unsorted; they stay out of every other surface
 	PasteDestination        string `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
 	InboxDedupeUrls         bool   `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox

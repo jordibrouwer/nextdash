@@ -543,6 +543,17 @@ class DashboardUnsortedSelect {
         }
     }
 
+    /**
+     * Take the offered destination: file this one row where its neighbours are.
+     *
+     * The move itself is the bulk path pointed at a single row, so the write,
+     * the rollback on a failed delete and the reload are the same as filing a
+     * whole selection.
+     */
+    async fileWhereNeighboursAre(bookmark, destination) {
+        if (!bookmark || !destination) return;
+        await this.moveSelectionTo(destination.pageId, destination.category, [bookmark]);
+    }
 
     /**
      * Open every ticked row in a new tab.

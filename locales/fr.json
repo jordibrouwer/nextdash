@@ -2060,7 +2060,10 @@
     "tagSuggestDismiss": "Ne plus proposer #{tag} ici",
     "unsortedSuggestNone": "Rien à proposer pour ceux-ci",
     "unsortedSuggestTitle": "Tags proposés",
-    "unsortedSuggestDone": "{count} signet(s) étiquetés"
+    "unsortedSuggestDone": "{count} signet(s) étiquetés",
+    "unsortedRowDestination": "classer sur {place}",
+    "unsortedRowDestinationHint": "{have} liens de ce site sont classés sur {place}",
+    "inboxAutoFiled": "Classé sur {place}"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -5612,7 +5615,9 @@
     "unsortedEnabledHint": "Ajoute un onglet Gardés à la boîte, et fait que Garder dans le tri y dépose le lien au lieu de le marquer comme lu.",
     "refreshAllPreviewsStop": "Arrêter",
     "refreshAllPreviewsStopping": "Arrêt…",
-    "refreshAllPreviewsWaiting": "Limite atteinte — attente de {seconds}s"
+    "refreshAllPreviewsWaiting": "Limite atteinte — attente de {seconds}s",
+    "keepAutoFileHint": "Quand le reste d’un site est déjà classé sur une page et une catégorie, Garder y place le lien au lieu de l’onglet Gardés.",
+    "keepAutoFileLabel": "Classer un lien gardé là où sont ses voisins"
   },
   "colors": {
     "title": "personnalisation du thème",
