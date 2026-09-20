@@ -968,7 +968,23 @@ class DashboardUnsortedSelect {
                     headers,
                     body: JSON.stringify({ page: sourcePage, bookmark }),
                 });
-                return remove.ok ? 'ok' : 'failed';
+                if (remove.ok) return 'ok';
+                /*
+                 * The copy goes back off the page.
+                 *
+                 * Filing is add-then-delete, and a delete that fails after the
+                 * add leaves the link in both places: on the page as a filed
+                 * bookmark and in the kept list as one that still needs filing.
+                 * It was reported as a failure, which says try again -- and
+                 * trying again added a second copy. Undoing the add leaves the
+                 * row exactly where the reader last saw it.
+                 */
+                await fetcher('/api/bookmarks', {
+                    method: 'DELETE',
+                    headers,
+                    body: JSON.stringify({ page: Number(pageId), bookmark: moved }),
+                }).catch(() => {});
+                return 'failed';
             },
             done: (ok, failed) => (failed
                 ? this.t('unsortedMoveDoneSome', `Filed ${ok}, ${failed} failed`, { ok, failed })
