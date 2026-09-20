@@ -1089,6 +1089,13 @@ class Dashboard {
      * @returns {boolean} whether the press was spent on a selection.
      */
     handleSelectionEscape() {
+        // A popover the selection opened is the top layer: Escape closes that
+        // first and leaves the ticks alone, the way the row menus behave. Only
+        // the next press drops the selection.
+        if (typeof this._unsortedMovePopoverClose === 'function') {
+            this._unsortedMovePopoverClose();
+            return true;
+        }
         const unsortedSelect = this.unsorted?.isActiveView?.() ? this.unsorted.select : null;
         if (unsortedSelect?.isActive?.()) {
             unsortedSelect.clear();

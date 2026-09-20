@@ -3547,8 +3547,14 @@ class DashboardInbox {
         this.shell.headerActions.append(this._ownActions, this._keptActions);
         this._ownBody = document.createElement('div');
         this._ownBody.className = 'inbox-body-own';
+        // Each body is the panel its tab controls, so a screen reader moving
+        // off the strip lands in the list the strip just named.
+        this._ownBody.id = 'inbox-panel-triage';
+        this._ownBody.setAttribute('role', 'tabpanel');
         this._keptBody = document.createElement('div');
         this._keptBody.className = 'inbox-body-kept';
+        this._keptBody.id = 'inbox-panel-kept';
+        this._keptBody.setAttribute('role', 'tabpanel');
         this.shell.body.append(this._ownBody, this._keptBody);
         this.buildToolbar(this._ownToolbar);
         this.buildHeaderActions(this._ownActions);
@@ -3598,6 +3604,7 @@ class DashboardInbox {
             btn.className = 'inbox-tab';
             btn.dataset.inboxTab = tab;
             btn.setAttribute('role', 'tab');
+            btn.setAttribute('aria-controls', tab === 'kept' ? 'inbox-panel-kept' : 'inbox-panel-triage');
             const text = document.createElement('span');
             text.className = 'inbox-tab-label';
             text.textContent = label;
@@ -3612,6 +3619,41 @@ class DashboardInbox {
             strip.appendChild(btn);
             return btn;
         };
+        /*
+         * The keyboard a tablist promises.
+         *
+         * Calling the strip a tablist is a claim about the arrows: they move
+         * between the tabs, and the strip is one stop in the tab order rather
+         * than one per tab. Without it the roles said one thing and the keys
+         * did another, which is worse than no roles at all.
+         */
+        this._tabStripKeys = (event) => {
+            if (!strip.isConnected || !strip.contains(document.activeElement)) return;
+            const order = ['triage', 'kept'].filter(
+                (tab) => tab === 'triage' || this.keptEnabled());
+            if (order.length < 2) return;
+            const at = Math.max(0, order.indexOf(this.activeTab()));
+            let next = null;
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                next = order[(at - 1 + order.length) % order.length];
+            } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                next = order[(at + 1) % order.length];
+            } else if (event.key === 'Home') {
+                next = order[0];
+            } else if (event.key === 'End') {
+                next = order[order.length - 1];
+            }
+            if (!next) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            this.setTab(next, 'keyboard');
+            this._focusActiveTab();
+        };
+        // On the window in capture, gated on the focus being in the strip. The
+        // grid's own navigation is bound to document and claims Home and End
+        // for the first and last row, so anything bound there -- or on the
+        // strip itself -- hears those two only after they are gone.
+        window.addEventListener('keydown', this._tabStripKeys, true);
         this._triageTabBtn = make('triage', this.t('dashboard.inboxTabTriage', 'To triage'));
         this._keptTabBtn = make('kept', this.t('dashboard.inboxTabKept', 'Kept'));
         shell.root.insertBefore(strip, shell.root.firstChild);
@@ -3629,16 +3671,25 @@ class DashboardInbox {
         if (this._triageTabBtn) {
             this._triageTabBtn.classList.toggle('is-active', tab === 'triage');
             this._triageTabBtn.setAttribute('aria-selected', String(tab === 'triage'));
+            // Roving: the strip is one stop, and it is the active tab.
+            this._triageTabBtn.tabIndex = tab === 'triage' ? 0 : -1;
         }
         if (this._keptTabBtn) {
             this._keptTabBtn.classList.toggle('is-active', tab === 'kept');
             this._keptTabBtn.setAttribute('aria-selected', String(tab === 'kept'));
+            this._keptTabBtn.tabIndex = tab === 'kept' ? 0 : -1;
             this._keptTabBtn.hidden = !kept;
         }
         if (this._keptCountEl) {
             const count = (this.dash.unsortedBookmarks || []).length;
             this._keptCountEl.textContent = count ? String(count) : '';
         }
+    }
+
+    /** Put the focus back on whichever tab is now selected. */
+    _focusActiveTab() {
+        const btn = this.activeTab() === 'kept' ? this._keptTabBtn : this._triageTabBtn;
+        btn?.focus?.({ preventScroll: true });
     }
 
     /**
@@ -3652,6 +3703,10 @@ class DashboardInbox {
         const next = tab === 'kept' && this.keptEnabled() ? 'kept' : 'triage';
         if (next === this.tab) return;
         this.tab = next;
+        // The kept list's selection bar is drawn into the layout, not into the
+        // tab: ticks left behind on a switch stood over the queue offering
+        // Delete and Move to… for rows that were no longer on screen.
+        if (next !== 'kept') this.dash.unsorted?.select?.clear?.();
         this._trackAction('tab', { tab: next, via });
         this.applyTabToChrome();
         this.restoreInboxHash();
@@ -4584,6 +4639,13 @@ class DashboardInbox {
             // the life of the tab; a link kept from here is exactly what makes
             // that answer wrong.
             d._widgetUnsorted = null;
+            // And the list the strip counts. Keep is the one action that adds
+            // to the kept page, and nothing else on this path reloads the
+            // bookmarks -- so without this the count beside the Kept tab stood
+            // still until the reader switched tabs or reloaded, at exactly the
+            // moment it was meant to say where the link went.
+            await d.loadAllBookmarks?.();
+            this.syncTabStrip();
             await this.completePromote(item.id);
             return true;
         } catch (_error) {

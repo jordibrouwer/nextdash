@@ -551,12 +551,32 @@ class DashboardUnsortedSelect {
         const close = () => {
             pop.remove();
             document.removeEventListener('click', onOutside, true);
+            document.removeEventListener('keydown', onKey, true);
             if (d._unsortedMovePopoverClose === close) d._unsortedMovePopoverClose = null;
         };
         const onOutside = (event) => {
             if (pop.contains(event.target) || anchorEl.contains(event.target)) return;
             close();
         };
+        /*
+         * Escape, like every other popover in the grid.
+         *
+         * Two parts. The listener below closes it, and the registration says
+         * the picker is the layer on top -- the inbox binds its own Escape when
+         * the view opens, before any menu exists, and would otherwise see the
+         * key first and close the whole view with the picker left standing over
+         * an empty page (shared/escape-owner.js says the rest).
+         */
+        const onKey = (event) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            close();
+        };
+        window.EscapeOwner?.registerOwner?.('unsorted-move-popover', {
+            isOpen: () => pop.isConnected,
+            handleEscape: close,
+        });
 
         const item = (label, onClick) => {
             const row = document.createElement('button');
@@ -575,15 +595,18 @@ class DashboardUnsortedSelect {
             list.replaceChildren();
             (d.pages || []).forEach((page) => {
                 item(d.pageNav?.pageLabel?.(page.id) || page.name || String(page.id),
-                    () => showCategories(page));
+                    () => { void showCategories(page); });
             });
         };
 
-        const showCategories = (page) => {
+        const showCategories = async (page) => {
             list.replaceChildren();
             const back = item(`← ${d.pageNav?.pageLabel?.(page.id) || page.name || ''}`, showPages);
             back.classList.add('unsorted-move-back');
-            this.categoriesOnPage(page).forEach((category) => {
+            const categories = await this.categoriesOnPage(page);
+            // The picker can be closed while the categories are on their way.
+            if (!pop.isConnected) return;
+            categories.forEach((category) => {
                 item(category.label, () => {
                     close();
                     void this.moveSelectionTo(page.id, category.id, targets);
@@ -603,21 +626,38 @@ class DashboardUnsortedSelect {
             d.bookmarkRows._positionActionPopoverBeside(pop, anchorEl);
         }
         setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+        document.addEventListener('keydown', onKey, true);
         d._unsortedMovePopoverClose = close;
     }
 
     /**
-     * The categories a page holds, from what the dashboard already knows: the
-     * live list for the page on screen, and the categories its bookmarks carry
-     * for every other one. No new request for a picker.
+     * The categories a page holds.
+     *
+     * The page on screen is already loaded, so it is read from what the
+     * dashboard has. Every other page is asked for -- reading them off the
+     * bookmarks that carry them showed an id where a name belongs, and left
+     * out every category nobody has filed anything in yet, which on a page
+     * made for the purpose is all of them. The bookmarks stay as the fallback
+     * for a request that does not answer.
      */
-    categoriesOnPage(page) {
+    async categoriesOnPage(page) {
         const d = this.dash;
         const byId = new Map();
         if (String(d.currentPageId) === String(page.id)) {
             (d.categories || []).filter((c) => !c.isSmartCollection).forEach((c) => {
                 if (c?.id) byId.set(String(c.id), String(c.name || c.id));
             });
+        } else {
+            try {
+                const res = await fetch(`/api/categories?page=${encodeURIComponent(page.id)}`);
+                if (res.ok) {
+                    const list = await res.json();
+                    (Array.isArray(list) ? list : []).forEach((category) => {
+                        if (category?.isSmartCollection || !category?.id) return;
+                        byId.set(String(category.id), String(category.name || category.id));
+                    });
+                }
+            } catch { /* the bookmarks below are the fallback */ }
         }
         (d.allBookmarks || [])
             .filter((bookmark) => String(bookmark?.pageId) === String(page.id))
@@ -646,6 +686,8 @@ class DashboardUnsortedSelect {
 
         await this._runOverEach(targets, {
             title: this.t('unsortedMoveProgress', 'Filing', {}),
+            // Two writes to this server per row and no page fetch at all.
+            intervalMs: 0,
             run: async (bookmark) => {
                 const moved = { ...bookmark, pageId: Number(pageId), category: String(category || '') };
                 delete moved.index;
@@ -689,6 +731,8 @@ class DashboardUnsortedSelect {
 
         await this._runOverEach(targets, {
             title: this.t('unsortedToInboxProgress', 'Sending back'),
+            // Local writes, like filing: nothing here asks another server.
+            intervalMs: 0,
             run: async (bookmark) => {
                 const added = await fetcher('/api/inbox', {
                     method: 'POST',
@@ -910,7 +954,14 @@ class DashboardUnsortedSelect {
      * Walk a list, one call at a time, reporting progress in the notification
      * the run started with rather than one toast per row.
      */
-    async _runOverEach(targets, { title, run, done, progress = false }) {
+    async _runOverEach(targets, {
+        title, run, done, progress = false,
+        // The gap between rows. It is there to keep the outbound fetches under
+        // the sixty-a-minute ceiling; work that only writes to this server pays
+        // nothing for going at full speed, and used to wait out the same second
+        // and a bit per row as a sweep of other people's pages.
+        intervalMs = DashboardUnsortedSelect.SWEEP_INTERVAL_MS,
+    }) {
         const d = this.dash;
         this._busy = true;
         this.sync();
@@ -986,8 +1037,8 @@ class DashboardUnsortedSelect {
                 // Paced under the limit rather than up against it. Sixty a
                 // minute is the budget, and the hover fetches and the preview
                 // cards draw on the same one, so the sweep leaves room.
-                if (i + 1 < targets.length) {
-                    await wait(DashboardUnsortedSelect.SWEEP_INTERVAL_MS);
+                if (intervalMs > 0 && i + 1 < targets.length) {
+                    await wait(intervalMs);
                 }
             }
         } finally {

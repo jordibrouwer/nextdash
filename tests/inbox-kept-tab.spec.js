@@ -262,3 +262,85 @@ test('triage says that Keep moves a link to the Kept tab', async ({ page }) => {
     await expect(page.locator('.inbox-triage-keep-hint')).toContainText('Kept');
     await expect(page.locator('.inbox-triage-hint').first()).toContainText('to Kept');
 });
+
+/**
+ * The count beside Kept is the one number saying where a kept link went. It
+ * read from the array the dashboard keeps of the kept page, which Keep itself
+ * never reloaded -- so the tab said nothing had been kept until the reader
+ * switched tabs or reloaded, which is the moment the count exists for.
+ */
+test('keeping a link moves the count beside the Kept tab', async ({ page }) => {
+    await bootstrap(page, { kept: [] });
+
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/inbox', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: `https://counts-${Date.now()}.example/x`, title: 'Counts' }),
+        });
+    });
+    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
+    await expect.poll(() => page.evaluate(() =>
+        (window.dashboardInstance.inbox.items || []).length), { timeout: 10_000 }).toBeGreaterThan(0);
+    await expect(page.locator('.inbox-tab-count')).toHaveText('');
+
+    await page.keyboard.press('t');
+    await expect.poll(() => page.evaluate(() =>
+        !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
+    await page.keyboard.press('r');
+
+    // No reload, no tab switch: the strip is repainted by the keep itself.
+    await expect(page.locator('.inbox-tab-count')).toHaveText('1', { timeout: 10_000 });
+});
+
+/**
+ * The strip calls itself a tablist, which is a promise about the keyboard: the
+ * arrows move between tabs, one stop holds the focus, and each tab says which
+ * panel it controls. It had the roles and none of the behaviour.
+ */
+test('the tab strip answers to the arrow keys', async ({ page }) => {
+    await bootstrap(page);
+    await openKept(page);
+
+    const triage = page.locator('[data-inbox-tab="triage"]');
+    const kept = page.locator('[data-inbox-tab="kept"]');
+    // One stop in the tab order: the active tab, as a tablist has.
+    await expect(kept).toHaveAttribute('tabindex', '0');
+    await expect(triage).toHaveAttribute('tabindex', '-1');
+    await expect(kept).toHaveAttribute('aria-controls', /.+/);
+    await expect(page.locator(`#${await kept.getAttribute('aria-controls')}`))
+        .toHaveAttribute('role', 'tabpanel');
+
+    await kept.focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect(triage).toHaveAttribute('aria-selected', 'true');
+    await expect(triage).toBeFocused();
+    await expect.poll(() => new URL(page.url()).hash).toBe('#inbox');
+
+    await page.keyboard.press('ArrowRight');
+    await expect(kept).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.inbox-body-kept.unsorted-view')).toBeVisible();
+
+    // Home and End are the ends of the strip, as they are in every tablist.
+    await page.keyboard.press('Home');
+    await expect(triage).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('End');
+    await expect(kept).toHaveAttribute('aria-selected', 'true');
+});
+
+/**
+ * The kept list's selection bar belongs to the kept list. It is drawn into the
+ * layout rather than into the tab, so ticks left behind on a switch stood over
+ * the queue offering Delete and Move to… for rows that were no longer there.
+ */
+test('switching to the queue drops the kept selection with its bar', async ({ page }) => {
+    await bootstrap(page);
+    await openKept(page);
+
+    await page.locator('.unsorted-row-check-input').first().check();
+    await expect(page.locator('.unsorted-select-toolbar')).toBeVisible();
+
+    await page.locator('[data-inbox-tab="triage"]').click();
+    await expect(page.locator('.unsorted-select-toolbar')).toHaveCount(0);
+});

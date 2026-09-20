@@ -399,3 +399,152 @@ test('a preview sweep shows the progress overlay, counting and stoppable', async
     await stop.click();
     await expect(overlay).toBeHidden({ timeout: 15_000 });
 });
+
+/**
+ * Filing onto another page.
+ *
+ * The picker read the categories of every page but the one on screen out of
+ * the bookmarks that carry them, so a category nobody has filed anything in
+ * yet did not exist as a destination at all, and the ones that did showed
+ * their id rather than their name.
+ */
+test('the move picker names the categories of another page, empty ones included', async ({ page }) => {
+    await openUnsorted(page);
+
+    const pageId = await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        // The endpoint takes the whole list, so the new page is appended to
+        // what is already there.
+        const pages = await (await fetch('/api/pages')).json();
+        const id = Math.max(1, ...pages.filter((p) => p.id < 999999).map((p) => Number(p.id))) + 1;
+        await api('/api/pages', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([...pages.filter((p) => !p.hidden), { id, name: 'Second' }]),
+        });
+        await api(`/api/categories?page=${id}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([{ id: 'reading-room', name: 'Reading room' }]),
+        });
+        await window.dashboardInstance.loadAllBookmarks?.();
+        return id;
+    });
+    expect(pageId).toBeGreaterThan(1);
+    await page.reload();
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView({ tab: 'kept' }));
+    await expect(page.locator('.bookmark-link[data-unsorted-key]').first()).toBeVisible();
+
+    await page.locator('.unsorted-row-check-input').first().check();
+    await page.locator('.unsorted-select-toolbar .multi-select-btn', { hasText: 'Move to' }).click();
+    await page.locator('#unsorted-move-popover .unsorted-move-item', { hasText: 'Second' }).click();
+
+    // By its name, and present although nothing is filed in it yet.
+    await expect(page.locator('#unsorted-move-popover .unsorted-move-item', { hasText: 'Reading room' }))
+        .toBeVisible({ timeout: 10_000 });
+});
+
+/**
+ * Escape closes the picker. It is a popover like the row menus beside it, and
+ * those all answer to Escape; this one could only be dismissed by clicking
+ * somewhere else.
+ */
+test('Escape closes the move picker', async ({ page }) => {
+    await openUnsorted(page);
+    await page.locator('.unsorted-row-check-input').first().check();
+    await page.locator('.unsorted-select-toolbar .multi-select-btn', { hasText: 'Move to' }).click();
+    await expect(page.locator('#unsorted-move-popover')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#unsorted-move-popover')).toHaveCount(0);
+});
+
+/**
+ * Filing is local: two writes to this server, no outbound page fetch. It was
+ * paced at the sweep interval all the same -- the gap that keeps the preview
+ * and icon fetches under the sixty-a-minute ceiling -- so filing a group of
+ * rows sat there for more than a second per row for no reason at all.
+ */
+test('filing a selection is not paced like an outbound sweep', async ({ page }) => {
+    await openUnsorted(page);
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        for (let i = 0; i < 6; i += 1) {
+            await api('/api/bookmarks/add', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: 999999,
+                    bookmark: { name: `Paced ${i}`, url: `https://paced-${i}-uvb.example/`, category: '' },
+                }),
+            });
+        }
+        await window.dashboardInstance.unsorted.loadAndRender();
+    });
+    await page.locator('.unsorted-view-search-input').fill('paced-');
+    await expect.poll(() => page.locator('.unsorted-row-check-input').count()).toBe(6);
+
+    await page.locator('.unsorted-select-toolbar, .unsorted-row-check-input').first().waitFor();
+    for (let i = 0; i < 6; i += 1) {
+        await page.locator('.unsorted-row-check-input').nth(i).check();
+    }
+    const started = Date.now();
+    await page.locator('.unsorted-select-toolbar .multi-select-btn', { hasText: 'Move to' }).click();
+    await page.locator('#unsorted-move-popover .unsorted-move-item').first().click();
+    await page.locator('#unsorted-move-popover .unsorted-move-item').last().click();
+
+    await expect.poll(async () => page.evaluate(async () => {
+        const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        return (data.bookmarks || []).filter((b) => b.url.includes('paced-')).length;
+    }), { timeout: 20_000 }).toBe(0);
+    // Paced, the six rows alone would be six seconds of waiting before the
+    // last write even goes out.
+    expect(Date.now() - started).toBeLessThan(6000);
+});
+
+/**
+ * Filing is add-then-delete. A delete that fails after the add used to leave
+ * the link on the page *and* in the kept list, counted only as a failure --
+ * the one outcome the reader cannot see and would not think to look for.
+ */
+test('a failed delete takes the copy it just filed back off the page', async ({ page }) => {
+    await openUnsorted(page);
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/bookmarks/add', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                page: 999999,
+                bookmark: { name: 'Rollback', url: 'https://rollback-uvb.example/', category: '' },
+            }),
+        });
+        await window.dashboardInstance.unsorted.loadAndRender();
+    });
+    await page.locator('.unsorted-view-search-input').fill('rollback-uvb');
+
+    // Only the delete from the kept page refuses; the rollback delete on the
+    // target page is let through.
+    await page.route('**/api/bookmarks', async (route) => {
+        const request = route.request();
+        if (request.method() !== 'DELETE') return route.fallback();
+        const body = JSON.parse(request.postData() || '{}');
+        if (Number(body.page) === 999999) {
+            return route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+        }
+        return route.fallback();
+    });
+
+    await page.locator('.unsorted-row-check-input').first().check();
+    await page.locator('.unsorted-select-toolbar .multi-select-btn', { hasText: 'Move to' }).click();
+    await page.locator('#unsorted-move-popover .unsorted-move-item').first().click();
+    await page.locator('#unsorted-move-popover .unsorted-move-item').last().click();
+
+    // Still kept, and not a second copy on the page: the row is where it was.
+    await expect.poll(async () => page.evaluate(async () => {
+        const rows = await (await fetch('/api/bookmarks?page=1', { cache: 'no-store' })).json();
+        return (Array.isArray(rows) ? rows : rows.bookmarks || [])
+            .filter((b) => String(b.url).includes('rollback-uvb')).length;
+    }), { timeout: 20_000 }).toBe(0);
+    await expect.poll(async () => page.evaluate(async () => {
+        const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        return (data.bookmarks || []).filter((b) => b.url.includes('rollback-uvb')).length;
+    })).toBe(1);
+});
