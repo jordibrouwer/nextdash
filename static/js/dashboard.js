@@ -175,7 +175,6 @@ class Dashboard {
             this.updateHealthBadge();
             this.inbox?.restoreViewIfNeeded?.();
             this.health?.restoreViewIfNeeded?.();
-            this.unsorted?.restoreViewIfNeeded?.();
             this.maybeRefreshAfterConfigReturn();
         });
         this.searchComponent = null;
@@ -220,7 +219,8 @@ class Dashboard {
         this.configSync = new DashboardConfigSync(this);
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
-        this.unsorted = new DashboardUnsorted(this);
+        // Built by the inbox loader, with the view it belongs to.
+        this.unsorted = null;
         this.multiSelect = new DashboardMultiSelect(this);
         // Narrowing the page you are on, as opposed to searching everything.
         this.gridFilter = typeof DashboardGridFilter === 'function'
@@ -474,9 +474,10 @@ class Dashboard {
             } else if ((bootHash === 'health' || bootHash.startsWith('health/'))
                 && this.activeView !== 'health' && this.health?.isEnabled?.()) {
                 await this.health.openHealthView();
-            } else if (bootHash === 'unsorted'
-                && this.activeView !== 'unsorted' && this.unsorted?.isEnabled?.()) {
-                await this.unsorted.openUnsortedView();
+            } else if (bootHash === 'unsorted' && this.settings?.unsortedEnabled !== false) {
+                // The setting rather than the module: the kept list loads with
+                // the inbox, and this runs before either of them is there.
+                await this.inbox?.openInboxView?.({ tab: 'kept' });
             }
 
             if (this.config?.isEnabled?.()
@@ -622,10 +623,6 @@ class Dashboard {
 
     updateHealthDashboardVisibility() {
         return this.visual.updateHealthDashboardVisibility(...arguments);
-    }
-
-    updateUnsortedVisibility() {
-        return this.visual.updateUnsortedVisibility(...arguments);
     }
 
     async updateHealthBadge() {
@@ -1031,11 +1028,10 @@ class Dashboard {
                 }
                 return;
             }
+            // Kept is a tab of the inbox now; the address it always had still
+            // opens it, so every saved link keeps working.
             if (hash === 'unsorted') {
-                if (this.activeView !== 'unsorted') {
-                    return this.unsorted?.openUnsortedView?.();
-                }
-                return;
+                return this.inbox?.openInboxView?.({ tab: 'kept' });
             }
             if (hash === 'config' || hash.startsWith('config/')) {
                 const genericConfig = hash === 'config';
@@ -1068,10 +1064,6 @@ class Dashboard {
                 }
                 if (!restoring && this.activeView === 'health') {
                     this.health?.restoreHealthHash?.();
-                    return;
-                }
-                if (!restoring && this.activeView === 'unsorted') {
-                    this.unsorted?.restoreUnsortedHash?.();
                     return;
                 }
                 const pageIndex = parseInt(hash, 10) - 1;
@@ -1133,7 +1125,7 @@ class Dashboard {
         // Ticks are a state of that view, not of the app. Left standing, the
         // bulk bar would come back with the view holding rows the reader
         // stopped thinking about several screens ago.
-        if (previous === 'unsorted' && view !== 'unsorted') {
+        if (previous === 'inbox' && view !== 'inbox') {
             this.unsorted?.select?.clear?.();
         }
         if (!options.silent) {

@@ -500,7 +500,7 @@ class SearchComponent {
      * some of the ways of finding the same bookmark is worse than none.
      */
     _isUnsortedMatch(match) {
-        const isUnsorted = window.DashboardUnsorted?.isUnsortedBookmark;
+        const isUnsorted = window.UnsortedPage?.isUnsorted;
         if (typeof isUnsorted !== 'function') return false;
         if (isUnsorted(match?.bookmark) === true || isUnsorted(match) === true) {
             return true;

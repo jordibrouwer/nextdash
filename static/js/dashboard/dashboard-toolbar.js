@@ -38,13 +38,6 @@ class DashboardToolbar {
                 when: () => d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false,
             },
             {
-                selector: '.unsorted-link-anchor',
-                labelKey: 'dashboard.unsorted',
-                keys: ['Shift+U'],
-                header: true,
-                when: () => d.unsorted?.isEnabled?.(),
-            },
-            {
                 selector: '.health-link-anchor',
                 labelKey: 'dashboard.health',
                 keys: ['Shift+H'],
@@ -435,7 +428,7 @@ class DashboardToolbar {
          */
         document.addEventListener('click', (e) => {
             const anchor = e.target?.closest?.(
-                '.config-link-anchor, .health-link-anchor, .unsorted-link-anchor, .dashboard-link-anchor'
+                '.config-link-anchor, .health-link-anchor, .dashboard-link-anchor'
             );
             if (!anchor) return;
             // Leave the browser's own gestures alone: a modified click or a
@@ -447,8 +440,6 @@ class DashboardToolbar {
                 void d.config?.openConfigView?.();
             } else if (anchor.classList.contains('health-link-anchor')) {
                 void d.health?.openHealthView?.();
-            } else if (anchor.classList.contains('unsorted-link-anchor')) {
-                void d.unsorted?.openUnsortedView?.();
             } else {
                 /*
                  * Back to the dashboard, at the page you left it on.

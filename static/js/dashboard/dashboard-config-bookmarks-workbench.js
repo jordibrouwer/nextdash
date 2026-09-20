@@ -390,9 +390,9 @@
          * is the default and picking a page is the deliberate act that moves it
          * onto the dashboard.
          */
-        const isKept = global.DashboardUnsorted?.isUnsortedBookmark?.(b) === true;
+        const isKept = global.UnsortedPage?.isUnsorted?.(b) === true;
         const keptOption = isKept
-            ? `<option value="${esc(global.DashboardUnsorted.PAGE_ID)}" selected>${
+            ? `<option value="${esc(global.UnsortedPage.PAGE_ID)}" selected>${
                 esc(this.t('config.bmViewUnsorted', 'Unsorted'))}</option>`
             : '';
         const pageOptions = keptOption + (this.dash.pages || []).map((p) =>
@@ -756,7 +756,7 @@
         // exactly what it is not. Listed only when that is where they are:
         // moving a filed bookmark *into* Unsorted is not what this panel is
         // for, and the category list below would have nothing to offer it.
-        const unsortedPageId = String(global.DashboardUnsorted?.PAGE_ID ?? '');
+        const unsortedPageId = String(global.UnsortedPage?.PAGE_ID ?? '');
         const keptOption = unsortedPageId && String(pageValue) === unsortedPageId
             ? `<option value="${esc(unsortedPageId)}" selected>${esc(this.t('config.bmViewUnsorted', 'Unsorted'))}</option>`
             : '';

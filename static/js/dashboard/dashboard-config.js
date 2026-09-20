@@ -11260,7 +11260,7 @@ class DashboardConfig {
         // Quick add & inbox
         pasteUrlQuickAdd: { info: ['pasteUrlQuickAddInfoTitle', 'pasteUrlQuickAddInfoMessage'], def: true },
         inboxEnabled: { info: ['inboxEnabledInfoTitle', 'inboxEnabledInfoMessage'], def: true },
-        unsortedEnabled: { def: true },
+        unsortedEnabled: { hint: 'unsortedEnabledHint', def: true },
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
@@ -12033,7 +12033,6 @@ class DashboardConfig {
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
                     chrome('showDashboardButton', 'config.showDashboardButtonLabel', 'Show the dashboard button'),
                     chrome('showInboxButton', 'config.showInboxButtonLabel', 'Show the inbox button'),
-                    chrome('unsortedEnabled', 'config.unsortedEnabledLabel', 'Show the unsorted icon'),
                     chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
                     chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
                 ],
@@ -12159,6 +12158,11 @@ class DashboardConfig {
                 controls: [
                     bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
                     bool('inboxEnabled', 'config.inboxEnabledLabel', 'Enable the inbox'),
+                    // Keeping is a step in the inbox's own flow, so its switch
+                    // stands with the inbox rather than among the header's
+                    // icons, where it used to read as "show an icon" while it
+                    // also decided whether Keep worked at all.
+                    { ...bool('unsortedEnabled', 'config.unsortedEnabledLabel', 'Keep links without filing them'), special: 'render' },
                     { field: 'pasteDestination', type: 'select', label: t('config.pasteDestinationLabel', 'Paste destination'), art: 'flow', options: [
                         opt('ask', t('config.pasteDestinationAsk', 'Ask each time')), opt('bookmark', t('config.pasteDestinationBookmark', 'New bookmark')),
                         opt('inbox', t('config.pasteDestinationInbox', 'Inbox')),

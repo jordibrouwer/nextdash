@@ -579,7 +579,7 @@ class DashboardSmartCollections {
         // yet. Tag collections are the sharpest case -- tagging a row in
         // Unsorted would otherwise publish it to the grid.
         if (Array.isArray(d.allBookmarks) && d.allBookmarks.length > 0) {
-            return window.DashboardUnsorted?.withoutUnsorted?.(d.allBookmarks) ?? d.allBookmarks;
+            return window.UnsortedPage?.without?.(d.allBookmarks) ?? d.allBookmarks;
         }
         return d.bookmarks;
     }

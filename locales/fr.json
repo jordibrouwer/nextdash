@@ -2001,7 +2001,31 @@
     "scopeAll": "tout",
     "scopeBookmarks": "favoris",
     "dashboardLink": "tableau de bord",
-    "scopeRailHint": "Tab bascule"
+    "scopeRailHint": "Tab bascule",
+    "unsortedSortChecked": "dernière vérification",
+    "unsortedGroupSuggested": "grouper par étiquette suggérée",
+    "unsortedGroupNoSuggestion": "aucune suggestion",
+    "unsortedGroupDate": "grouper par ancienneté",
+    "unsortedSelectMove": "Déplacer vers…",
+    "unsortedMoveTitle": "Déplacer vers…",
+    "unsortedMoveCount": "Déplacer {count} vers…",
+    "unsortedMoveNoCategory": "Sans catégorie",
+    "unsortedMoveProgress": "Classement",
+    "unsortedMoveDone": "{ok} classés",
+    "unsortedMoveDoneSome": "{ok} classés, {failed} en échec",
+    "unsortedBrokenCount": "{count} de ces liens ne répondent pas",
+    "unsortedBrokenShow": "Les afficher",
+    "unsortedBrokenClear": "Tout afficher",
+    "unsortedTabDescription": "Liens gardés, pas encore classés. Donnez-en un à une page et une catégorie pour le mettre sur le tableau de bord, ou renvoyez-le dans la file.",
+    "contextMenuFileOnPage": "Déplacer vers une page…",
+    "contextMenuBackToInbox": "Renvoyer dans la boîte",
+    "unsortedSelectToInbox": "Renvoyer dans la boîte",
+    "unsortedToInboxProgress": "Renvoi",
+    "unsortedToInboxDone": "{ok} renvoyés",
+    "unsortedToInboxDoneSome": "{ok} renvoyés, {failed} en échec",
+    "inboxTabsLabel": "Onglets de la boîte",
+    "inboxTabTriage": "À trier",
+    "inboxTabKept": "Gardés"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -5548,7 +5572,9 @@
     "previewLabel": "Aperçu",
     "filterElsewhere": "Aussi trouvé dans :",
     "changedElsewhere": "Aussi modifié dans :",
-    "appearanceClockPlacementTitle": "Horloge & météo"
+    "appearanceClockPlacementTitle": "Horloge & météo",
+    "unsortedEnabledLabel": "Garder des liens sans les classer",
+    "unsortedEnabledHint": "Ajoute un onglet Gardés à la boîte, et fait que Garder dans le tri y dépose le lien au lieu de le marquer comme lu."
   },
   "colors": {
     "title": "personnalisation du thème",

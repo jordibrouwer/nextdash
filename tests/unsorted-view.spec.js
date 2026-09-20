@@ -9,6 +9,19 @@ test('Unsorted view renders kept bookmarks in packed columns, chronologically', 
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    // How the kept list is read is a setting now, so it outlives a test and
+    // the next one would inherit a grouping it never chose.
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/settings', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ unsortedSort: 'added-desc', unsortedGroup: 'none' }),
+        });
+        const s = window.dashboardInstance?.settings;
+        if (s) { s.unsortedSort = 'added-desc'; s.unsortedGroup = 'none'; }
+        const u = window.dashboardInstance?.unsorted;
+        if (u) { u.sort = 'added-desc'; u.groupBy = 'none'; u.searchQuery = ''; u.brokenOnly = false; }
+    });
 
     await page.evaluate(async () => {
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;

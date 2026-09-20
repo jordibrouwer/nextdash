@@ -1,0 +1,264 @@
+// @ts-check
+const { test, expect } = require('./fixtures');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+
+/**
+ * Kept bookmarks are the inbox's second tab, not a fourth destination.
+ *
+ * They had an icon of their own in the header, beside Dashboard, Inbox and
+ * Health. Those three are ways of looking at the whole collection; keeping a
+ * link is a step in the inbox's own flow, so it lives there -- one view, one
+ * route, and one icon fewer for someone who never keeps anything.
+ */
+
+const KEPT = [
+    { name: 'Alpha Guide', url: 'https://alpha.example/guide', createdAt: 5000 },
+    { name: 'Alpha Reference', url: 'https://alpha.example/ref', createdAt: 4000 },
+    { name: 'Zebra Docs', url: 'https://zebra.example/docs', createdAt: 3000 },
+];
+
+async function bootstrap(page, { kept = KEPT, settings = {} } = {}) {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+
+    await page.evaluate(async ({ rows, patch }) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        // The kept page is emptied first: these specs share one server, so a
+        // previous test's rows would be counted by this one.
+        const current = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        for (const bookmark of current.bookmarks || []) {
+            await api('/api/bookmarks', {
+                method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: 999999, bookmark }),
+            });
+        }
+        for (const bookmark of rows) {
+            await api('/api/bookmarks/add', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: 999999, bookmark: { ...bookmark, category: '' } }),
+            });
+        }
+        // How the list is read is a setting, so each test says what it expects
+        // rather than inheriting the last one's choice.
+        await api('/api/settings', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                inboxEnabled: true, unsortedEnabled: true,
+                unsortedSort: 'added-desc', unsortedGroup: 'none', ...patch,
+            }),
+        });
+        Object.assign(window.dashboardInstance.settings, {
+            inboxEnabled: true, unsortedEnabled: true,
+            unsortedSort: 'added-desc', unsortedGroup: 'none', ...patch,
+        });
+        await window.dashboardInstance.loadAllBookmarks?.();
+    }, { rows: kept, patch: settings });
+}
+
+async function openKept(page) {
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('KeyU');
+    await page.keyboard.up('Shift');
+    await expect(page.locator('.inbox-body-kept.unsorted-view')).toBeVisible();
+    await expect(page.locator('.bookmark-link[data-unsorted-key]').first()).toBeVisible();
+}
+
+const rowNames = (page) => page.locator('.unsorted-view .bookmarks-list .bookmark-text').allInnerTexts();
+
+test('Shift+U opens the inbox on its Kept tab, and the header has no icon of its own', async ({ page }) => {
+    await bootstrap(page);
+    await openKept(page);
+
+    expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('inbox');
+    expect(await page.evaluate(() => window.dashboardInstance.inbox.tab)).toBe('kept');
+    expect(new URL(page.url()).hash).toBe('#unsorted');
+    // The fourth destination is gone.
+    await expect(page.locator('.unsorted-link, .unsorted-link-anchor')).toHaveCount(0);
+});
+
+test('the strip switches the two lists, and the address says which is up', async ({ page }) => {
+    await bootstrap(page);
+    await openKept(page);
+    await expect(page.locator('[data-inbox-tab="kept"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.inbox-tab-count')).toHaveText('3');
+
+    await page.locator('[data-inbox-tab="triage"]').click();
+    await expect(page.locator('.inbox-body-own .inbox-item, .inbox-body-own .inbox-empty, .inbox-body-own')).toBeVisible();
+    await expect(page.locator('.inbox-body-kept')).toBeHidden();
+    await expect.poll(() => new URL(page.url()).hash).toBe('#inbox');
+    // The rail belongs to the queue: it is back with it.
+    await expect(page.locator('.lvs-rail')).toBeVisible();
+
+    await page.locator('[data-inbox-tab="kept"]').click();
+    await expect(page.locator('.inbox-body-kept.unsorted-view')).toBeVisible();
+    await expect(page.locator('.lvs-rail')).toBeHidden();
+    await expect.poll(() => new URL(page.url()).hash).toBe('#unsorted');
+});
+
+test('#unsorted still opens what it names, straight from a reload', async ({ page }) => {
+    await bootstrap(page);
+    await page.goto('/#unsorted');
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+
+    await expect(page.locator('.inbox-body-kept.unsorted-view')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox?.tab)).toBe('kept');
+});
+
+test('with keeping switched off there is no tab and Keep does nothing', async ({ page }) => {
+    await bootstrap(page, { settings: { unsortedEnabled: false } });
+
+    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
+    await expect(page.locator('.inbox-layout')).toBeVisible();
+    await expect(page.locator('[data-inbox-tab="kept"]')).toBeHidden();
+
+    const kept = await page.evaluate(async () => {
+        const inbox = window.dashboardInstance.inbox;
+        return inbox.keepItem({ id: 'nope', url: 'https://off.example/x', title: 'Off' });
+    });
+    expect(kept).toBe(false);
+});
+
+test('sorting by last checked leads with what is broken, then what was never checked', async ({ page }) => {
+    await bootstrap(page, {
+        kept: [
+            { name: 'Checked Today', url: 'https://checked.example/a', createdAt: 5000, lastChecked: 9000 },
+            { name: 'Never Checked', url: 'https://never.example/b', createdAt: 4000 },
+            { name: 'Broken One', url: 'https://broken.example/c', createdAt: 3000, lastChecked: 8000, lastError: 'dial tcp: timeout' },
+        ],
+    });
+    await openKept(page);
+    await page.locator('.unsorted-view-sort-select').selectOption('checked');
+
+    await expect.poll(() => rowNames(page)).toEqual(['Broken One', 'Never Checked', 'Checked Today']);
+});
+
+test('the broken line counts the kept links that stopped answering, and filters to them', async ({ page }) => {
+    await bootstrap(page, {
+        kept: [
+            { name: 'Fine One', url: 'https://fine.example/a', createdAt: 5000 },
+            { name: 'Broken One', url: 'https://broken.example/b', createdAt: 4000, lastChecked: 8000, lastError: 'dial tcp: timeout' },
+        ],
+    });
+    await openKept(page);
+
+    const note = page.locator('.unsorted-broken-note');
+    await expect(note).toBeVisible();
+    await expect(note).toContainText('1');
+
+    await page.locator('.unsorted-broken-btn').click();
+    await expect.poll(() => rowNames(page)).toEqual(['Broken One']);
+
+    await page.locator('.unsorted-broken-btn').click();
+    await expect.poll(async () => (await rowNames(page)).length).toBe(2);
+});
+
+test('grouping by suggested tag reads the tag rules, and says when none matches', async ({ page }) => {
+    await bootstrap(page, { settings: { tagRules: [{ pattern: 'alpha.example', tag: 'reading' }] } });
+    await openKept(page);
+    await page.locator('.unsorted-view-group-select').selectOption('suggested');
+
+    const titles = page.locator('.unsorted-view .unsorted-group-title .category-title-name');
+    await expect.poll(() => titles.allInnerTexts()).toEqual(
+        expect.arrayContaining(['reading', 'no suggestion']));
+});
+
+test('the sort and the grouping are remembered across a reload', async ({ page }) => {
+    await bootstrap(page);
+    await openKept(page);
+
+    await page.locator('.unsorted-view-sort-select').selectOption('name');
+    await page.locator('.unsorted-view-group-select').selectOption('site');
+    await expect.poll(() => page.evaluate(async () =>
+        (await (await fetch('/api/settings')).json()).unsortedGroup), { timeout: 10_000 }).toBe('site');
+
+    await page.goto('/#unsorted');
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await expect(page.locator('.unsorted-view-sort-select')).toHaveValue('name');
+    await expect(page.locator('.unsorted-view-group-select')).toHaveValue('site');
+});
+
+test('Move to… files the whole selection in one go', async ({ page }) => {
+    await bootstrap(page);
+    await openKept(page);
+
+    await page.locator('.unsorted-row-check-input').nth(0).check();
+    await page.locator('.unsorted-row-check-input').nth(1).check();
+    await page.locator('.unsorted-select-toolbar .multi-select-btn', { hasText: 'Move to' }).click();
+
+    const popover = page.locator('#unsorted-move-popover');
+    await expect(popover).toBeVisible();
+    await popover.locator('.unsorted-move-item').first().click();
+    // Page first, then that page's categories -- or none, which is what a
+    // dashboard with no categories yet offers.
+    await popover.locator('.unsorted-move-item').last().click();
+
+    await expect.poll(async () => page.evaluate(async () => {
+        const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        return (data.bookmarks || []).length;
+    }), { timeout: 20_000 }).toBe(1);
+});
+
+test('a kept bookmark is still found and opened from the search panel', async ({ page }) => {
+    await bootstrap(page);
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        d.settings.searchUnsorted = true;
+        // The panel holds its own copy of the pool; the rows this test just
+        // added are not in it until it is handed a new one.
+        d.setup?.updateSearchComponent?.();
+    });
+
+    await page.keyboard.press('>');
+    await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5_000 });
+    await page.keyboard.type('Zebra', { delay: 10 });
+    // Letters look for a shortcut first; / is what the panel itself offers to
+    // search the names, which is how a kept bookmark is reached by name.
+    await page.keyboard.press('/');
+
+    const match = page.locator('.search-match').filter({ hasText: 'Zebra Docs' }).first();
+    await expect(match).toBeVisible({ timeout: 10_000 });
+    // Marked as kept, so the row says where it came from, and it opens like
+    // any other result.
+    await expect(match.locator('.search-match-unsorted-badge')).toBeVisible();
+});
+
+/**
+ * Keep is a one-key action with a consequence: the link leaves the queue for
+ * the Kept tab. The triage card used to say "R keep" and nothing else, so the
+ * link appeared to vanish. The card now names the destination, and so does
+ * the row menu.
+ */
+test('triage says that Keep moves a link to the Kept tab', async ({ page }) => {
+    await bootstrap(page, { kept: [] });
+
+    const url = `https://says-${Date.now()}.example/x`;
+    await page.evaluate(async (u) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/inbox', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: u, title: 'Says where' }),
+        });
+    }, url);
+
+    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
+    await expect(page.locator('.inbox-layout')).toBeVisible();
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
+    await expect.poll(() => page.evaluate(() =>
+        (window.dashboardInstance.inbox.items || []).length), { timeout: 10_000 }).toBeGreaterThan(0);
+
+    // The row menu names the destination, not bare "Keep".
+    await page.locator('.inbox-item').first().click({ button: 'right' });
+    await expect(page.locator('#bookmark-context-menu [data-action="inbox-keep"]')).toContainText('Kept tab');
+    await page.keyboard.press('Escape');
+
+    await page.keyboard.press('t');
+    await expect.poll(() => page.evaluate(() =>
+        !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
+
+    await expect(page.locator('.inbox-triage-keep-hint')).toContainText('Kept');
+    await expect(page.locator('.inbox-triage-hint').first()).toContainText('to Kept');
+});

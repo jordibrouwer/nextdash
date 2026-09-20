@@ -994,7 +994,7 @@ class DashboardBookmarkRows {
          * kept bookmark into allBookmarks would put it on all of them at once,
          * and nothing would take it out again until the next full load.
          */
-        const list = window.DashboardUnsorted?.isUnsortedBookmark?.({ pageId: pid })
+        const list = window.UnsortedPage?.isUnsorted?.({ pageId: pid })
             ? d.unsortedBookmarks
             : d.allBookmarks;
         if (!Array.isArray(list)) {

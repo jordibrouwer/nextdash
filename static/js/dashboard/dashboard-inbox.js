@@ -40,6 +40,13 @@ class DashboardInbox {
         this._statsFailed = false;
         this.triage = typeof DashboardInboxTriage === 'function' ? new DashboardInboxTriage(this) : null;
         this._searchRenderTimer = null;
+        /**
+         * Which of the view's two tabs is up: the triage queue, or the pile
+         * kept out of it. One view with two lists rather than two destinations
+         * in the header -- keeping a link is a step in this flow, not a place
+         * of its own.
+         */
+        this.tab = 'triage';
         /** The mounted ListViewShell handle, or null before the first render. */
         this.shell = null;
         this._fetchPromise = null;
@@ -914,7 +921,10 @@ class DashboardInbox {
             setOrDelete('ib_tag', String(this.tagFilter || '').trim(), !String(this.tagFilter || '').trim());
             setOrDelete('ib_id', String(this.focusItemId || '').trim(), !String(this.focusItemId || '').trim());
             const query = params.toString();
-            history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}#inbox`);
+            // The kept tab keeps its own address; this call would otherwise
+            // undo restoreInboxHash a moment after it wrote it.
+            const hash = this.activeTab() === 'kept' ? '#unsorted' : '#inbox';
+            history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}${hash}`);
         } catch { /* history is unavailable in some embedded contexts */ }
     }
 
@@ -1509,8 +1519,11 @@ class DashboardInbox {
      * syncUrlState stay replaceState -- they are not places you navigated to.
      */
     restoreInboxHash() {
-        if (window.location.hash === '#inbox') return;
-        const next = `${window.location.pathname}${window.location.search}#inbox`;
+        // The kept tab keeps the address it always had, so every link and
+        // bookmark to #unsorted still opens what it names.
+        const wanted = this.activeTab() === 'kept' ? '#unsorted' : '#inbox';
+        if (window.location.hash === wanted) return;
+        const next = `${window.location.pathname}${window.location.search}${wanted}`;
         if (!window.DashboardHistory?.pushLocation?.(next)) {
             history.replaceState(history.state, '', next);
         }
@@ -1528,14 +1541,21 @@ class DashboardInbox {
         }
     }
 
-    async openInboxView() {
+    async openInboxView({ tab } = {}) {
         const d = this.dash;
         if (!this.isEnabled()) {
             return false;
         }
+        // A tab named by the caller is what Shift+U, #unsorted and the widget's
+        // "view all" ask for, and it has to be honoured on a view that is
+        // already open as well as on one being opened.
+        const wanted = tab === 'kept' && this.keptEnabled() ? 'kept'
+            : (tab === 'triage' ? 'triage' : null);
         if (d.activeView === DashboardInbox.VIEW) {
+            if (wanted && wanted !== this.tab) this.setTab(wanted, 'link');
             return true;
         }
+        if (wanted) this.tab = wanted;
         if (d.isInlineEditActive() && !(await d.confirmInlineEditBeforeNavigation())) {
             return false;
         }
@@ -1607,6 +1627,9 @@ class DashboardInbox {
      * the module, which re-checks the tip id too.
      */
     async maybeShowTutorial() {
+        // The tour walks the triage queue. Arriving straight on the kept tab
+        // is not the moment to teach what the other tab does.
+        if (this.activeTab() === 'kept') return;
         if (window.DiscoverabilityState?.hasSeenTip?.(DashboardInbox.TUTORIAL_TIP_ID)) return;
         if (this.dash.settings?.enableSessionTips === false) return;
         if (typeof window.InboxTutorial === 'undefined') {
@@ -3502,14 +3525,174 @@ class DashboardInbox {
         // stop being swallowed; without a tabindex that focus() does nothing.
         container.tabIndex = -1;
         this.shell = window.ListViewShell.mount(container, this.shellConfig());
-        this.buildToolbar(this.shell.toolbar);
-        this.buildHeaderActions(this.shell.headerActions);
+        this.buildTabStrip(this.shell);
+        /*
+         * Two of everything above the body, side by side and one of them
+         * hidden.
+         *
+         * The tabs hold different things -- a search box with a caret in it, a
+         * sort and a grouping -- and rebuilding either on every switch would
+         * lose what was typed into it. So each tab owns a host of its own and
+         * the switch only flips which is shown.
+         */
+        this._ownToolbar = document.createElement('div');
+        this._ownToolbar.className = 'inbox-toolbar-own';
+        this._keptToolbar = document.createElement('div');
+        this._keptToolbar.className = 'inbox-toolbar-kept';
+        this.shell.toolbar.append(this._ownToolbar, this._keptToolbar);
+        this._ownActions = document.createElement('div');
+        this._ownActions.className = 'inbox-actions-own';
+        this._keptActions = document.createElement('div');
+        this._keptActions.className = 'inbox-actions-kept';
+        this.shell.headerActions.append(this._ownActions, this._keptActions);
+        this._ownBody = document.createElement('div');
+        this._ownBody.className = 'inbox-body-own';
+        this._keptBody = document.createElement('div');
+        this._keptBody.className = 'inbox-body-kept';
+        this.shell.body.append(this._ownBody, this._keptBody);
+        this.buildToolbar(this._ownToolbar);
+        this.buildHeaderActions(this._ownActions);
         return this.shell;
     }
 
     _destroyShell() {
         this.shell?.destroy?.();
         this.shell = null;
+    }
+
+    /* ── The two tabs ──────────────────────────────────────────────────────── */
+
+    /**
+     * True when kept bookmarks have a tab to stand on at all.
+     *
+     * Read from the setting rather than from the module: this is asked while
+     * the view is being built, and the module it would ask is loaded by the
+     * same loader that builds this one.
+     */
+    keptEnabled() {
+        return this.dash.settings?.unsortedEnabled !== false;
+    }
+
+    /** The tab actually showing: kept only while kept is switched on. */
+    activeTab() {
+        return this.tab === 'kept' && this.keptEnabled() ? 'kept' : 'triage';
+    }
+
+    /**
+     * The strip above the shell: the queue, and what was kept out of it.
+     *
+     * Built once with the shell and only relabelled afterwards, like the rest
+     * of the chrome. The count beside Kept comes from the array the dashboard
+     * already keeps in step with every mutation, so the strip asks nothing of
+     * its own.
+     */
+    buildTabStrip(shell) {
+        const strip = document.createElement('div');
+        strip.className = 'inbox-tabs';
+        strip.setAttribute('role', 'tablist');
+        strip.setAttribute('aria-label', this.t('dashboard.inboxTabsLabel', 'Inbox tabs'));
+
+        const make = (tab, label) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'inbox-tab';
+            btn.dataset.inboxTab = tab;
+            btn.setAttribute('role', 'tab');
+            const text = document.createElement('span');
+            text.className = 'inbox-tab-label';
+            text.textContent = label;
+            btn.appendChild(text);
+            if (tab === 'kept') {
+                const count = document.createElement('span');
+                count.className = 'inbox-tab-count';
+                btn.appendChild(count);
+                this._keptCountEl = count;
+            }
+            btn.addEventListener('click', () => this.setTab(tab, 'click'));
+            strip.appendChild(btn);
+            return btn;
+        };
+        this._triageTabBtn = make('triage', this.t('dashboard.inboxTabTriage', 'To triage'));
+        this._keptTabBtn = make('kept', this.t('dashboard.inboxTabKept', 'Kept'));
+        shell.root.insertBefore(strip, shell.root.firstChild);
+        this._tabStrip = strip;
+        this.syncTabStrip();
+        return strip;
+    }
+
+    /** Which tab is lit, what the count says, and whether Kept is offered. */
+    syncTabStrip() {
+        if (!this._tabStrip) return;
+        const tab = this.activeTab();
+        const kept = this.keptEnabled();
+        this._tabStrip.hidden = !kept;
+        if (this._triageTabBtn) {
+            this._triageTabBtn.classList.toggle('is-active', tab === 'triage');
+            this._triageTabBtn.setAttribute('aria-selected', String(tab === 'triage'));
+        }
+        if (this._keptTabBtn) {
+            this._keptTabBtn.classList.toggle('is-active', tab === 'kept');
+            this._keptTabBtn.setAttribute('aria-selected', String(tab === 'kept'));
+            this._keptTabBtn.hidden = !kept;
+        }
+        if (this._keptCountEl) {
+            const count = (this.dash.unsortedBookmarks || []).length;
+            this._keptCountEl.textContent = count ? String(count) : '';
+        }
+    }
+
+    /**
+     * Switch tabs: the chrome each one owns is shown or hidden, never rebuilt.
+     *
+     * The rail goes with the triage tab. Kept filters itself from its own
+     * toolbar, and an empty column of filters beside it would be chrome that
+     * says nothing.
+     */
+    setTab(tab, via = 'click') {
+        const next = tab === 'kept' && this.keptEnabled() ? 'kept' : 'triage';
+        if (next === this.tab) return;
+        this.tab = next;
+        this._trackAction('tab', { tab: next, via });
+        this.applyTabToChrome();
+        this.restoreInboxHash();
+        if (next === 'kept') {
+            void this.dash.unsorted?.loadAndRender?.();
+        } else {
+            this.render();
+        }
+    }
+
+    /** Show the half of the chrome the active tab owns, hide the other. */
+    applyTabToChrome() {
+        const kept = this.activeTab() === 'kept';
+        const flip = (own, other) => {
+            if (own) own.hidden = kept;
+            if (other) other.hidden = !kept;
+        };
+        // The band says which list is up, and on the kept tab it says what to
+        // do with what is in it: the one question a kept link poses is where
+        // it should go, and the answer used to be hidden in the row menu.
+        const description = this.shell?.root?.querySelector('.lvs-description');
+        if (description) {
+            description.textContent = kept
+                ? this.t('dashboard.unsortedTabDescription',
+                    'Kept links, not filed yet. Move one to a page and a category to put it on the dashboard, or send it back to the queue.')
+                : this.t('dashboard.inboxPageSubtitle', 'Links saved to read or review later');
+        }
+        flip(this._ownToolbar, this._keptToolbar);
+        flip(this._ownActions, this._keptActions);
+        flip(this._ownBody, this._keptBody);
+        if (this.shell?.root) {
+            this.shell.root.classList.toggle('inbox-kept-tab', kept);
+        }
+        this.syncTabStrip();
+        if (kept) {
+            this.dash.unsorted?.mountInto?.({
+                body: this._keptBody,
+                toolbar: this._keptToolbar,
+                actions: this._keptActions,
+            });
+        }
     }
 
     /**
@@ -3849,6 +4032,13 @@ class DashboardInbox {
         if (!shell) {
             return;
         }
+        this.applyTabToChrome();
+        // On the kept tab the body belongs to the unsorted module: everything
+        // below here is about the queue, down to the filters and the bulk bar.
+        if (this.activeTab() === 'kept') {
+            void d.unsorted?.loadAndRender?.();
+            return;
+        }
         const container = document.getElementById('dashboard-layout');
 
         d._abortInlineEditForRender?.();
@@ -3887,7 +4077,7 @@ class DashboardInbox {
         // returns early would otherwise leave a stale one behind.
         this.renderBulkBar();
 
-        const body = shell.body;
+        const body = this._ownBody || shell.body;
         body.innerHTML = '';
 
         // What the active filter selects, in a sentence. Rendered before the
@@ -4342,6 +4532,9 @@ class DashboardInbox {
      */
     async keepItem(item) {
         const d = this.dash;
+        // The same switch the kept tab answers to: with keeping off there is
+        // nowhere for this to land that the reader can reach.
+        if (!this.keptEnabled()) return false;
         this._trackAction('keep');
         try {
             if (!d._unsortedPageId) {

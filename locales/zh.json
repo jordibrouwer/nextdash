@@ -2001,7 +2001,31 @@
     "scopeAll": "全部",
     "scopeBookmarks": "书签",
     "dashboardLink": "仪表板",
-    "scopeRailHint": "Tab 切换"
+    "scopeRailHint": "Tab 切换",
+    "unsortedSortChecked": "最近检查",
+    "unsortedGroupSuggested": "按建议标签分组",
+    "unsortedGroupNoSuggestion": "没有建议",
+    "unsortedGroupDate": "按存放时长分组",
+    "unsortedSelectMove": "移动到…",
+    "unsortedMoveTitle": "移动到…",
+    "unsortedMoveCount": "将 {count} 项移动到…",
+    "unsortedMoveNoCategory": "不分类",
+    "unsortedMoveProgress": "正在归档",
+    "unsortedMoveDone": "已归档 {ok} 项",
+    "unsortedMoveDoneSome": "已归档 {ok} 项，{failed} 项失败",
+    "unsortedBrokenCount": "其中 {count} 个链接没有响应",
+    "unsortedBrokenShow": "查看",
+    "unsortedBrokenClear": "显示全部",
+    "unsortedTabDescription": "保留下来、尚未归档的链接。给一条链接选定页面和分类即可放到仪表板，或把它退回队列。",
+    "contextMenuFileOnPage": "移动到某个页面…",
+    "contextMenuBackToInbox": "退回收件箱",
+    "unsortedSelectToInbox": "退回收件箱",
+    "unsortedToInboxProgress": "正在退回",
+    "unsortedToInboxDone": "已退回 {ok} 项",
+    "unsortedToInboxDoneSome": "已退回 {ok} 项，{failed} 项失败",
+    "inboxTabsLabel": "收件箱标签页",
+    "inboxTabTriage": "待处理",
+    "inboxTabKept": "已保留"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -5548,7 +5572,9 @@
     "previewLabel": "预览",
     "filterElsewhere": "也出现在：",
     "changedElsewhere": "也改过的：",
-    "appearanceClockPlacementTitle": "时钟与天气"
+    "appearanceClockPlacementTitle": "时钟与天气",
+    "unsortedEnabledLabel": "保留链接而不归档",
+    "unsortedEnabledHint": "在收件箱里增加「已保留」标签页；整理时的“保留”会把链接放到那里，而不是标记为已读。"
   },
   "colors": {
     "title": "主题自定义",

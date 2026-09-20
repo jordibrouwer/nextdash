@@ -169,7 +169,6 @@ class DashboardSetup {
         d.updateHealthDashboardVisibility();
 
         // Control unsorted link visibility dynamically
-        d.updateUnsortedVisibility();
 
         // Control page tabs visibility dynamically
         d.updatePageTabsVisibility();
@@ -537,11 +536,11 @@ class DashboardSetup {
             }
 
             if (e.shiftKey && e.code === 'KeyU') {
-                if (d.unsorted?.isEnabled?.()) {
+                if (d.settings?.unsortedEnabled !== false && d.inbox?.isEnabled?.()) {
                     e.preventDefault();
                     e.stopPropagation();
                     window.nextdashRecordKey?.('Shift + U');
-                    void d.unsorted.openUnsortedView();
+                    void d.inbox.openInboxView({ tab: 'kept' });
                 }
                 return;
             }

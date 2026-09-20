@@ -24,6 +24,19 @@ async function openUnsorted(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    // How the kept list is read is a setting now, so it outlives a test and
+    // the next one would inherit a grouping it never chose.
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/settings', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ unsortedSort: 'added-desc', unsortedGroup: 'none' }),
+        });
+        const s = window.dashboardInstance?.settings;
+        if (s) { s.unsortedSort = 'added-desc'; s.unsortedGroup = 'none'; }
+        const u = window.dashboardInstance?.unsorted;
+        if (u) { u.sort = 'added-desc'; u.groupBy = 'none'; u.searchQuery = ''; u.brokenOnly = false; }
+    });
 
     await page.evaluate(async (kept) => {
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
@@ -133,7 +146,7 @@ test('toolbar state survives leaving the view and coming back', async ({ page })
     await page.locator('.unsorted-view-group-select').selectOption('site');
 
     await page.locator('.dashboard-link a, .page-tab').first().click();
-    await expect(page.locator('#dashboard-layout.unsorted-view')).toHaveCount(0);
+    await expect(page.locator('.inbox-body-kept.unsorted-view')).toHaveCount(0);
 
     await page.keyboard.down('Shift');
     await page.keyboard.press('KeyU');
@@ -142,5 +155,7 @@ test('toolbar state survives leaving the view and coming back', async ({ page })
     await expect(page.locator('.unsorted-view-search-input')).toHaveValue('alpha');
     await expect(page.locator('.unsorted-view-sort-select')).toHaveValue('name');
     await expect(page.locator('.unsorted-view-group-select')).toHaveValue('site');
-    expect(await rowNames(page)).toEqual(['Alpha Guide', 'Alpha Reference']);
+    // Polled: the list loads with the inbox now, so the toolbar is on screen a
+    // moment before the rows it describes are.
+    await expect.poll(() => rowNames(page)).toEqual(['Alpha Guide', 'Alpha Reference']);
 });

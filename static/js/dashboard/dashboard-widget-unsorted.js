@@ -54,12 +54,12 @@
             window.DashboardWidgetUtils?.bindRowAction(row, dash, {
                 labelKey: 'widgetActionOpenUnsorted',
                 labelFallback: 'Open Unsorted',
-                run: () => { void dash.unsorted?.openUnsortedView?.(); },
+                run: () => { void dash.inbox?.openInboxView?.({ tab: 'kept' }); },
             });
             list.appendChild(row);
         });
         window.DashboardWidgetUtils?.appendOverflowRow(
-            list, dash, bookmarks.length - maxRows, () => { void dash.unsorted?.openUnsortedView?.(); });
+            list, dash, bookmarks.length - maxRows, () => { void dash.inbox?.openInboxView?.({ tab: 'kept' }); });
         body.appendChild(list);
     }
 

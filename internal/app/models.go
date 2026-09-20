@@ -667,16 +667,21 @@ type Settings struct {
 	BackgroundGradient        string                           `json:"backgroundGradient"`                  // preset name used when type="gradient"
 	BackgroundImageUrl        string                           `json:"backgroundImageUrl"`                  // URL used when type="image"
 	ThemeIconStyling          map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
-	PasteUrlQuickAdd          bool                             `json:"pasteUrlQuickAdd"`        // Enable paste URL to quick-add bookmark on dashboard
-	InboxEnabled              bool                             `json:"inboxEnabled"`            // Enable inbox page and paste-to-inbox flow
-	UnsortedEnabled           bool                             `json:"unsortedEnabled"`         // Enable unsorted nav icon and the Keep-to-Unsorted promote action
-	SearchUnsorted            bool                             `json:"searchUnsorted"`          // Let search reach bookmarks kept in Unsorted; they stay out of every other surface
-	PasteDestination          string                           `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
-	InboxDedupeUrls           bool                             `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
-	InboxMaxItems             int                              `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
-	InboxShowInPageTabs       bool                             `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
-	InboxDeleteAfterPromote   bool                             `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
-	AllowLocalBookmarks       bool                             `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
+	PasteUrlQuickAdd          bool                             `json:"pasteUrlQuickAdd"` // Enable paste URL to quick-add bookmark on dashboard
+	InboxEnabled              bool                             `json:"inboxEnabled"`     // Enable inbox page and paste-to-inbox flow
+	UnsortedEnabled           bool                             `json:"unsortedEnabled"`  // Keep links from the inbox without filing them: the Kept tab and the Keep action
+	// How the kept list is read, remembered across browsers. Empty means the
+	// default -- newest first, ungrouped -- so an install that never chose one
+	// carries nothing.
+	UnsortedSort            string `json:"unsortedSort,omitempty"`
+	UnsortedGroup           string `json:"unsortedGroup,omitempty"`
+	SearchUnsorted          bool   `json:"searchUnsorted"`          // Let search reach bookmarks kept in Unsorted; they stay out of every other surface
+	PasteDestination        string `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
+	InboxDedupeUrls         bool   `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
+	InboxMaxItems           int    `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
+	InboxShowInPageTabs     bool   `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
+	InboxDeleteAfterPromote bool   `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
+	AllowLocalBookmarks     bool   `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
 	/*
 	 * MCPEnabled opens the /mcp endpoint an assistant talks to.
 	 *

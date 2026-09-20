@@ -2001,7 +2001,31 @@
     "scopeAll": "todo",
     "scopeBookmarks": "marcadores",
     "dashboardLink": "panel",
-    "scopeRailHint": "tab cambia"
+    "scopeRailHint": "tab cambia",
+    "unsortedSortChecked": "última comprobación",
+    "unsortedGroupSuggested": "agrupar por etiqueta sugerida",
+    "unsortedGroupNoSuggestion": "sin sugerencia",
+    "unsortedGroupDate": "agrupar por antigüedad",
+    "unsortedSelectMove": "Mover a…",
+    "unsortedMoveTitle": "Mover a…",
+    "unsortedMoveCount": "Mover {count} a…",
+    "unsortedMoveNoCategory": "Sin categoría",
+    "unsortedMoveProgress": "Archivando",
+    "unsortedMoveDone": "{ok} archivados",
+    "unsortedMoveDoneSome": "{ok} archivados, {failed} fallidos",
+    "unsortedBrokenCount": "{count} de estos enlaces no responden",
+    "unsortedBrokenShow": "Mostrarlos",
+    "unsortedBrokenClear": "Mostrar todo otra vez",
+    "unsortedTabDescription": "Enlaces guardados, aún sin archivar. Dale a uno una página y una categoría para ponerlo en el panel, o devuélvelo a la cola.",
+    "contextMenuFileOnPage": "Mover a una página…",
+    "contextMenuBackToInbox": "Volver a la bandeja",
+    "unsortedSelectToInbox": "Volver a la bandeja",
+    "unsortedToInboxProgress": "Devolviendo",
+    "unsortedToInboxDone": "{ok} devueltos",
+    "unsortedToInboxDoneSome": "{ok} devueltos, {failed} fallidos",
+    "inboxTabsLabel": "Pestañas de la bandeja",
+    "inboxTabTriage": "Por revisar",
+    "inboxTabKept": "Guardados"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -5548,7 +5572,9 @@
     "previewLabel": "Vista previa",
     "filterElsewhere": "También en:",
     "changedElsewhere": "También cambiado en:",
-    "appearanceClockPlacementTitle": "Reloj y tiempo"
+    "appearanceClockPlacementTitle": "Reloj y tiempo",
+    "unsortedEnabledLabel": "Guardar enlaces sin archivarlos",
+    "unsortedEnabledHint": "Añade una pestaña Guardados a la bandeja, y hace que Guardar en el triaje deje el enlace ahí en vez de marcarlo como leído."
   },
   "colors": {
     "title": "personalización del tema",

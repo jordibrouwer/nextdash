@@ -2001,7 +2001,31 @@
     "scopeAll": "alles",
     "scopeBookmarks": "lesezeichen",
     "dashboardLink": "dashboard",
-    "scopeRailHint": "Tab wechselt"
+    "scopeRailHint": "Tab wechselt",
+    "unsortedSortChecked": "zuletzt geprüft",
+    "unsortedGroupSuggested": "nach vorgeschlagenem Tag gruppieren",
+    "unsortedGroupNoSuggestion": "kein Vorschlag",
+    "unsortedGroupDate": "nach Alter gruppieren",
+    "unsortedSelectMove": "Verschieben nach…",
+    "unsortedMoveTitle": "Verschieben nach…",
+    "unsortedMoveCount": "{count} verschieben nach…",
+    "unsortedMoveNoCategory": "Keine Kategorie",
+    "unsortedMoveProgress": "Wird abgelegt",
+    "unsortedMoveDone": "{ok} abgelegt",
+    "unsortedMoveDoneSome": "{ok} abgelegt, {failed} fehlgeschlagen",
+    "unsortedBrokenCount": "{count} dieser Links antworten nicht",
+    "unsortedBrokenShow": "Anzeigen",
+    "unsortedBrokenClear": "Wieder alle anzeigen",
+    "unsortedTabDescription": "Behaltene Links, noch nicht abgelegt. Gib einem eine Seite und eine Kategorie, damit er aufs Dashboard kommt, oder schick ihn zurück in die Liste.",
+    "contextMenuFileOnPage": "Auf eine Seite verschieben…",
+    "contextMenuBackToInbox": "Zurück in den Posteingang",
+    "unsortedSelectToInbox": "Zurück in den Posteingang",
+    "unsortedToInboxProgress": "Wird zurückgeschickt",
+    "unsortedToInboxDone": "{ok} zurückgeschickt",
+    "unsortedToInboxDoneSome": "{ok} zurückgeschickt, {failed} fehlgeschlagen",
+    "inboxTabsLabel": "Posteingang-Tabs",
+    "inboxTabTriage": "Zu sichten",
+    "inboxTabKept": "Behalten"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -5548,7 +5572,9 @@
     "previewLabel": "Vorschau",
     "filterElsewhere": "Auch gefunden unter:",
     "changedElsewhere": "Auch geändert unter:",
-    "appearanceClockPlacementTitle": "Uhr & Wetter"
+    "appearanceClockPlacementTitle": "Uhr & Wetter",
+    "unsortedEnabledLabel": "Links behalten, ohne sie abzulegen",
+    "unsortedEnabledHint": "Fügt dem Posteingang den Tab Behalten hinzu; Behalten in der Sichtung legt den Link dort ab, statt ihn als gelesen zu markieren."
   },
   "colors": {
     "title": "themenanpassung",

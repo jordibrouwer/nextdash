@@ -1046,7 +1046,7 @@ class DashboardInlineEdit {
          * option makes staying put the default and choosing a page the
          * deliberate act that promotes it onto the dashboard.
          */
-        const unsortedPageId = window.DashboardUnsorted?.PAGE_ID;
+        const unsortedPageId = window.UnsortedPage?.PAGE_ID;
         const isUnsortedSource = Number.isFinite(Number(unsortedPageId))
             && sourcePageId === Number(unsortedPageId);
         const fillPageSelect = (pages, selectedId) => {

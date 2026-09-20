@@ -16,45 +16,25 @@ class DashboardUnsorted {
     static VIEW = 'unsorted';
     static DEFAULT_CHUNK_SIZE = 15;
 
-    /**
-     * The page every kept bookmark sits on, mirroring unsortedPageID in
-     * models.go. It is deliberately far outside the range ordinary pages reach,
-     * and it is not in d.pages, so nothing on the dashboard routes to it.
-     */
-    static PAGE_ID = 999999;
+    /** Mirrors unsortedPageID in models.go; defined once in UnsortedPage. */
+    static PAGE_ID = window.UnsortedPage?.PAGE_ID ?? 999999;
 
     /** What a preview answer puts on a bookmark, and what gets written back. */
     static PREVIEW_FIELDS = ['previewTitle', 'previewDesc', 'previewImage',
         'previewImageSource', 'previewSiteName', 'previewAuthor', 'previewPublishedAt',
         'previewEmbedHtml', 'previewContentLength', 'previewEnriched'];
 
-    static SORTS = ['added-desc', 'added-asc', 'name', 'site', 'opened', 'tag'];
-    static GROUPS = ['none', 'site', 'date', 'tag'];
+    static SORTS = ['added-desc', 'added-asc', 'name', 'site', 'opened', 'tag', 'checked'];
+    static GROUPS = ['none', 'site', 'date', 'tag', 'suggested'];
 
-    /**
-     * The one answer to "does this bookmark live on the unsorted page".
-     *
-     * Both spellings of the field, because the two exist in the tree: the store
-     * writes `pageId`, and a few older record shapes carry `pageID`. Normalized
-     * here rather than at the callers, so a second definition cannot drift away
-     * from this one.
-     */
+    /** The one answer to "does this bookmark live on the unsorted page". */
     static isUnsortedBookmark(bookmark) {
-        const pageId = Number(bookmark?.pageId ?? bookmark?.pageID);
-        return Number.isFinite(pageId) && pageId === DashboardUnsorted.PAGE_ID;
+        return window.UnsortedPage?.isUnsorted?.(bookmark) === true;
     }
 
-    /**
-     * Every dashboard surface that reads across pages has to drop these.
-     *
-     * Kept for the surfaces that build a pool of their own from a list that
-     * may still hold them — the split in loadAllBookmarks keeps them out of
-     * d.allBookmarks, and this keeps any other pool honest besides. They are
-     * filed by being given a category, and not before.
-     */
+    /** The same list with the kept bookmarks taken out. */
     static withoutUnsorted(list) {
-        if (!Array.isArray(list)) return list;
-        return list.filter((bookmark) => !DashboardUnsorted.isUnsortedBookmark(bookmark));
+        return window.UnsortedPage?.without?.(list) ?? list;
     }
 
     constructor(dashboard) {
@@ -62,8 +42,18 @@ class DashboardUnsorted {
         /** Everything /api/unsorted last returned, unfiltered and unsorted. */
         this._bookmarks = [];
         this.searchQuery = '';
-        this.sort = 'added-desc';
-        this.groupBy = 'none';
+        /** Narrowed to the kept links that last answered with an error. */
+        this.brokenOnly = false;
+        /*
+         * How this pile is read, remembered on the server like any other
+         * setting: an empty value is the default, so an install that never
+         * chose keeps the shape it always had.
+         */
+        const stored = dashboard?.settings || {};
+        this.sort = DashboardUnsorted.SORTS.includes(stored.unsortedSort)
+            ? stored.unsortedSort : 'added-desc';
+        this.groupBy = DashboardUnsorted.GROUPS.includes(stored.unsortedGroup)
+            ? stored.unsortedGroup : 'none';
         this._bodyHost = null;
         this._countEl = null;
         this._actionsEl = null;
@@ -90,69 +80,48 @@ class DashboardUnsorted {
         return this.dash.settings?.unsortedEnabled !== false;
     }
 
+    /**
+     * Kept is a tab of the inbox, not a view of its own: what is on screen is
+     * the inbox, and this list is what it is showing.
+     */
     isActiveView() {
-        return this.dash.activeView === DashboardUnsorted.VIEW;
-    }
-
-    /**
-     * Put #unsorted in the address bar, the way health writes #health.
-     *
-     * Without it the hash stays on whatever page tab was last open, so a
-     * refresh restored that page (or the inbox) instead of this view -- the
-     * view was reachable but never survived a reload.
-     */
-    restoreUnsortedHash() {
-        if (window.location.hash === '#unsorted') return;
-        const next = `${window.location.pathname}${window.location.search}#unsorted`;
-        if (!window.DashboardHistory?.pushLocation?.(next)) {
-            history.replaceState(history.state, '', next);
-        }
-    }
-
-    /**
-     * Called when the tab comes back to the foreground, alongside inbox's and
-     * health's: a view that owns the whole container has to prove it is still
-     * the thing on screen.
-     */
-    restoreViewIfNeeded() {
-        if (!this.isActiveView() || !this.isEnabled()) {
-            return;
-        }
-        this.restoreUnsortedHash();
-        this.dash.pageNav?.setActiveUnsortedTab?.();
-        const container = document.getElementById('dashboard-layout');
-        if (!container?.classList.contains('unsorted-view')) {
-            void this.loadAndRender();
-        }
-    }
-
-    async openUnsortedView() {
         const d = this.dash;
-        if (!this.isEnabled()) {
-            return false;
+        return d.activeView === 'inbox' && d.inbox?.activeTab?.() === 'kept';
+    }
+
+    /**
+     * The one way in, from everywhere that used to open a view of its own:
+     * the inbox, on its kept tab.
+     */
+    async openUnsortedView() {
+        if (!this.isEnabled()) return false;
+        return Boolean(await this.dash.inbox?.openInboxView?.({ tab: 'kept' }));
+    }
+
+    /**
+     * Where this list draws: the hosts the inbox's shell hands over.
+     *
+     * Called on every switch to the kept tab and cheap to repeat -- the toolbar
+     * and the header buttons are built once and left alone, so a search typed
+     * into the toolbar survives a trip to the other tab and back.
+     */
+    mountInto({ body, toolbar, actions }) {
+        this._bodyHost = body || null;
+        // The marker every rule for this list is keyed on. It sits on the body
+        // host now rather than on #dashboard-layout, which belongs to the
+        // inbox's shell.
+        this._bodyHost?.classList.add('unsorted-view');
+        if (toolbar && !toolbar.childElementCount) {
+            toolbar.appendChild(this._buildToolbar());
         }
-        if (d.activeView === DashboardUnsorted.VIEW) {
-            return true;
+        if (actions && !actions.childElementCount) {
+            actions.appendChild(this._buildHeadButtons());
+            this._countEl = document.createElement('span');
+            this._countEl.className = 'unsorted-view-count';
+            actions.appendChild(this._countEl);
+            this._actionsEl = actions;
         }
-        if (d.isInlineEditActive() && !(await d.confirmInlineEditBeforeNavigation())) {
-            return false;
-        }
-        // The header band below is .lvs chrome, and list-view-shell.css rides in
-        // the view stylesheet bundle that only the three lazy view loaders ask
-        // for. Nothing else on this path requests it, so an unsorted view opened
-        // first in a session drew the band unstyled.
-        await window.ViewStyles?.ensureViewStyles?.();
-        d._abortInlineEditForRender?.();
-        d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
-        d.setActiveView(DashboardUnsorted.VIEW);
-        // The header name and the document title still read 'inbox' (or the page
-        // name) otherwise -- this view arrives from the header icon, not from a
-        // page tab, so nothing else re-titles it. Same call health makes.
-        d.pageNav?.setActiveUnsortedTab?.();
-        window.nextdashTrack?.('view:unsorted');
-        this.restoreUnsortedHash();
-        await this.loadAndRender();
-        return true;
+        this.syncHead();
     }
 
     async loadAndRender() {
@@ -222,99 +191,21 @@ class DashboardUnsorted {
     }
 
     render(bookmarks) {
-        const container = document.getElementById('dashboard-layout');
-        if (!container || !this._stillShowing()) return;
+        if (!this._bodyHost?.isConnected || !this._stillShowing()) return;
 
         // A repaint triggered by an action on a row -- tagging it, deleting a
         // selection -- must leave the reader looking at the same place. Only a
-        // repaint: arriving in the view scrolls to the top like any other
-        // navigation, which is what `wasShowing` tells apart.
-        const wasShowing = this._bodyHost?.isConnected && container.contains(this._bodyHost);
-        const offset = wasShowing ? window.scrollY : 0;
+        // repaint: arriving on the tab scrolls to the top like any other
+        // navigation, which is what `drawnAlready` tells apart.
+        const drawnAlready = this._bodyHost.childElementCount > 0;
+        const offset = drawnAlready ? window.scrollY : 0;
 
         this._bookmarks = Array.isArray(bookmarks) ? bookmarks : [];
-        this._ensureChrome(container);
         this.renderBody();
 
-        if (wasShowing && offset > 0) {
+        if (drawnAlready && offset > 0) {
             window.scrollTo({ top: offset, behavior: 'instant' });
         }
-    }
-
-    /**
-     * Build the view's frame once and leave it alone afterwards.
-     *
-     * A background refresh can land while someone is mid-word in the search box
-     * (loadAndRender runs on a data-revision poll), and rebuilding the toolbar
-     * under a caret loses both the caret and the keystroke arriving next. So
-     * the chrome is rebuilt only when it is actually missing -- on the first
-     * render, and after another view has wiped the container.
-     */
-    _ensureChrome(container) {
-        const d = this.dash;
-
-        // syncDashboardGridLayout() is the usual way the grid gets its
-        // columns-N/density/packed classes, but it returns early off the
-        // bookmarks view -- which this is. So the container keeps whatever the
-        // last page render left on it (layout-masonry, packed-masonry,
-        // reorder-container) and the column widths below never apply. Set the
-        // shape here instead of borrowing a stale one.
-        const colCount = d.renderCore.getEffectiveColumnsPerRow();
-        const packed = d.renderCore.shouldPackDashboardColumns();
-        const density = d.settings?.densityMode || 'compact';
-        container.className = `dashboard-grid columns-${colCount} layout-default density-${density}`
-            + `${packed ? ' packed-columns' : ''} unsorted-view`;
-        container.setAttribute('role', 'grid');
-
-        if (this._bodyHost?.isConnected && container.contains(this._bodyHost)) {
-            return;
-        }
-
-        container.innerHTML = '';
-        container.appendChild(this._buildHead());
-        container.appendChild(this._buildToolbar());
-        this._bodyHost = document.createElement('div');
-        this._bodyHost.className = 'unsorted-view-main';
-        container.appendChild(this._bodyHost);
-    }
-
-    /**
-     * The same header band health, inbox and config wear: name of the view and
-     * one line saying what is in it. Built here rather than through
-     * ListViewShell.mount -- the shell's value is the rail of filters and
-     * summary figures beside the list, and this view has neither, so mounting
-     * it would put an empty 200px 'Filter' rail next to the grid.
-     */
-    _buildHead() {
-        const d = this.dash;
-        const head = document.createElement('div');
-        head.className = 'lvs-header unsorted-view-head';
-
-        const text = document.createElement('div');
-        text.className = 'lvs-header-text';
-
-        const title = document.createElement('h2');
-        title.className = 'lvs-title';
-        title.textContent = d.pageNav?.unsortedPageLabel?.() || 'Unsorted';
-
-        const description = document.createElement('p');
-        description.className = 'lvs-description';
-        description.textContent = d.formatDashboardLabel(
-            'unsortedPageSubtitle', {}, 'Bookmarks kept from the inbox, not filed on a page');
-
-        text.append(title, description);
-
-        const actions = document.createElement('div');
-        actions.className = 'lvs-header-actions';
-        this._actionsEl = actions;
-
-        this._countEl = document.createElement('span');
-        this._countEl.className = 'unsorted-view-count';
-        actions.append(this._buildHeadButtons(), this._countEl);
-
-        head.append(text, actions);
-        this.syncHead();
-        return head;
     }
 
     /**
@@ -391,6 +282,7 @@ class DashboardUnsorted {
             ['site', d.formatDashboardLabel('unsortedSortSite', {}, 'site')],
             ['opened', d.formatDashboardLabel('unsortedSortOpened', {}, 'most opened')],
             ['tag', d.formatDashboardLabel('unsortedSortTag', {}, 'tag')],
+            ['checked', d.formatDashboardLabel('unsortedSortChecked', {}, 'last checked')],
         ];
     }
 
@@ -399,18 +291,25 @@ class DashboardUnsorted {
         return [
             ['none', d.formatDashboardLabel('unsortedGroupNone', {}, 'no grouping')],
             ['site', d.formatDashboardLabel('unsortedGroupSite', {}, 'group by site')],
-            ['date', d.formatDashboardLabel('unsortedGroupDate', {}, 'group by date added')],
+            ['date', d.formatDashboardLabel('unsortedGroupDate', {}, 'group by age')],
             ['tag', d.formatDashboardLabel('unsortedGroupTag', {}, 'group by tag')],
+            ['suggested', d.formatDashboardLabel('unsortedGroupSuggested', {}, 'group by suggested tag')],
         ];
     }
 
-    /** Health's toolbar row, with this view's three controls in it. */
+    /**
+     * The three controls this list reads by, for the shell's own toolbar row.
+     *
+     * A plain wrapper rather than a `.lvs-toolbar` of its own: the row it goes
+     * into is already one, and nesting a second drew two toolbars inside each
+     * other with the selects escaping to the outer one.
+     */
     _buildToolbar() {
         const d = this.dash;
         const toolbar = document.createElement('div');
-        toolbar.className = 'lvs-toolbar unsorted-view-toolbar';
+        toolbar.className = 'unsorted-view-toolbar';
         const slot = document.createElement('div');
-        slot.className = 'lvs-toolbar-slot';
+        slot.className = 'unsorted-view-toolbar-slot';
 
         const searchLabel = d.formatDashboardLabel(
             'unsortedSearchPlaceholder', {}, 'Search unsorted bookmarks…');
@@ -447,6 +346,7 @@ class DashboardUnsorted {
             this.sort,
             (value) => {
                 this.sort = DashboardUnsorted.SORTS.includes(value) ? value : 'added-desc';
+                this.rememberReading();
                 this.renderBody();
             }
         );
@@ -458,6 +358,7 @@ class DashboardUnsorted {
             this.groupBy,
             (value) => {
                 this.groupBy = DashboardUnsorted.GROUPS.includes(value) ? value : 'none';
+                this.rememberReading();
                 this.renderBody();
             }
         );
@@ -490,6 +391,50 @@ class DashboardUnsorted {
             .sort();
     }
 
+    /**
+     * Keep the sort and the grouping, so the next visit reads the pile the way
+     * this one left it -- on every browser, which is why they are settings
+     * rather than something kept in this one.
+     */
+    rememberReading() {
+        const d = this.dash;
+        if (!d.settings) return;
+        d.settings.unsortedSort = this.sort;
+        d.settings.unsortedGroup = this.groupBy;
+        void d.saveSettings?.();
+    }
+
+    /**
+     * The tag this bookmark's address would be given by the reader's own tag
+     * rules, whether or not it carries it yet.
+     *
+     * A rule is a host, or a host and its first path segment (TagRule in
+     * models.go), so both spellings are tried, the longer one first: a rule for
+     * `github.com/nextdash` is more specific than one for `github.com` and
+     * should win.
+     */
+    _suggestedTag(bookmark) {
+        const rules = this.dash.settings?.tagRules;
+        if (!Array.isArray(rules) || !rules.length) return '';
+        let host = '';
+        let segment = '';
+        try {
+            const url = new URL(String(bookmark?.url || ''));
+            host = url.hostname.replace(/^www\./i, '').toLowerCase();
+            segment = url.pathname.split('/').filter(Boolean)[0] || '';
+        } catch (_error) {
+            return '';
+        }
+        if (!host) return '';
+        const wanted = segment ? [`${host}/${segment.toLowerCase()}`, host] : [host];
+        for (const pattern of wanted) {
+            const hit = rules.find((rule) =>
+                String(rule?.pattern || '').trim().toLowerCase() === pattern);
+            if (hit) return String(hit.tag || '').trim().toLowerCase();
+        }
+        return '';
+    }
+
     /** Hostname without www., lowercased. '' for anything unparseable. */
     _hostOf(url) {
         try {
@@ -511,10 +456,53 @@ class DashboardUnsorted {
         return haystack.includes(query);
     }
 
+    /** True when the last check on this link came back with an error. */
+    _isBroken(bookmark) {
+        return Boolean(String(bookmark?.lastError || '').trim());
+    }
+
+    _brokenBookmarks() {
+        return this._bookmarks.filter((bookmark) => this._isBroken(bookmark));
+    }
+
     _visibleBookmarks() {
         const query = this.searchQuery.trim().toLowerCase();
-        const list = this._bookmarks.filter((bookmark) => this._matchesQuery(bookmark, query));
+        const list = this._bookmarks.filter((bookmark) => this._matchesQuery(bookmark, query)
+            && (!this.brokenOnly || this._isBroken(bookmark)));
         return this._sortBookmarks(list);
+    }
+
+    /**
+     * What the health report deliberately leaves out, said here instead.
+     *
+     * Health is about the library as it stands on the dashboard, and a kept
+     * link has no category to be reported under -- but it is still checked, so
+     * it can rot without anything saying so. This is that line: how many of
+     * these answered with an error, and a button that narrows the list to
+     * them, where they can be fixed or thrown away.
+     */
+    _buildBrokenNote() {
+        const d = this.dash;
+        const broken = this._brokenBookmarks().length;
+        if (!broken) return null;
+        const note = document.createElement('div');
+        note.className = 'unsorted-broken-note';
+        const text = document.createElement('span');
+        text.className = 'unsorted-broken-count';
+        text.textContent = d.formatDashboardLabel('unsortedBrokenCount',
+            { count: broken }, `${broken} of these links do not answer`);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'unsorted-broken-btn';
+        button.textContent = this.brokenOnly
+            ? d.formatDashboardLabel('unsortedBrokenClear', {}, 'Show all again')
+            : d.formatDashboardLabel('unsortedBrokenShow', {}, 'Show them');
+        button.addEventListener('click', () => {
+            this.brokenOnly = !this.brokenOnly;
+            this.renderBody();
+        });
+        note.append(text, button);
+        return note;
     }
 
     _sortBookmarks(list) {
@@ -548,6 +536,25 @@ class DashboardUnsorted {
                 sorted.sort((a, b) => (Number(b?.openCount) || 0) - (Number(a?.openCount) || 0)
                     || (Number(b?.lastOpened) || 0) - (Number(a?.lastOpened) || 0)
                     || byName(a, b));
+                break;
+            case 'checked':
+                /*
+                 * What needs looking at first: the ones that answered with an
+                 * error, then the ones never checked at all, then by how long
+                 * ago the last check was. Sorting by the timestamp alone put
+                 * the never-checked (0) and the broken in the same place for
+                 * opposite reasons.
+                 */
+                sorted.sort((a, b) => {
+                    const rank = (bookmark) => {
+                        if (String(bookmark?.lastError || '').trim()) return 0;
+                        if (!(Number(bookmark?.lastChecked) || 0)) return 1;
+                        return 2;
+                    };
+                    return rank(a) - rank(b)
+                        || (Number(a?.lastChecked) || 0) - (Number(b?.lastChecked) || 0)
+                        || byName(a, b);
+                });
                 break;
             default:
                 sorted.sort((a, b) => added(b) - added(a));
@@ -611,6 +618,19 @@ class DashboardUnsorted {
                 push(bucket.key, bucket.label, bookmark);
                 return;
             }
+            if (this.groupBy === 'suggested') {
+                /*
+                 * The tag the reader's own rules would give this address, so a
+                 * batch can be filed in one move. Unlike grouping by tag, rows
+                 * no rule matches are kept -- in a group of their own, because
+                 * "nothing suggests a home for these" is the answer this
+                 * grouping exists to give, not a row to hide.
+                 */
+                const tag = this._suggestedTag(bookmark);
+                push(tag || '\u0000none', tag || this.dash.formatDashboardLabel(
+                    'unsortedGroupNoSuggestion', {}, 'no suggestion'), bookmark);
+                return;
+            }
             const host = this._hostOf(bookmark?.url);
             push(host, host || this.dash.formatDashboardLabel('unsortedGroupNoSite', {}, 'no site'), bookmark);
         });
@@ -632,6 +652,8 @@ class DashboardUnsorted {
 
         host.innerHTML = '';
         this.syncHead();
+        const brokenNote = this._buildBrokenNote();
+        if (brokenNote) host.appendChild(brokenNote);
         // Before the empty-list path returns, not after the grid is built: the
         // Select all button has to go quiet over a list with nothing in it, and
         // that is exactly the render that used to skip this call.

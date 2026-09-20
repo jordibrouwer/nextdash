@@ -315,14 +315,6 @@
                         </a>
                     </div>
                     <div id="page-nav-inbox-host" class="page-nav-inbox-host"></div>
-                    {{if .UnsortedEnabled}}<div class="unsorted-link unsorted-link--icon">
-                        <a href="/#unsorted" class="unsorted-link-anchor" data-i18n-aria="dashboard.unsorted" data-i18n-tooltip="dashboard.unsorted" aria-label="unsorted" title="unsorted">
-                            <svg class="unsorted-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                                <rect x="3" y="3" width="12" height="12" rx="2" transform="rotate(-8 9 9)"/>
-                                <rect x="9" y="9" width="12" height="12" rx="2" transform="rotate(6 15 15)"/>
-                            </svg>
-                        </a>
-                    </div>{{end}}
                     {{if .ShowHealthDashboard}}<div class="health-link health-link--icon">
                         <a href="/#health" class="health-link-anchor" data-i18n-aria="dashboard.health" data-i18n-tooltip="dashboard.health" aria-label="health" title="health">
                             <svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -620,8 +612,7 @@
     <script src="{{asset "js/dashboard/dashboard-page-nav.js"}}" defer></script>
     <script src="{{asset "js/dashboard-trash.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-tag-filter.js"}}" defer></script>
-    <script src="{{asset "js/dashboard/dashboard-unsorted.js"}}" defer></script>
-    <script src="{{asset "js/dashboard/dashboard-unsorted-select.js"}}" defer></script>
+    <script src="{{asset "js/shared/unsorted-page.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-multi-select.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-grid-filter.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-structure-create.js"}}" defer></script>

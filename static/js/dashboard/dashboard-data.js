@@ -610,10 +610,6 @@ class DashboardData {
             await d.health.loadAndRender({ refresh: true });
             return true;
         }
-        if (d.activeView === 'unsorted' && d.unsorted?.isEnabled?.()) {
-            await d.unsorted.loadAndRender();
-            return true;
-        }
         if (d.needsCrossPageBookmarks?.()) {
             await this.loadAllBookmarks();
         }
@@ -769,7 +765,9 @@ class DashboardData {
         {
             view: 'inbox',
             layoutClass: 'inbox-layout',
-            matchesHash: (hash) => hash === '#inbox',
+            // Both of the inbox's tabs: the kept list is a tab of this view
+            // and keeps the address it always had.
+            matchesHash: (hash) => hash === '#inbox' || hash === '#unsorted',
             isEnabled: (d) => Boolean(d.inbox?.isEnabled?.()),
         },
         {
@@ -779,12 +777,6 @@ class DashboardData {
             // match the prefix the way config's own deep links do.
             matchesHash: (hash) => hash === '#health' || hash.startsWith('#health/'),
             isEnabled: (d) => Boolean(d.health?.isEnabled?.()),
-        },
-        {
-            view: 'unsorted',
-            layoutClass: 'unsorted-view',
-            matchesHash: (hash) => hash === '#unsorted',
-            isEnabled: (d) => Boolean(d.unsorted?.isEnabled?.()),
         },
         {
             view: 'config',
@@ -1169,7 +1161,7 @@ class DashboardData {
              */
             const loaded = await allBookmarksRes.json();
             const rows = Array.isArray(loaded) ? loaded : [];
-            const isUnsorted = (bookmark) => window.DashboardUnsorted?.isUnsortedBookmark?.(bookmark) === true;
+            const isUnsorted = (bookmark) => window.UnsortedPage?.isUnsorted?.(bookmark) === true;
             d.allBookmarks = rows.filter((bookmark) => !isUnsorted(bookmark));
             d.unsortedBookmarks = rows.filter(isUnsorted);
             this.invalidateStalePageCaches();
@@ -1293,13 +1285,6 @@ class DashboardData {
                 return;
             }
             d.inbox.render?.();
-            return;
-        }
-        if (d.activeView === 'unsorted' && d.unsorted?.isEnabled?.()) {
-            if (d.isInlineEditActive() && !despiteModal) {
-                return;
-            }
-            void d.unsorted.loadAndRender();
             return;
         }
         if (d.activeView === 'config' && d.config?.isEnabled?.()) {

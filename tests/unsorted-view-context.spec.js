@@ -31,6 +31,19 @@ async function bootstrap(page, kept = []) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    // How the kept list is read is a setting now, so it outlives a test and
+    // the next one would inherit a grouping it never chose.
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/settings', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ unsortedSort: 'added-desc', unsortedGroup: 'none' }),
+        });
+        const s = window.dashboardInstance?.settings;
+        if (s) { s.unsortedSort = 'added-desc'; s.unsortedGroup = 'none'; }
+        const u = window.dashboardInstance?.unsorted;
+        if (u) { u.sort = 'added-desc'; u.groupBy = 'none'; u.searchQuery = ''; u.brokenOnly = false; }
+    });
     await seedKept(page, kept);
 }
 
@@ -72,6 +85,9 @@ async function openUnsorted(page) {
     await page.keyboard.up('Shift');
     await expect(page.locator('.unsorted-view')).toBeVisible();
     await expect(page.locator('.unsorted-view-search-input')).toBeVisible();
+    // And the rows themselves: the list loads with the inbox, so the toolbar
+    // is on screen a moment before what it describes.
+    await expect(page.locator('.bookmark-link[data-unsorted-key]').first()).toBeVisible();
 }
 
 /**
@@ -115,13 +131,16 @@ test('the unsorted row menu drops what does not apply there', async ({ page }) =
 
     const actions = await menuActions(page);
     expect(actions).toEqual(expect.arrayContaining(['edit', 'tags', 'delete', 'copy-url']));
-    // Pin orders within a category, Move files by force, and both health
-    // entries speak for the filed library — none of the four mean anything on a
-    // bookmark that has not been filed yet.
+    // Pin orders within a category and both health entries speak for the filed
+    // library — none of the three mean anything on a bookmark that has not been
+    // filed yet.
     expect(actions).not.toContain('pin');
-    expect(actions).not.toContain('move');
     expect(actions).not.toContain('check-mode');
     expect(actions).not.toContain('health');
+    // Filing is what this list is for, so the two ways out are here: onto a
+    // page, or back into the queue it came from.
+    expect(actions).toContain('move');
+    expect(actions).toContain('unsorted-to-inbox');
 });
 
 test('Shift+M does not open the move popover from Unsorted either', async ({ page }) => {
@@ -165,7 +184,7 @@ test('tagging from Unsorted stays in Unsorted and reaches the grid', async ({ pa
     await page.locator('#tag-popover [data-tag="uvctag"]').click();
 
     // The view is the thing that must not move.
-    await expect(page.locator('#dashboard-layout.unsorted-view')).toBeVisible();
+    await expect(page.locator('.inbox-body-kept.unsorted-view')).toBeVisible();
     expect(new URL(page.url()).hash).toBe('#unsorted');
 
     await page.keyboard.press('Escape');
@@ -252,7 +271,7 @@ test('Edit offers Unsorted as the page, and picking another one files the bookma
         const data = await res.json();
         return (data.bookmarks || []).filter((b) => b.name === 'Ctx edit Two').length;
     })).toBe(0);
-    await expect(page.locator('#dashboard-layout.unsorted-view')).toBeVisible();
+    await expect(page.locator('.inbox-body-kept.unsorted-view')).toBeVisible();
     expect(new URL(page.url()).hash).toBe('#unsorted');
 });
 
@@ -288,4 +307,29 @@ test('Tags from the row menu covers the whole selection', async ({ page }) => {
             .map((b) => b.name)
             .sort();
     })).toEqual(['Ctx bulk One', 'Ctx bulk Two']);
+});
+
+/**
+ * Keeping a link is not a one-way door. A row that turns out to need more
+ * thought goes back into the queue it came from, with what was written about
+ * it, and leaves the kept list behind.
+ */
+test('the row menu sends a kept bookmark back to the inbox', async ({ page }) => {
+    await bootstrap(page, keptPair('back'));
+    await openUnsorted(page);
+    await page.locator('.unsorted-view-search-input').fill('ctx-back-one');
+
+    await openRowMenu(page, page.locator('.bookmark-link[data-unsorted-key]').first());
+    await page.click('#bookmark-context-menu [data-action="unsorted-to-inbox"]');
+
+    const url = 'https://ctx-back-one.example/a';
+    await expect.poll(async () => page.evaluate(async (u) => {
+        const items = await (await fetch('/api/inbox', { cache: 'no-store' })).json();
+        return (items.items || items || []).some((item) => item.url === u);
+    }, url), { timeout: 15_000 }).toBe(true);
+
+    await expect.poll(async () => page.evaluate(async (u) => {
+        const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        return (data.bookmarks || []).some((b) => b.url === u);
+    }, url), { timeout: 15_000 }).toBe(false);
 });

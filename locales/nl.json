@@ -2001,7 +2001,31 @@
     "scopeAll": "alles",
     "scopeBookmarks": "bladwijzers",
     "dashboardLink": "dashboard",
-    "scopeRailHint": "tab wisselt"
+    "scopeRailHint": "tab wisselt",
+    "unsortedSortChecked": "laatst gecontroleerd",
+    "unsortedGroupSuggested": "groeperen op voorgestelde tag",
+    "unsortedGroupNoSuggestion": "geen voorstel",
+    "unsortedGroupDate": "groeperen op leeftijd",
+    "unsortedSelectMove": "Verplaats naar…",
+    "unsortedMoveTitle": "Verplaats naar…",
+    "unsortedMoveCount": "Verplaats {count} naar…",
+    "unsortedMoveNoCategory": "Geen categorie",
+    "unsortedMoveProgress": "Opbergen",
+    "unsortedMoveDone": "{ok} opgeborgen",
+    "unsortedMoveDoneSome": "{ok} opgeborgen, {failed} mislukt",
+    "unsortedBrokenCount": "{count} van deze links antwoorden niet",
+    "unsortedBrokenShow": "Toon ze",
+    "unsortedBrokenClear": "Toon weer alles",
+    "unsortedTabDescription": "Bewaarde links, nog niet opgeborgen. Geef er een een pagina en categorie om hem op het dashboard te zetten, of stuur hem terug naar de wachtrij.",
+    "contextMenuFileOnPage": "Naar een pagina verplaatsen…",
+    "contextMenuBackToInbox": "Terug naar de inbox",
+    "unsortedSelectToInbox": "Terug naar de inbox",
+    "unsortedToInboxProgress": "Terugsturen",
+    "unsortedToInboxDone": "{ok} teruggestuurd",
+    "unsortedToInboxDoneSome": "{ok} teruggestuurd, {failed} mislukt",
+    "inboxTabsLabel": "Inbox-tabbladen",
+    "inboxTabTriage": "Te verwerken",
+    "inboxTabKept": "Bewaard"
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -5548,7 +5572,9 @@
     "previewLabel": "Voorbeeld",
     "filterElsewhere": "Ook gevonden op:",
     "changedElsewhere": "Ook gewijzigd op:",
-    "appearanceClockPlacementTitle": "Klok & weer"
+    "appearanceClockPlacementTitle": "Klok & weer",
+    "unsortedEnabledLabel": "Links bewaren zonder op te bergen",
+    "unsortedEnabledHint": "Voegt het tabblad Bewaard toe aan de inbox, en laat Keep in de triage een link daar neerzetten in plaats van hem als gelezen te markeren."
   },
   "colors": {
     "title": "thema-aanpassing",

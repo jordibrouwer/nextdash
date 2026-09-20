@@ -266,7 +266,7 @@ class DashboardContextMenu {
          * becomes available is a question the menu cannot answer.
          */
         const inUnsorted = d.unsorted?.isActiveView?.() === true;
-        const hiddenInUnsorted = new Set(['pin', 'move', 'check-mode', 'health']);
+        const hiddenInUnsorted = new Set(['pin', 'check-mode', 'health']);
         /*
          * With rows ticked in Unsorted, Tags means the selection.
          *
@@ -302,7 +302,30 @@ class DashboardContextMenu {
                 icon: '#',
                 key: 'Shift+T',
             },
-            { id: 'move', label: this.t('dashboard.contextMenuMove', 'Move to…'), icon: '→', key: 'Shift+M' },
+            /*
+             * Filing, and unfiling.
+             *
+             * In the kept list Move to... asks for a page *and* a category --
+             * which is what filing is, and what sends the row to the
+             * dashboard. Elsewhere it is the picker it has always been. The
+             * second entry is the way back: a kept link that turned out to
+             * need thinking about again returns to the queue it came from.
+             */
+            {
+                id: 'move',
+                label: inUnsorted
+                    ? this.t('dashboard.contextMenuFileOnPage', 'Move to a page…')
+                    : this.t('dashboard.contextMenuMove', 'Move to…'),
+                icon: '→',
+                key: 'Shift+M',
+            },
+            ...(inUnsorted
+                ? [{
+                    id: 'unsorted-to-inbox',
+                    label: this.t('dashboard.contextMenuBackToInbox', 'Back to the inbox'),
+                    icon: '↩',
+                }]
+                : []),
             ...(currentMode
                 ? [{
                     id: 'check-mode',
@@ -999,7 +1022,16 @@ class DashboardContextMenu {
                 break;
             }
             case 'move':
+                // In the kept list the picker asks for a page and a category:
+                // a kept bookmark has neither, and both are what filing means.
+                if (d.unsorted?.isActiveView?.() && d.unsorted.select) {
+                    d.unsorted.select.openMovePopover(row, [bookmark]);
+                    break;
+                }
                 void d.showMovePopover?.(row, bookmark, bookmarkIndex);
+                break;
+            case 'unsorted-to-inbox':
+                void d.unsorted?.select?.sendToInbox([bookmark]);
                 break;
             case 'check-mode':
                 this.showCheckModeMenu(row, bookmarkRef, { parentPoint: options.parentPoint });

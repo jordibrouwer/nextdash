@@ -269,6 +269,12 @@ class DashboardUnsortedSelect {
         addButton(this.t('unsortedFetchIcons', 'Fetch icons'), '', () => {
             void this.fetchIcons();
         });
+        addButton(this.t('unsortedSelectMove', 'Move to…'), '', (btn) => {
+            this.openMovePopover(btn);
+        });
+        addButton(this.t('unsortedSelectToInbox', 'Back to the inbox'), '', () => {
+            void this.sendToInbox();
+        });
         addButton(this.t('unsortedSelectDelete', 'Delete'), 'danger', () => {
             void this.deleteSelected();
         });
@@ -510,6 +516,207 @@ class DashboardUnsortedSelect {
             d.showNotification(this.t('unsortedBulkTagFailed', 'Could not change the tags'), 'error');
             return false;
         }
+    }
+
+    /**
+     * File the whole selection: one page and one category for all of it.
+     *
+     * Filing is what a kept bookmark is waiting for, and doing it a row at a
+     * time through Edit is the work grouping exists to save. Two steps rather
+     * than one long list: the pages, then that page's categories -- a flat list
+     * of every category on every page is unreadable past a handful of pages.
+     */
+    openMovePopover(anchorEl, rows = null) {
+        const d = this.dash;
+        const targets = Array.isArray(rows) && rows.length ? rows : this.selectedBookmarks();
+        if (!targets.length || !anchorEl) return;
+        d._closeActionPopovers?.();
+
+        const pop = document.createElement('div');
+        pop.className = 'move-popover unsorted-move-popover';
+        pop.id = 'unsorted-move-popover';
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', this.t('unsortedMoveTitle', 'Move to…'));
+
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = this.t('unsortedMoveCount',
+            `Move ${targets.length} to…`, { count: targets.length });
+        pop.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'unsorted-move-popover-list';
+        pop.appendChild(list);
+
+        const close = () => {
+            pop.remove();
+            document.removeEventListener('click', onOutside, true);
+            if (d._unsortedMovePopoverClose === close) d._unsortedMovePopoverClose = null;
+        };
+        const onOutside = (event) => {
+            if (pop.contains(event.target) || anchorEl.contains(event.target)) return;
+            close();
+        };
+
+        const item = (label, onClick) => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'move-popover-item unsorted-move-item';
+            row.textContent = label;
+            row.addEventListener('click', (event) => {
+                event.preventDefault();
+                onClick();
+            });
+            list.appendChild(row);
+            return row;
+        };
+
+        const showPages = () => {
+            list.replaceChildren();
+            (d.pages || []).forEach((page) => {
+                item(d.pageNav?.pageLabel?.(page.id) || page.name || String(page.id),
+                    () => showCategories(page));
+            });
+        };
+
+        const showCategories = (page) => {
+            list.replaceChildren();
+            const back = item(`← ${d.pageNav?.pageLabel?.(page.id) || page.name || ''}`, showPages);
+            back.classList.add('unsorted-move-back');
+            this.categoriesOnPage(page).forEach((category) => {
+                item(category.label, () => {
+                    close();
+                    void this.moveSelectionTo(page.id, category.id, targets);
+                });
+            });
+            item(this.t('unsortedMoveNoCategory', 'No category'), () => {
+                close();
+                void this.moveSelectionTo(page.id, '', targets);
+            });
+        };
+
+        showPages();
+        document.body.appendChild(pop);
+        // The same placement every row popover in the grid uses, so this one
+        // is clamped to the window the way they are.
+        if (typeof d.bookmarkRows?._positionActionPopoverBeside === 'function') {
+            d.bookmarkRows._positionActionPopoverBeside(pop, anchorEl);
+        }
+        setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+        d._unsortedMovePopoverClose = close;
+    }
+
+    /**
+     * The categories a page holds, from what the dashboard already knows: the
+     * live list for the page on screen, and the categories its bookmarks carry
+     * for every other one. No new request for a picker.
+     */
+    categoriesOnPage(page) {
+        const d = this.dash;
+        const byId = new Map();
+        if (String(d.currentPageId) === String(page.id)) {
+            (d.categories || []).filter((c) => !c.isSmartCollection).forEach((c) => {
+                if (c?.id) byId.set(String(c.id), String(c.name || c.id));
+            });
+        }
+        (d.allBookmarks || [])
+            .filter((bookmark) => String(bookmark?.pageId) === String(page.id))
+            .forEach((bookmark) => {
+                const id = String(bookmark?.category || '').trim();
+                if (id && !byId.has(id)) byId.set(id, id);
+            });
+        return [...byId.entries()]
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    /**
+     * Add to the target, then delete from the kept page -- the same pair a
+     * single move makes (_moveBookmarkToPage), row by row so a failure leaves
+     * the rest of the selection where it was rather than half-filed.
+     */
+    async moveSelectionTo(pageId, category, rows = null) {
+        const targets = Array.isArray(rows) && rows.length ? rows : this.selectedBookmarks();
+        if (!targets.length || this._busy) return;
+        const d = this.dash;
+        const sourcePage = Number(d._unsortedPageId) || 999999;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = { 'Content-Type': 'application/json' };
+        window.nextdashTrack?.('unsorted:bulk-move', { count: targets.length });
+
+        await this._runOverEach(targets, {
+            title: this.t('unsortedMoveProgress', 'Filing', {}),
+            run: async (bookmark) => {
+                const moved = { ...bookmark, pageId: Number(pageId), category: String(category || '') };
+                delete moved.index;
+                const add = await fetcher('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ page: Number(pageId), bookmark: moved, allowDuplicate: true }),
+                });
+                if (!add.ok) return 'failed';
+                const remove = await fetcher('/api/bookmarks', {
+                    method: 'DELETE',
+                    headers,
+                    body: JSON.stringify({ page: sourcePage, bookmark }),
+                });
+                return remove.ok ? 'ok' : 'failed';
+            },
+            done: (ok, failed) => (failed
+                ? this.t('unsortedMoveDoneSome', `Filed ${ok}, ${failed} failed`, { ok, failed })
+                : this.t('unsortedMoveDone', `Filed ${ok}`, { ok })),
+        });
+        this.clear();
+        await d.loadAllBookmarks?.();
+    }
+
+    /**
+     * The way back: a kept link returns to the queue it was kept out of.
+     *
+     * Keeping is a decision, and decisions are sometimes wrong -- a link kept
+     * in a hurry is one that still needs thinking about, and the inbox is
+     * where thinking about links happens. The bookmark is put back as an inbox
+     * item carrying its note and its tags, then removed from the kept page.
+     */
+    async sendToInbox(rows = null) {
+        const targets = Array.isArray(rows) && rows.length ? rows : this.selectedBookmarks();
+        if (!targets.length || this._busy) return;
+        const d = this.dash;
+        const sourcePage = Number(d._unsortedPageId) || 999999;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = { 'Content-Type': 'application/json' };
+        window.nextdashTrack?.('unsorted:to-inbox', { count: targets.length });
+
+        await this._runOverEach(targets, {
+            title: this.t('unsortedToInboxProgress', 'Sending back'),
+            run: async (bookmark) => {
+                const added = await fetcher('/api/inbox', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        url: bookmark.url,
+                        title: bookmark.name || '',
+                        note: bookmark.note || '',
+                        tags: Array.isArray(bookmark.tags) ? bookmark.tags : [],
+                        source: 'unsorted',
+                    }),
+                });
+                // A link already waiting in the queue is not a failure: the
+                // reason this row can go is that the inbox has it.
+                if (!added.ok && added.status !== 409) return 'failed';
+                const removed = await fetcher('/api/bookmarks', {
+                    method: 'DELETE',
+                    headers,
+                    body: JSON.stringify({ page: sourcePage, bookmark }),
+                });
+                return removed.ok ? 'ok' : 'failed';
+            },
+            done: (ok, failed) => (failed
+                ? this.t('unsortedToInboxDoneSome', `Sent back ${ok}, ${failed} failed`, { ok, failed })
+                : this.t('unsortedToInboxDone', `Sent back ${ok}`, { ok })),
+        });
+        this.clear();
+        await d.inbox?.loadAndRender?.({ refresh: true });
     }
 
     async confirmDanger(title, message, confirmText) {
