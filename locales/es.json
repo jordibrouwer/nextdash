@@ -5588,7 +5588,9 @@
     "changedElsewhere": "También cambiado en:",
     "appearanceClockPlacementTitle": "Reloj y tiempo",
     "unsortedEnabledLabel": "Guardar enlaces sin archivarlos",
-    "unsortedEnabledHint": "Añade una pestaña Guardados a la bandeja, y hace que Guardar en el triaje deje el enlace ahí en vez de marcarlo como leído."
+    "unsortedEnabledHint": "Añade una pestaña Guardados a la bandeja, y hace que Guardar en el triaje deje el enlace ahí en vez de marcarlo como leído.",
+    "refreshAllPreviewsStop": "Detener",
+    "refreshAllPreviewsStopping": "Deteniendo…"
   },
   "colors": {
     "title": "personalización del tema",

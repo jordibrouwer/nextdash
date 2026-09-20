@@ -5620,7 +5620,9 @@
     "helpNoteData": "Backups, imports, and running nextDash on your own machine.",
     "helpNoteLogs": "The server log and the activity trail: what is recorded, and for how long.",
     "unsortedEnabledLabel": "Keep links without filing them",
-    "unsortedEnabledHint": "Adds a Kept tab to the inbox, and makes Keep in triage put a link there instead of marking it read."
+    "unsortedEnabledHint": "Adds a Kept tab to the inbox, and makes Keep in triage put a link there instead of marking it read.",
+    "refreshAllPreviewsStop": "Stop",
+    "refreshAllPreviewsStopping": "Stopping…"
   },
   "colors": {
     "title": "theme customization",

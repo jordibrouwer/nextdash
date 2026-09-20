@@ -7043,9 +7043,18 @@ class DashboardConfig {
         if (!await this.confirmAction(this.t('config.refreshAllPreviewsConfirm', 'Fetch every link preview card again from its site?'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false })) return;
 
         const BATCH = 5;
+        // A way out. The bar blocks the page for minutes on a real collection,
+        // and a reader who started the sweep by mistake had nothing to do but
+        // wait or reload. The round in flight finishes; nothing after it starts.
+        let stopped = false;
         this.showProgressOverlay(
             this.t('config.refreshAllPreviewsTitle', 'Refreshing link previews…'),
-            this.t('config.refreshAllPreviewsCounting', 'Reading the collection'));
+            this.t('config.refreshAllPreviewsCounting', 'Reading the collection'),
+            {
+                onCancel: () => { stopped = true; },
+                cancelLabel: this.t('config.refreshAllPreviewsStop', 'Stop'),
+                cancellingLabel: this.t('config.refreshAllPreviewsStopping', 'Stopping…'),
+            });
 
         let offset = 0;
         let total = 0;
@@ -7055,6 +7064,7 @@ class DashboardConfig {
             // rounds here: the collection can change under a long run, and the
             // server's own position is the only one that stays true.
             for (let round = 0; round < 2000; round++) {
+                if (stopped) break;
                 const res = await this.writeFetch(
                     `/api/previews/refresh?offset=${offset}&limit=${BATCH}`, { method: 'POST' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7071,9 +7081,17 @@ class DashboardConfig {
 
                 if (body.done || offset >= total) break;
             }
-            this.finishProgressOverlay(
-                this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'));
-            this.notify(this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'), 'success');
+            if (stopped) {
+                // Stopped halfway is not finished: a full bar would say the
+                // sweep completed. What it did fetch is saved all the same.
+                this.hideProgressOverlay();
+                this.notify(this.t('config.refreshAllPreviewsPartial', 'Stopped after {n} of {total}.')
+                    .replace('{n}', String(refreshed)).replace('{total}', String(total || refreshed)), 'info');
+            } else {
+                this.finishProgressOverlay(
+                    this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'));
+                this.notify(this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'), 'success');
+            }
         } catch {
             this.hideProgressOverlay();
             // Says how far it got: a run that stopped at 300 of 500 left 300

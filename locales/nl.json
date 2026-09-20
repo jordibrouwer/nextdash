@@ -5588,7 +5588,9 @@
     "changedElsewhere": "Ook gewijzigd op:",
     "appearanceClockPlacementTitle": "Klok & weer",
     "unsortedEnabledLabel": "Links bewaren zonder op te bergen",
-    "unsortedEnabledHint": "Voegt het tabblad Bewaard toe aan de inbox, en laat Keep in de triage een link daar neerzetten in plaats van hem als gelezen te markeren."
+    "unsortedEnabledHint": "Voegt het tabblad Bewaard toe aan de inbox, en laat Keep in de triage een link daar neerzetten in plaats van hem als gelezen te markeren.",
+    "refreshAllPreviewsStop": "Stoppen",
+    "refreshAllPreviewsStopping": "Stoppen…"
   },
   "colors": {
     "title": "thema-aanpassing",

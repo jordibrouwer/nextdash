@@ -5588,7 +5588,9 @@
     "changedElsewhere": "也改过的：",
     "appearanceClockPlacementTitle": "时钟与天气",
     "unsortedEnabledLabel": "保留链接而不归档",
-    "unsortedEnabledHint": "在收件箱里增加「已保留」标签页；整理时的“保留”会把链接放到那里，而不是标记为已读。"
+    "unsortedEnabledHint": "在收件箱里增加「已保留」标签页；整理时的“保留”会把链接放到那里，而不是标记为已读。",
+    "refreshAllPreviewsStop": "停止",
+    "refreshAllPreviewsStopping": "正在停止…"
   },
   "colors": {
     "title": "主题自定义",

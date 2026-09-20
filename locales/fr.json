@@ -5588,7 +5588,9 @@
     "changedElsewhere": "Aussi modifié dans :",
     "appearanceClockPlacementTitle": "Horloge & météo",
     "unsortedEnabledLabel": "Garder des liens sans les classer",
-    "unsortedEnabledHint": "Ajoute un onglet Gardés à la boîte, et fait que Garder dans le tri y dépose le lien au lieu de le marquer comme lu."
+    "unsortedEnabledHint": "Ajoute un onglet Gardés à la boîte, et fait que Garder dans le tri y dépose le lien au lieu de le marquer comme lu.",
+    "refreshAllPreviewsStop": "Arrêter",
+    "refreshAllPreviewsStopping": "Arrêt…"
   },
   "colors": {
     "title": "personnalisation du thème",

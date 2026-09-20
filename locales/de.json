@@ -5588,7 +5588,9 @@
     "changedElsewhere": "Auch geändert unter:",
     "appearanceClockPlacementTitle": "Uhr & Wetter",
     "unsortedEnabledLabel": "Links behalten, ohne sie abzulegen",
-    "unsortedEnabledHint": "Fügt dem Posteingang den Tab Behalten hinzu; Behalten in der Sichtung legt den Link dort ab, statt ihn als gelesen zu markieren."
+    "unsortedEnabledHint": "Fügt dem Posteingang den Tab Behalten hinzu; Behalten in der Sichtung legt den Link dort ab, statt ihn als gelesen zu markieren.",
+    "refreshAllPreviewsStop": "Stopp",
+    "refreshAllPreviewsStopping": "Wird gestoppt…"
   },
   "colors": {
     "title": "themenanpassung",

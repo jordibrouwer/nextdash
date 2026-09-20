@@ -93,3 +93,33 @@ test.describe('Data & backups → Icons & previews', () => {
         await expect(page.locator('[data-backup-select="faviconRefreshPolicy"]')).toBeVisible();
     });
 });
+
+/**
+ * Refreshing every preview is one page fetch per bookmark: minutes on a real
+ * collection, behind a bar that blocks the page. It had no way out — a reader
+ * who started it by mistake could only wait or reload — which is what the
+ * kept list and the health view already answer with a Stop button.
+ */
+test('the preview refresh can be stopped halfway', async ({ page }) => {
+    await page.route('**/api/previews/refresh**', async (route) => {
+        const offset = Number(new URL(route.request().url()).searchParams.get('offset') || 0);
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ total: 400, refreshed: 5, next: offset + 5, done: false }),
+        });
+    });
+    await openData(page);
+    await page.locator('[data-db-tab="icons"]').click();
+    await page.locator('[data-backup-action="refresh-previews"]').click();
+    await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
+
+    const overlay = page.locator('#nextdash-progress-overlay');
+    await expect(overlay).toBeVisible();
+    await expect(overlay.locator('[data-progress-status]')).toContainText(' of 400');
+
+    const stop = overlay.locator('[data-progress-cancel]');
+    await expect(stop).toBeVisible();
+    await stop.click();
+    await expect(overlay).toBeHidden({ timeout: 15_000 });
+});
