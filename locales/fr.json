@@ -2029,7 +2029,17 @@
     "itKeep": "Garder : vers l’onglet Gardés",
     "inboxTabsLabel": "Onglets de la boîte",
     "inboxTabTriage": "À trier",
-    "inboxTabKept": "Gardés"
+    "inboxTabKept": "Gardés",
+    "unsortedSweepProgress": "{done} sur {total}",
+    "unsortedSweepStop": "Arrêter",
+    "unsortedSweepStopping": "Arrêt…",
+    "unsortedSweepStopped": "Arrêté après {done} sur {total}",
+    "healthFetchPreviewsCounting": "Lecture de la collection",
+    "healthFetchPreviewsProgress": "{done} sur {total}",
+    "healthFetchPreviewsStop": "Arrêter",
+    "healthFetchPreviewsStopping": "Arrêt…",
+    "healthFetchPreviewsStopped": "Arrêté après {done} sur {total}",
+    "healthFetchPreviewsPartial": "Arrêté après {done} sur {total}"
   },
   "health": {
     "reloadPage": "Recharger la page",

@@ -361,6 +361,41 @@ test('the view survives a reload', async ({ page }) => {
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
 
-    await expect(page.locator('#dashboard-layout.unsorted-view')).toBeVisible();
+    await expect(page.locator('.inbox-body-kept.unsorted-view')).toBeVisible();
     await expect(page.locator('.title')).toHaveText('unsorted');
+});
+
+/**
+ * A preview sweep is paced against the rate limit, so a handful of rows is
+ * already seconds of waiting and a few hundred is minutes. The icon sweep puts
+ * the blocking progress overlay up for exactly that reason; the preview sweep
+ * used to report itself in toasts every twentieth row, which on a short sweep
+ * is one toast at the start and nothing until it ends.
+ */
+test('a preview sweep shows the progress overlay, counting and stoppable', async ({ page }) => {
+    await page.route('**/api/bookmark-preview**', async (route) => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ title: 'Swept', description: 'From the sweep' }),
+        });
+    });
+
+    await openUnsorted(page);
+    await page.locator('.unsorted-view-search-input').fill('-uvb.example');
+    await page.locator('.unsorted-view-previews-btn').click();
+
+    const overlay = page.locator('#nextdash-progress-overlay');
+    await expect(overlay).toBeVisible();
+    await expect(overlay.locator('[data-progress-title]')).toContainText('preview');
+    // Counting, not indeterminate: the number of rows is known before the
+    // first request goes out.
+    await expect(overlay.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', /\d+/);
+    await expect(overlay.locator('[data-progress-status]')).toContainText(' of ');
+
+    // A sweep this long needs a way out that is not a reload.
+    const stop = overlay.locator('[data-progress-cancel]');
+    await expect(stop).toBeVisible();
+    await stop.click();
+    await expect(overlay).toBeHidden({ timeout: 15_000 });
 });

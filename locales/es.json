@@ -2029,7 +2029,17 @@
     "itKeep": "Guardar: a la pestaña Guardados",
     "inboxTabsLabel": "Pestañas de la bandeja",
     "inboxTabTriage": "Por revisar",
-    "inboxTabKept": "Guardados"
+    "inboxTabKept": "Guardados",
+    "unsortedSweepProgress": "{done} de {total}",
+    "unsortedSweepStop": "Detener",
+    "unsortedSweepStopping": "Deteniendo…",
+    "unsortedSweepStopped": "Detenido tras {done} de {total}",
+    "healthFetchPreviewsCounting": "Leyendo la colección",
+    "healthFetchPreviewsProgress": "{done} de {total}",
+    "healthFetchPreviewsStop": "Detener",
+    "healthFetchPreviewsStopping": "Deteniendo…",
+    "healthFetchPreviewsStopped": "Detenido tras {done} de {total}",
+    "healthFetchPreviewsPartial": "Detenido tras {done} de {total}"
   },
   "health": {
     "reloadPage": "Recargar la página",

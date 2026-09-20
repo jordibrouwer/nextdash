@@ -2029,7 +2029,17 @@
     "itKeep": "Bewaren: naar tabblad Bewaard",
     "inboxTabsLabel": "Inbox-tabbladen",
     "inboxTabTriage": "Te verwerken",
-    "inboxTabKept": "Bewaard"
+    "inboxTabKept": "Bewaard",
+    "unsortedSweepProgress": "{done} van {total}",
+    "unsortedSweepStop": "Stoppen",
+    "unsortedSweepStopping": "Stoppen…",
+    "unsortedSweepStopped": "Gestopt na {done} van {total}",
+    "healthFetchPreviewsCounting": "Collectie lezen",
+    "healthFetchPreviewsProgress": "{done} van {total}",
+    "healthFetchPreviewsStop": "Stoppen",
+    "healthFetchPreviewsStopping": "Stoppen…",
+    "healthFetchPreviewsStopped": "Gestopt na {done} van {total}",
+    "healthFetchPreviewsPartial": "Gestopt na {done} van {total}"
   },
   "health": {
     "reloadPage": "Pagina herladen",

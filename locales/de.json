@@ -2029,7 +2029,17 @@
     "itKeep": "Behalten: zum Tab Behalten",
     "inboxTabsLabel": "Posteingang-Tabs",
     "inboxTabTriage": "Zu sichten",
-    "inboxTabKept": "Behalten"
+    "inboxTabKept": "Behalten",
+    "unsortedSweepProgress": "{done} von {total}",
+    "unsortedSweepStop": "Stopp",
+    "unsortedSweepStopping": "Wird gestoppt…",
+    "unsortedSweepStopped": "Gestoppt nach {done} von {total}",
+    "healthFetchPreviewsCounting": "Sammlung wird gelesen",
+    "healthFetchPreviewsProgress": "{done} von {total}",
+    "healthFetchPreviewsStop": "Stopp",
+    "healthFetchPreviewsStopping": "Wird gestoppt…",
+    "healthFetchPreviewsStopped": "Gestoppt nach {done} von {total}",
+    "healthFetchPreviewsPartial": "Gestoppt nach {done} von {total}"
   },
   "health": {
     "reloadPage": "Seite neu laden",

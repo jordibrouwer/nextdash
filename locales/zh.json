@@ -2029,7 +2029,17 @@
     "itKeep": "保留：移到「已保留」标签页",
     "inboxTabsLabel": "收件箱标签页",
     "inboxTabTriage": "待处理",
-    "inboxTabKept": "已保留"
+    "inboxTabKept": "已保留",
+    "unsortedSweepProgress": "{done} / {total}",
+    "unsortedSweepStop": "停止",
+    "unsortedSweepStopping": "正在停止…",
+    "unsortedSweepStopped": "已在 {done}/{total} 处停止",
+    "healthFetchPreviewsCounting": "正在读取收藏",
+    "healthFetchPreviewsProgress": "{done} / {total}",
+    "healthFetchPreviewsStop": "停止",
+    "healthFetchPreviewsStopping": "正在停止…",
+    "healthFetchPreviewsStopped": "已在 {done}/{total} 处停止",
+    "healthFetchPreviewsPartial": "已在 {done}/{total} 处停止"
   },
   "health": {
     "reloadPage": "重新加载页面",

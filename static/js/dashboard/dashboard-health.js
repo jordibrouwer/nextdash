@@ -4740,19 +4740,79 @@ class DashboardHealth {
         }
         window.nextdashTrack?.('health:fetch-previews');
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        /*
+         * In batches, behind the blocking bar, the way Config runs the same
+         * endpoint (dashboard-config.js refreshAllPreviews).
+         *
+         * One page fetch per bookmark means a real collection takes minutes. As
+         * a single request it had no feedback beyond a button reading
+         * "Fetching…", a proxy was free to time the whole thing out halfway
+         * with nothing saved, and there was no way to call it off.
+         */
+        const BATCH = 5;
+        let stopped = false;
+        window.ProgressOverlay?.show(
+            this.t('dashboard.healthFetchPreviews', 'Fetch previews'),
+            this.t('dashboard.healthFetchPreviewsCounting', 'Reading the collection'),
+            {
+                onCancel: () => { stopped = true; },
+                cancelLabel: this.t('dashboard.healthFetchPreviewsStop', 'Stop'),
+                cancellingLabel: this.t('dashboard.healthFetchPreviewsStopping', 'Stopping…'),
+            });
+        let offset = 0;
+        let total = 0;
+        let refreshed = 0;
         try {
-            const res = await fetcher('/api/previews/refresh', { method: 'POST' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // Walks until the server says it is done rather than counting
+            // rounds here: the collection can change under a long run, and the
+            // server's own position is the only one that stays true.
+            for (let round = 0; round < 2000; round += 1) {
+                if (stopped) break;
+                const res = await fetcher(`/api/previews/refresh?offset=${offset}&limit=${BATCH}`,
+                    { method: 'POST' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const body = await res.json().catch(() => ({}));
+
+                total = Number(body.total) || total;
+                refreshed += Number(body.refreshed) || 0;
+                offset = Number(body.next) || offset + BATCH;
+
+                const done = Math.min(offset, total);
+                window.ProgressOverlay?.update(done, total,
+                    this.t('dashboard.healthFetchPreviewsProgress', '{done} of {total}',
+                        { done, total }));
+
+                if (body.done || offset >= total) break;
+            }
             // The flag is read from what is stored on the bookmark, not from the
             // preview cache, so both have to be re-read before the count means
             // anything.
             await this.dash.loadAllBookmarks?.();
             await this.loadAndRender({ refresh: true });
-            this.dash.showNotification?.(
-                this.t('dashboard.healthFetchPreviewsDone', 'Previews fetched.'), 'success');
+            if (stopped) {
+                // Stopped halfway is not finished: a full bar would say the
+                // sweep completed. What it did get is saved all the same.
+                window.ProgressOverlay?.hide();
+                this.dash.showNotification?.(
+                    this.t('dashboard.healthFetchPreviewsStopped',
+                        'Stopped after {done} of {total}', { done: refreshed, total: total || refreshed }),
+                    'info');
+            } else {
+                window.ProgressOverlay?.finish(
+                    this.t('dashboard.healthFetchPreviewsDone', 'Previews fetched.'));
+                this.dash.showNotification?.(
+                    this.t('dashboard.healthFetchPreviewsDone', 'Previews fetched.'), 'success');
+            }
         } catch {
+            window.ProgressOverlay?.hide();
+            // Says how far it got: a run that stopped halfway left those
+            // previews genuinely fetched, and starting over is not required.
             this.dash.showNotification?.(
-                this.t('dashboard.healthFetchPreviewsError', 'Could not fetch the previews.'), 'error');
+                total
+                    ? this.t('dashboard.healthFetchPreviewsPartial',
+                        'Stopped after {done} of {total}', { done: refreshed, total })
+                    : this.t('dashboard.healthFetchPreviewsError', 'Could not fetch the previews.'),
+                'error');
         } finally {
             this._fetchPreviewsRunning = false;
             if (button && button.isConnected) {

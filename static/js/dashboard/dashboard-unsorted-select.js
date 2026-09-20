@@ -822,6 +822,10 @@ class DashboardUnsortedSelect {
 
         await this._runOverEach(targets, {
             title: this.t('unsortedFetchPreviewsTitle', 'Fetching previews…'),
+            // The overlay, not a toast every twentieth row: each request is
+            // paced against the rate limit, so even a short sweep is seconds
+            // of waiting and the icon sweep already answers that with a bar.
+            progress: true,
             run: async (bookmark) => {
                 const url = String(bookmark?.url || '').trim();
                 if (!url) return 'failed';
@@ -906,17 +910,35 @@ class DashboardUnsortedSelect {
      * Walk a list, one call at a time, reporting progress in the notification
      * the run started with rather than one toast per row.
      */
-    async _runOverEach(targets, { title, run, done }) {
+    async _runOverEach(targets, { title, run, done, progress = false }) {
         const d = this.dash;
         this._busy = true;
         this.sync();
         let ok = 0;
         let failed = 0;
+        /*
+         * Stopping is the overlay's job, not a guess of ours: it blocks the
+         * page, and a sweep over a few hundred rows is minutes long, so a
+         * reader who started one by mistake needs a way out that is not a
+         * reload. The round in flight finishes; nothing after it starts.
+         */
+        let stopped = false;
+        const counted = (index) => this.t('unsortedSweepProgress',
+            `${index} of ${targets.length}`, { done: index, total: targets.length });
+        if (progress) {
+            window.ProgressOverlay?.show(title, counted(0), {
+                onCancel: () => { stopped = true; },
+                cancelLabel: this.t('unsortedSweepStop', 'Stop'),
+                cancellingLabel: this.t('unsortedSweepStopping', 'Stopping…'),
+            });
+            window.ProgressOverlay?.update(0, targets.length, counted(0));
+        }
         const notify = (text, kind) => d.showNotification(text, kind, { duration: 2500 });
-        notify(`${title} (0/${targets.length})`, 'info');
+        if (!progress) notify(`${title} (0/${targets.length})`, 'info');
         const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         try {
             for (let i = 0; i < targets.length; i += 1) {
+                if (stopped) break;
                 let result = 'failed';
                 try {
                     result = await run(targets[i]);
@@ -934,9 +956,11 @@ class DashboardUnsortedSelect {
                  * the same row again. Once.
                  */
                 if (result && result.rateLimited) {
-                    notify(this.t('unsortedBulkRateLimited',
+                    const waiting = this.t('unsortedBulkRateLimited',
                         `Rate limit reached — waiting ${result.retryAfter}s`,
-                        { seconds: result.retryAfter }), 'info');
+                        { seconds: result.retryAfter });
+                    if (progress) window.ProgressOverlay?.update(i, targets.length, waiting);
+                    else notify(waiting, 'info');
                     await wait((result.retryAfter + 1) * 1000);
                     try {
                         result = await run(targets[i]);
@@ -952,9 +976,11 @@ class DashboardUnsortedSelect {
                 } else {
                     failed += 1;
                 }
-                // Every twenty rows rather than every row: a notification per
-                // request on a 200-row sweep is a flicker, not progress.
-                if ((i + 1) % 20 === 0 && i + 1 < targets.length) {
+                if (progress) {
+                    window.ProgressOverlay?.update(i + 1, targets.length, counted(i + 1));
+                } else if ((i + 1) % 20 === 0 && i + 1 < targets.length) {
+                    // Every twenty rows rather than every row: a notification
+                    // per request on a 200-row sweep is a flicker, not progress.
                     notify(`${title} (${i + 1}/${targets.length})`, 'info');
                 }
                 // Paced under the limit rather than up against it. Sixty a
@@ -967,7 +993,19 @@ class DashboardUnsortedSelect {
         } finally {
             this._busy = false;
         }
-        d.showNotification(done(ok, failed), failed && !ok ? 'error' : (failed ? 'warning' : 'success'));
+        const summary = stopped
+            ? this.t('unsortedSweepStopped',
+                `Stopped after ${ok + failed} of ${targets.length}`,
+                { done: ok + failed, total: targets.length })
+            : done(ok, failed);
+        // Stopped halfway is not finished: filling the bar to a hundred would
+        // say the sweep completed. The toast below carries the count either way.
+        if (progress) {
+            if (stopped) window.ProgressOverlay?.hide();
+            else window.ProgressOverlay?.finish(summary);
+        }
+        d.showNotification(summary,
+            stopped ? 'info' : (failed && !ok ? 'error' : (failed ? 'warning' : 'success')));
         await this.unsorted.loadAndRender();
     }
 }

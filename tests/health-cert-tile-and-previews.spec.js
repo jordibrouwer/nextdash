@@ -109,7 +109,8 @@ test.describe('the filter-specific buttons', () => {
 test.describe('the missing-preview filter', () => {
     test('offers the one action that can empty it', async ({ page }) => {
         let refreshCalls = 0;
-        await page.route('**/api/previews/refresh', (route) => {
+        // The sweep runs in batches now, so the address carries offset/limit.
+        await page.route('**/api/previews/refresh**', (route) => {
             refreshCalls += 1;
             return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
@@ -133,5 +134,50 @@ test.describe('the missing-preview filter', () => {
 
         await page.getByRole('button', { name: 'Fetch previews', exact: true }).last().click();
         await expect.poll(() => refreshCalls, { timeout: 10_000 }).toBe(1);
+    });
+});
+
+/**
+ * The sweep takes minutes — one page fetch per bookmark — and it used to run
+ * behind a button that said "Fetching…" and nothing else, so a collection of
+ * any size looked like the app had hung. Config's own preview refresh answers
+ * this with the blocking bar; the same bar belongs here.
+ */
+test.describe('the fetch-previews sweep', () => {
+    test('runs behind the counting progress overlay, and can be stopped', async ({ page }) => {
+        let calls = 0;
+        await page.route('**/api/previews/refresh**', async (route) => {
+            calls += 1;
+            const offset = Number(new URL(route.request().url()).searchParams.get('offset') || 0);
+            // A collection big enough that the sweep is still running when the
+            // assertions look at it.
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ total: 400, refreshed: 5, next: offset + 5, done: false }),
+            });
+        });
+        await openHealth(page);
+        await dismissOnboardingIfPresent(page);
+
+        await page.click('[data-health-filter="missing-preview"]');
+        await openHealthToolbarMenu(page);
+        await page.locator('.health-view-fetch-previews-btn').click();
+        await page.locator('#app-modal.show')
+            .getByRole('button', { name: 'Fetch previews', exact: true }).click();
+
+        const overlay = page.locator('#nextdash-progress-overlay');
+        await expect(overlay).toBeVisible();
+        await expect(overlay.locator('[data-progress-status]')).toContainText(' of 400');
+        await expect(overlay.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', /\d+/);
+
+        const stop = overlay.locator('[data-progress-cancel]');
+        await expect(stop).toBeVisible();
+        await stop.click();
+        await expect(overlay).toBeHidden({ timeout: 15_000 });
+        // Stopped means stopped: no further round goes out.
+        const seen = calls;
+        await page.waitForTimeout(1000);
+        expect(calls).toBe(seen);
     });
 });

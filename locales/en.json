@@ -2029,7 +2029,17 @@
     "ivKeep": "Keep (move to the Kept tab)",
     "itKeep": "Keep: move to the Kept tab",
     "inboxTabsLabel": "Inbox tabs",
-    "inboxTabTriage": "To triage"
+    "inboxTabTriage": "To triage",
+    "unsortedSweepProgress": "{done} of {total}",
+    "unsortedSweepStop": "Stop",
+    "unsortedSweepStopping": "Stopping…",
+    "unsortedSweepStopped": "Stopped after {done} of {total}",
+    "healthFetchPreviewsCounting": "Reading the collection",
+    "healthFetchPreviewsProgress": "{done} of {total}",
+    "healthFetchPreviewsStop": "Stop",
+    "healthFetchPreviewsStopping": "Stopping…",
+    "healthFetchPreviewsStopped": "Stopped after {done} of {total}",
+    "healthFetchPreviewsPartial": "Stopped after {done} of {total}"
   },
   "health": {
     "reloadPage": "Reload page",
