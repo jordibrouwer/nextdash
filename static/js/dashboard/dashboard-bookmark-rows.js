@@ -1658,6 +1658,18 @@ class DashboardBookmarkRows {
                 d._tagPopoverCleanup = null;
             }
             window.FocusTrapUtils?.syncDashboardInert?.();
+            /*
+             * The Unsorted view refuses to repaint while a popover is open --
+             * its loadAndRender bails on `.move-popover`, which this one is,
+             * so that the row the popover hangs off cannot be detached under
+             * it. Nothing repainted it afterwards either, so a tag added here
+             * did not reach the grid until the next visit: grouping by tag
+             * still showed the row untagged. The popover is gone by the time
+             * this runs, so the guard no longer stands in the way.
+             */
+            if (d.unsorted?.isActiveView?.()) {
+                void d.unsorted.loadAndRender();
+            }
         };
         unbindPosition = this._attachActionPopoverPositioning(pop, anchorEl);
         d._tagPopoverCleanup = close;

@@ -1694,6 +1694,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 .dashboard-link--icon a,
 .health-link--icon a,
 .config-link--icon a,
+.unsorted-link--icon a,
 .header-destinations .page-nav-btn--inbox {
     border-bottom: 2px solid transparent;
 }
@@ -1701,6 +1702,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 .dashboard-link--icon a.active,
 .health-link--icon a.active,
 .config-link--icon a.active,
+.unsorted-link--icon a.active,
 .header-destinations .page-nav-btn--inbox.active {
     background: var(--background-secondary);
     color: var(--text-primary);
@@ -1712,6 +1714,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 .dashboard-link--icon .dashboard-link-icon,
 .health-link--icon .health-link-icon,
 .config-link--icon .config-link-icon,
+.unsorted-link--icon .unsorted-link-icon,
 .header-destinations .page-nav-btn--inbox .page-tab-icon--svg {
     width: 1.15rem;
     height: 1.15rem;
