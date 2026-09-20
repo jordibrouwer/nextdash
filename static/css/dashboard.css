@@ -903,7 +903,8 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 /* Tag filter view — same dashboard-grid / packed-columns as normal categories */
-#dashboard-layout.dashboard-grid.tag-filter-view {
+#dashboard-layout.dashboard-grid.tag-filter-view,
+#dashboard-layout.dashboard-grid.unsorted-view {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -931,13 +932,15 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     width: 100%;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar {
+#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar,
+#dashboard-layout.unsorted-view .tag-filter-bulk-toolbar {
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: none;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar .recent-bookmarks-open-btn.modal-button {
+#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar .recent-bookmarks-open-btn.modal-button,
+#dashboard-layout.unsorted-view .tag-filter-bulk-toolbar .recent-bookmarks-open-btn.modal-button {
     flex: 0 1 auto;
     min-width: min(100%, 10rem);
 }
@@ -1105,12 +1108,14 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     outline: none;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid {
+#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid,
+#dashboard-layout.unsorted-view .tag-filter-view-body.dashboard-grid {
     width: 100%;
     max-width: 100%;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid:not(.packed-columns) {
+#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid:not(.packed-columns),
+#dashboard-layout.unsorted-view .tag-filter-view-body.dashboard-grid:not(.packed-columns) {
     width: fit-content;
     max-width: min(100%, var(--dashboard-grid-max-width, 100%));
     margin-inline: auto;
@@ -1124,12 +1129,18 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     box-sizing: border-box;
 }
 
-/* Equal-width columns: one chunk (10 bookmarks) per dashboard-column */
-#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns {
+/*
+ * Equal-width columns. The tag filter puts one chunk per column; the
+ * unsorted view stacks several per column so the chunks read left to
+ * right and wrap onto a band underneath (dashboard-unsorted.js).
+ */
+#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns,
+#dashboard-layout.unsorted-view .tag-filter-view-body.packed-columns {
     column-gap: var(--gap, 1.5rem);
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns .dashboard-column {
+#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns .dashboard-column,
+#dashboard-layout.unsorted-view .tag-filter-view-body.packed-columns .dashboard-column {
     flex: 1 1 0;
     flex-basis: min(
         var(--dashboard-column-max, 300px),
@@ -1146,18 +1157,21 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     min-width: 0;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-view-body:not(.packed-columns) .category.tag-filter-chunk {
+#dashboard-layout.tag-filter-view .tag-filter-view-body:not(.packed-columns) .category.tag-filter-chunk,
+#dashboard-layout.unsorted-view .tag-filter-view-body:not(.packed-columns) .category.tag-filter-chunk {
     width: 100%;
     max-width: 100%;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmarks-list {
     width: 100%;
     max-width: 100%;
 }
 
 /* Tag filter always uses vertical bookmark rows (overrides launcher tiles on parent grid) */
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmarks-list {
     display: grid;
     grid-template-columns: var(--bookmark-lead-col, minmax(1.25rem, max-content)) minmax(0, 1fr) max-content;
     row-gap: var(--space-2, 0.5rem);
@@ -1165,11 +1179,13 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     flex-wrap: unset;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list > * {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list > *,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmarks-list > * {
     grid-column: 1 / -1;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-link {
     display: grid;
     grid-template-columns: subgrid;
     grid-column: 1 / -1;
@@ -1184,19 +1200,23 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     flex-direction: unset;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link:hover {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link:hover,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-link:hover {
     transform: none;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open::before {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open::before,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-open::before {
     content: none;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-reorder-handle {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-reorder-handle,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-reorder-handle {
     display: block !important;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-shortcut {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-shortcut,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-shortcut {
     display: block !important;
     grid-column: 3;
     grid-row: 1;
@@ -1204,7 +1224,8 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     justify-self: end;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"],
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] {
     grid-template-columns:
         var(--bookmark-lead-col, minmax(1.25rem, max-content))
         minmax(0, 1fr)
@@ -1212,27 +1233,33 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
         max-content;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .status-text {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .status-text,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .status-text {
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
     align-self: center;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .bookmark-shortcut {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .bookmark-shortcut,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .bookmark-shortcut {
     grid-column: 4;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open-count {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open-count,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-open-count {
     display: none !important;
 }
 
 #dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-pin-badge:not(.is-empty),
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-note-badge:not(.is-empty) {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-note-badge:not(.is-empty),
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-pin-badge:not(.is-empty),
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-note-badge:not(.is-empty) {
     display: inline-flex !important;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-lead {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-lead,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-lead {
     display: inline-flex;
     justify-content: flex-start;
     align-items: center;
@@ -1243,17 +1270,20 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     min-width: 1.15em;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon-slot {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon-slot,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-icon-slot {
     width: auto;
     height: auto;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-icon {
     width: 1.15em;
     height: 1.15em;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk a.bookmark-open {
+#dashboard-layout.tag-filter-view .tag-filter-chunk a.bookmark-open,
+#dashboard-layout.unsorted-view .tag-filter-chunk a.bookmark-open {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -1265,7 +1295,8 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     overflow: hidden;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-text {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-text,
+#dashboard-layout.unsorted-view .tag-filter-chunk .bookmark-text {
     font-size: var(--bookmark-font-size, 1rem);
     text-align: left;
     white-space: nowrap;
@@ -8835,4 +8866,182 @@ body[data-action-bar="bottom"] #dashboard-layout {
         padding-right: 0;
         padding-bottom: 72px;
     }
+}
+
+/*
+ * Unsorted's header band. The shell's own .lvs-header carries the surface and
+ * the sticky behaviour; this only sizes it inside #dashboard-layout, which is
+ * a flex column here rather than the shell's grid, so `grid-area: header` has
+ * nothing to place it against.
+ */
+#dashboard-layout.unsorted-view .unsorted-view-head {
+    width: 100%;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+/*
+ * The toolbar row and the grid under it. Both are plain blocks in the
+ * container's flex column; only the grid's own body carries the packed-column
+ * machinery, which is why the row above it can stay a simple flex line.
+ */
+#dashboard-layout.unsorted-view .unsorted-view-toolbar {
+    width: 100%;
+    flex-shrink: 0;
+    margin-top: var(--space-3);
+}
+
+#dashboard-layout.unsorted-view .unsorted-view-main {
+    width: 100%;
+    min-width: 0;
+}
+
+#dashboard-layout.unsorted-view .empty-state--unsorted {
+    padding: var(--space-6, 2rem) 0;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+/*
+ * A group heading reuses .category-title's type so a grouped Unsorted reads as
+ * the same kind of page as a dashboard full of categories. It is not a real
+ * category title, though: no collapse caret, no rename, no reorder handle, so
+ * none of that column's interactive spacing applies either.
+ */
+#dashboard-layout.unsorted-view .unsorted-group-title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-1, 0.28rem);
+    cursor: default;
+}
+
+#dashboard-layout.unsorted-view .unsorted-group-count {
+    margin-left: auto;
+    font-size: calc(var(--font-size-text) * 0.857);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+#dashboard-layout.unsorted-view .unsorted-view-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.55rem);
+}
+
+/*
+ * Neutral chrome, the way the inbox's bulk buttons are: these sit beside a
+ * count, not at the end of a flow, so none of them is the thing to press. The
+ * Select toggle takes the accent only while it is on, which is the one state
+ * worth calling out.
+ */
+#dashboard-layout.unsorted-view .unsorted-view-btn {
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.7rem);
+    border-radius: var(--radius-4, 0.4rem);
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: var(--text-sm, 0.8rem);
+    line-height: 1.2;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+#dashboard-layout.unsorted-view .unsorted-view-btn:hover,
+#dashboard-layout.unsorted-view .unsorted-view-btn:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    outline: none;
+}
+
+#dashboard-layout.unsorted-view .unsorted-view-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+#dashboard-layout.unsorted-view .unsorted-view-btn.is-active {
+    border-color: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--accent-primary);
+}
+
+/*
+ * The row's tick box, over the lead icon.
+ *
+ * Absolute, because the row is a grid whose columns are already spoken for; the
+ * same reason and the same placement the inbox uses (.inbox-item-check). Quiet
+ * until the row is hovered, focused or ticked, so an untouched list stays calm.
+ */
+#dashboard-layout.unsorted-view .unsorted-row-check {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+#dashboard-layout.unsorted-view .unsorted-row-check-input {
+    width: 0.85rem;
+    height: 0.85rem;
+    margin: 0;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+    border-radius: var(--radius-2, 0.2rem);
+    /* A backing, so the box stays legible over the favicon underneath. */
+    box-shadow: 0 0 0 2px var(--background-secondary);
+    background: var(--background-secondary);
+}
+
+#dashboard-layout.unsorted-view .unsorted-row-check-input:not(:checked) {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+#dashboard-layout.unsorted-view .bookmark-link:hover .unsorted-row-check-input,
+#dashboard-layout.unsorted-view .bookmark-link:focus-within .unsorted-row-check-input,
+#dashboard-layout.unsorted-view .unsorted-row-check-input:focus-visible {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    #dashboard-layout.unsorted-view .unsorted-row-check-input:not(:checked) {
+        opacity: 1;
+    }
+}
+
+/* The bar sits in the column above the grid, the way health's and the inbox's
+   do, rather than floating over the page. */
+#dashboard-layout.unsorted-view .unsorted-select-toolbar {
+    position: static;
+    width: 100%;
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+/* Bulk tag popover. The rows are .move-popover-item, so they take the popover's
+   own styling; only the count on the right is new -- it says how much of the
+   selection already carries the tag, which is what makes the row a decision. */
+#unsorted-tags-popover .unsorted-tags-popover-list {
+    display: flex;
+    flex-direction: column;
+    max-height: min(60vh, 22rem);
+    overflow-y: auto;
+}
+
+#unsorted-tags-popover .unsorted-tags-popover-count {
+    margin-left: auto;
+    padding-left: var(--space-3, 0.7rem);
+    font-size: calc(var(--font-size-text) * 0.857);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+#dashboard-layout.unsorted-view .unsorted-view-count {
+    font-size: calc(var(--font-size-text) * 0.914);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
 }
