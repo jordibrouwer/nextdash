@@ -888,8 +888,8 @@
     "healthFilterMissingPreview": "Sin vista previa",
     "healthFilterCertificates": "Certificados",
     "healthFetchPreviews": "Obtener las vistas previas",
-    "healthFetchPreviewsHint": "Pedir a la página de cada marcador su título, su descripción y su imagen",
-    "healthFetchPreviewsConfirm": "¿Pedir a la página de cada marcador su título, su descripción y su imagen? {count} fila(s) no tienen ninguna. Es una petición por marcador, así que tarda un rato.",
+    "healthFetchPreviewsHint": "Pedir a cada página su título, descripción e imagen: toda la colección, no solo las filas de este filtro",
+    "healthFetchPreviewsConfirm": "¿Pedir a cada página su título, descripción e imagen? Recorre toda la colección, no solo las {count} fila(s) de este filtro, con una petición por marcador, así que tarda.",
     "healthFetchPreviewsRunning": "Obteniendo…",
     "healthFetchPreviewsDone": "Vistas previas obtenidas.",
     "healthFetchPreviewsError": "No se pudieron obtener las vistas previas.",
@@ -2039,7 +2039,8 @@
     "healthFetchPreviewsStop": "Detener",
     "healthFetchPreviewsStopping": "Deteniendo…",
     "healthFetchPreviewsStopped": "Detenido tras {done} de {total}",
-    "healthFetchPreviewsPartial": "Detenido tras {done} de {total}"
+    "healthFetchPreviewsPartial": "Detenido tras {done} de {total}",
+    "healthFetchPreviewsWaiting": "Límite alcanzado — esperando {seconds}s"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -5590,7 +5591,8 @@
     "unsortedEnabledLabel": "Guardar enlaces sin archivarlos",
     "unsortedEnabledHint": "Añade una pestaña Guardados a la bandeja, y hace que Guardar en el triaje deje el enlace ahí en vez de marcarlo como leído.",
     "refreshAllPreviewsStop": "Detener",
-    "refreshAllPreviewsStopping": "Deteniendo…"
+    "refreshAllPreviewsStopping": "Deteniendo…",
+    "refreshAllPreviewsWaiting": "Límite alcanzado — esperando {seconds}s"
   },
   "colors": {
     "title": "personalización del tema",

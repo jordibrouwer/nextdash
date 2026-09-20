@@ -4706,7 +4706,8 @@ class DashboardHealth {
             return '';
         }
         return `<button type="button" class="health-view-fetch-previews-btn" title="${this.escape(
-            this.t('dashboard.healthFetchPreviewsHint', 'Ask every bookmark\u2019s page for its title, description and image')
+            this.t('dashboard.healthFetchPreviewsHint',
+                'Ask every bookmark\u2019s page for its title, description and image \u2014 the whole collection, not only the rows in this filter')
         )}">${this.escape(this.t('dashboard.healthFetchPreviews', 'Fetch previews'))}</button>`;
     }
 
@@ -4726,7 +4727,7 @@ class DashboardHealth {
         const ok = await this.confirm(
             this.t('dashboard.healthFetchPreviews', 'Fetch previews'),
             this.t('dashboard.healthFetchPreviewsConfirm',
-                'Ask every bookmark\u2019s page for its title, description and image? {count} row(s) have none. This is one request per bookmark, so it takes a while.',
+                'Ask every bookmark\u2019s page for its title, description and image? This walks the whole collection, not only the {count} row(s) in this filter, at one request per bookmark, so it takes a while.',
                 { count: missing }),
             { confirmText: this.t('dashboard.healthFetchPreviews', 'Fetch previews') }
         );
@@ -4768,8 +4769,27 @@ class DashboardHealth {
             // server's own position is the only one that stays true.
             for (let round = 0; round < 2000; round += 1) {
                 if (stopped) break;
-                const res = await fetcher(`/api/previews/refresh?offset=${offset}&limit=${BATCH}`,
+                /*
+                 * A refusal is not a failure.
+                 *
+                 * The endpoint is behind the sixty-a-minute limiter the preview
+                 * and icon fetches share, so a sweep of any size reaches it.
+                 * Throwing there ended the whole run and reported the rows it
+                 * had already fetched as a run that stopped, for no reason
+                 * other than its own haste. The server says how long to wait.
+                 */
+                let res = await fetcher(`/api/previews/refresh?offset=${offset}&limit=${BATCH}`,
                     { method: 'POST' });
+                if (res.status === 429) {
+                    const retryAfter = Number(res.headers.get('Retry-After')) || 60;
+                    window.ProgressOverlay?.update(Math.min(offset, total), total,
+                        this.t('dashboard.healthFetchPreviewsWaiting',
+                            'Rate limit reached — waiting {seconds}s', { seconds: retryAfter }));
+                    await new Promise((resolve) => setTimeout(resolve, (retryAfter + 1) * 1000));
+                    if (stopped) break;
+                    res = await fetcher(`/api/previews/refresh?offset=${offset}&limit=${BATCH}`,
+                        { method: 'POST' });
+                }
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const body = await res.json().catch(() => ({}));
 

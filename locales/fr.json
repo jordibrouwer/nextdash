@@ -888,8 +888,8 @@
     "healthFilterMissingPreview": "Aperçu manquant",
     "healthFilterCertificates": "Certificats",
     "healthFetchPreviews": "Récupérer les aperçus",
-    "healthFetchPreviewsHint": "Demander à chaque page de favori son titre, sa description et son image",
-    "healthFetchPreviewsConfirm": "Demander à chaque page de favori son titre, sa description et son image ? {count} ligne(s) n’en ont pas. C’est une requête par favori, cela prend donc un moment.",
+    "healthFetchPreviewsHint": "Demander à chaque page son titre, sa description et son image — toute la collection, pas seulement les lignes de ce filtre",
+    "healthFetchPreviewsConfirm": "Demander à chaque page son titre, sa description et son image ? Cela parcourt toute la collection, pas seulement les {count} ligne(s) de ce filtre, à raison d’une requête par signet : c’est long.",
     "healthFetchPreviewsRunning": "Récupération…",
     "healthFetchPreviewsDone": "Aperçus récupérés.",
     "healthFetchPreviewsError": "Impossible de récupérer les aperçus.",
@@ -2039,7 +2039,8 @@
     "healthFetchPreviewsStop": "Arrêter",
     "healthFetchPreviewsStopping": "Arrêt…",
     "healthFetchPreviewsStopped": "Arrêté après {done} sur {total}",
-    "healthFetchPreviewsPartial": "Arrêté après {done} sur {total}"
+    "healthFetchPreviewsPartial": "Arrêté après {done} sur {total}",
+    "healthFetchPreviewsWaiting": "Limite atteinte — attente de {seconds}s"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -5590,7 +5591,8 @@
     "unsortedEnabledLabel": "Garder des liens sans les classer",
     "unsortedEnabledHint": "Ajoute un onglet Gardés à la boîte, et fait que Garder dans le tri y dépose le lien au lieu de le marquer comme lu.",
     "refreshAllPreviewsStop": "Arrêter",
-    "refreshAllPreviewsStopping": "Arrêt…"
+    "refreshAllPreviewsStopping": "Arrêt…",
+    "refreshAllPreviewsWaiting": "Limite atteinte — attente de {seconds}s"
   },
   "colors": {
     "title": "personnalisation du thème",

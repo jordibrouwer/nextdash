@@ -888,8 +888,8 @@
     "healthFilterMissingPreview": "Keine Vorschau",
     "healthFilterCertificates": "Zertifikate",
     "healthFetchPreviews": "Vorschauen holen",
-    "healthFetchPreviewsHint": "Jede Lesezeichenseite nach Titel, Beschreibung und Bild fragen",
-    "healthFetchPreviewsConfirm": "Jede Lesezeichenseite nach Titel, Beschreibung und Bild fragen? {count} Zeile(n) haben keine. Das ist eine Anfrage pro Lesezeichen und dauert entsprechend.",
+    "healthFetchPreviewsHint": "Jede Lesezeichenseite nach Titel, Beschreibung und Bild fragen — die ganze Sammlung, nicht nur die Zeilen in diesem Filter",
+    "healthFetchPreviewsConfirm": "Jede Lesezeichenseite nach Titel, Beschreibung und Bild fragen? Das geht durch die ganze Sammlung, nicht nur die {count} Zeile(n) in diesem Filter, mit einer Anfrage pro Lesezeichen — das dauert.",
     "healthFetchPreviewsRunning": "Wird geholt…",
     "healthFetchPreviewsDone": "Vorschauen geholt.",
     "healthFetchPreviewsError": "Die Vorschauen konnten nicht geholt werden.",
@@ -2039,7 +2039,8 @@
     "healthFetchPreviewsStop": "Stopp",
     "healthFetchPreviewsStopping": "Wird gestoppt…",
     "healthFetchPreviewsStopped": "Gestoppt nach {done} von {total}",
-    "healthFetchPreviewsPartial": "Gestoppt nach {done} von {total}"
+    "healthFetchPreviewsPartial": "Gestoppt nach {done} von {total}",
+    "healthFetchPreviewsWaiting": "Limit erreicht — {seconds}s Wartezeit"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -5590,7 +5591,8 @@
     "unsortedEnabledLabel": "Links behalten, ohne sie abzulegen",
     "unsortedEnabledHint": "Fügt dem Posteingang den Tab Behalten hinzu; Behalten in der Sichtung legt den Link dort ab, statt ihn als gelesen zu markieren.",
     "refreshAllPreviewsStop": "Stopp",
-    "refreshAllPreviewsStopping": "Wird gestoppt…"
+    "refreshAllPreviewsStopping": "Wird gestoppt…",
+    "refreshAllPreviewsWaiting": "Limit erreicht — {seconds}s Wartezeit"
   },
   "colors": {
     "title": "themenanpassung",

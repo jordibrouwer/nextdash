@@ -888,8 +888,8 @@
     "healthFilterMissingPreview": "缺少预览",
     "healthFilterCertificates": "证书",
     "healthFetchPreviews": "获取预览",
-    "healthFetchPreviewsHint": "向每个书签的页面索取标题、描述和图片",
-    "healthFetchPreviewsConfirm": "向每个书签的页面索取标题、描述和图片？有 {count} 行还没有。每个书签一次请求，所以要等一会儿。",
+    "healthFetchPreviewsHint": "向每个书签的页面索取标题、描述和图片 —— 整个收藏，而不只是此筛选下的条目",
+    "healthFetchPreviewsConfirm": "向每个书签的页面索取标题、描述和图片？这会遍历整个收藏，而不只是此筛选下的 {count} 条，每个书签一个请求，所以会花些时间。",
     "healthFetchPreviewsRunning": "正在获取…",
     "healthFetchPreviewsDone": "预览已获取。",
     "healthFetchPreviewsError": "无法获取预览。",
@@ -2039,7 +2039,8 @@
     "healthFetchPreviewsStop": "停止",
     "healthFetchPreviewsStopping": "正在停止…",
     "healthFetchPreviewsStopped": "已在 {done}/{total} 处停止",
-    "healthFetchPreviewsPartial": "已在 {done}/{total} 处停止"
+    "healthFetchPreviewsPartial": "已在 {done}/{total} 处停止",
+    "healthFetchPreviewsWaiting": "已达速率上限 — 等待 {seconds} 秒"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -5590,7 +5591,8 @@
     "unsortedEnabledLabel": "保留链接而不归档",
     "unsortedEnabledHint": "在收件箱里增加「已保留」标签页；整理时的“保留”会把链接放到那里，而不是标记为已读。",
     "refreshAllPreviewsStop": "停止",
-    "refreshAllPreviewsStopping": "正在停止…"
+    "refreshAllPreviewsStopping": "正在停止…",
+    "refreshAllPreviewsWaiting": "已达速率上限 — 等待 {seconds} 秒"
   },
   "colors": {
     "title": "主题自定义",

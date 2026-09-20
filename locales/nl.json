@@ -888,8 +888,8 @@
     "healthFilterMissingPreview": "Geen preview",
     "healthFilterCertificates": "Certificaten",
     "healthFetchPreviews": "Previews ophalen",
-    "healthFetchPreviewsHint": "Vraag elke bladwijzerpagina om zijn titel, beschrijving en afbeelding",
-    "healthFetchPreviewsConfirm": "Elke bladwijzerpagina om zijn titel, beschrijving en afbeelding vragen? {count} rij(en) hebben er geen. Dit is één verzoek per bladwijzer, dus het duurt even.",
+    "healthFetchPreviewsHint": "Vraag elke bookmarkpagina om titel, omschrijving en afbeelding — de hele collectie, niet alleen de rijen in dit filter",
+    "healthFetchPreviewsConfirm": "Elke bookmarkpagina om titel, omschrijving en afbeelding vragen? Dit loopt de hele collectie door, niet alleen de {count} rij(en) in dit filter, met één verzoek per bookmark, dus het duurt even.",
     "healthFetchPreviewsRunning": "Ophalen…",
     "healthFetchPreviewsDone": "Previews opgehaald.",
     "healthFetchPreviewsError": "Kon de previews niet ophalen.",
@@ -2039,7 +2039,8 @@
     "healthFetchPreviewsStop": "Stoppen",
     "healthFetchPreviewsStopping": "Stoppen…",
     "healthFetchPreviewsStopped": "Gestopt na {done} van {total}",
-    "healthFetchPreviewsPartial": "Gestopt na {done} van {total}"
+    "healthFetchPreviewsPartial": "Gestopt na {done} van {total}",
+    "healthFetchPreviewsWaiting": "Limiet bereikt — {seconds}s wachten"
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -5590,7 +5591,8 @@
     "unsortedEnabledLabel": "Links bewaren zonder op te bergen",
     "unsortedEnabledHint": "Voegt het tabblad Bewaard toe aan de inbox, en laat Keep in de triage een link daar neerzetten in plaats van hem als gelezen te markeren.",
     "refreshAllPreviewsStop": "Stoppen",
-    "refreshAllPreviewsStopping": "Stoppen…"
+    "refreshAllPreviewsStopping": "Stoppen…",
+    "refreshAllPreviewsWaiting": "Limiet bereikt — {seconds}s wachten"
   },
   "colors": {
     "title": "thema-aanpassing",

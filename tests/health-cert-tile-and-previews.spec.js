@@ -181,3 +181,63 @@ test.describe('the fetch-previews sweep', () => {
         expect(calls).toBe(seen);
     });
 });
+
+/**
+ * The endpoint is behind the sixty-a-minute limiter the preview and icon
+ * fetches share, and a sweep of any size walks straight into it. A refusal is
+ * not a failure: the server says how long to wait. The sweep used to throw on
+ * it and report the whole run as stopped.
+ */
+test.describe('a rate-limited preview sweep', () => {
+    test('waits the server out instead of giving up', async ({ page }) => {
+        let calls = 0;
+        await page.route('**/api/previews/refresh**', async (route) => {
+            calls += 1;
+            if (calls === 1) {
+                await route.fulfill({
+                    status: 429,
+                    headers: { 'Retry-After': '1' },
+                    contentType: 'application/json',
+                    body: JSON.stringify({ error: 'rate limited' }),
+                });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ total: 5, refreshed: 5, next: 5, done: true }),
+            });
+        });
+        await openHealth(page);
+        await dismissOnboardingIfPresent(page);
+
+        await page.click('[data-health-filter="missing-preview"]');
+        await openHealthToolbarMenu(page);
+        await page.locator('.health-view-fetch-previews-btn').click();
+        await page.locator('#app-modal.show')
+            .getByRole('button', { name: 'Fetch previews', exact: true }).click();
+
+        await expect.poll(() => calls, { timeout: 20_000 }).toBe(2);
+        await expect(page.locator('.app-notification')).toContainText(/previews fetched/i, { timeout: 20_000 });
+    });
+});
+
+/**
+ * The button sits on the missing-preview filter but the endpoint behind it
+ * walks the whole collection, not the rows on screen. The copy said "every
+ * bookmark's page" without saying that the filter does not narrow it, which
+ * reads as an action on the {count} rows the sentence goes on to mention.
+ */
+test.describe('what the fetch-previews button promises', () => {
+    test('says the sweep is the whole collection, not the filtered rows', async ({ page }) => {
+        await openHealth(page);
+        await dismissOnboardingIfPresent(page);
+        await page.click('[data-health-filter="missing-preview"]');
+        await openHealthToolbarMenu(page);
+
+        await expect(page.locator('.health-view-fetch-previews-btn'))
+            .toHaveAttribute('title', /whole collection/i);
+        await page.locator('.health-view-fetch-previews-btn').click();
+        await expect(page.locator('#app-modal.show')).toContainText(/whole collection/i);
+    });
+});

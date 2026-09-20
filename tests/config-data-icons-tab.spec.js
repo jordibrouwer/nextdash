@@ -123,3 +123,35 @@ test('the preview refresh can be stopped halfway', async ({ page }) => {
     await stop.click();
     await expect(overlay).toBeHidden({ timeout: 15_000 });
 });
+
+/**
+ * Same limiter, same answer: Config's own sweep waits the server out rather
+ * than reporting a refusal as a run that stopped halfway.
+ */
+test('a rate-limited preview refresh waits and carries on', async ({ page }) => {
+    let calls = 0;
+    await page.route('**/api/previews/refresh**', async (route) => {
+        calls += 1;
+        if (calls === 1) {
+            await route.fulfill({
+                status: 429,
+                headers: { 'Retry-After': '1' },
+                contentType: 'application/json',
+                body: JSON.stringify({ error: 'rate limited' }),
+            });
+            return;
+        }
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ total: 5, refreshed: 5, next: 5, done: true }),
+        });
+    });
+    await openData(page);
+    await page.locator('[data-db-tab="icons"]').click();
+    await page.locator('[data-backup-action="refresh-previews"]').click();
+    await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
+
+    await expect.poll(() => calls, { timeout: 20_000 }).toBe(2);
+    await expect(page.locator('.app-notification')).toContainText(/refreshed/i, { timeout: 20_000 });
+});

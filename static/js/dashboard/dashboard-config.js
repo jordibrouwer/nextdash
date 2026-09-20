@@ -7065,8 +7065,23 @@ class DashboardConfig {
             // server's own position is the only one that stays true.
             for (let round = 0; round < 2000; round++) {
                 if (stopped) break;
-                const res = await this.writeFetch(
+                // A refusal is not a failure: the endpoint shares the
+                // sixty-a-minute limiter with the preview and icon fetches, and
+                // a sweep of a real collection reaches it. The server says how
+                // long to wait, so the round is asked for again rather than the
+                // run ending on what it had.
+                let res = await this.writeFetch(
                     `/api/previews/refresh?offset=${offset}&limit=${BATCH}`, { method: 'POST' });
+                if (res.status === 429) {
+                    const retryAfter = Number(res.headers.get('Retry-After')) || 60;
+                    window.ProgressOverlay?.update(Math.min(offset, total), total,
+                        this.t('config.refreshAllPreviewsWaiting', 'Rate limit reached — waiting {seconds}s')
+                            .replace('{seconds}', String(retryAfter)));
+                    await new Promise((resolve) => setTimeout(resolve, (retryAfter + 1) * 1000));
+                    if (stopped) break;
+                    res = await this.writeFetch(
+                        `/api/previews/refresh?offset=${offset}&limit=${BATCH}`, { method: 'POST' });
+                }
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const body = await res.json();
 

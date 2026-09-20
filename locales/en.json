@@ -888,8 +888,8 @@
     "healthFilterMissingPreview": "Missing preview",
     "healthFilterCertificates": "Certificates",
     "healthFetchPreviews": "Fetch previews",
-    "healthFetchPreviewsHint": "Ask every bookmark’s page for its title, description and image",
-    "healthFetchPreviewsConfirm": "Ask every bookmark’s page for its title, description and image? {count} row(s) have none. This is one request per bookmark, so it takes a while.",
+    "healthFetchPreviewsHint": "Ask every bookmark’s page for its title, description and image — the whole collection, not only the rows in this filter",
+    "healthFetchPreviewsConfirm": "Ask every bookmark’s page for its title, description and image? This walks the whole collection, not only the {count} row(s) in this filter, at one request per bookmark, so it takes a while.",
     "healthFetchPreviewsRunning": "Fetching…",
     "healthFetchPreviewsDone": "Previews fetched.",
     "healthFetchPreviewsError": "Could not fetch the previews.",
@@ -2039,7 +2039,8 @@
     "healthFetchPreviewsStop": "Stop",
     "healthFetchPreviewsStopping": "Stopping…",
     "healthFetchPreviewsStopped": "Stopped after {done} of {total}",
-    "healthFetchPreviewsPartial": "Stopped after {done} of {total}"
+    "healthFetchPreviewsPartial": "Stopped after {done} of {total}",
+    "healthFetchPreviewsWaiting": "Rate limit reached — waiting {seconds}s"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -5622,7 +5623,8 @@
     "unsortedEnabledLabel": "Keep links without filing them",
     "unsortedEnabledHint": "Adds a Kept tab to the inbox, and makes Keep in triage put a link there instead of marking it read.",
     "refreshAllPreviewsStop": "Stop",
-    "refreshAllPreviewsStopping": "Stopping…"
+    "refreshAllPreviewsStopping": "Stopping…",
+    "refreshAllPreviewsWaiting": "Rate limit reached — waiting {seconds}s"
   },
   "colors": {
     "title": "theme customization",
