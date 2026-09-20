@@ -424,11 +424,16 @@
         getBookmarkPool() {
             const dash = window.dashboardInstance;
             if (!dash) return [];
-            return dash.settings?.globalShortcuts
+            const pool = dash.settings?.globalShortcuts
                 ? dash.allBookmarks
                 : dash.allBookmarks?.length
                   ? dash.allBookmarks
                   : dash.bookmarks;
+            // Kept bookmarks carry tags of their own and are tagged from their
+            // own view, but they are not filed yet -- listing their tags here
+            // would put a route to them on the dashboard, which is the one
+            // place they stay out of until they have a category.
+            return window.DashboardUnsorted?.withoutUnsorted?.(pool) ?? pool;
         },
 
         /**

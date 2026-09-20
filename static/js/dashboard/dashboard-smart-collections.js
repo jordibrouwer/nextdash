@@ -574,8 +574,12 @@ class DashboardSmartCollections {
 
     getSmartCollectionSourceBookmarks() {
         const d = this.dash;
+        // Never the unsorted page: every collection built from this pool is
+        // drawn on the dashboard, and a kept bookmark has not been filed there
+        // yet. Tag collections are the sharpest case -- tagging a row in
+        // Unsorted would otherwise publish it to the grid.
         if (Array.isArray(d.allBookmarks) && d.allBookmarks.length > 0) {
-            return d.allBookmarks;
+            return window.DashboardUnsorted?.withoutUnsorted?.(d.allBookmarks) ?? d.allBookmarks;
         }
         return d.bookmarks;
     }
