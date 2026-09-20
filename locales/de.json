@@ -2051,7 +2051,16 @@
     "unsortedSelectExport": "Exportieren",
     "unsortedExported": "{count} Lesezeichen exportiert",
     "unsortedSelectOpen": "Öffnen",
-    "unsortedSelectSnooze": "Später"
+    "unsortedSelectSnooze": "Später",
+    "unsortedSelectSuggest": "Tags vorschlagen",
+    "unsortedSuggestDoneSome": "{count} getaggt, {failed} fehlgeschlagen",
+    "unsortedSuggestCount": "Vorgeschlagen für {count}",
+    "unsortedSuggestApply": "Anwenden",
+    "tagSuggestAdd": "Dieses Lesezeichen mit #{tag} versehen",
+    "tagSuggestDismiss": "#{tag} hier nicht mehr vorschlagen",
+    "unsortedSuggestNone": "Hierfür gibt es nichts vorzuschlagen",
+    "unsortedSuggestTitle": "Vorgeschlagene Tags",
+    "unsortedSuggestDone": "{count} Lesezeichen getaggt"
   },
   "health": {
     "reloadPage": "Seite neu laden",

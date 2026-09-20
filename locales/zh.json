@@ -2051,7 +2051,16 @@
     "unsortedSelectExport": "导出",
     "unsortedExported": "已导出 {count} 条书签",
     "unsortedSelectOpen": "打开",
-    "unsortedSelectSnooze": "暂缓"
+    "unsortedSelectSnooze": "暂缓",
+    "unsortedSelectSuggest": "建议标签",
+    "unsortedSuggestDoneSome": "已为 {count} 条加标签，{failed} 条失败",
+    "unsortedSuggestCount": "为 {count} 条建议",
+    "unsortedSuggestApply": "应用",
+    "tagSuggestAdd": "给这个书签加上 #{tag}",
+    "tagSuggestDismiss": "不再在这里建议 #{tag}",
+    "unsortedSuggestNone": "这些暂无可建议的标签",
+    "unsortedSuggestTitle": "建议的标签",
+    "unsortedSuggestDone": "已为 {count} 条书签加标签"
   },
   "health": {
     "reloadPage": "重新加载页面",

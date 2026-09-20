@@ -2051,7 +2051,16 @@
     "unsortedSelectExport": "Exportar",
     "unsortedExported": "{count} marcador(es) exportados",
     "unsortedSelectOpen": "Abrir",
-    "unsortedSelectSnooze": "Posponer"
+    "unsortedSelectSnooze": "Posponer",
+    "unsortedSelectSuggest": "Proponer etiquetas",
+    "unsortedSuggestDoneSome": "{count} etiquetados, {failed} fallidos",
+    "unsortedSuggestCount": "Propuesto para {count}",
+    "unsortedSuggestApply": "Aplicar",
+    "tagSuggestAdd": "Etiquetar este marcador con #{tag}",
+    "tagSuggestDismiss": "No proponer #{tag} aquí",
+    "unsortedSuggestNone": "No hay nada que proponer para estos",
+    "unsortedSuggestTitle": "Etiquetas propuestas",
+    "unsortedSuggestDone": "{count} marcador(es) etiquetados"
   },
   "health": {
     "reloadPage": "Recargar la página",

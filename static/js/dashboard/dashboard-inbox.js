@@ -197,6 +197,8 @@ class DashboardInbox {
                     this.openBulkPromoteMenu(btn);
                 } else if (action === 'keep-visible') {
                     this.keepOnlyVisibleChecked();
+                } else if (action === 'suggest') {
+                    this.openSuggestPopover(btn);
                 }
             });
             // Between the toolbar row and the body, which is where it sat when
@@ -226,6 +228,7 @@ class DashboardInbox {
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="open">${this.escape(this.t('dashboard.inboxSelectionOpen', 'Open'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="copy">${this.escape(this.t('dashboard.inboxSelectionCopy', 'Copy links'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="suggest">${this.escape(this.t('dashboard.unsortedSelectSuggest', 'Suggest tags'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="read">${this.escape(this.t('dashboard.inboxMarkRead', 'Mark read'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="snooze">${this.escape(this.t('dashboard.inboxSnooze', 'Snooze'))}</button>
             <button type="button" class="inbox-bulk-btn inbox-bulk-btn--danger" data-inbox-selection="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}</button>
@@ -508,6 +511,264 @@ class DashboardInbox {
                 title="${this.escape(this.t('dashboard.inboxFilterByTag', 'Show only #{tag}', { tag }))}">#${this.escape(tag)}</button>
         `).join('');
         return `<p class="inbox-item-tags">${chips}</p>`;
+    }
+
+    /**
+     * What this link would be called, offered on the row.
+     *
+     * The same engine Config → Bookmarks → Suggestions runs, through the one
+     * adapter (shared/tag-suggest-live.js). A link in the queue is the moment
+     * a tag is cheapest to accept -- it travels to Kept with the link when it
+     * is kept, and to the bookmark when it is promoted -- and the only way to
+     * ask before was to leave the queue for config.
+     */
+    fillSuggestChips(card, item) {
+        const host = card.querySelector('[data-inbox-suggest]');
+        const live = window.TagSuggestLive;
+        if (!host) return;
+        host.replaceChildren();
+        if (!live) return;
+        const offers = live.forInboxItem(this.dash, item).slice(0, 2);
+        if (!offers.length) return;
+        offers.forEach((offer) => {
+            const chip = document.createElement('span');
+            chip.className = 'tag-suggest-chip';
+
+            const add = document.createElement('button');
+            add.type = 'button';
+            add.className = 'tag-suggest-chip-add';
+            add.textContent = `#${offer.tag}`;
+            add.title = this.t('dashboard.tagSuggestAdd', `Tag this bookmark #${offer.tag}`, { tag: offer.tag });
+            add.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                void this.acceptSuggestedTag(item, offer.tag);
+            });
+
+            const off = document.createElement('button');
+            off.type = 'button';
+            off.className = 'tag-suggest-chip-dismiss';
+            off.textContent = '×';
+            off.title = this.t('dashboard.tagSuggestDismiss', `Stop proposing #${offer.tag} here`, { tag: offer.tag });
+            off.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                void this.dismissSuggestedTag(offer);
+            });
+
+            chip.append(add, off);
+            host.appendChild(chip);
+        });
+    }
+
+    /** Take one, through the path that already writes an item's tags. */
+    async acceptSuggestedTag(item, tag) {
+        if (!item || !tag) return;
+        const current = Array.isArray(item.tags) ? item.tags : [];
+        if (current.includes(tag)) return;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const tags = [...current, tag];
+        try {
+            const res = await fetcher('/api/inbox', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: item.id, tags }),
+            });
+            if (!res.ok) throw new Error(`tags HTTP ${res.status}`);
+            const stored = this.items.find((entry) => entry.id === item.id);
+            if (stored) stored.tags = tags;
+            // The engine answered before this write; the row it just tagged
+            // would go on offering the tag it now carries.
+            window.TagSuggestLive?.invalidate?.();
+            if (this.isActiveView()) this.render();
+        } catch {
+            this.dash.showErrorNotification?.(this.t('dashboard.inboxTagsFailed', 'Could not save tags'));
+        }
+    }
+
+    /**
+     * What the engine would call the ticked rows, and what it would write.
+     *
+     * Shown before it writes, the same popover the kept list opens: a tag
+     * applied to twenty rows is not something to discover afterwards. Each
+     * line is a tag and the number of ticked rows it covers, ticked on --
+     * accepting them is why the reader came -- and unticking one leaves those
+     * rows alone.
+     */
+    openSuggestPopover(anchorEl) {
+        const d = this.dash;
+        const live = window.TagSuggestLive;
+        const targets = this.checkedItems();
+        if (!targets.length || !anchorEl || !live) return;
+        d._closeActionPopovers?.();
+
+        const byTag = new Map();
+        targets.forEach((item) => {
+            live.forInboxItem(d, item).slice(0, 2).forEach((offer) => {
+                const rows = byTag.get(offer.tag) || [];
+                rows.push(item);
+                byTag.set(offer.tag, rows);
+            });
+        });
+        if (!byTag.size) {
+            d.showNotification(
+                this.t('dashboard.unsortedSuggestNone', 'Nothing to propose for these'),
+                'info', { duration: 3000 });
+            return;
+        }
+
+        const pop = document.createElement('div');
+        pop.className = 'move-popover unsorted-suggest-popover';
+        pop.id = 'inbox-suggest-popover';
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', this.t('dashboard.unsortedSuggestTitle', 'Suggested tags'));
+
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = this.t('dashboard.unsortedSuggestCount',
+            `Suggested for ${targets.length}`, { count: targets.length });
+        pop.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'unsorted-suggest-list';
+        pop.appendChild(list);
+
+        const close = () => {
+            pop.remove();
+            document.removeEventListener('click', onOutside, true);
+            document.removeEventListener('keydown', onKey, true);
+        };
+        const onOutside = (event) => {
+            if (pop.contains(event.target) || anchorEl.contains(event.target)) return;
+            close();
+        };
+        const onKey = (event) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            close();
+        };
+        // The view binds its own Escape when it opens, before any menu exists,
+        // so without this the key would close the whole inbox and leave the
+        // popover standing over it.
+        window.EscapeOwner?.registerOwner?.('inbox-suggest-popover', {
+            isOpen: () => pop.isConnected,
+            handleEscape: close,
+        });
+
+        const chosen = new Map();
+        [...byTag.entries()]
+            .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
+            .forEach(([tag, rows]) => {
+                chosen.set(tag, rows);
+                const line = document.createElement('label');
+                line.className = 'move-popover-item unsorted-suggest-item';
+                const box = document.createElement('input');
+                box.type = 'checkbox';
+                box.className = 'unsorted-suggest-check';
+                box.checked = true;
+                box.addEventListener('change', () => {
+                    if (box.checked) chosen.set(tag, rows);
+                    else chosen.delete(tag);
+                });
+                const name = document.createElement('span');
+                name.className = 'unsorted-suggest-tag';
+                name.textContent = `#${tag}`;
+                const count = document.createElement('span');
+                count.className = 'unsorted-suggest-rows';
+                count.textContent = String(rows.length);
+                line.append(box, name, count);
+                list.appendChild(line);
+            });
+
+        const apply = document.createElement('button');
+        apply.type = 'button';
+        apply.className = 'unsorted-suggest-apply';
+        apply.textContent = this.t('dashboard.unsortedSuggestApply', 'Apply');
+        apply.addEventListener('click', (event) => {
+            event.preventDefault();
+            const picked = [...chosen.entries()];
+            close();
+            void this.applySuggestions(picked);
+        });
+        pop.appendChild(apply);
+
+        document.body.appendChild(pop);
+        if (typeof d.bookmarkRows?._positionActionPopoverBeside === 'function') {
+            d.bookmarkRows._positionActionPopoverBeside(pop, anchorEl);
+        }
+        setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+        document.addEventListener('keydown', onKey, true);
+    }
+
+    /**
+     * Write the accepted tags, one PATCH per item.
+     *
+     * Per item because that is the only write the inbox has -- there is no
+     * list to save whole, the way the kept page is saved -- and they are local
+     * writes, so they go at full speed rather than paced like a fetch.
+     */
+    async applySuggestions(picked) {
+        if (!picked?.length) return;
+        const wanted = new Map();
+        picked.forEach(([tag, rows]) => {
+            rows.forEach((item) => {
+                const tags = wanted.get(item.id) || new Set();
+                tags.add(tag);
+                wanted.set(item.id, tags);
+            });
+        });
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        let ok = 0;
+        let failed = 0;
+        for (const [id, tags] of wanted) {
+            const item = this.items.find((entry) => entry.id === id);
+            if (!item) continue;
+            const current = Array.isArray(item.tags) ? item.tags : [];
+            const next = [...current];
+            tags.forEach((tag) => {
+                if (!next.includes(tag)) next.push(tag);
+            });
+            if (next.length === current.length) continue;
+            try {
+                const res = await fetcher('/api/inbox', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, tags: next }),
+                });
+                if (!res.ok) throw new Error(`tags HTTP ${res.status}`);
+                item.tags = next;
+                ok += 1;
+            } catch {
+                failed += 1;
+            }
+        }
+        window.TagSuggestLive?.invalidate?.();
+        this._trackAction('bulk-suggest', { size: this._countBucket(ok) });
+        this.clearChecked();
+        if (this.isActiveView()) this.render();
+        this.dash.showNotification(
+            failed
+                ? this.t('dashboard.unsortedSuggestDoneSome',
+                    `Tagged ${ok}, ${failed} failed`, { count: ok, failed })
+                : this.t('dashboard.unsortedSuggestDone', `Tagged ${ok} bookmark(s)`, { count: ok }),
+            failed && !ok ? 'error' : (failed ? 'warning' : 'success'),
+            { duration: 3000 });
+    }
+
+    /** Turn one down, in the list config reads and writes. */
+    async dismissSuggestedTag(offer) {
+        const d = this.dash;
+        const live = window.TagSuggestLive;
+        if (!d.settings || !live) return;
+        const key = live.dismissKey(offer);
+        const before = Array.isArray(d.settings.dismissedTagSuggestions)
+            ? d.settings.dismissedTagSuggestions : [];
+        if (before.includes(key)) return;
+        d.settings.dismissedTagSuggestions = [...before, key];
+        live.invalidate();
+        if (this.isActiveView()) this.render();
+        await d.saveSettings?.();
     }
 
     /**
@@ -1541,11 +1802,22 @@ class DashboardInbox {
         }
     }
 
+
+    /** The shipped catalogue, once per tab, shared with config's own panel. */
+    ensureSuggestCatalogue() {
+        if (this._catalogueAsked) return;
+        this._catalogueAsked = true;
+        void window.TagSuggestLive?.ensureCatalogue?.().then(() => {
+            if (this.isActiveView()) this.render();
+        });
+    }
+
     async openInboxView({ tab } = {}) {
         const d = this.dash;
         if (!this.isEnabled()) {
             return false;
         }
+        this.ensureSuggestCatalogue();
         // A tab named by the caller is what Shift+U, #unsorted and the widget's
         // "view all" ask for, and it has to be honoured on a view that is
         // already open as well as on one being opened.
@@ -4438,6 +4710,7 @@ class DashboardInbox {
                 ${item.previewDesc ? `<p class="inbox-item-desc">${this.escape(item.previewDesc)}</p>` : ''}
                 ${item.note ? `<p class="inbox-item-note">${this.escape(item.note)}</p>` : ''}
                 ${this.renderItemTags(item)}
+                <span class="tag-suggest-chips" data-inbox-suggest></span>
                 <div class="feed-row-actions inbox-item-actions">
                     <div class="inbox-item-actions-inner">
                         <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
@@ -4488,6 +4761,7 @@ class DashboardInbox {
         // The checkbox is inside the row, which opens on click — without this,
         // ticking a box would also launch the link.
         card.querySelector('.inbox-item-check')?.addEventListener('click', (e) => e.stopPropagation());
+        this.fillSuggestChips(card, item);
 
         // Same shape as the domain button below: a chip is a filter you can
         // click, and clicking the active one clears it again.

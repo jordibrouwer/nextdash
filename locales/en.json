@@ -2051,7 +2051,16 @@
     "unsortedSelectExport": "Export",
     "unsortedExported": "Exported {count} bookmark(s)",
     "unsortedSelectOpen": "Open",
-    "unsortedSelectSnooze": "Snooze"
+    "unsortedSelectSnooze": "Snooze",
+    "unsortedSelectSuggest": "Suggest tags",
+    "unsortedSuggestDoneSome": "Tagged {count}, {failed} failed",
+    "unsortedSuggestCount": "Suggested for {count}",
+    "unsortedSuggestApply": "Apply",
+    "tagSuggestAdd": "Tag this bookmark #{tag}",
+    "tagSuggestDismiss": "Stop proposing #{tag} here",
+    "unsortedSuggestNone": "Nothing to propose for these",
+    "unsortedSuggestTitle": "Suggested tags",
+    "unsortedSuggestDone": "Tagged {count} bookmark(s)"
   },
   "health": {
     "reloadPage": "Reload page",

@@ -126,6 +126,15 @@ class DashboardUnsorted {
 
     async loadAndRender() {
         const d = this.dash;
+        // The shipped catalogue, once per tab and shared with config's panel:
+        // without it the chips would offer only what the rules and the
+        // neighbours say, which on a fresh collection is nothing at all.
+        if (!this._catalogueAsked) {
+            this._catalogueAsked = true;
+            void window.TagSuggestLive?.ensureCatalogue?.().then(() => {
+                if (this._stillShowing()) this.renderBody();
+            });
+        }
         // The row's context menu resolves a cross-page row by URL against
         // d.bookmarks/d.allBookmarks (dashboard-context-menu.js's
         // resolveRowBookmark) -- the same fallback the tag-filter view relies
@@ -414,6 +423,15 @@ class DashboardUnsorted {
      * should win.
      */
     _suggestedTag(bookmark) {
+        // The engine first, so the group a row lands in is the tag its own
+        // chip offers. The rule walk below stays as the answer for a browser
+        // that has not loaded the adapter yet -- and it is what the engine
+        // would say anyway, since a rule outranks every other source.
+        const live = window.TagSuggestLive;
+        if (live) {
+            const top = live.topTag(this.dash, bookmark);
+            if (top) return top;
+        }
         const rules = this.dash.settings?.tagRules;
         if (!Array.isArray(rules) || !rules.length) return '';
         let host = '';

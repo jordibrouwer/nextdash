@@ -2051,7 +2051,16 @@
     "unsortedSelectExport": "Exporter",
     "unsortedExported": "{count} signet(s) exportés",
     "unsortedSelectOpen": "Ouvrir",
-    "unsortedSelectSnooze": "Reporter"
+    "unsortedSelectSnooze": "Reporter",
+    "unsortedSelectSuggest": "Proposer des tags",
+    "unsortedSuggestDoneSome": "{count} étiquetés, {failed} en échec",
+    "unsortedSuggestCount": "Proposé pour {count}",
+    "unsortedSuggestApply": "Appliquer",
+    "tagSuggestAdd": "Étiqueter ce signet #{tag}",
+    "tagSuggestDismiss": "Ne plus proposer #{tag} ici",
+    "unsortedSuggestNone": "Rien à proposer pour ceux-ci",
+    "unsortedSuggestTitle": "Tags proposés",
+    "unsortedSuggestDone": "{count} signet(s) étiquetés"
   },
   "health": {
     "reloadPage": "Recharger la page",

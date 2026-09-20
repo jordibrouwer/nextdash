@@ -9220,4 +9220,73 @@ body[data-action-bar="bottom"] #dashboard-layout {
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-pill, 999px);
     padding: 0.05rem 0.4rem;
+}radius: var(--radius-pill, 999px);
+    background: transparent;
+    line-height: 1;
+}
+
+.tag-suggest-chip-add,
+.tag-suggest-chip-dismiss {
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.75rem);
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0.15rem 0.4rem;
+}
+
+.tag-suggest-chip-add:hover,
+.tag-suggest-chip-add:focus-visible {
+    color: var(--accent-primary);
+}
+
+.tag-suggest-chip-dismiss {
+    padding-left: 0.1rem;
+    padding-right: 0.35rem;
+    opacity: 0.6;
+}
+
+.tag-suggest-chip-dismiss:hover,
+.tag-suggest-chip-dismiss:focus-visible {
+    opacity: 1;
+    color: var(--danger, #d24545);
+}
+/* The preview of what a selection would be tagged, in the Move to… shape. */
+.unsorted-suggest-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 16rem;
+    overflow-y: auto;
+}
+
+.unsorted-suggest-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    cursor: pointer;
+}
+
+.unsorted-suggest-rows {
+    margin-left: auto;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.75rem);
+}
+
+.unsorted-suggest-apply {
+    margin: var(--space-2, 0.5rem);
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-2, 0.25rem);
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-controls);
+    cursor: pointer;
+}
+
+.unsorted-suggest-apply:hover,
+.unsorted-suggest-apply:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
 }

@@ -271,6 +271,9 @@ class DashboardUnsortedSelect {
         });
         addButton(this.t('unsortedSelectOpen', 'Open'), '', () => this.openSelected());
         addButton(this.t('unsortedSelectExport', 'Export'), '', () => this.exportSelected());
+        addButton(this.t('unsortedSelectSuggest', 'Suggest tags'), '', (btn) => {
+            this.openSuggestPopover(btn);
+        });
         addButton(this.t('unsortedSelectMove', 'Move to…'), '', (btn) => {
             this.openMovePopover(btn);
         });
@@ -457,11 +460,24 @@ class DashboardUnsortedSelect {
      * write reads the page fresh, and anything that changed it in between (a
      * promote, a delete from another tab) has already renumbered it.
      */
-    async applyTagToSelection(tag, add) {
+    /**
+     * Take a suggested tag on one row.
+     *
+     * The selection's own path, pointed at a single bookmark: the write is the
+     * same read-modify-write of the kept page either way, and a second copy of
+     * it is a second place for the two to disagree about what a tag list is.
+     */
+    async acceptSuggestion(bookmark, tag) {
+        if (!bookmark || !tag) return false;
+        return this.applyTagToSelection(tag, true, [bookmark]);
+    }
+
+    async applyTagToSelection(tag, add, rows = null) {
         const d = this.dash;
         const pageId = Number(d._unsortedPageId) || DashboardUnsortedSelect.PAGE_ID;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const wanted = new Set(this.selectedBookmarks().map((bookmark) => this.keyFor(bookmark)));
+        const targets = Array.isArray(rows) && rows.length ? rows : this.selectedBookmarks();
+        const wanted = new Set(targets.map((bookmark) => this.keyFor(bookmark)));
         if (!wanted.size) return false;
 
         window.nextdashTrack?.('unsorted:bulk-tag', { count: wanted.size, add: !!add });
@@ -508,6 +524,10 @@ class DashboardUnsortedSelect {
             });
 
             void d.data?.fetchAndStoreDataRevision?.();
+            // Before the redraw, not after: the chips are drawn from the
+            // engine's last answer, which was computed while these rows still
+            // lacked the tag this write just gave them.
+            window.TagSuggestLive?.invalidate?.();
             await this.unsorted.loadAndRender();
             d.showNotification(
                 add
@@ -577,7 +597,181 @@ class DashboardUnsortedSelect {
             'success', { duration: 3000 });
     }
 
+    /**
+     * What the engine would call the ticked rows, and what it would write.
+     *
+     * Shown before it is written, in the shape Move to… uses: a suggestion
+     * applied to forty rows is not something to discover afterwards. Each line
+     * is a tag and the number of ticked rows it covers, ticked on by default --
+     * the reader came here to accept them -- and unticking one leaves those
+     * rows alone.
+     */
+    openSuggestPopover(anchorEl) {
+        const d = this.dash;
+        const live = window.TagSuggestLive;
+        const targets = this.selectedBookmarks();
+        if (!targets.length || !anchorEl || !live) return;
+        d._closeActionPopovers?.();
 
+        // tag -> the ticked rows it is offered to.
+        const byTag = new Map();
+        targets.forEach((bookmark) => {
+            live.forBookmark(d, bookmark).slice(0, 2).forEach((offer) => {
+                const rows = byTag.get(offer.tag) || [];
+                rows.push(bookmark);
+                byTag.set(offer.tag, rows);
+            });
+        });
+        if (!byTag.size) {
+            d.showNotification(
+                this.t('unsortedSuggestNone', 'Nothing to propose for these'), 'info', { duration: 3000 });
+            return;
+        }
+
+        const pop = document.createElement('div');
+        pop.className = 'move-popover unsorted-suggest-popover';
+        pop.id = 'unsorted-suggest-popover';
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', this.t('unsortedSuggestTitle', 'Suggested tags'));
+
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = this.t('unsortedSuggestCount',
+            `Suggested for ${targets.length}`, { count: targets.length });
+        pop.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'unsorted-suggest-list';
+        pop.appendChild(list);
+
+        const close = () => {
+            pop.remove();
+            document.removeEventListener('click', onOutside, true);
+            document.removeEventListener('keydown', onKey, true);
+            if (d._unsortedMovePopoverClose === close) d._unsortedMovePopoverClose = null;
+        };
+        const onOutside = (event) => {
+            if (pop.contains(event.target) || anchorEl.contains(event.target)) return;
+            close();
+        };
+        const onKey = (event) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            close();
+        };
+        window.EscapeOwner?.registerOwner?.('unsorted-suggest-popover', {
+            isOpen: () => pop.isConnected,
+            handleEscape: close,
+        });
+
+        const chosen = new Map();
+        [...byTag.entries()]
+            .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
+            .forEach(([tag, rows]) => {
+                chosen.set(tag, rows);
+                const line = document.createElement('label');
+                line.className = 'move-popover-item unsorted-suggest-item';
+                const box = document.createElement('input');
+                box.type = 'checkbox';
+                box.className = 'unsorted-suggest-check';
+                box.checked = true;
+                box.addEventListener('change', () => {
+                    if (box.checked) chosen.set(tag, rows);
+                    else chosen.delete(tag);
+                });
+                const name = document.createElement('span');
+                name.className = 'unsorted-suggest-tag';
+                name.textContent = `#${tag}`;
+                const count = document.createElement('span');
+                count.className = 'unsorted-suggest-rows';
+                count.textContent = String(rows.length);
+                line.append(box, name, count);
+                list.appendChild(line);
+            });
+
+        const apply = document.createElement('button');
+        apply.type = 'button';
+        apply.className = 'unsorted-suggest-apply';
+        apply.textContent = this.t('unsortedSuggestApply', 'Apply');
+        apply.addEventListener('click', (event) => {
+            event.preventDefault();
+            const picked = [...chosen.entries()];
+            close();
+            void this.applySuggestions(picked);
+        });
+        pop.appendChild(apply);
+
+        document.body.appendChild(pop);
+        if (typeof d.bookmarkRows?._positionActionPopoverBeside === 'function') {
+            d.bookmarkRows._positionActionPopoverBeside(pop, anchorEl);
+        }
+        setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+        document.addEventListener('keydown', onKey, true);
+        d._unsortedMovePopoverClose = close;
+    }
+
+    /**
+     * Write the accepted tags, one page read and one page write for all of
+     * them rather than one per tag: the kept page is a single list, and a
+     * write per tag would have each one racing the last.
+     */
+    async applySuggestions(picked) {
+        const d = this.dash;
+        if (!picked?.length || this._busy) return;
+        const pageId = Number(d._unsortedPageId) || DashboardUnsortedSelect.PAGE_ID;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const wanted = new Map();
+        picked.forEach(([tag, rows]) => {
+            rows.forEach((bookmark) => {
+                const key = this.keyFor(bookmark);
+                const tags = wanted.get(key) || new Set();
+                tags.add(tag);
+                wanted.set(key, tags);
+            });
+        });
+        window.nextdashTrack?.('unsorted:suggest-apply', { tags: picked.length });
+        this._busy = true;
+        this.sync();
+        let touched = 0;
+        try {
+            const res = await fetch(`/api/bookmarks?page=${pageId}`, { cache: 'no-store' });
+            if (!res.ok) throw new Error(`read HTTP ${res.status}`);
+            const bookmarks = await res.json();
+            if (!Array.isArray(bookmarks)) throw new Error('unexpected page shape');
+            bookmarks.forEach((bookmark) => {
+                const add = wanted.get(this.keyFor(bookmark));
+                if (!add) return;
+                const tags = this._tagsOf(bookmark);
+                const next = [...tags];
+                add.forEach((tag) => {
+                    if (!next.includes(tag)) next.push(tag);
+                });
+                if (next.length === tags.length) return;
+                bookmark.tags = next;
+                touched += 1;
+            });
+            if (touched) {
+                const save = await fetcher(`/api/bookmarks?page=${pageId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bookmarks),
+                });
+                if (!save.ok) throw new Error(`write HTTP ${save.status}`);
+            }
+            d.showNotification(
+                this.t('unsortedSuggestDone', `Tagged ${touched} bookmark(s)`, { count: touched }),
+                'success', { duration: 3000 });
+        } catch {
+            d.showNotification(this.t('unsortedBulkTagFailed', 'Could not change the tags'), 'error');
+        } finally {
+            this._busy = false;
+            window.TagSuggestLive?.invalidate?.();
+            this.clear();
+            await d.loadAllBookmarks?.();
+            await this.unsorted.loadAndRender();
+        }
+    }
 
     /**
      * File the whole selection: one page and one category for all of it.

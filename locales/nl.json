@@ -2051,7 +2051,16 @@
     "unsortedSelectExport": "Exporteren",
     "unsortedExported": "{count} bookmark(s) geëxporteerd",
     "unsortedSelectOpen": "Openen",
-    "unsortedSelectSnooze": "Snoozen"
+    "unsortedSelectSnooze": "Snoozen",
+    "unsortedSelectSuggest": "Tags voorstellen",
+    "unsortedSuggestDoneSome": "{count} getagd, {failed} mislukt",
+    "unsortedSuggestCount": "Voorgesteld voor {count}",
+    "unsortedSuggestApply": "Toepassen",
+    "tagSuggestAdd": "Geef deze bookmark #{tag}",
+    "tagSuggestDismiss": "Stel #{tag} hier niet meer voor",
+    "unsortedSuggestNone": "Niets voor te stellen hiervoor",
+    "unsortedSuggestTitle": "Voorgestelde tags",
+    "unsortedSuggestDone": "{count} bookmark(s) getagd"
   },
   "health": {
     "reloadPage": "Pagina herladen",
