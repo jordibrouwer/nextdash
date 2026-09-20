@@ -853,7 +853,14 @@
             <footer class="config-bm-panel-foot">
                 <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-bulk-action="apply"${dirty ? '' : ' disabled'}>${esc(this.t('config.bmApplyTo', 'Apply to {n}').replace('{n}', String(n)))}</button>
                 <button type="button" class="config-btn config-btn--small" data-bm-bulk-action="export">${esc(this.t('config.bulkExportCsv', 'Export CSV'))}</button>
-                <button type="button" class="config-btn config-btn--small" data-bm-bulk-action="favicons">${esc(this.t('config.bulkRefreshFavicons', 'Refresh favicons'))}</button>
+                <button type="button" class="config-btn config-btn--small" data-bm-bulk-action="favicons"
+                        title="${esc(this.t('config.bulkIconsHint', 'Ask each site for its icon, for the ticked rows that have none'))}">${
+                    esc(this.t('config.bulkFetchIcons', 'Fetch icons ({k})')
+                        .replace('{k}', String(this.bulkFetchTargets(picked, 'icons').length)))}</button>
+                <button type="button" class="config-btn config-btn--small" data-bm-bulk-action="previews"
+                        title="${esc(this.t('config.bulkPreviewsHint', 'Ask each page for its title, description and image, for the ticked rows that have none'))}">${
+                    esc(this.t('config.bulkFetchPreviews', 'Fetch previews ({k})')
+                        .replace('{k}', String(this.bulkFetchTargets(picked, 'previews').length)))}</button>
                 <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-bulk-action="delete">${esc(this.t('config.bmDeleteN', 'Delete {n}').replace('{n}', String(n)))}</button>
             </footer>`;
     },

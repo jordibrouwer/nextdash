@@ -14,6 +14,16 @@ class DashboardConfig {
     static VIEW = 'config';
 
     /**
+     * The gap between rows of a selection sweep.
+     *
+     * The icon and preview endpoints allow sixty a minute per client, shared
+     * with the hover previews and the link checks, so a sweep that goes flat
+     * out spends most of its time being refused. Same value as the kept
+     * list's sweep (dashboard-unsorted-select.js SWEEP_INTERVAL_MS).
+     */
+    static SELECTION_SWEEP_INTERVAL_MS = 1200;
+
+    /**
      * Fallback for the count-mode log cap when settings have not been read yet.
      *
      * Must stay equal to serverLogDefaultMaxEntries in log_buffer.go: this is
@@ -23944,6 +23954,7 @@ class DashboardConfig {
         try {
             if (action === 'pin') await this.bulkPin(picked);
             else if (action === 'favicons') await this.bulkFavicons(picked);
+            else if (action === 'previews') await this.bulkPreviews(picked);
             else if (action === 'export') this.bulkExportCsv(picked);
             else if (action === 'delete') await this.bulkDelete(picked);
         } catch {
@@ -24398,6 +24409,190 @@ class DashboardConfig {
         await this.refreshBookmarksAfterWrite();
     }
 
+    /* ── Fetching icons and previews for a selection ─────────────────────── */
+
+    /**
+     * The fields a preview answer leaves on a bookmark. The kept list writes
+     * the same set (dashboard-unsorted.js PREVIEW_FIELDS); a preview fetched
+     * here has to end up on the record for the same reason it does there --
+     * the server caches its own answer, but that cache is not the bookmark.
+     */
+    static PREVIEW_FIELDS = ['previewTitle', 'previewDesc', 'previewImage',
+        'previewImageSource', 'previewSiteName', 'previewAuthor', 'previewPublishedAt',
+        'previewEmbedHtml', 'previewContentLength', 'previewEnriched'];
+
+    /** Already answered for: the same test the kept list's button counts by. */
+    bookmarkHasPreview(bookmark) {
+        return bookmark?.previewEnriched === true
+            || !!String(bookmark?.previewTitle || '').trim()
+            || !!String(bookmark?.previewDesc || '').trim();
+    }
+
+    /** Of a selection, the rows a sweep would actually ask about. */
+    bulkFetchTargets(picked, kind) {
+        return (picked || []).filter((bookmark) => (kind === 'icons'
+            ? !String(bookmark?.icon || '').trim()
+            : !this.bookmarkHasPreview(bookmark)));
+    }
+
+    /**
+     * Walk a selection one row at a time, behind the blocking bar.
+     *
+     * Serial and paced, because every row is a request to somebody else's
+     * server through an endpoint that allows sixty a minute per client --
+     * shared with the hover previews, the link checks and the icon prefetch.
+     * A refusal is not a failure: the server says how long to wait, and the
+     * row is asked for again. The same shape as the kept list's sweep
+     * (dashboard-unsorted-select.js), so the two behave alike.
+     */
+    async runSelectionSweep(targets, { title, run, done }) {
+        let ok = 0;
+        let failed = 0;
+        let stopped = false;
+        const total = targets.length;
+        const counted = (n) => this.t('config.bulkSweepProgress', '{done} of {total}')
+            .replace('{done}', String(n)).replace('{total}', String(total));
+        this.showProgressOverlay(title, counted(0), {
+            onCancel: () => { stopped = true; },
+            cancelLabel: this.t('config.bulkSweepStop', 'Stop'),
+            cancellingLabel: this.t('config.bulkSweepStopping', 'Stopping…'),
+        });
+        window.ProgressOverlay?.update(0, total, counted(0));
+        const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        for (let i = 0; i < total; i += 1) {
+            if (stopped) break;
+            let result = 'failed';
+            try {
+                result = await run(targets[i]);
+            } catch {
+                result = 'failed';
+            }
+            if (result && result.rateLimited) {
+                window.ProgressOverlay?.update(i, total,
+                    this.t('config.bulkSweepWaiting', 'Rate limit reached — waiting {seconds}s')
+                        .replace('{seconds}', String(result.retryAfter)));
+                await wait((result.retryAfter + 1) * 1000);
+                if (stopped) break;
+                try {
+                    result = await run(targets[i]);
+                } catch {
+                    result = 'failed';
+                }
+                if (result && result.rateLimited) result = 'failed';
+            }
+            if (result === 'ok' || result === true) ok += 1;
+            else failed += 1;
+            window.ProgressOverlay?.update(i + 1, total, counted(i + 1));
+            if (i + 1 < total) await wait(DashboardConfig.SELECTION_SWEEP_INTERVAL_MS);
+        }
+        const summary = stopped
+            ? this.t('config.bulkSweepStopped', 'Stopped after {done} of {total}')
+                .replace('{done}', String(ok + failed)).replace('{total}', String(total))
+            : done(ok, failed);
+        // A stopped sweep did not finish: filling the bar would say it had.
+        if (stopped) this.hideProgressOverlay();
+        else this.finishProgressOverlay(summary);
+        this.notify(summary, stopped ? 'info' : (failed && !ok ? 'warning' : 'success'));
+        return { ok, failed, stopped };
+    }
+
+    /**
+     * Write what a sweep collected, one POST per page rather than one per row.
+     *
+     * The store has no per-bookmark write: saving a row means reading its
+     * page, changing one entry and writing the list back. Row by row that is
+     * two requests each and every write racing the last; grouped, a page is
+     * read once and written once however many of its rows the sweep touched.
+     *
+     * @param {Map<string, Map<number, object>>} byPage pageId → index → fields
+     */
+    async saveSweptFields(byPage) {
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        for (const [pageId, rows] of byPage) {
+            if (!rows.size) continue;
+            try {
+                const res = await fetch(`/api/bookmarks?page=${pageId}`);
+                if (!res.ok) continue;
+                const stored = await res.json();
+                if (!Array.isArray(stored)) continue;
+                rows.forEach((fields, index) => {
+                    if (stored[index]) Object.assign(stored[index], fields);
+                });
+                await fetcher(`/api/bookmarks?page=${pageId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stored),
+                });
+            } catch {
+                // The next sweep can ask again; a page that will not save is
+                // not a reason to drop the pages after it.
+            }
+        }
+        await this.refreshBookmarksAfterWrite();
+    }
+
+    /** Where a picked bookmark sits in its page's stored list. */
+    async sweepRecordFor(bookmark) {
+        return this.findBookmarkRecord(this.bookmarkKey(bookmark));
+    }
+
+    /**
+     * Ask every ticked row's page for its title, description and image.
+     *
+     * Only the rows that have none: a row already carrying a preview is one
+     * the sweep would spend its rate limit re-asking for an answer nobody is
+     * waiting for. The button says how many that leaves.
+     */
+    async bulkPreviews(picked) {
+        const targets = this.bulkFetchTargets(picked, 'previews');
+        if (!targets.length) {
+            this.notify(this.t('config.bulkPreviewsAllPresent', 'Every one of these already has a preview'), 'info');
+            return;
+        }
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        /** @type {Map<string, Map<number, object>>} */
+        const byPage = new Map();
+        const result = await this.runSelectionSweep(targets, {
+            title: this.t('config.bulkPreviewsTitle', 'Fetching previews…'),
+            run: async (bookmark) => {
+                const url = String(bookmark?.url || '').trim();
+                if (!url) return 'failed';
+                const res = await fetcher(`/api/bookmark-preview?url=${encodeURIComponent(url)}`);
+                if (res.status === 429) {
+                    return { rateLimited: true, retryAfter: Number(res.headers.get('Retry-After')) || 60 };
+                }
+                if (!res.ok) return 'failed';
+                const preview = await res.json().catch(() => null);
+                if (!preview) return 'failed';
+                const record = await this.sweepRecordFor(bookmark);
+                if (!record) return 'failed';
+                const fields = {
+                    previewTitle: preview.title || '',
+                    previewDesc: preview.description || '',
+                    previewImage: preview.image || '',
+                    previewImageSource: preview.imageSource || '',
+                    previewSiteName: preview.siteName || '',
+                    previewAuthor: preview.author || '',
+                    previewPublishedAt: Number(preview.publishedAt || 0) || 0,
+                    previewEmbedHtml: preview.embedHtml || '',
+                    previewContentLength: Number(preview.contentLength || 0) || 0,
+                    previewEnriched: true,
+                };
+                const page = byPage.get(String(record.pageId)) || new Map();
+                page.set(record.index, fields);
+                byPage.set(String(record.pageId), page);
+                return 'ok';
+            },
+            done: (ok, failed) => (failed
+                ? this.t('config.bulkPreviewsDoneSome', 'Fetched {ok} preview(s), {failed} failed')
+                    .replace('{ok}', String(ok)).replace('{failed}', String(failed))
+                : this.t('config.bulkPreviewsDone', 'Fetched {ok} preview(s)').replace('{ok}', String(ok))),
+        });
+        // Whatever the sweep did collect is saved, including a stopped one:
+        // those pages were fetched and there is no reason to throw them away.
+        if (result.ok) await this.saveSweptFields(byPage);
+    }
+
     async bulkFavicons(picked) {
         // The global refresh asks first because it is slow on a large library;
         // the bulk one did the same work on any number of rows without a word.
@@ -24407,22 +24602,42 @@ class DashboardConfig {
                 .replace('{n}', String(picked.length));
             if (!await this.confirmAction(ask, { danger: false })) return;
         }
-        let ok = 0;
-        for (const b of picked) {
-            const key = this.bookmarkKey(b);
-            try {
-                await this.refreshBookmarkFavicon(key);
-                ok += 1;
-            } catch {
-                /* refreshBookmarkFavicon notifies per row */
-            }
+        // The rows without one. Re-fetching an icon a row already has spends
+        // the same rate limit on an answer nobody is waiting for, and the
+        // button beside this says how many rows that leaves.
+        const targets = this.bulkFetchTargets(picked, 'icons');
+        if (!targets.length) {
+            this.notify(this.t('config.bulkIconsAllPresent', 'Every one of these already has an icon'), 'info');
+            return;
         }
-        if (ok > 0) {
-            this.notify(
-                this.t('config.bulkFaviconsDone', 'Favicons refreshed for {n} bookmarks.').replace('{n}', String(ok)),
-                'success'
-            );
+        const fetchIcon = window.BookmarkPreviewService?.fetchAndUploadFavicon;
+        if (typeof fetchIcon !== 'function') {
+            this.notify(this.t('dashboard.healthFaviconFailed', 'Could not refresh the favicon'), 'error');
+            return;
         }
+        /** @type {Map<string, Map<number, object>>} */
+        const byPage = new Map();
+        const result = await this.runSelectionSweep(targets, {
+            title: this.t('config.bulkIconsTitle', 'Fetching icons…'),
+            run: async (bookmark) => {
+                const url = String(bookmark?.url || '').trim();
+                if (!url) return 'failed';
+                const iconPath = await fetchIcon(url);
+                if (!iconPath) return 'failed';
+                const record = await this.sweepRecordFor(bookmark);
+                if (!record) return 'failed';
+                const page = byPage.get(String(record.pageId)) || new Map();
+                page.set(record.index, { icon: iconPath });
+                byPage.set(String(record.pageId), page);
+                return 'ok';
+            },
+            done: (ok, failed) => (failed
+                ? this.t('config.bulkIconsDoneSome', 'Fetched {ok} icon(s), {failed} failed')
+                    .replace('{ok}', String(ok)).replace('{failed}', String(failed))
+                : this.t('config.bulkFaviconsDone', 'Favicons refreshed for {n} bookmarks.')
+                    .replace('{n}', String(ok))),
+        });
+        if (result.ok) await this.saveSweptFields(byPage);
     }
 
     bulkExportCsv(picked) {
