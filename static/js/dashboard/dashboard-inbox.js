@@ -2178,6 +2178,19 @@ class DashboardInbox {
 
         const apply = (until) => {
             this.closeSnoozeMenu();
+            /*
+             * A caller that owns what happens next.
+             *
+             * The kept list parks a bookmark rather than an inbox item: the
+             * row has to travel to the queue first and be put to sleep there,
+             * which is neither of the two paths below. It wants the presets
+             * and the date field, nothing else.
+             */
+            if (typeof options.onPicked === 'function') {
+                const value = Number(until);
+                if (value > Date.now()) options.onPicked(value);
+                return;
+            }
             if (Array.isArray(bulkTargets)) {
                 void this.bulkSnooze(bulkTargets, until);
             } else if (typeof options.onApplied === 'function') {

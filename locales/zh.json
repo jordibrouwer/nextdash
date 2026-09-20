@@ -2047,7 +2047,11 @@
     "unsortedRowFiledHint": "该地址已归档在 {page}；在这里保留就是第二份副本",
     "unsortedAgeMonths": "{count}个月",
     "unsortedAgeWeeks": "{count}周",
-    "unsortedAgeYears": "{count}年"
+    "unsortedAgeYears": "{count}年",
+    "unsortedSelectExport": "导出",
+    "unsortedExported": "已导出 {count} 条书签",
+    "unsortedSelectOpen": "打开",
+    "unsortedSelectSnooze": "暂缓"
   },
   "health": {
     "reloadPage": "重新加载页面",

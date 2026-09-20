@@ -2047,7 +2047,11 @@
     "unsortedRowFiledHint": "Cette adresse est déjà classée sur {page} ; la garder ici en fait une copie",
     "unsortedAgeMonths": "{count}mois",
     "unsortedAgeWeeks": "{count}sem",
-    "unsortedAgeYears": "{count}an"
+    "unsortedAgeYears": "{count}an",
+    "unsortedSelectExport": "Exporter",
+    "unsortedExported": "{count} signet(s) exportés",
+    "unsortedSelectOpen": "Ouvrir",
+    "unsortedSelectSnooze": "Reporter"
   },
   "health": {
     "reloadPage": "Recharger la page",

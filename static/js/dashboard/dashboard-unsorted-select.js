@@ -269,11 +269,16 @@ class DashboardUnsortedSelect {
         addButton(this.t('unsortedFetchIcons', 'Fetch icons'), '', () => {
             void this.fetchIcons();
         });
+        addButton(this.t('unsortedSelectOpen', 'Open'), '', () => this.openSelected());
+        addButton(this.t('unsortedSelectExport', 'Export'), '', () => this.exportSelected());
         addButton(this.t('unsortedSelectMove', 'Move to…'), '', (btn) => {
             this.openMovePopover(btn);
         });
         addButton(this.t('unsortedSelectToInbox', 'Back to the inbox'), '', () => {
             void this.sendToInbox();
+        });
+        addButton(this.t('unsortedSelectSnooze', 'Snooze'), '', (btn) => {
+            this.openSnoozeMenu(btn);
         });
         addButton(this.t('unsortedSelectDelete', 'Delete'), 'danger', () => {
             void this.deleteSelected();
@@ -518,6 +523,62 @@ class DashboardUnsortedSelect {
         }
     }
 
+
+    /**
+     * Open every ticked row in a new tab.
+     *
+     * The queue beside this one has had it since it was built, for the same
+     * reason: reading is how a kept link is decided, and doing that one row at
+     * a time means leaving the list and coming back for every one of them.
+     */
+    openSelected() {
+        const targets = this.selectedBookmarks();
+        if (!targets.length) return;
+        window.nextdashTrack?.('unsorted:bulk-open', { count: targets.length });
+        targets.forEach((bookmark) => {
+            const href = this.dash.safeBookmarkOpenHref?.(bookmark.url) || bookmark.url;
+            if (href) window.open(href, '_blank', 'noopener,noreferrer');
+        });
+    }
+
+    /**
+     * The ticked rows as a CSV.
+     *
+     * The same columns Config → Bookmarks exports, so the two files open the
+     * same way -- this list could only be exported by going there and filtering
+     * back down to the rows already ticked here.
+     */
+    exportSelected() {
+        const targets = this.selectedBookmarks();
+        if (!targets.length) return;
+        const escape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const header = ['Name', 'URL', 'Tags', 'Notes', 'Kept'].map(escape).join(',');
+        const rows = targets.map((bookmark) => [
+            escape(bookmark.name),
+            escape(bookmark.url),
+            escape(this._tagsOf(bookmark).join(', ')),
+            escape(bookmark.note || ''),
+            escape(bookmark.createdAt ? new Date(Number(bookmark.createdAt)).toISOString().slice(0, 10) : ''),
+        ].join(','));
+        // The byte order mark is what makes a spreadsheet read the accents.
+        const csv = `\ufeff${[header, ...rows].join('\r\n')}`;
+        const date = new Date().toISOString().slice(0, 10);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `nextdash-kept-${date}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        window.nextdashTrack?.('unsorted:export', { count: targets.length });
+        this.dash.showNotification(
+            this.t('unsortedExported', `Exported ${targets.length} bookmark(s)`, { count: targets.length }),
+            'success', { duration: 3000 });
+    }
+
+
+
     /**
      * File the whole selection: one page and one category for all of it.
      *
@@ -720,7 +781,27 @@ class DashboardUnsortedSelect {
      * where thinking about links happens. The bookmark is put back as an inbox
      * item carrying its note and its tags, then removed from the kept page.
      */
-    async sendToInbox(rows = null) {
+    /**
+     * Park a kept link: back in the queue, asleep until a date.
+     *
+     * Kept had two ways out -- file it, or return it to a queue that will
+     * offer it again tomorrow, where it will be kept again. A link worth
+     * holding that cannot be placed yet needs the queue's own answer, and the
+     * queue already has it: the same menu, the same presets, the same wake.
+     */
+    openSnoozeMenu(anchorEl) {
+        const inbox = this.dash.inbox;
+        const targets = this.selectedBookmarks();
+        if (!targets.length || !anchorEl || !inbox?.openSnoozeMenu) return;
+        // The inbox's menu, driven by its own presets: a second list of
+        // durations is a second list to keep in step.
+        inbox.openSnoozeMenu(null, anchorEl, null, {
+            onApplied: null,
+            onPicked: (until) => { void this.sendToInbox(targets, { snoozeUntil: until }); },
+        });
+    }
+
+    async sendToInbox(rows = null, { snoozeUntil = 0 } = {}) {
         const targets = Array.isArray(rows) && rows.length ? rows : this.selectedBookmarks();
         if (!targets.length || this._busy) return;
         const d = this.dash;
@@ -748,6 +829,19 @@ class DashboardUnsortedSelect {
                 // A link already waiting in the queue is not a failure: the
                 // reason this row can go is that the inbox has it.
                 if (!added.ok && added.status !== 409) return 'failed';
+                // Asleep, when that is what was asked for. The wake belongs to
+                // the inbox item, so it is written the moment the item exists.
+                if (snoozeUntil > Date.now()) {
+                    const body = await added.json().catch(() => null);
+                    const id = body?.item?.id || body?.id || '';
+                    if (id) {
+                        await fetcher('/api/inbox', {
+                            method: 'PATCH',
+                            headers,
+                            body: JSON.stringify({ id, snoozedUntil: Number(snoozeUntil) }),
+                        }).catch(() => {});
+                    }
+                }
                 const removed = await fetcher('/api/bookmarks', {
                     method: 'DELETE',
                     headers,

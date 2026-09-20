@@ -2047,7 +2047,11 @@
     "unsortedRowFiledHint": "Diese Adresse liegt bereits auf {page}; hier zu behalten ist eine zweite Kopie",
     "unsortedAgeMonths": "{count}M",
     "unsortedAgeWeeks": "{count}W",
-    "unsortedAgeYears": "{count}J"
+    "unsortedAgeYears": "{count}J",
+    "unsortedSelectExport": "Exportieren",
+    "unsortedExported": "{count} Lesezeichen exportiert",
+    "unsortedSelectOpen": "Öffnen",
+    "unsortedSelectSnooze": "Später"
   },
   "health": {
     "reloadPage": "Seite neu laden",

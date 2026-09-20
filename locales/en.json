@@ -2047,7 +2047,11 @@
     "unsortedRowFiledHint": "This address is already filed on {page}; keeping it here is a second copy",
     "unsortedAgeMonths": "{count}mo",
     "unsortedAgeWeeks": "{count}w",
-    "unsortedAgeYears": "{count}y"
+    "unsortedAgeYears": "{count}y",
+    "unsortedSelectExport": "Export",
+    "unsortedExported": "Exported {count} bookmark(s)",
+    "unsortedSelectOpen": "Open",
+    "unsortedSelectSnooze": "Snooze"
   },
   "health": {
     "reloadPage": "Reload page",

@@ -2047,7 +2047,11 @@
     "unsortedRowFiledHint": "Dit adres staat al op {page}; hier bewaren is een tweede kopie",
     "unsortedAgeMonths": "{count}mnd",
     "unsortedAgeWeeks": "{count}w",
-    "unsortedAgeYears": "{count}j"
+    "unsortedAgeYears": "{count}j",
+    "unsortedSelectExport": "Exporteren",
+    "unsortedExported": "{count} bookmark(s) geëxporteerd",
+    "unsortedSelectOpen": "Openen",
+    "unsortedSelectSnooze": "Snoozen"
   },
   "health": {
     "reloadPage": "Pagina herladen",
