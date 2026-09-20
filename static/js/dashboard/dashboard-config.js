@@ -1792,6 +1792,17 @@ class DashboardConfig {
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
+        /*
+         * Bind what was just drawn.
+         *
+         * The band is filled after the panels are bound, so the bar's own
+         * controls were written into a head nobody came back to: the filter
+         * field took text and the "Only changed" button took clicks, and
+         * neither reached this object. Binding is idempotent per element, so
+         * doing it here as well as at panel time costs nothing and covers the
+         * one order that had no binder at all.
+         */
+        if (actions) this.bindChangedFilter(head);
         const bar = null;
         // Only swapped when the body actually rendered one: this runs again on
         // every repaint, and clearing the band unconditionally threw away the

@@ -105,3 +105,30 @@ test('the filter names the other tabs a setting is on, and goes there', async ({
     await expect(page.locator('[data-behavior-field="globalShortcuts"]')).toBeVisible();
     await expect(page.locator('[data-settings-filter]')).toHaveValue('keyboard');
 });
+
+/**
+ * The bar in the band takes input.
+ *
+ * The band is filled after the panels are bound, so the filter field and the
+ * "Only changed" button were written into a head nobody came back to: both
+ * looked alive and neither reached the config object. The filter's symptom was
+ * a tab that said nothing matched while the word was in the box.
+ */
+test('the filter and the changed toggle in the band are wired up', async ({ page }) => {
+    await open(page, '#config/behavior/general');
+
+    await page.locator('[data-settings-filter]').fill('keyboard');
+    await expect.poll(() => page.evaluate(() =>
+        window.dashboardInstance.config.settingsFilter), { timeout: 5_000 }).toBe('keyboard');
+
+    await page.locator('[data-settings-filter]').fill('');
+    await expect.poll(() => page.evaluate(() =>
+        window.dashboardInstance.config.settingsFilter), { timeout: 5_000 }).toBe('');
+
+    const toggle = page.locator('[data-config-action="toggle-changed"]');
+    if (await toggle.isEnabled()) {
+        await toggle.click();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.changedOnly === true), { timeout: 5_000 }).toBe(true);
+    }
+});
