@@ -904,8 +904,162 @@ class DashboardUnsorted {
             if (!row) return;
             row.dataset.unsortedKey = this.select.keyFor(bookmark);
             this.select.ensureCheckbox(row, bookmark);
+            this._addRowHints(row, bookmark);
+            this._addSuggestChips(row, bookmark);
         });
         return block;
+    }
+
+    /**
+     * The two facts that decide a kept link, said on the row.
+     *
+     * How long it has waited, because a kept link is a decision postponed and
+     * the length of the postponement is the whole argument for ending it --
+     * and it was readable only by switching the grouping to age. And whether
+     * the collection already holds the address, because then filing is not a
+     * move but a duplicate, and the row read exactly like one nobody had ever
+     * seen.
+     *
+     * Beside the row, for the reason the suggestion chips are: a bookmark row
+     * is a subgrid whose columns are spoken for.
+     */
+    _addRowHints(row, bookmark) {
+        if (row.nextElementSibling?.classList.contains('unsorted-row-hints')) {
+            row.nextElementSibling.remove();
+        }
+        const parts = [];
+        const age = this._ageLabel(bookmark);
+        if (age) {
+            const chip = document.createElement('span');
+            chip.className = 'unsorted-row-age';
+            chip.textContent = age;
+            chip.title = this.dash.formatDashboardLabel('unsortedRowAge', { age },
+                `Kept ${age} ago, still without a page`);
+            parts.push(chip);
+        }
+        const filedOn = this._filedElsewhere(bookmark);
+        if (filedOn) {
+            const chip = document.createElement('span');
+            chip.className = 'unsorted-row-filed';
+            chip.textContent = this.dash.formatDashboardLabel('unsortedRowFiled', { page: filedOn },
+                `already on ${filedOn}`);
+            chip.title = this.dash.formatDashboardLabel('unsortedRowFiledHint', { page: filedOn },
+                `This address is already filed on ${filedOn}; keeping it here is a second copy`);
+            parts.push(chip);
+        }
+        if (!parts.length) return;
+        const wrap = document.createElement('span');
+        wrap.className = 'unsorted-row-hints';
+        parts.forEach((part) => wrap.appendChild(part));
+        row.insertAdjacentElement('afterend', wrap);
+    }
+
+    /**
+     * How long this has been waiting, in one or two characters, or nothing.
+     *
+     * Nothing under a week: a link kept this morning is not a decision anyone
+     * is putting off, and a timestamp on every row is noise that makes the
+     * rows that matter harder to see.
+     */
+    _ageLabel(bookmark) {
+        const created = Number(bookmark?.createdAt) || 0;
+        if (!created) return '';
+        const days = Math.floor((Date.now() - created) / 86400000);
+        if (days < 7) return '';
+        if (days < 30) return this.dash.formatDashboardLabel(
+            'unsortedAgeWeeks', { count: Math.floor(days / 7) }, `${Math.floor(days / 7)}w`);
+        if (days < 365) return this.dash.formatDashboardLabel(
+            'unsortedAgeMonths', { count: Math.floor(days / 30) }, `${Math.floor(days / 30)}mo`);
+        return this.dash.formatDashboardLabel(
+            'unsortedAgeYears', { count: Math.floor(days / 365) }, `${Math.floor(days / 365)}y`);
+    }
+
+    /** The page already holding this address, if the collection has it filed. */
+    _filedElsewhere(bookmark) {
+        const url = String(bookmark?.url || '').trim().toLowerCase();
+        if (!url) return '';
+        const hit = (this.dash.allBookmarks || []).find(
+            (entry) => String(entry?.url || '').trim().toLowerCase() === url);
+        if (!hit) return '';
+        const page = (this.dash.pages || []).find(
+            (entry) => String(entry.id) === String(hit.pageId));
+        return this.dash.pageNav?.pageLabel?.(hit.pageId) || page?.name || String(hit.pageId || '');
+    }
+
+    /**
+     * What this link would be called, offered on the row itself.
+     *
+     * The same engine Config → Bookmarks → Suggestions runs, through the one
+     * adapter (shared/tag-suggest-live.js). A kept link is a link nobody has
+     * filed yet, which is exactly the row a proposed tag is worth something
+     * on -- and reaching it through config meant leaving the list to go and
+     * tag, which is the trip this view exists to save.
+     */
+    _addSuggestChips(row, bookmark) {
+        // Beside the row rather than inside it: a bookmark row is a subgrid
+        // whose columns are already spoken for, so a child lands in the next
+        // cell and draws over the name. A sibling spanning every column sits
+        // under the row, where a footnote about it belongs.
+        if (row.nextElementSibling?.classList.contains('tag-suggest-chips')) {
+            row.nextElementSibling.remove();
+        }
+        const live = window.TagSuggestLive;
+        if (!live) return;
+        const offers = live.forBookmark(this.dash, bookmark).slice(0, 2);
+        if (!offers.length) return;
+        const wrap = document.createElement('span');
+        wrap.className = 'tag-suggest-chips';
+        offers.forEach((offer) => {
+            const chip = document.createElement('span');
+            chip.className = 'tag-suggest-chip';
+
+            const add = document.createElement('button');
+            add.type = 'button';
+            add.className = 'tag-suggest-chip-add';
+            add.textContent = `#${offer.tag}`;
+            add.title = this.dash.formatDashboardLabel('tagSuggestAdd', { tag: offer.tag },
+                `Tag this bookmark #${offer.tag}`);
+            add.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                void this.select?.acceptSuggestion(bookmark, offer.tag);
+            });
+
+            const off = document.createElement('button');
+            off.type = 'button';
+            off.className = 'tag-suggest-chip-dismiss';
+            off.textContent = '×';
+            off.title = this.dash.formatDashboardLabel('tagSuggestDismiss', { tag: offer.tag },
+                `Stop proposing #${offer.tag} here`);
+            off.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                void this.dismissSuggestion(offer);
+            });
+
+            chip.append(add, off);
+            wrap.appendChild(chip);
+        });
+        row.insertAdjacentElement('afterend', wrap);
+    }
+
+    /**
+     * Turn one down, the way config does: against the pattern and the tag
+     * rather than against the rows under it, so it does not come back the
+     * moment one more link on that site arrives.
+     */
+    async dismissSuggestion(offer) {
+        const d = this.dash;
+        const live = window.TagSuggestLive;
+        if (!d.settings || !live) return;
+        const key = live.dismissKey(offer);
+        const before = Array.isArray(d.settings.dismissedTagSuggestions)
+            ? d.settings.dismissedTagSuggestions : [];
+        if (before.includes(key)) return;
+        d.settings.dismissedTagSuggestions = [...before, key];
+        live.invalidate();
+        this.renderBody();
+        await d.saveSettings?.();
     }
 
     _buildBlocks(visible) {

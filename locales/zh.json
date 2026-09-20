@@ -2040,7 +2040,14 @@
     "healthFetchPreviewsStopping": "正在停止…",
     "healthFetchPreviewsStopped": "已在 {done}/{total} 处停止",
     "healthFetchPreviewsPartial": "已在 {done}/{total} 处停止",
-    "healthFetchPreviewsWaiting": "已达速率上限 — 等待 {seconds} 秒"
+    "healthFetchPreviewsWaiting": "已达速率上限 — 等待 {seconds} 秒",
+    "unsortedRowFiled": "已在 {page}",
+    "unsortedDeleteUndone": "已放回 {count} 条书签",
+    "unsortedRowAge": "{age}前保留，仍未指定页面",
+    "unsortedRowFiledHint": "该地址已归档在 {page}；在这里保留就是第二份副本",
+    "unsortedAgeMonths": "{count}个月",
+    "unsortedAgeWeeks": "{count}周",
+    "unsortedAgeYears": "{count}年"
   },
   "health": {
     "reloadPage": "重新加载页面",

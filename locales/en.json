@@ -2040,7 +2040,14 @@
     "healthFetchPreviewsStopping": "Stopping…",
     "healthFetchPreviewsStopped": "Stopped after {done} of {total}",
     "healthFetchPreviewsPartial": "Stopped after {done} of {total}",
-    "healthFetchPreviewsWaiting": "Rate limit reached — waiting {seconds}s"
+    "healthFetchPreviewsWaiting": "Rate limit reached — waiting {seconds}s",
+    "unsortedRowFiled": "already on {page}",
+    "unsortedDeleteUndone": "Put {count} bookmark(s) back",
+    "unsortedRowAge": "Kept {age} ago, still without a page",
+    "unsortedRowFiledHint": "This address is already filed on {page}; keeping it here is a second copy",
+    "unsortedAgeMonths": "{count}mo",
+    "unsortedAgeWeeks": "{count}w",
+    "unsortedAgeYears": "{count}y"
   },
   "health": {
     "reloadPage": "Reload page",

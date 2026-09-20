@@ -2040,7 +2040,14 @@
     "healthFetchPreviewsStopping": "Wird gestoppt…",
     "healthFetchPreviewsStopped": "Gestoppt nach {done} von {total}",
     "healthFetchPreviewsPartial": "Gestoppt nach {done} von {total}",
-    "healthFetchPreviewsWaiting": "Limit erreicht — {seconds}s Wartezeit"
+    "healthFetchPreviewsWaiting": "Limit erreicht — {seconds}s Wartezeit",
+    "unsortedRowFiled": "schon auf {page}",
+    "unsortedDeleteUndone": "{count} Lesezeichen zurückgelegt",
+    "unsortedRowAge": "Vor {age} behalten, noch ohne Seite",
+    "unsortedRowFiledHint": "Diese Adresse liegt bereits auf {page}; hier zu behalten ist eine zweite Kopie",
+    "unsortedAgeMonths": "{count}M",
+    "unsortedAgeWeeks": "{count}W",
+    "unsortedAgeYears": "{count}J"
   },
   "health": {
     "reloadPage": "Seite neu laden",

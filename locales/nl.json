@@ -2040,7 +2040,14 @@
     "healthFetchPreviewsStopping": "Stoppen…",
     "healthFetchPreviewsStopped": "Gestopt na {done} van {total}",
     "healthFetchPreviewsPartial": "Gestopt na {done} van {total}",
-    "healthFetchPreviewsWaiting": "Limiet bereikt — {seconds}s wachten"
+    "healthFetchPreviewsWaiting": "Limiet bereikt — {seconds}s wachten",
+    "unsortedRowFiled": "staat al op {page}",
+    "unsortedDeleteUndone": "{count} bookmark(s) teruggezet",
+    "unsortedRowAge": "{age} geleden bewaard, nog zonder pagina",
+    "unsortedRowFiledHint": "Dit adres staat al op {page}; hier bewaren is een tweede kopie",
+    "unsortedAgeMonths": "{count}mnd",
+    "unsortedAgeWeeks": "{count}w",
+    "unsortedAgeYears": "{count}j"
   },
   "health": {
     "reloadPage": "Pagina herladen",

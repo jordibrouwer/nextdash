@@ -9194,3 +9194,30 @@ body[data-action-bar="bottom"] #dashboard-layout {
 .unsorted-move-back {
     color: var(--text-muted, #888);
 }
+/*
+ * What a kept row says about itself: how long it has waited, and whether the
+ * collection already holds the address. Beside the row for the reason the
+ * suggestion chips are -- the row is a subgrid with no cell to spare -- and
+ * quiet, because both are footnotes to the link rather than facts about it.
+ */
+.unsorted-view .unsorted-row-hints {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    margin: 0 0 0.1rem var(--bookmark-row-start-pad, 6px);
+    padding-left: 1.5rem;
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-secondary);
+}
+
+.unsorted-view .unsorted-row-age {
+    opacity: 0.75;
+}
+
+.unsorted-view .unsorted-row-filed {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    padding: 0.05rem 0.4rem;
+}

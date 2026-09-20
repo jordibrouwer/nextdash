@@ -826,16 +826,79 @@ class DashboardUnsortedSelect {
                 );
                 return;
             }
+            /*
+             * The way back, where the reader is looking.
+             *
+             * The server already files these under the trash, which is thirty
+             * days of safety in a place nobody visits mid-triage. The toast is
+             * the undo that is actually reachable: it puts the rows back on
+             * the kept page and takes their trash entries with them, so the
+             * same delete cannot be undone twice.
+             */
             d.showNotification(
                 this.t('unsortedDeleted', `Deleted ${deleted} bookmark(s)`, { count: deleted }),
                 'success',
-                { duration: 4000 }
+                {
+                    duration: 8000,
+                    undoCallback: () => this.restoreDeleted(targets),
+                }
             );
         } catch {
             d.showNotification(this.t('unsortedDeleteFailed', 'Could not delete the bookmarks'), 'error');
         } finally {
             this._busy = false;
             this.sync();
+        }
+    }
+
+    /** Put deleted kept bookmarks back, and drop the trash entries they made. */
+    async restoreDeleted(targets) {
+        const d = this.dash;
+        const pageId = Number(d._unsortedPageId) || DashboardUnsortedSelect.PAGE_ID;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        let restored = 0;
+        for (const bookmark of targets) {
+            const row = { ...bookmark };
+            delete row.index;
+            try {
+                const res = await fetcher('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: pageId, bookmark: row, allowDuplicate: true }),
+                });
+                if (res.ok) restored += 1;
+            } catch {
+                // Reported below by the count; the trash still holds it.
+            }
+        }
+        await this.dropRestoredTrashEntries(pageId, targets);
+        await d.loadAllBookmarks?.();
+        await this.unsorted.loadAndRender();
+        d.showNotification(
+            this.t('unsortedDeleteUndone', `Put ${restored} bookmark(s) back`, { count: restored }),
+            restored ? 'success' : 'error', { duration: 3000 });
+    }
+
+    /**
+     * Take the restored rows out of the trash.
+     *
+     * Without this the same delete could be undone a second time from Config →
+     * Data & backups → Trash, which would put a duplicate on the kept page --
+     * the entry there describes a bookmark that exists again.
+     */
+    async dropRestoredTrashEntries(pageId, targets) {
+        try {
+            const data = await window.DashboardTrash?.list?.();
+            const items = data?.items || [];
+            for (const bookmark of targets) {
+                const hit = items.find((item) => item.kind !== 'category'
+                    && Number(item.pageId) === Number(pageId)
+                    && String(item.bookmark?.url || '') === String(bookmark?.url || ''));
+                if (hit) await window.DashboardTrash.remove(hit.id);
+            }
+        } catch {
+            // The restore itself already succeeded; a leftover entry is a
+            // stale line in the trash, not a lost bookmark.
         }
     }
 
