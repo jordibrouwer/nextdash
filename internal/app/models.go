@@ -670,6 +670,7 @@ type Settings struct {
 	PasteUrlQuickAdd          bool                             `json:"pasteUrlQuickAdd"`        // Enable paste URL to quick-add bookmark on dashboard
 	InboxEnabled              bool                             `json:"inboxEnabled"`            // Enable inbox page and paste-to-inbox flow
 	UnsortedEnabled           bool                             `json:"unsortedEnabled"`         // Enable unsorted nav icon and the Keep-to-Unsorted promote action
+	SearchUnsorted            bool                             `json:"searchUnsorted"`          // Let search reach bookmarks kept in Unsorted; they stay out of every other surface
 	PasteDestination          string                           `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
 	InboxDedupeUrls           bool                             `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
 	InboxMaxItems             int                              `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
@@ -1508,6 +1509,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
 			UnsortedEnabled:                true,
+			SearchUnsorted:                 true,
 			PasteDestination:               "ask",
 			InboxDedupeUrls:                true,
 			InboxMaxItems:                  500,
@@ -3706,6 +3708,7 @@ func (fs *FileStore) GetSettings() Settings {
 			PasteUrlQuickAdd:                true,
 			InboxEnabled:                    true,
 			UnsortedEnabled:                 true,
+			SearchUnsorted:                  true,
 			PasteDestination:                "ask",
 			InboxDedupeUrls:                 true,
 			InboxMaxItems:                   500,
@@ -4307,6 +4310,17 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["unsortedEnabled"]; !ok {
 			settings.UnsortedEnabled = true
+		}
+		if _, ok := rawSettings["searchUnsorted"]; !ok {
+			settings.SearchUnsorted = true
+		}
+		// A settings file written before this field existed decodes to the
+		// zero value, which for a bool is off -- so an install that never made
+		// a choice about it would silently get the opposite of the default the
+		// seed sets for a fresh one. Only an absent key is healed; a stored
+		// false is a choice and stays.
+		if _, ok := rawSettings["globalShortcuts"]; !ok {
+			settings.GlobalShortcuts = true
 		}
 		if settings.InboxEnabled {
 			settings.PasteUrlQuickAdd = true

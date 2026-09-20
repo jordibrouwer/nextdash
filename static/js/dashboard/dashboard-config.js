@@ -11243,6 +11243,7 @@ class DashboardConfig {
         detectSoftNotFound: { info: ['detectSoftNotFoundInfoTitle', 'detectSoftNotFoundInfoMessage'], def: true },
         certWarnDays: { info: ['certWarnDaysInfoTitle', 'certWarnDaysInfoMessage'], def: 0 },
         includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'], def: true },
+        searchUnsorted: { info: ['searchUnsortedInfoTitle', 'searchUnsortedInfoMessage'], def: true },
         enableFuzzySuggestions: { info: ['fuzzySuggestionsInfoTitle', 'fuzzySuggestionsInfoMessage'], def: false },
         fuzzySuggestionsStartWith: { info: ['fuzzySuggestionsStartWithInfoTitle', 'fuzzySuggestionsStartWithInfoMessage'], def: false },
         keepSearchOpenWhenEmpty: { info: ['keepSearchOpenWhenEmptyInfoTitle', 'keepSearchOpenWhenEmptyInfoMessage'], def: false },
@@ -12123,6 +12124,10 @@ class DashboardConfig {
                 note: t('config.generalGroupSuggestionsNote', 'What the list offers while you type, beyond the bookmarks whose names match.'),
                 controls: [
                     bool('includeFindersInSearch', 'config.includeFindersInSearch', 'Include finders in search'),
+                    // Kept bookmarks stay out of every other surface, so this is
+                    // the one switch that decides whether they can be found at all.
+                    { ...bool('searchUnsorted', 'config.searchUnsorted', 'Search unsorted bookmarks'),
+                        special: 'search' },
                     bool('enableFuzzySuggestions', 'config.enableFuzzySuggestions', 'Fuzzy search suggestions'),
                     bool('fuzzySuggestionsStartWith', 'config.fuzzySuggestionsStartWith', 'Prefer matches that start with the query'),
                 ],
@@ -14094,6 +14099,14 @@ class DashboardConfig {
                     d.feeds.byKey = new Map();
                     d.renderDashboard?.({ animate: false });
                 }
+                break;
+            case 'search':
+                // The search component holds its own copy of the pool, built
+                // when the data loads -- a setting that decides what goes into
+                // that pool has to hand it a new one, or it takes effect on the
+                // next reload and looks like it did nothing.
+                d.updateSearchComponent?.();
+                d.renderDashboard?.({ animate: false });
                 break;
             case 'render':
                 d.renderDashboard?.({ animate: false });

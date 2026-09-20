@@ -320,6 +320,27 @@ body.no-animations .shortcut-search.show .search-container.from-origin {
     letter-spacing: 0.02em;
 }
 
+/*
+ * The same pill as the current-value badge, in the muted colour: it names where
+ * the row came from rather than marking it as the chosen one, and a second
+ * accent-coloured chip on the same line would compete with that one.
+ */
+.search-match-unsorted-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    margin-left: var(--space-1-5, 0.4rem);
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.68rem);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
 .search-match.command-entry.command-just-applied {
     animation: command-palette-flash 0.55s ease;
 }
