@@ -5416,6 +5416,8 @@
     "actionBarGroupNote": "标题栏中的按钮，按其排列顺序。隐藏某个按钮不会影响它的快捷键；全部隐藏时外框也会消失。",
     "bmViews": "视图",
     "bmViewAll": "全部",
+    "bmViewUnsorted": "未分类",
+    "bmViewUnsortedHint": "尚未归档的书签。此视图仅显示它们；为书签指定页面即可移到仪表板。",
     "bmPages": "页面",
     "bmCategories": "分类",
     "bmTags": "标签",

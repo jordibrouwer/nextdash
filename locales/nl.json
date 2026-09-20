@@ -5416,6 +5416,8 @@
     "actionBarGroupNote": "De knoppen in de header, in de volgorde waarin ze staan. Eén verbergen laat zijn toets werken, en met alles uit verdwijnt ook de omranding. Tags, recents, de cheat sheet en het paginapaneel zijn standen van het zoekpaneel — zet een knop hier aan om hem ook in de balk terug te zetten.",
     "bmViews": "Weergaven",
     "bmViewAll": "Alles",
+    "bmViewUnsorted": "Ongesorteerd",
+    "bmViewUnsortedHint": "Bookmarks die nog niet zijn opgeborgen. Deze weergave toont ze apart; geef er een pagina aan om hem naar het dashboard te verplaatsen.",
     "bmPages": "Pagina's",
     "bmCategories": "Categorieën",
     "bmTags": "Tags",

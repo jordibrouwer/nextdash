@@ -5416,6 +5416,8 @@
     "actionBarGroupNote": "Los botones de la cabecera, en el orden en que aparecen. Ocultar uno mantiene su tecla activa; con todos ocultos también desaparece el marco.",
     "bmViews": "Vistas",
     "bmViewAll": "Todos",
+    "bmViewUnsorted": "Sin ordenar",
+    "bmViewUnsortedHint": "Marcadores que aún no están archivados. Esta vista solo los muestra; asigna una página para moverlo al panel.",
     "bmPages": "Páginas",
     "bmCategories": "Categorías",
     "bmTags": "Etiquetas",

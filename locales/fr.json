@@ -5416,6 +5416,8 @@
     "actionBarGroupNote": "Les boutons de l’en-tête, dans leur ordre d’affichage. Masquer un bouton laisse sa touche active ; tous masqués, le cadre disparaît aussi.",
     "bmViews": "Vues",
     "bmViewAll": "Tout",
+    "bmViewUnsorted": "Non triés",
+    "bmViewUnsortedHint": "Signets pas encore classés. Cette vue les affiche seuls ; attribuez une page pour en déplacer un vers le tableau de bord.",
     "bmPages": "Pages",
     "bmCategories": "Catégories",
     "bmTags": "Étiquettes",

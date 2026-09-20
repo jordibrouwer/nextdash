@@ -70,8 +70,9 @@
     },
 
     bookmarkFacetCounts() {
-        const all = this.dash.allBookmarks || [];
-        const token = JSON.stringify([this._bmVisibleToken, all.length, global.HealthFacts?.updatedAt || 0]);
+        const all = this.configBookmarkPool();
+        const token = JSON.stringify([this._bmVisibleToken, all.length,
+            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0]);
         if (this._bmFacetSource === all && this._bmFacetToken === token && this._bmFacets) return this._bmFacets;
         const tests = this.bookmarkFilterTests();
         const cleanupKeys = Object.keys(global.DashboardConfig.CLEANUP_FILTERS);
@@ -97,6 +98,33 @@
         return counts;
     },
 
+    /**
+     * What a view's number says.
+     *
+     * The facets are computed over whichever pool is on screen, so two of these
+     * cannot come from there: Unsorted never counts itself, and while it is the
+     * one showing, the other views describe a library this pool is not part of.
+     * Those fall back to a pass over the filed bookmarks, which is the set they
+     * are about.
+     */
+    railViewCount(key, counts) {
+        const unsortedView = global.DashboardConfig.UNSORTED_VIEW;
+        if (key === unsortedView) {
+            return (this.dash.unsortedBookmarks || []).length;
+        }
+        if (!this.isUnsortedBookmarkView()) {
+            return counts.view.get(key) || 0;
+        }
+        const filed = this.dash.allBookmarks || [];
+        if (!key) return filed.length;
+        const fn = global.DashboardConfig.CLEANUP_FILTERS[key];
+        if (typeof fn !== 'function') return 0;
+        const dupes = key === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
+        return filed.filter((b) => (key === 'duplicate'
+            ? fn(b, dupes, (url) => this.canonicalStatsUrlKey(url))
+            : fn(b))).length;
+    },
+
     railCategoryLabel(pageId, categoryId) {
         const hit = this.knownCategories(pageId).find((c) =>
             c.id === categoryId || c.id === global.DashboardConfig.categoryFilterKey(pageId, categoryId));
@@ -107,10 +135,10 @@
         const esc = (v) => this.dash.escapeHtml(v);
         const counts = this.bookmarkFacetCounts();
         const tags = this.bookmarkTagFilters();
-        const entry = (kind, value, label, n, on, extra = '') => `
-            <button type="button" class="config-bm-rail-item${on ? ' is-on' : ''}${n ? '' : ' is-empty'}"
+        const entry = (kind, value, label, n, on, extra = '', cls = '', hint = '') => `
+            <button type="button" class="config-bm-rail-item${on ? ' is-on' : ''}${n ? '' : ' is-empty'}${cls ? ` ${cls}` : ''}"
                     data-bm-rail="${kind}" data-value="${esc(value)}" aria-pressed="${on ? 'true' : 'false'}"
-                    title="${esc(`${label} (${n})`)}">
+                    title="${esc(hint ? `${label} (${n}) — ${hint}` : `${label} (${n})`)}">
                 ${extra}<span class="config-bm-rail-label">${esc(label)}</span>
                 <span class="config-bm-rail-count">${n}</span>
             </button>`;
@@ -138,18 +166,33 @@
             </div>` : '';
 
         const VIEWS_SHOWN = 5;
-        const viewKeys = ['', ...Object.keys(global.DashboardConfig.CLEANUP_FILTERS)];
+        // Unsorted closes the cleanup views: it is not a question about the
+        // filed library but a different pool, so it sits apart from the rest.
+        // It is always drawn, never folded into "+N more".
+        const unsortedView = global.DashboardConfig.UNSORTED_VIEW;
+        const viewKeys = ['', ...Object.keys(global.DashboardConfig.CLEANUP_FILTERS), unsortedView];
         const viewsOpen = this._bmRailViewsOpen === true;
         const views = viewKeys
-            .filter((k, i) => viewsOpen || i < VIEWS_SHOWN || k === this.bmCleanupFilter)
-            .map((k) => entry('cleanup', k,
-                k ? this.cleanupFilterLabel(k) : this.t('config.bmViewAll', 'All'),
-                counts.view.get(k) || 0, (this.bmCleanupFilter || '') === k))
+            .filter((k, i) => viewsOpen || i < VIEWS_SHOWN || k === unsortedView || k === this.bmCleanupFilter)
+            .map((k) => {
+                // Unsorted is not another question about the same library: it
+                // swaps the pool. Marked so the row reads as the odd one out.
+                const odd = k === unsortedView;
+                const label = k ? this.cleanupFilterLabel(k) : this.t('config.bmViewAll', 'All');
+                return entry('cleanup', k, label, this.railViewCount(k, counts),
+                    (this.bmCleanupFilter || '') === k,
+                    odd ? '<span class="config-bm-rail-mark" aria-hidden="true">✻</span>' : '',
+                    odd ? 'is-unsorted' : '',
+                    odd ? this.t('config.bmViewUnsortedHint',
+                        'Bookmarks that are not filed yet. This view shows them alone; give one a page to move it to the dashboard.') : '');
+            })
             .join('');
-        const viewsMore = viewKeys.length > VIEWS_SHOWN
+        // Unsorted is drawn either way, so it is not one of the ones hidden.
+        const viewsHidden = viewKeys.length - VIEWS_SHOWN - 1;
+        const viewsMore = viewsHidden > 0
             ? `<button type="button" class="config-bm-rail-more" data-bm-rail-more="views">${esc(viewsOpen
                 ? this.t('config.bmShowFewer', 'fewer')
-                : this.t('config.bmShowMore', '+{n} more').replace('{n}', String(viewKeys.length - VIEWS_SHOWN)))}</button>`
+                : this.t('config.bmShowMore', '+{n} more').replace('{n}', String(viewsHidden)))}</button>`
             : '';
 
         const pages = (this.dash.pages || [])
@@ -339,7 +382,20 @@
         const facts = global.HealthFacts?.get?.(b.url) || null;
         const state = this.bookmarkHealthState(b);
         const fmt = (ts) => global.formatLastOpened?.(ts, { t: this.lastOpenedTranslator() }) || { label: '—' };
-        const pageOptions = (this.dash.pages || []).map((p) =>
+        /*
+         * A kept bookmark's own page is not in d.pages -- it is hidden, and
+         * nothing on the dashboard routes to it -- so without an entry of its
+         * own the select would sit on a page this bookmark is not on, and the
+         * first save would file it somewhere nobody chose. With it, staying put
+         * is the default and picking a page is the deliberate act that moves it
+         * onto the dashboard.
+         */
+        const isKept = global.DashboardUnsorted?.isUnsortedBookmark?.(b) === true;
+        const keptOption = isKept
+            ? `<option value="${esc(global.DashboardUnsorted.PAGE_ID)}" selected>${
+                esc(this.t('config.bmViewUnsorted', 'Unsorted'))}</option>`
+            : '';
+        const pageOptions = keptOption + (this.dash.pages || []).map((p) =>
             `<option value="${esc(p.id)}"${String(p.id) === String(b.pageId) ? ' selected' : ''}>${esc(p.name || p.id)}</option>`).join('');
         const categories = this.knownCategories(b.pageId);
         const catOptions = [`<option value="">${esc(this.t('config.bmNoCategory', 'No category'))}</option>`]
@@ -695,7 +751,16 @@
 
         const page = M.sharedValue(picked.map((b) => String(b.pageId)));
         const pageValue = draft.pageId ?? (page.mixed ? '' : page.value);
-        const pageOptions = [`<option value="">${mixed}</option>`]
+        // The unsorted page is not in d.pages, so a selection that is entirely
+        // kept bookmarks had nothing to sit on and read as "mixed" -- which is
+        // exactly what it is not. Listed only when that is where they are:
+        // moving a filed bookmark *into* Unsorted is not what this panel is
+        // for, and the category list below would have nothing to offer it.
+        const unsortedPageId = String(global.DashboardUnsorted?.PAGE_ID ?? '');
+        const keptOption = unsortedPageId && String(pageValue) === unsortedPageId
+            ? `<option value="${esc(unsortedPageId)}" selected>${esc(this.t('config.bmViewUnsorted', 'Unsorted'))}</option>`
+            : '';
+        const pageOptions = [`<option value="">${mixed}</option>`, keptOption]
             .concat((this.dash.pages || []).map((p) =>
                 `<option value="${esc(p.id)}"${String(p.id) === String(pageValue) ? ' selected' : ''}>${esc(p.name || p.id)}</option>`))
             .join('');

@@ -5418,6 +5418,8 @@
     "actionBarGroupNote": "The buttons in the header, in the order they stand there. Hiding one leaves its key working, and with all of them off the surround goes too. Tags, recents, the cheat sheet and the pages panel are modes of the search panel — switch a button on here to put it back in the bar as well.",
     "bmViews": "Views",
     "bmViewAll": "All",
+    "bmViewUnsorted": "Unsorted",
+    "bmViewUnsortedHint": "Bookmarks that are not filed yet. This view shows them alone; give one a page to move it to the dashboard.",
     "bmPages": "Pages",
     "bmCategories": "Categories",
     "bmTags": "Tags",

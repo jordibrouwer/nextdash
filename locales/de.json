@@ -5416,6 +5416,8 @@
     "actionBarGroupNote": "Die Schaltflächen in der Kopfzeile, in ihrer Reihenfolge. Eine ausgeblendete Schaltfläche behält ihre Taste, und sind alle aus, verschwindet auch der Rahmen.",
     "bmViews": "Ansichten",
     "bmViewAll": "Alle",
+    "bmViewUnsorted": "Unsortiert",
+    "bmViewUnsortedHint": "Lesezeichen, die noch nicht einsortiert sind. Diese Ansicht zeigt nur sie; weise eine Seite zu, um eines auf das Dashboard zu verschieben.",
     "bmPages": "Seiten",
     "bmCategories": "Kategorien",
     "bmTags": "Tags",

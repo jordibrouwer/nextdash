@@ -604,7 +604,8 @@ class DashboardConfig {
         this.bmQuery = params.get('q') || '';
         this.bmCategoryFilter = params.get('cat') || '';
         const filter = params.get('filter') || '';
-        this.bmCleanupFilter = DashboardConfig.CLEANUP_FILTERS[filter] ? filter : '';
+        this.bmCleanupFilter = (DashboardConfig.CLEANUP_FILTERS[filter]
+            || filter === DashboardConfig.UNSORTED_VIEW) ? filter : '';
         const health = params.get('health') || '';
         this.bmHealthFilter = DashboardConfig.HEALTH_FILTERS.includes(health) ? health : '';
         const tags = (params.get('tag') || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
@@ -1776,7 +1777,7 @@ class DashboardConfig {
         const markup = context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
-                ? `<span class="config-bm-header-badge">${this.dash.escapeHtml(String((this.dash.allBookmarks || []).length))}</span>`
+                ? `<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
                 : '');
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
@@ -1818,6 +1819,10 @@ class DashboardConfig {
     updateConfigShellHead() {
         const title = document.querySelector('.config-view-section-title');
         if (title) title.textContent = this.sectionLabel(this.section);
+        // The band carries the bookmark count, and switching to the Unsorted
+        // view changes which pool that count is about — so the band is redrawn
+        // here rather than only when the section itself changes.
+        this._fillShellHeadFromSection(document.getElementById('dashboard-layout') || document);
         // The line under the name is the section's own description now, put
         // there by _fillShellHeadFromSection; the trail it used to carry said
         // the section name the heading already carries and the tab the strip
@@ -2477,7 +2482,11 @@ class DashboardConfig {
     }
 
     findBookmarkByKey(key) {
-        return (this.dash.allBookmarks || []).find((b) => this.bookmarkKey(b) === key) || null;
+        // Both pools: a row acted on from the unsorted view is not in
+        // allBookmarks, and a key resolved from the other side must still find
+        // its bookmark after the view has been switched back.
+        return [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])]
+            .find((b) => this.bookmarkKey(b) === key) || null;
     }
 
     /**
@@ -21988,6 +21997,7 @@ class DashboardConfig {
             noicon: ['config.cleanupFilterNoIcon', 'Without an icon'],
             duplicate: ['config.cleanupFilterDuplicate', 'Duplicate URLs'],
             changed: ['config.cleanupFilterChanged', 'Changed in the last week'],
+            unsorted: ['config.bmViewUnsorted', 'Unsorted'],
         }[key];
         return map ? this.t(map[0], map[1]) : '';
     }
@@ -22083,7 +22093,7 @@ class DashboardConfig {
     }
 
     bookmarksFromKeys(keys) {
-        const all = this.dash.allBookmarks || [];
+        const all = this.configBookmarkPool();
         const wanted = new Set(keys || []);
         return all.filter((b) => wanted.has(this.bookmarkKey(b)));
     }
@@ -22265,7 +22275,54 @@ class DashboardConfig {
         changed: (b) => window.BookmarkPredicates.match('changed', b),
     };
 
+    /**
+     * The one view that changes where the list looks rather than what it keeps.
+     *
+     * Every cleanup filter above is a question asked of a bookmark on a page.
+     * This one asks for bookmarks that are on no page at all: the ones kept
+     * from the inbox, which are held apart from allBookmarks precisely so they
+     * stay out of this list until someone asks for them. Picking it swaps the
+     * pool; the filters, the search box and the bulk actions then work on it
+     * exactly as they do on the rest.
+     */
+    static UNSORTED_VIEW = 'unsorted';
+
     static HEALTH_FILTERS = ['healthy', 'broken', 'down', 'unchecked'];
+
+    /** True while the bookmark list is showing the kept bookmarks. */
+    isUnsortedBookmarkView() {
+        return this.bmCleanupFilter === DashboardConfig.UNSORTED_VIEW;
+    }
+
+    /**
+     * What the bookmark list, its facets and its counts read from.
+     *
+     * Everything in the section goes through here rather than reaching for
+     * d.allBookmarks, so the view switch is one decision made in one place.
+     */
+    configBookmarkPool() {
+        const d = this.dash;
+        return this.isUnsortedBookmarkView()
+            ? (d.unsortedBookmarks || [])
+            : (d.allBookmarks || []);
+    }
+
+    /**
+     * Every bookmark the store holds on one page, from whichever array holds
+     * that page.
+     *
+     * This is not the same question as the view's pool, and answering it with
+     * d.allBookmarks was destructive: the kept bookmarks are split out of that
+     * array, so a page list built for the unsorted page came back empty, and
+     * writePageBookmarks below then saved that empty list over the page. One
+     * move out of Unsorted wiped everything else still in it.
+     */
+    bookmarksOnPage(pageId) {
+        const d = this.dash;
+        const wanted = String(pageId);
+        return [...(d.allBookmarks || []), ...(d.unsortedBookmarks || [])]
+            .filter((b) => String(b?.pageId) === wanted);
+    }
 
     /** Where this bookmark stands with the checker, from what the dashboard already knows. */
     bookmarkHealthState(b) {
@@ -22300,6 +22357,9 @@ class DashboardConfig {
             tag: (b) => !tagFilter.length || (Array.isArray(b.tags) ? b.tags : [])
                 .map((t) => String(t).toLowerCase()).some((t) => tagFilter.includes(t)),
             cleanup: (b) => {
+                // The unsorted view is the pool, not a predicate: everything
+                // configBookmarkPool() handed over belongs to it.
+                if (cleanupKey === DashboardConfig.UNSORTED_VIEW) return true;
                 if (!cleanup) return true;
                 return cleanupKey === 'duplicate'
                     ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
@@ -22338,7 +22398,7 @@ class DashboardConfig {
      * memoised against everything it depends on.
      */
     visibleBookmarks() {
-        const all = this.dash.allBookmarks || [];
+        const all = this.configBookmarkPool();
         // JSON rather than a joined string: query, tag and category all hold free
         // text, so a plain separator could be ambiguous — query "a b" with no tag
         // versus query "a" with tag "b" must not share a token.
@@ -22364,10 +22424,11 @@ class DashboardConfig {
         this._bmVisibleToken = null;
         this._bmOccurrence = null;
         this._bmOccurrenceSource = null;
+        this._bmOccurrenceKeptSource = null;
     }
 
     computeVisibleBookmarks() {
-        const all = this.dash.allBookmarks || [];
+        const all = this.configBookmarkPool();
         const tests = Object.values(this.bookmarkFilterTests());
         const rows = all.filter((b) => tests.every((test) => test(b)));
         const order = this.pageOrderIndex();
@@ -22424,19 +22485,30 @@ class DashboardConfig {
      *
      * Rebuilt whenever allBookmarks is replaced — the array identity is the
      * cache token, so a reload after a write invalidates it on its own.
+     *
+     * The kept bookmarks are indexed too. They are not in allBookmarks, and an
+     * object missing from here answers occurrence 0 for every copy: a write
+     * aimed at the second of two identical URLs would hit the first, and a row
+     * that is not in the index at all cannot be aimed at.
      */
     bookmarkOccurrenceIndex() {
         const all = this.dash.allBookmarks || [];
-        if (this._bmOccurrenceSource === all && this._bmOccurrence) return this._bmOccurrence;
+        const kept = this.dash.unsortedBookmarks || [];
+        if (this._bmOccurrenceSource === all
+            && this._bmOccurrenceKeptSource === kept
+            && this._bmOccurrence) {
+            return this._bmOccurrence;
+        }
         const seen = new Map();
         const index = new Map();
-        all.forEach((b) => {
+        [...all, ...kept].forEach((b) => {
             const base = DashboardConfig.bookmarkKeyBase(b);
             const n = seen.get(base) || 0;
             index.set(b, n);
             seen.set(base, n + 1);
         });
         this._bmOccurrenceSource = all;
+        this._bmOccurrenceKeptSource = kept;
         this._bmOccurrence = index;
         return index;
     }
@@ -22657,7 +22729,7 @@ class DashboardConfig {
 
     /** The key of the n-th bookmark on a page, as the list now holds it. */
     bookmarkKeyAt(pageId, index) {
-        const onPage = (this.dash.allBookmarks || []).filter((b) => String(b.pageId) === String(pageId));
+        const onPage = this.bookmarksOnPage(pageId);
         const b = index < 0 ? onPage[onPage.length - 1] : onPage[index];
         return b ? this.bookmarkKey(b) : null;
     }
@@ -23734,8 +23806,7 @@ class DashboardConfig {
 
     /** Re-save one page's bookmark list with a mutation applied. */
     async writePageBookmarks(pageId, mutate) {
-        const all = this.dash.allBookmarks || [];
-        const list = all.filter((b) => String(b.pageId) === String(pageId))
+        const list = this.bookmarksOnPage(pageId)
             .map((b) => {
                 const copy = { ...b };
                 delete copy.pageId;
@@ -23761,8 +23832,7 @@ class DashboardConfig {
         try {
             // Snapshot before the write, so the toast can put this row back —
             // same as bulk delete and the :remove command.
-            const snapshot = (this.dash.allBookmarks || [])
-                .filter((b) => String(b.pageId) === String(parsed.pageId))
+            const snapshot = this.bookmarksOnPage(parsed.pageId)
                 .map((b) => {
                     const copy = { ...b };
                     delete copy.pageId;
@@ -23905,9 +23975,7 @@ class DashboardConfig {
     async mutateSelected(picked, mutate) {
         const snapshots = new Map();
         for (const [pageId, targets] of this.selectionTargetsByPage(picked)) {
-            const before = (this.dash.allBookmarks || [])
-                .filter((b) => String(b.pageId) === String(pageId))
-                .map((b) => ({ ...b }));
+            const before = this.bookmarksOnPage(pageId).map((b) => ({ ...b }));
             snapshots.set(pageId, before);
             await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
                 .map(({ bookmark, target }) => (targets.has(target) ? mutate({ ...bookmark }) : bookmark)));
@@ -24240,8 +24308,7 @@ class DashboardConfig {
         // deleting in bulk is exactly where getting it wrong hurts most.
         const snapshots = new Map();
         for (const [pageId] of byPage) {
-            snapshots.set(String(pageId), (this.dash.allBookmarks || [])
-                .filter((b) => String(b.pageId) === String(pageId))
+            snapshots.set(String(pageId), this.bookmarksOnPage(pageId)
                 .map((b) => {
                     const copy = { ...b };
                     delete copy.pageId;
