@@ -2068,7 +2068,22 @@
     "keptPileNoticeTitle": "Behaltene Links stapeln sich",
     "keptPileNoticeOpen": "Liste öffnen",
     "keptPileNoticeDismiss": "Schließen",
-    "keptPileNoticeBody": "{count} behaltene Links warten seit über einem Monat auf eine Seite. Die Liste kann eine Gruppe auf einmal ablegen — nach Website oder vorgeschlagenem Tag gruppieren, Gruppe markieren, verschieben."
+    "keptPileNoticeBody": "{count} behaltene Links warten seit über einem Monat auf eine Seite. Die Liste kann eine Gruppe auf einmal ablegen — nach Website oder vorgeschlagenem Tag gruppieren, Gruppe markieren, verschieben.",
+    "unsortedReviewSkip": "Überspringen",
+    "unsortedKeyReview": "durchgehen",
+    "unsortedReviewHint": "J/K weiter · O öffnen · M verschieben · Z später · B zurück zum Posteingang · S überspringen · D löschen · Esc schließen",
+    "unsortedReviewOpen": "Öffnen",
+    "unsortedReviewFile": "Auf {place} ablegen",
+    "unsortedKeyEsc": "Auswahl leeren · zurück zu den Lesezeichen",
+    "unsortedReviewSuggested": "Vorgeschlagen",
+    "unsortedReviewProgress": "{current} / {total}",
+    "unsortedReviewStart": "Durchgehen",
+    "unsortedReviewDoneCount": "Du hast {handled} von {total} erledigt.",
+    "unsortedReviewTitle": "Behaltene Links durchgehen",
+    "unsortedKeySelect": "auswählen",
+    "unsortedReviewDoneTitle": "Das war die Runde",
+    "unsortedReviewClose": "Schließen",
+    "unsortedReviewKicker": "Behaltene Links"
   },
   "health": {
     "reloadPage": "Seite neu laden",

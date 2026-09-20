@@ -1074,12 +1074,14 @@ class DashboardUnsortedSelect {
         return window.confirm(message);
     }
 
-    async deleteSelected() {
+    async deleteSelected({ confirmed: preConfirmed = false } = {}) {
         const targets = this.selectedBookmarks();
         if (!targets.length || this._busy) return;
 
         const count = targets.length;
-        const confirmed = await this.confirmDanger(
+        // A run over the list asks once, at the start, by being a run: a dialog
+        // per link is what stops it being one. The toast still carries the undo.
+        const confirmed = preConfirmed || await this.confirmDanger(
             this.t('unsortedDeleteTitle', 'Delete unsorted bookmarks'),
             this.t('unsortedDeleteConfirm', `Delete ${count} bookmark(s)?`, { count }),
             this.dash.configLabel ? this.dash.configLabel('delete', 'Delete') : 'Delete'

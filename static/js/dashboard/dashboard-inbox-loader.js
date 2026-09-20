@@ -59,6 +59,10 @@ class DashboardInboxLoader {
             await load('js/dashboard/dashboard-unsorted.js', 'dashboardUnsortedModule',
                 () => typeof DashboardUnsorted === 'function');
         }
+        if (typeof DashboardUnsortedReview === 'undefined') {
+            await load('js/dashboard/dashboard-unsorted-review.js', 'dashboardUnsortedReview',
+                () => typeof DashboardUnsortedReview === 'function');
+        }
     }
 
     load() {

@@ -60,6 +60,10 @@ class DashboardUnsorted {
         this.select = window.DashboardUnsortedSelect
             ? new window.DashboardUnsortedSelect(this)
             : null;
+        /** The one-at-a-time run over this list; `f`, like the health view's. */
+        this.review = window.DashboardUnsortedReview
+            ? new window.DashboardUnsortedReview(this)
+            : null;
     }
 
     /**
@@ -242,6 +246,23 @@ class DashboardUnsorted {
             wrap.appendChild(btn);
             return btn;
         };
+
+        /*
+         * The way into the run that is not a keystroke.
+         *
+         * The queue's band carries its Triage button for the same reason: a
+         * ritual nobody can see is a ritual nobody starts, and `f` in a legend
+         * under two hundred rows is not seeing it. First in the row, because
+         * it is the only button here that deals with the list rather than
+         * fetching things for it.
+         */
+        const review = button('unsorted-view-review-btn',
+            this.dash.formatDashboardLabel('unsortedReviewStart', {}, 'Work through'),
+            () => { this.review?.open?.(); });
+        review.classList.add('lvs-action--primary');
+        const hint = document.createElement('kbd');
+        hint.textContent = 'f';
+        review.appendChild(hint);
 
         this._previewsBtn = button('unsorted-view-previews-btn',
             this.dash.formatDashboardLabel('unsortedFetchPreviews', {}, 'Fetch previews'),
@@ -711,6 +732,7 @@ class DashboardUnsorted {
 
         this._distributeChunks(body, blocks, { colCount, packed });
         host.appendChild(body);
+        host.appendChild(this._buildLegend());
 
         this.select?.bindRows(host);
         this._bindPreviewHover(host);
@@ -891,6 +913,29 @@ class DashboardUnsorted {
             // Left unsaved rather than retried: the fields are still in memory
             // for this session, and the next hover on a fresh load asks again.
         }
+    }
+
+    /**
+     * The keys that work here, under the list.
+     *
+     * The inbox and the health view have carried one since they were built;
+     * this list had the grid's arrows and no word about them, and the tick it
+     * needs most -- x over a list of two hundred rows -- was unreachable
+     * without knowing it existed.
+     */
+    _buildLegend() {
+        const legend = document.createElement('p');
+        legend.className = 'inbox-legend unsorted-legend';
+        legend.setAttribute('aria-hidden', 'true');
+        const keys = window.KeyboardViewLegends
+            ? window.KeyboardViewLegends.toLegendPairs(
+                window.KeyboardViewLegends.KEPT_VIEW,
+                (key, fallback) => this.dash.formatDashboardLabel(key, {}, fallback))
+            : [];
+        legend.innerHTML = keys
+            .map(([k, label]) => `<span><kbd>${this.dash.escapeHtml(k)}</kbd> ${this.dash.escapeHtml(label)}</span>`)
+            .join('');
+        return legend;
     }
 
     _buildEmptyState({ noTags = false } = {}) {

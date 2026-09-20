@@ -2068,7 +2068,22 @@
     "keptPileNoticeTitle": "Bewaarde links stapelen zich op",
     "keptPileNoticeOpen": "Open de bewaarlijst",
     "keptPileNoticeDismiss": "Sluiten",
-    "keptPileNoticeBody": "{count} bewaarde links wachten al langer dan een maand op een pagina. In de bewaarlijst kun je een groep in één keer opbergen — groepeer op site of voorgestelde tag, vink een groep aan en verplaats hem."
+    "keptPileNoticeBody": "{count} bewaarde links wachten al langer dan een maand op een pagina. In de bewaarlijst kun je een groep in één keer opbergen — groepeer op site of voorgestelde tag, vink een groep aan en verplaats hem.",
+    "unsortedReviewSkip": "Overslaan",
+    "unsortedKeyReview": "doorlopen",
+    "unsortedReviewHint": "J/K volgende · O openen · M verplaatsen · Z snoozen · B terug naar inbox · S overslaan · D verwijderen · Esc sluiten",
+    "unsortedReviewOpen": "Openen",
+    "unsortedReviewFile": "Opbergen op {place}",
+    "unsortedKeyEsc": "selectie wissen · terug naar bookmarks",
+    "unsortedReviewSuggested": "Voorgesteld",
+    "unsortedReviewProgress": "{current} / {total}",
+    "unsortedReviewStart": "Doorlopen",
+    "unsortedReviewDoneCount": "Je hebt er {handled} van {total} afgehandeld.",
+    "unsortedReviewTitle": "Bewaarde links doorlopen",
+    "unsortedKeySelect": "selecteren",
+    "unsortedReviewDoneTitle": "Dat was de ronde",
+    "unsortedReviewClose": "Sluiten",
+    "unsortedReviewKicker": "Bewaarde links"
   },
   "health": {
     "reloadPage": "Pagina herladen",

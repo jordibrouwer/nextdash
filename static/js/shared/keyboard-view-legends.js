@@ -80,6 +80,23 @@
     ];
 
     /**
+     * The kept list: the grid's own keys, plus the tick this list reads.
+     *
+     * Short for the reason the dashboard's is: the rows below it are the
+     * point, and a legend as tall as the list explains it out of existence.
+     *
+     * @type {LegendRow[]}
+     */
+    const KEPT_VIEW = [
+        { keys: '↑ ↓ ← →', legendKey: 'dashboardKeyMove', cheatKey: 'dvMove', fallback: 'move' },
+        { keys: 'Enter', legendKey: 'dashboardKeyOpen', cheatKey: 'dvOpen', fallback: 'open' },
+        { keys: 'x', legendKey: 'unsortedKeySelect', cheatKey: 'uvSelect', fallback: 'select' },
+        { keys: 'f', legendKey: 'unsortedKeyReview', cheatKey: 'uvReview', fallback: 'work through' },
+        { keys: 'Esc', legendKey: 'unsortedKeyEsc', cheatKey: 'uvEsc', fallback: 'clear selection · back to bookmarks' },
+        { keys: '!', legendKey: 'dashboardKeyCheatSheet', cheatKey: 'dvCheatSheet', fallback: 'all keys' },
+    ];
+
+    /**
      * @param {LegendRow[]} rows
      * @param {(legendKey: string, fallback: string) => string} labelFor
      */
@@ -100,6 +117,7 @@
 
     global.KeyboardViewLegends = {
         DASHBOARD_VIEW,
+        KEPT_VIEW,
         HEALTH_VIEW,
         INBOX_VIEW,
         INBOX_TRIAGE,

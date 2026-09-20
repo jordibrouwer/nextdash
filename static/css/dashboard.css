@@ -9306,4 +9306,52 @@ body[data-action-bar="bottom"] #dashboard-layout {
 .unsorted-view .unsorted-row-destination:focus-visible {
     color: var(--accent-primary);
     border-color: var(--accent-primary);
+}/* The run over the kept list borrows the triage card; only the tag row and the
+   wider action strip are its own. */
+.unsorted-review-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    padding: 0 var(--space-4, 1rem) var(--space-2, 0.5rem);
+}
+/* Said, not implied: a proposed tag beside the ones a link already carries
+   reads as a fourth tag it has. */
+.unsorted-review-tags-lead {
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-secondary);
+    margin-right: var(--space-1, 0.25rem);
+}
+
+.unsorted-review-actions {
+    flex-wrap: wrap;
+}
+/* A card with no picture gives its whole width to the text: the queue's body is
+   a two-column grid whose first track is the thumbnail, and a lone text block
+   landed in it. */
+.unsorted-review-card .inbox-triage-body.unsorted-review-body--bare {
+    grid-template-columns: 1fr;
+}
+
+.unsorted-review-card .inbox-triage-title {
+    overflow-wrap: anywhere;
+}
+
+.unsorted-review-own-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    margin: var(--space-1, 0.25rem) 0 0;
+}
+
+.unsorted-review-own-tag {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    padding: 0.05rem 0.4rem;
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-secondary);
+}
+
+.unsorted-review-age {
+    opacity: 0.8;
 }

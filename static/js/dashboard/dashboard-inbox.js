@@ -2082,6 +2082,31 @@ class DashboardInbox {
         if (!this.isActiveView() || !this.isEnabled()) {
             return false;
         }
+        /*
+         * The kept tab is not this list.
+         *
+         * These keys move a cursor through the queue's rows and act on the row
+         * it lands on. On the kept tab that queue is hidden, so every one of
+         * them was spent on rows nobody could see -- and the arrows never
+         * reached the grid navigation the kept list actually uses, which is
+         * why x over that list did nothing at all.
+         */
+        if (this.activeTab() === 'kept') {
+            // One key is this list's own: the run over it, the way f opens the
+            // health view's. Everything else belongs to the grid below.
+            const typing = e.target?.tagName === 'INPUT' || e.target?.tagName === 'TEXTAREA'
+                || e.target?.isContentEditable;
+            if (e.key === 'f' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                const review = d.unsorted?.review;
+                if (review && !review.isOpen()) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    review.open();
+                    return true;
+                }
+            }
+            return false;
+        }
         if (this.triage?.isOpen?.()) {
             return false;
         }

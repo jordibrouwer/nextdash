@@ -2068,7 +2068,22 @@
     "keptPileNoticeTitle": "Les liens gardés s’accumulent",
     "keptPileNoticeOpen": "Ouvrir la liste",
     "keptPileNoticeDismiss": "Fermer",
-    "keptPileNoticeBody": "{count} liens gardés attendent une page depuis plus d’un mois. La liste peut en classer un lot d’un coup — groupez par site ou par tag proposé, cochez un groupe, déplacez-le."
+    "keptPileNoticeBody": "{count} liens gardés attendent une page depuis plus d’un mois. La liste peut en classer un lot d’un coup — groupez par site ou par tag proposé, cochez un groupe, déplacez-le.",
+    "unsortedReviewSkip": "Passer",
+    "unsortedKeyReview": "passer en revue",
+    "unsortedReviewHint": "J/K suivant · O ouvrir · M déplacer · Z reporter · B retour à la boîte · S passer · D supprimer · Échap fermer",
+    "unsortedReviewOpen": "Ouvrir",
+    "unsortedReviewFile": "Classer sur {place}",
+    "unsortedKeyEsc": "vider la sélection · retour aux signets",
+    "unsortedReviewSuggested": "Proposé",
+    "unsortedReviewProgress": "{current} / {total}",
+    "unsortedReviewStart": "Passer en revue",
+    "unsortedReviewDoneCount": "Vous en avez traité {handled} sur {total}.",
+    "unsortedReviewTitle": "Passer les liens gardés en revue",
+    "unsortedKeySelect": "sélectionner",
+    "unsortedReviewDoneTitle": "Fin de la session",
+    "unsortedReviewClose": "Fermer",
+    "unsortedReviewKicker": "Liens gardés"
   },
   "health": {
     "reloadPage": "Recharger la page",

@@ -2068,7 +2068,22 @@
     "keptPileNoticeTitle": "Los enlaces guardados se acumulan",
     "keptPileNoticeOpen": "Abrir la lista",
     "keptPileNoticeDismiss": "Cerrar",
-    "keptPileNoticeBody": "{count} enlaces guardados llevan más de un mes esperando página. La lista puede archivar un lote de una vez: agrupa por sitio o etiqueta propuesta, marca un grupo y muévelo."
+    "keptPileNoticeBody": "{count} enlaces guardados llevan más de un mes esperando página. La lista puede archivar un lote de una vez: agrupa por sitio o etiqueta propuesta, marca un grupo y muévelo.",
+    "unsortedReviewSkip": "Saltar",
+    "unsortedKeyReview": "repasar",
+    "unsortedReviewHint": "J/K siguiente · O abrir · M mover · Z posponer · B volver a la bandeja · S saltar · D eliminar · Esc cerrar",
+    "unsortedReviewOpen": "Abrir",
+    "unsortedReviewFile": "Archivar en {place}",
+    "unsortedKeyEsc": "limpiar selección · volver a marcadores",
+    "unsortedReviewSuggested": "Propuesto",
+    "unsortedReviewProgress": "{current} / {total}",
+    "unsortedReviewStart": "Repasar",
+    "unsortedReviewDoneCount": "Has resuelto {handled} de {total}.",
+    "unsortedReviewTitle": "Repasar los enlaces guardados",
+    "unsortedKeySelect": "seleccionar",
+    "unsortedReviewDoneTitle": "Fin de la ronda",
+    "unsortedReviewClose": "Cerrar",
+    "unsortedReviewKicker": "Enlaces guardados"
   },
   "health": {
     "reloadPage": "Recargar la página",

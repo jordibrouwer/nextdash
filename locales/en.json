@@ -2068,7 +2068,22 @@
     "keptPileNoticeTitle": "Kept links are piling up",
     "keptPileNoticeOpen": "Open the kept list",
     "keptPileNoticeDismiss": "Dismiss",
-    "keptPileNoticeBody": "{count} of the links you kept have been waiting over a month for a page. The kept list can file a batch at once — group them by site or by suggested tag, tick a group, and move it."
+    "keptPileNoticeBody": "{count} of the links you kept have been waiting over a month for a page. The kept list can file a batch at once — group them by site or by suggested tag, tick a group, and move it.",
+    "unsortedReviewSkip": "Skip",
+    "unsortedKeyReview": "work through",
+    "unsortedReviewHint": "J/K next · O open · M move · Z snooze · B back to the inbox · S skip · D delete · Esc close",
+    "unsortedReviewOpen": "Open",
+    "unsortedReviewFile": "File on {place}",
+    "unsortedKeyEsc": "clear selection · back to bookmarks",
+    "unsortedReviewSuggested": "Suggested",
+    "unsortedReviewProgress": "{current} / {total}",
+    "unsortedReviewStart": "Work through",
+    "unsortedReviewDoneCount": "You dealt with {handled} of {total}.",
+    "unsortedReviewTitle": "Work through the kept links",
+    "unsortedKeySelect": "select",
+    "unsortedReviewDoneTitle": "That is the run",
+    "unsortedReviewClose": "Close",
+    "unsortedReviewKicker": "Kept links"
   },
   "health": {
     "reloadPage": "Reload page",
