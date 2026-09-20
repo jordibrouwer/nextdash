@@ -46,3 +46,70 @@ test('Keep promotes an inbox item to Unsorted without opening a modal', async ({
         return body.bookmarks.some((b) => b.url === url);
     }, { timeout: 10_000 }).toBe(true);
 });
+
+/**
+ * Keep is the promise that a link is being held on to, so what was written
+ * about it is held on to as well: the note someone typed while triaging and
+ * the tags they gave it. Both used to be dropped -- the kept bookmark carried
+ * a name and an address and nothing else.
+ *
+ * The preview and the icon ride along for a different reason: the inbox has
+ * already fetched them, and leaving them behind makes the Unsorted view ask
+ * the same site for the same answer again.
+ */
+test('Keep carries the note, the tags and the preview to the kept bookmark', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+    await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+
+    const url = `https://keep-note-${Date.now()}.example/x`;
+    await page.evaluate(async (u) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await api('/api/inbox', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: u, title: 'Keep with note' }),
+        });
+        const created = await res.json();
+        const item = created.item || created;
+        // Through the same PATCH the inbox itself writes a note and tags with,
+        // so the item is shaped the way a triaged one really is.
+        await api('/api/inbox', {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: item.id,
+                note: 'read the second half',
+                tags: ['research', 'later'],
+            }),
+        });
+    }, url);
+
+    await page.locator('#page-nav-inbox-btn').click();
+    await expect(page.locator('.inbox-layout')).toBeVisible();
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
+    await expect.poll(() => page.evaluate((u) => (window.dashboardInstance.inbox.items || [])
+        .some((i) => i.url === u), url), { timeout: 10_000 }).toBe(true);
+
+    await page.evaluate(async (u) => {
+        const inbox = window.dashboardInstance.inbox;
+        const item = (inbox.items || []).find((i) => i.url === u);
+        await inbox.keepItem(item);
+    }, url);
+
+    const kept = await (async () => {
+        let found = null;
+        await expect.poll(async () => {
+            const res = await page.request.get('/api/unsorted');
+            const body = await res.json();
+            found = body.bookmarks.find((b) => b.url === url) || null;
+            return Boolean(found);
+        }, { timeout: 10_000 }).toBe(true);
+        return found;
+    })();
+
+    expect(kept.note).toBe('read the second half');
+    expect(kept.tags).toEqual(['research', 'later']);
+});

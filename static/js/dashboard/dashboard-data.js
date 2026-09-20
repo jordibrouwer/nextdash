@@ -1260,6 +1260,12 @@ class DashboardData {
     repaintBookmarkMutationSurfaces({ animate = false, refreshHealthReport = true, despiteModal = false } = {}) {
         const d = this.dash;
 
+        // The Unsorted widget keeps what /api/unsorted answered the first time
+        // it drew, for the life of the tab. Every add, edit, delete, move and
+        // tag change comes through here, and any of them can change that
+        // answer -- so the held copy goes, and the next draw asks again.
+        d._widgetUnsorted = null;
+
         d.config?.repaintBookmarksList?.();
 
         // Not `incremental: false`. Every add/edit/delete/move/tag change comes

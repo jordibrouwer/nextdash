@@ -4360,6 +4360,24 @@ class DashboardInbox {
                         name: item.previewTitle || item.title || item.url,
                         url: item.url,
                         category: '',
+                        /*
+                         * Everything the inbox item had carries over.
+                         *
+                         * Keep used to send the name and the address alone, so
+                         * the note someone wrote while filing it and the tags
+                         * they gave it were dropped at the exact moment they
+                         * said "keep this" -- the one action that promises the
+                         * link is being held on to. The preview and the icon
+                         * ride along too: the inbox already fetched them, and
+                         * without them the Unsorted view asks the same sites
+                         * for the same answers again.
+                         */
+                        note: item.note || '',
+                        tags: Array.isArray(item.tags) ? item.tags : [],
+                        icon: item.icon || '',
+                        previewTitle: item.previewTitle || '',
+                        previewDesc: item.previewDesc || '',
+                        previewImage: item.previewImage || '',
                     },
                 }),
             });
@@ -4369,6 +4387,10 @@ class DashboardInbox {
             if (response.status !== 409 && !response.ok) {
                 throw new Error('bookmark create failed');
             }
+            // The Unsorted widget holds what /api/unsorted last answered for
+            // the life of the tab; a link kept from here is exactly what makes
+            // that answer wrong.
+            d._widgetUnsorted = null;
             await this.completePromote(item.id);
             return true;
         } catch (_error) {
