@@ -8,7 +8,6 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [v1.12.0 — 19 September 2026](#v1120--19-september-2026)
 - [v1.11.4 — 18 September 2026](#v1114--18-september-2026)
 - [v1.11.3 — 18 September 2026](#v1113--18-september-2026)
 - [v1.11.2 — 18 September 2026](#v1112--18-september-2026)
@@ -210,23 +209,6 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
-
----
-
-## v1.12.0 — 19 September 2026
-
-A third way out of Inbox triage: keep a link without picking a category.
-
-### Unsorted bookmarks
-
-- **new — "Keep" in inbox triage now saves the link for good, instead of only marking it read.** It silently promotes the item to a reserved "Unsorted" page (`internal/app/models.go`'s `unsortedPageID = 999999` — hidden from `GET /api/pages` and page navigation, but a normal page everywhere else: Health, search and `store.GetPages()` all see it unchanged) through the existing `/api/bookmarks/add`, with no category prompt. `dashboard-inbox.js`'s new `keepItem()` replaces the old mark-read behavior in `actKeep()`.
-- **new — "Move to…" can send a bookmark to Unsorted, and back.** The popover lists it as a target beside categories and other pages (`dashboard-bookmark-rows.js`'s `showMovePopover`), resolved once per session from `GET /api/unsorted`.
-- **new — an Unsorted widget, and a full view.** The widget (`dashboard-widget-unsorted.js`) lists the most recently kept links; the full view (`Shift+U`, or the header icon) reuses the tag-filter view's packed-columns layout (`dashboard-unsorted.js`) rather than a separate renderer.
-- **new — a header icon and a Config → Appearance → Header toggle** ("Show the unsorted icon"), on by default, switching without a reload the same way the health icon's own toggle does.
-
-### Docs
-
-- **docs — the What's new entry for v1.12.0 is not hidden — it leads the modal.** `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v291`, `DASHBOARD_RELEASE` to `v1.12.0`. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
