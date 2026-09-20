@@ -3194,6 +3194,17 @@ func normalizePageMeta(page Page, fileID int) Page {
 	if page.Name == "" {
 		page.Name = defaultPageName(fileID)
 	}
+	// The unsorted page is hidden by what it is, not by what its file happens
+	// to say. Adding a bookmark to it writes the file before EnsureUnsortedPage
+	// has ever run, and that record carried no Hidden flag -- so the reserved
+	// page turned up in /api/pages as an ordinary one, with a page tab of its
+	// own, which is the one thing it must never have.
+	if page.ID == unsortedPageID {
+		page.Hidden = true
+		if page.Name == defaultPageName(fileID) {
+			page.Name = "Unsorted"
+		}
+	}
 	return page
 }
 

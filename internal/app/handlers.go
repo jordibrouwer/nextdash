@@ -521,7 +521,21 @@ func appendHealthReason(details *[]HealthReason, legacy *[]string, reason Health
 }
 
 func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
-	pages := h.store.GetPages()
+	// The unsorted page is left out of the report entirely.
+	//
+	// Health is about the library as it stands on the dashboard: what is
+	// broken, what is stale, what has no category. A bookmark kept from the
+	// inbox has not been filed yet -- it has no category by definition, it is
+	// never "unused" in the sense the report means, and it belongs to a page
+	// nothing on the dashboard routes to. Counting them buried the real report
+	// under rows nobody could act on from there.
+	pages := make([]Page, 0)
+	for _, page := range h.store.GetPages() {
+		if page.ID == unsortedPageID {
+			continue
+		}
+		pages = append(pages, page)
+	}
 	pageNames := make(map[int]string, len(pages))
 	for _, page := range pages {
 		pageNames[page.ID] = page.Name
