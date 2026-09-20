@@ -91,18 +91,18 @@ test.describe('triage can be finished', () => {
         );
         expect(total).toBeGreaterThan(1);
 
-        // Keep every one of them. Keeping does not shorten the queue, which is
-        // exactly the path that used to wrap round to the first card.
+        // Keep every one of them. Keep now promotes and removes the card, so
+        // the queue empties one card at a time down to the last one.
         for (let i = 0; i < total; i += 1) {
             await page.keyboard.press('r');
             await page.waitForTimeout(250);
         }
 
         await expect(page.locator('.inbox-triage-done')).toBeVisible({ timeout: 10_000 });
-        // And it did not quietly go back to the top.
+        // The run finished rather than quietly starting over.
         expect(await page.evaluate(
-            () => window.dashboardInstance.inbox.triage.index
-        )).not.toBe(0);
+            () => window.dashboardInstance.inbox.triage.finished
+        )).toBe(true);
     });
 
     test('promoting a link puts you back in the run', async ({ page }) => {

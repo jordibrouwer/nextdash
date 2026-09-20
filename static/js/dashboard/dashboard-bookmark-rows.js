@@ -1276,8 +1276,21 @@ class DashboardBookmarkRows {
     }
 
 
-    showMovePopover(anchorEl, bookmark, bookmarkIndex) {
+    async showMovePopover(anchorEl, bookmark, bookmarkIndex) {
         const d = this.dash;
+        /*
+         * Not from inside Unsorted.
+         *
+         * The row menu there no longer offers Move to..., because a kept
+         * bookmark is filed by being given a category in Edit -- which moves it
+         * onto that page and out of this view in one step. Shift+M is the same
+         * action by another route, and leaving it live would make the keyboard
+         * do what the menu had just stopped offering. Moving a bookmark *into*
+         * Unsorted is untouched: that is this popover opened from a page.
+         */
+        if (d.unsorted?.isActiveView?.()) {
+            return;
+        }
         if (d._movePopoverCleanup) {
             d._movePopoverCleanup();
             d._movePopoverCleanup = null;
@@ -1372,6 +1385,46 @@ class DashboardBookmarkRows {
                 pop.appendChild(item);
                 items.push(item);
             });
+        }
+
+        // Fetched once per session and cached on d -- same pattern as the
+        // Keep action in dashboard-inbox.js, both need "the id of the
+        // Unsorted page" and neither should pay for a GET on every popover open.
+        if (!d._unsortedPage) {
+            try {
+                const res = await fetch('/api/unsorted');
+                if (res.ok) {
+                    const data = await res.json();
+                    d._unsortedPage = data.page;
+                }
+            } catch (_error) {
+                // Best effort -- Unsorted just doesn't appear as a target this
+                // time; Move to... still works for categories and other pages.
+            }
+        }
+
+        if (d._unsortedPage && String(d._unsortedPage.id) !== String(d.currentPageId)) {
+            const divider = document.createElement('div');
+            divider.className = 'move-popover-divider';
+            pop.appendChild(divider);
+
+            const item = document.createElement('div');
+            item.className = 'move-popover-item';
+            item.setAttribute('role', 'option');
+            item.setAttribute('data-type', 'page');
+            item.setAttribute('data-id', String(d._unsortedPage.id));
+            item.setAttribute('aria-selected', 'false');
+
+            const check = document.createElement('span');
+            check.className = 'move-popover-check';
+            item.appendChild(check);
+
+            const label = document.createElement('span');
+            label.textContent = t('dashboard.unsortedPageName', 'Unsorted');
+            item.appendChild(label);
+
+            pop.appendChild(item);
+            items.push(item);
         }
 
         if (items.length === 0) return;
@@ -1618,6 +1671,18 @@ class DashboardBookmarkRows {
                 d._tagPopoverCleanup = null;
             }
             window.FocusTrapUtils?.syncDashboardInert?.();
+            /*
+             * The Unsorted view refuses to repaint while a popover is open --
+             * its loadAndRender bails on `.move-popover`, which this one is,
+             * so that the row the popover hangs off cannot be detached under
+             * it. Nothing repainted it afterwards either, so a tag added here
+             * did not reach the grid until the next visit: grouping by tag
+             * still showed the row untagged. The popover is gone by the time
+             * this runs, so the guard no longer stands in the way.
+             */
+            if (d.unsorted?.isActiveView?.()) {
+                void d.unsorted.loadAndRender();
+            }
         };
         unbindPosition = this._attachActionPopoverPositioning(pop, anchorEl);
         d._tagPopoverCleanup = close;

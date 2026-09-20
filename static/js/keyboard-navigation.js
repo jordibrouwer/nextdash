@@ -1508,9 +1508,10 @@ class KeyboardNavigation {
                 this._clearGState();
                 e.preventDefault();
                 // Escape drops the selection before it drops the cursor, so one
-                // press does not lose both at once.
-                if (this.dashboard?.multiSelect?.isActive()) {
-                    this.dashboard.multiSelect.clear();
+                // press does not lose both at once. Which selection that is --
+                // the grid's or the Unsorted view's -- is the dashboard's to
+                // answer; both are cleared the same way from here.
+                if (this.dashboard?.handleSelectionEscape?.()) {
                     break;
                 }
                 if (this.currentIndex >= 0) {

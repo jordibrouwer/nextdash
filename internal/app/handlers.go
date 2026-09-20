@@ -1948,7 +1948,53 @@ func (h *Handlers) GetPages(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		return
 	}
-	writeJSONWithETag(w, r, h.store.GetPages())
+	all := h.store.GetPages()
+	visible := make([]Page, 0, len(all))
+	for _, p := range all {
+		if p.Hidden {
+			continue
+		}
+		visible = append(visible, p)
+	}
+	writeJSONWithETag(w, r, visible)
+}
+
+// GetUnsorted returns the reserved Unsorted page and its bookmarks, newest
+// first. The page is created on first call (EnsureUnsortedPage), so this
+// never 404s.
+// unsortedBookmark is a bookmark plus the index it occupies on the unsorted
+// page. The embedded struct has no JSON name of its own, so the bookmark's own
+// fields stay where every existing reader expects them.
+type unsortedBookmark struct {
+	Bookmark
+	Index int `json:"index"`
+}
+
+func (h *Handlers) GetUnsorted(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w, r)
+	if r.Method == "OPTIONS" {
+		return
+	}
+	page, err := h.store.EnsureUnsortedPage()
+	if !respondStorePersistError(w, err) {
+		return
+	}
+	bookmarks := h.store.GetBookmarksByPage(page.ID)
+	// The position each bookmark holds on the page, captured before the sort
+	// below reorders them. Deleting by index is the only safe bulk delete the
+	// store offers (/api/health/delete-bookmarks), and a client that only ever
+	// saw this list newest-first has no other way to know where a row sits.
+	rows := make([]unsortedBookmark, len(bookmarks))
+	for i, bookmark := range bookmarks {
+		rows[i] = unsortedBookmark{Bookmark: bookmark, Index: i}
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].CreatedAt > rows[j].CreatedAt
+	})
+	writeJSONWithETag(w, r, map[string]any{
+		"page":      page,
+		"bookmarks": rows,
+	})
 }
 
 func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
@@ -1959,6 +2005,12 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&pages); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
+	}
+	for _, page := range pages {
+		if page.ID == unsortedPageID {
+			http.Error(w, "That page id is reserved", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Extract page order (array of IDs)
@@ -2001,6 +2053,10 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 	// Prevent deleting page 1 (main page)
 	if pageID == 1 {
 		http.Error(w, "Cannot delete the main page", http.StatusBadRequest)
+		return
+	}
+	if pageID == unsortedPageID {
+		http.Error(w, "Cannot delete the unsorted page", http.StatusBadRequest)
 		return
 	}
 

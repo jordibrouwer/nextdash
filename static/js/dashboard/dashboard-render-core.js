@@ -922,6 +922,23 @@ class DashboardRenderCore {
             d.health.render();
             return;
         }
+        /*
+         * Unsorted repaints itself, like the three views above it.
+         *
+         * Without this branch the fallback further down ran instead
+         * (`activeView !== 'bookmarks'` -> setActiveView('bookmarks')), so any
+         * mutation that ends in a repaint -- tagging a row, deleting one,
+         * flipping a pin -- threw the reader out of Unsorted and onto the page
+         * grid. The row it acted on lives on the hidden unsorted page, so the
+         * grid it landed on did not even contain it.
+         */
+        if (d.activeView === 'unsorted' && d.unsorted?.isEnabled?.()) {
+            if (blockForInlineEdit) {
+                return;
+            }
+            void d.unsorted.loadAndRender();
+            return;
+        }
         if (d.activeView === 'config' && d.config?.isEnabled?.()) {
             if (blockForInlineEdit) {
                 return;

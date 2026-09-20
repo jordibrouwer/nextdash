@@ -4334,6 +4334,49 @@ class DashboardInbox {
         });
     }
 
+    /**
+     * The silent promote: "Keep" from inbox triage. Unlike promoteItem() this
+     * never opens the bookmark form -- there is no category to choose, that is
+     * the entire point of Unsorted. Resolves the Unsorted page id once per
+     * session and caches it, matching bulkPromote's page-id-known model.
+     */
+    async keepItem(item) {
+        const d = this.dash;
+        this._trackAction('keep');
+        try {
+            if (!d._unsortedPageId) {
+                const res = await fetch('/api/unsorted');
+                if (!res.ok) throw new Error('unsorted lookup failed');
+                const data = await res.json();
+                d._unsortedPageId = data.page.id;
+            }
+            const doFetch = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const response = await doFetch('/api/bookmarks/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: d._unsortedPageId,
+                    bookmark: {
+                        name: item.previewTitle || item.title || item.url,
+                        url: item.url,
+                        category: '',
+                    },
+                }),
+            });
+            // Already on Unsorted -- same convention as bulkPromote: a 409 for
+            // a link already saved there is not a failure, it's the reason the
+            // inbox entry can go.
+            if (response.status !== 409 && !response.ok) {
+                throw new Error('bookmark create failed');
+            }
+            await this.completePromote(item.id);
+            return true;
+        } catch (_error) {
+            d.showNotification(this.t('dashboard.inboxKeepFailed', 'Could not keep this link'), 'error');
+            return false;
+        }
+    }
+
     promoteItem(item) {
         const d = this.dash;
         // The inbox's main conversion: a captured link becoming a real bookmark.

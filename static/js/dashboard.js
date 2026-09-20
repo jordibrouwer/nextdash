@@ -172,6 +172,7 @@ class Dashboard {
             this.updateHealthBadge();
             this.inbox?.restoreViewIfNeeded?.();
             this.health?.restoreViewIfNeeded?.();
+            this.unsorted?.restoreViewIfNeeded?.();
             this.maybeRefreshAfterConfigReturn();
         });
         this.searchComponent = null;
@@ -216,6 +217,7 @@ class Dashboard {
         this.configSync = new DashboardConfigSync(this);
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
+        this.unsorted = new DashboardUnsorted(this);
         this.multiSelect = new DashboardMultiSelect(this);
         // Narrowing the page you are on, as opposed to searching everything.
         this.gridFilter = typeof DashboardGridFilter === 'function'
@@ -469,6 +471,9 @@ class Dashboard {
             } else if ((bootHash === 'health' || bootHash.startsWith('health/'))
                 && this.activeView !== 'health' && this.health?.isEnabled?.()) {
                 await this.health.openHealthView();
+            } else if (bootHash === 'unsorted'
+                && this.activeView !== 'unsorted' && this.unsorted?.isEnabled?.()) {
+                await this.unsorted.openUnsortedView();
             }
 
             if (this.config?.isEnabled?.()
@@ -614,6 +619,10 @@ class Dashboard {
 
     updateHealthDashboardVisibility() {
         return this.visual.updateHealthDashboardVisibility(...arguments);
+    }
+
+    updateUnsortedVisibility() {
+        return this.visual.updateUnsortedVisibility(...arguments);
     }
 
     async updateHealthBadge() {
@@ -1019,6 +1028,12 @@ class Dashboard {
                 }
                 return;
             }
+            if (hash === 'unsorted') {
+                if (this.activeView !== 'unsorted') {
+                    return this.unsorted?.openUnsortedView?.();
+                }
+                return;
+            }
             if (hash === 'config' || hash.startsWith('config/')) {
                 const genericConfig = hash === 'config';
                 const deferRestore = genericConfig && !this._configInitialHashRouted;
@@ -1052,6 +1067,10 @@ class Dashboard {
                     this.health?.restoreHealthHash?.();
                     return;
                 }
+                if (!restoring && this.activeView === 'unsorted') {
+                    this.unsorted?.restoreUnsortedHash?.();
+                    return;
+                }
                 const pageIndex = parseInt(hash, 10) - 1;
                 if (pageIndex >= 0 && pageIndex < this.pages.length) {
                     const page = this.pages[pageIndex];
@@ -1063,6 +1082,28 @@ class Dashboard {
                     }
                 }
             }
+    }
+
+    /**
+     * What Escape drops, one level per press.
+     *
+     * The grid's multi-select and the Unsorted view's selection are two objects
+     * with the same shape, and Escape has to mean the same thing over both --
+     * so the key's handler asks here rather than naming one of them.
+     *
+     * @returns {boolean} whether the press was spent on a selection.
+     */
+    handleSelectionEscape() {
+        const unsortedSelect = this.unsorted?.isActiveView?.() ? this.unsorted.select : null;
+        if (unsortedSelect?.isActive?.()) {
+            unsortedSelect.clear();
+            return true;
+        }
+        if (this.multiSelect?.isActive?.()) {
+            this.multiSelect.clear();
+            return true;
+        }
+        return false;
     }
 
     setActiveView(view, options = {}) {
@@ -1085,6 +1126,12 @@ class Dashboard {
         // restoreBookmarksViewForPage.
         if (previous === 'bookmarks' && view !== 'bookmarks') {
             this.data?.rememberScrollForPage?.(Number(this.currentPageId));
+        }
+        // Ticks are a state of that view, not of the app. Left standing, the
+        // bulk bar would come back with the view holding rows the reader
+        // stopped thinking about several screens ago.
+        if (previous === 'unsorted' && view !== 'unsorted') {
+            this.unsorted?.select?.clear?.();
         }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);

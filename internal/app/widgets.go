@@ -46,6 +46,10 @@ const (
 	// WidgetTypeInbox reports what is waiting to be filed, and how long it has
 	// been waiting.
 	WidgetTypeInbox WidgetType = "inbox"
+	// WidgetTypeUnsorted lists bookmarks kept from the inbox without a
+	// dashboard category -- the same list the full Unsorted view shows,
+	// chronological, most recent first.
+	WidgetTypeUnsorted WidgetType = "unsorted"
 	// WidgetTypeFeeds reports feeds with fresh items, and -- the part nobody
 	// sees today -- the feeds that retired themselves after repeated failures.
 	WidgetTypeFeeds WidgetType = "feeds"
@@ -129,6 +133,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeCerts:      {},
 	WidgetTypeTrend:      {},
 	WidgetTypeInbox:      {},
+	WidgetTypeUnsorted:   {},
 	WidgetTypeFeeds:      {},
 	WidgetTypeSources:    {},
 	WidgetTypeNeglected:  {},

@@ -386,6 +386,60 @@ class DashboardVisual {
     }
 
 
+    /**
+     * Mark the header unsorted icon as the current view, the way the health
+     * icon is marked. It is an <a> outside #page-navigation, so
+     * setActivePageNavButton never reaches it.
+     */
+    syncUnsortedLinkActiveState() {
+        const d = this.dash;
+        const anchor = document.querySelector('.unsorted-link a.unsorted-link-anchor');
+        if (!anchor) {
+            return;
+        }
+        const active = d.activeView === 'unsorted';
+        anchor.classList.toggle('active', active);
+        if (active) {
+            anchor.setAttribute('aria-current', 'page');
+        } else {
+            anchor.removeAttribute('aria-current');
+        }
+    }
+
+    updateUnsortedVisibility() {
+        const d = this.dash;
+        let unsortedLink = document.querySelector('.unsorted-link');
+
+        if (d.settings.unsortedEnabled !== false) {
+            if (!unsortedLink) {
+                unsortedLink = document.createElement('div');
+                unsortedLink.className = 'unsorted-link unsorted-link--icon';
+                const unsortedLabel = d.language.t('dashboard.unsorted');
+                const raw = unsortedLabel !== 'dashboard.unsorted' ? unsortedLabel : 'unsorted';
+                const label = d.escapeHtml ? d.escapeHtml(raw) : raw;
+                unsortedLink.innerHTML = `<a href="/#unsorted" class="unsorted-link-anchor" aria-label="${label}" title="${label}"><svg class="unsorted-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="12" height="12" rx="2" transform="rotate(-8 9 9)"/><rect x="9" y="9" width="12" height="12" rx="2" transform="rotate(6 15 15)"/></svg></a>`;
+
+                const host = this.headerDestinationsHost();
+                if (host) {
+                    const healthLink = host.querySelector('.health-link');
+                    if (healthLink) {
+                        host.insertBefore(unsortedLink, healthLink);
+                    } else {
+                        const configLink = host.querySelector('.config-link');
+                        if (configLink) {
+                            host.insertBefore(unsortedLink, configLink);
+                        } else {
+                            host.appendChild(unsortedLink);
+                        }
+                    }
+                }
+            }
+            this.syncUnsortedLinkActiveState();
+        } else if (unsortedLink) {
+            unsortedLink.remove();
+        }
+    }
+
     updateHealthDashboardVisibility() {
         const d = this.dash;
         let healthLink = document.querySelector('.health-link');

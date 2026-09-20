@@ -357,6 +357,12 @@ type Page struct {
 	Name  string `json:"name"`            // Editable page name
 	Icon  string `json:"icon,omitempty"`  // Optional emoji icon shown in the tab
 	Color string `json:"color,omitempty"` // Optional accent color (hex) for the tab indicator
+	// Hidden excludes the page from the ordinary page navigation, the page
+	// tab strip, and the Config -> Pages list. Used for the single reserved
+	// "Unsorted" page (see unsortedPageID) -- everything else about a Hidden
+	// page is a normal Page, so Health, search and GetBookmarksByPage all see
+	// it exactly as they see any other page.
+	Hidden bool `json:"hidden,omitempty"`
 }
 
 type PageWithBookmarks struct {
@@ -663,6 +669,7 @@ type Settings struct {
 	ThemeIconStyling          map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
 	PasteUrlQuickAdd          bool                             `json:"pasteUrlQuickAdd"`        // Enable paste URL to quick-add bookmark on dashboard
 	InboxEnabled              bool                             `json:"inboxEnabled"`            // Enable inbox page and paste-to-inbox flow
+	UnsortedEnabled           bool                             `json:"unsortedEnabled"`         // Enable unsorted nav icon and the Keep-to-Unsorted promote action
 	PasteDestination          string                           `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
 	InboxDedupeUrls           bool                             `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
 	InboxMaxItems             int                              `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
@@ -1153,6 +1160,8 @@ type Store interface {
 	GetPageBlocks(pageID int) ([]Widget, []string)
 	SavePageBlocks(pageID int, widgets []Widget, order []string) error
 	SavePage(page Page) error
+	// EnsureUnsortedPage returns the reserved hidden "Unsorted" page, creating it on first use.
+	EnsureUnsortedPage() (Page, error)
 	DeletePage(pageID int) error
 	GetPageOrder() []int
 	SavePageOrder(order []int) error
@@ -1498,6 +1507,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			LauncherIconSize:               "normal",
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
+			UnsortedEnabled:                true,
 			PasteDestination:               "ask",
 			InboxDedupeUrls:                true,
 			InboxMaxItems:                  500,
@@ -2880,6 +2890,14 @@ func parseBookmarkPageIDFromFilename(name string) (int, bool) {
 	return id, true
 }
 
+// unsortedPageID is the fixed, reserved page ID for the hidden "Unsorted"
+// page (see EnsureUnsortedPage). It is a constant rather than "next available
+// ID" precisely because "next available ID" is how ordinary pages are
+// assigned (see dashboard-structure-create.js's createPageFromForm): a
+// dynamically chosen low ID would eventually collide with a real page created
+// after it. 999999 is far outside the range ordinary pages ever reach.
+const unsortedPageID = 999999
+
 func defaultPageName(id int) string {
 	if id == 1 {
 		return "main"
@@ -3291,6 +3309,22 @@ func (fs *FileStore) SavePage(page Page) error {
 	return fs.writeStoreJSONFile(fileName, existing, 0)
 }
 
+// EnsureUnsortedPage returns the reserved hidden "Unsorted" page, creating it
+// on first use. It is idempotent: once the page exists, later calls read it
+// back rather than re-saving it.
+func (fs *FileStore) EnsureUnsortedPage() (Page, error) {
+	for _, p := range fs.getPages() {
+		if p.ID == unsortedPageID {
+			return p, nil
+		}
+	}
+	page := Page{ID: unsortedPageID, Name: "Unsorted", Hidden: true}
+	if err := fs.SavePage(page); err != nil {
+		return Page{}, fmt.Errorf("create unsorted page: %w", err)
+	}
+	return page, nil
+}
+
 func (fs *FileStore) removeFactoryResetUserAssets() {
 	os.RemoveAll(fmt.Sprintf("%s/icons", fs.dataDir))
 	for _, name := range []string{
@@ -3671,6 +3705,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ThemeIconStyling:                defaultThemeIconStyling(),
 			PasteUrlQuickAdd:                true,
 			InboxEnabled:                    true,
+			UnsortedEnabled:                 true,
 			PasteDestination:                "ask",
 			InboxDedupeUrls:                 true,
 			InboxMaxItems:                   500,
@@ -4269,6 +4304,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["inboxEnabled"]; !ok {
 			settings.InboxEnabled = true
+		}
+		if _, ok := rawSettings["unsortedEnabled"]; !ok {
+			settings.UnsortedEnabled = true
 		}
 		if settings.InboxEnabled {
 			settings.PasteUrlQuickAdd = true

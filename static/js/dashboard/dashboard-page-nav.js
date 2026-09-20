@@ -142,6 +142,13 @@ class DashboardPageNav {
     }
 
 
+    unsortedPageLabel() {
+        const d = this.dash;
+        const unsortedLabel = d.language?.t?.('dashboard.unsorted');
+        return unsortedLabel && unsortedLabel !== 'dashboard.unsorted' ? unsortedLabel : 'Unsorted';
+    }
+
+
     /**
      * The big header names the view only ('config', 'health', …). The trail of
      * sections that used to sit next to it drops to the smaller line below —
@@ -159,6 +166,8 @@ class DashboardPageNav {
                 displayName = this.t('dashboard.health', 'health');
             } else if (d.activeView === 'config') {
                 displayName = this.t('config.viewBreadcrumbRoot', 'Config').toLowerCase();
+            } else if (d.activeView === 'unsorted') {
+                displayName = this.unsortedPageLabel().toLowerCase();
             } else {
                 const defaultTitle = d.language.t('dashboard.defaultPageTitle');
                 displayName = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
@@ -199,7 +208,9 @@ class DashboardPageNav {
             ? this.inboxPageLabel()
             : (d.activeView === 'health'
                 ? this.healthPageLabel()
-                : (d.activeView === 'config' ? this.configPageLabel() : ''));
+                : (d.activeView === 'config'
+                    ? this.configPageLabel()
+                    : (d.activeView === 'unsorted' ? this.unsortedPageLabel() : '')));
         if (viewName) {
             if (d.settings?.enableCustomTitle) {
                 const base = (d.settings.customTitle || '').trim();
@@ -274,6 +285,7 @@ class DashboardPageNav {
         // The health and config icons live in the header, outside this container,
         // but are the same kind of destination — keep their active state in step
         // with the tabs.
+        d.visual?.syncUnsortedLinkActiveState?.();
         d.visual?.syncHealthLinkActiveState?.();
         d.visual?.syncConfigLinkActiveState?.();
         d.visual?.syncDashboardLinkActiveState?.();
@@ -293,6 +305,14 @@ class DashboardPageNav {
 
     /** Health has no tab of its own: it opens from the header icon. */
     setActiveHealthTab() {
+        this.setActivePageNavButton(this.dash.currentPageId);
+        this.updatePageTitle();
+        this.updateDocumentTitle();
+    }
+
+
+    /** Unsorted has no tab of its own either: same header-icon route as health. */
+    setActiveUnsortedTab() {
         this.setActivePageNavButton(this.dash.currentPageId);
         this.updatePageTitle();
         this.updateDocumentTitle();

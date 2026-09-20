@@ -355,16 +355,10 @@ class DashboardInboxTriage {
         if (!item) {
             return;
         }
-        if (!item.readAt) {
-            // Unlike Open, the read mark *is* this action. Advancing past a
-            // failure would move the card on from an item that is still unread,
-            // so a failed keep reports and stays put for another try.
-            if (!(await this.inbox.markReadReporting(item.id))) {
-                return;
-            }
-            item.readAt = Date.now();
+        if (!(await this.inbox.keepItem(item))) {
+            return;
         }
-        await this.afterAction(false, { readId: item.id });
+        await this.afterAction(true, { removedId: item.id });
     }
 
     async actDelete() {

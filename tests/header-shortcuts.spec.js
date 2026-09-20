@@ -318,7 +318,7 @@ test('the hairline needs something on both sides of it', async ({ page }) => {
     // And the other way round: the actions stand, the destinations do not.
     await apply({
         showDashboardButton: false, showInboxButton: false,
-        showConfigButton: false, showHealthDashboard: false,
+        showConfigButton: false, showHealthDashboard: false, unsortedEnabled: false,
     });
     await expect.poll(rules, { timeout: 5_000 }).toBe(0);
 
@@ -326,7 +326,7 @@ test('the hairline needs something on both sides of it', async ({ page }) => {
     // the way the tests after this one expect to find it.
     await apply({
         showDashboardButton: true, showInboxButton: true,
-        showConfigButton: true, showHealthDashboard: true,
+        showConfigButton: true, showHealthDashboard: true, unsortedEnabled: true,
     });
     await expect.poll(rules, { timeout: 5_000 }).toBe(1);
 });
@@ -577,4 +577,38 @@ test('the destinations are as big as the action group', async ({ page }) => {
     expect(seen.dividers, 'the header kept a rule with nothing on one side of it').toBe(1);
     expect(seen.pagesInGroup, 'the pages button is not in the action group').toBe(true);
     expect(seen.pagesStandalone, 'the standalone pages button is still drawn').toBe(0);
+});
+
+test('Shift+U opens the Unsorted view, and its nav icon opens it too', async ({ page }) => {
+    await openDashboard(page);
+
+    await page.keyboard.press('Shift+U');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('unsorted');
+    await expect(page.locator('.unsorted-view')).toBeVisible();
+
+    // Back to the dashboard, then in again via the icon.
+    await page.evaluate(() => window.dashboardInstance.requestPageNavigation(window.dashboardInstance.currentPageId));
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).not.toBe('unsorted');
+
+    await page.locator('.unsorted-link-anchor').click();
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('unsorted');
+});
+
+test('turning off the unsorted setting removes its icon without a reload', async ({ page }) => {
+    await openDashboard(page);
+    await expect(page.locator('.unsorted-link-anchor')).toHaveCount(1);
+
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.unsortedEnabled = false;
+        d.setupDOM();
+    });
+    await expect(page.locator('.unsorted-link-anchor')).toHaveCount(0);
+
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.unsortedEnabled = true;
+        d.setupDOM();
+    });
+    await expect(page.locator('.unsorted-link-anchor')).toHaveCount(1);
 });
