@@ -31,6 +31,21 @@ class ConfigFaviconPrefetch {
             return;
         }
         const refreshAll = options.refreshAll === true;
+        /*
+         * Gap between batches, for callers sweeping a long list.
+         *
+         * Each batch fetches up to four icons from other people's servers, and
+         * the endpoint behind it is rate limited (60 a minute per client,
+         * shared with the preview fetches and the link checks). An import runs
+         * once over a handful of pages and can go at full speed; a sweep over a
+         * few hundred rows walks into the ceiling, and a refused batch throws
+         * and takes the whole run down with it.
+         */
+        const intervalMs = Number(options.intervalMs) > 0 ? Number(options.intervalMs) : 0;
+        // Icons per request. A sweep pays one request per batch against a
+        // sixty-a-minute ceiling, so a bigger batch is the difference between
+        // a run that finishes and one that spends its minute waiting.
+        const size = Number(options.limit) > 0 ? { limit: Number(options.limit) } : {};
         this._running = true;
         const overlay = this._showOverlay();
         try {
@@ -46,10 +61,22 @@ class ConfigFaviconPrefetch {
             for (const pageId of ids) {
                 let pageTotal = null;
                 let attempts = 0;
-                // refreshAll does not shrink the candidate list, so walk it by offset.
+                /*
+                 * Where the next batch starts.
+                 *
+                 * refreshAll does not shrink the candidate list, so it walks by
+                 * what it has attempted. The plain sweep does shrink -- an icon
+                 * that lands drops out of the list -- but one that cannot be
+                 * fetched does not, and with no offset the server handed back
+                 * the same first four unreachable bookmarks every time. A page
+                 * whose first rows are dead addresses fetched nothing at all,
+                 * for as many batches as the list was long. So the plain sweep
+                 * steps past what it failed to fetch.
+                 */
                 let offset = 0;
                 while (true) {
-                    const batch = await this._postBatch(pageId, refreshAll ? { refreshAll: true, offset } : {});
+                    const batch = await this._postBatch(pageId,
+                        refreshAll ? { refreshAll: true, offset, ...size } : { offset, ...size });
                     if (pageTotal === null) {
                         pageTotal = batch.total || 0;
                         if (pageTotal === 0) {
@@ -60,11 +87,16 @@ class ConfigFaviconPrefetch {
                         break;
                     }
                     attempts += batch.attempted || 0;
-                    offset += batch.attempted || 0;
+                    offset += refreshAll
+                        ? (batch.attempted || 0)
+                        : Math.max(0, (batch.attempted || 0) - (batch.applied || 0));
                     done = Math.min(totalMissing, done + (batch.attempted || 0));
                     this._updateOverlay(overlay, done, totalMissing, false);
                     if (batch.done || batch.remaining === 0 || attempts >= pageTotal) {
                         break;
+                    }
+                    if (intervalMs) {
+                        await this._delay(intervalMs);
                     }
                 }
             }
@@ -122,12 +154,23 @@ class ConfigFaviconPrefetch {
             Object.assign(headers, nextDashWriteHeaders());
         }
         const body = { pageId, limit: 4, ...options };
+        // The server caps a batch at eight; asking for more of them per request
+        // is how a paced sweep stays under the rate limit and still moves.
         const fetchFn = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const res = await fetchFn('/api/bookmarks/prefetch-icons', {
+        const post = () => fetchFn('/api/bookmarks/prefetch-icons', {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
         });
+        let res = await post();
+        // A refusal is not a failure: the server says how long to wait, and a
+        // sweep that threw here took the whole run down and left the reader
+        // looking at rows that never got an icon and no word about why.
+        if (res.status === 429) {
+            const retryAfter = Number(res.headers.get('Retry-After')) || 60;
+            await this._delay((retryAfter + 1) * 1000);
+            res = await post();
+        }
         if (!res.ok) {
             const errText = await res.text().catch(() => '');
             throw new Error(errText || `HTTP ${res.status}`);
