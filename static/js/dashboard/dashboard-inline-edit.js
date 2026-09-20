@@ -1031,11 +1031,32 @@ class DashboardInlineEdit {
         pageSelect.className = 'bookmark-inline-select';
         const currentPageId = Number(d.currentPageId);
         const sourcePageId = Number(bookmarkRef.pageId || d.currentPageId);
+        /*
+         * An unsorted bookmark's own page is not in d.pages -- it is hidden, and
+         * nothing on the dashboard routes to it -- so without an entry of its
+         * own the select fell through to the first real page and every save
+         * from the Unsorted view silently filed the bookmark. Giving it an
+         * option makes staying put the default and choosing a page the
+         * deliberate act that promotes it onto the dashboard.
+         */
+        const unsortedPageId = window.DashboardUnsorted?.PAGE_ID;
+        const isUnsortedSource = Number.isFinite(Number(unsortedPageId))
+            && sourcePageId === Number(unsortedPageId);
         const fillPageSelect = (pages, selectedId) => {
             pageSelect.replaceChildren();
             pageSelect.appendChild(mkNewOption(cfg('addNewPageOption', '➕ New page…')));
             const list = Array.isArray(pages) ? pages : [];
             let matched = false;
+            if (isUnsortedSource) {
+                const o = document.createElement('option');
+                o.value = String(unsortedPageId);
+                o.textContent = d.pageNav?.unsortedPageLabel?.() || 'Unsorted';
+                if (Number(selectedId) === Number(unsortedPageId)) {
+                    o.selected = true;
+                    matched = true;
+                }
+                pageSelect.appendChild(o);
+            }
             list.forEach((page) => {
                 const o = document.createElement('option');
                 o.value = page.id;

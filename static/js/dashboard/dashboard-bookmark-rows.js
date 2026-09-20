@@ -1278,6 +1278,19 @@ class DashboardBookmarkRows {
 
     async showMovePopover(anchorEl, bookmark, bookmarkIndex) {
         const d = this.dash;
+        /*
+         * Not from inside Unsorted.
+         *
+         * The row menu there no longer offers Move to..., because a kept
+         * bookmark is filed by being given a category in Edit -- which moves it
+         * onto that page and out of this view in one step. Shift+M is the same
+         * action by another route, and leaving it live would make the keyboard
+         * do what the menu had just stopped offering. Moving a bookmark *into*
+         * Unsorted is untouched: that is this popover opened from a page.
+         */
+        if (d.unsorted?.isActiveView?.()) {
+            return;
+        }
         if (d._movePopoverCleanup) {
             d._movePopoverCleanup();
             d._movePopoverCleanup = null;

@@ -6,7 +6,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * DashboardUnsorted.render() is a full innerHTML wipe, not an incremental
  * patch. A background refresh (refreshIfDataRevisionChanged,
  * repaintBookmarkMutationSurfaces) firing while a row's context menu or
- * Move to... popover is open used to detach the row the popover is anchored
+ * row popover is open used to detach the row the popover is anchored
  * to -- the popover's own position code gives up on a 0x0 rect rather than
  * guess, so it rendered wherever the browser default put it (the viewport's
  * top-left corner) instead of beside the row. loadAndRender() now skips the
@@ -53,8 +53,12 @@ test('a background refresh does not detach the row under an open context menu', 
     });
     expect(sameNode, 'the row was rebuilt while its context menu was open').toBe(true);
 
-    await page.click('#bookmark-context-menu [data-action="move"]');
-    const pop = page.locator('#move-popover');
+    // Tags rather than Move to...: the Unsorted menu no longer carries Move --
+    // a kept bookmark is filed by giving it a category in Edit, not by being
+    // shoved at a page -- and this test is about a popover finding the row it
+    // hangs off, which the tag popover anchors the same way.
+    await page.click('#bookmark-context-menu [data-action="tags"]');
+    const pop = page.locator('#tag-popover');
     await expect(pop).toBeVisible({ timeout: 5_000 });
     const box = await pop.boundingBox();
     // Not the unpositioned top-left corner fallback.
