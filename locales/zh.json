@@ -4388,7 +4388,6 @@
     "logsIntro": "服务器都做了些什么。日志行保存在内存里和一个轮转文件里，也照旧镜像到容器日志。",
     "logsSettingsTitle": "日志设置",
     "logsPanelTitle": "服务器日志",
-    "logCaptureLabel": "收集服务器日志",
     "logCaptureHint": "默认关闭。关着的时候什么都不收集，日志也不花任何代价；已经收集到的会保留。",
     "logCaptureStarted": "开始收集服务器日志。",
     "logCaptureStopped": "已停止收集服务器日志。",

@@ -4388,7 +4388,6 @@
     "logsIntro": "Lo que ha estado haciendo el servidor. Las líneas se guardan en memoria y en un archivo rotatorio, y se reflejan en el registro del contenedor como antes.",
     "logsSettingsTitle": "Ajustes del registro",
     "logsPanelTitle": "Registro del servidor",
-    "logCaptureLabel": "Recoger el registro del servidor",
     "logCaptureHint": "Desactivado por defecto. Mientras esté apagado no se recoge nada y el registro no cuesta nada; lo ya recogido se conserva.",
     "logCaptureStarted": "Recogiendo el registro del servidor.",
     "logCaptureStopped": "Se ha dejado de recoger el registro del servidor.",

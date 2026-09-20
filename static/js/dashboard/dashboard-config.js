@@ -5740,6 +5740,13 @@ class DashboardConfig {
             ['activity', this.t('config.logLevelActivity', 'Activity only')],
         ].map(([v, label]) => `<option value="${esc(v)}" ${v === this.logLevelFilter ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
+        /*
+         * Recording sits in the toolbar, not behind the gear. It decides
+         * whether anything below exists at all — the empty state tells you to
+         * switch it on — so the switch belongs where you are already looking.
+         * Everything behind the gear is a preference about a log that is
+         * already being written.
+         */
         return `
             <p class="config-view-intro">${esc(this.t('config.logsIntro', 'What the server has been doing. Lines are kept in memory and in a rotating file, and mirrored to the container log as before.'))}</p>
 
@@ -5764,6 +5771,10 @@ class DashboardConfig {
                         <span>${esc(this.t('config.logFollowLabel', 'Follow'))}</span>
                     </label>
                     <div class="config-log-toolbar-actions">
+                        <button type="button" class="config-btn config-log-record${s.serverLogEnabled ? ' is-active' : ''}"
+                                data-log-toggle="capture" aria-pressed="${s.serverLogEnabled ? 'true' : 'false'}"
+                                aria-label="${esc(this.t('config.logRecordLabel', 'Record server log'))}"
+                                title="${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}">${esc(this.t('config.logRecordLabel', 'Record server log'))}</button>
                         <button type="button" class="config-btn config-icon-btn" data-log-action="refresh"
                                 title="${esc(this.t('config.logRefreshNow', 'Refresh now'))}" aria-label="${esc(this.t('config.logRefreshNow', 'Refresh now'))}">↻</button>
                         <button type="button" class="config-btn" data-log-action="copy">${esc(this.t('config.logCopy', 'Copy'))}</button>
@@ -5777,6 +5788,8 @@ class DashboardConfig {
                 </div>
 
                 <p class="config-panel-note" data-log-floor-note>${esc(this.serverLogFloorNote())}</p>
+                <p class="config-panel-note config-log-manual-note" data-log-refresh-note
+                   ${s.serverLogEnabled && !this.logRefreshSeconds ? '' : 'hidden'}>${esc(this.serverLogManualNote())}</p>
                 <p class="config-panel-note" data-log-activity-note ${this.logLevelFilter === 'activity' ? '' : 'hidden'}>${esc(this.t('config.logActivityHint',
                     'What was done — bookmarks saved, pages added, checks run — mixed into the same log as the requests. Pick Activity only to read just those, or turn categories on and off with NEXTDASH_ACTIVITY_LOG.'))}</p>
 
@@ -5787,11 +5800,6 @@ class DashboardConfig {
                     <h4 class="move-popover-header">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h4>
                     <div class="config-log-settings-body">
                         <div class="config-log-settings-col">
-                        <label class="config-toggle">
-                            <input type="checkbox" data-log-toggle="capture" ${s.serverLogEnabled ? 'checked' : ''}>
-                            <span>${esc(this.t('config.logCaptureLabel', 'Collect server log'))}</span>
-                        </label>
-                        <p class="config-panel-note">${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}</p>
                         <div class="config-field">
                             <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
                             <select class="config-select" data-log-select="interval">${intervalOptions}</select>
@@ -5963,6 +5971,7 @@ class DashboardConfig {
                 const value = sel.value;
                 if (kind === 'interval') {
                     this.logRefreshSeconds = Number(value) || 0;
+                    this.syncServerLogRefreshNote();
                     this.updateServerLogTimer();
                     return;
                 }
@@ -6044,22 +6053,27 @@ class DashboardConfig {
 
         const capture = container.querySelector('[data-log-toggle="capture"]');
         if (capture) {
-            capture.addEventListener('change', () => {
-                this.dash.settings.serverLogEnabled = capture.checked;
+            capture.addEventListener('click', () => {
+                const on = capture.getAttribute('aria-pressed') !== 'true';
+                capture.setAttribute('aria-pressed', on ? 'true' : 'false');
+                capture.classList.toggle('is-active', on);
+                this.dash.settings.serverLogEnabled = on;
                 void this.saveSettingsWithFeedback();
-                this.notify(capture.checked
+                this.notify(on
                     ? this.t('config.logCaptureStarted', 'Collecting the server log.')
                     : this.t('config.logCaptureStopped', 'Stopped collecting the server log.'), 'success');
                 // Turning it on should show something without waiting for the
                 // interval; turning it off should stop the polling that would
                 // now return nothing new.
-                if (capture.checked) {
+                this.syncServerLogRefreshNote();
+                if (on) {
                     void this.loadServerLog({ reset: true });
                 } else {
                     this.stopServerLogTimer();
                     const sel = container.querySelector('[data-log-select="interval"]');
                     if (sel) sel.value = '0';
                     this.logRefreshSeconds = 0;
+                    this.syncServerLogRefreshNote();
                     // The empty state reads differently when collecting is off,
                     // and it is chosen at paint time — so repaint now rather
                     // than leaving the wrong message until the tab is reopened.

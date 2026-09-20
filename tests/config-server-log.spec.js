@@ -52,8 +52,7 @@ async function openLogs(page, { capture = true, clear = false, maxEntries = 0 } 
     await expect(page.locator('[data-log-output]')).toBeVisible();
 
     const toggle = page.locator('[data-log-toggle="capture"]');
-    if (capture !== await toggle.isChecked()) {
-        await openLogSettingsPopover(page);
+    if (capture !== ((await toggle.getAttribute('aria-pressed')) === 'true')) {
         await toggle.click();
         await expect.poll(() => page.evaluate(async () =>
             (await (await fetch('/api/logs')).json()).capturing), { timeout: 10_000 }).toBe(capture);
@@ -96,6 +95,28 @@ test.describe('Logs → Server logs', () => {
         for (const kind of ['interval', 'retention']) {
             await expect(page.locator(`[data-log-select="${kind}"]`)).toBeVisible();
         }
+    });
+
+    test('every line carries its own number, and a filter does not renumber them', async ({ page }) => {
+        await openLogs(page, { clear: true });
+        await expect.poll(() => page.locator('.config-log-line').count()).toBeGreaterThan(2);
+
+        const numbers = () => page.locator('.config-log-seq').allTextContents();
+        const before = (await numbers()).map(Number);
+        expect(before.length).toBeGreaterThan(2);
+        // Counting up, one per line, starting at 1 for a cleared buffer.
+        expect(before).toEqual(before.map((_, i) => i + 1));
+
+        // The number belongs to the line, not to its place on screen: what
+        // survives a filter keeps the number it had.
+        const kept = before.at(-1);
+        await page.locator('[data-log-search]').fill(String(await page
+            .locator('.config-log-line')
+            .last()
+            .locator('.config-log-message')
+            .innerText()).slice(0, 20));
+        await expect.poll(() => page.locator('.config-log-line').count()).toBeGreaterThan(0);
+        expect((await numbers()).map(Number)).toContain(kept);
     });
 
     test('the level filter narrows what is listed', async ({ page }) => {
@@ -177,7 +198,7 @@ test.describe('Logs → Server logs', () => {
         await openLogs(page, { capture: false, clear: true });
 
         // Off by default, so an install nobody debugs pays nothing for it.
-        await expect(page.locator('[data-log-toggle="capture"]')).not.toBeChecked();
+        await expect(page.locator('[data-log-toggle="capture"]')).toHaveAttribute('aria-pressed', 'false');
         // The empty state says why the list is empty. Asserted on the rendered
         // string rather than the DOM node: these tests share one server, so
         // whether any lines survive the clear depends on what ran before.
@@ -186,18 +207,15 @@ test.describe('Logs → Server logs', () => {
             return window.dashboardInstance.config.renderServerLogLines();
         })).toContain('Not collecting');
 
-        await openLogSettingsPopover(page);
         await page.locator('[data-log-toggle="capture"]').click();
+        await expect(page.locator('[data-log-toggle="capture"]')).toHaveAttribute('aria-pressed', 'true');
         await expect.poll(() => page.evaluate(async () =>
             (await (await fetch('/api/settings')).json()).serverLogEnabled), { timeout: 10_000 }).toBe(true);
         await page.evaluate(() => fetch('/api/pages'));
-        // A click on the toolbar's refresh button lands outside the popover,
-        // which closes it — the same outside-click rule any menu follows.
         await page.locator('[data-log-action="refresh"]').click();
         await expect.poll(() => page.locator('.config-log-line').count()).toBeGreaterThan(0);
 
         // Stopping halts capture without discarding what is already there.
-        await openLogSettingsPopover(page);
         await page.locator('[data-log-toggle="capture"]').click();
         await expect.poll(() => page.evaluate(async () =>
             (await (await fetch('/api/logs')).json()).capturing), { timeout: 10_000 }).toBe(false);
@@ -207,6 +225,31 @@ test.describe('Logs → Server logs', () => {
         expect(before).toBeGreaterThan(0);
         for (let i = 0; i < 5; i++) await page.evaluate(() => fetch('/api/pages'));
         expect(await total()).toBe(before);
+    });
+
+    test('recording with the refresh off says so, and says where the setting is', async ({ page }) => {
+        await openLogs(page, { capture: false });
+        const note = page.locator('[data-log-refresh-note]');
+        // Not recording: nothing to warn about, whatever the interval says.
+        await expect(note).toBeHidden();
+
+        await page.locator('[data-log-toggle="capture"]').click();
+        await expect(note).toBeVisible();
+        await expect(note).toContainText('Refresh');
+
+        // An interval answers it, so the note goes.
+        await openLogSettingsPopover(page);
+        await page.locator('[data-log-select="interval"]').selectOption('5');
+        await expect(note).toBeHidden();
+
+        await page.locator('[data-log-select="interval"]').selectOption('0');
+        await expect(note).toBeVisible();
+
+        // Stopping answers it too: an idle view over a log nobody is filling
+        // is not a fault.
+        await page.keyboard.press('Escape');
+        await page.locator('[data-log-toggle="capture"]').click();
+        await expect(note).toBeHidden();
     });
 
     test('the two caps are exclusive: only one control is live at a time', async ({ page }) => {
@@ -288,7 +331,10 @@ test.describe('Logs → Server logs', () => {
         for (const kind of ['interval', 'mode', 'retention', 'maxEntries', 'detail']) {
             await expect(popover.locator(`[data-log-select="${kind}"]`)).toBeVisible();
         }
-        await expect(popover.locator('[data-log-toggle="capture"]')).toBeVisible();
+        // Recording is the one control that stayed in the toolbar: it decides
+        // whether there is anything to look at, so it is not behind a gear.
+        await expect(popover.locator('[data-log-toggle="capture"]')).toHaveCount(0);
+        await expect(page.locator('.config-log-toolbar-actions [data-log-toggle="capture"]')).toBeVisible();
 
         // Escape closes it and hands focus back to the button that opened it.
         await page.keyboard.press('Escape');
