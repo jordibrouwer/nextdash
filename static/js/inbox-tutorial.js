@@ -64,7 +64,7 @@
             {
                 title: t('inboxTutorialStep2Title', 'Read is not the same as dealt with'),
                 visual: `<div class="inbox-tutorial-visual">
-                    ${key('r', t('inboxTutorialKeyKeep', 'keep · mark read'))}
+                    ${key('r', t('inboxTutorialKeyKeep', 'keep · moves to Kept'))}
                     <span class="inbox-tutorial-visual-hint">${esc(t('inboxTutorialStep2VisualHint', 'Clear read empties them in one go'))}</span>
                 </div>`,
                 body: `<p>${esc(t('inboxTutorialStep2Body1',

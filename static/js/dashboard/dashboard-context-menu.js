@@ -199,7 +199,11 @@ class DashboardContextMenu {
             { id: 'inbox-promote', label: this.t('dashboard.inboxPromote', 'Promote'), icon: '★' },
             // Keep's own entry: the same silent promote-to-Unsorted the triage
             // "r" key runs, reachable now without starting a triage run first.
-            { id: 'inbox-keep', label: this.t('dashboard.inboxKeep', 'Keep'), icon: '▣' },
+            {
+                id: 'inbox-keep',
+                label: this.t('dashboard.inboxKeepToKept', 'Keep (to the Kept tab)'),
+                icon: '▣',
+            },
             // Whichever way the row can still go: read, or back to unread. The
             // second was missing entirely — the server accepted it and nothing
             // ever sent it — so a link marked read by mistake could only be

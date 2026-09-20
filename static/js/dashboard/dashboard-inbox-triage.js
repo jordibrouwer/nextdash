@@ -542,7 +542,8 @@ class DashboardInboxTriage {
                 <button type="button" class="inbox-action-btn" data-triage="note">${this.escape(noteLabel)} <kbd>N</kbd></button>
                 <button type="button" class="inbox-action-btn inbox-action-btn--danger" data-triage="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))} <kbd>D</kbd></button>
             </div>
-            <p class="inbox-triage-hint">${this.escape(this.t('dashboard.inboxTriageHint', 'J/K next · O open · P promote · R keep · Z snooze · N note · D delete · Esc close'))}</p>
+            <p class="inbox-triage-hint">${this.escape(this.t('dashboard.inboxTriageHint', 'J/K next · O open · P promote · R keep (to Kept) · Z snooze · N note · D delete · Esc close'))}</p>
+            <p class="inbox-triage-hint inbox-triage-keep-hint">${this.escape(this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, on the inbox\u2019s Kept tab, without giving it a page yet'))}</p>
         `;
 
         // Rewriting the card destroys whatever was focused inside it, which
