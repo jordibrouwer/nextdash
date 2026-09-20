@@ -896,6 +896,10 @@ class DashboardBookmarkRows {
             syncList(d.bookmarks);
         }
         syncList(d.allBookmarks);
+        // The kept bookmarks are held in their own array (see loadAllBookmarks),
+        // so an edit that skipped it left search offering the old name until the
+        // next full load.
+        syncList(d.unsortedBookmarks);
 
         if (updatedUrlTrimmed && previousUrlTrimmed && updatedUrlTrimmed !== previousUrlTrimmed) {
             bookmarkRef.original.url = updated.url;
@@ -910,20 +914,28 @@ class DashboardBookmarkRows {
 
     removeBookmarkFromAllBookmarks(bookmarkRef) {
         const d = this.dash;
-        if (!bookmarkRef || !Array.isArray(d.allBookmarks)) {
+        if (!bookmarkRef) {
             return;
         }
         const pageId = Number(bookmarkRef.pageId || d.currentPageId);
-        for (let i = d.allBookmarks.length - 1; i >= 0; i -= 1) {
-            const candidate = d.allBookmarks[i];
-            const candidatePageId = Number(candidate?.pageId || candidate?.pageID || 0);
-            if (candidatePageId !== pageId) {
-                continue;
+        // Both cross-page arrays: the kept bookmarks live apart from
+        // allBookmarks, and a delete that only walked one of them left the
+        // other still offering the row.
+        [d.allBookmarks, d.unsortedBookmarks].forEach((list) => {
+            if (!Array.isArray(list)) {
+                return;
             }
-            if (this.isSameBookmarkReference(bookmarkRef, candidate)) {
-                d.allBookmarks.splice(i, 1);
+            for (let i = list.length - 1; i >= 0; i -= 1) {
+                const candidate = list[i];
+                const candidatePageId = Number(candidate?.pageId || candidate?.pageID || 0);
+                if (candidatePageId !== pageId) {
+                    continue;
+                }
+                if (this.isSameBookmarkReference(bookmarkRef, candidate)) {
+                    list.splice(i, 1);
+                }
             }
-        }
+        });
     }
 
 
@@ -963,15 +975,31 @@ class DashboardBookmarkRows {
             purge(d.bookmarks);
         }
         purge(d.allBookmarks);
+        purge(d.unsortedBookmarks);
         return removed;
     }
 
     restoreBookmarkInAllBookmarks(bookmark, pageId) {
         const d = this.dash;
-        if (!bookmark || !Array.isArray(d.allBookmarks)) {
+        if (!bookmark) {
             return;
         }
         const pid = Number(pageId || d.currentPageId);
+        /*
+         * Back where it came from, which for a kept bookmark is not
+         * allBookmarks.
+         *
+         * The two arrays are split by page on load precisely so the dashboard's
+         * surfaces cannot see the unsorted page; an undone delete that pushed a
+         * kept bookmark into allBookmarks would put it on all of them at once,
+         * and nothing would take it out again until the next full load.
+         */
+        const list = window.DashboardUnsorted?.isUnsortedBookmark?.({ pageId: pid })
+            ? d.unsortedBookmarks
+            : d.allBookmarks;
+        if (!Array.isArray(list)) {
+            return;
+        }
         const ref = {
             bookmark,
             pageId: pid,
@@ -979,11 +1007,11 @@ class DashboardBookmarkRows {
             scope: 'current',
             index: -1
         };
-        const exists = d.allBookmarks.some((candidate) => (
+        const exists = list.some((candidate) => (
             d._shouldSyncBookmarkMutation(ref, candidate, String(bookmark.url || '').trim())
         ));
         if (!exists) {
-            d.allBookmarks.push({ ...bookmark, pageId: pid });
+            list.push({ ...bookmark, pageId: pid });
         }
     }
 

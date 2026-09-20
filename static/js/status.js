@@ -738,6 +738,9 @@ class StatusMonitor {
         const dash = window.dashboardInstance;
         const fresh = dash?.bookmarks?.find((candidate) => candidate?.url === url)
             || dash?.allBookmarks?.find((candidate) => candidate?.url === url)
+            // Kept bookmarks are held apart from allBookmarks; without this the
+            // freshest copy of one is whatever the caller happened to pass in.
+            || dash?.unsortedBookmarks?.find((candidate) => candidate?.url === url)
             || bookmark;
 
         if (!bookmarkIsChecked(fresh)) {

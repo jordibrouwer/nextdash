@@ -419,10 +419,17 @@ class DashboardUnsortedSelect {
         pop.focus({ preventScroll: true });
     }
 
-    /** Every tag the library knows, so a bulk tag can reuse an existing name. */
+    /**
+     * Every tag the library knows, so a bulk tag can reuse an existing name.
+     *
+     * The kept bookmarks included: they are split out of allBookmarks on load,
+     * and without them this list could not offer the tags already used in this
+     * very view.
+     */
     knownTags() {
         const d = this.dash;
-        const pool = (d.allBookmarks?.length ? d.allBookmarks : d.bookmarks) || [];
+        const filed = (d.allBookmarks?.length ? d.allBookmarks : d.bookmarks) || [];
+        const pool = [...filed, ...(d.unsortedBookmarks || [])];
         const tags = new Set();
         pool.forEach((bookmark) => this._tagsOf(bookmark).forEach((tag) => tags.add(tag)));
         return [...tags].sort();
@@ -650,13 +657,42 @@ class DashboardUnsortedSelect {
         window.nextdashTrack?.('unsorted:fetch-icons', {});
         this._busy = true;
         this.sync();
+        const hadIcon = (bookmark) => !!String(bookmark?.icon || '').trim();
+        const before = this.unsorted._bookmarks.filter(hadIcon).length;
         try {
-            await prefetch.run([pageId]);
+            // Paced: a few hundred rows at four icons a batch runs into the
+            // same sixty-a-minute ceiling the preview sweep does.
+            await prefetch.run([pageId], {
+                intervalMs: DashboardUnsortedSelect.SWEEP_INTERVAL_MS,
+                // Eight at a time, the server's own cap: a few hundred rows at
+                // four a request spends most of the run rate limited.
+                limit: 8,
+            });
             await this.unsorted.loadAndRender();
         } finally {
             this._busy = false;
             this.sync();
         }
+        /*
+         * Say what came back.
+         *
+         * The sweep can attempt every row and apply none -- a site that
+         * answers without a favicon, a host that cannot be reached from here --
+         * and the overlay closes the same way either way. Without a count the
+         * only visible difference between "worked" and "reached nothing" is
+         * that the rows still have no icon, which reads as the button being
+         * broken.
+         */
+        const gained = this.unsorted._bookmarks.filter(hadIcon).length - before;
+        if (gained > 0) {
+            d.showNotification(
+                this.t('unsortedFetchIconsDone', `Fetched ${gained} icon(s)`, { count: gained }),
+                'success', { duration: 4000 });
+            return;
+        }
+        d.showNotification(
+            this.t('unsortedFetchIconsNone', 'No icons came back — the sites answered without one'),
+            'warning');
     }
 
     /**

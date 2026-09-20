@@ -2094,6 +2094,10 @@ class KeyboardNavigation {
             if (url) {
                 bookmark = (dash.bookmarks || []).find(b => b.url === url)
                     || (dash.allBookmarks || []).find(b => b.url === url)
+                    // Kept rows live apart from allBookmarks so they stay out
+                    // of the dashboard's surfaces; the cursor still lands on
+                    // them in the Unsorted view.
+                    || (dash.unsortedBookmarks || []).find(b => b.url === url)
                     || null;
             }
         }
@@ -2219,7 +2223,8 @@ class KeyboardNavigation {
                     if (hits.length <= 1) return hits[0] || null;
                     return hits.find((b) => String(b.name || '').trim() === label) || hits[0];
                 };
-                bookmark = pick(dash.bookmarks) || pick(dash.allBookmarks) || null;
+                bookmark = pick(dash.bookmarks) || pick(dash.allBookmarks)
+                    || pick(dash.unsortedBookmarks) || null;
             }
         }
         return bookmark || null;

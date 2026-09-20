@@ -31,17 +31,26 @@ class DashboardUnsorted {
     static SORTS = ['added-desc', 'added-asc', 'name', 'site', 'opened', 'tag'];
     static GROUPS = ['none', 'site', 'date', 'tag'];
 
+    /**
+     * The one answer to "does this bookmark live on the unsorted page".
+     *
+     * Both spellings of the field, because the two exist in the tree: the store
+     * writes `pageId`, and a few older record shapes carry `pageID`. Normalized
+     * here rather than at the callers, so a second definition cannot drift away
+     * from this one.
+     */
     static isUnsortedBookmark(bookmark) {
-        return Number(bookmark?.pageId) === DashboardUnsorted.PAGE_ID;
+        const pageId = Number(bookmark?.pageId ?? bookmark?.pageID);
+        return Number.isFinite(pageId) && pageId === DashboardUnsorted.PAGE_ID;
     }
 
     /**
      * Every dashboard surface that reads across pages has to drop these.
      *
-     * d.allBookmarks holds the unsorted page too — the row menus in this view
-     * resolve through it — so a pool taken straight from it put kept bookmarks
-     * into the tag cloud and the smart collections, which is the one place they
-     * must never appear. Filed by giving it a category, and not before.
+     * Kept for the surfaces that build a pool of their own from a list that
+     * may still hold them — the split in loadAllBookmarks keeps them out of
+     * d.allBookmarks, and this keeps any other pool honest besides. They are
+     * filed by being given a category, and not before.
      */
     static withoutUnsorted(list) {
         if (!Array.isArray(list)) return list;
@@ -169,7 +178,10 @@ class DashboardUnsorted {
         }
         let bookmarks = [];
         try {
-            const res = await fetch('/api/unsorted');
+            // no-store: this reload follows writes of its own -- a tag, a
+            // promote, a sweep of icons -- and a revalidated copy from the
+            // browser's cache would show the list as it was before them.
+            const res = await fetch('/api/unsorted', { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
                 bookmarks = Array.isArray(data?.bookmarks) ? data.bookmarks : [];

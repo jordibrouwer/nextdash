@@ -310,6 +310,10 @@ class DashboardConfigSync {
                 await d.withRetry(() => d.loadAllBookmarks({ rethrow: true }), 2, 220);
             } else {
                 d.allBookmarks = [];
+                // Cleared together: they are two halves of one load, and a
+                // stale unsorted half would keep answering search after the
+                // rest had gone.
+                d.unsortedBookmarks = [];
             }
             d.renderPageNavigation();
             d.inbox?.applySettingsChange?.();

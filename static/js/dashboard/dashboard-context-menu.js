@@ -117,8 +117,11 @@ class DashboardContextMenu {
         const url = row.getAttribute('data-bookmark-url');
         if (!url) return null;
         const label = (row.querySelector('.bookmark-text')?.textContent || '').trim();
+        // d.unsortedBookmarks as well: the kept rows are held apart from
+        // allBookmarks so they cannot reach the dashboard's own surfaces, and
+        // the Unsorted view's rows resolve through here like any other.
         const candidates = [];
-        [d.bookmarks, d.allBookmarks].forEach((list) => {
+        [d.bookmarks, d.allBookmarks, d.unsortedBookmarks].forEach((list) => {
             (list || []).forEach((b) => {
                 if (b?.url === url && !candidates.includes(b)) candidates.push(b);
             });

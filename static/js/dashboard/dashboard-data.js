@@ -1155,7 +1155,23 @@ class DashboardData {
             if (!allBookmarksRes.ok) {
                 throw new Error('Failed to load all bookmarks');
             }
-            d.allBookmarks = await allBookmarksRes.json();
+            /*
+             * Split on the way in, so every surface that reads allBookmarks is
+             * right by construction.
+             *
+             * A bookmark kept from the inbox lives on the hidden unsorted page
+             * and belongs to one view. It was reaching config's bookmark list,
+             * the tag cloud, the smart collections and the health badge simply
+             * because they all read this array -- gating each of them would be
+             * a dozen places to remember and one to forget. The unsorted rows
+             * are kept beside it instead, for the two surfaces that may see
+             * them: the Unsorted view, and search when the reader allows it.
+             */
+            const loaded = await allBookmarksRes.json();
+            const rows = Array.isArray(loaded) ? loaded : [];
+            const isUnsorted = (bookmark) => window.DashboardUnsorted?.isUnsortedBookmark?.(bookmark) === true;
+            d.allBookmarks = rows.filter((bookmark) => !isUnsorted(bookmark));
+            d.unsortedBookmarks = rows.filter(isUnsorted);
             this.invalidateStalePageCaches();
 
             const currentPageId = Number(d.currentPageId);

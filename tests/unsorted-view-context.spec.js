@@ -194,14 +194,16 @@ test('a tagged unsorted bookmark stays out of the dashboard pools', async ({ pag
         const unsortedIn = (list) => (list || []).filter((b) => Number(b.pageId) === 999999).length;
         return {
             all: unsortedIn(d.allBookmarks),
+            kept: (d.unsortedBookmarks || []).length,
             smart: unsortedIn(d.smartCollections?.getSmartCollectionSourceBookmarks?.()),
             cloud: unsortedIn(window.DashboardTagCloud?.getBookmarkPool?.()),
         };
     });
 
-    // allBookmarks still carries them — the row menus in the Unsorted view
-    // resolve through it — but neither dashboard surface may.
-    expect(leaked.all).toBeGreaterThan(0);
+    // The kept rows are held in their own array, and none of the dashboard's
+    // pools -- allBookmarks included -- carries them.
+    expect(leaked.kept).toBeGreaterThan(0);
+    expect(leaked.all).toBe(0);
     expect(leaked.smart).toBe(0);
     expect(leaked.cloud).toBe(0);
 });

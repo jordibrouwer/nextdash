@@ -540,13 +540,20 @@ class DashboardInlineEdit {
                 ) || d.bookmarks.find((b) => String((b.url || '').trim()) === url);
             }
         }
-        if (!bookmark && Array.isArray(d.allBookmarks)) {
+        if (!bookmark) {
             const url = String(el.getAttribute('data-bookmark-url') || '').trim();
             const cat = String(el.getAttribute('data-category-id') || '').trim();
+            // Both cross-page arrays: kept bookmarks are split out of
+            // allBookmarks on load, so a row in the Unsorted view resolves
+            // through the second one or not at all.
+            const pools = [d.allBookmarks, d.unsortedBookmarks].filter(Array.isArray);
             if (url) {
-                bookmark = d.allBookmarks.find(
-                    (b) => String((b.url || '').trim()) === url && String(b.category || '') === cat
-                ) || d.allBookmarks.find((b) => String((b.url || '').trim()) === url);
+                for (const pool of pools) {
+                    bookmark = pool.find(
+                        (b) => String((b.url || '').trim()) === url && String(b.category || '') === cat
+                    ) || pool.find((b) => String((b.url || '').trim()) === url);
+                    if (bookmark) break;
+                }
             }
         }
         if (!bookmark) {

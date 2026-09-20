@@ -184,8 +184,12 @@ const CheckMode = {
         });
         // allBookmarks needs its own pass: syncEditedBookmarkAcrossCollections
         // matches on page id and entries here carry none, so it skips them.
-        (d.allBookmarks || []).forEach((candidate) => {
-            if (matches(candidate)) CheckMode.assign(candidate, mode, intervalMinutes);
+        // The kept bookmarks are a third array for the same reason -- they are
+        // split out of allBookmarks on load -- and need the same pass.
+        [d.allBookmarks, d.unsortedBookmarks].forEach((list) => {
+            (list || []).forEach((candidate) => {
+                if (matches(candidate)) CheckMode.assign(candidate, mode, intervalMinutes);
+            });
         });
         if (bookmarkRef) d.syncEditedBookmarkAcrossCollections?.(bookmarkRef, key);
 

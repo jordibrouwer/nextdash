@@ -56,6 +56,9 @@ class Dashboard {
         this._bookmarksReady = false;
         /** All pages — search / global shortcuts; not for getRecentBookmarks (page-local recent UX). */
         this.allBookmarks = [];
+        // Bookmarks kept on the hidden unsorted page, held apart so the
+        // dashboard's own surfaces cannot see them (see loadAllBookmarks).
+        this.unsortedBookmarks = [];
         this.finders = [];
         this.categories = [];
         this.collapsedCategories = {};
