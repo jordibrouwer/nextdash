@@ -2063,7 +2063,12 @@
     "unsortedSuggestDone": "{count} marcador(es) etiquetados",
     "unsortedRowDestination": "archivar en {place}",
     "unsortedRowDestinationHint": "{have} enlaces de este sitio están en {place}",
-    "inboxAutoFiled": "Archivado en {place}"
+    "inboxAutoFiled": "Archivado en {place}",
+    "keptPileNoticeLater": "Ahora no",
+    "keptPileNoticeTitle": "Los enlaces guardados se acumulan",
+    "keptPileNoticeOpen": "Abrir la lista",
+    "keptPileNoticeDismiss": "Cerrar",
+    "keptPileNoticeBody": "{count} enlaces guardados llevan más de un mes esperando página. La lista puede archivar un lote de una vez: agrupa por sitio o etiqueta propuesta, marca un grupo y muévelo."
   },
   "health": {
     "reloadPage": "Recargar la página",

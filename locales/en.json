@@ -2063,7 +2063,12 @@
     "unsortedSuggestDone": "Tagged {count} bookmark(s)",
     "unsortedRowDestination": "file on {place}",
     "unsortedRowDestinationHint": "{have} links from this site are filed on {place}",
-    "inboxAutoFiled": "Filed on {place}"
+    "inboxAutoFiled": "Filed on {place}",
+    "keptPileNoticeLater": "Not now",
+    "keptPileNoticeTitle": "Kept links are piling up",
+    "keptPileNoticeOpen": "Open the kept list",
+    "keptPileNoticeDismiss": "Dismiss",
+    "keptPileNoticeBody": "{count} of the links you kept have been waiting over a month for a page. The kept list can file a batch at once — group them by site or by suggested tag, tick a group, and move it."
   },
   "health": {
     "reloadPage": "Reload page",

@@ -2063,7 +2063,12 @@
     "unsortedSuggestDone": "已为 {count} 条书签加标签",
     "unsortedRowDestination": "归档到 {place}",
     "unsortedRowDestinationHint": "该站点有 {have} 个链接已归档在 {place}",
-    "inboxAutoFiled": "已归档到 {place}"
+    "inboxAutoFiled": "已归档到 {place}",
+    "keptPileNoticeLater": "暂时不用",
+    "keptPileNoticeTitle": "保留的链接越积越多",
+    "keptPileNoticeOpen": "打开已保留列表",
+    "keptPileNoticeDismiss": "关闭",
+    "keptPileNoticeBody": "有 {count} 个保留的链接已等待超过一个月还没有页面。在「已保留」列表里可以整批归档——按站点或建议标签分组，勾选一组再移动。"
   },
   "health": {
     "reloadPage": "重新加载页面",

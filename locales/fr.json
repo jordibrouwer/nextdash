@@ -2063,7 +2063,12 @@
     "unsortedSuggestDone": "{count} signet(s) étiquetés",
     "unsortedRowDestination": "classer sur {place}",
     "unsortedRowDestinationHint": "{have} liens de ce site sont classés sur {place}",
-    "inboxAutoFiled": "Classé sur {place}"
+    "inboxAutoFiled": "Classé sur {place}",
+    "keptPileNoticeLater": "Pas maintenant",
+    "keptPileNoticeTitle": "Les liens gardés s’accumulent",
+    "keptPileNoticeOpen": "Ouvrir la liste",
+    "keptPileNoticeDismiss": "Fermer",
+    "keptPileNoticeBody": "{count} liens gardés attendent une page depuis plus d’un mois. La liste peut en classer un lot d’un coup — groupez par site ou par tag proposé, cochez un groupe, déplacez-le."
   },
   "health": {
     "reloadPage": "Recharger la page",

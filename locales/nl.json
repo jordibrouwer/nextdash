@@ -2063,7 +2063,12 @@
     "unsortedSuggestDone": "{count} bookmark(s) getagd",
     "unsortedRowDestination": "opbergen op {place}",
     "unsortedRowDestinationHint": "{have} links van deze site staan op {place}",
-    "inboxAutoFiled": "Opgeborgen op {place}"
+    "inboxAutoFiled": "Opgeborgen op {place}",
+    "keptPileNoticeLater": "Niet nu",
+    "keptPileNoticeTitle": "Bewaarde links stapelen zich op",
+    "keptPileNoticeOpen": "Open de bewaarlijst",
+    "keptPileNoticeDismiss": "Sluiten",
+    "keptPileNoticeBody": "{count} bewaarde links wachten al langer dan een maand op een pagina. In de bewaarlijst kun je een groep in één keer opbergen — groepeer op site of voorgestelde tag, vink een groep aan en verplaats hem."
   },
   "health": {
     "reloadPage": "Pagina herladen",
