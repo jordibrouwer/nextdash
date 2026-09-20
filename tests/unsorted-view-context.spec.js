@@ -333,3 +333,35 @@ test('the row menu sends a kept bookmark back to the inbox', async ({ page }) =>
         return (data.bookmarks || []).some((b) => b.url === u);
     }, url), { timeout: 15_000 }).toBe(false);
 });
+
+/**
+ * Parking a kept link from the row itself.
+ *
+ * The selection bar can snooze a whole tick-list, and the run over the list can
+ * park the card in front of you -- but the row menu, which is where a single
+ * link is dealt with, could only file it, send it back, or delete it. A link
+ * worth holding that cannot be placed yet had no answer here.
+ */
+test('the row menu parks a kept bookmark back into the queue', async ({ page }) => {
+    await bootstrap(page, keptPair('snooze'));
+    await openUnsorted(page);
+    await page.locator('.unsorted-view-search-input').fill('ctx-snooze-one');
+
+    await openRowMenu(page, page.locator('.bookmark-link[data-unsorted-key]').first());
+    await page.click('#bookmark-context-menu [data-action="unsorted-snooze"]');
+
+    const menu = page.locator('.inbox-snooze-menu');
+    await expect(menu).toBeVisible();
+    await menu.locator('[data-snooze-until]').first().click();
+
+    const url = 'https://ctx-snooze-one.example/a';
+    await expect.poll(async () => page.evaluate(async (u) => {
+        const body = await (await fetch('/api/inbox', { cache: 'no-store' })).json();
+        const rows = body.items || body || [];
+        return Number(rows.find((item) => item.url === u)?.snoozedUntil || 0);
+    }, url), { timeout: 20_000 }).toBeGreaterThan(Date.now());
+    await expect.poll(async () => page.evaluate(async (u) => {
+        const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        return (data.bookmarks || []).some((b) => b.url === u);
+    }, url), { timeout: 20_000 }).toBe(false);
+});

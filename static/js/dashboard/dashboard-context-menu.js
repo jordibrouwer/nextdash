@@ -328,6 +328,14 @@ class DashboardContextMenu {
                     id: 'unsorted-to-inbox',
                     label: this.t('dashboard.contextMenuBackToInbox', 'Back to the inbox'),
                     icon: '↩',
+                }, {
+                    // The third answer a kept link can be given: not filed, not
+                    // back in the queue today, but parked until a date. The
+                    // selection bar and the run over the list both offer it;
+                    // the row menu is where a single link is dealt with.
+                    id: 'unsorted-snooze',
+                    label: this.t('dashboard.unsortedSelectSnooze', 'Snooze'),
+                    icon: '⏰',
                 }]
                 : []),
             ...(currentMode
@@ -1036,6 +1044,15 @@ class DashboardContextMenu {
                 break;
             case 'unsorted-to-inbox':
                 void d.unsorted?.select?.sendToInbox([bookmark]);
+                break;
+            case 'unsorted-snooze':
+                // The queue's own menu, on this row: one list of durations for
+                // both, and the wake it writes is the one the queue reads.
+                d.inbox?.openSnoozeMenu?.(null, row, null, {
+                    onPicked: (until) => {
+                        void d.unsorted?.select?.sendToInbox([bookmark], { snoozeUntil: until });
+                    },
+                });
                 break;
             case 'check-mode':
                 this.showCheckModeMenu(row, bookmarkRef, { parentPoint: options.parentPoint });
