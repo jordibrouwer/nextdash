@@ -2,6 +2,39 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureKeptTabTitle",
+      "titleFallback": "Keep a link without filing it",
+      "whatKey": "config.overviewNewFeatureKeptTabWhat",
+      "whatFallback": "A link in the inbox could only become a bookmark or be thrown away, so the ones you wanted but could not place yet stayed in the queue and kept asking.",
+      "howKey": "config.overviewNewFeatureKeptTabHow",
+      "howFallback": "Keep (Shift+K) moves it to the inbox's Kept tab with its note and tags. Group the tab by site, tag or age and file a whole group at once, or press f to work through it one link at a time.",
+      "enableKey": "config.overviewNewFeatureKeptTabEnable",
+      "enableFallback": "Open the inbox and press Shift+K on a row.",
+      "ctaKey": "config.overviewNewFeatureKeptTabCta",
+      "ctaFallback": "Open the inbox →",
+      "go": {
+        "view": "inbox"
+      },
+      "since": "v1.12.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureKeptFileTitle",
+      "titleFallback": "File a kept link where its site lives",
+      "whatKey": "config.overviewNewFeatureKeptFileWhat",
+      "whatFallback": "Filing a kept link took three steps — Move to…, a page, a category — even when the rest of its site was already filed in one place.",
+      "howKey": "config.overviewNewFeatureKeptFileHow",
+      "howFallback": "A kept row shows where its neighbours are and files it there in one click. Switch it on and Keep does that by itself.",
+      "enableKey": "config.overviewNewFeatureKeptFileEnable",
+      "enableFallback": "Config → Behavior → Inbox & Fresh → File a kept link where its neighbours are.",
+      "ctaKey": "config.overviewNewFeatureKeptFileCta",
+      "ctaFallback": "Open Inbox & Fresh →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "inbox"
+      },
+      "since": "v1.12.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureButtonHomeTitle",
       "titleFallback": "The fixed buttons have a home",
       "whatKey": "config.overviewNewFeatureButtonHomeWhat",

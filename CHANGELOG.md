@@ -273,6 +273,7 @@ A third answer for the inbox. Until now a link left the queue as a bookmark or n
 ### Docs
 
 - **docs — Config → Help → Inbox** has a new *The Kept tab* panel, and the inbox, working, triage, settings, tour and Behavior panels describe Keep, the two tabs and the new switches; **Help → Tips** gains `tipEditKeep` and `tipEditKeptPile`. Six locales.
+- **docs — `static/data/whats-new/v1.12.0.json` and its index entry**, leading the What's new window: `whats-new-stub.js`'s `DASHBOARD_RELEASE` moved to `2026.09-dashboard-release-v1.12.0`, so every install sees it once, and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v295`. v1.11.1–v1.11.8 lose `hideFromModal` and are shown under it, the way v1.7.0 released v1.6.1 and v1.6.2; v1.11.4's lead no longer mentions a test. `tests/whats-new-hidden-release.spec.js` asserts that nothing is held back and that each of them is reachable in the window. `static/data/overview-features.json` gains two spotlights with `since: "v1.12.0"` — keeping a link, and filing it where its site lives — with their keys in six locales. `go generate` refreshed `asset_hashes_gen.go`.
 - **docs — MANUAL.md** gains §14.5 *The Kept tab* (Settings moves to §14.6), and §8, §11, §13, §14, §15.4, §15.5, §17.4 and §18.1 follow the changes above; **README.md** mentions Kept and counts twenty-one widget kinds.
 
 ---
