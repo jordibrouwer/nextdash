@@ -142,3 +142,23 @@ test('the card gives the title room, and shows the tags and the age', async ({ p
     await expect(card.locator('.unsorted-review-own-tags')).toContainText('later');
     await expect(card.locator('.inbox-triage-meta')).toContainText('1mo');
 });
+
+test('closing the run and starting it again picks up where it stopped', async ({ page }) => {
+    await openKept(page, [
+        ...KEPT,
+        { name: 'Review Three', url: 'https://review.example/three', createdAt: 3000 },
+    ]);
+    const card = page.locator('.unsorted-review-card');
+
+    await page.keyboard.press('f');
+    await expect(card).toContainText('Review One');
+    await page.keyboard.press('j');
+    await page.keyboard.press('j');
+    await expect(card).toContainText('Review Three');
+    await page.keyboard.press('Escape');
+    await expect(card).toHaveCount(0);
+
+    await page.keyboard.press('f');
+    await expect(card).toContainText('Review Three');
+    await expect(card.locator('.unsorted-review-progress')).toHaveText('3 / 3');
+});

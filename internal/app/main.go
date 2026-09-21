@@ -108,6 +108,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/bookmarks", handlers.GetBookmarks).Methods("GET")
 	r.HandleFunc("/api/bookmarks", handlers.SaveBookmarks).Methods("POST")
 	r.HandleFunc("/api/bookmarks", handlers.DeleteBookmark).Methods("DELETE")
+	r.HandleFunc("/api/bookmarks", handlers.PatchBookmarks).Methods("PATCH")
 	r.HandleFunc("/api/bookmarks/add", handlers.AddBookmark).Methods("POST")
 	r.HandleFunc("/api/bookmarks/import-browser", handlers.ImportBrowserBookmarks).Methods("POST")
 	// The file itself rather than the browser's reading of it, so an import

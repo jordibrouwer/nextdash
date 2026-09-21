@@ -227,7 +227,7 @@ test('a tagged unsorted bookmark stays out of the dashboard pools', async ({ pag
     expect(leaked.cloud).toBe(0);
 });
 
-test('grouping by tag shows only what carries one', async ({ page }) => {
+test('grouping by tag gives the untagged rows a block of their own, last', async ({ page }) => {
     await bootstrap(page, [
         ...keptPair('group'),
         {
@@ -240,12 +240,13 @@ test('grouping by tag shows only what carries one', async ({ page }) => {
     await page.locator('.unsorted-view-search-input').fill('ctx-group-');
     await page.locator('.unsorted-view-group-select').selectOption('tag');
 
-    // Both of the tagged row's tags get a block; the two untagged fixtures get
-    // none at all rather than a "no tag" pile.
+    // Both of the tagged row's tags get a block, and the two untagged
+    // fixtures share one after them: the pile a tagging pass starts from.
     const titles = await page.locator('.unsorted-group-title .category-title-name').allInnerTexts();
-    expect(titles.sort()).toEqual(['alpha', 'beta']);
-    const names = await page.locator('.unsorted-view .bookmarks-list .bookmark-text').allInnerTexts();
-    expect(new Set(names)).toEqual(new Set(['Ctx group Tagged']));
+    expect(titles.slice(0, 2).sort()).toEqual(['alpha', 'beta']);
+    expect(titles[2]).toBe('no tag');
+    const untagged = page.locator('.unsorted-view .unsorted-group', { has: page.locator('.category-title-name', { hasText: 'no tag' }) });
+    await expect(untagged.locator('.bookmark-text')).toHaveCount(2);
 });
 
 test('Edit offers Unsorted as the page, and picking another one files the bookmark', async ({ page }) => {
@@ -364,4 +365,116 @@ test('the row menu parks a kept bookmark back into the queue', async ({ page }) 
         const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
         return (data.bookmarks || []).some((b) => b.url === u);
     }, url), { timeout: 20_000 }).toBe(false);
+});
+
+async function inboxRow(page, url) {
+    return page.evaluate(async (u) => {
+        const body = await (await fetch('/api/inbox', { cache: 'no-store' })).json();
+        const rows = Array.isArray(body) ? body : (Array.isArray(body?.items) ? body.items : []);
+        return rows.find((item) => item.url === u) || null;
+    }, url);
+}
+
+async function stillKept(page, url) {
+    return page.evaluate(async (u) => {
+        const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        return (data.bookmarks || []).some((b) => b.url === u);
+    }, url);
+}
+
+/** A full inbox also answers 409; that one must not cost the kept row. */
+test('a full inbox leaves the kept row where it was', async ({ page }) => {
+    await bootstrap(page, keptPair('full'));
+    await page.route('**/api/inbox', async (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        return route.fulfill({
+            status: 409, contentType: 'application/json',
+            body: JSON.stringify({ error: 'at_capacity', message: 'Inbox is full' }),
+        });
+    });
+    await openUnsorted(page);
+    await page.locator('.unsorted-view-search-input').fill('ctx-full-one');
+    await openRowMenu(page, page.locator('.bookmark-link[data-unsorted-key]').first());
+    await page.click('#bookmark-context-menu [data-action="unsorted-to-inbox"]');
+
+    await expect(page.locator('.app-notification, .notification').filter({ hasText: /failed/i }).first())
+        .toBeVisible({ timeout: 15_000 });
+    expect(await stillKept(page, 'https://ctx-full-one.example/a')).toBe(true);
+});
+
+/** Kept delete fails after the inbox add: the inbox copy is taken back out. */
+test('a failed kept delete takes the new inbox copy back out', async ({ page }) => {
+    await bootstrap(page, keptPair('rollback'));
+    const url = 'https://ctx-rollback-one.example/a';
+    await page.route('**/api/bookmarks', async (route) => {
+        if (route.request().method() !== 'DELETE') return route.continue();
+        return route.fulfill({ status: 500, body: 'nope' });
+    });
+    await openUnsorted(page);
+    await page.locator('.unsorted-view-search-input').fill('ctx-rollback-one');
+    await openRowMenu(page, page.locator('.bookmark-link[data-unsorted-key]').first());
+    await page.click('#bookmark-context-menu [data-action="unsorted-to-inbox"]');
+
+    await expect(page.locator('.app-notification, .notification').filter({ hasText: /failed/i }).first())
+        .toBeVisible({ timeout: 15_000 });
+    await expect.poll(async () => inboxRow(page, url), { timeout: 10_000 }).toBeNull();
+    expect(await stillKept(page, url)).toBe(true);
+});
+
+/** The search box reads what a row shows: tags, the note and the preview too. */
+test('search finds a kept row by tag, note and preview text', async ({ page }) => {
+    await bootstrap(page, [
+        { name: 'Plain Name', url: 'https://ctx-search-a.example/a', createdAt: 5000,
+            tags: ['zebrafish'], note: 'ask about the quokka', previewTitle: 'Narwhal handbook' },
+        { name: 'Other Row', url: 'https://ctx-search-b.example/b', createdAt: 4000 },
+    ]);
+    await openUnsorted(page);
+    const rows = page.locator('.bookmark-link[data-unsorted-key]');
+    for (const query of ['zebrafish', 'quokka', 'narwhal']) {
+        await page.locator('.unsorted-view-search-input').fill(query);
+        await expect(rows).toHaveCount(1);
+        await expect(rows.first()).toContainText('Plain Name');
+    }
+});
+
+/** The toast after sending back carries an undo that restores the kept row. */
+test('sending back to the inbox can be undone from the toast', async ({ page }) => {
+    await bootstrap(page, keptPair('undosend'));
+    const url = 'https://ctx-undosend-one.example/a';
+    await openUnsorted(page);
+    await page.locator('.unsorted-view-search-input').fill('ctx-undosend-one');
+    await openRowMenu(page, page.locator('.bookmark-link[data-unsorted-key]').first());
+    await page.click('#bookmark-context-menu [data-action="unsorted-to-inbox"]');
+    await expect.poll(() => stillKept(page, url), { timeout: 15_000 }).toBe(false);
+
+    await page.locator('.app-notification', { hasText: 'Sent back' })
+        .locator('.app-notification-action').click();
+
+    await expect.poll(() => stillKept(page, url), { timeout: 15_000 }).toBe(true);
+    await expect.poll(async () => inboxRow(page, url), { timeout: 15_000 }).toBeNull();
+});
+
+/** Filing a kept row can be undone: back on the kept page, off the target. */
+test('filing a kept row can be undone from the toast', async ({ page }) => {
+    await bootstrap(page, keptPair('undofile'));
+    const url = 'https://ctx-undofile-one.example/a';
+    await openUnsorted(page);
+    const moved = await page.evaluate(async (u) => {
+        const unsorted = window.dashboardInstance.unsorted;
+        const row = unsorted._bookmarks.find((b) => b.url === u);
+        await unsorted.select.moveSelectionTo(1, '', [row]);
+        const filed = await (await fetch('/api/bookmarks?page=1', { cache: 'no-store' })).json();
+        return filed.some((b) => b.url === u);
+    }, url);
+    expect(moved).toBe(true);
+    expect(await stillKept(page, url)).toBe(false);
+
+    await page.locator('.app-notification', { hasText: 'Filed' })
+        .locator('.app-notification-action').click();
+
+    await expect.poll(() => stillKept(page, url), { timeout: 15_000 }).toBe(true);
+    await expect.poll(async () => page.evaluate(async (u) => {
+        const filed = await (await fetch('/api/bookmarks?page=1', { cache: 'no-store' })).json();
+        return filed.some((b) => b.url === u);
+    }, url), { timeout: 15_000 }).toBe(false);
 });

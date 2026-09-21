@@ -51,7 +51,12 @@ class DashboardUnsortedReview {
         const rows = this.unsorted._visibleBookmarks?.() || [];
         if (!rows.length) return false;
         this.queue = [...rows];
-        this.index = 0;
+        // Back where the last run stopped, when that link is still on the
+        // list: a pile of two hundred is not worked through in one sitting,
+        // and starting over means walking past everything already looked at.
+        const resumeAt = DashboardUnsortedReview.readResume();
+        const found = resumeAt ? rows.findIndex((row) => row?.url === resumeAt) : -1;
+        this.index = found > 0 ? found : 0;
         this.handled = 0;
         this.started = rows.length;
         this.finished = false;
@@ -118,8 +123,32 @@ class DashboardUnsortedReview {
         this._scrollLock = null;
     }
 
+    /*
+     * Where a run stopped, per browser. A convenience, not state anyone else
+     * needs: storage that is blocked or cleared just means starting at the top.
+     */
+    static RESUME_KEY = 'nextdash.keptReviewAt';
+
+    static readResume() {
+        try {
+            return window.localStorage.getItem(DashboardUnsortedReview.RESUME_KEY) || '';
+        } catch {
+            return '';
+        }
+    }
+
+    static writeResume(url) {
+        try {
+            if (url) window.localStorage.setItem(DashboardUnsortedReview.RESUME_KEY, url);
+            else window.localStorage.removeItem(DashboardUnsortedReview.RESUME_KEY);
+        } catch {
+            // Nothing to do: the next run starts at the top.
+        }
+    }
+
     close() {
         if (!this.isOpen()) return;
+        DashboardUnsortedReview.writeResume(this.finished ? '' : this.current()?.url || '');
         this.unmount();
         this._opener?.focus?.({ preventScroll: true });
         this._opener = null;

@@ -24,6 +24,9 @@ class DashboardUnsorted {
         'previewImageSource', 'previewSiteName', 'previewAuthor', 'previewPublishedAt',
         'previewEmbedHtml', 'previewContentLength', 'previewEnriched'];
 
+    // NUL-prefixed so no real tag can share it, as with suggested's own.
+    static UNTAGGED_GROUP = '\u0000untagged';
+
     static SORTS = ['added-desc', 'added-asc', 'name', 'site', 'opened', 'tag', 'checked'];
     static GROUPS = ['none', 'site', 'date', 'tag', 'suggested'];
 
@@ -44,6 +47,7 @@ class DashboardUnsorted {
         this.searchQuery = '';
         /** Narrowed to the kept links that last answered with an error. */
         this.brokenOnly = false;
+        this.duplicatesOnly = false;
         /*
          * How this pile is read, remembered on the server like any other
          * setting: an empty value is the default, so an install that never
@@ -512,13 +516,24 @@ class DashboardUnsorted {
      */
     _matchesQuery(bookmark, query) {
         if (!query) return true;
-        const haystack = `${bookmark?.name || ''}\u0000${bookmark?.url || ''}`.toLowerCase();
+        // What the row shows or carries, not only its name and address: a
+        // link kept for its note or tagged on the way in is found by that.
+        const haystack = [
+            bookmark?.name, bookmark?.url, bookmark?.note,
+            bookmark?.previewTitle, bookmark?.previewDesc,
+            ...this._tagsOf(bookmark),
+        ].map((part) => String(part || '')).join('\u0000').toLowerCase();
         return haystack.includes(query);
     }
 
     /** True when the last check on this link came back with an error. */
     _isBroken(bookmark) {
         return Boolean(String(bookmark?.lastError || '').trim());
+    }
+
+    /** True when the same address is already filed on a page. */
+    _isDuplicate(bookmark) {
+        return Boolean(this._filedElsewhere(bookmark));
     }
 
     _brokenBookmarks() {
@@ -528,7 +543,8 @@ class DashboardUnsorted {
     _visibleBookmarks() {
         const query = this.searchQuery.trim().toLowerCase();
         const list = this._bookmarks.filter((bookmark) => this._matchesQuery(bookmark, query)
-            && (!this.brokenOnly || this._isBroken(bookmark)));
+            && (!this.brokenOnly || this._isBroken(bookmark))
+            && (!this.duplicatesOnly || this._isDuplicate(bookmark)));
         return this._sortBookmarks(list);
     }
 
@@ -562,6 +578,50 @@ class DashboardUnsorted {
             this.renderBody();
         });
         note.append(text, button);
+        return note;
+    }
+
+    /**
+     * The second copies, counted, with a way to see them and a way to clear
+     * them. A kept link whose address is already filed is not waiting for a
+     * decision -- it was made, somewhere else -- so this list is the one place
+     * it can be cleared in bulk rather than found row by row.
+     */
+    _buildDupesNote() {
+        const d = this.dash;
+        const dupes = this._bookmarks.filter((bookmark) => this._isDuplicate(bookmark));
+        if (!dupes.length) {
+            this.duplicatesOnly = false;
+            return null;
+        }
+        const note = document.createElement('div');
+        note.className = 'unsorted-broken-note unsorted-dupes-note';
+        const text = document.createElement('span');
+        text.className = 'unsorted-broken-count';
+        text.textContent = d.formatDashboardLabel('unsortedDupesCount',
+            { count: dupes.length }, `${dupes.length} of these are already filed on a page`);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'unsorted-broken-btn unsorted-dupes-btn';
+        button.textContent = this.duplicatesOnly
+            ? d.formatDashboardLabel('unsortedBrokenClear', {}, 'Show all again')
+            : d.formatDashboardLabel('unsortedBrokenShow', {}, 'Show them');
+        button.addEventListener('click', () => {
+            this.duplicatesOnly = !this.duplicatesOnly;
+            this.renderBody();
+        });
+        note.append(text, button);
+        if (this.duplicatesOnly) {
+            const clear = document.createElement('button');
+            clear.type = 'button';
+            clear.className = 'unsorted-broken-btn unsorted-dupes-clear';
+            clear.textContent = d.formatDashboardLabel('unsortedDupesClear', {}, 'Remove the kept copies');
+            clear.addEventListener('click', () => {
+                const rows = this._visibleBookmarks();
+                if (rows.length) void this.select?.deleteSelected({ rows });
+            });
+            note.appendChild(clear);
+        }
         return note;
     }
 
@@ -667,10 +727,16 @@ class DashboardUnsorted {
                 // One block per tag, and a bookmark carrying three of them
                 // appears under all three: that is what grouping by tag means,
                 // and picking one tag to file it under would hide it from the
-                // other two. An untagged row belongs to no group and is left
-                // out entirely rather than pooled into a "no tag" block nobody
-                // grouped by tag to read.
-                this._tagsOf(bookmark).forEach((tag) => push(tag, tag, bookmark));
+                // other two. Untagged rows share a block, last: it is the pile
+                // a tagging pass starts from, and tick-the-group plus Suggest
+                // tags works on it like on any other.
+                const tags = this._tagsOf(bookmark);
+                if (!tags.length) {
+                    push(DashboardUnsorted.UNTAGGED_GROUP, this.dash.formatDashboardLabel(
+                        'unsortedGroupNoTag', {}, 'no tag'), bookmark);
+                    return;
+                }
+                tags.forEach((tag) => push(tag, tag, bookmark));
                 return;
             }
             if (this.groupBy === 'date') {
@@ -699,13 +765,16 @@ class DashboardUnsorted {
         if (order) {
             built.sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
         } else {
-            built.sort((a, b) => b.bookmarks.length - a.bookmarks.length
+            const last = (group) => (group.key === DashboardUnsorted.UNTAGGED_GROUP ? 1 : 0);
+            built.sort((a, b) => last(a) - last(b)
+                || b.bookmarks.length - a.bookmarks.length
                 || a.label.localeCompare(b.label));
         }
         return built;
     }
 
     renderBody() {
+        this._filedIndexSource = null;
         const d = this.dash;
         const host = this._bodyHost;
         if (!host || !this._stillShowing()) return;
@@ -714,6 +783,8 @@ class DashboardUnsorted {
         this.syncHead();
         const brokenNote = this._buildBrokenNote();
         if (brokenNote) host.appendChild(brokenNote);
+        const dupesNote = this._buildDupesNote();
+        if (dupesNote) host.appendChild(dupesNote);
         // Before the empty-list path returns, not after the grid is built: the
         // Select all button has to go quiet over a list with nothing in it, and
         // that is exactly the render that used to skip this call.
@@ -728,10 +799,7 @@ class DashboardUnsorted {
         const blocks = this._buildBlocks(visible);
         if (!blocks.length) {
             this.syncHeaderActions();
-            // Grouping by tag over rows that carry none: the list is not empty,
-            // but nothing in it belongs to a group, and an empty grid with no
-            // word about why reads as a bug.
-            host.appendChild(this._buildEmptyState({ noTags: this.groupBy === 'tag' }));
+            host.appendChild(this._buildEmptyState());
             return;
         }
 
@@ -911,24 +979,19 @@ class DashboardUnsorted {
         const d = this.dash;
         const pageId = Number(d._unsortedPageId) || DashboardUnsorted.PAGE_ID;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        // Per row, not the page: a read-then-write of the whole list here put
+        // back rows a move or delete had taken off in the second between.
+        const updates = [...pending].map(([url, values]) => ({
+            url,
+            previewTitle: String(values.previewTitle || ''),
+            previewDesc: String(values.previewDesc || ''),
+            previewImage: String(values.previewImage || ''),
+        }));
         try {
-            const res = await fetch(`/api/bookmarks?page=${pageId}`, { cache: 'no-store' });
-            if (!res.ok) return;
-            const stored = await res.json();
-            if (!Array.isArray(stored)) return;
-            let touched = 0;
-            stored.forEach((entry) => {
-                const url = String(entry?.url || '').trim();
-                const values = pending.get(url);
-                if (!values) return;
-                Object.assign(entry, values);
-                touched += 1;
-            });
-            if (!touched) return;
-            await fetcher(`/api/bookmarks?page=${pageId}`, {
-                method: 'POST',
+            await fetcher('/api/bookmarks', {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(stored),
+                body: JSON.stringify({ page: pageId, updates }),
             });
         } catch (_error) {
             // Left unsaved rather than retried: the fields are still in memory
@@ -959,16 +1022,11 @@ class DashboardUnsorted {
         return legend;
     }
 
-    _buildEmptyState({ noTags = false } = {}) {
+    _buildEmptyState() {
         const d = this.dash;
         const query = this.searchQuery.trim();
         const empty = document.createElement('div');
         empty.className = 'empty-state empty-state--unsorted';
-        if (noTags) {
-            empty.textContent = d.formatDashboardLabel(
-                'unsortedNoTags', {}, 'Nothing here carries a tag yet.');
-            return empty;
-        }
         empty.textContent = query
             ? d.formatDashboardLabel('unsortedSearchEmpty', { query }, `Nothing matches “${query}”.`)
             : d.formatDashboardLabel('unsortedEmpty', {}, 'Nothing kept yet.');
@@ -1067,12 +1125,20 @@ class DashboardUnsorted {
         }
         const filedOn = this._filedElsewhere(bookmark);
         if (filedOn) {
-            const chip = document.createElement('span');
+            // A button, because the hint is also the way out: the copy here is
+            // the spare, and one click clears it (with the toast's undo).
+            const chip = document.createElement('button');
+            chip.type = 'button';
             chip.className = 'unsorted-row-filed';
             chip.textContent = this.dash.formatDashboardLabel('unsortedRowFiled', { page: filedOn },
                 `already on ${filedOn}`);
-            chip.title = this.dash.formatDashboardLabel('unsortedRowFiledHint', { page: filedOn },
-                `This address is already filed on ${filedOn}; keeping it here is a second copy`);
+            chip.title = this.dash.formatDashboardLabel('unsortedRowFiledRemove', { page: filedOn },
+                `Already filed on ${filedOn} — click to remove this kept copy`);
+            chip.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                void this.select?.deleteSelected({ rows: [bookmark], confirmed: true });
+            });
             parts.push(chip);
         }
         if (!parts.length) return;
@@ -1102,12 +1168,32 @@ class DashboardUnsorted {
             'unsortedAgeYears', { count: Math.floor(days / 365) }, `${Math.floor(days / 365)}y`);
     }
 
+    /**
+     * Every filed bookmark by URL, built once per list of them rather than
+     * searched once per row: a few hundred kept rows against a few thousand
+     * filed ones was a full walk per row on every repaint. renderBody drops it,
+     * so an edit made in place is seen on the next paint.
+     */
+    _filedIndex() {
+        const all = this.dash.allBookmarks || [];
+        if (this._filedIndexSource === all) {
+            return this._filedIndexMap;
+        }
+        const map = new Map();
+        all.forEach((entry) => {
+            const key = String(entry?.url || '').trim().toLowerCase();
+            if (key && !map.has(key)) map.set(key, entry);
+        });
+        this._filedIndexSource = all;
+        this._filedIndexMap = map;
+        return map;
+    }
+
     /** The page already holding this address, if the collection has it filed. */
     _filedElsewhere(bookmark) {
         const url = String(bookmark?.url || '').trim().toLowerCase();
         if (!url) return '';
-        const hit = (this.dash.allBookmarks || []).find(
-            (entry) => String(entry?.url || '').trim().toLowerCase() === url);
+        const hit = this._filedIndex().get(url);
         if (!hit) return '';
         const page = (this.dash.pages || []).find(
             (entry) => String(entry.id) === String(hit.pageId));

@@ -9174,6 +9174,11 @@ body[data-action-bar="bottom"] #dashboard-layout {
     outline-offset: 2px;
 }
 
+/* Second copies are not broken, only spare: same line, quieter colour. */
+.unsorted-dupes-note {
+    color: var(--text-secondary);
+}
+
 /* The bulk "Move to…" picker: pages, then that page's categories. */
 .unsorted-move-popover-list {
     display: flex;
@@ -9332,10 +9337,22 @@ body[data-action-bar="bottom"] #dashboard-layout {
     cursor: help;
 }
 
+/* A button too: the second copy is cleared from its own hint. */
 .unsorted-view .unsorted-row-filed {
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
     padding: 0.05rem 0.4rem;
+    cursor: pointer;
+}
+
+.unsorted-view .unsorted-row-filed:hover,
+.unsorted-view .unsorted-row-filed:focus-visible {
+    color: var(--status-offline, #d1493f);
+    border-color: var(--status-offline, #d1493f);
 }
 
 /* The destination a kept row's neighbours agree on: a button, because taking

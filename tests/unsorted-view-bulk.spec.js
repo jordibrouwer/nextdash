@@ -548,3 +548,36 @@ test('a failed delete takes the copy it just filed back off the page', async ({ 
         return (data.bookmarks || []).filter((b) => b.url.includes('rollback-uvb')).length;
     })).toBe(1);
 });
+
+test('tagging does not put back a row deleted while the write was under way', async ({ page }) => {
+    await openUnsorted(page);
+    // The other row is deleted after the view read the page and before its
+    // write lands: a write that carries the whole page brings it back.
+    await page.route('**/api/bookmarks**', async (route) => {
+        const method = route.request().method();
+        const url = route.request().url();
+        const isWrite = (method === 'POST' && url.includes('page=')) || method === 'PATCH';
+        if (!isWrite) return route.continue();
+        await page.evaluate(async (gone) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await api('/api/bookmarks', {
+                method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: 999999, bookmark: { url: gone } }),
+            });
+        }, KEPT[1].url);
+        await route.continue();
+    });
+    const ok = await page.evaluate(async (url) => {
+        const u = window.dashboardInstance.unsorted;
+        const row = u._bookmarks.find((b) => b.url === url);
+        return u.select.applyTagToSelection('race', true, [row]);
+    }, KEPT[0].url);
+    expect(ok).toBe(true);
+    const names = await storedNames(page);
+    expect(names).not.toContain('Bulk Two');
+    const tags = await page.evaluate(async (url) => {
+        const data = await (await fetch('/api/unsorted')).json();
+        return (data.bookmarks.find((b) => b.url === url) || {}).tags || [];
+    }, KEPT[0].url);
+    expect(tags).toContain('race');
+});

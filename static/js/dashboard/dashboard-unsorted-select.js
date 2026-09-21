@@ -605,26 +605,24 @@ class DashboardUnsortedSelect {
 
         window.nextdashTrack?.('unsorted:bulk-tag', { count: wanted.size, add: !!add });
         try {
-            const res = await fetch(`/api/bookmarks?page=${pageId}`, { cache: 'no-store' });
-            if (!res.ok) throw new Error(`read HTTP ${res.status}`);
-            const bookmarks = await res.json();
-            if (!Array.isArray(bookmarks)) throw new Error('unexpected page shape');
-
-            let touched = 0;
-            bookmarks.forEach((bookmark) => {
-                if (!wanted.has(this.keyFor(bookmark))) return;
-                const tags = this._tagsOf(bookmark);
-                const has = tags.includes(tag);
-                if (add === has) return;
-                bookmark.tags = add ? [...tags, tag] : tags.filter((entry) => entry !== tag);
-                touched += 1;
-            });
+            // Only the rows that change, by URL, and only the one tag: a
+            // whole-page write from a list read a moment ago put back rows a
+            // move or a delete had just taken off (PatchBookmarks in Go).
+            const changing = targets.filter((bookmark) =>
+                this._tagsOf(bookmark).includes(tag) !== !!add);
+            const touched = changing.length;
             if (!touched) return true;
 
-            const save = await fetcher(`/api/bookmarks?page=${pageId}`, {
-                method: 'POST',
+            const save = await fetcher('/api/bookmarks', {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bookmarks),
+                body: JSON.stringify({
+                    page: pageId,
+                    updates: changing.map((bookmark) => ({
+                        url: bookmark.url,
+                        [add ? 'addTags' : 'removeTags']: [tag],
+                    })),
+                }),
             });
             if (!save.ok) throw new Error(`write HTTP ${save.status}`);
 
@@ -632,12 +630,7 @@ class DashboardUnsortedSelect {
             // place rather than refetched: loadAndRender bails while a popover
             // is open (this one is), and the popover's own three-state marks
             // read straight off these objects.
-            const applied = new Set();
-            bookmarks.forEach((bookmark) => {
-                if (wanted.has(this.keyFor(bookmark))) {
-                    applied.add(this.keyFor(bookmark));
-                }
-            });
+            const applied = new Set(changing.map((bookmark) => this.keyFor(bookmark)));
             this.unsorted._bookmarks.forEach((bookmark) => {
                 if (!applied.has(this.keyFor(bookmark))) return;
                 const tags = this._tagsOf(bookmark);
@@ -869,27 +862,21 @@ class DashboardUnsortedSelect {
         this.sync();
         let touched = 0;
         try {
-            const res = await fetch(`/api/bookmarks?page=${pageId}`, { cache: 'no-store' });
-            if (!res.ok) throw new Error(`read HTTP ${res.status}`);
-            const bookmarks = await res.json();
-            if (!Array.isArray(bookmarks)) throw new Error('unexpected page shape');
-            bookmarks.forEach((bookmark) => {
+            const updates = [];
+            this.unsorted._bookmarks.forEach((bookmark) => {
                 const add = wanted.get(this.keyFor(bookmark));
                 if (!add) return;
                 const tags = this._tagsOf(bookmark);
-                const next = [...tags];
-                add.forEach((tag) => {
-                    if (!next.includes(tag)) next.push(tag);
-                });
-                if (next.length === tags.length) return;
-                bookmark.tags = next;
-                touched += 1;
+                const missing = [...add].filter((tag) => !tags.includes(tag));
+                if (!missing.length) return;
+                updates.push({ url: bookmark.url, addTags: missing });
             });
+            touched = updates.length;
             if (touched) {
-                const save = await fetcher(`/api/bookmarks?page=${pageId}`, {
-                    method: 'POST',
+                const save = await fetcher('/api/bookmarks', {
+                    method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bookmarks),
+                    body: JSON.stringify({ page: pageId, updates }),
                 });
                 if (!save.ok) throw new Error(`write HTTP ${save.status}`);
             }
@@ -1072,6 +1059,7 @@ class DashboardUnsortedSelect {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const headers = { 'Content-Type': 'application/json' };
         window.nextdashTrack?.('unsorted:bulk-move', { count: targets.length });
+        const filed = [];
 
         await this._runOverEach(targets, {
             title: this.t('unsortedMoveProgress', 'Filing', {}),
@@ -1091,7 +1079,10 @@ class DashboardUnsortedSelect {
                     headers,
                     body: JSON.stringify({ page: sourcePage, bookmark }),
                 });
-                if (remove.ok) return 'ok';
+                if (remove.ok) {
+                    filed.push({ bookmark, moved });
+                    return 'ok';
+                }
                 /*
                  * The copy goes back off the page.
                  *
@@ -1112,6 +1103,11 @@ class DashboardUnsortedSelect {
             done: (ok, failed) => (failed
                 ? this.t('unsortedMoveDoneSome', `Filed ${ok}, ${failed} failed`, { ok, failed })
                 : this.t('unsortedMoveDone', `Filed ${ok}`, { ok })),
+            undo: () => () => this._putBack(filed, (record, send) => send('/api/bookmarks', {
+                method: 'DELETE',
+                headers,
+                body: JSON.stringify({ page: Number(pageId), bookmark: record.moved }),
+            })),
         });
         this.clear();
         await d.loadAllBookmarks?.();
@@ -1158,6 +1154,7 @@ class DashboardUnsortedSelect {
         const sources = targets.map((bookmark) =>
             d.inbox?.keptRowSource?.(bookmark, this.keyFor(bookmark)) || null);
         let flown = false;
+        const sent = [];
 
         await this._runOverEach(targets, {
             title: this.t('unsortedToInboxProgress', 'Sending back'),
@@ -1175,34 +1172,60 @@ class DashboardUnsortedSelect {
                         source: 'unsorted',
                     }),
                 });
+                const body = await added.json().catch(() => null);
                 // A link already waiting in the queue is not a failure: the
-                // reason this row can go is that the inbox has it.
-                if (!added.ok && added.status !== 409) return 'failed';
+                // reason this row can go is that the inbox has it. A full
+                // inbox answers 409 too, and that one is: the link is nowhere
+                // but here, so the row must stay.
+                const alreadyThere = added.status === 409 && body?.error === 'duplicate_url';
+                if (!added.ok && !alreadyThere) return 'failed';
+                const id = body?.item?.id || body?.id || '';
                 // Off as soon as the first one is safely back, the way Keep
                 // flies once its write lands rather than after the reloads.
                 if (!flown) {
                     flown = true;
                     d.inbox?.flyBackToQueue?.(sources);
                 }
-                // Asleep, when that is what was asked for. The wake belongs to
-                // the inbox item, so it is written the moment the item exists.
-                if (snoozeUntil > Date.now()) {
-                    const body = await added.json().catch(() => null);
-                    const id = body?.item?.id || body?.id || '';
-                    if (id) {
-                        await fetcher('/api/inbox', {
-                            method: 'PATCH',
-                            headers,
-                            body: JSON.stringify({ id, snoozedUntil: Number(snoozeUntil) }),
-                        }).catch(() => {});
-                    }
+                // Asleep, when that is what was asked for -- the item this
+                // call made, or the one that was already waiting. The wake
+                // belongs to the inbox item, so it is written the moment the
+                // item exists.
+                if (snoozeUntil > Date.now() && id) {
+                    await fetcher('/api/inbox', {
+                        method: 'PATCH',
+                        headers,
+                        body: JSON.stringify({ id, snoozedUntil: Number(snoozeUntil) }),
+                    }).catch(() => {});
                 }
                 const removed = await fetcher('/api/bookmarks', {
                     method: 'DELETE',
                     headers,
                     body: JSON.stringify({ page: sourcePage, bookmark }),
                 });
-                return removed.ok ? 'ok' : 'failed';
+                if (removed.ok) {
+                    sent.push({ bookmark, id: added.ok ? id : '' });
+                    return 'ok';
+                }
+                // The copy this call made goes back out of the queue, as
+                // filing takes its copy back off the page: otherwise the link
+                // sits in both lists and a retry is refused as a duplicate.
+                // One that was already waiting is left where it was.
+                if (added.ok && id) {
+                    await fetcher(`/api/inbox?id=${encodeURIComponent(id)}`, {
+                        method: 'DELETE',
+                    }).catch(() => {});
+                }
+                return 'failed';
+            },
+            // Back on the kept page, and the queue item this made taken out
+            // again. One that was already waiting before stays.
+            undo: () => async () => {
+                await this._putBack(sent, async (record, send) => {
+                    if (record.id) {
+                        await send(`/api/inbox?id=${encodeURIComponent(record.id)}`, { method: 'DELETE' });
+                    }
+                });
+                await d.inbox?.loadAndRender?.({ refresh: true });
             },
             done: (ok, failed) => (failed
                 ? this.t('unsortedToInboxDoneSome', `Sent back ${ok}, ${failed} failed`, { ok, failed })
@@ -1224,8 +1247,8 @@ class DashboardUnsortedSelect {
         return window.confirm(message);
     }
 
-    async deleteSelected({ confirmed: preConfirmed = false } = {}) {
-        const targets = this.selectedBookmarks();
+    async deleteSelected({ confirmed: preConfirmed = false, rows = null } = {}) {
+        const targets = Array.isArray(rows) && rows.length ? rows : this.selectedBookmarks();
         if (!targets.length || this._busy) return;
 
         const count = targets.length;
@@ -1261,7 +1284,9 @@ class DashboardUnsortedSelect {
             const deleted = Number(body.deleted) || 0;
             const skipped = Array.isArray(body.skipped) ? body.skipped.length : 0;
 
-            this.selected.clear();
+            // Only the rows that went: a delete of named rows -- a second copy
+            // cleared from its hint -- leaves the rest of the ticks alone.
+            targets.forEach((bookmark) => this.selected.delete(this.keyFor(bookmark)));
             targets.forEach((bookmark) => d.removeBookmarkByUrl?.(pageId, bookmark.url));
             d.data?.invalidatePageDataCache?.(pageId);
             void d.data?.fetchAndStoreDataRevision?.();
@@ -1475,6 +1500,9 @@ class DashboardUnsortedSelect {
      */
     async _runOverEach(targets, {
         title, run, done, progress = false,
+        // Called once the run is over; a function it returns becomes the
+        // toast's undo. Only for writes to this server that can be reversed.
+        undo = null,
         // The gap between rows. It is there to keep the outbound fetches under
         // the sixty-a-minute ceiling; work that only writes to this server pays
         // nothing for going at full speed, and used to wait out the same second
@@ -1574,9 +1602,46 @@ class DashboardUnsortedSelect {
             if (stopped) window.ProgressOverlay?.hide();
             else window.ProgressOverlay?.finish(summary);
         }
+        const undoCallback = ok > 0 && typeof undo === 'function' ? undo() : null;
         d.showNotification(summary,
-            stopped ? 'info' : (failed && !ok ? 'error' : (failed ? 'warning' : 'success')));
+            stopped ? 'info' : (failed && !ok ? 'error' : (failed ? 'warning' : 'success')),
+            typeof undoCallback === 'function' ? { duration: 8000, undoCallback } : undefined);
         await this.unsorted.loadAndRender();
+    }
+
+    /**
+     * Put rows back on the kept page after an undo, then report the count.
+     *
+     * `afterEach` takes the other copy away -- the filed one, or the inbox item
+     * the send made -- and runs only once the row is safely back, so a failed
+     * put-back never leaves the link nowhere.
+     */
+    async _putBack(records, afterEach) {
+        const d = this.dash;
+        const pageId = Number(d._unsortedPageId) || DashboardUnsortedSelect.PAGE_ID;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        let restored = 0;
+        for (const record of records) {
+            const row = { ...record.bookmark };
+            delete row.index;
+            try {
+                const res = await fetcher('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: pageId, bookmark: row, allowDuplicate: true }),
+                });
+                if (!res.ok) continue;
+                restored += 1;
+                await afterEach(record, fetcher).catch(() => {});
+            } catch {
+                // Counted below; the link is still wherever the action put it.
+            }
+        }
+        await d.loadAllBookmarks?.();
+        await this.unsorted.loadAndRender();
+        d.showNotification(
+            this.t('unsortedDeleteUndone', `Put ${restored} bookmark(s) back`, { count: restored }),
+            restored ? 'success' : 'error', { duration: 3000 });
     }
 }
 
