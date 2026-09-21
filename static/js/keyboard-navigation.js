@@ -1548,6 +1548,10 @@ class KeyboardNavigation {
                 // the grid's or the Unsorted view's -- is the dashboard's to
                 // answer; both are cleared the same way from here.
                 if (this.dashboard?.handleSelectionEscape?.()) {
+                    // Spent: the press cleared a selection, and whatever else
+                    // listens for Escape -- the inbox leaving its tab or its
+                    // view -- must not act on the same press as well.
+                    e.stopImmediatePropagation();
                     break;
                 }
                 if (this.currentIndex >= 0) {

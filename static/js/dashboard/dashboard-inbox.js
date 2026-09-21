@@ -2042,6 +2042,28 @@ class DashboardInbox {
             }
             e.preventDefault();
             e.stopImmediatePropagation();
+            /*
+             * One layer per press.
+             *
+             * On Kept: the ticks first, then the tab itself, back to the
+             * queue. On the queue: its ticks first, then the view, back to the
+             * dashboard page that was on screen. A single press used to skip
+             * every layer at once -- the selection, the tab and the view -- so
+             * clearing a mis-tick meant leaving the inbox and coming back.
+             */
+            if (this.activeTab() === 'kept') {
+                const select = d.unsorted?.select;
+                if (select?.isActive?.()) {
+                    select.clear();
+                    return;
+                }
+                this.setTab('triage', 'escape');
+                return;
+            }
+            if (this.checkedIds.size) {
+                this.clearChecked();
+                return;
+            }
             this.closeInboxView();
         };
         document.addEventListener('keydown', this._escapeHandler, true);

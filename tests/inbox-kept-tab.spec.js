@@ -491,3 +491,86 @@ test('the To triage tab and the header badge show the same number', async ({ pag
     await expect(tab).toHaveText('2', { timeout: 10_000 });
     await expect(badge).toHaveText('2');
 });
+
+/**
+ * Escape walks back one layer at a time.
+ *
+ * From Kept with rows ticked: the ticks go first. Then Kept itself, back to
+ * the queue. Then the queue, back to the dashboard page that was on screen
+ * before the inbox opened. One press used to skip every layer and leave the
+ * inbox with the selection still standing.
+ */
+test('Escape clears the kept selection, then goes to the queue, then to the dashboard', async ({ page }) => {
+    await bootstrap(page);
+    await openKept(page);
+
+    await page.locator('.unsorted-row-check-input').first().check();
+    await expect(page.locator('.unsorted-select-toolbar')).toBeVisible();
+
+    await page.locator('.unsorted-view-count, .inbox-tabs').first().click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.unsorted-select-toolbar')).toHaveCount(0);
+    expect(await page.evaluate(() => window.dashboardInstance.inbox.tab)).toBe('kept');
+    expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('inbox');
+
+    await page.keyboard.press('Escape');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox.tab)).toBe('triage');
+    expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('inbox');
+
+    await page.keyboard.press('Escape');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('bookmarks');
+});
+
+test('Escape from the queue returns to the dashboard page last on screen', async ({ page }) => {
+    await bootstrap(page);
+    const target = await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const pages = await (await fetch('/api/pages')).json();
+        let second = pages.find((p) => !p.hidden && Number(p.id) !== 1);
+        if (!second) {
+            const id = Math.max(1, ...pages.filter((p) => p.id < 999999).map((p) => Number(p.id))) + 1;
+            await api('/api/pages', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([...pages.filter((p) => !p.hidden), { id, name: 'Second' }]),
+            });
+            second = { id };
+        }
+        return Number(second.id);
+    });
+    await page.reload();
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await page.evaluate((id) => window.dashboardInstance.requestPageNavigation?.(id)
+        ?? window.dashboardInstance.switchToPage?.(id), target);
+    await expect.poll(() => page.evaluate(() => Number(window.dashboardInstance.currentPageId))).toBe(target);
+
+    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
+    await expect(page.locator('.inbox-layout')).toBeVisible();
+    await page.locator('.inbox-tabs').click();
+    await page.keyboard.press('Escape');
+
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('bookmarks');
+    expect(await page.evaluate(() => Number(window.dashboardInstance.currentPageId))).toBe(target);
+});
+
+test('Escape on the queue clears its ticks before it leaves', async ({ page }) => {
+    await bootstrap(page, { kept: [] });
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/inbox', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: `https://esc-queue-${Date.now()}.example/`, title: 'Esc queue' }),
+        });
+        await window.dashboardInstance.inbox.openInboxView();
+        await window.dashboardInstance.inbox.loadAndRender({ refresh: true });
+    });
+    await page.locator('.inbox-item-check-input').first().check();
+    await expect(page.locator('.inbox-selection-bar')).toBeVisible();
+
+    await page.locator('.inbox-tabs').click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.inbox-selection-bar')).toHaveCount(0);
+    expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('inbox');
+
+    await page.keyboard.press('Escape');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('bookmarks');
+});
