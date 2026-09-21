@@ -58,6 +58,8 @@
                 'tipEditLockLayout',
                 'tipEditMoveCategory',
                 'tipEditSelectionActions',
+                'tipEditKeep',
+                'tipEditKeptPile',
                 'tipEditWorkbench',
                 'tipEditTagSuggestions',
                 'tipEditRenamePage',

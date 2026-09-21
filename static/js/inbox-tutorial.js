@@ -225,12 +225,12 @@
                     ${pill(330, 23, t('inboxPromote', 'Promote'), { kind: 'soft' })}
                     ${pill(400, 23, `${t('inboxTriageKeep', 'Keep')}  K`, { kind: 'active' })}
                     ${keycap(20, 70, 'K')} ${label(56, 84, t('inboxTourS4KeyList', 'in the list'))}
-                    ${keycap(150, 70, 'r')} ${label(180, 84, t('inboxTourS4KeyTriage', 'on the triage card'))}
+                    ${keycap(150, 70, 'K')} ${label(180, 84, t('inboxTourS4KeyTriage', 'on the triage card'))}
                     ${label(310, 84, t('inboxTourS4Menu', 'or the row menu'))}
                     ${label(20, 124, t('inboxTourS4Travels', 'The note and the tags travel with it.'), 'itv-caption')}
-                `, 'Keep from the row, with K, or with r in triage'),
+                `, 'Keep from the row, or with K in the list and in triage'),
                 body: `<p>${esc(t('inboxTourS4Body1',
-                    'Every row has a Keep button; Shift+K keeps the row under the cursor, r keeps the card in front of you during triage, and the right-click menu has it too.'))}</p>
+                    'Every row has a Keep button; Shift+K keeps the row under the cursor, in the list and on the triage card alike, and the right-click menu has it too.'))}</p>
                     <p>${esc(t('inboxTourS4Body2',
                     'A toast says where it went, with Undo on it — a keep made with one key is sometimes a keep made by accident.'))}</p>`,
             },
@@ -320,7 +320,7 @@
                     ${pill(380, 96, 'Tour', { kind: 'active' })}
                 `, 'Keyboard shortcuts for both tabs'),
                 body: `<p>${esc(t('inboxTourS9Body1',
-                    't opens triage on the queue: j and k move, r keeps, p promotes, z snoozes, d deletes. The legend under each list has the rest.'))}</p>
+                    't opens triage on the queue: j and k move, r marks read, Shift+K keeps, p promotes, z snoozes, d deletes. The legend under each list has the rest.'))}</p>
                     <p class="inbox-tutorial-closing">${esc(t('inboxTourS9Closing',
                     'Tour, in the band above either list, brings this back whenever you want it.'))}</p>`,
             },

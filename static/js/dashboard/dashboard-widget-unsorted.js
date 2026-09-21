@@ -53,7 +53,7 @@
 
             window.DashboardWidgetUtils?.bindRowAction(row, dash, {
                 labelKey: 'widgetActionOpenUnsorted',
-                labelFallback: 'Open Unsorted',
+                labelFallback: 'Open Kept',
                 run: () => { void dash.inbox?.openInboxView?.({ tab: 'kept' }); },
             });
             list.appendChild(row);

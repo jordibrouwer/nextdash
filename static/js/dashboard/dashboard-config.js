@@ -27246,6 +27246,8 @@ class DashboardConfig {
                 'config.helpInboxWorkBody', '')
             + this.helpPanel('config.helpInboxTriageTitle', 'Triage mode',
                 'config.helpInboxTriageBody', '')
+            + this.helpPanel('config.helpInboxKeptTitle', 'The Kept tab',
+                'config.helpInboxKeptBody', '')
             + this.helpPanel('config.helpInboxSettingsTitle', 'Settings behind the scenes',
                 'config.helpInboxSettingsBody', '')
             // Last, not first: someone reading this page has already found the
