@@ -1499,6 +1499,15 @@ class KeyboardNavigation {
                      * one key a list of two hundred rows needs did nothing.
                      */
                     const keptKey = row.dataset?.unsortedKey;
+                    // Shift+X takes the row's whole group, the way it takes a
+                    // category on the dashboard.
+                    if (keptKey && key === 'X' && this.dashboard?.unsorted?.select) {
+                        const select = this.dashboard.unsorted.select;
+                        const rows = select.groupOfRow(row);
+                        if (rows?.length) select.toggleGroup(rows);
+                        else select.toggleKey(keptKey);
+                        break;
+                    }
                     if (keptKey && this.dashboard?.unsorted?.select) {
                         this.dashboard.unsorted.select.toggleKey(keptKey);
                         if (this.currentIndex < this.navigableElements.length - 1) {

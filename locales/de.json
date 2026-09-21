@@ -2091,7 +2091,11 @@
     "ivMarkRead": "Als gelesen markieren",
     "inboxKeyMarkRead": "als gelesen",
     "inboxKeptToast": "Behalten — auf dem Tab Behalten",
-    "unsortedKeyBack": "zurück zum Posteingang"
+    "unsortedKeyBack": "zurück zum Posteingang",
+    "unsortedGroupSelect": "Alle Links in {group} auswählen",
+    "unsortedKeySelectGroup": "Gruppe auswählen",
+    "unsortedGroupMenuTitle": "{group} · {count}",
+    "unsortedGroupMenuSelect": "Diese Gruppe auswählen"
   },
   "health": {
     "reloadPage": "Seite neu laden",

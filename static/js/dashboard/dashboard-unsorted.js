@@ -1235,6 +1235,31 @@ class DashboardUnsorted {
     _buildGroupTitle(group) {
         const title = document.createElement('div');
         title.className = 'category-title unsorted-group-title';
+        const rows = group.bookmarks;
+
+        /*
+         * The group, as one thing to act on.
+         *
+         * Grouping is how a pile is read -- by site, by age, by tag -- and the
+         * point of reading it that way is usually to do the same thing to a
+         * whole group. The box ticks every row in it (and reads as mixed when
+         * only some are), the name does the same, and a right-click offers
+         * what the selection bar does, for this group.
+         */
+        const check = document.createElement('label');
+        check.className = 'unsorted-group-check';
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.className = 'unsorted-group-check-input';
+        box.setAttribute('aria-label', this.dash.formatDashboardLabel('unsortedGroupSelect',
+            { group: group.label }, `Select every link in ${group.label}`));
+        box.addEventListener('change', () => this.select?.setMany(rows, box.checked));
+        check.appendChild(box);
+        title.appendChild(check);
+        title.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+            this.select?.openGroupMenu(title, rows, group.label, { x: event.clientX, y: event.clientY });
+        });
 
         const prefix = document.createElement('span');
         prefix.className = 'category-title-prefix';
@@ -1244,6 +1269,18 @@ class DashboardUnsorted {
         const name = document.createElement('span');
         name.className = 'category-title-name';
         name.textContent = group.label;
+        name.setAttribute('role', 'button');
+        name.tabIndex = 0;
+        name.title = this.dash.formatDashboardLabel('unsortedGroupSelect',
+            { group: group.label }, `Select every link in ${group.label}`);
+        const toggle = () => this.select?.toggleGroup(rows);
+        name.addEventListener('click', toggle);
+        name.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggle();
+            }
+        });
 
         const count = document.createElement('span');
         count.className = 'unsorted-group-count';

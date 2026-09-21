@@ -93,6 +93,7 @@
         { keys: '↑ ↓ ← →', legendKey: 'dashboardKeyMove', cheatKey: 'dvMove', fallback: 'move' },
         { keys: 'Enter', legendKey: 'dashboardKeyOpen', cheatKey: 'dvOpen', fallback: 'open' },
         { keys: 'x', legendKey: 'unsortedKeySelect', cheatKey: 'uvSelect', fallback: 'select' },
+        { keys: 'X', legendKey: 'unsortedKeySelectGroup', cheatKey: 'uvSelectGroup', fallback: 'select group' },
         { keys: 'f', legendKey: 'unsortedKeyReview', cheatKey: 'uvReview', fallback: 'work through' },
         { keys: 'b', legendKey: 'unsortedKeyBack', cheatKey: 'uvBack', fallback: 'back to the inbox' },
         { keys: 'Esc', legendKey: 'unsortedKeyEsc', cheatKey: 'uvEsc', fallback: 'clear selection · back to bookmarks' },

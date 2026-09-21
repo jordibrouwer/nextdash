@@ -136,10 +136,133 @@ class DashboardUnsortedSelect {
         return this.isActive() ? this.selectedBookmarks() : this.unsorted._visibleBookmarks();
     }
 
+    /** Tick or untick a set of rows at once -- a group, from its heading. */
+    setMany(bookmarks, on) {
+        (bookmarks || []).forEach((bookmark) => {
+            const key = this.keyFor(bookmark);
+            if (!key) return;
+            if (on) this.selected.add(key);
+            else this.selected.delete(key);
+        });
+        this.sync();
+    }
+
+    /** A whole group: ticked when any of it is not, cleared when all of it is. */
+    toggleGroup(bookmarks) {
+        const keys = (bookmarks || []).map((bookmark) => this.keyFor(bookmark));
+        this.setMany(bookmarks, !keys.every((key) => this.selected.has(key)));
+    }
+
+    /** The rows of the group a row sits in, read off the grid it is drawn in. */
+    groupOfRow(row) {
+        const block = row?.closest?.('.unsorted-group');
+        if (!block) return null;
+        const keys = new Set([...block.querySelectorAll('.bookmark-link[data-unsorted-key]')]
+            .map((el) => el.dataset.unsortedKey));
+        return this.unsorted._bookmarks.filter((bookmark) => keys.has(this.keyFor(bookmark)));
+    }
+
+    /**
+     * What the selection bar does, for one group.
+     *
+     * Each entry makes the group the selection and then runs the bar's own
+     * action, so the confirmation, the progress, the undo and the flight are
+     * the ones the bar already has rather than a second copy of each.
+     */
+    openGroupMenu(anchorEl, bookmarks, label, point = null) {
+        const d = this.dash;
+        const rows = (bookmarks || []).filter(Boolean);
+        if (!rows.length) return;
+        document.getElementById('unsorted-group-menu')?.remove();
+        const pop = document.createElement('div');
+        pop.className = 'move-popover unsorted-group-menu';
+        pop.id = 'unsorted-group-menu';
+        pop.setAttribute('role', 'menu');
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = this.t('unsortedGroupMenuTitle', `${label} · ${rows.length}`,
+            { group: label, count: rows.length });
+        pop.appendChild(header);
+
+        const close = () => {
+            pop.remove();
+            document.removeEventListener('click', onOutside, true);
+            document.removeEventListener('keydown', onKey, true);
+        };
+        const onOutside = (event) => {
+            if (pop.contains(event.target)) return;
+            close();
+        };
+        const onKey = (event) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            close();
+        };
+        window.EscapeOwner?.registerOwner?.('unsorted-group-menu', {
+            isOpen: () => pop.isConnected,
+            handleEscape: close,
+        });
+
+        const selectGroup = () => {
+            this.selected = new Set(rows.map((bookmark) => this.keyFor(bookmark)));
+            this.sync();
+        };
+        const entries = [
+            ['select', this.t('unsortedGroupMenuSelect', 'Select this group'), () => selectGroup()],
+            ['open', this.t('unsortedSelectOpen', 'Open'), () => { selectGroup(); this.openSelected(); }],
+            ['move', this.t('unsortedSelectMove', 'Move to…'), () => { selectGroup(); this.openMovePopover(anchorEl); }],
+            ['suggest', this.t('unsortedSelectSuggest', 'Suggest tags'), () => { selectGroup(); this.openSuggestPopover(anchorEl); }],
+            ['inbox', this.t('unsortedSelectToInbox', 'Back to the inbox'), () => { selectGroup(); void this.sendToInbox(rows); }],
+            ['snooze', this.t('unsortedSelectSnooze', 'Snooze'), () => { selectGroup(); this.openSnoozeMenu(anchorEl); }],
+            ['export', this.t('unsortedSelectExport', 'Export'), () => { selectGroup(); this.exportSelected(); }],
+            ['delete', this.t('unsortedSelectDelete', 'Delete'), () => { selectGroup(); void this.deleteSelected(); }],
+        ];
+        const list = document.createElement('div');
+        list.className = 'unsorted-move-popover-list';
+        entries.forEach(([action, text, run]) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `move-popover-item unsorted-move-item${action === 'delete' ? ' is-danger' : ''}`;
+            btn.setAttribute('role', 'menuitem');
+            btn.dataset.groupAction = action;
+            btn.textContent = text;
+            btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                close();
+                run();
+            });
+            list.appendChild(btn);
+        });
+        pop.appendChild(list);
+        document.body.appendChild(pop);
+        if (point) {
+            const width = pop.offsetWidth || 220;
+            const height = pop.offsetHeight || 260;
+            pop.style.left = `${Math.max(8, Math.min(point.x, window.innerWidth - width - 8))}px`;
+            pop.style.top = `${Math.max(8, Math.min(point.y, window.innerHeight - height - 8))}px`;
+        } else if (typeof d.bookmarkRows?._positionActionPopoverBeside === 'function') {
+            d.bookmarkRows._positionActionPopoverBeside(pop, anchorEl);
+        }
+        setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+        document.addEventListener('keydown', onKey, true);
+        pop.querySelector('button')?.focus({ preventScroll: true });
+    }
+
     /** Paint the ticks and rebuild the bar. Called after every change. */
     sync() {
         const host = this.unsorted._bodyHost;
         if (host) {
+            // Each group's own box: ticked when all of it is, mixed when some.
+            host.querySelectorAll('.unsorted-group').forEach((block) => {
+                const box = block.querySelector('.unsorted-group-check-input');
+                if (!box) return;
+                const keys = [...block.querySelectorAll('.bookmark-link[data-unsorted-key]')]
+                    .map((el) => el.dataset.unsortedKey || '');
+                const ticked = keys.filter((key) => this.selected.has(key)).length;
+                box.checked = keys.length > 0 && ticked === keys.length;
+                box.indeterminate = ticked > 0 && ticked < keys.length;
+            });
             host.querySelectorAll('.bookmark-link[data-unsorted-key]').forEach((row) => {
                 const on = this.selected.has(row.dataset.unsortedKey || '');
                 row.classList.toggle('is-multi-selected', on);

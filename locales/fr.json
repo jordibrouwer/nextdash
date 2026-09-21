@@ -2091,7 +2091,11 @@
     "ivMarkRead": "Marquer comme lu",
     "inboxKeyMarkRead": "marquer comme lu",
     "inboxKeptToast": "Gardé — dans l’onglet Gardés",
-    "unsortedKeyBack": "retour à la boîte"
+    "unsortedKeyBack": "retour à la boîte",
+    "unsortedGroupSelect": "Sélectionner tous les liens de {group}",
+    "unsortedKeySelectGroup": "sélectionner le groupe",
+    "unsortedGroupMenuTitle": "{group} · {count}",
+    "unsortedGroupMenuSelect": "Sélectionner ce groupe"
   },
   "health": {
     "reloadPage": "Recharger la page",

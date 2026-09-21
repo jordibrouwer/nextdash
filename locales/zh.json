@@ -2091,7 +2091,11 @@
     "ivMarkRead": "标为已读",
     "inboxKeyMarkRead": "标为已读",
     "inboxKeptToast": "已保留 — 在「已保留」标签页",
-    "unsortedKeyBack": "退回收件箱"
+    "unsortedKeyBack": "退回收件箱",
+    "unsortedGroupSelect": "选择 {group} 中的所有链接",
+    "unsortedKeySelectGroup": "选择整组",
+    "unsortedGroupMenuTitle": "{group} · {count}",
+    "unsortedGroupMenuSelect": "选择此组"
   },
   "health": {
     "reloadPage": "重新加载页面",

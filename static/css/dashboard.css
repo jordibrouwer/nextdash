@@ -9458,3 +9458,55 @@ body[data-action-bar="bottom"] #dashboard-layout {
     font-size: var(--font-size-small, 0.75rem);
     color: var(--text-secondary);
 }
+
+/*
+ * A group heading in the kept list: a box that ticks the whole group, and a
+ * name that does the same. The box stays quiet until the heading is hovered
+ * or the group has ticks in it, the way the row boxes do.
+ */
+.unsorted-view .unsorted-group-title {
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
+}
+
+.unsorted-view .unsorted-group-check {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.unsorted-view .unsorted-group-check-input {
+    width: 0.85rem;
+    height: 0.85rem;
+    margin: 0;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+    opacity: 0.35;
+    transition: opacity 0.15s ease;
+}
+
+.unsorted-view .unsorted-group-title:hover .unsorted-group-check-input,
+.unsorted-view .unsorted-group-check-input:checked,
+.unsorted-view .unsorted-group-check-input:indeterminate,
+.unsorted-view .unsorted-group-check-input:focus-visible {
+    opacity: 1;
+}
+
+.unsorted-view .unsorted-group-title .category-title-name {
+    cursor: pointer;
+}
+
+.unsorted-view .unsorted-group-title .category-title-name:hover,
+.unsorted-view .unsorted-group-title .category-title-name:focus-visible {
+    color: var(--accent-primary);
+}
+
+@media (hover: none) {
+    .unsorted-view .unsorted-group-check-input {
+        opacity: 1;
+    }
+}
+
+.unsorted-group-menu .is-danger {
+    color: var(--accent-error, var(--danger, #d24545));
+}

@@ -2091,7 +2091,11 @@
     "ivMarkRead": "Mark as read",
     "inboxKeyMarkRead": "mark read",
     "inboxKeptToast": "Kept — on the Kept tab",
-    "unsortedKeyBack": "back to the inbox"
+    "unsortedKeyBack": "back to the inbox",
+    "unsortedGroupSelect": "Select every link in {group}",
+    "unsortedKeySelectGroup": "select group",
+    "unsortedGroupMenuTitle": "{group} · {count}",
+    "unsortedGroupMenuSelect": "Select this group"
   },
   "health": {
     "reloadPage": "Reload page",

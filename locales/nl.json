@@ -2091,7 +2091,11 @@
     "ivMarkRead": "Als gelezen markeren",
     "inboxKeyMarkRead": "als gelezen",
     "inboxKeptToast": "Bewaard — op het tabblad Bewaard",
-    "unsortedKeyBack": "terug naar inbox"
+    "unsortedKeyBack": "terug naar inbox",
+    "unsortedGroupSelect": "Selecteer alle links in {group}",
+    "unsortedKeySelectGroup": "groep selecteren",
+    "unsortedGroupMenuTitle": "{group} · {count}",
+    "unsortedGroupMenuSelect": "Deze groep selecteren"
   },
   "health": {
     "reloadPage": "Pagina herladen",
