@@ -2,7 +2,7 @@
   "tag": "v1.11.4",
   "date": "18 September 2026",
   "releasedAt": "2026-09-18",
-  "modalLead": "A fix to a search reached from the address bar or a bookmarked query, plus a flaky test correction.",
+  "modalLead": "A fix to a search reached from the address bar or a bookmarked query.",
   "sections": [
     {
       "title": "Search",

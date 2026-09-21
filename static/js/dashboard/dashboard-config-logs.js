@@ -251,6 +251,23 @@
         return this.t('config.logFloorNormal', 'Recording at Normal — debug lines are not kept.');
     },
 
+    /**
+     * Recording with the refresh off is the one combination that looks broken:
+     * the server is collecting, the view is not asking for it, and nothing
+     * arrives until Refresh is pressed. Say so, and say where the setting is.
+     */
+    serverLogManualNote() {
+        return this.t('config.logManualRefreshNote',
+            'Recording, but this view does not update by itself. Press ↻ for the newest lines, or pick an interval under Refresh in ⚙ Log settings to have them appear on their own.');
+    },
+
+    /** Show that note only while recording with no interval armed. */
+    syncServerLogRefreshNote() {
+        const note = document.querySelector('[data-log-refresh-note]');
+        if (!note) return;
+        note.hidden = !(this.dash.settings?.serverLogEnabled === true && !this.logRefreshSeconds);
+    },
+
     /** Summary tiles above the log, in the same shape the other tabs use. */
     renderServerLogTiles() {
         const stats = this._logStats || { total: 0, warn: 0, error: 0 };
@@ -309,17 +326,23 @@
             // "Nothing logged yet" would read as a fault when the reason is
             // simply that collecting is switched off.
             const empty = this.dash.settings?.serverLogEnabled === false
-                ? this.t('config.logEmptyStopped', 'Not collecting. Switch on Collect server log above to start.')
+                ? this.t('config.logEmptyStopped', 'Not collecting. Switch on Record server log above to start.')
                 : this.t('config.logEmpty', 'Nothing logged yet.');
             return `<p class="config-panel-empty">${esc(empty)}</p>`;
         }
 
-        return lines.map((line) => {
+        return lines.map((line, i) => {
             const time = line.time ? this.formatLogTime(line.time) : '';
             const source = line.source
                 ? `<span class="config-log-source">${esc(line.source)}</span>`
                 : '';
+            // The server's own sequence, not a count of what is on screen: a
+            // filter hides lines without renumbering the ones it keeps, so the
+            // number beside a line is the same number in the file, in a copy,
+            // and in what someone reads back to you over the phone.
+            const seq = Number.isFinite(line.seq) ? line.seq + 1 : i + 1;
             return `<div class="config-log-line config-log-line--${esc(line.level || 'info')}">`
+                + `<span class="config-log-seq">${esc(String(seq))}</span>`
                 + `<span class="config-log-time">${esc(time)}</span>`
                 + source
                 + `<span class="config-log-message">${esc(line.message)}</span>`

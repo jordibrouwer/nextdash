@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.12.0 — 21 September 2026](#v1120--21-september-2026)
 - [v1.11.8 — 19 September 2026](#v1118--19-september-2026)
 - [v1.11.7 — 19 September 2026](#v1117--19-september-2026)
 - [v1.11.6 — 19 September 2026](#v1116--19-september-2026)
@@ -213,6 +214,67 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.12.0 — 21 September 2026
+
+A third answer for the inbox. Until now a link left the queue as a bookmark or not at all; **Keep** holds on to it without asking where it belongs, on a **Kept** tab beside the queue — and the tab brings what a pile of postponed decisions needs: where each link probably belongs, tags it would be given, grouping, filing a whole group at once, and a run that puts one link in front of you at a time. Around it, every write in the inbox, the kept list, health and Config → Bookmarks now touches only the rows it changes, and each one can be undone from its toast.
+
+### Inbox
+
+- **new — Keep, the inbox's third answer.** Every queue row has a Keep button, `Shift + K` keeps the row under the cursor in the list and on the triage card, and the right-click menu offers it too. The link leaves the queue for good, with its note and tags, to a hidden *Unsorted* page (`Page.Hidden`, reserved id `999999`, `GET /api/unsorted`). A copy of the row flies to the Kept tab, its count steps up, and a toast names the place with **Undo**.
+- **new — the inbox has two tabs**, **To triage** and **Kept**, a real `tablist` with roving tabindex and Arrow/Home/End. The queue's tab carries the header badge's own count — unread and awake — and the two repaint each other, so neither lags a reload behind. `Shift + U` and `#unsorted` open the inbox on Kept.
+- **new — `r` marks read in the list and in triage alike.** Triage's `r` used to keep; one letter meant two things a tab apart. Keep is `Shift + K` in both, and the legends, the cheat sheet, the triage hint and the tour say so.
+- **new — the selection bar keeps and tags.** Keep and Tags join promote, open, copy, mark read, snooze and delete; bulk promote asks for a page *and* a category; **Select all** on the bar ticks what the filter shows. Each bulk action has an undo, and they write in batches (`inbox_batch.go`) rather than one request per row.
+- **new — Promote carries the tags** given in the queue, by hand or from a suggestion chip, into the bookmark form.
+- **new — suggested tags where a link is triaged.** The engine behind Config → Bookmarks → Suggestions answers per row in the queue and on Kept: a dashed chip adds the tag, × turns it down in the same list config writes.
+- **new — a drawn tour in nine steps**, most of it about Kept, each step with a small scene painted from the theme's variables. A **Tour** button in the band opens it again; the tip id moved to `inboxTutorialV2`, so everyone who saw the old seven-step tour gets this one once.
+- **fix — Escape steps back one layer at a time**: ticks on Kept, then the queue, then the queue's ticks, then the dashboard. The general key handler cleared a selection and let the same press run on.
+- **fix — Keep undo, and a Keep of a link already filed** says where it is filed rather than adding a second copy.
+
+### Kept
+
+- **new — each kept row says what it is**: its tags (two, and +n), how long it has waited (nothing under a week), and *file on …* when most of that site's filed links sit on one page and category — one click files it there. **File a kept link where its neighbours are** (Behavior → Inbox & Fresh, off by default) lets Keep do that without asking.
+- **new — group by site, tag, suggested tag or age**, and sort by last checked among the rest. The sort and grouping are settings, so they follow you across browsers. A group's box or its name ticks the whole group, `X` takes the group of the row under the cursor, and a right-click on a group heading offers what the selection bar does.
+- **new — the selection bar**: Move to… (page and category), tags, suggest tags, open, export, snooze, Back to the inbox, delete, and Fetch icons / Fetch previews for the rows that lack them. Filing, sending back and deleting can be undone; a delete's undo takes its trash entries back with it.
+- **new — Work through (`f`)** puts one kept link in front of you with every answer under it — file where its site lives, move (`m`), snooze (`z`), back to the inbox (`b`), skip (`s`), delete (`d`) — and ends on a count of what was dealt with.
+- **new — back and snooze from the row.** `b` sends the row (or the ticked rows) back to the queue, with the same flight in reverse; snooze sends it back asleep on the queue's own presets.
+- **new — a line counts the kept links that stopped answering**, with a filter to them, and another counts the ones already filed on a page, with **Remove the kept copies**.
+- **new — a card in the corner when kept links pile up**: ten or more waiting over a month, once. It opens the list; it never files or deletes.
+- **new — a Kept widget** lists the most recently kept links on a page (`WidgetTypeUnsorted`, with a rows field).
+- **fix — filing is add-then-delete**, and a delete that failed after the add left the link filed *and* kept; the filed copy is now taken back off the page. Filing and sending back are no longer paced at the outbound-fetch interval, the Move to… picker asks the server for categories (an empty one was missing, others showed an id), and a background refresh no longer wipes the row a popover is anchored to.
+- **fix — kept bookmarks stay out of the dashboard's pools**, the tag cloud, smart collections and the health report. Search reaches them while **Search unsorted bookmarks** (Behavior → Keyboard & search, on by default) is on; Config → Bookmarks shows them under its **Unsorted** view; Move to… on a dashboard row offers the Kept list as a destination.
+
+### Health
+
+- **new — rows are found by URL**, deletes go to the trash, and deletes and fixes can be undone from the toast. Ticks follow their bookmark rather than their position. A row that changed since the report was read reloads the report instead of acting on stale data.
+- **new — Fetch previews on *Missing preview*** walks the whole collection in batches behind a counting bar with **Stop**, waits out the rate limit instead of ending on it, and says so in its label.
+- **fix — a tall row menu pinned itself to the top of the viewport** when neither side of its row had room; it is clamped toward the row, as the right-click path already was.
+
+### Config
+
+- **new — Config → Bookmarks writes only the rows that change**, moves refuse a URL already on the target page and say which ones stayed, the undo takes back only what that change did, and duplicating a page copies its bookmarks (a duplicated category comes without them — a page holds each link once).
+- **new — Fetch icons and Fetch previews for a selection** in Config → Bookmarks, counting only the rows that need it, behind the blocking bar with **Stop** and a rate-limit wait. A sweep's results are written one page at a time.
+- **new — the link-preview refresh** under Data & backups → Icons & previews can be stopped; what it fetched is kept.
+- **new — Keep links without filing them** moved from Appearance → Header to Behavior → Inbox & Fresh, and now gates Keep in triage too.
+- **fix — the config band's filter and *Only changed*** were written after the panels were bound and never reached the config object.
+
+### Logs
+
+- **new — Record server log is a toggle in the log toolbar**, beside Copy and Download, instead of a switch behind ⚙. Every line carries its own server sequence number, and recording with no refresh interval says the view will not update by itself.
+
+### Translations
+
+- **fix — 25 strings the code used had no locale key**, so they showed in English in every language: the Keep, bulk-tag and undo toasts in the inbox, the health undo and restore toasts, the Config → Bookmarks move and duplicate messages, the kept list's duplicate line and *no tag* group, and the Kept widget's name, description, empty and loading text and open action. All six locales.
+- **fix — the cheat sheet's `r` row had no label** (`ivMarkRead` sat in `dashboard.*`, not `dashboard.cheatsheet.*`) and its `ivKeep` read "Mark as read"; both are in place.
+- **fix — copy that still said `r` keeps** — the triage hint, the inbox explainer, tour steps 4 and 9 and the tour's keycap — says `r` marks read and `Shift+K` keeps, in six locales. The server-log help and empty state name the renamed toggle.
+
+### Docs
+
+- **docs — Config → Help → Inbox** has a new *The Kept tab* panel, and the inbox, working, triage, settings, tour and Behavior panels describe Keep, the two tabs and the new switches; **Help → Tips** gains `tipEditKeep` and `tipEditKeptPile`. Six locales.
+- **docs — `static/data/whats-new/v1.12.0.json` and its index entry**, leading the What's new window: `whats-new-stub.js`'s `DASHBOARD_RELEASE` moved to `2026.09-dashboard-release-v1.12.0`, so every install sees it once, and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v295`. v1.11.1–v1.11.8 lose `hideFromModal` and are shown under it, the way v1.7.0 released v1.6.1 and v1.6.2; v1.11.4's lead no longer mentions a test. `tests/whats-new-hidden-release.spec.js` asserts that nothing is held back and that each of them is reachable in the window. `static/data/overview-features.json` gains two spotlights with `since: "v1.12.0"` — keeping a link, and filing it where its site lives — with their keys in six locales. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — MANUAL.md** gains §14.5 *The Kept tab* (Settings moves to §14.6), and §8, §11, §13, §14, §15.4, §15.5, §17.4 and §18.1 follow the changes above; **README.md** mentions Kept and counts twenty-one widget kinds.
 
 ---
 

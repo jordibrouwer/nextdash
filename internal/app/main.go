@@ -108,7 +108,11 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/bookmarks", handlers.GetBookmarks).Methods("GET")
 	r.HandleFunc("/api/bookmarks", handlers.SaveBookmarks).Methods("POST")
 	r.HandleFunc("/api/bookmarks", handlers.DeleteBookmark).Methods("DELETE")
+	r.HandleFunc("/api/bookmarks", handlers.PatchBookmarks).Methods("PATCH")
 	r.HandleFunc("/api/bookmarks/add", handlers.AddBookmark).Methods("POST")
+	r.HandleFunc("/api/bookmarks/move", handlers.MoveBookmarks).Methods("POST")
+	r.HandleFunc("/api/bookmarks/delete", handlers.DeleteHealthBookmarksBulk).Methods("POST")
+	r.HandleFunc("/api/tags/rewrite", handlers.RewriteTag).Methods("POST")
 	r.HandleFunc("/api/bookmarks/import-browser", handlers.ImportBrowserBookmarks).Methods("POST")
 	// The file itself rather than the browser's reading of it, so an import
 	// keeps the tags, notes and dates every export has always carried.
@@ -130,6 +134,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/categories", handlers.SaveCategories).Methods("POST")
 	r.HandleFunc("/api/pages", handlers.GetPages).Methods("GET")
 	r.HandleFunc("/api/pages", handlers.SavePages).Methods("POST")
+	r.HandleFunc("/api/unsorted", handlers.GetUnsorted).Methods("GET")
 	// A page's widgets and the order every block on it is drawn in -- category
 	// ids and widget ids in one list, so a widget can sit between categories.
 	r.HandleFunc("/api/pages/{id:[0-9]+}/blocks", handlers.GetPageBlocksHandler).Methods("GET", "OPTIONS")
@@ -260,6 +265,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/inbox", handlers.DeleteInboxItem).Methods("DELETE")
 	r.HandleFunc("/api/inbox", handlers.PatchInboxItem).Methods("PATCH")
 	r.HandleFunc("/api/inbox", handlers.PutInboxItem).Methods("PUT")
+	r.HandleFunc("/api/inbox/batch", handlers.BatchInbox).Methods("POST")
 	r.HandleFunc("/api/inbox-stats", handlers.GetInboxStats).Methods("GET")
 	r.HandleFunc("/api/trash", handlers.GetTrash).Methods("GET")
 	r.HandleFunc("/api/trash", handlers.AddTrashItems).Methods("POST")

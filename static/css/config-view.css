@@ -4833,6 +4833,29 @@ body.no-animations .config-new-features-panel-star {
     font-size: calc(var(--font-size-text) * 1.1);
 }
 
+/*
+ * Recording is a state, not an action, so the button carries it: pressed and
+ * tinted while the server is collecting, plain while it is not. Same weight as
+ * Copy and Download beside it — it belongs to the row, not above it.
+ */
+.config-log-record[aria-pressed="true"] {
+    border-color: var(--accent-color, #4a90d9);
+    color: var(--accent-color, #4a90d9);
+}
+
+/*
+ * Recording with no interval armed: the log is filling up while the view sits
+ * still. Warning-tinted rather than plain, because it reads as a fault until
+ * you know it is a setting, and the note says where that setting is.
+ */
+.config-log-manual-note {
+    color: var(--warn, #cf9014);
+}
+
+.config-log-manual-note[hidden] {
+    display: none;
+}
+
 /* ── Log settings popover ─────────────────────────────────────────────────── */
 
 /*
@@ -4967,7 +4990,7 @@ body.no-animations .config-new-features-panel-star {
 
 .config-log-line {
     display: grid;
-    grid-template-columns: auto auto 1fr;
+    grid-template-columns: auto auto auto 1fr;
     gap: 0 8px;
     padding: 2px 4px;
     border-radius: var(--radius-3, 4px);
@@ -4975,6 +4998,21 @@ body.no-animations .config-new-features-panel-star {
 
 .config-log-line + .config-log-line {
     margin-top: 1px;
+}
+
+/*
+ * The line's own number, in a gutter of its own. Not selectable: the point of
+ * Copy and of a drag over the log is the lines, and a column of numbers pasted
+ * between them is noise.
+ */
+.config-log-seq {
+    color: var(--text-muted, #888);
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    min-width: 4ch;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .config-log-time {

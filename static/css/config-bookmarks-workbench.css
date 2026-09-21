@@ -198,6 +198,23 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
     opacity: 0.45;
 }
 
+/* Unsorted is not a filter over the filed library: it replaces the pool.
+   Own colour plus a mark, so the row does not read as one more view. */
+.config-bm-rail-item.is-unsorted .config-bm-rail-label,
+.config-bm-rail-item.is-unsorted .config-bm-rail-mark {
+    color: var(--accent-warning, #d08700);
+}
+
+.config-bm-rail-item.is-unsorted.is-on {
+    background: color-mix(in srgb, var(--accent-warning, #d08700) 16%, transparent);
+}
+
+.config-bm-rail-mark {
+    flex: none;
+    font-size: var(--font-size-small);
+    line-height: 1.4;
+}
+
 .config-bm-rail-label {
     flex: 1;
     min-width: 0;
@@ -254,8 +271,11 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
        (tags) its full share before a bare `1fr` ever sees a pixel, so
        without a floor here a narrow panel starves the title to 0 width —
        invisible, not just cramped. Tags is the one allowed to lose the
-       argument and clip. */
-    grid-template-columns: 16px 20px minmax(6rem, 1fr) minmax(0, 9rem) 3.5rem 5.5rem;
+       argument and clip.
+
+       The floor is what a title needs to be read: the columns to its right
+       are capped rather than wide, so the name keeps the slack. */
+    grid-template-columns: 16px 20px minmax(10rem, 1fr) minmax(0, 6rem) 3.5rem 5.5rem;
     align-items: center;
     gap: var(--space-2, 0.5rem);
     height: var(--bm-row-h);
@@ -480,8 +500,11 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
 
 @media (min-width: 1200px) {
     .config-bm-workbench.is-panel-collapsed .config-bm-row {
-        grid-template-columns: 16px 20px minmax(8rem, 1fr) minmax(0, 11rem) 1.5rem 4rem 8rem 5.5rem 3.5rem 5.5rem;
+        /* Every column here is a fact about the bookmark; the name is the
+           bookmark. Caps trimmed all round so the title reads in full. */
+        grid-template-columns: 16px 20px minmax(14rem, 1fr) minmax(0, 6rem) 1.5rem 3.5rem 7rem 5rem 3rem 5rem;
     }
+
 
     /* Pinned is shown only here, in its own column; the drawn pin the
        context menus use, in the theme's colour. */

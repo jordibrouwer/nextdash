@@ -117,8 +117,11 @@ class DashboardContextMenu {
         const url = row.getAttribute('data-bookmark-url');
         if (!url) return null;
         const label = (row.querySelector('.bookmark-text')?.textContent || '').trim();
+        // d.unsortedBookmarks as well: the kept rows are held apart from
+        // allBookmarks so they cannot reach the dashboard's own surfaces, and
+        // the Unsorted view's rows resolve through here like any other.
         const candidates = [];
-        [d.bookmarks, d.allBookmarks].forEach((list) => {
+        [d.bookmarks, d.allBookmarks, d.unsortedBookmarks].forEach((list) => {
             (list || []).forEach((b) => {
                 if (b?.url === url && !candidates.includes(b)) candidates.push(b);
             });
@@ -194,6 +197,13 @@ class DashboardContextMenu {
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: this.shareActionLabel(), icon: '↪' },
             { id: 'inbox-promote', label: this.t('dashboard.inboxPromote', 'Promote'), icon: '★' },
+            // Keep's own entry: the same silent promote-to-Unsorted the triage
+            // "r" key runs, reachable now without starting a triage run first.
+            {
+                id: 'inbox-keep',
+                label: this.t('dashboard.inboxKeepToKept', 'Keep (to the Kept tab)'),
+                icon: '▣',
+            },
             // Whichever way the row can still go: read, or back to unread. The
             // second was missing entirely — the server accepted it and nothing
             // ever sent it — so a link marked read by mistake could only be
@@ -247,7 +257,33 @@ class DashboardContextMenu {
         // is the busiest surface in the app for finding out that a key exists.
         // Untranslated, like every other key hint.
         const mod = window.ShortcutFormat?.modifierLabel?.() || 'Ctrl';
-        const singleActions = bookmarkRef.scope === 'inbox' ? inboxActions : [
+        /*
+         * Four of the entries below mean nothing on an unsorted row, so that
+         * view does not carry them.
+         *
+         * Pin orders a row within a category and an unsorted bookmark has none.
+         * Checking and Show in Health both speak for the health report, which
+         * covers the filed library. Move to... would file the bookmark by
+         * shoving it at a page, while the way to file one is to give it a
+         * category in Edit -- which promotes it, and is the one route worth
+         * teaching. Hidden rather than disabled: a greyed row that never
+         * becomes available is a question the menu cannot answer.
+         */
+        const inUnsorted = d.unsorted?.isActiveView?.() === true;
+        const hiddenInUnsorted = new Set(['pin', 'check-mode', 'health']);
+        /*
+         * With rows ticked in Unsorted, Tags means the selection.
+         *
+         * The menu is opened from one row, but that row is part of a set the
+         * reader has just built, and tagging them one at a time is the work the
+         * set was made to avoid. The label says the count so the entry cannot
+         * be mistaken for the single-row one.
+         */
+        const unsortedSelection = inUnsorted && d.unsorted?.select?.isActive?.()
+            ? d.unsorted.select
+            : null;
+        const bulkTagCount = unsortedSelection ? unsortedSelection.count() : 0;
+        const singleActions = (bookmarkRef.scope === 'inbox' ? inboxActions : [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗', key: `${mod}+Enter` },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${mod}+C` },
             { id: 'share', label: this.shareActionLabel(), icon: '↪', key: 'Shift+L' },
@@ -262,8 +298,47 @@ class DashboardContextMenu {
                 icon: 'pin',
                 key: 'Shift+P',
             },
-            { id: 'tags', label: this.t('dashboard.contextMenuTags', 'Tags…'), icon: '#', key: 'Shift+T' },
-            { id: 'move', label: this.t('dashboard.contextMenuMove', 'Move to…'), icon: '→', key: 'Shift+M' },
+            {
+                id: 'tags',
+                label: bulkTagCount > 1
+                    ? this.t('dashboard.contextMenuTagsSelected', 'Tags for {count} selected…', { count: bulkTagCount })
+                    : this.t('dashboard.contextMenuTags', 'Tags…'),
+                icon: '#',
+                key: 'Shift+T',
+            },
+            /*
+             * Filing, and unfiling.
+             *
+             * In the kept list Move to... asks for a page *and* a category --
+             * which is what filing is, and what sends the row to the
+             * dashboard. Elsewhere it is the picker it has always been. The
+             * second entry is the way back: a kept link that turned out to
+             * need thinking about again returns to the queue it came from.
+             */
+            {
+                id: 'move',
+                label: inUnsorted
+                    ? this.t('dashboard.contextMenuFileOnPage', 'Move to a page…')
+                    : this.t('dashboard.contextMenuMove', 'Move to…'),
+                icon: '→',
+                key: 'Shift+M',
+            },
+            ...(inUnsorted
+                ? [{
+                    id: 'unsorted-to-inbox',
+                    label: this.t('dashboard.contextMenuBackToInbox', 'Back to the inbox'),
+                    icon: '↩',
+                    key: 'B',
+                }, {
+                    // The third answer a kept link can be given: not filed, not
+                    // back in the queue today, but parked until a date. The
+                    // selection bar and the run over the list both offer it;
+                    // the row menu is where a single link is dealt with.
+                    id: 'unsorted-snooze',
+                    label: this.t('dashboard.unsortedSelectSnooze', 'Snooze'),
+                    icon: '⏰',
+                }]
+                : []),
             ...(currentMode
                 ? [{
                     id: 'check-mode',
@@ -281,7 +356,7 @@ class DashboardContextMenu {
             // someone would look for it.
             { id: 'health', label: this.t('dashboard.healthOpenInHealth', 'Show in Health'), icon: '♥', key: 'Shift+R' },
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
-        ];
+        ]).filter((action) => !inUnsorted || !hiddenInUnsorted.has(action.id));
 
         // A selection replaces the single-row actions entirely rather than being
         // appended to them: a menu offering both would leave "Delete" and
@@ -919,6 +994,7 @@ class DashboardContextMenu {
             // buttons and keyboard shortcuts already call, so right-click cannot
             // drift from the other two routes.
             case 'inbox-promote':
+            case 'inbox-keep':
             case 'inbox-read':
             case 'inbox-unread':
             case 'inbox-snooze':
@@ -932,6 +1008,7 @@ class DashboardContextMenu {
                 );
                 if (!inbox || !item) break;
                 if (action === 'inbox-promote') inbox.promoteItem(item);
+                else if (action === 'inbox-keep') void inbox.keepItem(item);
                 else if (action === 'inbox-read') void inbox.markReadFromKeyboard(item);
                 else if (action === 'inbox-unread') void inbox.markUnreadFromRow(item);
                 else if (action === 'inbox-snooze') inbox.openSnoozeMenu(item, row);
@@ -944,11 +1021,39 @@ class DashboardContextMenu {
             case 'edit':
                 d.openBookmarkInlineEditor?.(row, bookmarkRef);
                 break;
-            case 'tags':
+            case 'tags': {
+                // The selection's own popover when there is one, which writes
+                // the page once instead of walking the rows.
+                const selection = d.unsorted?.isActiveView?.() && d.unsorted.select?.isActive?.()
+                    ? d.unsorted.select
+                    : null;
+                if (selection && selection.count() > 1) {
+                    selection.openTagsPopover(row);
+                    break;
+                }
                 d.showTagPopover?.(row, bookmark, bookmarkIndex);
                 break;
+            }
             case 'move':
-                d.showMovePopover?.(row, bookmark, bookmarkIndex);
+                // In the kept list the picker asks for a page and a category:
+                // a kept bookmark has neither, and both are what filing means.
+                if (d.unsorted?.isActiveView?.() && d.unsorted.select) {
+                    d.unsorted.select.openMovePopover(row, [bookmark]);
+                    break;
+                }
+                void d.showMovePopover?.(row, bookmark, bookmarkIndex);
+                break;
+            case 'unsorted-to-inbox':
+                void d.unsorted?.select?.sendToInbox([bookmark]);
+                break;
+            case 'unsorted-snooze':
+                // The queue's own menu, on this row: one list of durations for
+                // both, and the wake it writes is the one the queue reads.
+                d.inbox?.openSnoozeMenu?.(null, row, null, {
+                    onPicked: (until) => {
+                        void d.unsorted?.select?.sendToInbox([bookmark], { snoozeUntil: until });
+                    },
+                });
                 break;
             case 'check-mode':
                 this.showCheckModeMenu(row, bookmarkRef, { parentPoint: options.parentPoint });

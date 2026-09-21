@@ -765,7 +765,9 @@ class DashboardData {
         {
             view: 'inbox',
             layoutClass: 'inbox-layout',
-            matchesHash: (hash) => hash === '#inbox',
+            // Both of the inbox's tabs: the kept list is a tab of this view
+            // and keeps the address it always had.
+            matchesHash: (hash) => hash === '#inbox' || hash === '#unsorted',
             isEnabled: (d) => Boolean(d.inbox?.isEnabled?.()),
         },
         {
@@ -1145,7 +1147,23 @@ class DashboardData {
             if (!allBookmarksRes.ok) {
                 throw new Error('Failed to load all bookmarks');
             }
-            d.allBookmarks = await allBookmarksRes.json();
+            /*
+             * Split on the way in, so every surface that reads allBookmarks is
+             * right by construction.
+             *
+             * A bookmark kept from the inbox lives on the hidden unsorted page
+             * and belongs to one view. It was reaching config's bookmark list,
+             * the tag cloud, the smart collections and the health badge simply
+             * because they all read this array -- gating each of them would be
+             * a dozen places to remember and one to forget. The unsorted rows
+             * are kept beside it instead, for the two surfaces that may see
+             * them: the Unsorted view, and search when the reader allows it.
+             */
+            const loaded = await allBookmarksRes.json();
+            const rows = Array.isArray(loaded) ? loaded : [];
+            const isUnsorted = (bookmark) => window.UnsortedPage?.isUnsorted?.(bookmark) === true;
+            d.allBookmarks = rows.filter((bookmark) => !isUnsorted(bookmark));
+            d.unsortedBookmarks = rows.filter(isUnsorted);
             this.invalidateStalePageCaches();
 
             const currentPageId = Number(d.currentPageId);
@@ -1233,6 +1251,12 @@ class DashboardData {
 
     repaintBookmarkMutationSurfaces({ animate = false, refreshHealthReport = true, despiteModal = false } = {}) {
         const d = this.dash;
+
+        // The Unsorted widget keeps what /api/unsorted answered the first time
+        // it drew, for the life of the tab. Every add, edit, delete, move and
+        // tag change comes through here, and any of them can change that
+        // answer -- so the held copy goes, and the next draw asks again.
+        d._widgetUnsorted = null;
 
         d.config?.repaintBookmarksList?.();
 

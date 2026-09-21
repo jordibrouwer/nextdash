@@ -495,7 +495,7 @@ With the panel empty, your recent and saved searches show as chips (`←`/`→` 
 
 **Switch search mode** (Behavior → Keyboard & search, or **`Shift + Q`**) decides whether bare letters look for a shortcut or a name. When one finds nothing and the other would, the panel adds a row that searches the other way.
 
-**Behavior → Keyboard & search** also holds fuzzy suggestions for near-misses, *include finders in search*, *keep search open when empty* and the search hint.
+**Behavior → Keyboard & search** also holds fuzzy suggestions for near-misses, *include finders in search*, *keep search open when empty* and the search hint. *Search unsorted bookmarks* (on by default) lets search reach links kept on the inbox's Kept tab ([§14.5](#145-the-kept-tab)); they stay out of every other list.
 
 ### 8.2 Filters
 
@@ -710,6 +710,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | Kind | Shows |
 |---|---|
 | **Inbox** | How much is waiting, and how old the oldest is |
+| **Kept** | Links kept from the inbox without a page yet, newest first |
 | **Feeds** | Feeds with news, and feeds that stopped after repeated failures |
 | **Sources** | What each import source last did |
 
@@ -1048,7 +1049,7 @@ A filter with nothing in it hides until it fills; Broken, Content, Duplicates, U
 
 **The score.** Click the badge or press **`s`**. Every bookmark starts at 100: broken −60, duplicate −15, shortcut conflict −15, never checked −10, stale check −5, no preview −5. Not opening a bookmark costs nothing.
 
-**Fixing a row.** The row menu (**`m`**, the ⋯ button, or a right-click) offers re-check, open, show on the dashboard, edit, **detect redirect**, refresh title, refresh favicon, **find in Web Archive** or point the bookmark at the last good copy (the old address goes into the note), save a local copy, copy URL, share and delete. **`n`** or **`z`** sets one condition aside for a bookmark you judged fine. **Merge** keeps one of two duplicates with both sets of tags and notes. On *Missing preview*, **Fetch previews** asks every page for its title, description and image.
+**Fixing a row.** The row menu (**`m`**, the ⋯ button, or a right-click) offers re-check, open, show on the dashboard, edit, **detect redirect**, refresh title, refresh favicon, **find in Web Archive** or point the bookmark at the last good copy (the old address goes into the note), save a local copy, copy URL, share and delete. **`n`** or **`z`** sets one condition aside for a bookmark you judged fine. **Merge** keeps one of two duplicates with both sets of tags and notes. On *Missing preview*, **Fetch previews** asks every page for its title, description and image — the whole collection, not only the filtered rows. It shows progress, waits out a rate limit, and can be stopped.
 
 **Keys:**
 
@@ -1070,7 +1071,7 @@ A filter with nothing in it hides until it fills; Broken, Content, Duplicates, U
 
 ### 13.3 Working through the list
 
-**Several rows.** Tick rows (or `x`, or **Select all** in the ⋯ menu, which reads **Deselect all** once they all are). The bar offers **Set checking**, **Re-check**, **Open**, **Copy links**, **Mute alerts** / **Unmute**, **Follow redirects** (asks each row where it goes now and applies the answers after one confirmation), **Accept drift**, **Rebuild previews**, **Refresh favicons**, **Save a copy on this disk** and **Delete**. The slow ones run one page at a time behind a progress bar. A row that changed since the report was built is skipped rather than deleted. Ticks survive a filter change; the bar says how many are hidden. On a filtered list, a button switches all visible rows to Periodic or Monitor at once — never on the unfiltered list.
+**Several rows.** Tick rows (or `x`, or **Select all** in the ⋯ menu, which reads **Deselect all** once they all are). The bar offers **Set checking**, **Re-check**, **Open**, **Copy links**, **Mute alerts** / **Unmute**, **Follow redirects** (asks each row where it goes now and applies the answers after one confirmation), **Accept drift**, **Rebuild previews**, **Refresh favicons**, **Save a copy on this disk** and **Delete**. The slow ones run one page at a time behind a progress bar. A row that changed since the report was built is skipped rather than deleted. Deleted rows go to the trash, and deletes and fixes can be undone from the toast. Ticks survive a filter change; the bar says how many are hidden. On a filtered list, a button switches all visible rows to Periodic or Monitor at once — never on the unfiltered list.
 
 **Work through** (**`f`**) shows one row at a time with large actions: re-check (`p`), open (`Enter`), delete (`d`), **ignore for 30 days** (`z`), skip (`j`) and back (`k`). It starts at the row your cursor is on; `Esc` leaves and keeps your place.
 
@@ -1200,6 +1201,7 @@ A URL already in the inbox is not added again: a toast says *Already in Inbox* a
 
 Open it with **`Shift + I`**, **`0`**, the inbox icon or `:inbox`.
 
+- **Two tabs** — **To triage** is the queue, counted on the tab and in the header; **Kept** holds links you kept without a page yet ([§14.5](#145-the-kept-tab)).
 - **Filters** in a left column, each with its count: All (called *Active*), Unread, Snoozed and With note (the last two only when they hold something). *This week* is a readout above them.
 - **Narrowing** — by site, by tag (click a tag chip) and by search. Every count follows what is shown, and *Mark all read* becomes *Mark shown read*.
 - **Sort** — newest first (default), oldest first, title or site.
@@ -1216,6 +1218,7 @@ Open it with **`Shift + I`**, **`0`**, the inbox icon or `:inbox`.
 | `Enter` | Open |
 | `p` | Promote to a bookmark |
 | `r` | Mark read |
+| `Shift + K` | Keep — to the Kept tab (undo in the toast) |
 | `n` | Note |
 | `z` | Snooze |
 | `x` | Tick and move on |
@@ -1225,26 +1228,52 @@ Open it with **`Shift + I`**, **`0`**, the inbox icon or `:inbox`.
 | `R` | Reload |
 | `Esc` | Clear the selection |
 
-- **Read** — a link is unread until opened or kept. Right-click to mark it unread again.
+- **Read** — a link is unread until opened or marked read. Right-click to mark it unread again.
 - **Snooze** — three hours, tomorrow, the weekend, next week, or a date (waking at 09:00). A snoozed link is left out of every count; a line under the list says how many are asleep. **Wake now** brings one back.
 - **Notes and tags** — plain-text notes; tags from the capture show as chips, and can be edited from the right-click menu.
 - **Promote** — opens the bookmark form filled in, with every page and category. The inbox entry goes when the bookmark is saved.
-- **Several at once** — promote (to one page), open, copy links, mark read, snooze, delete. **Select all** in the ⋯ menu ticks every link the filters leave, and reads **Deselect all** once they all are.
+- **Several at once** — promote (to one page and category), keep, tags, open, copy links, mark read, snooze, delete — each with undo. **Select all** in the ⋯ menu ticks every link the filters leave, and reads **Deselect all** once they all are.
 - **Mark all read** and **Clear read** — for the whole (shown) list. Clear read leaves snoozed links alone.
 - **Stats** — how many links were added, promoted and deleted, and how long links wait.
 - **Export and import** — CSV and JSON of what is shown; **Import** reads a JSON export back and skips links already there.
 
 ### 14.4 Triage
 
-**Triage** (the button, `t`, or `:inbox triage`) shows one link at a time: `j`/`k` move, `o` or `Enter` opens, `p` promotes, `r` or `Space` keeps, `d` or `Delete` removes, `Esc` returns to the list. It follows the filter and sort you had.
+**Triage** (the button, `t`, or `:inbox triage`) shows one link at a time: `j`/`k` move, `o`, `Enter` or `Space` opens, `p` promotes, `r` marks read, `Shift + K` keeps, `z` snoozes, `n` adds a note, `d` or `Delete` removes, `Esc` returns to the list. It follows the filter and sort you had.
 
-### 14.5 Settings
+### 14.5 The Kept tab
+
+**Kept** is for links worth holding on to that have no place yet. **Keep** — the row's button, `Shift + K` in the list or in triage, or the right-click menu — takes a link out of the queue for good, with its note and tags. A toast says where it went, with **Undo**. With **File a kept link where its neighbours are** on, a link whose site is already filed in one place goes straight there instead.
+
+- **Rows** show the tags, how long the link has waited, and *file on …* when the rest of its site lives on one page and category. Dashed chips are suggested tags: click to add, × to stop suggesting. A row that is already filed elsewhere says so.
+- **Group** by site, tag, suggested tag or age, and **sort** by newest, oldest, name, site, tag, most opened or last checked. Click a group's bar, or press `X`, to select the whole group.
+- **Selection bar** — **Move to…** (one page and category), tags, **Suggest tags**, open, export, snooze, **Back to the inbox**, delete, and **Fetch icons** / **Fetch previews** for rows that lack them (with progress and **Stop**). Deletes and moves can be undone from the toast.
+- **Work through** (`f`) shows one kept link at a time: file it where its site lives, move (`m`), snooze (`z`), back to the inbox (`b`), skip (`s`), delete (`d`), `Esc` to stop. The run ends with a count.
+- **Back to the inbox** (`b`) returns a link to the queue with its note and tags; **Snooze** returns it asleep, to wake on the chosen date.
+- When more than ten kept links have waited over a month, a card in the bottom-left corner says so, once.
+
+| Key | Action |
+|---|---|
+| Arrows | Move |
+| `Enter` | Open |
+| `x` / `X` | Tick the row / the whole group |
+| `f` | Work through |
+| `b` | Back to the inbox |
+| `Esc` | Clear the selection, then back to the queue, then back to the bookmarks — one layer per press |
+
+`Shift + U` or the address `#unsorted` opens the inbox on this tab. On a dashboard bookmark, **Move to…** also offers the Kept list as a destination.
+
+Kept links are bookmarks on a hidden **Unsorted** page. They stay off the dashboard, the tag cloud, smart collections and the health report; **Config → Bookmarks → Unsorted** lists them, the **Kept** widget shows them on a page, and search reaches them while *Search unsorted bookmarks* is on.
+
+### 14.6 Settings
 
 - **Behavior → Inbox & Fresh → Enable the inbox** — off removes the inbox from the header, stops its keys and command, and adds pasted URLs as bookmarks.
+- **Keep links without filing them** (on) — the Kept tab and the Keep action. Off, Keep in triage only marks a link read.
+- **File a kept link where its neighbours are** (off) — Keep files a link on the page and category where the rest of its site already is.
 - **Paste destination** — ask each time, always add a bookmark, or always save to the inbox.
 - In `settings.json` only: `inboxMaxItems` (default 500; past it the oldest links are silently dropped) and deduplication by URL (on). Undoing a delete at the cap restores the link with its original date; with no room at all, the undo says the inbox is full.
 
-The first visit plays a seven-step tour. Behavior → Privacy & sync → Onboarding can play it again.
+The first visit plays a nine-step tour of the queue and the Kept tab. **Tour**, above either list, plays it again; so does Behavior → Privacy & sync → Onboarding.
 
 ---
 ## 15. ⚙️ Config
@@ -1295,11 +1324,11 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 **The list** is a workbench in three parts.
 
-- **The rail** narrows the list: a search (`/`; it matches name, URL, category, note, shortcut and tags), **Views** (never opened, opened once, without tags, not on HTTPS, and more), **Pages**, **Categories**, **Tags** and **Health** (healthy, broken, monitor down, never checked), each with a count.
+- **The rail** narrows the list: a search (`/`; it matches name, URL, category, note, shortcut and tags), **Views** (never opened, opened once, without tags, not on HTTPS, **Unsorted** — the links kept from the inbox, shown on their own — and more), **Pages**, **Categories**, **Tags** and **Health** (healthy, broken, monitor down, never checked), each with a count.
 - **The list** shows what is left, grouped by page and category, with a sort (page order, last opened, most opened, pinned first and others). Rows show icon, name, host, tags, open count and last opened. Only the rows near the screen are drawn, so thousands of bookmarks stay fast.
 - **The side panel** shows the bookmark in focus and edits it in place: name, URL, page, category, tags (with suggestions), shortcut, note, pin, availability checking and interval. Lists and checkboxes save on change, text fields when you leave them; `Escape` puts the old value back. It also shows health and usage, and offers **Open**, **Edit in dialog** (`Shift + E`), **Show on dashboard**, **Refresh favicon** and **Delete**.
 
-**Several at once.** Tick rows and the side panel edits the selection: page, category, tags (add, replace, remove), pin all / unpin all, checking and interval. Fields that differ read *mixed*. **Apply to N** writes the changes; **Export CSV**, **Refresh favicons** and **Delete N** act on the selection. Bulk changes can be undone from the toast. A selection survives a filter change.
+**Several at once.** Tick rows and the side panel edits the selection: page, category, tags (add, replace, remove), pin all / unpin all, checking and interval. Fields that differ read *mixed*. **Apply to N** writes the changes; **Export CSV**, **Refresh favicons**, **Fetch icons**, **Fetch previews** and **Delete N** act on the selection. Fetching runs behind a progress bar, waits out a rate limit and can be stopped. Bulk changes and moves can be undone from the toast, and the undo takes back only what that change did. A selection survives a filter change.
 
 **Keys:** `j`/`k` or arrows move, `g`/`G` first and last, `x` ticks, `Enter` or `o` opens, `Shift + E` opens the dialog, `m` the row menu, `c` the checking menu, `/` the search.
 
@@ -1319,8 +1348,8 @@ The other tabs:
 | Tab | Settings |
 |---|---|
 | **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode** |
-| **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
-| **Inbox & Fresh** | Paste to quick-add, enable the inbox, paste destination; show what is new since you last looked, mark rows that publish, find feeds now |
+| **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
+| **Inbox & Fresh** | Paste to quick-add, enable the inbox, keep links without filing them, file a kept link where its neighbours are, paste destination; show what is new since you last looked, mark rows that publish, find feeds now |
 | **Status & alerts** | [§13.1](#131-availability-modes) |
 | **Privacy & sync** | Analytics, the daily release check, posts from nextdash.cc; **Keep settings on this device only**; onboarding (keyboard tips, review cards, tours, *Show quick-start card again*) |
 
@@ -1465,7 +1494,7 @@ The MCP endpoint is switched on from this tab as well — see [§21.6](#216-the-
 
 - **Refresh favicons** — never, monthly, weekly or on every load; **Refresh all favicons** now. `:favicons fetch` does the same from the dashboard.
 - **Image cache size** — 50, 200 or 500 MB, with the current use. **Remove cached images** empties it.
-- **Refresh all link previews** / **Clear all link previews** — the stored titles, descriptions and images. Refreshing is one request per bookmark and shows progress.
+- **Refresh all link previews** / **Clear all link previews** — the stored titles, descriptions and images. Refreshing is one request per bookmark, shows progress, waits out a rate limit and can be stopped.
 - **Forget the scanned keywords** — what *Read their pages* kept for tag suggestions.
 
 ### 17.5 Trash
@@ -1506,7 +1535,7 @@ ERROR  store    bookmarks.json could not be written: no space left on device
 
 | Control | What it does |
 |---|---|
-| **Collect server log** (⚙) | Off by default. While off, nothing is captured and nothing is written. Turning it off keeps what was collected. |
+| **Record server log** (toolbar) | Off by default. While off, nothing is captured and nothing is written. Turning it off keeps what was collected. |
 | **Detail level** | **Quiet** (problems only), **Normal** (default) or **Verbose** (every step). Applies to the next line, here and in `docker logs`, without a restart. |
 | **Show** | Everything, warnings & errors, errors only, or activity only. Only changes what you see; a note says which level is recording. |
 | **Search** | On the message and the component, across the whole log |
@@ -1515,6 +1544,8 @@ ERROR  store    bookmarks.json could not be written: no space left on device
 | **Follow** | Keeps the newest line in view until you scroll up |
 | **Copy** / **Download** | The lines to the clipboard, or the log as a `.log` file |
 | **Clear** | Empties the log and deletes `server.log` and its rotated copies. Asks first. |
+
+Every line carries its own sequence number from the server. With **Refresh** off, a note says the view does not update by itself; press ↻ for the newest lines.
 
 Lines are kept in memory and in `server.log` in the data directory (2 MB, two rotated copies). The same lines go to stderr.
 

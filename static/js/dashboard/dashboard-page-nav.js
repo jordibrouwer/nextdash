@@ -142,6 +142,13 @@ class DashboardPageNav {
     }
 
 
+    unsortedPageLabel() {
+        const d = this.dash;
+        const unsortedLabel = d.language?.t?.('dashboard.unsorted');
+        return unsortedLabel && unsortedLabel !== 'dashboard.unsorted' ? unsortedLabel : 'Unsorted';
+    }
+
+
     /**
      * The big header names the view only ('config', 'health', …). The trail of
      * sections that used to sit next to it drops to the smaller line below —
@@ -154,7 +161,11 @@ class DashboardPageNav {
         if (titleElement) {
             let displayName;
             if (d.activeView === 'inbox') {
-                displayName = this.t('dashboard.inboxPageTitle', 'Inbox').toLowerCase();
+                // The kept tab names itself, so the title says which of the
+                // view's two lists is on screen.
+                displayName = (d.inbox?.activeTab?.() === 'kept'
+                    ? this.unsortedPageLabel()
+                    : this.t('dashboard.inboxPageTitle', 'Inbox')).toLowerCase();
             } else if (d.activeView === 'health') {
                 displayName = this.t('dashboard.health', 'health');
             } else if (d.activeView === 'config') {
@@ -196,7 +207,7 @@ class DashboardPageNav {
     updateDocumentTitle() {
         const d = this.dash;
         const viewName = d.activeView === 'inbox'
-            ? this.inboxPageLabel()
+            ? (d.inbox?.activeTab?.() === 'kept' ? this.unsortedPageLabel() : this.inboxPageLabel())
             : (d.activeView === 'health'
                 ? this.healthPageLabel()
                 : (d.activeView === 'config' ? this.configPageLabel() : ''));
@@ -299,6 +310,7 @@ class DashboardPageNav {
     }
 
 
+
     /** Config has no tab of its own either: it opens from the header link. */
     setActiveConfigTab() {
         this.setActivePageNavButton(this.dash.currentPageId);
@@ -315,6 +327,11 @@ class DashboardPageNav {
             return;
         }
         const unread = d.inbox?.unreadCount?.() || 0;
+        // The To triage tab shows this same number; moved together here, so
+        // no path that updates the badge can leave the tab behind. Through
+        // the loaded module only -- asking the loader would fetch the inbox
+        // just to count it.
+        d.inbox?.instance?.syncTabStrip?.({ fromBadge: true });
         const previous = Number(this._lastInboxBadgeCount) || 0;
         if (unread > 0) {
             badge.textContent = String(unread);

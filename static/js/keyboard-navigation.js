@@ -96,7 +96,18 @@ class KeyboardNavigation {
                 if (inbox.handleKeyboardNavigation?.(e)) {
                     return;
                 }
-                return;
+                /*
+                 * The kept tab draws the ordinary bookmark grid.
+                 *
+                 * Everything else the inbox shows is its own feed, which owns
+                 * every key while it is up -- so this returned unconditionally
+                 * and the grid's navigation never ran. On the kept tab that
+                 * left a grid of bookmarks with no arrows, no Enter and no x,
+                 * while the same rows on a page answer to all three.
+                 */
+                if (inbox.activeTab?.() !== 'kept') {
+                    return;
+                }
             }
 
             const health = this.dashboard.health;
@@ -1479,6 +1490,31 @@ class KeyboardNavigation {
                     if (!row) {
                         break;
                     }
+                    /*
+                     * The kept list keeps its own selection.
+                     *
+                     * Its rows carry the grid's classes, so x reached the
+                     * grid's multi-select and ticked a row in a layer this
+                     * list never reads -- the bulk bar stayed empty and the
+                     * one key a list of two hundred rows needs did nothing.
+                     */
+                    const keptKey = row.dataset?.unsortedKey;
+                    // Shift+X takes the row's whole group, the way it takes a
+                    // category on the dashboard.
+                    if (keptKey && key === 'X' && this.dashboard?.unsorted?.select) {
+                        const select = this.dashboard.unsorted.select;
+                        const rows = select.groupOfRow(row);
+                        if (rows?.length) select.toggleGroup(rows);
+                        else select.toggleKey(keptKey);
+                        break;
+                    }
+                    if (keptKey && this.dashboard?.unsorted?.select) {
+                        this.dashboard.unsorted.select.toggleKey(keptKey);
+                        if (this.currentIndex < this.navigableElements.length - 1) {
+                            this.selectElement(this.currentIndex + 1);
+                        }
+                        break;
+                    }
                     if (key === 'X') {
                         this.dashboard.multiSelect.selectCategory(row);
                     } else {
@@ -1508,9 +1544,14 @@ class KeyboardNavigation {
                 this._clearGState();
                 e.preventDefault();
                 // Escape drops the selection before it drops the cursor, so one
-                // press does not lose both at once.
-                if (this.dashboard?.multiSelect?.isActive()) {
-                    this.dashboard.multiSelect.clear();
+                // press does not lose both at once. Which selection that is --
+                // the grid's or the Unsorted view's -- is the dashboard's to
+                // answer; both are cleared the same way from here.
+                if (this.dashboard?.handleSelectionEscape?.()) {
+                    // Spent: the press cleared a selection, and whatever else
+                    // listens for Escape -- the inbox leaving its tab or its
+                    // view -- must not act on the same press as well.
+                    e.stopImmediatePropagation();
                     break;
                 }
                 if (this.currentIndex >= 0) {
@@ -2093,6 +2134,10 @@ class KeyboardNavigation {
             if (url) {
                 bookmark = (dash.bookmarks || []).find(b => b.url === url)
                     || (dash.allBookmarks || []).find(b => b.url === url)
+                    // Kept rows live apart from allBookmarks so they stay out
+                    // of the dashboard's surfaces; the cursor still lands on
+                    // them in the Unsorted view.
+                    || (dash.unsortedBookmarks || []).find(b => b.url === url)
                     || null;
             }
         }
@@ -2218,7 +2263,8 @@ class KeyboardNavigation {
                     if (hits.length <= 1) return hits[0] || null;
                     return hits.find((b) => String(b.name || '').trim() === label) || hits[0];
                 };
-                bookmark = pick(dash.bookmarks) || pick(dash.allBookmarks) || null;
+                bookmark = pick(dash.bookmarks) || pick(dash.allBookmarks)
+                    || pick(dash.unsortedBookmarks) || null;
             }
         }
         return bookmark || null;

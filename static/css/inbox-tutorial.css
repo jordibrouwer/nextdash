@@ -164,3 +164,18 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.inbox-tu
         transition: none;
     }
 }
+
+/* The scenes carry their own styles, inline in each SVG: see inbox-tutorial.js. */
+.inbox-tutorial-scene {
+    margin: 0 0 var(--space-4, 0.9rem);
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-5, 0.5rem);
+    background: var(--background-primary);
+}
+
+.inbox-tutorial-scene .itv {
+    display: block;
+    width: 100%;
+    height: auto;
+}

@@ -228,13 +228,20 @@
                     ) || d.bookmarks.find((b) => String((b.url || '').trim()) === url);
                 }
             }
-            if (!bookmark && Array.isArray(d.allBookmarks)) {
+            if (!bookmark) {
                 const url = String(el.getAttribute('data-bookmark-url') || '').trim();
                 const cat = String(el.getAttribute('data-category-id') || '').trim();
+                // Both cross-page arrays: kept bookmarks are split out of
+                // allBookmarks on load, so a row in the Unsorted view resolves
+                // through the second one or not at all.
+                const pools = [d.allBookmarks, d.unsortedBookmarks].filter(Array.isArray);
                 if (url) {
-                    bookmark = d.allBookmarks.find(
-                        (b) => String((b.url || '').trim()) === url && String(b.category || '') === cat
-                    ) || d.allBookmarks.find((b) => String((b.url || '').trim()) === url);
+                    for (const pool of pools) {
+                        bookmark = pool.find(
+                            (b) => String((b.url || '').trim()) === url && String(b.category || '') === cat
+                        ) || pool.find((b) => String((b.url || '').trim()) === url);
+                        if (bookmark) break;
+                    }
                 }
             }
             if (!bookmark) {
@@ -541,7 +548,11 @@
             if (!url) return null;
             const label = (row.querySelector('.bookmark-text')?.textContent || '').trim();
             const candidates = [];
-            [d.bookmarks, d.allBookmarks].forEach((list) => {
+            // Matches dashboard-context-menu.js's resolveRowBookmark exactly,
+            // d.unsortedBookmarks included: the first right-click of a session
+            // runs this copy, and it must not behave differently from every
+            // later one.
+            [d.bookmarks, d.allBookmarks, d.unsortedBookmarks].forEach((list) => {
                 (list || []).forEach((b) => {
                     if (b?.url === url && !candidates.includes(b)) candidates.push(b);
                 });

@@ -168,6 +168,8 @@ class DashboardSetup {
         // Control health beta link visibility dynamically
         d.updateHealthDashboardVisibility();
 
+        // Control unsorted link visibility dynamically
+
         // Control page tabs visibility dynamically
         d.updatePageTabsVisibility();
         // After the three above: each of them decides whether one side of the
@@ -198,12 +200,70 @@ class DashboardSetup {
         const bookmarksForSearch = (d.settings.globalShortcuts ? d.allBookmarks : d.bookmarks) || [];
 
         if (window.SearchComponent) {
-            d.searchComponent = new window.SearchComponent(bookmarksForSearch, d.bookmarks, d.allBookmarks, d.settings, d.language, d.finders, d.pages);
+            d.searchComponent = new window.SearchComponent(
+                this.searchBookmarkPool(bookmarksForSearch), d.bookmarks, d.allBookmarks,
+                d.settings, d.language, d.finders, d.pages);
         }
         // No else: search lives in its own bundle now and is fetched by the key
         // that opens it (see search-loader.js), so arriving here without it is
         // the ordinary case on first paint rather than a missing file. The
         // loader calls this again once the code lands.
+    }
+
+    /**
+     * What search may look through: the dashboard's bookmarks, plus the ones
+     * kept in Unsorted.
+     *
+     * Search is the one surface outside its own view where a kept bookmark may
+     * turn up. Everywhere else -- config's list, the tag cloud, the smart
+     * collections, health -- it stays out, which is why it is no longer part of
+     * allBookmarks at all. But a bookmark nothing can find is a bookmark you
+     * have lost, so search reaches into Unsorted as well and says so with a
+     * badge on the row. Switchable, because a reader who treats Unsorted as a
+     * holding pen may not want it answering.
+     *
+     * Used by both the first build and every refresh: the component is
+     * constructed from its own copy of the data, so a pool assembled in only
+     * one of the two would be right until the first render and wrong after it,
+     * or the other way round.
+     *
+     * The kept rows are appended whatever `globalShortcuts` says, and that is
+     * deliberate rather than an oversight. That setting scopes search to the
+     * page you are standing on, and Unsorted is not a page -- nothing on the
+     * dashboard routes to it, and standing on page 2 says nothing about what
+     * you want out of the holding pen. `searchUnsorted` is the one switch that
+     * governs these rows; scoping them to a page as well would mean that with
+     * global shortcuts off they could not be found anywhere, which is the exact
+     * loss this feature exists to prevent.
+     */
+    searchBookmarkPool(bookmarksForSearch) {
+        const d = this.dash;
+        const base = bookmarksForSearch || [];
+        if (d.settings?.searchUnsorted === false) {
+            return base;
+        }
+        /*
+         * Deduped by URL, and the filed copy wins.
+         *
+         * The same address can sit on a page and still have a copy waiting in
+         * Unsorted -- keeping one from the inbox does not check whether it is
+         * already filed somewhere. Concatenated plainly, that URL answered
+         * twice, and the second row claimed it was unsorted when a home for it
+         * already existed. A bookmark that has a home is presented as being in
+         * that home.
+         */
+        const seen = new Set(base
+            .map((bookmark) => String(bookmark?.url || '').trim())
+            .filter(Boolean));
+        const kept = (d.unsortedBookmarks || []).filter((bookmark) => {
+            const url = String(bookmark?.url || '').trim();
+            // A row with no address cannot collide with one, so it rides along.
+            if (!url) return true;
+            if (seen.has(url)) return false;
+            seen.add(url);
+            return true;
+        });
+        return [...base, ...kept];
     }
 
     // Method to update search component when data changes
@@ -213,7 +273,9 @@ class DashboardSetup {
         if (d.searchComponent) {
             // Use all bookmarks if global shortcuts is enabled, otherwise just current page
             const bookmarksForSearch = d.settings.globalShortcuts ? d.allBookmarks : d.bookmarks;
-            d.searchComponent.updateData(bookmarksForSearch, d.bookmarks, d.allBookmarks, d.settings, d.language, d.finders, d.pages);
+            d.searchComponent.updateData(
+                this.searchBookmarkPool(bookmarksForSearch), d.bookmarks, d.allBookmarks,
+                d.settings, d.language, d.finders, d.pages);
         }
         window.DashboardTagCloud?.syncFromSettings?.();
     }
@@ -469,6 +531,16 @@ class DashboardSetup {
                     e.stopPropagation();
                     window.nextdashRecordKey?.('Shift + I');
                     void d.inbox.openInboxView();
+                }
+                return;
+            }
+
+            if (e.shiftKey && e.code === 'KeyU') {
+                if (d.settings?.unsortedEnabled !== false && d.inbox?.isEnabled?.()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + U');
+                    void d.inbox.openInboxView({ tab: 'kept' });
                 }
                 return;
             }

@@ -14,6 +14,16 @@ class DashboardConfig {
     static VIEW = 'config';
 
     /**
+     * The gap between rows of a selection sweep.
+     *
+     * The icon and preview endpoints allow sixty a minute per client, shared
+     * with the hover previews and the link checks, so a sweep that goes flat
+     * out spends most of its time being refused. Same value as the kept
+     * list's sweep (dashboard-unsorted-select.js SWEEP_INTERVAL_MS).
+     */
+    static SELECTION_SWEEP_INTERVAL_MS = 1200;
+
+    /**
      * Fallback for the count-mode log cap when settings have not been read yet.
      *
      * Must stay equal to serverLogDefaultMaxEntries in log_buffer.go: this is
@@ -604,7 +614,8 @@ class DashboardConfig {
         this.bmQuery = params.get('q') || '';
         this.bmCategoryFilter = params.get('cat') || '';
         const filter = params.get('filter') || '';
-        this.bmCleanupFilter = DashboardConfig.CLEANUP_FILTERS[filter] ? filter : '';
+        this.bmCleanupFilter = (DashboardConfig.CLEANUP_FILTERS[filter]
+            || filter === DashboardConfig.UNSORTED_VIEW) ? filter : '';
         const health = params.get('health') || '';
         this.bmHealthFilter = DashboardConfig.HEALTH_FILTERS.includes(health) ? health : '';
         const tags = (params.get('tag') || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
@@ -1776,11 +1787,22 @@ class DashboardConfig {
         const markup = context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
-                ? `<span class="config-bm-header-badge">${this.dash.escapeHtml(String((this.dash.allBookmarks || []).length))}</span>`
+                ? `<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
                 : '');
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
+        /*
+         * Bind what was just drawn.
+         *
+         * The band is filled after the panels are bound, so the bar's own
+         * controls were written into a head nobody came back to: the filter
+         * field took text and the "Only changed" button took clicks, and
+         * neither reached this object. Binding is idempotent per element, so
+         * doing it here as well as at panel time costs nothing and covers the
+         * one order that had no binder at all.
+         */
+        if (actions) this.bindChangedFilter(head);
         const bar = null;
         // Only swapped when the body actually rendered one: this runs again on
         // every repaint, and clearing the band unconditionally threw away the
@@ -1818,6 +1840,10 @@ class DashboardConfig {
     updateConfigShellHead() {
         const title = document.querySelector('.config-view-section-title');
         if (title) title.textContent = this.sectionLabel(this.section);
+        // The band carries the bookmark count, and switching to the Unsorted
+        // view changes which pool that count is about — so the band is redrawn
+        // here rather than only when the section itself changes.
+        this._fillShellHeadFromSection(document.getElementById('dashboard-layout') || document);
         // The line under the name is the section's own description now, put
         // there by _fillShellHeadFromSection; the trail it used to carry said
         // the section name the heading already carries and the tab the strip
@@ -2477,7 +2503,11 @@ class DashboardConfig {
     }
 
     findBookmarkByKey(key) {
-        return (this.dash.allBookmarks || []).find((b) => this.bookmarkKey(b) === key) || null;
+        // Both pools: a row acted on from the unsorted view is not in
+        // allBookmarks, and a key resolved from the other side must still find
+        // its bookmark after the view has been switched back.
+        return [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])]
+            .find((b) => this.bookmarkKey(b) === key) || null;
     }
 
     /**
@@ -5740,6 +5770,13 @@ class DashboardConfig {
             ['activity', this.t('config.logLevelActivity', 'Activity only')],
         ].map(([v, label]) => `<option value="${esc(v)}" ${v === this.logLevelFilter ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
+        /*
+         * Recording sits in the toolbar, not behind the gear. It decides
+         * whether anything below exists at all — the empty state tells you to
+         * switch it on — so the switch belongs where you are already looking.
+         * Everything behind the gear is a preference about a log that is
+         * already being written.
+         */
         return `
             <p class="config-view-intro">${esc(this.t('config.logsIntro', 'What the server has been doing. Lines are kept in memory and in a rotating file, and mirrored to the container log as before.'))}</p>
 
@@ -5764,6 +5801,10 @@ class DashboardConfig {
                         <span>${esc(this.t('config.logFollowLabel', 'Follow'))}</span>
                     </label>
                     <div class="config-log-toolbar-actions">
+                        <button type="button" class="config-btn config-log-record${s.serverLogEnabled ? ' is-active' : ''}"
+                                data-log-toggle="capture" aria-pressed="${s.serverLogEnabled ? 'true' : 'false'}"
+                                aria-label="${esc(this.t('config.logRecordLabel', 'Record server log'))}"
+                                title="${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}">${esc(this.t('config.logRecordLabel', 'Record server log'))}</button>
                         <button type="button" class="config-btn config-icon-btn" data-log-action="refresh"
                                 title="${esc(this.t('config.logRefreshNow', 'Refresh now'))}" aria-label="${esc(this.t('config.logRefreshNow', 'Refresh now'))}">↻</button>
                         <button type="button" class="config-btn" data-log-action="copy">${esc(this.t('config.logCopy', 'Copy'))}</button>
@@ -5777,6 +5818,8 @@ class DashboardConfig {
                 </div>
 
                 <p class="config-panel-note" data-log-floor-note>${esc(this.serverLogFloorNote())}</p>
+                <p class="config-panel-note config-log-manual-note" data-log-refresh-note
+                   ${s.serverLogEnabled && !this.logRefreshSeconds ? '' : 'hidden'}>${esc(this.serverLogManualNote())}</p>
                 <p class="config-panel-note" data-log-activity-note ${this.logLevelFilter === 'activity' ? '' : 'hidden'}>${esc(this.t('config.logActivityHint',
                     'What was done — bookmarks saved, pages added, checks run — mixed into the same log as the requests. Pick Activity only to read just those, or turn categories on and off with NEXTDASH_ACTIVITY_LOG.'))}</p>
 
@@ -5787,11 +5830,6 @@ class DashboardConfig {
                     <h4 class="move-popover-header">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h4>
                     <div class="config-log-settings-body">
                         <div class="config-log-settings-col">
-                        <label class="config-toggle">
-                            <input type="checkbox" data-log-toggle="capture" ${s.serverLogEnabled ? 'checked' : ''}>
-                            <span>${esc(this.t('config.logCaptureLabel', 'Collect server log'))}</span>
-                        </label>
-                        <p class="config-panel-note">${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}</p>
                         <div class="config-field">
                             <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
                             <select class="config-select" data-log-select="interval">${intervalOptions}</select>
@@ -5963,6 +6001,7 @@ class DashboardConfig {
                 const value = sel.value;
                 if (kind === 'interval') {
                     this.logRefreshSeconds = Number(value) || 0;
+                    this.syncServerLogRefreshNote();
                     this.updateServerLogTimer();
                     return;
                 }
@@ -6044,22 +6083,27 @@ class DashboardConfig {
 
         const capture = container.querySelector('[data-log-toggle="capture"]');
         if (capture) {
-            capture.addEventListener('change', () => {
-                this.dash.settings.serverLogEnabled = capture.checked;
+            capture.addEventListener('click', () => {
+                const on = capture.getAttribute('aria-pressed') !== 'true';
+                capture.setAttribute('aria-pressed', on ? 'true' : 'false');
+                capture.classList.toggle('is-active', on);
+                this.dash.settings.serverLogEnabled = on;
                 void this.saveSettingsWithFeedback();
-                this.notify(capture.checked
+                this.notify(on
                     ? this.t('config.logCaptureStarted', 'Collecting the server log.')
                     : this.t('config.logCaptureStopped', 'Stopped collecting the server log.'), 'success');
                 // Turning it on should show something without waiting for the
                 // interval; turning it off should stop the polling that would
                 // now return nothing new.
-                if (capture.checked) {
+                this.syncServerLogRefreshNote();
+                if (on) {
                     void this.loadServerLog({ reset: true });
                 } else {
                     this.stopServerLogTimer();
                     const sel = container.querySelector('[data-log-select="interval"]');
                     if (sel) sel.value = '0';
                     this.logRefreshSeconds = 0;
+                    this.syncServerLogRefreshNote();
                     // The empty state reads differently when collecting is off,
                     // and it is chosen at paint time — so repaint now rather
                     // than leaving the wrong message until the tab is reopened.
@@ -7020,9 +7064,18 @@ class DashboardConfig {
         if (!await this.confirmAction(this.t('config.refreshAllPreviewsConfirm', 'Fetch every link preview card again from its site?'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false })) return;
 
         const BATCH = 5;
+        // A way out. The bar blocks the page for minutes on a real collection,
+        // and a reader who started the sweep by mistake had nothing to do but
+        // wait or reload. The round in flight finishes; nothing after it starts.
+        let stopped = false;
         this.showProgressOverlay(
             this.t('config.refreshAllPreviewsTitle', 'Refreshing link previews…'),
-            this.t('config.refreshAllPreviewsCounting', 'Reading the collection'));
+            this.t('config.refreshAllPreviewsCounting', 'Reading the collection'),
+            {
+                onCancel: () => { stopped = true; },
+                cancelLabel: this.t('config.refreshAllPreviewsStop', 'Stop'),
+                cancellingLabel: this.t('config.refreshAllPreviewsStopping', 'Stopping…'),
+            });
 
         let offset = 0;
         let total = 0;
@@ -7032,8 +7085,24 @@ class DashboardConfig {
             // rounds here: the collection can change under a long run, and the
             // server's own position is the only one that stays true.
             for (let round = 0; round < 2000; round++) {
-                const res = await this.writeFetch(
+                if (stopped) break;
+                // A refusal is not a failure: the endpoint shares the
+                // sixty-a-minute limiter with the preview and icon fetches, and
+                // a sweep of a real collection reaches it. The server says how
+                // long to wait, so the round is asked for again rather than the
+                // run ending on what it had.
+                let res = await this.writeFetch(
                     `/api/previews/refresh?offset=${offset}&limit=${BATCH}`, { method: 'POST' });
+                if (res.status === 429) {
+                    const retryAfter = Number(res.headers.get('Retry-After')) || 60;
+                    window.ProgressOverlay?.update(Math.min(offset, total), total,
+                        this.t('config.refreshAllPreviewsWaiting', 'Rate limit reached — waiting {seconds}s')
+                            .replace('{seconds}', String(retryAfter)));
+                    await new Promise((resolve) => setTimeout(resolve, (retryAfter + 1) * 1000));
+                    if (stopped) break;
+                    res = await this.writeFetch(
+                        `/api/previews/refresh?offset=${offset}&limit=${BATCH}`, { method: 'POST' });
+                }
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const body = await res.json();
 
@@ -7048,9 +7117,17 @@ class DashboardConfig {
 
                 if (body.done || offset >= total) break;
             }
-            this.finishProgressOverlay(
-                this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'));
-            this.notify(this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'), 'success');
+            if (stopped) {
+                // Stopped halfway is not finished: a full bar would say the
+                // sweep completed. What it did fetch is saved all the same.
+                this.hideProgressOverlay();
+                this.notify(this.t('config.refreshAllPreviewsPartial', 'Stopped after {n} of {total}.')
+                    .replace('{n}', String(refreshed)).replace('{total}', String(total || refreshed)), 'info');
+            } else {
+                this.finishProgressOverlay(
+                    this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'));
+                this.notify(this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'), 'success');
+            }
         } catch {
             this.hideProgressOverlay();
             // Says how far it got: a run that stopped at 300 of 500 left 300
@@ -11229,6 +11306,7 @@ class DashboardConfig {
         detectSoftNotFound: { info: ['detectSoftNotFoundInfoTitle', 'detectSoftNotFoundInfoMessage'], def: true },
         certWarnDays: { info: ['certWarnDaysInfoTitle', 'certWarnDaysInfoMessage'], def: 0 },
         includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'], def: true },
+        searchUnsorted: { info: ['searchUnsortedInfoTitle', 'searchUnsortedInfoMessage'], def: true },
         enableFuzzySuggestions: { info: ['fuzzySuggestionsInfoTitle', 'fuzzySuggestionsInfoMessage'], def: false },
         fuzzySuggestionsStartWith: { info: ['fuzzySuggestionsStartWithInfoTitle', 'fuzzySuggestionsStartWithInfoMessage'], def: false },
         keepSearchOpenWhenEmpty: { info: ['keepSearchOpenWhenEmptyInfoTitle', 'keepSearchOpenWhenEmptyInfoMessage'], def: false },
@@ -11236,6 +11314,8 @@ class DashboardConfig {
         // Quick add & inbox
         pasteUrlQuickAdd: { info: ['pasteUrlQuickAddInfoTitle', 'pasteUrlQuickAddInfoMessage'], def: true },
         inboxEnabled: { info: ['inboxEnabledInfoTitle', 'inboxEnabledInfoMessage'], def: true },
+        unsortedEnabled: { hint: 'unsortedEnabledHint', def: true },
+        keepAutoFile: { hint: 'keepAutoFileHint', def: false },
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
@@ -12107,6 +12187,10 @@ class DashboardConfig {
                 note: t('config.generalGroupSuggestionsNote', 'What the list offers while you type, beyond the bookmarks whose names match.'),
                 controls: [
                     bool('includeFindersInSearch', 'config.includeFindersInSearch', 'Include finders in search'),
+                    // Kept bookmarks stay out of every other surface, so this is
+                    // the one switch that decides whether they can be found at all.
+                    { ...bool('searchUnsorted', 'config.searchUnsorted', 'Search unsorted bookmarks'),
+                        special: 'search' },
                     bool('enableFuzzySuggestions', 'config.enableFuzzySuggestions', 'Fuzzy search suggestions'),
                     bool('fuzzySuggestionsStartWith', 'config.fuzzySuggestionsStartWith', 'Prefer matches that start with the query'),
                 ],
@@ -12129,6 +12213,14 @@ class DashboardConfig {
                 controls: [
                     bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
                     bool('inboxEnabled', 'config.inboxEnabledLabel', 'Enable the inbox'),
+                    // Keeping is a step in the inbox's own flow, so its switch
+                    // stands with the inbox rather than among the header's
+                    // icons, where it used to read as "show an icon" while it
+                    // also decided whether Keep worked at all.
+                    { ...bool('unsortedEnabled', 'config.unsortedEnabledLabel', 'Keep links without filing them'), special: 'render' },
+                    // What Keep does with a link whose site the collection has
+                    // already settled: file it there instead of parking it.
+                    bool('keepAutoFile', 'config.keepAutoFileLabel', 'File a kept link where its neighbours are'),
                     { field: 'pasteDestination', type: 'select', label: t('config.pasteDestinationLabel', 'Paste destination'), art: 'flow', options: [
                         opt('ask', t('config.pasteDestinationAsk', 'Ask each time')), opt('bookmark', t('config.pasteDestinationBookmark', 'New bookmark')),
                         opt('inbox', t('config.pasteDestinationInbox', 'Inbox')),
@@ -14079,6 +14171,14 @@ class DashboardConfig {
                     d.renderDashboard?.({ animate: false });
                 }
                 break;
+            case 'search':
+                // The search component holds its own copy of the pool, built
+                // when the data loads -- a setting that decides what goes into
+                // that pool has to hand it a new one, or it takes effect on the
+                // next reload and looks like it did nothing.
+                d.updateSearchComponent?.();
+                d.renderDashboard?.({ animate: false });
+                break;
             case 'render':
                 d.renderDashboard?.({ animate: false });
                 break;
@@ -14690,7 +14790,7 @@ class DashboardConfig {
      */
     static WIDGET_TYPE_GROUPS = [
         ['links', ['health', 'uptime', 'certs', 'trend']],
-        ['incoming', ['inbox', 'feeds', 'sources']],
+        ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker']],
         ['ambient', ['weather', 'calendar', 'rss']],
@@ -15526,42 +15626,52 @@ class DashboardConfig {
         if (caret != null) next.setSelectionRange(caret, caret);
     }
 
-    /** Rename (to != null) or delete (to == null) a tag across every bookmark. */
+    /**
+     * Rename (to != null) or delete (to == null) a tag across every bookmark.
+     *
+     * On the server, on only the rows that carry it: this used to read every
+     * page, change the list here and write every page back -- the ones without
+     * the tag too -- from a copy that could already be out of date. The answer
+     * names the rows and the tags they had, which is the undo.
+     */
     async rewriteTag(from, to) {
-        try {
-            const res = await fetch('/api/bookmarks?all=true');
-            const bookmarks = res && res.ok ? await res.json() : [];
-            const list = Array.isArray(bookmarks) ? bookmarks : [];
-            let changed = false;
-            list.forEach((bm) => {
-                if (!Array.isArray(bm.tags)) return;
-                const idx = bm.tags.indexOf(from);
-                if (idx === -1) return;
-                bm.tags.splice(idx, 1);
-                if (to && !bm.tags.includes(to)) bm.tags.push(to);
-                changed = true;
-            });
-            if (!changed) return;
-            // Group by page and re-save each page's bookmarks.
-            const pages = new Map();
-            list.forEach((bm) => {
-                if (!pages.has(bm.pageId)) pages.set(bm.pageId, []);
-                pages.get(bm.pageId).push(bm);
-            });
-            for (const [pageId, pageBookmarks] of pages.entries()) {
-                const saveRes = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(pageBookmarks),
-                });
-                if (!saveRes.ok) throw new Error(`HTTP ${saveRes.status}`);
-            }
-            this.notify(to
-                ? this.t('config.tagRenamed', 'Tag renamed.')
-                : this.t('config.tagDeleted', 'Tag deleted.'), 'success');
+        const reload = async () => {
             this._tagList = null;
             await this.loadTagsManager();
+            await this.refreshBookmarksAfterWrite({ silent: true });
             this.dash.renderDashboard?.({ animate: false });
+        };
+        try {
+            const res = await this.writeFetch('/api/tags/rewrite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from, to: to || '' }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            const changed = Array.isArray(body.changed) ? body.changed : [];
+            if (!changed.length) return;
+            const undo = new Map();
+            changed.forEach((row) => {
+                const pid = String(row.pageId);
+                if (!undo.has(pid)) undo.set(pid, []);
+                undo.get(pid).push({ url: row.url, fields: { tags: Array.isArray(row.tags) ? row.tags : [] } });
+            });
+            this.notify(to
+                ? this.t('config.tagRenamed', 'Tag renamed.')
+                : this.t('config.tagDeleted', 'Tag deleted.'), 'success', {
+                duration: 8000,
+                undoCallback: async () => {
+                    try {
+                        for (const [pageId, updates] of undo) await this.patchRows(pageId, updates);
+                        await reload();
+                        this.notify(this.t('config.tagRewriteUndone', 'Tags put back.'), 'success');
+                    } catch {
+                        this.notify(this.t('config.bulkUndoFailed', 'Could not undo that.'), 'error');
+                    }
+                },
+            });
+            await reload();
         } catch {
             this.notify(this.t('config.tagsSaveError', 'Could not update the tag.'), 'error');
         }
@@ -16113,6 +16223,11 @@ class DashboardConfig {
         });
     }
 
+    /**
+     * Returns whether the pages were saved. duplicatePage stops on a false
+     * answer -- and got undefined from every save, so a duplicate never went
+     * past the page list: no categories, no bookmarks, no word.
+     */
     async savePages() {
         try {
             const res = await this.writeFetch('/api/pages', {
@@ -16122,8 +16237,10 @@ class DashboardConfig {
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.dash.pageNav?.renderPageNavigation?.();
+            return true;
         } catch {
             this.notify(this.t('config.pagesSaveError', 'Could not save pages.'), 'error');
+            return false;
         }
     }
 
@@ -16206,20 +16323,30 @@ class DashboardConfig {
                 // Shortcuts are unique per page in practice but not enforced
                 // across a copy, and a duplicated check history would be a lie
                 // about a URL this copy has never checked itself.
+                // Without their shortcuts: a shortcut belongs to one bookmark
+                // across the collection, and the server refused the whole copy
+                // over the first one -- after which this still said "duplicated".
                 const copies = sourceBookmarks.map((bm) => ({
                     ...bm,
                     pageId: newId,
+                    shortcut: '',
                     lastChecked: 0,
                     lastError: '',
                     brokenSince: 0,
                     openCount: 0,
                     lastOpened: 0,
                 }));
-                await fetcher(`/api/bookmarks?page=${encodeURIComponent(newId)}`, {
+                const saved = await fetcher(`/api/bookmarks?page=${encodeURIComponent(newId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(copies),
                 });
+                if (!saved.ok) {
+                    this.notify(this.t('config.pageDuplicateBookmarksFailed',
+                        'The page was copied, but its bookmarks were not'), 'error');
+                    this.repaintPtBody();
+                    return;
+                }
             }
             this.notify(this.t('config.pageDuplicated', 'Page duplicated'), 'success');
         } catch {
@@ -16243,13 +16370,14 @@ class DashboardConfig {
         const source = list[Number(index)];
         if (!source) return;
 
-        const withBookmarks = await this.confirmAction(
-            this.t('config.categoryDuplicateAsk',
-                'Copy this category and its settings. Copy the bookmarks in it as well?'),
-            { confirmLabel: this.t('config.pageDuplicateWith', 'With bookmarks'), danger: false }
-        );
-        if (withBookmarks === null || withBookmarks === undefined) return;
-
+        /*
+         * The category and its settings, not its bookmarks.
+         *
+         * It used to offer the bookmarks as well, but a page holds each link
+         * once: the copies had the same URLs as the originals on the same page,
+         * the server refused the lot, and the refusal was never read -- so the
+         * toast said "duplicated" over a category that stayed empty.
+         */
         const id = `cat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
         const name = DashboardConfig.uniqueNameFrom(
             this.t('config.pageDuplicateName', '{name} copy').replace('{name}', source.name || ''),
@@ -16258,38 +16386,8 @@ class DashboardConfig {
         list.splice(Number(index) + 1, 0, { ...source, id, name });
         this.repaintPtBody();
         if (!await this.saveCategories(this._catPageId)) return;
-
-        if (withBookmarks === true) {
-            const pageId = this._catPageId;
-            try {
-                const res = await fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`);
-                const bookmarks = res.ok ? await res.json() : [];
-                const copies = (bookmarks || [])
-                    .filter((bm) => String(bm.category || '') === String(source.id || ''))
-                    .map((bm) => ({
-                        ...bm,
-                        category: id,
-                        shortcut: '',
-                        lastChecked: 0,
-                        lastError: '',
-                        brokenSince: 0,
-                        openCount: 0,
-                        lastOpened: 0,
-                    }));
-                if (copies.length) {
-                    const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-                    await fetcher(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify([...(bookmarks || []), ...copies]),
-                    });
-                }
-            } catch {
-                this.notify(this.t('config.categoryDuplicateBookmarksFailed',
-                    'The category was copied, but its bookmarks were not'), 'error');
-            }
-        }
-        this.notify(this.t('config.categoryDuplicated', 'Category duplicated'), 'success');
+        this.notify(this.t('config.categoryDuplicatedEmpty',
+            'Category duplicated, without its bookmarks — a page holds each link once'), 'success');
         void this.dash.data?.fetchAndStoreDataRevision?.();
     }
 
@@ -16964,7 +17062,7 @@ class DashboardConfig {
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health',
           whereKey: 'config.tourWhereHealth', where: 'the next time you open Health' },
-        { id: 'inboxTutorialV1', labelKey: 'config.tourInbox', label: 'Inbox',
+        { id: 'inboxTutorialV2', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },
         { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh',
           whereKey: 'config.tourWhereFresh', where: 'the next time you open Fresh' },
@@ -16975,7 +17073,7 @@ class DashboardConfig {
     ];
 
     /** The types a reader may add. Mirrors the server's register. */
-    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
+    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
         'cpu', 'memory', 'disks', 'docker', 'weather', 'calendar', 'rss', 'custom'];
 
@@ -17078,6 +17176,9 @@ class DashboardConfig {
         inbox: [
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
             { key: 'showSource', kind: 'bool', label: ['config.widgetShowSource', 'Show where each link came from'] },
+        ],
+        unsorted: [
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         feeds: [
             { key: 'freshOnly', kind: 'bool', label: ['config.widgetFreshOnly', 'Only feeds with fresh items'] },
@@ -19026,6 +19127,7 @@ class DashboardConfig {
             certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
             trend: 'The health view\'s summary: the score and its direction over time, what is broken, and the monitors\' last day.',
             inbox: 'How much is waiting to be filed, and how long the oldest has waited.',
+            unsorted: 'Bookmarks kept from the inbox without picking a category, most recent first.',
             feeds: 'Feeds with new items, and the ones that stopped after repeated failures.',
             sources: 'What each import last did, so a failed import is not only visible in config.',
             neglected: 'Bookmarks you have not opened in a long time — the graveyard question in reverse.',
@@ -21955,6 +22057,7 @@ class DashboardConfig {
             noicon: ['config.cleanupFilterNoIcon', 'Without an icon'],
             duplicate: ['config.cleanupFilterDuplicate', 'Duplicate URLs'],
             changed: ['config.cleanupFilterChanged', 'Changed in the last week'],
+            unsorted: ['config.bmViewUnsorted', 'Unsorted'],
         }[key];
         return map ? this.t(map[0], map[1]) : '';
     }
@@ -22050,7 +22153,7 @@ class DashboardConfig {
     }
 
     bookmarksFromKeys(keys) {
-        const all = this.dash.allBookmarks || [];
+        const all = this.configBookmarkPool();
         const wanted = new Set(keys || []);
         return all.filter((b) => wanted.has(this.bookmarkKey(b)));
     }
@@ -22232,7 +22335,54 @@ class DashboardConfig {
         changed: (b) => window.BookmarkPredicates.match('changed', b),
     };
 
+    /**
+     * The one view that changes where the list looks rather than what it keeps.
+     *
+     * Every cleanup filter above is a question asked of a bookmark on a page.
+     * This one asks for bookmarks that are on no page at all: the ones kept
+     * from the inbox, which are held apart from allBookmarks precisely so they
+     * stay out of this list until someone asks for them. Picking it swaps the
+     * pool; the filters, the search box and the bulk actions then work on it
+     * exactly as they do on the rest.
+     */
+    static UNSORTED_VIEW = 'unsorted';
+
     static HEALTH_FILTERS = ['healthy', 'broken', 'down', 'unchecked'];
+
+    /** True while the bookmark list is showing the kept bookmarks. */
+    isUnsortedBookmarkView() {
+        return this.bmCleanupFilter === DashboardConfig.UNSORTED_VIEW;
+    }
+
+    /**
+     * What the bookmark list, its facets and its counts read from.
+     *
+     * Everything in the section goes through here rather than reaching for
+     * d.allBookmarks, so the view switch is one decision made in one place.
+     */
+    configBookmarkPool() {
+        const d = this.dash;
+        return this.isUnsortedBookmarkView()
+            ? (d.unsortedBookmarks || [])
+            : (d.allBookmarks || []);
+    }
+
+    /**
+     * Every bookmark the store holds on one page, from whichever array holds
+     * that page.
+     *
+     * This is not the same question as the view's pool, and answering it with
+     * d.allBookmarks was destructive: the kept bookmarks are split out of that
+     * array, so a page list built for the unsorted page came back empty, and
+     * the whole-page write that used to follow saved that empty list over the
+     * page. One move out of Unsorted wiped everything else still in it.
+     */
+    bookmarksOnPage(pageId) {
+        const d = this.dash;
+        const wanted = String(pageId);
+        return [...(d.allBookmarks || []), ...(d.unsortedBookmarks || [])]
+            .filter((b) => String(b?.pageId) === wanted);
+    }
 
     /** Where this bookmark stands with the checker, from what the dashboard already knows. */
     bookmarkHealthState(b) {
@@ -22267,6 +22417,9 @@ class DashboardConfig {
             tag: (b) => !tagFilter.length || (Array.isArray(b.tags) ? b.tags : [])
                 .map((t) => String(t).toLowerCase()).some((t) => tagFilter.includes(t)),
             cleanup: (b) => {
+                // The unsorted view is the pool, not a predicate: everything
+                // configBookmarkPool() handed over belongs to it.
+                if (cleanupKey === DashboardConfig.UNSORTED_VIEW) return true;
                 if (!cleanup) return true;
                 return cleanupKey === 'duplicate'
                     ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
@@ -22305,7 +22458,7 @@ class DashboardConfig {
      * memoised against everything it depends on.
      */
     visibleBookmarks() {
-        const all = this.dash.allBookmarks || [];
+        const all = this.configBookmarkPool();
         // JSON rather than a joined string: query, tag and category all hold free
         // text, so a plain separator could be ambiguous — query "a b" with no tag
         // versus query "a" with tag "b" must not share a token.
@@ -22331,10 +22484,11 @@ class DashboardConfig {
         this._bmVisibleToken = null;
         this._bmOccurrence = null;
         this._bmOccurrenceSource = null;
+        this._bmOccurrenceKeptSource = null;
     }
 
     computeVisibleBookmarks() {
-        const all = this.dash.allBookmarks || [];
+        const all = this.configBookmarkPool();
         const tests = Object.values(this.bookmarkFilterTests());
         const rows = all.filter((b) => tests.every((test) => test(b)));
         const order = this.pageOrderIndex();
@@ -22391,19 +22545,30 @@ class DashboardConfig {
      *
      * Rebuilt whenever allBookmarks is replaced — the array identity is the
      * cache token, so a reload after a write invalidates it on its own.
+     *
+     * The kept bookmarks are indexed too. They are not in allBookmarks, and an
+     * object missing from here answers occurrence 0 for every copy: a write
+     * aimed at the second of two identical URLs would hit the first, and a row
+     * that is not in the index at all cannot be aimed at.
      */
     bookmarkOccurrenceIndex() {
         const all = this.dash.allBookmarks || [];
-        if (this._bmOccurrenceSource === all && this._bmOccurrence) return this._bmOccurrence;
+        const kept = this.dash.unsortedBookmarks || [];
+        if (this._bmOccurrenceSource === all
+            && this._bmOccurrenceKeptSource === kept
+            && this._bmOccurrence) {
+            return this._bmOccurrence;
+        }
         const seen = new Map();
         const index = new Map();
-        all.forEach((b) => {
+        [...all, ...kept].forEach((b) => {
             const base = DashboardConfig.bookmarkKeyBase(b);
             const n = seen.get(base) || 0;
             index.set(b, n);
             seen.set(base, n + 1);
         });
         this._bmOccurrenceSource = all;
+        this._bmOccurrenceKeptSource = kept;
         this._bmOccurrence = index;
         return index;
     }
@@ -22590,25 +22755,27 @@ class DashboardConfig {
         if (!record) return false;
         const { pageId, index } = record;
         try {
-            const res = await fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`);
-            const list = res.ok ? await res.json() : null;
-            if (!Array.isArray(list) || !list[index]) throw new Error('bookmark not found');
-            const next = { ...list[index], ...patch };
+            const current = record.record;
+            const next = { ...current, ...patch };
             if ('shortcut' in patch) next.shortcut = String(patch.shortcut || '').trim().toUpperCase();
             // An emptied name or URL keeps what was there: a row with neither
             // has nothing to show and nowhere to go.
-            if ('name' in patch && !String(patch.name || '').trim()) next.name = list[index].name;
+            if ('name' in patch && !String(patch.name || '').trim()) next.name = current.name;
             if ('url' in patch) {
                 const url = window.BookmarkUrlUtils?.ensureHttpUrl?.(patch.url) || String(patch.url || '').trim();
-                next.url = url || list[index].url;
+                next.url = url || current.url;
             }
-            list[index] = next;
-            const saved = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(list),
-            });
-            if (!saved.ok) throw new Error(`HTTP ${saved.status}`);
+            // The fields that changed, on this row, by its URL: the page is no
+            // longer read and written back whole around a one-field edit.
+            try {
+                await this.patchRows(pageId, [{ url: current.url, fields: DashboardConfig.changedFields(current, next) }]);
+            } catch (err) {
+                if (err?.conflict) {
+                    this.notify(this.conflictMessage(err, 'config.bookmarkSaveError', 'Could not save the bookmark.'), 'error');
+                    return false;
+                }
+                throw err;
+            }
             // Only when the panel still shows this bookmark: a save that lands
             // after a click on another row must not pull the panel back.
             if (this._bmKeyboardKey === key) this._bmPendingFocus = { pageId: String(pageId), index };
@@ -22624,7 +22791,7 @@ class DashboardConfig {
 
     /** The key of the n-th bookmark on a page, as the list now holds it. */
     bookmarkKeyAt(pageId, index) {
-        const onPage = (this.dash.allBookmarks || []).filter((b) => String(b.pageId) === String(pageId));
+        const onPage = this.bookmarksOnPage(pageId);
         const b = index < 0 ? onPage[onPage.length - 1] : onPage[index];
         return b ? this.bookmarkKey(b) : null;
     }
@@ -22682,6 +22849,7 @@ class DashboardConfig {
                     body: JSON.stringify({
                         pageId: record.pageId,
                         index: record.index,
+                        url: record.record?.url,
                         status,
                         error: status === 'online' ? '' : errorDetail,
                     }),
@@ -22800,19 +22968,16 @@ class DashboardConfig {
                 this.notify(this.t('dashboard.healthFaviconNone', 'No favicon found for this URL'), 'info');
                 return;
             }
-            const res = await fetch(`/api/bookmarks?page=${record.pageId}`);
-            if (!res.ok) throw new Error(`load HTTP ${res.status}`);
-            const bookmarks = await res.json();
-            if (!Array.isArray(bookmarks) || !bookmarks[record.index]) {
-                throw new Error('bookmark not found');
-            }
-            bookmarks[record.index].icon = iconPath;
-            const save = await fetcher(`/api/bookmarks?page=${record.pageId}`, {
-                method: 'POST',
+            // One field, by URL: not a read-then-write of the whole page, which
+            // could put back rows changed in the moment between.
+            const save = await fetcher('/api/bookmarks', {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bookmarks),
+                body: JSON.stringify({ page: Number(record.pageId), updates: [{ url, icon: iconPath }] }),
             });
             if (!save.ok) throw new Error(`save HTTP ${save.status}`);
+            const saved = await save.json().catch(() => ({}));
+            if (!saved.updated) throw new Error('bookmark not found');
             this.notify(this.t('dashboard.healthFaviconDone', 'Favicon updated'), 'success', { duration: 3000 });
             await this.refreshBookmarksAfterWrite();
         } catch {
@@ -22838,6 +23003,7 @@ class DashboardConfig {
                 body: JSON.stringify({
                     pageId: record.pageId,
                     index: record.index,
+                    url: record.record?.url,
                     refreshTitle: true,
                 }),
             });
@@ -22886,13 +23052,14 @@ class DashboardConfig {
                 body: JSON.stringify({
                     pageId: record.pageId,
                     index: record.index,
+                    url: record.record?.url,
                     newUrl: redirectUrl,
                     refreshTitle: false,
                 }),
             });
             if (!applied.ok) throw new Error(`apply HTTP ${applied.status}`);
             const body = await applied.json().catch(() => ({}));
-            const stillBroken = String(body?.lastError || '').trim();
+            const stillBroken = String(body?.verifyError || '').trim();
             this.notify(
                 stillBroken
                     ? this.t('dashboard.healthRedirectStillBroken', 'URL updated, but it still fails: {error}', { error: stillBroken })
@@ -22918,12 +23085,10 @@ class DashboardConfig {
         const updated = { ...record.record };
         window.CheckMode.assign(updated, mode, intervalMinutes);
         try {
-            await this.writePageBookmarks(record.pageId, (list) => {
-                const next = [...list];
-                if (!next[record.index]) return next;
-                next[record.index] = { ...next[record.index], ...updated };
-                return next;
-            });
+            await this.patchRows(record.pageId, [{
+                url: record.record.url,
+                fields: DashboardConfig.changedFields(record.record, updated),
+            }]);
             await this.refreshBookmarksAfterWrite({ silent: true });
             this.dash.updateHealthBadge?.();
             return true;
@@ -23699,22 +23864,130 @@ class DashboardConfig {
         return { pageId: raw.slice(0, idx), url, occurrence };
     }
 
-    /** Re-save one page's bookmark list with a mutation applied. */
-    async writePageBookmarks(pageId, mutate) {
-        const all = this.dash.allBookmarks || [];
-        const list = all.filter((b) => String(b.pageId) === String(pageId))
-            .map((b) => {
-                const copy = { ...b };
-                delete copy.pageId;
-                return copy;
-            });
-        const next = mutate(list);
-        const res = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
+    /*
+     * Writes that name their rows.
+     *
+     * Every edit here used to take the page from memory, change it and send
+     * the whole list back: a link added elsewhere since (the extension, the
+     * inbox, another tab) was not in that list, so the next edit deleted it,
+     * and an undo put back a page that had moved on. These send only the rows
+     * that change, by URL, and the server applies them under its own lock.
+     */
+
+    /** The fields a bookmark holds that the server keeps for itself. */
+    static SERVER_OWNED = new Set(['pageId', 'index', 'createdAt', 'updatedAt', 'lastOpened',
+        'lastChecked', 'lastError', 'openCount', 'brokenSince', 'archiveDiedAt',
+        'archiveSnapshotUrl', 'archiveCheckedAt', 'archiveJobId', 'archiveJobAt', 'driftUrl',
+        'driftTitle', 'driftFingerprint', 'driftNoticed', 'driftSince', 'driftReason']);
+
+    /** What `after` changes on `before`, as `fields` for a patch. */
+    static changedFields(before, after) {
+        const fields = {};
+        const keys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]);
+        keys.forEach((key) => {
+            if (DashboardConfig.SERVER_OWNED.has(key)) return;
+            const a = before?.[key];
+            const b = after?.[key];
+            if (JSON.stringify(a ?? null) === JSON.stringify(b ?? null)) return;
+            fields[key] = b === undefined ? null : b;
+        });
+        return fields;
+    }
+
+    /**
+     * PATCH rows of one page. A refusal (409) throws an Error carrying the
+     * server's answer as `.conflict`, so the caller can say what collided.
+     */
+    async patchRows(pageId, updates) {
+        if (!updates.length) return { updated: 0 };
+        const res = await this.writeFetch('/api/bookmarks', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: Number(pageId), updates }),
+        });
+        if (res.status === 409) {
+            const err = new Error('conflict');
+            err.conflict = await res.json().catch(() => ({}));
+            throw err;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json().catch(() => ({}));
+    }
+
+    /** Delete rows by URL; the server files them in the trash and returns the ids. */
+    async deleteRows(rows, source = 'config-bookmarks') {
+        const res = await this.writeFetch('/api/bookmarks/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(next),
+            body: JSON.stringify({
+                source,
+                items: rows.map((b) => ({
+                    pageId: Number(b.pageId), index: -1, url: b.url, occurrence: this.occurrenceOf(b),
+                })),
+            }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = await res.json().catch(() => ({}));
+        return {
+            deleted: Number(body.deleted) || 0,
+            skipped: Array.isArray(body.skipped) ? body.skipped : [],
+            trashIds: Array.isArray(body.trashIds) ? body.trashIds : [],
+        };
+    }
+
+    /**
+     * Which copy of its URL on its page a row is: 0 almost always. A page can
+     * still hold the same link twice from before that was refused, and a
+     * write by URL alone would then hit the first copy whichever was meant.
+     */
+    occurrenceOf(bookmark) {
+        return this.bookmarkOccurrenceIndex().get(bookmark) || 0;
+    }
+
+    /** Move rows to a page in one step; a row the target cannot take stays put. */
+    async moveRows(toPage, category, items) {
+        const res = await this.writeFetch('/api/bookmarks/move', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ toPage: Number(toPage), category, items }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = await res.json().catch(() => ({}));
+        return {
+            moved: Array.isArray(body.moved) ? body.moved : [],
+            skipped: Array.isArray(body.skipped) ? body.skipped : [],
+        };
+    }
+
+    /**
+     * Put trashed rows back by id. Restoring takes the entry out of the trash,
+     * so the same delete cannot also be undone a second time from there.
+     */
+    async restoreTrashed(trashIds) {
+        let back = 0;
+        for (const id of trashIds) {
+            try {
+                await window.DashboardTrash?.restore?.(id);
+                back += 1;
+            } catch { /* counted by omission */ }
+        }
+        await this.refreshTrashIfVisible();
+        await this.refreshBookmarksAfterWrite();
+        return back;
+    }
+
+    /** The words for a 409, naming what the change collided with. */
+    conflictMessage(err, fallbackKey, fallback) {
+        const c = err?.conflict;
+        if (c?.error === 'duplicate_shortcut') {
+            return this.t('config.bookmarkShortcutTaken', 'Shortcut {key} is already used by “{name}”.')
+                .replace('{key}', String(c.shortcut || '')).replace('{name}', String(c.conflict?.name || c.conflict?.url || ''));
+        }
+        if (c?.error === 'duplicate_url') {
+            return this.t('config.bookmarkUrlTaken', '{url} is already on {page}.')
+                .replace('{url}', String(c.url || '')).replace('{page}', String(c.conflict?.pageName || c.conflict?.pageId || ''));
+        }
+        return this.t(fallbackKey, fallback);
     }
 
     async deleteBookmarkByKey(key) {
@@ -23726,45 +23999,23 @@ class DashboardConfig {
         if (this.deleteNeedsConfirm(1)
             && !await this.confirmAction(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
         try {
-            // Snapshot before the write, so the toast can put this row back —
-            // same as bulk delete and the :remove command.
-            const snapshot = (this.dash.allBookmarks || [])
-                .filter((b) => String(b.pageId) === String(parsed.pageId))
-                .map((b) => {
-                    const copy = { ...b };
-                    delete copy.pageId;
-                    return copy;
-                });
-            const isTarget = DashboardConfig.matchesParsedKey(parsed);
-            // Captured inside the mutation, where the stored list still holds the
-            // row and its real index — the trash restores to that position.
-            const trashed = [];
-            await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b, index) => {
-                if (!isTarget(b)) return true;
-                trashed.push({ pageId: Number(parsed.pageId), index, bookmark: { ...b } });
-                return false;
-            }));
-            // After the page write, so a delete that did not persist cannot leave
-            // a phantom entry. The 8s toast is the fast path; the trash catches it
-            // an hour later, same as every delete on the dashboard side.
-            await window.DashboardTrash?.record(trashed, 'config-bookmarks');
+            const bookmark = this.findBookmarkByKey(key);
+            if (!bookmark) return;
+            // By URL, into the trash, on the server: the toast's undo restores
+            // that trash entry, which also takes it back out of the trash.
+            const { deleted, trashIds } = await this.deleteRows([bookmark]);
+            if (!deleted) throw new Error('not deleted');
             await this.refreshTrashIfVisible();
             this.bmSelected.delete(key);
             this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success', {
                 duration: 8000,
-                undoCallback: async () => {
-                    try {
-                        await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(parsed.pageId)}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(snapshot),
-                        });
-                        await this.refreshBookmarksAfterWrite();
-                        this.notify(this.t('config.bookmarkRestored', 'Bookmark restored.'), 'success');
-                    } catch {
-                        this.notify(this.t('config.bookmarkRestoreFailed', 'Could not restore the bookmark.'), 'error');
-                    }
-                },
+                undoCallback: trashIds.length ? async () => {
+                    const back = await this.restoreTrashed(trashIds);
+                    this.notify(back
+                        ? this.t('config.bookmarkRestored', 'Bookmark restored.')
+                        : this.t('config.bookmarkRestoreFailed', 'Could not restore the bookmark.'),
+                    back ? 'success' : 'error');
+                } : null,
             });
             await this.refreshBookmarksAfterWrite();
         } catch {
@@ -23800,6 +24051,7 @@ class DashboardConfig {
         try {
             if (action === 'pin') await this.bulkPin(picked);
             else if (action === 'favicons') await this.bulkFavicons(picked);
+            else if (action === 'previews') await this.bulkPreviews(picked);
             else if (action === 'export') this.bulkExportCsv(picked);
             else if (action === 'delete') await this.bulkDelete(picked);
         } catch {
@@ -23810,25 +24062,6 @@ class DashboardConfig {
             // is stored — reload so the rows match what actually landed.
             await this.refreshBookmarksAfterWrite();
         }
-    }
-
-    /**
-     * Groups picked bookmarks per page as sets of "url::occurrence" targets.
-     *
-     * Matching on the URL alone would hit every copy of a duplicated URL, so
-     * ticking one of two identical rows would mutate or delete both. The
-     * occurrence number pins which copy was meant. The stored list is walked in
-     * the same order the occurrence index was built from, so the counts line up.
-     */
-    selectionTargetsByPage(picked) {
-        const occurrence = this.bookmarkOccurrenceIndex();
-        const byPage = new Map();
-        picked.forEach((b) => {
-            const set = byPage.get(String(b.pageId)) || new Set();
-            set.add(`${b.url}::${occurrence.get(b) || 0}`);
-            byPage.set(String(b.pageId), set);
-        });
-        return byPage;
     }
 
     /**
@@ -23844,77 +24077,71 @@ class DashboardConfig {
         };
     }
 
-    /** Walks a stored page list, tagging each entry with its occurrence number. */
-    static withOccurrence(list) {
-        const seen = new Map();
-        return (list || []).map((b) => {
-            const n = seen.get(b.url) || 0;
-            seen.set(b.url, n + 1);
-            return { bookmark: b, target: `${b.url}::${n}` };
-        });
-    }
-
-    /**
-     * Apply a mutation to every ticked bookmark, grouped per page so each page
-     * is written exactly once rather than once per bookmark.
-     */
     /**
      * Apply a change to the selection, and hand back the way to undo it.
      *
      * A bulk edit is the one action here with no natural second chance: forty
-     * rows retagged, or pinned, cannot be picked apart by hand afterwards, and
-     * only the delete path offered an undo. The snapshot is the pages as they
-     * were before the write — the same shape the delete undo restores — so
-     * putting it back is one POST per page rather than a reverse of the edit,
-     * which would have to be written for each kind of change and would be wrong
-     * for `replace`.
+     * rows retagged, or pinned, cannot be picked apart by hand afterwards. The
+     * undo is the old value of each field the edit changed, on each row it
+     * changed -- not the pages as they were, which would also undo whatever
+     * else happened to them in between.
      */
     async mutateSelected(picked, mutate) {
-        const snapshots = new Map();
-        for (const [pageId, targets] of this.selectionTargetsByPage(picked)) {
-            const before = (this.dash.allBookmarks || [])
-                .filter((b) => String(b.pageId) === String(pageId))
-                .map((b) => ({ ...b }));
-            snapshots.set(pageId, before);
-            await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
-                .map(({ bookmark, target }) => (targets.has(target) ? mutate({ ...bookmark }) : bookmark)));
+        // Only the ticked rows, by URL, and only what the change touches on
+        // each. The undo is the same shape: the old values of those fields.
+        const undo = new Map();
+        const byPage = new Map();
+        picked.forEach((b) => {
+            const pid = String(b.pageId);
+            if (!byPage.has(pid)) byPage.set(pid, []);
+            byPage.get(pid).push(b);
+        });
+        let failure = null;
+        for (const [pageId, rows] of byPage) {
+            const forward = [];
+            const back = [];
+            rows.forEach((b) => {
+                const after = mutate({ ...b });
+                const fields = DashboardConfig.changedFields(b, after);
+                if (!Object.keys(fields).length) return;
+                const occurrence = this.occurrenceOf(b);
+                forward.push({ url: b.url, occurrence, fields });
+                const previous = {};
+                Object.keys(fields).forEach((k) => { previous[k] = b[k] === undefined ? null : b[k]; });
+                back.push({ url: after.url || b.url, occurrence, fields: previous });
+            });
+            try {
+                await this.patchRows(pageId, forward);
+                if (back.length) undo.set(pageId, back);
+            } catch (err) {
+                failure = failure || err;
+            }
         }
         this.bmSelected.clear();
         await this.refreshBookmarksAfterWrite();
-        return snapshots;
+        if (failure) {
+            // Pages that took the change keep it, and their undo; the refusal
+            // is named rather than folded into "could not".
+            this.notify(this.conflictMessage(failure, 'config.bulkActionError', 'Could not apply the bulk action.'), 'error');
+        }
+        return undo;
     }
 
     /**
-     * The undo a bulk edit hands to its toast.
-     *
-     * Restores each page as it was before the write. The rows are sent whole
-     * rather than diffed: the pages are already in memory, and a diff would
-     * have to reason about what "remove these tags" meant on a row that did not
-     * carry them.
+     * The undo a bulk edit hands to its toast: the old value of every field
+     * the edit changed, on exactly the rows it changed.
      */
-    bulkUndo(snapshots, doneKey, doneFallback, failKey, failFallback) {
-        if (!snapshots || !snapshots.size) return null;
+    bulkUndo(undo, doneKey, doneFallback, failKey, failFallback) {
+        if (!undo || !undo.size) return null;
         return async () => {
             try {
-                for (const [pageId, rows] of snapshots) {
-                    await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(rows),
-                    });
+                for (const [pageId, updates] of undo) {
+                    await this.patchRows(pageId, updates);
                 }
                 await this.refreshBookmarksAfterWrite();
                 // The suggestions panel is built from the tags an undo just put
-                // back, so it has to be redrawn or it keeps showing the
-                // collection as it was before the undo. Today the refresh above
-                // usually gets there by accident -- with Config on screen
-                // repaintBookmarkMutationSurfaces falls through to a whole
-                // config.render() -- but that path bails out early whenever an
-                // inline edit is open, and it is an accident either way. Say it
-                // here, where the undo is. Every bulk undo is raised from this
-                // same section, so this runs for pin, move and delete too --
-                // one extra suggest() pass, and render() replaces the container
-                // outright, so a second draw changes nothing.
+                // back; render() replaces its container outright, so a second
+                // draw after the refresh changes nothing.
                 this.renderTagSuggestionsSafe();
                 this.notify(this.t(doneKey, doneFallback), 'success');
             } catch {
@@ -23946,36 +24173,23 @@ class DashboardConfig {
             return;
         }
 
-        // A page move is a remove-then-append across two lists, so it cannot go
-        // through mutateSelected.
+        // One step on the server: each row is checked against the target and
+        // only taken off its page once it can land. A move used to remove the
+        // rows first and add them after, so a target that refused (the same
+        // URL already there) left them on no page at all.
         if (targetCat) await this.ensureCategoryOnPage(targetPage, targetCat);
-        const moving = picked.filter((b) => String(b.pageId) !== String(targetPage));
-        const byPage = this.selectionTargetsByPage(moving);
-        const carried = moving.map((b) => {
-            const copy = { ...b };
-            delete copy.pageId;
-            if (targetCat !== null) copy.category = targetCat;
-            return copy;
-        });
-        for (const [pageId, targets] of byPage) {
-            await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
-                .filter(({ target }) => !targets.has(target))
-                .map(({ bookmark }) => bookmark));
+        let result;
+        try {
+            result = await this.moveRows(targetPage, targetCat,
+                picked.map((b) => ({ pageId: Number(b.pageId), url: b.url, occurrence: this.occurrenceOf(b) })));
+        } catch {
+            this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
+            await this.refreshBookmarksAfterWrite();
+            return;
         }
-        await this.refreshBookmarksAfterWrite({ silent: true });
-        if (carried.length) {
-            await this.writePageBookmarks(targetPage, (list) => [...list, ...carried]);
-        }
-        // Anything already on the target page still needs its category applied.
-        // Targets are resolved before the refresh below, while the occurrence
-        // index still describes the list these bookmarks were picked from.
-        const staying = picked.filter((b) => String(b.pageId) === String(targetPage));
-        if (targetCat !== null && staying.length) {
-            const targets = this.selectionTargetsByPage(staying).get(String(targetPage)) || new Set();
-            await this.refreshBookmarksAfterWrite({ silent: true });
-            await this.writePageBookmarks(targetPage, (list) => DashboardConfig.withOccurrence(list)
-                .map(({ bookmark, target }) => (targets.has(target) ? { ...bookmark, category: targetCat } : bookmark)));
-        }
+        const movedKeys = new Set(result.moved.map((m) => `${m.fromPage}\u0000${m.url}`));
+        const moving = picked.filter((b) => movedKeys.has(`${Number(b.pageId)}\u0000${b.url}`)
+            && String(b.pageId) !== String(targetPage));
         if (keepSelection) {
             // A moved row has a new key, so its tick has nothing left to point at.
             moving.forEach((b) => this.bmSelected.delete(this.bookmarkKey(b)));
@@ -23985,7 +24199,34 @@ class DashboardConfig {
         // A row moved from the panel repaints only the list and panel: a
         // whole-section render would replace the panel and close its drawer.
         await this.refreshBookmarksAfterWrite({ silent: keepSelection });
-        this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
+        const undoCallback = result.moved.length ? async () => {
+            // Back to where each came from, into the category it had.
+            const home = new Map();
+            result.moved.forEach((m) => {
+                if (!home.has(m.fromPage)) home.set(m.fromPage, []);
+                home.get(m.fromPage).push({ pageId: Number(targetPage), url: m.url, category: m.category ?? '' });
+            });
+            try {
+                for (const [fromPage, items] of home) {
+                    await this.moveRows(fromPage, null, items);
+                }
+                await this.refreshBookmarksAfterWrite();
+                this.notify(this.t('config.bmBulkUndone', 'Changes put back.'), 'success');
+            } catch {
+                this.notify(this.t('config.bulkUndoFailed', 'Could not undo that.'), 'error');
+            }
+        } : null;
+        if (result.skipped.length) {
+            const first = result.skipped[0];
+            this.notify(this.t('config.bulkMoveSkipped',
+                'Moved {moved}; {skipped} stayed where they were — {url} is already on that page.')
+                .replace('{moved}', String(result.moved.length))
+                .replace('{skipped}', String(result.skipped.length))
+                .replace('{url}', String(first.url || '')), 'warning', { duration: 8000, undoCallback });
+            return;
+        }
+        this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success',
+            undoCallback ? { duration: 8000, undoCallback } : undefined);
     }
 
     async bulkPin(picked, pinned) {
@@ -24201,60 +24442,199 @@ class DashboardConfig {
             .replace('{n}', String(picked.length));
         if (this.deleteNeedsConfirm(picked.length) && !await this.confirmAction(msg)) return;
 
-        const byPage = [...this.selectionTargetsByPage(picked)];
-        // Snapshot each affected page before touching it, so the toast can put
-        // the rows back. The same approach the :remove command already uses —
-        // deleting in bulk is exactly where getting it wrong hurts most.
-        const snapshots = new Map();
-        for (const [pageId] of byPage) {
-            snapshots.set(String(pageId), (this.dash.allBookmarks || [])
-                .filter((b) => String(b.pageId) === String(pageId))
-                .map((b) => {
-                    const copy = { ...b };
-                    delete copy.pageId;
-                    return copy;
-                }));
+        let result;
+        try {
+            // By URL, filed in the trash by the server; the undo restores
+            // those entries, which also takes them back out of the trash.
+            result = await this.deleteRows(picked, 'config-bookmarks-bulk');
+        } catch {
+            this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
+            await this.refreshBookmarksAfterWrite();
+            return;
         }
-
-        // Captured inside each page's mutation, where the stored list still holds
-        // the rows and their real indices — the trash restores to those positions.
-        const trashed = [];
-        for (const [pageId, targets] of byPage) {
-            await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
-                .filter(({ bookmark, target }, index) => {
-                    if (!targets.has(target)) return true;
-                    trashed.push({ pageId: Number(pageId), index, bookmark: { ...bookmark } });
-                    return false;
-                })
-                .map(({ bookmark }) => bookmark));
-        }
-        // After every page write, so a delete that did not persist cannot leave a
-        // phantom entry. The 8s toast is the fast path; the trash catches it later.
-        await window.DashboardTrash?.record(trashed, 'config-bookmarks-bulk');
         await this.refreshTrashIfVisible();
         this.bmSelected.clear();
-
-        const undoCallback = async () => {
-            try {
-                for (const [pageId, rows] of snapshots) {
-                    await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(rows),
-                    });
-                }
-                await this.refreshBookmarksAfterWrite();
-                this.notify(this.t('config.bulkDeleteUndone', 'Bookmarks restored.'), 'success');
-            } catch {
-                this.notify(this.t('config.bulkDeleteUndoFailed', 'Could not restore the bookmarks.'), 'error');
-            }
-        };
-
+        const undoCallback = result.trashIds.length ? async () => {
+            const back = await this.restoreTrashed(result.trashIds);
+            this.notify(back
+                ? this.t('config.bulkDeleteUndone', 'Bookmarks restored.')
+                : this.t('config.bulkDeleteUndoFailed', 'Could not restore the bookmarks.'),
+            back ? 'success' : 'error');
+        } : null;
         this.notify(this.t('config.bulkDeleteDone', 'Bookmarks deleted.'), 'success', {
             undoCallback,
             duration: 8000,
         });
         await this.refreshBookmarksAfterWrite();
+    }
+
+    /* ── Fetching icons and previews for a selection ─────────────────────── */
+
+    /**
+     * The fields a preview answer leaves on a bookmark. The kept list writes
+     * the same set (dashboard-unsorted.js PREVIEW_FIELDS); a preview fetched
+     * here has to end up on the record for the same reason it does there --
+     * the server caches its own answer, but that cache is not the bookmark.
+     */
+    static PREVIEW_FIELDS = ['previewTitle', 'previewDesc', 'previewImage',
+        'previewImageSource', 'previewSiteName', 'previewAuthor', 'previewPublishedAt',
+        'previewEmbedHtml', 'previewContentLength', 'previewEnriched'];
+
+    /** Already answered for: the same test the kept list's button counts by. */
+    bookmarkHasPreview(bookmark) {
+        return bookmark?.previewEnriched === true
+            || !!String(bookmark?.previewTitle || '').trim()
+            || !!String(bookmark?.previewDesc || '').trim();
+    }
+
+    /** Of a selection, the rows a sweep would actually ask about. */
+    bulkFetchTargets(picked, kind) {
+        return (picked || []).filter((bookmark) => (kind === 'icons'
+            ? !String(bookmark?.icon || '').trim()
+            : !this.bookmarkHasPreview(bookmark)));
+    }
+
+    /**
+     * Walk a selection one row at a time, behind the blocking bar.
+     *
+     * Serial and paced, because every row is a request to somebody else's
+     * server through an endpoint that allows sixty a minute per client --
+     * shared with the hover previews, the link checks and the icon prefetch.
+     * A refusal is not a failure: the server says how long to wait, and the
+     * row is asked for again. The same shape as the kept list's sweep
+     * (dashboard-unsorted-select.js), so the two behave alike.
+     */
+    async runSelectionSweep(targets, { title, run, done }) {
+        let ok = 0;
+        let failed = 0;
+        let stopped = false;
+        const total = targets.length;
+        const counted = (n) => this.t('config.bulkSweepProgress', '{done} of {total}')
+            .replace('{done}', String(n)).replace('{total}', String(total));
+        this.showProgressOverlay(title, counted(0), {
+            onCancel: () => { stopped = true; },
+            cancelLabel: this.t('config.bulkSweepStop', 'Stop'),
+            cancellingLabel: this.t('config.bulkSweepStopping', 'Stopping…'),
+        });
+        window.ProgressOverlay?.update(0, total, counted(0));
+        const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        for (let i = 0; i < total; i += 1) {
+            if (stopped) break;
+            let result = 'failed';
+            try {
+                result = await run(targets[i]);
+            } catch {
+                result = 'failed';
+            }
+            if (result && result.rateLimited) {
+                window.ProgressOverlay?.update(i, total,
+                    this.t('config.bulkSweepWaiting', 'Rate limit reached — waiting {seconds}s')
+                        .replace('{seconds}', String(result.retryAfter)));
+                await wait((result.retryAfter + 1) * 1000);
+                if (stopped) break;
+                try {
+                    result = await run(targets[i]);
+                } catch {
+                    result = 'failed';
+                }
+                if (result && result.rateLimited) result = 'failed';
+            }
+            if (result === 'ok' || result === true) ok += 1;
+            else failed += 1;
+            window.ProgressOverlay?.update(i + 1, total, counted(i + 1));
+            if (i + 1 < total) await wait(DashboardConfig.SELECTION_SWEEP_INTERVAL_MS);
+        }
+        const summary = stopped
+            ? this.t('config.bulkSweepStopped', 'Stopped after {done} of {total}')
+                .replace('{done}', String(ok + failed)).replace('{total}', String(total))
+            : done(ok, failed);
+        // A stopped sweep did not finish: filling the bar would say it had.
+        if (stopped) this.hideProgressOverlay();
+        else this.finishProgressOverlay(summary);
+        this.notify(summary, stopped ? 'info' : (failed && !ok ? 'warning' : 'success'));
+        return { ok, failed, stopped };
+    }
+
+    /**
+     * Write what a sweep collected: one PATCH per page, naming each row by URL.
+     *
+     * @param {Map<string, Map<string, object>>} byPage pageId → url → fields
+     */
+    async saveSweptFields(byPage) {
+        for (const [pageId, rows] of byPage) {
+            if (!rows.size) continue;
+            try {
+                // By URL, only the swept fields: a sweep takes minutes, and a
+                // whole-page write at its end undid whatever changed meanwhile.
+                await this.patchRows(pageId, [...rows].map(([url, fields]) => ({ url, fields })));
+            } catch {
+                // The next sweep can ask again; a page that will not save is
+                // not a reason to drop the pages after it.
+            }
+        }
+        await this.refreshBookmarksAfterWrite();
+    }
+
+    /** Where a picked bookmark sits in its page's stored list. */
+    async sweepRecordFor(bookmark) {
+        return this.findBookmarkRecord(this.bookmarkKey(bookmark));
+    }
+
+    /**
+     * Ask every ticked row's page for its title, description and image.
+     *
+     * Only the rows that have none: a row already carrying a preview is one
+     * the sweep would spend its rate limit re-asking for an answer nobody is
+     * waiting for. The button says how many that leaves.
+     */
+    async bulkPreviews(picked) {
+        const targets = this.bulkFetchTargets(picked, 'previews');
+        if (!targets.length) {
+            this.notify(this.t('config.bulkPreviewsAllPresent', 'Every one of these already has a preview'), 'info');
+            return;
+        }
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        /** @type {Map<string, Map<string, object>>} pageId → url → fields */
+        const byPage = new Map();
+        const result = await this.runSelectionSweep(targets, {
+            title: this.t('config.bulkPreviewsTitle', 'Fetching previews…'),
+            run: async (bookmark) => {
+                const url = String(bookmark?.url || '').trim();
+                if (!url) return 'failed';
+                const res = await fetcher(`/api/bookmark-preview?url=${encodeURIComponent(url)}`);
+                if (res.status === 429) {
+                    return { rateLimited: true, retryAfter: Number(res.headers.get('Retry-After')) || 60 };
+                }
+                if (!res.ok) return 'failed';
+                const preview = await res.json().catch(() => null);
+                if (!preview) return 'failed';
+                const record = await this.sweepRecordFor(bookmark);
+                if (!record) return 'failed';
+                const fields = {
+                    previewTitle: preview.title || '',
+                    previewDesc: preview.description || '',
+                    previewImage: preview.image || '',
+                    previewImageSource: preview.imageSource || '',
+                    previewSiteName: preview.siteName || '',
+                    previewAuthor: preview.author || '',
+                    previewPublishedAt: Number(preview.publishedAt || 0) || 0,
+                    previewEmbedHtml: preview.embedHtml || '',
+                    previewContentLength: Number(preview.contentLength || 0) || 0,
+                    previewEnriched: true,
+                };
+                const page = byPage.get(String(record.pageId)) || new Map();
+                page.set(record.record?.url || record.bookmark?.url, fields);
+                byPage.set(String(record.pageId), page);
+                return 'ok';
+            },
+            done: (ok, failed) => (failed
+                ? this.t('config.bulkPreviewsDoneSome', 'Fetched {ok} preview(s), {failed} failed')
+                    .replace('{ok}', String(ok)).replace('{failed}', String(failed))
+                : this.t('config.bulkPreviewsDone', 'Fetched {ok} preview(s)').replace('{ok}', String(ok))),
+        });
+        // Whatever the sweep did collect is saved, including a stopped one:
+        // those pages were fetched and there is no reason to throw them away.
+        if (result.ok) await this.saveSweptFields(byPage);
     }
 
     async bulkFavicons(picked) {
@@ -24266,22 +24646,42 @@ class DashboardConfig {
                 .replace('{n}', String(picked.length));
             if (!await this.confirmAction(ask, { danger: false })) return;
         }
-        let ok = 0;
-        for (const b of picked) {
-            const key = this.bookmarkKey(b);
-            try {
-                await this.refreshBookmarkFavicon(key);
-                ok += 1;
-            } catch {
-                /* refreshBookmarkFavicon notifies per row */
-            }
+        // The rows without one. Re-fetching an icon a row already has spends
+        // the same rate limit on an answer nobody is waiting for, and the
+        // button beside this says how many rows that leaves.
+        const targets = this.bulkFetchTargets(picked, 'icons');
+        if (!targets.length) {
+            this.notify(this.t('config.bulkIconsAllPresent', 'Every one of these already has an icon'), 'info');
+            return;
         }
-        if (ok > 0) {
-            this.notify(
-                this.t('config.bulkFaviconsDone', 'Favicons refreshed for {n} bookmarks.').replace('{n}', String(ok)),
-                'success'
-            );
+        const fetchIcon = window.BookmarkPreviewService?.fetchAndUploadFavicon;
+        if (typeof fetchIcon !== 'function') {
+            this.notify(this.t('dashboard.healthFaviconFailed', 'Could not refresh the favicon'), 'error');
+            return;
         }
+        /** @type {Map<string, Map<string, object>>} pageId → url → fields */
+        const byPage = new Map();
+        const result = await this.runSelectionSweep(targets, {
+            title: this.t('config.bulkIconsTitle', 'Fetching icons…'),
+            run: async (bookmark) => {
+                const url = String(bookmark?.url || '').trim();
+                if (!url) return 'failed';
+                const iconPath = await fetchIcon(url);
+                if (!iconPath) return 'failed';
+                const record = await this.sweepRecordFor(bookmark);
+                if (!record) return 'failed';
+                const page = byPage.get(String(record.pageId)) || new Map();
+                page.set(record.record?.url || record.bookmark?.url, { icon: iconPath });
+                byPage.set(String(record.pageId), page);
+                return 'ok';
+            },
+            done: (ok, failed) => (failed
+                ? this.t('config.bulkIconsDoneSome', 'Fetched {ok} icon(s), {failed} failed')
+                    .replace('{ok}', String(ok)).replace('{failed}', String(failed))
+                : this.t('config.bulkFaviconsDone', 'Favicons refreshed for {n} bookmarks.')
+                    .replace('{n}', String(ok))),
+        });
+        if (result.ok) await this.saveSweptFields(byPage);
     }
 
     bulkExportCsv(picked) {
@@ -26846,6 +27246,8 @@ class DashboardConfig {
                 'config.helpInboxWorkBody', '')
             + this.helpPanel('config.helpInboxTriageTitle', 'Triage mode',
                 'config.helpInboxTriageBody', '')
+            + this.helpPanel('config.helpInboxKeptTitle', 'The Kept tab',
+                'config.helpInboxKeptBody', '')
             + this.helpPanel('config.helpInboxSettingsTitle', 'Settings behind the scenes',
                 'config.helpInboxSettingsBody', '')
             // Last, not first: someone reading this page has already found the

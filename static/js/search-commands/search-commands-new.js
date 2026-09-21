@@ -219,6 +219,10 @@ class SearchCommandNew {
                 url: options.url,
                 name: options.name,
                 note: options.note,
+                // Passed through like the note: the form already fills its
+                // tags field from them, and this was the one hop that dropped
+                // them on the way.
+                tags: Array.isArray(options.tags) ? options.tags : undefined,
                 pageId: pageId || options.pageId,
             });
         }

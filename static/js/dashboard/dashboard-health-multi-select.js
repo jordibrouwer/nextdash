@@ -541,12 +541,11 @@ class DashboardHealthMultiSelect {
             run: async (issue) => {
                 const url = String(issue?.url || '').trim();
                 const pageId = Number(issue?.pageId ?? issue?.pageID ?? 0);
-                const index = Number(issue?.index ?? -1);
-                if (!url || !(pageId > 0) || index < 0) return 'failed';
+                if (!url || !(pageId > 0)) return 'failed';
                 const iconPath = await fetchIcon(url);
                 if (!iconPath) return 'failed';
-                if (!icons.has(pageId)) icons.set(pageId, new Map());
-                icons.get(pageId).set(index, iconPath);
+                if (!icons.has(pageId)) icons.set(pageId, []);
+                icons.get(pageId).push({ url, icon: iconPath });
                 return 'ok';
             },
             done: (ok) => this.t('dashboard.healthBulkFaviconDone', 'Updated {count}', { count: ok }),
@@ -554,26 +553,19 @@ class DashboardHealthMultiSelect {
 
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         let written = 0;
-        for (const [pageId, byIndex] of icons) {
+        // By URL, one field per row: the sweep takes minutes, and writing the
+        // whole page back from a list read at the end -- by report-old index --
+        // set icons on neighbours and undid edits made while it ran.
+        for (const [pageId, updates] of icons) {
             try {
-                const res = await fetch(`/api/bookmarks?page=${pageId}`);
-                if (!res.ok) continue;
-                const bookmarks = await res.json();
-                if (!Array.isArray(bookmarks)) continue;
-                let touched = 0;
-                byIndex.forEach((iconPath, index) => {
-                    if (bookmarks[index]) {
-                        bookmarks[index].icon = iconPath;
-                        touched += 1;
-                    }
-                });
-                if (!touched) continue;
-                const save = await fetcher(`/api/bookmarks?page=${pageId}`, {
-                    method: 'POST',
+                const save = await fetcher('/api/bookmarks', {
+                    method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bookmarks),
+                    body: JSON.stringify({ page: pageId, updates }),
                 });
-                if (save.ok) written += touched;
+                if (!save.ok) continue;
+                const saved = await save.json().catch(() => ({}));
+                written += Number(saved.updated) || 0;
             } catch {
                 // A page that will not save leaves its rows unchanged; the
                 // others are still worth writing.
@@ -865,17 +857,23 @@ class DashboardHealthMultiSelect {
 
         let applied = 0;
         let stillBroken = 0;
+        const undoable = [];
         for (const fix of found) {
             try {
                 const res = await fetcher('/api/health/auto-heal-apply', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pageId: fix.pageId, index: fix.index, newUrl: fix.to, refreshTitle: false }),
+                    body: JSON.stringify({ pageId: fix.pageId, index: fix.index, url: fix.from, newUrl: fix.to, refreshTitle: false }),
                 });
                 if (!res.ok) continue;
                 const body = await res.json().catch(() => ({}));
                 applied += 1;
-                if (String(body?.lastError || '').trim()) stillBroken += 1;
+                // verifyError, as the server names it: lastError is never sent,
+                // so every batch used to report every fix as reachable.
+                if (String(body?.verifyError || '').trim()) stillBroken += 1;
+                if (body?.previous?.url && body?.url) {
+                    undoable.push({ pageId: fix.pageId, url: String(body.url), previous: body.previous });
+                }
             } catch {
                 // Counted by omission: the summary reports what landed.
             }
@@ -889,7 +887,9 @@ class DashboardHealthMultiSelect {
                 ? this.t('dashboard.healthBulkHealPartial', 'Updated {count} bookmark(s); {broken} still fail', { count: applied, broken: stillBroken })
                 : this.t('dashboard.healthBulkHealDone', 'Updated {count} bookmark(s)', { count: applied }),
             stillBroken > 0 ? 'warning' : 'success',
-            { duration: 5000 }
+            undoable.length
+                ? { duration: 8000, undoCallback: () => health.undoFixes(undoable) }
+                : { duration: 5000 }
         );
     }
 
@@ -1071,7 +1071,14 @@ class DashboardHealthMultiSelect {
             if (!res.ok) throw new Error(`bulk delete HTTP ${res.status}`);
             const body = await res.json().catch(() => ({}));
             const deleted = Number(body.deleted) || 0;
-            const skipped = Array.isArray(body.skipped) ? body.skipped.length : 0;
+            const skippedRows = Array.isArray(body.skipped) ? body.skipped : [];
+            const skipped = skippedRows.length;
+            const trashIds = Array.isArray(body.trashIds) ? body.trashIds : [];
+            // The rows the server refused are still on their pages: only the
+            // others come off the grid, or a skipped one vanished from the
+            // dashboard until the next reload.
+            const kept = new Set(skippedRows.map((row) =>
+                `${Number(row.pageId)}\u0000${this.health.canonicalUrl(row.url)}`));
 
             this.clear({ render: false });
             this.health.selectedKey = null;
@@ -1080,6 +1087,7 @@ class DashboardHealthMultiSelect {
             // the single-row delete does.
             const pageIds = new Set();
             issues.forEach((issue) => {
+                if (kept.has(`${Number(issue.pageId)}\u0000${this.health.canonicalUrl(issue.url)}`)) return;
                 d.removeBookmarkByUrl?.(issue.pageId, issue.url);
                 pageIds.add(Number(issue.pageId));
             });
@@ -1097,14 +1105,20 @@ class DashboardHealthMultiSelect {
                         'Deleted {count}; {skipped} had changed — reload the report',
                         { count: deleted, skipped }
                     ),
-                    'warning'
+                    'warning',
+                    trashIds.length
+                        ? { duration: 8000, undoCallback: () => this.health.restoreFromTrash(trashIds) }
+                        : undefined
                 );
                 return;
             }
             d.showNotification(
                 this.t('dashboard.healthBulkDeleted', 'Deleted {count} bookmark(s)', { count: deleted }),
                 'success',
-                { duration: 4000 }
+                {
+                    duration: trashIds.length ? 8000 : 4000,
+                    undoCallback: trashIds.length ? () => this.health.restoreFromTrash(trashIds) : null,
+                }
             );
         } catch {
             d.showNotification(this.t('dashboard.healthBulkDeleteFailed', 'Could not delete the bookmarks'), 'error');

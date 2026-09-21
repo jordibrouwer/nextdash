@@ -88,6 +88,10 @@ func respondBookmarkMutationError(w http.ResponseWriter, err error) bool {
 		http.Error(w, "Bookmark index out of range", http.StatusNotFound)
 		return false
 	}
+	if errors.Is(err, ErrBookmarkChanged) {
+		http.Error(w, "Bookmark has changed; reload the health report", http.StatusConflict)
+		return false
+	}
 	return respondStorePersistError(w, err)
 }
 
@@ -521,7 +525,21 @@ func appendHealthReason(details *[]HealthReason, legacy *[]string, reason Health
 }
 
 func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
-	pages := h.store.GetPages()
+	// The unsorted page is left out of the report entirely.
+	//
+	// Health is about the library as it stands on the dashboard: what is
+	// broken, what is stale, what has no category. A bookmark kept from the
+	// inbox has not been filed yet -- it has no category by definition, it is
+	// never "unused" in the sense the report means, and it belongs to a page
+	// nothing on the dashboard routes to. Counting them buried the real report
+	// under rows nobody could act on from there.
+	pages := make([]Page, 0)
+	for _, page := range h.store.GetPages() {
+		if page.ID == unsortedPageID {
+			continue
+		}
+		pages = append(pages, page)
+	}
 	pageNames := make(map[int]string, len(pages))
 	for _, page := range pages {
 		pageNames[page.ID] = page.Name
@@ -1948,7 +1966,53 @@ func (h *Handlers) GetPages(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		return
 	}
-	writeJSONWithETag(w, r, h.store.GetPages())
+	all := h.store.GetPages()
+	visible := make([]Page, 0, len(all))
+	for _, p := range all {
+		if p.Hidden {
+			continue
+		}
+		visible = append(visible, p)
+	}
+	writeJSONWithETag(w, r, visible)
+}
+
+// GetUnsorted returns the reserved Unsorted page and its bookmarks, newest
+// first. The page is created on first call (EnsureUnsortedPage), so this
+// never 404s.
+// unsortedBookmark is a bookmark plus the index it occupies on the unsorted
+// page. The embedded struct has no JSON name of its own, so the bookmark's own
+// fields stay where every existing reader expects them.
+type unsortedBookmark struct {
+	Bookmark
+	Index int `json:"index"`
+}
+
+func (h *Handlers) GetUnsorted(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w, r)
+	if r.Method == "OPTIONS" {
+		return
+	}
+	page, err := h.store.EnsureUnsortedPage()
+	if !respondStorePersistError(w, err) {
+		return
+	}
+	bookmarks := h.store.GetBookmarksByPage(page.ID)
+	// The position each bookmark holds on the page, captured before the sort
+	// below reorders them. Deleting by index is the only safe bulk delete the
+	// store offers (/api/health/delete-bookmarks), and a client that only ever
+	// saw this list newest-first has no other way to know where a row sits.
+	rows := make([]unsortedBookmark, len(bookmarks))
+	for i, bookmark := range bookmarks {
+		rows[i] = unsortedBookmark{Bookmark: bookmark, Index: i}
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].CreatedAt > rows[j].CreatedAt
+	})
+	writeJSONWithETag(w, r, map[string]any{
+		"page":      page,
+		"bookmarks": rows,
+	})
 }
 
 func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
@@ -1959,6 +2023,12 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&pages); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
+	}
+	for _, page := range pages {
+		if page.ID == unsortedPageID {
+			http.Error(w, "That page id is reserved", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Extract page order (array of IDs)
@@ -2001,6 +2071,10 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 	// Prevent deleting page 1 (main page)
 	if pageID == 1 {
 		http.Error(w, "Cannot delete the main page", http.StatusBadRequest)
+		return
+	}
+	if pageID == unsortedPageID {
+		http.Error(w, "Cannot delete the unsorted page", http.StatusBadRequest)
 		return
 	}
 
@@ -4065,6 +4139,7 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 	var req struct {
 		PageID int    `json:"pageId"`
 		Index  int    `json:"index"`
+		URL    string `json:"url"`
 		Status string `json:"status"`
 		Error  string `json:"error"`
 	}
@@ -4076,8 +4151,12 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 		http.Error(w, "Invalid bookmark reference", http.StatusBadRequest)
 		return
 	}
+	if canonicalBookmarkURLKey(strings.TrimSpace(req.URL)) == "" {
+		http.Error(w, "url is required", http.StatusBadRequest)
+		return
+	}
 
-	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
+	err := h.mutateHealthBookmark(req.PageID, req.Index, req.URL, func(bookmark *Bookmark) error {
 		detail := ""
 		if strings.TrimSpace(req.Status) != "online" {
 			detail = strings.TrimSpace(req.Error)
@@ -4511,8 +4590,9 @@ func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var req struct {
-		PageID int `json:"pageId"`
-		Index  int `json:"index"`
+		PageID int    `json:"pageId"`
+		Index  int    `json:"index"`
+		URL    string `json:"url"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -4522,25 +4602,48 @@ func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Invalid bookmark reference", http.StatusBadRequest)
 		return
 	}
-
-	existing := h.store.GetBookmarksByPage(req.PageID)
-	var deleted Bookmark
-	if req.Index < len(existing) {
-		deleted = existing[req.Index]
-	}
-
-	if !respondBookmarkMutationError(w, h.store.DeleteBookmarkAt(req.PageID, req.Index)) {
+	// The URL the row showed, required: this used to delete whatever sat at
+	// the index, and a report read minutes ago can name a neighbour there.
+	if canonicalBookmarkURLKey(strings.TrimSpace(req.URL)) == "" {
+		http.Error(w, "url is required", http.StatusBadRequest)
 		return
 	}
-	h.invalidateHealthReportCache()
-	if deleted.URL != "" || deleted.Name != "" {
-		deleted.PageID = req.PageID
-		logBookmarkDelete(deleted, r)
+
+	// The bulk path, with one item: the same URL check under the lock, and the
+	// same trash entry, so a single delete is as recoverable as a batch.
+	removed, skipped := h.deleteHealthBookmarksOnPage(req.PageID, []healthBulkDeleteItem{
+		{PageID: req.PageID, Index: req.Index, URL: req.URL},
+	})
+	if len(removed) == 0 {
+		if len(skipped) > 0 && skipped[0].Reason == healthBulkSkipWriteFailed {
+			http.Error(w, "Failed to save data", http.StatusInternalServerError)
+			return
+		}
+		http.Error(w, "Bookmark has changed; reload the health report", http.StatusConflict)
+		return
 	}
+	pageName := ""
+	for _, page := range h.store.GetPages() {
+		if page.ID == req.PageID {
+			pageName = page.Name
+			break
+		}
+	}
+	entry := removed[0]
+	entry.PageName = pageName
+	entry.Source = "health"
+	_ = h.store.AddTrashedBookmarks([]TrashedBookmark{entry})
+	h.invalidateHealthReportCache()
+	deleted := entry.Bookmark
+	deleted.PageID = req.PageID
+	logBookmarkDelete(deleted, r)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]any{"status": "deleted"})
+	json.NewEncoder(w).Encode(map[string]any{
+		"status":   "deleted",
+		"trashIds": []string{entry.ID},
+	})
 }
 
 // AutoHealSuggest returns healing suggestions for a broken bookmark.
@@ -4608,6 +4711,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		PageID       int    `json:"pageId"`
 		Index        int    `json:"index"`
+		URL          string `json:"url"`
 		NewURL       string `json:"newUrl"`
 		RefreshTitle bool   `json:"refreshTitle"`
 		OneClick     bool   `json:"oneClick"`
@@ -4640,12 +4744,24 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	appliedTitle := false
 	var result Bookmark
 
-	bookmarks := h.store.GetBookmarksByPage(req.PageID)
-	if req.Index >= len(bookmarks) {
-		http.Error(w, "Bookmark index out of range", http.StatusNotFound)
+	if canonicalBookmarkURLKey(strings.TrimSpace(req.URL)) == "" {
+		http.Error(w, "url is required", http.StatusBadRequest)
 		return
 	}
-	sourceBookmark := bookmarks[req.Index]
+	bookmarks := h.store.GetBookmarksByPage(req.PageID)
+	at := locateBookmark(bookmarks, req.Index, req.URL)
+	if at < 0 {
+		http.Error(w, "Bookmark has changed; reload the health report", http.StatusConflict)
+		return
+	}
+	sourceBookmark := bookmarks[at]
+	// What the fix replaces, handed back so the client can offer an undo.
+	previous := map[string]any{
+		"url":          sourceBookmark.URL,
+		"name":         sourceBookmark.Name,
+		"note":         sourceBookmark.Note,
+		"previewTitle": sourceBookmark.PreviewTitle,
+	}
 
 	// Outbound HTTP must not run inside MutateBookmarkAt — it holds the store write lock
 	// and would freeze dashboard/config/health for the full redirect/title fetch duration.
@@ -4669,7 +4785,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		verified = h.pingURLExpecting(r.Context(), updatedURL, expectationFor(sourceBookmark).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
 	}
 
-	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
+	err := h.mutateHealthBookmark(req.PageID, at, req.URL, func(bookmark *Bookmark) error {
 		if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
 			if req.KeepOriginalInNote {
 				appendBookmarkNote(bookmark, "Was: "+strings.TrimSpace(bookmark.URL))
@@ -4729,6 +4845,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		"title":          result.PreviewTitle,
 		"verifiedOnline": appliedURL && verified.Status == "online",
 		"verifyError":    strings.TrimSpace(result.LastError),
+		"previous":       previous,
 	})
 }
 

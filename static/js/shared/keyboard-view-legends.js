@@ -30,7 +30,9 @@
         { keys: 'Enter / Space', legendKey: 'inboxKeyOpen', cheatKey: 'ivOpen', fallback: 'open' },
         { keys: 'p', legendKey: 'inboxKeyPromote', cheatKey: 'ivPromote', fallback: 'promote' },
         { keys: 'n', legendKey: 'inboxKeyNote', cheatKey: 'ivNote', fallback: 'note' },
-        { keys: 'r', legendKey: 'inboxKeyKeep', cheatKey: 'ivKeep', fallback: 'mark read' },
+        // r marks read and Shift+K keeps, here and on triage's card alike.
+        { keys: 'r', legendKey: 'inboxKeyMarkRead', cheatKey: 'ivMarkRead', fallback: 'mark read' },
+        { keys: 'K', legendKey: 'inboxKeyKeep', cheatKey: 'ivKeep', fallback: 'keep · to Kept' },
         { keys: 'z', legendKey: 'inboxKeySnooze', cheatKey: 'ivSnooze', fallback: 'snooze' },
         { keys: 'x', legendKey: 'inboxKeySelect', cheatKey: 'ivSelect', fallback: 'select' },
         { keys: 'Shift+↑ / ↓', legendKey: 'inboxKeySelectRange', cheatKey: 'ivSelectRange', fallback: 'extend selection' },
@@ -70,13 +72,34 @@
     /** @type {LegendRow[]} */
     const INBOX_TRIAGE = [
         { keys: 'j / k', legendKey: 'inboxKeyMove', cheatKey: 'itMove', fallback: 'next / previous' },
-        { keys: 'o / Enter', legendKey: 'inboxKeyOpen', cheatKey: 'itOpen', fallback: 'open' },
+        { keys: 'o / Enter / Space', legendKey: 'inboxKeyOpen', cheatKey: 'itOpen', fallback: 'open' },
         { keys: 'p', legendKey: 'inboxKeyPromote', cheatKey: 'itPromote', fallback: 'promote' },
-        { keys: 'r / Space', legendKey: 'inboxKeyKeep', cheatKey: 'itKeep', fallback: 'keep · mark read' },
+        // The same letters as the list: r reads, Shift+K keeps.
+        { keys: 'r', legendKey: 'inboxKeyMarkRead', cheatKey: 'itMarkRead', fallback: 'mark read' },
+        { keys: 'K', legendKey: 'inboxKeyKeep', cheatKey: 'itKeep', fallback: 'keep · to Kept' },
         { keys: 'z', legendKey: 'inboxKeySnooze', cheatKey: 'itSnooze', fallback: 'snooze' },
         { keys: 'n', legendKey: 'inboxKeyNote', cheatKey: 'itNote', fallback: 'note' },
         { keys: 'd', legendKey: 'inboxKeyDelete', cheatKey: 'itDelete', fallback: 'delete' },
         { keys: 'Esc', legendKey: 'inboxKeyEsc', cheatKey: 'itEsc', fallback: 'close triage' },
+    ];
+
+    /**
+     * The kept list: the grid's own keys, plus the tick this list reads.
+     *
+     * Short for the reason the dashboard's is: the rows below it are the
+     * point, and a legend as tall as the list explains it out of existence.
+     *
+     * @type {LegendRow[]}
+     */
+    const KEPT_VIEW = [
+        { keys: '↑ ↓ ← →', legendKey: 'dashboardKeyMove', cheatKey: 'dvMove', fallback: 'move' },
+        { keys: 'Enter', legendKey: 'dashboardKeyOpen', cheatKey: 'dvOpen', fallback: 'open' },
+        { keys: 'x', legendKey: 'unsortedKeySelect', cheatKey: 'uvSelect', fallback: 'select' },
+        { keys: 'X', legendKey: 'unsortedKeySelectGroup', cheatKey: 'uvSelectGroup', fallback: 'select group' },
+        { keys: 'f', legendKey: 'unsortedKeyReview', cheatKey: 'uvReview', fallback: 'work through' },
+        { keys: 'b', legendKey: 'unsortedKeyBack', cheatKey: 'uvBack', fallback: 'back to the inbox' },
+        { keys: 'Esc', legendKey: 'unsortedKeyEsc', cheatKey: 'uvEsc', fallback: 'clear selection · back to bookmarks' },
+        { keys: '!', legendKey: 'dashboardKeyCheatSheet', cheatKey: 'dvCheatSheet', fallback: 'all keys' },
     ];
 
     /**
@@ -100,6 +123,7 @@
 
     global.KeyboardViewLegends = {
         DASHBOARD_VIEW,
+        KEPT_VIEW,
         HEALTH_VIEW,
         INBOX_VIEW,
         INBOX_TRIAGE,

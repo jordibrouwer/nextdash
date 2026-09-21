@@ -337,6 +337,19 @@ class DashboardHealthFocus {
         if (landingKey) {
             this.health.selectedKey = landingKey;
             this.health.focusIssueKey = landingKey;
+            // A session queues from the whole report, so the card left on can
+            // be a row the list behind it is filtering out -- and the render
+            // then dropped the cursor, landing the reader nowhere. Widen to
+            // All in that case, so Escape comes back to where the run was.
+            const visible = (this.health.getFilteredIssues?.() || [])
+                .some((issue) => this.health.issueKey(issue) === landingKey);
+            const exists = (this.health.report?.issues || [])
+                .some((issue) => this.health.issueKey(issue) === landingKey);
+            if (!visible && exists && this.health.filter !== 'all') {
+                this.health.applyFilter?.('all', 'session');
+                this.health.selectedKey = landingKey;
+                this.health.focusIssueKey = landingKey;
+            }
         }
         // Re-render so the row the cursor landed on is highlighted and scrolled
         // into view, the same as any other selection change.

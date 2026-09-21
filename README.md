@@ -251,7 +251,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Tags, notes, shortcuts and pins, and a preview card that says what a page is without opening it. *[Manual §6](MANUAL.md#6-opening-and-editing-bookmarks), [§10](MANUAL.md#10-tags)*
 - **Tag suggestions** tag whole groups at once — from your own tags, a shipped list of 463 subjects, and rules you write. Nothing is tagged until you accept. *[Manual §10.4](MANUAL.md#104-tag-suggestions)*
 - A **bookmarks workbench** in config: filter in a rail, edit one bookmark or a whole selection in a side panel. *[Manual §15.4](MANUAL.md#154-bookmarks)*
-- An **inbox** for links you have not filed yet — snooze, triage, promote. *[Manual §14](MANUAL.md#14-inbox)*
+- An **inbox** for links you have not filed yet — snooze, triage, promote, or keep them on a **Kept** tab until they have a place, then file a whole pile at once. *[Manual §14](MANUAL.md#14-inbox)*
 - **Smart collections** fill themselves; custom collections follow your rules. *[Manual §9.6](MANUAL.md#96-smart-collections)*
 
 **Search and keyboard**
@@ -270,7 +270,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Widgets**
 
-- Twenty kinds: health, uptime, certificates, trend, inbox, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, weather, calendar and RSS. *[Manual §11](MANUAL.md#11-widgets)*
+- Twenty-one kinds: health, uptime, certificates, trend, inbox, kept, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, weather, calendar and RSS. *[Manual §11](MANUAL.md#11-widgets)*
 - A **Custom widget** reads any service that answers with JSON, with 28 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and more. *[Manual §11.5](MANUAL.md#115-the-custom-widget)*
 
 **Appearance**

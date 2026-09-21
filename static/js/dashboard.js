@@ -56,6 +56,9 @@ class Dashboard {
         this._bookmarksReady = false;
         /** All pages — search / global shortcuts; not for getRecentBookmarks (page-local recent UX). */
         this.allBookmarks = [];
+        // Bookmarks kept on the hidden unsorted page, held apart so the
+        // dashboard's own surfaces cannot see them (see loadAllBookmarks).
+        this.unsortedBookmarks = [];
         this.finders = [];
         this.categories = [];
         this.collapsedCategories = {};
@@ -216,6 +219,8 @@ class Dashboard {
         this.configSync = new DashboardConfigSync(this);
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
+        // Built by the inbox loader, with the view it belongs to.
+        this.unsorted = null;
         this.multiSelect = new DashboardMultiSelect(this);
         // Narrowing the page you are on, as opposed to searching everything.
         this.gridFilter = typeof DashboardGridFilter === 'function'
@@ -469,6 +474,10 @@ class Dashboard {
             } else if ((bootHash === 'health' || bootHash.startsWith('health/'))
                 && this.activeView !== 'health' && this.health?.isEnabled?.()) {
                 await this.health.openHealthView();
+            } else if (bootHash === 'unsorted' && this.settings?.unsortedEnabled !== false) {
+                // The setting rather than the module: the kept list loads with
+                // the inbox, and this runs before either of them is there.
+                await this.inbox?.openInboxView?.({ tab: 'kept' });
             }
 
             if (this.config?.isEnabled?.()
@@ -1019,6 +1028,11 @@ class Dashboard {
                 }
                 return;
             }
+            // Kept is a tab of the inbox now; the address it always had still
+            // opens it, so every saved link keeps working.
+            if (hash === 'unsorted') {
+                return this.inbox?.openInboxView?.({ tab: 'kept' });
+            }
             if (hash === 'config' || hash.startsWith('config/')) {
                 const genericConfig = hash === 'config';
                 const deferRestore = genericConfig && !this._configInitialHashRouted;
@@ -1065,6 +1079,35 @@ class Dashboard {
             }
     }
 
+    /**
+     * What Escape drops, one level per press.
+     *
+     * The grid's multi-select and the Unsorted view's selection are two objects
+     * with the same shape, and Escape has to mean the same thing over both --
+     * so the key's handler asks here rather than naming one of them.
+     *
+     * @returns {boolean} whether the press was spent on a selection.
+     */
+    handleSelectionEscape() {
+        // A popover the selection opened is the top layer: Escape closes that
+        // first and leaves the ticks alone, the way the row menus behave. Only
+        // the next press drops the selection.
+        if (typeof this._unsortedMovePopoverClose === 'function') {
+            this._unsortedMovePopoverClose();
+            return true;
+        }
+        const unsortedSelect = this.unsorted?.isActiveView?.() ? this.unsorted.select : null;
+        if (unsortedSelect?.isActive?.()) {
+            unsortedSelect.clear();
+            return true;
+        }
+        if (this.multiSelect?.isActive?.()) {
+            this.multiSelect.clear();
+            return true;
+        }
+        return false;
+    }
+
     setActiveView(view, options = {}) {
         const previous = this.activeView;
         if (previous === view) {
@@ -1085,6 +1128,12 @@ class Dashboard {
         // restoreBookmarksViewForPage.
         if (previous === 'bookmarks' && view !== 'bookmarks') {
             this.data?.rememberScrollForPage?.(Number(this.currentPageId));
+        }
+        // Ticks are a state of that view, not of the app. Left standing, the
+        // bulk bar would come back with the view holding rows the reader
+        // stopped thinking about several screens ago.
+        if (previous === 'inbox' && view !== 'inbox') {
+            this.unsorted?.select?.clear?.();
         }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);

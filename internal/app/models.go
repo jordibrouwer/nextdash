@@ -357,6 +357,12 @@ type Page struct {
 	Name  string `json:"name"`            // Editable page name
 	Icon  string `json:"icon,omitempty"`  // Optional emoji icon shown in the tab
 	Color string `json:"color,omitempty"` // Optional accent color (hex) for the tab indicator
+	// Hidden excludes the page from the ordinary page navigation, the page
+	// tab strip, and the Config -> Pages list. Used for the single reserved
+	// "Unsorted" page (see unsortedPageID) -- everything else about a Hidden
+	// page is a normal Page, so Health, search and GetBookmarksByPage all see
+	// it exactly as they see any other page.
+	Hidden bool `json:"hidden,omitempty"`
 }
 
 type PageWithBookmarks struct {
@@ -661,14 +667,26 @@ type Settings struct {
 	BackgroundGradient        string                           `json:"backgroundGradient"`                  // preset name used when type="gradient"
 	BackgroundImageUrl        string                           `json:"backgroundImageUrl"`                  // URL used when type="image"
 	ThemeIconStyling          map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
-	PasteUrlQuickAdd          bool                             `json:"pasteUrlQuickAdd"`        // Enable paste URL to quick-add bookmark on dashboard
-	InboxEnabled              bool                             `json:"inboxEnabled"`            // Enable inbox page and paste-to-inbox flow
-	PasteDestination          string                           `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
-	InboxDedupeUrls           bool                             `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
-	InboxMaxItems             int                              `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
-	InboxShowInPageTabs       bool                             `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
-	InboxDeleteAfterPromote   bool                             `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
-	AllowLocalBookmarks       bool                             `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
+	PasteUrlQuickAdd          bool                             `json:"pasteUrlQuickAdd"` // Enable paste URL to quick-add bookmark on dashboard
+	InboxEnabled              bool                             `json:"inboxEnabled"`     // Enable inbox page and paste-to-inbox flow
+	UnsortedEnabled           bool                             `json:"unsortedEnabled"`  // Keep links from the inbox without filing them: the Kept tab and the Keep action
+	// How the kept list is read, remembered across browsers. Empty means the
+	// default -- newest first, ungrouped -- so an install that never chose one
+	// carries nothing.
+	UnsortedSort            string `json:"unsortedSort,omitempty"`
+	UnsortedGroup           string `json:"unsortedGroup,omitempty"`
+	// Keep files the link straight onto the page and category the rest of its
+	// site is already filed under, when the collection agrees on one, instead
+	// of leaving it on the kept page. Off by default: filing without being
+	// asked is only welcome once the reader trusts where it lands.
+	KeepAutoFile            bool   `json:"keepAutoFile"`
+	SearchUnsorted          bool   `json:"searchUnsorted"`          // Let search reach bookmarks kept in Unsorted; they stay out of every other surface
+	PasteDestination        string `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
+	InboxDedupeUrls         bool   `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
+	InboxMaxItems           int    `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
+	InboxShowInPageTabs     bool   `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
+	InboxDeleteAfterPromote bool   `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
+	AllowLocalBookmarks     bool   `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
 	/*
 	 * MCPEnabled opens the /mcp endpoint an assistant talks to.
 	 *
@@ -1134,6 +1152,7 @@ type Store interface {
 	TrackBookmarkOpen(pageID int, index int) error
 	MutateBookmarkAt(pageID int, index int, mutate func(*Bookmark) error) error
 	MutateBookmarksOnPage(pageID int, mutate func([]Bookmark) ([]Bookmark, error)) error
+	MutateBookmarkPages(pageIDs []int, mutate func(map[int][]Bookmark) (map[int][]Bookmark, error)) error
 	DeleteBookmarkAt(pageID int, index int) error
 	AddBookmarkToPage(pageID int, bookmark Bookmark) error
 	DeleteBookmarkFromPage(pageID int, bookmark Bookmark) error
@@ -1153,6 +1172,8 @@ type Store interface {
 	GetPageBlocks(pageID int) ([]Widget, []string)
 	SavePageBlocks(pageID int, widgets []Widget, order []string) error
 	SavePage(page Page) error
+	// EnsureUnsortedPage returns the reserved hidden "Unsorted" page, creating it on first use.
+	EnsureUnsortedPage() (Page, error)
 	DeletePage(pageID int) error
 	GetPageOrder() []int
 	SavePageOrder(order []int) error
@@ -1192,6 +1213,7 @@ type Store interface {
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
+	BatchInboxLinks(ids []string, mutate func(*InboxLink) bool) ([]InboxLink, []string, error)
 	// removeUnusedIconFile deletes a stored favicon file when no bookmark or inbox
 	// item still references it (best-effort). Called after an inbox item that owned
 	// the icon is deleted or promoted, so its file does not linger in data/icons/.
@@ -1498,6 +1520,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			LauncherIconSize:               "normal",
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
+			UnsortedEnabled:                true,
+			SearchUnsorted:                 true,
 			PasteDestination:               "ask",
 			InboxDedupeUrls:                true,
 			InboxMaxItems:                  500,
@@ -2880,6 +2904,14 @@ func parseBookmarkPageIDFromFilename(name string) (int, bool) {
 	return id, true
 }
 
+// unsortedPageID is the fixed, reserved page ID for the hidden "Unsorted"
+// page (see EnsureUnsortedPage). It is a constant rather than "next available
+// ID" precisely because "next available ID" is how ordinary pages are
+// assigned (see dashboard-structure-create.js's createPageFromForm): a
+// dynamically chosen low ID would eventually collide with a real page created
+// after it. 999999 is far outside the range ordinary pages ever reach.
+const unsortedPageID = 999999
+
 func defaultPageName(id int) string {
 	if id == 1 {
 		return "main"
@@ -3174,6 +3206,17 @@ func normalizePageMeta(page Page, fileID int) Page {
 	if page.Name == "" {
 		page.Name = defaultPageName(fileID)
 	}
+	// The unsorted page is hidden by what it is, not by what its file happens
+	// to say. Adding a bookmark to it writes the file before EnsureUnsortedPage
+	// has ever run, and that record carried no Hidden flag -- so the reserved
+	// page turned up in /api/pages as an ordinary one, with a page tab of its
+	// own, which is the one thing it must never have.
+	if page.ID == unsortedPageID {
+		page.Hidden = true
+		if page.Name == defaultPageName(fileID) {
+			page.Name = "Unsorted"
+		}
+	}
 	return page
 }
 
@@ -3289,6 +3332,22 @@ func (fs *FileStore) SavePage(page Page) error {
 	// May create bookmarks-N.json (new page) or rename an existing one — either
 	// way GetPages() can change, so this is not single-page-scoped.
 	return fs.writeStoreJSONFile(fileName, existing, 0)
+}
+
+// EnsureUnsortedPage returns the reserved hidden "Unsorted" page, creating it
+// on first use. It is idempotent: once the page exists, later calls read it
+// back rather than re-saving it.
+func (fs *FileStore) EnsureUnsortedPage() (Page, error) {
+	for _, p := range fs.getPages() {
+		if p.ID == unsortedPageID {
+			return p, nil
+		}
+	}
+	page := Page{ID: unsortedPageID, Name: "Unsorted", Hidden: true}
+	if err := fs.SavePage(page); err != nil {
+		return Page{}, fmt.Errorf("create unsorted page: %w", err)
+	}
+	return page, nil
 }
 
 func (fs *FileStore) removeFactoryResetUserAssets() {
@@ -3671,6 +3730,8 @@ func (fs *FileStore) GetSettings() Settings {
 			ThemeIconStyling:                defaultThemeIconStyling(),
 			PasteUrlQuickAdd:                true,
 			InboxEnabled:                    true,
+			UnsortedEnabled:                 true,
+			SearchUnsorted:                  true,
 			PasteDestination:                "ask",
 			InboxDedupeUrls:                 true,
 			InboxMaxItems:                   500,
@@ -4269,6 +4330,20 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["inboxEnabled"]; !ok {
 			settings.InboxEnabled = true
+		}
+		if _, ok := rawSettings["unsortedEnabled"]; !ok {
+			settings.UnsortedEnabled = true
+		}
+		if _, ok := rawSettings["searchUnsorted"]; !ok {
+			settings.SearchUnsorted = true
+		}
+		// A settings file written before this field existed decodes to the
+		// zero value, which for a bool is off -- so an install that never made
+		// a choice about it would silently get the opposite of the default the
+		// seed sets for a fresh one. Only an absent key is healed; a stored
+		// false is a choice and stays.
+		if _, ok := rawSettings["globalShortcuts"]; !ok {
+			settings.GlobalShortcuts = true
 		}
 		if settings.InboxEnabled {
 			settings.PasteUrlQuickAdd = true

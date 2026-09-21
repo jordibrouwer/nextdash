@@ -477,6 +477,44 @@ class SearchComponent {
      * on purpose -- minutes, then hours, then the weekday, then the date --
      * because what is being answered is "roughly when", not "at what time".
      */
+    /**
+     * The badge's word, in the reader's language when the key is there.
+     *
+     * `t()` answers with the key itself when it is missing, so `t(...) || '…'`
+     * never reaches its fallback -- a key is a truthy string. The keys are
+     * written in a translation round, and until then the badge has to read as
+     * a word rather than as `search.unsortedBadge`.
+     */
+    _unsortedBadgeLabel() {
+        const key = 'commands.unsortedBadge';
+        const translated = this.language?.t?.(key);
+        return translated && translated !== key ? translated : 'unsorted';
+    }
+
+    /**
+     * True when this row stands for a bookmark kept in Unsorted.
+     *
+     * The page id when the match carries one, and the URL when it does not:
+     * not every match type hands over the stored record -- a fuzzy hit can
+     * arrive as a name and an address -- and a badge that only appears for
+     * some of the ways of finding the same bookmark is worse than none.
+     */
+    _isUnsortedMatch(match) {
+        const isUnsorted = window.UnsortedPage?.isUnsorted;
+        if (typeof isUnsorted !== 'function') return false;
+        if (isUnsorted(match?.bookmark) === true || isUnsorted(match) === true) {
+            return true;
+        }
+        // Not every match type hands over the stored record -- a fuzzy hit can
+        // arrive as a name and an address -- so the URL is the fallback. A badge
+        // that appeared for only some of the ways of finding the same bookmark
+        // would be worse than none.
+        const url = String(match?.bookmark?.url || match?.url || '').trim();
+        if (!url) return false;
+        return (window.dashboardInstance?.unsortedBookmarks || [])
+            .some((bookmark) => String(bookmark?.url || '').trim() === url);
+    }
+
     _relativeWhen(timestamp) {
         const when = Number(timestamp) || 0;
         if (!when) return '';
@@ -3467,6 +3505,17 @@ class SearchComponent {
                 ? `<span class="search-match-current-badge">${this._escHtml(this.language?.t('commands.currentBadge') || 'current')}</span>`
                 : '';
 
+            /*
+             * Search is the only place outside its own view where a kept
+             * bookmark turns up, so the row has to say where it came from --
+             * otherwise the reader opens it, looks for it on the page it
+             * seemed to belong to, and does not find it.
+             */
+            const unsortedBadge = this._isUnsortedMatch(match)
+                ? `<span class="search-match-unsorted-badge">${this._escHtml(
+                    this._unsortedBadgeLabel())}</span>`
+                : '';
+
             const historyRemoveHtml = match.type === 'history'
                 ? `<button type="button" class="search-history-remove" aria-label="${this._escHtml(this.historyRemoveLabel())}">×</button>`
                 : '';
@@ -3481,6 +3530,7 @@ class SearchComponent {
                 <span class="search-match-name"${plainName ? ` title="${plainName}"` : ''}>${displayName}${match.meta ? `<span class="search-match-meta">${this._escHtml(match.meta)}</span>` : ''}</span>
                 ${finderUseBadge}
                 ${currentValueBadge}
+                ${unsortedBadge}
                 ${whenHtml}
                 ${historyRemoveHtml}
             `;

@@ -1,0 +1,92 @@
+{
+  "tag": "v1.12.0",
+  "date": "21 September 2026",
+  "releasedAt": "2026-09-21",
+  "modalLead": "The inbox gets a third answer. Until now a link left it as a bookmark or not at all; <strong>Keep</strong> holds on to it without asking where it belongs, on a new <strong>Kept</strong> tab beside the queue &mdash; and that tab helps you place the pile later: where each link probably belongs, tags it could get, whole groups filed at once, or one link at a time. Almost everything you change in the inbox, health and the bookmark list can now be undone from its message. Below this release you will also find the smaller updates since v1.11.0 that were not shown here before.",
+  "sections": [
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Keep a link without filing it.</strong> The Keep button on a row, <kbd>Shift</kbd>+<kbd>K</kbd>, or the right-click menu takes a link out of the queue for good, with its note and tags. It flies to the Kept tab, and the message it leaves has Undo on it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Two tabs: To triage and Kept.</strong> The queue's tab carries the same count as the inbox icon in the header. <kbd>Shift</kbd>+<kbd>U</kbd> opens the inbox straight on Kept."
+        },
+        {
+          "badge": "new",
+          "text": "<strong><kbd>r</kbd> marks read everywhere.</strong> In the list and in triage alike &mdash; keeping is <kbd>Shift</kbd>+<kbd>K</kbd> in both."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>More for a selection.</strong> Keep and Tags join the bar, Promote asks for a page and a category, and every bulk action can be undone. Tags you gave a link travel with it into the bookmark form."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Suggested tags where you triage.</strong> Dashed chips propose tags from your own collection; click to add one, × to stop proposing it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A new tour, in nine drawn steps.</strong> Mostly about Kept. The Tour button above either list plays it again."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Escape steps back one layer at a time</strong> &mdash; the ticks first, then the tab, then the inbox itself."
+        }
+      ]
+    },
+    {
+      "title": "Kept",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Each kept link says what it is.</strong> Its tags, how long it has waited, and &mdash; when the rest of that site is already filed in one place &mdash; where it belongs, one click away. A new switch lets Keep file it there straight away."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>File a whole pile at once.</strong> Group by site, tag, suggested tag or age, tick a group in one go, and Move to&hellip; puts every ticked link on one page and category."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Or work through it one link at a time.</strong> <kbd>f</kbd> puts one kept link in front of you with every answer under it: file it, move it, snooze it, send it back, skip or delete."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Nothing is stuck there.</strong> Back to the inbox (<kbd>b</kbd>) returns a link to the queue; snooze returns it on a date you pick. When kept links start piling up, a card in the corner says so, once."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A Kept widget</strong> lists your most recently kept links on any page."
+        }
+      ]
+    },
+    {
+      "title": "Health and the bookmark list",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Undo where it was missing.</strong> Deleting and fixing rows in health, and moving and editing in Config &rarr; Bookmarks, can be taken back from the message &mdash; and the undo takes back only that change."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Fetching previews shows its progress and can be stopped</strong> &mdash; in health, for a selection in Config &rarr; Bookmarks, and for the whole collection under Data &amp; backups. What was fetched before you stopped is kept."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A long row menu in health</strong> opened at the top of the screen instead of beside its row."
+        }
+      ]
+    },
+    {
+      "title": "Logs",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Record server log sits in the toolbar</strong>, beside Copy and Download, and every line carries its own number."
+        }
+      ]
+    }
+  ]
+}
