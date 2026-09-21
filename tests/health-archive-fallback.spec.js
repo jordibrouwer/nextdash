@@ -26,8 +26,8 @@ async function openHealth(page) {
 
 /**
  * Run recoverFromArchive against stubbed archives and report what it asked and
- * what it said. Answering the confirm with "no" opens the capture, which is the
- * branch that needs no write.
+ * what it said. Answering the confirm with "no" writes nothing and offers the capture
+ * in the toast, whose action is pressed here.
  */
 async function recover(page, { wayback, today }) {
     return page.evaluate(async ({ wayback, today }) => {
@@ -65,17 +65,25 @@ async function recover(page, { wayback, today }) {
         const realOpen = window.open;
         window.open = (href) => { opened = String(href || ''); return null; };
         const realNotify = d.showNotification;
-        d.showNotification = (text) => { notice = String(text || ''); };
+        let offer = null;
+        d.showNotification = (text, _type, opts) => {
+            notice = String(text || '');
+            if (typeof opts?.onAction === 'function') offer = opts.onAction;
+        };
+        let openedOnCancel = '';
 
         try {
             await health.recoverFromArchive({ url: 'https://example.com/gone', pageId: 'p', index: 0 });
+            // Cancel opens nothing by itself; the toast offers the copy.
+            openedOnCancel = opened;
+            offer?.();
         } finally {
             window.fetch = realFetch;
             health.confirm = realConfirm;
             window.open = realOpen;
             d.showNotification = realNotify;
         }
-        return { asked, confirmBody, opened, notice };
+        return { asked, confirmBody, opened, openedOnCancel, notice };
     }, { wayback, today });
 }
 
@@ -98,7 +106,9 @@ test.describe('recovering from either archive', () => {
         // The offer names which archive answered, so the date means something.
         expect(r.confirmBody).toContain('archive.today');
         expect(r.confirmBody).toContain('archive.ph/20260324065815');
-        // Declining still opens the capture — it is worth seeing either way.
+        // Declining opens nothing on its own; the toast offers the capture,
+        // which is worth seeing either way.
+        expect(r.openedOnCancel).toBe('');
         expect(r.opened).toContain('archive.ph/20260324065815');
     });
 

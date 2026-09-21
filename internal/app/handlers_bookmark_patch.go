@@ -17,6 +17,13 @@ type bookmarkPatch struct {
 	PreviewTitle *string  `json:"previewTitle,omitempty"`
 	PreviewDesc  *string  `json:"previewDesc,omitempty"`
 	PreviewImage *string  `json:"previewImage,omitempty"`
+	Icon         *string  `json:"icon,omitempty"`
+	// SetURL, Name and Note put a row back the way it was -- the undo of a
+	// health fix that pointed it somewhere else. A new URL drops the check
+	// result, which described the other address.
+	SetURL *string `json:"setUrl,omitempty"`
+	Name   *string `json:"name,omitempty"`
+	Note   *string `json:"note,omitempty"`
 }
 
 /*
@@ -61,6 +68,15 @@ func (h *Handlers) PatchBookmarks(w http.ResponseWriter, r *http.Request) {
 			order = append(order, key)
 		}
 		byKey[key] = update
+	}
+
+	for _, update := range byKey {
+		if update.SetURL != nil {
+			if err := h.validateBookmarkURL(strings.TrimSpace(*update.SetURL)); err != nil {
+				http.Error(w, "Invalid setUrl", http.StatusBadRequest)
+				return
+			}
+		}
 	}
 
 	applied := make(map[string]bool, len(byKey))
@@ -116,5 +132,22 @@ func applyBookmarkPatch(bookmark *Bookmark, update bookmarkPatch) {
 	}
 	if update.PreviewImage != nil {
 		bookmark.PreviewImage = strings.TrimSpace(*update.PreviewImage)
+	}
+	if update.Icon != nil {
+		bookmark.Icon = sanitizeBookmarkIcon(*update.Icon)
+	}
+	if update.Name != nil {
+		bookmark.Name = strings.TrimSpace(*update.Name)
+	}
+	if update.Note != nil {
+		bookmark.Note = strings.TrimSpace(*update.Note)
+	}
+	if update.SetURL != nil {
+		next := strings.TrimSpace(*update.SetURL)
+		if next != "" && next != bookmark.URL {
+			bookmark.URL = next
+			bookmark.LastChecked = 0
+			bookmark.LastError = ""
+		}
 	}
 }

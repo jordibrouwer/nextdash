@@ -88,6 +88,10 @@ func respondBookmarkMutationError(w http.ResponseWriter, err error) bool {
 		http.Error(w, "Bookmark index out of range", http.StatusNotFound)
 		return false
 	}
+	if errors.Is(err, ErrBookmarkChanged) {
+		http.Error(w, "Bookmark has changed; reload the health report", http.StatusConflict)
+		return false
+	}
 	return respondStorePersistError(w, err)
 }
 
@@ -4135,6 +4139,7 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 	var req struct {
 		PageID int    `json:"pageId"`
 		Index  int    `json:"index"`
+		URL    string `json:"url"`
 		Status string `json:"status"`
 		Error  string `json:"error"`
 	}
@@ -4146,8 +4151,12 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 		http.Error(w, "Invalid bookmark reference", http.StatusBadRequest)
 		return
 	}
+	if canonicalBookmarkURLKey(strings.TrimSpace(req.URL)) == "" {
+		http.Error(w, "url is required", http.StatusBadRequest)
+		return
+	}
 
-	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
+	err := h.mutateHealthBookmark(req.PageID, req.Index, req.URL, func(bookmark *Bookmark) error {
 		detail := ""
 		if strings.TrimSpace(req.Status) != "online" {
 			detail = strings.TrimSpace(req.Error)
@@ -4581,8 +4590,9 @@ func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var req struct {
-		PageID int `json:"pageId"`
-		Index  int `json:"index"`
+		PageID int    `json:"pageId"`
+		Index  int    `json:"index"`
+		URL    string `json:"url"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -4592,25 +4602,48 @@ func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Invalid bookmark reference", http.StatusBadRequest)
 		return
 	}
-
-	existing := h.store.GetBookmarksByPage(req.PageID)
-	var deleted Bookmark
-	if req.Index < len(existing) {
-		deleted = existing[req.Index]
-	}
-
-	if !respondBookmarkMutationError(w, h.store.DeleteBookmarkAt(req.PageID, req.Index)) {
+	// The URL the row showed, required: this used to delete whatever sat at
+	// the index, and a report read minutes ago can name a neighbour there.
+	if canonicalBookmarkURLKey(strings.TrimSpace(req.URL)) == "" {
+		http.Error(w, "url is required", http.StatusBadRequest)
 		return
 	}
-	h.invalidateHealthReportCache()
-	if deleted.URL != "" || deleted.Name != "" {
-		deleted.PageID = req.PageID
-		logBookmarkDelete(deleted, r)
+
+	// The bulk path, with one item: the same URL check under the lock, and the
+	// same trash entry, so a single delete is as recoverable as a batch.
+	removed, skipped := h.deleteHealthBookmarksOnPage(req.PageID, []healthBulkDeleteItem{
+		{PageID: req.PageID, Index: req.Index, URL: req.URL},
+	})
+	if len(removed) == 0 {
+		if len(skipped) > 0 && skipped[0].Reason == healthBulkSkipWriteFailed {
+			http.Error(w, "Failed to save data", http.StatusInternalServerError)
+			return
+		}
+		http.Error(w, "Bookmark has changed; reload the health report", http.StatusConflict)
+		return
 	}
+	pageName := ""
+	for _, page := range h.store.GetPages() {
+		if page.ID == req.PageID {
+			pageName = page.Name
+			break
+		}
+	}
+	entry := removed[0]
+	entry.PageName = pageName
+	entry.Source = "health"
+	_ = h.store.AddTrashedBookmarks([]TrashedBookmark{entry})
+	h.invalidateHealthReportCache()
+	deleted := entry.Bookmark
+	deleted.PageID = req.PageID
+	logBookmarkDelete(deleted, r)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]any{"status": "deleted"})
+	json.NewEncoder(w).Encode(map[string]any{
+		"status":   "deleted",
+		"trashIds": []string{entry.ID},
+	})
 }
 
 // AutoHealSuggest returns healing suggestions for a broken bookmark.
@@ -4678,6 +4711,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		PageID       int    `json:"pageId"`
 		Index        int    `json:"index"`
+		URL          string `json:"url"`
 		NewURL       string `json:"newUrl"`
 		RefreshTitle bool   `json:"refreshTitle"`
 		OneClick     bool   `json:"oneClick"`
@@ -4710,12 +4744,24 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	appliedTitle := false
 	var result Bookmark
 
-	bookmarks := h.store.GetBookmarksByPage(req.PageID)
-	if req.Index >= len(bookmarks) {
-		http.Error(w, "Bookmark index out of range", http.StatusNotFound)
+	if canonicalBookmarkURLKey(strings.TrimSpace(req.URL)) == "" {
+		http.Error(w, "url is required", http.StatusBadRequest)
 		return
 	}
-	sourceBookmark := bookmarks[req.Index]
+	bookmarks := h.store.GetBookmarksByPage(req.PageID)
+	at := locateBookmark(bookmarks, req.Index, req.URL)
+	if at < 0 {
+		http.Error(w, "Bookmark has changed; reload the health report", http.StatusConflict)
+		return
+	}
+	sourceBookmark := bookmarks[at]
+	// What the fix replaces, handed back so the client can offer an undo.
+	previous := map[string]any{
+		"url":          sourceBookmark.URL,
+		"name":         sourceBookmark.Name,
+		"note":         sourceBookmark.Note,
+		"previewTitle": sourceBookmark.PreviewTitle,
+	}
 
 	// Outbound HTTP must not run inside MutateBookmarkAt — it holds the store write lock
 	// and would freeze dashboard/config/health for the full redirect/title fetch duration.
@@ -4739,7 +4785,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		verified = h.pingURLExpecting(r.Context(), updatedURL, expectationFor(sourceBookmark).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
 	}
 
-	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
+	err := h.mutateHealthBookmark(req.PageID, at, req.URL, func(bookmark *Bookmark) error {
 		if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
 			if req.KeepOriginalInNote {
 				appendBookmarkNote(bookmark, "Was: "+strings.TrimSpace(bookmark.URL))
@@ -4799,6 +4845,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		"title":          result.PreviewTitle,
 		"verifiedOnline": appliedURL && verified.Status == "online",
 		"verifyError":    strings.TrimSpace(result.LastError),
+		"previous":       previous,
 	})
 }
 

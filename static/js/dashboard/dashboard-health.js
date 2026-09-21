@@ -242,6 +242,57 @@ class DashboardHealth {
     }
 
     /**
+     * Move the ticks and the cursor onto a new report by what they point at.
+     *
+     * A key is page and index, and a report read after a delete or an edit
+     * numbers the rows afresh: a tick on row 5 then sat on whatever became row
+     * 5, and a bulk delete took a bookmark nobody ticked. Each old key is
+     * followed to the same page and URL in the new report; one whose bookmark
+     * is gone is dropped rather than left on a neighbour.
+     */
+    carryKeysAcross(oldIssues, newIssues) {
+        const ms = this._multiSelect;
+        const hasTicks = ms?.selected?.size > 0;
+        const focusQueue = this._focus?.active ? this._focus.queue : null;
+        if (!hasTicks && !this.selectedKey && !focusQueue?.length) return;
+        const ident = (issue) => `${Number(issue?.pageId)}\u0000${this.canonicalUrl(issue?.url)}`;
+        const byIdent = new Map();
+        newIssues.forEach((issue) => {
+            const id = ident(issue);
+            if (!byIdent.has(id)) byIdent.set(id, this.issueKey(issue));
+        });
+        const oldByKey = new Map(oldIssues.map((issue) => [this.issueKey(issue), issue]));
+        const follow = (key) => {
+            const was = oldByKey.get(key);
+            // Not on the old report either (a key set from a deep link, say):
+            // left for prune() to judge against the new one as before.
+            if (!was) return key;
+            return byIdent.get(ident(was)) || null;
+        };
+        if (hasTicks) {
+            const next = new Set();
+            ms.selected.forEach((key) => {
+                const moved = follow(key);
+                if (moved) next.add(moved);
+            });
+            ms.selected = next;
+            if (ms.anchorKey) ms.anchorKey = follow(ms.anchorKey);
+        }
+        // A run through the rows holds keys as well. A card whose bookmark is
+        // gone gets a key nothing resolves, which the run already skips; its
+        // place in the queue stays, so the position still counts right.
+        if (focusQueue?.length) {
+            this._focus.queue = focusQueue.map((key) => follow(key) || `gone:${key}`);
+        }
+        // The cursor follows too, but where its bookmark is gone it keeps the
+        // old key: sitting on the row that took the deleted one's place is what
+        // the view has always done after a delete.
+        if (this.selectedKey) {
+            this.selectedKey = follow(this.selectedKey) || this.selectedKey;
+        }
+    }
+
+    /**
      * Resolve a stored icon to a loadable src. Icons are bare filenames served
      * from /data/icons/ (matching the dashboard rows in dashboard-bookmark-rows.js);
      * absolute URLs and root-relative paths are left as-is. Returns '' when there
@@ -336,6 +387,7 @@ class DashboardHealth {
                 return res.json();
             })
             .then((data) => {
+                this.carryKeysAcross(this.report?.issues || [], data?.issues || []);
                 this.report = data || null;
                 // The dashboard's preview cards read health facts from the
                 // badge's index; a report fetched here is fresher, so it
@@ -2053,6 +2105,7 @@ class DashboardHealth {
                     body: JSON.stringify({
                         pageId: issue.pageId,
                         index: issue.index,
+                        url: issue.url,
                         status,
                         error: status === 'online' ? '' : errorDetail,
                     }),
@@ -2553,7 +2606,18 @@ class DashboardHealth {
             );
             // Not keeping it is still an answer, and the capture is worth seeing.
             if (!keep) {
-                window.open(snapshotUrl, '_blank', 'noopener,noreferrer');
+                // Cancel means no. It used to open the copy in a new tab as
+                // well, which the dialog never said; looking is offered here
+                // instead, for whoever wanted to see it before deciding.
+                d.showNotification(
+                    this.t('dashboard.healthArchiveKeptOriginal', 'Bookmark left as it was'),
+                    'info',
+                    {
+                        duration: 6000,
+                        actionLabel: this.t('dashboard.healthArchiveOpenCopy', 'Open the copy'),
+                        onAction: () => window.open(snapshotUrl, '_blank', 'noopener,noreferrer'),
+                    }
+                );
                 return;
             }
 
@@ -2563,19 +2627,21 @@ class DashboardHealth {
                 body: JSON.stringify({
                     pageId: issue.pageId,
                     index: issue.index,
+                    url: issue.url,
                     newUrl: snapshotUrl,
                     refreshTitle: false,
                     keepOriginalInNote: true,
                 }),
             });
             if (!applied.ok) throw new Error(`apply HTTP ${applied.status}`);
+            const appliedBody = await applied.json().catch(() => ({}));
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
             d.showNotification(
                 this.t('dashboard.healthArchiveApplied', 'Now pointing at the copy {source} took on {date}',
                     { date: when, source }),
                 'success',
-                { duration: 4000 }
+                this.fixUndoOptions(issue, appliedBody)
             );
         } catch {
             d.showNotification(this.t('dashboard.healthArchiveFailed', 'Could not reach either archive'), 'error');
@@ -2667,21 +2733,17 @@ class DashboardHealth {
                 d.showNotification(this.t('dashboard.healthFaviconNone', 'No favicon found for this URL'), 'info');
                 return;
             }
-            // Read-modify-write the whole page: /api/bookmarks has no per-bookmark
-            // PATCH.
-            const res = await fetch(`/api/bookmarks?page=${issue.pageId}`);
-            if (!res.ok) throw new Error(`load HTTP ${res.status}`);
-            const bookmarks = await res.json();
-            if (!Array.isArray(bookmarks) || !bookmarks[issue.index]) {
-                throw new Error('bookmark not found');
-            }
-            bookmarks[issue.index].icon = iconPath;
-            const save = await fetcher(`/api/bookmarks?page=${issue.pageId}`, {
-                method: 'POST',
+            // By URL, one field: the whole-page write this was set the icon on
+            // whatever sat at a report-old index, and put back anything the
+            // page had gained or lost since it was read.
+            const save = await fetcher('/api/bookmarks', {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bookmarks),
+                body: JSON.stringify({ page: Number(issue.pageId), updates: [{ url, icon: iconPath }] }),
             });
             if (!save.ok) throw new Error(`save HTTP ${save.status}`);
+            const saved = await save.json().catch(() => ({}));
+            if (!saved.updated) throw new Error('bookmark not found');
             d.showNotification(this.t('dashboard.healthFaviconDone', 'Favicon updated'), 'success', { duration: 3000 });
             await this.loadAndRender({ refresh: true });
         } catch {
@@ -2722,7 +2784,7 @@ class DashboardHealth {
             const applied = await fetcher('/api/health/auto-heal-apply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId: issue.pageId, index: issue.index, newUrl: redirectUrl, refreshTitle: false }),
+                body: JSON.stringify({ pageId: issue.pageId, index: issue.index, url: issue.url, newUrl: redirectUrl, refreshTitle: false }),
             });
             if (!applied.ok) throw new Error(`apply HTTP ${applied.status}`);
             const body = await applied.json().catch(() => ({}));
@@ -2730,13 +2792,16 @@ class DashboardHealth {
             d.updateHealthBadge?.();
             // The server pings the replacement before storing it, so a fix that
             // still fails must not be reported as a success.
-            const stillBroken = String(body?.lastError || '').trim();
+            // verifyError is the field the server sends; lastError, read here
+            // before, is never in the answer -- so a fix that still failed was
+            // announced as reachable.
+            const stillBroken = String(body?.verifyError || '').trim();
             d.showNotification(
                 stillBroken
                     ? this.t('dashboard.healthRedirectStillBroken', 'URL updated, but it still fails: {error}', { error: stillBroken })
                     : this.t('dashboard.healthRedirectDone', 'URL updated and reachable'),
                 stillBroken ? 'info' : 'success',
-                { duration: 4000 }
+                this.fixUndoOptions(issue, body)
             );
         } catch {
             d.showNotification(this.t('dashboard.healthRedirectFailed', 'Could not detect a redirect'), 'error');
@@ -2760,11 +2825,13 @@ class DashboardHealth {
             const res = await fetcher('/api/health/auto-heal-apply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId: issue.pageId, index: issue.index, refreshTitle: true }),
+                body: JSON.stringify({ pageId: issue.pageId, index: issue.index, url: issue.url, refreshTitle: true }),
             });
             if (!res.ok) throw new Error(`title HTTP ${res.status}`);
+            const titleBody = await res.json().catch(() => ({}));
             await this.loadAndRender({ refresh: true });
-            d.showNotification(this.t('dashboard.healthTitleDone', 'Title refreshed'), 'success', { duration: 3000 });
+            d.showNotification(this.t('dashboard.healthTitleDone', 'Title refreshed'), 'success',
+                this.fixUndoOptions(issue, titleBody, 3000));
         } catch {
             d.showNotification(this.t('dashboard.healthTitleFailed', 'Could not refresh the title'), 'error');
         } finally {
@@ -2794,9 +2861,19 @@ class DashboardHealth {
             const res = await fetcher('/api/health/delete-bookmark', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId: issue.pageId, index: issue.index }),
+                body: JSON.stringify({ pageId: issue.pageId, index: issue.index, url: issue.url }),
             });
+            if (res.status === 409) {
+                // The row no longer names that bookmark: the report was read
+                // before something else changed the page. Nothing was deleted.
+                await this.loadAndRender({ refresh: true });
+                d.showNotification(this.t('dashboard.healthChangedReloaded',
+                    'That bookmark changed since the report was read — the report is reloaded'), 'warning');
+                return;
+            }
             if (!res.ok) throw new Error(`delete HTTP ${res.status}`);
+            const deletedBody = await res.json().catch(() => ({}));
+            const trashIds = Array.isArray(deletedBody?.trashIds) ? deletedBody.trashIds : [];
             this.selectedKey = null;
 
             // Keep the dashboard grid in step with the delete rather than leaving
@@ -2812,13 +2889,111 @@ class DashboardHealth {
 
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
-            d.showNotification(this.t('dashboard.healthDeleted', 'Bookmark deleted'), 'success', { duration: 3000 });
+            // In the trash since the server started putting single deletes
+            // there, so the toast can take it straight back.
+            d.showNotification(this.t('dashboard.healthDeleted', 'Bookmark deleted'), 'success', {
+                duration: trashIds.length ? 8000 : 3000,
+                undoCallback: trashIds.length ? () => this.restoreFromTrash(trashIds) : null,
+            });
         } catch {
             d.showNotification(this.t('dashboard.healthDeleteFailed', 'Could not delete the bookmark'), 'error');
         } finally {
             this._busyKeys.delete(key);
             this.syncRowBusy(key, false);
         }
+    }
+
+    /**
+     * Put fixed bookmarks back the way they were.
+     *
+     * A fix hands back what it replaced (`previous` from auto-heal-apply); the
+     * undo writes those fields onto the row now at the new address, by URL,
+     * and then checks the old address again -- the result the report had was
+     * for the address the fix just left.
+     */
+    async undoFixes(fixes) {
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const byPage = new Map();
+        fixes.forEach((fix) => {
+            if (!fix?.previous?.url || !fix.url) return;
+            if (!byPage.has(fix.pageId)) byPage.set(fix.pageId, []);
+            byPage.get(fix.pageId).push({
+                url: fix.url,
+                setUrl: fix.previous.url,
+                name: fix.previous.name ?? '',
+                note: fix.previous.note ?? '',
+                previewTitle: fix.previous.previewTitle ?? '',
+            });
+        });
+        let back = 0;
+        for (const [pageId, updates] of byPage) {
+            try {
+                const res = await fetcher('/api/bookmarks', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: Number(pageId), updates }),
+                });
+                if (res.ok) back += Number((await res.json().catch(() => ({}))).updated) || 0;
+            } catch {
+                // Counted below.
+            }
+        }
+        await d.loadAllBookmarks?.();
+        d.renderDashboard?.({ incremental: false });
+        if (this.isActiveView()) await this.loadAndRender({ refresh: true });
+        // The old addresses have no check result any more; ask again rather
+        // than leave the rows unknown until the next scheduled round.
+        const restored = new Set(fixes.map((fix) => `${Number(fix.pageId)}\u0000${this.canonicalUrl(fix.previous?.url)}`));
+        const again = (this.report?.issues || []).filter((issue) =>
+            restored.has(`${Number(issue.pageId)}\u0000${this.canonicalUrl(issue.url)}`));
+        for (const issue of again) {
+            await this.recheckIssue(issue, { silent: true });
+        }
+        d.updateHealthBadge?.();
+        d.showNotification(
+            back
+                ? this.t('dashboard.healthFixUndone', 'Put {count} bookmark(s) back the way they were', { count: back })
+                : this.t('dashboard.healthFixUndoFailed', 'Could not undo the change'),
+            back ? 'success' : 'error', { duration: 3000 });
+    }
+
+    /** The toast options that carry a fix's undo, when the server said what it replaced. */
+    fixUndoOptions(issue, body, duration = 4000) {
+        const previous = body?.previous;
+        const now = String(body?.url || '').trim();
+        if (!previous?.url || !now) return { duration };
+        return {
+            duration: 8000,
+            undoCallback: () => this.undoFixes([{ pageId: issue.pageId, url: now, previous }]),
+        };
+    }
+
+    /**
+     * Put deleted bookmarks back from the trash, by the ids the delete handed
+     * back, and bring the grid and the report in step with it.
+     */
+    async restoreFromTrash(trashIds) {
+        const d = this.dash;
+        let back = 0;
+        for (const id of trashIds) {
+            try {
+                await window.DashboardTrash?.restore?.(id);
+                back += 1;
+            } catch {
+                // Counted below; the entry stays in the trash to restore by hand.
+            }
+        }
+        await d.loadAllBookmarks?.();
+        d.renderDashboard?.({ incremental: false });
+        void d.data?.fetchAndStoreDataRevision?.();
+        if (this.isActiveView?.()) await this.loadAndRender({ refresh: true });
+        d.updateHealthBadge?.();
+        d.showNotification(
+            back
+                ? this.t('dashboard.healthRestored', 'Put {count} bookmark(s) back', { count: back })
+                : this.t('dashboard.healthRestoreFailed', 'Could not put the bookmark back — it is still in the trash'),
+            back ? 'success' : 'error', { duration: 3000 });
     }
 
     /**

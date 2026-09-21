@@ -77,7 +77,7 @@ func TestAutoHealApplyValidatesURLBeforeStoreLock(t *testing.T) {
 	}
 	h := &Handlers{store: store}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/health/auto-heal-apply", strings.NewReader(`{"pageId":1,"index":0,"newUrl":"https://example.com/new","refreshTitle":false}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/health/auto-heal-apply", strings.NewReader(`{"pageId":1,"index":0,"url":"https://example.com/old","newUrl":"https://example.com/new","refreshTitle":false}`))
 	rec := httptest.NewRecorder()
 	h.AutoHealApply(rec, req)
 

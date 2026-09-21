@@ -122,37 +122,41 @@ test.describe('health bulk: the three that fetch a page', () => {
     });
 
     /*
-     * Favicons are written per page, not per row.
+     * Favicons are written per page, by URL, one field each.
      *
-     * There is no per-bookmark write: a single row's refresh reads the whole
-     * page's bookmarks, changes one and saves them all back. Done row by row,
-     * three rows on one page would be three loads and three saves of the same
-     * list, and the last save would carry only the last icon.
+     * A sweep takes minutes. Writing the whole page back at the end from a
+     * list read then -- by the report's index -- put icons on neighbours and
+     * undid anything edited while it ran. One PATCH per page names each row by
+     * its URL and touches only the icon.
      */
-    test('three rows on one page are saved once, with all three icons', async ({ page }) => {
+    test('three rows on one page are saved in one write, each by its URL', async ({ page }) => {
         await seedAndSelect(page, 3);
         const result = await page.evaluate(async () => {
-            const saves = [];
+            const writes = [];
             const original = window.fetch;
             window.BookmarkPreviewService = window.BookmarkPreviewService || {};
             const originalIcon = window.BookmarkPreviewService.fetchAndUploadFavicon;
             let n = 0;
-            window.BookmarkPreviewService.fetchAndUploadFavicon = async () => `/data/icons/bulk-${n += 1}.png`;
+            window.BookmarkPreviewService.fetchAndUploadFavicon = async () => `bulk-${n += 1}.png`;
             window.fetch = function (input, init) {
                 const url = typeof input === 'string' ? input : input?.url || '';
-                if (url.includes('/api/bookmarks?page=') && init?.method === 'POST') {
-                    saves.push(JSON.parse(init.body).filter((b) => String(b.icon || '').includes('bulk-')).length);
-                    return Promise.resolve(new Response('{}', { status: 200 }));
+                if (url.includes('/api/bookmarks') && ['POST', 'PATCH'].includes(init?.method)
+                    && !url.includes('/add')) {
+                    writes.push({ method: init.method, body: JSON.parse(init.body) });
                 }
                 return original.apply(this, arguments);
             };
+            const picked = window.dashboardInstance.health.multiSelect.selectedIssues().map((i) => i.url);
             await window.dashboardInstance.health.multiSelect.bulkRefreshFavicons();
             window.fetch = original;
             window.BookmarkPreviewService.fetchAndUploadFavicon = originalIcon;
-            return { saves };
+            return { writes, picked };
         });
-        expect(result.saves.length).toBe(1);
-        expect(result.saves[0]).toBe(3);
+        expect(result.writes.length).toBe(1);
+        expect(result.writes[0].method).toBe('PATCH');
+        const updates = result.writes[0].body.updates;
+        expect(updates.map((u) => u.url).sort()).toEqual(result.picked.slice().sort());
+        updates.forEach((u) => expect(u.icon).toMatch(/^bulk-\d\.png$/));
     });
 
     /*

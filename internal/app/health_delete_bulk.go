@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strings"
@@ -120,12 +121,17 @@ func (h *Handlers) DeleteHealthBookmarksBulk(w http.ResponseWriter, r *http.Requ
 		logBookmarkDelete(bm, r)
 	}
 
+	trashIDs := make([]string, 0, len(trashed))
+	for _, entry := range trashed {
+		trashIDs = append(trashIDs, entry.ID)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
-		"status":  "deleted",
-		"deleted": len(deleted),
-		"skipped": skipped,
+		"status":   "deleted",
+		"deleted":  len(deleted),
+		"skipped":  skipped,
+		"trashIds": trashIDs,
 	})
 }
 
@@ -145,27 +151,28 @@ func (h *Handlers) deleteHealthBookmarksOnPage(
 		skipped = skipped[:0]
 		next := current
 		for _, item := range items {
-			if item.Index >= len(next) {
+			// Found by URL when the index has moved on: the item is resolved
+			// against the list as it stands after the removals before it, so
+			// the order they run in no longer matters for correctness.
+			at := locateBookmark(next, item.Index, item.URL)
+			if at < 0 {
+				reason := healthBulkSkipStale
+				if item.Index >= len(next) {
+					reason = healthBulkSkipOutOfRange
+				}
 				skipped = append(skipped, healthBulkDeleteSkip{
 					PageID: pageID, Index: item.Index, URL: item.URL,
-					Reason: healthBulkSkipOutOfRange,
-				})
-				continue
-			}
-			want := canonicalBookmarkURLKey(strings.TrimSpace(item.URL))
-			if canonicalBookmarkURLKey(next[item.Index].URL) != want {
-				skipped = append(skipped, healthBulkDeleteSkip{
-					PageID: pageID, Index: item.Index, URL: item.URL,
-					Reason: healthBulkSkipStale,
+					Reason: reason,
 				})
 				continue
 			}
 			removed = append(removed, TrashedBookmark{
+				ID:       generateTrashID(),
 				PageID:   pageID,
-				Index:    item.Index,
-				Bookmark: next[item.Index],
+				Index:    at,
+				Bookmark: next[at],
 			})
-			next = append(next[:item.Index], next[item.Index+1:]...)
+			next = append(next[:at:at], next[at+1:]...)
 		}
 		return next, nil
 	})
@@ -183,4 +190,44 @@ func (h *Handlers) deleteHealthBookmarksOnPage(
 		return nil, failed
 	}
 	return removed, skipped
+}
+
+// ErrBookmarkChanged means the URL a health write named is no longer on the
+// page: the row was deleted or edited since the report was read.
+var ErrBookmarkChanged = errors.New("bookmark has changed")
+
+// locateBookmark finds the bookmark a health row means. The index is tried
+// first and kept when it still holds the URL; otherwise the URL decides, since
+// an index read minutes ago may now point at a neighbour. -1 when the URL is
+// not on the page at all.
+func locateBookmark(list []Bookmark, index int, url string) int {
+	want := canonicalBookmarkURLKey(strings.TrimSpace(url))
+	if want == "" {
+		return -1
+	}
+	if index >= 0 && index < len(list) && canonicalBookmarkURLKey(list[index].URL) == want {
+		return index
+	}
+	for i := range list {
+		if canonicalBookmarkURLKey(list[i].URL) == want {
+			return i
+		}
+	}
+	return -1
+}
+
+// mutateHealthBookmark runs mutate on the bookmark a health row names, found
+// under the store lock by locateBookmark. ErrBookmarkChanged when the URL is
+// no longer on the page.
+func (h *Handlers) mutateHealthBookmark(pageID, index int, url string, mutate func(*Bookmark) error) error {
+	return h.store.MutateBookmarksOnPage(pageID, func(current []Bookmark) ([]Bookmark, error) {
+		at := locateBookmark(current, index, url)
+		if at < 0 {
+			return nil, ErrBookmarkChanged
+		}
+		if err := mutate(&current[at]); err != nil {
+			return nil, err
+		}
+		return current, nil
+	})
 }

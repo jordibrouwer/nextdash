@@ -108,3 +108,38 @@ func TestPatchBookmarksRejectsMissingPage(t *testing.T) {
 		t.Fatalf("status = %d, want 400", rec.Code)
 	}
 }
+
+func TestPatchBookmarksSetsTheIcon(t *testing.T) {
+	h, store := patchTestHandlers(t)
+	if err := store.SaveBookmarksByPage(7, []Bookmark{{Name: "A", URL: "https://a.example/"}, {Name: "B", URL: "https://b.example/"}}); err != nil {
+		t.Fatal(err)
+	}
+	rec := doPatch(t, h, map[string]any{"page": 7, "updates": []map[string]any{{"url": "https://b.example/", "icon": "icon-b.png"}}})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	rows := store.GetBookmarksByPage(7)
+	if rows[0].Icon != "" || rows[1].Icon != "icon-b.png" {
+		t.Fatalf("icons = %q %q", rows[0].Icon, rows[1].Icon)
+	}
+}
+
+func TestPatchBookmarksPutsAURLBack(t *testing.T) {
+	h, store := patchTestHandlers(t)
+	if err := store.SaveBookmarksByPage(7, []Bookmark{{Name: "New", URL: "https://new.example/", Note: "Was: https://old.example/", LastError: "HTTP 500", LastChecked: 5}}); err != nil {
+		t.Fatal(err)
+	}
+	rec := doPatch(t, h, map[string]any{"page": 7, "updates": []map[string]any{{
+		"url": "https://new.example/", "setUrl": "https://old.example/", "name": "Old", "note": "",
+	}}})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d %s", rec.Code, rec.Body.String())
+	}
+	row := store.GetBookmarksByPage(7)[0]
+	if row.URL != "https://old.example/" || row.Name != "Old" || row.Note != "" || row.LastChecked != 0 || row.LastError != "" {
+		t.Fatalf("row = %+v", row)
+	}
+	if rec := doPatch(t, h, map[string]any{"page": 7, "updates": []map[string]any{{"url": "https://old.example/", "setUrl": "javascript:alert(1)"}}}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("bad setUrl status = %d", rec.Code)
+	}
+}

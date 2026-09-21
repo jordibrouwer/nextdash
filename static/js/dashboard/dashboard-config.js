@@ -22849,6 +22849,7 @@ class DashboardConfig {
                     body: JSON.stringify({
                         pageId: record.pageId,
                         index: record.index,
+                        url: record.record?.url,
                         status,
                         error: status === 'online' ? '' : errorDetail,
                     }),
@@ -22967,19 +22968,16 @@ class DashboardConfig {
                 this.notify(this.t('dashboard.healthFaviconNone', 'No favicon found for this URL'), 'info');
                 return;
             }
-            const res = await fetch(`/api/bookmarks?page=${record.pageId}`);
-            if (!res.ok) throw new Error(`load HTTP ${res.status}`);
-            const bookmarks = await res.json();
-            if (!Array.isArray(bookmarks) || !bookmarks[record.index]) {
-                throw new Error('bookmark not found');
-            }
-            bookmarks[record.index].icon = iconPath;
-            const save = await fetcher(`/api/bookmarks?page=${record.pageId}`, {
-                method: 'POST',
+            // One field, by URL: not a read-then-write of the whole page, which
+            // could put back rows changed in the moment between.
+            const save = await fetcher('/api/bookmarks', {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bookmarks),
+                body: JSON.stringify({ page: Number(record.pageId), updates: [{ url, icon: iconPath }] }),
             });
             if (!save.ok) throw new Error(`save HTTP ${save.status}`);
+            const saved = await save.json().catch(() => ({}));
+            if (!saved.updated) throw new Error('bookmark not found');
             this.notify(this.t('dashboard.healthFaviconDone', 'Favicon updated'), 'success', { duration: 3000 });
             await this.refreshBookmarksAfterWrite();
         } catch {
@@ -23005,6 +23003,7 @@ class DashboardConfig {
                 body: JSON.stringify({
                     pageId: record.pageId,
                     index: record.index,
+                    url: record.record?.url,
                     refreshTitle: true,
                 }),
             });
@@ -23053,13 +23052,14 @@ class DashboardConfig {
                 body: JSON.stringify({
                     pageId: record.pageId,
                     index: record.index,
+                    url: record.record?.url,
                     newUrl: redirectUrl,
                     refreshTitle: false,
                 }),
             });
             if (!applied.ok) throw new Error(`apply HTTP ${applied.status}`);
             const body = await applied.json().catch(() => ({}));
-            const stillBroken = String(body?.lastError || '').trim();
+            const stillBroken = String(body?.verifyError || '').trim();
             this.notify(
                 stillBroken
                     ? this.t('dashboard.healthRedirectStillBroken', 'URL updated, but it still fails: {error}', { error: stillBroken })

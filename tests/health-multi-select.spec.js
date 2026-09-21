@@ -454,4 +454,92 @@ test.describe('health select all button', () => {
         );
         expect(after).toBe(all - narrowed);
     });
+
+    test('a tick follows its bookmark when a delete renumbers the page', async ({ page }) => {
+        const urls = await seedAndOpen(page, 4, 'hms-follow');
+        await selectByUrls(page, [urls[2]]);
+        await page.evaluate(() => { window.dashboardInstance.health.confirm = async () => true; });
+
+        // Delete an earlier row on its own: every row after it moves up one.
+        await page.evaluate(async (u) => {
+            const h = window.dashboardInstance.health;
+            const issue = h.report.issues.find((i) => String(i.url).trim() === u);
+            await h.deleteIssue(issue);
+        }, urls[0]);
+
+        const ticked = await page.evaluate(() => window.dashboardInstance.health.multiSelect
+            .selectedIssues().map((i) => String(i.url).trim()));
+        expect(ticked).toEqual([urls[2]]);
+    });
+
+    test('a single delete goes to the trash, and the toast puts it back', async ({ page }) => {
+        const urls = await seedAndOpen(page, 2, 'hms-undo1');
+        const pageId = await page.evaluate(() => Number(window.dashboardInstance.currentPageId) || 1);
+        await page.evaluate(() => { window.dashboardInstance.health.confirm = async () => true; });
+        await page.evaluate(async (u) => {
+            const h = window.dashboardInstance.health;
+            await h.deleteIssue(h.report.issues.find((i) => String(i.url).trim() === u));
+        }, urls[0]);
+        await expect.poll(async () => (await pageBookmarkUrls(page, pageId)).includes(urls[0])).toBe(false);
+
+        await page.locator('.app-notification', { hasText: 'Bookmark deleted' })
+            .locator('.app-notification-action').click();
+        await expect.poll(async () => (await pageBookmarkUrls(page, pageId)).includes(urls[0]),
+            { timeout: 10_000 }).toBe(true);
+    });
+
+    test('the bulk delete toast puts the batch back', async ({ page }) => {
+        const urls = await seedAndOpen(page, 2, 'hms-undob');
+        const pageId = await page.evaluate(() => Number(window.dashboardInstance.currentPageId) || 1);
+        await selectByUrls(page, urls);
+        await page.evaluate(() => { window.dashboardInstance.health.confirm = async () => true; });
+        await page.evaluate(() => window.dashboardInstance.health.multiSelect.bulkDelete());
+        await expect.poll(async () => (await pageBookmarkUrls(page, pageId)).filter((u) => urls.includes(u)).length).toBe(0);
+
+        await page.locator('.app-notification', { hasText: 'Deleted 2' })
+            .locator('.app-notification-action').click();
+        await expect.poll(async () => (await pageBookmarkUrls(page, pageId)).filter((u) => urls.includes(u)).length,
+            { timeout: 10_000 }).toBe(2);
+    });
+
+    test('a row the server refused stays on the dashboard grid', async ({ page }) => {
+        const urls = await seedAndOpen(page, 2, 'hms-skip');
+        const pageId = await page.evaluate(() => Number(window.dashboardInstance.currentPageId) || 1);
+        await selectByUrls(page, urls);
+        await page.route('**/api/health/delete-bookmarks', (route) => route.fulfill({
+            status: 200, contentType: 'application/json',
+            body: JSON.stringify({ status: 'deleted', deleted: 1, trashIds: [],
+                skipped: [{ pageId, index: 0, url: urls[1], reason: 'stale' }] }),
+        }));
+        await page.evaluate(() => { window.dashboardInstance.health.confirm = async () => true; });
+        await page.evaluate(() => window.dashboardInstance.health.multiSelect.bulkDelete());
+        const onGrid = await page.evaluate((u) => (window.dashboardInstance.bookmarks || [])
+            .some((b) => String(b.url).trim() === u), urls[1]);
+        expect(onGrid).toBe(true);
+    });
+
+    test('a redirect fix says when the new address still fails, and undoes', async ({ page }) => {
+        const urls = await seedAndOpen(page, 1, 'hms-fix');
+        const pageId = await page.evaluate(() => Number(window.dashboardInstance.currentPageId) || 1);
+        const target = urls[0].replace('hms-fix', 'hms-fixed');
+        await page.route('**/api/health/auto-heal-suggest**', (route) => route.fulfill({
+            status: 200, contentType: 'application/json', body: JSON.stringify({ redirectUrl: target }),
+        }));
+        await page.evaluate(() => { window.dashboardInstance.health.confirm = async () => true; });
+        await page.evaluate(async (u) => {
+            const h = window.dashboardInstance.health;
+            await h.detectRedirect(h.report.issues.find((i) => String(i.url).trim() === u));
+        }, urls[0]);
+
+        // .invalid never answers: the toast must say so, not "reachable".
+        const toast = page.locator('.app-notification', { hasText: 'still fails' });
+        await expect(toast).toBeVisible({ timeout: 15_000 });
+        expect(await pageBookmarkUrls(page, pageId)).toContain(target);
+
+        await toast.locator('.app-notification-action').click();
+        await expect.poll(async () => (await pageBookmarkUrls(page, pageId)).includes(urls[0]),
+            { timeout: 15_000 }).toBe(true);
+        expect(await pageBookmarkUrls(page, pageId)).not.toContain(target);
+    });
 });
+

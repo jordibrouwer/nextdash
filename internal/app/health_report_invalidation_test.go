@@ -46,7 +46,7 @@ func TestUpdateStatusInvalidatesHealthReportCache(t *testing.T) {
 	h.UpdateBookmarkHealthStatus(rec, httptest.NewRequest(
 		http.MethodPost,
 		"/api/health/update-status",
-		strings.NewReader(`{"pageId":1,"index":0,"status":"online"}`),
+		strings.NewReader(`{"pageId":1,"index":0,"url":"https://example.com","status":"online"}`),
 	))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("update-status = %d, body = %s", rec.Code, rec.Body.String())
@@ -69,7 +69,7 @@ func TestDeleteHealthBookmarkInvalidatesHealthReportCache(t *testing.T) {
 	h.DeleteHealthBookmark(rec, httptest.NewRequest(
 		http.MethodPost,
 		"/api/health/delete-bookmark",
-		strings.NewReader(`{"pageId":1,"index":0}`),
+		strings.NewReader(`{"pageId":1,"index":0,"url":"https://example.com"}`),
 	))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("delete = %d, body = %s", rec.Code, rec.Body.String())
@@ -129,7 +129,7 @@ func TestAutoHealApplyKeepsErrorWhenNewURLFails(t *testing.T) {
 	h.AutoHealApply(rec, httptest.NewRequest(
 		http.MethodPost,
 		"/api/health/auto-heal-apply",
-		strings.NewReader(`{"pageId":1,"index":0,"newUrl":"`+dead.URL+`","refreshTitle":false}`),
+		strings.NewReader(`{"pageId":1,"index":0,"url":"https://example.com/old","newUrl":"`+dead.URL+`","refreshTitle":false}`),
 	))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("auto-heal-apply = %d, body = %s", rec.Code, rec.Body.String())
@@ -159,7 +159,7 @@ func TestAutoHealApplyClearsErrorWhenNewURLWorks(t *testing.T) {
 	h.AutoHealApply(rec, httptest.NewRequest(
 		http.MethodPost,
 		"/api/health/auto-heal-apply",
-		strings.NewReader(`{"pageId":1,"index":0,"newUrl":"`+live.URL+`","refreshTitle":false}`),
+		strings.NewReader(`{"pageId":1,"index":0,"url":"https://example.com/old","newUrl":"`+live.URL+`","refreshTitle":false}`),
 	))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("auto-heal-apply = %d, body = %s", rec.Code, rec.Body.String())

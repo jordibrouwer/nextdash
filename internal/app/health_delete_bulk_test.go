@@ -129,14 +129,15 @@ func TestBulkDeleteAppliesGoodRowsBesideASkippedOne(t *testing.T) {
 	}
 }
 
-// An index past the end of the page is reported, not silently ignored.
+// An index past the end of the page, for a URL the page no longer has, is
+// reported, not silently ignored. (A URL still on the page is found by it.)
 func TestBulkDeleteReportsOutOfRangeIndex(t *testing.T) {
 	h := newBulkDeleteFixture(t, map[int]string{1: `{"page":{"id":1,"name":"Page 1"},"bookmarks":[
 		{"name":"A","url":"https://a.example"}
 	]}`})
 
 	_, payload := postBulkDelete(t, h, `{"items":[
-		{"pageId":1,"index":7,"url":"https://a.example"}
+		{"pageId":1,"index":7,"url":"https://gone.example"}
 	]}`)
 	skipped, _ := payload["skipped"].([]any)
 	if len(skipped) != 1 {

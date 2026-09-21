@@ -257,10 +257,9 @@ test.describe('a review session, from the offer to the end', () => {
         // before starting the session.
         //
         // A session queues from every issue, while the list behind it is still
-        // on whatever filter was chosen — and syncKeyboardSelectionAfterRender
-        // drops a cursor that is not among the visible rows. So on the default
-        // Broken filter the landing is discarded by design, and asserting it
-        // there would be asserting the filter rather than the leaving.
+        // on whatever filter was chosen. Leaving onto a hidden row now widens
+        // the list to All (tested below); here the list is widened first, so
+        // this test is about the leaving alone.
         await page.click('.health-link a.health-link-anchor');
         await page.waitForSelector('#dashboard-layout.health-layout .health-view-filter-group',
             { timeout: 15_000 });
@@ -291,6 +290,31 @@ test.describe('a review session, from the offer to the end', () => {
         // And tomorrow's offer is still owed an answer: walking away is not the
         // same as saying "done for today", which is a decision someone makes.
         expect(await page.evaluate(() => window.HealthReviewSession.isDoneToday())).toBe(false);
+    });
+});
+
+test.describe('a review session left on a row the filter hides', () => {
+    test('widens the list to All so the cursor lands on that row', async ({ page }) => {
+        await loadDashboard(page);
+        await page.route('**/api/bookmark-preview**', (route) => route.fulfill({
+            status: 200, contentType: 'application/json',
+            body: JSON.stringify({ title: '', description: '', image: '' }),
+        }));
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('#dashboard-layout.health-layout .health-view-filter-group',
+            { timeout: 15_000 });
+        await dismissWhatsNewIfPresent(page);
+        // Left on the default Broken filter: only 'Broken one' is listed.
+        await page.evaluate(() => window.HealthReviewSession.start());
+        await expect(card(page)).toBeVisible({ timeout: 15_000 });
+        await page.keyboard.press('j');
+        await expect(card(page).locator('.health-focus-title')).toHaveText('Second one');
+        await page.keyboard.press('Escape');
+        await expect(page.locator('.health-focus-overlay')).toHaveCount(0);
+
+        await expect(page.locator('.health-view-item[aria-selected="true"]')).toHaveCount(1);
+        await expect(page.locator('.health-view-item[aria-selected="true"]')).toContainText('Second one');
+        expect(await page.evaluate(() => window.dashboardInstance.health._module.filter)).toBe('all');
     });
 });
 
