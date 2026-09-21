@@ -1401,8 +1401,13 @@ class DashboardUnsortedSelect {
                 this.unsorted.applyPreview(bookmark, await res.json().catch(() => null));
                 return 'ok';
             },
-            done: (ok, failed) => this.t('unsortedFetchPreviewsDone',
-                `Fetched ${ok} preview(s)${failed ? `, ${failed} failed` : ''}`, { count: ok, failed }),
+            // Two strings rather than one with a condition inside it: a
+            // translation cannot carry the condition, and the failed count is
+            // the part a reader most needs to see.
+            done: (ok, failed) => (failed
+                ? this.t('unsortedFetchPreviewsDoneSome',
+                    `Fetched ${ok} preview(s), ${failed} failed`, { count: ok, failed })
+                : this.t('unsortedFetchPreviewsDone', `Fetched ${ok} preview(s)`, { count: ok })),
         });
     }
 
