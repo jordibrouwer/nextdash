@@ -2090,7 +2090,8 @@
     "inboxKeepUndoFailed": "无法撤销保留",
     "ivMarkRead": "标为已读",
     "inboxKeyMarkRead": "标为已读",
-    "inboxKeptToast": "已保留 — 在「已保留」标签页"
+    "inboxKeptToast": "已保留 — 在「已保留」标签页",
+    "unsortedKeyBack": "退回收件箱"
   },
   "health": {
     "reloadPage": "重新加载页面",

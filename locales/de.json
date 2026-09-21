@@ -2090,7 +2090,8 @@
     "inboxKeepUndoFailed": "Behalten ließ sich nicht rückgängig machen",
     "ivMarkRead": "Als gelesen markieren",
     "inboxKeyMarkRead": "als gelesen",
-    "inboxKeptToast": "Behalten — auf dem Tab Behalten"
+    "inboxKeptToast": "Behalten — auf dem Tab Behalten",
+    "unsortedKeyBack": "zurück zum Posteingang"
   },
   "health": {
     "reloadPage": "Seite neu laden",

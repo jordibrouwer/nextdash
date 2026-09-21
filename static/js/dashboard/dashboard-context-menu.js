@@ -328,6 +328,7 @@ class DashboardContextMenu {
                     id: 'unsorted-to-inbox',
                     label: this.t('dashboard.contextMenuBackToInbox', 'Back to the inbox'),
                     icon: '↩',
+                    key: 'B',
                 }, {
                     // The third answer a kept link can be given: not filed, not
                     // back in the queue today, but parked until a date. The

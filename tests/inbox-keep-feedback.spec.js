@@ -134,3 +134,39 @@ test('Shift+K keeps the row under the cursor, and the list says so', async ({ pa
     await expect.poll(() => keptHas(page, url), { timeout: 15_000 }).toBe(true);
     await expect(page.locator('.app-notification', { hasText: 'Kept' })).toBeVisible({ timeout: 5_000 });
 });
+
+/**
+ * The way back looks like the way in.
+ *
+ * Keep flies a row to the Kept tab; sending a kept link back to the queue
+ * made it vanish, the same silence Keep used to have. It flies to the queue's
+ * tab now, which steps up as it lands.
+ */
+test('sending a kept link back flies it to the queue tab', async ({ page }) => {
+    await bootstrap(page);
+    const url = `https://back-${Date.now()}.example/x`;
+    await page.evaluate(async (u) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/bookmarks/add', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: 999999, bookmark: { name: 'Fly back', url: u, category: '' } }),
+        });
+        await window.dashboardInstance.loadAllBookmarks?.();
+        await window.dashboardInstance.inbox.openInboxView({ tab: 'kept' });
+    }, url);
+    const row = page.locator('.unsorted-view .bookmark-link', { hasText: 'Fly back' });
+    await expect(row).toBeVisible({ timeout: 10_000 });
+    await expect(row).toHaveAttribute('data-context-menu-bound', '1');
+    await row.evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        node.dispatchEvent(new MouseEvent('contextmenu', {
+            bubbles: true, cancelable: true,
+            clientX: Math.round(rect.left + 20), clientY: Math.round(rect.top + 5),
+        }));
+    });
+    await page.click('#bookmark-context-menu [data-action="unsorted-to-inbox"]');
+
+    await expect(page.locator('.keep-flight')).toHaveCount(1, { timeout: 5_000 });
+    await expect(page.locator('[data-inbox-tab="triage"] .is-bumped')).toHaveCount(1, { timeout: 5_000 });
+    await expect.poll(() => inboxHas(page, url), { timeout: 15_000 }).toBe(true);
+});

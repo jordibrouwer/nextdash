@@ -2115,6 +2115,28 @@ class DashboardInbox {
             // health view's. Everything else belongs to the grid below.
             const typing = e.target?.tagName === 'INPUT' || e.target?.tagName === 'TEXTAREA'
                 || e.target?.isContentEditable;
+            /*
+             * b: back to the inbox, for the row under the cursor -- or for the
+             * ticked rows when there are any, the way the selection bar's own
+             * button reads them. The run over the list has had it as B on the
+             * card; the list had no key at all, so the way back was a
+             * right-click.
+             */
+            if (e.key === 'b' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                const select = d.unsorted?.select;
+                const nav = d.keyboardNavigation;
+                const rowKey = nav?.navigableElements?.[nav.currentIndex]?.dataset?.unsortedKey || '';
+                const current = rowKey
+                    ? (d.unsorted?._bookmarks || []).find((b) => select?.keyFor(b) === rowKey)
+                    : null;
+                const rows = select?.isActive?.() ? select.selectedBookmarks() : (current ? [current] : []);
+                if (rows.length) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    void select.sendToInbox(rows);
+                    return true;
+                }
+            }
             if (e.key === 'f' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
                 const review = d.unsorted?.review;
                 if (review && !review.isOpen()) {
@@ -5191,7 +5213,46 @@ class DashboardInbox {
         setTimeout(() => el.classList.remove('is-bumped'), 900);
     }
 
+    /**
+     * The row box a kept bookmark sits in on screen, for a flight back to the
+     * queue. Measured before the write: the list redraws after it.
+     */
+    keptRowSource(bookmark, key) {
+        // Compared as a value rather than through a selector: the key joins
+        // the address and the name with a NUL, which CSS.escape rewrites to a
+        // replacement character, so a selector built from it never matches.
+        const row = key
+            ? [...document.querySelectorAll('.unsorted-view .bookmark-link[data-unsorted-key]')]
+                .find((el) => el.dataset.unsortedKey === key)
+            : null;
+        const rect = row?.getBoundingClientRect?.();
+        if (!rect || rect.width < 1 || rect.height < 1) return null;
+        return {
+            left: rect.left, top: rect.top, width: rect.width, height: rect.height,
+            title: bookmark?.name || bookmark?.url || '',
+        };
+    }
 
+    /** Fly rows back to the queue's tab, which steps up as they land. */
+    flyBackToQueue(sources) {
+        const tab = document.querySelector('[data-inbox-tab="triage"]:not([hidden])');
+        // Into the count, like Keep flies into Kept's; the label when the
+        // queue was empty and the count has no box yet.
+        const count = tab?.querySelector('.inbox-tab-count');
+        const label = count && count.getBoundingClientRect().width > 0
+            ? count
+            : (tab?.querySelector('.inbox-tab-label') || tab);
+        // A handful is the gesture; forty ghosts at once is noise, and each
+        // is a layer the browser has to composite.
+        const shown = (sources || []).filter(Boolean).slice(0, 6);
+        if (!shown.length) {
+            this.bump(label);
+            return;
+        }
+        shown.forEach((from, i) => {
+            setTimeout(() => this.flyTo(from, label, () => this.bump(label)), i * 70);
+        });
+    }
 
     /** The count the link landed in steps up, visibly. */
     bumpKeptCounters() {

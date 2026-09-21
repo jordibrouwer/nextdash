@@ -141,3 +141,29 @@ test('a kept row can be snoozed back into the queue', async ({ page }) => {
         return Number(rows.find((item) => item.url === u)?.snoozedUntil || 0);
     }, url), { timeout: 20_000 }).toBeGreaterThan(Date.now());
 });
+
+/**
+ * b sends the kept link under the cursor back to the queue.
+ *
+ * The run over the list had it as B on the card; the list itself had no key
+ * for it at all, so the way back was a right-click. Same letter in both
+ * places, shown in the row menu and the legend.
+ */
+test('b sends the row under the cursor back to the inbox', async ({ page }) => {
+    await openKept(page, [{ name: 'Key Back', url: `https://key-back.example/${Date.now()}`, createdAt: 5000 }]);
+    const url = await page.evaluate(() => window.dashboardInstance.unsorted._bookmarks[0].url);
+
+    await expect(page.locator('.unsorted-view .inbox-legend')).toContainText('back to the inbox');
+
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('b');
+
+    await expect.poll(async () => page.evaluate(async (u) => {
+        const body = await (await fetch('/api/inbox', { cache: 'no-store' })).json();
+        return (body.items || body || []).some((item) => item.url === u);
+    }, url), { timeout: 15_000 }).toBe(true);
+    await expect.poll(async () => page.evaluate(async (u) => {
+        const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        return (data.bookmarks || []).some((b) => b.url === u);
+    }, url), { timeout: 15_000 }).toBe(false);
+});

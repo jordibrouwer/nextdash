@@ -94,6 +94,7 @@
         { keys: 'Enter', legendKey: 'dashboardKeyOpen', cheatKey: 'dvOpen', fallback: 'open' },
         { keys: 'x', legendKey: 'unsortedKeySelect', cheatKey: 'uvSelect', fallback: 'select' },
         { keys: 'f', legendKey: 'unsortedKeyReview', cheatKey: 'uvReview', fallback: 'work through' },
+        { keys: 'b', legendKey: 'unsortedKeyBack', cheatKey: 'uvBack', fallback: 'back to the inbox' },
         { keys: 'Esc', legendKey: 'unsortedKeyEsc', cheatKey: 'uvEsc', fallback: 'clear selection · back to bookmarks' },
         { keys: '!', legendKey: 'dashboardKeyCheatSheet', cheatKey: 'dvCheatSheet', fallback: 'all keys' },
     ];

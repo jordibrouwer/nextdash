@@ -2090,7 +2090,8 @@
     "inboxKeepUndoFailed": "No se pudo deshacer",
     "ivMarkRead": "Marcar como leído",
     "inboxKeyMarkRead": "marcar leído",
-    "inboxKeptToast": "Guardado — en la pestaña Guardados"
+    "inboxKeptToast": "Guardado — en la pestaña Guardados",
+    "unsortedKeyBack": "volver a la bandeja"
   },
   "health": {
     "reloadPage": "Recargar la página",

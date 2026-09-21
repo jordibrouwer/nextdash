@@ -2090,7 +2090,8 @@
     "inboxKeepUndoFailed": "Bewaren kon niet ongedaan worden",
     "ivMarkRead": "Als gelezen markeren",
     "inboxKeyMarkRead": "als gelezen",
-    "inboxKeptToast": "Bewaard — op het tabblad Bewaard"
+    "inboxKeptToast": "Bewaard — op het tabblad Bewaard",
+    "unsortedKeyBack": "terug naar inbox"
   },
   "health": {
     "reloadPage": "Pagina herladen",

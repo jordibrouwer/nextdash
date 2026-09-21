@@ -9427,6 +9427,7 @@ body[data-action-bar="bottom"] #dashboard-layout {
 }
 
 .inbox-tab-count.is-bumped,
+.inbox-tab-label.is-bumped,
 .inbox-triage-kept-count.is-bumped {
     display: inline-block;
     animation: keep-count-bump 0.7s ease-out;

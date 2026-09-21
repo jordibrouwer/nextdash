@@ -1030,6 +1030,11 @@ class DashboardUnsortedSelect {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const headers = { 'Content-Type': 'application/json' };
         window.nextdashTrack?.('unsorted:to-inbox', { count: targets.length });
+        // Where the rows are now, for the flight back: the list redraws once
+        // the writes land, and the boxes go with it.
+        const sources = targets.map((bookmark) =>
+            d.inbox?.keptRowSource?.(bookmark, this.keyFor(bookmark)) || null);
+        let flown = false;
 
         await this._runOverEach(targets, {
             title: this.t('unsortedToInboxProgress', 'Sending back'),
@@ -1050,6 +1055,12 @@ class DashboardUnsortedSelect {
                 // A link already waiting in the queue is not a failure: the
                 // reason this row can go is that the inbox has it.
                 if (!added.ok && added.status !== 409) return 'failed';
+                // Off as soon as the first one is safely back, the way Keep
+                // flies once its write lands rather than after the reloads.
+                if (!flown) {
+                    flown = true;
+                    d.inbox?.flyBackToQueue?.(sources);
+                }
                 // Asleep, when that is what was asked for. The wake belongs to
                 // the inbox item, so it is written the moment the item exists.
                 if (snoozeUntil > Date.now()) {

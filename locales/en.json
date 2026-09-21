@@ -2090,7 +2090,8 @@
     "inboxKeepUndoFailed": "Could not take the keep back",
     "ivMarkRead": "Mark as read",
     "inboxKeyMarkRead": "mark read",
-    "inboxKeptToast": "Kept — on the Kept tab"
+    "inboxKeptToast": "Kept — on the Kept tab",
+    "unsortedKeyBack": "back to the inbox"
   },
   "health": {
     "reloadPage": "Reload page",

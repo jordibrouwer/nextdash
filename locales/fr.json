@@ -2090,7 +2090,8 @@
     "inboxKeepUndoFailed": "Impossible d’annuler",
     "ivMarkRead": "Marquer comme lu",
     "inboxKeyMarkRead": "marquer comme lu",
-    "inboxKeptToast": "Gardé — dans l’onglet Gardés"
+    "inboxKeptToast": "Gardé — dans l’onglet Gardés",
+    "unsortedKeyBack": "retour à la boîte"
   },
   "health": {
     "reloadPage": "Recharger la page",
