@@ -2083,7 +2083,9 @@
     "unsortedKeySelect": "select",
     "unsortedReviewDoneTitle": "That is the run",
     "unsortedReviewClose": "Close",
-    "unsortedReviewKicker": "Kept links"
+    "unsortedReviewKicker": "Kept links",
+    "inboxTour": "Tour",
+    "inboxTourHint": "A short tour of the inbox and the Kept tab"
   },
   "health": {
     "reloadPage": "Reload page",

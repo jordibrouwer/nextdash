@@ -2083,7 +2083,9 @@
     "unsortedKeySelect": "sélectionner",
     "unsortedReviewDoneTitle": "Fin de la session",
     "unsortedReviewClose": "Fermer",
-    "unsortedReviewKicker": "Liens gardés"
+    "unsortedReviewKicker": "Liens gardés",
+    "inboxTour": "Visite",
+    "inboxTourHint": "Une courte visite de la boîte et de l’onglet Gardés"
   },
   "health": {
     "reloadPage": "Recharger la page",

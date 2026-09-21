@@ -264,6 +264,15 @@ class DashboardUnsorted {
         hint.textContent = 'f';
         review.appendChild(hint);
 
+        // The inbox's tour, in the same place the queue's band has it: most of
+        // it is about this list, and the reader looking at this list is the
+        // one it is for.
+        const tour = button('unsorted-view-tour-btn inbox-tour-btn',
+            this.dash.formatDashboardLabel('inboxTour', {}, 'Tour'),
+            () => { void this.dash.inbox?.openTour?.(); });
+        tour.title = this.dash.formatDashboardLabel('inboxTourHint', {},
+            'A short tour of the inbox and the Kept tab');
+
         this._previewsBtn = button('unsorted-view-previews-btn',
             this.dash.formatDashboardLabel('unsortedFetchPreviews', {}, 'Fetch previews'),
             () => { void this.select.fetchPreviews(); });

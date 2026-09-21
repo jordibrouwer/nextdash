@@ -143,7 +143,7 @@ async function markHealthTutorialSeen(page) {
  */
 async function markInboxTutorialSeen(page) {
     await page.evaluate(() => {
-        window.DiscoverabilityState?.markTipSeen?.('inboxTutorialV1', { persist: false });
+        window.DiscoverabilityState?.markTipSeen?.('inboxTutorialV2', { persist: false });
     });
 }
 

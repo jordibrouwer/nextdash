@@ -11,7 +11,7 @@ const { prepareDashboardInteraction, markWhatsNewSeen } = require('./e2e-helpers
  * leaves it unseen, to exercise the tour itself.
  */
 
-const STEPS = 7;
+const STEPS = 9;
 
 async function openInboxWithoutMarkingTutorialSeen(page) {
     // What's new is a different overlay from the tutorial and this file has no
@@ -36,7 +36,7 @@ async function openInboxWithoutMarkingTutorialSeen(page) {
         const state = window.DiscoverabilityState;
         if (state?.exportState) {
             const exported = state.exportState();
-            exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV1');
+            exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV2');
             state.init?.(exported);
         }
     });
@@ -47,7 +47,7 @@ async function openInboxWithoutMarkingTutorialSeen(page) {
 const modal = (page) => page.locator('#app-modal.show .inbox-tutorial-modal');
 
 test.describe('inbox tutorial', () => {
-    test('shows on first visit to the inbox, with seven steps', async ({ page }) => {
+    test('shows on first visit to the inbox, with nine steps', async ({ page }) => {
         await openInboxWithoutMarkingTutorialSeen(page);
 
         await expect(modal(page)).toBeVisible();
@@ -81,13 +81,15 @@ test.describe('inbox tutorial', () => {
             }
         }
         expect(titles).toEqual([
-            'A place for links you have not decided about yet',
-            'Read is not the same as dealt with',
-            'Snooze the ones that are not for today',
-            'Write down why you saved it',
-            'Promote turns a link into a real bookmark',
-            'Triage: the whole backlog, no mouse',
-            'Selecting, narrowing, and sharing the view',
+            'A waiting room for links',
+            'Every link leaves one of three ways',
+            'Kept: worth keeping, no page yet',
+            'How to keep a link',
+            'Each kept row tells you what it knows',
+            'File a whole pile at once',
+            'Or work through it, one link at a time',
+            'Nothing on Kept is stuck',
+            'The keys, and where this tour lives',
         ]);
         await expect(page.locator('.inbox-tutorial-progress')).toHaveText(`Step ${STEPS} of ${STEPS}`);
 
@@ -110,7 +112,7 @@ test.describe('inbox tutorial', () => {
         await page.locator('.modal-actions .modal-button', { hasText: 'Got it' }).click();
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
 
-        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('inboxTutorialV1'));
+        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('inboxTutorialV2'));
         expect(seen).toBe(true);
     });
 
@@ -120,7 +122,7 @@ test.describe('inbox tutorial', () => {
         await page.keyboard.press('Escape');
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
 
-        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('inboxTutorialV1'));
+        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('inboxTutorialV2'));
         expect(seen).toBe(true);
     });
 
@@ -136,7 +138,7 @@ test.describe('inbox tutorial', () => {
             const state = window.DiscoverabilityState;
             if (state?.exportState) {
                 const exported = state.exportState();
-                exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV1');
+                exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV2');
                 state.init?.(exported);
             }
         });
@@ -163,5 +165,34 @@ test.describe('inbox tutorial', () => {
         await page.waitForTimeout(700);
 
         expect(requested).toEqual([]);
+    });
+
+    /**
+     * The tour is a button away on both tabs.
+     *
+     * Shown once, it was gone for good -- and most of it is about the Kept
+     * tab, which a reader may not open until long after the first visit.
+     */
+    test('Tour opens it again from the queue and from the Kept tab, seen or not', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+        await page.waitForTimeout(500);
+        await expect(modal(page)).toHaveCount(0);
+
+        await page.locator('.inbox-actions-own [data-inbox-tour]').click();
+        await expect(modal(page)).toBeVisible();
+        // Pictures, not only prose: every step carries a drawn scene.
+        await expect(page.locator('.inbox-tutorial-scene svg.itv')).toHaveCount(1);
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#app-modal.show')).toHaveCount(0);
+
+        await page.locator('[data-inbox-tab="kept"]').click();
+        await page.locator('.unsorted-view-tour-btn').click();
+        await expect(modal(page)).toBeVisible();
+        await expect(page.locator('.inbox-tutorial-progress')).toHaveText(`Step 1 of ${STEPS}`);
     });
 });

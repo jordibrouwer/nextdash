@@ -2083,7 +2083,9 @@
     "unsortedKeySelect": "selecteren",
     "unsortedReviewDoneTitle": "Dat was de ronde",
     "unsortedReviewClose": "Sluiten",
-    "unsortedReviewKicker": "Bewaarde links"
+    "unsortedReviewKicker": "Bewaarde links",
+    "inboxTour": "Rondleiding",
+    "inboxTourHint": "Een korte rondleiding door de inbox en het tabblad Bewaard"
   },
   "health": {
     "reloadPage": "Pagina herladen",

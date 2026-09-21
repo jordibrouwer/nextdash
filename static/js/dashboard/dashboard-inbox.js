@@ -13,7 +13,7 @@ class DashboardInbox {
      * separately — and the whole point of a seen-check here is to not fetch it
      * at all once the tour is done. Both copies must stay in step.
      */
-    static TUTORIAL_TIP_ID = 'inboxTutorialV1';
+    static TUTORIAL_TIP_ID = 'inboxTutorialV2';
 
     constructor(dashboard) {
         this.dash = dashboard;
@@ -1943,9 +1943,28 @@ class DashboardInbox {
      * all. Everything else — an open modal, active search, mobile — is left to
      * the module, which re-checks the tip id too.
      */
+    /**
+     * The Tour button: the same tour, on request, whether or not it has been
+     * seen. Loaded on demand like the first-visit showing, so a session that
+     * never asks for it never fetches it.
+     */
+    async openTour() {
+        if (typeof window.InboxTutorial === 'undefined') {
+            try {
+                await window.LazyScript.loadScriptOnce('js/inbox-tutorial.js', 'inboxTutorialModule',
+                    () => typeof window.InboxTutorial !== 'undefined');
+            } catch {
+                return;
+            }
+        }
+        this._trackAction('tour');
+        window.InboxTutorial?.open?.();
+    }
+
     async maybeShowTutorial() {
-        // The tour walks the triage queue. Arriving straight on the kept tab
-        // is not the moment to teach what the other tab does.
+        // On the queue only. Arriving on Kept comes from a link, Shift+U or
+        // the widget -- someone already on their way somewhere -- and the Tour
+        // button in that band is there for when they want it.
         if (this.activeTab() === 'kept') return;
         if (window.DiscoverabilityState?.hasSeenTip?.(DashboardInbox.TUTORIAL_TIP_ID)) return;
         if (this.dash.settings?.enableSessionTips === false) return;
@@ -4219,6 +4238,8 @@ class DashboardInbox {
         const helpLabel = this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'));
         host.innerHTML = `
             <button type="button" class="lvs-action lvs-action--primary inbox-triage-btn inbox-triage-btn--primary">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
+            <button type="button" class="lvs-action inbox-tour-btn" data-inbox-tour
+                    title="${this.escape(this.t('dashboard.inboxTourHint', 'A short tour of the inbox and the Kept tab'))}">${this.escape(this.t('dashboard.inboxTour', 'Tour'))}</button>
             <span class="inbox-menu-wrap">
                 <button type="button" class="lvs-action lvs-action--overflow inbox-toolbar-more" data-inbox-toolbar-more
                         aria-haspopup="menu" aria-expanded="false"
@@ -4237,6 +4258,9 @@ class DashboardInbox {
         });
         host.querySelector('[data-inbox-help]')?.addEventListener('click', () => {
             this.showInboxExplainer();
+        });
+        host.querySelector('[data-inbox-tour]')?.addEventListener('click', () => {
+            void this.openTour();
         });
 
         const moreBtn = host.querySelector('[data-inbox-toolbar-more]');

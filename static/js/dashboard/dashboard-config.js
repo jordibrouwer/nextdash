@@ -17064,7 +17064,7 @@ class DashboardConfig {
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health',
           whereKey: 'config.tourWhereHealth', where: 'the next time you open Health' },
-        { id: 'inboxTutorialV1', labelKey: 'config.tourInbox', label: 'Inbox',
+        { id: 'inboxTutorialV2', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },
         { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh',
           whereKey: 'config.tourWhereFresh', where: 'the next time you open Fresh' },

@@ -59,7 +59,7 @@ test.describe('replaying the tour also replays the tips', () => {
         await page.evaluate(() => {
             const s = window.DiscoverabilityState;
             s.markTipSeen('healthTutorialV2', { persist: false });
-            s.markTipSeen('inboxTutorialV1', { persist: false });
+            s.markTipSeen('inboxTutorialV2', { persist: false });
             s.markTipSeen('tipSearch', { persist: false });
             s.setTipsNotBefore(Date.now() + 3 * 86400000, { persist: false });
         });

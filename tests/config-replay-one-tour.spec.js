@@ -46,7 +46,7 @@ test.describe('a single tour can be replayed', () => {
         await page.evaluate(() => {
             const s = window.DiscoverabilityState;
             s.markTipSeen('healthTutorialV2', { persist: false });
-            s.markTipSeen('inboxTutorialV1', { persist: false });
+            s.markTipSeen('inboxTutorialV2', { persist: false });
             s.markTipSeen('tipSearch', { persist: false });
         });
 
@@ -63,7 +63,7 @@ test.describe('a single tour can be replayed', () => {
 
         // The others are untouched — that is the whole difference from the
         // reset button sitting above these.
-        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('inboxTutorialV1'))).toBe(true);
+        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('inboxTutorialV2'))).toBe(true);
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('tipSearch'))).toBe(true);
     });
 
@@ -78,6 +78,6 @@ test.describe('a single tour can be replayed', () => {
         // Seen: replayable. Unseen: shown, but not as a button that pretends to
         // put back something that was never taken away.
         await expect(page.locator('[data-replay-tour="healthTutorialV2"]')).toBeEnabled({ timeout: 10_000 });
-        await expect(page.locator('[data-replay-tour="inboxTutorialV1"]')).toBeDisabled();
+        await expect(page.locator('[data-replay-tour="inboxTutorialV2"]')).toBeDisabled();
     });
 });

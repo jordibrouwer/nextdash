@@ -2083,7 +2083,9 @@
     "unsortedKeySelect": "seleccionar",
     "unsortedReviewDoneTitle": "Fin de la ronda",
     "unsortedReviewClose": "Cerrar",
-    "unsortedReviewKicker": "Enlaces guardados"
+    "unsortedReviewKicker": "Enlaces guardados",
+    "inboxTour": "Recorrido",
+    "inboxTourHint": "Un breve recorrido por la bandeja y la pestaña Guardados"
   },
   "health": {
     "reloadPage": "Recargar la página",

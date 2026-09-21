@@ -2083,7 +2083,9 @@
     "unsortedKeySelect": "选择",
     "unsortedReviewDoneTitle": "本轮结束",
     "unsortedReviewClose": "关闭",
-    "unsortedReviewKicker": "已保留的链接"
+    "unsortedReviewKicker": "已保留的链接",
+    "inboxTour": "导览",
+    "inboxTourHint": "收件箱与「已保留」标签页的简短导览"
   },
   "health": {
     "reloadPage": "重新加载页面",

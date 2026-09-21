@@ -2083,7 +2083,9 @@
     "unsortedKeySelect": "auswählen",
     "unsortedReviewDoneTitle": "Das war die Runde",
     "unsortedReviewClose": "Schließen",
-    "unsortedReviewKicker": "Behaltene Links"
+    "unsortedReviewKicker": "Behaltene Links",
+    "inboxTour": "Tour",
+    "inboxTourHint": "Eine kurze Tour durch den Posteingang und den Tab Behalten"
   },
   "health": {
     "reloadPage": "Seite neu laden",
