@@ -60,6 +60,18 @@ class DashboardUnsorted {
         this.select = window.DashboardUnsortedSelect
             ? new window.DashboardUnsortedSelect(this)
             : null;
+        /*
+         * Follow the density toggle.
+         *
+         * The grid takes its density as a class when it is drawn, and the
+         * toolbar's two buttons change the setting without redrawing anything
+         * -- the queue's rows follow a body attribute, these do not. So the
+         * buttons saved the choice and left the list in front of them as it
+         * was. Once per instance: it outlives every trip to the tab and back.
+         */
+        window.addEventListener('nextdash:list-density', () => {
+            if (this._stillShowing?.()) this.renderBody();
+        });
         /** The one-at-a-time run over this list; `f`, like the health view's. */
         this.review = window.DashboardUnsortedReview
             ? new window.DashboardUnsortedReview(this)
@@ -1000,6 +1012,30 @@ class DashboardUnsorted {
             row.nextElementSibling.remove();
         }
         const parts = [];
+        /*
+         * What it already carries, first: two tags and a count for the rest.
+         *
+         * They were only in the edit form, so a list grouped by anything but
+         * tag gave no hint which rows were already described. Two because a
+         * row of five chips is a row nobody reads; the count says there is
+         * more, and its title says what.
+         */
+        const own = (Array.isArray(bookmark?.tags) ? bookmark.tags : [])
+            .map((tag) => String(tag || '').trim())
+            .filter(Boolean);
+        own.slice(0, 2).forEach((tag) => {
+            const chip = document.createElement('span');
+            chip.className = 'unsorted-row-tag';
+            chip.textContent = `#${tag}`;
+            parts.push(chip);
+        });
+        if (own.length > 2) {
+            const more = document.createElement('span');
+            more.className = 'unsorted-row-tag-more';
+            more.textContent = `+${own.length - 2}`;
+            more.title = own.slice(2).map((tag) => `#${tag}`).join(' ');
+            parts.push(more);
+        }
         const age = this._ageLabel(bookmark);
         if (age) {
             const chip = document.createElement('span');

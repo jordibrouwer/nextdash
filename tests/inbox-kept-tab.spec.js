@@ -400,6 +400,25 @@ test('the list legend says what r does in the list', async ({ page }) => {
 });
 
 /**
+ * The density toggle in the toolbar reaches the kept list.
+ *
+ * The kept grid takes its density as a class when it is drawn, and nothing
+ * redrew it when the setting changed: the two buttons saved the setting,
+ * stamped the page, and left the list in front of them exactly as it was.
+ */
+test('the density toggle redraws the kept list', async ({ page }) => {
+    await bootstrap(page);
+    await openKept(page);
+
+    const grid = page.locator('.unsorted-view .dashboard-grid').first();
+    await page.locator('.lvs-density-btn[data-lvs-density="comfortable"]').click();
+    await expect(grid).toHaveClass(/density-comfortable/, { timeout: 5_000 });
+
+    await page.locator('.lvs-density-btn[data-lvs-density="compact"]').click();
+    await expect(page.locator('.unsorted-view .dashboard-grid').first()).toHaveClass(/density-compact/, { timeout: 5_000 });
+});
+
+/**
  * Both tabs carry their count.
  *
  * Kept said how many it held; To triage said nothing, so the strip read as

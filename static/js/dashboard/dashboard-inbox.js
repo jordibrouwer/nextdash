@@ -4155,7 +4155,7 @@ class DashboardInbox {
         if (description) {
             description.textContent = kept
                 ? this.t('dashboard.unsortedTabDescription',
-                    'Kept links, not filed yet. Move one to a page and a category to put it on the dashboard, or send it back to the queue.')
+                    'Kept links without a page yet. File one on a page, or send it back to the queue.')
                 : this.t('dashboard.inboxPageSubtitle', 'Links saved to read or review later');
         }
         flip(this._ownToolbar, this._keptToolbar);

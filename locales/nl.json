@@ -2016,7 +2016,7 @@
     "unsortedBrokenCount": "{count} van deze links antwoorden niet",
     "unsortedBrokenShow": "Toon ze",
     "unsortedBrokenClear": "Toon weer alles",
-    "unsortedTabDescription": "Bewaarde links, nog niet opgeborgen. Geef er een een pagina en categorie om hem op het dashboard te zetten, of stuur hem terug naar de wachtrij.",
+    "unsortedTabDescription": "Bewaarde links zonder pagina. Berg er een op, of stuur hem terug naar de queue.",
     "contextMenuFileOnPage": "Naar een pagina verplaatsen…",
     "contextMenuBackToInbox": "Terug naar de inbox",
     "unsortedSelectToInbox": "Terug naar de inbox",

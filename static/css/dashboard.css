@@ -9318,6 +9318,20 @@ body[data-action-bar="bottom"] #dashboard-layout {
     opacity: 0.75;
 }
 
+/* The tags a kept row already carries: solid, where a suggestion is dashed,
+   so the two cannot be mistaken for one another on the same row. */
+.unsorted-view .unsorted-row-tag,
+.unsorted-view .unsorted-row-tag-more {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    padding: 0.05rem 0.4rem;
+    color: var(--text-secondary);
+}
+
+.unsorted-view .unsorted-row-tag-more {
+    cursor: help;
+}
+
 .unsorted-view .unsorted-row-filed {
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-pill, 999px);

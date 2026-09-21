@@ -2016,7 +2016,7 @@
     "unsortedBrokenCount": "{count} dieser Links antworten nicht",
     "unsortedBrokenShow": "Anzeigen",
     "unsortedBrokenClear": "Wieder alle anzeigen",
-    "unsortedTabDescription": "Behaltene Links, noch nicht abgelegt. Gib einem eine Seite und eine Kategorie, damit er aufs Dashboard kommt, oder schick ihn zurück in die Liste.",
+    "unsortedTabDescription": "Behaltene Links ohne Seite. Einen ablegen oder zurück in die Liste schicken.",
     "contextMenuFileOnPage": "Auf eine Seite verschieben…",
     "contextMenuBackToInbox": "Zurück in den Posteingang",
     "unsortedSelectToInbox": "Zurück in den Posteingang",

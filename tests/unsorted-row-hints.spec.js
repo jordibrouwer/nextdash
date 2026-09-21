@@ -118,3 +118,27 @@ test('deleting kept bookmarks can be undone from the toast', async ({ page }) =>
         return rows.filter((entry) => String(entry?.bookmark?.url || '') === u).length;
     }, url), { timeout: 20_000 }).toBe(0);
 });
+
+/**
+ * The tags a kept row already carries, at most two and a count for the rest.
+ *
+ * They were not on the row at all -- only in the edit form -- so a list
+ * grouped by anything but tag gave no hint which rows were already described.
+ * Two because a row of five chips is a row nobody reads, and the count says
+ * there is more without spelling it out.
+ */
+test('a row shows two of its tags and counts the rest', async ({ page }) => {
+    await bootstrap(page, [
+        { name: 'Many Tags', url: 'https://tags.example/many', createdAt: Date.now() - 1000, tags: ['alpha', 'beta', 'gamma', 'delta'] },
+        { name: 'One Tag', url: 'https://tags.example/one', createdAt: Date.now() - 2000, tags: ['solo'] },
+    ]);
+
+    const many = hintsFor(page, 'Many Tags');
+    await expect(many.locator('.unsorted-row-tag')).toHaveText(['#alpha', '#beta']);
+    await expect(many.locator('.unsorted-row-tag-more')).toHaveText('+2');
+    await expect(many.locator('.unsorted-row-tag-more')).toHaveAttribute('title', /gamma.*delta/);
+
+    const one = hintsFor(page, 'One Tag');
+    await expect(one.locator('.unsorted-row-tag')).toHaveText(['#solo']);
+    await expect(one.locator('.unsorted-row-tag-more')).toHaveCount(0);
+});

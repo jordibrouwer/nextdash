@@ -2016,7 +2016,7 @@
     "unsortedBrokenCount": "{count} of these links do not answer",
     "unsortedBrokenShow": "Show them",
     "unsortedBrokenClear": "Show all again",
-    "unsortedTabDescription": "Kept links, not filed yet. Move one to a page and a category to put it on the dashboard, or send it back to the queue.",
+    "unsortedTabDescription": "Kept links without a page yet. File one on a page, or send it back to the queue.",
     "contextMenuFileOnPage": "Move to a page…",
     "contextMenuBackToInbox": "Back to the inbox",
     "unsortedSelectToInbox": "Back to the inbox",

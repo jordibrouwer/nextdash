@@ -70,6 +70,21 @@
     background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
 }
 
+/* Rounded, in the theme's own radius.
+ *
+ * A row only takes its rounding on hover or under the cursor, so a ticked row
+ * at rest drew its ring with square corners -- the one shape nothing else in
+ * the app uses. The grouped and tag-filter lists (the kept tab among them) go
+ * further and pin their rows square, which is why this names them: the
+ * selection has to win there too. --radius-5 is scaled by the theme's own
+ * radius setting (theme-character.css), so a square theme stays square.
+ */
+.bookmark-link.is-multi-selected,
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link.is-multi-selected,
+.unsorted-view .tag-filter-chunk .bookmark-link.is-multi-selected {
+    border-radius: var(--radius-5, 8px);
+}
+
 .bookmark-link.is-multi-selected.keyboard-selected {
     box-shadow: inset 0 0 0 2px var(--accent-primary);
 }

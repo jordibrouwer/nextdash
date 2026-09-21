@@ -2016,7 +2016,7 @@
     "unsortedBrokenCount": "其中 {count} 个链接没有响应",
     "unsortedBrokenShow": "查看",
     "unsortedBrokenClear": "显示全部",
-    "unsortedTabDescription": "保留下来、尚未归档的链接。给一条链接选定页面和分类即可放到仪表板，或把它退回队列。",
+    "unsortedTabDescription": "尚未归档的保留链接。归档到页面，或退回队列。",
     "contextMenuFileOnPage": "移动到某个页面…",
     "contextMenuBackToInbox": "退回收件箱",
     "unsortedSelectToInbox": "退回收件箱",

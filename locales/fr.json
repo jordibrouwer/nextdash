@@ -2016,7 +2016,7 @@
     "unsortedBrokenCount": "{count} de ces liens ne répondent pas",
     "unsortedBrokenShow": "Les afficher",
     "unsortedBrokenClear": "Tout afficher",
-    "unsortedTabDescription": "Liens gardés, pas encore classés. Donnez-en un à une page et une catégorie pour le mettre sur le tableau de bord, ou renvoyez-le dans la file.",
+    "unsortedTabDescription": "Liens gardés sans page. Classez-en un, ou renvoyez-le dans la file.",
     "contextMenuFileOnPage": "Déplacer vers une page…",
     "contextMenuBackToInbox": "Renvoyer dans la boîte",
     "unsortedSelectToInbox": "Renvoyer dans la boîte",

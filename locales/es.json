@@ -2016,7 +2016,7 @@
     "unsortedBrokenCount": "{count} de estos enlaces no responden",
     "unsortedBrokenShow": "Mostrarlos",
     "unsortedBrokenClear": "Mostrar todo otra vez",
-    "unsortedTabDescription": "Enlaces guardados, aún sin archivar. Dale a uno una página y una categoría para ponerlo en el panel, o devuélvelo a la cola.",
+    "unsortedTabDescription": "Enlaces guardados sin página. Archiva uno o devuélvelo a la cola.",
     "contextMenuFileOnPage": "Mover a una página…",
     "contextMenuBackToInbox": "Volver a la bandeja",
     "unsortedSelectToInbox": "Volver a la bandeja",
