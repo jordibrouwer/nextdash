@@ -2272,6 +2272,15 @@ class DashboardInbox {
             this.promoteItem(selected);
             return true;
         }
+        // Keep, from the list. Shift+K: k moves the cursor up and r marks the
+        // row read, so the letter the word starts with is the shifted one --
+        // the same shape as R for refresh and G for the last row.
+        if (e.key === 'K' && selected && this.keptEnabled()) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.keepItem(selected);
+            return true;
+        }
         if ((e.key === 'r') && selected) {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -4809,6 +4818,7 @@ class DashboardInbox {
                     <div class="inbox-item-actions-inner">
                         <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
                         <button type="button" class="inbox-action-btn" data-inbox-action="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}<kbd>p</kbd></button>
+                        ${this.keptEnabled() ? `<button type="button" class="inbox-action-btn" data-inbox-action="keep" title="${this.escape(this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, on the inbox\u2019s Kept tab, without giving it a page yet'))}">${this.escape(this.t('dashboard.inboxTriageKeep', 'Keep'))}<kbd>K</kbd></button>` : ''}
                         ${item.readAt ? '' : `<button type="button" class="inbox-action-btn" data-inbox-action="read">${this.escape(this.t('dashboard.inboxMarkRead', 'Mark read'))}<kbd>r</kbd></button>`}
                         ${snoozeBtn}
                         <button type="button" class="inbox-action-btn" data-inbox-action="note">${this.escape(item.note ? this.t('dashboard.inboxEditNote', 'Edit note') : this.t('dashboard.inboxAddNote', 'Note'))}<kbd>n</kbd></button>
@@ -4902,6 +4912,14 @@ class DashboardInbox {
         card.querySelector('[data-inbox-action="promote"]')?.addEventListener('click', () => {
             this.promoteItem(item);
         });
+        // Keep, on the row: every other way out of the queue had a button
+        // here, and the one with a tab of its own was reachable only from
+        // triage or the right-click menu.
+        card.querySelector('[data-inbox-action="keep"]')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            this.selectItemById(item.id);
+            await this.keepItem(item);
+        });
         card.querySelector('[data-inbox-action="read"]')?.addEventListener('click', async () => {
             this.selectItemById(item.id);
             await this.markReadFromKeyboard(item);
@@ -4972,6 +4990,10 @@ class DashboardInbox {
         // nowhere for this to land that the reader can reach.
         if (!this.keptEnabled()) return false;
         this._trackAction('keep');
+        // Where the link is on screen *now*: the write below re-renders the
+        // queue, and the row the flight starts from is gone by the time it
+        // lands.
+        const flightFrom = this.keepFlightSource(item);
         /*
          * Straight to where the rest of the site lives, when the reader asked
          * for that.
@@ -5030,6 +5052,10 @@ class DashboardInbox {
             if (response.status !== 409 && !response.ok) {
                 throw new Error('bookmark create failed');
             }
+            // Off as soon as the link is safely kept, not after the reloads
+            // below: on a large collection those take long enough that a
+            // flight starting at the end reads as the click not having worked.
+            this.startKeepFlight(flightFrom);
             // The Unsorted widget holds what /api/unsorted last answered for
             // the life of the tab; a link kept from here is exactly what makes
             // that answer wrong.
@@ -5042,10 +5068,179 @@ class DashboardInbox {
             await d.loadAllBookmarks?.();
             this.syncTabStrip();
             await this.completePromote(item.id);
+            this.announceKeep(item);
             return true;
         } catch (_error) {
             d.showNotification(this.t('dashboard.inboxKeepFailed', 'Could not keep this link'), 'error');
             return false;
+        }
+    }
+
+    /* ── What Keep looks like ─────────────────────────────────────────────── */
+
+    /**
+     * The box the flight starts from: the triage card when it is up, the
+     * row otherwise. Null when neither is on screen -- a keep from the row
+     * menu of a row scrolled away still lands, it just does not fly.
+     */
+    keepFlightSource(item) {
+        const card = document.querySelector('#inbox-triage-overlay .inbox-triage-card');
+        const el = card || document.querySelector(`.inbox-item[data-inbox-id="${CSS.escape(String(item?.id || ''))}"]`);
+        const rect = el?.getBoundingClientRect?.();
+        if (!rect || rect.width < 1 || rect.height < 1) return null;
+        return {
+            left: rect.left, top: rect.top, width: rect.width, height: rect.height,
+            title: item?.previewTitle || item?.title || item?.url || '',
+        };
+    }
+
+    /**
+     * Say where the link went, three ways at once.
+     *
+     * Keep took the row out of the queue and said nothing, so the link simply
+     * vanished and where it had gone was a tab the reader had to know to look
+     * at. Now a copy of the row flies to that tab, the count there steps up,
+     * and a toast names the place -- with the way back on it, because a keep
+     * made with one key is a keep made by accident often enough.
+     */
+    startKeepFlight(from) {
+        const target = this.keepFlightTarget();
+        if (from && target) this.flyToKept(from, target);
+        else this.bumpKeptCounters();
+    }
+
+    /** The words, once the queue has caught up with the keep. */
+    announceKeep(item) {
+        const d = this.dash;
+        d.showNotification(
+            this.t('dashboard.inboxKeptToast', 'Kept — on the Kept tab'),
+            'success',
+            {
+                duration: 6000,
+                undoCallback: () => this.undoKeep(item),
+            }
+        );
+    }
+
+    /** Where the flight lands: the triage card's own counter, else the tab. */
+    keepFlightTarget() {
+        const inCard = document.querySelector('#inbox-triage-overlay .inbox-triage-kept-count');
+        if (inCard) return inCard;
+        const tab = document.querySelector('[data-inbox-tab="kept"]:not([hidden])');
+        // The count when it has something in it; an empty one has no box to
+        // fly into -- the first keep of all lands on a count that is blank.
+        const count = tab?.querySelector('.inbox-tab-count');
+        if (count && count.getBoundingClientRect().width > 0) return count;
+        return tab || null;
+    }
+
+    flyToKept(from, target) {
+        this.flyTo(from, target, () => this.bumpKeptCounters());
+    }
+
+    /**
+     * A copy of a row, flying from where it was to where it went.
+     *
+     * Shared by both directions -- Keep sends a row to the Kept tab, Back to
+     * the inbox sends one to the queue's -- so the two moves look like one
+     * another, which is what makes the second read as the undoing of the
+     * first. `land` runs when it arrives, or straight away when there is
+     * nothing to animate.
+     */
+    flyTo(from, target, land) {
+        const to = target?.getBoundingClientRect?.();
+        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+        if (!from || !to || reduced || !to.width || typeof document.body.animate !== 'function') {
+            land?.();
+            return;
+        }
+        const ghost = document.createElement('div');
+        ghost.className = 'keep-flight';
+        ghost.setAttribute('aria-hidden', 'true');
+        ghost.textContent = from.title;
+        Object.assign(ghost.style, {
+            left: `${from.left}px`,
+            top: `${from.top}px`,
+            width: `${from.width}px`,
+            height: `${Math.min(from.height, 64)}px`,
+        });
+        document.body.appendChild(ghost);
+        const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+        const dy = (to.top + to.height / 2) - (from.top + Math.min(from.height, 64) / 2);
+        const animation = ghost.animate([
+            { transform: 'translate(0, 0) scale(1)', opacity: 0.95 },
+            { transform: `translate(${dx * 0.55}px, ${dy * 0.55 - 24}px) scale(0.6)`, opacity: 0.85, offset: 0.55 },
+            { transform: `translate(${dx}px, ${dy}px) scale(0.12)`, opacity: 0.2 },
+        ], { duration: 620, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' });
+        const done = () => {
+            ghost.remove();
+            land?.();
+        };
+        animation.onfinish = done;
+        animation.oncancel = done;
+    }
+
+    /** One element steps up, visibly. */
+    bump(el) {
+        if (!el) return;
+        el.classList.remove('is-bumped');
+        // A reflow between the two, so a second move in quick succession
+        // bumps again rather than finding the class already set.
+        void el.offsetWidth;
+        el.classList.add('is-bumped');
+        setTimeout(() => el.classList.remove('is-bumped'), 900);
+    }
+
+
+
+    /** The count the link landed in steps up, visibly. */
+    bumpKeptCounters() {
+        const counts = [
+            document.querySelector('[data-inbox-tab="kept"] .inbox-tab-count'),
+            document.querySelector('#inbox-triage-overlay .inbox-triage-kept-count'),
+        ].filter(Boolean);
+        const total = (this.dash.unsortedBookmarks || []).length;
+        counts.forEach((el) => {
+            if (el.classList.contains('inbox-triage-kept-count')) {
+                el.textContent = this.t('dashboard.inboxTriageKeptCount', `Kept ${total}`, { count: total });
+            }
+            this.bump(el);
+        });
+    }
+
+    /**
+     * Take a keep back: the link returns to the queue with what was written
+     * about it, and leaves the kept page.
+     */
+    async undoKeep(item) {
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = { 'Content-Type': 'application/json' };
+        try {
+            const added = await fetcher('/api/inbox', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    url: item.url,
+                    title: item.title || item.previewTitle || '',
+                    note: item.note || '',
+                    tags: Array.isArray(item.tags) ? item.tags : [],
+                    source: item.source || 'keep-undo',
+                }),
+            });
+            if (!added.ok && added.status !== 409) throw new Error(`inbox HTTP ${added.status}`);
+            const pageId = Number(d._unsortedPageId) || 999999;
+            await fetcher('/api/bookmarks', {
+                method: 'DELETE',
+                headers,
+                body: JSON.stringify({ page: pageId, bookmark: { url: item.url } }),
+            });
+            d._widgetUnsorted = null;
+            await d.loadAllBookmarks?.();
+            this.syncTabStrip();
+            if (this.isActiveView()) await this.loadAndRender({ refresh: true });
+        } catch {
+            d.showNotification(this.t('dashboard.inboxKeepUndoFailed', 'Could not take the keep back'), 'error');
         }
     }
 

@@ -2085,7 +2085,12 @@
     "unsortedReviewClose": "Close",
     "unsortedReviewKicker": "Kept links",
     "inboxTour": "Tour",
-    "inboxTourHint": "A short tour of the inbox and the Kept tab"
+    "inboxTourHint": "A short tour of the inbox and the Kept tab",
+    "inboxTriageKeptCount": "Kept {count}",
+    "inboxKeepUndoFailed": "Could not take the keep back",
+    "ivMarkRead": "Mark as read",
+    "inboxKeyMarkRead": "mark read",
+    "inboxKeptToast": "Kept — on the Kept tab"
   },
   "health": {
     "reloadPage": "Reload page",

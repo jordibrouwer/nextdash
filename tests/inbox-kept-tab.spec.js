@@ -344,3 +344,57 @@ test('switching to the queue drops the kept selection with its bar', async ({ pa
     await page.locator('[data-inbox-tab="triage"]').click();
     await expect(page.locator('.unsorted-select-toolbar')).toHaveCount(0);
 });
+
+/**
+ * Keep on the row itself.
+ *
+ * The row's own buttons offered Open, Promote, Mark read, Snooze, Note and
+ * Delete -- every exit from the queue but the one that has a tab of its own.
+ * Keep was reachable only from triage or the right-click menu.
+ */
+test('the inbox row keeps a link with its own button', async ({ page }) => {
+    await bootstrap(page, { kept: [] });
+    const url = `https://row-keep-${Date.now()}.example/x`;
+    await page.evaluate(async (u) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/inbox', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: u, title: 'Row keep' }),
+        });
+    }, url);
+    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
+    const row = page.locator('.inbox-item', { hasText: 'Row keep' });
+    await expect(row).toBeVisible({ timeout: 10_000 });
+
+    await row.hover();
+    await row.locator('[data-inbox-action="keep"]').click();
+
+    await expect.poll(async () => page.evaluate(async (u) => {
+        const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        return (data.bookmarks || []).some((b) => b.url === u);
+    }, url), { timeout: 15_000 }).toBe(true);
+    await expect(page.locator('[data-inbox-tab="kept"] .inbox-tab-count')).toHaveText('1', { timeout: 10_000 });
+});
+
+/**
+ * r in the list marks a row read; r in the triage card keeps it. The legend
+ * under the list said "keep · to Kept" for both, which is the one key in the
+ * list that does something else.
+ */
+test('the list legend says what r does in the list', async ({ page }) => {
+    await bootstrap(page, { kept: [] });
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/inbox', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: `https://legend-${Date.now()}.example/x`, title: 'Legend row' }),
+        });
+    });
+    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
+    const legend = page.locator('.inbox-body-own .inbox-legend');
+    await expect(legend).toBeVisible({ timeout: 10_000 });
+    const rLine = legend.locator('span', { has: page.locator('kbd', { hasText: /^r$/ }) });
+    await expect(rLine).toContainText('mark read');
+});

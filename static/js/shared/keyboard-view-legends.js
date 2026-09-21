@@ -30,7 +30,9 @@
         { keys: 'Enter / Space', legendKey: 'inboxKeyOpen', cheatKey: 'ivOpen', fallback: 'open' },
         { keys: 'p', legendKey: 'inboxKeyPromote', cheatKey: 'ivPromote', fallback: 'promote' },
         { keys: 'n', legendKey: 'inboxKeyNote', cheatKey: 'ivNote', fallback: 'note' },
-        { keys: 'r', legendKey: 'inboxKeyKeep', cheatKey: 'ivKeep', fallback: 'keep · to Kept' },
+        // In the list r marks the row read; it is triage's card where r keeps.
+        { keys: 'r', legendKey: 'inboxKeyMarkRead', cheatKey: 'ivMarkRead', fallback: 'mark read' },
+        { keys: 'K', legendKey: 'inboxKeyKeep', cheatKey: 'ivKeep', fallback: 'keep · to Kept' },
         { keys: 'z', legendKey: 'inboxKeySnooze', cheatKey: 'ivSnooze', fallback: 'snooze' },
         { keys: 'x', legendKey: 'inboxKeySelect', cheatKey: 'ivSelect', fallback: 'select' },
         { keys: 'Shift+↑ / ↓', legendKey: 'inboxKeySelectRange', cheatKey: 'ivSelectRange', fallback: 'extend selection' },

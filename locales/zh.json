@@ -2085,7 +2085,12 @@
     "unsortedReviewClose": "关闭",
     "unsortedReviewKicker": "已保留的链接",
     "inboxTour": "导览",
-    "inboxTourHint": "收件箱与「已保留」标签页的简短导览"
+    "inboxTourHint": "收件箱与「已保留」标签页的简短导览",
+    "inboxTriageKeptCount": "已保留 {count}",
+    "inboxKeepUndoFailed": "无法撤销保留",
+    "ivMarkRead": "标为已读",
+    "inboxKeyMarkRead": "标为已读",
+    "inboxKeptToast": "已保留 — 在「已保留」标签页"
   },
   "health": {
     "reloadPage": "重新加载页面",

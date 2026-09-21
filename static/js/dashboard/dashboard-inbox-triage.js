@@ -521,6 +521,10 @@ class DashboardInboxTriage {
             <header class="inbox-triage-header">
                 <p class="inbox-triage-kicker">${this.escape(this.t('dashboard.inboxTriage', 'Triage inbox'))}</p>
                 <p class="inbox-triage-progress">${this.escape(progress)}</p>
+                ${this.inbox.keptEnabled?.() ? `<span class="inbox-triage-kept-count" title="${this.escape(
+                    this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, on the inbox\u2019s Kept tab, without giving it a page yet'))}">${this.escape(
+                    this.t('dashboard.inboxTriageKeptCount', `Kept ${(this.inbox.dash.unsortedBookmarks || []).length}`,
+                        { count: (this.inbox.dash.unsortedBookmarks || []).length }))}</span>` : ''}
                 <button type="button" class="inbox-triage-close" aria-label="${this.escape(this.t('dashboard.inboxTriageClose', 'Close'))}">×</button>
             </header>
             <div class="inbox-triage-body">

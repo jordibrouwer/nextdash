@@ -2085,7 +2085,12 @@
     "unsortedReviewClose": "Fermer",
     "unsortedReviewKicker": "Liens gardés",
     "inboxTour": "Visite",
-    "inboxTourHint": "Une courte visite de la boîte et de l’onglet Gardés"
+    "inboxTourHint": "Une courte visite de la boîte et de l’onglet Gardés",
+    "inboxTriageKeptCount": "Gardés {count}",
+    "inboxKeepUndoFailed": "Impossible d’annuler",
+    "ivMarkRead": "Marquer comme lu",
+    "inboxKeyMarkRead": "marquer comme lu",
+    "inboxKeptToast": "Gardé — dans l’onglet Gardés"
   },
   "health": {
     "reloadPage": "Recharger la page",

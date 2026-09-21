@@ -2085,7 +2085,12 @@
     "unsortedReviewClose": "Schließen",
     "unsortedReviewKicker": "Behaltene Links",
     "inboxTour": "Tour",
-    "inboxTourHint": "Eine kurze Tour durch den Posteingang und den Tab Behalten"
+    "inboxTourHint": "Eine kurze Tour durch den Posteingang und den Tab Behalten",
+    "inboxTriageKeptCount": "Behalten {count}",
+    "inboxKeepUndoFailed": "Behalten ließ sich nicht rückgängig machen",
+    "ivMarkRead": "Als gelesen markieren",
+    "inboxKeyMarkRead": "als gelesen",
+    "inboxKeptToast": "Behalten — auf dem Tab Behalten"
   },
   "health": {
     "reloadPage": "Seite neu laden",

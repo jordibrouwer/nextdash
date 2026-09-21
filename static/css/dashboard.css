@@ -9394,3 +9394,52 @@ body[data-action-bar="bottom"] #dashboard-layout {
 .unsorted-review-age {
     opacity: 0.8;
 }
+
+/*
+ * Keep, as it happens: a copy of the row flying to the Kept tab, and the count
+ * there stepping up when it lands. Fixed and above every overlay, because the
+ * flight starts on the triage card as often as on a row.
+ */
+.keep-flight {
+    position: fixed;
+    z-index: 13000;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-3, 0.75rem);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    transform-origin: center;
+}
+
+@keyframes keep-count-bump {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.6); color: var(--accent-primary); }
+    100% { transform: scale(1); }
+}
+
+.inbox-tab-count.is-bumped,
+.inbox-triage-kept-count.is-bumped {
+    display: inline-block;
+    animation: keep-count-bump 0.7s ease-out;
+}
+
+/* The triage card's own counter: the tab it would fly to sits under the
+   overlay, so the card carries a small one of its own. */
+.inbox-triage-kept-count {
+    margin-left: auto;
+    margin-right: var(--space-2, 0.5rem);
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-secondary);
+}

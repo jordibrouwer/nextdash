@@ -2085,7 +2085,12 @@
     "unsortedReviewClose": "Cerrar",
     "unsortedReviewKicker": "Enlaces guardados",
     "inboxTour": "Recorrido",
-    "inboxTourHint": "Un breve recorrido por la bandeja y la pestaña Guardados"
+    "inboxTourHint": "Un breve recorrido por la bandeja y la pestaña Guardados",
+    "inboxTriageKeptCount": "Guardados {count}",
+    "inboxKeepUndoFailed": "No se pudo deshacer",
+    "ivMarkRead": "Marcar como leído",
+    "inboxKeyMarkRead": "marcar leído",
+    "inboxKeptToast": "Guardado — en la pestaña Guardados"
   },
   "health": {
     "reloadPage": "Recargar la página",
