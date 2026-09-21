@@ -4014,12 +4014,14 @@ class DashboardInbox {
             text.className = 'inbox-tab-label';
             text.textContent = label;
             btn.appendChild(text);
-            if (tab === 'kept') {
-                const count = document.createElement('span');
-                count.className = 'inbox-tab-count';
-                btn.appendChild(count);
-                this._keptCountEl = count;
-            }
+            // Both tabs say how much they hold. Only Kept used to, so the
+            // queue -- the list that asks for attention -- was the one without
+            // a number.
+            const count = document.createElement('span');
+            count.className = 'inbox-tab-count';
+            btn.appendChild(count);
+            if (tab === 'kept') this._keptCountEl = count;
+            else this._triageCountEl = count;
             btn.addEventListener('click', () => this.setTab(tab, 'click'));
             strip.appendChild(btn);
             return btn;
@@ -4068,7 +4070,12 @@ class DashboardInbox {
     }
 
     /** Which tab is lit, what the count says, and whether Kept is offered. */
-    syncTabStrip() {
+    syncTabStrip({ fromBadge = false } = {}) {
+        // And the header badge, which shows the To triage number too: every
+        // repaint of the strip moves it, so neither can be left a count behind
+        // the other. The badge calls back in with fromBadge, which stops the
+        // pair from calling each other forever.
+        if (!fromBadge) this.dash.pageNav?.updateInboxTabBadge?.();
         if (!this._tabStrip) return;
         const tab = this.activeTab();
         const kept = this.keptEnabled();
@@ -4088,6 +4095,18 @@ class DashboardInbox {
         if (this._keptCountEl) {
             const count = (this.dash.unsortedBookmarks || []).length;
             this._keptCountEl.textContent = count ? String(count) : '';
+        }
+        if (this._triageCountEl) {
+            /*
+             * The header badge's own number: unread and awake.
+             *
+             * The tab used to count every row, read or not, so the same queue
+             * read 27 in the header and 56 on the tab. One count, from one
+             * place, cannot disagree with itself -- and "waiting to be read"
+             * is the number that goes to zero when the queue is dealt with.
+             */
+            const waiting = this.unreadCount?.() || 0;
+            this._triageCountEl.textContent = waiting ? String(waiting) : '';
         }
     }
 

@@ -84,7 +84,7 @@ test('the strip switches the two lists, and the address says which is up', async
     await bootstrap(page);
     await openKept(page);
     await expect(page.locator('[data-inbox-tab="kept"]')).toHaveAttribute('aria-selected', 'true');
-    await expect(page.locator('.inbox-tab-count')).toHaveText('3');
+    await expect(page.locator('[data-inbox-tab="kept"] .inbox-tab-count')).toHaveText('3');
 
     await page.locator('[data-inbox-tab="triage"]').click();
     await expect(page.locator('.inbox-body-own .inbox-item, .inbox-body-own .inbox-empty, .inbox-body-own')).toBeVisible();
@@ -283,7 +283,7 @@ test('keeping a link moves the count beside the Kept tab', async ({ page }) => {
     await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
     await expect.poll(() => page.evaluate(() =>
         (window.dashboardInstance.inbox.items || []).length), { timeout: 10_000 }).toBeGreaterThan(0);
-    await expect(page.locator('.inbox-tab-count')).toHaveText('');
+    await expect(page.locator('[data-inbox-tab="kept"] .inbox-tab-count')).toHaveText('');
 
     await page.keyboard.press('t');
     await expect.poll(() => page.evaluate(() =>
@@ -291,7 +291,7 @@ test('keeping a link moves the count beside the Kept tab', async ({ page }) => {
     await page.keyboard.press('r');
 
     // No reload, no tab switch: the strip is repainted by the keep itself.
-    await expect(page.locator('.inbox-tab-count')).toHaveText('1', { timeout: 10_000 });
+    await expect(page.locator('[data-inbox-tab="kept"] .inbox-tab-count')).toHaveText('1', { timeout: 10_000 });
 });
 
 /**
@@ -397,4 +397,78 @@ test('the list legend says what r does in the list', async ({ page }) => {
     await expect(legend).toBeVisible({ timeout: 10_000 });
     const rLine = legend.locator('span', { has: page.locator('kbd', { hasText: /^r$/ }) });
     await expect(rLine).toContainText('mark read');
+});
+
+/**
+ * Both tabs carry their count.
+ *
+ * Kept said how many it held; To triage said nothing, so the strip read as
+ * one list with a number and one without, and the queue -- the one that asks
+ * for attention -- was the one that did not say how much.
+ */
+test('the To triage tab counts the queue, and follows it', async ({ page }) => {
+    await bootstrap(page, { kept: [] });
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const body = await (await fetch('/api/inbox', { cache: 'no-store' })).json();
+        for (const item of (Array.isArray(body) ? body : (Array.isArray(body?.items) ? body.items : []))) {
+            await api(`/api/inbox?id=${encodeURIComponent(item.id)}`, { method: 'DELETE' });
+        }
+        for (const n of [1, 2]) {
+            await api('/api/inbox', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: `https://count-${n}-${Date.now()}.example/`, title: `Count ${n}` }),
+            });
+        }
+    });
+    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
+
+    const count = page.locator('[data-inbox-tab="triage"] .inbox-tab-count');
+    await expect(count).toHaveText('2', { timeout: 10_000 });
+
+    // Keep one: the queue shrinks and says so.
+    const row = page.locator('.inbox-item', { hasText: 'Count 1' });
+    await row.hover();
+    await row.locator('[data-inbox-action="keep"]').click();
+    await expect(count).toHaveText('1', { timeout: 10_000 });
+});
+
+/**
+ * One number for the queue, wherever it is shown.
+ *
+ * The header badge counts what still waits to be read; the tab counted every
+ * row, read or not -- 27 in the header over 56 on the tab, for the same list.
+ * They read the same count now, so marking a row read moves both.
+ */
+test('the To triage tab and the header badge show the same number', async ({ page }) => {
+    await bootstrap(page, { kept: [] });
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const body = await (await fetch('/api/inbox', { cache: 'no-store' })).json();
+        for (const item of (Array.isArray(body) ? body : (Array.isArray(body?.items) ? body.items : []))) {
+            await api(`/api/inbox?id=${encodeURIComponent(item.id)}`, { method: 'DELETE' });
+        }
+        for (const n of [1, 2, 3]) {
+            await api('/api/inbox', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: `https://same-${n}-${Date.now()}.example/`, title: `Same ${n}` }),
+            });
+        }
+        await window.dashboardInstance.inbox.openInboxView();
+        await window.dashboardInstance.inbox.loadAndRender({ refresh: true });
+    });
+
+    const tab = page.locator('[data-inbox-tab="triage"] .inbox-tab-count');
+    const badge = page.locator('#page-inbox-badge');
+    await expect(tab).toHaveText('3', { timeout: 10_000 });
+    await expect(badge).toHaveText('3');
+
+    // One of the three read, through the row's own button: it stays in the
+    // list, and leaves both counts at once.
+    const row = page.locator('.inbox-item', { hasText: 'Same 1' });
+    await row.hover();
+    await row.locator('[data-inbox-action="read"]').click();
+    await expect(tab).toHaveText('2', { timeout: 10_000 });
+    await expect(badge).toHaveText('2');
 });

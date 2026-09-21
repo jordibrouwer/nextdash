@@ -327,6 +327,11 @@ class DashboardPageNav {
             return;
         }
         const unread = d.inbox?.unreadCount?.() || 0;
+        // The To triage tab shows this same number; moved together here, so
+        // no path that updates the badge can leave the tab behind. Through
+        // the loaded module only -- asking the loader would fetch the inbox
+        // just to count it.
+        d.inbox?.instance?.syncTabStrip?.({ fromBadge: true });
         const previous = Number(this._lastInboxBadgeCount) || 0;
         if (unread > 0) {
             badge.textContent = String(unread);
