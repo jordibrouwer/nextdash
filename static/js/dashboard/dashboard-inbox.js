@@ -199,6 +199,10 @@ class DashboardInbox {
                     this.keepOnlyVisibleChecked();
                 } else if (action === 'suggest') {
                     this.openSuggestPopover(btn);
+                } else if (action === 'select-all') {
+                    // What the filter shows, and a second press clears it --
+                    // the same toggle Ctrl/Cmd+A is.
+                    this.checkAllVisible();
                 }
             });
             // Between the toolbar row and the body, which is where it sat when
@@ -225,6 +229,7 @@ class DashboardInbox {
                 this.t('dashboard.inboxSelectedCount', '{count} selected', { count })
             )}</span>
             ${offscreen}
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="select-all">${this.escape(this.t('dashboard.unsortedSelectAll', 'Select all'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="open">${this.escape(this.t('dashboard.inboxSelectionOpen', 'Open'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="copy">${this.escape(this.t('dashboard.inboxSelectionCopy', 'Copy links'))}</button>
@@ -5360,6 +5365,10 @@ class DashboardInbox {
             url: item.url,
             name: item.previewTitle || item.title || '',
             note: item.note || '',
+            // The tags given in the queue, by hand or by a suggestion chip.
+            // Left out, the form opened with an empty field and the save
+            // dropped them unless the reader typed them in again.
+            tags: Array.isArray(item.tags) ? item.tags : [],
         });
     }
 

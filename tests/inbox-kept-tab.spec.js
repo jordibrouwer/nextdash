@@ -493,6 +493,63 @@ test('the To triage tab and the header badge show the same number', async ({ pag
 });
 
 /**
+ * Promote carries the tags.
+ *
+ * The form Promote opens was given the address, the title and the note, and
+ * nothing else -- so tags given in the queue, by hand or by a suggestion
+ * chip, were missing from the field and lost on save unless typed again.
+ */
+test('Promote opens the form with the item tags filled in', async ({ page }) => {
+    await bootstrap(page, { kept: [] });
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/inbox', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: `https://promote-tags-${Date.now()}.example/`, title: 'Tagged promote', tags: ['reading', 'later'] }),
+        });
+    });
+    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
+    const row = page.locator('.inbox-item', { hasText: 'Tagged promote' });
+    await expect(row).toBeVisible({ timeout: 10_000 });
+
+    await row.hover();
+    await row.locator('[data-inbox-action="promote"]').click();
+
+    const modal = page.locator('#bookmark-form-modal.show');
+    await expect(modal).toBeVisible({ timeout: 10_000 });
+    const tagsField = modal.locator('input.bookmark-inline-input').filter({ hasNot: page.locator('xpath=self::*[@type="url"]') });
+    await expect.poll(async () => modal.evaluate((el) =>
+        [...el.querySelectorAll('input')].map((input) => input.value).join('|')), { timeout: 5_000 })
+        .toContain('reading, later');
+});
+
+/** The same promise for a kept bookmark: Edit opens with its tags filled in. */
+test('Edit on a kept bookmark opens the form with its tags filled in', async ({ page }) => {
+    await bootstrap(page, {
+        kept: [{ name: 'Tagged kept', url: `https://kept-tags-${Date.now()}.example/`, createdAt: 5000, tags: ['reading', 'later'] }],
+    });
+    await openKept(page);
+
+    const row = page.locator('.unsorted-view .bookmark-link', { hasText: 'Tagged kept' });
+    await expect(row).toHaveAttribute('data-context-menu-bound', '1');
+    await row.evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        node.dispatchEvent(new MouseEvent('contextmenu', {
+            bubbles: true, cancelable: true,
+            clientX: Math.round(rect.left + 20), clientY: Math.round(rect.top + 5),
+        }));
+    });
+    await page.click('#bookmark-context-menu [data-action="edit"]');
+
+    const modal = page.locator('#bookmark-form-modal.show');
+    await expect(modal).toBeVisible({ timeout: 10_000 });
+    await expect.poll(async () => modal.evaluate((el) =>
+        [...el.querySelectorAll('input')].map((input) => input.value).join('|')), { timeout: 5_000 })
+        .toContain('reading, later');
+});
+
+/**
  * Escape walks back one layer at a time.
  *
  * From Kept with rows ticked: the ticks go first. Then Kept itself, back to

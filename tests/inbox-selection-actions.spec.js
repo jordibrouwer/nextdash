@@ -188,3 +188,49 @@ test.describe('inbox selection and row actions', () => {
         await expect(page.locator('#bookmark-context-menu [data-action="inbox-read"]')).toHaveCount(0);
     });
 });
+
+/**
+ * Select all, on the bar.
+ *
+ * The kept list's selection bar has had it since it was built; the queue's
+ * had every bulk action but that one, so ticking forty rows meant forty
+ * clicks or knowing Ctrl/Cmd+A. It ticks what the filter shows, and a second
+ * press clears them, the same chord-like toggle the key has.
+ */
+test('the selection bar ticks every row the filter shows', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const body = await (await fetch('/api/inbox', { cache: 'no-store' })).json();
+        const existing = Array.isArray(body) ? body : (Array.isArray(body?.items) ? body.items : []);
+        for (const item of existing) {
+            await api(`/api/inbox?id=${encodeURIComponent(item.id)}`, { method: 'DELETE' });
+        }
+        for (const n of [1, 2, 3]) {
+            await api('/api/inbox', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: `https://all-${n}-${Date.now()}.example/`, title: `All ${n}` }),
+            });
+        }
+        window.dashboardInstance.settings.inboxEnabled = true;
+        await window.dashboardInstance.inbox.openInboxView();
+        await window.dashboardInstance.inbox.loadAndRender({ refresh: true });
+    });
+    await expect(page.locator('.inbox-item')).toHaveCount(3, { timeout: 10_000 });
+
+    await page.locator('.inbox-item-check-input').first().check();
+    const selectAll = page.locator('.inbox-selection-bar [data-inbox-selection="select-all"]');
+    await selectAll.click();
+    await expect(page.locator('.inbox-selection-count')).toContainText('3');
+    await expect(page.locator('.inbox-item.is-checked')).toHaveCount(3);
+
+    // Pressed again over a full selection, it clears -- the bar goes with it.
+    await selectAll.click();
+    await expect(page.locator('.inbox-item.is-checked')).toHaveCount(0);
+    await expect(page.locator('.inbox-selection-bar')).toHaveCount(0);
+});
