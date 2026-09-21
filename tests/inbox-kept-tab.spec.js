@@ -288,7 +288,7 @@ test('keeping a link moves the count beside the Kept tab', async ({ page }) => {
     await page.keyboard.press('t');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
-    await page.keyboard.press('r');
+    await page.keyboard.press('Shift+K');
 
     // No reload, no tab switch: the strip is repainted by the keep itself.
     await expect(page.locator('[data-inbox-tab="kept"] .inbox-tab-count')).toHaveText('1', { timeout: 10_000 });

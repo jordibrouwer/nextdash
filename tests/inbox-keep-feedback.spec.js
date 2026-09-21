@@ -106,7 +106,7 @@ test('keeping from the triage card lands on the card own Kept counter', async ({
     await expect(counter).toBeVisible();
     await expect(counter).toContainText('0');
 
-    await page.keyboard.press('r');
+    await page.keyboard.press('Shift+K');
 
     await expect(page.locator('.app-notification', { hasText: 'Kept' })).toBeVisible({ timeout: 5_000 });
     await expect.poll(() => keptHas(page, url), { timeout: 15_000 }).toBe(true);
@@ -169,4 +169,69 @@ test('sending a kept link back flies it to the queue tab', async ({ page }) => {
     await expect(page.locator('.keep-flight')).toHaveCount(1, { timeout: 5_000 });
     await expect(page.locator('[data-inbox-tab="triage"] .is-bumped')).toHaveCount(1, { timeout: 5_000 });
     await expect.poll(() => inboxHas(page, url), { timeout: 15_000 }).toBe(true);
+});
+
+async function keepRow(page, title) {
+    const row = page.locator('.inbox-item', { hasText: title });
+    await row.hover();
+    await row.locator('[data-inbox-action="keep"]').click();
+}
+
+async function addBookmark(page, pageId, bookmark) {
+    await page.evaluate(async ({ p, b }) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/bookmarks/add', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: p, bookmark: { category: '', ...b } }),
+        });
+    }, { p: pageId, b: bookmark });
+}
+
+/** A link filed on a page is not kept: the toast says where it already is. */
+test('keeping a link already filed on a page says where it is, not Kept', async ({ page }) => {
+    await bootstrap(page);
+    const url = await queue(page, 'Filed already');
+    await addBookmark(page, 1, { name: 'Filed copy', url });
+    await page.evaluate(() => window.dashboardInstance.loadAllBookmarks());
+
+    await keepRow(page, 'Filed already');
+    await expect(page.locator('.app-notification', { hasText: 'Already filed' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.app-notification', { hasText: 'on the Kept tab' })).toHaveCount(0);
+    expect(await keptHas(page, url)).toBe(false);
+    await expect.poll(() => inboxHas(page, url), { timeout: 10_000 }).toBe(false);
+});
+
+/** Undo after keeping a link Kept already had leaves that copy alone. */
+test('undoing a keep of a link already in Kept keeps the older copy', async ({ page }) => {
+    await bootstrap(page);
+    const url = await queue(page, 'Kept twice');
+    await addBookmark(page, 999999, { name: 'Older kept copy', url, note: 'my note' });
+
+    await keepRow(page, 'Kept twice');
+    await page.locator('.app-notification', { hasText: 'Kept' }).locator('.app-notification-action').click();
+
+    await expect.poll(() => inboxHas(page, url), { timeout: 15_000 }).toBe(true);
+    // The row is back on screen only once undo has run to its end.
+    await expect(page.locator('.inbox-item', { hasText: 'Kept twice' })).toBeVisible({ timeout: 15_000 });
+    expect(await keptHas(page, url)).toBe(true);
+});
+
+/** Undo into a full inbox leaves the kept copy where it is. */
+test('undoing a keep into a full inbox keeps the link in Kept', async ({ page }) => {
+    await bootstrap(page);
+    const url = await queue(page, 'Full undo');
+    await keepRow(page, 'Full undo');
+    await expect.poll(() => keptHas(page, url), { timeout: 15_000 }).toBe(true);
+
+    await page.route('**/api/inbox', async (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        return route.fulfill({
+            status: 409, contentType: 'application/json',
+            body: JSON.stringify({ error: 'at_capacity', message: 'Inbox is full' }),
+        });
+    });
+    await page.locator('.app-notification', { hasText: 'Kept' }).locator('.app-notification-action').click();
+    await expect(page.locator('.app-notification', { hasText: 'Could not take the keep back' }))
+        .toBeVisible({ timeout: 10_000 });
+    expect(await keptHas(page, url)).toBe(true);
 });

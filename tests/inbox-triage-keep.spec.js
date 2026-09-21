@@ -34,7 +34,7 @@ test('Keep promotes an inbox item to Unsorted without opening a modal', async ({
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
 
-    await page.keyboard.press('r');
+    await page.keyboard.press('Shift+K');
 
     // No bookmark form modal opened.
     await expect(page.locator('#bookmark-form-modal, .bookmark-form-modal')).toBeHidden();
@@ -112,4 +112,51 @@ test('Keep carries the note, the tags and the preview to the kept bookmark', asy
 
     expect(kept.note).toBe('read the second half');
     expect(kept.tags).toEqual(['research', 'later']);
+});
+
+/**
+ * The card reads the same letters as the list: r marks read and moves on,
+ * Shift+K keeps. r used to keep here and mark read in the list.
+ */
+test('on the triage card r marks read and moves on, without keeping', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+    await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+
+    const stamp = Date.now();
+    const urls = [`https://read-a-${stamp}.example/x`, `https://read-b-${stamp}.example/x`];
+    await page.evaluate(async (list) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        for (const u of list) {
+            await api('/api/inbox', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: u, title: 'Read me' }),
+            });
+        }
+    }, urls);
+    await page.locator('#page-nav-inbox-btn').click();
+    await expect(page.locator('.inbox-layout')).toBeVisible();
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
+
+    await page.keyboard.press('t');
+    await expect.poll(() => page.evaluate(() =>
+        !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
+    const first = await page.evaluate(() => window.dashboardInstance.inbox.triage.currentItem().url);
+    const index = await page.evaluate(() => window.dashboardInstance.inbox.triage.index);
+
+    await page.keyboard.press('r');
+
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox.triage.index),
+        { timeout: 10_000 }).toBe(index + 1);
+    const state = await page.evaluate(async (u) => {
+        const inbox = await (await fetch('/api/inbox', { cache: 'no-store' })).json();
+        const kept = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        const row = (inbox.items || []).find((i) => i.url === u);
+        return { read: Boolean(row?.readAt), kept: (kept.bookmarks || []).some((b) => b.url === u) };
+    }, first);
+    expect(state).toEqual({ read: true, kept: false });
 });

@@ -493,3 +493,50 @@ func (fs *FileStore) UpdateInboxLink(id string, mutate func(*InboxLink) error) (
 	}
 	return InboxLink{}, ErrInboxItemNotFound
 }
+
+// BatchInboxLinks applies one change to many items under a single lock and a
+// single write of inbox.json. mutate returns true to drop the item. It reports
+// the items as they were before the change (for events and icon cleanup) and
+// the ids it could not find.
+func (fs *FileStore) BatchInboxLinks(ids []string, mutate func(*InboxLink) bool) ([]InboxLink, []string, error) {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	wanted := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		if id = strings.TrimSpace(id); id != "" {
+			wanted[id] = false
+		}
+	}
+	inbox := fs.readInboxDataLocked()
+	before := make([]InboxLink, 0, len(wanted))
+	next := make([]InboxLink, 0, len(inbox.Items))
+	for _, item := range inbox.Items {
+		seen, ok := wanted[item.ID]
+		if !ok || seen {
+			next = append(next, item)
+			continue
+		}
+		wanted[item.ID] = true
+		before = append(before, item)
+		if mutate(&item) {
+			continue
+		}
+		next = append(next, item)
+	}
+	missing := make([]string, 0)
+	for _, id := range ids {
+		if found, ok := wanted[strings.TrimSpace(id)]; ok && !found {
+			missing = append(missing, id)
+			wanted[strings.TrimSpace(id)] = true
+		}
+	}
+	if len(before) == 0 {
+		return before, missing, nil
+	}
+	inbox.Items = next
+	if err := fs.saveInboxDataLocked(inbox); err != nil {
+		return nil, nil, err
+	}
+	return before, missing, nil
+}

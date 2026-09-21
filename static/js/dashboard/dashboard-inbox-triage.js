@@ -260,6 +260,13 @@ class DashboardInboxTriage {
         }
 
         const key = e.key.toLowerCase();
+        // Keep is Shift+K here as it is in the list, and read first: the
+        // lowercase test below takes k for "previous".
+        if (e.key === 'K') {
+            e.preventDefault();
+            void this.actKeep();
+            return;
+        }
         if (e.key === 'Escape') {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -276,7 +283,7 @@ class DashboardInboxTriage {
             this.advance(-1);
             return;
         }
-        if (key === 'o' || e.key === 'Enter') {
+        if (key === 'o' || e.key === 'Enter' || key === ' ') {
             e.preventDefault();
             void this.actOpen();
             return;
@@ -291,9 +298,11 @@ class DashboardInboxTriage {
             void this.actDelete();
             return;
         }
-        if (key === 'r' || key === ' ') {
+        // r marks read and moves on, as it marks read in the list. It used to
+        // keep here and mark read there: one letter, two meanings a tab apart.
+        if (e.key === 'r') {
             e.preventDefault();
-            void this.actKeep();
+            void this.actMarkRead();
             return;
         }
         if (key === 'z') {
@@ -334,6 +343,18 @@ class DashboardInboxTriage {
             if (await this.inbox.markReadReporting(item.id)) {
                 item.readAt = Date.now();
             }
+        }
+        await this.afterAction(false, { readId: item.id });
+    }
+
+    /** Read, without opening it: the card stays in the run, the cursor moves on. */
+    async actMarkRead() {
+        const item = this.currentItem();
+        if (!item) {
+            return;
+        }
+        if (!item.readAt && await this.inbox.markReadReporting(item.id)) {
+            item.readAt = Date.now();
         }
         await this.afterAction(false, { readId: item.id });
     }
@@ -541,7 +562,7 @@ class DashboardInboxTriage {
             <div class="inbox-triage-actions">
                 <button type="button" class="inbox-action-btn" data-triage="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))} <kbd>O</kbd></button>
                 <button type="button" class="inbox-action-btn" data-triage="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))} <kbd>P</kbd></button>
-                <button type="button" class="inbox-action-btn" data-triage="keep">${this.escape(this.t('dashboard.inboxTriageKeep', 'Keep'))} <kbd>R</kbd></button>
+                <button type="button" class="inbox-action-btn" data-triage="keep">${this.escape(this.t('dashboard.inboxTriageKeep', 'Keep'))} <kbd>K</kbd></button>
                 <button type="button" class="inbox-action-btn" data-triage="snooze">${this.escape(snoozeLabel)} <kbd>Z</kbd></button>
                 <button type="button" class="inbox-action-btn" data-triage="note">${this.escape(noteLabel)} <kbd>N</kbd></button>
                 <button type="button" class="inbox-action-btn inbox-action-btn--danger" data-triage="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))} <kbd>D</kbd></button>

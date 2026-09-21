@@ -30,7 +30,7 @@
         { keys: 'Enter / Space', legendKey: 'inboxKeyOpen', cheatKey: 'ivOpen', fallback: 'open' },
         { keys: 'p', legendKey: 'inboxKeyPromote', cheatKey: 'ivPromote', fallback: 'promote' },
         { keys: 'n', legendKey: 'inboxKeyNote', cheatKey: 'ivNote', fallback: 'note' },
-        // In the list r marks the row read; it is triage's card where r keeps.
+        // r marks read and Shift+K keeps, here and on triage's card alike.
         { keys: 'r', legendKey: 'inboxKeyMarkRead', cheatKey: 'ivMarkRead', fallback: 'mark read' },
         { keys: 'K', legendKey: 'inboxKeyKeep', cheatKey: 'ivKeep', fallback: 'keep · to Kept' },
         { keys: 'z', legendKey: 'inboxKeySnooze', cheatKey: 'ivSnooze', fallback: 'snooze' },
@@ -72,9 +72,11 @@
     /** @type {LegendRow[]} */
     const INBOX_TRIAGE = [
         { keys: 'j / k', legendKey: 'inboxKeyMove', cheatKey: 'itMove', fallback: 'next / previous' },
-        { keys: 'o / Enter', legendKey: 'inboxKeyOpen', cheatKey: 'itOpen', fallback: 'open' },
+        { keys: 'o / Enter / Space', legendKey: 'inboxKeyOpen', cheatKey: 'itOpen', fallback: 'open' },
         { keys: 'p', legendKey: 'inboxKeyPromote', cheatKey: 'itPromote', fallback: 'promote' },
-        { keys: 'r / Space', legendKey: 'inboxKeyKeep', cheatKey: 'itKeep', fallback: 'keep · to Kept' },
+        // The same letters as the list: r reads, Shift+K keeps.
+        { keys: 'r', legendKey: 'inboxKeyMarkRead', cheatKey: 'itMarkRead', fallback: 'mark read' },
+        { keys: 'K', legendKey: 'inboxKeyKeep', cheatKey: 'itKeep', fallback: 'keep · to Kept' },
         { keys: 'z', legendKey: 'inboxKeySnooze', cheatKey: 'itSnooze', fallback: 'snooze' },
         { keys: 'n', legendKey: 'inboxKeyNote', cheatKey: 'itNote', fallback: 'note' },
         { keys: 'd', legendKey: 'inboxKeyDelete', cheatKey: 'itDelete', fallback: 'delete' },

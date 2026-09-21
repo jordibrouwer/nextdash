@@ -262,6 +262,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/inbox", handlers.DeleteInboxItem).Methods("DELETE")
 	r.HandleFunc("/api/inbox", handlers.PatchInboxItem).Methods("PATCH")
 	r.HandleFunc("/api/inbox", handlers.PutInboxItem).Methods("PUT")
+	r.HandleFunc("/api/inbox/batch", handlers.BatchInbox).Methods("POST")
 	r.HandleFunc("/api/inbox-stats", handlers.GetInboxStats).Methods("GET")
 	r.HandleFunc("/api/trash", handlers.GetTrash).Methods("GET")
 	r.HandleFunc("/api/trash", handlers.AddTrashItems).Methods("POST")

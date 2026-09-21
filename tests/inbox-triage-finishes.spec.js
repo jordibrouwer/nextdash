@@ -94,7 +94,7 @@ test.describe('triage can be finished', () => {
         // Keep every one of them. Keep now promotes and removes the card, so
         // the queue empties one card at a time down to the last one.
         for (let i = 0; i < total; i += 1) {
-            await page.keyboard.press('r');
+            await page.keyboard.press('Shift+K');
             await page.waitForTimeout(250);
         }
 

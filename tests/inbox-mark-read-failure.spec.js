@@ -54,10 +54,14 @@ async function openInboxWithOneUnread(page) {
     return id;
 }
 
-/** Fail every PATCH to /api/inbox, leaving the other verbs alone. */
+/**
+ * Fail every write that marks read -- the single PATCH and the batch route the
+ * bulk paths use -- leaving the other verbs alone.
+ */
 async function failPatches(page) {
-    await page.route('**/api/inbox', async (route) => {
-        if (route.request().method() === 'PATCH') {
+    await page.route(/\/api\/inbox(\/batch)?$/, async (route) => {
+        const req = route.request();
+        if (req.method() === 'PATCH' || (req.method() === 'POST' && req.url().endsWith('/batch'))) {
             await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
             return;
         }
@@ -165,5 +169,28 @@ test.describe('inbox — a failed mark-read is reported as one', () => {
 
         expect(toasts.some((t) => /failed/i.test(t.message)),
             `toasts were ${JSON.stringify(toasts)}`).toBe(true);
+    });
+});
+
+test.describe('inbox — bulk writes', () => {
+    test('mark all read is one request, and the toast takes it back', async ({ page }) => {
+        const id = await openInboxWithOneUnread(page);
+        const writes = [];
+        page.on('request', (req) => {
+            if (/\/api\/inbox(\/batch)?(\?|$)/.test(req.url()) && req.method() !== 'GET') {
+                writes.push(`${req.method()} ${new URL(req.url()).pathname}`);
+            }
+        });
+
+        await page.evaluate(() => window.dashboardInstance.inbox.markAllRead());
+        expect(writes).toEqual(['POST /api/inbox/batch']);
+
+        await page.locator('.app-notification', { hasText: /Marked \d+ read/ })
+            .locator('.app-notification-action').click();
+        await expect.poll(() => page.evaluate(async (wanted) => {
+            const data = await (await fetch('/api/inbox', { cache: 'no-store' })).json();
+            const row = (data.items || []).find((i) => i.id === wanted);
+            return Boolean(row) && !row.readAt;
+        }, id), { timeout: 10_000 }).toBe(true);
     });
 });

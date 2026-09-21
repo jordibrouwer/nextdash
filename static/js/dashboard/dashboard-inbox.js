@@ -199,6 +199,10 @@ class DashboardInbox {
                     this.keepOnlyVisibleChecked();
                 } else if (action === 'suggest') {
                     this.openSuggestPopover(btn);
+                } else if (action === 'keep') {
+                    void this.bulkKeep();
+                } else if (action === 'tags') {
+                    void this.bulkTags();
                 } else if (action === 'select-all') {
                     // What the filter shows, and a second press clears it --
                     // the same toggle Ctrl/Cmd+A is.
@@ -231,6 +235,8 @@ class DashboardInbox {
             ${offscreen}
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="select-all">${this.escape(this.t('dashboard.unsortedSelectAll', 'Select all'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}</button>
+            ${this.keptEnabled() ? `<button type="button" class="inbox-bulk-btn" data-inbox-selection="keep">${this.escape(this.t('dashboard.inboxTriageKeep', 'Keep'))}</button>` : ''}
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="tags">${this.escape(this.t('dashboard.inboxSelectionTags', 'Tags'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="open">${this.escape(this.t('dashboard.inboxSelectionOpen', 'Open'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="copy">${this.escape(this.t('dashboard.inboxSelectionCopy', 'Copy links'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="suggest">${this.escape(this.t('dashboard.unsortedSelectSuggest', 'Suggest tags'))}</button>
@@ -239,6 +245,158 @@ class DashboardInbox {
             <button type="button" class="inbox-bulk-btn inbox-bulk-btn--danger" data-inbox-selection="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="clear">${this.escape(this.t('dashboard.inboxSelectionClear', 'Clear selection'))}</button>
         `;
+    }
+
+    /**
+     * Keep every ticked link: each one onto the kept page, then the batch out
+     * of the queue in one write. Links already filed on a page are counted
+     * apart and leave the queue too, as a single Keep of one does; links
+     * already kept are not copied twice, and undo leaves those copies alone.
+     */
+    async bulkKeep() {
+        const targets = this.checkedItems();
+        if (!targets.length || !this.keptEnabled()) return;
+        const d = this.dash;
+        this._trackAction('bulk-keep', { size: this._countBucket(targets.length) });
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            if (!d._unsortedPageId) {
+                const res = await fetch('/api/unsorted');
+                if (!res.ok) throw new Error('unsorted lookup failed');
+                d._unsortedPageId = (await res.json()).page.id;
+            }
+        } catch {
+            d.showNotification(this.t('dashboard.inboxKeepFailed', 'Could not keep this link'), 'error');
+            return;
+        }
+        const leaving = [];
+        const made = [];
+        let filedElsewhere = 0;
+        let failed = 0;
+        for (const item of targets) {
+            try {
+                const res = await fetcher('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: d._unsortedPageId, bookmark: this.keptBookmarkFor(item) }),
+                });
+                if (res.ok) {
+                    made.push(JSON.parse(JSON.stringify(item)));
+                } else if (res.status === 409) {
+                    const body = await res.json().catch(() => null);
+                    const onKept = body?.samePage === true
+                        || Number(body?.conflict?.pageId) === Number(d._unsortedPageId);
+                    if (!onKept) filedElsewhere += 1;
+                } else {
+                    failed += 1;
+                    continue;
+                }
+                leaving.push(item.id);
+            } catch {
+                failed += 1;
+            }
+        }
+        if (leaving.length) {
+            if (d.settings?.inboxDeleteAfterPromote === false) {
+                await this.batchInboxSafe('read', leaving);
+            } else {
+                await this.batchInboxSafe('delete', leaving, { reason: 'promote' });
+            }
+        }
+        this.clearChecked();
+        d._widgetUnsorted = null;
+        await d.loadAllBookmarks?.();
+        this.syncTabStrip();
+        this.bumpKeptCounters();
+        if (this.isActiveView()) this.render();
+        const kept = leaving.length - filedElsewhere;
+        if (kept) {
+            d.showNotification(
+                this.t('dashboard.inboxBulkKept', 'Kept {count} — on the Kept tab', { count: kept }),
+                'success',
+                {
+                    duration: 8000,
+                    undoCallback: made.length ? () => this.undoBulkKeep(made) : null,
+                }
+            );
+        }
+        if (filedElsewhere) {
+            d.showNotification(
+                this.t('dashboard.inboxPromoteDuplicate', '{count} were already saved as bookmarks',
+                    { count: filedElsewhere }),
+                'info', { duration: 4000 });
+        }
+        if (failed) {
+            d.showErrorNotification?.(
+                this.t('dashboard.inboxBulkKeepPartial', '{count} could not be kept', { count: failed }));
+        }
+    }
+
+    /** Back into the queue, and the kept copies this made off the kept page. */
+    async undoBulkKeep(snapshots) {
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const pageId = Number(d._unsortedPageId) || 999999;
+        const keptEntries = d.settings?.inboxDeleteAfterPromote === false;
+        let back = 0;
+        for (const snap of snapshots) {
+            try {
+                if (keptEntries) {
+                    await this.markUnread(snap.id);
+                } else if (!(await this.restoreItem(snap))) {
+                    continue;
+                }
+                await fetcher('/api/bookmarks', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: pageId, bookmark: { url: snap.url } }),
+                });
+                back += 1;
+            } catch {
+                // Counted below; the link is still kept.
+            }
+        }
+        d._widgetUnsorted = null;
+        await d.loadAllBookmarks?.();
+        this.syncTabStrip();
+        if (this.isActiveView()) await this.loadAndRender({ refresh: true });
+        d.showNotification(
+            back
+                ? this.t('dashboard.inboxSelectionDeleteRestored', 'Restored {count} links', { count: back })
+                : this.t('dashboard.inboxUndoFailed', 'Could not restore'),
+            back ? 'success' : 'error', { duration: 3000 });
+    }
+
+    /**
+     * Tag every ticked link at once. What is typed is added to what each link
+     * has; a tag written with a leading minus is taken off instead, so one
+     * dialog can both add and clear across the selection.
+     */
+    async bulkTags() {
+        const targets = this.checkedItems();
+        if (!targets.length) return;
+        const typed = await this.promptTags('', {
+            label: this.t('dashboard.inboxBulkTagsLabel',
+                'Tags to add to {count} links, separated by commas. Put - in front to remove one.',
+                { count: targets.length }),
+        });
+        if (typed === null) return;
+        const words = typed.split(',').map((tag) => tag.trim().toLowerCase()).filter(Boolean);
+        const removeTags = words.filter((tag) => tag.startsWith('-')).map((tag) => tag.slice(1).trim()).filter(Boolean);
+        const addTags = words.filter((tag) => !tag.startsWith('-'));
+        if (!addTags.length && !removeTags.length) return;
+        this._trackAction('bulk-tags', { size: this._countBucket(targets.length) });
+        const { done, failed } = await this.batchInboxSafe('tag', targets.map((item) => item.id),
+            { addTags, removeTags });
+        if (this.isActiveView()) this.render();
+        if (done.length) {
+            this.dash.showNotification(
+                this.t('dashboard.inboxBulkTagsSaved', 'Tagged {count} links', { count: done.length }),
+                'success', { duration: 3000 });
+        }
+        if (failed) {
+            this.dash.showErrorNotification?.(this.t('dashboard.inboxTagsFailed', 'Could not save tags'));
+        }
     }
 
     /**
@@ -276,13 +434,15 @@ class DashboardInbox {
      * — so this is the other half rather than a replacement: pick the
      * destination once, and the titles the inbox already captured are used as-is.
      */
-    async bulkPromote(pageId) {
+    async bulkPromote(pageId, category = '') {
         const targets = this.checkedItems();
         if (!targets.length) return;
         this._trackAction('bulk-promote', { size: this._countBucket(targets.length) });
+        const d = this.dash;
 
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const results = await Promise.allSettled(targets.map(async (item) => {
+            const snapshot = JSON.parse(JSON.stringify(item));
             const res = await fetcher('/api/bookmarks/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -291,8 +451,16 @@ class DashboardInbox {
                     bookmark: {
                         name: item.previewTitle || item.title || item.domain || item.url,
                         url: item.url,
-                        category: '',
+                        category: String(category || ''),
                         tags: Array.isArray(item.tags) ? item.tags : [],
+                        // What the item carried, as a single promote and Keep
+                        // already carry it: the note written while reading it
+                        // was dropped at exactly the moment it was filed.
+                        note: item.note || '',
+                        icon: item.icon || '',
+                        previewTitle: item.previewTitle || '',
+                        previewDesc: item.previewDesc || '',
+                        previewImage: item.previewImage || '',
                         createdAt: Date.now(),
                     },
                 }),
@@ -301,14 +469,14 @@ class DashboardInbox {
             // promote — it is the reason the inbox entry can go. Counted apart
             // from real errors below so the message can say which happened.
             if (res.status === 409) {
-                await this.completePromote(item.id);
-                return { id: item.id, duplicate: true };
+                await this.completePromote(item.id, { skipRender: true });
+                return { snapshot, duplicate: true };
             }
             if (!res.ok) throw new Error(`promote HTTP ${res.status}`);
             // Only clear the inbox entry once its bookmark exists, so a failure
             // leaves the link here to try again rather than losing it.
-            await this.completePromote(item.id);
-            return { id: item.id, duplicate: false };
+            await this.completePromote(item.id, { skipRender: true });
+            return { snapshot, duplicate: false };
         }));
 
         const settled = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
@@ -316,6 +484,8 @@ class DashboardInbox {
         const promoted = settled.length - duplicates;
         const failed = results.length - settled.length;
         this.clearChecked();
+        // Once, at the end: each row used to redraw the list as its own
+        // promote landed, a few hundred times over on a big selection.
         if (this.isActiveView()) {
             await this.loadAndRender({ refresh: true });
         } else {
@@ -323,14 +493,18 @@ class DashboardInbox {
         }
 
         if (promoted) {
-            this.dash.showNotification?.(
+            const made = settled.filter((r) => !r.duplicate).map((r) => r.snapshot);
+            d.showNotification?.(
                 this.t('dashboard.inboxPromotedCount', 'Promoted {count} links', { count: promoted }),
                 'success',
-                { duration: 3000 }
+                {
+                    duration: 8000,
+                    undoCallback: () => this.undoBulkPromote(made, Number(pageId)),
+                }
             );
         }
         if (duplicates) {
-            this.dash.showNotification?.(
+            d.showNotification?.(
                 this.t('dashboard.inboxPromoteDuplicate', '{count} were already saved as bookmarks',
                     { count: duplicates }),
                 'info',
@@ -338,26 +512,91 @@ class DashboardInbox {
             );
         }
         if (failed) {
-            this.dash.showErrorNotification?.(
+            d.showErrorNotification?.(
                 this.t('dashboard.inboxPromotePartial', '{count} could not be promoted', { count: failed })
             );
         }
     }
 
+    /**
+     * Take a bulk promote back: the bookmarks it made come off the page and
+     * the inbox entries return. The entry goes back first, so a failure in
+     * between leaves the link in two places rather than none.
+     */
+    async undoBulkPromote(snapshots, pageId) {
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const keptEntries = d.settings?.inboxDeleteAfterPromote === false;
+        let back = 0;
+        for (const snap of snapshots) {
+            try {
+                if (keptEntries) {
+                    await this.markUnread(snap.id);
+                } else if (!(await this.restoreItem(snap))) {
+                    continue;
+                }
+                await fetcher('/api/bookmarks', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: pageId, bookmark: { url: snap.url } }),
+                });
+                back += 1;
+            } catch {
+                // Counted below; the bookmark is still filed.
+            }
+        }
+        await d.loadAllBookmarks?.();
+        if (this.isActiveView()) {
+            await this.loadAndRender({ refresh: true });
+        } else {
+            await this.refreshBadge();
+        }
+        d.showNotification(
+            back
+                ? this.t('dashboard.inboxSelectionDeleteRestored', 'Restored {count} links', { count: back })
+                : this.t('dashboard.inboxUndoFailed', 'Could not restore'),
+            back ? 'success' : 'error',
+            { duration: 3000 }
+        );
+    }
+
     /** Pick the page the ticked links become bookmarks on. */
     openBulkPromoteMenu(anchor) {
         this.closeSnoozeMenu();
-        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        const d = this.dash;
+        const pages = Array.isArray(d.pages) ? d.pages : [];
         if (!pages.length) return;
 
         const menu = document.createElement('div');
         menu.className = 'inbox-snooze-menu inbox-promote-menu';
         menu.setAttribute('role', 'menu');
-        menu.innerHTML = `<p class="inbox-promote-menu-title">${this.escape(
-            this.t('dashboard.inboxPromoteToPage', 'Promote to page')
-        )}</p>` + pages.map((page) => `
-            <button type="button" class="inbox-snooze-option" role="menuitem" data-promote-page="${this.escape(String(page.id))}">${this.escape(page.name || String(page.id))}</button>
-        `).join('');
+        const option = (attrs, label) => `
+            <button type="button" class="inbox-snooze-option" role="menuitem" ${attrs}>${this.escape(label)}</button>`;
+        const title = (text) => `<p class="inbox-promote-menu-title">${this.escape(text)}</p>`;
+        const pageLabel = (page) => d.pageNav?.pageLabel?.(page.id) || page.name || String(page.id);
+
+        const showPages = () => {
+            menu.innerHTML = title(this.t('dashboard.inboxPromoteToPage', 'Promote to page'))
+                + pages.map((page) => option(`data-promote-page="${this.escape(String(page.id))}"`,
+                    pageLabel(page))).join('');
+        };
+        /*
+         * Then the category, the way Kept's Move to… asks it: a batch filed
+         * loose on a page is a batch still to be sorted, only somewhere else.
+         * The same lookup, so the two pickers list the same categories.
+         */
+        const showCategories = async (page) => {
+            menu.innerHTML = title(pageLabel(page))
+                + option('data-promote-back', `← ${this.t('dashboard.inboxPromoteToPage', 'Promote to page')}`);
+            const categories = await d.unsorted?.select?.categoriesOnPage?.(page) || [];
+            if (!menu.isConnected) return;
+            menu.innerHTML += categories.map((category) => option(
+                `data-promote-category="${this.escape(category.id)}" data-page="${this.escape(String(page.id))}"`,
+                category.label)).join('')
+                + option(`data-promote-category="" data-page="${this.escape(String(page.id))}"`,
+                    this.t('dashboard.unsortedMoveNoCategory', 'No category'));
+        };
+        showPages();
 
         document.body.appendChild(menu);
         this._snoozeMenu = menu;
@@ -372,11 +611,21 @@ class DashboardInbox {
         }
 
         menu.addEventListener('click', (e) => {
-            const btn = e.target.closest('[data-promote-page]');
-            if (!btn) return;
-            const pageId = btn.getAttribute('data-promote-page');
+            e.stopPropagation();
+            if (e.target.closest('[data-promote-back]')) {
+                showPages();
+                return;
+            }
+            const pageBtn = e.target.closest('[data-promote-page]');
+            if (pageBtn) {
+                const page = pages.find((p) => String(p.id) === pageBtn.getAttribute('data-promote-page'));
+                if (page) void showCategories(page);
+                return;
+            }
+            const catBtn = e.target.closest('[data-promote-category]');
+            if (!catBtn) return;
             this.closeSnoozeMenu();
-            void this.bulkPromote(pageId);
+            void this.bulkPromote(catBtn.getAttribute('data-page'), catBtn.getAttribute('data-promote-category'));
         });
 
         const onOutside = (e) => {
@@ -829,8 +1078,7 @@ class DashboardInbox {
         // The results were discarded outright, so a selection that failed to
         // save reported nothing at all — the ticks cleared and the rows simply
         // stayed unread.
-        const results = await Promise.allSettled(targets.map((item) => this.markRead(item.id)));
-        const failed = results.filter((r) => r.status === 'rejected').length;
+        const { failed } = await this.batchInboxSafe('read', targets.map((item) => item.id));
         this.clearChecked();
         if (this.isActiveView()) {
             this.render();
@@ -851,8 +1099,8 @@ class DashboardInbox {
         // Reported for the same reason bulkMarkRead reports: discarding the
         // results meant a selection that failed to save said nothing at all —
         // the ticks cleared and the rows simply stayed awake.
-        const results = await Promise.allSettled(targets.map((item) => this.patchSnooze(item.id, until)));
-        const failed = results.filter((r) => r.status === 'rejected').length;
+        const { failed } = await this.batchInboxSafe('snooze', targets.map((item) => item.id),
+            { snoozedUntil: Number(until) });
         this.clearChecked();
         if (this.isActiveView()) {
             this.render();
@@ -884,15 +1132,15 @@ class DashboardInbox {
         if (!ok) return;
         this._trackAction('bulk-delete', { size: this._countBucket(targets.length) });
         const d = this.dash;
-        const results = await Promise.allSettled(targets.map((item) => this.deleteItem(item.id)));
+        const copies = targets.map((item) => JSON.parse(JSON.stringify(item)));
+        const { done } = await this.batchInboxSafe('delete', targets.map((item) => item.id));
         // Only the items that really went are snapshotted: undoing a partial
         // batch used to re-PUT the survivors too, restoring items that were
         // never deleted.
-        const snapshots = targets
-            .filter((_, i) => results[i].status === 'fulfilled')
-            .map((item) => JSON.parse(JSON.stringify(item)));
+        const went = new Set(done);
+        const snapshots = copies.filter((item) => went.has(item.id));
         const removed = snapshots.length;
-        const failed = results.length - removed;
+        const failed = targets.length - removed;
         this.clearChecked();
         if (this.isActiveView()) {
             this.render();
@@ -1550,6 +1798,64 @@ class DashboardInbox {
         }
         this.items = this.items.filter((item) => item.id !== id);
         this.dash.pageNav?.updateInboxTabBadge?.();
+    }
+
+    /**
+     * One action over many items, in one request (BatchInbox in Go). Every
+     * bulk path used to send a request per item, and each one rewrote the
+     * whole inbox file. Local state is updated here for the ids the server
+     * found; the rest come back as `missing`.
+     */
+    async batchInbox(op, ids, extra = {}) {
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await fetcher('/api/inbox/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ op, ids, ...extra }),
+        });
+        if (!res.ok) throw new Error(`inbox batch HTTP ${res.status}`);
+        const body = await res.json().catch(() => ({}));
+        const missing = new Set(Array.isArray(body.missing) ? body.missing : []);
+        const done = ids.filter((id) => !missing.has(id));
+        const doneSet = new Set(done);
+        const now = Date.now();
+        if (op === 'delete') {
+            this.items = this.items.filter((item) => !doneSet.has(item.id));
+        } else {
+            this.items.forEach((item) => {
+                if (!doneSet.has(item.id)) return;
+                if (op === 'read') {
+                    if (!item.readAt) item.readAt = now;
+                    this._deliberateUnread?.delete(item.id);
+                } else if (op === 'unread') {
+                    item.readAt = 0;
+                    if (!this._deliberateUnread) this._deliberateUnread = new Set();
+                    this._deliberateUnread.add(item.id);
+                } else if (op === 'snooze') {
+                    item.snoozedUntil = Number(extra.snoozedUntil) > now ? Number(extra.snoozedUntil) : 0;
+                } else if (op === 'tag') {
+                    const drop = new Set((extra.removeTags || []).map((tag) => String(tag).toLowerCase()));
+                    const next = (Array.isArray(item.tags) ? item.tags : [])
+                        .filter((tag) => !drop.has(String(tag).toLowerCase()));
+                    (extra.addTags || []).forEach((tag) => {
+                        const clean = String(tag).trim().toLowerCase();
+                        if (clean && !next.includes(clean)) next.push(clean);
+                    });
+                    item.tags = next;
+                }
+            });
+        }
+        this.dash.pageNav?.updateInboxTabBadge?.();
+        return { done, failed: ids.length - done.length };
+    }
+
+    /** batchInbox that reports a failed request as every id failing. */
+    async batchInboxSafe(op, ids, extra) {
+        try {
+            return await this.batchInbox(op, ids, extra);
+        } catch {
+            return { done: [], failed: ids.length };
+        }
     }
 
     async restoreItem(snapshot) {
@@ -2859,17 +3165,29 @@ class DashboardInbox {
         // This branch was unreachable until markRead started throwing: it
         // resolved on failure too, so `failed` was always zero and the toast
         // claimed the whole batch had been marked.
-        const results = await Promise.allSettled(targets.map((item) => this.markRead(item.id)));
-        const failed = results.filter((r) => r.status === 'rejected').length;
+        const { done, failed } = await this.batchInboxSafe('read', targets.map((item) => item.id));
         if (this.isActiveView()) {
             this.render();
         }
+        // The way back, like Clear read's: marking a whole filtered list read
+        // is one keystroke, and each of those links was unread for a reason.
+        const undoCallback = done.length ? async () => {
+            const back = await this.batchInboxSafe('unread', done);
+            if (this.isActiveView()) this.render();
+            this.dash.showNotification(
+                back.done.length
+                    ? this.t('dashboard.inboxMarkAllReadUndone', 'Marked {count} unread again', { count: back.done.length })
+                    : this.t('dashboard.inboxUndoFailed', 'Could not restore'),
+                back.done.length ? 'success' : 'error',
+                { duration: 3000 }
+            );
+        } : null;
         this.dash.showNotification(
             failed
                 ? this.t('dashboard.inboxMarkAllReadPartial', 'Marked read, {count} failed', { count: failed })
                 : this.t('dashboard.inboxMarkAllReadDone', 'Marked {count} read', { count: targets.length }),
             failed ? 'info' : 'success',
-            { duration: 3000 }
+            { duration: undoCallback ? 8000 : 3000, undoCallback }
         );
     }
 
@@ -2899,13 +3217,13 @@ class DashboardInbox {
             return;
         }
         const d = this.dash;
-        const results = await Promise.allSettled(targets.map((item) => this.deleteItem(item.id)));
+        const copies = targets.map((item) => JSON.parse(JSON.stringify(item)));
+        const { done } = await this.batchInboxSafe('delete', targets.map((item) => item.id));
         // Snapshot only what really went, the same way bulkDelete does: undoing
         // a partial batch used to re-PUT the survivors too, and the restore
         // count then claimed more links came back than were ever deleted.
-        const snapshots = targets
-            .filter((_, i) => results[i].status === 'fulfilled')
-            .map((item) => JSON.parse(JSON.stringify(item)));
+        const went = new Set(done);
+        const snapshots = copies.filter((item) => went.has(item.id));
         const removed = snapshots.length;
         if (this.isActiveView()) {
             this.render();
@@ -5052,6 +5370,33 @@ class DashboardInbox {
      * the entire point of Unsorted. Resolves the Unsorted page id once per
      * session and caches it, matching bulkPromote's page-id-known model.
      */
+    /** The kept-page bookmark an inbox item becomes: everything it carried. */
+    keptBookmarkFor(item) {
+        return {
+            name: item.previewTitle || item.title || item.url,
+            url: item.url,
+            category: '',
+            /*
+             * Everything the inbox item had carries over.
+             *
+             * Keep used to send the name and the address alone, so
+             * the note someone wrote while filing it and the tags
+             * they gave it were dropped at the exact moment they
+             * said "keep this" -- the one action that promises the
+             * link is being held on to. The preview and the icon
+             * ride along too: the inbox already fetched them, and
+             * without them the Unsorted view asks the same sites
+             * for the same answers again.
+             */
+            note: item.note || '',
+            tags: Array.isArray(item.tags) ? item.tags : [],
+            icon: item.icon || '',
+            previewTitle: item.previewTitle || '',
+            previewDesc: item.previewDesc || '',
+            previewImage: item.previewImage || '',
+        };
+    }
+
     async keepItem(item) {
         const d = this.dash;
         // The same switch the kept tab answers to: with keeping off there is
@@ -5089,35 +5434,28 @@ class DashboardInbox {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     page: d._unsortedPageId,
-                    bookmark: {
-                        name: item.previewTitle || item.title || item.url,
-                        url: item.url,
-                        category: '',
-                        /*
-                         * Everything the inbox item had carries over.
-                         *
-                         * Keep used to send the name and the address alone, so
-                         * the note someone wrote while filing it and the tags
-                         * they gave it were dropped at the exact moment they
-                         * said "keep this" -- the one action that promises the
-                         * link is being held on to. The preview and the icon
-                         * ride along too: the inbox already fetched them, and
-                         * without them the Unsorted view asks the same sites
-                         * for the same answers again.
-                         */
-                        note: item.note || '',
-                        tags: Array.isArray(item.tags) ? item.tags : [],
-                        icon: item.icon || '',
-                        previewTitle: item.previewTitle || '',
-                        previewDesc: item.previewDesc || '',
-                        previewImage: item.previewImage || '',
-                    },
+                    bookmark: this.keptBookmarkFor(item),
                 }),
             });
-            // Already on Unsorted -- same convention as bulkPromote: a 409 for
-            // a link already saved there is not a failure, it's the reason the
-            // inbox entry can go.
-            if (response.status !== 409 && !response.ok) {
+            // A 409 is not a failure, it is the reason the inbox entry can go
+            // -- but where the link already is decides what to say. On the
+            // kept page itself it is kept, and the copy there is not this
+            // call's to take back on undo. Filed on a real page it was never
+            // waiting for a decision: the toast names the page instead of
+            // sending the reader to a tab it is not on.
+            let createdCopy = response.ok;
+            if (response.status === 409) {
+                const body = await response.json().catch(() => null);
+                const conflict = body?.conflict || {};
+                const onKept = body?.samePage === true
+                    || Number(conflict.pageId) === Number(d._unsortedPageId);
+                if (!onKept && body?.error === 'duplicate_url') {
+                    await this.completePromote(item.id);
+                    this.announceAlreadyFiled(item, conflict);
+                    return true;
+                }
+                createdCopy = false;
+            } else if (!response.ok) {
                 throw new Error('bookmark create failed');
             }
             // Off as soon as the link is safely kept, not after the reloads
@@ -5136,7 +5474,7 @@ class DashboardInbox {
             await d.loadAllBookmarks?.();
             this.syncTabStrip();
             await this.completePromote(item.id);
-            this.announceKeep(item);
+            this.announceKeep(item, { createdCopy });
             return true;
         } catch (_error) {
             d.showNotification(this.t('dashboard.inboxKeepFailed', 'Could not keep this link'), 'error');
@@ -5178,14 +5516,34 @@ class DashboardInbox {
     }
 
     /** The words, once the queue has caught up with the keep. */
-    announceKeep(item) {
+    announceKeep(item, { createdCopy = true } = {}) {
         const d = this.dash;
         d.showNotification(
             this.t('dashboard.inboxKeptToast', 'Kept — on the Kept tab'),
             'success',
             {
                 duration: 6000,
-                undoCallback: () => this.undoKeep(item),
+                undoCallback: () => this.undoKeep(item, { createdCopy }),
+            }
+        );
+    }
+
+    /**
+     * Keep on a link the collection already has on a page: the inbox entry
+     * goes, nothing is kept, and the toast says where the link lives. Undo
+     * puts the entry back in the queue and touches nothing else.
+     */
+    announceAlreadyFiled(item, conflict = {}) {
+        const d = this.dash;
+        const place = conflict.pageName || String(conflict.pageId || '');
+        d.showNotification(
+            place
+                ? this.t('dashboard.inboxKeepAlreadyFiled', 'Already filed on {page}', { page: place })
+                : this.t('dashboard.inboxKeepAlreadyFiledSomewhere', 'Already filed on a page'),
+            'info',
+            {
+                duration: 6000,
+                undoCallback: () => this.undoKeep(item, { createdCopy: false }),
             }
         );
     }
@@ -5319,7 +5677,7 @@ class DashboardInbox {
      * Take a keep back: the link returns to the queue with what was written
      * about it, and leaves the kept page.
      */
-    async undoKeep(item) {
+    async undoKeep(item, { createdCopy = true } = {}) {
         const d = this.dash;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const headers = { 'Content-Type': 'application/json' };
@@ -5335,13 +5693,24 @@ class DashboardInbox {
                     source: item.source || 'keep-undo',
                 }),
             });
-            if (!added.ok && added.status !== 409) throw new Error(`inbox HTTP ${added.status}`);
-            const pageId = Number(d._unsortedPageId) || 999999;
-            await fetcher('/api/bookmarks', {
-                method: 'DELETE',
-                headers,
-                body: JSON.stringify({ page: pageId, bookmark: { url: item.url } }),
-            });
+            // Already waiting in the queue is fine; a full queue is not -- the
+            // kept copy is then the only one, and must stay.
+            if (!added.ok) {
+                const body = await added.json().catch(() => null);
+                if (!(added.status === 409 && body?.error === 'duplicate_url')) {
+                    throw new Error(`inbox HTTP ${added.status}`);
+                }
+            }
+            // Only the copy this keep made: one that was already on the kept
+            // page, with its own note and tags, was there before and stays.
+            if (createdCopy) {
+                const pageId = Number(d._unsortedPageId) || 999999;
+                await fetcher('/api/bookmarks', {
+                    method: 'DELETE',
+                    headers,
+                    body: JSON.stringify({ page: pageId, bookmark: { url: item.url } }),
+                });
+            }
             d._widgetUnsorted = null;
             await d.loadAllBookmarks?.();
             this.syncTabStrip();
@@ -5394,7 +5763,7 @@ class DashboardInbox {
             .catch(() => {});
     }
 
-    async completePromote(id) {
+    async completePromote(id, { skipRender = false } = {}) {
         if (this.dash.settings?.inboxDeleteAfterPromote === false) {
             // Best-effort, like the delete below it: the bookmark is already
             // saved, and failing to tidy the inbox entry afterwards is not
@@ -5406,7 +5775,7 @@ class DashboardInbox {
         }
         try {
             await this.deleteItem(id, { reason: 'promote' });
-            if (this.isActiveView()) {
+            if (!skipRender && this.isActiveView()) {
                 await this.loadAndRender();
             }
         } catch {
@@ -5511,14 +5880,15 @@ class DashboardInbox {
         }
     }
 
-    promptTags(current) {
+    promptTags(current, { label: labelText = '' } = {}) {
         const modal = window.AppModal;
         if (!modal || typeof modal.show !== 'function') {
             const value = window.prompt(this.t('dashboard.inboxTagsPrompt', 'Tags'), current);
             return Promise.resolve(value === null ? null : value);
         }
         return new Promise((resolve) => {
-            const label = this.escape(this.t('dashboard.inboxTagsLabel', 'Tags for this link, separated by commas'));
+            const label = this.escape(labelText
+                || this.t('dashboard.inboxTagsLabel', 'Tags for this link, separated by commas'));
             const placeholder = this.escape(this.t('dashboard.inboxTagsPlaceholder', 'reading, work, later'));
             modal.show({
                 title: this.t('dashboard.inboxTagsTitle', 'Inbox tags'),
