@@ -40,6 +40,9 @@ test('Unsorted view renders kept bookmarks in packed columns, chronologically', 
     await page.keyboard.up('Shift');
 
     await expect(page.locator('.unsorted-view')).toBeVisible();
+    // The rows arrive a moment after the view: read the text once they have.
+    await expect(page.locator('.unsorted-view .bookmark-link', { hasText: 'Newer' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.unsorted-view .bookmark-link', { hasText: 'Older' })).toBeVisible({ timeout: 10_000 });
     const text = await page.locator('#dashboard-layout').innerText();
     expect(text.indexOf('Newer')).toBeGreaterThanOrEqual(0);
     expect(text.indexOf('Newer')).toBeLessThan(text.indexOf('Older'));

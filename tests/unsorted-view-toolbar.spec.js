@@ -63,8 +63,10 @@ function rowNames(page) {
 test('search narrows the grid and the header count says how far', async ({ page }) => {
     await openUnsorted(page);
 
-    const total = await page.locator('.unsorted-view .bookmark-link').count();
-    expect(total).toBeGreaterThanOrEqual(KEPT.length);
+    // Polled: the toolbar is drawn a moment before the rows it describes, and
+    // a count taken in that moment reads zero.
+    await expect.poll(() => page.locator('.unsorted-view .bookmark-link').count(), { timeout: 10_000 })
+        .toBeGreaterThanOrEqual(KEPT.length);
 
     await page.locator('.unsorted-view-search-input').fill('alpha');
 
