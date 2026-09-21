@@ -30,6 +30,9 @@ type healthBulkDeleteItem struct {
 	PageID int    `json:"pageId"`
 	Index  int    `json:"index"`
 	URL    string `json:"url"`
+	// Occurrence picks the n-th row with this URL, for a page that still
+	// holds the same link twice from before duplicates were refused.
+	Occurrence int `json:"occurrence,omitempty"`
 }
 
 // healthBulkDeleteSkip names one row that was not deleted, so the client can say
@@ -59,6 +62,10 @@ func (h *Handlers) DeleteHealthBookmarksBulk(w http.ResponseWriter, r *http.Requ
 
 	var req struct {
 		Items []healthBulkDeleteItem `json:"items"`
+		// Source names the view in the trash entry; Config → Bookmarks sends
+		// its own. An index of -1 means "find it by URL", which is all a view
+		// without a report has.
+		Source string `json:"source"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -71,7 +78,7 @@ func (h *Handlers) DeleteHealthBookmarksBulk(w http.ResponseWriter, r *http.Requ
 
 	byPage := make(map[int][]healthBulkDeleteItem)
 	for _, item := range req.Items {
-		if item.PageID <= 0 || item.Index < 0 {
+		if item.PageID <= 0 || item.Index < -1 {
 			http.Error(w, "Invalid bookmark reference", http.StatusBadRequest)
 			return
 		}
@@ -80,6 +87,11 @@ func (h *Handlers) DeleteHealthBookmarksBulk(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		byPage[item.PageID] = append(byPage[item.PageID], item)
+	}
+
+	source := strings.TrimSpace(req.Source)
+	if source == "" {
+		source = "health-bulk"
 	}
 
 	pageNames := make(map[int]string)
@@ -94,7 +106,14 @@ func (h *Handlers) DeleteHealthBookmarksBulk(w http.ResponseWriter, r *http.Requ
 	for pageID, items := range byPage {
 		// Highest index first: removing a later entry never moves an earlier one,
 		// so every remaining index in this page stays valid as we go.
-		sort.Slice(items, func(a, b int) bool { return items[a].Index > items[b].Index })
+		// A later copy of a URL goes before an earlier one, so removing it does
+		// not renumber the copy still to come.
+		sort.SliceStable(items, func(a, b int) bool {
+			if items[a].Index != items[b].Index {
+				return items[a].Index > items[b].Index
+			}
+			return items[a].Occurrence > items[b].Occurrence
+		})
 
 		pageDeleted, pageSkipped := h.deleteHealthBookmarksOnPage(pageID, items)
 		skipped = append(skipped, pageSkipped...)
@@ -103,7 +122,7 @@ func (h *Handlers) DeleteHealthBookmarksBulk(w http.ResponseWriter, r *http.Requ
 			bm.PageID = pageID
 			deleted = append(deleted, bm)
 			entry.PageName = pageNames[pageID]
-			entry.Source = "health-bulk"
+			entry.Source = source
 			trashed = append(trashed, entry)
 		}
 	}
@@ -149,15 +168,18 @@ func (h *Handlers) deleteHealthBookmarksOnPage(
 		// snapshot, and the page may have been written since.
 		removed = removed[:0]
 		skipped = skipped[:0]
-		next := current
+		// Every item is found against the page as it stands, before anything
+		// comes off it: each trash entry then records the position its row
+		// really had, which is where a restore puts it back. Found one by one
+		// on a shrinking list, two neighbours deleted together landed on the
+		// same index.
+		taken := make(map[int]bool, len(items))
+		positions := make([]int, 0, len(items))
 		for _, item := range items {
-			// Found by URL when the index has moved on: the item is resolved
-			// against the list as it stands after the removals before it, so
-			// the order they run in no longer matters for correctness.
-			at := locateBookmark(next, item.Index, item.URL)
-			if at < 0 {
+			at := locateBookmarkAt(current, item.Index, item.URL, item.Occurrence)
+			if at < 0 || taken[at] {
 				reason := healthBulkSkipStale
-				if item.Index >= len(next) {
+				if item.Index >= len(current) {
 					reason = healthBulkSkipOutOfRange
 				}
 				skipped = append(skipped, healthBulkDeleteSkip{
@@ -166,13 +188,19 @@ func (h *Handlers) deleteHealthBookmarksOnPage(
 				})
 				continue
 			}
+			taken[at] = true
+			positions = append(positions, at)
+		}
+		sort.Sort(sort.Reverse(sort.IntSlice(positions)))
+		next := append([]Bookmark(nil), current...)
+		for _, at := range positions {
 			removed = append(removed, TrashedBookmark{
 				ID:       generateTrashID(),
 				PageID:   pageID,
 				Index:    at,
-				Bookmark: next[at],
+				Bookmark: current[at],
 			})
-			next = append(next[:at:at], next[at+1:]...)
+			next = append(next[:at], next[at+1:]...)
 		}
 		return next, nil
 	})
@@ -230,4 +258,27 @@ func (h *Handlers) mutateHealthBookmark(pageID, index int, url string, mutate fu
 		}
 		return current, nil
 	})
+}
+
+// locateBookmarkAt is locateBookmark for the n-th copy of a URL. Occurrence 0
+// is the ordinary lookup.
+func locateBookmarkAt(list []Bookmark, index int, url string, occurrence int) int {
+	if occurrence <= 0 {
+		return locateBookmark(list, index, url)
+	}
+	want := canonicalBookmarkURLKey(strings.TrimSpace(url))
+	if want == "" {
+		return -1
+	}
+	seen := 0
+	for i := range list {
+		if canonicalBookmarkURLKey(list[i].URL) != want {
+			continue
+		}
+		if seen == occurrence {
+			return i
+		}
+		seen++
+	}
+	return -1
 }

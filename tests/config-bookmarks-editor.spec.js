@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
+const { captureRowWrites } = require('./config-bookmarks-helpers');
 const {
     dismissOnboardingIfPresent, dismissBlockingOverlays, resetDashboardData, markWhatsNewSeen, WRITE_TOKEN,
 } = require('./e2e-helpers');
@@ -86,17 +87,9 @@ async function openFirstDialog(page) {
     return key;
 }
 
-/** Capture page writes instead of storing them. */
+/** Capture row writes instead of storing them. */
 async function capturePosts(page) {
-    const posts = [];
-    await page.route('**/api/bookmarks?page=*', async (route) => {
-        if (route.request().method() === 'POST') {
-            posts.push(JSON.parse(route.request().postData() || '[]'));
-            return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-        }
-        return route.fallback();
-    });
-    return posts;
+    return captureRowWrites(page);
 }
 
 /** Sort the list flat, so each row carries its own page › category crumb. */

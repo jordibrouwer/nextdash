@@ -110,6 +110,9 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/bookmarks", handlers.DeleteBookmark).Methods("DELETE")
 	r.HandleFunc("/api/bookmarks", handlers.PatchBookmarks).Methods("PATCH")
 	r.HandleFunc("/api/bookmarks/add", handlers.AddBookmark).Methods("POST")
+	r.HandleFunc("/api/bookmarks/move", handlers.MoveBookmarks).Methods("POST")
+	r.HandleFunc("/api/bookmarks/delete", handlers.DeleteHealthBookmarksBulk).Methods("POST")
+	r.HandleFunc("/api/tags/rewrite", handlers.RewriteTag).Methods("POST")
 	r.HandleFunc("/api/bookmarks/import-browser", handlers.ImportBrowserBookmarks).Methods("POST")
 	// The file itself rather than the browser's reading of it, so an import
 	// keeps the tags, notes and dates every export has always carried.

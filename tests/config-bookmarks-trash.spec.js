@@ -192,14 +192,10 @@ test.describe('Config → Bookmarks writes deletes to the trash', () => {
         const marker = `cfg-failed-${Date.now()}`;
         await seedBookmarks(page, [marker]);
 
-        // The trash write runs only after the page write succeeds, so a delete
-        // that never persisted must not leave a phantom entry behind.
-        await page.route('**/api/bookmarks?page=*', async (route) => {
-            if (route.request().method() === 'POST') {
-                return route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
-            }
-            return route.fallback();
-        });
+        // The trash entry is written by the server with the delete, so a
+        // delete that never reached it must not leave a phantom entry behind.
+        await page.route('**/api/bookmarks/delete', (route) =>
+            route.fulfill({ status: 500, contentType: 'application/json', body: '{}' }));
 
         await page.evaluate(async (name) => {
             const cfg = window.dashboardInstance.config;

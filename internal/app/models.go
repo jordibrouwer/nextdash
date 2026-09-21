@@ -1152,6 +1152,7 @@ type Store interface {
 	TrackBookmarkOpen(pageID int, index int) error
 	MutateBookmarkAt(pageID int, index int, mutate func(*Bookmark) error) error
 	MutateBookmarksOnPage(pageID int, mutate func([]Bookmark) ([]Bookmark, error)) error
+	MutateBookmarkPages(pageIDs []int, mutate func(map[int][]Bookmark) (map[int][]Bookmark, error)) error
 	DeleteBookmarkAt(pageID int, index int) error
 	AddBookmarkToPage(pageID int, bookmark Bookmark) error
 	DeleteBookmarkFromPage(pageID int, bookmark Bookmark) error

@@ -1,7 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
 const { resetDashboardData, WRITE_TOKEN } = require('./e2e-helpers');
-const { openBookmarks } = require('./config-bookmarks-helpers');
+const { openBookmarks, captureRowWrites, mergedRow } = require('./config-bookmarks-helpers');
 
 test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -9,17 +9,9 @@ test.beforeEach(async ({ page }) => {
     await resetDashboardData(page);
 });
 
-/** Capture page writes instead of storing them. */
+/** Capture row writes instead of storing them. */
 async function capturePosts(page) {
-    const posts = [];
-    await page.route('**/api/bookmarks?page=*', async (route) => {
-        if (route.request().method() === 'POST') {
-            posts.push(JSON.parse(route.request().postData() || '[]'));
-            return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-        }
-        return route.fallback();
-    });
-    return posts;
+    return captureRowWrites(page);
 }
 
 /** A second page, over the API: fixture setup, not the thing under test. */
@@ -70,9 +62,7 @@ test.describe('the bookmark panel', () => {
     });
 
     test('a failed save keeps what was typed and says so', async ({ page }) => {
-        await page.route('**/api/bookmarks?page=*', async (route) => (route.request().method() === 'POST'
-            ? route.fulfill({ status: 500, body: 'no' })
-            : route.fallback()));
+        await captureRowWrites(page, { status: 500 });
         await openBookmarks(page);
         await focusFirstRow(page);
         await page.keyboard.press('e');
@@ -203,11 +193,7 @@ test.describe('the bookmark panel', () => {
     test('Monitor offers the interval, and choosing one saves it', async ({ page }) => {
         // Recorded and passed on: the mode has to be stored for the panel to
         // keep showing the interval after the refresh.
-        const posts = [];
-        await page.route('**/api/bookmarks?page=*', async (route) => {
-            if (route.request().method() === 'POST') posts.push(JSON.parse(route.request().postData() || '[]'));
-            return route.fallback();
-        });
+        const posts = await captureRowWrites(page);
         await openBookmarks(page);
         const key = await focusFirstRow(page);
         const url = await page.evaluate((k) => window.dashboardInstance.config.findBookmarkByKey(k).url, key);
@@ -217,10 +203,12 @@ test.describe('the bookmark panel', () => {
         await expect(interval).toBeHidden();
         await page.locator('#config-bm-panel [data-bm-field="checkMode"]').selectOption('monitor');
         await expect(interval).toBeVisible();
-        await expect.poll(() => posts.some((list) => list.some((b) => b.url === url && b.monitor === true))).toBe(true);
+        await expect.poll(() => mergedRow(posts, url)?.monitor === true).toBe(true);
         await interval.selectOption('60');
-        await expect.poll(() => posts.some((list) => list.some((b) =>
-            b.url === url && b.monitor === true && b.monitorIntervalMinutes === 60))).toBe(true);
+        await expect.poll(() => {
+            const row = mergedRow(posts, url);
+            return row?.monitor === true && row?.monitorIntervalMinutes === 60;
+        }).toBe(true);
     });
 
     test('Shift+E opens the full dialog, and the legend says so', async ({ page }) => {
@@ -237,12 +225,12 @@ test.describe('the bookmark panel', () => {
 
     test('a save leaves the next field focused, with what was typed into it', async ({ page }) => {
         const posts = [];
-        await page.route('**/api/bookmarks?page=*', async (route) => {
-            if (route.request().method() !== 'POST') return route.fallback();
-            posts.push(JSON.parse(route.request().postData() || '[]'));
+        await page.route(/\/api\/bookmarks$/, async (route) => {
+            if (route.request().method() !== 'PATCH') return route.fallback();
+            posts.push(JSON.parse(route.request().postData() || '{}').updates || []);
             // Slow enough that the typing below happens while the save runs.
             await new Promise((r) => setTimeout(r, 300));
-            return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            return route.fulfill({ status: 200, contentType: 'application/json', body: '{"updated":1}' });
         });
         await openBookmarks(page);
         await focusFirstRow(page);
@@ -353,7 +341,7 @@ test.describe('the bookmark panel', () => {
         const values = await select.locator('option').evaluateAll((os) => os.map((o) => o.value));
         const next = values.find((v) => v !== current);
         test.skip(next === undefined, 'needs a second category option');
-        const saved = page.waitForRequest((r) => r.method() === 'POST' && r.url().includes('/api/bookmarks?page='));
+        const saved = page.waitForRequest((r) => r.method() === 'PATCH' && /\/api\/bookmarks$/.test(r.url()));
         await select.focus();
         await select.selectOption(next);
         await saved;

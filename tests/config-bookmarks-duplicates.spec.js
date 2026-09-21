@@ -61,14 +61,12 @@ test.describe('duplicate URLs on one page', () => {
         expect(keys[0]).not.toBe(keys[1]);
     });
 
-    test('deleting one copy leaves the other in place', async ({ page }) => {
+    test('deleting one copy names that copy, not the first', async ({ page }) => {
         let posted = null;
-        await page.route('**/api/bookmarks?page=*', async (route) => {
-            if (route.request().method() === 'POST') {
-                posted = JSON.parse(route.request().postData() || '[]');
-                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-            }
-            return route.fallback();
+        await page.route('**/api/bookmarks/delete', async (route) => {
+            posted = JSON.parse(route.request().postData() || '{}');
+            return route.fulfill({ status: 200, contentType: 'application/json',
+                body: JSON.stringify({ deleted: 1, skipped: [], trashIds: [] }) });
         });
 
         await openBookmarks(page);
@@ -85,19 +83,17 @@ test.describe('duplicate URLs on one page', () => {
         });
 
         await expect.poll(() => posted !== null).toBe(true);
-        const survivors = posted.filter((b) => b.url === 'https://duplicate.example.com/');
-        expect(survivors).toHaveLength(1);
-        expect(survivors[0].name).toBe('First copy');
+        expect(posted.items).toHaveLength(1);
+        expect(posted.items[0].url).toBe('https://duplicate.example.com/');
+        expect(posted.items[0].occurrence).toBe(1);
     });
 
-    test('editing one copy does not rewrite the other', async ({ page }) => {
+    test('editing one copy names that copy, not the first', async ({ page }) => {
         let posted = null;
-        await page.route('**/api/bookmarks?page=*', async (route) => {
-            if (route.request().method() === 'POST') {
-                posted = JSON.parse(route.request().postData() || '[]');
-                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-            }
-            return route.fallback();
+        await page.route(/\/api\/bookmarks$/, async (route) => {
+            if (route.request().method() !== 'PATCH') return route.fallback();
+            posted = JSON.parse(route.request().postData() || '{}');
+            return route.fulfill({ status: 200, contentType: 'application/json', body: '{"updated":1}' });
         });
 
         await openBookmarks(page);
@@ -112,9 +108,8 @@ test.describe('duplicate URLs on one page', () => {
         });
 
         await expect.poll(() => posted !== null).toBe(true);
-        const pair = posted.filter((b) => b.url === 'https://duplicate.example.com/');
-        expect(pair).toHaveLength(2);
-        expect(pair.find((b) => b.name === 'First copy').category).toBe('');
-        expect(pair.find((b) => b.name === 'Second copy').category).toBe('tagged-by-test');
+        expect(posted.updates).toHaveLength(1);
+        expect(posted.updates[0].occurrence).toBe(1);
+        expect(posted.updates[0].fields).toEqual({ category: 'tagged-by-test' });
     });
 });

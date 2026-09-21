@@ -61,10 +61,10 @@ test.describe('the workbench on a narrow screen', () => {
 
     test('the drawer stays open while a field is saved', async ({ page }) => {
         let posts = 0;
-        await page.route('**/api/bookmarks?page=*', async (route) => {
-            if (route.request().method() !== 'POST') return route.fallback();
+        await page.route(/\/api\/bookmarks$/, async (route) => {
+            if (route.request().method() !== 'PATCH') return route.fallback();
             posts += 1;
-            return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            return route.fulfill({ status: 200, contentType: 'application/json', body: '{"updated":1}' });
         });
         await page.setViewportSize({ width: 1000, height: 800 });
         await openBookmarks(page);

@@ -15626,42 +15626,52 @@ class DashboardConfig {
         if (caret != null) next.setSelectionRange(caret, caret);
     }
 
-    /** Rename (to != null) or delete (to == null) a tag across every bookmark. */
+    /**
+     * Rename (to != null) or delete (to == null) a tag across every bookmark.
+     *
+     * On the server, on only the rows that carry it: this used to read every
+     * page, change the list here and write every page back -- the ones without
+     * the tag too -- from a copy that could already be out of date. The answer
+     * names the rows and the tags they had, which is the undo.
+     */
     async rewriteTag(from, to) {
-        try {
-            const res = await fetch('/api/bookmarks?all=true');
-            const bookmarks = res && res.ok ? await res.json() : [];
-            const list = Array.isArray(bookmarks) ? bookmarks : [];
-            let changed = false;
-            list.forEach((bm) => {
-                if (!Array.isArray(bm.tags)) return;
-                const idx = bm.tags.indexOf(from);
-                if (idx === -1) return;
-                bm.tags.splice(idx, 1);
-                if (to && !bm.tags.includes(to)) bm.tags.push(to);
-                changed = true;
-            });
-            if (!changed) return;
-            // Group by page and re-save each page's bookmarks.
-            const pages = new Map();
-            list.forEach((bm) => {
-                if (!pages.has(bm.pageId)) pages.set(bm.pageId, []);
-                pages.get(bm.pageId).push(bm);
-            });
-            for (const [pageId, pageBookmarks] of pages.entries()) {
-                const saveRes = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(pageBookmarks),
-                });
-                if (!saveRes.ok) throw new Error(`HTTP ${saveRes.status}`);
-            }
-            this.notify(to
-                ? this.t('config.tagRenamed', 'Tag renamed.')
-                : this.t('config.tagDeleted', 'Tag deleted.'), 'success');
+        const reload = async () => {
             this._tagList = null;
             await this.loadTagsManager();
+            await this.refreshBookmarksAfterWrite({ silent: true });
             this.dash.renderDashboard?.({ animate: false });
+        };
+        try {
+            const res = await this.writeFetch('/api/tags/rewrite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from, to: to || '' }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            const changed = Array.isArray(body.changed) ? body.changed : [];
+            if (!changed.length) return;
+            const undo = new Map();
+            changed.forEach((row) => {
+                const pid = String(row.pageId);
+                if (!undo.has(pid)) undo.set(pid, []);
+                undo.get(pid).push({ url: row.url, fields: { tags: Array.isArray(row.tags) ? row.tags : [] } });
+            });
+            this.notify(to
+                ? this.t('config.tagRenamed', 'Tag renamed.')
+                : this.t('config.tagDeleted', 'Tag deleted.'), 'success', {
+                duration: 8000,
+                undoCallback: async () => {
+                    try {
+                        for (const [pageId, updates] of undo) await this.patchRows(pageId, updates);
+                        await reload();
+                        this.notify(this.t('config.tagRewriteUndone', 'Tags put back.'), 'success');
+                    } catch {
+                        this.notify(this.t('config.bulkUndoFailed', 'Could not undo that.'), 'error');
+                    }
+                },
+            });
+            await reload();
         } catch {
             this.notify(this.t('config.tagsSaveError', 'Could not update the tag.'), 'error');
         }
@@ -16213,6 +16223,11 @@ class DashboardConfig {
         });
     }
 
+    /**
+     * Returns whether the pages were saved. duplicatePage stops on a false
+     * answer -- and got undefined from every save, so a duplicate never went
+     * past the page list: no categories, no bookmarks, no word.
+     */
     async savePages() {
         try {
             const res = await this.writeFetch('/api/pages', {
@@ -16222,8 +16237,10 @@ class DashboardConfig {
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.dash.pageNav?.renderPageNavigation?.();
+            return true;
         } catch {
             this.notify(this.t('config.pagesSaveError', 'Could not save pages.'), 'error');
+            return false;
         }
     }
 
@@ -16306,20 +16323,30 @@ class DashboardConfig {
                 // Shortcuts are unique per page in practice but not enforced
                 // across a copy, and a duplicated check history would be a lie
                 // about a URL this copy has never checked itself.
+                // Without their shortcuts: a shortcut belongs to one bookmark
+                // across the collection, and the server refused the whole copy
+                // over the first one -- after which this still said "duplicated".
                 const copies = sourceBookmarks.map((bm) => ({
                     ...bm,
                     pageId: newId,
+                    shortcut: '',
                     lastChecked: 0,
                     lastError: '',
                     brokenSince: 0,
                     openCount: 0,
                     lastOpened: 0,
                 }));
-                await fetcher(`/api/bookmarks?page=${encodeURIComponent(newId)}`, {
+                const saved = await fetcher(`/api/bookmarks?page=${encodeURIComponent(newId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(copies),
                 });
+                if (!saved.ok) {
+                    this.notify(this.t('config.pageDuplicateBookmarksFailed',
+                        'The page was copied, but its bookmarks were not'), 'error');
+                    this.repaintPtBody();
+                    return;
+                }
             }
             this.notify(this.t('config.pageDuplicated', 'Page duplicated'), 'success');
         } catch {
@@ -16343,13 +16370,14 @@ class DashboardConfig {
         const source = list[Number(index)];
         if (!source) return;
 
-        const withBookmarks = await this.confirmAction(
-            this.t('config.categoryDuplicateAsk',
-                'Copy this category and its settings. Copy the bookmarks in it as well?'),
-            { confirmLabel: this.t('config.pageDuplicateWith', 'With bookmarks'), danger: false }
-        );
-        if (withBookmarks === null || withBookmarks === undefined) return;
-
+        /*
+         * The category and its settings, not its bookmarks.
+         *
+         * It used to offer the bookmarks as well, but a page holds each link
+         * once: the copies had the same URLs as the originals on the same page,
+         * the server refused the lot, and the refusal was never read -- so the
+         * toast said "duplicated" over a category that stayed empty.
+         */
         const id = `cat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
         const name = DashboardConfig.uniqueNameFrom(
             this.t('config.pageDuplicateName', '{name} copy').replace('{name}', source.name || ''),
@@ -16358,38 +16386,8 @@ class DashboardConfig {
         list.splice(Number(index) + 1, 0, { ...source, id, name });
         this.repaintPtBody();
         if (!await this.saveCategories(this._catPageId)) return;
-
-        if (withBookmarks === true) {
-            const pageId = this._catPageId;
-            try {
-                const res = await fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`);
-                const bookmarks = res.ok ? await res.json() : [];
-                const copies = (bookmarks || [])
-                    .filter((bm) => String(bm.category || '') === String(source.id || ''))
-                    .map((bm) => ({
-                        ...bm,
-                        category: id,
-                        shortcut: '',
-                        lastChecked: 0,
-                        lastError: '',
-                        brokenSince: 0,
-                        openCount: 0,
-                        lastOpened: 0,
-                    }));
-                if (copies.length) {
-                    const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-                    await fetcher(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify([...(bookmarks || []), ...copies]),
-                    });
-                }
-            } catch {
-                this.notify(this.t('config.categoryDuplicateBookmarksFailed',
-                    'The category was copied, but its bookmarks were not'), 'error');
-            }
-        }
-        this.notify(this.t('config.categoryDuplicated', 'Category duplicated'), 'success');
+        this.notify(this.t('config.categoryDuplicatedEmpty',
+            'Category duplicated, without its bookmarks — a page holds each link once'), 'success');
         void this.dash.data?.fetchAndStoreDataRevision?.();
     }
 
@@ -22376,8 +22374,8 @@ class DashboardConfig {
      * This is not the same question as the view's pool, and answering it with
      * d.allBookmarks was destructive: the kept bookmarks are split out of that
      * array, so a page list built for the unsorted page came back empty, and
-     * writePageBookmarks below then saved that empty list over the page. One
-     * move out of Unsorted wiped everything else still in it.
+     * the whole-page write that used to follow saved that empty list over the
+     * page. One move out of Unsorted wiped everything else still in it.
      */
     bookmarksOnPage(pageId) {
         const d = this.dash;
@@ -22757,25 +22755,27 @@ class DashboardConfig {
         if (!record) return false;
         const { pageId, index } = record;
         try {
-            const res = await fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`);
-            const list = res.ok ? await res.json() : null;
-            if (!Array.isArray(list) || !list[index]) throw new Error('bookmark not found');
-            const next = { ...list[index], ...patch };
+            const current = record.record;
+            const next = { ...current, ...patch };
             if ('shortcut' in patch) next.shortcut = String(patch.shortcut || '').trim().toUpperCase();
             // An emptied name or URL keeps what was there: a row with neither
             // has nothing to show and nowhere to go.
-            if ('name' in patch && !String(patch.name || '').trim()) next.name = list[index].name;
+            if ('name' in patch && !String(patch.name || '').trim()) next.name = current.name;
             if ('url' in patch) {
                 const url = window.BookmarkUrlUtils?.ensureHttpUrl?.(patch.url) || String(patch.url || '').trim();
-                next.url = url || list[index].url;
+                next.url = url || current.url;
             }
-            list[index] = next;
-            const saved = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(list),
-            });
-            if (!saved.ok) throw new Error(`HTTP ${saved.status}`);
+            // The fields that changed, on this row, by its URL: the page is no
+            // longer read and written back whole around a one-field edit.
+            try {
+                await this.patchRows(pageId, [{ url: current.url, fields: DashboardConfig.changedFields(current, next) }]);
+            } catch (err) {
+                if (err?.conflict) {
+                    this.notify(this.conflictMessage(err, 'config.bookmarkSaveError', 'Could not save the bookmark.'), 'error');
+                    return false;
+                }
+                throw err;
+            }
             // Only when the panel still shows this bookmark: a save that lands
             // after a click on another row must not pull the panel back.
             if (this._bmKeyboardKey === key) this._bmPendingFocus = { pageId: String(pageId), index };
@@ -23085,12 +23085,10 @@ class DashboardConfig {
         const updated = { ...record.record };
         window.CheckMode.assign(updated, mode, intervalMinutes);
         try {
-            await this.writePageBookmarks(record.pageId, (list) => {
-                const next = [...list];
-                if (!next[record.index]) return next;
-                next[record.index] = { ...next[record.index], ...updated };
-                return next;
-            });
+            await this.patchRows(record.pageId, [{
+                url: record.record.url,
+                fields: DashboardConfig.changedFields(record.record, updated),
+            }]);
             await this.refreshBookmarksAfterWrite({ silent: true });
             this.dash.updateHealthBadge?.();
             return true;
@@ -23866,21 +23864,130 @@ class DashboardConfig {
         return { pageId: raw.slice(0, idx), url, occurrence };
     }
 
-    /** Re-save one page's bookmark list with a mutation applied. */
-    async writePageBookmarks(pageId, mutate) {
-        const list = this.bookmarksOnPage(pageId)
-            .map((b) => {
-                const copy = { ...b };
-                delete copy.pageId;
-                return copy;
-            });
-        const next = mutate(list);
-        const res = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
+    /*
+     * Writes that name their rows.
+     *
+     * Every edit here used to take the page from memory, change it and send
+     * the whole list back: a link added elsewhere since (the extension, the
+     * inbox, another tab) was not in that list, so the next edit deleted it,
+     * and an undo put back a page that had moved on. These send only the rows
+     * that change, by URL, and the server applies them under its own lock.
+     */
+
+    /** The fields a bookmark holds that the server keeps for itself. */
+    static SERVER_OWNED = new Set(['pageId', 'index', 'createdAt', 'updatedAt', 'lastOpened',
+        'lastChecked', 'lastError', 'openCount', 'brokenSince', 'archiveDiedAt',
+        'archiveSnapshotUrl', 'archiveCheckedAt', 'archiveJobId', 'archiveJobAt', 'driftUrl',
+        'driftTitle', 'driftFingerprint', 'driftNoticed', 'driftSince', 'driftReason']);
+
+    /** What `after` changes on `before`, as `fields` for a patch. */
+    static changedFields(before, after) {
+        const fields = {};
+        const keys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]);
+        keys.forEach((key) => {
+            if (DashboardConfig.SERVER_OWNED.has(key)) return;
+            const a = before?.[key];
+            const b = after?.[key];
+            if (JSON.stringify(a ?? null) === JSON.stringify(b ?? null)) return;
+            fields[key] = b === undefined ? null : b;
+        });
+        return fields;
+    }
+
+    /**
+     * PATCH rows of one page. A refusal (409) throws an Error carrying the
+     * server's answer as `.conflict`, so the caller can say what collided.
+     */
+    async patchRows(pageId, updates) {
+        if (!updates.length) return { updated: 0 };
+        const res = await this.writeFetch('/api/bookmarks', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: Number(pageId), updates }),
+        });
+        if (res.status === 409) {
+            const err = new Error('conflict');
+            err.conflict = await res.json().catch(() => ({}));
+            throw err;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json().catch(() => ({}));
+    }
+
+    /** Delete rows by URL; the server files them in the trash and returns the ids. */
+    async deleteRows(rows, source = 'config-bookmarks') {
+        const res = await this.writeFetch('/api/bookmarks/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(next),
+            body: JSON.stringify({
+                source,
+                items: rows.map((b) => ({
+                    pageId: Number(b.pageId), index: -1, url: b.url, occurrence: this.occurrenceOf(b),
+                })),
+            }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = await res.json().catch(() => ({}));
+        return {
+            deleted: Number(body.deleted) || 0,
+            skipped: Array.isArray(body.skipped) ? body.skipped : [],
+            trashIds: Array.isArray(body.trashIds) ? body.trashIds : [],
+        };
+    }
+
+    /**
+     * Which copy of its URL on its page a row is: 0 almost always. A page can
+     * still hold the same link twice from before that was refused, and a
+     * write by URL alone would then hit the first copy whichever was meant.
+     */
+    occurrenceOf(bookmark) {
+        return this.bookmarkOccurrenceIndex().get(bookmark) || 0;
+    }
+
+    /** Move rows to a page in one step; a row the target cannot take stays put. */
+    async moveRows(toPage, category, items) {
+        const res = await this.writeFetch('/api/bookmarks/move', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ toPage: Number(toPage), category, items }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = await res.json().catch(() => ({}));
+        return {
+            moved: Array.isArray(body.moved) ? body.moved : [],
+            skipped: Array.isArray(body.skipped) ? body.skipped : [],
+        };
+    }
+
+    /**
+     * Put trashed rows back by id. Restoring takes the entry out of the trash,
+     * so the same delete cannot also be undone a second time from there.
+     */
+    async restoreTrashed(trashIds) {
+        let back = 0;
+        for (const id of trashIds) {
+            try {
+                await window.DashboardTrash?.restore?.(id);
+                back += 1;
+            } catch { /* counted by omission */ }
+        }
+        await this.refreshTrashIfVisible();
+        await this.refreshBookmarksAfterWrite();
+        return back;
+    }
+
+    /** The words for a 409, naming what the change collided with. */
+    conflictMessage(err, fallbackKey, fallback) {
+        const c = err?.conflict;
+        if (c?.error === 'duplicate_shortcut') {
+            return this.t('config.bookmarkShortcutTaken', 'Shortcut {key} is already used by “{name}”.')
+                .replace('{key}', String(c.shortcut || '')).replace('{name}', String(c.conflict?.name || c.conflict?.url || ''));
+        }
+        if (c?.error === 'duplicate_url') {
+            return this.t('config.bookmarkUrlTaken', '{url} is already on {page}.')
+                .replace('{url}', String(c.url || '')).replace('{page}', String(c.conflict?.pageName || c.conflict?.pageId || ''));
+        }
+        return this.t(fallbackKey, fallback);
     }
 
     async deleteBookmarkByKey(key) {
@@ -23892,44 +23999,23 @@ class DashboardConfig {
         if (this.deleteNeedsConfirm(1)
             && !await this.confirmAction(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
         try {
-            // Snapshot before the write, so the toast can put this row back —
-            // same as bulk delete and the :remove command.
-            const snapshot = this.bookmarksOnPage(parsed.pageId)
-                .map((b) => {
-                    const copy = { ...b };
-                    delete copy.pageId;
-                    return copy;
-                });
-            const isTarget = DashboardConfig.matchesParsedKey(parsed);
-            // Captured inside the mutation, where the stored list still holds the
-            // row and its real index — the trash restores to that position.
-            const trashed = [];
-            await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b, index) => {
-                if (!isTarget(b)) return true;
-                trashed.push({ pageId: Number(parsed.pageId), index, bookmark: { ...b } });
-                return false;
-            }));
-            // After the page write, so a delete that did not persist cannot leave
-            // a phantom entry. The 8s toast is the fast path; the trash catches it
-            // an hour later, same as every delete on the dashboard side.
-            await window.DashboardTrash?.record(trashed, 'config-bookmarks');
+            const bookmark = this.findBookmarkByKey(key);
+            if (!bookmark) return;
+            // By URL, into the trash, on the server: the toast's undo restores
+            // that trash entry, which also takes it back out of the trash.
+            const { deleted, trashIds } = await this.deleteRows([bookmark]);
+            if (!deleted) throw new Error('not deleted');
             await this.refreshTrashIfVisible();
             this.bmSelected.delete(key);
             this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success', {
                 duration: 8000,
-                undoCallback: async () => {
-                    try {
-                        await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(parsed.pageId)}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(snapshot),
-                        });
-                        await this.refreshBookmarksAfterWrite();
-                        this.notify(this.t('config.bookmarkRestored', 'Bookmark restored.'), 'success');
-                    } catch {
-                        this.notify(this.t('config.bookmarkRestoreFailed', 'Could not restore the bookmark.'), 'error');
-                    }
-                },
+                undoCallback: trashIds.length ? async () => {
+                    const back = await this.restoreTrashed(trashIds);
+                    this.notify(back
+                        ? this.t('config.bookmarkRestored', 'Bookmark restored.')
+                        : this.t('config.bookmarkRestoreFailed', 'Could not restore the bookmark.'),
+                    back ? 'success' : 'error');
+                } : null,
             });
             await this.refreshBookmarksAfterWrite();
         } catch {
@@ -23979,25 +24065,6 @@ class DashboardConfig {
     }
 
     /**
-     * Groups picked bookmarks per page as sets of "url::occurrence" targets.
-     *
-     * Matching on the URL alone would hit every copy of a duplicated URL, so
-     * ticking one of two identical rows would mutate or delete both. The
-     * occurrence number pins which copy was meant. The stored list is walked in
-     * the same order the occurrence index was built from, so the counts line up.
-     */
-    selectionTargetsByPage(picked) {
-        const occurrence = this.bookmarkOccurrenceIndex();
-        const byPage = new Map();
-        picked.forEach((b) => {
-            const set = byPage.get(String(b.pageId)) || new Set();
-            set.add(`${b.url}::${occurrence.get(b) || 0}`);
-            byPage.set(String(b.pageId), set);
-        });
-        return byPage;
-    }
-
-    /**
      * Predicate matching exactly one stored entry: the n-th bookmark with that
      * URL. Built for the single-row paths, where matching on URL alone would
      * edit or delete every copy of a duplicated URL at once.
@@ -24010,75 +24077,71 @@ class DashboardConfig {
         };
     }
 
-    /** Walks a stored page list, tagging each entry with its occurrence number. */
-    static withOccurrence(list) {
-        const seen = new Map();
-        return (list || []).map((b) => {
-            const n = seen.get(b.url) || 0;
-            seen.set(b.url, n + 1);
-            return { bookmark: b, target: `${b.url}::${n}` };
-        });
-    }
-
-    /**
-     * Apply a mutation to every ticked bookmark, grouped per page so each page
-     * is written exactly once rather than once per bookmark.
-     */
     /**
      * Apply a change to the selection, and hand back the way to undo it.
      *
      * A bulk edit is the one action here with no natural second chance: forty
-     * rows retagged, or pinned, cannot be picked apart by hand afterwards, and
-     * only the delete path offered an undo. The snapshot is the pages as they
-     * were before the write — the same shape the delete undo restores — so
-     * putting it back is one POST per page rather than a reverse of the edit,
-     * which would have to be written for each kind of change and would be wrong
-     * for `replace`.
+     * rows retagged, or pinned, cannot be picked apart by hand afterwards. The
+     * undo is the old value of each field the edit changed, on each row it
+     * changed -- not the pages as they were, which would also undo whatever
+     * else happened to them in between.
      */
     async mutateSelected(picked, mutate) {
-        const snapshots = new Map();
-        for (const [pageId, targets] of this.selectionTargetsByPage(picked)) {
-            const before = this.bookmarksOnPage(pageId).map((b) => ({ ...b }));
-            snapshots.set(pageId, before);
-            await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
-                .map(({ bookmark, target }) => (targets.has(target) ? mutate({ ...bookmark }) : bookmark)));
+        // Only the ticked rows, by URL, and only what the change touches on
+        // each. The undo is the same shape: the old values of those fields.
+        const undo = new Map();
+        const byPage = new Map();
+        picked.forEach((b) => {
+            const pid = String(b.pageId);
+            if (!byPage.has(pid)) byPage.set(pid, []);
+            byPage.get(pid).push(b);
+        });
+        let failure = null;
+        for (const [pageId, rows] of byPage) {
+            const forward = [];
+            const back = [];
+            rows.forEach((b) => {
+                const after = mutate({ ...b });
+                const fields = DashboardConfig.changedFields(b, after);
+                if (!Object.keys(fields).length) return;
+                const occurrence = this.occurrenceOf(b);
+                forward.push({ url: b.url, occurrence, fields });
+                const previous = {};
+                Object.keys(fields).forEach((k) => { previous[k] = b[k] === undefined ? null : b[k]; });
+                back.push({ url: after.url || b.url, occurrence, fields: previous });
+            });
+            try {
+                await this.patchRows(pageId, forward);
+                if (back.length) undo.set(pageId, back);
+            } catch (err) {
+                failure = failure || err;
+            }
         }
         this.bmSelected.clear();
         await this.refreshBookmarksAfterWrite();
-        return snapshots;
+        if (failure) {
+            // Pages that took the change keep it, and their undo; the refusal
+            // is named rather than folded into "could not".
+            this.notify(this.conflictMessage(failure, 'config.bulkActionError', 'Could not apply the bulk action.'), 'error');
+        }
+        return undo;
     }
 
     /**
-     * The undo a bulk edit hands to its toast.
-     *
-     * Restores each page as it was before the write. The rows are sent whole
-     * rather than diffed: the pages are already in memory, and a diff would
-     * have to reason about what "remove these tags" meant on a row that did not
-     * carry them.
+     * The undo a bulk edit hands to its toast: the old value of every field
+     * the edit changed, on exactly the rows it changed.
      */
-    bulkUndo(snapshots, doneKey, doneFallback, failKey, failFallback) {
-        if (!snapshots || !snapshots.size) return null;
+    bulkUndo(undo, doneKey, doneFallback, failKey, failFallback) {
+        if (!undo || !undo.size) return null;
         return async () => {
             try {
-                for (const [pageId, rows] of snapshots) {
-                    await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(rows),
-                    });
+                for (const [pageId, updates] of undo) {
+                    await this.patchRows(pageId, updates);
                 }
                 await this.refreshBookmarksAfterWrite();
                 // The suggestions panel is built from the tags an undo just put
-                // back, so it has to be redrawn or it keeps showing the
-                // collection as it was before the undo. Today the refresh above
-                // usually gets there by accident -- with Config on screen
-                // repaintBookmarkMutationSurfaces falls through to a whole
-                // config.render() -- but that path bails out early whenever an
-                // inline edit is open, and it is an accident either way. Say it
-                // here, where the undo is. Every bulk undo is raised from this
-                // same section, so this runs for pin, move and delete too --
-                // one extra suggest() pass, and render() replaces the container
-                // outright, so a second draw changes nothing.
+                // back; render() replaces its container outright, so a second
+                // draw after the refresh changes nothing.
                 this.renderTagSuggestionsSafe();
                 this.notify(this.t(doneKey, doneFallback), 'success');
             } catch {
@@ -24110,36 +24173,23 @@ class DashboardConfig {
             return;
         }
 
-        // A page move is a remove-then-append across two lists, so it cannot go
-        // through mutateSelected.
+        // One step on the server: each row is checked against the target and
+        // only taken off its page once it can land. A move used to remove the
+        // rows first and add them after, so a target that refused (the same
+        // URL already there) left them on no page at all.
         if (targetCat) await this.ensureCategoryOnPage(targetPage, targetCat);
-        const moving = picked.filter((b) => String(b.pageId) !== String(targetPage));
-        const byPage = this.selectionTargetsByPage(moving);
-        const carried = moving.map((b) => {
-            const copy = { ...b };
-            delete copy.pageId;
-            if (targetCat !== null) copy.category = targetCat;
-            return copy;
-        });
-        for (const [pageId, targets] of byPage) {
-            await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
-                .filter(({ target }) => !targets.has(target))
-                .map(({ bookmark }) => bookmark));
+        let result;
+        try {
+            result = await this.moveRows(targetPage, targetCat,
+                picked.map((b) => ({ pageId: Number(b.pageId), url: b.url, occurrence: this.occurrenceOf(b) })));
+        } catch {
+            this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
+            await this.refreshBookmarksAfterWrite();
+            return;
         }
-        await this.refreshBookmarksAfterWrite({ silent: true });
-        if (carried.length) {
-            await this.writePageBookmarks(targetPage, (list) => [...list, ...carried]);
-        }
-        // Anything already on the target page still needs its category applied.
-        // Targets are resolved before the refresh below, while the occurrence
-        // index still describes the list these bookmarks were picked from.
-        const staying = picked.filter((b) => String(b.pageId) === String(targetPage));
-        if (targetCat !== null && staying.length) {
-            const targets = this.selectionTargetsByPage(staying).get(String(targetPage)) || new Set();
-            await this.refreshBookmarksAfterWrite({ silent: true });
-            await this.writePageBookmarks(targetPage, (list) => DashboardConfig.withOccurrence(list)
-                .map(({ bookmark, target }) => (targets.has(target) ? { ...bookmark, category: targetCat } : bookmark)));
-        }
+        const movedKeys = new Set(result.moved.map((m) => `${m.fromPage}\u0000${m.url}`));
+        const moving = picked.filter((b) => movedKeys.has(`${Number(b.pageId)}\u0000${b.url}`)
+            && String(b.pageId) !== String(targetPage));
         if (keepSelection) {
             // A moved row has a new key, so its tick has nothing left to point at.
             moving.forEach((b) => this.bmSelected.delete(this.bookmarkKey(b)));
@@ -24149,7 +24199,34 @@ class DashboardConfig {
         // A row moved from the panel repaints only the list and panel: a
         // whole-section render would replace the panel and close its drawer.
         await this.refreshBookmarksAfterWrite({ silent: keepSelection });
-        this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
+        const undoCallback = result.moved.length ? async () => {
+            // Back to where each came from, into the category it had.
+            const home = new Map();
+            result.moved.forEach((m) => {
+                if (!home.has(m.fromPage)) home.set(m.fromPage, []);
+                home.get(m.fromPage).push({ pageId: Number(targetPage), url: m.url, category: m.category ?? '' });
+            });
+            try {
+                for (const [fromPage, items] of home) {
+                    await this.moveRows(fromPage, null, items);
+                }
+                await this.refreshBookmarksAfterWrite();
+                this.notify(this.t('config.bmBulkUndone', 'Changes put back.'), 'success');
+            } catch {
+                this.notify(this.t('config.bulkUndoFailed', 'Could not undo that.'), 'error');
+            }
+        } : null;
+        if (result.skipped.length) {
+            const first = result.skipped[0];
+            this.notify(this.t('config.bulkMoveSkipped',
+                'Moved {moved}; {skipped} stayed where they were — {url} is already on that page.')
+                .replace('{moved}', String(result.moved.length))
+                .replace('{skipped}', String(result.skipped.length))
+                .replace('{url}', String(first.url || '')), 'warning', { duration: 8000, undoCallback });
+            return;
+        }
+        this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success',
+            undoCallback ? { duration: 8000, undoCallback } : undefined);
     }
 
     async bulkPin(picked, pinned) {
@@ -24365,54 +24442,25 @@ class DashboardConfig {
             .replace('{n}', String(picked.length));
         if (this.deleteNeedsConfirm(picked.length) && !await this.confirmAction(msg)) return;
 
-        const byPage = [...this.selectionTargetsByPage(picked)];
-        // Snapshot each affected page before touching it, so the toast can put
-        // the rows back. The same approach the :remove command already uses —
-        // deleting in bulk is exactly where getting it wrong hurts most.
-        const snapshots = new Map();
-        for (const [pageId] of byPage) {
-            snapshots.set(String(pageId), this.bookmarksOnPage(pageId)
-                .map((b) => {
-                    const copy = { ...b };
-                    delete copy.pageId;
-                    return copy;
-                }));
+        let result;
+        try {
+            // By URL, filed in the trash by the server; the undo restores
+            // those entries, which also takes them back out of the trash.
+            result = await this.deleteRows(picked, 'config-bookmarks-bulk');
+        } catch {
+            this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
+            await this.refreshBookmarksAfterWrite();
+            return;
         }
-
-        // Captured inside each page's mutation, where the stored list still holds
-        // the rows and their real indices — the trash restores to those positions.
-        const trashed = [];
-        for (const [pageId, targets] of byPage) {
-            await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
-                .filter(({ bookmark, target }, index) => {
-                    if (!targets.has(target)) return true;
-                    trashed.push({ pageId: Number(pageId), index, bookmark: { ...bookmark } });
-                    return false;
-                })
-                .map(({ bookmark }) => bookmark));
-        }
-        // After every page write, so a delete that did not persist cannot leave a
-        // phantom entry. The 8s toast is the fast path; the trash catches it later.
-        await window.DashboardTrash?.record(trashed, 'config-bookmarks-bulk');
         await this.refreshTrashIfVisible();
         this.bmSelected.clear();
-
-        const undoCallback = async () => {
-            try {
-                for (const [pageId, rows] of snapshots) {
-                    await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(rows),
-                    });
-                }
-                await this.refreshBookmarksAfterWrite();
-                this.notify(this.t('config.bulkDeleteUndone', 'Bookmarks restored.'), 'success');
-            } catch {
-                this.notify(this.t('config.bulkDeleteUndoFailed', 'Could not restore the bookmarks.'), 'error');
-            }
-        };
-
+        const undoCallback = result.trashIds.length ? async () => {
+            const back = await this.restoreTrashed(result.trashIds);
+            this.notify(back
+                ? this.t('config.bulkDeleteUndone', 'Bookmarks restored.')
+                : this.t('config.bulkDeleteUndoFailed', 'Could not restore the bookmarks.'),
+            back ? 'success' : 'error');
+        } : null;
         this.notify(this.t('config.bulkDeleteDone', 'Bookmarks deleted.'), 'success', {
             undoCallback,
             duration: 8000,
@@ -24508,32 +24556,17 @@ class DashboardConfig {
     }
 
     /**
-     * Write what a sweep collected, one POST per page rather than one per row.
+     * Write what a sweep collected: one PATCH per page, naming each row by URL.
      *
-     * The store has no per-bookmark write: saving a row means reading its
-     * page, changing one entry and writing the list back. Row by row that is
-     * two requests each and every write racing the last; grouped, a page is
-     * read once and written once however many of its rows the sweep touched.
-     *
-     * @param {Map<string, Map<number, object>>} byPage pageId → index → fields
+     * @param {Map<string, Map<string, object>>} byPage pageId → url → fields
      */
     async saveSweptFields(byPage) {
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         for (const [pageId, rows] of byPage) {
             if (!rows.size) continue;
             try {
-                const res = await fetch(`/api/bookmarks?page=${pageId}`);
-                if (!res.ok) continue;
-                const stored = await res.json();
-                if (!Array.isArray(stored)) continue;
-                rows.forEach((fields, index) => {
-                    if (stored[index]) Object.assign(stored[index], fields);
-                });
-                await fetcher(`/api/bookmarks?page=${pageId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(stored),
-                });
+                // By URL, only the swept fields: a sweep takes minutes, and a
+                // whole-page write at its end undid whatever changed meanwhile.
+                await this.patchRows(pageId, [...rows].map(([url, fields]) => ({ url, fields })));
             } catch {
                 // The next sweep can ask again; a page that will not save is
                 // not a reason to drop the pages after it.
@@ -24561,7 +24594,7 @@ class DashboardConfig {
             return;
         }
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        /** @type {Map<string, Map<number, object>>} */
+        /** @type {Map<string, Map<string, object>>} pageId → url → fields */
         const byPage = new Map();
         const result = await this.runSelectionSweep(targets, {
             title: this.t('config.bulkPreviewsTitle', 'Fetching previews…'),
@@ -24590,7 +24623,7 @@ class DashboardConfig {
                     previewEnriched: true,
                 };
                 const page = byPage.get(String(record.pageId)) || new Map();
-                page.set(record.index, fields);
+                page.set(record.record?.url || record.bookmark?.url, fields);
                 byPage.set(String(record.pageId), page);
                 return 'ok';
             },
@@ -24626,7 +24659,7 @@ class DashboardConfig {
             this.notify(this.t('dashboard.healthFaviconFailed', 'Could not refresh the favicon'), 'error');
             return;
         }
-        /** @type {Map<string, Map<number, object>>} */
+        /** @type {Map<string, Map<string, object>>} pageId → url → fields */
         const byPage = new Map();
         const result = await this.runSelectionSweep(targets, {
             title: this.t('config.bulkIconsTitle', 'Fetching icons…'),
@@ -24638,7 +24671,7 @@ class DashboardConfig {
                 const record = await this.sweepRecordFor(bookmark);
                 if (!record) return 'failed';
                 const page = byPage.get(String(record.pageId)) || new Map();
-                page.set(record.index, { icon: iconPath });
+                page.set(record.record?.url || record.bookmark?.url, { icon: iconPath });
                 byPage.set(String(record.pageId), page);
                 return 'ok';
             },

@@ -1,7 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
 const { resetDashboardData } = require('./e2e-helpers');
-const { openBookmarks } = require('./config-bookmarks-helpers');
+const { openBookmarks, captureRowWrites } = require('./config-bookmarks-helpers');
 
 test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -10,15 +10,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function capturePosts(page) {
-    const posts = [];
-    await page.route('**/api/bookmarks?page=*', async (route) => {
-        if (route.request().method() === 'POST') {
-            posts.push(JSON.parse(route.request().postData() || '[]'));
-            return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-        }
-        return route.fallback();
-    });
-    return posts;
+    return captureRowWrites(page);
 }
 
 /** Tick the first `n` rows with the keyboard. */
@@ -77,8 +69,9 @@ test.describe('the bulk form', () => {
             const row = written.find((w) => w.url === b.url);
             expect(row, `${b.url} was written`).toBeTruthy();
             expect(row.tags).toContain('bulkadded');
-            expect(Boolean(row.pinned)).toBe(b.pinned);
-            expect(row.name).toBe(b.name);
+            // Only what changed is sent: the pin and the name are not.
+            expect('pinned' in row).toBe(false);
+            expect('name' in row).toBe(false);
         }
         const untouched = written.filter((w) => !before.some((b) => b.url === w.url));
         expect(untouched.every((w) => !(w.tags || []).includes('bulkadded'))).toBe(true);
@@ -134,13 +127,13 @@ test.describe('the bulk form', () => {
 
     test('a move with No category takes the category away', async ({ page }) => {
         const posts = [];
-        await page.route('**/api/bookmarks?page=*', async (route) => {
-            if (route.request().method() !== 'POST') return route.fallback();
-            posts.push({
-                page: new URL(route.request().url()).searchParams.get('page'),
-                rows: JSON.parse(route.request().postData() || '[]'),
+        await page.route('**/api/bookmarks/move', async (route) => {
+            posts.push(JSON.parse(route.request().postData() || '{}'));
+            const body = posts[posts.length - 1];
+            return route.fulfill({
+                status: 200, contentType: 'application/json',
+                body: JSON.stringify({ moved: (body.items || []).map((i) => ({ fromPage: i.pageId, url: i.url, category: 'x' })), skipped: [] }),
             });
-            return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
         await openBookmarks(page);
         await page.evaluate(() => window.dashboardInstance.config.addPage());
@@ -168,12 +161,14 @@ test.describe('the bulk form', () => {
             await panel.locator('[data-bm-bulk-field="page"]').selectOption(target);
             await panel.locator('[data-bm-bulk-field="category"]').selectOption('');
             await panel.locator('[data-bm-bulk-action="apply"]').click();
-            const landed = () => posts.filter((p) => p.page === target)
-                .flatMap((p) => p.rows).filter((w) => urls.includes(w.url));
+            // One move request: to the target, with the category taken away.
+            const landed = () => posts.filter((p) => String(p.toPage) === target)
+                .flatMap((p) => (p.items || []).map((i) => ({ ...i, category: p.category })))
+                .filter((w) => urls.includes(w.url));
             await expect.poll(() => landed().length).toBeGreaterThanOrEqual(urls.length);
-            for (const row of landed()) expect(row.category || '').toBe('');
+            for (const row of landed()) expect(row.category).toBe('');
         } finally {
-            await page.unroute('**/api/bookmarks?page=*');
+            await page.unroute('**/api/bookmarks/move');
             await page.evaluate(async (p) => {
                 const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
                 await api(`/api/pages/${p}`, { method: 'DELETE' });
