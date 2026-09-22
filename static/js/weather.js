@@ -309,7 +309,13 @@ class WeatherService {
              */
             + `&wind_speed_unit=${fahrenheit ? 'mph' : 'kmh'}`
             /*
-             * More of the same answer, for the tile drawn wide.
+             * The current block, and more of the same answer for a tile drawn
+             * wide.
+             *
+             * The readings below are a continuation of this parameter, not a
+             * parameter of their own: dropping `&current=` while adding them
+             * left a URL that asked for no current conditions at all, and the
+             * whole call answers null without one.
              *
              * Open-Meteo returns these in the request the forecast already
              * makes, so what a wide weather tile says extra -- what it feels
@@ -317,6 +323,7 @@ class WeatherService {
              * second round trip. The header's own line asks for none of it and
              * is left alone.
              */
+            + `&current=temperature_2m,weather_code`
             + `,apparent_temperature,relative_humidity_2m,wind_speed_10m,precipitation_probability`;
 
         if (mode === '24h') {

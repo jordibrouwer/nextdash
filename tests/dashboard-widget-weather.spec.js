@@ -132,4 +132,65 @@ test.describe('the weather widget', () => {
         // Every third hour across 24: eight points, not twenty-four.
         expect(rendered.rowCount).toBe(8);
     });
+
+    /*
+     * The forecast request must still ask for current conditions.
+     *
+     * The extra readings a wide tile shows are a continuation of `current=`,
+     * not a parameter of their own. Adding them once dropped `&current=`
+     * itself, and Open-Meteo then answered without a current block, which this
+     * client reads as "no forecast at all" -- the whole tile said the weather
+     * was unavailable. The stubs in the tests above answer any URL, so only
+     * the URL itself can catch that.
+     */
+    test('the forecast asks for the current conditions and the extra readings', async ({ page }) => {
+        await open(page);
+        const asked = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            Object.assign(d.settings, { weatherSource: 'manual', weatherLocation: 'Berlin' });
+            const realFetch = window.fetch;
+            const urls = [];
+            window.fetch = async (url, ...rest) => {
+                const address = String(url);
+                if (address.includes('geocoding-api.open-meteo.com')) {
+                    return new Response(JSON.stringify({
+                        results: [{ latitude: 52.5, longitude: 13.4, name: 'Berlin' }],
+                    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                }
+                if (address.includes('api.open-meteo.com')) {
+                    urls.push(address);
+                    return new Response(JSON.stringify({
+                        current: {
+                            temperature_2m: 21, weather_code: 0, apparent_temperature: 19,
+                            relative_humidity_2m: 70, wind_speed_10m: 11, precipitation_probability: 30,
+                        },
+                        daily: {
+                            time: ['2026-09-08'], temperature_2m_max: [22],
+                            temperature_2m_min: [12], weather_code: [0],
+                        },
+                    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                }
+                return realFetch(url, ...rest);
+            };
+            const body = document.createElement('div');
+            try {
+                // Cached forecasts would answer without a request at all.
+                await window.DashboardWidgets.weather(
+                    body, { id: 'w_url', type: 'weather', config: { forecastRange: '3day' } },
+                    { ...d, weatherService: Object.assign(Object.create(Object.getPrototypeOf(d.weatherService)), d.weatherService) });
+            } finally {
+                window.fetch = realFetch;
+            }
+            return { urls, temp: body.querySelector('.dashboard-widget-weather-temp')?.textContent };
+        });
+
+        const forecast = asked.urls.find((u) => u.includes('daily=') || u.includes('hourly='));
+        expect(forecast).toBeTruthy();
+        expect(forecast).toContain('current=temperature_2m,weather_code');
+        expect(forecast).toContain('apparent_temperature');
+        expect(forecast).toContain('relative_humidity_2m');
+        expect(forecast).toContain('wind_speed_10m');
+        expect(forecast).toContain('precipitation_probability');
+        expect(asked.temp).toBe('21°C');
+    });
 });
