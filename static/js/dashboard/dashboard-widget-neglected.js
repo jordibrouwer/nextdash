@@ -22,13 +22,15 @@
     }
 
     function render(body, widget, dash) {
-        body.replaceChildren();
+        const utils = window.DashboardWidgetUtils;
+        // The container-query root the blocks below answer to.
+        const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
         const bookmarks = dash.allBookmarks || dash.bookmarks || null;
         if (!Array.isArray(bookmarks)) {
             const waiting = document.createElement('p');
             waiting.className = 'dashboard-widget-waiting';
             waiting.textContent = label(dash, 'dashboard.widgetNeglectedWaiting', 'Loading…');
-            body.appendChild(waiting);
+            wrap.appendChild(waiting);
             return;
         }
 
@@ -66,7 +68,7 @@
             empty.className = 'dashboard-widget-empty';
             empty.textContent = label(dash, 'dashboard.widgetNeglectedNone',
                 'Nothing has been sitting untouched for {n} days.').replace('{n}', String(sinceDays));
-            body.appendChild(empty);
+            wrap.appendChild(empty);
             return;
         }
 
@@ -88,10 +90,34 @@
         note.textContent = label(dash, 'dashboard.widgetNeglectedSince', 'untouched {n}d+')
             .replace('{n}', String(sinceDays));
         head.append(count, note);
-        body.appendChild(head);
+        wrap.appendChild(head);
 
-        const list = document.createElement('div');
-        list.className = 'dashboard-widget-rows';
+        /*
+         * How the neglect breaks down, for a tile drawn wide.
+         *
+         * "Eleven neglected" is one number for two different things: links
+         * that were opened once and then dropped, and links that were saved
+         * and never opened at all. The second is the pile worth clearing.
+         */
+        const neverOpened = candidates.filter((bookmark) => !Number(bookmark?.lastOpened)).length;
+        const oldest = sorted.length ? age(sorted[0]) : 0;
+        const summary = utils?.statGrid?.([
+            { value: String(candidates.length), label: label(dash, 'dashboard.widgetNeglectedTotalLabel', 'neglected') },
+            { value: String(neverOpened), label: label(dash, 'dashboard.widgetNeglectedNeverLabel', 'never opened') },
+            {
+                value: oldest ? String(Math.floor((Date.now() - oldest) / DAY)) : '—',
+                label: label(dash, 'dashboard.widgetNeglectedLongestLabel', 'longest, days'),
+            },
+        ]);
+        if (summary) {
+            summary.classList.add('dashboard-widget-wide-only');
+            wrap.appendChild(summary);
+        }
+
+        // Two files of rows once the tile is wide: a name with an age beside
+        // it is the shape that pairs.
+        const list = utils?.rowList?.() || document.createElement('div');
+        if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
         sorted.slice(0, maxRows).forEach((bookmark) => {
             const row = document.createElement('a');
             row.className = 'dashboard-widget-row';
@@ -117,7 +143,7 @@
         // twelve otherwise looks exactly like five out of five.
         window.DashboardWidgetUtils?.appendOverflowRow(
             list, dash, sorted.length - maxRows, null);
-        body.appendChild(list);
+        wrap.appendChild(list);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};

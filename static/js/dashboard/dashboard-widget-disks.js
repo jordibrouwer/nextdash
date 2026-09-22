@@ -92,9 +92,16 @@
                 .replace('{total}', s.formatBytes(disks.totalBytes)),
         ));
 
-        // Four abreast on a wide tile, two on a narrow one: the stat grid
-        // decides from the width it was actually drawn at.
-        panel.appendChild(u.statGrid(totalsRow(dash, disks)));
+        /*
+         * Four abreast on a wide tile, two on a narrow one: the stat grid
+         * decides from the width it was actually drawn at. Used and total are
+         * what the headline already implies, so they wait for the width; free
+         * and how full sit on the narrow tile too.
+         */
+        const totals = u.statGrid(totalsRow(dash, disks));
+        totals.children[1]?.classList.add('dashboard-widget-wide-only');
+        totals.children[2]?.classList.add('dashboard-widget-wide-only');
+        panel.appendChild(totals);
 
         /*
          * Not paired into two columns, unlike most row lists.
@@ -125,16 +132,24 @@
                 list.appendChild(u.meter(mount.usedBytes, mount.totalBytes, tone(mount.usedPercent)));
             }
 
-            // Inodes run out on their own: a filesystem full of small files
-            // refuses a write with gigabytes still showing free.
-            if (showInodes && mount.inodesTotal > 0) {
+            /*
+             * Inodes run out on their own: a filesystem full of small files
+             * refuses a write with gigabytes still showing free.
+             *
+             * Drawn whether or not the box was ticked, and hidden again by
+             * width when it was not -- a wide tile has room for the reading
+             * that a free-space figure cannot give.
+             */
+            if (mount.inodesTotal > 0) {
                 const usedInodes = mount.inodesTotal - mount.inodesFree;
                 const pct = Math.round((usedInodes / mount.inodesTotal) * 100);
-                list.appendChild(u.row(
+                const row = u.row(
                     label(dash, 'dashboard.widgetDisksInodes', 'files'),
                     `${pct}%`,
                     pct >= 90 ? 'warn' : undefined,
-                ));
+                );
+                if (!showInodes) row.classList.add('dashboard-widget-wide-only');
+                list.appendChild(row);
             }
         });
         panel.appendChild(list);

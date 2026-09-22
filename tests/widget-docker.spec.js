@@ -41,15 +41,19 @@ async function renderDocker(page, docker, config = {}, width = 320) {
         await window.DashboardWidgets.docker(body, { id: 'probe', type: 'docker', config: cfg }, d);
 
         const grid = body.querySelector('.dashboard-widget-stats');
-        const cells = grid ? [...grid.children] : [];
+        // Only what is on screen counts. Figures and blocks the reader did not
+        // ask for are built at every width and hidden again by the container
+        // query, so a DOM count would report what nobody can see.
+        const shown = (el) => el && el.offsetParent !== null;
+        const cells = shown(grid) ? [...grid.children].filter(shown) : [];
         return {
-            text: body.textContent.replace(/\s+/g, ' ').trim(),
+            text: body.innerText.replace(/\s+/g, ' ').trim(),
             cells: cells.length,
             labels: cells.map((c) => c.textContent.replace(/\s+/g, ' ').trim()),
-            columns: grid
+            columns: shown(grid)
                 ? getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length
                 : 0,
-            rows: body.querySelectorAll('.dashboard-widget-row').length,
+            rows: [...body.querySelectorAll('.dashboard-widget-row')].filter(shown).length,
         };
     }, { cfg: config, w: width });
 }
@@ -76,15 +80,29 @@ test.describe('the containers widget', () => {
      * keeps a figure added in a later version included by default, rather than
      * invisible to everyone who once saved this panel.
      */
-    test('with nothing chosen it shows every figure', async ({ page }) => {
+    test('with nothing chosen a wide tile shows every figure', async ({ page }) => {
         await openDashboard(page);
-        const out = await renderDocker(page, READING, {});
+        const out = await renderDocker(page, READING, {}, 700);
         expect(out.cells).toBe(6);
+    });
+
+    /*
+     * Running and stopped are the pair a narrow tile has room to carry, and
+     * the headline above them already says running against total. The rest
+     * arrive with the width rather than stacking three rows deep in a column.
+     */
+    test('a narrow tile keeps the first two figures', async ({ page }) => {
+        await openDashboard(page);
+        const out = await renderDocker(page, READING, {}, 320);
+
+        expect(out.cells).toBe(2);
+        expect(out.labels.join(' ').toLowerCase()).toContain('running');
+        expect(out.labels.join(' ').toLowerCase()).not.toContain('images');
     });
 
     test('shows only the figures that were chosen', async ({ page }) => {
         await openDashboard(page);
-        const out = await renderDocker(page, READING, { show: ['running', 'unhealthy'] });
+        const out = await renderDocker(page, READING, { show: ['running', 'unhealthy'] }, 700);
 
         expect(out.cells).toBe(2);
         expect(out.labels.join(' ').toLowerCase()).toContain('running');
@@ -100,10 +118,10 @@ test.describe('the containers widget', () => {
     test('spreads the chosen figures across a two-column tile', async ({ page }) => {
         await openDashboard(page);
 
-        const narrow = await renderDocker(page, READING, {}, 320);
+        const narrow = await renderDocker(page, READING, { show: ['running', 'stopped', 'unhealthy'] }, 320);
         const wide = await renderDocker(page, READING, {}, 700);
 
-        expect(wide.cells).toBe(narrow.cells);
+        expect(wide.cells).toBeGreaterThan(narrow.cells);
         expect(wide.columns).toBeGreaterThan(narrow.columns);
         // Six figures go three abreast rather than four: four columns would
         // leave two patches of empty ground on the second row.

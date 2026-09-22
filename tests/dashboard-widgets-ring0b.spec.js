@@ -513,7 +513,10 @@ test.describe('a figure on a tile opens the rows behind it', () => {
             await send('/api/pages/1/blocks', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ widgets: [{ type: 'health', title: 'Health' }] }),
+                // Two columns, because the figures past the first two are what a
+                // wide tile is for: a one-column tile carries what is broken and
+                // what is down, and the rest wait for the room.
+                body: JSON.stringify({ widgets: [{ type: 'health', title: 'Health', config: { columns: 2 } }] }),
             });
             const d = window.dashboardInstance;
             d.healthSummary = { brokenCount: 3, monitorDownCount: 1, contentCount: 2, healthyCount: 40 };

@@ -86,27 +86,48 @@
                     tone: toneFor(f.key, value, docker),
                 };
             });
-        if (stats.length) panel.appendChild(u.statGrid(stats));
+        if (stats.length) {
+            /*
+             * Running and stopped are the pair a narrow tile has room for --
+             * the rest of the figures arrive with the width, so two columns
+             * are spent on more of the reading rather than on a wider number.
+             * A reader who picked their own figures keeps the first two of
+             * those, in the order they chose them.
+             */
+            const grid = u.statGrid(stats);
+            [...grid.children].forEach((cell, index) => {
+                if (index >= 2) cell.classList.add('dashboard-widget-wide-only');
+            });
+            panel.appendChild(grid);
+        }
 
         // The lists: each disk of a name rather than a count.
         const names = [];
-        if (config.showUnhealthyNames && docker.unhealthyNames?.length) {
+        if (docker.unhealthyNames?.length) {
             names.push([
                 label(dash, 'dashboard.widgetDockerUnhealthyList', 'failing'),
                 docker.unhealthyNames.join(', '),
                 'bad',
+                config.showUnhealthyNames === true,
             ]);
         }
-        if (config.showRestarted && docker.restartedNames?.length) {
+        if (docker.restartedNames?.length) {
             names.push([
                 label(dash, 'dashboard.widgetDockerRestartedList', 'just restarted'),
                 docker.restartedNames.join(', '),
                 'warn',
+                config.showRestarted === true,
             ]);
         }
         if (names.length) {
             const list = u.rowList(false);
-            names.forEach(([name, detail, tone]) => list.appendChild(u.row(name, detail, tone)));
+            // "One unhealthy" sends you looking; "one unhealthy: jellyfin"
+            // does not -- which is exactly what a wide tile has room to say.
+            names.forEach(([name, detail, tone, asked]) => {
+                const item = u.row(name, detail, tone);
+                if (!asked) item.classList.add('dashboard-widget-wide-only');
+                list.appendChild(item);
+            });
             panel.appendChild(list);
         }
 

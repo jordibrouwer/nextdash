@@ -39,15 +39,19 @@ async function renderMemory(page, memory, config = {}, width = 320) {
         await window.DashboardWidgets.memory(body, { id: 'probe', type: 'memory', config: cfg }, d);
 
         const grid = body.querySelector('.dashboard-widget-stats');
-        const cells = grid ? [...grid.children] : [];
+        // Only what is on screen counts. Figures and blocks the reader did not
+        // ask for are built at every width and hidden again by the container
+        // query, so a DOM count would report what nobody can see.
+        const shown = (el) => el && el.offsetParent !== null;
+        const cells = shown(grid) ? [...grid.children].filter(shown) : [];
         return {
-            text: body.textContent.replace(/\s+/g, ' ').trim(),
+            text: body.innerText.replace(/\s+/g, ' ').trim(),
             cells: cells.length,
-            columns: grid
+            columns: shown(grid)
                 ? getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length
                 : 0,
-            meters: body.querySelectorAll('.dashboard-widget-meter').length,
-            rows: body.querySelectorAll('.dashboard-widget-row').length,
+            meters: [...body.querySelectorAll('.dashboard-widget-meter')].filter(shown).length,
+            rows: [...body.querySelectorAll('.dashboard-widget-row')].filter(shown).length,
         };
     }, { cfg: config, w: width });
 }

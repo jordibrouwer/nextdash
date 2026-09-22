@@ -103,7 +103,7 @@
                 : label(dash, 'dashboard.widgetTrashOldest', 'the oldest goes in {n}d')
                     .replace('{n}', String(soonest))));
 
-        panel.appendChild(u.statGrid([
+        const figures = u.statGrid([
             {
                 value: countOf(items, 'bookmark'),
                 label: label(dash, 'dashboard.widgetTrashBookmarks', 'bookmarks'),
@@ -124,7 +124,20 @@
                     'Leaving within {n} days.').replace('{n}', String(warnDays)),
                 onOpen: open,
             },
-        ], { dash, labelKey: 'widgetActionOpenTrash', labelFallback: 'Open the trash' }));
+        ], { dash, labelKey: 'widgetActionOpenTrash', labelFallback: 'Open the trash' });
+        /*
+         * Past the first two, the figures wait for the width.
+         *
+         * A narrow tile has room for a pair under its headline; four of them
+         * in a column turns a summary into a table. The second column is spent
+         * on the rest rather than on wider numbers, and the tile answers to
+         * the width it was actually drawn at -- the grid narrows a two-column
+         * widget back to one whenever the dashboard is showing one.
+         */
+        [...figures.children].forEach((cell, index) => {
+            if (index >= 2) cell.classList.add('dashboard-widget-wide-only');
+        });
+        panel.appendChild(figures);
 
         const list = u.rowList();
         sorted.slice(0, maxRows).forEach((item) => {

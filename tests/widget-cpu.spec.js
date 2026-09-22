@@ -41,9 +41,14 @@ async function renderCPU(page, cpu, config = {}, width = 320) {
         await window.DashboardWidgets.cpu(body, { id: 'probe', type: 'cpu', config: cfg }, d);
 
         const grid = body.querySelector('.dashboard-widget-stats');
-        const cells = grid ? [...grid.children] : [];
+        // Only what is actually on screen counts. The figures are built at
+        // every width and hidden again by the container query when the reader
+        // did not ask for them, so a DOM count would report a block nobody can
+        // see -- innerText and offsetParent both answer what was drawn.
+        const visible = grid && grid.offsetParent !== null;
+        const cells = visible ? [...grid.children] : [];
         return {
-            text: body.textContent.replace(/\s+/g, ' ').trim(),
+            text: body.innerText.replace(/\s+/g, ' ').trim(),
             cells: cells.length,
             // How many rows the figures ended up on, read off the geometry
             // rather than the class: this is the thing the reader sees.
@@ -51,7 +56,7 @@ async function renderCPU(page, cpu, config = {}, width = 320) {
             // And how many columns the grid was actually given, which is what
             // "fills a wide tile" means and what a row count alone cannot say:
             // three figures across four columns is still one row.
-            columns: grid
+            columns: visible
                 ? getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length
                 : 0,
         };
@@ -121,6 +126,27 @@ test.describe('the processor widget', () => {
         expect(wide.columns).toBe(4);
     });
 
+
+    /*
+     * Two columns should be more of the reading, not the same reading larger.
+     *
+     * The load windows and the core count are what a percentage cannot say --
+     * whether work is queueing up behind it -- so a tile given the room shows
+     * them whether or not the boxes were ticked. Narrow, the boxes still
+     * decide: that is the space the tile actually has.
+     */
+    test('a wide tile shows the load windows even when the boxes are unticked', async ({ page }) => {
+        await openDashboard(page);
+
+        const narrow = await renderCPU(page, READING, {}, 320);
+        expect(narrow.cells).toBe(0);
+        expect(narrow.text).not.toContain('0.07');
+
+        const wide = await renderCPU(page, READING, {}, 700);
+        expect(wide.cells).toBe(4);
+        expect(wide.text).toContain('0.07');
+        expect(wide.text).toContain('0.11');
+    });
     /*
      * The settings panel draws each checkbox from the stored value alone, so a
      * default-on boolean would sit unticked over a tile that was showing the

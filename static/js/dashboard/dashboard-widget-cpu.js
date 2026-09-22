@@ -69,30 +69,40 @@
             panel.appendChild(u.meter(cpu.percent, 100, cpu.percent >= 90 ? 'bad' : 'good'));
         }
 
-        if (showLoad) {
-            const stats = [
-                { value: load(cpu.load1), label: label(dash, 'dashboard.widgetCpuLoad1', '1 min') },
-                { value: load(cpu.load5), label: label(dash, 'dashboard.widgetCpuLoad5', '5 min') },
-                { value: load(cpu.load15), label: label(dash, 'dashboard.widgetCpuLoad15', '15 min') },
-            ];
-            // The fourth cell is what makes the row fill two columns evenly;
-            // statGrid only goes four abreast when it has four.
-            if (showCores && cpu.cores > 0) {
-                stats.push({
-                    value: String(cpu.cores),
-                    label: label(dash, 'dashboard.widgetCpuCoresLabel', 'cores'),
-                });
-            }
-            // Two columns is the stat grid's own doing: at 24rem it goes four
-            // abreast, answering to the width the tile was actually drawn at
-            // rather than to config.columns, which only records the request.
-            panel.appendChild(u.statGrid(stats));
+        /*
+         * The load windows, and the core count beside them.
+         *
+         * Drawn whether or not the settings asked for them, and hidden again
+         * by width when they did not: a tile given two columns should spend
+         * them on more of the reading rather than on a wider percentage, and a
+         * percentage alone cannot say whether work is queueing up. A reader who
+         * ticked the boxes keeps them at one column too.
+         */
+        const stats = [
+            { value: load(cpu.load1), label: label(dash, 'dashboard.widgetCpuLoad1', '1 min') },
+            { value: load(cpu.load5), label: label(dash, 'dashboard.widgetCpuLoad5', '5 min') },
+            { value: load(cpu.load15), label: label(dash, 'dashboard.widgetCpuLoad15', '15 min') },
+        ];
+        // The fourth cell is what makes the row fill two columns evenly;
+        // statGrid only goes four abreast when it has four.
+        if (cpu.cores > 0) {
+            stats.push({
+                value: String(cpu.cores),
+                label: label(dash, 'dashboard.widgetCpuCoresLabel', 'cores'),
+            });
         }
+        const grid = u.statGrid(stats);
+        if (!showLoad) grid.classList.add('dashboard-widget-wide-only');
+        panel.appendChild(grid);
 
         if (showCores && cpu.cores > 0 && !showLoad) {
-            panel.appendChild(u.footnote(
+            // The narrow tile's own answer: the grid above is hidden there, and
+            // a reader who asked for the core count still gets it.
+            const note = u.footnote(
                 label(dash, 'dashboard.widgetCpuCores', '{n} cores').replace('{n}', String(cpu.cores)),
-            ));
+            );
+            note.classList.add('dashboard-widget-narrow-only');
+            panel.appendChild(note);
         }
 
         /*

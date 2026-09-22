@@ -33,9 +33,9 @@
     }
 
     /** The four figures the tile breaks into once there is room for them. */
-    function statsRow(dash, mem, showCache) {
+    function statsRow(dash, mem) {
         const s = S();
-        const stats = [
+        return [
             {
                 value: s.formatBytes(mem.usedBytes),
                 label: label(dash, 'dashboard.widgetMemoryUsedLabel', 'in use'),
@@ -45,18 +45,15 @@
                 value: s.formatBytes(mem.availableBytes),
                 label: label(dash, 'dashboard.widgetMemoryAvailableLabel', 'available'),
             },
-        ];
-        if (showCache) {
-            stats.push({
+            {
                 value: s.formatBytes(mem.cacheBytes),
                 label: label(dash, 'dashboard.widgetMemoryCacheLabel', 'cache'),
-            });
-        }
-        stats.push({
-            value: s.formatBytes(mem.totalBytes),
-            label: label(dash, 'dashboard.widgetMemoryTotalLabel', 'total'),
-        });
-        return stats;
+            },
+            {
+                value: s.formatBytes(mem.totalBytes),
+                label: label(dash, 'dashboard.widgetMemoryTotalLabel', 'total'),
+            },
+        ];
     }
 
     function draw(body, widget, dash, data) {
@@ -84,11 +81,20 @@
 
         panel.appendChild(u.meter(mem.usedBytes, mem.totalBytes, tone(mem.usedPercent)));
 
-        // Four abreast on a wide tile, two on a narrow one: the stat grid
-        // decides from the width it was actually drawn at.
-        panel.appendChild(u.statGrid(statsRow(dash, mem, showCache)));
+        /*
+         * Four abreast on a wide tile, two on a narrow one: the stat grid
+         * decides from the width it was actually drawn at.
+         *
+         * The cache is the other half of the story -- memory that is busy and
+         * instantly available at the same time -- so a tile with the room says
+         * it whether or not the box was ticked. Narrow, where there is room
+         * for two figures, the box still decides.
+         */
+        const grid = u.statGrid(statsRow(dash, mem));
+        if (!showCache) grid.children[2]?.classList.add('dashboard-widget-wide-only');
+        panel.appendChild(grid);
 
-        if (showSwap) {
+        {
             const list = u.rowList(false);
             if (mem.hasSwap) {
                 list.appendChild(u.row(
@@ -110,6 +116,12 @@
                     label(dash, 'dashboard.widgetMemoryNoSwap', 'none'),
                 ));
             }
+            /*
+             * Swap creeping upwards is the reading that actually predicts
+             * trouble, and it is the one figure a percentage of RAM cannot
+             * carry -- so a wide tile shows it unasked.
+             */
+            if (!showSwap) list.classList.add('dashboard-widget-wide-only');
             panel.appendChild(list);
         }
 

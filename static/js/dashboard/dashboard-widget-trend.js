@@ -292,10 +292,24 @@
             }));
         }
 
+        /*
+         * Score and trend are the reading; the rest is the detail behind it.
+         *
+         * A narrow tile carries the two, a wide one carries all of them in two
+         * files -- the trend row keeps the full width, because the line under
+         * it is drawn to be read across the tile rather than down half of it.
+         */
+        rows.forEach((item) => {
+            const key = item.dataset.trendRow;
+            if (key !== 'score' && key !== 'trend') item.classList.add('dashboard-widget-wide-only');
+        });
+
+        const utils = window.DashboardWidgetUtils;
+        const wrap = utils?.panel ? utils.panel(body) : body;
         const block = document.createElement('div');
         block.className = 'dashboard-widget-trend';
         block.append(...rows);
-        body.appendChild(block);
+        wrap.appendChild(block);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};

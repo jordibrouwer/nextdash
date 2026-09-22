@@ -61,6 +61,11 @@
             return;
         }
 
+        const utils = window.DashboardWidgetUtils;
+        // The panel is the container-query root the layout below answers to:
+        // the figures sit two abreast once the tile is wide enough for them,
+        // and the ones past the first two only appear there.
+        const wrap = utils?.panel ? utils.panel(body) : body;
         const list = document.createElement('div');
         list.className = 'dashboard-widget-health';
 
@@ -68,8 +73,8 @@
             ? widget.config.show
             : null;
 
-        FIGURES.forEach((figure) => {
-            if (wanted && !wanted.includes(figure.filter)) return;
+        const shown = FIGURES.filter((figure) => !wanted || wanted.includes(figure.filter));
+        shown.forEach((figure, index) => {
             const count = Number(summary[figure.key]) || 0;
             // A figure of zero for a problem is good news and worth saying;
             // "0 broken" is the whole point of looking.
@@ -79,6 +84,13 @@
             // Nought is dimmed rather than painted in the row's colour: see
             // the note on .is-quiet. The label still says which row it is.
             if (count === 0) row.classList.add('is-quiet');
+            /*
+             * Two figures is what a narrow tile can carry without the block
+             * becoming the whole widget; the rest arrive with the width. What
+             * is broken and what is down now are the two worth the room, and
+             * they head the list already.
+             */
+            if (index >= 2) row.classList.add('dashboard-widget-wide-only');
             row.dataset.healthFilter = figure.filter;
 
             const value = document.createElement('span');
@@ -108,7 +120,7 @@
             list.appendChild(row);
         });
 
-        body.appendChild(list);
+        wrap.appendChild(list);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};

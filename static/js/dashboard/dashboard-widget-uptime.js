@@ -98,7 +98,11 @@
     }
 
     function render(body, widget, dash) {
-        body.replaceChildren();
+        const utils = window.DashboardWidgetUtils;
+        // The container-query root the blocks below answer to: the summary
+        // figures and the second file of rows appear with the width the tile
+        // was actually given, not with the columns it asked for.
+        const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
         const rows = rowsFrom(dash);
         if (!rows) {
             const waiting = document.createElement('p');
@@ -106,7 +110,7 @@
             // Neither report has arrived yet — the badge's request is in flight
             // on a load this early, and the tile redraws when it lands.
             waiting.textContent = label(dash, 'dashboard.widgetUptimeWaiting', 'Checking…');
-            body.appendChild(waiting);
+            wrap.appendChild(waiting);
             return;
         }
 
@@ -139,12 +143,44 @@
             empty.textContent = downOnly
                 ? label(dash, 'dashboard.widgetUptimeAllUp', 'Everything monitored is up.')
                 : label(dash, 'dashboard.widgetUptimeNone', 'No bookmarks are being monitored.');
-            body.appendChild(empty);
+            wrap.appendChild(empty);
             return;
         }
 
-        const list = document.createElement('div');
-        list.className = 'dashboard-widget-rows';
+        /*
+         * What the rows cannot say between them, for a tile drawn wide.
+         *
+         * A file of percentages answers "how is this one doing"; these answer
+         * "how is the watch doing" -- how many are watched at all, how many
+         * are down right now, and the average across the week that a single
+         * worst row hides.
+         */
+        const up = shown.filter((row) => Number(row.uptime7d?.samples) > 0);
+        const average = up.length
+            ? up.reduce((sum, row) => sum + Number(row.uptime7d.ratio), 0) / up.length
+            : null;
+        const downNow = shown.filter((row) => row.down).length;
+        const summary = utils?.statGrid?.([
+            { value: String(shown.length), label: label(dash, 'dashboard.widgetUptimeWatchedLabel', 'watched') },
+            {
+                value: String(downNow),
+                label: label(dash, 'dashboard.widgetUptimeDownLabel', 'down now'),
+                tone: downNow > 0 ? 'bad' : undefined,
+            },
+            {
+                value: average === null ? '—' : `${(average * 100).toFixed(1)}%`,
+                label: label(dash, 'dashboard.widgetUptimeAverageLabel', '7-day average'),
+            },
+        ]);
+        if (summary) {
+            summary.classList.add('dashboard-widget-wide-only');
+            wrap.appendChild(summary);
+        }
+
+        // Two files of rows once the tile is wide: a row here is a host with a
+        // percentage beside it, which is the shape that pairs.
+        const list = utils?.rowList?.() || document.createElement('div');
+        if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
 
         shown.slice(0, maxRows).forEach((row) => {
             const button = document.createElement('button');
@@ -194,9 +230,9 @@
 
         // What did not fit is stated rather than dropped: five rows out of
         // twelve otherwise looks exactly like five out of five.
-        window.DashboardWidgetUtils?.appendOverflowRow(
+        utils?.appendOverflowRow(
             list, dash, shown.length - maxRows, () => { window.DashboardWidgetUtils?.openHealthFiltered(dash, 'monitored'); });
-        body.appendChild(list);
+        wrap.appendChild(list);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};

@@ -85,7 +85,7 @@
                 ? label(dash, 'dashboard.widgetDuplicatesOne', 'address stored more than once')
                 : label(dash, 'dashboard.widgetDuplicatesMany', 'addresses stored more than once')));
 
-        panel.appendChild(u.statGrid([
+        const figures = u.statGrid([
             {
                 value: spare,
                 label: label(dash, 'dashboard.widgetDuplicatesSpare', 'could go'),
@@ -105,7 +105,20 @@
                 label: label(dash, 'dashboard.widgetDuplicatesWorst', 'worst group'),
                 tone: found[0].refs.length > 2 ? 'warn' : null,
             },
-        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
+        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' });
+        /*
+         * Past the first two, the figures wait for the width.
+         *
+         * A narrow tile has room for a pair under its headline; four of them
+         * in a column turns a summary into a table. The second column is spent
+         * on the rest rather than on wider numbers, and the tile answers to
+         * the width it was actually drawn at -- the grid narrows a two-column
+         * widget back to one whenever the dashboard is showing one.
+         */
+        [...figures.children].forEach((cell, index) => {
+            if (index >= 2) cell.classList.add('dashboard-widget-wide-only');
+        });
+        panel.appendChild(figures);
 
         const list = u.rowList();
         found.slice(0, maxRows).forEach((group) => {

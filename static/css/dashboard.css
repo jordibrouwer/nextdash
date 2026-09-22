@@ -6417,6 +6417,82 @@ button.dashboard-widget-row--more {
     cursor: pointer;
 }
 
+/*
+ * What a tile only says when it was drawn wide.
+ *
+ * Two columns should be more of the reading, not the same reading stretched.
+ * The extra blocks are always built and hidden by width, so the tile answers
+ * to the space it actually got: the grid narrows a two-column widget back to
+ * one whenever the dashboard is showing one, and a phone never shows two at
+ * all. Doing it in CSS rather than in the render is what makes dragging the
+ * window narrower take effect at once, with nothing refetched.
+ *
+ * Two classes deep so it beats the single-class rules that give these blocks
+ * their own display.
+ */
+@container (max-width: 27.99rem) {
+    .dashboard-widget-panel .dashboard-widget-wide-only {
+        display: none;
+    }
+}
+
+/*
+ * A row that gains a second detail keeps its name readable.
+ *
+ * The name takes the slack and shrinks to nothing without a floor: paired into
+ * two columns, with a figure and a date after it, the title of a calendar
+ * entry was squeezed to nought pixels and the row read as two numbers with no
+ * subject. A floor is enough -- the ellipsis still does the rest.
+ */
+.dashboard-widget-panel .dashboard-widget-row-name {
+    min-width: 4.5rem;
+}
+
+.dashboard-widget-panel .dashboard-widget-row-detail.dashboard-widget-wide-only {
+    flex: 0 1 auto;
+    min-width: 0;
+    /* One line, cut if it must be: a date that wrapped turned every row into
+       three, and a list of three-line rows is not the list the reader came
+       for. */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* And the other way: what stands in for it while the tile is narrow. */
+@container (min-width: 27.99rem) {
+    .dashboard-widget-panel .dashboard-widget-narrow-only {
+        display: none;
+    }
+}
+
+/*
+ * The trend rows in two files once the tile is wide.
+ *
+ * The score and the trend keep the whole width: the line under the trend is
+ * drawn to be read across the tile, and halving it halves the only picture
+ * this widget draws.
+ */
+@container (min-width: 28rem) {
+    .dashboard-widget-panel .dashboard-widget-trend {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-widget-panel .dashboard-widget-trend-row[data-trend-row="score"],
+    .dashboard-widget-panel .dashboard-widget-trend-row[data-trend-row="trend"] {
+        grid-column: 1 / -1;
+    }
+}
+
+/* The health figures: a column when narrow, two abreast once there is room. */
+@container (min-width: 22rem) {
+    .dashboard-widget-panel .dashboard-widget-health {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 /* ─── Kept widget ────────────────────────────────────────────────────────── */
 /* Which order the tile is showing, and the shuffle for the one order that has
    anything to shuffle. Above the rows rather than in the widget's title: the

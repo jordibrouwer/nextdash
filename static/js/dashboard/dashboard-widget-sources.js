@@ -45,13 +45,16 @@
     }
 
     async function render(body, widget, dash) {
-        body.replaceChildren();
+        const utils = window.DashboardWidgetUtils;
+        // The container-query root: the rows pair and the run times appear
+        // according to the width this tile was actually given.
+        const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
         const sources = await load(dash);
         if (!sources) {
             const waiting = document.createElement('p');
             waiting.className = 'dashboard-widget-waiting';
             waiting.textContent = label(dash, 'dashboard.widgetSourcesWaiting', 'Loading…');
-            body.appendChild(waiting);
+            wrap.appendChild(waiting);
             return;
         }
 
@@ -67,14 +70,16 @@
             empty.textContent = errorsOnly
                 ? label(dash, 'dashboard.widgetSourcesAllWell', 'Every source is fine.')
                 : label(dash, 'dashboard.widgetSourcesNone', 'No import sources yet.');
-            body.appendChild(empty);
+            wrap.appendChild(empty);
             return;
         }
 
-        const rows = window.DashboardWidgetUtils?.rowLimit(widget, 6) ?? 6;
+        const rows = utils?.rowLimit(widget, 6) ?? 6;
 
-        const list = document.createElement('div');
-        list.className = 'dashboard-widget-rows';
+        // Two files of rows once the tile is wide: a source is a name with a
+        // verdict beside it, which is the shape that pairs.
+        const list = utils?.rowList?.() || document.createElement('div');
+        if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
 
         shown.slice(0, rows).forEach((source) => {
             const error = String(source?.lastError || '').trim();
@@ -94,6 +99,20 @@
             if (ran) detail.title = ran;
 
             row.append(name, detail);
+            /*
+             * When it last ran, on the tile rather than in a tooltip.
+             *
+             * "Imported 42" says nothing about whether the source has stopped:
+             * a week-old success and this morning's read the same. The hover
+             * had the answer, and a hover is not an answer -- a wide tile has
+             * the room to simply print it.
+             */
+            if (ran) {
+                const at = document.createElement('span');
+                at.className = 'dashboard-widget-row-detail dashboard-widget-wide-only';
+                at.textContent = ran;
+                row.appendChild(at);
+            }
             window.DashboardWidgetUtils?.bindRowAction(row, dash, {
                 labelKey: 'widgetActionOpenSources',
                 labelFallback: 'Open Sources',
@@ -104,10 +123,10 @@
             list.appendChild(row);
         });
 
-        window.DashboardWidgetUtils?.appendOverflowRow(list, dash, shown.length - rows,
+        utils?.appendOverflowRow(list, dash, shown.length - rows,
             () => { dash.config?.openConfigView?.('sources') ?? dash.showView?.('config'); });
 
-        body.appendChild(list);
+        wrap.appendChild(list);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};

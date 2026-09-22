@@ -39,13 +39,16 @@
     }
 
     async function render(body, widget, dash) {
-        body.replaceChildren();
+        const utils = window.DashboardWidgetUtils;
+        // The container-query root: the summary and the second file of rows
+        // answer to the width this tile was actually drawn at.
+        const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
         const feeds = await load(dash);
         if (!feeds) {
             const waiting = document.createElement('p');
             waiting.className = 'dashboard-widget-waiting';
             waiting.textContent = label(dash, 'dashboard.widgetFeedsWaiting', 'Loading…');
-            body.appendChild(waiting);
+            wrap.appendChild(waiting);
             return;
         }
 
@@ -66,12 +69,38 @@
             empty.textContent = freshOnly
                 ? label(dash, 'dashboard.widgetFeedsNothingNew', 'Nothing new in your feeds.')
                 : label(dash, 'dashboard.widgetFeedsNone', 'No feeds are being followed.');
-            body.appendChild(empty);
+            wrap.appendChild(empty);
             return;
         }
 
-        const list = document.createElement('div');
-        list.className = 'dashboard-widget-rows';
+        /*
+         * The state of the whole set, for a tile drawn wide.
+         *
+         * The rows say which feeds have something new; these say how many
+         * items are waiting altogether, how many feeds are being followed at
+         * all, and how many have stopped -- the last being the figure nobody
+         * goes looking for until the reading has been dry for a week.
+         */
+        const items = entries.reduce((sum, feed) => sum + (Number(feed?.newCount) || 0), 0);
+        const stopped = entries.filter((feed) => feed?.retired).length;
+        const summary = utils?.statGrid?.([
+            { value: String(items), label: label(dash, 'dashboard.widgetFeedsItemsLabel', 'new items') },
+            { value: String(entries.length), label: label(dash, 'dashboard.widgetFeedsFollowedLabel', 'followed') },
+            {
+                value: String(stopped),
+                label: label(dash, 'dashboard.widgetFeedsStoppedLabel', 'stopped'),
+                tone: stopped > 0 ? 'warn' : undefined,
+            },
+        ]);
+        if (summary) {
+            summary.classList.add('dashboard-widget-wide-only');
+            wrap.appendChild(summary);
+        }
+
+        // Two files of rows once the tile is wide: a feed is a host with a
+        // count beside it, which is the shape that pairs.
+        const list = utils?.rowList?.() || document.createElement('div');
+        if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
 
         // Retired first: "this stopped working" outranks "this has three new
         // items", and it is the half nobody can see anywhere else.
@@ -112,7 +141,7 @@
         window.DashboardWidgetUtils?.appendOverflowRow(list, dash,
             Math.max(retired.length - rows, 0) + Math.max(fresh.length - freshRoom, 0), null);
 
-        body.appendChild(list);
+        wrap.appendChild(list);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};
