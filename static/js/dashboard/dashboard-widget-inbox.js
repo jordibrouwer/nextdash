@@ -33,7 +33,9 @@
     }
 
     function render(body, widget, dash, items) {
-        body.replaceChildren();
+        const utils = window.DashboardWidgetUtils;
+        // The container-query root the blocks below answer to.
+        const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
         const config = widget?.config || {};
         const maxRows = Math.min(Math.max(Number(config.rows) || 5, 1), 20);
         const showSource = config.showSource !== false;
@@ -42,7 +44,7 @@
             const empty = document.createElement('p');
             empty.className = 'dashboard-widget-empty';
             empty.textContent = label(dash, 'dashboard.widgetInboxEmpty', 'Nothing waiting.');
-            body.appendChild(empty);
+            wrap.appendChild(empty);
             return;
         }
 
@@ -66,10 +68,53 @@
                 : label(dash, 'dashboard.widgetInboxToday', 'all from today');
             head.appendChild(age);
         }
-        body.appendChild(head);
+        wrap.appendChild(head);
 
-        const list = document.createElement('div');
-        list.className = 'dashboard-widget-rows';
+        /*
+         * What the headline leaves out, for a tile drawn wide.
+         *
+         * A count and an age answer "is the inbox filling up"; these answer
+         * "what happened lately" -- what arrived today, how long the queue has
+         * really been standing, and how many places it is arriving from. Built
+         * always and hidden by width, so the tile follows the room it was
+         * given rather than the columns it asked for.
+         */
+        const day = (at) => Math.floor((Date.now() - (Number(at) || 0)) / DAY);
+        const today = sorted.filter((item) => Number(item?.addedAt) > 0 && day(item.addedAt) < 1).length;
+        const week = sorted.filter((item) => Number(item?.addedAt) > 0 && day(item.addedAt) < 7).length;
+        const sources = new Set(sorted.map((item) => String(item?.source || '').trim()).filter(Boolean));
+        const stats = window.DashboardWidgetUtils?.statGrid?.([
+            { value: String(items.length), label: label(dash, 'dashboard.widgetInboxWaitingLabel', 'waiting') },
+            { value: String(today), label: label(dash, 'dashboard.widgetInboxTodayLabel', 'today') },
+            { value: String(week), label: label(dash, 'dashboard.widgetInboxWeekLabel', 'this week') },
+            {
+                value: oldest ? String(Math.max(day(oldest), 0)) : '0',
+                label: label(dash, 'dashboard.widgetInboxOldestLabel', 'days waiting'),
+                // A queue standing for a fortnight is the reading this tile
+                // exists for, and it is not an error until it is old.
+                tone: oldest && day(oldest) >= 14 ? 'warn' : undefined,
+            },
+        ]);
+        if (stats) {
+            stats.classList.add('dashboard-widget-wide-only');
+            wrap.appendChild(stats);
+        }
+        if (sources.size > 1) {
+            const note = window.DashboardWidgetUtils?.footnote?.(
+                label(dash, 'dashboard.widgetInboxSources', 'from {n} sources')
+                    .replace('{n}', String(sources.size)));
+            if (note) {
+                note.classList.add('dashboard-widget-wide-only');
+                wrap.appendChild(note);
+            }
+        }
+
+        // Two files of rows once the tile is wide, one when it is not: a row
+        // here is a headline with its source beside it, which is the shape
+        // that pairs.
+        const list = window.DashboardWidgetUtils?.rowList?.()
+            || document.createElement('div');
+        if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
         sorted.slice(0, maxRows).forEach((item) => {
             const row = document.createElement('button');
             row.type = 'button';
@@ -99,7 +144,7 @@
         // twelve otherwise looks exactly like five out of five.
         window.DashboardWidgetUtils?.appendOverflowRow(
             list, dash, sorted.length - maxRows, () => { dash.showView?.('inbox'); });
-        body.appendChild(list);
+        wrap.appendChild(list);
     }
 
     async function renderInbox(body, widget, dash) {

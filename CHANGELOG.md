@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.13.0 — 22 September 2026](#v1130--22-september-2026)
 - [v1.12.0 — 21 September 2026](#v1120--21-september-2026)
 - [v1.11.8 — 19 September 2026](#v1118--19-september-2026)
 - [v1.11.7 — 19 September 2026](#v1117--19-september-2026)
@@ -214,6 +215,29 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.13.0 — 22 September 2026
+
+A widget set to two columns used to show the same reading, wider. Now it shows more of it: the load average behind the processor's percentage, the container that is failing by name, the date a certificate expires, what the weather feels like. Narrow the dashboard, or open it on a phone, and each tile falls back to the half worth having. The Kept widget also gained an order — newest, at random, or by tag — and prints each link's address under its title.
+
+### Widgets
+
+- **new — two columns say more, not the same thing larger.** Every widget now has a wide reading and a narrow one. Processor adds the 1, 5 and 15 minute load and the core count; Memory adds the file cache and swap; Disks adds used against total and how full the file table is; Containers shows all six figures and names what is failing or just restarted; Health shows four figures rather than two; Health trend opens into two files of rows; Inbox adds what arrived today and this week and how long the queue has really stood; Uptime adds how many are watched, how many are down and the seven-day average; Sources prints when each import last ran; Certificates adds the expiry date and how much is inside the window; Feeds adds how many are followed and how many stopped; Neglected splits its count into dropped and never opened; Calendar adds the date and how long an event runs; Weather adds what it feels like, the wind, the humidity and the chance of rain; Archive, Duplicates, Trash, Blind spots and Backups hold their later figures back until there is room.
+- **new — lists of rows run in two files** on a wide tile — RSS, Inbox, Uptime, Sources, Certificates, Feeds, Neglected, Calendar, Kept and the Custom widget's items. RSS's "show less" row keeps the full width.
+- **new — the extra readings follow the width the tile actually got**, not the number of columns it asked for: a two-column widget on a one-column dashboard, or on a phone, narrows itself and drops back to the important half at once, with nothing refetched.
+- **new — the weather forecast now carries the apparent temperature, wind speed, humidity and chance of rain**, asked for in the same Open-Meteo request the forecast already made. Wind follows the temperature unit: mph beside Fahrenheit.
+- **fix — a row's name no longer shrinks to nothing** when a second figure sits beside it, and a date beside a row no longer wraps the row onto three lines.
+
+### Kept
+
+- **new — the Kept widget has an order**: most recent, random, or by tag. With a tag it shows only that tag; without one it groups every tag under its own heading, untagged last. Random carries a shuffle button that reorders without refetching.
+- **new — each row prints its address under the title**, without the scheme and `www.`, cut in the middle so the host and the end of the path both survive.
+
+### Docs
+
+- The manual's widget chapter and the in-app Help describe what a wide tile adds, and the Kept widget's order. Help counted twenty kinds and left out Kept; it counts twenty-one now.
 
 ---
 

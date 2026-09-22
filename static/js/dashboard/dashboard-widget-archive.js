@@ -82,7 +82,7 @@
         panel.appendChild(u.meter(kept, subject.length,
             share >= 0.75 ? 'good' : share >= 0.4 ? 'warn' : 'bad'));
 
-        panel.appendChild(u.statGrid([
+        const figures = u.statGrid([
             {
                 value: kept,
                 label: label(dash, 'dashboard.widgetArchiveKept', 'kept'),
@@ -110,7 +110,20 @@
                 label: label(dash, 'dashboard.widgetArchiveNoCopy', 'no copy'),
                 tone: null,
             },
-        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
+        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' });
+        /*
+         * Past the first two, the figures wait for the width.
+         *
+         * A narrow tile has room for a pair under its headline; four of them
+         * in a column turns a summary into a table. The second column is spent
+         * on the rest rather than on wider numbers, and the tile answers to
+         * the width it was actually drawn at -- the grid narrows a two-column
+         * widget back to one whenever the dashboard is showing one.
+         */
+        [...figures.children].forEach((cell, index) => {
+            if (index >= 2) cell.classList.add('dashboard-widget-wide-only');
+        });
+        panel.appendChild(figures);
 
         /*
          * One list, not two: everything the figures counted, without a copy,

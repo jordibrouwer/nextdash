@@ -65,6 +65,37 @@
         return time ? `${dayText} ${time}` : dayText;
     }
 
+    /*
+     * The date an event falls on, and how long it runs.
+     *
+     * Written out rather than relative: "Thu" answers which day of this week,
+     * and a fortnight out that is the wrong question. All-day events say so
+     * instead of printing a span of hours nobody set.
+     */
+    function dateRange(dash, event) {
+        const start = new Date(Number(event?.start) || 0);
+        if (!Number(event?.start)) return '';
+        const locale = dash?.settings?.language || document.documentElement.getAttribute('data-lang') || 'en';
+        let date;
+        try {
+            date = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(start);
+        } catch (error) {
+            date = start.toLocaleDateString();
+        }
+        if (event?.allDay) {
+            return `${date} · ${label(dash, 'dashboard.widgetCalendarAllDay', 'all day')}`;
+        }
+        const end = Number(event?.end) || 0;
+        if (end > Number(event.start)) {
+            const minutes = Math.round((end - Number(event.start)) / 60000);
+            const text = minutes >= 60
+                ? label(dash, 'dashboard.widgetCalendarHours', '{n}h').replace('{n}', String(Math.round(minutes / 60)))
+                : label(dash, 'dashboard.widgetCalendarMinutes', '{n}m').replace('{n}', String(minutes));
+            return `${date} · ${text}`;
+        }
+        return date;
+    }
+
     async function render(body, widget, dash) {
         const pageId = Number(dash?.currentPageId) || Number(dash?.pages?.[0]?.id) || 1;
         say(body, 'dashboard-widget-waiting', label(dash, 'dashboard.widgetCalendarWaiting', 'Checking…'));
@@ -93,8 +124,11 @@
             return;
         }
 
-        const list = document.createElement('div');
-        list.className = 'dashboard-widget-rows';
+        const utils = window.DashboardWidgetUtils;
+        // Two files of rows once the tile is wide: an event is a title with a
+        // time beside it, which is the shape that pairs.
+        const list = utils?.rowList?.() || document.createElement('div');
+        if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
         events.forEach((event) => {
             const row = document.createElement('div');
             row.className = 'dashboard-widget-row';
@@ -105,10 +139,25 @@
             detail.className = 'dashboard-widget-row-detail';
             detail.textContent = rowLabel(dash, event);
             row.append(name, detail);
+            /*
+             * The date, and how long it runs, for a tile drawn wide.
+             *
+             * "Thu 14:00" is enough to recognise an appointment and not enough
+             * to plan around one: which Thursday, and whether it takes the
+             * afternoon, are the two things a diary is read for.
+             */
+            const extra = dateRange(dash, event);
+            if (extra) {
+                const span = document.createElement('span');
+                span.className = 'dashboard-widget-row-detail dashboard-widget-wide-only';
+                span.textContent = extra;
+                row.appendChild(span);
+            }
             list.appendChild(row);
         });
         body.replaceChildren();
-        body.appendChild(list);
+        const wrap = utils?.panel ? utils.panel(body) : body;
+        wrap.appendChild(list);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};

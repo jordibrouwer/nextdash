@@ -49,13 +49,16 @@
     }
 
     function render(body, widget, dash) {
-        body.replaceChildren();
+        const utils = window.DashboardWidgetUtils;
+        // The container-query root: the rows pair and the expiry dates appear
+        // according to the width this tile was actually drawn at.
+        const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
         const certs = certificatesFrom(dash);
         if (!certs) {
             const waiting = document.createElement('p');
             waiting.className = 'dashboard-widget-waiting';
             waiting.textContent = label(dash, 'dashboard.widgetCertsWaiting', 'Checking…');
-            body.appendChild(waiting);
+            wrap.appendChild(waiting);
             return;
         }
 
@@ -75,12 +78,36 @@
             // within the days that were asked about, not nothing ever.
             empty.textContent = label(dash, 'dashboard.widgetCertsNone',
                 'No certificate expires within {n} days.').replace('{n}', String(withinDays));
-            body.appendChild(empty);
+            wrap.appendChild(empty);
             return;
         }
 
-        const list = document.createElement('div');
-        list.className = 'dashboard-widget-rows';
+        /*
+         * The shape of the problem, for a tile drawn wide.
+         *
+         * A list of hosts says which certificates expire; these say whether
+         * this is next week's job or next quarter's -- and how much of what is
+         * watched is in the window at all.
+         */
+        const urgent = expiring.filter((entry) => entry.expiry - Date.now() <= 7 * DAY).length;
+        const summary = utils?.statGrid?.([
+            {
+                value: String(urgent),
+                label: label(dash, 'dashboard.widgetCertsUrgentLabel', 'within a week'),
+                tone: urgent > 0 ? 'bad' : undefined,
+            },
+            { value: String(expiring.length), label: label(dash, 'dashboard.widgetCertsWindowLabel', 'in the window') },
+            { value: String(certs.length), label: label(dash, 'dashboard.widgetCertsWatchedLabel', 'seen over TLS') },
+        ]);
+        if (summary) {
+            summary.classList.add('dashboard-widget-wide-only');
+            wrap.appendChild(summary);
+        }
+
+        // Two files of rows once the tile is wide: a host with a count of days
+        // beside it is exactly the shape that pairs.
+        const list = utils?.rowList?.() || document.createElement('div');
+        if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
 
         expiring.slice(0, rows).forEach((entry) => {
             const days = Math.floor((entry.expiry - Date.now()) / DAY);
@@ -101,6 +128,15 @@
             detail.title = new Date(entry.expiry).toLocaleDateString();
 
             row.append(name, detail);
+            /*
+             * The date itself, on the tile rather than in a tooltip. "14d" is
+             * the urgency; the date is what goes in the diary, and a hover
+             * cannot be read at a glance or on a phone at all.
+             */
+            const when = document.createElement('span');
+            when.className = 'dashboard-widget-row-detail dashboard-widget-wide-only';
+            when.textContent = new Date(entry.expiry).toLocaleDateString();
+            row.appendChild(when);
             window.DashboardWidgetUtils?.bindRowAction(row, dash, {
                 labelKey: 'widgetActionOpenHealth',
                 labelFallback: 'Open Health',
@@ -115,7 +151,7 @@
         // twelve otherwise looks exactly like five out of five.
         window.DashboardWidgetUtils?.appendOverflowRow(
             list, dash, expiring.length - rows, () => { window.DashboardWidgetUtils?.openHealthFiltered(dash, 'certificates'); });
-        body.appendChild(list);
+        wrap.appendChild(list);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};

@@ -17178,6 +17178,17 @@ class DashboardConfig {
             { key: 'showSource', kind: 'bool', label: ['config.widgetShowSource', 'Show where each link came from'] },
         ],
         unsorted: [
+            { key: 'sort', kind: 'choice',
+              label: ['config.widgetKeptSort', 'Order'],
+              options: [
+                  ['recent', ['config.widgetKeptSortRecent', 'Most recent']],
+                  ['random', ['config.widgetKeptSortRandom', 'Random']],
+                  ['tag', ['config.widgetKeptSortByTag', 'By tag']],
+              ] },
+            { key: 'tag', kind: 'tags',
+              label: ['config.widgetKeptTag', 'Tag to show'],
+              hint: ['config.widgetKeptTagHint',
+                     'With Order on By tag: one tag shows only that tag, none groups every tag under its own heading.'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         feeds: [
@@ -19127,7 +19138,7 @@ class DashboardConfig {
             certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
             trend: 'The health view\'s summary: the score and its direction over time, what is broken, and the monitors\' last day.',
             inbox: 'How much is waiting to be filed, and how long the oldest has waited.',
-            unsorted: 'Bookmarks kept from the inbox without picking a category, most recent first.',
+            unsorted: 'Bookmarks kept from the inbox without picking a category — most recent, at random, or by tag.',
             feeds: 'Feeds with new items, and the ones that stopped after repeated failures.',
             sources: 'What each import last did, so a failed import is not only visible in config.',
             neglected: 'Bookmarks you have not opened in a long time — the graveyard question in reverse.',

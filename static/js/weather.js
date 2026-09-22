@@ -303,7 +303,21 @@ class WeatherService {
         const base = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(latitude)}`
             + `&longitude=${encodeURIComponent(longitude)}&timezone=auto`
             + `&temperature_unit=${fahrenheit ? 'fahrenheit' : 'celsius'}`
-            + `&current=temperature_2m,weather_code`;
+            /*
+             * Wind in the unit the temperature is already in: a reader who
+             * asked for Fahrenheit does not want kilometres per hour beside it.
+             */
+            + `&wind_speed_unit=${fahrenheit ? 'mph' : 'kmh'}`
+            /*
+             * More of the same answer, for the tile drawn wide.
+             *
+             * Open-Meteo returns these in the request the forecast already
+             * makes, so what a wide weather tile says extra -- what it feels
+             * like, the wind, the humidity, the chance of rain -- costs no
+             * second round trip. The header's own line asks for none of it and
+             * is left alone.
+             */
+            + `,apparent_temperature,relative_humidity_2m,wind_speed_10m,precipitation_probability`;
 
         if (mode === '24h') {
             const url = `${base}&hourly=temperature_2m,weather_code&forecast_hours=24`;
@@ -329,6 +343,7 @@ class WeatherService {
                 current: {
                     temperature: Number(data.current.temperature_2m),
                     weatherCode: Number(data.current.weather_code),
+                    ...extraCurrent(data.current, fahrenheit),
                     unitSymbol
                 },
                 hours
@@ -350,6 +365,7 @@ class WeatherService {
             current: {
                 temperature: Number(data.current.temperature_2m),
                 weatherCode: Number(data.current.weather_code),
+                ...extraCurrent(data.current, fahrenheit),
                 unitSymbol
             },
             days: dates.map((date, i) => ({
@@ -371,6 +387,27 @@ class WeatherService {
         const code = Number(weatherCode);
         return this.weatherCodeMap[code] || 'unknown';
     }
+}
+
+/*
+ * The current-conditions fields beyond the temperature, when they are there.
+ *
+ * A reading that is absent is left out rather than reported as nought: a
+ * forecast cached before these were asked for has none of them, and "0 km/h
+ * wind" is a claim nobody measured.
+ */
+function extraCurrent(current, fahrenheit) {
+    const out = {};
+    const put = (key, value) => {
+        const number = Number(value);
+        if (Number.isFinite(number)) out[key] = number;
+    };
+    put('apparentTemperature', current?.apparent_temperature);
+    put('humidity', current?.relative_humidity_2m);
+    put('windSpeed', current?.wind_speed_10m);
+    put('precipitationChance', current?.precipitation_probability);
+    if (out.windSpeed !== undefined) out.windUnit = fahrenheit ? 'mph' : 'km/h';
+    return out;
 }
 
 window.WeatherService = WeatherService;

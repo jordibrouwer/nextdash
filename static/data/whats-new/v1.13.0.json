@@ -1,0 +1,42 @@
+{
+  "tag": "v1.13.0",
+  "date": "22 September 2026",
+  "releasedAt": "2026-09-22",
+  "modalLead": "A widget set to two columns used to show the same reading, only wider. Now it shows more of it &mdash; the load behind the processor's percentage, the container that is failing by name, the date a certificate runs out, what the weather feels like. Narrow the dashboard, or open it on your phone, and every tile falls back to the half worth having. The Kept widget also picked up an order: newest, at random, or by tag.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Two columns say more, not the same thing larger.</strong> Processor adds the load average and the core count, Memory the file cache and swap, Disks used against total, Containers every figure and the name of what is failing, Health four figures instead of two, Inbox what arrived today and this week, Uptime how many are watched and the week's average, Weather what it feels like, the wind and the chance of rain."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Lists run in two files.</strong> RSS, Inbox, Uptime, Sources, Certificates, Feeds, Neglected, Calendar and Kept put twice the rows in the same height when the tile is wide."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>More detail where a tooltip used to hide it.</strong> Sources prints when each import last ran, Certificates the expiry date, Calendar the date and how long an event lasts."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>It follows the room the tile actually got.</strong> On a one-column dashboard, or on a phone, a wide widget narrows itself and keeps the important half &mdash; at once, with nothing fetched again."
+        }
+      ]
+    },
+    {
+      "title": "Kept",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>An order for the Kept widget:</strong> most recent, random, or by tag. One tag shows just that tag; no tag groups them all under their own headings. Random gets a shuffle button."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The address under each title</strong>, shortened so a long link cannot widen the tile."
+        }
+      ]
+    }
+  ]
+}

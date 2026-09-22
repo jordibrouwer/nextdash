@@ -73,7 +73,7 @@
         panel.appendChild(u.meter(covered, scope.length,
             share >= 0.9 ? 'good' : share >= 0.6 ? 'warn' : 'bad'));
 
-        panel.appendChild(u.statGrid([
+        const figures = u.statGrid([
             {
                 value: never.length,
                 label: label(dash, 'dashboard.widgetUncheckedNever', 'never'),
@@ -105,7 +105,20 @@
                     'On the faster tier, with uptime history.'),
                 onOpen: () => u.openHealthFiltered(dash, 'monitored'),
             },
-        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
+        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' });
+        /*
+         * Past the first two, the figures wait for the width.
+         *
+         * A narrow tile has room for a pair under its headline; four of them
+         * in a column turns a summary into a table. The second column is spent
+         * on the rest rather than on wider numbers, and the tile answers to
+         * the width it was actually drawn at -- the grid narrows a two-column
+         * widget back to one whenever the dashboard is showing one.
+         */
+        [...figures.children].forEach((cell, index) => {
+            if (index >= 2) cell.classList.add('dashboard-widget-wide-only');
+        });
+        panel.appendChild(figures);
 
         // Never before stale, and within each the one waiting longest first —
         // the order someone would work the list in.

@@ -187,8 +187,10 @@
         }
 
         if (items.length) {
-            const list = document.createElement('div');
-            list.className = 'dashboard-widget-rows';
+            // Two files of rows once the tile is wide: twice the list for the
+            // same height, which is what the second column is for.
+            const list = utils?.rowList?.() || document.createElement('div');
+            if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
             items.forEach((item) => {
                 const row = document.createElement('div');
                 row.className = 'dashboard-widget-row';

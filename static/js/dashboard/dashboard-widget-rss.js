@@ -140,9 +140,18 @@
         const expanded = expandedIds().has(String(widget.id));
         const shown = expanded ? items : items.slice(0, rows);
 
-        body.replaceChildren();
-        const list = document.createElement('div');
-        list.className = 'dashboard-widget-rows';
+        /*
+         * The panel is what makes two columns possible: the rows answer to a
+         * container query, and without an element declaring itself a container
+         * a tile set to two columns drew one file of headlines beside empty
+         * ground. Narrowing back to one column is the same rule read the other
+         * way, so a dashboard on one column -- or a phone -- needs no case of
+         * its own.
+         */
+        const utils = window.DashboardWidgetUtils;
+        const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
+        const list = utils?.rowList ? utils.rowList() : document.createElement('div');
+        if (!utils?.rowList) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
         shown.forEach((item) => list.appendChild(buildRow(dash, item)));
 
         const hidden = items.length - shown.length;
@@ -168,11 +177,11 @@
                 },
             });
             list.appendChild(toggle);
-            body.appendChild(list);
+            wrap.appendChild(list);
             if (focusToggle) toggle.focus({ preventScroll: true });
             return;
         }
-        body.appendChild(list);
+        wrap.appendChild(list);
     }
 
     async function render(body, widget, dash) {

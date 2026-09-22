@@ -140,6 +140,47 @@
 
         grid.append(current, forecast);
         wrap.appendChild(grid);
+
+        /*
+         * What the sky is doing beyond its temperature, for a tile drawn wide.
+         *
+         * A number and an icon answer "how warm is it"; these answer what
+         * anyone actually asks next -- whether to take a coat, whether the
+         * wind will make it feel colder than it reads, and whether it is going
+         * to rain. They arrive in the same request as the forecast, and a
+         * reading that was not there is left out rather than printed as nought.
+         */
+        const extras = [];
+        const value = (n, suffix) => `${Math.round(n)}${suffix}`;
+        if (Number.isFinite(result.current.apparentTemperature)) {
+            extras.push({
+                value: value(result.current.apparentTemperature, `°${result.current.unitSymbol}`),
+                label: label(dash, 'dashboard.widgetWeatherFeelsLike', 'feels like'),
+            });
+        }
+        if (Number.isFinite(result.current.windSpeed)) {
+            extras.push({
+                value: value(result.current.windSpeed, ''),
+                label: result.current.windUnit || 'km/h',
+            });
+        }
+        if (Number.isFinite(result.current.humidity)) {
+            extras.push({
+                value: value(result.current.humidity, '%'),
+                label: label(dash, 'dashboard.widgetWeatherHumidity', 'humidity'),
+            });
+        }
+        if (Number.isFinite(result.current.precipitationChance)) {
+            extras.push({
+                value: value(result.current.precipitationChance, '%'),
+                label: label(dash, 'dashboard.widgetWeatherRainChance', 'chance of rain'),
+            });
+        }
+        if (extras.length && utils?.statGrid) {
+            const stats = utils.statGrid(extras);
+            stats.classList.add('dashboard-widget-wide-only');
+            wrap.appendChild(stats);
+        }
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};
