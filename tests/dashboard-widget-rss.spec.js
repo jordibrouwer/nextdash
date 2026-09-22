@@ -178,4 +178,46 @@ test.describe('the RSS widget', () => {
         // Gone again once the pointer leaves the row.
         expect(shown.hiddenAfterLeave).toBe(true);
     });
+
+    /*
+     * A tile set to two columns should put headlines in both of them.
+     *
+     * The rows answer to a container query on the tile's own width, not to the
+     * widget's config: the grid narrows a two-column widget back to one
+     * whenever the dashboard is showing one, and a phone never shows two.
+     * Measured on the drawn grid rather than on a class name, because the
+     * class was there before this and still drew a single file.
+     */
+    test('the rows pair when the tile is wide and go back to one file when it is narrow', async ({ page }) => {
+        await open(page);
+        const columnsAt = async (width) => page.evaluate(async ({ items, width }) => {
+            const d = window.dashboardInstance;
+            const realFetch = window.fetch;
+            window.fetch = async (url, ...rest) => {
+                if (String(url).includes('/api/widgets/rss')) {
+                    return new Response(JSON.stringify({ fetchedAt: Date.now(), items }),
+                        { status: 200, headers: { 'Content-Type': 'application/json' } });
+                }
+                return realFetch(url, ...rest);
+            };
+            const host = document.createElement('div');
+            host.style.width = `${width}px`;
+            const body = document.createElement('div');
+            body.className = 'dashboard-widget-body';
+            host.appendChild(body);
+            document.body.appendChild(host);
+            try {
+                await window.DashboardWidgets.rss(body, { id: 'w_rss_cols', type: 'rss', config: { rows: 5 } }, d);
+                const list = body.querySelector('.dashboard-widget-rows');
+                return getComputedStyle(list).gridTemplateColumns.split(' ').filter(Boolean).length;
+            } finally {
+                window.fetch = realFetch;
+                host.remove();
+                delete d._widgetRss;
+            }
+        }, { items: threeItems, width });
+
+        expect(await columnsAt(640)).toBe(2);
+        expect(await columnsAt(280)).toBe(1);
+    });
 });
