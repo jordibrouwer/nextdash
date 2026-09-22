@@ -1,0 +1,17 @@
+{
+  "tag": "v1.13.1",
+  "date": "22 September 2026",
+  "releasedAt": "2026-09-22",
+  "modalLead": "A fix for the weather widget, which went dark in v1.13.0: the extra readings a wide tile shows were asked for in a way that dropped the current conditions from the request.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The weather widget works again.</strong> v1.13.0 asked Open-Meteo for what it feels like, the wind, the humidity and the chance of rain in a way that dropped the current conditions from the same request, and the tile answered <em>Weather unavailable</em>. The weather line in the header was never affected."
+        }
+      ]
+    }
+  ]
+}

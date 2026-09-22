@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.13.1 — 22 September 2026](#v1131--22-september-2026)
 - [v1.13.0 — 22 September 2026](#v1130--22-september-2026)
 - [v1.12.0 — 21 September 2026](#v1120--21-september-2026)
 - [v1.11.8 — 19 September 2026](#v1118--19-september-2026)
@@ -215,6 +216,17 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.13.1 — 22 September 2026
+
+One fix, for the widget v1.13.0 broke.
+
+### Widgets
+
+- **docs — the weather widget's line in Help and the manual** now says what a wide tile adds: what it feels like, the wind, the humidity and the chance of rain.
+- **fix — the weather widget said "Weather unavailable".** The readings a wide tile added in v1.13.0 — apparent temperature, wind, humidity, chance of rain — are a continuation of Open-Meteo's `current=` parameter, and adding them dropped the parameter itself. The answer then carried no current block at all, which this client reads as no forecast, so the whole tile went dark. The header's own weather line asks through a different call and was never affected. A test now reads the request rather than the reply: the stubs behind the other weather tests answer any URL, so nothing looked at what was asked for.
 
 ---
 
