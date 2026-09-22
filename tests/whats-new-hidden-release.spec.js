@@ -154,15 +154,15 @@ test.describe('a release flagged hideFromModal', () => {
     // what the shipped files do with it: nothing is held back any more.
     // v1.11.1 through v1.11.8 were hidden while v1.11.0 led the modal, and
     // v1.12.0 released them from that hold the way v1.7.0 released v1.6.1
-    // and v1.6.2 -- so v1.12.0 leads and the patch releases are readable
-    // under it.
-    test('nothing is held back: v1.12.0 leads and v1.11.1 through v1.11.8 are shown under it', async ({ page }) => {
+    // and v1.6.2 -- so the newest release leads and everything under it is
+    // readable.
+    test('nothing is held back: v1.13.0 leads and the releases under it are shown', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
-        expect(index[0].tag).toBe('v1.12.0');
+        expect(index[0].tag).toBe('v1.13.0');
         expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual([]);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
@@ -177,7 +177,7 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
-        expect(await shownTags()).toContain('v1.12.0');
+        expect(await shownTags()).toContain('v1.13.0');
 
         const scrollAndRead = async () => {
             await modal.evaluate((m) => {
@@ -186,22 +186,22 @@ test.describe('a release flagged hideFromModal', () => {
             });
             return shownTags();
         };
-        for (const tag of ['v1.11.8', 'v1.11.7', 'v1.11.6', 'v1.11.5', 'v1.11.4', 'v1.11.3', 'v1.11.2', 'v1.11.1', 'v1.11.0']) {
+        for (const tag of ['v1.12.0', 'v1.11.8', 'v1.11.7', 'v1.11.6', 'v1.11.5', 'v1.11.4', 'v1.11.3', 'v1.11.2', 'v1.11.1', 'v1.11.0']) {
             await expect.poll(scrollAndRead, { timeout: 20_000 }).toContain(tag);
         }
     });
 
-    test('the release constants name v1.12.0, the release the modal leads with', async ({ page }) => {
+    test('the release constants name v1.13.0, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
         /*
          * The release token names what the modal leads with, and index[0] is
-         * the same release: an install that already read v1.11.0's notes is
-         * reopened once for v1.12.0.
+         * the same release: an install that already read v1.12.0's notes is
+         * reopened once for v1.13.0.
          */
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.12.0'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.13.0'");
         // The data token moves regardless: the index changed, and a browser
-        // holding its old copy would never learn v1.12.0 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v295'");
+        // holding its old copy would never learn v1.13.0 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v296'");
     });
 });

@@ -269,6 +269,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 **Widgets**
 
 - Twenty-one kinds: health, uptime, certificates, trend, inbox, kept, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, weather, calendar and RSS. *[Manual §11](MANUAL.md#11-widgets)*
+- A widget set to two columns says more rather than the same thing larger: the load behind the processor's percentage, the container failing by name, the expiry date of a certificate, what the weather feels like. One column keeps the important half. *[Manual §11.2](MANUAL.md#112-adding-and-arranging)*
 - A **Custom widget** reads any service that answers with JSON, with 28 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and more. *[Manual §11.5](MANUAL.md#115-the-custom-widget)*
 
 **Appearance**

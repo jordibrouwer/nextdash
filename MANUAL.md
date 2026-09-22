@@ -710,7 +710,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | Kind | Shows |
 |---|---|
 | **Inbox** | How much is waiting, and how old the oldest is |
-| **Kept** | Links kept from the inbox without a page yet, newest first |
+| **Kept** | Links kept from the inbox without a page yet — newest first, at random, by one tag or grouped under every tag, with each address under its title |
 | **Feeds** | Feeds with news, and feeds that stopped after repeated failures |
 | **Sources** | What each import source last did |
 
@@ -752,7 +752,9 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 
 Each widget has a title, a width (one or two columns), the page it counts, a row count and the settings of its kind. An **ℹ** explains the harder settings and **↺** resets them. The title and **Shown** save at once; the rest waits for **Save**.
 
-Widgets are ordered with the categories under **Structure → Categories**, or dragged on the dashboard. On a one-column dashboard a wide widget narrows itself.
+Widgets are ordered with the categories under **Structure → Categories**, or dragged on the dashboard. On a one-column dashboard — and on a phone — a wide widget narrows itself and keeps the important half.
+
+**Two columns say more, not the same thing larger.** A tile drawn wide adds the readings a narrow one leaves out: the load average behind the processor's percentage, the container that is failing by name, used and total beside free space, what the weather feels like, the date a certificate expires, when an import last ran. Lists of rows run in two files instead of one. This follows the width the tile actually got, so narrowing the dashboard takes it back at once.
 
 ### 11.3 On the dashboard
 
@@ -1263,7 +1265,7 @@ Open it with **`Shift + I`**, **`0`**, the inbox icon or `:inbox`.
 
 `Shift + U` or the address `#unsorted` opens the inbox on this tab. On a dashboard bookmark, **Move to…** also offers the Kept list as a destination.
 
-Kept links are bookmarks on a hidden **Unsorted** page. They stay off the dashboard, the tag cloud, smart collections and the health report; **Config → Bookmarks → Unsorted** lists them, the **Kept** widget shows them on a page, and search reaches them while *Search unsorted bookmarks* is on.
+Kept links are bookmarks on a hidden **Unsorted** page. They stay off the dashboard, the tag cloud, smart collections and the health report; **Config → Bookmarks → Unsorted** lists them, the **Kept** widget shows them on a page (newest first, at random or by tag), and search reaches them while *Search unsorted bookmarks* is on.
 
 ### 14.6 Settings
 
