@@ -488,6 +488,15 @@ func commonZipPrefix(files []*zip.File) string {
 
 // stagedFilesFromZip unpacks a backup ZIP into staged import files, applying the
 // same filename validation and JSON check as the upload import path.
+/*
+importEntryLimit is how large one file inside a backup may be once unpacked.
+
+Far above anything these archives actually carry -- the largest is an icon --
+and far below the size at which one entry is a way of filling memory. A var so a
+test can lower it rather than build a gigabyte to prove the ceiling is there.
+*/
+var importEntryLimit int64 = 32 << 20
+
 func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
@@ -514,10 +523,26 @@ func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
 		if err != nil {
 			return nil, fmt.Errorf("could not read %s from backup: %w", filename, err)
 		}
-		content, err := io.ReadAll(rc)
+		/*
+		 * Bounded, the way countBackupContents further down this file already
+		 * bounds the same read.
+		 *
+		 * A zip says how large an entry claims to be; what it actually unpacks
+		 * to is only known once it has been unpacked. One highly compressible
+		 * entry named settings.json is small on the wire and unbounded in
+		 * memory, and this is the path that takes archives from outside.
+		 *
+		 * Read one byte past the ceiling so the overshoot is visible: stopping
+		 * exactly at it would silently truncate a file and then write the
+		 * truncation over the reader's real data.
+		 */
+		content, err := io.ReadAll(io.LimitReader(rc, importEntryLimit+1))
 		rc.Close()
 		if err != nil {
 			return nil, fmt.Errorf("could not read %s from backup: %w", filename, err)
+		}
+		if int64(len(content)) > importEntryLimit {
+			return nil, fmt.Errorf("%s is too large to restore from this backup", filename)
 		}
 		if strings.HasSuffix(filename, ".json") && !json.Valid(content) {
 			return nil, fmt.Errorf("invalid JSON in backup file: %s", filename)
@@ -618,7 +643,7 @@ func countBackupContents(path string) (bookmarks int, pages int) {
 		if err != nil {
 			continue
 		}
-		body, err := io.ReadAll(io.LimitReader(rc, 32<<20))
+		body, err := io.ReadAll(io.LimitReader(rc, importEntryLimit))
 		rc.Close()
 		if err != nil {
 			continue
