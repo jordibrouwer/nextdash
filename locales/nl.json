@@ -2243,7 +2243,16 @@
     "widgetUptimeAverageLabel": "gemiddelde 7 dagen",
     "widgetWeatherFeelsLike": "gevoelstemperatuur",
     "widgetWeatherHumidity": "luchtvochtigheid",
-    "widgetWeatherRainChance": "kans op regen"
+    "widgetWeatherRainChance": "kans op regen",
+    "widgetsLayoutNoticeTitle": "Je widgets kunnen anders op de pagina staan",
+    "widgetsLayoutNoticeBody": "De Widgets-layout tekent elke categorie als kaart, zodat de widgets ertussen niet langer opgeplakt lijken. Het is één instelling, hij geldt meteen, en deze kaart zet hem terug als je het liever houdt zoals het was.",
+    "widgetsLayoutNoticeTry": "Probeer het",
+    "widgetsLayoutNoticeNoThanks": "Nee, dank je",
+    "widgetsLayoutNoticeDismiss": "Sluiten",
+    "widgetsLayoutNoticeAppliedTitle": "Dit is de Widgets-layout",
+    "widgetsLayoutNoticeAppliedBody": "Categorieën zijn nu kaarten, zodat de widgets ertussen op gelijke voet staan. Hij staat onder Config → Appearance → Grid, waar je hem altijd weer kunt wijzigen.",
+    "widgetsLayoutNoticeUndo": "Zet {preset} terug",
+    "widgetsLayoutNoticeKeep": "Zo houden"
   },
   "health": {
     "reloadPage": "Pagina herladen",

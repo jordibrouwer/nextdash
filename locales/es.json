@@ -2243,7 +2243,16 @@
     "widgetUptimeAverageLabel": "media de 7 días",
     "widgetWeatherFeelsLike": "sensación",
     "widgetWeatherHumidity": "humedad",
-    "widgetWeatherRainChance": "prob. de lluvia"
+    "widgetWeatherRainChance": "prob. de lluvia",
+    "widgetsLayoutNoticeTitle": "Your widgets can sit on the page differently",
+    "widgetsLayoutNoticeBody": "The Widgets layout draws every category as a card, so the widgets between them stop looking like something pasted on top. It is one setting, it applies right now, and this card puts it back if you would rather have it the way it was.",
+    "widgetsLayoutNoticeTry": "Try it",
+    "widgetsLayoutNoticeNoThanks": "No thanks",
+    "widgetsLayoutNoticeDismiss": "Dismiss",
+    "widgetsLayoutNoticeAppliedTitle": "This is the Widgets layout",
+    "widgetsLayoutNoticeAppliedBody": "Categories are cards now, so the widgets between them sit on the same footing. It lives under Config → Appearance → Grid, where you can change it again whenever you like.",
+    "widgetsLayoutNoticeUndo": "Put back {preset}",
+    "widgetsLayoutNoticeKeep": "Keep it"
   },
   "health": {
     "reloadPage": "Recargar la página",

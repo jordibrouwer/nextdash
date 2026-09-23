@@ -2243,7 +2243,16 @@
     "inboxTourS8Snooze": "Snooze: back in the queue on a date you pick",
     "inboxTourS9Title": "The keys, and where this tour lives",
     "inboxTourS9Body1": "t opens triage on the queue: j and k move, r marks read, Shift+K keeps, p promotes, z snoozes, d deletes. The legend under each list has the rest.",
-    "inboxTourS9Closing": "Tour, in the band above either list, brings this back whenever you want it."
+    "inboxTourS9Closing": "Tour, in the band above either list, brings this back whenever you want it.",
+    "widgetsLayoutNoticeTitle": "Your widgets can sit on the page differently",
+    "widgetsLayoutNoticeBody": "The Widgets layout draws every category as a card, so the widgets between them stop looking like something pasted on top. It is one setting, it applies right now, and this card puts it back if you would rather have it the way it was.",
+    "widgetsLayoutNoticeTry": "Try it",
+    "widgetsLayoutNoticeNoThanks": "No thanks",
+    "widgetsLayoutNoticeDismiss": "Dismiss",
+    "widgetsLayoutNoticeAppliedTitle": "This is the Widgets layout",
+    "widgetsLayoutNoticeAppliedBody": "Categories are cards now, so the widgets between them sit on the same footing. It lives under Config → Appearance → Grid, where you can change it again whenever you like.",
+    "widgetsLayoutNoticeUndo": "Put back {preset}",
+    "widgetsLayoutNoticeKeep": "Keep it"
   },
   "health": {
     "reloadPage": "Reload page",
