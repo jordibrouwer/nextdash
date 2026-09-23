@@ -267,6 +267,16 @@ collection rendered flat and matte whatever its palette was.
   your own theme…* both ran `switchAppearanceTab('custom-themes')`.
 - **new — ℹ on Depth, Glow, Effects, Text contrast, both Backdrop rows and the
   two favicon controls.** None of them had one.
+- **fix — Surfaces had grown to seven fields against a limit of five**, and
+  stood four times taller than the shortest panel on the tab. The scope tick
+  and the reset are their own panel now — *Whose surfaces these are* — and the
+  notes under the four remaining rows are one line each, since the ℹ carries
+  the detail.
+- **fix — the *Every theme* tick sat in a `.config-field`**, the one row shape
+  checkboxes do not use (`config-checkbox-rows.spec.js` pins it).
+- **fix — the grid rule for the favicon slider was keyed on its affordances**,
+  so it also caught the opacity slider and gave that row a fifth column with
+  nothing to put in it.
 
 ### The theme browser
 
@@ -304,6 +314,13 @@ collection rendered flat and matte whatever its palette was.
 - `clampFloat` treats zero as "unset" and answers with its fallback, which is
   right for a JSON field and wrong for arithmetic: `paper` multiplies the
   derived blur by 0 and means it. `clampComputed` clamps a worked-out number.
+- **fix — `--layout-radius-xs/sm/md` sat on fixed pixels**, outside the radius
+  scale, so a theme's character moved one family of corners and not the other.
+  It never showed while no theme asked for a scale — `--radius-5` and
+  `--layout-radius-sm` were both 8px — and turned up as the search box in
+  Health staying at 8px while the same box in Config followed the theme. The
+  three follow the scale now, which is what `theme-character.css` already
+  claimed.
 - `/api/themes/meta` and `/api/themes/defaults`.
 
 ### Development
@@ -315,6 +332,16 @@ collection rendered flat and matte whatever its palette was.
   words to Go.
 - **fix — `TestGlowLiftIsOneOfTwoNumbers`** required the glow geometry to be a
   function of page lightness alone; `neon` and `velvet` now insist.
+- **fix — eight e2e specs pinned absolute corner radii** (`8px`, `4px`) or a
+  computed edge alpha. A theme may move its corners now, so they measure the
+  token on a probe element and `theme-edge-dark` compares the widget's lit line
+  with `--edge-top` itself rather than with 0.24.
+- **fix — `config-field-grid-and-mobile-nav`** read "the first slider on the
+  tab", which became the favicon intensity row once that gained an ℹ; it names
+  the opacity slider now.
+- **fix — the gloss glow offer wrote `glowStrength` install-wide.** It goes
+  through the same path as every other surface change, so it lands on the theme
+  that prompted it.
 
 ### Docs
 
