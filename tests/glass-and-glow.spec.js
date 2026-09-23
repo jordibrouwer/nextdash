@@ -73,14 +73,15 @@ test('the glow is soft out of the box, and both layers read the dial', async ({ 
 });
 
 /*
- * The three Surfaces answers, agreed once.
+ * The three Surfaces answers now belong to the theme.
  *
- * Backdrop on, glow soft, depth glass — for a fresh install, because
- * Tarnished Brass (the fresh-install theme) is built for glass and a soft
- * glow. surfaceDefaultsMigrated is what stops it happening twice: after the
- * first pass the reader's own answers are theirs.
+ * An install used to carry one answer for all of them; each theme states the
+ * surfaces it was drawn for instead, and the setting says "follow". So what a
+ * fresh install stores is the word follow, and what it draws is whatever the
+ * theme it opens on asks for — Tarnished Brass is brushed, which is drawn for
+ * rich and a soft glow.
  */
-test('backdrop on, glow soft, depth glass is what an install starts on', async ({ page }) => {
+test('a fresh install follows the theme, and the theme decides the surfaces', async ({ page }) => {
     await openDashboard(page);
 
     const stored = await page.evaluate(async () => {
@@ -89,15 +90,25 @@ test('backdrop on, glow soft, depth glass is what an install starts on', async (
     });
 
     expect(stored.themeBackdrop).toBe('on');
-    expect(stored.glowStrength).toBe('soft');
-    expect(stored.themeDepth).toBe('glass');
-    expect(stored.surfaceDefaultsMigrated, 'the migration marker was not written').toBe(true);
+    // The exact words the three settings hold on a genuinely fresh install are
+    // pinned in Go (TestFreshInstallFollowsTheTheme): the store here is shared
+    // with the tests above, so what can honestly be asserted is the marker and
+    // what ends up on screen.
+    expect(stored.surfaceFollowMigrated, 'the follow marker was not written').toBe(true);
 
-    // And the page is drawn that way, not just stored that way.
-    expect(await page.evaluate(() => document.body.getAttribute('data-depth'))).toBe('glass');
-    expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('soft');
-    expect(await page.evaluate(
-        () => document.body.getAttribute('data-theme-backdrop'))).toBe('on');
+    // And the page is drawn with the theme's answers, not with the word
+    // "follow" — which would match no rule in the stylesheet at all.
+    const drawn = await page.evaluate(() => ({
+        depth: document.body.getAttribute('data-depth'),
+        glow: document.body.getAttribute('data-glow'),
+        effects: document.body.getAttribute('data-effects'),
+        backdrop: document.body.getAttribute('data-theme-backdrop'),
+    }));
+    expect(drawn.depth, 'the page was drawn with a word the stylesheet does not define')
+        .toBe('rich');
+    expect(drawn.glow).toBe('soft');
+    expect(drawn.effects).toBe('full');
+    expect(drawn.backdrop).toBe('on');
 });
 
 /*
