@@ -331,8 +331,14 @@ hovered its tab first, and a kept pile that looked empty when a request failed.
 - **fix — the last two importers go out through the shared client**, so GitHub
   stars and Raindrop follow the same redirect checks and outbound limit as
   everything else.
+- **fix — the What's new window opens for this release.** It reopens when the
+  release it leads with changes, and that name had been left on v1.13.0 — so
+  every install that had already read those notes would never have been shown
+  these. A test names both tokens now, because the failure is silent: nothing
+  looks wrong, the window simply never appears.
 - **docs — Help and the manual** now carry the certificate webhook event and
-  where automatic backups are stored.
+  where automatic backups are stored, and the Kept panel in Help opens with a
+  drawing like every other article on that tab.
 
 ### Development
 
@@ -344,6 +350,21 @@ hovered its tab first, and a kept pile that looked empty when a request failed.
   setting the config panel can write and the server does not declare is accepted
   with a 200 and gone on the next read, which is how the Kept widget lost its
   order in v1.13.0.
+- **fix — eleven tests that had been failing for at least two releases.** Most
+  were expectations left behind by changes that were right: `r` moved from Keep
+  to mark-read in triage, `search` was added to the settings that repaint the
+  dashboard, the inbox help grew a seventh panel with the Kept tab, and the tag
+  column in Config → Bookmarks is capped, so eight long tags legitimately
+  collapse into a counter. One was a real gap: the Kept help panel had no
+  opening drawing.
+- **fix — two tests that could not pass whatever the app did.** The scroll
+  anchor that holds a widget in place while it is widened was measured at the
+  very bottom of the page, where no scroll position can hold anything: the
+  document grows and there is nowhere left to go. Measured with room on both
+  sides it drifts a pixel, and 141px with the anchor switched off. The sticky
+  header test read the band while a late restore was still scrolling the page;
+  it waits for the page to hold still now, which was checked by reproducing the
+  failure rather than by assuming it.
 
 ---
 
