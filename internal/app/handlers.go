@@ -46,13 +46,19 @@ type Handlers struct {
 	healthReportGen       uint64
 	healthReportBuildMu   sync.Mutex
 	healthReportBuildCond *sync.Cond
-	healthReportBuilding  bool
-	prefetchMu            sync.Mutex
-	autoBackupMu          sync.Mutex
-	ssrfAPILimiter        *slidingWindowLimiter
-	statusPingLimiter     *slidingWindowLimiter
-	updateCheckMu         sync.RWMutex
-	updateCheckCache      updateCheckCacheEntry
+	// Built once, whoever gets there first. NewHandlers sets it, and a Handlers
+	// assembled by hand -- which several tests do -- would otherwise reach
+	// loadBookmarkHealthReport with a nil Cond and race two goroutines into
+	// building one each: a Wait on one and a Broadcast on the other never meet,
+	// and the waiter never wakes.
+	healthReportCondOnce sync.Once
+	healthReportBuilding bool
+	prefetchMu           sync.Mutex
+	autoBackupMu         sync.Mutex
+	ssrfAPILimiter       *slidingWindowLimiter
+	statusPingLimiter    *slidingWindowLimiter
+	updateCheckMu        sync.RWMutex
+	updateCheckCache     updateCheckCacheEntry
 }
 
 const healthReportCacheTTL = 3 * time.Minute
@@ -293,7 +299,7 @@ func NewHandlers(store Store, files assetFS) *Handlers {
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
 	}
-	h.healthReportBuildCond = sync.NewCond(&h.healthReportBuildMu)
+	h.ensureHealthReportCond()
 	h.startPreviewCacheFlushLoop()
 	if store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
@@ -374,10 +380,14 @@ func (h *Handlers) healthReportFreshLocked() bool {
 	return h.healthReportGen == h.store.DataGeneration()
 }
 
-func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthReport {
-	if h.healthReportBuildCond == nil {
+func (h *Handlers) ensureHealthReportCond() {
+	h.healthReportCondOnce.Do(func() {
 		h.healthReportBuildCond = sync.NewCond(&h.healthReportBuildMu)
-	}
+	})
+}
+
+func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthReport {
+	h.ensureHealthReportCond()
 	if !forceRefresh {
 		h.healthReportMu.RLock()
 		if h.healthReportFreshLocked() {
