@@ -144,6 +144,12 @@ var widgetFields = map[WidgetType][]widgetField{
 	},
 	WidgetTypeUnsorted: {
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// Which order the tile reads in. Absent means most recent, which is
+		// what every widget saved before these existed asked for.
+		{Key: "sort", Kind: "string", Allowed: []string{"recent", "random", "tag"}},
+		// One tag, kept as a list because the settings panel writes the tags
+		// editor's shape; the widget reads the first entry.
+		{Key: "tag", Kind: "list"},
 	},
 	WidgetTypeFeeds: {
 		{Key: "freshOnly", Kind: "bool"},
