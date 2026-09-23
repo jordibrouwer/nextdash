@@ -26,6 +26,8 @@ Key features:
 • Keyboard-driven navigation for fast access to all your bookmarks
 • Extensive theme and layout customization
 • Inbox feature to quickly collect new links and organize them later
+• Health monitoring: link checks, uptime monitors and alerts
+• Dashboard widgets, including processor, memory, disks and Docker containers read from the host
 • Lightweight and fast, no heavy dependencies
 • Actively maintained with regular releases
 
@@ -35,6 +37,9 @@ Links:
 • Changelog: https://github.com/jordibrouwer/nextdash/releases
 • Devlog / release updates: https://www.nextdash.cc/news
 • Also available on GHCR: ghcr.io/jordibrouwer/nextdash:latest
+• User manual: https://github.com/jordibrouwer/nextdash/blob/main/MANUAL.md
+
+The host widgets (Processor, Memory, Disks, Containers) are off until you fill in the optional paths and variables below — they are hidden under Show more settings. Section 11.4 of the manual explains what each one reads.
 
 Support: open an issue on GitHub via the Support link above. Bug reports and feature requests are welcome.
   </Overview>
@@ -44,7 +49,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-09-02</Date>
+  <Date>2026-09-23</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
@@ -64,6 +69,91 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
           Type="Path"
           Display="always"
           Required="true"
+          Mask="false" />
+
+  <!-- Everything below is optional and empty by default. Unraid skips a Path
+       or Variable whose value is blank, so an install that wants none of this
+       is unaffected. The pairs are from MANUAL.md section 11.4: each host
+       widget needs its mount and the variable that points at it. -->
+
+  <Config Name="Write token"
+          Target="NEXTDASH_WRITE_TOKEN"
+          Default=""
+          Mode=""
+          Description="Optional. Require this token in the X-NextDash-Token header on every write. Leave empty for an open instance on a trusted network."
+          Type="Variable"
+          Display="advanced"
+          Required="false"
+          Mask="true" />
+
+  <Config Name="Trusted proxies"
+          Target="NEXTDASH_TRUSTED_PROXIES"
+          Default=""
+          Mode=""
+          Description="Optional. Addresses and CIDR ranges whose X-Forwarded-For header is believed, comma-separated — set this if nextDash sits behind a reverse proxy, so rate limits count per visitor instead of per proxy. Left empty the header is ignored."
+          Type="Variable"
+          Display="advanced"
+          Required="false"
+          Mask="false" />
+
+  <Config Name="Host proc"
+          Target="/host/proc"
+          Default=""
+          Mode="ro"
+          Description="Optional. Mount the host /proc here for the Processor and Memory widgets. Host path: /proc"
+          Type="Path"
+          Display="advanced"
+          Required="false"
+          Mask="false" />
+
+  <Config Name="Host proc variable"
+          Target="NEXTDASH_HOST_PROC"
+          Default=""
+          Mode=""
+          Description="Optional. Set to /host/proc once the mount above is filled in."
+          Type="Variable"
+          Display="advanced"
+          Required="false"
+          Mask="false" />
+
+  <Config Name="Host disks"
+          Target="/host/root/mnt"
+          Default=""
+          Mode="ro,rslave"
+          Description="Optional. Mount the array here for the Disks widget. Host path: /mnt — then name /mnt/user or /mnt/cache in the widget."
+          Type="Path"
+          Display="advanced"
+          Required="false"
+          Mask="false" />
+
+  <Config Name="Host root variable"
+          Target="NEXTDASH_HOST_ROOT"
+          Default=""
+          Mode=""
+          Description="Optional. Set to /host/root once the disks mount above is filled in."
+          Type="Variable"
+          Display="advanced"
+          Required="false"
+          Mask="false" />
+
+  <Config Name="Docker socket"
+          Target="/var/run/docker.sock"
+          Default=""
+          Mode="ro"
+          Description="Optional. Mount the Docker socket here for the Containers widget. Host path: /var/run/docker.sock — read-only still exposes the daemon's whole read API, so use a socket proxy if that is too much."
+          Type="Path"
+          Display="advanced"
+          Required="false"
+          Mask="false" />
+
+  <Config Name="Docker socket variable"
+          Target="NEXTDASH_DOCKER_SOCKET"
+          Default=""
+          Mode=""
+          Description="Optional. Set to /var/run/docker.sock once the socket mount above is filled in. Unset, the Containers widget is hidden."
+          Type="Variable"
+          Display="advanced"
+          Required="false"
           Mask="false" />
 
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-dashboard.jpg</Screenshot>
