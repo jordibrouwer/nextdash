@@ -1324,6 +1324,23 @@ class DashboardBookmarkRows {
             d._movePopoverCleanup = null;
             return;
         }
+        /*
+         * Which press this is, claimed before the await below.
+         *
+         * The guard above is the only thing stopping two popovers, and it is
+         * checked before the one await in this function -- the fetch for the
+         * Unsorted page id, taken once per session. Two presses that both start
+         * before it resolves both find _movePopoverCleanup still null, both
+         * reach document.body.appendChild, and both register a capture-phase
+         * keydown listener; only the second is stored, so one Escape closes one
+         * of them and the survivor goes on swallowing Escape and the arrows for
+         * the rest of the session. Holding Shift+M down is enough.
+         *
+         * So a newer press supersedes an older one that has not drawn yet --
+         * the same generation guard loadPageBookmarks uses for its own loads.
+         */
+        const openId = (d._movePopoverOpenId || 0) + 1;
+        d._movePopoverOpenId = openId;
         this._closeDeletePopover();
         this._closeTagPopover();
 
@@ -1456,6 +1473,9 @@ class DashboardBookmarkRows {
         }
 
         if (items.length === 0) return;
+        // Someone pressed again while the fetch above was in flight: that press
+        // is the one drawing a popover, and this one stops here.
+        if (d._movePopoverOpenId !== openId) return;
 
         document.body.appendChild(pop);
         this._positionActionPopoverBeside(pop, anchorEl);

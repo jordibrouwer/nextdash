@@ -673,8 +673,8 @@ type Settings struct {
 	// How the kept list is read, remembered across browsers. Empty means the
 	// default -- newest first, ungrouped -- so an install that never chose one
 	// carries nothing.
-	UnsortedSort            string `json:"unsortedSort,omitempty"`
-	UnsortedGroup           string `json:"unsortedGroup,omitempty"`
+	UnsortedSort  string `json:"unsortedSort,omitempty"`
+	UnsortedGroup string `json:"unsortedGroup,omitempty"`
 	// Keep files the link straight onto the page and category the rest of its
 	// site is already filed under, when the collection agrees on one, instead
 	// of leaving it on the kept page. Off by default: filing without being

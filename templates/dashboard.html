@@ -7,7 +7,10 @@
     <meta name="nextdash-app-version" content="{{.AppVersion}}">
     {{if .TelemetryLockedOff}}<meta name="nextdash-telemetry-locked" content="1">{{end}}
     {{if .UpdateCheckLockedOff}}<meta name="nextdash-update-check-locked" content="1">{{end}}
-    <title>{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}Dashboard{{end}}</title>
+    {{/* The same title dashboard-page-nav.js would set, so the first paint does
+         not say "Dashboard" and then change its mind. A deep link to another
+         page is corrected by the script, as it always was. */}}
+    <title>{{if and .EnableCustomTitle .CustomTitle}}{{if and .ShowPageInTitle .LandingPageName}}{{.LandingPageName}} — {{end}}{{.CustomTitle}}{{else if .LandingPageName}}{{.LandingPageName}} — nextDash{{else}}nextDash{{end}}</title>
     <!-- Hashed URLs for scripts fetched at runtime, read by asset-map.js. Passed
          as a data attribute rather than an inline script: the CSP is script-src
          'self' with no 'unsafe-inline', and loosening that for one JSON blob is

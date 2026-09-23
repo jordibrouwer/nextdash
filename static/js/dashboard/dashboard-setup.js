@@ -530,7 +530,17 @@ class DashboardSetup {
                     e.preventDefault();
                     e.stopPropagation();
                     window.nextdashRecordKey?.('Shift + I');
-                    void d.inbox.openInboxView();
+                    /*
+                     * The first tab, named rather than left to whatever the tab
+                     * was last time.
+                     *
+                     * Without it the key opened the view on this.tab, which
+                     * holds Kept for the rest of the session once Kept has been
+                     * visited -- so Shift+I landed on Kept, and pressed while
+                     * already on Kept it did nothing at all. Shift+U is the key
+                     * that means Kept; this one means the inbox.
+                     */
+                    void d.inbox.openInboxView({ tab: 'triage' });
                 }
                 return;
             }

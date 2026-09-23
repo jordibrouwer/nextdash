@@ -111,27 +111,59 @@ func (h *Handlers) BackfillArchiveHistory(ctx context.Context) (asked int) {
 	return asked
 }
 
-// recordArchiveHistory writes what the index said onto every bookmark with this
-// address on the page.
+/*
+recordArchiveHistory writes what the index said onto every bookmark with this
+address on the page.
+
+Through MutateBookmarksOnPage, like every other write path: it reads and writes
+inside one turn of the store lock. Reading the page, stamping the copy and
+handing the whole slice back to SaveBookmarksByPage looks the same and is not --
+this round runs on a six-hour timer, so its window falls wherever it falls, and
+a bookmark added inside it was overwritten by a slice that predated it.
+*/
 func (h *Handlers) recordArchiveHistory(pageID int, url string, history ArchiveHistory, answered bool) {
 	key := canonicalBookmarkURLKey(url)
-	bookmarks := h.store.GetBookmarksByPage(pageID)
-	changed := false
-	for i := range bookmarks {
-		if canonicalBookmarkURLKey(bookmarks[i].URL) != key {
-			continue
-		}
-		bookmarks[i].ArchiveCheckedAt = time.Now().UnixMilli()
-		if answered {
-			bookmarks[i].ArchiveDiedAt = history.DiedAt
-			bookmarks[i].ArchiveSnapshotURL = history.Snapshot.URL
-		}
-		changed = true
-	}
-	if !changed {
+	if key == "" {
 		return
 	}
-	_ = h.store.SaveBookmarksByPage(pageID, bookmarks)
+	/*
+	 * Asked on a copy first, only to decide whether to open a write at all.
+	 *
+	 * Every write moves the data revision, and every move drops each client's
+	 * page cache -- so rewriting a page that does not hold this address at all
+	 * is not free. The answer is allowed to be a moment out of date: a page
+	 * that has just gained the address is caught by the next round, and one
+	 * that has just lost it is rewritten with what it already said. Neither
+	 * loses anything, which is the whole difference from the read this
+	 * replaced.
+	 */
+	if !pageHoldsBookmarkKey(h.store.GetBookmarksByPage(pageID), key) {
+		return
+	}
+	_ = h.store.MutateBookmarksOnPage(pageID, func(current []Bookmark) ([]Bookmark, error) {
+		now := time.Now().UnixMilli()
+		for i := range current {
+			if canonicalBookmarkURLKey(current[i].URL) != key {
+				continue
+			}
+			current[i].ArchiveCheckedAt = now
+			if answered {
+				current[i].ArchiveDiedAt = history.DiedAt
+				current[i].ArchiveSnapshotURL = history.Snapshot.URL
+			}
+		}
+		return current, nil
+	})
+}
+
+// pageHoldsBookmarkKey reports whether any bookmark on the page is this address.
+func pageHoldsBookmarkKey(bookmarks []Bookmark, key string) bool {
+	for i := range bookmarks {
+		if canonicalBookmarkURLKey(bookmarks[i].URL) == key {
+			return true
+		}
+	}
+	return false
 }
 
 // archiveBackfillInterval is how often the round runs. Slow on purpose: the

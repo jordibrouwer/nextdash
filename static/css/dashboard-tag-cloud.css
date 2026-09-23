@@ -80,6 +80,17 @@ body[data-tag-filter-active="true"] .tag-cloud-modal-backdrop.is-open {
     transform: translateY(0) scale(1);
 }
 
+/* The closed cloud is laid out until this rule says otherwise.
+   closeModal() sets the `hidden` attribute, and the display above is a class
+   rule, which outranks the browser's own `[hidden] { display: none }`. So the
+   modal stayed on the grid at opacity 0 with pointer-events on -- an invisible
+   541 x 521 box that swallowed every click meant for the bookmarks under it,
+   and an aria-hidden container the keyboard could still walk into.
+   The backdrop escaped it only because its rule never sets display. */
+.tag-cloud-modal[hidden] {
+    display: none;
+}
+
 .tag-cloud-modal-header {
     display: flex;
     align-items: center;

@@ -5259,6 +5259,8 @@ class DashboardConfig {
             'bookmark.deleted': this.t('config.webhookEventBookmarkDeleted', 'A bookmark is removed'),
             'health.down': this.t('config.webhookEventHealthDown', 'A monitored bookmark goes down'),
             'health.up': this.t('config.webhookEventHealthUp', 'A monitored bookmark comes back'),
+            'health.cert-expiring': this.t('config.webhookEventHealthCertExpiring',
+                'A TLS certificate is about to expire'),
         };
         const boxes = (this._webhookEvents || Object.keys(labels)).map((name) => `
             <label class="config-check">
@@ -6560,6 +6562,25 @@ class DashboardConfig {
                 'The newest {keep} are kept. Making another — or restoring, which copies the current data first — removes the oldest.')
                 .replace('{keep}', String(keep)))}</p>`
             : '';
+        /*
+         * Where they are, and whether that is a problem.
+         *
+         * The panel could say how old the newest backup was and never where it
+         * lived, while NEXTDASH_AUTO_BACKUP_DIR sat documented in the README
+         * and nowhere in the app. Unset, backups land inside the data directory
+         * — and the one failure they exist for takes them with it.
+         */
+        const dir = String(this._backupData?.dir || '').trim();
+        const where = dir
+            ? `<p class="config-panel-note">${esc(this.t('config.backupDirLine', 'Stored in {dir}.')
+                .replace('{dir}', dir))}</p>`
+            : '';
+        const inside = dir && this._backupData?.insideDataDir
+            ? `<p class="config-panel-note config-panel-note--warn">${esc(this.t(
+                'config.backupInsideDataDirWarning',
+                'These backups are inside the data directory they back up, so losing it loses them too. '
+                + 'Set NEXTDASH_AUTO_BACKUP_DIR to an absolute path elsewhere.'))}</p>`
+            : '';
         const rows = backups.map((b) => `
             <li class="config-backup-row">
                 <div class="config-backup-meta">
@@ -6573,7 +6594,7 @@ class DashboardConfig {
                 </div>
             </li>
         `).join('');
-        return `${note}<ul class="config-backup-list">${rows}</ul>
+        return `${note}${where}${inside}<ul class="config-backup-list">${rows}</ul>
             <div class="config-actions">
                 <button type="button" class="config-btn config-btn--small" data-backup-action="download-all">${esc(
                     this.t('config.backupDownloadAll', 'Download all'))}</button>
@@ -15826,16 +15847,29 @@ class DashboardConfig {
         // Suggestions come from what is actually in use, so a rule value can be
         // picked rather than remembered.
         const tags = [...new Set((this.dash.allBookmarks || []).flatMap((b) => b.tags || []))].sort();
-        const cats = this.knownCategories().map((c) => c.id);
+        /*
+         * A category is matched by its id and read by its name.
+         *
+         * The datalist offered the id as the whole entry and nothing else, so
+         * the picker for a rule value listed things like "cat_mrjjzqik_o2rt0"
+         * with no way to tell which category that is. The id is still what gets
+         * filled in -- the matching underneath is id-based and correct -- and
+         * the name now rides along as the option's text, which is where a
+         * datalist puts a description.
+         */
+        const cats = this.knownCategories().map((c) => ({ value: c.id, label: c.label }));
         const shortcuts = [...new Set((this.dash.allBookmarks || [])
-            .map((b) => String(b.shortcut || '').trim()).filter(Boolean))].sort();
-        const listFor = (field) => (field === 'category' ? cats : field === 'shortcut' ? shortcuts : tags);
+            .map((b) => String(b.shortcut || '').trim()).filter(Boolean))].sort()
+            .map((v) => ({ value: v, label: '' }));
+        const tagOptions = tags.map((v) => ({ value: v, label: '' }));
+        const listFor = (field) => (field === 'category' ? cats : field === 'shortcut' ? shortcuts : tagOptions);
 
         const ruleRows = rules.map((r, i) => {
             const field = r.field || 'tag';
             const op = r.operator === 'excludes' ? 'excludes' : 'includes';
             const options = listFor(field)
-                .map((v) => `<option value="${esc(v)}"></option>`).join('');
+                .map((o) => `<option value="${esc(o.value)}">${o.label && o.label !== o.value ? esc(o.label) : ''}</option>`)
+                .join('');
             return `
             <div class="config-collection-rule" data-collection-rule="${i}">
                 <select class="config-select" data-rule-field="${i}">
@@ -26865,6 +26899,27 @@ class DashboardConfig {
                     { k: 'config.helpArtTriageOne', d: 'One link' },
                     { k: 'config.helpArtTriageDecide', d: 'Keep or drop' },
                     { k: 'config.helpArtTriageNext', d: 'Next' },
+                ],
+            },
+        ],
+        /*
+         * The Kept tab is a branch in the queue, not a step after it: a link
+         * either goes on a page or waits here, and it waits without staying in
+         * the queue. Drawn as the branch it is, with the key that takes it.
+         */
+        'config.helpInboxKeptTitle': [
+            {
+                kind: 'keys', value: ['Shift', 'K'],
+                captionKey: 'config.helpArtKeptKey', caption: 'Out of the queue, not off the list',
+            },
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtKeptQueue', d: 'In the queue' },
+                    [
+                        { k: 'config.helpArtKeptFiled', d: 'Filed on a page' },
+                        { k: 'config.helpArtKeptWaiting', d: 'Kept, waiting' },
+                    ],
                 ],
             },
         ],

@@ -82,6 +82,17 @@ const (
 	webhookEventBookmarkDeleted = "bookmark.deleted"
 	webhookEventHealthDown      = "health.down"
 	webhookEventHealthUp        = "health.up"
+	/*
+	 * The one alert that arrives with weeks of notice, and the only one that
+	 * could not leave the app.
+	 *
+	 * health_notify.go has classified three events since certificates were
+	 * watched -- down, up and this -- and only the first two were published
+	 * here. A certificate expiring is exactly the kind of thing somebody wants
+	 * in a channel they already read, precisely because it is not urgent enough
+	 * to be noticed by opening the dashboard on the day.
+	 */
+	webhookEventHealthCertExpiring = "health.cert-expiring"
 )
 
 // webhookEventNames is every event that can be subscribed to, in the order the
@@ -92,6 +103,7 @@ var webhookEventNames = []string{
 	webhookEventBookmarkDeleted,
 	webhookEventHealthDown,
 	webhookEventHealthUp,
+	webhookEventHealthCertExpiring,
 }
 
 /*

@@ -211,14 +211,16 @@ including the unsorted ones. Sorted by -created so the same newest-first
 resumption GitHub uses works here: the first row not newer than the cursor means
 everything below it has been seen.
 */
-func FetchRaindrops(ctx context.Context, token, since, fallbackCategory string) (RaindropResult, error) {
+// The client is passed in for the reason FetchGitHubStars gives: the shared
+// constructor carries the redirect validation and the outbound limit, and
+// NEXTDASH_RAINDROP_API_BASE can name a host only the caller can judge.
+func FetchRaindrops(ctx context.Context, client *http.Client, token, since, fallbackCategory string) (RaindropResult, error) {
 	var out RaindropResult
 	token = strings.TrimSpace(token)
 	if token == "" {
 		return out, errors.New("no raindrop token configured")
 	}
 
-	client := &http.Client{Timeout: raindropTimeout}
 	sinceAt := raindropTime(since)
 	collections := raindropCollectionNames(ctx, client, token)
 	seen := map[string]struct{}{}
