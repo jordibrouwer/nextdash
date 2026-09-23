@@ -388,10 +388,17 @@ body:not([data-depth="flat"]) .dashboard-grid.layout-widgets .category {
  * card it sits in, and on every theme that read as a grey panel pasted on the
  * page. The tile keeps its page-coloured ground from dashboard.css; depth gives it a
  * hairline and the soft shadow, not the lit edges.
+ *
+ * The gloss is a different thing from the ladder, and it belongs here. It is a
+ * gradient over whatever ground the tile already has -- the same one
+ * .config-panel carries below -- so it lights the surface without lifting it a
+ * step. Without it a widget was the one card-shaped surface in the app that
+ * stayed matte while every panel in Config had a sheen on it.
  */
 body:not([data-depth="flat"]) .dashboard-widget .dashboard-widget-body {
     border: 1px solid var(--hairline);
     box-shadow: var(--surface-cast);
+    background-image: var(--surface-gloss);
 }
 
 /*
