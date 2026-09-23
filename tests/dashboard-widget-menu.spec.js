@@ -216,7 +216,19 @@ test('the widget keeps its place in the viewport when its width changes', async 
 
     const block = page.locator('.dashboard-widget[data-widget-type="health"]');
     await expect(block).toBeVisible({ timeout: 15_000 });
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    /*
+     * Part way down, not pinned to the very end.
+     *
+     * At the bottom the page has no slack left: the widget grows, the document
+     * grows with it, and putting the block back where it was would need a
+     * scroll position past the new maximum — so it cannot be done by any
+     * mechanism, and measuring there says nothing about this one. Measured at
+     * the end: 167px of drift with no anchor at all and 143px with it, because
+     * the anchor was already scrolled as far as the page allows. With room on
+     * both sides the same widen moves the block by a pixel.
+     */
+    await page.evaluate(() => window.scrollTo(0,
+        Math.round((document.documentElement.scrollHeight - window.innerHeight) * 0.6)));
     await page.waitForTimeout(400);
 
     const topOf = () => page.evaluate(() =>
@@ -278,7 +290,19 @@ test('the widget keeps its place with packed columns too', async ({ page }) => {
 
     const block = page.locator('.dashboard-widget[data-widget-type="health"]');
     await expect(block).toBeVisible({ timeout: 15_000 });
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    /*
+     * Part way down, not pinned to the very end.
+     *
+     * At the bottom the page has no slack left: the widget grows, the document
+     * grows with it, and putting the block back where it was would need a
+     * scroll position past the new maximum — so it cannot be done by any
+     * mechanism, and measuring there says nothing about this one. Measured at
+     * the end: 167px of drift with no anchor at all and 143px with it, because
+     * the anchor was already scrolled as far as the page allows. With room on
+     * both sides the same widen moves the block by a pixel.
+     */
+    await page.evaluate(() => window.scrollTo(0,
+        Math.round((document.documentElement.scrollHeight - window.innerHeight) * 0.6)));
     await page.waitForTimeout(400);
 
     const topOf = () => page.evaluate(() =>
