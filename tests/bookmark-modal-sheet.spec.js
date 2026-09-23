@@ -36,12 +36,30 @@ const dialog = (page, props) => page.evaluate((list) => {
 
 const insets = (shadow) => shadow.split(/,(?![^(]*\))/).filter((p) => p.includes('inset')).length;
 
+
+/**
+ * The pixel value of a radius token, as the browser resolves it.
+ *
+ * A theme's character moves every corner now -- the fresh-install theme is
+ * brushed and asks for 0.7 of the scale -- so the number to compare against is
+ * the token, measured on an element that uses it, not a constant.
+ */
+const radiusPx = (page, token) => page.evaluate((name) => {
+    const probe = document.createElement('div');
+    probe.style.cssText = `position:fixed;left:-9999px;width:10px;height:10px;border-radius:var(${name})`;
+    document.body.appendChild(probe);
+    const value = getComputedStyle(probe).borderRadius;
+    probe.remove();
+    return value;
+}, token);
+
 test.describe('the bookmark form sheet', () => {
     test('takes the corner and the drop every overlay takes', async ({ page }) => {
         await openForm(page);
         const sheet = await dialog(page, ['borderRadius', 'boxShadow']);
 
-        expect(sheet.borderRadius, 'the sheet kept a card corner').toBe('8px');
+        expect(sheet.borderRadius, 'the sheet kept a card corner')
+            .toBe(await radiusPx(page, '--radius-5'));
         expect(sheet.boxShadow, `no deep drop under the sheet: ${sheet.boxShadow}`)
             .toMatch(/0px 24px 64px/);
     });

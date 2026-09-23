@@ -8794,20 +8794,7 @@ class DashboardConfig {
                     ${this.surfaceAff('themeEffects')}
                     <p class="config-panel-note">${esc(this.t('config.themeEffectsNote', 'How loudly a theme\'s character is drawn: the shine on a lacquered surface, the glow around a neon one, the grain on a brushed one, and how round its corners are. Off leaves the palette and nothing else. Depth is a different question — it decides how much of the theme is drawn behind the content.'))}</p>
                 </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.themeSurfacesScopeLabel', 'These apply to'))}</span>
-                    <label class="config-checkbox">
-                        <input type="checkbox" data-appearance-toggle="themeSurfacesForceAll"${s.themeSurfacesForceAll ? ' checked' : ''}>
-                        <span>${esc(this.t('config.themeSurfacesForceAllLabel', 'Every theme'))}</span>
-                    </label>
-                    ${this.appearanceAff('themeSurfacesForceAll')}
-                    <p class="config-panel-note">${esc(this.t('config.themeSurfacesForceAllNote', 'Off, the three above belong to the theme you are on and each theme keeps its own. On, they hold for every theme and a theme brings nothing of its own.'))}</p>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.themeResetLabel', 'This theme'))}</span>
-                    <button type="button" class="config-btn config-btn--field" data-appearance-action="reset-theme-surfaces">${esc(this.t('config.themeResetToIdeal', 'Back to the theme\'s own'))}</button>
-                    <p class="config-panel-note">${esc(this.t('config.themeResetNote', 'Changes you make while Follow the theme is on belong to the theme you are on, so switching away and back finds them again. This puts the theme you are on back to what it ships with.'))}</p>
-                </div>
+
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
                     <select class="config-select" data-appearance-select="inkGap">
@@ -8822,6 +8809,28 @@ class DashboardConfig {
                         <span>${esc(this.t('config.enableAnimations', 'Enable animations'))}</span>
                     </label>
                     ${this.appearanceAff('animationsEnabled')}
+                </div>
+            </div>
+
+            <!-- Whose the three above are. Its own panel rather than two more
+                 rows in Surfaces: they are not settings about how a theme is
+                 drawn, they are about who answers, and Surfaces was seven
+                 fields deep with them in it. -->
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceSurfaceScopeTitle', 'Whose surfaces these are'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceSurfaceScopeNote', 'Depth, Glow and Effects can belong to the theme you are on, or to every theme.'))}</p>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="themeSurfacesForceAll"${s.themeSurfacesForceAll ? ' checked' : ''}>
+                        <span>${esc(this.t('config.themeSurfacesForceAllLabel', 'Use these for every theme'))}</span>
+                    </label>
+                    ${this.appearanceAff('themeSurfacesForceAll')}
+                </div>
+                <p class="config-panel-note">${esc(this.t('config.themeSurfacesForceAllNote', 'Off, the three above belong to the theme you are on and each theme keeps its own. On, they hold for every theme and a theme brings nothing of its own.'))}</p>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.themeResetLabel', 'This theme'))}</span>
+                    <button type="button" class="config-btn config-btn--field" data-appearance-action="reset-theme-surfaces">${esc(this.t('config.themeResetToIdeal', 'Back to the theme\'s own'))}</button>
+                    <p class="config-panel-note">${esc(this.t('config.themeResetNote', 'Changes you make while Follow the theme is on belong to the theme you are on, so switching away and back finds them again. This puts the theme you are on back to what it ships with.'))}</p>
                 </div>
             </div>
 
@@ -11174,8 +11183,11 @@ class DashboardConfig {
      * is off asks, once per visit, with the switch in the question.
      */
     async offerGlowForGloss(theme) {
-        const s = this.dash.settings || {};
-        if ((s.glowStrength || 'off') !== 'off' || this._glossGlowOffered) return;
+        if (this._glossGlowOffered) return;
+        // What is drawn, not what is stored: with the three surfaces on
+        // "follow" the setting says `follow` whatever the page looks like, and
+        // the question is only worth asking when the glow is actually off.
+        if ((document.body?.getAttribute('data-glow') || 'off') !== 'off') return;
         await this.loadColorsData();
         const palette = this.themeById(theme);
         if (!(Number(palette?.sheen) > 0)) return;
@@ -11186,7 +11198,10 @@ class DashboardConfig {
             {
                 durationMs: 12000,
                 actionLabel: this.t('config.glossGlowOfferAction', 'Turn on'),
-                onAction: () => this.setAppearanceSelect('glowStrength', 'soft'),
+                // Through setSurface, so the answer lands where the reader's
+                // other surface changes land: on this theme, unless they have
+                // asked for one answer across every theme.
+                onAction: () => this.setSurface('glowStrength', 'soft'),
             },
         );
     }

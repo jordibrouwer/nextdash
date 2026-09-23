@@ -40,6 +40,23 @@ const menuStyle = (page) => page.evaluate(() => {
     };
 });
 
+
+/**
+ * The pixel value of a radius token, as the browser resolves it.
+ *
+ * A theme's character moves every corner now -- the fresh-install theme is
+ * brushed and asks for 0.7 of the scale -- so the number to compare against is
+ * the token, measured on an element that uses it, not a constant.
+ */
+const radiusPx = (page, token) => page.evaluate((name) => {
+    const probe = document.createElement('div');
+    probe.style.cssText = `position:fixed;left:-9999px;width:10px;height:10px;border-radius:var(${name})`;
+    document.body.appendChild(probe);
+    const value = getComputedStyle(probe).borderRadius;
+    probe.remove();
+    return value;
+}, token);
+
 test('a menu carries the theme edges and a real drop', async ({ page }) => {
     await openMenu(page, 'rich');
     const style = await menuStyle(page);
@@ -54,7 +71,8 @@ test('a menu carries the theme edges and a real drop', async ({ page }) => {
     const black = style.shadow.split(/,(?![^(]*\))/)
         .some((part) => /rgba\(0,\s*0,\s*0|color\(srgb 0 0 0/.test(part));
     expect(black, `the drop is still a pale halo: ${style.shadow}`).toBe(true);
-    expect(style.radius, 'the menu keeps a corner no panel uses').toBe(8);
+    expect(`${style.radius}px`, 'the menu keeps a corner no panel uses')
+        .toBe(await radiusPx(page, '--radius-5'));
 });
 
 test('flat leaves the menu flat', async ({ page }) => {

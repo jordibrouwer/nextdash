@@ -569,7 +569,10 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-appearance-bg="gradient"]')).toBeVisible();
         await expect(page.locator('[data-appearance-range="backgroundOpacity"]')).toBeVisible();
         await expect(page.locator('[data-appearance-action="upload-font"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-action="edit-colors"]')).toBeVisible();
+        // One button to the editor, not two: "Open the theme editor…" and
+        // "Make your own theme…" went to the same tab, so the goto hook is
+        // what survived.
+        await expect(page.locator('[data-appearance-goto="custom-themes"]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="layout"]').click();
         // Icon size moved out of the Layout version panel and into Bookmarks
@@ -679,7 +682,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
-        await page.locator('[data-appearance-action="edit-colors"]').click();
+        await page.locator('[data-appearance-goto="custom-themes"]').click();
 
         // This used to reveal the old config's editor, embedded from a
         // server-rendered partial. That editor's buttons were wired through a

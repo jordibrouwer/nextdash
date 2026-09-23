@@ -1248,8 +1248,12 @@
 }
 
 /* A slider row that also carries a preview and an ℹ has two more children than
-   the four columns above allow, and they wrapped onto a line of their own. */
-.config-field:has(> .config-range-value):has(> .config-field-affordances) {
+   the four columns above allow, and they wrapped onto a line of their own.
+
+   The preview is what identifies it. Keyed on the affordances alone this also
+   caught the opacity slider, which has a readout and an ℹ and no preview, and
+   gave it a fifth column with nothing to put in it. */
+.config-field:has(> .config-range-value):has(> .config-icon-preview) {
     grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto auto auto;
 }
 

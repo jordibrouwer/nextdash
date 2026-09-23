@@ -42,6 +42,20 @@ html[data-theme] body {
     --radius-5: calc(8px * var(--theme-radius-applied, 1));
     --radius-6: calc(10px * var(--theme-radius-applied, 1));
     --radius-7: calc(12px * var(--theme-radius-applied, 1));
+
+    /*
+     * De moderne laag draait mee.
+     *
+     * --layout-radius-* stond op vaste pixels in dashboard-enhancements.css,
+     * dus de schaal van een theme bewoog de ene familie hoeken wel en de
+     * andere niet. Dat viel niet op zolang geen enkel theme om een schaal
+     * vroeg: --radius-5 en --layout-radius-sm waren allebei 8px. Sinds elk
+     * theme een karakter heeft liepen ze uit elkaar -- het zoekveld in Health
+     * bleef op 8px staan terwijl datzelfde veld in Config meebewoog.
+     */
+    --layout-radius-xs: calc(4px * var(--theme-radius-applied, 1));
+    --layout-radius-sm: calc(8px * var(--theme-radius-applied, 1));
+    --layout-radius-md: calc(12px * var(--theme-radius-applied, 1));
 }
 
 /* ── Letter ──────────────────────────────────────────────────────────────

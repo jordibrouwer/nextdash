@@ -138,11 +138,18 @@ test.describe('config fields line up in a grid', () => {
         await openSection(page, 'appearance');
 
         const row = await page.evaluate(() => {
-            const value = document.querySelector('.config-field > .config-range-value');
-            if (!value) return null;
-            const field = value.parentElement;
-            const range = field.querySelector('.config-range');
+            /*
+             * The opacity slider by name, not the first slider on the tab.
+             *
+             * Favicon intensity is a slider too and it comes first; it carries
+             * a preview beside its readout, so it has a column this row does
+             * not and reading "the first one" measured the wrong row.
+             */
+            const range = document.querySelector('.config-field [data-appearance-range="backgroundOpacity"]');
             if (!range) return null;
+            const field = range.closest('.config-field');
+            const value = field?.querySelector('.config-range-value');
+            if (!value) return null;
             const v = value.getBoundingClientRect();
             const r = range.getBoundingClientRect();
             return {

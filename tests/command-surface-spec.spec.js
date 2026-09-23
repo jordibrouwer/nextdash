@@ -35,6 +35,21 @@ const style = (page, selector, props) => page.evaluate(([sel, list]) => {
     return Object.fromEntries(list.map((p) => [p, cs[p]]));
 }, [selector, props]);
 
+/**
+ * The pixel value of a radius token, as the browser resolves it.
+ *
+ * Reading the custom property gives back the unresolved `calc(...)` it is
+ * declared as, so it is measured on an element that actually uses it.
+ */
+const radiusPx = (page, token) => page.evaluate((name) => {
+    const probe = document.createElement('div');
+    probe.style.cssText = `position:fixed;left:-9999px;width:10px;height:10px;border-radius:var(${name})`;
+    document.body.appendChild(probe);
+    const value = getComputedStyle(probe).borderRadius;
+    probe.remove();
+    return value;
+}, token);
+
 test.describe('the command surface', () => {
     test('is a sheet, not a padded card', async ({ page }) => {
         await openCommands(page);
@@ -48,7 +63,16 @@ test.describe('the command surface', () => {
         // No padding of its own: the parts carry theirs, which is what lets
         // the rule under the prompt run the full width.
         expect(surface.padding, 'the surface still pads its own contents').toBe('0px');
-        expect(surface.borderRadius, 'the sheet has a card corner').toBe('8px');
+        /*
+         * Against the token rather than a number of pixels.
+         *
+         * A theme's character now moves every corner: the fresh-install theme
+         * is brushed, which asks for 0.7 of the radius scale, so --radius-5 is
+         * 5.6px there and 8px on a theme that asks for nothing. What the sheet
+         * has to be is that token, not a constant.
+         */
+        expect(surface.borderRadius, 'the sheet has a card corner')
+            .toBe(await radiusPx(page, '--radius-5'));
         expect(surface.backdropFilter).toContain('blur(8px)');
         // Lifted off the page, not resting on it: the spec draws 0 24px 64px.
         expect(surface.boxShadow, `no deep drop under the sheet: ${surface.boxShadow}`)
@@ -70,7 +94,10 @@ test.describe('the command surface', () => {
 
         expect(pill.textTransform).toBe('uppercase');
         expect(pill.fontWeight).toBe('700');
-        expect(pill.borderRadius, 'the pill took the sheet\'s corner').toBe('4px');
+        // The pill is one step tighter than the sheet, whatever the theme's
+        // character does to the scale.
+        expect(pill.borderRadius, 'the pill took the sheet\'s corner')
+            .toBe(await radiusPx(page, '--radius-3'));
         expect(parseFloat(pill.borderTopWidth), 'the pill has no outline').toBeGreaterThan(0);
     });
 

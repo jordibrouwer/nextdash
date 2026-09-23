@@ -36,17 +36,20 @@ async function openBrowser(page, settings = {}) {
 const sheen = (page) => page.evaluate(() =>
     getComputedStyle(document.body).getPropertyValue('--theme-sheen').trim());
 
-test('gloss themes carry a badge, and have a segment of their own', async ({ page }) => {
+test('gloss themes carry their character as a badge and a chip', async ({ page }) => {
     await openBrowser(page);
     const card = page.locator(`[data-theme-id="${GLOSS}"]`).first();
-    await expect(card.locator('[data-theme-badge="gloss"]')).toBeVisible();
-    // A matte theme has none.
-    await expect(page.locator('[data-theme-id="moss-stone-dark"] [data-theme-badge="gloss"]')).toHaveCount(0);
+    // Gloss is the Lacquer character now, so the badge names it and the
+    // filter is one chip in a row of twelve rather than a segment of its own.
+    await expect(card.locator('[data-theme-badge="lacquer"]')).toBeVisible();
+    // A matte theme carries a different one.
+    await expect(page.locator('[data-theme-id="moss-stone-dark"] [data-theme-badge="lacquer"]')).toHaveCount(0);
 
-    await page.locator('[data-theme-segment="gloss"]').click();
+    await page.locator('[data-theme-character="lacquer"]').click();
     const cards = page.locator('[data-theme-card]');
-    await expect.poll(() => cards.count()).toBeGreaterThanOrEqual(10);
-    expect(await page.locator('[data-theme-card]:not(.is-gloss)').count(), 'a matte theme under Gloss').toBe(0);
+    await expect.poll(() => cards.count()).toBeGreaterThanOrEqual(8);
+    expect(await page.locator('[data-theme-card]:not(.is-lacquer)').count(),
+        'a theme of another character under Lacquer').toBe(0);
 });
 
 test('picking a gloss theme with the glow off offers to turn it on', async ({ page }) => {
@@ -58,7 +61,11 @@ test('picking a gloss theme with the glow off offers to turn it on', async ({ pa
     const offer = page.locator('#app-notification.show');
     await expect(offer).toContainText(/gloss/i);
     await offer.locator('button, .app-notification-action').filter({ hasText: /turn on/i }).first().click();
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.glowStrength)).toBe('soft');
+    // What the page is drawn with: the answer belongs to this theme unless
+    // the reader has asked for one glow across every theme, so the setting
+    // itself stays on "follow".
+    await expect.poll(() => page.evaluate(
+        () => document.body.getAttribute('data-glow'))).toBe('soft');
 });
 
 test('a gloss theme lights its surfaces; a matte one does not', async ({ page }) => {

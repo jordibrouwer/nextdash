@@ -199,7 +199,25 @@ test.describe('the top edge strength', () => {
         const top = parts(shadow).find((part) => part.includes('inset') && /\s0px 1px 0px/.test(part));
         expect(top, `no lit top line in: ${shadow}`).toBeTruthy();
 
-        // 16% of the text colour at depth 1.5. The stale copy gave 0.09.
-        expect(alphaOf(top), 'the top edge is painting at the overridden strength').toBeCloseTo(0.24, 2);
+        /*
+         * Against --edge-top itself, not against a number.
+         *
+         * The strength is the ladder's, composed from the depth and the
+         * theme's own sheen -- and every packaged theme carries a sheen now,
+         * so a constant here would only say which theme the test happened to
+         * open on. What this pins is that the line on the widget is the token,
+         * rather than a second copy of it living in the character sheet, which
+         * is the bug it was written for.
+         */
+        const fromToken = await page.evaluate(() => {
+            const probe = document.createElement('div');
+            probe.style.cssText = 'position:fixed;left:-9999px;width:10px;height:10px;box-shadow:var(--edge-top)';
+            document.body.appendChild(probe);
+            const value = getComputedStyle(probe).boxShadow;
+            probe.remove();
+            return value;
+        });
+        expect(alphaOf(top), `the top edge is not the ladder's: ${fromToken}`)
+            .toBeCloseTo(alphaOf(fromToken), 2);
     });
 });

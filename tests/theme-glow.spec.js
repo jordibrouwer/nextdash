@@ -129,6 +129,10 @@ test.describe('theme glow', () => {
 
         const depth = page.locator('[data-appearance-select="themeDepth"]');
         const previous = await depth.inputValue();
+        // What the page is drawn with, which is not what the select says: on
+        // "follow" the select reads follow and the body carries the theme's
+        // own answer, so that is what has to come back at the end.
+        const drawnBefore = await page.evaluate(() => document.body.getAttribute('data-depth'));
         await depth.selectOption('flat');
         await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-depth'))).toBe('flat');
 
@@ -136,6 +140,7 @@ test.describe('theme glow', () => {
         await expect.poll(() => panelShadow(page)).toBe('none');
 
         await depth.selectOption(previous);
-        await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-depth'))).toBe(previous);
+        await expect.poll(() => page.evaluate(
+            () => document.body.getAttribute('data-depth'))).toBe(drawnBefore);
     });
 });
