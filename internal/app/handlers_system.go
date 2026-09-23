@@ -30,6 +30,17 @@ func (h *Handlers) SystemMountsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*
+systemMetricsMaxMounts is how many disks one request may ask about.
+
+Far above what a machine has -- Unraid's /mnt/user, /mnt/cache and a disk per
+slot come nowhere near it -- and far below the number at which a single request
+becomes a denial of service against the one lock every metrics reader waits on.
+Anything past it is dropped rather than refused: a tile with a long list still
+gets an answer about the disks at the front of it.
+*/
+const systemMetricsMaxMounts = 32
+
 func (h *Handlers) SystemMetricsHandler(w http.ResponseWriter, r *http.Request) {
 	want := []string{}
 	for _, raw := range strings.Split(r.URL.Query().Get("want"), ",") {
@@ -41,16 +52,26 @@ func (h *Handlers) SystemMetricsHandler(w http.ResponseWriter, r *http.Request) 
 	// Which disks this tile watches, and what the reader calls them. Sent as
 	// path=name so a renamed disk costs no second request and the server never
 	// has to know what a label means.
+	//
+	// Both lists stop at systemMetricsMaxMounts. Every mount is a statfs call
+	// made while the cache holds its lock, so a long list stalls every other
+	// caller -- and this route has no token in front of it.
 	mounts := []string{}
 	for _, raw := range strings.Split(r.URL.Query().Get("mounts"), ",") {
 		if path := strings.TrimSpace(raw); path != "" {
 			mounts = append(mounts, path)
+		}
+		if len(mounts) == systemMetricsMaxMounts {
+			break
 		}
 	}
 	labels := map[string]string{}
 	for _, pair := range strings.Split(r.URL.Query().Get("labels"), ",") {
 		if at := strings.Index(pair, "="); at > 0 {
 			labels[strings.TrimSpace(pair[:at])] = strings.TrimSpace(pair[at+1:])
+		}
+		if len(labels) == systemMetricsMaxMounts {
+			break
 		}
 	}
 

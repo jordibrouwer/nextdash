@@ -78,8 +78,66 @@ func (c *systemMetricsCache) fresh(key string, floor time.Duration) (any, bool) 
 	return entry.value, true
 }
 
+/*
+metricsCacheMaxEntries is how many readings the cache will hold at once.
+
+Three of the four sources have one key each. The disks reading has one per set
+of mounts asked for, and that set arrives in the query string of a route with no
+token in front of it -- so without a ceiling the map grew by one permanent entry
+per distinct request, for as long as anyone cared to keep asking.
+
+Generous against real use: a dashboard has a handful of disk tiles, and the
+entry a tile wants is the one written most recently, which is the last thing
+pruning takes.
+*/
+const metricsCacheMaxEntries = 32
+
+// A reading older than this is of no use to anyone: every floor in this file is
+// far shorter, so it can only ever be handed out as stale.
+const metricsCacheStaleAfter = time.Minute
+
 func (c *systemMetricsCache) store(key string, value any) {
+	c.pruneLocked(key)
 	c.entries[key] = cachedMetric{at: c.now(), value: value}
+}
+
+/*
+pruneLocked makes room for one more entry. Called with the mutex held.
+
+Stale first, because those answer nobody. If that is not enough, the oldest
+goes: the cache's whole purpose is that several tiles asking the same question
+inside one floor share a reading, and the least recently written entry is the
+one least likely to be asked again inside its floor.
+*/
+func (c *systemMetricsCache) pruneLocked(incoming string) {
+	if len(c.entries) < metricsCacheMaxEntries {
+		return
+	}
+	if _, exists := c.entries[incoming]; exists {
+		// Replacing one, not adding one.
+		return
+	}
+
+	now := c.now()
+	for key, entry := range c.entries {
+		if now.Sub(entry.at) >= metricsCacheStaleAfter {
+			delete(c.entries, key)
+		}
+	}
+
+	for len(c.entries) >= metricsCacheMaxEntries {
+		oldestKey := ""
+		var oldestAt time.Time
+		for key, entry := range c.entries {
+			if oldestKey == "" || entry.at.Before(oldestAt) {
+				oldestKey, oldestAt = key, entry.at
+			}
+		}
+		if oldestKey == "" {
+			return
+		}
+		delete(c.entries, oldestKey)
+	}
 }
 
 // Get reads the named sources, sharing one reading per source per floor.
