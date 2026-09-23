@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -109,5 +111,87 @@ func TestSystemMetricsHandlerCapsTheMountsItAccepts(t *testing.T) {
 	}
 	if asked > systemMetricsMaxMounts {
 		t.Errorf("read %d mounts from one request, cap is %d", asked, systemMetricsMaxMounts)
+	}
+}
+
+/*
+One slow source must not stop every other reading.
+
+Get held the cache mutex for its whole body, and then called out through it: a
+statfs per mount, which the file's own comment says can block on a spun-down
+array disk, and an HTTP round trip to the Docker socket with a five second
+timeout. So one request asking about a sleeping disk stalled every other
+request, including the ones that only wanted the processor.
+*/
+func TestASlowSourceDoesNotBlockTheOthers(t *testing.T) {
+	clock := time.Now()
+	c := newProbeCache(&clock)
+
+	reading := make(chan struct{})
+	release := make(chan struct{})
+	c.readDisksFn = func(mounts []string, _ map[string]string) DiskMetrics {
+		close(reading)
+		<-release
+		return DiskMetrics{Readable: len(mounts)}
+	}
+
+	go c.Get([]string{"disks"}, []string{"/mnt/slow"}, nil)
+	<-reading // the disk read has begun and is going nowhere
+
+	answered := make(chan SystemMetrics, 1)
+	go func() { answered <- c.Get([]string{"cpu"}, nil, nil) }()
+
+	select {
+	case <-answered:
+	case <-time.After(2 * time.Second):
+		close(release)
+		t.Fatal("asking for the processor waited on a disk that had not answered")
+	}
+	close(release)
+}
+
+/*
+And two callers asking the same question at the same moment still pay for one
+reading between them.
+
+That is what the cache is for, and it is the property the lock used to provide
+for free. Taking the lock off the read has to keep it deliberately.
+*/
+func TestConcurrentAsksForOneSourceShareOneReading(t *testing.T) {
+	clock := time.Now()
+	c := newProbeCache(&clock)
+
+	var reads int32
+	reading := make(chan struct{})
+	release := make(chan struct{})
+	c.readDisksFn = func(mounts []string, _ map[string]string) DiskMetrics {
+		if atomic.AddInt32(&reads, 1) == 1 {
+			close(reading)
+		}
+		<-release
+		return DiskMetrics{Readable: len(mounts)}
+	}
+
+	const askers = 8
+	var wg sync.WaitGroup
+	for i := 0; i < askers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			out := c.Get([]string{"disks"}, []string{"/mnt/user"}, nil)
+			if out.Disks == nil {
+				t.Error("a caller waiting on someone else's reading got nothing")
+			}
+		}()
+	}
+
+	<-reading
+	// Everyone else has had time to arrive and find the read already running.
+	time.Sleep(50 * time.Millisecond)
+	close(release)
+	wg.Wait()
+
+	if got := atomic.LoadInt32(&reads); got != 1 {
+		t.Errorf("%d callers caused %d readings, want 1", askers, got)
 	}
 }

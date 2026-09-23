@@ -45,10 +45,24 @@ type cachedMetric struct {
 	value any
 }
 
+/*
+metricReading is one source being read right now.
+
+Callers that arrive while it is in flight wait on done rather than starting a
+second read of the same thing -- which is the property the old code got for
+free by holding the mutex across the read, and the reason taking the read out
+from under the mutex has to say so explicitly.
+*/
+type metricReading struct {
+	done  chan struct{}
+	value any
+}
+
 type systemMetricsCache struct {
-	mu      sync.Mutex
-	entries map[string]cachedMetric
-	sampler *cpuSampler
+	mu       sync.Mutex
+	entries  map[string]cachedMetric
+	inflight map[string]*metricReading
+	sampler  *cpuSampler
 
 	// Swappable so the cache can be exercised without touching the host.
 	now          func() time.Time
@@ -60,6 +74,7 @@ type systemMetricsCache struct {
 func newSystemMetricsCache() *systemMetricsCache {
 	return &systemMetricsCache{
 		entries:      map[string]cachedMetric{},
+		inflight:     map[string]*metricReading{},
 		sampler:      newCPUSampler(),
 		now:          time.Now,
 		readMemoryFn: readMemory,
@@ -140,54 +155,69 @@ func (c *systemMetricsCache) pruneLocked(incoming string) {
 	}
 }
 
+/*
+value answers for one source: from the cache when it is fresh, otherwise by
+reading it -- once, however many callers are asking.
+
+The read happens with the mutex released. It used to happen while Get held it
+for its whole body, and what is behind these functions is a statfs per mount
+(which can block on a spun-down array disk) and an HTTP round trip to the Docker
+socket with a five second timeout. One request asking about a sleeping disk
+therefore stalled every other request, including the ones that only wanted the
+processor.
+
+Letting go of the lock would ordinarily mean several callers reading the same
+source at once, which is the one thing this cache exists to prevent -- so the
+first caller claims the key and the rest wait on its answer.
+*/
+func (c *systemMetricsCache) value(key string, floor time.Duration, read func() any) any {
+	c.mu.Lock()
+	if cached, ok := c.fresh(key, floor); ok {
+		c.mu.Unlock()
+		return cached
+	}
+	if pending, ok := c.inflight[key]; ok {
+		c.mu.Unlock()
+		<-pending.done
+		return pending.value
+	}
+	pending := &metricReading{done: make(chan struct{})}
+	c.inflight[key] = pending
+	c.mu.Unlock()
+
+	value := read()
+
+	c.mu.Lock()
+	pending.value = value
+	c.store(key, value)
+	delete(c.inflight, key)
+	c.mu.Unlock()
+	// Closing after the write, so every waiter sees the value it waited for.
+	close(pending.done)
+	return value
+}
+
 // Get reads the named sources, sharing one reading per source per floor.
 // A name that is not a source is ignored rather than refused: an unknown name
 // is not an error, it is simply nothing to report.
 func (c *systemMetricsCache) Get(want []string, mounts []string, labels map[string]string) SystemMetrics {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	out := SystemMetrics{}
 	for _, source := range want {
 		switch source {
 		case "cpu":
-			if v, ok := c.fresh("cpu", metricsFloor); ok {
-				value := v.(CPUMetrics)
-				out.CPU = &value
-				continue
-			}
-			value := c.sampler.Read()
-			c.store("cpu", value)
+			value := c.value("cpu", metricsFloor, func() any { return c.sampler.Read() }).(CPUMetrics)
 			out.CPU = &value
 		case "memory":
-			if v, ok := c.fresh("memory", metricsFloor); ok {
-				value := v.(MemoryMetrics)
-				out.Memory = &value
-				continue
-			}
-			value := c.readMemoryFn()
-			c.store("memory", value)
+			value := c.value("memory", metricsFloor, func() any { return c.readMemoryFn() }).(MemoryMetrics)
 			out.Memory = &value
 		case "docker":
-			if v, ok := c.fresh("docker", metricsDockerFloor); ok {
-				value := v.(DockerMetrics)
-				out.Docker = &value
-				continue
-			}
-			value := c.readDockerFn()
-			c.store("docker", value)
+			value := c.value("docker", metricsDockerFloor, func() any { return c.readDockerFn() }).(DockerMetrics)
 			out.Docker = &value
 		case "disks":
 			// Keyed by the mounts asked for: two tiles watching different
 			// disks are two readings, not one answer serving both.
 			key := "disks:" + strings.Join(mounts, ",")
-			if v, ok := c.fresh(key, metricsDiskFloor); ok {
-				value := v.(DiskMetrics)
-				out.Disks = &value
-				continue
-			}
-			value := c.readDisksFn(mounts, labels)
-			c.store(key, value)
+			value := c.value(key, metricsDiskFloor, func() any { return c.readDisksFn(mounts, labels) }).(DiskMetrics)
 			out.Disks = &value
 		}
 		// Anything else is ignored: an unknown name is not an error, it is
