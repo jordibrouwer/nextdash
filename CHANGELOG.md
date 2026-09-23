@@ -353,6 +353,11 @@ collection rendered flat and matte whatever its palette was.
   rewritten around *Follow the theme*, Effects and Vivid, and Gloss became one
   archetype rather than a kind of its own. English in all six locale files;
   translation belongs to a docs round.
+- Around forty new interface strings in all six locale files: the twelve
+  archetype labels, the Effects setting, *Follow the theme*, and the ℹ text for
+  the rows in Surfaces, Backdrop and Favicons that had none. English
+  everywhere; translation belongs to a docs round.
+- `asset_hashes_gen.go` regenerated for the CSS and JS this release touches.
 - `CHANGELOG.md`, `static/data/whats-new/v1.13.3.json`, `index.json`, both
   tokens in `whats-new-stub.js`, `tests/whats-new-hidden-release.spec.js`.
 
