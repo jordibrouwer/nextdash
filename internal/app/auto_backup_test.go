@@ -21,7 +21,13 @@ func newTestHandlers(t *testing.T) *Handlers {
 	// tests fail on "outbound rate limit exceeded" instead of on their own
 	// subject. Each test starts with an empty window.
 	globalOutboundLimiter.reset()
-	return &Handlers{store: NewStore()}
+	h := &Handlers{store: NewStore()}
+	// The same register main.go builds. Two of the importers moved out of the
+	// package-level table and into here, so a Handlers without this answers
+	// "Unknown source kind" for them -- which is true of a hand-built one and
+	// not of the running app.
+	h.registerHandlerSources()
+	return h
 }
 
 func TestWriteAutoBackupRotatesToThree(t *testing.T) {

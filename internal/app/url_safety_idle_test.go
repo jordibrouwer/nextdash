@@ -34,3 +34,16 @@ func TestOutboundTransportsGiveUpIdleConnections(t *testing.T) {
 		}
 	}
 }
+
+/*
+ * The client the importer tests hand to a fetcher.
+ *
+ * Through the shared constructor, like the real caller -- with allowLocal on,
+ * because the stub servers these tests point NEXTDASH_GITHUB_API_BASE and
+ * NEXTDASH_RAINDROP_API_BASE at all listen on 127.0.0.1. That is also a real
+ * arrangement: a GitHub Enterprise on the same network is what the setting is
+ * for.
+ */
+func testOutboundClient() *http.Client {
+	return newOutboundHTTPClient(true, 20*time.Second, 5)
+}

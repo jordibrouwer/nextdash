@@ -292,3 +292,31 @@ func TestRunSourceWritesToTheConfiguredPage(t *testing.T) {
 		t.Error("the collection's category was not created on the target page")
 	}
 }
+
+/*
+ * Every importer reaches the network the same way.
+ *
+ * github-stars and raindrop used to build a bare http.Client, which skips the
+ * redirect validation and the global outbound limit that everything else goes
+ * through -- and cannot know whether this install allows a local address, which
+ * matters because both API bases can be pointed elsewhere by environment. They
+ * are registered beside the three that always had a Handlers now, so the rule
+ * handlers_sources.go calls not negotiable holds for all of them.
+ */
+func TestEveryImporterIsRegisteredThroughTheHandlers(t *testing.T) {
+	// The package-level table is what a process gets before main wires it up.
+	// Nothing may be in it: an entry there has no Handlers to ask.
+	fresh := len(sourceImporters)
+
+	h := newTestHandlers(t)
+	h.registerHandlerSources()
+
+	for _, kind := range []string{"github-stars", "raindrop", "hackernews"} {
+		if _, ok := sourceImporters[kind]; !ok {
+			t.Errorf("%s is not registered, so its source cannot run at all", kind)
+		}
+	}
+	if fresh == 0 && len(sourceImporters) == 0 {
+		t.Error("registering added nothing")
+	}
+}
