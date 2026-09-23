@@ -342,6 +342,11 @@ hovered its tab first, and a kept pile that looked empty when a request failed.
 
 ### Development
 
+- **new — the Unraid template carries the host widgets.** Processor, Memory,
+  Disks and Containers each need a mount and the variable that points at it,
+  which until now only the manual said. They are rows in the template now,
+  empty and under *Show more settings*, beside a write token and the trusted
+  proxies. An install that fills in none of them is unchanged.
 - **new — CI runs the eleven checks the repo already had** and nothing ran:
   cheat sheet, help and locale parity, duplicates, placeholders, documentation
   links, the overview feature list, tag patterns and two model tests. `go vet`
