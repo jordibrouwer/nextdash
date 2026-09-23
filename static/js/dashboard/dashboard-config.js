@@ -15826,16 +15826,29 @@ class DashboardConfig {
         // Suggestions come from what is actually in use, so a rule value can be
         // picked rather than remembered.
         const tags = [...new Set((this.dash.allBookmarks || []).flatMap((b) => b.tags || []))].sort();
-        const cats = this.knownCategories().map((c) => c.id);
+        /*
+         * A category is matched by its id and read by its name.
+         *
+         * The datalist offered the id as the whole entry and nothing else, so
+         * the picker for a rule value listed things like "cat_mrjjzqik_o2rt0"
+         * with no way to tell which category that is. The id is still what gets
+         * filled in -- the matching underneath is id-based and correct -- and
+         * the name now rides along as the option's text, which is where a
+         * datalist puts a description.
+         */
+        const cats = this.knownCategories().map((c) => ({ value: c.id, label: c.label }));
         const shortcuts = [...new Set((this.dash.allBookmarks || [])
-            .map((b) => String(b.shortcut || '').trim()).filter(Boolean))].sort();
-        const listFor = (field) => (field === 'category' ? cats : field === 'shortcut' ? shortcuts : tags);
+            .map((b) => String(b.shortcut || '').trim()).filter(Boolean))].sort()
+            .map((v) => ({ value: v, label: '' }));
+        const tagOptions = tags.map((v) => ({ value: v, label: '' }));
+        const listFor = (field) => (field === 'category' ? cats : field === 'shortcut' ? shortcuts : tagOptions);
 
         const ruleRows = rules.map((r, i) => {
             const field = r.field || 'tag';
             const op = r.operator === 'excludes' ? 'excludes' : 'includes';
             const options = listFor(field)
-                .map((v) => `<option value="${esc(v)}"></option>`).join('');
+                .map((o) => `<option value="${esc(o.value)}">${o.label && o.label !== o.value ? esc(o.label) : ''}</option>`)
+                .join('');
             return `
             <div class="config-collection-rule" data-collection-rule="${i}">
                 <select class="config-select" data-rule-field="${i}">
