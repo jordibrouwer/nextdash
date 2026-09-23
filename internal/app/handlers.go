@@ -300,7 +300,6 @@ func NewHandlers(store Store, files assetFS) *Handlers {
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
 	}
 	h.ensureHealthReportCond()
-	h.startPreviewCacheFlushLoop()
 	if store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
 	}

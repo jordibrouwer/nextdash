@@ -125,14 +125,32 @@ func (h *Handlers) flushPreviewCacheLocked() error {
 	return err
 }
 
-func (h *Handlers) startPreviewCacheFlushLoop() {
+/*
+StartPreviewCacheFlushScheduler writes the preview cache out every so often,
+until it is told to stop.
+
+It was started inside NewHandlers and ran on `for range ticker.C` -- the only
+background ticker here with no way out, while main.go wires a stop channel into
+all six others. Moving it beside them makes it one of them, and it also means a
+Handlers built for a test no longer has a goroutine writing preview-cache.json
+underneath it.
+
+Shutdown flushes once more through FlushCaches, so nothing written between the
+last tick and the stop is lost.
+*/
+func (h *Handlers) StartPreviewCacheFlushScheduler(stop <-chan struct{}) {
+	ticker := time.NewTicker(previewCacheFlushInterval)
 	go func() {
-		ticker := time.NewTicker(previewCacheFlushInterval)
 		defer ticker.Stop()
-		for range ticker.C {
-			h.previewCacheMu.Lock()
-			_ = h.flushPreviewCacheLocked()
-			h.previewCacheMu.Unlock()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+				h.previewCacheMu.Lock()
+				_ = h.flushPreviewCacheLocked()
+				h.previewCacheMu.Unlock()
+			}
 		}
 	}()
 }
