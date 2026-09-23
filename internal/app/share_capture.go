@@ -253,9 +253,18 @@ func (h *Handlers) AddCapture(w http.ResponseWriter, r *http.Request) {
 			Detail:  "Clear some links and try again.",
 		})
 	default:
+		/*
+		 * The reason, not the error.
+		 *
+		 * err.Error() put internal text on a page anyone holding the
+		 * bookmarklet can reach, and said nothing a reader could act on --
+		 * Scan 2 flagged this route for it. The detail belongs in the log,
+		 * which is where somebody who can act on it is looking.
+		 */
+		logWarn(logComponentMutate, "a captured link could not be saved (%v)", err)
 		h.writeCaptureResult(w, http.StatusInternalServerError, captureResult{
 			Heading: "Could not save",
-			Detail:  err.Error(),
+			Detail:  "The link could not be saved. Try again, or open the inbox to check.",
 		})
 	}
 }
