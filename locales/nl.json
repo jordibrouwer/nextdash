@@ -2131,6 +2131,7 @@
     "unsortedCountFiltered": "{shown} van {total}",
     "unsortedDeleteConfirm": "{count} bookmark(s) verwijderen?",
     "unsortedDeleteFailed": "De bookmarks konden niet worden verwijderd",
+    "unsortedLoadFailed": "De bewaarde links konden niet worden geladen.",
     "unsortedDeletePartial": "{count} verwijderd; {skipped} waren gewijzigd — open de weergave opnieuw",
     "unsortedDeleteTitle": "Bewaarde bookmarks verwijderen",
     "unsortedDeleted": "{count} bookmark(s) verwijderd",

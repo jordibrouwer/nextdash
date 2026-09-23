@@ -2131,6 +2131,7 @@
     "unsortedCountFiltered": "{shown} de {total}",
     "unsortedDeleteConfirm": "¿Eliminar {count} marcador(es)?",
     "unsortedDeleteFailed": "No se pudieron eliminar los marcadores",
+    "unsortedLoadFailed": "No se han podido cargar los enlaces guardados.",
     "unsortedDeletePartial": "{count} eliminados; {skipped} habían cambiado — vuelve a abrir la vista",
     "unsortedDeleteTitle": "Eliminar marcadores guardados",
     "unsortedDeleted": "{count} marcador(es) eliminado(s)",

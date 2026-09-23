@@ -2131,6 +2131,7 @@
     "unsortedCountFiltered": "{shown} / {total}",
     "unsortedDeleteConfirm": "删除 {count} 条书签？",
     "unsortedDeleteFailed": "无法删除这些书签",
+    "unsortedLoadFailed": "无法加载已保留的链接。",
     "unsortedDeletePartial": "已删除 {count} 条；{skipped} 条已变更 — 请重新打开视图",
     "unsortedDeleteTitle": "删除已保留的书签",
     "unsortedDeleted": "已删除 {count} 条书签",

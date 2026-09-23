@@ -2131,6 +2131,7 @@
     "unsortedCountFiltered": "{shown} of {total}",
     "unsortedDeleteConfirm": "Delete {count} bookmark(s)?",
     "unsortedDeleteFailed": "Could not delete the bookmarks",
+    "unsortedLoadFailed": "Could not load the kept links.",
     "unsortedDeletePartial": "Deleted {count}; {skipped} had changed — reopen the view",
     "unsortedDeleteTitle": "Delete unsorted bookmarks",
     "unsortedDeleted": "Deleted {count} bookmark(s)",

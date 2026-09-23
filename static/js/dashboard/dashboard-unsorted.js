@@ -175,6 +175,7 @@ class DashboardUnsorted {
             return;
         }
         let bookmarks = [];
+        let answered = false;
         try {
             // no-store: this reload follows writes of its own -- a tag, a
             // promote, a sweep of icons -- and a revalidated copy from the
@@ -184,9 +185,30 @@ class DashboardUnsorted {
                 const data = await res.json();
                 bookmarks = Array.isArray(data?.bookmarks) ? data.bookmarks : [];
                 d._unsortedPageId = data?.page?.id;
+                answered = true;
             }
         } catch (_error) {
-            // Falls through to the empty-state render below.
+            // Said below, not painted as an empty pile.
+        }
+        /*
+         * A request that failed and a pile with nothing in it must not look
+         * alike.
+         *
+         * Both used to end at render([]), so a 500 or a dropped connection
+         * during the background poll replaced the whole kept list with "Nothing
+         * kept yet." -- which is what someone sees after they have just filed
+         * everything, and so reads as "it worked" rather than "ask again".
+         * Nothing on screen said a request had failed.
+         *
+         * So keep what is drawn and say what happened. The next poll, or
+         * arriving on the tab again, repaints it.
+         */
+        if (!answered) {
+            d.showNotification(
+                d.formatDashboardLabel('unsortedLoadFailed', {}, 'Could not load the kept links.'),
+                'error',
+            );
+            return;
         }
         this.render(bookmarks);
     }

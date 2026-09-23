@@ -2131,6 +2131,7 @@
     "unsortedCountFiltered": "{shown} von {total}",
     "unsortedDeleteConfirm": "{count} Lesezeichen löschen?",
     "unsortedDeleteFailed": "Die Lesezeichen konnten nicht gelöscht werden",
+    "unsortedLoadFailed": "Die aufbewahrten Links konnten nicht geladen werden.",
     "unsortedDeletePartial": "{count} gelöscht; {skipped} hatten sich geändert — Ansicht neu öffnen",
     "unsortedDeleteTitle": "Behaltene Lesezeichen löschen",
     "unsortedDeleted": "{count} Lesezeichen gelöscht",

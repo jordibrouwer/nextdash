@@ -2131,6 +2131,7 @@
     "unsortedCountFiltered": "{shown} sur {total}",
     "unsortedDeleteConfirm": "Supprimer {count} signet(s) ?",
     "unsortedDeleteFailed": "Impossible de supprimer les signets",
+    "unsortedLoadFailed": "Impossible de charger les liens conservés.",
     "unsortedDeletePartial": "{count} supprimé(s) ; {skipped} avaient changé — rouvrez la vue",
     "unsortedDeleteTitle": "Supprimer les signets gardés",
     "unsortedDeleted": "{count} signet(s) supprimé(s)",
