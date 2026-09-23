@@ -65,3 +65,47 @@ func TestUnsortedWidgetKeepsOrderAndTag(t *testing.T) {
 		t.Errorf("an unknown order was accepted: %#v", got["sort"])
 	}
 }
+
+/*
+ * Reordering the grid must not erase what its widgets were told to watch.
+ *
+ * A drag sends the order and no widget list, so handlers_widgets.go writes back
+ * the widgets it just read from the store. Those come back with their lists as
+ * []string, and widgetConfigList only knew []any -- so every list on the page
+ * was refused and dropped. One drag erased the disks a Disks widget watched,
+ * the figures Containers and Health showed, and the tags Uptime and Neglected
+ * filtered by.
+ *
+ * The same round trip the handler makes, at the level the loss happened.
+ */
+func TestWidgetListsSurviveASaveOfWhatWasRead(t *testing.T) {
+	cases := []struct {
+		widgetType WidgetType
+		key        string
+		value      []any
+		want       string
+	}{
+		{WidgetTypeDisks, "mounts", []any{"/mnt/user"}, "/mnt/user"},
+		{WidgetTypeDocker, "show", []any{"running"}, "running"},
+		{WidgetTypeHealth, "show", []any{"broken"}, "broken"},
+		{WidgetTypeUptime, "tags", []any{"homelab"}, "homelab"},
+		{WidgetTypeNeglected, "tags", []any{"reading"}, "reading"},
+	}
+
+	for _, tc := range cases {
+		// As the browser sends it: a JSON array arrives as []any.
+		first := sanitizeWidgetConfig(tc.widgetType, map[string]any{tc.key: tc.value})
+		stored, ok := first[tc.key].([]string)
+		if !ok || len(stored) != 1 || stored[0] != tc.want {
+			t.Fatalf("%s.%s was not kept on the way in: %#v", tc.widgetType, tc.key, first[tc.key])
+		}
+
+		// As a reorder saves it: the value read back from the store, unchanged.
+		second := sanitizeWidgetConfig(tc.widgetType, map[string]any{tc.key: stored})
+		again, ok := second[tc.key].([]string)
+		if !ok || len(again) != 1 || again[0] != tc.want {
+			t.Errorf("%s.%s was erased by a save of what was read: %#v",
+				tc.widgetType, tc.key, second[tc.key])
+		}
+	}
+}

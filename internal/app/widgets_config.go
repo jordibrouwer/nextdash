@@ -389,8 +389,30 @@ func widgetConfigInt(raw any) (int, bool) {
 // widgetConfigList reads a bounded list of short strings, dropping blanks,
 // duplicates and anything outside the allowed set.
 func widgetConfigList(raw any, allowed []string) []string {
-	items, ok := raw.([]any)
-	if !ok {
+	/*
+	 * Both shapes, for the reason widgetConfigURLList gives: off the wire a
+	 * JSON array is []any, and read back from a widget this function has
+	 * already sanitised it is []string.
+	 *
+	 * Knowing only the first was not a hypothetical. A drag that reorders a
+	 * page sends the order and no widgets, so handlers_widgets.go writes back
+	 * the widgets it just read -- and every list on that page went through here
+	 * as []string, was refused, and was dropped. Reordering the grid erased the
+	 * disks a Disks widget watched, the figures Containers and Health showed,
+	 * and the tags Uptime and Neglected filtered by. RSS was spared only
+	 * because its addresses are a urlList, whose reader had already learned
+	 * this.
+	 */
+	var items []any
+	switch value := raw.(type) {
+	case []any:
+		items = value
+	case []string:
+		items = make([]any, 0, len(value))
+		for _, entry := range value {
+			items = append(items, entry)
+		}
+	default:
 		return nil
 	}
 	seen := map[string]struct{}{}
