@@ -88,6 +88,53 @@ test.describe('overlays hand their keys back', () => {
             .toBe(before);
     });
 
+    /*
+     * Two presses that overlap must still make one popover.
+     *
+     * The re-entrancy guard on "Move to..." is checked before the function's
+     * one await -- the fetch for the Unsorted page id, taken once per session.
+     * Two presses that both start before it resolves both find the guard clear,
+     * both append a popover, and both register a capture-phase keydown
+     * listener. Only the second is remembered, so one Escape closes one of
+     * them, and the one left over swallows Escape and the arrows for the rest
+     * of the session. Holding the key down is enough to do it.
+     */
+    test('two fast Move-to presses leave one popover and no stray listener', async ({ page }) => {
+        // Slow enough that the second press certainly lands inside the first
+        // press's fetch, which is the window the bug lives in.
+        await page.route('**/api/unsorted', async (route) => {
+            await new Promise((resolve) => setTimeout(resolve, 600));
+            await route.continue();
+        });
+
+        await load(page);
+        const before = await listeners(page);
+
+        // Shift+M acts on the selected row, so select one the way a reader does.
+        await page.keyboard.press('ArrowDown');
+        await expect
+            .poll(() => page.evaluate(
+                () => Boolean(window.dashboardInstance?.keyboardNavigation?.getSelectedBookmark?.())),
+                { timeout: 10_000 })
+            .toBe(true);
+
+        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+M');
+
+        await expect
+            .poll(() => page.locator('#move-popover').count(), { timeout: 10_000 })
+            .toBe(1);
+
+        await page.keyboard.press('Escape');
+        await expect
+            .poll(() => page.locator('#move-popover').count(), { timeout: 10_000 })
+            .toBe(0);
+
+        await expect
+            .poll(() => listeners(page), { timeout: 5_000 })
+            .toBe(before);
+    });
+
     test('search hands its keys back too', async ({ page }) => {
         await load(page);
         const before = await listeners(page);

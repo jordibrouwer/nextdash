@@ -81,7 +81,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/action-bar-autohide.js":                    "2e7f579d4cfb",
 	"js/dashboard/action-key-hint.js":                        "e7aabfb9d5e8",
 	"js/dashboard/dashboard-bookmark-interactions-loader.js": "a88dfb98096f",
-	"js/dashboard/dashboard-bookmark-rows.js":                "dd6bba492505",
+	"js/dashboard/dashboard-bookmark-rows.js":                "73d232b9e14b",
 	"js/dashboard/dashboard-category-add.js":                 "3647a618aa0c",
 	"js/dashboard/dashboard-category-menu.js":                "5b1e1d46d3f3",
 	"js/dashboard/dashboard-category-sort.js":                "7d10f5238753",
