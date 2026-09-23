@@ -141,7 +141,9 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, header, err := r.FormFile("icon")
+	// The name the browser sent is deliberately not read: what the file is
+	// called decides nothing here any more.
+	file, _, err := r.FormFile("icon")
 	if err != nil {
 		http.Error(w, "Error retrieving file", http.StatusBadRequest)
 		return
@@ -170,31 +172,33 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 		ext = ".webp"
 	case "image/svg+xml":
 		ext = ".svg"
-		// Strip <script> blocks and event-handler attributes from SVG
-		data = sanitizeSVGContent(data)
 	default:
 		http.Error(w, "Invalid file type. Only ico, png, jpg, gif, webp, svg allowed", http.StatusBadRequest)
 		return
 	}
 
-	if err := os.MkdirAll(filepath.Join(ResolveDataDir(), "icons"), 0755); err != nil {
-		http.Error(w, "Unable to create directory", http.StatusInternalServerError)
+	/*
+	 * Named for nothing but chance, through the same helper the favicon
+	 * prefetcher uses -- which also strips <script> and event handlers out of
+	 * an SVG, so that no longer has to be remembered here.
+	 *
+	 * The browser's filename used to be kept, with "..", "/" and "\\" stripped
+	 * out of it. No traversal was reachable, but two consequences were. Two
+	 * bookmarks given different pictures both called icon.png meant the second
+	 * overwrote the first. And /data/icons/ is served with a year-long
+	 * immutable cache entry on the stated premise that these names carry random
+	 * bytes and are never rewritten -- true of the prefetcher's names, and not
+	 * of anything that came through here. A replaced icon was invisible to
+	 * every browser that had already seen the old one, reload or no reload.
+	 */
+	fileName, err := saveIconBytes(data, ext)
+	if err != nil {
+		http.Error(w, "Unable to save file", http.StatusInternalServerError)
 		return
 	}
-
-	// Sanitize filename: strip path traversal characters
-	baseName := strings.TrimSuffix(header.Filename, filepath.Ext(header.Filename))
-	baseName = strings.ReplaceAll(baseName, "..", "")
-	baseName = strings.ReplaceAll(baseName, "/", "")
-	baseName = strings.ReplaceAll(baseName, "\\", "")
-
-	fileName := baseName + ext
-	if strings.TrimSpace(baseName) == "" {
-		fileName = "icon-" + randomHex(8) + ext
-	}
-	filePath := filepath.Join(ResolveDataDir(), "icons", fileName)
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		http.Error(w, "Unable to save file", http.StatusInternalServerError)
+	if fileName == "" {
+		// An SVG that was nothing but script has no picture left in it.
+		http.Error(w, "Invalid file type. Only ico, png, jpg, gif, webp, svg allowed", http.StatusBadRequest)
 		return
 	}
 

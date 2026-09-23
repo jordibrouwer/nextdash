@@ -26,7 +26,10 @@ func TestDataFileRouteServesOnlyWhatItNames(t *testing.T) {
 	}
 	write("preview-images/pi-abc123.png", "png bytes")
 	write("preview-images/nested/deep.png", "png bytes")
-	write("icons/icon-abc.png", "png bytes")
+	write("icons/icon-0123456789abcdef.png", "png bytes")
+	// What an older version wrote: an upload kept the browser's own filename,
+	// and those are overwritten in place when the same name comes back.
+	write("icons/logo.png", "png bytes")
 	write("settings.json", `{"secret":true}`)
 
 	handler := dataFileHandler(dir)
@@ -39,8 +42,13 @@ func TestDataFileRouteServesOnlyWhatItNames(t *testing.T) {
 		// Named for the source URL, so the same address is rewritten in place
 		// when a site changes its og:image -- it must revalidate.
 		{"/data/preview-images/pi-abc123.png", http.StatusOK, "public, max-age=300"},
-		// Icon names carry 8 random bytes and are never rewritten, so they freeze.
-		{"/data/icons/icon-abc.png", http.StatusOK, "public, max-age=31536000, immutable"},
+		// A generated icon name carries 8 random bytes and is never written
+		// twice, so it freezes.
+		{"/data/icons/icon-0123456789abcdef.png", http.StatusOK, "public, max-age=31536000, immutable"},
+		// A name from before uploads were content-addressed can be rewritten in
+		// place, so freezing it would hide the replacement for a year -- past a
+		// reload, too. It revalidates instead.
+		{"/data/icons/logo.png", http.StatusOK, "public, max-age=300"},
 		{"/data/preview-images/nested/deep.png", http.StatusNotFound, ""},
 		{"/data/preview-images/", http.StatusNotFound, ""},
 		{"/data/settings.json", http.StatusNotFound, ""},

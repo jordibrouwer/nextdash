@@ -11,7 +11,21 @@ import (
 	"testing"
 )
 
-func TestUploadIconOverwritesExistingFile(t *testing.T) {
+/*
+An upload does not overwrite whatever happens to share its name.
+
+This test used to assert the opposite -- that posting site.png replaced an
+existing site.png -- which was the behaviour, not a decision: nothing anywhere
+argued for it, and two consequences followed. Two bookmarks given different
+pictures both called icon.png meant the second silently replaced the first. And
+/data/icons/ is served with a year-long immutable cache entry on the stated
+premise that these names are never rewritten, so a replacement was invisible to
+any browser that had already seen the old one, reload or no reload.
+
+Uploads are now named the way the favicon prefetcher names what it fetches, and
+the old file stays until the orphan sweep takes it.
+*/
+func TestUploadIconLeavesAnUnrelatedFileAlone(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 	t.Setenv("NEXTDASH_DATA_DIR", tmp)
@@ -20,8 +34,8 @@ func TestUploadIconOverwritesExistingFile(t *testing.T) {
 	if err := os.MkdirAll(iconsDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	iconPath := filepath.Join(iconsDir, "site.png")
-	if err := os.WriteFile(iconPath, []byte("old"), 0644); err != nil {
+	existing := filepath.Join(iconsDir, "site.png")
+	if err := os.WriteFile(existing, []byte("old"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -49,20 +63,27 @@ func TestUploadIconOverwritesExistingFile(t *testing.T) {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
 	}
 
-	got, err := os.ReadFile(iconPath)
+	untouched, err := os.ReadFile(existing)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Equal(got, png) {
-		t.Fatalf("file not overwritten: got %q, want PNG header bytes", got)
+	if string(untouched) != "old" {
+		t.Errorf("site.png was overwritten: got %q", untouched)
 	}
 
 	var resp map[string]string
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatal(err)
 	}
-	if resp["icon"] != "site.png" {
-		t.Fatalf("icon = %q, want site.png", resp["icon"])
+	if resp["icon"] == "site.png" || resp["icon"] == "" {
+		t.Fatalf("icon = %q, want a generated name", resp["icon"])
+	}
+	stored, err := os.ReadFile(filepath.Join(iconsDir, resp["icon"]))
+	if err != nil {
+		t.Fatalf("read %s: %v", resp["icon"], err)
+	}
+	if !bytes.Equal(stored, png) {
+		t.Errorf("%s does not hold what was uploaded", resp["icon"])
 	}
 }
 
