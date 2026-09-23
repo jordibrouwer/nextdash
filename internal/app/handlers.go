@@ -1166,6 +1166,21 @@ type htmlPageData struct {
 	// when the What's new index cannot be read.
 	ReleaseTag string
 
+	/*
+	 * The name of the page this request will land on, for the <title>.
+	 *
+	 * The template said "Dashboard" and dashboard-page-nav.js corrected it once
+	 * the scripts had run -- so a new tab, a bookmark of the dashboard and the
+	 * PWA all caught the generic name first, and whatever was bookmarked kept
+	 * it. Rendering it here means the first paint already says what this is.
+	 *
+	 * The landing page, not necessarily the page shown: a deep link like /#3
+	 * picks its page from the hash, which a server never sees. The script
+	 * corrects that the way it always did; what changes is what is on screen
+	 * until it does.
+	 */
+	LandingPageName string
+
 	// Umami analytics (privacy-friendly, opt-out). Fixed id + host for the
 	// project's shared instance. The template emits the tracker only when
 	// AnalyticsContentJSON is the bucketable size of this install, as JSON on
@@ -1208,7 +1223,20 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		AnalyticsContentJSON: h.analyticsContentJSON(analyticsEnabled(settings)),
 		TelemetryLockedOff:   telemetryDisabledByEnv(),
 		UpdateCheckLockedOff: updateCheckDisabledByEnv(),
+		LandingPageName:      h.landingPageName(),
 	}
+}
+
+// landingPageName is the first page a plain request opens on: the same one
+// dashboard-data.js takes, which is pages[0] once the hidden ones are out.
+func (h *Handlers) landingPageName() string {
+	for _, page := range h.store.GetPages() {
+		if page.Hidden {
+			continue
+		}
+		return strings.TrimSpace(page.Name)
+	}
+	return ""
 }
 
 func (h *Handlers) allowLocalBookmarks() bool {
