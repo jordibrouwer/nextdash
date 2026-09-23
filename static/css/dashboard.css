@@ -2898,7 +2898,25 @@ body.layout-locked .category-reorder-handle {
     white-space: nowrap;
 }
 
+/*
+ * inline-block is what makes everything under it work, and the fit besides.
+ *
+ * This is a span, and an inline box has no width of its own: overflow and
+ * text-overflow are ignored on one, and scrollWidth and clientWidth both read
+ * 0. dashboard-category-title-fit.js decides whether to step the font down or
+ * wrap to two lines by measuring exactly those, so it measured nothing, and
+ * every title was left at full size to run past its column until
+ * .category-title-label's overflow: hidden cut it mid-word with no ellipsis --
+ * "unknown category (testing)" read as "unknown category (testi".
+ *
+ * inline-block rather than block, which would be just as wrong the other way:
+ * a block fills its container, so every name would measure as exactly too wide
+ * and every title in the grid would shrink to the floor and wrap. The width has
+ * to be the text's own, and max-width keeps it inside the column.
+ */
 .category-title-name {
+    display: inline-block;
+    max-width: 100%;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
