@@ -2904,6 +2904,7 @@
     "webhookEventBookmarkDeleted": "Een bookmark verdwijnt",
     "webhookEventHealthDown": "Een bewaakte bookmark valt uit",
     "webhookEventHealthUp": "Een bewaakte bookmark komt terug",
+    "webhookEventHealthCertExpiring": "Een TLS-certificaat verloopt binnenkort",
     "webhookEnabledLabel": "Naar deze ontvanger versturen",
     "webhookSave": "Opslaan",
     "webhookTest": "Test versturen",

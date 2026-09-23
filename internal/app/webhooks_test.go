@@ -439,3 +439,78 @@ func TestALocalAddressIsRefusedUnlessTheInstallAllowsThem(t *testing.T) {
 		t.Errorf("an ftp receiver was accepted with HTTP %d", res.Code)
 	}
 }
+
+/*
+ * A certificate about to expire reaches a webhook.
+ *
+ * health_notify.go has classified three events since certificates were
+ * watched -- down, up and cert-expiring -- and the dispatch published only the
+ * first two. So the one alert that comes with weeks of warning was also the
+ * only one that could not leave the app: browser push carried it under the
+ * monitor toggle, a webhook receiver never saw it.
+ */
+func TestCertExpiringIsAPublishedWebhookEvent(t *testing.T) {
+	found := false
+	for _, name := range webhookEventNames {
+		if name == webhookEventHealthCertExpiring {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("%q is not in webhookEventNames, so it cannot be subscribed to: %v",
+			webhookEventHealthCertExpiring, webhookEventNames)
+	}
+	// The name is a published interface; a receiver filters on this string.
+	if webhookEventHealthCertExpiring != "health.cert-expiring" {
+		t.Errorf("event name = %q, want health.cert-expiring", webhookEventHealthCertExpiring)
+	}
+}
+
+/*
+ * And a cert-expiring notification actually reaches a receiver subscribed to it.
+ *
+ * The constant existing is not the same as the dispatch emitting it: the switch
+ * in health_notify.go had a case for "down" and one for "up" and fell through
+ * on the third event it classifies.
+ */
+func TestCertExpiringReachesASubscribedWebhook(t *testing.T) {
+	delivered := make(chan []byte, 2)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		delivered <- body
+	}))
+	defer server.Close()
+
+	// The handlers first: healthRecheckTestHandlers points NEXTDASH_DATA_DIR at
+	// its own directory, and the endpoint has to be saved into that one or the
+	// dispatch reads a register that does not hold it.
+	h, _ := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true}`)
+
+	if _, err := saveWebhookEndpoint("certs", WebhookEndpoint{
+		URL: server.URL + "/certs", Enabled: true,
+		Events: []string{webhookEventHealthCertExpiring},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	defer webhookAllowLocalForTest(true)()
+	h.dispatchMonitorNotifications(context.Background(), []monitorNotification{{
+		Event:  "cert-expiring",
+		Name:   "example.com",
+		URL:    "https://example.com",
+		Status: "warning",
+		Error:  "TLS certificate expires in 7 days",
+		At:     time.Now().UnixMilli(),
+	}})
+
+	select {
+	case body := <-delivered:
+		if !strings.Contains(string(body), "cert-expiring") {
+			t.Errorf("payload does not name the event: %s", body)
+		}
+		if !strings.Contains(string(body), "example.com") {
+			t.Errorf("payload does not name the bookmark: %s", body)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("a certificate expiring never reached the receiver subscribed to it")
+	}
+}

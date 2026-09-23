@@ -2904,6 +2904,7 @@
     "webhookEventBookmarkDeleted": "Se quita un marcador",
     "webhookEventHealthDown": "Se cae un marcador vigilado",
     "webhookEventHealthUp": "Vuelve un marcador vigilado",
+    "webhookEventHealthCertExpiring": "Un certificado TLS está a punto de caducar",
     "webhookEnabledLabel": "Enviar a este receptor",
     "webhookSave": "Guardar",
     "webhookTest": "Enviar una prueba",

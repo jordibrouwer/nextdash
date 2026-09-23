@@ -2904,6 +2904,7 @@
     "webhookEventBookmarkDeleted": "移除了一个书签",
     "webhookEventHealthDown": "某个监控中的书签离线了",
     "webhookEventHealthUp": "某个监控中的书签恢复了",
+    "webhookEventHealthCertExpiring": "TLS 证书即将到期",
     "webhookEnabledLabel": "发送给这个接收方",
     "webhookSave": "保存",
     "webhookTest": "发一条测试",

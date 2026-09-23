@@ -312,6 +312,8 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 			emitWebhookEvent(webhookEventHealthDown, monitorNotificationFields(n))
 		case "up":
 			emitWebhookEvent(webhookEventHealthUp, monitorNotificationFields(n))
+		case "cert-expiring":
+			emitWebhookEvent(webhookEventHealthCertExpiring, monitorNotificationFields(n))
 		}
 	}
 

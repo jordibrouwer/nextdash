@@ -2904,6 +2904,7 @@
     "webhookEventBookmarkDeleted": "Un signet est supprimé",
     "webhookEventHealthDown": "Un signet surveillé tombe",
     "webhookEventHealthUp": "Un signet surveillé revient",
+    "webhookEventHealthCertExpiring": "Un certificat TLS arrive à expiration",
     "webhookEnabledLabel": "Envoyer à ce destinataire",
     "webhookSave": "Enregistrer",
     "webhookTest": "Envoyer un test",

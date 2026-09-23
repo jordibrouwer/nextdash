@@ -5259,6 +5259,8 @@ class DashboardConfig {
             'bookmark.deleted': this.t('config.webhookEventBookmarkDeleted', 'A bookmark is removed'),
             'health.down': this.t('config.webhookEventHealthDown', 'A monitored bookmark goes down'),
             'health.up': this.t('config.webhookEventHealthUp', 'A monitored bookmark comes back'),
+            'health.cert-expiring': this.t('config.webhookEventHealthCertExpiring',
+                'A TLS certificate is about to expire'),
         };
         const boxes = (this._webhookEvents || Object.keys(labels)).map((name) => `
             <label class="config-check">

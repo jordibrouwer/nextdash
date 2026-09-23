@@ -2904,6 +2904,7 @@
     "webhookEventBookmarkDeleted": "A bookmark is removed",
     "webhookEventHealthDown": "A monitored bookmark goes down",
     "webhookEventHealthUp": "A monitored bookmark comes back",
+    "webhookEventHealthCertExpiring": "A TLS certificate is about to expire",
     "webhookEnabledLabel": "Send to this receiver",
     "webhookSave": "Save",
     "webhookTest": "Send a test",

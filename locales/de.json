@@ -2904,6 +2904,7 @@
     "webhookEventBookmarkDeleted": "Ein Lesezeichen verschwindet",
     "webhookEventHealthDown": "Ein überwachtes Lesezeichen fällt aus",
     "webhookEventHealthUp": "Ein überwachtes Lesezeichen kommt zurück",
+    "webhookEventHealthCertExpiring": "Ein TLS-Zertifikat läuft demnächst ab",
     "webhookEnabledLabel": "An diesen Empfänger senden",
     "webhookSave": "Speichern",
     "webhookTest": "Test senden",
