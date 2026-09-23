@@ -194,15 +194,28 @@ var captureResultPage = template.Must(template.New("capture").Parse(`<!doctype h
 <body><main>
  <h1>{{.Heading}}</h1>
  <p>{{.Detail}}</p>
- <p><a href="/#inbox">Open the inbox</a></p>
+ <p><a href="/#inbox">{{.InboxLink}}</a></p>
 </main></body></html>`))
 
 type captureResult struct {
 	Heading string
 	Detail  string
+	// InboxLink is the way back, and the only string on this page that is the
+	// same whatever happened.
+	InboxLink string
 }
 
+/*
+writeCaptureResult answers the bookmarklet with a page.
+
+This is the one surface the reader meets that no script ever touches -- the
+bookmarklet lands here and there is nothing to fetch a locale file -- so the
+strings are read on the server instead. It was English whatever the install was
+set to, in a product that holds six locales in exact parity, and it is also the
+only place a capture failure is explained.
+*/
 func (h *Handlers) writeCaptureResult(w http.ResponseWriter, status int, result captureResult) {
+	result.InboxLink = h.text("others.captureOpenInbox", "Open the inbox")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
@@ -215,8 +228,9 @@ func (h *Handlers) AddCapture(w http.ResponseWriter, r *http.Request) {
 	if !captureAccessAllowed(r) {
 		logAuthDenied(r, "capture_token_missing")
 		h.writeCaptureResult(w, http.StatusUnauthorized, captureResult{
-			Heading: "Not saved",
-			Detail:  "This nextDash needs a capture token. Add ?token=… to the bookmarklet.",
+			Heading: h.text("others.captureDeniedHeading", "Not saved"),
+			Detail: h.text("others.captureDeniedDetail",
+				"This nextDash needs a capture token. Add ?token=… to the bookmarklet."),
 		})
 		return
 	}
@@ -224,8 +238,8 @@ func (h *Handlers) AddCapture(w http.ResponseWriter, r *http.Request) {
 	target := firstHTTPURL(q.Get("url"), q.Get("text"), q.Get("title"))
 	if target == "" {
 		h.writeCaptureResult(w, http.StatusBadRequest, captureResult{
-			Heading: "Nothing to save",
-			Detail:  "No web address was found in what was sent.",
+			Heading: h.text("others.captureNoUrlHeading", "Nothing to save"),
+			Detail:  h.text("others.captureNoUrlDetail", "No web address was found in what was sent."),
 		})
 		return
 	}
@@ -239,32 +253,30 @@ func (h *Handlers) AddCapture(w http.ResponseWriter, r *http.Request) {
 			name = created.URL
 		}
 		h.writeCaptureResult(w, http.StatusOK, captureResult{
-			Heading: "Saved to the inbox",
+			Heading: h.text("others.captureSavedHeading", "Saved to the inbox"),
 			Detail:  name,
 		})
 	case errors.Is(err, ErrInboxDuplicateURL):
 		h.writeCaptureResult(w, http.StatusOK, captureResult{
-			Heading: "Already in the inbox",
+			Heading: h.text("others.captureDuplicateHeading", "Already in the inbox"),
 			Detail:  target,
 		})
 	case errors.Is(err, ErrInboxAtCapacity):
 		h.writeCaptureResult(w, http.StatusConflict, captureResult{
-			Heading: "Inbox is full",
-			Detail:  "Clear some links and try again.",
+			Heading: h.text("others.captureFullHeading", "Inbox is full"),
+			Detail:  h.text("others.captureFullDetail", "Clear some links and try again."),
 		})
 	default:
-		/*
-		 * The reason, not the error.
-		 *
-		 * err.Error() put internal text on a page anyone holding the
-		 * bookmarklet can reach, and said nothing a reader could act on --
-		 * Scan 2 flagged this route for it. The detail belongs in the log,
-		 * which is where somebody who can act on it is looking.
-		 */
+		// Said here, because the page no longer says it. Dropping err.Error()
+		// from the answer must not drop the reason altogether.
 		logWarn(logComponentMutate, "a captured link could not be saved (%v)", err)
 		h.writeCaptureResult(w, http.StatusInternalServerError, captureResult{
-			Heading: "Could not save",
-			Detail:  "The link could not be saved. Try again, or open the inbox to check.",
+			Heading: h.text("others.captureFailedHeading", "Could not save"),
+			// The reason, not the error: err.Error() put internal text on a page
+			// anyone with the bookmarklet can reach, and said nothing a reader
+			// could act on. The log still carries the detail.
+			Detail: h.text("others.captureFailedDetail",
+				"The link could not be saved. Try again, or open the inbox to check."),
 		})
 	}
 }

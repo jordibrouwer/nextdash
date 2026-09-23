@@ -5898,7 +5898,18 @@
   "others": {
     "yes": "Ja",
     "no": "Nein",
-    "undone": "Rückgängig gemacht."
+    "undone": "Rückgängig gemacht.",
+    "captureOpenInbox": "Posteingang öffnen",
+    "captureDeniedHeading": "Nicht gespeichert",
+    "captureDeniedDetail": "Dieses nextDash verlangt ein Capture-Token. Hänge ?token=… an das Bookmarklet an.",
+    "captureNoUrlHeading": "Nichts zu speichern",
+    "captureNoUrlDetail": "In dem Gesendeten war keine Webadresse.",
+    "captureSavedHeading": "Im Posteingang gespeichert",
+    "captureDuplicateHeading": "Schon im Posteingang",
+    "captureFullHeading": "Posteingang ist voll",
+    "captureFullDetail": "Räume ein paar Links auf und versuche es erneut.",
+    "captureFailedHeading": "Speichern fehlgeschlagen",
+    "captureFailedDetail": "Der Link konnte nicht gespeichert werden. Versuche es erneut oder sieh im Posteingang nach."
   },
   "bookmark": {
     "noteLabel": "Notiz",

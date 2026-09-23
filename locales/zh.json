@@ -5898,7 +5898,18 @@
   "others": {
     "yes": "是",
     "no": "否",
-    "undone": "已撤销。"
+    "undone": "已撤销。",
+    "captureOpenInbox": "打开收件箱",
+    "captureDeniedHeading": "未保存",
+    "captureDeniedDetail": "此 nextDash 需要捕获令牌。请在书签小工具后加上 ?token=…。",
+    "captureNoUrlHeading": "没有可保存的内容",
+    "captureNoUrlDetail": "发送的内容里没有网址。",
+    "captureSavedHeading": "已保存到收件箱",
+    "captureDuplicateHeading": "已在收件箱中",
+    "captureFullHeading": "收件箱已满",
+    "captureFullDetail": "清理一些链接后再试。",
+    "captureFailedHeading": "无法保存",
+    "captureFailedDetail": "链接无法保存。请重试，或打开收件箱查看。"
   },
   "bookmark": {
     "noteLabel": "备注",

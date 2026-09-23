@@ -5898,7 +5898,18 @@
   "others": {
     "yes": "Oui",
     "no": "Non",
-    "undone": "Annulé."
+    "undone": "Annulé.",
+    "captureOpenInbox": "Ouvrir la boîte de réception",
+    "captureDeniedHeading": "Non enregistré",
+    "captureDeniedDetail": "Ce nextDash demande un jeton de capture. Ajoutez ?token=… au bookmarklet.",
+    "captureNoUrlHeading": "Rien à enregistrer",
+    "captureNoUrlDetail": "Aucune adresse web dans ce qui a été envoyé.",
+    "captureSavedHeading": "Enregistré dans la boîte de réception",
+    "captureDuplicateHeading": "Déjà dans la boîte de réception",
+    "captureFullHeading": "Boîte de réception pleine",
+    "captureFullDetail": "Videz quelques liens et réessayez.",
+    "captureFailedHeading": "Enregistrement impossible",
+    "captureFailedDetail": "Le lien n’a pas pu être enregistré. Réessayez, ou ouvrez la boîte de réception."
   },
   "bookmark": {
     "noteLabel": "Note",

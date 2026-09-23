@@ -5898,7 +5898,18 @@
   "others": {
     "yes": "Yes",
     "no": "No",
-    "undone": "Undone."
+    "undone": "Undone.",
+    "captureOpenInbox": "Open the inbox",
+    "captureDeniedHeading": "Not saved",
+    "captureDeniedDetail": "This nextDash needs a capture token. Add ?token=… to the bookmarklet.",
+    "captureNoUrlHeading": "Nothing to save",
+    "captureNoUrlDetail": "No web address was found in what was sent.",
+    "captureSavedHeading": "Saved to the inbox",
+    "captureDuplicateHeading": "Already in the inbox",
+    "captureFullHeading": "Inbox is full",
+    "captureFullDetail": "Clear some links and try again.",
+    "captureFailedHeading": "Could not save",
+    "captureFailedDetail": "The link could not be saved. Try again, or open the inbox to check."
   },
   "bookmark": {
     "noteLabel": "Note",

@@ -5898,7 +5898,18 @@
   "others": {
     "yes": "Sí",
     "no": "No",
-    "undone": "Deshecho."
+    "undone": "Deshecho.",
+    "captureOpenInbox": "Abrir la bandeja de entrada",
+    "captureDeniedHeading": "No se ha guardado",
+    "captureDeniedDetail": "Este nextDash necesita un token de captura. Añade ?token=… al bookmarklet.",
+    "captureNoUrlHeading": "Nada que guardar",
+    "captureNoUrlDetail": "No se ha encontrado ninguna dirección web en lo enviado.",
+    "captureSavedHeading": "Guardado en la bandeja de entrada",
+    "captureDuplicateHeading": "Ya está en la bandeja de entrada",
+    "captureFullHeading": "La bandeja de entrada está llena",
+    "captureFullDetail": "Libera algunos enlaces e inténtalo de nuevo.",
+    "captureFailedHeading": "No se ha podido guardar",
+    "captureFailedDetail": "El enlace no se ha podido guardar. Inténtalo de nuevo o abre la bandeja de entrada."
   },
   "bookmark": {
     "noteLabel": "Nota",

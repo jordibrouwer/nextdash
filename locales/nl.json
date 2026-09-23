@@ -5898,7 +5898,18 @@
   "others": {
     "yes": "Ja",
     "no": "Nee",
-    "undone": "Ongedaan gemaakt."
+    "undone": "Ongedaan gemaakt.",
+    "captureOpenInbox": "Open de inbox",
+    "captureDeniedHeading": "Niet opgeslagen",
+    "captureDeniedDetail": "Deze nextDash vraagt om een capture-token. Zet ?token=… achter de bookmarklet.",
+    "captureNoUrlHeading": "Niets om op te slaan",
+    "captureNoUrlDetail": "In wat er verstuurd is, stond geen webadres.",
+    "captureSavedHeading": "Opgeslagen in de inbox",
+    "captureDuplicateHeading": "Staat al in de inbox",
+    "captureFullHeading": "Inbox is vol",
+    "captureFullDetail": "Ruim wat links op en probeer het opnieuw.",
+    "captureFailedHeading": "Opslaan lukte niet",
+    "captureFailedDetail": "De link kon niet worden opgeslagen. Probeer het opnieuw, of kijk in de inbox."
   },
   "bookmark": {
     "noteLabel": "Notitie",
