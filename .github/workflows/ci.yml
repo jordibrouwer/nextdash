@@ -24,6 +24,31 @@ jobs:
       # being collected into. They cost seconds; the silence cost a release.
       - name: Run node unit tests
         run: npm run test:news-stream && npm run test:analytics-buckets && npm run test:search-groups
+      # Eleven checks the repo already had and nothing ran. They are the
+      # mechanism Scan 2's N5 asked for, left unplugged -- locale parity is held
+      # by hand at 6011 keys across six files, and the v1.11.0 changelog even
+      # says validate-tag-patterns "runs in CI", which it did not.
+      #
+      # Listed one per line rather than chained with &&, so a failure names
+      # itself in the step that broke instead of in one long command.
+      - name: Validate the cheat sheet
+        run: npm run validate:cheatsheet-registry && npm run validate:cheatsheet-i18n
+      - name: Validate help translations
+        run: npm run validate:help-i18n
+      - name: Validate locale parity
+        run: npm run validate:locale-parity
+      - name: Validate locale duplicates
+        run: npm run validate:locale-duplicates
+      - name: Validate locale placeholders
+        run: npm run validate:locale-placeholders
+      - name: Validate documentation links
+        run: npm run validate:doc-links
+      - name: Validate the overview feature list
+        run: npm run validate:overview-features
+      - name: Validate tag patterns
+        run: npm run validate:tag-patterns
+      - name: Run the model unit tests
+        run: npm run test:workbench-model && npm run test:config-split
 
   go-test:
     runs-on: ubuntu-latest
