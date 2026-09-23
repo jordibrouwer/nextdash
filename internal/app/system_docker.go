@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -54,15 +55,36 @@ type DockerMetrics struct {
 	RestartedNames []string `json:"restartedNames,omitempty"`
 }
 
+/*
+dockerClientFor hands back the client for this socket, building it once.
+
+The socket comes from NEXTDASH_DOCKER_SOCKET and does not change while the
+process runs, but this was building a fresh client and transport on every
+metrics read -- which the floor allows as often as once every two seconds, for
+as long as a dashboard is open. Each one kept its connection and the goroutine
+behind it until the daemon hung up.
+
+Keyed rather than kept in a single variable so a test can ask for another socket
+without inheriting the first one's client. The set of keys is whatever this
+process was configured with, not anything a request can name.
+*/
+var dockerClients sync.Map
+
 func dockerClientFor(socket string) *http.Client {
-	return &http.Client{
+	if cached, ok := dockerClients.Load(socket); ok {
+		return cached.(*http.Client)
+	}
+	client := &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 				return (&net.Dialer{}).DialContext(ctx, "unix", socket)
 			},
+			IdleConnTimeout: 30 * time.Second,
 		},
 		Timeout: 5 * time.Second,
 	}
+	actual, _ := dockerClients.LoadOrStore(socket, client)
+	return actual.(*http.Client)
 }
 
 // containerName strips the leading slash Docker puts on every name.

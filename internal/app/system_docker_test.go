@@ -172,3 +172,31 @@ func TestDockerUnavailableWhenSocketMissing(t *testing.T) {
 		t.Fatal("an unavailable source must not report counts")
 	}
 }
+
+/*
+ * One client per socket, not one per reading.
+ *
+ * This built a fresh client and transport on every metrics read, which the
+ * floor allows as often as once every two seconds for as long as a dashboard is
+ * open. Each one held its connection, and the goroutine behind it, until the
+ * daemon hung up.
+ */
+func TestDockerClientIsBuiltOncePerSocket(t *testing.T) {
+	first := dockerClientFor("/var/run/probe-a.sock")
+	again := dockerClientFor("/var/run/probe-a.sock")
+	other := dockerClientFor("/var/run/probe-b.sock")
+
+	if first != again {
+		t.Error("two reads of the same socket built two clients")
+	}
+	if first == other {
+		t.Error("a different socket was given the first socket's client")
+	}
+	transport, ok := first.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("transport is %T, want *http.Transport", first.Transport)
+	}
+	if transport.IdleConnTimeout == 0 {
+		t.Error("an idle connection to the daemon is never given up")
+	}
+}
