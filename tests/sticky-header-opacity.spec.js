@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, markConfigSettingPromosSeen } = require('./e2e-helpers');
 
 /**
  * The band goes solid once the page moves under it.
@@ -20,6 +20,17 @@ async function open(page, view) {
     await dismissBlockingOverlays(page);
     if (view === 'config') {
         await waitForConfigReady(page);
+        /*
+         * The setting promo is what moved the page under the band.
+         *
+         * Opening a config section schedules a promo balloon 500ms later, and
+         * showing one calls scrollIntoView({ block: 'center' }) on its anchor
+         * field -- appearance has `random-theme-v2`, which lands at y=253.
+         * That is after any wait for the page to settle has finished, so the
+         * band was read scrolled through no fault of the rule under test.
+         * Marked seen, the way every other config spec does it.
+         */
+        await markConfigSettingPromosSeen(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.waitForSelector('.config-view', { timeout: 20_000 });
     } else if (view === 'health') {

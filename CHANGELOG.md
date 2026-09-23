@@ -362,9 +362,12 @@ hovered its tab first, and a kept pile that looked empty when a request failed.
   very bottom of the page, where no scroll position can hold anything: the
   document grows and there is nowhere left to go. Measured with room on both
   sides it drifts a pixel, and 141px with the anchor switched off. The sticky
-  header test read the band while a late restore was still scrolling the page;
-  it waits for the page to hold still now, which was checked by reproducing the
-  failure rather than by assuming it.
+  header test read the band while something else was still scrolling the page.
+  Instrumenting `scrollTo` and `scrollIntoView` named it: opening a config
+  section schedules a setting promo half a second later, and showing one centres
+  its anchor field -- appearance lands at y=253, after any wait for the page to
+  settle has finished. The test marks the promos seen, the way every other
+  config spec does, and now passes four runs out of four where it failed three.
 
 ---
 
