@@ -150,9 +150,17 @@ test('the popover keeps clear of the sticky header when it can', async ({ page }
     expect(popTop).toBeGreaterThan(bandBottom);
 });
 
-// A window too low for the popover under the band: it reaches over it.
+/*
+ * A window too low for the popover under the band: it reaches over it.
+ *
+ * The height is tied to how tall the popover is, so it needs checking when the
+ * panel grows a control: at 440 the popover fits under the header again and
+ * this test then passes its assertion while proving nothing, which is what the
+ * setup check below is for. Measured: it starts crossing at about 360 and
+ * overlaps the header by roughly 40px here.
+ */
 test('a popover crossing the sticky header draws above it', async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 440 });
+    await page.setViewportSize({ width: 1200, height: 320 });
     await openLogsWithGlass(page);
     const gearBtn = page.locator('[data-log-settings-toggle]');
     await gearBtn.scrollIntoViewIfNeeded();

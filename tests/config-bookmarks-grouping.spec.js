@@ -74,8 +74,15 @@ test.describe('groups in the bookmark list', () => {
         expect(img.y + img.height).toBeLessThanOrEqual(cell.y + cell.height + 0.5);
     });
 
+    /*
+     * The tag column is capped at 6rem by design — the columns right of the
+     * title are capped so the name keeps the slack — so what fits is one short
+     * chip beside the counter, not several long ones. The first tag here is
+     * short on purpose: with eight long ones nothing fits at all, which is the
+     * case below rather than this one.
+     */
     test('tags that do not fit are counted, never cut', async ({ page }) => {
-        const tags = ['networking', 'observability', 'homelab-services', 'documentation',
+        const tags = ['db', 'observability', 'homelab-services', 'documentation',
             'infrastructure', 'automation', 'dashboards', 'monitoring'];
         // Wide enough for the tag column to reach its full width.
         await page.setViewportSize({ width: 1600, height: 800 });
@@ -100,6 +107,24 @@ test.describe('groups in the bookmark list', () => {
         expect(layout.shown).toBeGreaterThanOrEqual(1);
         expect(layout.shown + n).toBe(tags.length);
         expect(layout.overflow).toBe(false);
+    });
+
+    // And when not even one fits, the counter carries them all rather than a
+    // chip being cut off at the edge of the column.
+    test('when nothing fits, everything is counted', async ({ page }) => {
+        const tags = ['observability', 'homelab-services', 'documentation', 'infrastructure'];
+        await page.setViewportSize({ width: 1600, height: 800 });
+        await openBookmarksWithRows(page, [
+            { name: 'Tagged', url: 'https://tagged.example', pageId: 1, tags },
+        ]);
+        const cell = page.locator('#config-bm-list .config-bm-row').first().locator('.config-bm-tags');
+        const more = cell.locator('.config-bm-tag--more');
+        await expect(more).toHaveText(`+${tags.length}`);
+        const overflow = await cell.evaluate((el) => {
+            const box = el.getBoundingClientRect();
+            return el.querySelector('.config-bm-tag--more').getBoundingClientRect().right > box.right + 0.5;
+        });
+        expect(overflow, 'the counter itself runs past the column').toBe(false);
     });
 
     test('select group ticks the whole group', async ({ page }) => {

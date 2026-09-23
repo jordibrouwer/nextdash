@@ -175,8 +175,11 @@ test('every special in the schema is one setBehavior actually handles', async ({
     // repaints the sample card beside the checklist, which every one of the
     // three preview fields has to do.
     // `siteNews` drops or refetches the overview's news stream, both directions.
+    // `search` hands the search component a new pool: it keeps its own copy,
+    // built when the data loads, so a setting that decides what goes into that
+    // pool takes effect on the next reload and looks like it did nothing.
     const handled = ['language', 'datetime', 'chrome', 'chromeRender', 'render', 'shortcutTooltips',
-        'visual', 'feeds', 'previewCard', 'siteNews'];
+        'visual', 'feeds', 'previewCard', 'siteNews', 'search'];
     expect(used.length).toBeGreaterThan(3);
     expect(used.filter((s) => !handled.includes(s))).toEqual([]);
 });

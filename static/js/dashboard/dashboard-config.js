@@ -26902,6 +26902,27 @@ class DashboardConfig {
                 ],
             },
         ],
+        /*
+         * The Kept tab is a branch in the queue, not a step after it: a link
+         * either goes on a page or waits here, and it waits without staying in
+         * the queue. Drawn as the branch it is, with the key that takes it.
+         */
+        'config.helpInboxKeptTitle': [
+            {
+                kind: 'keys', value: ['Shift', 'K'],
+                captionKey: 'config.helpArtKeptKey', caption: 'Out of the queue, not off the list',
+            },
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtKeptQueue', d: 'In the queue' },
+                    [
+                        { k: 'config.helpArtKeptFiled', d: 'Filed on a page' },
+                        { k: 'config.helpArtKeptWaiting', d: 'Kept, waiting' },
+                    ],
+                ],
+            },
+        ],
         'config.helpInboxSettingsTitle': [
             {
                 kind: 'toggles', value: [true, false],

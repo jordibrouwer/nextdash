@@ -183,13 +183,13 @@ test.describe('config help — health', () => {
 });
 
 test.describe('config help — inbox', () => {
-    test('splits into six panels, each with real prose', async ({ page }) => {
+    test('splits into seven panels, each with real prose', async ({ page }) => {
         await openInboxHelp(page);
 
         const body = page.locator('#config-help-body');
-        // Inbox, working the backlog, triage mode, the settings with no UI,
-        // saving a link from anywhere, and the one-time tour.
-        await expect(body.locator('.config-panel')).toHaveCount(6);
+        // Inbox, working the backlog, triage mode, the Kept tab, the settings
+        // with no UI, saving a link from anywhere, and the one-time tour.
+        await expect(body.locator('.config-panel')).toHaveCount(7);
 
         await expect(body).not.toContainText('config.help');
 
@@ -271,7 +271,10 @@ test.describe('config help — translations', () => {
                 english: ['Uptime, trends & statistics', 'Certificate expiry', 'Maintenance windows'],
             },
             inbox: {
-                count: 6,
+                // Seven since Kept was given a panel of its own: inbox, working
+                // the backlog, triage, Kept, the settings with no UI, saving a
+                // link from anywhere, and the tour.
+                count: 7,
                 english: ['Working through the inbox', 'Triage mode', 'Settings behind the scenes',
                     'The one-time tour'],
             },

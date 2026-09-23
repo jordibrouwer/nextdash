@@ -124,7 +124,10 @@ test('with auto-file on, Keep puts a link straight where its neighbours are', as
     await page.keyboard.press('t');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
-    await page.keyboard.press('r');
+    // Shift+K, the Keep key here as in the list. `r` used to keep in triage
+    // and mark read in the list — one letter with two meanings a tab apart —
+    // and it marks read in both now.
+    await page.keyboard.press('Shift+K');
 
     await expect.poll(async () => page.evaluate(async (u) => {
         const rows = await (await fetch('/api/bookmarks?page=1', { cache: 'no-store' })).json();
@@ -155,7 +158,10 @@ test('with auto-file on, a link nothing agrees about still lands in Kept', async
     await page.keyboard.press('t');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
-    await page.keyboard.press('r');
+    // Shift+K, the Keep key here as in the list. `r` used to keep in triage
+    // and mark read in the list — one letter with two meanings a tab apart —
+    // and it marks read in both now.
+    await page.keyboard.press('Shift+K');
 
     await expect.poll(async () => page.evaluate(async (u) => {
         const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();

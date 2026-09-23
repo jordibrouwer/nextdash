@@ -118,6 +118,11 @@ test.describe('config info + reset affordances', () => {
             // says what the card does and what switching it off leaves alone,
             // so the explanation is on screen rather than behind an ℹ.
             'enableTagSuggestionNotice', 'enableHealthReviewNotice',
+            // The Kept pair, for the same reason: the hint under each says what
+            // it does in a sentence — "Adds a Kept tab to the inbox, and makes
+            // Keep in triage put a link there instead of marking it read" —
+            // which is the whole of what an ℹ would say.
+            'unsortedEnabled', 'keepAutoFile',
             // Two choice cards with a sentence on each, like shortcutDisplay
             // and monitorEmphasis above: the explanation is the control.
             'rowHighlight',
