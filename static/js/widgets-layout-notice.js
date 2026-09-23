@@ -11,13 +11,12 @@
  * the way back: the preset the reader had is remembered before the switch, and
  * Undo puts it back. Nothing here is a one-way door.
  *
- * The delay is deliberately not a plain timer. A card that appears five
- * seconds after load interrupts somebody who is still arriving; one that
- * appears after a fixed minute is the same interruption on a schedule. This
- * one spends a random budget of *active* time -- the tab visible, and a
- * pointer, a key or a scroll within the last three-quarters of a minute --
- * so it arrives while the reader is using the dashboard rather than while
- * they are away from it, and not at the same moment for everyone.
+ * The delay is random rather than fixed: a card that appears five seconds
+ * after load interrupts somebody who is still arriving, and a fixed minute is
+ * the same interruption on a schedule for everybody. It does not need to wait
+ * for the reader to be at the keyboard -- it stays up until it is answered, so
+ * arriving while they are away costs nothing and it is there when they come
+ * back.
  *
  * The card itself (markup, transition, corner etiquette, retry loop) comes
  * from NoticeCard; only what is below is specific to this invitation.
@@ -29,26 +28,17 @@
     const TARGET_PRESET = 'widgets';
 
     /*
-     * The budget, in active milliseconds.
+     * The wait, in milliseconds.
      *
-     * Two to six minutes of actually using the dashboard. Long enough that the
-     * card is never part of arriving, short enough that a reader who opens
-     * nextDash for a working session sees it once in that session. Drawn once
-     * per page load, so two people -- or two tabs -- do not get it at the same
-     * point.
+     * Two to six minutes, drawn once per page load so two people -- or two
+     * tabs -- are not asked at the same moment. Long enough that the card is
+     * never part of arriving, short enough that a reader who opens nextDash
+     * for a working session meets it in that session.
      */
-    const MIN_ACTIVE_MS = 120_000;
-    const MAX_ACTIVE_MS = 360_000;
+    const MIN_DELAY_MS = 120_000;
+    const MAX_DELAY_MS = 360_000;
 
-    /** How long an interaction counts for. Reading a dashboard is not typing. */
-    const IDLE_AFTER_MS = 45_000;
-    const TICK_MS = 1000;
-
-    const budgetMs = MIN_ACTIVE_MS + Math.floor(Math.random() * (MAX_ACTIVE_MS - MIN_ACTIVE_MS));
-
-    let activeMs = 0;
-    let lastInteraction = Date.now();
-    let ticker = null;
+    const delayMs = MIN_DELAY_MS + Math.floor(Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS));
 
     /** The preset the reader was on before the card changed it. */
     let previousPreset = null;
@@ -83,47 +73,6 @@
     /** Only worth asking somebody who is not already there. */
     function worthAsking() {
         return !hasAnswered() && currentPreset() !== TARGET_PRESET;
-    }
-
-    /* ── The active clock ──────────────────────────────────────────────── */
-
-    function noteInteraction() {
-        lastInteraction = Date.now();
-    }
-
-    function isActive() {
-        if (document.visibilityState === 'hidden') return false;
-        return Date.now() - lastInteraction < IDLE_AFTER_MS;
-    }
-
-    function stopClock() {
-        if (!ticker) return;
-        clearInterval(ticker);
-        ticker = null;
-    }
-
-    function tick(card) {
-        // Someone who reaches the layout by themselves, or answers another
-        // way, should not then be asked about it.
-        if (!worthAsking()) {
-            stopClock();
-            return;
-        }
-        if (isActive()) activeMs += TICK_MS;
-        if (activeMs < budgetMs) return;
-
-        stopClock();
-        // showDelayMs is 0: the waiting was this clock's job, and the queue
-        // still decides whether the corner is free.
-        card.autoStart();
-    }
-
-    function startClock(card) {
-        if (ticker || !worthAsking()) return;
-        ['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll']
-            .forEach((event) => global.addEventListener(event, noteInteraction, { passive: true }));
-        document.addEventListener('visibilitychange', noteInteraction);
-        ticker = setInterval(() => tick(card), TICK_MS);
     }
 
     /* ── Applying, and putting it back ─────────────────────────────────── */
@@ -194,8 +143,7 @@
 
     const card = global.NoticeCard.define({
         id: 'widgets-layout-notice',
-        // Nothing: this card's waiting is the active clock above.
-        showDelayMs: 0,
+        showDelayMs: delayMs,
         title: () => t('dashboard.widgetsLayoutNoticeTitle', 'Your widgets can sit on the page differently'),
         body: () => t('dashboard.widgetsLayoutNoticeBody',
             'The Widgets layout draws every category as a card, so the widgets between them stop looking like something pasted on top. It is one setting, it applies right now, and this card puts it back if you would rather have it the way it was.'),
@@ -220,9 +168,9 @@
     });
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => startClock(card), { once: true });
+        document.addEventListener('DOMContentLoaded', card.autoStart, { once: true });
     } else {
-        startClock(card);
+        card.autoStart();
     }
 
     global.DashboardWidgetsLayoutNotice = {
@@ -231,7 +179,9 @@
         dismiss: () => { markAnswered(); card.close(); },
         tryIt: () => tryIt(card),
         // For tests and for a manual re-prompt: skips the wait, not the gate.
-        showNow: () => card.autoStart(),
+        // renderSync rather than autoStart, which would sit out the random
+        // delay this card exists to have.
+        showNow: () => card.renderSync(),
         PROMO_ID,
     };
 })(typeof window !== 'undefined' ? window : globalThis);
