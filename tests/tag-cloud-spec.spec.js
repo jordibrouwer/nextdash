@@ -244,3 +244,63 @@ test('escape leaves the cloud on the grid, not on the button', async ({ page }) 
     expect(landed.index, 'there is no cursor to walk on from').toBeGreaterThanOrEqual(0);
 });
 
+
+/**
+ * A closed cloud is out of the way, not merely invisible.
+ *
+ * closeModal() sets `hidden`, and for a while that did nothing: the stylesheet
+ * gives .tag-cloud-modal `display: flex`, and a class rule outranks the
+ * browser's own `[hidden] { display: none }`. So the modal stayed laid out at
+ * opacity 0 with pointer-events on, and a 541 x 521 region of the grid -- four
+ * columns wide on a 1440px screen -- quietly ate every click after the cloud
+ * had been opened once. The bookmark underneath did not open and nothing said
+ * why.
+ *
+ * Measured through the hit test rather than through the attribute, because the
+ * attribute was set correctly the whole time.
+ */
+test('the closed cloud lets the grid have its clicks back', async ({ page }) => {
+    await page.setViewportSize({ width: 1500, height: 1000 });
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => {
+        window.dashboardInstance.settings.showTagCloudButton = true;
+        window.dashboardInstance.setupDOM?.();
+    });
+
+    // Through the key the reader presses, not through openModal().
+    await page.locator('body').press('/');
+    await expect.poll(() => page.locator('.tag-cloud-word').count()).toBeGreaterThan(1);
+
+    // Where the cloud stood, remembered before it closes.
+    const where = await page.evaluate(() => {
+        const r = document.querySelector('#tag-cloud-modal').getBoundingClientRect();
+        return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+    });
+
+    await page.locator('body').press('Escape');
+    await page.waitForTimeout(400);
+
+    const after = await page.evaluate(({ x, y }) => {
+        const modal = document.querySelector('#tag-cloud-modal');
+        const hit = document.elementFromPoint(x, y);
+        // Asked of the browser rather than counted: the modal is aria-hidden
+        // while closed, so a control inside it that can still take focus is a
+        // control a screen reader is told is not there. A display:none subtree
+        // refuses focus, which is the whole point of the rule above.
+        const inside = modal.querySelector('.tag-cloud-word, button');
+        inside?.focus?.();
+        return {
+            display: window.getComputedStyle(modal).display,
+            hitInsideModal: modal.contains(hit),
+            focusLanded: modal.contains(document.activeElement),
+        };
+    }, where);
+
+    expect(after.display, 'the closed cloud is still laid out').toBe('none');
+    expect(after.hitInsideModal, 'a click where the cloud was lands on the closed cloud').toBe(false);
+    expect(after.focusLanded, 'the keyboard can still reach into an aria-hidden cloud').toBe(false);
+});
