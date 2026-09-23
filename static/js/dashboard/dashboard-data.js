@@ -475,6 +475,22 @@ class DashboardData {
         if (!entry) {
             return null;
         }
+        /*
+         * An entry with no blocks is not an answer, it is half of one.
+         *
+         * blocks is null here only when nothing recorded them -- a prefetch
+         * that asked for the bookmarks and the categories and stopped, or a
+         * load whose block request failed. A page genuinely without widgets
+         * still answers with an object, so it is stored as one.
+         *
+         * Handing that null on made the cache worse than no cache:
+         * _applyLoadedPageData guards with `blocks !== undefined`, null walks
+         * through it, and the page opened with every widget gone and its block
+         * order lost. A miss costs one round trip and draws the page right.
+         */
+        if (!entry.blocks) {
+            return null;
+        }
         return {
             bookmarks: this.clonePageBookmarks(entry.bookmarks),
             categories: entry.categories.map((cat) => ({ ...cat })),
@@ -734,16 +750,26 @@ class DashboardData {
         }
         d._pagePrefetchInFlight.add(pid);
         try {
-            const [bookmarksRes, categoriesRes] = await Promise.all([
+            // The blocks come in the same round as the rest, for the reason
+            // loadPageBookmarks gives: they decide what is drawn and in what
+            // order, and an entry without them is not a page.
+            const [bookmarksRes, categoriesRes, blocksRes] = await Promise.all([
                 fetch(`/api/bookmarks?page=${pid}`),
                 fetch(`/api/categories?page=${pid}`),
+                fetch(`/api/pages/${pid}/blocks`),
             ]);
-            if (!bookmarksRes.ok || !categoriesRes.ok) {
+            if (!bookmarksRes.ok || !categoriesRes.ok || !blocksRes.ok) {
                 return;
             }
             const bookmarks = await bookmarksRes.json();
             const categories = await categoriesRes.json();
-            this.setPageDataCache(pid, bookmarks, categories);
+            // Half a page is not worth caching: getCachedPageData would refuse
+            // it anyway, and leaving no entry lets the next hover try again.
+            const blocks = await blocksRes.json().catch(() => null);
+            if (!blocks) {
+                return;
+            }
+            this.setPageDataCache(pid, bookmarks, categories, blocks);
         } catch {
             // Best-effort prefetch.
         } finally {
