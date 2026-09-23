@@ -46,3 +46,7 @@ nextDash.code-workspace
 # writes, its canvas/draft ids and its scratch HTML. Local working material,
 # not part of the app — never committed and so never pushed.
 .superdesign/
+
+# Working notes: plans and specs stay on disk and out of the repository.
+# They are for whoever is doing the work, not for anyone cloning it.
+docs/
