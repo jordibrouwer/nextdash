@@ -1697,6 +1697,7 @@ environment:
   # - NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120
   # - NEXTDASH_SSRF_API_RATE_PER_MIN=60
   # - NEXTDASH_STATUS_PING_RATE_PER_MIN=300
+  # - NEXTDASH_TRUSTED_PROXIES=10.0.0.0/8
   # - NEXTDASH_CSP=off
   # - NEXTDASH_DISABLE_PREFETCH=1
 ```
@@ -1728,6 +1729,14 @@ NEXTDASH_STATUS_PING_RATE_PER_MIN=300    # /api/ping, the browser's own status c
 ```
 
 Above the limit the API answers **429**, and the `security` channel records it.
+
+**Who a request is counted against.** By default, the address the connection comes from. Behind a reverse proxy that is the proxy for everyone, so the limits are shared by every reader — which is deliberate: `X-Forwarded-For` can be set by anyone, and believing it would let a client hand itself a fresh allowance simply by inventing a new value. Name your proxy to have the header believed:
+
+```bash
+NEXTDASH_TRUSTED_PROXIES=10.0.0.0/8, 192.168.1.5   # addresses and ranges, comma-separated
+```
+
+Only a request arriving from one of these is taken at its word, and only its first `X-Forwarded-For` entry — the client the proxy saw — is used.
 
 ### 21.4 CORS
 
