@@ -5909,7 +5909,10 @@
     "captureFullHeading": "Posteingang ist voll",
     "captureFullDetail": "Räume ein paar Links auf und versuche es erneut.",
     "captureFailedHeading": "Speichern fehlgeschlagen",
-    "captureFailedDetail": "Der Link konnte nicht gespeichert werden. Versuche es erneut oder sieh im Posteingang nach."
+    "captureFailedDetail": "Der Link konnte nicht gespeichert werden. Versuche es erneut oder sieh im Posteingang nach.",
+    "notFoundHeading": "Hier ist nichts",
+    "notFoundDetail": "Diese Adresse gehört nicht zu nextDash.",
+    "notFoundBack": "Zurück zum Dashboard"
   },
   "bookmark": {
     "noteLabel": "Notiz",

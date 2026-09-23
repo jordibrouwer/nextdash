@@ -5909,7 +5909,10 @@
     "captureFullHeading": "Boîte de réception pleine",
     "captureFullDetail": "Videz quelques liens et réessayez.",
     "captureFailedHeading": "Enregistrement impossible",
-    "captureFailedDetail": "Le lien n’a pas pu être enregistré. Réessayez, ou ouvrez la boîte de réception."
+    "captureFailedDetail": "Le lien n’a pas pu être enregistré. Réessayez, ou ouvrez la boîte de réception.",
+    "notFoundHeading": "Il n’y a rien ici",
+    "notFoundDetail": "Cette adresse ne fait pas partie de nextDash.",
+    "notFoundBack": "Retour au tableau de bord"
   },
   "bookmark": {
     "noteLabel": "Note",

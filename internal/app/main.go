@@ -92,6 +92,9 @@ func Run(files assetFS) {
 
 	// Create router
 	r := mux.NewRouter()
+	// Anything the routes below do not match. Without this, net/http answers
+	// with its own plain "404 page not found" on a white page and no way back.
+	r.NotFoundHandler = http.HandlerFunc(handlers.NotFoundHandler)
 
 	// Routes
 	r.HandleFunc("/version", Version).Methods("GET")

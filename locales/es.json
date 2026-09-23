@@ -5909,7 +5909,10 @@
     "captureFullHeading": "La bandeja de entrada está llena",
     "captureFullDetail": "Libera algunos enlaces e inténtalo de nuevo.",
     "captureFailedHeading": "No se ha podido guardar",
-    "captureFailedDetail": "El enlace no se ha podido guardar. Inténtalo de nuevo o abre la bandeja de entrada."
+    "captureFailedDetail": "El enlace no se ha podido guardar. Inténtalo de nuevo o abre la bandeja de entrada.",
+    "notFoundHeading": "Aquí no hay nada",
+    "notFoundDetail": "Esa dirección no forma parte de nextDash.",
+    "notFoundBack": "Volver al panel"
   },
   "bookmark": {
     "noteLabel": "Nota",

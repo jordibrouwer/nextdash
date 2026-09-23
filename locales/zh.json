@@ -5909,7 +5909,10 @@
     "captureFullHeading": "收件箱已满",
     "captureFullDetail": "清理一些链接后再试。",
     "captureFailedHeading": "无法保存",
-    "captureFailedDetail": "链接无法保存。请重试，或打开收件箱查看。"
+    "captureFailedDetail": "链接无法保存。请重试，或打开收件箱查看。",
+    "notFoundHeading": "这里什么也没有",
+    "notFoundDetail": "该地址不属于 nextDash。",
+    "notFoundBack": "返回仪表板"
   },
   "bookmark": {
     "noteLabel": "备注",

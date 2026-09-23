@@ -5909,7 +5909,10 @@
     "captureFullHeading": "Inbox is vol",
     "captureFullDetail": "Ruim wat links op en probeer het opnieuw.",
     "captureFailedHeading": "Opslaan lukte niet",
-    "captureFailedDetail": "De link kon niet worden opgeslagen. Probeer het opnieuw, of kijk in de inbox."
+    "captureFailedDetail": "De link kon niet worden opgeslagen. Probeer het opnieuw, of kijk in de inbox.",
+    "notFoundHeading": "Hier staat niets",
+    "notFoundDetail": "Dat adres hoort niet bij nextDash.",
+    "notFoundBack": "Terug naar het dashboard"
   },
   "bookmark": {
     "noteLabel": "Notitie",

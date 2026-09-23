@@ -5909,7 +5909,10 @@
     "captureFullHeading": "Inbox is full",
     "captureFullDetail": "Clear some links and try again.",
     "captureFailedHeading": "Could not save",
-    "captureFailedDetail": "The link could not be saved. Try again, or open the inbox to check."
+    "captureFailedDetail": "The link could not be saved. Try again, or open the inbox to check.",
+    "notFoundHeading": "Nothing here",
+    "notFoundDetail": "That address is not part of nextDash.",
+    "notFoundBack": "Back to the dashboard"
   },
   "bookmark": {
     "noteLabel": "Note",
