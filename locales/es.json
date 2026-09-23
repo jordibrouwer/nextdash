@@ -4898,6 +4898,8 @@
     "backupEveryTwoWeeks": "Cada dos semanas",
     "backupEveryMonth": "Cada mes",
     "backupRotationNote": "Se guardan las {keep} más nuevas. Hacer otra —o restaurar, que copia antes los datos actuales— quita la más antigua.",
+    "backupDirLine": "Guardadas en {dir}.",
+    "backupInsideDataDirWarning": "Estas copias están dentro del directorio de datos que respaldan, así que perderlo es perderlas también. Establece NEXTDASH_AUTO_BACKUP_DIR en una ruta absoluta en otro lugar.",
     "backupContents": "{bookmarks} marcadores en {pages} páginas",
     "backupDownloadAll": "Descargar todas",
     "backupDownloadAllDone": "{n} copias guardadas.",

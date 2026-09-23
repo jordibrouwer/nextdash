@@ -3,6 +3,7 @@ package app
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -395,5 +396,52 @@ func TestAutoBackupNotDueAfterRecentBackup(t *testing.T) {
 	}
 	if h.autoBackupDue() {
 		t.Fatal("did not expect a backup to be due right after one was made")
+	}
+}
+
+/*
+ * The panel is told where the backups are, and whether that is inside the data
+ * directory they back up.
+ *
+ * NEXTDASH_AUTO_BACKUP_DIR was documented in the README and the manual and
+ * appeared nowhere in the app, so the panel could say how old the newest backup
+ * was and never where it lived. Unset, they land in data/auto-backups/ -- and
+ * the one failure a backup exists for takes them with it.
+ */
+func TestAutoBackupListSaysWhereTheBackupsAre(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// Unset: inside the data directory, which is the arrangement worth warning
+	// about.
+	rec := httptest.NewRecorder()
+	h.ListAutoBackups(rec, httptest.NewRequest(http.MethodGet, "/api/auto-backups", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	var inside autoBackupListResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &inside); err != nil {
+		t.Fatal(err)
+	}
+	if inside.Dir == "" {
+		t.Error("the answer does not say where the backups are")
+	}
+	if !inside.InsideDataDir {
+		t.Errorf("dir = %q, which is the default inside the data directory, and it was not flagged", inside.Dir)
+	}
+
+	// Moved elsewhere, which is what the variable is for.
+	elsewhere := t.TempDir()
+	t.Setenv("NEXTDASH_AUTO_BACKUP_DIR", elsewhere)
+	rec = httptest.NewRecorder()
+	h.ListAutoBackups(rec, httptest.NewRequest(http.MethodGet, "/api/auto-backups", nil))
+	var outside autoBackupListResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &outside); err != nil {
+		t.Fatal(err)
+	}
+	if outside.Dir != elsewhere {
+		t.Errorf("dir = %q, want %q", outside.Dir, elsewhere)
+	}
+	if outside.InsideDataDir {
+		t.Error("a directory outside the data directory was flagged as inside it")
 	}
 }

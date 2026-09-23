@@ -74,6 +74,29 @@ func autoBackupDir() string {
 }
 
 /*
+autoBackupsAreInsideTheDataDir reports the arrangement a backup cannot survive.
+
+Not a string comparison against the default path: NEXTDASH_AUTO_BACKUP_DIR can
+name a directory inside the data directory just as easily as the fallback does,
+and that is the same risk by another route.
+*/
+func autoBackupsAreInsideTheDataDir() bool {
+	dir, err := filepath.Abs(autoBackupDir())
+	if err != nil {
+		return false
+	}
+	dataDir, err := filepath.Abs(ResolveDataDir())
+	if err != nil {
+		return false
+	}
+	rel, err := filepath.Rel(dataDir, dir)
+	if err != nil {
+		return false
+	}
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+/*
 How many backups are kept, and how often one is made.
 
 Both were constants. The count is now an environment variable, because it is an
@@ -120,6 +143,19 @@ type autoBackupListResponse struct {
 	// so the panel can say what will happen rather than only what has happened.
 	Keep         int `json:"keep"`
 	IntervalDays int `json:"intervalDays"`
+	/*
+	 * Where the backups actually are, and whether that is inside the thing
+	 * they back up.
+	 *
+	 * NEXTDASH_AUTO_BACKUP_DIR is documented in the README and the manual and
+	 * appeared nowhere in the app, so the panel could say how old the newest
+	 * backup was and never where it lived. Unset, they land in
+	 * data/auto-backups/ -- and the one failure a backup exists for, losing the
+	 * data directory, takes them with it. That is worth saying out loud rather
+	 * than leaving to be discovered.
+	 */
+	Dir           string `json:"dir"`
+	InsideDataDir bool   `json:"insideDataDir"`
 	// NextBackupAt is when the next automatic backup is due (RFC3339), or empty
 	// when automatic backups are disabled. When it's in the past, one is due now.
 	NextBackupAt string `json:"nextBackupAt,omitempty"`
@@ -368,8 +404,10 @@ func (h *Handlers) ListAutoBackups(w http.ResponseWriter, r *http.Request) {
 		// panel could only say how many backups exist — never that a fourth
 		// pushes the oldest out, which is what makes "Make a backup now" a
 		// destructive button on a full rotation.
-		Keep:         maxAutoBackups(),
-		IntervalDays: int(h.autoBackupInterval() / (24 * time.Hour)),
+		Keep:          maxAutoBackups(),
+		IntervalDays:  int(h.autoBackupInterval() / (24 * time.Hour)),
+		Dir:           autoBackupDir(),
+		InsideDataDir: autoBackupsAreInsideTheDataDir(),
 	}
 	if resp.Enabled {
 		resp.NextBackupAt = h.nextAutoBackupTime().UTC().Format(time.RFC3339)

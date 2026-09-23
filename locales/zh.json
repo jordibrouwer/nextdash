@@ -4898,6 +4898,8 @@
     "backupEveryTwoWeeks": "每两周",
     "backupEveryMonth": "每月",
     "backupRotationNote": "保留最新的 {keep} 份。再做一份——或者恢复（它会先把当前数据复制一份）——就会挤掉最早的那份。",
+    "backupDirLine": "存放于 {dir}。",
+    "backupInsideDataDirWarning": "这些备份就在它们所备份的数据目录里，数据目录一旦丢失，备份也一并丢失。请将 NEXTDASH_AUTO_BACKUP_DIR 设为其他位置的绝对路径。",
     "backupContents": "{pages} 个页面上的 {bookmarks} 个书签",
     "backupDownloadAll": "全部下载",
     "backupDownloadAllDone": "已保存 {n} 份备份。",

@@ -6560,6 +6560,25 @@ class DashboardConfig {
                 'The newest {keep} are kept. Making another — or restoring, which copies the current data first — removes the oldest.')
                 .replace('{keep}', String(keep)))}</p>`
             : '';
+        /*
+         * Where they are, and whether that is a problem.
+         *
+         * The panel could say how old the newest backup was and never where it
+         * lived, while NEXTDASH_AUTO_BACKUP_DIR sat documented in the README
+         * and nowhere in the app. Unset, backups land inside the data directory
+         * — and the one failure they exist for takes them with it.
+         */
+        const dir = String(this._backupData?.dir || '').trim();
+        const where = dir
+            ? `<p class="config-panel-note">${esc(this.t('config.backupDirLine', 'Stored in {dir}.')
+                .replace('{dir}', dir))}</p>`
+            : '';
+        const inside = dir && this._backupData?.insideDataDir
+            ? `<p class="config-panel-note config-panel-note--warn">${esc(this.t(
+                'config.backupInsideDataDirWarning',
+                'These backups are inside the data directory they back up, so losing it loses them too. '
+                + 'Set NEXTDASH_AUTO_BACKUP_DIR to an absolute path elsewhere.'))}</p>`
+            : '';
         const rows = backups.map((b) => `
             <li class="config-backup-row">
                 <div class="config-backup-meta">
@@ -6573,7 +6592,7 @@ class DashboardConfig {
                 </div>
             </li>
         `).join('');
-        return `${note}<ul class="config-backup-list">${rows}</ul>
+        return `${note}${where}${inside}<ul class="config-backup-list">${rows}</ul>
             <div class="config-actions">
                 <button type="button" class="config-btn config-btn--small" data-backup-action="download-all">${esc(
                     this.t('config.backupDownloadAll', 'Download all'))}</button>

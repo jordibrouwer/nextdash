@@ -4898,6 +4898,8 @@
     "backupEveryTwoWeeks": "Om de twee weken",
     "backupEveryMonth": "Elke maand",
     "backupRotationNote": "De nieuwste {keep} blijven bewaard. Nog één maken — of herstellen, wat eerst de huidige gegevens kopieert — gooit de oudste weg.",
+    "backupDirLine": "Opgeslagen in {dir}.",
+    "backupInsideDataDirWarning": "Deze back-ups staan in de datamap die ze back-uppen, dus wie die kwijtraakt, raakt ook de back-ups kwijt. Zet NEXTDASH_AUTO_BACKUP_DIR op een absoluut pad ergens anders.",
     "backupContents": "{bookmarks} bladwijzers op {pages} pagina’s",
     "backupDownloadAll": "Alles downloaden",
     "backupDownloadAllDone": "{n} back-ups opgeslagen.",
