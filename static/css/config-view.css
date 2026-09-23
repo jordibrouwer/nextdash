@@ -1232,7 +1232,8 @@
  * on their own line once they wrap.
  */
 .config-field > .config-field-hint,
-.config-field > .config-field-warning {
+.config-field > .config-field-warning,
+.config-field > .config-panel-note {
     grid-column: 1 / -1;
     margin-top: -4px;
 }
@@ -1516,6 +1517,20 @@
     font: inherit;
     font-size: calc(var(--font-size-text) * 0.971);
     cursor: pointer;
+}
+
+/*
+ * Een knop die in de controlekolom van een rij staat, naast selects.
+ *
+ * Zelfde padding, radius en tekstgrootte als .config-select, zodat de rij er
+ * niet uitspringt: de lezer leest een kolom met controls, niet vier selects
+ * en een knop van een andere maat.
+ */
+.config-btn--field {
+    padding: 7px 10px;
+    border-radius: var(--radius-5, 8px);
+    font-size: calc(var(--font-size-text) * 0.971);
+    justify-self: start;
 }
 
 .config-select:disabled {
