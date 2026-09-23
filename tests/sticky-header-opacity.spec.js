@@ -30,18 +30,36 @@ async function open(page, view) {
         await page.waitForSelector('.lvs-header', { timeout: 20_000 });
     }
     /*
-     * Start at the top, and wait until the page agrees.
+     * Start at the top, and wait until the page has stopped moving.
      *
      * `data-scrolled` is written by a scroll listener, and opening a view does
      * not reset the window position -- so a test could begin with the flag left
      * true by whatever ran before it, and the first assertion read that as the
      * band being wrong. Scrolled home explicitly, then polled, because the flag
      * lands a frame after the scroll does.
+     *
+     * Polling once was not enough. Opening config restores where it was, and on
+     * a loaded machine that restore lands after a single poll has already seen
+     * the top -- so the band was read mid-scroll and reported itself scrolled.
+     * Seen three times in one CI run, on config only, while passing every time
+     * here. So this waits for the page to hold still rather than to pass
+     * through zero: four consecutive reads at the top, and anything that moves
+     * it in between is scrolled home again and starts the count over.
      */
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await expect.poll(() => page.evaluate(
-        () => document.body.getAttribute('data-scrolled')), { timeout: 5_000 }).toBe('false');
-    await page.waitForTimeout(400);
+    await expect.poll(async () => {
+        let quiet = 0;
+        while (quiet < 4) {
+            const home = await page.evaluate(() => {
+                const y = Math.round(window.scrollY || document.documentElement.scrollTop || 0);
+                if (y !== 0) window.scrollTo(0, 0);
+                return y === 0 && document.body.getAttribute('data-scrolled') === 'false';
+            });
+            if (!home) return false;
+            quiet += 1;
+            await page.waitForTimeout(120);
+        }
+        return true;
+    }, { timeout: 15_000, message: 'the page would not settle at the top' }).toBe(true);
 }
 
 const band = (page) => page.evaluate(() => {

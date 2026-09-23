@@ -241,7 +241,14 @@ test('the widget keeps its place in the viewport when its width changes', async 
     await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 }).toBe(2);
     await page.waitForTimeout(600);
 
-    expect(Math.abs((await topOf()) - before)).toBeLessThan(24);
+    /*
+     * 40, not 24. The old number was a guess from before a wide widget showed
+     * more than a narrow one, so widening changes the tile's own height now and
+     * the blocks around it repack. Measured: 0–1px locally, 27px on CI, and
+     * 141px (default grid) / 167px (packed) with the anchor switched off — so
+     * this still fails loudly the moment the anchor stops working.
+     */
+    expect(Math.abs((await topOf()) - before)).toBeLessThan(40);
 });
 
 /*
@@ -313,7 +320,14 @@ test('the widget keeps its place with packed columns too', async ({ page }) => {
     await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 }).toBe(2);
     await page.waitForTimeout(700);
 
-    expect(Math.abs((await topOf()) - before)).toBeLessThan(24);
+    /*
+     * 40, not 24. The old number was a guess from before a wide widget showed
+     * more than a narrow one, so widening changes the tile's own height now and
+     * the blocks around it repack. Measured: 0–1px locally, 27px on CI, and
+     * 141px (default grid) / 167px (packed) with the anchor switched off — so
+     * this still fails loudly the moment the anchor stops working.
+     */
+    expect(Math.abs((await topOf()) - before)).toBeLessThan(40);
 });
 
 /*
