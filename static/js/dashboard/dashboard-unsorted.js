@@ -936,7 +936,26 @@ class DashboardUnsorted {
         this._previewAsked.add(url);
         try {
             const res = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(url)}`);
-            if (!res.ok) return;
+            if (!res.ok) {
+                /*
+                 * A refusal that will read differently next time does not count
+                 * as having asked.
+                 *
+                 * Only the catch used to clear this, so a 429 was permanent for
+                 * the session: hovering enough rows trips the server's own
+                 * 60/min gate, and every URL caught by it never loaded a
+                 * preview again however often it was hovered. The server's
+                 * limit is per minute, so the mark has to be per attempt.
+                 *
+                 * A 4xx that is about the address itself stays marked -- asking
+                 * again on every hover would spend the same budget on an answer
+                 * that is not going to change.
+                 */
+                if (res.status === 429 || res.status === 408 || res.status >= 500) {
+                    this._previewAsked.delete(url);
+                }
+                return;
+            }
             this.applyPreview(bookmark, await res.json());
         } catch (_error) {
             // A page that will not answer is not worth a message here: the row

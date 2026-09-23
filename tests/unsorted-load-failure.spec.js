@@ -96,3 +96,60 @@ test('an empty pile still says it is empty', async ({ page }) => {
     await expect(page.locator('.empty-state--unsorted')).toBeVisible({ timeout: 10_000 });
     expect(await keptRows(page).count()).toBe(0);
 });
+
+/**
+ * A refusal that will read differently next time does not count as having
+ * asked.
+ *
+ * _previewAsked is marked before the request, so a second hover while the first
+ * is in flight does not ask twice. Only the catch cleared it again, and a 429
+ * is not a thrown fetch -- so hovering enough rows to trip the server's own
+ * 60/min gate meant every URL caught by it never loaded a preview again for the
+ * rest of the session, however often it was hovered.
+ *
+ * Read off _previewAsked rather than by counting requests: the hover card asks
+ * the same endpoint for the same address, so a request count measures both
+ * paths at once and this is about exactly one of them.
+ */
+const askedFor = (page, url) => page.evaluate(
+    (wanted) => Boolean(window.dashboardInstance.unsorted._previewAsked?.has(wanted)),
+    url,
+);
+
+async function hoverFirstRowWithPreviewStatus(page, status) {
+    await page.route('**/api/bookmark-preview**', (route) => route.fulfill({
+        status,
+        contentType: 'application/json',
+        body: '{"error":"refused"}',
+    }));
+    // The hover delay is a setting; shorten it so the test is not mostly waiting.
+    await page.evaluate(() => { window.dashboardInstance.settings.linkPreviewHoverDelayMs = 30; });
+
+    const row = page.locator('.bookmark-link[data-unsorted-key]').first();
+    await row.hover();
+    await page.waitForTimeout(1200);
+}
+
+test('a preview refused with 429 may be asked for again', async ({ page }) => {
+    const url = 'https://preview.example/one';
+    await openKept(page, [{ name: 'Preview Me', url }]);
+
+    await hoverFirstRowWithPreviewStatus(page, 429);
+
+    expect(await askedFor(page, url),
+        'the address stayed marked as asked, so the next hover will not try again')
+        .toBe(false);
+});
+
+// A refusal about the address itself is not worth asking again on every hover:
+// the answer is not going to change, and it spends the same per-minute budget.
+test('a preview refused with 404 is not asked for again', async ({ page }) => {
+    const url = 'https://preview.example/gone';
+    await openKept(page, [{ name: 'Gone', url }]);
+
+    await hoverFirstRowWithPreviewStatus(page, 404);
+
+    expect(await askedFor(page, url),
+        'a 404 was cleared, so every hover spends the budget on an unchanging answer')
+        .toBe(true);
+});
