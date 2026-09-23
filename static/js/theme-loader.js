@@ -271,7 +271,7 @@
      * copy is not the one that counts.
      */
     function applyThemeDepth(depth) {
-        const value = ['flat', 'soft', 'rich', 'glass'].includes(depth) ? depth : 'flat';
+        const value = ['flat', 'soft', 'rich', 'vivid', 'glass'].includes(depth) ? depth : 'flat';
         document.documentElement.setAttribute('data-depth', value);
         if (document.body) {
             document.body.setAttribute('data-depth', value);
@@ -290,6 +290,22 @@
         document.documentElement.setAttribute('data-glow', value);
         if (document.body) {
             document.body.setAttribute('data-glow', value);
+        }
+        return value;
+    }
+
+    /**
+     * Mirrors the effects choice onto <html> and <body>.
+     *
+     * Same shape again. `held` rather than `full` for anything unknown: an
+     * archetype that shouts because a value could not be read is worse than
+     * one that is a little quiet.
+     */
+    function applyThemeEffects(effects) {
+        const value = ['off', 'held', 'full'].includes(effects) ? effects : 'held';
+        document.documentElement.setAttribute('data-effects', value);
+        if (document.body) {
+            document.body.setAttribute('data-effects', value);
         }
         return value;
     }
@@ -418,6 +434,77 @@
         document.addEventListener('visibilitychange', release);
         requestAnimationFrame(() => {
             requestAnimationFrame(release);
+        });
+    }
+
+    /*
+     * The surfaces a theme brings with it.
+     *
+     * With Depth, Glow and Effects on "follow", picking a theme also picks
+     * how it is drawn -- the theme's own answer, or whatever the reader
+     * changed for that theme. The server resolves this for the first paint;
+     * this is the same resolution for the moment a theme changes, which the
+     * server never sees.
+     *
+     * The meta is fetched once and kept: it is 121 short rows, it changes
+     * only when a theme is edited, and a fetch per theme switch would put a
+     * request in front of every arrow key in the theme browser.
+     */
+    let surfaceMeta = null;
+    let surfaceMetaPromise = null;
+
+    function loadSurfaceMeta() {
+        if (surfaceMeta) return Promise.resolve(surfaceMeta);
+        if (surfaceMetaPromise) return surfaceMetaPromise;
+        surfaceMetaPromise = fetch('/api/themes/meta')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+                surfaceMeta = data && data.themes ? data : null;
+                return surfaceMeta;
+            })
+            .catch(() => null)
+            .finally(() => { surfaceMetaPromise = null; });
+        return surfaceMetaPromise;
+    }
+
+    /** Forget the cache, for when a theme's character has just been edited. */
+    function refreshSurfaceMeta() {
+        surfaceMeta = null;
+        return loadSurfaceMeta();
+    }
+
+    /**
+     * Resolve one theme's surfaces the way resolveSurfaces does on the server:
+     * a forced setting first, then the reader's change for this theme, then
+     * the theme's own answer.
+     */
+    function resolveSurfacesFor(theme, settings) {
+        const s = settings || {};
+        const prefs = (s.themeSurfacePrefs || {})[theme] || {};
+        const ideal = (surfaceMeta && surfaceMeta.themes && surfaceMeta.themes[theme]) || {};
+        const pick = (global, own, fallback) => {
+            const g = String(global || '').trim().toLowerCase();
+            if (g && g !== 'follow') return g;
+            const o = String(own || '').trim().toLowerCase();
+            if (o) return o;
+            return fallback;
+        };
+        return {
+            depth: pick(s.themeDepth, prefs.depth, ideal.depth || 'soft'),
+            glow: pick(s.glowStrength, prefs.glow, ideal.glow || 'off'),
+            effects: pick(s.themeEffects, prefs.effects, ideal.effects || 'held'),
+            backdrop: pick(s.themeBackdrop, prefs.backdrop, ideal.backdrop || 'on'),
+        };
+    }
+
+    /** Resolve and write all three attributes for a theme. */
+    function applySurfacesForTheme(theme, settings) {
+        return loadSurfaceMeta().then(() => {
+            const resolved = resolveSurfacesFor(theme, settings);
+            applyThemeDepth(resolved.depth);
+            applyGlowStrength(resolved.glow);
+            applyThemeEffects(resolved.effects);
+            return resolved;
         });
     }
 
@@ -607,6 +694,10 @@
         applyTheme: applyTheme,
         applyThemeDepth: applyThemeDepth,
         applyGlowStrength: applyGlowStrength,
+        applyThemeEffects: applyThemeEffects,
+        applySurfacesForTheme: applySurfacesForTheme,
+        resolveSurfacesFor: resolveSurfacesFor,
+        refreshSurfaceMeta: refreshSurfaceMeta,
         applyInkGap: applyInkGap,
         applyThemeBackdrop: applyThemeBackdrop,
         applyBackgroundPattern: applyBackgroundPattern,
