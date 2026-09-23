@@ -1247,6 +1247,12 @@
     grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto auto;
 }
 
+/* A slider row that also carries a preview and an ℹ has two more children than
+   the four columns above allow, and they wrapped onto a line of their own. */
+.config-field:has(> .config-range-value):has(> .config-field-affordances) {
+    grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto auto auto;
+}
+
 .config-field-label {
     font-size: calc(var(--font-size-text) * 0.971);
     color: var(--text-muted, #888);

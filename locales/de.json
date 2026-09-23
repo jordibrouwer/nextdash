@@ -5928,7 +5928,13 @@
     "themeBackdropInfoTitle": "Theme backdrop",
     "themeBackdropInfoMessage": "The wash behind the content, built from the theme's own colours.\n\nEvery theme gets one of nine recipes — blooms, a sweep, a wireframe, a glow, a band, rings, scanlines, crosshatch or a horizon — and a theme may name the one it wants. The rest are settled by the theme's id, so no two look alike and a theme looks the same on every install.\n\nOff leaves a flat surface. Your own background image, if you set one, is drawn over the backdrop either way.",
     "backgroundPatternInfoTitle": "Backdrop texture",
-    "backgroundPatternInfoMessage": "The texture drawn across the page behind everything else.\n\nFollow the theme is the default: most themes ask for dots, and a few ask for something that suits them better.\n\nLines and hatch cover more of the page than dots do, so they read heavier on a light theme. None leaves the surface bare.\n\nThis is a separate question from the theme backdrop above: the backdrop is the wash of colour, this is the pattern over it."
+    "backgroundPatternInfoMessage": "The texture drawn across the page behind everything else.\n\nFollow the theme is the default: most themes ask for dots, and a few ask for something that suits them better.\n\nLines and hatch cover more of the page than dots do, so they read heavier on a light theme. None leaves the surface bare.\n\nThis is a separate question from the theme backdrop above: the backdrop is the wash of colour, this is the pattern over it.",
+    "iconStylingStyleNote": "How the tint is applied. Muted drains the icon toward the theme, Tinted keeps its shape and recolours it, and Overlay lays the theme over it.",
+    "iconStylingIntensityNote": "How far to go. The three icons beside the slider show it on a light, a mid and a dark favicon.",
+    "iconStylingStyleInfoTitle": "Favicon style",
+    "iconStylingStyleInfoMessage": "Three ways to pull a site's icon toward the theme.\n\nMuted drains the colour out of it, so a row of icons stops competing with the bookmark names. It suits a quiet palette.\n\nTinted keeps the icon's shape and recolours it in the theme's own accent, which is the strongest of the three and reads best on a dark theme.\n\nOverlay lays the theme over the icon without taking its colour away, so a logo you recognise stays recognisable.\n\nThe choice is stored per theme, so the light and dark halves of a family can differ.",
+    "iconStylingIntensityInfoTitle": "Favicon intensity",
+    "iconStylingIntensityInfoMessage": "How far the chosen style goes, from nothing at 0% to the full effect at 100%.\n\nThe three dots beside the slider are the same setting on a light, a mid-toned and a dark favicon — most collections have all three, and a value that suits one can flatten another.\n\nStored per theme, like the style above it."
   },
   "colors": {
     "title": "themenanpassung",

@@ -10841,7 +10841,8 @@ class DashboardConfig {
 
     /** Hand-written Appearance fields that already explain themselves in a note. */
     static APPEARANCE_OWN_NOTES = new Set(['themeEditor', 'themeDepth', 'glowStrength', 'themeEffects',
-        'themeSurfacesForceAll', 'inkGap', 'themeBackdrop', 'backgroundPattern']);
+        'themeSurfacesForceAll', 'inkGap', 'themeBackdrop', 'backgroundPattern',
+        'iconStylingStyle', 'iconStylingIntensity']);
 
     /**
      * The theme whose icon styling is being edited. The dashboard reads the entry
@@ -10936,12 +10937,16 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.iconStylingStyleLabel', 'Style'))}</span>
                     <div class="config-choices" role="group">${choices}</div>
+                    ${this.appearanceAff('iconStylingStyle')}
+                    <p class="config-panel-note">${esc(this.t('config.iconStylingStyleNote', 'How the tint is applied. Muted drains the icon toward the theme, Tinted keeps its shape and recolours it, and Overlay lays the theme over it.'))}</p>
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.iconStylingIntensityLabel', 'Intensity'))}</span>
                     <input type="range" class="config-range" data-appearance-icon-intensity min="0" max="1" step="0.05" value="${intensity}">
                     <span class="config-range-value">${Math.round(intensity * 100)}%</span>
                     <span class="config-icon-preview" aria-hidden="true">${preview}</span>
+                    ${this.appearanceAff('iconStylingIntensity')}
+                    <p class="config-panel-note">${esc(this.t('config.iconStylingIntensityNote', 'How far to go. The three icons beside the slider show it on a light, a mid and a dark favicon.'))}</p>
                 </div>` : ''}`;
     }
 
@@ -11654,6 +11659,11 @@ class DashboardConfig {
         // renderFieldAffordances only offers one where there is a default to
         // go back to.
         themeEditor: { info: ['themeEditorInfoTitle', 'themeEditorInfoMessage'] },
+        // Two more that are not settings in their own right: they are stored
+        // per theme, under themeIconStyling. Info only, so no ↺ -- the row
+        // above them resets the pair.
+        iconStylingStyle: { info: ['iconStylingStyleInfoTitle', 'iconStylingStyleInfoMessage'] },
+        iconStylingIntensity: { info: ['iconStylingIntensityInfoTitle', 'iconStylingIntensityInfoMessage'] },
         themeDepth: { info: ['themeDepthInfoTitle', 'themeDepthInfoMessage'], def: 'follow' },
         glowStrength: { info: ['glowStrengthInfoTitle', 'glowStrengthInfoMessage'], def: 'follow' },
         themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
