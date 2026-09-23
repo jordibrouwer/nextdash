@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.13.3 — 23 September 2026](#v1133--23-september-2026)
 - [v1.13.2 — 23 September 2026](#v1132--23-september-2026)
 - [v1.13.1 — 22 September 2026](#v1131--22-september-2026)
 - [v1.13.0 — 22 September 2026](#v1130--22-september-2026)
@@ -217,6 +218,112 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.13.3 — 23 September 2026
+
+A theme was thirteen colours. It is now a palette **and** a character: one of
+twelve archetypes that answers the nine surface fields a theme leaves blank.
+218 of the 242 entries said nothing about how they were drawn, so most of the
+collection rendered flat and matte whatever its palette was.
+
+### Themes
+
+- **new — every packaged theme names a character.** Lacquer, Glass, Frost,
+  Aurora, Neon, Velvet, Enamel, Brushed, Carbon, Paper, Terminal, Ink. The
+  archetype scales what the palette derivations already work out rather than
+  replacing them, so glass on a pale slate and glass on a near-black terminal
+  are both glass and not equally transparent. A field a theme states for itself
+  still wins, so the 24 entries that already carried character are untouched.
+- **new — one line per family**, saying what it is like to sit in front of.
+  Shown on the card in the browser and searchable, so a word from a theme's own
+  line finds it.
+- **new — a theme states the surfaces it was drawn for.** `Depth`, `Glow` and
+  `Effects` are fields on `ThemeColors` now; left empty they are derived from
+  the archetype.
+
+### Appearance
+
+- **new — Depth, Glow and Effects start on *Follow the theme*.** A change made
+  while following belongs to the theme on screen: it is stored under
+  `themeSurfacePrefs` keyed by theme id, so switching away and back finds it
+  again and every other theme keeps its own. *Every theme* holds the three
+  across the install instead, which is how every version before this worked.
+- **new — Effects (off / held back / full)**, emitted as `--theme-effects`.
+  Every character token multiplies by it, so off is genuinely off.
+- **new — Vivid**, a rung above `rich` where the archetypes open all the way.
+  `glass` stays beside the ladder rather than on it.
+- **new — *Back to the theme's own*** resets Depth, Glow and Effects for the
+  theme on screen, whether they were stored against it or forced install-wide.
+- **fix — the Surfaces panel lines up.** Notes sat in the third column of the
+  `.config-field` grid and pushed the ↺ onto a line of its own; they take the
+  full row now, which also straightens out Text contrast and the Backdrop
+  panel.
+- **fix — `themeDepth` and `glowStrength` carried stale defaults** (`glass`,
+  `soft`) in `FIELD_META`, so the ↺ claimed every install differed from the
+  default.
+- **fix — one button to the theme editor.** *Open the theme editor…* and *Make
+  your own theme…* both ran `switchAppearanceTab('custom-themes')`.
+- **new — ℹ on Depth, Glow, Effects, Text contrast, both Backdrop rows and the
+  two favicon controls.** None of them had one.
+
+### The theme browser
+
+- **new — a row of chips, one per archetype.** `isGloss()` tested `sheen > 0`,
+  which matches almost everything once every theme has a character; Gloss is
+  one chip of twelve now.
+- **new — searching reaches the archetype and the written line**, in the
+  reader's own language as well as the bare word.
+- **new — every theme previews at its own intended surfaces** while the browser
+  is open; what the reader had is restored on close, picked or not.
+
+### The dashboard
+
+- **new — an invitation to try the Widgets layout**, through
+  `NoticeCard.define()`. It applies the preset and carries the undo itself: the
+  preset in use is stored before the switch and the follow-up names it. The
+  delay is random, two to six minutes, drawn per page load.
+
+### The theme editor
+
+- **new — a Character group**: the archetype, the grain's angle and strength,
+  and the Depth, Glow and Effects the theme asks for. Every field starts at
+  *Automatic* and shows what the archetype gives it.
+
+### Under the hood
+
+- `--surface-grain`, two repeating gradients at right angles, for the brushed
+  and woven archetypes.
+- `--gloss-depth` caps the gloss at 1.15 of `--theme-depth`. Every other layer
+  is meant to grow with depth, but 15% white × a full sheen × a depth of 2 is
+  30% white over a whole panel.
+- `fillThemeCharacter` learned the new fields. Every built-in is written to
+  disk on first run, so without it an install that has been going a week would
+  keep 242 stored palettes with no character at all.
+- `clampFloat` treats zero as "unset" and answers with its fallback, which is
+  right for a JSON field and wrong for arithmetic: `paper` multiplies the
+  derived blur by 0 and means it. `clampComputed` clamps a worked-out number.
+- `/api/themes/meta` and `/api/themes/defaults`.
+
+### Development
+
+- **fix — five specs pinned rules this release changed.** A fresh install no
+  longer stores `glass` and `soft` but `follow`; the ↺ on the three surfaces is
+  one button now; and `glass-and-glow.spec.js` turned out to depend on what ran
+  before it in the same file, so it asserts what is drawn and leaves the stored
+  words to Go.
+- **fix — `TestGlowLiftIsOneOfTwoNumbers`** required the glow geometry to be a
+  function of page lightness alone; `neon` and `velvet` now insist.
+
+### Docs
+
+- Config → Help: the Themes page gained a Character section, Surfaces was
+  rewritten around *Follow the theme*, Effects and Vivid, and Gloss became one
+  archetype rather than a kind of its own. English in all six locale files;
+  translation belongs to a docs round.
+- `CHANGELOG.md`, `static/data/whats-new/v1.13.3.json`, `index.json`, both
+  tokens in `whats-new-stub.js`, `tests/whats-new-hidden-release.spec.js`.
 
 ---
 

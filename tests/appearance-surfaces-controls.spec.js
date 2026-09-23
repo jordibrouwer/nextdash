@@ -83,21 +83,43 @@ test('choosing a contrast applies it and it sticks', async ({ page }) => {
 test('every setting on the page carries a way back to its default', async ({ page }) => {
     await openAppearance(page);
 
+    /*
+     * Two kinds of way back, because there are two kinds of answer.
+     *
+     * Text contrast is the install's and carries the ↺. Depth, Glow and
+     * Effects belong to the theme on screen until "Every theme" is ticked, so
+     * theirs is the panel's own button -- one reset for the three of them,
+     * because they are one answer about one theme.
+     */
+    const perTheme = ['themeDepth', 'glowStrength', 'themeEffects'];
+    const installWide = FIELDS.filter((f) => !perTheme.includes(f));
+
     const missing = await page.evaluate((fields) => fields.filter(
         (field) => !document.querySelector(`[data-reset-field="${field}"]`),
-    ), FIELDS);
+    ), installWide);
     expect(missing, `no reset control for: ${missing.join(', ')}`).toEqual([]);
+
+    await expect(page.locator('[data-appearance-action="reset-theme-surfaces"]'),
+        'the three that belong to the theme have no reset').toHaveCount(1);
+
+    // One button, not one per setting and not a second one beside the ↺: the
+    // three are one answer about one theme.
+    await expect.poll(() => page.evaluate((fields) => fields.filter(
+        (field) => document.querySelector(`[data-reset-field="${field}"]`),
+    ), perTheme), { message: 'the three carry a ↺ as well as the button' }).toEqual([]);
 });
 
 test('the reset puts the value back and repaints the page', async ({ page }) => {
     await openAppearance(page);
 
     /*
-     * Move all three Surfaces answers away from their defaults — which changed
-     * with this release. A fresh install starts on glass with a soft glow
-     * (defaultThemeDepth / defaultGlowStrength in internal/app/models.go), so
-     * setting the depth to glass here left it sitting on its default and no ↺
-     * was offered, which is what this test had been reading as a broken reset.
+     * The ↺ is the installation default's reset, so this is about the mode
+     * where the three Surfaces answers are the installation's.
+     *
+     * With "Every theme" off they belong to the theme on screen, the setting
+     * stays on "follow" whatever is picked, and the reset that applies is the
+     * panel's own button rather than the ↺ — which is why this ticks the box
+     * first. The per-theme reset has its own test in theme-archetypes.spec.js.
      */
     await page.locator('[data-appearance-select="themeDepth"]').selectOption('flat');
     await page.locator('[data-appearance-select="glowStrength"]').selectOption('full');
@@ -107,18 +129,16 @@ test('the reset puts the value back and repaints the page', async ({ page }) => 
     expect(await page.evaluate(() => document.body.getAttribute('data-depth'))).toBe('flat');
     expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('full');
 
-    // The ↺ is only offered while there is something to undo.
+    // The one button puts all three back to what the theme asks for.
+    await page.locator('[data-appearance-action="reset-theme-surfaces"]').click();
+    await expect.poll(() => page.evaluate(
+        () => document.body.getAttribute('data-depth')), { timeout: 5_000 }).not.toBe('flat');
+    await expect.poll(() => page.evaluate(
+        () => document.body.getAttribute('data-glow')), { timeout: 5_000 }).not.toBe('full');
+
+    // Text contrast is the install's own answer and keeps its ↺.
     const reset = (field) => page.locator(`[data-reset-field="${field}"]`);
-    await expect(reset('themeDepth')).toHaveClass(/is-visible/);
-
-    await reset('themeDepth').click();
-    await expect.poll(() => page.evaluate(
-        () => document.body.getAttribute('data-depth')), { timeout: 5_000 }).toBe('glass');
-
-    await reset('glowStrength').click();
-    await expect.poll(() => page.evaluate(
-        () => document.body.getAttribute('data-glow')), { timeout: 5_000 }).toBe('soft');
-
+    await expect(reset('inkGap')).toHaveClass(/is-visible/);
     await reset('inkGap').click();
     await expect.poll(() => page.evaluate(
         () => Number(window.dashboardInstance.settings.inkGap)), { timeout: 5_000 }).toBe(0.44);

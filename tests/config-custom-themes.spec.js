@@ -62,7 +62,12 @@ test.describe('custom theme editor', () => {
         // Branding is one panel — a toggle, a text field and an upload — so it
         // lives on Display rather than owning a tab of its own.
         await expect(page.locator('[data-appearance-tab="branding"]')).toHaveCount(0);
+        // One button reaches that page. It used to be two -- "Open the theme
+        // editor…" and "Make your own theme…" both ran switchAppearanceTab to
+        // the same tab -- so the count is part of what this pins.
         await expect(page.locator('[data-appearance-goto="custom-themes"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-goto="custom-themes"]'),
+            'the second button to the same tab is back').toHaveCount(1);
     });
 
     test('adding a theme copies a full palette and opens its editor', async ({ page }) => {
@@ -238,7 +243,7 @@ test.describe('custom theme editor', () => {
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         // The old embedded panel is gone; the link is a jump to the tab.
         await expect(page.locator('#config-theme-colors-panel')).toHaveCount(0);
-        await page.locator('[data-appearance-action="edit-colors"]').click();
+        await page.locator('[data-appearance-goto="custom-themes"]').click();
         await expect(page.locator('[data-theme-add]')).toBeVisible();
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');

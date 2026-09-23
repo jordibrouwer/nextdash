@@ -237,12 +237,20 @@ func TestGlowLiftIsOneOfTwoNumbers(t *testing.T) {
 		if !ok {
 			continue
 		}
+		// The page decides, unless the theme's archetype insists: neon emits
+		// and so always haloes, velvet absorbs and so always casts down. That
+		// is the whole point of those two, and it is why this is no longer a
+		// function of lightness alone (see theme_archetype.go).
 		wantLift := "1"
 		if pageLightness >= lightPageThreshold {
 			wantLift = "0"
 		}
+		if forced := archetypeGlowLift(tc); forced >= 0 {
+			wantLift = strconv.Itoa(forced)
+		}
 		if lift != wantLift {
-			t.Errorf("%s has a page lightness of %.2f and a glow lift of %s", id, pageLightness, lift)
+			t.Errorf("%s (%s) has a page lightness of %.2f and a glow lift of %s, want %s",
+				id, tc.Character, pageLightness, lift, wantLift)
 		}
 	}
 

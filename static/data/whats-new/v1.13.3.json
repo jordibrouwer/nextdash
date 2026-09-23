@@ -1,0 +1,81 @@
+{
+  "tag": "v1.13.3",
+  "date": "23 September 2026",
+  "releasedAt": "2026-09-23",
+  "modalLead": "Every theme now says what kind of thing it is, not just which colours it uses — lacquer, glass, velvet, paper, terminal, twelve in all. A theme brings the surfaces it was drawn for when you pick it, the browser lets you filter on character and tells you what each theme is like, and a new Effects setting decides how loudly any of it is drawn.",
+  "sections": [
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every theme has a character.</strong> Lacquer catches a band of light, Glass and Frost you look through, Velvet absorbs it, Neon lets the colour leave the surface, Brushed and Carbon have a grain, Paper and Terminal refuse all of it. Two themes in the same colours no longer look like the same theme twice."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A theme brings its own surfaces.</strong> Depth, Glow and Effects start on <em>Follow the theme</em>, so picking a theme also picks how it is drawn. Change one and it belongs to that theme: switch away and back and it is still there, and every other theme keeps its own."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Back to the theme's own</strong> puts Depth, Glow and Effects back to what the theme asks for. Tick <em>Every theme</em> instead and the three hold across every theme, the way they used to."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Each theme has a line saying what it is like.</strong> One sentence per family, on its card in the browser, and you can search on it — type <em>phosphor</em> and the tube themes come up."
+        }
+      ]
+    },
+    {
+      "title": "The theme browser",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A row of chips, one per character.</strong> Gloss used to be the only filter beside light and dark; it is now one of twelve, and picking one narrows the grid to that kind. Searching finds a character by name as well."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Themes are shown the way they were drawn.</strong> While the browser is open every theme previews at its own surfaces, so a hundred themes can be compared on equal footing. What you had comes back when you close it."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Effects</strong> decides how loudly a theme's character is drawn — the shine, the glow, the grain, and how round the corners are. Off leaves the palette and nothing else."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Vivid</strong> joins Depth, above Rich, where a theme's character opens all the way."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The ℹ button reaches more settings.</strong> Depth, Glow, Effects, Text contrast, both Backdrop rows and the two favicon controls explain themselves now, and the rows in Surfaces line up instead of scattering."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>One button to the theme editor, not two.</strong> <em>Open the theme editor…</em> and <em>Make your own theme…</em> went to the same page."
+        }
+      ]
+    },
+    {
+      "title": "The theme editor",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A theme's character is editable.</strong> Pick an archetype and the rest follows, or set the grain, the shine, the roundness and the surfaces it asks to be drawn at by hand. Packaged themes as well as your own."
+        }
+      ]
+    },
+    {
+      "title": "The dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>An invitation to try the Widgets layout</strong>, for anyone not already on it. It applies the layout there and then, and the same card puts back the one you had."
+        }
+      ]
+    }
+  ]
+}

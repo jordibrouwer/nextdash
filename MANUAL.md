@@ -893,29 +893,61 @@ The shine is drawn with the glow. When you pick a Gloss theme while **Glow** is 
 
 **Any theme can shine.** The **Gloss** slider in the theme editor (Custom themes) sets the sheen — how much light a raised surface catches — for a custom theme or a recoloured packaged theme. Zero draws no sheen.
 
-### 12.2 Surfaces
+### 12.2 Character
 
-These change how any theme is drawn.
+Every packaged theme names one of twelve archetypes. The archetype decides what
+kind of surface a theme draws, which is the part a palette cannot say.
+
+| Archetype | What it draws |
+|---|---|
+| **Lacquer** | A band of light across a polished surface |
+| **Glass** · **Frost** | You look through it; frost has stopped being clear |
+| **Aurora** | About the page behind everything, rather than the surfaces on it |
+| **Neon** | The accent leaves the surface as a halo |
+| **Velvet** | Deep and unlit; the light goes into the shadow beneath |
+| **Enamel** | Round and glazed at once |
+| **Brushed** · **Carbon** | A grain, in one direction or woven |
+| **Paper** · **Terminal** · **Ink** | Matte, square-ish, and carried by the type |
+
+The chips in the theme browser filter on it, and searching finds an archetype
+by name — or a word from the line each family carries.
+
+A theme's character is editable in the theme editor, for packaged themes as
+well as your own: the archetype, the grain's angle and strength, the shine, the
+roundness, and the surfaces the theme asks to be drawn at.
+
+### 12.3 Surfaces
+
+These change how any theme is drawn. The first three start on **Follow the
+theme**: each theme states what it was drawn for, and picking a theme brings
+its answer with it.
 
 | Setting | Choices |
 |---|---|
-| **Depth** | **Flat** (default) · Soft · Rich · Glass — Soft and Rich add a tint in the greys, raised surfaces and a faint wash of light behind the page; Glass blurs what is behind a surface. Menus are never blurred. |
-| **Glow** | **Off** (default) · Soft · Full — how far the theme's colour carries around a surface. Flat has no glow. |
+| **Depth** | **Follow the theme** (default) · Flat · Soft · Rich · Vivid · Glass — the steps add a tint in the greys, raised surfaces and a faint wash of light behind the page; Glass blurs what is behind a surface and sits beside the ladder rather than on it. Menus are never blurred. |
+| **Glow** | **Follow the theme** (default) · Off · Soft · Full — how far the theme's colour carries around a surface. Flat has no glow. |
+| **Effects** | **Follow the theme** (default) · Off · Held back · Full — how loudly the character is drawn: the shine, the glow, the grain, and how round the corners are. Off leaves the palette and nothing else. |
+| **These apply to** | Off, the three above belong to the theme you are on; **Every theme** holds them across the whole install. |
+| **This theme** | **Back to the theme's own** puts the three back to what the theme asks for. |
 | **Text contrast** | Soft · Normal · High · Maximum — how far the fainter text sits from its surface |
 | **Theme backdrop** | On · Off — the backdrop each theme builds from its own colours |
 | **Backdrop** | Follow the theme · Dots · Grid · Lines · Hatch · None |
 | **Favicon harmonization** | Off · On, with **Muted**, **Tinted** or **Overlay** and an intensity. Stored per theme, so the light and dark halves are set separately. |
 
+While Depth, Glow and Effects say *Follow the theme*, changing one belongs to
+the theme on screen: switch away and back and it is still there, and every
+other theme keeps its own.
+
 `:depth`, `:glow`, `:contrast`, `:backdrop`, `:pattern` and `:harmonize` change these from the command palette.
 
-### 12.3 Type and background
+### 12.4 Type and background
 
 - **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**.
 - **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL; pointing at a size previews it.
 - **Background** — **Auto** (follows the theme), **None**, **Gradient** or **Image URL**. **Opacity** fades it so the bookmarks stay readable. A background of your own is drawn over the theme backdrop.
 - **Enable animations** — on the Look tab with the surfaces; off stills the motion across the app.
 
-### 12.4 Custom themes
+### 12.5 Custom themes
 
 **Make your own theme…** on the Look tab opens the theme editor as a page of its own; **← Look** above it goes back. A link to `/#config/appearance/custom-themes` opens it directly.
 
@@ -925,7 +957,7 @@ These change how any theme is drawn.
 - **Packaged themes** — recolour any theme that ships, or the base light and dark palettes. **Reset defaults** puts a theme back.
 - Changes preview live on the dashboard behind config; leaving the tab drops an unsaved preview. On a phone the editor is read-only.
 
-### 12.5 Grid and rows
+### 12.6 Grid and rows
 
 **Grid**
 
@@ -956,7 +988,7 @@ Small drawings beside the shape settings show what a value looks like.
 | **Tags on rows** | And how many show before a count |
 | **Link preview cards** | Off · On hover · Keyboard only, the hover delay, and which rows the card shows ([§4](#4-the-dashboard)) |
 
-### 12.6 Header and action buttons
+### 12.7 Header and action buttons
 
 See [§4](#4-the-dashboard) for what each part does. The settings:
 
@@ -965,13 +997,13 @@ See [§4](#4-the-dashboard) for what each part does. The settings:
 
 Each group has **Show all / Hide all**.
 
-### 12.7 Date and weather
+### 12.8 Date and weather
 
-- **Date & time** — show date, show time, date format, 12- or 24-hour clock. Where the clock and weather stand in the header is set on the Header tab ([§12.6](#126-header-and-action-buttons)).
+- **Date & time** — show date, show time, date format, 12- or 24-hour clock. Where the clock and weather stand in the header is set on the Header tab ([§12.7](#127-header-and-action-buttons)).
 - **Weather** — on or off, browser location or a city, Celsius or Fahrenheit, refresh interval. The Weather widget reads the same settings.
 - **Calendar** — **Calendar URL** (the link in the date popover) and **Calendar feed URL (.ics)** (what the Calendar widget reads).
 
-### 12.8 Finding and resetting
+### 12.9 Finding and resetting
 
 Each tab has a filter beside **Only changed**. When the filter — or **Only changed** — finds something on another tab too, the line under the list names that tab with a count (*Also found on: Header 2*); a click opens it and keeps the filter. **↺** resets one setting, **Reset panel** a whole group. `Ctrl/Cmd + Shift + K` finds any setting ([§15](#15-config)).
 

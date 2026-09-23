@@ -33,7 +33,14 @@ func writeSurfaceSettingsFile(t *testing.T, payload map[string]any) {
 	}
 }
 
-func TestFreshInstallStartsOnBackdropOnGlowSoftDepthGlass(t *testing.T) {
+/*
+Every one of the passes below is now followed by one more: depth, glow and
+effects move to "follow", where the theme answers. So the older passes are
+history rather than behaviour -- their markers still have to be written, and
+an install that forced a value after the follow pass still has to keep it, but
+what a reader ends up looking at is the theme's own surfaces.
+*/
+func TestFreshInstallFollowsTheTheme(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	t.Chdir(t.TempDir())
 
@@ -42,14 +49,19 @@ func TestFreshInstallStartsOnBackdropOnGlowSoftDepthGlass(t *testing.T) {
 	if settings.ThemeBackdrop != "on" {
 		t.Fatalf("fresh install: themeBackdrop is %q", settings.ThemeBackdrop)
 	}
-	// A fresh install opens on Tarnished Brass, which is built for glass and a
-	// soft glow; an install that predates this keeps the flat, unlit answer the
-	// migration below gave it.
-	if settings.GlowStrength != "soft" {
-		t.Fatalf("fresh install: glowStrength is %q", settings.GlowStrength)
+	// A fresh install asks the theme rather than carrying an answer of its
+	// own: Tarnished Brass is brushed, and brushed knows what it wants.
+	for label, got := range map[string]string{
+		"glowStrength": settings.GlowStrength,
+		"themeDepth":   settings.ThemeDepth,
+		"themeEffects": settings.ThemeEffects,
+	} {
+		if got != surfaceFollow {
+			t.Fatalf("fresh install: %s is %q, want follow", label, got)
+		}
 	}
-	if settings.ThemeDepth != "glass" {
-		t.Fatalf("fresh install: themeDepth is %q", settings.ThemeDepth)
+	if !settings.SurfaceFollowMigrated {
+		t.Fatal("fresh install: the follow marker was not written")
 	}
 }
 
@@ -71,7 +83,7 @@ func TestAnIncompleteSettingsFileGetsTheFreshLook(t *testing.T) {
 	if settings.Theme != defaultThemeID {
 		t.Fatalf("incomplete file: theme is %q", settings.Theme)
 	}
-	if settings.ThemeDepth != "glass" || settings.GlowStrength != "soft" {
+	if settings.ThemeDepth != surfaceFollow || settings.GlowStrength != surfaceFollow {
 		t.Fatalf("incomplete file: depth %q glow %q", settings.ThemeDepth, settings.GlowStrength)
 	}
 	if settings.ThemeBackdrop != "on" || settings.BackgroundPattern != "auto" {
@@ -79,8 +91,16 @@ func TestAnIncompleteSettingsFileGetsTheFreshLook(t *testing.T) {
 	}
 }
 
-// And one that did answer keeps its answer.
-func TestAStoredLookIsKept(t *testing.T) {
+/*
+An install that did answer is moved to follow anyway, once.
+
+Settings are written as one whole struct, so a stored depth is present on
+nearly every install whether or not anybody chose it -- "key present" is not
+"choice made", and this release does not pretend it can tell them apart. The
+theme is theirs and stays; the surfaces move, the What's new modal says so,
+and one setting puts it back.
+*/
+func TestAStoredLookMovesToFollowOnce(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	t.Chdir(t.TempDir())
 
@@ -95,9 +115,35 @@ func TestAStoredLookIsKept(t *testing.T) {
 
 	settings := NewStore().GetSettings()
 
-	if settings.Theme != "cherry-graphite-dark" || settings.ThemeDepth != "flat" || settings.GlowStrength != "off" {
-		t.Fatalf("stored look was overwritten: theme %q depth %q glow %q",
-			settings.Theme, settings.ThemeDepth, settings.GlowStrength)
+	if settings.Theme != "cherry-graphite-dark" {
+		t.Fatalf("the theme was overwritten: %q", settings.Theme)
+	}
+	if settings.ThemeDepth != surfaceFollow || settings.GlowStrength != surfaceFollow {
+		t.Fatalf("the surfaces did not move to follow: depth %q glow %q",
+			settings.ThemeDepth, settings.GlowStrength)
+	}
+}
+
+// And once moved, a value forced afterwards is the reader's and is kept.
+func TestTheFollowPassRunsOnlyOnce(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+
+	writeSurfaceSettingsFile(t, map[string]any{
+		"currentPage":              1,
+		"surfaceDefaultsMigrated":  true,
+		"depthDefaultFlatMigrated": true,
+		"surfaceFollowMigrated":    true,
+		"themeDepth":               "flat",
+		"glowStrength":             "off",
+		"themeEffects":             "held",
+	})
+
+	settings := NewStore().GetSettings()
+
+	if settings.ThemeDepth != "flat" || settings.GlowStrength != "off" || settings.ThemeEffects != "held" {
+		t.Fatalf("a forced look was taken away: %q/%q/%q",
+			settings.ThemeDepth, settings.GlowStrength, settings.ThemeEffects)
 	}
 }
 
@@ -118,11 +164,11 @@ func TestExistingInstallIsMovedOntoTheSameThree(t *testing.T) {
 	if settings.ThemeBackdrop != "on" {
 		t.Fatalf("migration: themeBackdrop is %q", settings.ThemeBackdrop)
 	}
-	if settings.GlowStrength != "off" {
-		t.Fatalf("migration: glowStrength is %q", settings.GlowStrength)
-	}
-	if settings.ThemeDepth != "flat" {
-		t.Fatalf("migration: themeDepth is %q", settings.ThemeDepth)
+	// Glow and depth are on follow: this pass still runs and still writes its
+	// marker, and the follow pass after it is what the reader ends up on.
+	if settings.GlowStrength != surfaceFollow || settings.ThemeDepth != surfaceFollow {
+		t.Fatalf("migration: glow %q depth %q, want follow",
+			settings.GlowStrength, settings.ThemeDepth)
 	}
 	if !settings.SurfaceDefaultsMigrated {
 		t.Fatal("migration: the marker was not written")
@@ -144,9 +190,13 @@ func TestSurfaceDefaultsRunOnlyOnce(t *testing.T) {
 
 	settings := NewStore().GetSettings()
 
-	if settings.ThemeBackdrop != "off" || settings.ThemeDepth != "glass" || settings.GlowStrength != "full" {
-		t.Fatalf("the pass ran twice: %q/%q/%q",
-			settings.ThemeBackdrop, settings.ThemeDepth, settings.GlowStrength)
+	if settings.ThemeBackdrop != "off" {
+		t.Fatalf("the pass ran twice: backdrop %q", settings.ThemeBackdrop)
+	}
+	// Depth and glow are on follow: this file predates the follow marker, so
+	// that pass has just run over it.
+	if settings.ThemeDepth != surfaceFollow || settings.GlowStrength != surfaceFollow {
+		t.Fatalf("depth %q glow %q, want follow", settings.ThemeDepth, settings.GlowStrength)
 	}
 }
 
@@ -171,16 +221,18 @@ func TestDepthMovesToFlatForInstallsThatTookTheFirstPass(t *testing.T) {
 
 	settings := NewStore().GetSettings()
 
-	if settings.ThemeDepth != "flat" {
-		t.Fatalf("depth is %q", settings.ThemeDepth)
-	}
+	// The marker is still written -- it is what stops that pass running again
+	// for anybody who goes back to forcing a depth -- but the follow pass runs
+	// after it and is what the reader ends up on.
 	if !settings.DepthDefaultFlatMigrated {
 		t.Fatal("the marker was not written")
 	}
-	// Their own answers to the other two are theirs.
-	if settings.ThemeBackdrop != "off" || settings.GlowStrength != "full" {
-		t.Fatalf("the pass took more than the depth: %q/%q",
-			settings.ThemeBackdrop, settings.GlowStrength)
+	if settings.ThemeDepth != surfaceFollow {
+		t.Fatalf("depth is %q, want follow", settings.ThemeDepth)
+	}
+	// The backdrop is not part of the follow pass, so their answer stands.
+	if settings.ThemeBackdrop != "off" {
+		t.Fatalf("the pass took the backdrop too: %q", settings.ThemeBackdrop)
 	}
 }
 
@@ -194,8 +246,10 @@ func TestDepthFlatPassRunsOnlyOnce(t *testing.T) {
 		"depthDefaultFlatMigrated": true,
 	})
 
-	if depth := NewStore().GetSettings().ThemeDepth; depth != "glass" {
-		t.Fatalf("the pass ran twice: %q", depth)
+	// The flat pass leaves it alone; the follow pass then moves it, because
+	// this file carries no follow marker.
+	if depth := NewStore().GetSettings().ThemeDepth; depth != surfaceFollow {
+		t.Fatalf("depth is %q, want follow", depth)
 	}
 }
 

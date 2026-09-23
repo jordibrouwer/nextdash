@@ -64,6 +64,56 @@
     color: var(--text-primary);
 }
 
+/*
+ * De archetyperij.
+ *
+ * Twaalf chips passen niet naast het zoekveld en de vier segmenten, dus ze
+ * staan op een eigen regel en mogen aflopen. Wrap in plaats van scroll: een
+ * rij die horizontaal schuift verbergt precies wat je zoekt als je niet weet
+ * dat er meer is.
+ */
+
+.theme-browser-characters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.theme-browser-chip {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.55rem);
+    border-radius: var(--layout-radius-pill, 999px);
+    border: 1px solid var(--hairline, var(--border-secondary));
+    background: transparent;
+    color: var(--text-tertiary);
+    font: inherit;
+    font-size: 0.8em;
+    cursor: pointer;
+}
+
+.theme-browser-chip:hover {
+    color: var(--text-secondary);
+}
+
+.theme-browser-chip.is-on {
+    background: var(--accent-wash, color-mix(in srgb, var(--accent-primary) 16%, transparent));
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+/* De geschreven regel staat boven de afgeleide eigenschappen: hij is de zin
+   en die zijn de etiketten. Niet afgekapt: de kaart is de enige plek waar hij
+   staat, en een halve zin is geen zin. De regels zijn op lengte gehouden waar
+   ze geschreven zijn (theme_description.go), dus dit kost hooguit een derde
+   regel op de smalste kaart. */
+
+.theme-browser-card-line {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    line-height: 1.35;
+}
+
 .theme-browser-count {
     margin: 0;
     color: var(--text-tertiary);

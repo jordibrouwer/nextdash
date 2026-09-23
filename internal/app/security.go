@@ -179,7 +179,41 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		LabelWeight:    keepLabelWeight(tc.LabelWeight),
 		Sheen:          keepInRange(tc.Sheen, 0, 1),
 		Backdrop:       keepBackdrop(tc.Backdrop),
+
+		// The archetype and what it draws. A word this build does not know is
+		// dropped rather than kept: it would reach the browser as a class and
+		// as a filter chip, and a theme file from elsewhere does not get to
+		// invent either.
+		Character:  keepArchetype(tc.Character),
+		GrainAngle: keepInRange(tc.GrainAngle, 0, 360),
+		GrainScale: keepInRange(tc.GrainScale, 0, 1),
+
+		// The surfaces the theme asks for. Same rule: one of the words the
+		// stylesheet defines, or nothing, in which case it is derived.
+		Depth:   keepWord(tc.Depth, "flat", "soft", "rich", "vivid", "glass"),
+		Glow:    keepWord(tc.Glow, "off", "soft", "full"),
+		Effects: keepWord(tc.Effects, "off", "held", "full"),
 	}
+}
+
+// keepArchetype keeps a character this build defines, and nothing else.
+func keepArchetype(value string) string {
+	name := strings.ToLower(strings.TrimSpace(value))
+	if !isKnownArchetype(name) {
+		return ""
+	}
+	return name
+}
+
+// keepWord keeps one of a fixed set, lowercased, or empty for "work it out".
+func keepWord(value string, allowed ...string) string {
+	word := strings.ToLower(strings.TrimSpace(value))
+	for _, ok := range allowed {
+		if word == ok {
+			return word
+		}
+	}
+	return ""
 }
 
 // keepBackdrop keeps a recipe name the renderer knows, and nothing else.

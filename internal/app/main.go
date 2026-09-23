@@ -166,6 +166,8 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/colors/reset", handlers.ResetColors).Methods("POST")
 	r.HandleFunc("/api/colors/custom-themes", handlers.GetCustomThemesList).Methods("GET")
 	r.HandleFunc("/api/theme.css", handlers.CustomThemeCSS).Methods("GET")
+	r.HandleFunc("/api/themes/meta", handlers.ThemeMeta).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/themes/defaults", handlers.ThemeDefaults).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/push/public-key", handlers.PushPublicKey).Methods("GET")
 	r.HandleFunc("/api/push/devices", handlers.ListPushDevices).Methods("GET")
 	r.HandleFunc("/api/push/subscribe", handlers.SubscribePush).Methods("POST")
