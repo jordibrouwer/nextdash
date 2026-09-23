@@ -2432,15 +2432,27 @@ class SearchCommandsComponent {
         return this._appearanceCommand({
             prefix: 'depth',
             shortcut: ':DEPTH',
+            /*
+             * The same list Config offers, follow included.
+             *
+             * Without it the palette could not say what the setting is on: a
+             * fresh install follows the theme, which is none of the four, so
+             * the ✓ landed on nothing at all.
+             */
             options: [
+                { value: 'follow', label: t('config.themeSurfacesFollow', 'Follow the theme') },
                 { value: 'flat', label: t('config.themeDepthFlat', 'Flat') },
                 { value: 'soft', label: t('config.themeDepthSoft', 'Soft') },
                 { value: 'rich', label: t('config.themeDepthRich', 'Rich') },
+                { value: 'vivid', label: t('config.themeDepthVivid', 'Vivid') },
                 { value: 'glass', label: t('config.themeDepthGlass', 'Glass') },
             ],
-            current: (d) => d.settings.themeDepth || 'rich',
+            current: (d) => d.settings.themeDepth || 'follow',
+            // Through config's own writer, so a depth picked here belongs to
+            // the theme on screen exactly as it would from the Surfaces panel.
             apply: (value) => this._applyAppearance(window.dashboardInstance, 'themeDepth', value,
-                (v) => window.ThemeLoader?.applyThemeDepth?.(v), `depth:${value}`),
+                (v) => window.dashboardInstance?.config?.setSurface?.('themeDepth', v)
+                    ?? window.ThemeLoader?.applyThemeDepth?.(v), `depth:${value}`),
         }, args);
     }
 
@@ -2674,13 +2686,15 @@ class SearchCommandsComponent {
             prefix: 'glow',
             shortcut: ':GLOW',
             options: [
+                { value: 'follow', label: t('config.themeSurfacesFollow', 'Follow the theme') },
                 { value: 'off', label: t('config.glowStrengthOff', 'Off') },
                 { value: 'soft', label: t('config.glowStrengthSoft', 'Soft') },
                 { value: 'full', label: t('config.glowStrengthFull', 'Full') },
             ],
-            current: (d) => d.settings.glowStrength || 'off',
+            current: (d) => d.settings.glowStrength || 'follow',
             apply: (value) => this._applyAppearance(window.dashboardInstance, 'glowStrength', value,
-                (v) => window.ThemeLoader?.applyGlowStrength?.(v), `glow:${value}`),
+                (v) => window.dashboardInstance?.config?.setSurface?.('glowStrength', v)
+                    ?? window.ThemeLoader?.applyGlowStrength?.(v), `glow:${value}`),
         }, args);
     }
 

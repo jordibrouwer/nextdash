@@ -72,7 +72,9 @@ test.describe('appearance in the command palette', () => {
         await dashboard(page);
 
         for (const [command, expected] of [
-            ['depth', 4], ['contrast', 4], ['backdrop', 2], ['pattern', 6], ['rows', 2],
+            // Depth lists follow plus five: the ✓ has to have somewhere to
+            // land on a fresh install, which follows the theme.
+            ['depth', 6], ['contrast', 4], ['backdrop', 2], ['pattern', 6], ['rows', 2],
         ]) {
             const listed = await rows(page, command, expected);
             expect(listed.filter((r) => r.includes('✓')).length,
@@ -96,7 +98,18 @@ test.describe('appearance in the command palette', () => {
         await pick(page, 'contrast', 'high');
 
         const saved = await settings(page);
-        expect(saved.themeDepth, 'depth did not reach the settings').toBe('glass');
+        /*
+         * Depth is stored against the theme, not the install.
+         *
+         * Picking one from the palette goes through the same writer the
+         * Surfaces panel uses, so the setting stays on "follow" and the answer
+         * lands under themeSurfacePrefs. What is on the body was asserted
+         * above; this is where it was kept.
+         */
+        expect(saved.themeDepth, 'depth stopped following the theme').toBe('follow');
+        const prefs = saved.themeSurfacePrefs || {};
+        expect(Object.values(prefs).map((p) => p.depth),
+            'the depth was not stored against a theme').toContain('glass');
         expect(saved.themeBackdrop).toBe('off');
         expect(saved.rowHighlight).toBe('strong');
         expect(saved.backgroundPattern).toBe('hatch');
