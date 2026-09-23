@@ -105,13 +105,16 @@ func captureAccessAllowed(r *http.Request) bool {
 	if writeAccessToken() == "" {
 		return true
 	}
+	// Compared in constant time, for the reason tokensMatch gives: `==` stops
+	// at the first byte that differs, and how long that took says how much of a
+	// guess was right.
 	provided := strings.TrimSpace(r.URL.Query().Get("token"))
 	capture := captureToken()
-	if capture != "" && provided == capture {
+	if capture != "" && tokensMatch(provided, capture) {
 		return true
 	}
 	// The write token itself is accepted too, for a script that already has it.
-	return provided != "" && provided == writeAccessToken()
+	return provided != "" && tokensMatch(provided, writeAccessToken())
 }
 
 // captureToInbox performs the save both routes share.

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"crypto/subtle"
 	"math"
 	"net/http"
 	"os"
@@ -342,9 +343,23 @@ For a route that narrows what it returns rather than refusing it outright: the
 dashboard has to be able to read a page's blocks to draw them, and only the
 settings that are addresses need withholding.
 */
+/*
+tokensMatch compares two secrets in time that does not depend on how much of
+them matches.
+
+`==` on a string stops at the first byte that differs, so how long the answer
+took says how much of a guess was right -- and a guess can be refined one byte
+at a time from that. Over a network the difference is buried in noise and this
+is not the likeliest way into a self-hosted dashboard, but it is one line either
+way and the one line that does not leak is the one to write.
+*/
+func tokensMatch(provided, expected string) bool {
+	return subtle.ConstantTimeCompare([]byte(provided), []byte(expected)) == 1
+}
+
 func hasWriteAccess(r *http.Request) bool {
 	token := writeAccessToken()
-	return token == "" || r.Header.Get("X-NextDash-Token") == token
+	return token == "" || tokensMatch(r.Header.Get("X-NextDash-Token"), token)
 }
 
 func (h *Handlers) requireWriteAccess(w http.ResponseWriter, r *http.Request) bool {
@@ -352,7 +367,7 @@ func (h *Handlers) requireWriteAccess(w http.ResponseWriter, r *http.Request) bo
 	if token == "" {
 		return true
 	}
-	if r.Header.Get("X-NextDash-Token") != token {
+	if !tokensMatch(r.Header.Get("X-NextDash-Token"), token) {
 		logAuthDenied(r, "missing_or_invalid_write_token")
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return false
