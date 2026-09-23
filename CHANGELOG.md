@@ -342,6 +342,10 @@ collection rendered flat and matte whatever its palette was.
 - **fix — the gloss glow offer wrote `glowStrength` install-wide.** It goes
   through the same path as every other surface change, so it lands on the theme
   that prompted it.
+- **fix — `:depth` in the command palette listed four choices** and knew
+  nothing of follow or vivid, so on a fresh install the ✓ had nowhere to land.
+  It and `:glow` offer the list Config does and write through the same path, so
+  a value picked there belongs to the theme on screen.
 
 ### Docs
 
