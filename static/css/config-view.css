@@ -1232,7 +1232,8 @@
  * on their own line once they wrap.
  */
 .config-field > .config-field-hint,
-.config-field > .config-field-warning {
+.config-field > .config-field-warning,
+.config-field > .config-panel-note {
     grid-column: 1 / -1;
     margin-top: -4px;
 }
@@ -1244,6 +1245,16 @@
  */
 .config-field:has(> .config-range-value) {
     grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto auto;
+}
+
+/* A slider row that also carries a preview and an ℹ has two more children than
+   the four columns above allow, and they wrapped onto a line of their own.
+
+   The preview is what identifies it. Keyed on the affordances alone this also
+   caught the opacity slider, which has a readout and an ℹ and no preview, and
+   gave it a fifth column with nothing to put in it. */
+.config-field:has(> .config-range-value):has(> .config-icon-preview) {
+    grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto auto auto;
 }
 
 .config-field-label {
@@ -1516,6 +1527,20 @@
     font: inherit;
     font-size: calc(var(--font-size-text) * 0.971);
     cursor: pointer;
+}
+
+/*
+ * Een knop die in de controlekolom van een rij staat, naast selects.
+ *
+ * Zelfde padding, radius en tekstgrootte als .config-select, zodat de rij er
+ * niet uitspringt: de lezer leest een kolom met controls, niet vier selects
+ * en een knop van een andere maat.
+ */
+.config-btn--field {
+    padding: 7px 10px;
+    border-radius: var(--radius-5, 8px);
+    font-size: calc(var(--font-size-text) * 0.971);
+    justify-self: start;
 }
 
 .config-select:disabled {

@@ -8747,9 +8747,20 @@ class DashboardConfig {
                     <div class="config-choices" role="group">${this.renderRandomThemeModeChoices(s)}</div>
                     ${this.appearanceAff('randomThemeMode')}
                 </div>
-                <div class="config-actions" style="margin-top:14px">
-                    <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openBuiltInColorsLink', 'Open the theme editor…'))}</button>
-                    <button type="button" class="config-btn" data-appearance-goto="custom-themes">${esc(this.t('config.makeOwnTheme', 'Make your own theme…'))}</button>
+                <!-- One button, not two. "Open the theme editor…" and "Make
+                     your own theme…" both ran switchAppearanceTab to the same
+                     tab, so they were one action wearing two labels -- and
+                     that tab does both jobs: it recolours a packaged theme
+                     and it builds a new one.
+
+                     A row like the rest of the panel rather than a lone
+                     button: it is reached the same way every setting here is,
+                     so it says what it is and carries the same ℹ. -->
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.themeEditorLabel', 'Theme editor'))}</span>
+                    <button type="button" class="config-btn config-btn--field" data-appearance-goto="custom-themes">${esc(this.t('config.openBuiltInColorsLink', 'Open the theme editor…'))}</button>
+                    ${this.appearanceAff('themeEditor')}
+                    <p class="config-panel-note">${esc(this.t('config.themeEditorNote', 'Change the colours of a theme that ships with nextDash, or build one of your own. A theme you make comes as a light and a dark half, like the packaged ones.'))}</p>
                 </div>
             </div>
 
@@ -8759,26 +8770,38 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeDepthLabel', 'Depth'))}</span>
                     <select class="config-select" data-appearance-select="themeDepth">
-                        ${['flat', 'soft', 'rich', 'glass'].map((option) => `<option value="${option}"${(s.themeDepth || 'flat') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
+                        <option value="follow"${this.surfaceSelectValue('themeDepth') === 'follow' ? ' selected' : ''}>${esc(this.t('config.themeSurfacesFollow', 'Follow the theme'))}</option>
+                        ${['flat', 'soft', 'rich', 'vivid', 'glass'].map((option) => `<option value="${option}"${this.surfaceSelectValue('themeDepth') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
                     </select>
-                    <p class="config-panel-note">${esc(this.t('config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Flat is the dashboard as it was before any of it.'))}</p>
-                    ${this.appearanceAff('themeDepth')}
+                    ${this.surfaceAff('themeDepth')}
+                    <p class="config-panel-note">${esc(this.t('config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Follow the theme lets each theme bring the depth it was drawn for; pick a value instead and it holds for the theme you are on.'))}</p>
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.glowStrengthLabel', 'Glow'))}</span>
                     <select class="config-select" data-appearance-select="glowStrength">
-                        ${[['soft', 'Soft'], ['full', 'Full'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${(s.glowStrength || 'off') === option ? ' selected' : ''}>${esc(this.t('config.glowStrength' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
+                        <option value="follow"${this.surfaceSelectValue('glowStrength') === 'follow' ? ' selected' : ''}>${esc(this.t('config.themeSurfacesFollow', 'Follow the theme'))}</option>
+                        ${[['soft', 'Soft'], ['full', 'Full'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${this.surfaceSelectValue('glowStrength') === option ? ' selected' : ''}>${esc(this.t('config.glowStrength' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
                     </select>
-                    <p class="config-panel-note">${esc(this.t('config.glowStrengthNote', 'How far the theme\'s own colour carries around a surface and around what you are acting on. Off is the default; Full is what earlier versions drew, and Soft is the middle. Depth decides whether there is a glow at all — flat has none.'))}</p>
-                    ${this.appearanceAff('glowStrength')}
+                    ${this.surfaceAff('glowStrength')}
+                    <p class="config-panel-note">${esc(this.t('config.glowStrengthNote', 'How far the theme\'s own colour carries around a surface and around what you are acting on. Follow the theme lets each theme bring its own; Full is what earlier versions drew, and Soft is the middle. Depth decides whether there is a glow at all — flat has none.'))}</p>
                 </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.themeEffectsLabel', 'Effects'))}</span>
+                    <select class="config-select" data-appearance-select="themeEffects">
+                        <option value="follow"${this.surfaceSelectValue('themeEffects') === 'follow' ? ' selected' : ''}>${esc(this.t('config.themeSurfacesFollow', 'Follow the theme'))}</option>
+                        ${[['full', 'Full'], ['held', 'Held back'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${this.surfaceSelectValue('themeEffects') === option ? ' selected' : ''}>${esc(this.t('config.themeEffects' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
+                    </select>
+                    ${this.surfaceAff('themeEffects')}
+                    <p class="config-panel-note">${esc(this.t('config.themeEffectsNote', 'How loudly a theme\'s character is drawn: the shine on a lacquered surface, the glow around a neon one, the grain on a brushed one, and how round its corners are. Off leaves the palette and nothing else. Depth is a different question — it decides how much of the theme is drawn behind the content.'))}</p>
+                </div>
+
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
                     <select class="config-select" data-appearance-select="inkGap">
                         ${DashboardConfig.INK_GAP_STEPS.map(([value, key, fallback]) => `<option value="${value}"${DashboardConfig.inkGapStepFor(inkGap) === value ? ' selected' : ''}>${esc(this.t(`config.${key}`, fallback))}</option>`).join('')}
                     </select>
-                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
                     ${this.appearanceAff('inkGap')}
+                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
                 </div>
                 <div class="config-field-row">
                     <label class="config-toggle">
@@ -8786,6 +8809,28 @@ class DashboardConfig {
                         <span>${esc(this.t('config.enableAnimations', 'Enable animations'))}</span>
                     </label>
                     ${this.appearanceAff('animationsEnabled')}
+                </div>
+            </div>
+
+            <!-- Whose the three above are. Its own panel rather than two more
+                 rows in Surfaces: they are not settings about how a theme is
+                 drawn, they are about who answers, and Surfaces was seven
+                 fields deep with them in it. -->
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceSurfaceScopeTitle', 'Whose surfaces these are'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceSurfaceScopeNote', 'Depth, Glow and Effects can belong to the theme you are on, or to every theme.'))}</p>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="themeSurfacesForceAll"${s.themeSurfacesForceAll ? ' checked' : ''}>
+                        <span>${esc(this.t('config.themeSurfacesForceAllLabel', 'Use these for every theme'))}</span>
+                    </label>
+                    ${this.appearanceAff('themeSurfacesForceAll')}
+                </div>
+                <p class="config-panel-note">${esc(this.t('config.themeSurfacesForceAllNote', 'Off, the three above belong to the theme you are on and each theme keeps its own. On, they hold for every theme and a theme brings nothing of its own.'))}</p>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.themeResetLabel', 'This theme'))}</span>
+                    <button type="button" class="config-btn config-btn--field" data-appearance-action="reset-theme-surfaces">${esc(this.t('config.themeResetToIdeal', 'Back to the theme\'s own'))}</button>
+                    <p class="config-panel-note">${esc(this.t('config.themeResetNote', 'Changes you make while Follow the theme is on belong to the theme you are on, so switching away and back finds them again. This puts the theme you are on back to what it ships with.'))}</p>
                 </div>
             </div>
 
@@ -8797,16 +8842,16 @@ class DashboardConfig {
                     <select class="config-select" data-appearance-select="themeBackdrop">
                         ${[['on', 'On'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${(s.themeBackdrop || 'on') === option ? ' selected' : ''}>${esc(this.t('config.themeBackdrop' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
                     </select>
-                    <p class="config-panel-note">${esc(this.t('config.themeBackdropNote', 'Every theme brings its own backdrop, built from its own colours, so no two look alike. Turn it off for a flat surface. Your own background image, if you set one, is drawn over it either way.'))}</p>
                     ${this.appearanceAff('themeBackdrop')}
+                    <p class="config-panel-note">${esc(this.t('config.themeBackdropNote', 'Every theme brings its own backdrop, built from its own colours, so no two look alike. Turn it off for a flat surface. Your own background image, if you set one, is drawn over it either way.'))}</p>
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.backgroundPatternLabel', 'Backdrop'))}</span>
                     <select class="config-select" data-appearance-select="backgroundPattern">
                         ${[['auto', 'Follow the theme'], ['dots', 'Dots'], ['grid', 'Grid'], ['lines', 'Lines'], ['hatch', 'Hatch'], ['none', 'None']].map(([option, label]) => `<option value="${option}"${(s.backgroundPattern || 'auto') === option ? ' selected' : ''}>${esc(this.t('config.backgroundPattern' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
                     </select>
-                    <p class="config-panel-note">${esc(this.t('config.backgroundPatternNote', 'The texture behind the dashboard. Left to the theme, most ask for dots and a few ask for something that suits them. Lines and hatch cover more of the page than dots do, so they read heavier on a light theme.'))}</p>
                     ${this.appearanceAff('backgroundPattern')}
+                    <p class="config-panel-note">${esc(this.t('config.backgroundPatternNote', 'The texture behind the dashboard. Left to the theme, most ask for dots and a few ask for something that suits them. Lines and hatch cover more of the page than dots do, so they read heavier on a light theme.'))}</p>
                 </div>
             </div>
 
@@ -8984,7 +9029,9 @@ class DashboardConfig {
      */
     async openThemeBrowser() {
         if (!window.ThemeBrowser?.open) return;
-        const [colors] = await Promise.all([this.loadColorsData(), this.loadThemeList()]);
+        const [colors, meta] = await Promise.all([
+            this.loadColorsData(), this.loadThemeMeta(), this.loadThemeList(),
+        ]).then(([c, m]) => [c, m]);
         const palettes = {
             light: colors?.light || {},
             dark: colors?.dark || {},
@@ -8994,6 +9041,7 @@ class DashboardConfig {
         this._themePickerPrevious = this.dash.settings?.theme || 'dark';
         window.ThemeBrowser.open({
             palettes,
+            meta,
             current: this.dash.settings?.theme || 'dark',
             favorites: Array.isArray(this.dash.settings?.favoriteThemes)
                 ? this.dash.settings.favoriteThemes
@@ -9142,6 +9190,27 @@ class DashboardConfig {
             const option = e.target.closest('[data-theme-option]');
             if (option) highlight(option);
         });
+
+        /*
+         * The line about a theme, while you are pointing at it.
+         *
+         * The list is a hundred names and a name says nothing about what a
+         * theme is like; the bubble is where that sentence fits without
+         * turning every row into two. One delegated pair of listeners rather
+         * than a popover attached per option: the list is rebuilt whenever the
+         * theme list loads, and per-option listeners would be rebound with it.
+         */
+        void this.loadThemeMeta().catch(() => {});
+        list.addEventListener('mouseover', (e) => {
+            const option = e.target.closest('[data-theme-option]');
+            if (!option) return;
+            const line = this.themeDescription(option.getAttribute('data-theme-option'));
+            // Beside the list, not under the row: the next row is directly
+            // beneath it, and a bubble there covers the thing it describes.
+            if (line) window.FieldPopover?.show?.(option, line, { variant: 'theme', beside: list });
+            else window.FieldPopover?.hide?.();
+        });
+        list.addEventListener('mouseleave', () => window.FieldPopover?.hide?.());
         list.addEventListener('click', (e) => {
             const option = e.target.closest('[data-theme-option]');
             if (option) commit(option);
@@ -9240,6 +9309,31 @@ class DashboardConfig {
     }
 
     /** Load the built-in + custom theme list, then repaint the theme picker. */
+    /**
+     * What the server says about each theme beyond its colours: the archetype,
+     * the written line, and the surfaces it was drawn for.
+     *
+     * Fetched once and kept. It is a short document, it only changes when a
+     * theme is edited, and both readers of it -- the picker's hover bubble and
+     * the theme browser -- would otherwise ask for it repeatedly.
+     */
+    async loadThemeMeta() {
+        if (this._themeMeta) return this._themeMeta;
+        try {
+            const res = await fetch('/api/themes/meta');
+            this._themeMeta = res && res.ok ? await res.json() : { themes: {}, archetypes: [] };
+        } catch {
+            this._themeMeta = { themes: {}, archetypes: [] };
+        }
+        return this._themeMeta;
+    }
+
+    /** The line written for a theme, or '' for one that has none. */
+    themeDescription(id) {
+        const meta = this._themeMeta?.themes?.[id];
+        return meta && meta.description ? meta.description : '';
+    }
+
     async loadThemeList() {
         if (this._themeList) return;
         try {
@@ -9596,6 +9690,17 @@ class DashboardConfig {
             window.ThemeLoader?.applyTheme?.(this.displayTheme(), this.currentFontSize());
         }
         this.reloadThemeCSS();
+        /*
+         * A theme brings its own surfaces, so changing theme has to resolve
+         * them again -- and against the theme being displayed, not the one
+         * stored: with Follow system dark mode on, those are different, and
+         * the light and dark halves of a family can want different depths.
+         *
+         * Without this, switching from a theme with a change of its own left
+         * that change behind on the next theme: pick flat on one, and every
+         * theme after it was flat until a reload.
+         */
+        void window.ThemeLoader?.applySurfacesForTheme?.(this.displayTheme(), s);
     }
 
     appearanceTabLabel(tab) {
@@ -9636,6 +9741,9 @@ class DashboardConfig {
      * (handlers.go); an unset field is derived there.
      */
     static THEME_CHARACTER_FIELDS = [
+        // The archetype first: it answers most of the rows below it, and a
+        // reader who picks one usually never touches the rest.
+        { prop: 'character', kind: 'select', options: [], key: 'themeCharArchetype', label: 'Character' },
         { prop: 'surfaceStep', kind: 'range', min: 0.6, max: 1.8, step: 0.05, key: 'themeCharSurfaceStep', label: 'Space between surface layers' },
         { prop: 'radiusScale', kind: 'range', min: 0.05, max: 1.6, step: 0.05, key: 'themeCharRadius', label: 'Corner roundness' },
         { prop: 'surfaceAlpha', kind: 'range', min: 0.3, max: 1, step: 0.05, glass: true, key: 'themeCharSurfaceAlpha', label: 'Surface opacity' },
@@ -9645,7 +9753,20 @@ class DashboardConfig {
         { prop: 'labelSpacing', kind: 'range', min: -0.05, max: 0.25, step: 0.01, unit: 'em', key: 'themeCharLabelSpacing', label: 'Category title letter spacing' },
         { prop: 'labelWeight', kind: 'select', options: [400, 500, 600, 700, 800], key: 'themeCharLabelWeight', label: 'Category title weight' },
         { prop: 'sheen', kind: 'range', min: 0.05, max: 1, step: 0.05, key: 'themeCharSheen', label: 'Gloss' },
+        { prop: 'grainAngle', kind: 'range', min: 0, max: 180, step: 5, unit: 'deg', key: 'themeCharGrainAngle', label: 'Grain direction' },
+        { prop: 'grainScale', kind: 'range', min: 0.05, max: 1, step: 0.05, key: 'themeCharGrainScale', label: 'Grain strength' },
         { prop: 'backdrop', kind: 'select', options: ['blooms', 'sweep', 'wireframe', 'glow', 'band', 'rings', 'scanlines', 'crosshatch', 'horizon'], key: 'themeCharBackdrop', label: 'Backdrop pattern' },
+        /*
+         * The surfaces this theme is drawn for.
+         *
+         * Not the reader's settings -- those live in Appearance and are per
+         * install or per theme. These are what the theme itself asks for, and
+         * what "Follow the theme" follows. Left on Automatic they are worked
+         * out from the archetype.
+         */
+        { prop: 'depth', kind: 'select', options: ['flat', 'soft', 'rich', 'vivid', 'glass'], key: 'themeCharDepth', label: 'Drawn for depth' },
+        { prop: 'glow', kind: 'select', options: ['off', 'soft', 'full'], key: 'themeCharGlow2', label: 'Drawn for glow' },
+        { prop: 'effects', kind: 'select', options: ['off', 'held', 'full'], key: 'themeCharEffects', label: 'Drawn for effects' },
     ];
 
     themeColorLabel(prop) {
@@ -9848,7 +9969,14 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const auto = this.t('config.themeCharAuto', 'Automatic');
         const glassNote = this.t('config.themeCharGlassOnly', 'Shows with depth set to Glass.');
-        const rows = DashboardConfig.THEME_CHARACTER_FIELDS.map((f) => {
+        // The archetype list is the server's; copying twelve words into this
+        // file would only give them somewhere to drift apart.
+        const archetypes = this._themeMeta?.archetypes || [];
+        void this.loadThemeMeta().catch(() => {});
+        const rows = DashboardConfig.THEME_CHARACTER_FIELDS
+            .filter((f) => f.prop !== 'character' || archetypes.length)
+            .map((f) => (f.prop === 'character' ? { ...f, options: archetypes } : f))
+            .map((f) => {
             const label = this.t(`config.${f.key}`, f.label);
             const raw = theme[f.prop];
             let control;
@@ -9875,9 +10003,19 @@ class DashboardConfig {
                     `<button type="button" class="config-choice${o === current ? ' is-active' : ''}" aria-pressed="${o === current}" data-theme-char-choice="${esc(f.prop)}" data-value="${esc(o)}">${esc(names[o])}</button>`).join('')}</div>`;
             } else {
                 const current = raw ? String(raw) : '';
-                const optionLabel = (o) => (f.prop === 'backdrop'
-                    ? this.t(`config.themeBackdrop_${o}`, o.charAt(0).toUpperCase() + o.slice(1))
-                    : String(o));
+                const optionLabel = (o) => {
+                    if (f.prop === 'backdrop') {
+                        return this.t(`config.themeBackdrop_${o}`, o.charAt(0).toUpperCase() + o.slice(1));
+                    }
+                    if (f.prop === 'character') {
+                        return this.t(`config.themeArchetype.${o}`, o.charAt(0).toUpperCase() + o.slice(1));
+                    }
+                    if (f.prop === 'depth' || f.prop === 'glow' || f.prop === 'effects') {
+                        return this.t(`config.theme${f.prop === 'depth' ? 'Depth' : f.prop === 'glow' ? 'GlowStrength' : 'Effects'}${o.charAt(0).toUpperCase() + o.slice(1)}`,
+                            o.charAt(0).toUpperCase() + o.slice(1));
+                    }
+                    return String(o);
+                };
                 control = `<select class="config-select" data-theme-char-select="${esc(f.prop)}" aria-label="${esc(label)}">
                     <option value="" ${current === '' ? 'selected' : ''}>${esc(auto)}</option>
                     ${f.options.map((o) => `<option value="${esc(String(o))}" ${String(o) === current ? 'selected' : ''}>${esc(optionLabel(o))}</option>`).join('')}
@@ -10676,6 +10814,30 @@ class DashboardConfig {
      * when the field has no affordances to show, so the marker never depends on
      * whether the setting happens to carry an ℹ or a ↺.
      */
+    /**
+     * The affordances for the three surfaces, which answer to two resets.
+     *
+     * ↺ means "back to the installation default", and it reads the setting.
+     * While the three belong to the theme, the setting sits on "follow" no
+     * matter what the reader picks -- so the ↺ would never appear, and if it
+     * did it would undo something other than what is on screen. The reset
+     * that is right there is the panel's own button, which puts this theme
+     * back to the surfaces it ships with.
+     *
+     * So these three carry ℹ and no ↺. One button under them puts all three
+     * back, which is also the honest count: they are one answer about one
+     * theme, and two controls for it would only raise the question of what
+     * the difference was.
+     */
+    surfaceAff(field) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const meta = this.fieldMeta(field);
+        const info = meta?.info && this.hasInfoText(meta.info)
+            ? `<button type="button" class="config-info-btn" data-info-field="${esc(field)}" aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}" title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`
+            : '';
+        return `<span class="config-field-affordances" data-appearance-aff="${esc(field)}">${info}</span>`;
+    }
+
     appearanceAff(field) {
         const esc = (v) => this.dash.escapeHtml(v);
         const aff = this.renderFieldAffordances(field, this.dash.settings?.[field]);
@@ -10687,7 +10849,9 @@ class DashboardConfig {
     }
 
     /** Hand-written Appearance fields that already explain themselves in a note. */
-    static APPEARANCE_OWN_NOTES = new Set(['themeDepth', 'glowStrength', 'inkGap', 'themeBackdrop', 'backgroundPattern']);
+    static APPEARANCE_OWN_NOTES = new Set(['themeEditor', 'themeDepth', 'glowStrength', 'themeEffects',
+        'themeSurfacesForceAll', 'inkGap', 'themeBackdrop', 'backgroundPattern',
+        'iconStylingStyle', 'iconStylingIntensity']);
 
     /**
      * The theme whose icon styling is being edited. The dashboard reads the entry
@@ -10782,12 +10946,16 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.iconStylingStyleLabel', 'Style'))}</span>
                     <div class="config-choices" role="group">${choices}</div>
+                    ${this.appearanceAff('iconStylingStyle')}
+                    <p class="config-panel-note">${esc(this.t('config.iconStylingStyleNote', 'How the tint is applied. Muted drains the icon toward the theme, Tinted keeps its shape and recolours it, and Overlay lays the theme over it.'))}</p>
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.iconStylingIntensityLabel', 'Intensity'))}</span>
                     <input type="range" class="config-range" data-appearance-icon-intensity min="0" max="1" step="0.05" value="${intensity}">
                     <span class="config-range-value">${Math.round(intensity * 100)}%</span>
                     <span class="config-icon-preview" aria-hidden="true">${preview}</span>
+                    ${this.appearanceAff('iconStylingIntensity')}
+                    <p class="config-panel-note">${esc(this.t('config.iconStylingIntensityNote', 'How far to go. The three icons beside the slider show it on a light, a mid and a dark favicon.'))}</p>
                 </div>` : ''}`;
     }
 
@@ -10824,16 +10992,9 @@ class DashboardConfig {
              * left the page exactly as it was and the ↺ looked broken. Same
              * appliers the selects above them call.
              */
-            case 'themeDepth':
-                this.dash.settings.themeDepth = value;
-                window.ThemeLoader?.applyThemeDepth?.(value);
-                this.persistAppearance();
-                break;
-            case 'glowStrength':
-                this.dash.settings.glowStrength = value;
-                window.ThemeLoader?.applyGlowStrength?.(value);
-                this.persistAppearance();
-                break;
+            case 'themeDepth': this.setSurface('themeDepth', value); break;
+            case 'glowStrength': this.setSurface('glowStrength', value); break;
+            case 'themeEffects': this.setSurface('themeEffects', value); break;
             case 'inkGap':
                 this.dash.settings.inkGap = DashboardConfig.inkGapStepFor(value);
                 window.ThemeLoader?.applyInkGap?.(this.dash.settings.inkGap);
@@ -10855,6 +11016,108 @@ class DashboardConfig {
                 this.dash.settings[field] = value;
                 this.persistAppearance();
         }
+    }
+
+    /* ── The three surfaces ─────────────────────────────────────────────
+       Depth, Glow and Effects are the reader's, but each one is stored in one
+       of two places and the difference is what "Follow the theme" means.
+
+       On follow, a change belongs to the theme on screen: it goes into
+       themeSurfacePrefs under that theme's id, so switching away and back
+       finds it again and switching to another theme finds that theme's own
+       answer. With "Use for every theme" ticked it is the install's answer
+       instead, and the theme has no say.
+
+       Choosing Follow the theme again is a delete rather than a write: an
+       empty field means the theme answers, and storing the word "follow" per
+       theme would be storing the absence of an answer. */
+
+    /** Which of the two places this field is written to. */
+    surfaceScope() {
+        return this.dash.settings?.themeSurfacesForceAll ? 'global' : 'theme';
+    }
+
+    /** The theme a per-theme surface change belongs to. */
+    currentThemeId() {
+        return this.dash.settings?.theme || 'dark';
+    }
+
+    setSurface(field, value) {
+        const settings = this.dash.settings;
+        if (!settings) return;
+        const themeId = this.currentThemeId();
+        const key = { themeDepth: 'depth', glowStrength: 'glow', themeEffects: 'effects' }[field];
+
+        if (this.surfaceScope() === 'global') {
+            settings[field] = value;
+        } else {
+            // Forced values are the install's; with the tick off, this field
+            // goes back to follow so the per-theme answer is the one that
+            // counts. Without this the old forced value would keep winning
+            // and the select would look as if it had done nothing.
+            settings[field] = 'follow';
+            const prefs = settings.themeSurfacePrefs || (settings.themeSurfacePrefs = {});
+            const entry = prefs[themeId] || (prefs[themeId] = {});
+            if (value === 'follow') {
+                delete entry[key];
+                if (!Object.keys(entry).length) delete prefs[themeId];
+            } else {
+                entry[key] = value;
+            }
+        }
+        void this.applyResolvedSurfaces();
+        this.persistAppearance();
+    }
+
+    /**
+     * Put Depth, Glow and Effects back to what the theme asks for.
+     *
+     * One button for both modes, because it is one outcome: whether the three
+     * were stored against this theme or forced across the install, what the
+     * reader wants back is the theme's own answer.
+     */
+    resetThemeSurfaces() {
+        const settings = this.dash.settings;
+        if (!settings) return;
+
+        if (settings.themeSurfacePrefs) {
+            delete settings.themeSurfacePrefs[this.currentThemeId()];
+            if (!Object.keys(settings.themeSurfacePrefs).length) {
+                delete settings.themeSurfacePrefs;
+            }
+        }
+        // A forced value outlives the per-theme entry, so it has to go too --
+        // otherwise the button would appear to do nothing.
+        settings.themeDepth = 'follow';
+        settings.glowStrength = 'follow';
+        settings.themeEffects = 'follow';
+
+        void this.applyResolvedSurfaces();
+        this.persistAppearance();
+        this.repaintAppearanceBody();
+    }
+
+    /** Draw the page with whatever the three questions now resolve to. */
+    applyResolvedSurfaces() {
+        return window.ThemeLoader?.applySurfacesForTheme?.(this.displayTheme(), this.dash.settings)
+            || Promise.resolve();
+    }
+
+    /**
+     * What a Surfaces select should be showing.
+     *
+     * The stored setting is not it: on follow the reader is looking at this
+     * theme's answer, and a select showing "follow" while the page is plainly
+     * glass is a control that disagrees with the screen. So it shows the
+     * per-theme value when there is one, the forced value when there is one,
+     * and Follow the theme when neither -- which is also exactly what the
+     * select writes back.
+     */
+    surfaceSelectValue(field) {
+        const settings = this.dash.settings || {};
+        if (this.surfaceScope() === 'global') return settings[field] || 'follow';
+        const key = { themeDepth: 'depth', glowStrength: 'glow', themeEffects: 'effects' }[field];
+        return settings.themeSurfacePrefs?.[this.currentThemeId()]?.[key] || 'follow';
     }
 
     setTheme(theme) {
@@ -10920,8 +11183,11 @@ class DashboardConfig {
      * is off asks, once per visit, with the switch in the question.
      */
     async offerGlowForGloss(theme) {
-        const s = this.dash.settings || {};
-        if ((s.glowStrength || 'off') !== 'off' || this._glossGlowOffered) return;
+        if (this._glossGlowOffered) return;
+        // What is drawn, not what is stored: with the three surfaces on
+        // "follow" the setting says `follow` whatever the page looks like, and
+        // the question is only worth asking when the glow is actually off.
+        if ((document.body?.getAttribute('data-glow') || 'off') !== 'off') return;
         await this.loadColorsData();
         const palette = this.themeById(theme);
         if (!(Number(palette?.sheen) > 0)) return;
@@ -10932,7 +11198,10 @@ class DashboardConfig {
             {
                 durationMs: 12000,
                 actionLabel: this.t('config.glossGlowOfferAction', 'Turn on'),
-                onAction: () => this.setAppearanceSelect('glowStrength', 'soft'),
+                // Through setSurface, so the answer lands where the reader's
+                // other surface changes land: on this theme, unless they have
+                // asked for one answer across every theme.
+                onAction: () => this.setSurface('glowStrength', 'soft'),
             },
         );
     }
@@ -10951,6 +11220,31 @@ class DashboardConfig {
                 d.settings.autoDarkMode = value;
                 this.applyThemeLive();
                 break;
+            /*
+             * Which of the two places the three Surfaces answers live in.
+             *
+             * Turning it on hands the install's forced values back: the three
+             * selects were writing per theme, so there is nothing global to
+             * carry over and the theme's own answers are what is on screen.
+             * They are seeded from what is being drawn, so ticking it keeps
+             * the page exactly as it looks rather than snapping to a default.
+             */
+            case 'themeSurfacesForceAll': {
+                d.settings.themeSurfacesForceAll = value;
+                if (value) {
+                    const body = document.body;
+                    d.settings.themeDepth = body?.getAttribute('data-depth') || 'soft';
+                    d.settings.glowStrength = body?.getAttribute('data-glow') || 'off';
+                    d.settings.themeEffects = body?.getAttribute('data-effects') || 'held';
+                } else {
+                    d.settings.themeDepth = 'follow';
+                    d.settings.glowStrength = 'follow';
+                    d.settings.themeEffects = 'follow';
+                }
+                void this.applyResolvedSurfaces();
+                this.repaintAppearanceBody();
+                break;
+            }
             case 'showIcons':
                 d.settings.showIcons = value;
                 d.renderDashboard?.({ animate: false });
@@ -11088,22 +11382,22 @@ class DashboardConfig {
             this.persistAppearance();
             return;
         }
-        if (name === 'glowStrength') {
-            const strength = ['off', 'soft', 'full'].includes(value) ? value : 'off';
-            this.dash.settings.glowStrength = strength;
-            // Applied before it is saved, like the depth below it: the control
-            // exists to be seen.
-            window.ThemeLoader?.applyGlowStrength?.(strength);
-            this.persistAppearance();
-            return;
-        }
-        if (name === 'themeDepth') {
-            const depth = ['flat', 'soft', 'rich', 'glass'].includes(value) ? value : 'flat';
-            this.dash.settings.themeDepth = depth;
-            // Applied before it is saved: the point of the control is seeing the
-            // difference, and a round trip to the server is a second of nothing.
-            window.ThemeLoader?.applyThemeDepth?.(depth);
-            this.persistAppearance();
+        /*
+         * The three that go through setSurface.
+         *
+         * They are not a plain settings write any more: on Follow the theme a
+         * value belongs to the theme on screen rather than to the install, and
+         * setSurface is the one place that knows which. Validated here first,
+         * because this path is reached from the settings search as well as
+         * from the select, and the search hands over whatever it was given.
+         */
+        const surfaces = {
+            glowStrength: ['follow', 'off', 'soft', 'full'],
+            themeDepth: ['follow', 'flat', 'soft', 'rich', 'vivid', 'glass'],
+            themeEffects: ['follow', 'off', 'held', 'full'],
+        };
+        if (surfaces[name]) {
+            this.setSurface(name, surfaces[name].includes(value) ? value : 'follow');
         }
     }
 
@@ -11196,6 +11490,7 @@ class DashboardConfig {
         switch (action) {
             case 'browse-themes': void this.openThemeBrowser(); break;
             case 'edit-colors': this.openThemeEditorTab(); break;
+            case 'reset-theme-surfaces': this.resetThemeSurfaces(); break;
             case 'upload-font': document.getElementById('config-font-input')?.click(); break;
             case 'upload-favicon': document.getElementById('config-favicon-input')?.click(); break;
         }
@@ -11372,11 +11667,25 @@ class DashboardConfig {
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
-        themeDepth: { def: 'glass' },
-        glowStrength: { def: 'soft' },
-        inkGap: { def: 0.44 },
-        themeBackdrop: { def: 'on' },
-        backgroundPattern: { def: 'auto' },
+        // The three surfaces: their default is now the word that hands the
+        // question to the theme, so the ↺ appears only once a reader has
+        // forced one of them.
+        // Not a setting: a way through to the editor. No `def`, so no ↺ --
+        // renderFieldAffordances only offers one where there is a default to
+        // go back to.
+        themeEditor: { info: ['themeEditorInfoTitle', 'themeEditorInfoMessage'] },
+        // Two more that are not settings in their own right: they are stored
+        // per theme, under themeIconStyling. Info only, so no ↺ -- the row
+        // above them resets the pair.
+        iconStylingStyle: { info: ['iconStylingStyleInfoTitle', 'iconStylingStyleInfoMessage'] },
+        iconStylingIntensity: { info: ['iconStylingIntensityInfoTitle', 'iconStylingIntensityInfoMessage'] },
+        themeDepth: { info: ['themeDepthInfoTitle', 'themeDepthInfoMessage'], def: 'follow' },
+        glowStrength: { info: ['glowStrengthInfoTitle', 'glowStrengthInfoMessage'], def: 'follow' },
+        themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
+        themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
+        inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.44 },
+        themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'on' },
+        backgroundPattern: { info: ['backgroundPatternInfoTitle', 'backgroundPatternInfoMessage'], def: 'auto' },
         fontSize: { def: 'm' },
         customTitle: { def: '' },
         monitorNotifyRetries: { info: ['monitorNotifyRetriesInfoTitle', 'monitorNotifyRetriesInfoMessage'], def: 3 },

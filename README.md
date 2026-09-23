@@ -279,7 +279,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 **Appearance**
 
 - 121 theme families in light and dark — including ten glossy **Gloss** themes — in a browser with live preview, plus an editor for your own. *[Manual §12](MANUAL.md#12-appearance)*
-- Depth, glow, glass and contrast for any theme; layout presets, columns, density, fonts and backdrops. *[Manual §12.2](MANUAL.md#122-surfaces)*
+- Character, depth, glow, effects and contrast for any theme; layout presets, columns, density, fonts and backdrops. *[Manual §12.3](MANUAL.md#123-surfaces)*
 - A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu. *[Manual §4](MANUAL.md#4-the-dashboard)*
 - Six languages: English, Dutch, German, French, Spanish and Chinese. *[Manual §15](MANUAL.md#15-config)*
 

@@ -35,10 +35,50 @@
         return bubble;
     }
 
-    function place(anchor) {
+    /*
+     * Beside, rather than below, for a row inside a scrolling list.
+     *
+     * Below the anchor is right for a control standing on its own in a form.
+     * A row in a listbox has the next row directly beneath it, so a bubble
+     * placed there covers the list it belongs to -- in the theme picker the
+     * line about one theme landed on top of three other themes, including the
+     * one being pointed at.
+     *
+     * So a row is described from the side: clear of the list, aligned with
+     * the row, and flipped to the other side when that edge of the window is
+     * the near one. `container` is the box to clear -- the listbox, not the
+     * row -- and without it this behaves exactly as it always did.
+     */
+    function placeBeside(el, a, container) {
+        const b = el.getBoundingClientRect();
+        const box = container ? container.getBoundingClientRect() : a;
+
+        let left = box.right + GAP;
+        if (left + b.width > window.innerWidth - 4) {
+            left = box.left - b.width - GAP;
+        }
+        // Neither side has room: fall back to sitting over the list's own
+        // edge rather than off the window, where it would not be readable.
+        if (left < 4) left = Math.max(4, window.innerWidth - b.width - 4);
+
+        // Centred on the row, then held inside the window.
+        let top = a.top + (a.height - b.height) / 2;
+        top = Math.min(Math.max(4, top), window.innerHeight - b.height - 4);
+        return { top, left };
+    }
+
+    function place(anchor, container) {
         const el = ensureBubble();
         const a = anchor.getBoundingClientRect();
         const b = el.getBoundingClientRect();
+
+        if (container) {
+            const beside = placeBeside(el, a, container);
+            el.style.top = `${Math.round(beside.top)}px`;
+            el.style.left = `${Math.round(beside.left)}px`;
+            return;
+        }
+
         // Below the anchor by default; above it when the window has no room,
         // which is the common case for a control near the foot of a dialog.
         let top = a.bottom + GAP;
@@ -53,7 +93,7 @@
         el.style.left = `${Math.round(left)}px`;
     }
 
-    function show(anchor, text, { variant = '' } = {}) {
+    function show(anchor, text, { variant = '', beside = null } = {}) {
         const message = String(text || '').trim();
         if (!anchor || !message) return;
         clearTimeout(hideTimer);
@@ -63,8 +103,8 @@
         el.hidden = false;
         openFor = anchor;
         // Measure with the text in place, then position: the height decides
-        // whether it goes above or below.
-        place(anchor);
+        // whether it goes above or below, and how far down the side.
+        place(anchor, beside);
     }
 
     function hide(anchor) {

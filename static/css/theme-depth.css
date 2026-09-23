@@ -68,6 +68,42 @@ html[data-theme] body[data-depth="rich"] {
     --theme-depth: 1.5;
 }
 
+/* De trede boven rich, waar het archetype van een theme helemaal opengaat.
+   Glass staat er niet boven maar ernaast: dat is een soort en geen trede --
+   je kijkt er doorheen, wat met diepte niets te maken heeft. */
+
+html[data-theme] body[data-depth="vivid"] {
+    --theme-tint: 7%;
+    --theme-depth: 2;
+}
+
+/* ── Effecten ────────────────────────────────────────────────────────────
+   De rem op alles wat een archetype tekent. Elk karaktertoken vermenigvuldigt
+   ermee, net zoals ze al met --theme-depth doen, dus uit is echt uit en er is
+   geen tweede plek waar een effect zich kan verstoppen.
+
+   Niet hetzelfde als diepte. Diepte zegt hoeveel van het theme áchter de
+   inhoud getekend wordt; effecten zeggen hoe hard het archetype spreekt. Een
+   plat theme met volle effecten bestaat niet -- diepte 0 maakt alles nul --
+   maar een diep theme met effecten uit wel, en dat is precies de lezer die
+   de diepte wil en de glans niet. */
+
+html[data-theme] body {
+    --theme-effects: 1;
+}
+
+html[data-theme] body[data-effects="off"] {
+    --theme-effects: 0;
+}
+
+html[data-theme] body[data-effects="held"] {
+    --theme-effects: 0.6;
+}
+
+html[data-theme] body[data-effects="full"] {
+    --theme-effects: 1;
+}
+
 html[data-theme] body {
     /*
      * How much of the theme's own colour bleeds into its greys.
@@ -210,7 +246,7 @@ html[data-theme] body {
      * invisible when you look for it, and the reason a large surface stops
      * looking like a swatch.
      */
-    --surface-sheen: var(--surface-gloss), linear-gradient(
+    --surface-sheen: var(--surface-grain), var(--surface-gloss), linear-gradient(
         180deg,
         color-mix(in srgb, var(--text-primary) calc(2.5% * var(--theme-depth)), transparent) 0%,
         transparent 40%
@@ -226,18 +262,59 @@ html[data-theme] body {
      * a reflection is the colour of the light, not of the ink, and on a light
      * theme it still reads as a shine on the surface.
      */
+    /*
+     * De glans schaalt niet mee tot boven soft.
+     *
+     * Elke andere laag hier vermenigvuldigt met --theme-depth, en bij vivid
+     * is dat 2. Voor een schaduw of een tint is dat precies de bedoeling;
+     * voor wit over een heel paneel niet -- 15% × sheen 1 × 2 is 30% wit, en
+     * dan kijk je niet meer naar het palet maar naar de glans. Afgekapt op
+     * 1.15: dieper mag alles worden, feller niet.
+     */
+    --gloss-depth: min(var(--theme-depth), 1.15);
+
     --surface-gloss:
         radial-gradient(120% 70% at 18% 0%,
-            color-mix(in srgb, white calc(12% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
+            color-mix(in srgb, white calc(7% * var(--theme-sheen, 0) * var(--gloss-depth) * var(--theme-effects, 1)), transparent) 0%,
             transparent 62%),
         linear-gradient(180deg,
-            color-mix(in srgb, white calc(15% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
-            color-mix(in srgb, white calc(4% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 42%,
+            color-mix(in srgb, white calc(9% * var(--theme-sheen, 0) * var(--gloss-depth) * var(--theme-effects, 1)), transparent) 0%,
+            color-mix(in srgb, white calc(2.5% * var(--theme-sheen, 0) * var(--gloss-depth) * var(--theme-effects, 1)), transparent) 42%,
             transparent 58%);
+
+    /*
+     * Grain: de herhalende glans van een geborsteld of geweven vlak.
+     *
+     * Twee lagen, de tweede haaks op de eerste en op 40% -- dat verschil is
+     * precies wat borstel van weefsel scheidt. Borstel draait op een lage
+     * sterkte, waar die tweede laag onder een procent wit uitkomt en dus niet
+     * te zien is; weefsel draait vol en krijgt zijn kruising.
+     *
+     * De hoek en de sterkte komen van de server (--theme-grain-angle en
+     * --theme-grain-scale, zie theme_archetype.go). Sterkte nul tekent niets,
+     * en dat is elk theme dat er niet om vraagt.
+     *
+     * Bewust een verloop en geen ruisplaatje: een data-URI met feTurbulence
+     * over elk vlak kost op elk paneel, en levert minder op dan deze twee
+     * regels.
+     */
+    --surface-grain:
+        repeating-linear-gradient(
+            var(--theme-grain-angle, 0deg),
+            color-mix(in srgb, white calc(3.5% * var(--theme-grain-scale, 0) * var(--gloss-depth) * var(--theme-effects, 1)), transparent) 0px,
+            color-mix(in srgb, white calc(3.5% * var(--theme-grain-scale, 0) * var(--gloss-depth) * var(--theme-effects, 1)), transparent) 1px,
+            transparent 1px,
+            transparent 3px),
+        repeating-linear-gradient(
+            calc(var(--theme-grain-angle, 0deg) + 90deg),
+            color-mix(in srgb, white calc(1.4% * var(--theme-grain-scale, 0) * var(--gloss-depth) * var(--theme-effects, 1)), transparent) 0px,
+            color-mix(in srgb, white calc(1.4% * var(--theme-grain-scale, 0) * var(--gloss-depth) * var(--theme-effects, 1)), transparent) 1px,
+            transparent 1px,
+            transparent 3px);
 
     /* The same light on a control under the pointer. */
     --gloss-hover: linear-gradient(180deg,
-        color-mix(in srgb, white calc(18% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
+        color-mix(in srgb, white calc(11% * var(--theme-sheen, 0) * var(--gloss-depth) * var(--theme-effects, 1)), transparent) 0%,
         transparent 70%);
 
     /*
@@ -398,7 +475,7 @@ body:not([data-depth="flat"]) .dashboard-grid.layout-widgets .category {
 body:not([data-depth="flat"]) .dashboard-widget .dashboard-widget-body {
     border: 1px solid var(--hairline);
     box-shadow: var(--surface-cast);
-    background-image: var(--surface-gloss);
+    background-image: var(--surface-grain), var(--surface-gloss);
 }
 
 /*
@@ -941,7 +1018,7 @@ body:not([data-depth="flat"]) :is(
     .lvs-summary,
     .search-container
 ) {
-    background-image: var(--surface-gloss);
+    background-image: var(--surface-grain), var(--surface-gloss);
 }
 
 /* The dock and the plated header controls are plates of their own. */
@@ -953,7 +1030,7 @@ body:not([data-depth="flat"]):not([data-header-buttons="plain"]) .dashboard-sect
     .config-link-anchor,
     .page-nav-btn--inbox
 ) {
-    background-image: var(--surface-gloss);
+    background-image: var(--surface-grain), var(--surface-gloss);
 }
 
 body:not([data-depth="flat"]) :is(.config-btn, .dashboard-widget-health-row, .dashboard-widget-trend-row):hover,

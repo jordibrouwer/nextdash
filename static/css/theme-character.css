@@ -27,14 +27,35 @@
    enkele view-CSS voor te veranderen. De pil blijft een pil: die is rond
    omdat hij rond hoort, niet omdat het theme dat vindt. */
 
+/* Bij effecten uit staat de radiusschaal op 1 in plaats van op wat het theme
+   vraagt: vorm is net zo goed een effect als glans, en "uit" dat de hoeken
+   laat staan is niet uit. Geschreven als interpolatie tussen 1 en de schaal,
+   want CSS kan niet op een waarde vertakken. */
+
 html[data-theme] body {
-    --radius-1: calc(2px * var(--theme-radius-scale, 1));
-    --radius-2: calc(3px * var(--theme-radius-scale, 1));
-    --radius-3: calc(4px * var(--theme-radius-scale, 1));
-    --radius-4: calc(6px * var(--theme-radius-scale, 1));
-    --radius-5: calc(8px * var(--theme-radius-scale, 1));
-    --radius-6: calc(10px * var(--theme-radius-scale, 1));
-    --radius-7: calc(12px * var(--theme-radius-scale, 1));
+    --theme-radius-applied: calc(1 + (var(--theme-radius-scale, 1) - 1) * var(--theme-effects, 1));
+
+    --radius-1: calc(2px * var(--theme-radius-applied, 1));
+    --radius-2: calc(3px * var(--theme-radius-applied, 1));
+    --radius-3: calc(4px * var(--theme-radius-applied, 1));
+    --radius-4: calc(6px * var(--theme-radius-applied, 1));
+    --radius-5: calc(8px * var(--theme-radius-applied, 1));
+    --radius-6: calc(10px * var(--theme-radius-applied, 1));
+    --radius-7: calc(12px * var(--theme-radius-applied, 1));
+
+    /*
+     * De moderne laag draait mee.
+     *
+     * --layout-radius-* stond op vaste pixels in dashboard-enhancements.css,
+     * dus de schaal van een theme bewoog de ene familie hoeken wel en de
+     * andere niet. Dat viel niet op zolang geen enkel theme om een schaal
+     * vroeg: --radius-5 en --layout-radius-sm waren allebei 8px. Sinds elk
+     * theme een karakter heeft liepen ze uit elkaar -- het zoekveld in Health
+     * bleef op 8px staan terwijl datzelfde veld in Config meebewoog.
+     */
+    --layout-radius-xs: calc(4px * var(--theme-radius-applied, 1));
+    --layout-radius-sm: calc(8px * var(--theme-radius-applied, 1));
+    --layout-radius-md: calc(12px * var(--theme-radius-applied, 1));
 }
 
 /* ── Letter ──────────────────────────────────────────────────────────────
@@ -430,7 +451,7 @@ html[data-theme] body:not([data-depth="flat"]) {
     --glow-spread: calc(-6px - 6px * var(--theme-glow-lift, 1));
     /* Dezelfde knop als de bloom in theme-depth.css: één sterkte voor beide
        gloeilagen, zodat "rustiger" niet op twee plekken apart hoeft. */
-    --glow-pct: calc((34% + 16% * var(--theme-glow-lift, 1)) * var(--glow-strength, 0));
+    --glow-pct: calc((34% + 16% * var(--theme-glow-lift, 1)) * var(--glow-strength, 0) * var(--theme-effects, 1));
 
     --surface-glow-ring:
         0 var(--glow-y) var(--glow-blur) var(--glow-spread)

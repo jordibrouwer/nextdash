@@ -20,7 +20,19 @@
 (function (global) {
     'use strict';
 
-    const SEGMENTS = ['all', 'favorites', 'light', 'dark', 'gloss'];
+    const SEGMENTS = ['all', 'favorites', 'light', 'dark'];
+
+    /*
+     * The archetypes, as their own row of chips.
+     *
+     * `gloss` used to be a fifth segment beside light and dark, and it tested
+     * `sheen > 0`. Once every theme has a character that test matches almost
+     * everything and stops distinguishing anything -- so Gloss becomes one
+     * chip among twelve, and the row grows with the catalogue rather than
+     * needing a segment per kind. Filled from /api/themes/meta, so the server
+     * stays the only place the list is written down.
+     */
+    let ARCHETYPES = [];
     const FAVORITE_LIMIT = 24;
 
     /* ── Reading a palette ─────────────────────────────────────────────── */
@@ -90,9 +102,33 @@
         return traits;
     }
 
-    /** A theme that catches light: its `sheen` is set. */
-    function isGloss(palette) {
-        return Number(palette?.sheen) > 0;
+    /* ── What the server says about a theme ────────────────────────────
+       meta.themes[id] carries the archetype, the written line and the
+       surfaces the theme was drawn for. Absent for a custom theme, and absent
+       altogether until the fetch lands, so every reader of it copes with
+       nothing being there. */
+    let META = { themes: {} };
+
+    /**
+     * The name an archetype goes by on screen.
+     *
+     * Translated like every other label, and falling back to the word itself
+     * capitalised -- an archetype added to the server before the locale files
+     * catch up should read as "Velvet", not as a missing key.
+     */
+    function archetypeLabel(name, t) {
+        const key = `config.themeArchetype.${name}`;
+        const fallback = name.charAt(0).toUpperCase() + name.slice(1);
+        return t(key, fallback);
+    }
+
+    function metaFor(id) {
+        return (META.themes && META.themes[id]) || {};
+    }
+
+    /** The archetype a theme belongs to, or '' for one that names none. */
+    function characterOf(id) {
+        return String(metaFor(id).character || '');
     }
 
     /* ── Grouping ──────────────────────────────────────────────────────── */
@@ -170,10 +206,11 @@
         const isFavorite = state.favorites.includes(id);
         const hasBoth = Boolean(family.variants.dark && family.variants.light);
         const variant = variantOf(id) || 'dark';
-        const gloss = isGloss(shown.palette);
+        const character = characterOf(id);
+        const description = metaFor(id).description || '';
 
         return `
-            <div class="theme-browser-card${isCurrent ? ' is-current' : ''}${gloss ? ' is-gloss' : ''}"
+            <div class="theme-browser-card${isCurrent ? ' is-current' : ''}${character ? ` is-${character}` : ''}"
                  role="option" tabindex="-1"
                  aria-selected="${isCurrent}"
                  data-theme-card="${escapeHtml(family.key)}"
@@ -181,12 +218,13 @@
                 <div class="theme-browser-swatches" aria-hidden="true">${swatches(shown.palette)}</div>
                 <div class="theme-browser-card-head">
                     <span class="theme-browser-card-name">${escapeHtml(family.label || id)}</span>
-                    ${gloss ? `<span class="theme-browser-badge" data-theme-badge="gloss">${escapeHtml(t('config.themeBadgeGloss', 'Gloss'))}</span>` : ''}
+                    ${character ? `<span class="theme-browser-badge" data-theme-badge="${escapeHtml(character)}">${escapeHtml(archetypeLabel(character, t))}</span>` : ''}
                     <button type="button" class="theme-browser-star${isFavorite ? ' is-on' : ''}"
                             data-theme-favorite="${escapeHtml(id)}"
                             aria-pressed="${isFavorite}"
                             title="${escapeHtml(t('config.themeFavorite', 'Favourite'))}">★</button>
                 </div>
+                ${description ? `<p class="theme-browser-card-line">${escapeHtml(description)}</p>` : ''}
                 ${traits ? `<p class="theme-browser-card-traits">${escapeHtml(traits)}</p>` : ''}
                 <div class="theme-browser-card-foot">
                     ${hasBoth ? `
@@ -211,11 +249,20 @@
         }
         if (state.segment === 'light' && !family.variants.light) return false;
         if (state.segment === 'dark' && !family.variants.dark) return false;
-        if (state.segment === 'gloss' && !Object.values(family.variants).some((v) => isGloss(v.palette))) return false;
+        if (state.archetype
+            && !Object.values(family.variants).some((v) => characterOf(v.id) === state.archetype)) {
+            return false;
+        }
         const query = state.query.trim().toLowerCase();
         if (!query) return true;
+        // The archetype goes in twice, as its own word and as its translated
+        // label, so `velvet` and `fluweel` both narrow the grid. The written
+        // line goes in whole: it is the only place a theme says "harbour" or
+        // "phosphor", which is what people actually type.
+        const character = characterOf(shown.id);
         const haystack = [family.label, family.key, deriveTraits(shown.palette, t).join(' '),
-            isGloss(shown.palette) ? `gloss ${t('config.themeBadgeGloss', 'Gloss')}` : '']
+            character, character ? archetypeLabel(character, t) : '',
+            metaFor(shown.id).description || '']
             .join(' ')
             .toLowerCase();
         return query.split(/\s+/).every((word) => haystack.includes(word));
@@ -224,6 +271,10 @@
     function renderBody(families, state, t) {
         const visible = families.filter((f) => matches(f, state, t));
         const cards = visible.map((f) => renderCard(f, state, t)).join('');
+        const chipButton = (name, label, st) =>
+            `<button type="button" class="theme-browser-chip${st.archetype === name ? ' is-on' : ''}"
+                     data-theme-character="${escapeHtml(name)}"
+                     aria-pressed="${st.archetype === name}">${escapeHtml(label)}</button>`;
         const segmentButton = (key, label) =>
             `<button type="button" class="theme-browser-segment${state.segment === key ? ' is-on' : ''}"
                      data-theme-segment="${key}" aria-pressed="${state.segment === key}">${escapeHtml(label)}</button>`;
@@ -240,9 +291,14 @@
                         ${segmentButton('favorites', t('config.themeSegmentFavorites', 'Favourites'))}
                         ${segmentButton('light', t('config.themeSegmentLight', 'Light'))}
                         ${segmentButton('dark', t('config.themeSegmentDark', 'Dark'))}
-                        ${segmentButton('gloss', t('config.themeBadgeGloss', 'Gloss'))}
                     </span>
                 </div>
+                ${ARCHETYPES.length ? `
+                <div class="theme-browser-characters" role="group"
+                     aria-label="${escapeHtml(t('config.themeCharacterFilter', 'Character'))}">
+                    ${chipButton('', t('config.themeSegmentAll', 'All'), state)}
+                    ${ARCHETYPES.map((name) => chipButton(name, archetypeLabel(name, t), state)).join('')}
+                </div>` : ''}
                 <p class="theme-browser-count">${escapeHtml(
                     t('config.themeBrowserCount', '{shown} of {total} themes · {favorites} favourites')
                         .replace('{shown}', String(visible.length))
@@ -265,6 +321,8 @@
             ? opts.displayName
             : (id, name) => name || id;
         const palettes = opts.palettes || {};
+        META = opts.meta && opts.meta.themes ? opts.meta : { themes: {} };
+        ARCHETYPES = Array.isArray(opts.meta?.archetypes) ? opts.meta.archetypes : [];
         if (!global.AppModal?.show) return;
 
         const families = buildFamilies(palettes, displayName);
@@ -273,6 +331,11 @@
         const state = {
             query: '',
             segment: 'all',
+            // Empty means every archetype. Separate from `segment` because the
+            // two narrow along different axes: light/dark is which half of a
+            // family you are looking at, an archetype is what kind of thing it
+            // is, and wanting "dark velvet" is an ordinary thing to want.
+            archetype: '',
             current: opts.current || 'dark',
             favorites: Array.isArray(opts.favorites) ? opts.favorites.slice() : [],
             // Which half of a family the card is showing. Starts at whichever
@@ -310,10 +373,46 @@
          * Gated here rather than at the three call sites, so a preview added
          * later cannot reintroduce it.
          */
+        /*
+         * While the browser is open, a theme is shown the way it was drawn.
+         *
+         * The reader may have forced a depth, or changed one for a particular
+         * theme; neither belongs here. Comparing a hundred themes only works
+         * if they are all shown at their own intended surfaces -- otherwise
+         * half the grid is being judged through somebody else's settings.
+         * What the reader chose comes straight back when the modal closes,
+         * whether they picked a theme or not.
+         */
+        const surfacesBefore = {
+            depth: document.body?.getAttribute('data-depth'),
+            glow: document.body?.getAttribute('data-glow'),
+            effects: document.body?.getAttribute('data-effects'),
+        };
+
+        const showIdealSurfaces = (id) => {
+            const ideal = metaFor(id);
+            if (!ideal.depth) return;
+            global.ThemeLoader?.applyThemeDepth?.(ideal.depth);
+            global.ThemeLoader?.applyGlowStrength?.(ideal.glow);
+            global.ThemeLoader?.applyThemeEffects?.(ideal.effects);
+        };
+
+        const restoreSurfaces = () => {
+            if (!surfacesBefore.depth) return;
+            global.ThemeLoader?.applyThemeDepth?.(surfacesBefore.depth);
+            global.ThemeLoader?.applyGlowStrength?.(surfacesBefore.glow);
+            global.ThemeLoader?.applyThemeEffects?.(surfacesBefore.effects);
+        };
+
         const preview = (id) => {
             if (picked || !id) return;
             opts.onPreview?.(id);
+            showIdealSurfaces(id);
         };
+
+        // The theme already on screen gets the same treatment, so the grid is
+        // consistent from the moment it opens rather than from the first hover.
+        showIdealSurfaces(state.current);
 
         const repaint = () => {
             const root = document.querySelector('[data-theme-browser]');
@@ -350,6 +449,17 @@
                 button.addEventListener('click', () => {
                     const segment = button.getAttribute('data-theme-segment');
                     state.segment = SEGMENTS.includes(segment) ? segment : 'all';
+                    repaint();
+                });
+            });
+
+            root.querySelectorAll('[data-theme-character]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const name = button.getAttribute('data-theme-character') || '';
+                    // Clicking the chip that is already on turns it off, which
+                    // is the only way back to everything without hunting for
+                    // the All chip at the far end of a twelve-chip row.
+                    state.archetype = state.archetype === name ? '' : name;
                     repaint();
                 });
             });
@@ -461,6 +571,10 @@
             initialFocusSelector: '[data-theme-search]',
             onHide: () => {
                 if (!picked) opts.onRevert?.();
+                // Picked or not: the ideal surfaces were this modal's doing.
+                // On a pick, the settings save that follows resolves them
+                // again through whatever the reader has chosen.
+                restoreSurfaces();
             },
         });
 
