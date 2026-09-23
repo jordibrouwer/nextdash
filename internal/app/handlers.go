@@ -1209,6 +1209,18 @@ const (
 func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	colors := h.store.GetColors()
 	themeID := normalizeLegacyThemeID(settings.Theme)
+	/*
+	 * The template writes data-depth and data-glow for the first paint, and
+	 * with the settings on "follow" the stored value is not a word the
+	 * stylesheet knows. Resolved here, into the same fields the template
+	 * already reads, so the first paint is the theme's own surfaces rather
+	 * than a flash of the default followed by a correction from a script.
+	 */
+	surfaces := resolveSurfaces(settings, themeID, themeColorsFor(themeID, colors))
+	settings.ThemeDepth = surfaces.Depth
+	settings.GlowStrength = surfaces.Glow
+	settings.ThemeEffects = surfaces.Effects
+	settings.ThemeBackdrop = surfaces.Backdrop
 	return htmlPageData{
 		Settings:             settings,
 		ThemePoolCSV:         themePoolCSV(colors),
@@ -2425,6 +2437,73 @@ func (h *Handlers) GetColors(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(colors)
 }
 
+/*
+ThemeMeta answers with what the theme browser needs beyond colours: each
+theme's archetype, its one-line description, and the surfaces it was drawn
+for.
+
+Separate from GetColors because three of the five fields are worked out rather
+than stored, and because a caller that only wants to draw the browser should
+not have to pull every palette to get them.
+*/
+func (h *Handlers) ThemeMeta(w http.ResponseWriter, r *http.Request) {
+	colors := h.store.GetColors()
+	meta := make(map[string]themeMeta, len(colors.BuiltIn)+len(colors.Custom))
+	for id, tc := range colors.BuiltIn {
+		meta[id] = themeMetaFor(id, tc)
+	}
+	// A custom theme has no description written for it, and may well have no
+	// archetype either; it still gets an entry, so the browser does not have
+	// to treat it as a special case.
+	for id, tc := range colors.Custom {
+		meta[id] = themeMetaFor(id, tc)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"archetypes": themeArchetypeOrder,
+		"themes":     meta,
+	})
+}
+
+/*
+ThemeDefaults answers with the values a built-in theme ships with.
+
+The editor opens on these rather than on what is stored: the shipped values
+are what the theme is, and a reader who has changed a colour at some point
+should be looking at the difference rather than at their own edit presented as
+the theme. Whether a stored copy differs is answered too, so the editor can
+say so instead of quietly dropping it on the next save.
+
+A custom theme has no shipped values, so it answers with what is stored and
+says it is not a built-in.
+*/
+func (h *Handlers) ThemeDefaults(w http.ResponseWriter, r *http.Request) {
+	themeID := normalizeLegacyThemeID(strings.TrimSpace(r.URL.Query().Get("id")))
+	colors := h.store.GetColors()
+	defaults, isBuiltIn := getDefaultBuiltInThemes()[themeID]
+
+	stored, hasStored := colors.BuiltIn[themeID]
+	if !hasStored {
+		stored, hasStored = colors.Custom[themeID]
+	}
+	if !isBuiltIn {
+		defaults = stored
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"id":        themeID,
+		"builtIn":   isBuiltIn,
+		"defaults":  defaults,
+		"stored":    stored,
+		"hasStored": hasStored,
+		// True when somebody has edited this theme: the editor opens on the
+		// defaults either way, and uses this to say that an edit exists.
+		"edited": isBuiltIn && hasStored && stored != defaults,
+		"meta":   themeMetaFor(themeID, defaults),
+	})
+}
+
 func (h *Handlers) SaveColors(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
@@ -2667,7 +2746,10 @@ func themeSurfaceAlpha(tc ThemeColors) string {
 	if tc.SurfaceAlpha > 0 {
 		return formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1))
 	}
-	return formatFloat(derivedSurfaceAlpha(tc))
+	// The archetype scales what the palette earned rather than replacing it:
+	// glass on a pale slate and glass on a near-black terminal are both glass,
+	// and they are not equally transparent. See theme_archetype.go.
+	return formatFloat(archetypeScaleAlpha(tc, derivedSurfaceAlpha(tc)))
 }
 
 /*
@@ -2735,9 +2817,12 @@ func themeSurfaceBlur(tc ThemeColors) string {
 	// lets the most through needs the most of it: 0.62 alpha earns 22px, 0.88
 	// earns 12px, and everything between lands on the line -- a palette with
 	// nothing to derive from sits in the middle at 18.
-	alpha := derivedSurfaceAlpha(tc)
+	// Against the alpha the archetype actually produced: the blur exists to
+	// keep text readable over what shows through, so it has to follow the
+	// transparency that is drawn and not the one before the archetype spoke.
+	alpha := archetypeScaleAlpha(tc, derivedSurfaceAlpha(tc))
 	blur := 22 - (alpha-0.62)*(10/0.26)
-	return formatFloat(math.Round(clampFloat(blur, 12, 22, 18)))
+	return formatFloat(archetypeScaleBlur(tc, math.Round(clampFloat(blur, 12, 22, 18))))
 }
 
 func themeSurfaceGlow(tc ThemeColors) string {
@@ -2769,7 +2854,7 @@ func themeSurfaceGlow(tc ThemeColors) string {
 		depth := unitRange((0.62 - accentLightness) / 0.30)
 		glow = clampFloat(chroma*depth*0.70, 0.12, 0.35, 0.12)
 	}
-	return formatFloat(math.Round(glow*100) / 100)
+	return formatFloat(archetypeScaleGlow(tc, math.Round(glow*100)/100))
 }
 
 /*
@@ -2796,6 +2881,11 @@ themes that ship a malformed background look like anyway: the glow itself is
 zero there, so the geometry is never spent.
 */
 func themeGlowLift(tc ThemeColors) string {
+	// An archetype may insist: neon is always a halo and velvet always a
+	// shadow, on any page. Everything else leaves the question to the page.
+	if lift := archetypeGlowLift(tc); lift >= 0 {
+		return strconv.Itoa(lift)
+	}
 	pageLightness, _, ok := hexOklch(tc.BackgroundPrimary)
 	if ok && pageLightness >= lightPageThreshold {
 		return "0"
@@ -3026,7 +3116,7 @@ variations on one gradient would still read as one background.
 func themeBackdropImage(themeID string, tc ThemeColors) string {
 	h := fnv32(themeBackdropHashID(themeID))
 	recipe := pick23(h)
-	if chosen := themeBackdropRecipeIndex(tc.Backdrop); chosen >= 0 {
+	if chosen := themeBackdropRecipeIndex(archetypeBackdrop(tc)); chosen >= 0 {
 		recipe = chosen
 	}
 	pick := func(shift uint, span int) int {
@@ -3208,6 +3298,10 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
 	if accentPrimary == "" {
 		accentPrimary = s.AccentSuccess
 	}
+	// Resolved here rather than inline below so the archetype is consulted
+	// once per theme and the block stays a list of tokens.
+	labelTransform, labelSpacing, labelWeight := archetypeLabel(tc)
+	grainAngle, grainScale := archetypeGrain(tc)
 	return `html[data-theme="` + selector + `"] {
     --text-primary: ` + s.TextPrimary + `;
     --text-secondary: ` + s.TextSecondary + `;
@@ -3230,11 +3324,13 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --theme-surface-glow: ` + themeSurfaceGlow(tc) + `;
     --theme-surface-step: ` + themeSurfaceStep(tc) + `;
     --theme-glow-lift: ` + themeGlowLift(tc) + `;
-    --theme-radius-scale: ` + formatFloat(clampFloat(tc.RadiusScale, 0.05, 1.6, 1)) + `;
-    --theme-sheen: ` + formatFloat(clampFloat(tc.Sheen, 0, 1, 0)) + `;
-    --theme-label-transform: ` + themeLabelTransform(tc.LabelTransform) + `;
-    --theme-label-spacing: ` + themeLabelSpacing(tc.LabelSpacing) + `;
-    --theme-label-weight: ` + themeLabelWeight(tc.LabelWeight) + `;
+    --theme-radius-scale: ` + formatFloat(archetypeRadius(tc)) + `;
+    --theme-sheen: ` + formatFloat(archetypeSheen(tc)) + `;
+    --theme-grain-angle: ` + formatFloat(grainAngle) + `deg;
+    --theme-grain-scale: ` + formatFloat(grainScale) + `;
+    --theme-label-transform: ` + themeLabelTransform(labelTransform) + `;
+    --theme-label-spacing: ` + themeLabelSpacing(labelSpacing) + `;
+    --theme-label-weight: ` + themeLabelWeight(labelWeight) + `;
 }
 `
 }
