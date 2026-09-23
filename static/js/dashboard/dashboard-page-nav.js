@@ -1449,9 +1449,24 @@ class DashboardPageNav {
         window.addEventListener('resize', reposition);
         window.addEventListener('scroll', reposition, true);
 
+        /*
+         * Everything this popover bound to something outside itself.
+         *
+         * onOutside used to take itself off only from inside itself, so it
+         * survived every close that did not go through it -- Enter commits,
+         * Escape cancels -- and one rename left one mousedown handler bound for
+         * the session, testing popover.contains() against a detached node on
+         * every click afterwards. It is assigned below and removed here, so
+         * there is one place that lets go of everything.
+         */
+        let onOutside = null;
         const removeRepositionListeners = () => {
             window.removeEventListener('resize', reposition);
             window.removeEventListener('scroll', reposition, true);
+            if (onOutside) {
+                document.removeEventListener('mousedown', onOutside);
+                onOutside = null;
+            }
         };
 
         nameInput.focus();
@@ -1513,14 +1528,18 @@ class DashboardPageNav {
             else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
         });
 
-        // Close on outside click
-        const onOutside = (e) => {
+        // Close on outside click. Declared above so removeRepositionListeners
+        // can take it off whichever way the popover closes.
+        onOutside = (e) => {
             if (!popover.contains(e.target) && e.target !== btn) {
-                document.removeEventListener('mousedown', onOutside);
                 commit();
             }
         };
-        setTimeout(() => document.addEventListener('mousedown', onOutside), 0);
+        // Bound on the next tick so the click that opened this popover does not
+        // immediately close it again -- and only if it is still open by then.
+        setTimeout(() => {
+            if (onOutside) document.addEventListener('mousedown', onOutside);
+        }, 0);
     }
 
 

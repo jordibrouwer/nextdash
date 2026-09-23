@@ -578,9 +578,16 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse multipart form.
-	// Keep this comfortably above typical icon-heavy backups.
-	err := r.ParseMultipartForm(256 << 20) // 256MB max
+	/*
+	 * Parse the form, buffering 32 MB of it in memory and spilling the rest to
+	 * temp files.
+	 *
+	 * This argument is maxMemory, not a size limit -- it was 256 MB, which
+	 * meant an icon-heavy backup was held in RAM in its entirety. How large the
+	 * upload may be is decided once, by multipartBodyLimit in securityHeaders;
+	 * this only decides how much of it sits in memory on the way past.
+	 */
+	err := r.ParseMultipartForm(32 << 20)
 	if err != nil {
 		logWarn(logComponentImport, "the uploaded file could not be read (%v); nothing was imported", err)
 		http.Error(w, "Failed to parse form (backup may be too large)", http.StatusBadRequest)

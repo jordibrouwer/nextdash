@@ -1144,7 +1144,7 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 - **ntfy** alerts carry **Open link** and **Health** buttons, and a failure is sent at a higher priority than a recovery. Fill in **Address of this dashboard** for the Health button.
 - Local addresses are refused unless *Allow local bookmarks* is on.
 - **Many at once** — when a host takes many bookmarks down together, the alerts are collapsed into one message. Certificate warnings are always separate.
-- **Certificates** — warnings at 30, 7 and 3 days before expiry, through the same channels.
+- **Certificates** — warnings at 30, 7 and 3 days before expiry, through the same channels, and to any webhook subscribed to `health.cert-expiring` ([§17.3](#173-webhooks)).
 
 **Muting one bookmark.** Tick **Do not alert me about this bookmark** in its Expected response panel. It is still checked and shows as down with a *Muted* badge; only the message is held back. Un-muting during an outage still alerts. **Mute alerts** and **Unmute** in the selection bar change several rows at once.
 
@@ -1203,7 +1203,7 @@ A URL already in the inbox is not added again: a toast says *Already in Inbox* a
 
 Open it with **`Shift + I`**, **`0`**, the inbox icon or `:inbox`.
 
-- **Two tabs** — **To triage** is the queue, counted on the tab and in the header; **Kept** holds links you kept without a page yet ([§14.5](#145-the-kept-tab)).
+- **Two tabs** — **To triage** is the queue, counted on the tab and in the header; **Kept** holds links you kept without a page yet ([§14.5](#145-the-kept-tab)). `Shift + I` always opens **To triage**, whichever tab you left it on; `Shift + U` is the key that means Kept.
 - **Filters** in a left column, each with its count: All (called *Active*), Unread, Snoozed and With note (the last two only when they hold something). *This week* is a readout above them.
 - **Narrowing** — by site, by tag (click a tag chip) and by search. Every count follows what is shown, and *Mark all read* becomes *Mark shown read*.
 - **Sort** — newest first (default), oldest first, title or site.
@@ -1419,7 +1419,7 @@ Keys do not fire while you type in a field, except where a list says so. A legen
 
 - **Download backup** — a ZIP of everything, to your computer.
 - **Make a backup now** — stores one on the server.
-- **Create a backup automatically** and **How often** — every day, week (default), two weeks or month. A run happens whenever the newest backup is older than that, so frequent restarts do not skip it. The newest **three** are kept; `NEXTDASH_AUTO_BACKUP_KEEP` (1–50) changes that and `NEXTDASH_AUTO_BACKUP_DIR` (an absolute path) stores them elsewhere. The default place is `data/auto-backups/`, which is left out of backups.
+- **Create a backup automatically** and **How often** — every day, week (default), two weeks or month. A run happens whenever the newest backup is older than that, so frequent restarts do not skip it. The newest **three** are kept; `NEXTDASH_AUTO_BACKUP_KEEP` (1–50) changes that and `NEXTDASH_AUTO_BACKUP_DIR` (an absolute path) stores them elsewhere. The default place is `data/auto-backups/`, which is left out of backups. **The panel names the directory it is actually using**, and warns when that is inside the data directory — backups kept there are lost with the thing they back up.
 - **What a backup carries** — a backup holds the whole data directory: bookmarks, pages, categories, finders, the inbox, settings, custom themes, check history, icons and uploads. Two switches decide the rest:
   - **Local copies of pages** — the largest part of a backup.
   - **Tokens and passwords** — source tokens, stored sign-ins and webhook keys. With them in, a restore needs nothing typed again, and the ZIP itself becomes a secret. They are written back with owner-only permissions.
@@ -1477,6 +1477,7 @@ Webhooks tell another program the moment something happens here. Add a receiver 
 | `bookmark.deleted` | A bookmark is removed |
 | `health.down` | A monitored bookmark stops answering |
 | `health.up` | It comes back |
+| `health.cert-expiring` | A TLS certificate is about to run out ([§13.7](#137-alerts)) |
 
 Every delivery is signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme:
 
@@ -1697,6 +1698,7 @@ environment:
   # - NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120
   # - NEXTDASH_SSRF_API_RATE_PER_MIN=60
   # - NEXTDASH_STATUS_PING_RATE_PER_MIN=300
+  # - NEXTDASH_TRUSTED_PROXIES=10.0.0.0/8
   # - NEXTDASH_CSP=off
   # - NEXTDASH_DISABLE_PREFETCH=1
 ```
@@ -1728,6 +1730,14 @@ NEXTDASH_STATUS_PING_RATE_PER_MIN=300    # /api/ping, the browser's own status c
 ```
 
 Above the limit the API answers **429**, and the `security` channel records it.
+
+**Who a request is counted against.** By default, the address the connection comes from. Behind a reverse proxy that is the proxy for everyone, so the limits are shared by every reader — which is deliberate: `X-Forwarded-For` can be set by anyone, and believing it would let a client hand itself a fresh allowance simply by inventing a new value. Name your proxy to have the header believed:
+
+```bash
+NEXTDASH_TRUSTED_PROXIES=10.0.0.0/8, 192.168.1.5   # addresses and ranges, comma-separated
+```
+
+Only a request arriving from one of these is taken at its word, and only its first `X-Forwarded-For` entry — the client the proxy saw — is used.
 
 ### 21.4 CORS
 

@@ -194,7 +194,16 @@ listing is newest-first, the first row that is not newer than it means everythin
 below has been seen, and the walk stops mid-page — which is what makes a routine
 round one request rather than a hundred.
 */
-func FetchGitHubStars(ctx context.Context, token, since, category string) (GitHubStarResult, error) {
+/*
+The client is passed in, not built here.
+
+A bare http.Client skips the redirect validation and the global outbound limit
+that every other outgoing request goes through, and handlers_sources.go calls
+that not negotiable. It also has to follow this install's own "allow localhost
+and private-network addresses" setting, because NEXTDASH_GITHUB_API_BASE can
+point at a GitHub Enterprise on a private host -- which only the caller knows.
+*/
+func FetchGitHubStars(ctx context.Context, client *http.Client, token, since, category string) (GitHubStarResult, error) {
 	var out GitHubStarResult
 	token = strings.TrimSpace(token)
 	if token == "" {
@@ -202,7 +211,6 @@ func FetchGitHubStars(ctx context.Context, token, since, category string) (GitHu
 	}
 
 	sinceAt := githubStarTime(since)
-	client := &http.Client{Timeout: githubStarsTimeout}
 	seen := map[string]struct{}{}
 
 	for page := 1; page <= githubStarsMaxPages; page++ {

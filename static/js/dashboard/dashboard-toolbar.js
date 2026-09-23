@@ -376,8 +376,16 @@ class DashboardToolbar {
         document.addEventListener('focusin', syncToolbarKbdTooltip);
         document.addEventListener('focusout', syncToolbarKbdTooltip);
 
-        if (!d._toolbarKbdTooltipDocBound) {
-            d._toolbarKbdTooltipDocBound = true;
+        /*
+         * Bound once, and remembered so teardown can take them off again.
+         *
+         * The flag used to be set and never reset, and teardown removed only
+         * the three document listeners -- so switching shortcut tooltips off
+         * left a capture-phase window scroll handler running for a feature that
+         * was no longer there, for the rest of the session.
+         */
+        if (!d._toolbarKbdTooltipHide) {
+            d._toolbarKbdTooltipHide = hide;
             window.addEventListener('scroll', hide, { passive: true, capture: true });
             window.addEventListener('blur', hide);
         }
@@ -403,6 +411,11 @@ class DashboardToolbar {
             document.removeEventListener('focusout', d._toolbarKbdTooltipSync);
             d._toolbarKbdTooltipSync = null;
             d._toolbarKbdTooltipPointerSync = null;
+        }
+        if (d._toolbarKbdTooltipHide) {
+            window.removeEventListener('scroll', d._toolbarKbdTooltipHide, { capture: true });
+            window.removeEventListener('blur', d._toolbarKbdTooltipHide);
+            d._toolbarKbdTooltipHide = null;
         }
         document.getElementById('toolbar-kbd-tooltip')?.remove();
     }

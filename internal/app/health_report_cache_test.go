@@ -150,3 +150,39 @@ func TestLoadBookmarkHealthReportSingleflight(t *testing.T) {
 		}
 	}
 }
+
+/*
+ * Two goroutines reaching a hand-built Handlers must not each make a Cond.
+ *
+ * loadBookmarkHealthReport used to build one when it found the field nil, with
+ * no lock around the check -- so two callers could each build one, and then a
+ * Wait on one and a Broadcast on the other never meet. The waiter never wakes.
+ * NewHandlers sets the field, so production was safe and the tests that
+ * assemble a Handlers by hand were not.
+ *
+ * Run with -race this catches the write; without it, it catches the two Conds.
+ */
+func TestHealthReportCondIsBuiltOnce(t *testing.T) {
+	h := &Handlers{store: NewStore()}
+
+	var wg sync.WaitGroup
+	seen := make([]*sync.Cond, 8)
+	for i := 0; i < len(seen); i++ {
+		wg.Add(1)
+		go func(slot int) {
+			defer wg.Done()
+			h.ensureHealthReportCond()
+			seen[slot] = h.healthReportBuildCond
+		}(i)
+	}
+	wg.Wait()
+
+	if h.healthReportBuildCond == nil {
+		t.Fatal("no Cond was built at all")
+	}
+	for i, cond := range seen {
+		if cond != h.healthReportBuildCond {
+			t.Errorf("goroutine %d saw a different Cond, so a Wait and a Broadcast can miss each other", i)
+		}
+	}
+}

@@ -142,6 +142,16 @@ class DashboardContextMenu {
         d._movePopoverCleanup?.();
         d._tagPopoverCleanup?.();
         d._deletePopoverCleanup?.();
+        /*
+         * The multi-select tag popover too, which was missing from this list.
+         *
+         * It closes either way: its outside-click binding sees the right-click
+         * and calls the same cleanup, which is why nothing looked wrong. But
+         * every other popover here is closed by name rather than left to notice
+         * for itself, and _multiSelectTagsCleanup was stored on the dash for
+         * this and read by nobody. Named, it is one rule for all four.
+         */
+        d._multiSelectTagsCleanup?.();
 
         const bookmark = bookmarkRef.bookmark;
         const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;

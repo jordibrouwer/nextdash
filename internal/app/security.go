@@ -1,6 +1,7 @@
 package app
 
 import (
+	"crypto/subtle"
 	"math"
 	"net/http"
 	"os"
@@ -257,6 +258,15 @@ func sanitizeColorTheme(c ColorTheme) ColorTheme {
 
 const jsonBodyLimit = 4 << 20 // 4 MB for JSON endpoints
 
+/*
+multipartBodyLimit is the ceiling on an uploaded body: a full backup with every
+icon in it, and nothing like enough room to be a way of filling a disk.
+
+A var rather than a const so a test can lower it and send a body over it without
+moving 256 MB to prove a limit exists.
+*/
+var multipartBodyLimit int64 = 256 << 20
+
 func contentSecurityPolicy() string {
 	if strings.EqualFold(strings.TrimSpace(os.Getenv("NEXTDASH_CSP")), "off") {
 		return ""
@@ -301,12 +311,22 @@ func securityHeaders(next http.Handler) http.Handler {
 		if csp := contentSecurityPolicy(); csp != "" {
 			w.Header().Set("Content-Security-Policy", csp)
 		}
-		// Apply body size limit to non-multipart requests so JSON endpoints
-		// cannot be fed unlimited data. File upload and backup handlers set
-		// their own limits via ParseMultipartForm and are excluded here.
-		if !strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/") {
-			r.Body = http.MaxBytesReader(w, r.Body, jsonBodyLimit)
+		/*
+		 * Every body has a ceiling. Two ceilings, because the two shapes are
+		 * not the same size: JSON is a settings object, multipart is a backup
+		 * with its icons in it.
+		 *
+		 * Multipart used to be excluded, on the reasoning that the upload
+		 * handlers set their own limit through ParseMultipartForm. They do not.
+		 * That argument is maxMemory -- where Go stops buffering in RAM and
+		 * starts spilling to temp files -- and the spilling half is unbounded.
+		 * One POST could take the memory and then the disk.
+		 */
+		limit := int64(jsonBodyLimit)
+		if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/") {
+			limit = multipartBodyLimit
 		}
+		r.Body = http.MaxBytesReader(w, r.Body, limit)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -323,9 +343,23 @@ For a route that narrows what it returns rather than refusing it outright: the
 dashboard has to be able to read a page's blocks to draw them, and only the
 settings that are addresses need withholding.
 */
+/*
+tokensMatch compares two secrets in time that does not depend on how much of
+them matches.
+
+`==` on a string stops at the first byte that differs, so how long the answer
+took says how much of a guess was right -- and a guess can be refined one byte
+at a time from that. Over a network the difference is buried in noise and this
+is not the likeliest way into a self-hosted dashboard, but it is one line either
+way and the one line that does not leak is the one to write.
+*/
+func tokensMatch(provided, expected string) bool {
+	return subtle.ConstantTimeCompare([]byte(provided), []byte(expected)) == 1
+}
+
 func hasWriteAccess(r *http.Request) bool {
 	token := writeAccessToken()
-	return token == "" || r.Header.Get("X-NextDash-Token") == token
+	return token == "" || tokensMatch(r.Header.Get("X-NextDash-Token"), token)
 }
 
 func (h *Handlers) requireWriteAccess(w http.ResponseWriter, r *http.Request) bool {
@@ -333,7 +367,7 @@ func (h *Handlers) requireWriteAccess(w http.ResponseWriter, r *http.Request) bo
 	if token == "" {
 		return true
 	}
-	if r.Header.Get("X-NextDash-Token") != token {
+	if !tokensMatch(r.Header.Get("X-NextDash-Token"), token) {
 		logAuthDenied(r, "missing_or_invalid_write_token")
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return false

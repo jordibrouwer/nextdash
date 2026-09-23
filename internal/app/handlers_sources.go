@@ -100,22 +100,7 @@ type sourceImporter func(ctx context.Context, source SourceState) (rows []Import
 
 // sourceImporters is the register's dispatch table. A new source in cluster A is
 // an entry here plus its fetch function.
-var sourceImporters = map[string]sourceImporter{
-	"github-stars": func(ctx context.Context, source SourceState) ([]ImportedRow, string, bool, error) {
-		result, err := FetchGitHubStars(ctx, source.Token, source.Cursor, source.TargetCategory)
-		if err != nil {
-			return nil, "", false, err
-		}
-		return result.Bookmarks, result.NewestStarredAt, result.Truncated, nil
-	},
-	"raindrop": func(ctx context.Context, source SourceState) ([]ImportedRow, string, bool, error) {
-		result, err := FetchRaindrops(ctx, source.Token, source.Cursor, source.TargetCategory)
-		if err != nil {
-			return nil, "", false, err
-		}
-		return result.Bookmarks, result.NewestCreated, result.Truncated, nil
-	},
-}
+var sourceImporters = map[string]sourceImporter{}
 
 /*
 registerHandlerSources adds the importers that need the Handlers receiver.
@@ -126,6 +111,27 @@ and the global rate limit live. A source that used http.Get would skip all
 three, and the atlas is explicit that this is not negotiable.
 */
 func (h *Handlers) registerHandlerSources() {
+	// Moved here from the plain table above. They were reaching the network
+	// through a bare http.Client, which skips the redirect validation and the
+	// outbound limit -- and, since both API bases can be pointed elsewhere by
+	// environment, they have to follow this install's own setting about local
+	// addresses, which only a Handlers can answer for.
+	sourceImporters["github-stars"] = func(ctx context.Context, source SourceState) ([]ImportedRow, string, bool, error) {
+		result, err := FetchGitHubStars(ctx, h.outboundHTTPClient(githubStarsTimeout, 5),
+			source.Token, source.Cursor, source.TargetCategory)
+		if err != nil {
+			return nil, "", false, err
+		}
+		return result.Bookmarks, result.NewestStarredAt, result.Truncated, nil
+	}
+	sourceImporters["raindrop"] = func(ctx context.Context, source SourceState) ([]ImportedRow, string, bool, error) {
+		result, err := FetchRaindrops(ctx, h.outboundHTTPClient(raindropTimeout, 5),
+			source.Token, source.Cursor, source.TargetCategory)
+		if err != nil {
+			return nil, "", false, err
+		}
+		return result.Bookmarks, result.NewestCreated, result.Truncated, nil
+	}
 	sourceImporters["hackernews"] = func(ctx context.Context, source SourceState) ([]ImportedRow, string, bool, error) {
 		result, err := h.FetchHackerNewsFavorites(ctx, source)
 		if err != nil {

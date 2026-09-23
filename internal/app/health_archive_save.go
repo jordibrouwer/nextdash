@@ -526,19 +526,23 @@ func (h *Handlers) recordArchiveJob(target, jobID string) {
 	}
 	now := time.Now().UnixMilli()
 	for _, page := range h.store.GetPages() {
-		bookmarks := h.store.GetBookmarksByPage(page.ID)
-		changed := false
-		for i := range bookmarks {
-			if canonicalBookmarkURLKey(bookmarks[i].URL) != key {
-				continue
+		// The copy decides whether this page is worth a write; the stamping
+		// itself happens inside the store lock, where nothing can be saved
+		// between the read and the write. See recordArchiveHistory for why the
+		// two halves are split this way.
+		if !pageHoldsBookmarkKey(h.store.GetBookmarksByPage(page.ID), key) {
+			continue
+		}
+		_ = h.store.MutateBookmarksOnPage(page.ID, func(current []Bookmark) ([]Bookmark, error) {
+			for i := range current {
+				if canonicalBookmarkURLKey(current[i].URL) != key {
+					continue
+				}
+				current[i].ArchiveJobID = jobID
+				current[i].ArchiveJobAt = now
 			}
-			bookmarks[i].ArchiveJobID = jobID
-			bookmarks[i].ArchiveJobAt = now
-			changed = true
-		}
-		if changed {
-			_ = h.store.SaveBookmarksByPage(page.ID, bookmarks)
-		}
+			return current, nil
+		})
 	}
 }
 

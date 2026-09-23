@@ -2,8 +2,13 @@ package app
 
 import (
 	"net/http"
+	"regexp"
 	"strings"
 )
+
+// generatedIconName matches what saveIconBytes writes, and nothing else: the
+// literal "icon-", 8 random bytes as hex, and an extension.
+var generatedIconName = regexp.MustCompile(`^icon-[0-9a-f]{16}\.[a-zA-Z0-9]+$`)
 
 /*
  * Serving files out of the data directory, and nothing else.
@@ -29,11 +34,26 @@ func dataFileHandler(dataDir string) http.HandlerFunc {
 		}
 		switch {
 		case isBareFileUnder(rel, "icons/"):
-			// Icon filenames carry 8 random bytes and are never rewritten in
-			// place, so they can be frozen. These are the most numerous requests
-			// on the dashboard -- one per bookmark -- and had no Cache-Control at
-			// all, costing a conditional round trip each on every load.
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			/*
+			 * Frozen only for the names that earn it.
+			 *
+			 * A generated name carries 8 random bytes and is never written
+			 * twice, so a year-long immutable entry is exactly right -- and
+			 * these are the most numerous requests on the dashboard, one per
+			 * bookmark, which had no Cache-Control at all before.
+			 *
+			 * Every other name in this directory was put there by a version
+			 * that kept the browser's own filename on an upload, and those are
+			 * rewritten in place. Freezing one means a replaced icon never
+			 * reaches a browser that saw the old one, and `immutable` defeats a
+			 * reload as well. They revalidate instead, like the uploaded
+			 * favicon below.
+			 */
+			if generatedIconName.MatchString(strings.TrimPrefix(rel, "icons/")) {
+				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			} else {
+				w.Header().Set("Cache-Control", "public, max-age=300")
+			}
 		case isBareFileUnder(rel, previewImageDirName+"/"):
 			// Named for the source URL rather than for its bytes, so the same
 			// address is rewritten in place when a site changes its og:image.

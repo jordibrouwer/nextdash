@@ -64,7 +64,7 @@ func TestFetchRaindropsUsesTheCollectionAsTheCategory(t *testing.T) {
 		[]map[string]any{{"_id": 42, "title": "Reading"}},
 	)
 
-	result, err := FetchRaindrops(context.Background(), "tok", "", "Raindrop")
+	result, err := FetchRaindrops(context.Background(), testOutboundClient(), "tok", "", "Raindrop")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestFetchRaindropsFallsBackToTheExcerpt(t *testing.T) {
 		[]map[string]any{raindropItemJSON("https://example.com/x", "X", 1, "2026-01-01T00:00:00Z", nil, "the excerpt", "")},
 		nil,
 	)
-	result, err := FetchRaindrops(context.Background(), "tok", "", "")
+	result, err := FetchRaindrops(context.Background(), testOutboundClient(), "tok", "", "")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -120,7 +120,7 @@ func TestFetchRaindropsStopsAtTheCursor(t *testing.T) {
 			raindropItemJSON("https://example.com/old", "Old", 1, "2026-01-01T00:00:00Z", nil, "", ""),
 		}, nil)
 
-	result, err := FetchRaindrops(context.Background(), "tok", "2026-01-15T00:00:00Z", "")
+	result, err := FetchRaindrops(context.Background(), testOutboundClient(), "tok", "2026-01-15T00:00:00Z", "")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -145,7 +145,7 @@ func TestFetchRaindropsSkipsNonWebEntries(t *testing.T) {
 			raindropItemJSON("https://example.com/real", "real", 1, "2026-01-01T00:00:00Z", nil, "", ""),
 		}, nil)
 
-	result, err := FetchRaindrops(context.Background(), "tok", "", "")
+	result, err := FetchRaindrops(context.Background(), testOutboundClient(), "tok", "", "")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestFetchRaindropsReportsBadToken(t *testing.T) {
 	raindropAPIBase = server.URL
 	defer func() { raindropAPIBase = original }()
 
-	if _, err := FetchRaindrops(context.Background(), "bad", "", ""); err != errRaindropUnauthorized {
+	if _, err := FetchRaindrops(context.Background(), testOutboundClient(), "bad", "", ""); err != errRaindropUnauthorized {
 		t.Errorf("err = %v, want errRaindropUnauthorized", err)
 	}
 }
@@ -194,7 +194,7 @@ func TestFetchRaindropsBoundsThePagesAndSaysSo(t *testing.T) {
 	raindropAPIBase = server.URL
 	defer func() { raindropAPIBase = baseOriginal }()
 
-	result, err := FetchRaindrops(context.Background(), "tok", "", "")
+	result, err := FetchRaindrops(context.Background(), testOutboundClient(), "tok", "", "")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -224,7 +224,7 @@ func TestFetchRaindropsSurvivesACollectionsFailure(t *testing.T) {
 	raindropAPIBase = server.URL
 	defer func() { raindropAPIBase = original }()
 
-	result, err := FetchRaindrops(context.Background(), "tok", "", "Raindrop")
+	result, err := FetchRaindrops(context.Background(), testOutboundClient(), "tok", "", "Raindrop")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -234,7 +234,7 @@ func TestFetchRaindropsSurvivesACollectionsFailure(t *testing.T) {
 }
 
 func TestFetchRaindropsNeedsAToken(t *testing.T) {
-	if _, err := FetchRaindrops(context.Background(), "  ", "", ""); err == nil {
+	if _, err := FetchRaindrops(context.Background(), testOutboundClient(), "  ", "", ""); err == nil {
 		t.Error("fetched with no token")
 	}
 }
@@ -261,7 +261,7 @@ func TestFetchRaindropsNumbersDuplicateCollectionNames(t *testing.T) {
 		},
 	)
 
-	result, err := FetchRaindrops(context.Background(), "tok", "", "Raindrop")
+	result, err := FetchRaindrops(context.Background(), testOutboundClient(), "tok", "", "Raindrop")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}

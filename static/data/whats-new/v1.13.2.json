@@ -1,0 +1,88 @@
+{
+  "tag": "v1.13.2",
+  "date": "23 September 2026",
+  "releasedAt": "2026-09-23",
+  "modalLead": "A fix-only release out of a sweep through the whole dashboard. The one worth knowing about: dragging a widget to reorder a page erased what its widgets were watching. Beside it, a closed tag cloud that went on swallowing clicks, a page that opened without its widgets if you hovered its tab first, and a kept pile that looked empty when a request failed.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Reordering a page no longer erases what its widgets watch.</strong> Dragging a widget dropped every list setting on that page — the disks a Disks tile listed, the figures Containers and Health showed, the tags Uptime and Neglected filtered by, and the names given to a disk."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A page opens with its widgets</strong> even when you hovered its tab on the way there. Hovering a page tab used to fetch it in a way that left the widgets and the block order behind."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A widget tile catches the light</strong> the way a panel in Config does. It was the one card-shaped surface that stayed matte on a theme with a sheen."
+        }
+      ]
+    },
+    {
+      "title": "The dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The tag cloud stops eating clicks when it closes.</strong> An invisible box the size of the cloud stayed over the grid, so bookmarks under it would not open and nothing said why."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A long category name fits again</strong> — shrunk a step at a time and wrapped to two lines, instead of cut off mid-word."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><code>Move to…</code> opens one popover</strong>, however fast the key repeats."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A collection rule names the category it offers</strong> instead of listing opaque ids."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The page name is in the browser tab from the first paint</strong>, instead of “Dashboard” until the scripts have run."
+        }
+      ]
+    },
+    {
+      "title": "Inbox and Kept",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong><code>Shift + I</code> opens the inbox on its first tab.</strong> It used to open on whichever tab you left it on, so it landed on Kept — and did nothing at all while you were already there. <code>Shift + U</code> is still the key that means Kept."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A failed reload leaves the kept pile on screen</strong> and says what happened, instead of drawing “Nothing kept yet.”"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A preview the server refused is asked for again.</strong> Hovering a lot of rows at once meant those links never loaded a preview again."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The capture page answers in your language.</strong> The page a bookmarklet lands on was English whatever the install was set to."
+        }
+      ]
+    },
+    {
+      "title": "Alerts and backups",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A certificate about to expire reaches a webhook.</strong> Tick <em>A TLS certificate is about to expire</em> under Data &amp; backups → Webhooks. It was already a notification and a browser push."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The Backups panel says where the backups are</strong>, and warns when that is inside the data directory they back up."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An uploaded icon no longer overwrites another one.</strong> Two bookmarks given different pictures with the same filename keep both, and a replaced icon actually appears."
+        }
+      ]
+    }
+  ]
+}

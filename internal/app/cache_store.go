@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -55,8 +56,66 @@ func writePreviewCacheFile(cache PreviewCacheFile) error {
 
 const previewCacheFlushInterval = 30 * time.Second
 
+/*
+previewCacheMaxEntries is how many previews are worth keeping at once.
+
+The TTL below takes most of it: an entry past seven days cannot be served to
+anyone. This is the second half, for a collection that really does hold
+thousands of live bookmarks, and for a week of distinct addresses asked for
+through /api/bookmark-preview -- which answers any address, not only one that is
+bookmarked.
+*/
+const previewCacheMaxEntries = 5000
+
+/*
+prunePreviewCacheLocked drops what the cache can no longer serve, and reports
+whether it took anything.
+
+Nothing ever removed an entry: previewCacheEntryValid gates reads, so a preview
+for a bookmark deleted years ago stayed in the map and in preview-cache.json
+for ever -- and the whole map is re-marshalled on every flush, so what it cost
+to keep grew with it.
+
+Pruning here rather than on write: this is the one place the file is rewritten,
+so the map on disk and the map in memory are trimmed in the same breath.
+*/
+func (h *Handlers) prunePreviewCacheLocked() bool {
+	removed := false
+	for key, entry := range h.previewCache.Cache {
+		if !previewCacheEntryValid(entry) {
+			delete(h.previewCache.Cache, key)
+			removed = true
+		}
+	}
+
+	over := len(h.previewCache.Cache) - previewCacheMaxEntries
+	if over <= 0 {
+		return removed
+	}
+
+	// Oldest first, because the entry fetched longest ago is the one nearest
+	// its TTL and so the one closest to being no use anyway.
+	keys := make([]string, 0, len(h.previewCache.Cache))
+	for key := range h.previewCache.Cache {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return h.previewCache.Cache[keys[i]].FetchedAt < h.previewCache.Cache[keys[j]].FetchedAt
+	})
+	for _, key := range keys[:over] {
+		delete(h.previewCache.Cache, key)
+	}
+	return true
+}
+
 func (h *Handlers) flushPreviewCacheLocked() error {
-	if !h.previewLoaded || !h.previewCacheDirty {
+	if !h.previewLoaded {
+		return nil
+	}
+	if h.prunePreviewCacheLocked() {
+		h.previewCacheDirty = true
+	}
+	if !h.previewCacheDirty {
 		return nil
 	}
 	err := writePreviewCacheFile(h.previewCache)
@@ -66,14 +125,32 @@ func (h *Handlers) flushPreviewCacheLocked() error {
 	return err
 }
 
-func (h *Handlers) startPreviewCacheFlushLoop() {
+/*
+StartPreviewCacheFlushScheduler writes the preview cache out every so often,
+until it is told to stop.
+
+It was started inside NewHandlers and ran on `for range ticker.C` -- the only
+background ticker here with no way out, while main.go wires a stop channel into
+all six others. Moving it beside them makes it one of them, and it also means a
+Handlers built for a test no longer has a goroutine writing preview-cache.json
+underneath it.
+
+Shutdown flushes once more through FlushCaches, so nothing written between the
+last tick and the stop is lost.
+*/
+func (h *Handlers) StartPreviewCacheFlushScheduler(stop <-chan struct{}) {
+	ticker := time.NewTicker(previewCacheFlushInterval)
 	go func() {
-		ticker := time.NewTicker(previewCacheFlushInterval)
 		defer ticker.Stop()
-		for range ticker.C {
-			h.previewCacheMu.Lock()
-			_ = h.flushPreviewCacheLocked()
-			h.previewCacheMu.Unlock()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+				h.previewCacheMu.Lock()
+				_ = h.flushPreviewCacheLocked()
+				h.previewCacheMu.Unlock()
+			}
 		}
 	}()
 }

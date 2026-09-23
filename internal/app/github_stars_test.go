@@ -63,7 +63,7 @@ func TestFetchGitHubStarsAsksForStarDates(t *testing.T) {
 		fmt.Fprint(w, starPage([]string{"golang/go"}, []string{"2020-05-01T10:00:00Z"}))
 	})
 
-	result, err := FetchGitHubStars(context.Background(), "ghp_x", "", "code")
+	result, err := FetchGitHubStars(context.Background(), testOutboundClient(), "ghp_x", "", "code")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -109,7 +109,7 @@ func TestFetchGitHubStarsStopsAtTheCursor(t *testing.T) {
 		))
 	})
 
-	result, err := FetchGitHubStars(context.Background(), "ghp_x", "2026-01-15T00:00:00Z", "")
+	result, err := FetchGitHubStars(context.Background(), testOutboundClient(), "ghp_x", "2026-01-15T00:00:00Z", "")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -134,7 +134,7 @@ func TestFetchGitHubStarsTreatsTheCursorAsAlreadySeen(t *testing.T) {
 		fmt.Fprint(w, starPage([]string{"same/one"}, []string{"2026-01-15T00:00:00Z"}))
 	})
 
-	result, err := FetchGitHubStars(context.Background(), "ghp_x", "2026-01-15T00:00:00Z", "")
+	result, err := FetchGitHubStars(context.Background(), testOutboundClient(), "ghp_x", "2026-01-15T00:00:00Z", "")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -151,7 +151,7 @@ func TestFetchGitHubStarsSeparatesRateLimitFromBadToken(t *testing.T) {
 		w.Header().Set("X-RateLimit-Reset", fmt.Sprint(time.Now().Add(30*time.Minute).Unix()))
 		w.WriteHeader(http.StatusForbidden)
 	})
-	_, err := FetchGitHubStars(context.Background(), "ghp_x", "", "")
+	_, err := FetchGitHubStars(context.Background(), testOutboundClient(), "ghp_x", "", "")
 	if err == nil || !strings.Contains(err.Error(), "rate limit") {
 		t.Errorf("rate-limited 403 gave %v, want a rate-limit error naming the wait", err)
 	}
@@ -164,7 +164,7 @@ func TestFetchGitHubStarsReportsBadToken(t *testing.T) {
 	withGitHubAPI(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 	})
-	if _, err := FetchGitHubStars(context.Background(), "ghp_bad", "", ""); err != errGitHubUnauthorized {
+	if _, err := FetchGitHubStars(context.Background(), testOutboundClient(), "ghp_bad", "", ""); err != errGitHubUnauthorized {
 		t.Errorf("err = %v, want errGitHubUnauthorized", err)
 	}
 }
@@ -186,7 +186,7 @@ func TestFetchGitHubStarsBoundsThePagesAndSaysSo(t *testing.T) {
 		fmt.Fprint(w, starPage(names, at))
 	})
 
-	result, err := FetchGitHubStars(context.Background(), "ghp_x", "", "")
+	result, err := FetchGitHubStars(context.Background(), testOutboundClient(), "ghp_x", "", "")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -204,7 +204,7 @@ func TestFetchGitHubStarsRefusesForeignLinks(t *testing.T) {
 	withGitHubAPI(t, func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `[{"starred_at":"2026-01-01T00:00:00Z","repo":{"full_name":"evil/one","html_url":"https://evil.example.com/x"}}]`)
 	})
-	result, err := FetchGitHubStars(context.Background(), "ghp_x", "", "")
+	result, err := FetchGitHubStars(context.Background(), testOutboundClient(), "ghp_x", "", "")
 	if err != nil {
 		t.Fatalf("fetch: %v", err)
 	}
@@ -227,7 +227,7 @@ func TestGitHubStarTagsAreBounded(t *testing.T) {
 }
 
 func TestFetchGitHubStarsNeedsAToken(t *testing.T) {
-	if _, err := FetchGitHubStars(context.Background(), "   ", "", ""); err == nil {
+	if _, err := FetchGitHubStars(context.Background(), testOutboundClient(), "   ", "", ""); err == nil {
 		t.Error("fetched with no token")
 	}
 }

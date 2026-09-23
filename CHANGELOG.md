@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.13.2 — 23 September 2026](#v1132--23-september-2026)
 - [v1.13.1 — 22 September 2026](#v1131--22-september-2026)
 - [v1.13.0 — 22 September 2026](#v1130--22-september-2026)
 - [v1.12.0 — 21 September 2026](#v1120--21-september-2026)
@@ -216,6 +217,133 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.13.2 — 23 September 2026
+
+A fix-only release out of a sweep through the whole dashboard. The one worth
+knowing about: dragging a widget to reorder a page erased what its widgets were
+watching — the disks a Disks tile listed, the figures Containers and Health
+showed, the tags Uptime and Neglected filtered by. Beside it, a closed tag cloud
+that went on swallowing clicks, a page that opened without its widgets if you
+hovered its tab first, and a kept pile that looked empty when a request failed.
+
+### Widgets
+
+- **fix — reordering a page erased what its widgets watch.** A drag sends the
+  new order and no widget list, so the server wrote back the widgets it had just
+  read — and every list setting on that page was refused on the way through and
+  dropped. The disks a Disks tile listed, the figures Containers and Health
+  showed, the tags Uptime and Neglected filtered by, and the labels on a disk
+  all went. RSS was spared because its addresses are stored in a different shape.
+- **fix — a page opened without its widgets** when its tab had been hovered
+  first. Hovering a page tab fetches that page in the background, and that fetch
+  asked for the bookmarks and the categories and not the blocks — so the page
+  opened with no widgets and its blocks in the wrong order until something made
+  it fetch again.
+- **new — a widget tile catches the light** the way a panel in Config does. It
+  was the one card-shaped surface in the app that stayed matte on a theme with a
+  sheen. Flat themes and the flat depth setting are unchanged.
+- **fix — a Disks tile answers for the disks it was given**, and for nothing
+  else. The reading is taken from the widget's own settings rather than from
+  whatever the request happened to name.
+
+### The dashboard
+
+- **fix — the tag cloud kept eating clicks after it was closed.** An invisible
+  box the size of the cloud stayed over the grid, so bookmarks under it stopped
+  opening and nothing said why. It also left controls where a keyboard could
+  still reach them.
+- **fix — a long category name fits again.** Titles are shrunk a step at a time
+  and wrapped to two lines when that is not enough; none of that had been
+  running, so a long name was cut off mid-word with nothing to say it had been.
+- **fix — `Move to…` opens one popover**, however fast the key repeats. Two
+  presses in the same moment could leave two on screen, and the one Escape did
+  not close went on swallowing Escape and the arrow keys.
+- **fix — a category rule names the category it offers.** The picker listed
+  opaque ids; it lists the name beside each one now.
+- **fix — the page name is in the tab title from the first paint**, instead of
+  "Dashboard" until the scripts have run. A new tab, a bookmark and the PWA all
+  used to catch the generic name.
+
+### Inbox and Kept
+
+- **fix — `Shift + I` opens the inbox on its first tab.** It opened on whichever
+  tab you were last on, so it landed on Kept once Kept had been visited, and did
+  nothing at all while you were already there. `Shift + U` is still the key that
+  means Kept.
+- **fix — a failed reload no longer empties the kept pile on screen.** A dropped
+  request drew "Nothing kept yet.", which reads as "it worked" straight after
+  filing everything. What is on screen stays, and a message says the reload
+  failed.
+- **fix — a preview refused with a rate limit is asked for again.** Hovering
+  enough rows to trip the server's own limit meant those links never loaded a
+  preview again for the rest of the session.
+- **fix — the capture page answers in your language.** The page a bookmarklet
+  lands on was English whatever the install was set to. A failure there also
+  stopped printing the server's internal error text.
+
+### Health and alerts
+
+- **new — a certificate about to expire reaches a webhook.** `health.cert-expiring`
+  is a published event now, beside `health.down` and `health.up`. It was already
+  a notification and a browser push; the one alert that comes with weeks of
+  warning was the only one that could not leave the app.
+
+### Data and backups
+
+- **new — the Backups panel says where the backups are**, and warns when that is
+  inside the data directory they back up. `NEXTDASH_AUTO_BACKUP_DIR` was
+  documented in the README and appeared nowhere in the app.
+- **fix — an uploaded icon no longer overwrites another one.** Icons are named
+  for chance rather than for the file they came from, so two bookmarks given
+  different pictures with the same filename keep both. Only names the server
+  generated are cached for a year; anything older revalidates, so a replaced
+  icon actually appears.
+
+### Under the hood
+
+- **fix — two background jobs could undo a bookmark you had just added.** The
+  archive backfill and the Save Page Now receipt read a page, edited a copy and
+  wrote the whole thing back without the lock every other write path takes.
+- **fix — a rate limit is counted per connection** rather than per
+  `X-Forwarded-For`, a header anyone can set. Behind a reverse proxy the limits
+  are now shared until you name the proxy in `NEXTDASH_TRUSTED_PROXIES`
+  (addresses and CIDR ranges, comma-separated).
+- **fix — an upload and each file inside it have a ceiling.** A multipart body
+  was the one body with no limit, and a zip entry was read whole however large
+  it unpacked to.
+- **fix — a byte range is never gzipped.** A `Range` request for a text file
+  came back compressed but labelled as a slice of the uncompressed one.
+- **fix — `/api/system/metrics` cannot be made to grow forever.** The readings
+  cache is capped and pruned, one request cannot ask about more than 32 disks,
+  and a slow disk no longer holds up every other reading.
+- **fix — the preview cache forgets.** Entries past their seven days are
+  dropped, and the file is capped, instead of growing for the life of the
+  install.
+- **fix — several listeners and clients were given back**: the rename popover's
+  outside-click, the shortcut tooltips' window handlers, idle outbound
+  connections, and a Docker client built once per socket instead of once per
+  reading.
+- **fix — tokens are compared in constant time**, and the health report's
+  condition variable is built exactly once.
+- **fix — the last two importers go out through the shared client**, so GitHub
+  stars and Raindrop follow the same redirect checks and outbound limit as
+  everything else.
+- **docs — Help and the manual** now carry the certificate webhook event and
+  where automatic backups are stored.
+
+### Development
+
+- **new — CI runs the eleven checks the repo already had** and nothing ran:
+  cheat sheet, help and locale parity, duplicates, placeholders, documentation
+  links, the overview feature list, tag patterns and two model tests. `go vet`
+  runs beside `gofmt`.
+- **new — the two widget settings tables are held to each other by a test.** A
+  setting the config panel can write and the server does not declare is accepted
+  with a 200 and gone on the next read, which is how the Kept widget lost its
+  order in v1.13.0.
 
 ---
 

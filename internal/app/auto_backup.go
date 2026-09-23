@@ -74,6 +74,29 @@ func autoBackupDir() string {
 }
 
 /*
+autoBackupsAreInsideTheDataDir reports the arrangement a backup cannot survive.
+
+Not a string comparison against the default path: NEXTDASH_AUTO_BACKUP_DIR can
+name a directory inside the data directory just as easily as the fallback does,
+and that is the same risk by another route.
+*/
+func autoBackupsAreInsideTheDataDir() bool {
+	dir, err := filepath.Abs(autoBackupDir())
+	if err != nil {
+		return false
+	}
+	dataDir, err := filepath.Abs(ResolveDataDir())
+	if err != nil {
+		return false
+	}
+	rel, err := filepath.Rel(dataDir, dir)
+	if err != nil {
+		return false
+	}
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+/*
 How many backups are kept, and how often one is made.
 
 Both were constants. The count is now an environment variable, because it is an
@@ -120,6 +143,19 @@ type autoBackupListResponse struct {
 	// so the panel can say what will happen rather than only what has happened.
 	Keep         int `json:"keep"`
 	IntervalDays int `json:"intervalDays"`
+	/*
+	 * Where the backups actually are, and whether that is inside the thing
+	 * they back up.
+	 *
+	 * NEXTDASH_AUTO_BACKUP_DIR is documented in the README and the manual and
+	 * appeared nowhere in the app, so the panel could say how old the newest
+	 * backup was and never where it lived. Unset, they land in
+	 * data/auto-backups/ -- and the one failure a backup exists for, losing the
+	 * data directory, takes them with it. That is worth saying out loud rather
+	 * than leaving to be discovered.
+	 */
+	Dir           string `json:"dir"`
+	InsideDataDir bool   `json:"insideDataDir"`
 	// NextBackupAt is when the next automatic backup is due (RFC3339), or empty
 	// when automatic backups are disabled. When it's in the past, one is due now.
 	NextBackupAt string `json:"nextBackupAt,omitempty"`
@@ -368,8 +404,10 @@ func (h *Handlers) ListAutoBackups(w http.ResponseWriter, r *http.Request) {
 		// panel could only say how many backups exist — never that a fourth
 		// pushes the oldest out, which is what makes "Make a backup now" a
 		// destructive button on a full rotation.
-		Keep:         maxAutoBackups(),
-		IntervalDays: int(h.autoBackupInterval() / (24 * time.Hour)),
+		Keep:          maxAutoBackups(),
+		IntervalDays:  int(h.autoBackupInterval() / (24 * time.Hour)),
+		Dir:           autoBackupDir(),
+		InsideDataDir: autoBackupsAreInsideTheDataDir(),
 	}
 	if resp.Enabled {
 		resp.NextBackupAt = h.nextAutoBackupTime().UTC().Format(time.RFC3339)
@@ -488,6 +526,15 @@ func commonZipPrefix(files []*zip.File) string {
 
 // stagedFilesFromZip unpacks a backup ZIP into staged import files, applying the
 // same filename validation and JSON check as the upload import path.
+/*
+importEntryLimit is how large one file inside a backup may be once unpacked.
+
+Far above anything these archives actually carry -- the largest is an icon --
+and far below the size at which one entry is a way of filling memory. A var so a
+test can lower it rather than build a gigabyte to prove the ceiling is there.
+*/
+var importEntryLimit int64 = 32 << 20
+
 func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
@@ -514,10 +561,26 @@ func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
 		if err != nil {
 			return nil, fmt.Errorf("could not read %s from backup: %w", filename, err)
 		}
-		content, err := io.ReadAll(rc)
+		/*
+		 * Bounded, the way countBackupContents further down this file already
+		 * bounds the same read.
+		 *
+		 * A zip says how large an entry claims to be; what it actually unpacks
+		 * to is only known once it has been unpacked. One highly compressible
+		 * entry named settings.json is small on the wire and unbounded in
+		 * memory, and this is the path that takes archives from outside.
+		 *
+		 * Read one byte past the ceiling so the overshoot is visible: stopping
+		 * exactly at it would silently truncate a file and then write the
+		 * truncation over the reader's real data.
+		 */
+		content, err := io.ReadAll(io.LimitReader(rc, importEntryLimit+1))
 		rc.Close()
 		if err != nil {
 			return nil, fmt.Errorf("could not read %s from backup: %w", filename, err)
+		}
+		if int64(len(content)) > importEntryLimit {
+			return nil, fmt.Errorf("%s is too large to restore from this backup", filename)
 		}
 		if strings.HasSuffix(filename, ".json") && !json.Valid(content) {
 			return nil, fmt.Errorf("invalid JSON in backup file: %s", filename)
@@ -618,7 +681,7 @@ func countBackupContents(path string) (bookmarks int, pages int) {
 		if err != nil {
 			continue
 		}
-		body, err := io.ReadAll(io.LimitReader(rc, 32<<20))
+		body, err := io.ReadAll(io.LimitReader(rc, importEntryLimit))
 		rc.Close()
 		if err != nil {
 			continue

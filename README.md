@@ -190,6 +190,7 @@ environment:
   # - NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120
   # - NEXTDASH_SSRF_API_RATE_PER_MIN=60
   # - NEXTDASH_STATUS_PING_RATE_PER_MIN=300
+  # - NEXTDASH_TRUSTED_PROXIES=10.0.0.0/8
   # - NEXTDASH_CSP=off
   # For everyone on this server:
   # - DISABLE_TELEMETRY=true
@@ -214,6 +215,7 @@ Every variable is listed in the reference table below.
 | `NEXTDASH_OUTBOUND_REQUESTS_PER_MIN` | `120` | Rate limit for requests the server makes for you |
 | `NEXTDASH_SSRF_API_RATE_PER_MIN` | `60` | Rate limit for the preview, icon, archive, check-URL and alert-test APIs |
 | `NEXTDASH_STATUS_PING_RATE_PER_MIN` | `300` | Rate limit for `/api/ping`, the status checks the dashboard runs in your browser |
+| `NEXTDASH_TRUSTED_PROXIES` | *(unset)* | Addresses and CIDR ranges whose `X-Forwarded-For` is believed, comma-separated. Unset, the header is ignored and rate limits count per connecting address. |
 | `NEXTDASH_AUTO_BACKUP_KEEP` | `3` | How many automatic backups are kept (1–50) |
 | `NEXTDASH_AUTO_BACKUP_DIR` | `data/auto-backups` | Where automatic backups are stored (absolute path) |
 | `NEXTDASH_LOG_LEVEL` | `info` | `error`, `warn`, `info` or `debug`. **Detail level** in the app wins. |

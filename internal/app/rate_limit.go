@@ -103,23 +103,87 @@ func statusPingRequestsPerMinute() int {
 	return envIntPositive("NEXTDASH_STATUS_PING_RATE_PER_MIN", 300)
 }
 
-func clientIP(r *http.Request) string {
-	// X-Forwarded-For is caller-controlled, so it is used only when it parses as
-	// an address. That does not make it trustworthy -- a client that sends a
-	// fresh valid IP per request still gets a fresh bucket -- but it does stop
-	// arbitrary strings from becoming limiter keys. Deciding whether to trust the
-	// header at all belongs in a trusted-proxy setting.
-	if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
-		parts := strings.Split(xff, ",")
-		if ip := strings.TrimSpace(parts[0]); ip != "" && net.ParseIP(ip) != nil {
-			return ip
+/*
+trustedProxies is who may speak for somebody else.
+
+NEXTDASH_TRUSTED_PROXIES takes a comma-separated list of addresses and CIDR
+ranges -- "10.0.0.0/8, 192.168.1.5". Empty, which is the default, means nobody:
+X-Forwarded-For is then read by nothing.
+
+Default-deny because of what these limiters guard. They are the only throttle on
+/api/bookmark-preview, /api/icon/from-url and /api/ping, all of which make the
+server fetch an address for you. Believing an unverifiable header meant a client
+could hand itself a fresh bucket per request simply by inventing a new value,
+which is not a rate limit at all.
+
+The cost of the default is that everyone behind a reverse proxy shares one
+bucket, since every request genuinely does arrive from the proxy. Anyone who
+wants the limits counted per reader names their proxy here -- which is the one
+piece of information the server cannot work out for itself.
+*/
+func trustedProxies() []*net.IPNet {
+	raw := strings.TrimSpace(os.Getenv("NEXTDASH_TRUSTED_PROXIES"))
+	if raw == "" {
+		return nil
+	}
+	var nets []*net.IPNet
+	for _, part := range strings.Split(raw, ",") {
+		entry := strings.TrimSpace(part)
+		if entry == "" {
+			continue
+		}
+		if _, network, err := net.ParseCIDR(entry); err == nil {
+			nets = append(nets, network)
+			continue
+		}
+		// A bare address is the range that holds only itself.
+		if ip := net.ParseIP(entry); ip != nil {
+			bits := 32
+			if ip.To4() == nil {
+				bits = 128
+			}
+			nets = append(nets, &net.IPNet{IP: ip, Mask: net.CIDRMask(bits, bits)})
 		}
 	}
-	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
-	if err == nil && host != "" {
-		return host
+	return nets
+}
+
+func isTrustedProxy(host string) bool {
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
 	}
-	return strings.TrimSpace(r.RemoteAddr)
+	for _, network := range trustedProxies() {
+		if network.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+func clientIP(r *http.Request) string {
+	peer := strings.TrimSpace(r.RemoteAddr)
+	if host, _, err := net.SplitHostPort(peer); err == nil && host != "" {
+		peer = host
+	}
+
+	/*
+	 * X-Forwarded-For is read only when the peer is one of the proxies this
+	 * install named. Anyone can set the header; only a named proxy is taken at
+	 * its word for it.
+	 *
+	 * The first entry is the client the proxy saw. The hops after it were
+	 * appended along the way and prove nothing, so they are not considered.
+	 */
+	if isTrustedProxy(peer) {
+		if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
+			first := strings.TrimSpace(strings.Split(xff, ",")[0])
+			if first != "" && net.ParseIP(first) != nil {
+				return first
+			}
+		}
+	}
+	return peer
 }
 
 type rateLimitedTransport struct {

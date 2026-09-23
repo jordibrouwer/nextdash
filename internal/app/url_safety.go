@@ -152,6 +152,18 @@ func newSSRFSafeTransportWithHeaderTimeout(allowLocal bool, dialTimeout, headerT
 		DialContext:           ssrfSafeDialContext(allowLocal, dialTimeout),
 		TLSHandshakeTimeout:   10 * time.Second,
 		ResponseHeaderTimeout: headerTimeout,
+		/*
+		 * A transport built here serves one request and is then dropped, so an
+		 * idle connection it is holding will never be reused -- but without a
+		 * timeout it, and the readLoop goroutine behind it, stayed alive until
+		 * the remote hung up. Once per preview, per feed, per ping and per
+		 * webhook delivery, that adds up on a dashboard that checks a lot of
+		 * links.
+		 *
+		 * Long enough to still be reused across the redirects of one request,
+		 * short enough that nothing lingers after it.
+		 */
+		IdleConnTimeout: 30 * time.Second,
 	}
 }
 

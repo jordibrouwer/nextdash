@@ -79,6 +79,76 @@ test.describe('switching pages', () => {
         expect(widgets).toBeGreaterThan(0);
     });
 
+    /**
+     * The hover that warms a page must not be the reason it opens empty.
+     *
+     * prefetchPageData asked for the bookmarks and the categories and stopped,
+     * and setPageDataCache stores a missing block list as null. getCachedPageData
+     * handed that null on, and null walks straight through
+     * _applyLoadedPageData's `blocks !== undefined` guard -- so a page whose tab
+     * had been hovered opened with every widget gone and its order lost, while
+     * the same page reached by a plain click opened correctly.
+     *
+     * Driven through the pointer, not through prefetchPageData(): the hover is
+     * what the reader does, and it is what binds the bug to the click.
+     */
+    test('a tab that was hovered still opens with its widgets', async ({ page }) => {
+        await openDashboard(page);
+        const target = await otherPageId(page);
+        test.skip(target === null, 'needs a second page');
+
+        /*
+         * Start again once the second page exists, with a bare reload.
+         *
+         * Creating a page writes, and so does anything openDashboard dismisses
+         * on the way in -- and a write moves the data revision, which makes the
+         * next switch drop its cache on purpose. That is the one path where
+         * this bug cannot show, so the setup must not sit on it. A plain reload
+         * puts the tab in the ordinary state this is about: two pages that have
+         * been there a while, one of them never opened in this session.
+         */
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+
+        // The target page is given a widget on the server side of the boundary,
+        // so the prefetch and the switch are answered the same way and the test
+        // does not depend on what the fixture happens to ship.
+        await page.route(`**/api/pages/${target}/blocks`, (route) => route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pageId: target, widgets: [{ id: 'w-hover-probe', type: 'uptime' }], order: ['w-hover-probe'] }),
+        }));
+
+        const tab = page.locator('.page-nav-btn').nth(await page.evaluate(
+            (id) => (window.dashboardInstance.pages || []).findIndex((p) => Number(p.id) === Number(id)),
+            target,
+        ));
+
+        await tab.hover();
+        // The prefetch is best-effort and unawaited; wait for the entry it writes.
+        await page.waitForFunction(
+            (id) => !!window.dashboardInstance._pageDataCache?.get(Number(id)),
+            target,
+            { timeout: 10_000 },
+        );
+
+        await tab.click();
+        await page.waitForFunction(
+            (id) => Number(window.dashboardInstance.currentPageId) === Number(id),
+            target,
+            { timeout: 10_000 },
+        );
+        await page.waitForTimeout(600);
+
+        const landed = await page.evaluate(() => ({
+            widgets: (window.dashboardInstance.widgets || []).length,
+            order: (window.dashboardInstance.blockOrder || []).length,
+        }));
+
+        expect(landed.widgets, 'the hovered page opened without its widgets').toBeGreaterThan(0);
+        expect(landed.order, 'the hovered page opened without its block order').toBeGreaterThan(0);
+    });
+
     test('a page already loaded is served from cache, not refetched', async ({ page }) => {
         await openDashboard(page);
         const first = await page.evaluate(() => Number(window.dashboardInstance.currentPageId));

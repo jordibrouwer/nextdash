@@ -1,8 +1,10 @@
 package app
 
 import (
+	"bufio"
 	"compress/gzip"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -72,11 +74,21 @@ func (w *gzipResponseWriter) WriteHeader(status int) {
 	w.wroteHeader = true
 
 	h := w.Header()
-	// Don't compress: already-encoded responses, or non-compressible types.
-	// 1xx/204/304 have no body worth compressing either.
+	/*
+	 * Don't compress: already-encoded responses, or non-compressible types.
+	 * 1xx/204/304 have no body worth compressing either.
+	 *
+	 * And never a byte range. Compressing one produced a gzip stream still
+	 * labelled with the Content-Range of the uncompressed file, which no client
+	 * can make sense of -- a Range request for a text asset through the /static
+	 * FileServer, or for an archive through http.ServeFile, came back as
+	 * exactly that. Checked on the header as well as the status, because a
+	 * handler that sets Content-Range on a 200 is the same trap.
+	 */
 	if h.Get("Content-Encoding") == "" &&
 		compressibleContentType(h.Get("Content-Type")) &&
 		status != http.StatusNoContent && status != http.StatusNotModified &&
+		status != http.StatusPartialContent && h.Get("Content-Range") == "" &&
 		status >= 200 {
 		w.compress = true
 		h.Set("Content-Encoding", "gzip")
@@ -97,6 +109,39 @@ func (w *gzipResponseWriter) Write(b []byte) (int, error) {
 		return w.gz.Write(b)
 	}
 	return w.ResponseWriter.Write(b)
+}
+
+/*
+Flush and Hijack are passed through to the writer underneath.
+
+A wrapper answers whatever interfaces it declares, and this one declared only
+ResponseWriter -- so wrapping a handler in it quietly took away Flush and
+Hijack, with nothing to report them missing. A streaming handler behind this
+middleware simply stopped streaming.
+
+Flushing while compressing means flushing the compressor first, or what reaches
+the client is the bytes before the last block boundary rather than everything
+written so far.
+*/
+func (w *gzipResponseWriter) Flush() {
+	if w.gz != nil {
+		_ = w.gz.Flush()
+	}
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
+func (w *gzipResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := w.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, http.ErrNotSupported
+	}
+	// The connection stops being an HTTP response, so there is nothing left to
+	// compress into it.
+	w.close()
+	w.compress = false
+	return hijacker.Hijack()
 }
 
 // close flushes and returns the gzip.Writer to the pool. Safe to call once.
