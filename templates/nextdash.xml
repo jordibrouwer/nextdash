@@ -25,10 +25,11 @@ NextDash is a lightweight, self-hosted bookmark dashboard that features a minima
 Key features:
 • Keyboard-driven navigation for fast access to all your bookmarks
 • Extensive theme and layout customization
-• Inbox feature to quickly collect new links and organize them later
-• Health monitoring: link checks, uptime monitors and alerts
-• Video bookmarks marked in the list, and played in the hover card
-• Dashboard widgets, including processor, memory, disks and Docker containers read from the host
+• Inbox to collect new links fast: triage them, or keep them on a Kept tab and file whole groups later
+• Health view that finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
+• Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
+• Widgets beside your bookmarks: 21 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
+• Six interface languages: English, Dutch, German, French, Spanish and Chinese
 • Lightweight and fast, no heavy dependencies
 • Actively maintained with regular releases
 
@@ -44,6 +45,46 @@ The host widgets (Processor, Memory, Disks, Containers) are off until you fill i
 
 Support: open an issue on GitHub via the Support link above. Bug reports and feature requests are welcome.
   </Overview>
+
+  <Changes>
+### v1.13.5 (2026-09-24)
+- Preview card: only a bookmark that is a video offers a play button — v1.13.4 drew one on every hover card
+
+### v1.13.4 (2026-09-24)
+- Bookmarks: a row whose link is a video carries a small play mark, read from the address alone
+- Preview card: the thumbnail gains a play button, and the video plays in the card; nothing reaches the provider until it is pressed
+- Keyboard: Shift+V puts the cursor on the play button; Escape, the close button or a click away ends the video
+- Fixed: the byline and the player could not be kept in Config → Bookmarks; the keyboard cursor's glow was cut off square
+
+### v1.13.3 (2026-09-23)
+- Themes: every packaged theme names its character and the surfaces it was drawn for
+- Appearance: Depth, Glow and Effects follow the theme until you change them, with one button back
+- Theme browser: chips per character, search that reaches it, and previews at the theme's own surfaces
+
+### v1.13.2 (2026-09-23)
+- Fixed: reordering a page erased what its widgets watch, and a page could open without them
+- Widgets: a tile catches the light the way a Config panel does
+- Health: a certificate about to expire now reaches a webhook
+- Unraid: the template carries the host widget mounts (Processor, Memory, Disks, Containers)
+- Plus a long list of fixes across the inbox, previews, uploads and rate limits
+
+### v1.13.1 (2026-09-22)
+- Weather widget: fixed a blank tile — v1.13.0 asked Open-Meteo for the extra readings in a way that dropped the current conditions from the request
+
+### v1.13.0 (2026-09-22)
+- Widgets: a widget set to two columns now shows more, not the same figures larger — the load average behind the processor percentage, the container that is failing by name, used against total disk space, the expiry date of a certificate, what the weather feels like
+- Widgets: row lists run in two columns on a wide tile, and narrow back to one on a one-column dashboard or a phone
+- Weather: the forecast request now also carries apparent temperature, wind, humidity and chance of rain
+- Kept widget: order by most recent, at random or by tag, with each link's address under its title
+
+### v1.12.0 (2026-09-21)
+- Inbox: Keep (Shift+K) moves a link to a new Kept tab with its note and tags, without filing it on a page
+- Kept: group by site, tag or age, file a whole group at once, or work through links one at a time; rows suggest where a link belongs and which tags fit
+- Undo: inbox, Kept, health and Config → Bookmarks changes can be taken back from their toast
+- Previews and icons: fetching shows progress, waits out rate limits and can be stopped
+- Logs: Record server log is a toggle in the log toolbar; every line carries a sequence number
+- New Kept widget; What's new now also shows v1.11.1–v1.11.8
+  </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
   <WebUI>http://[IP]:[PORT:8080]</WebUI>
@@ -158,11 +199,11 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
           Mask="false" />
 
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-dashboard.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-bookmarks.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-search.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-inbox.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-health.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-health-monitors.jpg</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-bookmarks.jpg</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-config.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-themes.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-config.jpg</Screenshot>
 </Container>
