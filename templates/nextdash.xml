@@ -27,6 +27,7 @@ Key features:
 • Extensive theme and layout customization
 • Inbox feature to quickly collect new links and organize them later
 • Health monitoring: link checks, uptime monitors and alerts
+• Video bookmarks marked in the list, and played in the hover card
 • Dashboard widgets, including processor, memory, disks and Docker containers read from the host
 • Lightweight and fast, no heavy dependencies
 • Actively maintained with regular releases
@@ -49,7 +50,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-09-23</Date>
+  <Date>2026-09-24</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
