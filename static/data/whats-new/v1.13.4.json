@@ -1,0 +1,42 @@
+{
+  "tag": "v1.13.4",
+  "date": "24 September 2026",
+  "releasedAt": "2026-09-24",
+  "modalLead": "A bookmark that points at a video now says so &mdash; a small &#9654; on the row &mdash; and plays where it is. Hovering shows the thumbnail with a play button, and nothing reaches YouTube or Vimeo until you press it.",
+  "sections": [
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A play mark on the row.</strong> Any link that is a video &mdash; YouTube, Vimeo, Dailymotion, or a file ending in .mp4 &mdash; carries a small &#9654;, read from the address itself. A channel or a search does not."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Play it on the card.</strong> The preview card opens on the thumbnail with a play button over it. Nothing is fetched from the provider until you press it, and the card stays put while the video runs."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>From the keyboard.</strong> <kbd>Shift</kbd>+<kbd>V</kbd> puts the cursor on the play button and <kbd>Enter</kbd> starts it. <kbd>Esc</kbd>, the <strong>&#10005;</strong> over the player or a click away stops it."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The video player and the byline can be kept.</strong> Both rows were quietly stripped out of the preview checklist on every save, so ticking them did nothing. They stay now, and a checklist saved in the meantime gets them back."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The keyboard cursor's glow is no longer cut off</strong> at the end of a bookmark row."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The paste dialog uses nextDash's own marks</strong> for <em>Add bookmark</em> and <em>Save to Inbox</em> instead of emoji from the system font."
+        }
+      ]
+    }
+  ]
+}
