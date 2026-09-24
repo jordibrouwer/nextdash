@@ -759,12 +759,62 @@ class DashboardPreview {
             e.stopPropagation();
             this.runPreviewCardAction(button.dataset.previewAction);
         });
+        /*
+         * A peek card with a play button has to be reachable.
+         *
+         * The card takes no pointer events while it is only being read, so the
+         * pointer crossing it never has to push it out of the way. A poster
+         * changes that for itself (see the CSS), and the pointer on its way
+         * there leaves the row -- which would close the card before the click
+         * lands. Entering the card cancels that close; leaving it starts the
+         * timer again, the way leaving the row does.
+         */
+        card.addEventListener('mouseenter', () => {
+            if (this.dash._previewHideTimer) {
+                clearTimeout(this.dash._previewHideTimer);
+                this.dash._previewHideTimer = null;
+            }
+        });
+        card.addEventListener('mouseleave', () => {
+            /*
+             * Take the focus back off the player on the way out.
+             *
+             * A click inside the frame hands the keyboard to the provider, and
+             * every key after that -- Escape included -- goes there instead of
+             * here. Leaving the card is the moment the reader is done with the
+             * player, so the card takes the focus back and Escape closes it
+             * again. A pinned card is not scheduled to hide; only the focus
+             * moves.
+             */
+            const frame = card.querySelector('.bookmark-preview-card-embed-frame');
+            if (frame && document.activeElement === frame) {
+                frame.blur?.();
+                card.focus?.({ preventScroll: true });
+            }
+            this.scheduleHideBookmarkPreviewCard();
+        });
         card.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
             e.stopPropagation();
             const openLink = card._previewContext?.openLink;
             this.hideBookmarkPreviewCard();
             openLink?.focus?.();
+        });
+        /*
+         * A click away closes a pinned card.
+         *
+         * The comment on the hide timer has promised this for a while and
+         * nothing did it: a card asked for could only be closed with Escape or
+         * the key that opened it. With a player on the card that gap bites --
+         * a click inside the frame gives the keyboard to the provider, and
+         * then Escape is not an answer either. mousedown rather than click, so
+         * the card is gone before whatever was underneath reacts.
+         */
+        document.addEventListener('mousedown', (event) => {
+            if (card.dataset.previewMode !== 'pinned') return;
+            if (!card.classList.contains('is-visible')) return;
+            if (event.target?.closest?.('.bookmark-preview-card')) return;
+            this.hideBookmarkPreviewCard();
         });
         document.body.appendChild(card);
         d.previewCardElement = card;
@@ -887,7 +937,13 @@ class DashboardPreview {
         }
 
         if (mode === 'pinned') {
-            card.focus?.();
+            /*
+             * The play button takes the focus when there is one, so the
+             * keyboard path is Shift+V then Enter rather than Shift+V, Tab,
+             * Tab, Enter. Escape still closes the card from either.
+             */
+            const poster = card.querySelector('.bookmark-preview-card-poster');
+            (poster || card).focus?.();
             // The one place the card may ask the server: the figures the health
             // report holds, fetched once and redrawn when they land.
             void this.ensureHealthFactsLoaded().then((loaded) => {
@@ -978,7 +1034,26 @@ class DashboardPreview {
     paintPreviewEmbed(card, preview, want, title, mode) {
         const el = card.querySelector('.bookmark-preview-card-embed');
         if (!el) return;
-        const html = want.has('embed') ? String(preview?.embedHtml || '') : '';
+        if (!want.has('embed')) {
+            this.clearPreviewEmbed(card);
+            return;
+        }
+        /*
+         * A player the reader asks for, rather than one that starts itself.
+         *
+         * The frame used to appear only on a pinned card, because a player
+         * that loads when the pointer crosses a link has the dashboard
+         * talking to YouTube on every hover. The poster keeps that promise
+         * and still makes the video one click away: it is the preview picture
+         * this card already holds, with a play button over it, and nothing
+         * reaches the provider until that button is pressed.
+         */
+        const source = this.videoPlayerSource(preview);
+        if (source && !el.querySelector('iframe')) {
+            this.paintPreviewPoster(card, el, preview, source, title);
+            return;
+        }
+        const html = String(preview?.embedHtml || '');
         const pinned = mode === 'pinned';
         if (!html || !pinned) {
             this.clearPreviewEmbed(card);
@@ -1028,6 +1103,170 @@ class DashboardPreview {
         el.appendChild(frame);
         el.dataset.embedKey = html;
         el.hidden = false;
+    }
+
+    /**
+     * Where this card's video plays, or '' when it is not a video.
+     *
+     * The provider's own oEmbed markup first, because it is what the provider
+     * chose to hand out. Its absence is not an answer, though: a preview
+     * stored before the server asked for oEmbed carries none, and a provider
+     * may stop advertising it -- so the address itself is asked second. Both
+     * routes end at a host frame-src already admits.
+     */
+    videoPlayerSource(preview) {
+        const fromProvider = this.embedPlayerSource(String(preview?.embedHtml || ''));
+        if (fromProvider) return fromProvider;
+        return window.VideoLinks?.videoEmbedSource?.(preview?.url || '') || '';
+    }
+
+    /**
+     * The poster: the picture this card already has, with a play button.
+     *
+     * A button rather than a click handler on the picture, so the keyboard
+     * reaches it: on a pinned card Tab or Shift+V lands here and Enter starts
+     * the video, which is the whole keyboard path.
+     */
+    paintPreviewPoster(card, el, preview, source, title) {
+        const d = this.dash;
+        const image = String(preview?.image || '').trim();
+        const key = `poster:${source}`;
+        if (el.dataset.embedKey === key && el.querySelector('.bookmark-preview-card-poster')) {
+            el.hidden = false;
+            return;
+        }
+
+        const label = d.formatDashboardLabel('previewPlayVideo', {}, 'Play video');
+        const poster = document.createElement('button');
+        poster.type = 'button';
+        poster.className = 'bookmark-preview-card-poster';
+        poster.title = label;
+        poster.setAttribute('aria-label', label);
+        if (image) {
+            const picture = document.createElement('img');
+            picture.className = 'bookmark-preview-card-poster-image';
+            picture.src = image;
+            picture.alt = '';
+            picture.loading = 'lazy';
+            poster.appendChild(picture);
+        } else {
+            poster.classList.add('is-bare');
+        }
+        const mark = document.createElement('span');
+        mark.className = 'bookmark-preview-card-poster-play';
+        mark.setAttribute('aria-hidden', 'true');
+        mark.innerHTML = '<svg viewBox="0 0 24 24" focusable="false"><path d="M8 5.5l11 6.5l-11 6.5z"/></svg>';
+        poster.appendChild(mark);
+
+        poster.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.playPreviewVideo(card, source, title);
+        });
+        /*
+         * Enter here plays; it must not also open the row behind the card.
+         *
+         * The grid's own key handler listens on the document and acts on the
+         * selected row, so an Enter that bubbles out of this button both
+         * started the video and opened the link in a new tab. Space is caught
+         * for the same reason, and because a page that scrolls under an open
+         * card is its own small betrayal.
+         */
+        poster.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            event.stopPropagation();
+            this.playPreviewVideo(card, source, title);
+        });
+
+        el.innerHTML = '';
+        el.appendChild(poster);
+        el.dataset.embedKey = key;
+        el.hidden = false;
+
+        /*
+         * One picture, not two.
+         *
+         * The poster is the card's own preview image with a play button over
+         * it, so leaving the image band underneath drew the same frame twice
+         * -- one of them inert. The band comes back on the next paint of a
+         * card that has no video, which is where it belongs.
+         */
+        const band = card.querySelector('.bookmark-preview-card-image-wrap');
+        if (band) band.hidden = true;
+    }
+
+    /**
+     * Swap the poster for the player, and keep the card open.
+     *
+     * Pinning is the point: a peek card closes when the pointer leaves it, and
+     * a video that stops because your hand moved is worse than no video. The
+     * frame autoplays because the reader just pressed play -- the click is the
+     * consent the browser's own autoplay rules ask for.
+     */
+    playPreviewVideo(card, source, title) {
+        const el = card.querySelector('.bookmark-preview-card-embed');
+        if (!el || !source) return;
+
+        const frame = document.createElement('iframe');
+        frame.className = 'bookmark-preview-card-embed-frame';
+        frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+        frame.setAttribute('allowfullscreen', '');
+        frame.setAttribute('allow', 'autoplay; accelerometer; encrypted-media; picture-in-picture; fullscreen');
+        frame.title = String(title || '');
+        frame.src = this.autoplayed(source);
+        /*
+         * A way out that does not depend on the keyboard.
+         *
+         * Once the pointer lands inside the player, the frame has the focus
+         * and it belongs to the provider: Escape goes to YouTube, not to this
+         * page, and the card cannot hear it. So the player carries its own
+         * close -- and the card takes the focus back when the pointer leaves
+         * it, which is what makes Escape work again.
+         */
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'bookmark-preview-card-embed-close';
+        const closeLabel = this.dash.formatDashboardLabel('previewStopVideo', {}, 'Stop the video');
+        close.title = closeLabel;
+        close.setAttribute('aria-label', closeLabel);
+        close.textContent = '✕';
+        close.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.hideBookmarkPreviewCard();
+            card._previewContext?.openLink?.focus?.();
+        });
+
+        el.innerHTML = '';
+        el.appendChild(frame);
+        el.appendChild(close);
+        el.dataset.embedKey = `player:${source}`;
+        el.hidden = false;
+
+        /*
+         * The still picture goes while the player is up: it is the same frame
+         * of the same video, and two of them stacked reads as a card that has
+         * not noticed what it is doing.
+         */
+        const picture = card.querySelector('.bookmark-preview-card-image-wrap');
+        if (picture) picture.hidden = true;
+
+        const context = card._previewContext;
+        if (context) context.mode = 'pinned';
+        this.applyPreviewCardMode(card, 'pinned');
+        card.focus?.();
+    }
+
+    /** The same address, asked to start playing. */
+    autoplayed(source) {
+        try {
+            const url = new URL(source);
+            url.searchParams.set('autoplay', '1');
+            return url.href;
+        } catch (_error) {
+            return source;
+        }
     }
 
     /**

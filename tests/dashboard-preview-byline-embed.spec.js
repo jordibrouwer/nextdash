@@ -35,6 +35,7 @@ async function paint(page, preview, { mode = 'pinned', parts = null } = {}) {
         return {
             byline: byline?.hidden ? '' : (byline?.textContent || ''),
             embedShown: !!embed && !embed.hidden,
+            poster: !!embed?.querySelector('.bookmark-preview-card-poster'),
             src: frame?.getAttribute('src') || '',
             sandbox: frame?.getAttribute('sandbox') || '',
             // What the payload carried, to prove the fields survive the trip.
@@ -72,13 +73,26 @@ test.describe('preview card byline and player', () => {
         expect(r.byline).toBe('');
     });
 
-    test('the player is sandboxed and never enters the page DOM', async ({ page }) => {
+    test('the player is built here, and only once play is pressed', async ({ page }) => {
         await open(page);
         const r = await paint(page, {
             url: 'https://youtube.com/watch?v=x', title: 'V', domain: 'youtube.com',
             embedHtml: '<iframe src="https://www.youtube.com/embed/x"></iframe>',
         });
+        // The card offers the video; it does not start fetching one.
         expect(r.embedShown).toBe(true);
+        expect(r.poster).toBe(true);
+        expect(r.src).toBe('');
+
+        const played = await page.evaluate(() => {
+            const card = window.dashboardInstance.previewCardElement;
+            card.querySelector('.bookmark-preview-card-poster').click();
+            const embed = card.querySelector('.bookmark-preview-card-embed');
+            return {
+                src: embed.querySelector('iframe')?.getAttribute('src') || '',
+                raw: embed.innerHTML,
+            };
+        });
         /*
          * Only the player's address is taken from the provider's markup; the
          * frame is built here. An earlier version wrapped their HTML in a
@@ -86,12 +100,10 @@ test.describe('preview card byline and player', () => {
          * a null origin the player cannot initialise in -- it drew black. What
          * confines the frame now is frame-src in the CSP, checked in Go.
          */
-        expect(r.src).toContain('https://www.youtube.com/embed/x');
-        const raw = await page.evaluate(() =>
-            document.querySelector('.bookmark-preview-card-embed')?.innerHTML || '');
+        expect(played.src).toContain('https://www.youtube.com/embed/x');
         // One frame built here, not a copy of what the provider sent.
-        expect(raw.match(/<iframe/g) || []).toHaveLength(1);
-        expect(raw).not.toContain('frameborder');
+        expect(played.raw.match(/<iframe/g) || []).toHaveLength(1);
+        expect(played.raw).not.toContain('frameborder');
     });
 
     // The markup comes from whatever site the bookmark points at, so anything
@@ -114,13 +126,20 @@ test.describe('preview card byline and player', () => {
         expect(stray).toBe(0);
     });
 
-    test('hovering does not open a player', async ({ page }) => {
+    /*
+     * Hover offers the video without loading it: a player that starts because
+     * a pointer crossed a link would have the dashboard talking to the
+     * provider all day. The poster is this card's own picture; the frame is
+     * built when it is pressed.
+     */
+    test('hovering offers a poster, never a player', async ({ page }) => {
         await open(page);
         const r = await paint(page, {
             url: 'https://youtube.com/watch?v=x', title: 'V', domain: 'youtube.com',
             embedHtml: '<iframe src="https://www.youtube.com/embed/x"></iframe>',
         }, { mode: 'peek' });
-        expect(r.embedShown).toBe(false);
+        expect(r.poster).toBe(true);
+        expect(r.src).toBe('');
     });
 
     test('both bands answer to the reader\'s checklist', async ({ page }) => {

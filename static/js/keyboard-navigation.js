@@ -141,6 +141,19 @@ class KeyboardNavigation {
                 return;
             }
 
+            /*
+             * A key pressed inside the preview card belongs to the card.
+             *
+             * This handler runs in the capture phase, so a button in the card
+             * cannot stop it by stopping propagation -- and Enter on the
+             * card's play button both started the video and opened the
+             * bookmark in a new tab behind it. The card has its own keys
+             * (Escape closes, Enter plays); the grid keeps out of them.
+             */
+            if (e.target?.closest?.('.bookmark-preview-card')) {
+                return;
+            }
+
             // Don't handle if a modal overlay is open
             if (document.querySelector('.modal-overlay.show')) {
                 return;

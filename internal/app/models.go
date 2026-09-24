@@ -495,13 +495,14 @@ type Settings struct {
 	// LinkPreviewParts names the rows the card may draw, from the set in
 	// normalizeLinkPreviewParts. Absent means all of them; someone who writes
 	// no notes never needs the note row.
-	LinkPreviewParts               []string                     `json:"linkPreviewParts,omitempty"`
+	LinkPreviewParts []string `json:"linkPreviewParts,omitempty"`
 	LinkPreviewHoverDelayMs        int                          `json:"linkPreviewHoverDelayMs"`                  // Hover delay before preview card appears
 	PreviewImageCacheMB            int                          `json:"previewImageCacheMB,omitempty"`            // Disk cap for data/preview-images
 	ShowShortcuts                  bool                         `json:"showShortcuts"`                            // Legacy on/off for the shortcut label (migrated to shortcutDisplay); read on upgrade, never written to again
 	ShortcutDisplay                string                       `json:"shortcutDisplay,omitempty"`                // When the shortcut label is on screen: "always", "hover" (pointer or keyboard selection only) or "never". Empty reads as "always"; see normalizeShortcutDisplay
 	ShowPinIcon                    bool                         `json:"showPinIcon"`                              // Show pin icon next to pinned bookmarks
 	ShowNoteIcon                   bool                         `json:"showNoteIcon"`                             // Show note icon next to bookmarks with a note
+	ShowVideoIcon                  bool                         `json:"showVideoIcon"`                            // Show a play mark next to bookmarks that are a video
 	IncludeFindersInSearch         bool                         `json:"includeFindersInSearch"`                   // Include finders in normal search
 	IncludeFindersInSearchMigrated bool                         `json:"includeFindersInSearchMigrated,omitempty"` // one-time: default finders-in-search to on
 	BraveFinderSeededMigrated      bool                         `json:"braveFinderSeededMigrated,omitempty"`      // one-time: add the Brave Search finder to existing installs
@@ -1530,6 +1531,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShortcutDisplay:                 shortcutDisplayAlways,
 			ShowPinIcon:                     false,
 			ShowNoteIcon:                    true,
+			ShowVideoIcon:                   true,
 			IncludeFindersInSearch:          true,
 			SortMethod:                      "order",
 			LayoutPreset:                    "default",
@@ -3748,6 +3750,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShortcutDisplay:                 shortcutDisplayAlways,
 			ShowPinIcon:                     false,
 			ShowNoteIcon:                    true,
+			ShowVideoIcon:                   true,
 			IncludeFindersInSearch:          true,
 			BackgroundOpacity:               1,
 			FontWeight:                      "normal",
@@ -3964,6 +3967,12 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showNoteIcon"]; !ok {
 			settings.ShowNoteIcon = true
+		}
+		// On for installs that never saw the setting: the mark is how a row
+		// says that opening it means watching something, and a collection full
+		// of video links is exactly the one that needs telling.
+		if _, ok := rawSettings["showVideoIcon"]; !ok {
+			settings.ShowVideoIcon = true
 		}
 		if _, ok := rawSettings["showRecentButton"]; !ok {
 			settings.ShowRecentButton = true

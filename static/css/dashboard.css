@@ -4611,6 +4611,112 @@ body.no-animations .bookmarks-list.reorder-container::after {
     border: 0;
 }
 
+/*
+ * The poster: this card's own picture, with a play button over it.
+ *
+ * It re-enables pointer events for itself, because the card around it takes
+ * none while it is only being read -- which is what lets a peek card carry a
+ * button at all. Nothing here reaches the provider: the picture is the
+ * preview image already stored, and the frame is built when this is pressed.
+ */
+.bookmark-preview-card-poster {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: #000;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.bookmark-preview-card-poster-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Dimmed so the play mark reads against a bright frame from the video. */
+    opacity: 0.72;
+    transition: opacity 120ms ease;
+}
+
+.bookmark-preview-card-poster:hover .bookmark-preview-card-poster-image,
+.bookmark-preview-card-poster:focus-visible .bookmark-preview-card-poster-image {
+    opacity: 0.9;
+}
+
+.bookmark-preview-card-poster-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+}
+
+.bookmark-preview-card-poster-play svg {
+    width: 26px;
+    height: 26px;
+    fill: currentColor;
+}
+
+.bookmark-preview-card-poster:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: -2px;
+}
+
+/* The player's own way out. Escape reaches the card only while the page has
+   the keyboard, and a click inside the frame hands that to the provider --
+   so the player carries a close of its own, over its top corner. */
+.bookmark-preview-card-embed {
+    position: relative;
+}
+
+.bookmark-preview-card-embed-close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.bookmark-preview-card-embed-close:hover,
+.bookmark-preview-card-embed-close:focus-visible {
+    background: rgba(0, 0, 0, 0.85);
+    border-color: #fff;
+}
+
+/* A row that plays something. Same superscript place as the pin and the note,
+   so a row with several of them still reads as one line. The mark is a glyph
+   in the badge's own colour -- no fill or stroke of its own to go missing
+   under a theme that paints icons differently. */
+.bookmark-video-badge {
+    /* The triangle sits high in its em box; a hair of leading puts it on the
+       same line as the digits on the badge next to it. */
+    line-height: 1.05;
+}
+
 /* "Is this link still alive" is the question the rest of the app exists to
    answer, so it is the first thing on the card. */
 .bookmark-preview-card-pill {
@@ -5973,6 +6079,7 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .paste-choice-card-icon {
     font-size: var(--text-lg, 1.1rem);
 }
+
 
 .paste-choice-card-title {
     font-weight: var(--font-weight-semibold);
