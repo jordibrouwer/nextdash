@@ -1,0 +1,18 @@
+{
+  "tag": "v1.13.5",
+  "date": "24 September 2026",
+  "releasedAt": "2026-09-24",
+  "hideFromModal": true,
+  "modalLead": "A fix for the preview card, which offered a play button on every hover card in v1.13.4 — including pages that hold no video at all.",
+  "sections": [
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Only a video gets a play button.</strong> The card asked where a player might be and took any answer: markup with no frame in it resolved to the dashboard's own address, which on an https install is a valid https address and passed for a player. Every hover card drew a black rectangle with a play mark on it. The bookmark's own address decides now, the same way the <strong>&#9654;</strong> on the row does."
+        }
+      ]
+    }
+  ]
+}
