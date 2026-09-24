@@ -117,7 +117,21 @@ test.describe("what's new modal", () => {
         await loadDashboard(page);
         await openWhatsNew(page);
 
+        // Whether the release the modal leads with happens to carry a long item
+        // is a property of its prose, not of the modal: a release of six short
+        // lines folds nothing, and pinned to the lead this test failed on the
+        // copy rather than on the fold. So walk the earlier releases open until
+        // a folded body appears -- the 110-item release is down there.
         const more = page.locator('.whats-new-modal [data-wn-entry-more]').first();
+        if (await more.count() === 0) {
+            const rows = page.locator('.whats-new-modal [data-wn-earlier]');
+            const count = await rows.count();
+            for (let i = 0; i < count; i += 1) {
+                await rows.nth(i).click();
+                await page.waitForTimeout(400);
+                if (await more.count() > 0) break;
+            }
+        }
         await expect(more).toBeVisible();
         const body = more.locator('xpath=preceding-sibling::div[@data-wn-entry-body]');
         await expect(body).toHaveClass(/is-folded/);

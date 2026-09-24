@@ -243,6 +243,10 @@ A bookmark that points at a video now says so, and plays where it is.
 
 - Help → Appearance, a new tip under *Making it yours*, MANUAL §4 and a spotlight in Config → Overview describe the ▶, the poster and the three ways to stop a video. Six locales.
 
+### Tests
+
+- The fold test in `whats-new-modal.spec.js` no longer depends on the prose of the release the modal leads with. This release's six items are all short enough to be shown whole, so nothing folded and the test failed on the copy rather than on the fold; it now opens the earlier releases until it finds a body long enough to be folded.
+
 ---
 
 ## v1.13.3 — 23 September 2026
