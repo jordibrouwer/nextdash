@@ -2,6 +2,22 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureVideoCardTitle",
+      "titleFallback": "Play a video where you saved it",
+      "whatKey": "config.overviewNewFeatureVideoCardWhat",
+      "whatFallback": "A bookmark to a video looked like any other link, and watching it meant leaving the dashboard for a tab you then had to close again.",
+      "howKey": "config.overviewNewFeatureVideoCardHow",
+      "howFallback": "A row whose link is a video carries a small play mark. Its preview card opens on the thumbnail with a play button, and nothing reaches YouTube or Vimeo until you press it. Shift+V then Enter plays from the keyboard; Esc, the cross over the player or a click away stops it.",
+      "enableKey": "config.overviewNewFeatureVideoCardEnable",
+      "enableFallback": "Hover a video bookmark, or press Shift+V on it. The player is the Video player row under Config → Appearance → Rows → Link preview cards.",
+      "ctaKey": "config.overviewNewFeatureVideoCardCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance"
+      },
+      "since": "v1.13.4"
+    },
+    {
       "titleKey": "config.overviewNewFeatureKeptTabTitle",
       "titleFallback": "Keep a link without filing it",
       "whatKey": "config.overviewNewFeatureKeptTabWhat",
