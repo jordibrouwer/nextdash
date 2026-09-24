@@ -3104,6 +3104,22 @@ body.layout-locked .category-reorder-handle {
 
 .category:not([data-collapsed="true"]) .category-body > .bookmarks-list {
     overflow-x: visible;
+    /*
+     * Room for the cursor's bloom, taken back again.
+     *
+     * The list clips: it is `overflow: hidden` for the collapse animation, and
+     * a horizontal `visible` beside a vertical `hidden` computes to `auto`, so
+     * both axes clip at the padding box. The keyboard row's glow (--bloom,
+     * 12px) was cut off square at the end of the row -- a pale block with a
+     * hard edge where a soft halo should be. The padding moves that clip out
+     * by the blur; the negative margin puts the box back where it was, so
+     * nothing on the page moves and the scroll width is unchanged.
+     */
+    padding: 6px 12px;
+    margin: -6px -12px;
+    /* The padding would otherwise eat 24px of row width: the box grows by
+       exactly what the margins pulled back, so a row is the width it was. */
+    width: calc(100% + 24px);
 }
 
 .category[data-collapsed="true"] .category-body > .bookmarks-list,
