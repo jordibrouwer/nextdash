@@ -6077,9 +6077,18 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 
 .paste-choice-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-primary);
     font-size: var(--text-lg, 1.1rem);
 }
 
+.paste-choice-card-icon svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+}
 
 .paste-choice-card-title {
     font-weight: var(--font-weight-semibold);

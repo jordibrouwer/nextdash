@@ -97,15 +97,36 @@ class DashboardPasteChoice {
                     <div class="modal-body">
                         <div class="paste-choice-url" id="paste-choice-url" aria-live="polite"></div>
                         <p class="paste-choice-lead" id="paste-choice-lead"></p>
+                        <!--
+                            The two marks are the app's own: the plus the Add
+                            bookmark button in the header carries, and the tray
+                            the inbox tab carries. An emoji was neither -- it
+                            came from the system's font, changed shape per
+                            platform, and matched nothing else on the screen.
+                        -->
                         <div class="paste-choice-options">
                             <button type="button" class="paste-choice-card" data-paste-choice="bookmark">
-                                <span class="paste-choice-card-icon" aria-hidden="true">📌</span>
+                                <span class="paste-choice-card-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        aria-hidden="true" focusable="false">
+                                        <path d="M5 12h14M12 5v14"/>
+                                    </svg>
+                                </span>
                                 <span class="paste-choice-card-title" id="paste-choice-bookmark-title"></span>
                                 <span class="paste-choice-card-hint" id="paste-choice-bookmark-hint"></span>
                                 <kbd class="paste-choice-kbd">1</kbd>
                             </button>
                             <button type="button" class="paste-choice-card" data-paste-choice="inbox">
-                                <span class="paste-choice-card-icon" aria-hidden="true">📥</span>
+                                <span class="paste-choice-card-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        aria-hidden="true" focusable="false">
+                                        <path d="M4 14h4l1.5 2.5h5L16 14h4"/>
+                                        <path d="M4 14v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>
+                                        <path d="M12 4v6m0 0l-2.5-2.5M12 10l2.5-2.5"/>
+                                    </svg>
+                                </span>
                                 <span class="paste-choice-card-title" id="paste-choice-inbox-title"></span>
                                 <span class="paste-choice-card-hint" id="paste-choice-inbox-hint"></span>
                                 <kbd class="paste-choice-kbd">2</kbd>

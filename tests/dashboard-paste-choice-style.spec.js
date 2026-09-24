@@ -54,3 +54,47 @@ test('the paste choice modal is styled on the dashboard', async ({ page }) => {
     expect(geo.cards[0].y).toBe(geo.cards[1].y);
     expect(geo.cards[0].x).not.toBe(geo.cards[1].x);
 });
+
+/*
+ * The two cards carry the app's own marks.
+ *
+ * They used to carry emoji, which come from the system font: a different
+ * shape on every platform, and the only two pictures on the screen that
+ * matched nothing else in the app. These are the plus the header's Add
+ * bookmark button draws and the tray the inbox tab draws, so a reader
+ * recognises both before reading either label.
+ */
+test('the paste choice cards use the app\'s bookmark and inbox glyphs', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => window.dashboardInstance.pasteChoice
+        .openChoiceModal('https://www.youtube.com/watch?v=8CRqzJyjvIQ'));
+    await expect(page.locator('.paste-choice-options')).toBeVisible();
+
+    const marks = await page.evaluate(() => {
+        const icon = (choice) => document
+            .querySelector(`[data-paste-choice="${choice}"] .paste-choice-card-icon`);
+        const paths = (choice) => [...(icon(choice)?.querySelectorAll('svg path') || [])]
+            .map((p) => p.getAttribute('d'));
+        const header = document.querySelector('#quick-add-toolbar-btn svg path')?.getAttribute('d') || '';
+        return {
+            bookmark: paths('bookmark'),
+            inbox: paths('inbox'),
+            header,
+            text: (icon('bookmark')?.textContent || '') + (icon('inbox')?.textContent || ''),
+            drawn: icon('bookmark')?.querySelector('svg')?.getBoundingClientRect().width || 0,
+        };
+    });
+
+    // The same plus the header draws, not a lookalike.
+    expect(marks.bookmark).toEqual([marks.header]);
+    // The inbox tray: the lip, the box and the arrow falling into it.
+    expect(marks.inbox).toHaveLength(3);
+    expect(marks.inbox[2]).toContain('M12 4v6');
+    // No emoji left behind them.
+    expect(marks.text.trim()).toBe('');
+    expect(marks.drawn).toBeGreaterThan(12);
+});
