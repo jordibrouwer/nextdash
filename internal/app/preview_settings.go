@@ -4,7 +4,29 @@ import "strings"
 
 // linkPreviewParts is every row the preview card can draw, in the order it
 // draws them. The checklist under Appearance stores a subset of these.
-var linkPreviewParts = []string{"image", "description", "note", "tags", "status", "opens", "fresh", "location"}
+//
+// It has to carry every name the card knows: this list is a filter, so a row
+// missing here is stripped out of the reader's stored list on every save. That
+// is what happened to the byline and the player -- both were added to the card
+// and to the checklist, never here, so nobody could keep them switched on.
+var linkPreviewParts = []string{"image", "byline", "embed", "description", "note", "tags", "status", "opens", "fresh", "location"}
+
+// linkPreviewPartsAddedLater is what this list gained after readers had
+// already saved a checklist. A row that did not exist cannot have been
+// refused, so a stored list gets them once -- see the migration in models.go.
+var linkPreviewPartsAddedLater = []string{"byline", "embed"}
+
+// withLaterLinkPreviewParts adds the rows introduced after a list was stored.
+//
+// Only for a list that exists: a nil list already means "everything the card
+// knows", and an empty one is a reader who switched every row off -- adding
+// two rows to that would be answering a question they did answer.
+func withLaterLinkPreviewParts(parts []string) []string {
+	if len(parts) == 0 {
+		return parts
+	}
+	return normalizeLinkPreviewParts(append(append([]string{}, parts...), linkPreviewPartsAddedLater...))
+}
 
 // normalizeLinkPreviewMode resolves how the card is reached.
 //

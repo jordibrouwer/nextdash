@@ -51,3 +51,43 @@ func TestLinkPreviewPartsDropsWhatTheCardCannotDraw(t *testing.T) {
 		t.Fatalf("normalizeLinkPreviewParts = %#v, want %#v", got, want)
 	}
 }
+
+/*
+ * Every row the card knows has to be in the filter.
+ *
+ * This list is what a save is measured against, so a row missing here is
+ * stripped out of the reader's own choice. The byline and the player were
+ * added to the card and to the checklist and never here, and the result was a
+ * setting that could be ticked and never stuck.
+ */
+func TestLinkPreviewPartsKeepsTheBylineAndThePlayer(t *testing.T) {
+	got := normalizeLinkPreviewParts([]string{"image", "byline", "embed", "description"})
+	want := []string{"image", "byline", "embed", "description"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("normalizeLinkPreviewParts = %#v, want %#v", got, want)
+	}
+}
+
+/*
+ * A row that did not exist cannot have been refused.
+ *
+ * A list stored while the server was still stripping these two reads as "both
+ * switched off"; putting them back once is the difference between a reader's
+ * choice and an accident. A list that was never stored, or one that is empty
+ * on purpose, is left exactly as it is.
+ */
+func TestLaterLinkPreviewPartsAreAddedToAStoredList(t *testing.T) {
+	got := withLaterLinkPreviewParts([]string{"image", "description", "tags"})
+	want := []string{"image", "byline", "embed", "description", "tags"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("withLaterLinkPreviewParts = %#v, want %#v", got, want)
+	}
+
+	if nilList := withLaterLinkPreviewParts(nil); nilList != nil {
+		t.Fatalf("a list nobody stored should stay absent, got %#v", nilList)
+	}
+	empty := withLaterLinkPreviewParts([]string{})
+	if empty == nil || len(empty) != 0 {
+		t.Fatalf("an empty choice is a choice, got %#v", empty)
+	}
+}
