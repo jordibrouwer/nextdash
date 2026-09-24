@@ -696,6 +696,35 @@ class DashboardBookmarkRows {
             openLink.appendChild(freshBadge);
         }
 
+        /*
+         * A row that plays something says so.
+         *
+         * Read from the address rather than from a preview: the badge has to
+         * be there when the grid draws, and a bookmark carries no field for
+         * it. The card's play button asks the same question, so the two can
+         * never disagree about which rows are video.
+         */
+        if (d.settings.showVideoIcon !== false && window.VideoLinks?.isVideoLink?.(bookmark?.url)) {
+            const videoBadge = document.createElement('span');
+            videoBadge.className = 'bookmark-video-badge bookmark-superscript-badge';
+            /*
+             * A glyph, not an SVG.
+             *
+             * The pin and the note draw a stroked icon, which needs its own
+             * size and stroke rules to be visible; this one is a solid shape,
+             * and at badge size it disappeared under some themes. A character
+             * takes the badge's own colour and font size, so every theme --
+             * terminal, carbon, light -- draws it the way it draws the count
+             * on the fresh badge beside it.
+             */
+            videoBadge.textContent = '▶';
+            const videoLabel = d.formatDashboardLabel('videoBookmarkBadge', {}, 'Plays a video');
+            videoBadge.title = videoLabel;
+            videoBadge.setAttribute('aria-label', videoLabel);
+            videoBadge.setAttribute('role', 'img');
+            openLink.appendChild(videoBadge);
+        }
+
         const hasNote = bookmark && String(bookmark.note || '').trim();
         if (d.settings.showNoteIcon !== false && hasNote) {
             const noteBadge = document.createElement('span');

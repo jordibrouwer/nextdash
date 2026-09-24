@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.13.4 — 24 September 2026](#v1134--24-september-2026)
 - [v1.13.3 — 23 September 2026](#v1133--23-september-2026)
 - [v1.13.2 — 23 September 2026](#v1132--23-september-2026)
 - [v1.13.1 — 22 September 2026](#v1131--22-september-2026)
@@ -218,6 +219,33 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.13.4 — 24 September 2026
+
+A bookmark that points at a video now says so, and plays where it is.
+
+### Bookmarks
+
+- **new — a row whose link is a video carries a small ▶.** Read from the address alone (`video-links.js`: YouTube watch, youtu.be, shorts and live, Vimeo, Dailymotion, and files ending in .mp4, .webm, .ogv, .mov or .m4v), so the mark is there the moment the grid draws — no preview, no request. A channel or a search is not a video and gets nothing. The mark is a glyph in the badge's own colour, beside the pin and the note; `showVideoIcon` turns it off.
+- **new — the preview card plays the video.** Hovering shows the thumbnail your own server already fetched with a play button over it, and nothing reaches the provider until that button is pressed. Pressing it builds the frame, hides the still picture so the card holds one image rather than two, and pins the card so a moving hand cannot stop the video. From the keyboard: `Shift + V` puts the cursor on the play button, `Enter` starts it.
+- **new — three ways out of a running player.** `Esc` closes the card and ends the video, the **✕** over the player does the same, and a click anywhere else now closes a pinned card — which it had promised to do for a while and never did. A click inside the player hands the keyboard to the provider, so `Esc` is heard again once the pointer leaves the card, which is also when the focus comes back.
+- **new — a player without oEmbed.** The frame's address is built from the bookmark's own URL when the provider advertises none, so a preview stored before the server asked for oEmbed still plays. Every address lands on a host `frame-src` already admits.
+
+### Fixes
+
+- **fix — the byline and the video player could not be kept.** `linkPreviewParts` on the server is the filter a saved checklist is measured against, and neither row was ever added to it: both were stripped out of every save, so ticking them did nothing. They are in the list now, and a one-time upgrade puts them back into a checklist stored while they were being stripped. A list that is empty on purpose stays empty.
+- **fix — the keyboard cursor's glow was cut off square** at the end of the row. The bookmark list clips for the collapse animation, and a horizontal `visible` beside a vertical `hidden` computes to `auto`, so both axes clipped at the padding box. The clip box now has the blur as padding and the box is pulled back by the same amount: nothing moved, and the halo fades.
+- **fix — the paste dialog drew two emoji.** *Add bookmark* and *Save to Inbox* now carry the app's own marks — the plus from the header's Add bookmark button and the tray from the inbox tab — rather than pictures from the system font that changed shape per platform.
+
+### Docs
+
+- Help → Appearance, a new tip under *Making it yours*, MANUAL §4 and a spotlight in Config → Overview describe the ▶, the poster and the three ways to stop a video. Six locales.
+
+### Tests
+
+- The fold test in `whats-new-modal.spec.js` no longer depends on the prose of the release the modal leads with. This release's six items are all short enough to be shown whole, so nothing folded and the test failed on the copy rather than on the fold; it now opens the earlier releases until it finds a body long enough to be folded.
 
 ---
 

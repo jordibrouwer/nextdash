@@ -117,6 +117,7 @@
                 'tipTuneActionKeyHint',
                 'tipTuneSwitcher',
                 'tipTunePreview',
+                'tipTuneVideoCard',
                 'tipTuneSmartCollections',
                 'tipTuneFresh',
                 'tipTuneReviewOffers',
