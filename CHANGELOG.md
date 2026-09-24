@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.13.5 — 24 September 2026](#v1135--24-september-2026)
 - [v1.13.4 — 24 September 2026](#v1134--24-september-2026)
 - [v1.13.3 — 23 September 2026](#v1133--23-september-2026)
 - [v1.13.2 — 23 September 2026](#v1132--23-september-2026)
@@ -219,6 +220,16 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.13.5 — 24 September 2026
+
+A fix for the preview card, which offered a play button on every hover card in v1.13.4. Recorded but not announced: the What's new window still leads with v1.13.4.
+
+### Bookmarks
+
+- **fix — only a video gets a play button.** `videoPlayerSource` asked where a player might be and took any answer. Markup with no frame in it left an empty address to be resolved against the page's own, which on an https install is a valid https address and so passed for a player — so every hover card drew a black rectangle with a play mark on it, whatever the bookmark pointed at. A provider's oEmbed frame is no longer evidence of a video either: the bookmark's own address decides, the same way the ▶ on the row does.
 
 ---
 

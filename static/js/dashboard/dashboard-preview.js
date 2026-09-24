@@ -1115,6 +1115,10 @@ class DashboardPreview {
      * routes end at a host frame-src already admits.
      */
     videoPlayerSource(preview) {
+        // The address decides what is a video, the same way the row's mark
+        // does -- a provider's oEmbed frame is not evidence of one, and a page
+        // that is not a video must not offer a play button.
+        if (!window.VideoLinks?.isVideoLink?.(preview?.url || '')) return '';
         const fromProvider = this.embedPlayerSource(String(preview?.embedHtml || ''));
         if (fromProvider) return fromProvider;
         return window.VideoLinks?.videoEmbedSource?.(preview?.url || '') || '';
@@ -1280,6 +1284,10 @@ class DashboardPreview {
     embedPlayerSource(html) {
         const parsed = new DOMParser().parseFromString(String(html || ''), 'text/html');
         const src = parsed.querySelector('iframe[src]')?.getAttribute('src') || '';
+        // Markup with no frame in it is not a player. Left to the resolver
+        // below, '' becomes the dashboard's own address, which on an https
+        // install is a perfectly valid https URL and passed for one.
+        if (!src) return '';
         try {
             const url = new URL(src, window.location.href);
             return url.protocol === 'https:' ? url.href : '';
