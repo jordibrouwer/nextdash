@@ -154,6 +154,51 @@ test.describe('video bookmarks', () => {
     });
 
     /*
+     * A page that is not a video gets no play button.
+     *
+     * The poster asked only where a player might be, and took any answer. Two
+     * ways to get one for a page with no video: markup that carries a frame
+     * which is not a player, and — on a dashboard served over https — no
+     * markup at all, because '' resolved against the page's own address is
+     * the dashboard's URL, which is https and so passed for a player. Every
+     * hover card drew a black rectangle with a play button on it.
+     *
+     * So the question is asked of the bookmark's address first: a page that is
+     * not a video has no poster, whatever its oEmbed says.
+     */
+    test('a card for an ordinary page has no poster', async ({ page }) => {
+        await openDashboard(page);
+
+        const drawn = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const preview = {
+                url: 'https://start.1password.com/signin',
+                title: '1Password',
+                image: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=',
+                description: 'A password manager.',
+                // A provider is free to hand out a frame that plays nothing.
+                embedHtml: '<iframe src="https://start.1password.com/embedded"></iframe>',
+            };
+            const bookmark = { url: preview.url, name: '1Password', tags: [] };
+            d.showBookmarkPreviewCard(
+                d.preview.buildPreviewPayload(bookmark, preview), null, { mode: 'peek' });
+            const card = d.previewCardElement;
+            return {
+                poster: !!card.querySelector('.bookmark-preview-card-poster'),
+                withFrame: d.preview.videoPlayerSource(preview),
+                // And with nothing to go on at all, still nothing.
+                bare: d.preview.videoPlayerSource({ url: preview.url }),
+                empty: d.preview.embedPlayerSource(''),
+            };
+        });
+
+        expect(drawn.withFrame).toBe('');
+        expect(drawn.bare).toBe('');
+        expect(drawn.empty).toBe('');
+        expect(drawn.poster).toBe(false);
+    });
+
+    /*
      * A preview stored before the server asked for oEmbed carries no
      * embedHtml. The address still knows where the player is, so the card
      * offers one anyway.
