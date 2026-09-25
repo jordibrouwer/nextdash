@@ -475,7 +475,7 @@ class DashboardToolbar {
             if (d.quickAddWidget) {
                 d.quickAddWidget.open();
             } else {
-                d.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
+                void d.newBookmarkHandler?.().then((h) => h?.openModal());
             }
         });
         document.getElementById('collapse-all-button')?.addEventListener('click', () => {
@@ -790,7 +790,7 @@ class DashboardToolbar {
 
     setupPasteToQuickAdd() {
         const d = this.dash;
-        document.addEventListener('paste', (e) => {
+        document.addEventListener('paste', async (e) => {
             if (d.settings?.pasteUrlQuickAdd === false) return;
             const tag = document.activeElement?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
@@ -815,7 +815,8 @@ class DashboardToolbar {
                 return;
             }
 
-            const handler = d.searchComponent?.commandsComponent?.newCommandHandler;
+            const handler = d.searchComponent?.commandsComponent?.newCommandHandler
+            || await d.newBookmarkHandler?.();
             if (!handler) {
                 const msg = d.language?.t?.('dashboard.pasteUrlHint')
                     || 'Paste a URL to directly create a bookmark.';
@@ -834,7 +835,7 @@ class DashboardToolbar {
             d.quickAddWidget.open();
             return;
         }
-        d.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
+        void d.newBookmarkHandler?.().then((h) => h?.openModal());
     }
 
 

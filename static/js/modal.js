@@ -438,9 +438,28 @@ class Modal {
             const panel = this.modalPanel || this.modal;
             const focusable = window.FocusTrapUtils?.getFocusableElements?.(panel) || [];
             const target = focusable[0] || confirmButton;
-            if (target && typeof target.focus === 'function') {
+            if (!target || typeof target.focus !== 'function') return;
+            /*
+             * Until it takes.
+             *
+             * The overlay fades in with a visibility transition, and at its
+             * start the panel is still visibility: hidden -- focus() on it is
+             * a no-op then, silently. Two frames were usually enough and not
+             * always: a dialog opened from inside the bookmark form kept the
+             * focus in the field behind it, so Enter answered nothing. A few
+             * tries across the fade settle it.
+             */
+            let tries = 0;
+            const attempt = () => {
+                if (!this.modal?.classList.contains('show')) return;
+                if (panel.contains(document.activeElement)) return;
                 target.focus({ preventScroll: true });
-            }
+                if (document.activeElement !== target && tries < 6) {
+                    tries += 1;
+                    setTimeout(attempt, 50);
+                }
+            };
+            attempt();
         });
     }
 

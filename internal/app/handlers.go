@@ -3921,7 +3921,10 @@ func (h *Handlers) extractTitleFromHTML(htmlBody string) string {
 	if endRel < 0 {
 		return ""
 	}
-	title := strings.TrimSpace(htmlBody[contentStart : contentStart+endRel])
+	// Text in the source, so escaped like any other: "Q&amp;A" is "Q&A" on
+	// the page. The meta values below were already decoded; the title was not,
+	// and every reader printed the entity as written.
+	title := strings.TrimSpace(html.UnescapeString(htmlBody[contentStart : contentStart+endRel]))
 	if title == "" {
 		return ""
 	}

@@ -821,3 +821,18 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
         display: none;
     }
 }
+
+/* Suggested tags under the panel's tags field: the same dashed pill as in the
+   bookmark form, tucked up against the field they would go into. */
+.config-bm-tags-suggest {
+    margin-top: calc(-1 * var(--space-1, 0.25rem));
+}
+.config-bm-tags-suggest .tag-suggest-chip {
+    background: var(--background-secondary);
+    border: 1px dashed var(--border-secondary);
+}
+.config-bm-tags-suggest .tag-suggest-chips-label {
+    font-size: calc(var(--font-size-controls) * 0.72);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+}

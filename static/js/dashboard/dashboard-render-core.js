@@ -35,10 +35,18 @@ class DashboardRenderCore {
         this.dash = dashboard;
     }
 
+    /*
+     * One column is for a phone held upright, not for any narrow window.
+     *
+     * The 767px line used to stack every window below it, so a desktop window
+     * with room for two or three columns got one long list. A narrow desktop
+     * window now keeps the columns that fit (see _columnsThatFit); only a
+     * touch screen in portrait always stacks.
+     */
     shouldStackDashboardCategories() {
         return (
             typeof window.matchMedia === 'function' &&
-            window.matchMedia('(max-width: 767px)').matches
+            window.matchMedia('(max-width: 767px) and (orientation: portrait) and (pointer: coarse)').matches
         );
     }
 
@@ -47,7 +55,30 @@ class DashboardRenderCore {
         if (this.shouldStackDashboardCategories()) {
             return 1;
         }
-        return this.getNormalizedColumnsPerRow();
+        return Math.min(this.getNormalizedColumnsPerRow(), this._columnsThatFit());
+    }
+
+
+    /*
+     * How many columns of at least --dashboard-column-min fit side by side.
+     *
+     * Measured on the grid's container, not the grid: the grid's own width is
+     * capped from the column count, which would make the answer confirm
+     * itself. Nothing measurable yet (hidden, not laid out): no limit.
+     */
+    _columnsThatFit() {
+        const grid = document.getElementById('dashboard-layout');
+        const box = grid?.parentElement;
+        if (!grid || !box) return Infinity;
+        const boxStyle = getComputedStyle(box);
+        const gridStyle = getComputedStyle(grid);
+        const width = box.clientWidth
+            - parseFloat(boxStyle.paddingLeft || '0') - parseFloat(boxStyle.paddingRight || '0')
+            - parseFloat(gridStyle.paddingLeft || '0') - parseFloat(gridStyle.paddingRight || '0');
+        if (!(width > 0)) return Infinity;
+        const min = parseFloat(gridStyle.getPropertyValue('--dashboard-column-min')) || 250;
+        const gap = parseFloat(gridStyle.columnGap) || 16;
+        return Math.max(1, Math.floor((width + gap) / (min + gap)));
     }
 
 
@@ -56,11 +87,7 @@ class DashboardRenderCore {
         if (this.shouldStackDashboardCategories()) {
             return false;
         }
-        return (
-            d.settings.packedColumns === true &&
-            typeof window.matchMedia === 'function' &&
-            window.matchMedia('(min-width: 768px)').matches
-        );
+        return d.settings.packedColumns === true;
     }
 
 

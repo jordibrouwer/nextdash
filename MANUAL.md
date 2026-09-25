@@ -232,11 +232,11 @@ While it is away, a small **handle** stands on that edge, so the place it came f
 
 `:buttons` and `:maxactions` change these from the command palette.
 
-The **★** button in the bottom-right corner opens the release notes.
+The **★** button in the bottom-right corner opens the release notes. It is left out on a window as narrow as a phone; `:whatsnew` and Help still open them.
 
 ### 🗂️ The grid
 
-Categories and widgets stand in columns. Each category header shows `//`, its icon and name, a count, and chips for sorting (manual, **A–Z**, **Recent**), a **+** to add a category and a **⋯** menu. Click the header to fold the category. A spread category shows **↔ N** with the number of columns it takes. Smart collections (*Today*, *Recently opened*, …) and custom collections appear as groups among your categories.
+Categories and widgets stand in columns — as many as **Columns per row** allows and the window has room for, and one on a phone held upright. Each category header shows `//`, its icon and name, a count, and chips for sorting (manual, **A–Z**, **Recent**), a **+** to add a category and a **⋯** menu. Click the header to fold the category. A spread category shows **↔ N** with the number of columns it takes. Smart collections (*Today*, *Recently opened*, …) and custom collections appear as groups among your categories.
 
 A bookmark row shows its icon, name, optional tags, the shortcut letters and, when checked, its status and ping. How the row looks is set under **Appearance → Rows** ([§12](#12-appearance)).
 
@@ -280,12 +280,24 @@ One bookmark form is used everywhere: the dashboard, health, the inbox, config a
 - **`Shift + B`** from anywhere on the dashboard, unless you are typing in a field.
 - **`Ctrl + Shift + A`** from anywhere.
 
-The form has two groups: **what it is** (address, name, icon, note) and **where it goes** (page, category, tags, shortcut, pin, availability checking). On a wide window they stand side by side. Adding starts in the address field; the title and icon are fetched when you paste a URL.
+The form is one column, in the order you fill it in: **address**, **name**, the **preview card**, **tags**, **page › category** and **shortcut**, **pin** and **availability checking**, and the **note**. It opens with the cursor in the address field, adding and editing alike.
 
-- The **Page** and **Category** lists start with **New page…** and **New category…**, so a bookmark can go somewhere that does not exist yet.
+**One read of the page.** When you leave the address field, the page is read once, and that one read fills in the rest:
+
+- **The icon** — with a **✎** on it for **Upload…**, **Fetch again** and **Clear**. An icon you uploaded, or one the bookmark already had, is kept when the address changes; a fetched one is replaced.
+- **A name** — left empty, the name field shows the page's own title, *Suggested from the page · Clear*; a name you typed stays, with *Page: … · Use* under it to take the page's title instead.
+- **The card** — the page's host, its own line and its picture. It says **Reading the page…** while a slow site answers, and **No preview** with **Try again** when the page could not be read; the bookmark saves fine without one.
+- **Suggested tags** — chips under the tags field, from the same sources as Tag suggestions ([§10.4](#104-tag-suggestions)). **+** adds one, **✕** turns it down for that site everywhere, and **↻** asks again. Editing a bookmark shows its suggestions straight away, from the words stored for it.
+
+Change the address and the whole read starts again; only the latest one counts.
+
+- **Page › category** is one field. It opens the same list as **Move to…** (`Shift + M`), with a filter at the top: type to narrow it, arrows and `Enter` to pick. Its first rows are **New category on …** and **New page…**; after a new page, the form asks for its first category.
+- **ⓘ** beside **Tags**, **Shortcut** and the checking choice explains each one.
 - **Availability** is the same **Off / Periodic / Monitor** choice as everywhere, with the interval for Monitor.
 - The **shortcut** field warns when a shortcut is taken, and says which letters the grid itself uses.
 - **Save** or **`Ctrl + Enter`** saves. **Create + New** saves and clears the form for the next one, keeping page and category.
+- **Before it saves**, the form asks: with no page it says a bookmark needs one; with no category it asks **Save without** or **Choose a category**; a link already on another page is named, with **Save anyway**; a link already on the same page is refused, naming the bookmark that has it.
+- **The keyboard alone** fills in the whole form: `Tab` walks the fields in order and wraps round inside the form, and `Escape` closes the innermost thing first — the tag list, the icon menu, the page list — and the form last. The dashboard behind it does not scroll.
 - On a phone the form leaves out the icon and note fields; existing values are kept.
 
 ### 5.3 Paste a URL (`Ctrl + V`)
@@ -460,7 +472,7 @@ The arrow keys walk into a widget and through its rows; `Enter` does what clicki
 | `Delete` | Delete the selection (one confirmation, undo in the toast) |
 | `Esc` | Clear the selection |
 
-A toolbar appears with **Move**, **Tags**, **Pin**, **Checking**, **Open**, **Copy links** and **Delete**. The tag picker shows a **✓** for tags the whole selection has and *on 2 of 3* for tags only some have. While a selection is open, a plain click clears it instead of opening a bookmark. A bulk change can be undone from its toast for eight seconds, and deleted bookmarks stay in the trash for 30 days.
+A toolbar appears with **Move**, **Tags**, **Pin**, **Checking**, **Open**, **Copy links** and **Delete**. The tag picker shows a **✓** for tags the whole selection has and *on 2 of 3* for tags only some have. Above them, **Suggested** lists up to three tags the selection is likely to want ([§10.4](#104-tag-suggestions)); a suggestion that fits only some of the rows says *on 1 of 3*, and choosing it tags only those rows. While a selection is open, a plain click clears it instead of opening a bookmark. A bulk change can be undone from its toast for eight seconds, and deleted bookmarks stay in the trash for 30 days.
 
 ### 7.6 The cheat sheet
 
@@ -629,7 +641,7 @@ The number of columns is not a setting: it follows from **items per category** a
 | 16–30 | 2 |
 | 31–45 | 3 |
 
-The column count of the grid is the ceiling. Spreading needs a limit on items per category and at least two columns. With **Pack columns tightly** on, the categories after a spread one fill in beside and below it. On a phone every category is one column wide. **Appearance → Grid → Categories across columns** holds the limit, whether new categories start spread, and whether *turn spreading off everywhere* covers this page or all pages. A walkthrough is under Config → Help → Structure & bookmarks.
+The column count of the grid is the ceiling. Spreading needs a limit on items per category and at least two columns. With **Pack columns tightly** on, the categories after a spread one fill in beside and below it. On a phone held upright every category is one column wide. **Appearance → Grid → Categories across columns** holds the limit, whether new categories start spread, and whether *turn spreading off everywhere* covers this page or all pages. A walkthrough is under Config → Help → Structure & bookmarks.
 
 ### 9.6 Smart collections
 
@@ -658,7 +670,7 @@ Editing or deleting a bookmark inside a collection changes the real bookmark.
 
 ### 10.1 Tags on a bookmark
 
-- Set them in the bookmark form, the side panel in Config → Bookmarks, with `Shift + T`, or with `:tag +name`.
+- Set them in the bookmark form, the side panel in Config → Bookmarks, with `Shift + T`, or with `:tag +name`. The form, the side panel, `Shift + T` and the selection's tag picker each show the tags this bookmark is likely to want, under **Suggested**; `Shift + T` opens at the top of its list, with those first.
 - Stored in lower case, trimmed, without duplicates. Autocomplete offers the tags you already use.
 - **Tags on rows** (Appearance → Rows) shows them as chips on the dashboard — the first few, then a count. Click a chip to filter.
 
@@ -683,6 +695,8 @@ Editing or deleting a bookmark inside a collection changes the real bookmark.
 - **Read their pages** (optional) — fetches the pages nothing else can place and files them by what they are about. It says what it will cost, shows progress and can be stopped. Only a dozen keywords per page are kept.
 
 Each row names its source and its count. The count opens the group, so single bookmarks can be left out. **Apply** tags the rest (undo in the toast); **No thanks** stops the proposal from coming back, and refusals are listed with a way back. At most 25 rows show at a time. **Forget the scanned keywords** (here or under Data & backups → Icons & previews) clears what *Read their pages* kept.
+
+The same proposals appear, one bookmark at a time, in the bookmark form, the Config → Bookmarks side panel, `Shift + T` and the selection's tag picker ([§10.1](#101-tags-on-a-bookmark)). Turning one down there counts as **No thanks** here, and the list on this tab follows.
 
 A corner card offers a round when ten proposals are waiting; it can be switched off under Behavior → Privacy & sync → Onboarding.
 
@@ -955,7 +969,7 @@ other theme keeps its own.
 
 | Setting | What it does |
 |---|---|
-| **Columns per row** | 1–6 |
+| **Columns per row** | 1–6 — the most the grid uses. A narrower window takes as many as fit, and one only when two no longer fit; a phone held upright always shows one |
 | **Layout preset** | Default, Compact, Cards, Terminal-ish, Masonry, List, Widgets and Launcher (large icon tiles) |
 | **Density** | Comfortable, Compact, Dense or Auto — one setting for the dashboard, health and the inbox |
 | **Category spacing** | Snug · Balanced (default) · Airy — the gap between rows of categories |
@@ -1354,7 +1368,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 - **The rail** narrows the list: a search (`/`; it matches name, URL, category, note, shortcut and tags), **Views** (never opened, opened once, without tags, not on HTTPS, **Unsorted** — the links kept from the inbox, shown on their own — and more), **Pages**, **Categories**, **Tags** and **Health** (healthy, broken, monitor down, never checked), each with a count.
 - **The list** shows what is left, grouped by page and category, with a sort (page order, last opened, most opened, pinned first and others). Rows show icon, name, host, tags, open count and last opened. Only the rows near the screen are drawn, so thousands of bookmarks stay fast.
-- **The side panel** shows the bookmark in focus and edits it in place: name, URL, page, category, tags (with suggestions), shortcut, note, pin, availability checking and interval. Lists and checkboxes save on change, text fields when you leave them; `Escape` puts the old value back. It also shows health and usage, and offers **Open**, **Edit in dialog** (`Shift + E`), **Show on dashboard**, **Refresh favicon** and **Delete**.
+- **The side panel** shows the bookmark in focus and edits it in place: name, URL, page, category, tags (with autocomplete, and up to three suggested tags under the field — **+** saves one at once, **✕** turns it down for that site everywhere), shortcut, note, pin, availability checking and interval. Lists and checkboxes save on change, text fields when you leave them; `Escape` puts the old value back. It also shows health and usage, and offers **Open**, **Edit in dialog** (`Shift + E`), **Show on dashboard**, **Refresh favicon** and **Delete**.
 
 **Several at once.** Tick rows and the side panel edits the selection: page, category, tags (add, replace, remove), pin all / unpin all, checking and interval. Fields that differ read *mixed*. **Apply to N** writes the changes; **Export CSV**, **Refresh favicons**, **Fetch icons**, **Fetch previews** and **Delete N** act on the selection. Fetching runs behind a progress bar, waits out a rate limit and can be stopped. Bulk changes and moves can be undone from the toast, and the undo takes back only what that change did. A selection survives a filter change.
 

@@ -787,11 +787,23 @@ class DashboardConfig {
         // gated on a tab: the export button sits in the foot of every one.
         void this.prefetchAllBookmarkCategories();
         // History is cheap and every tab can use it, so it is not gated on one.
-        if (this._statsTrend === undefined) void this.loadStatsTrend();
-        if ((all || tab === 'inbox') && this._statsInboxItems === undefined) void this.loadStatsInbox();
-        if ((all || tab === 'activity') && this._statsFinders === undefined) void this.loadStatsFinders();
-        if ((all || tab === 'health') && this._statsHealth === undefined) void this.loadStatsHealth();
-        if ((all || tab === 'content') && this._statsLibrary === undefined) void this.loadStatsLibrary();
+        /*
+         * Once per load, not once per visit. Each field stays undefined until
+         * its answer arrives, so leaving a tab and coming back while the first
+         * request was still out started a second one -- the health report is
+         * the heavy one, and a quick back-and-forth fetched it twice.
+         */
+        this._statsInFlight = this._statsInFlight || new Set();
+        const once = (key, load) => {
+            if (this._statsInFlight.has(key)) return;
+            this._statsInFlight.add(key);
+            Promise.resolve(load()).finally(() => this._statsInFlight.delete(key));
+        };
+        if (this._statsTrend === undefined) once('trend', () => this.loadStatsTrend());
+        if ((all || tab === 'inbox') && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
+        if ((all || tab === 'activity') && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
+        if ((all || tab === 'health') && this._statsHealth === undefined) once('health', () => this.loadStatsHealth());
+        if ((all || tab === 'content') && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
     }
 
     /**
@@ -22229,6 +22241,42 @@ class DashboardConfig {
         return this._tagKeywords;
     }
 
+    /**
+     * Something outside this panel fed the engine: a tag taken or refused in
+     * the bookmark form or the side panel, a page read for words when a
+     * bookmark was saved. The words and the scan count were loaded once per
+     * session, so they are dropped here and read again on the next draw.
+     */
+    onTagEvidenceChanged() {
+        this._tagKeywordsPromise = null;
+        if (document.getElementById('config-bm-suggestions')) {
+            void this.ensureTagKeywords().then(() => {
+                this.renderTagSuggestionsSafe();
+                this.syncTagSuggestionsTabCount();
+            });
+            return;
+        }
+        this.syncTagSuggestionsTabCount();
+    }
+
+    /** The number on the Tag suggestions tab, redrawn without the strip. */
+    syncTagSuggestionsTabCount() {
+        const tab = document.querySelector('[data-bm-tab="tag-suggestions"]');
+        if (!tab) return;
+        const waiting = this.tagSuggestionGroupCount();
+        let badge = tab.querySelector('.config-subtab-count');
+        if (!waiting) {
+            badge?.remove();
+            return;
+        }
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'config-subtab-count';
+            tab.appendChild(badge);
+        }
+        badge.textContent = String(waiting);
+    }
+
     /** The words already read, and how many pages are still unread. */
     ensureTagKeywords() {
         if (this._tagKeywordsPromise) return this._tagKeywordsPromise;
@@ -23154,7 +23202,8 @@ class DashboardConfig {
         this.closeBookmarkMenus();
         this._bmModalRestoreKey = key;
         const record = await this.findBookmarkRecord(key);
-        const handler = this.dash.searchComponent?.commandsComponent?.newCommandHandler;
+        const handler = this.dash.searchComponent?.commandsComponent?.newCommandHandler
+            || await this.dash.newBookmarkHandler?.();
         if (!handler?.openModal || !record) {
             this.notify(this.t('config.addBookmarkUnavailable', 'The add-bookmark dialog is not available.'), 'error');
             return;
@@ -23683,9 +23732,10 @@ class DashboardConfig {
      * path. It writes the bookmark itself and refreshes `dashboardInstance`,
      * but it knows nothing about the config list — hence the repaint below.
      */
-    openAddBookmarkModal() {
+    async openAddBookmarkModal() {
         const d = this.dash;
-        const handler = d.searchComponent?.commandsComponent?.newCommandHandler;
+        const handler = d.searchComponent?.commandsComponent?.newCommandHandler
+            || await d.newBookmarkHandler?.();
         if (!handler?.openModal) {
             this.notify(this.t('config.addBookmarkUnavailable', 'The add-bookmark dialog is not available.'), 'error');
             return;
@@ -24161,6 +24211,16 @@ class DashboardConfig {
     repaintBookmarksList() {
         const host = document.getElementById('config-bm-list');
         if (!host) return;
+        // The list's renderers arrive on demand. A repaint asked for before
+        // they land -- a data refresh right as the section opens -- threw
+        // "renderBookmarksList is not a function"; it waits for them instead,
+        // and repaints once they are there.
+        if (typeof this.renderBookmarksList !== 'function') {
+            void this.ensureBookmarkRenderers().then(() => {
+                if (typeof this.renderBookmarksList === 'function') this.repaintBookmarksList();
+            }, () => {});
+            return;
+        }
         // An explicit repaint means the caller believes something changed, and
         // bookmarks are routinely edited in place — the array identity the memo
         // keys on would not have moved. Drop it and recompute.

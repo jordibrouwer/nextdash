@@ -1264,38 +1264,14 @@ class DashboardUnsorted {
         if (!offers.length) return;
         const wrap = document.createElement('span');
         wrap.className = 'tag-suggest-chips';
-        offers.forEach((offer) => {
-            const chip = document.createElement('span');
-            chip.className = 'tag-suggest-chip';
-
-            const add = document.createElement('button');
-            add.type = 'button';
-            add.className = 'tag-suggest-chip-add';
-            add.textContent = `#${offer.tag}`;
-            add.title = this.dash.formatDashboardLabel('tagSuggestAdd', { tag: offer.tag },
-                `Tag this bookmark #${offer.tag}`);
-            add.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                void this.select?.acceptSuggestion(bookmark, offer.tag);
-            });
-
-            const off = document.createElement('button');
-            off.type = 'button';
-            off.className = 'tag-suggest-chip-dismiss';
-            off.textContent = '×';
-            off.title = this.dash.formatDashboardLabel('tagSuggestDismiss', { tag: offer.tag },
-                `Stop proposing #${offer.tag} here`);
-            off.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                void this.dismissSuggestion(offer);
-            });
-
-            chip.append(add, off);
-            wrap.appendChild(chip);
+        const drawn = window.TagSuggestChips.render(wrap, offers, {
+            limit: 2,
+            t: (key, fallback, params) => this.dash.formatDashboardLabel(
+                key.replace(/^dashboard\./, ''), params || {}, fallback),
+            onAccept: (tag) => { void this.select?.acceptSuggestion(bookmark, tag); },
+            onRefuse: (offer) => { void this.dismissSuggestion(offer); },
         });
-        row.insertAdjacentElement('afterend', wrap);
+        if (drawn) row.insertAdjacentElement('afterend', wrap);
     }
 
     /**
@@ -1304,18 +1280,11 @@ class DashboardUnsorted {
      * moment one more link on that site arrives.
      */
     async dismissSuggestion(offer) {
-        const d = this.dash;
-        const live = window.TagSuggestLive;
-        if (!d.settings || !live) return;
-        const key = live.dismissKey(offer);
-        const before = Array.isArray(d.settings.dismissedTagSuggestions)
-            ? d.settings.dismissedTagSuggestions : [];
-        if (before.includes(key)) return;
-        d.settings.dismissedTagSuggestions = [...before, key];
-        live.invalidate();
-        this.renderBody();
-        await d.saveSettings?.();
+        await window.TagSuggestChips?.refuse(this.dash, offer, {
+            onUpdated: () => this.renderBody(),
+        });
     }
+
 
     _buildBlocks(visible) {
         const d = this.dash;

@@ -71,8 +71,9 @@ class DashboardPasteChoice {
         this.openChoiceModal(trimmed);
     }
 
-    openBookmarkModal(url) {
-        const handler = this.dash.searchComponent?.commandsComponent?.newCommandHandler;
+    async openBookmarkModal(url) {
+        const handler = this.dash.searchComponent?.commandsComponent?.newCommandHandler
+            || await this.dash.newBookmarkHandler?.();
         if (!handler) {
             this.dash.showNotification(
                 this.t('dashboard.pasteUrlHint', 'Paste a URL to directly create a bookmark.'),

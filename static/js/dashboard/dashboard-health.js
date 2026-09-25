@@ -1798,7 +1798,8 @@ class DashboardHealth {
             return;
         }
 
-        const handler = d.searchComponent?.commandsComponent?.newCommandHandler;
+        const handler = d.searchComponent?.commandsComponent?.newCommandHandler
+            || await d.newBookmarkHandler?.();
         const bookmark = await this.findBookmarkForIssue(issue, pageId);
         if (handler && bookmark) {
             window.nextdashTrack?.('health:edit');

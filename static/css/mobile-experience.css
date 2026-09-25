@@ -64,6 +64,15 @@ body[data-mobile-layout="true"] .btn-group-secondary {
     display: none !important;
 }
 
+/* The What's new star also stays out of a phone-width window without a touch
+   screen (a narrowed browser, a side panel): it floats over the list there
+   too, and Config → About carries the same news. */
+@media (max-width: 767px) {
+    #whats-new-btn {
+        display: none !important;
+    }
+}
+
 body[data-mobile-layout="true"] #quick-add-toolbar-btn {
     display: flex !important;
     order: -1;
@@ -92,31 +101,24 @@ body[data-mobile-layout="true"] #search-button {
     min-height: 44px;
 }
 
-/* Dashboard: single column on phone — ignore columnsPerRow / packed layout */
-@media (max-width: 767px) {
-    body[data-dashboard-stack-categories="true"] .dashboard-grid,
-    .dashboard-grid.columns-2,
-    .dashboard-grid.columns-3,
-    .dashboard-grid.columns-4,
-    .dashboard-grid.columns-5,
-    .dashboard-grid.columns-6 {
-        display: grid !important;
-        grid-template-columns: 1fr !important;
-    }
+/* Dashboard: single column on a phone held upright -- ignore columnsPerRow
+   and the packed layout. Only there: a narrow desktop window keeps the
+   columns that fit, which the grid's own column count already says. */
+body[data-dashboard-stack-categories="true"] .dashboard-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+}
 
-    body[data-dashboard-stack-categories="true"] .dashboard-grid.packed-columns,
-    .dashboard-grid.packed-columns {
-        display: flex !important;
-        flex-direction: column !important;
-        flex-wrap: nowrap !important;
-    }
+body[data-dashboard-stack-categories="true"] .dashboard-grid.packed-columns {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+}
 
-    body[data-dashboard-stack-categories="true"] .dashboard-grid.packed-columns .dashboard-column,
-    .dashboard-grid.packed-columns .dashboard-column {
-        flex: 1 1 100% !important;
-        max-width: 100% !important;
-        width: 100% !important;
-    }
+body[data-dashboard-stack-categories="true"] .dashboard-grid.packed-columns .dashboard-column {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
 }
 
 /* Search mode tabs visible on mobile (override search.css ≤479px hide) */

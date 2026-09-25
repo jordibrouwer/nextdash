@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.13.7 — 25 September 2026](#v1137--25-september-2026)
 - [v1.13.6 — 25 September 2026](#v1136--25-september-2026)
 - [v1.13.5 — 24 September 2026](#v1135--24-september-2026)
 - [v1.13.4 — 24 September 2026](#v1134--24-september-2026)
@@ -221,6 +222,60 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.13.7 — 25 September 2026
+
+The bookmark form is rebuilt around one read of the page, tag suggestions reach every place a tag is set, and the grid stops dropping to one column on any narrow window. Leads the What's new window, and v1.13.1, v1.13.5 and v1.13.6, recorded but held back until now, are shown there as well.
+
+### Bookmark form
+
+- **new — one column, in the order it is filled in.** Address, name, a preview card, tags, *page › category* with the shortcut, pin and checking, note. The two side-by-side groups are gone, and so are the icon-URL field, **Set URL** and the separate **Fetch** button. The form is split into `bookmark-form-card.js`, `bookmark-form-title.js` and `bookmark-form-place.js` under `static/js/bookmark-form/`; the hidden page and category selects and the icon input stay as the data model, so the save path is unchanged.
+- **new — one read of the page after the address.** Leaving the address field makes a single `/api/bookmark-preview` call that fills the icon, a name suggestion (the host when the page has no title), the card and the keywords for tag suggestions. A changed address starts a new read and only the latest one counts (`fetchSeq`); a fetched icon is replaced, an uploaded or stored one is kept. The card says *Reading the page…* while a slow site answers, explains itself before there is an address, and says *No preview* with **Try again** when the read gave nothing. Create + New resets it. A form opened with an address already in it — a paste, the inbox, `:new <url>`, the extension — reads the page at once.
+- **new — the icon's ✎ menu:** **Upload…**, **Fetch again**, **Clear**.
+- **new — a name suggestion.** An empty name field shows the page's title as *Suggested from the page · Clear*; a typed name gets *Page: … · Use* under it instead.
+- **new — suggested tags in the form.** Chips from `TagSuggestLive.forDraft` under the tags field: the collection is the evidence, the page's keywords the last source, and a bookmark being edited gets its stored keywords from `/api/tags/keywords` without reading the page. **+** adds, **✕** refuses for the site everywhere (`dismissedTagSuggestions`), **↻** asks again. Config → Tag suggestions follows every change through `TagSuggestLive.changed` and `onTagEvidenceChanged`.
+- **new — page › category in one field.** It opens the Move to… popover (`move-popover`) with a filter; arrows and `Enter` pick, and `Enter` with one match takes it. Its first rows hand off to the form's existing `InlineCreateRow` for a new category or page, and a new page opens its first-category row.
+- **new — ⓘ on tags, shortcut and checking**, the check group's own button, with the text as the field's `aria-describedby`.
+- **new — save guards.** No page: a notice. No category: *Save without* / *Choose a category*. The same link on another page: *Already saved · Save anyway*. The same link on this page: a notice naming the bookmark that has it, where it used to fail with *Could not create bookmark*.
+- **new — keyboard-only use.** The form opens with the cursor in the address field, adding and editing (`keyboardNavigation.disable()` now runs before the render, which stole the focus). While it is open the form owns `Tab`: its own controls in order, wrapping at both ends, so focus can no longer walk out to the What's new ★ or the page tabs. The tag list no longer pre-selects its first entry when nothing is typed, so `Tab` moves on. `Escape` closes the tag list, the icon menu, the place popover and the create row before the form, and a dialog on top of the form (`z-index` 10300) takes the focus through its fade (`modal.js` retries `_focusInitialElement`).
+- **fix — the dashboard no longer scrolls behind the form** (`ScrollLock.acquire('bookmark-form-modal')`, `overscroll-behavior: contain`), and a render while it is open no longer aborts the form's fetch timer.
+- The legacy form's title fill in `search-commands-new.js` is removed; the bookmark form does it now.
+
+### Tags
+
+- **new — suggestions in the Config → Bookmarks side panel.** Up to three chips under the tags field of a single bookmark; **+** writes the tag through `commitWorkbenchField`, **✕** refuses. A selection of several gets none.
+- **new — a Suggested section in Shift+T** (`forDashBookmark`, top three) **and in the multi-select Tags popover.** Each selection offer counts the rows it fits (*on 1 of 2*), and `applyTagToSelection(tag, mode, { onlyKeys })` writes, rolls back and undoes only those rows.
+- **new — one chip component.** `TagSuggestChips.render` and `refuse` in `static/js/shared/tag-suggest-chips.js`, used by the form, the side panel, the inbox and Kept.
+- **fix — Shift+T opens at the top of its list.** It focused the row's first tag on open, so a long library scrolled it 1250px down and hid the header, the row's tags and the suggestions. It now starts on the first item; the ✓ still marks the row's tags.
+
+### Previews
+
+- **fix — page titles no longer carry HTML entities.** `extractTitleFromHTML` returned the `<title>` text raw, so *Q&amp;A* reached every reader as written; the meta values were already decoded. Previews cached before this fix keep the old title until they expire or are refreshed.
+
+### Dashboard
+
+- **fix — as many columns as fit.** Below 768px every window dropped to one column, and between 768 and 991px `responsive.css` forced two with `!important` and a flex rule that broke the packed masonry grid. `getEffectiveColumnsPerRow` now takes the configured count, capped by how many columns of `--dashboard-column-min` fit in the grid's container; `shouldStackDashboardCategories` is true only for a touch screen held upright below 768px. A resize that changes the count re-renders the grid. The forced rules in `responsive.css` and `mobile-experience.css` are removed, and the wide-category reset follows the stack attribute instead of the width.
+- **fix — the What's new ★ is hidden below 768px** on any window, not only on a touch phone.
+
+### Docs
+
+- **MANUAL §5.2 rewritten.** It described two groups side by side and a title and icon fetched on paste; it now describes the one column, the one read, the ✎ menu, the name suggestion, the chips, the place field, the ⓘ, the save guards and the keyboard. §7.5, §10.1 and §10.4 name the suggestions in Shift+T, the side panel and the selection's tag picker; §15.4 the side panel's chips; the grid and **Columns per row** say how many columns a narrow window keeps; the ★ line says it is hidden on a phone-width window.
+- **Help → Bookmarks**, in six languages, describes the form, the side panel's suggestions and where else suggestions appear.
+- **Translations:** the 27 strings the form and the popovers added are translated into Dutch, German, French, Spanish and Chinese.
+- **Config → Overview** and **About → News & features** gain *A bookmark form that reads the page* and *Suggested tags wherever you tag*.
+- The comment above the release tokens in `whats-new-stub.js` named v1.13.3 as the release the modal leads with; it names v1.13.7.
+
+### Tests
+
+- New: `bookmark-form-redesign`, `bookmark-form-keyboard`, `bookmark-form-save-guards`, `tag-suggest-draft`, `tag-popover-suggested`, `config-bookmarks-panel-suggest`, `multi-select-suggested-tags`, `dashboard-columns-fit`, `whats-new-btn-narrow`, and `preview_title_test.go` (gofmt'd after CI's `fmt-check` caught its alignment). About twenty form specs moved to `data-field` selectors and the `answerNoCategory` helper; `view-resize-layout` expects columns rather than stacking on a desktop window.
+- CI fixes after the push: `bookmark-form-modal-fit` hovers the check group's ⓘ by `data-info-for`, since the tags and shortcut ⓘ share its class; `unsorted-view-isolation` fills the name field by `data-field`, not the form's first input, which is the address now. Three flaky ones are steadied: `backlog-batch-two` awaits the inbox's `createItemElement`, which the loader's proxy answers with a promise until the module lands; `config-bookmarks-grouping` polls the row's widths instead of reading them once; and the first `tag-popover-suggested` test seeds a host of its own and waits for the seeds to reach `allBookmarks`.
+- **fix — Config → Bookmarks no longer throws when a repaint comes before its renderers.** `repaintBookmarksList` called `renderBookmarksList` while the lazily loaded workbench file was still on its way, and logged *renderBookmarksList is not a function* (caught by `config-section-smoke` on a loaded CI runner). It now waits for `ensureBookmarkRenderers` and repaints once they land; `config-bookmarks-lazy.spec.js` holds the file back and asks for a repaint in that gap.
+- Seven more flaky specs wait for what they use instead of racing it: `bookmark-form-modal-fit`, `inbox-promote-pages` and `search-shortcut-miss-hint` await `SearchLoader.ensureReady()` before reading `searchComponent`; `dashboard-command-palette-config` types once the panel is listening, not straight after `:`; `grid-bookmark-shortcuts` reads the cursor once it stands on a row; `unsorted-keyboard-and-export` repeats the arrow until the Kept list's keys are wired; `row-highlight` awaits `openConfigView` before switching the tab. And four more from the next run: `inbox-promote-pages` loads the inbox list again rather than trusting the view's copy; `escape-ownership` lets the list settle before its right-click; the second `tag-popover-suggested` test waits for its seeds in `allBookmarks`; `config-log-settings-popover` saves the glass depth until the reloaded page shows it, since another worker on the same server can write the setting in between.
+- **fix — opening the bookmark form before the search code has arrived.** The form lives in the lazily loaded search bundle, and inbox **Promote**, paste-a-URL, the toolbar's add button, the empty state, Health's **Edit** and Config → Bookmarks' **Add** and **Edit** each read its handler straight off `searchComponent`. In the seconds before the bundle landed they said *Could not open bookmark form* or did nothing. `Dashboard.newBookmarkHandler()` fetches the bundle first when the handler is not there yet, and every route goes through it; `inbox-promote-pages.spec.js` holds the bundle back and promotes in that gap.
+- **fix — Statistics asked for the health report twice** when you left the Health tab and came back while the first request was still out. Each loader's field stays `undefined` until its answer arrives, so the tab's return started another; the loaders now run once per load (`_statsInFlight`). `config-stats-range-and-lazy.spec.js` slows the report and goes back and forth.
+- Two more specs steadied: `config-trash-search-bulk` waits for the tab's own trash load before drawing its fixture, and `dashboard-command-palette-config` presses Enter only once the first row answers the whole query. After that: `search-shortcut-miss-hint` and the `:trash` test in `backlog-batch-two` await `SearchLoader.ensureReady()`, and `dashboard-check-mode-menu` right-clicks a row only once its menu is wired (`data-context-menu-bound`).
 
 ---
 

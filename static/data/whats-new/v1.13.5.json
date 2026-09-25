@@ -2,7 +2,6 @@
   "tag": "v1.13.5",
   "date": "24 September 2026",
   "releasedAt": "2026-09-24",
-  "hideFromModal": true,
   "modalLead": "A fix for the preview card, which offered a play button on every hover card in v1.13.4 — including pages that hold no video at all.",
   "sections": [
     {
