@@ -9,8 +9,8 @@ func TestExtractTitleFromHTMLDecodesEntities(t *testing.T) {
 	h := &Handlers{}
 	cases := map[string]string{
 		"<head><title>Q&amp;A &#8211; Tom&#39;s  site</title></head>": "Q&A – Tom's site",
-		"<title>\n  Plain title\n</title>":                               "Plain title",
-		"<title>&lt;b&gt; is bold</title>":                                "<b> is bold",
+		"<title>\n  Plain title\n</title>":                            "Plain title",
+		"<title>&lt;b&gt; is bold</title>":                            "<b> is bold",
 	}
 	for in, want := range cases {
 		if got := h.extractTitleFromHTML(in); got != want {

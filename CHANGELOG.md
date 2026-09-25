@@ -269,7 +269,7 @@ The bookmark form is rebuilt around one read of the page, tag suggestions reach 
 
 ### Tests
 
-- New: `bookmark-form-redesign`, `bookmark-form-keyboard`, `bookmark-form-save-guards`, `tag-suggest-draft`, `tag-popover-suggested`, `config-bookmarks-panel-suggest`, `multi-select-suggested-tags`, `dashboard-columns-fit`, `whats-new-btn-narrow`, and `preview_title_test.go`. About twenty form specs moved to `data-field` selectors and the `answerNoCategory` helper; `view-resize-layout` expects columns rather than stacking on a desktop window.
+- New: `bookmark-form-redesign`, `bookmark-form-keyboard`, `bookmark-form-save-guards`, `tag-suggest-draft`, `tag-popover-suggested`, `config-bookmarks-panel-suggest`, `multi-select-suggested-tags`, `dashboard-columns-fit`, `whats-new-btn-narrow`, and `preview_title_test.go` (gofmt'd after CI's `fmt-check` caught its alignment). About twenty form specs moved to `data-field` selectors and the `answerNoCategory` helper; `view-resize-layout` expects columns rather than stacking on a desktop window.
 
 ---
 
