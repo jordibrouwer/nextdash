@@ -267,6 +267,10 @@ The bookmark form is rebuilt around one read of the page, tag suggestions reach 
 - **Config → Overview** and **About → News & features** gain *A bookmark form that reads the page* and *Suggested tags wherever you tag*.
 - The comment above the release tokens in `whats-new-stub.js` named v1.13.3 as the release the modal leads with; it names v1.13.7.
 
+### Unraid
+
+- **The CA template carries v1.13.7**, in `templates/nextdash.xml` and in `jordibrouwer/unraid_templates`. The live copy had never received v1.13.6's entry; both now list v1.13.3 to v1.13.7, the last five releases, and the date is 25 September.
+
 ### Tests
 
 - New: `bookmark-form-redesign`, `bookmark-form-keyboard`, `bookmark-form-save-guards`, `tag-suggest-draft`, `tag-popover-suggested`, `config-bookmarks-panel-suggest`, `multi-select-suggested-tags`, `dashboard-columns-fit`, `whats-new-btn-narrow`, and `preview_title_test.go` (gofmt'd after CI's `fmt-check` caught its alignment). About twenty form specs moved to `data-field` selectors and the `answerNoCategory` helper; `view-resize-layout` expects columns rather than stacking on a desktop window.

@@ -47,6 +47,14 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.13.7 (2026-09-25)
+- Bookmark form: one column that reads the page once the address is in — icon, a name, its own line and picture, and suggested tags
+- Bookmark form: page and category are one field with a filter, and a new page or category can be made on the spot
+- Bookmark form: asks before saving without a category, names a link you already saved, and works by keyboard alone
+- Tags: suggested tags in Shift+T, the Config → Bookmarks side panel and the Tags button of a selection
+- Dashboard: a narrow window keeps as many columns as fit; only a phone held upright shows one
+- Fixed: page titles showed codes like &amp;amp; for an ampersand, and early clicks could not open the bookmark form
+
 ### v1.13.6 (2026-09-25)
 - Bookmarks: the play mark sits on the corner of the favicon instead of taking room on the row
 - Theme browser: Light and Dark turn every card to that half, so the grid previews only light or only dark themes
@@ -67,12 +75,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Appearance: Depth, Glow and Effects follow the theme until you change them, with one button back
 - Theme browser: chips per character, search that reaches it, and previews at the theme's own surfaces
 
-### v1.13.2 (2026-09-23)
-- Fixed: reordering a page erased what its widgets watch, and a page could open without them
-- Widgets: a tile catches the light the way a Config panel does
-- Health: a certificate about to expire now reaches a webhook
-- Unraid: the template carries the host widget mounts (Processor, Memory, Disks, Containers)
-- Plus a long list of fixes across the inbox, previews, uploads and rate limits
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
