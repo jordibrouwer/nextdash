@@ -83,6 +83,8 @@ test.describe('the two tidy-up questions the bar could not ask', () => {
 test.describe('the trash has a keyboard route', () => {
     test(':trash is a command and lands on the trash tab', async ({ page }) => {
         await dashboard(page);
+        // The command list is part of the lazily loaded search code.
+        await page.evaluate(() => window.SearchLoader?.ensureReady?.());
         expect(await page.evaluate(() =>
             typeof window.dashboardInstance.searchComponent.commandsComponent.availableCommands.trash))
             .toBe('function');

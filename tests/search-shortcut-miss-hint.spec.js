@@ -93,7 +93,9 @@ async function openSearchAndType(page, { interleaveMode }) {
     await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate((m) => {
+    await page.evaluate(async (m) => {
+        // Built from a lazily fetched bundle, so it can still be null here.
+        await window.SearchLoader?.ensureReady?.();
         window.dashboardInstance.searchComponent.interleaveMode = m;
     }, interleaveMode);
     await page.keyboard.press('>');

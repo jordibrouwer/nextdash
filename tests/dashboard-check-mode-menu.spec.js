@@ -14,7 +14,11 @@ const { prepareDashboardInteraction, markHealthTutorialSeen } = require('./e2e-h
 
 async function firstRow(page) {
     await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
-    return page.locator('.bookmark-link').first();
+    const row = page.locator('.bookmark-link').first();
+    // The row's own menu is wired a beat after it is drawn; a right-click in
+    // that beat gets the browser's menu, and #bookmark-context-menu never came.
+    await expect(row).toHaveAttribute('data-context-menu-bound', '1', { timeout: 15_000 });
+    return row;
 }
 
 async function openContextMenu(page, row) {
