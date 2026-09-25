@@ -234,7 +234,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/tag-autocomplete.js":                                 "9684db54621d",
 	"js/tag-suggestions-notice.js":                           "001caadf1dcc",
 	"js/theme-browser-notice.js":                             "5dcad620f7f3",
-	"js/theme-browser.js":                                    "f8931ae52672",
+	"js/theme-browser.js":                                    "15a8edc99093",
 	"js/theme-icon-styling.js":                               "d53326da7b5e",
 	"js/theme-loader.js":                                     "4b8d655583aa",
 	"js/theme-utils.js":                                      "df0c61a87417",

@@ -346,6 +346,12 @@
                 if (this.variants[key]) return this.variants[key];
                 const family = families.find((f) => f.key === key);
                 if (!family) return 'dark';
+                // Light and Dark say which half you are looking at, not only
+                // which families have one: under Light every card shows, and
+                // previews, its light half -- whatever half is in use now.
+                if ((this.segment === 'light' || this.segment === 'dark') && family.variants[this.segment]) {
+                    return this.segment;
+                }
                 const currentVariant = variantOf(this.current);
                 if (currentVariant && family.variants[currentVariant]
                     && Object.values(family.variants).some((v) => v.id === this.current)) {
@@ -449,6 +455,10 @@
                 button.addEventListener('click', () => {
                     const segment = button.getAttribute('data-theme-segment');
                     state.segment = SEGMENTS.includes(segment) ? segment : 'all';
+                    // A card switched by hand earlier answered the question
+                    // before this press asked it again; the segment wins, and
+                    // a card can still be switched by hand afterwards.
+                    if (segment === 'light' || segment === 'dark') state.variants = {};
                     repaint();
                 });
             });
