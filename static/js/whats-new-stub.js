@@ -10,15 +10,15 @@
     'use strict';
 
     /*
-     * The two tokens do different jobs, and both move for v1.13.3.
+     * The two tokens do different jobs, and both move for v1.13.7.
      *
      * DASHBOARD_RELEASE is the one that reopens this window: an install whose
      * stored value differs sees the notes once on its next visit. It names the
-     * release the modal leads with, which is v1.13.3.
+     * release the modal leads with, which is v1.13.7.
      *
      * NEXTDASH_WHATS_NEW_DATA_VERSION below is the `?v=` on every what's-new
      * file, and always has to move: without a new token a browser that already
-     * read the index keeps its copy and never learns v1.13.3 exists.
+     * read the index keeps its copy and never learns v1.13.7 exists.
      */
     const DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.13.7';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';

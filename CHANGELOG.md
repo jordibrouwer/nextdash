@@ -265,6 +265,7 @@ The bookmark form is rebuilt around one read of the page, tag suggestions reach 
 - **Help → Bookmarks**, in six languages, describes the form, the side panel's suggestions and where else suggestions appear.
 - **Translations:** the 27 strings the form and the popovers added are translated into Dutch, German, French, Spanish and Chinese.
 - **Config → Overview** and **About → News & features** gain *A bookmark form that reads the page* and *Suggested tags wherever you tag*.
+- The comment above the release tokens in `whats-new-stub.js` named v1.13.3 as the release the modal leads with; it names v1.13.7.
 
 ### Tests
 
