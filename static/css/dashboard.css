@@ -1913,10 +1913,8 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
  * would otherwise still be told to span three columns it no longer has, and
  * spanning past the last column creates implicit ones and scrolls the page
  * sideways. */
-@media (max-width: 767px) {
-    .dashboard-grid .category.category--wide {
-        --category-span: 1 !important;
-    }
+body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category--wide {
+    --category-span: 1 !important;
 }
 
 .dashboard-grid.columns-1 .category.category--wide {

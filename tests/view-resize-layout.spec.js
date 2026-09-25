@@ -139,17 +139,17 @@ test.describe('view layout survives a window resize', () => {
         await dragResize(client, page, [1400]);
         await expect(page.locator('#dashboard-layout')).toHaveClass(/dashboard-grid/);
 
-        // Guarding the sync must not stop the grid itself from restacking.
+        // Guarding the sync must not stop the grid itself from re-columning.
+        // A desktop window no longer stacks; it narrows to the columns that
+        // fit, down to one.
+        const shownColumns = () => page.evaluate(() =>
+            Number(/columns-(\d+)/.exec(document.getElementById('dashboard-layout').className)?.[1]));
         await dragResize(client, page, [1000, 700, 500]);
-        await expect
-            .poll(() => page.evaluate(() => document.body.getAttribute('data-dashboard-stack-categories')))
-            .toBe('true');
+        await expect.poll(shownColumns).toBe(1);
         await expect(page.locator('#dashboard-layout')).toHaveClass(/dashboard-grid/);
 
         await dragResize(client, page, [900, 1400]);
-        await expect
-            .poll(() => page.evaluate(() => document.body.getAttribute('data-dashboard-stack-categories')))
-            .toBe('false');
+        await expect.poll(shownColumns).toBeGreaterThan(1);
         await expect(page.locator('#dashboard-layout')).toHaveClass(/dashboard-grid/);
     });
 });

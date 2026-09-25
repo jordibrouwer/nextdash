@@ -285,7 +285,12 @@
         if (dashboardWasStacked === null) {
             dashboardWasStacked = stacked;
         }
-        if (stacked !== dashboardWasStacked) {
+        // The number of columns that fit changed: packed columns are built
+        // one block per column, so only a fresh render moves the categories.
+        // Read off the grid itself, so a resize before the first check counts.
+        const shown = /\bcolumns-(\d+)\b/.exec(document.getElementById('dashboard-layout')?.className || '');
+        const refit = shown && Number(shown[1]) !== Number(dash.getEffectiveColumnsPerRow?.());
+        if (stacked !== dashboardWasStacked || refit) {
             dashboardWasStacked = stacked;
             if (typeof dash.renderDashboard === 'function') {
                 dash.renderDashboard({ animate: false });

@@ -111,21 +111,11 @@
         padding: 0 var(--space-3, 0.75rem);
     }
     
+    /* The column count is not set here: the grid takes as many of its
+       configured columns as fit (renderCore.getEffectiveColumnsPerRow). A
+       fixed two here, and one below 768px, overrode that -- and the flex
+       rule broke the packed masonry grid outright. */
     .dashboard-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: var(--space-5, 1.5rem);
-    }
-
-    .dashboard-grid.packed-columns {
-        display: flex !important;
-        flex-wrap: wrap;
-        justify-content: center;
-        grid-template-columns: unset !important;
-        gap: var(--space-5, 1.5rem);
-    }
-
-    .dashboard-grid.packed-columns .dashboard-column {
-        flex: 1 1 calc(50% - 0.75rem);
         gap: var(--space-5, 1.5rem);
     }
     
@@ -218,7 +208,6 @@
     }
     
     .dashboard-grid {
-        grid-template-columns: 1fr !important;
         gap: var(--space-5, 1.5rem);
     }
     
