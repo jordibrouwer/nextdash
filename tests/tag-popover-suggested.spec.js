@@ -11,36 +11,44 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * one is the same click as any other tag in the list.
  */
 test('Shift+T shows the tag the row\'s site agrees on, and a click adds it', async ({ page }) => {
+    // A host of its own, so a second copy from an earlier test or a retry is
+    // never the row selected, and the seeds are the only evidence.
+    const host = `pop-${Date.now()}.example`;
+    const url = `https://${host}/target`;
     await page.setViewportSize({ width: 1400, height: 900 });
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(async () => {
+    await page.evaluate(async (h) => {
         const d = window.dashboardInstance;
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const add = (bookmark) => api('/api/bookmarks/add', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ page: d.currentPageId, bookmark: { category: '', ...bookmark } }),
+            body: JSON.stringify({ page: d.currentPageId, allowDuplicate: true, bookmark: { category: '', createdAt: Date.now(), ...bookmark } }),
         });
-        for (const slug of ['a', 'b', 'c']) await add({ name: `Pop ${slug}`, url: `https://pop.example/${slug}`, tags: ['homelab'] });
-        await add({ name: 'Pop target', url: 'https://pop.example/target', tags: [] });
+        for (const slug of ['a', 'b', 'c']) await add({ name: `Pop ${slug} ${h}`, url: `https://${h}/${slug}`, tags: ['homelab'] });
+        await add({ name: `Pop target ${h}`, url: `https://${h}/target`, tags: [] });
         await d.loadData?.();
-        window.TagSuggestLive.invalidate();
-    });
-    const row = page.locator('.bookmark-link[data-bookmark-url="https://pop.example/target"]');
+    }, host);
+    // The engine reads allBookmarks; wait until the seeds are in it before
+    // asking, rather than trusting loadData to have finished with them.
+    await page.waitForFunction((h) => (window.dashboardInstance.allBookmarks || [])
+        .filter((b) => String(b.url || '').includes(h)).length >= 4, host, { timeout: 10_000 });
+    await page.evaluate(() => window.TagSuggestLive.invalidate());
+    const row = page.locator(`.bookmark-link[data-bookmark-url="${url}"]`);
     await expect(row).toBeVisible({ timeout: 10_000 });
-    await page.evaluate(() => {
-        const row = document.querySelector('.bookmark-link[data-bookmark-url="https://pop.example/target"]');
-        window.dashboardInstance.keyboardNavigation.selectBookmarkRow(row);
-    });
+    await page.evaluate((u) => {
+        const el = document.querySelector(`.bookmark-link[data-bookmark-url="${u}"]`);
+        window.dashboardInstance.keyboardNavigation.selectBookmarkRow(el);
+    }, url);
     await page.keyboard.press('Shift+T');
     const suggested = page.locator('#tag-popover .tag-popover-suggested .move-popover-item[data-tag="homelab"]');
     await expect(suggested).toBeVisible();
     await suggested.click();
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance.allBookmarks
-        .find((b) => b.url === 'https://pop.example/target')?.tags || [])).toContain('homelab');
+    await expect.poll(() => page.evaluate((u) => window.dashboardInstance.allBookmarks
+        .find((b) => b.url === u)?.tags || [], url)).toContain('homelab');
 });
 
 test('Shift+T opens at the top of its list, suggestions in view, however long the list', async ({ page }) => {

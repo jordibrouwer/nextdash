@@ -39,16 +39,18 @@ test.describe('groups in the bookmark list', () => {
             { name: 'A reasonably long bookmark name', url: long, pageId: 1, category: '' },
         ]);
         const row = page.locator('#config-bm-list .config-bm-row').first();
-        const sizes = await row.evaluate((el) => {
+        // Polled, not read once: the row is measured while the list may still
+        // be settling (the panel opening beside it, the theme font arriving),
+        // and a single early read on a loaded runner saw a domain not yet cut.
+        await expect.poll(() => row.evaluate((el) => {
             const title = el.querySelector('.config-bm-title');
             const domain = el.querySelector('.config-bm-domain');
             return {
                 titleClipped: title.scrollWidth > title.clientWidth,
                 domainClipped: domain.scrollWidth > domain.clientWidth,
             };
-        });
-        expect(sizes.titleClipped, 'the name was cut').toBe(false);
-        expect(sizes.domainClipped, 'the domain should be the one to give way').toBe(true);
+        }), { message: 'the domain should give way, not the name' })
+            .toEqual({ titleClipped: false, domainClipped: true });
     });
 
     test('a favicon shows whole inside its cell', async ({ page }) => {

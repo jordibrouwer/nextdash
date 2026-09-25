@@ -124,7 +124,7 @@ test.describe('the inbox can undo a read', () => {
             null,
             { timeout: 15_000 },
         );
-        const shown = await page.evaluate(() => {
+        const shown = await page.evaluate(async () => {
             const inbox = window.dashboardInstance.inbox;
             const item = {
                 id: 'x1',
@@ -133,7 +133,11 @@ test.describe('the inbox can undo a read', () => {
                 previewDesc: 'the summary the server fetched',
                 addedAt: Date.now(),
             };
-            const card = inbox.createItemElement(item);
+            // Awaited: until the module lands, the inbox is the loader's proxy,
+            // and its createItemElement answers with a promise of the element.
+            // Read straight away that promise has no querySelector -- the
+            // "not a function" a loaded CI runner hit once.
+            const card = await inbox.createItemElement(item);
             const payload = JSON.parse(JSON.stringify(item));
             return {
                 desc: card.querySelector('.inbox-item-desc')?.textContent || '',

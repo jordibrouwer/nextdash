@@ -195,8 +195,9 @@ test('renaming a kept bookmark reaches search without a reload', async ({ page }
     await page.locator('#bookmark-context-menu [data-action="edit"]').click();
     await expect(page.locator('.bookmark-inline-form')).toBeVisible();
 
-    await page.locator('.bookmark-inline-form input').first().fill('Iso Renamed');
-    await page.locator('.bookmark-inline-save', { hasText: 'Save' }).click();
+    // The name field by name: the form opens with the address first now.
+    await page.locator('.bookmark-inline-form [data-field="name"]').fill('Iso Renamed');
+    await page.locator('.bookmark-inline-actions .bookmark-inline-save').click();
     await expect(page.locator('.bookmark-inline-form')).toHaveCount(0);
 
     await expect.poll(() => searchPoolNames(page), { timeout: 10_000 })
