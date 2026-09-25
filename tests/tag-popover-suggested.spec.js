@@ -42,3 +42,50 @@ test('Shift+T shows the tag the row\'s site agrees on, and a click adds it', asy
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.allBookmarks
         .find((b) => b.url === 'https://pop.example/target')?.tags || [])).toContain('homelab');
 });
+
+test('Shift+T opens at the top of its list, suggestions in view, however long the list', async ({ page }) => {
+    const host = `top-${Date.now()}.example`;
+    await page.setViewportSize({ width: 1400, height: 800 });
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(async (h) => {
+        const d = window.dashboardInstance;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const add = (bookmark) => api('/api/bookmarks/add', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: d.currentPageId, allowDuplicate: true, bookmark: { category: '', createdAt: Date.now(), ...bookmark } }),
+        });
+        // A long library, so the list scrolls.
+        const many = Array.from({ length: 30 }, (_, i) => `aa-filler-${String(i).padStart(2, '0')}`);
+        await add({ name: `Filler ${h}`, url: `https://filler-${h}/`, tags: many });
+        for (const slug of ['a', 'b', 'c']) await add({ name: `Top ${slug} ${h}`, url: `https://${h}/${slug}`, tags: ['homelab'] });
+        // The row's own tag sorts last, far down the list.
+        await add({ name: `Top target ${h}`, url: `https://${h}/target`, tags: ['zz-late'] });
+        await d.loadData?.();
+        window.TagSuggestLive.invalidate();
+    }, host);
+    const url = `https://${host}/target`;
+    const row = page.locator(`.bookmark-link[data-bookmark-url="${url}"]`);
+    await expect(row).toBeVisible({ timeout: 10_000 });
+    await page.evaluate((u) => {
+        const el = document.querySelector(`.bookmark-link[data-bookmark-url="${u}"]`);
+        window.dashboardInstance.keyboardNavigation.selectBookmarkRow(el);
+    }, url);
+    await page.keyboard.press('Shift+T');
+    const pop = page.locator('#tag-popover');
+    await expect(pop).toBeVisible();
+    const state = await pop.evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        const sug = el.querySelector('.tag-popover-suggested .move-popover-item')?.getBoundingClientRect();
+        return {
+            scrolls: el.scrollHeight > el.clientHeight,
+            scrollTop: el.scrollTop,
+            suggestionInView: !!sug && sug.top >= box.top && sug.bottom <= box.bottom,
+        };
+    });
+    expect(state.scrolls).toBe(true);
+    expect(state).toEqual({ scrolls: true, scrollTop: 0, suggestionInView: true });
+});

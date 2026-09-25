@@ -1780,10 +1780,11 @@ class DashboardBookmarkRows {
             }
         };
 
-        if (items.length > 0) {
-            const firstCurrent = items.findIndex((item) => item.classList.contains('is-current'));
-            focusedIdx = firstCurrent >= 0 ? firstCurrent : 0;
-        }
+        // Open at the top of the list: the header, the tags already on the row
+        // and the suggestions are what to read first. Starting on the row's
+        // own first tag scrolled a long library down to it and hid all three;
+        // the ✓ already marks which tags the row has.
+        focusedIdx = 0;
 
         let unbindOutside = null;
         let unbindPosition = null;
