@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.13.6 — 25 September 2026](#v1136--25-september-2026)
 - [v1.13.5 — 24 September 2026](#v1135--24-september-2026)
 - [v1.13.4 — 24 September 2026](#v1134--24-september-2026)
 - [v1.13.3 — 23 September 2026](#v1133--23-september-2026)
@@ -220,6 +221,40 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.13.6 — 25 September 2026
+
+The video mark gets out of the row's way, the theme browser's Light and Dark filters do what they say, and the theme help and settings catch up with the characters introduced in v1.13.3 — in every language.
+
+### Bookmarks
+
+- **fix — the ▶ no longer takes room on the row.** It was a bordered chip after the name, beside the response time and the shortcut, and a busy row got busier. It now sits as a small disc on the corner of the favicon, the way a video service draws play over a thumbnail, and costs the line nothing. The disc is sized in percentages of the icon rather than in em: Safari's minimum font size raised the 6px glyph and the disc grew with it until it covered the whole favicon. The triangle is a `clip-path` shape for the same reason. With favicons off, the mark goes back beside the name as a bare accent glyph, no box of its own.
+
+### Themes
+
+- **fix — Light and Dark in the theme browser show every card in that half.** The two segments only filtered: a family with a light half stayed in the grid under *Light*, but its card kept showing the half of the theme in use, so on a dark theme every card stayed dark and moving through the grid previewed dark themes. `variantFor` now answers with the segment, and choosing a segment clears the cards switched by hand before it; a single card can still be switched afterwards.
+- **fix — the glow offer no longer calls every shining theme a gloss theme.** It fires for any theme with a sheen, most of which are not named *Gloss*; it now says the theme has a shine that is drawn with the glow. Six locales.
+- **fix — the *What has changed* tour pointed at things that are gone.** Its themes step described a Gloss badge the theme browser no longer draws, and its last step sent people to *Config → Help → Guided tours*, which does not exist. The step now shows the Lacquer character badge the browser actually uses, and the tours are replayed from **Behavior → Privacy & sync → Onboarding**.
+- The theme settings from v1.13.3 — the twelve characters, Effects and its three steps, Vivid, *Use these for every theme*, *Back to the theme's own*, and the explanations under Depth, Glow, Effects, Text contrast, Backdrop, Favicons and the theme editor — were still English in German, French, Spanish and Chinese. All 72 strings are translated, and so are the nine of the Widgets-layout card, which had the same gap.
+- The `themeBadgeGloss` key and the `.theme-browser-card.is-gloss` style are removed: nothing had used them since cards carry their character as a class.
+
+### Docs
+
+- **MANUAL §12 rewritten from the app as it is.** A fresh install starts on Tarnished Brass at Glass depth with a Soft glow, not on Retro CRT. The Gloss section becomes *Themes that catch the light*: the shine belongs to the Lacquer character, and the ten families still named *Gloss* are listed by the character they have. The Grid and Rows tables follow the current labels (*Start with categories collapsed*, *Terminal-ish* and *Widgets* presets, *How a row lights up*, shortcut letters *Always* by default), the theme editor is **Open the theme editor…**, and the weather is a city or a location from your IP address rather than the browser's location. §4 places the ▶ on the icon, §15.6 replays the tours from Behavior → Privacy & sync. The README no longer counts 122 families or mentions a Gloss filter.
+- **Help and tips, in six languages.** Help → Appearance → Themes was English in every language but English; it is translated, and describes the characters, the Light and Dark cards and the Lacquer chip instead of Gloss as a group. The rows and weather lines, the Lacquer tip and the video tip follow the changes above. The *Getting started* version line no longer names v1.13.3 in its text — the heading above it already shows the running version — and is translated in the four languages where it was still English.
+
+### Unraid
+
+- **The template in this repository is now the file Community Applications reads.** CA reads `nextdash.xml` from `jordibrouwer/unraid_templates`, named by the template's own `<TemplateURL>`, and the two copies had drifted for four releases: this one had the host-widget rows, the live one had the release notes and a better feature list. Both are now the same file, with the video card named and the date bumped.
+- **`npm run validate:unraid-template`** fetches the live template and compares it with `templates/nextdash.xml`, printing the lines that differ. It reaches the network, so it is not part of `validate:json` or CI: the raw CDN serves a cached copy for a few minutes after a push.
+
+### Tests
+
+- `video-bookmarks.spec.js` checks that the ▶ rides the favicon, goes bare without one, and stays at most 60% of the icon's width under a forced font size.
+- `config-theme-browser-segment.spec.js` checks that Light and Dark turn every card to that half, and that a card switched by hand keeps its half.
+- `changes-tour.spec.js` expects the Lacquer badge, and `theme-gloss.spec.js` the new glow-offer wording.
 
 ---
 
