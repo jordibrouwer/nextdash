@@ -5924,7 +5924,7 @@
     "themeCharDepth": "Drawn for depth",
     "themeCharEffects": "Drawn for effects",
     "themeDepthInfoTitle": "Depth",
-    "themeDepthInfoMessage": "How much of a theme is drawn behind the content: the tint in its greys, the raised surfaces, and the wash behind the page.\n\nFollow the theme is the default. Each theme states the depth it was drawn for — a glass palette and a paper one do not want the same one — and picking a theme brings its answer with it.\n\nPick a value instead and it belongs to the theme you are on, unless Every theme is ticked below, in which case it holds everywhere.\n\nFlat is the dashboard with the theme's colours and nothing drawn on top of them.",
+    "themeDepthInfoMessage": "How much of a theme is drawn behind the content: the tint in its greys, the raised surfaces, and the wash behind the page.\n\nFollow the theme is the default. Each theme states the depth it was drawn for — a glass palette and a paper one do not want the same one — and picking a theme brings its answer with it.\n\nPick a value instead and it belongs to the theme you are on, unless Use these for every theme is on below, in which case it holds everywhere.\n\nFlat is the dashboard with the theme's colours and nothing drawn on top of them.",
     "glowStrengthInfoTitle": "Glow",
     "glowStrengthInfoMessage": "How far a theme's own colour carries around a surface and around whatever you are acting on.\n\nTwo layers answer to it: the ring under a resting surface and the bloom on what is focused or selected.\n\nFollow the theme lets each theme bring its own. Depth decides whether there is a glow at all — flat has none.",
     "themeEffectsInfoTitle": "Effects",

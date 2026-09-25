@@ -5924,7 +5924,7 @@
     "themeCharDepth": "Getekend voor diepte",
     "themeCharEffects": "Getekend voor effecten",
     "themeDepthInfoTitle": "Diepte",
-    "themeDepthInfoMessage": "Hoeveel van een theme áchter de inhoud getekend wordt: de tint in de grijzen, de opgetilde vlakken en de waas achter de pagina.\n\nVolg het theme is de standaard. Elk theme zegt voor welke diepte het getekend is — een glaspalet en een papierpalet willen niet dezelfde — en die komt mee als je het theme kiest.\n\nKies je zelf een waarde, dan hoort die bij het theme waar je op staat, tenzij hieronder Elk theme aan staat.\n\nPlat is het dashboard met de kleuren van het theme en niets daarbovenop.",
+    "themeDepthInfoMessage": "Hoeveel van een theme áchter de inhoud getekend wordt: de tint in de grijzen, de opgetilde vlakken en de waas achter de pagina.\n\nThema bepaalt is de standaard. Elk theme zegt voor welke diepte het getekend is — een glaspalet en een papierpalet willen niet dezelfde — en die komt mee als je het theme kiest.\n\nKies je zelf een waarde, dan hoort die bij het theme waar je op staat, tenzij hieronder Gebruik dit voor elk theme aan staat; dan geldt ze overal.\n\nVlak is het dashboard met de kleuren van het theme en niets daarbovenop.",
     "glowStrengthInfoTitle": "Gloed",
     "glowStrengthInfoMessage": "Hoe ver de eigen kleur van een theme om een vlak heen draagt, en om wat je aanwijst.\n\nTwee lagen luisteren ernaar: de ring onder een rustend vlak en de bloei op wat focus of selectie heeft.\n\nVolg het theme laat elk theme zijn eigen meebrengen. Diepte bepaalt of er überhaupt gloed is — plat heeft er geen.",
     "themeEffectsInfoTitle": "Effecten",
