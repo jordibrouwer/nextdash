@@ -64,6 +64,15 @@ body[data-mobile-layout="true"] .btn-group-secondary {
     display: none !important;
 }
 
+/* The What's new star also stays out of a phone-width window without a touch
+   screen (a narrowed browser, a side panel): it floats over the list there
+   too, and Config → About carries the same news. */
+@media (max-width: 767px) {
+    #whats-new-btn {
+        display: none !important;
+    }
+}
+
 body[data-mobile-layout="true"] #quick-add-toolbar-btn {
     display: flex !important;
     order: -1;
