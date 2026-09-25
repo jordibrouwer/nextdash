@@ -1,0 +1,63 @@
+{
+  "tag": "v1.13.7",
+  "date": "25 September 2026",
+  "releasedAt": "2026-09-25",
+  "modalLead": "The bookmark form reads the page for you and suggests its tags, suggested tags reach every place you tag, and the grid keeps as many columns as your window has room for.",
+  "sections": [
+    {
+      "title": "Adding and editing bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A form that reads the page.</strong> The form is one column in the order you fill it in. Leave the address field and it fills in the icon, suggests a name, and shows the page’s own line and picture on a small card. The ✎ on the icon uploads, fetches again or clears it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Suggested tags as you add.</strong> Under the tags field, chips offer the tags this bookmark probably wants. + adds one; ✕ turns it down for that site, everywhere."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Page and category in one field.</strong> It opens the same list as Move to…, with a filter at the top, and makes a new category or page right there."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Asked before it saves.</strong> The form says when a bookmark has no page, asks before saving one without a category, and tells you where a link is already saved."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The whole form by keyboard.</strong> It opens in the address field, Tab walks every field and stays in the form, and Escape closes the list or menu you are in before the form."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Titles read the way the page writes them.</strong> A page title with an ampersand or an apostrophe showed codes like &amp;amp; instead."
+        }
+      ]
+    },
+    {
+      "title": "Tags",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Suggestions wherever you tag.</strong> The side panel in Config → Bookmarks, Shift+T and the Tags button of a selection now offer suggested tags too. For a selection, a suggestion says how many rows it fits and tags only those."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shift+T opens at the top.</strong> With a long list of tags it opened scrolled down to the bookmark’s own tag, out of sight of the suggestions."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>As many columns as fit.</strong> A narrow window dropped straight to one long column. It now keeps as many columns as there is room for; only a phone held upright shows one."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No ★ over a phone-sized window.</strong> The What’s new button is left out when the window is as narrow as a phone."
+        }
+      ]
+    }
+  ]
+}

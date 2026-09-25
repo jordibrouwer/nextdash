@@ -86,7 +86,11 @@ test.describe('the current release as the reader meets it', () => {
         // Two shapes lead somewhere different: a section stays inside config,
         // while a view leaves it for health or the inbox. Which one the top
         // feature uses is the release's business, not this spec's.
-        if (target.view) {
+        if (target.openBookmarkForm) {
+            // A third shape: the feature is the bookmark form itself, so the
+            // button leaves config and opens it.
+            await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/, { timeout: 10_000 });
+        } else if (target.view) {
             await expect.poll(() => page.evaluate(() =>
                 document.getElementById('dashboard-layout')?.className || ''), { timeout: 10_000 })
                 .toContain(`${target.view}-layout`);

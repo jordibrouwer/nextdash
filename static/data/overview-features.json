@@ -2,6 +2,39 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureBookmarkFormReadsTitle",
+      "titleFallback": "A bookmark form that reads the page",
+      "whatKey": "config.overviewNewFeatureBookmarkFormReadsWhat",
+      "whatFallback": "Adding a bookmark meant typing a name, fetching an icon by hand and picking a page and a category from two lists that could disagree.",
+      "howKey": "config.overviewNewFeatureBookmarkFormReadsHow",
+      "howFallback": "One column in the order you fill it in. Leave the address and the page is read once: icon, a name, its own line and picture, and tags it probably wants. Page and category are one field with a filter, and it can make a new one on the spot.",
+      "enableKey": "config.overviewNewFeatureBookmarkFormReadsEnable",
+      "enableFallback": "Press + on the dashboard and paste an address.",
+      "ctaKey": "config.overviewNewFeatureBookmarkFormReadsCta",
+      "ctaFallback": "Add a bookmark →",
+      "go": {
+        "openBookmarkForm": true
+      },
+      "since": "v1.13.7"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureTagSuggestEverywhereTitle",
+      "titleFallback": "Suggested tags wherever you tag",
+      "whatKey": "config.overviewNewFeatureTagSuggestEverywhereWhat",
+      "whatFallback": "Tag suggestions lived on one tab in Config, so the bookmark you were editing never heard what it was likely to be called.",
+      "howKey": "config.overviewNewFeatureTagSuggestEverywhereHow",
+      "howFallback": "The bookmark form, the side panel in Config → Bookmarks, Shift+T and the Tags button of a selection now offer the tags a bookmark probably wants. + takes one; ✕ turns it down for that site everywhere, and Config follows.",
+      "enableKey": "config.overviewNewFeatureTagSuggestEverywhereEnable",
+      "enableFallback": "Press Shift+T on a bookmark, or open one in the form.",
+      "ctaKey": "config.overviewNewFeatureTagSuggestEverywhereCta",
+      "ctaFallback": "Open Tag suggestions →",
+      "go": {
+        "section": "bookmarks",
+        "bmTab": "tag-suggestions"
+      },
+      "since": "v1.13.7"
+    },
+    {
       "titleKey": "config.overviewNewFeatureVideoCardTitle",
       "titleFallback": "Play a video where you saved it",
       "whatKey": "config.overviewNewFeatureVideoCardWhat",
