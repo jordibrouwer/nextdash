@@ -124,3 +124,23 @@ test.describe('add-bookmark modal page dropdown', () => {
             .toBe(pinned);
     });
 });
+
+test('promoting before the search code has arrived still opens the form', async ({ page }) => {
+    // The form lives in the lazily loaded search bundle. Hold it back, so the
+    // promote comes in the seconds before it lands -- which used to say
+    // "Could not open bookmark form" and leave the reader where they were.
+    await page.route('**/static/bundle/search.js*', async (route) => {
+        await new Promise((r) => setTimeout(r, 2500));
+        await route.continue();
+    });
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+    const before = await page.evaluate(() => Boolean(window.dashboardInstance?.searchComponent?.commandsComponent));
+    test.skip(before, 'the search code was already there; nothing to race');
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        void d.inbox.promoteItem({ id: 'early-promote', url: 'https://early-promote.example/', title: 'Early' });
+    });
+    await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/, { timeout: 15_000 });
+    await expect(page.locator('#bookmark-form-modal [data-field="url"]')).toHaveValue('https://early-promote.example/');
+});

@@ -136,6 +136,27 @@ test.describe('statistics: health loads only when its tab is opened', () => {
         expect(hits.length - before).toBe(1);
     });
 
+    test('back to the Health tab while it is still loading does not ask twice', async ({ page }) => {
+        await loadDashboard(page);
+        // Counted from here: the dashboard's own health poll uses the same
+        // address, and is done by now.
+        const hits = [];
+        // A slow report, so the tab is left and reopened while it is out.
+        await page.route('**/api/bookmark-health', async (route) => {
+            hits.push(route.request().url());
+            await new Promise((r) => setTimeout(r, 1500));
+            await route.continue();
+        });
+        await openStats(page);
+        await page.locator('[data-stats-tab="health"]').click();
+        await expect.poll(() => hits.length, { timeout: 10_000 }).toBe(1);
+        await page.locator('[data-stats-tab="overview"]').click();
+        await page.locator('[data-stats-tab="health"]').click();
+        await expect(page.locator('#config-stats-health')).toBeVisible();
+        await page.waitForTimeout(2000);
+        expect(hits.length).toBe(1);
+    });
+
     test('landing straight on the Health tab still fetches it', async ({ page }) => {
         const hits = trackHealth(page);
         await loadDashboard(page);

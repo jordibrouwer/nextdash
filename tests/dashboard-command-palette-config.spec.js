@@ -63,6 +63,18 @@ async function offer(page, typed) {
         (window.dashboardInstance.searchComponent.selectableMatches || []).map((m) => m.name));
 }
 
+/**
+ * Enter takes the first row, so wait for the first row to be the answer to the
+ * whole query: the rows are redrawn after each keystroke, and an Enter in
+ * between took the row that ":config" alone put first -- the overview.
+ */
+async function firstRowFor(page, word) {
+    await expect.poll(() => page.evaluate(() => {
+        const first = (window.dashboardInstance.searchComponent.selectableMatches || [])[0];
+        return String(first?.name || '').toLowerCase();
+    }), { timeout: 5000 }).toContain(word);
+}
+
 test.describe('the config commands name the config that exists', () => {
     test('every section in the rail is offered', async ({ page }) => {
         await loadDashboard(page);
@@ -93,6 +105,7 @@ test.describe('the config commands name the config that exists', () => {
         const before = page.url();
 
         await offer(page, 'config widgets');
+        await firstRowFor(page, 'widgets');
         await page.keyboard.press('Enter');
 
         await expect.poll(() => page.evaluate(() =>
@@ -106,6 +119,7 @@ test.describe('the config commands name the config that exists', () => {
         await loadDashboard(page);
 
         await offer(page, 'config categories');
+        await firstRowFor(page, 'categor');
         await page.keyboard.press('Enter');
 
         await expect.poll(() => page.evaluate(() =>

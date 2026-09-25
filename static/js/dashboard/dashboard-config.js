@@ -787,11 +787,23 @@ class DashboardConfig {
         // gated on a tab: the export button sits in the foot of every one.
         void this.prefetchAllBookmarkCategories();
         // History is cheap and every tab can use it, so it is not gated on one.
-        if (this._statsTrend === undefined) void this.loadStatsTrend();
-        if ((all || tab === 'inbox') && this._statsInboxItems === undefined) void this.loadStatsInbox();
-        if ((all || tab === 'activity') && this._statsFinders === undefined) void this.loadStatsFinders();
-        if ((all || tab === 'health') && this._statsHealth === undefined) void this.loadStatsHealth();
-        if ((all || tab === 'content') && this._statsLibrary === undefined) void this.loadStatsLibrary();
+        /*
+         * Once per load, not once per visit. Each field stays undefined until
+         * its answer arrives, so leaving a tab and coming back while the first
+         * request was still out started a second one -- the health report is
+         * the heavy one, and a quick back-and-forth fetched it twice.
+         */
+        this._statsInFlight = this._statsInFlight || new Set();
+        const once = (key, load) => {
+            if (this._statsInFlight.has(key)) return;
+            this._statsInFlight.add(key);
+            Promise.resolve(load()).finally(() => this._statsInFlight.delete(key));
+        };
+        if (this._statsTrend === undefined) once('trend', () => this.loadStatsTrend());
+        if ((all || tab === 'inbox') && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
+        if ((all || tab === 'activity') && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
+        if ((all || tab === 'health') && this._statsHealth === undefined) once('health', () => this.loadStatsHealth());
+        if ((all || tab === 'content') && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
     }
 
     /**
@@ -23190,7 +23202,8 @@ class DashboardConfig {
         this.closeBookmarkMenus();
         this._bmModalRestoreKey = key;
         const record = await this.findBookmarkRecord(key);
-        const handler = this.dash.searchComponent?.commandsComponent?.newCommandHandler;
+        const handler = this.dash.searchComponent?.commandsComponent?.newCommandHandler
+            || await this.dash.newBookmarkHandler?.();
         if (!handler?.openModal || !record) {
             this.notify(this.t('config.addBookmarkUnavailable', 'The add-bookmark dialog is not available.'), 'error');
             return;
@@ -23719,9 +23732,10 @@ class DashboardConfig {
      * path. It writes the bookmark itself and refreshes `dashboardInstance`,
      * but it knows nothing about the config list — hence the repaint below.
      */
-    openAddBookmarkModal() {
+    async openAddBookmarkModal() {
         const d = this.dash;
-        const handler = d.searchComponent?.commandsComponent?.newCommandHandler;
+        const handler = d.searchComponent?.commandsComponent?.newCommandHandler
+            || await d.newBookmarkHandler?.();
         if (!handler?.openModal) {
             this.notify(this.t('config.addBookmarkUnavailable', 'The add-bookmark dialog is not available.'), 'error');
             return;

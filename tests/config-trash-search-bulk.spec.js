@@ -13,12 +13,16 @@ async function openTrash(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 20_000 });
-    await page.evaluate(() => {
+    await page.evaluate(async () => {
         const c = window.dashboardInstance.config;
         c.dbTab = 'trash';
-        c.openConfigView('data-backups');
+        await c.openConfigView('data-backups');
     });
     await page.waitForSelector('#config-db-body', { timeout: 15_000 });
+    // The tab loads the real trash itself. Wait for that answer before
+    // drawing the fixture: landing after it, the real (empty) trash repainted
+    // over the fixture and the search box never appeared.
+    await page.waitForFunction(() => window.dashboardInstance.config._trashData != null, null, { timeout: 15_000 });
     await page.evaluate(() => {
         const c = window.dashboardInstance.config;
         c._trashData = {

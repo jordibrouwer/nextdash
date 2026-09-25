@@ -5690,11 +5690,12 @@ class DashboardInbox {
         }
     }
 
-    promoteItem(item) {
+    async promoteItem(item) {
         const d = this.dash;
         // The inbox's main conversion: a captured link becoming a real bookmark.
         this._trackAction('promote');
-        const handler = d.searchComponent?.commandsComponent?.newCommandHandler;
+        const handler = d.searchComponent?.commandsComponent?.newCommandHandler
+            || await d.newBookmarkHandler?.();
         if (!handler) {
             d.showNotification(this.t('dashboard.inboxPromoteFailed', 'Could not open bookmark form'), 'error');
             return;

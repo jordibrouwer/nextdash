@@ -1894,6 +1894,23 @@ class Dashboard {
         return this.bookmarkRows._restoreActionPopoverFocus(...arguments);
     }
 
+    /**
+     * The bookmark form's handler, with the search bundle fetched first when
+     * it is not there yet.
+     *
+     * The form lives in the search stack, which loads on its own schedule.
+     * Every route in -- inbox promote, paste, the toolbar, health and config's
+     * edit buttons -- read the handler straight off searchComponent, so in the
+     * seconds before the bundle landed each one said "not available" or did
+     * nothing. Resolves with undefined only when the bundle cannot load.
+     */
+    async newBookmarkHandler() {
+        const now = this.searchComponent?.commandsComponent?.newCommandHandler;
+        if (now) return now;
+        await window.SearchLoader?.ensureReady?.();
+        return this.searchComponent?.commandsComponent?.newCommandHandler;
+    }
+
     shouldStackDashboardCategories() {
         return this.renderCore.shouldStackDashboardCategories(...arguments);
     }
