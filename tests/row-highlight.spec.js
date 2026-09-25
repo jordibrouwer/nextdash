@@ -71,14 +71,17 @@ test.describe('how a row lights up', () => {
         await dashboard(page);
         await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 20_000 });
         await page.evaluate(() => { window.__notReloaded = true; });
-        await page.evaluate(() => {
+        await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
-            (c.appearanceTab = c.appearanceTab || 'general', c).openConfigView('appearance');
+            c.appearanceTab = c.appearanceTab || 'general';
+            // Awaited: switching the tab while the section is still drawing
+            // redrew the control under the click, which then never landed.
+            await c.openConfigView('appearance');
             c.switchAppearanceTab?.('display');
         });
-        await page.waitForSelector('[data-behavior-field="rowHighlight"]', { timeout: 20_000 });
-
-        await page.click('[data-behavior-field="rowHighlight"][data-behavior-value="strong"]');
+        const strongChoice = page.locator('[data-behavior-field="rowHighlight"][data-behavior-value="strong"]');
+        await expect(strongChoice).toBeVisible({ timeout: 20_000 });
+        await strongChoice.click();
 
         await expect.poll(() => rowTokens(page).then((r) => r.attr)).toBe('strong');
         expect(await page.evaluate(() => window.__notReloaded === true),

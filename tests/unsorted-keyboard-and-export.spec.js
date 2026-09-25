@@ -57,8 +57,14 @@ test('x ticks the row the cursor is on, in this list own selection', async ({ pa
 
     // Through the real entry point: an arrow starts grid navigation, the way
     // a reader reaches the first row.
-    await page.keyboard.press('ArrowDown');
-    await expect(page.locator('.bookmark-link.keyboard-selected, .bookmark-link.is-kbd-selected')).toHaveCount(1);
+    // The list's keys are wired a beat after its rows appear; an arrow in
+    // that beat is lost, so it is pressed again until the cursor stands.
+    await expect(async () => {
+        if (await page.locator('.bookmark-link.keyboard-selected, .bookmark-link.is-kbd-selected').count() === 0) {
+            await page.keyboard.press('ArrowDown');
+        }
+        await expect(page.locator('.bookmark-link.keyboard-selected, .bookmark-link.is-kbd-selected')).toHaveCount(1, { timeout: 1000 });
+    }).toPass({ timeout: 10_000 });
     await page.keyboard.press('x');
 
     await expect(page.locator('.unsorted-select-toolbar .multi-select-count')).toHaveText('1 selected');

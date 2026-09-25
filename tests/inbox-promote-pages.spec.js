@@ -93,7 +93,9 @@ test.describe('add-bookmark modal page dropdown', () => {
 
     test('opening the modal directly on a fresh load offers every page', async ({ page }) => {
         // No :new or quick-add first, so nothing has set the context.
-        await page.evaluate(() => {
+        await page.evaluate(async () => {
+            // Lazily built: wait for the bundle rather than read it too early.
+            await window.SearchLoader?.ensureReady?.();
             const h = window.dashboardInstance.searchComponent?.commandsComponent?.newCommandHandler;
             h.openModal({ url: 'https://example.com/direct' });
         });
@@ -104,7 +106,8 @@ test.describe('add-bookmark modal page dropdown', () => {
     test('a caller that pins a page keeps it', async ({ page }) => {
         // Config opens the modal on the page it is editing, not the page the
         // dashboard shows; setContext marks that and openModal must not override.
-        const pinned = await page.evaluate(() => {
+        const pinned = await page.evaluate(async () => {
+            await window.SearchLoader?.ensureReady?.();
             const d = window.dashboardInstance;
             const h = d.searchComponent?.commandsComponent?.newCommandHandler;
             const other = (d.pages || []).find((p) => Number(p.id) !== Number(d.currentPageId));

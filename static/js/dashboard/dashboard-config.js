@@ -24197,6 +24197,16 @@ class DashboardConfig {
     repaintBookmarksList() {
         const host = document.getElementById('config-bm-list');
         if (!host) return;
+        // The list's renderers arrive on demand. A repaint asked for before
+        // they land -- a data refresh right as the section opens -- threw
+        // "renderBookmarksList is not a function"; it waits for them instead,
+        // and repaints once they are there.
+        if (typeof this.renderBookmarksList !== 'function') {
+            void this.ensureBookmarkRenderers().then(() => {
+                if (typeof this.renderBookmarksList === 'function') this.repaintBookmarksList();
+            }, () => {});
+            return;
+        }
         // An explicit repaint means the caller believes something changed, and
         // bookmarks are routinely edited in place — the array identity the memo
         // keys on would not have moved. Drop it and recompute.

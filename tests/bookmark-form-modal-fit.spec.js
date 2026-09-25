@@ -17,7 +17,10 @@ async function openAddBookmark(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => {
+    await page.evaluate(async () => {
+        // The search component is built from a lazily fetched bundle; on a
+        // loaded runner it was not there yet and this threw.
+        await window.SearchLoader?.ensureReady?.();
         const handler = window.dashboardInstance.searchComponent
             ?.commandsComponent?.newCommandHandler;
         if (!handler) throw new Error('bookmark form handler missing');

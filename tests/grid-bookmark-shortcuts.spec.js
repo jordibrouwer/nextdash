@@ -99,6 +99,9 @@ test('the letters the grid uses stay the grid’s', async ({ page }) => {
     await watchOpens(page);
 
     await page.keyboard.press('ArrowDown');
+    // The seed's reload redraws the grid; read the cursor once it stands on a
+    // row, or a late redraw resets it and j appears not to move.
+    await expect(page.locator('.bookmark-link.keyboard-selected')).toHaveCount(1);
     const first = await page.evaluate(
         () => window.dashboardInstance.keyboardNavigation.currentIndex,
     );

@@ -35,8 +35,14 @@ async function loadDashboard(page) {
 /** Type a command and hand back what the palette offers for it. */
 async function offer(page, typed) {
     await page.keyboard.press(':');
-    await page.keyboard.type(typed, { delay: 15 });
+    // The panel is built on first use; letters typed before it is listening
+    // went nowhere, and ":config" arrived as ":nfig".
     await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5000 });
+    await expect.poll(() => page.evaluate(() => {
+        const sc = window.dashboardInstance.searchComponent;
+        return Boolean(sc?.isActive?.()) && sc.currentQuery === ':';
+    }), { timeout: 5000 }).toBe(true);
+    await page.keyboard.type(typed, { delay: 15 });
     /*
      * Wait for the whole word, not for the first row.
      *

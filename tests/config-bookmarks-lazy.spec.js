@@ -56,3 +56,33 @@ test.describe('the bookmark list loads with its section', () => {
         await expect(page.locator('#config-bm-search')).toBeVisible();
     });
 });
+
+test('a repaint asked for before the renderers land waits for them, without an error', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    // Hold the list's renderers back, so the moment between opening the
+    // section and their arrival is long enough to ask for a repaint in.
+    await page.route('**/dashboard-config-bookmarks-workbench*', async (route) => {
+        await new Promise((r) => setTimeout(r, 1500));
+        await route.continue();
+    });
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => {
+        const c = window.dashboardInstance.config;
+        void c.openConfigView('bookmarks');
+        // A list host already on screen -- from an earlier visit -- and a data
+        // refresh landing now, asking for it to be drawn again.
+        if (!document.getElementById('config-bm-list')) {
+            const host = document.createElement('div');
+            host.id = 'config-bm-list';
+            document.body.appendChild(host);
+        }
+        c.repaintBookmarksList();
+    });
+    await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
+    expect(errors).toEqual([]);
+});

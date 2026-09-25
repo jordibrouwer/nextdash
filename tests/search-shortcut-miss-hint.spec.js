@@ -143,7 +143,11 @@ test('pressing / on an empty search enters tag mode', async ({ page }) => {
     await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => { window.dashboardInstance.searchComponent.interleaveMode = false; });
+    await page.evaluate(async () => {
+        // Built from a lazily fetched bundle, so it can still be null here.
+        await window.SearchLoader?.ensureReady?.();
+        window.dashboardInstance.searchComponent.interleaveMode = false;
+    });
     await page.keyboard.press('>');
     await expect
         .poll(() => page.evaluate(() => Boolean(window.dashboardInstance?.searchComponent?.isActive?.())),
