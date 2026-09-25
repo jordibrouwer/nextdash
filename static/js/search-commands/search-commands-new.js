@@ -1020,14 +1020,6 @@ class SearchCommandNew {
             if (iconUrlInput) iconUrlInput.value = `/data/icons/${icon}`;
             this.syncIconPreview(icon);
             this.setModalIconFetchState(this.t('config.iconFound', 'Found'));
-
-            const nameEl = document.getElementById('new-bookmark-name');
-            if (nameEl && !String(nameEl.value || '').trim()) {
-                try {
-                    const preview = await window.BookmarkPreviewService.fetchLinkPreview(urlValue);
-                    if (preview.title) nameEl.value = preview.title;
-                } catch { /* ignore */ }
-            }
         } else if (!icon) {
             this.setModalIconFetchState(this.t('config.iconNotFound', 'Not found'));
         }
