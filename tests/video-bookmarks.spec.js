@@ -100,6 +100,89 @@ test.describe('video bookmarks', () => {
     });
 
     /*
+     * Where the mark sits. The row is a tight line -- a name, the response
+     * time, the shortcut -- and a bordered chip after the name pushed all of
+     * that along. The favicon is already there and already says which site
+     * this is, so the play mark rides its corner and costs the line nothing.
+     *
+     * With favicons off there is no corner to ride, and the mark goes back
+     * beside the name -- but bare, a glyph in the accent colour rather than a
+     * chip of its own.
+     */
+    test('the play mark rides the favicon, and goes bare when there is no favicon', async ({ page }) => {
+        await openDashboard(page);
+
+        const stamp = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const mark = Date.now();
+            await api('/api/bookmarks/add', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: d.currentPageId,
+                    bookmark: { name: `Corner row ${mark}`, url: `https://vimeo.com/7697${mark}`, category: '' },
+                }),
+            });
+            return mark;
+        });
+
+        await openDashboard(page);
+
+        const placed = await page.evaluate((mark) => {
+            const row = [...document.querySelectorAll('.bookmark-link')]
+                .find((el) => el.textContent.includes(`Corner row ${mark}`));
+            const badge = row?.querySelector('.bookmark-video-badge');
+            return {
+                onIcon: !!row?.querySelector('.bookmark-icon-slot .bookmark-video-badge'),
+                inName: !!row?.querySelector('.bookmark-open > .bookmark-video-badge'),
+                bare: badge?.classList.contains('is-bare') === true,
+            };
+        }, stamp);
+
+        expect(placed.onIcon).toBe(true);
+        expect(placed.inName).toBe(false);
+        expect(placed.bare).toBe(false);
+
+        /*
+         * The disc stays a corner of the icon whatever the text size is.
+         * Safari's minimum font size raised a 6px glyph to 12px and the disc,
+         * sized in the glyph's em, grew with it until it covered the whole
+         * favicon. A forced font size stands in for that setting here.
+         */
+        const cover = await page.evaluate((mark) => {
+            const style = document.createElement('style');
+            style.textContent = '.bookmark-video-badge, .bookmark-video-badge * { font-size: 16px !important; }';
+            document.head.appendChild(style);
+            const row = [...document.querySelectorAll('.bookmark-link')]
+                .find((el) => el.textContent.includes(`Corner row ${mark}`));
+            const badge = row.querySelector('.bookmark-video-badge').getBoundingClientRect();
+            const slot = row.querySelector('.bookmark-icon-slot').getBoundingClientRect();
+            style.remove();
+            return badge.width / slot.width;
+        }, stamp);
+        expect(cover).toBeLessThanOrEqual(0.6);
+
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.showIcons = false;
+            d.renderDashboard({ animate: false, incremental: 'settings' });
+        });
+
+        const fallback = await page.evaluate((mark) => {
+            const row = [...document.querySelectorAll('.bookmark-link')]
+                .find((el) => el.textContent.includes(`Corner row ${mark}`));
+            const badge = row?.querySelector('.bookmark-video-badge');
+            return {
+                inName: !!row?.querySelector('.bookmark-open > .bookmark-video-badge'),
+                bare: badge?.classList.contains('is-bare') === true,
+            };
+        }, stamp);
+
+        expect(fallback.inName).toBe(true);
+        expect(fallback.bare).toBe(true);
+    });
+
+    /*
      * The poster is the promise this makes: a play button on a hover card, and
      * no frame — so the dashboard is not talking to the provider because a
      * pointer crossed a link. The frame appears when the button is pressed,
