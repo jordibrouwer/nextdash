@@ -427,6 +427,7 @@
                 ${this.renderWorkbenchField('page', this.t('config.page', 'Page'), `<select class="config-select" data-bm-field="page">${pageOptions}</select>`)}
                 ${this.renderWorkbenchField('category', this.t('config.category', 'Category'), `<select class="config-select" data-bm-field="category">${catOptions}</select>`)}
                 ${this.renderWorkbenchField('tags', this.t('config.bmFieldTags', 'Tags'), input('tags', (b.tags || []).join(', ')))}
+                <div class="tag-suggest-chips config-bm-tags-suggest" data-bm-suggest hidden></div>
                 ${this.renderWorkbenchField('shortcut', this.t('config.bmFieldShortcut', 'Shortcut'), input('shortcut', b.shortcut, 'maxlength="5"'))}
                 ${this.renderWorkbenchField('note', this.t('config.bmFieldNote', 'Note'),
                     `<textarea class="config-text" rows="2" data-bm-field="note" data-original="${esc(b.note || '')}">${esc(b.note || '')}</textarea>`)}
@@ -479,8 +480,52 @@
         panel.dataset.bmPanelSig = sig;
         panel.dataset.bmPanelMode = mode;
         panel.dataset.bmPanelKey = key || '';
+        void this.fillWorkbenchSuggestions(panel);
         if (mode === 'bulk' && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });
         this.syncWorkbenchToolbar();
+    },
+
+    /**
+     * The engine's answer for the bookmark in the panel, under its tags.
+     *
+     * The same offers the edit form makes -- the collection as evidence, the
+     * words stored for the address as the last source -- and taking one
+     * saves it straight away, like every other field in the panel. Only the
+     * single-bookmark panel has the host; a selection gets none.
+     */
+    async fillWorkbenchSuggestions(panel) {
+        const host = panel?.querySelector('[data-bm-suggest]');
+        const key = panel?.dataset.bmPanelKey;
+        const b = key ? this.findBookmarkByKey(key) : null;
+        const live = global.TagSuggestLive;
+        const chips = global.TagSuggestChips;
+        if (!host || !b || !live || !chips) return;
+        await live.ensureCatalogue();
+        const url = String(b.url || '').trim();
+        const keywords = (await live.storedKeywords())[url] || [];
+        // The panel may have moved on to another bookmark while this waited.
+        if (!host.isConnected || panel.dataset.bmPanelKey !== key) return;
+        const field = panel.querySelector('[data-bm-field="tags"]');
+        const current = () => String(field?.value || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+        const offers = live.forDraft(this.dash, { url, tags: current(), keywords });
+        chips.render(host, offers, {
+            limit: 3,
+            label: this.t('config.tagSuggestLabel', 'suggested'),
+            t: (k, fallback, params) => this.dash.formatDashboardLabel(k.replace(/^dashboard\./, ''), params || {}, fallback),
+            onAccept: async (tag) => {
+                if (!field) return;
+                const tags = current();
+                if (!tags.includes(tag)) tags.push(tag);
+                field.value = tags.join(', ');
+                await this.commitWorkbenchField(field, key);
+                live.changed(this.dash);
+                if (field.isConnected) field.focus({ preventScroll: true });
+                void this.fillWorkbenchSuggestions(panel);
+            },
+            onRefuse: (offer) => {
+                void chips.refuse(this.dash, offer, { onUpdated: () => { void this.fillWorkbenchSuggestions(panel); } });
+            },
+        });
     },
 
     workbenchPanelSig(mode, key) {
