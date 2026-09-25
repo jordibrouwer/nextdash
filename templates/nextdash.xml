@@ -47,6 +47,12 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.13.6 (2026-09-25)
+- Bookmarks: the play mark sits on the corner of the favicon instead of taking room on the row
+- Theme browser: Light and Dark turn every card to that half, so the grid previews only light or only dark themes
+- Themes: the theme settings and their help are translated into Dutch, German, French, Spanish and Chinese
+- Fixed: the What has changed tour pointed at a Gloss badge and a Guided tours tab that no longer exist
+
 ### v1.13.5 (2026-09-24)
 - Preview card: only a bookmark that is a video offers a play button — v1.13.4 drew one on every hover card
 
@@ -67,23 +73,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Health: a certificate about to expire now reaches a webhook
 - Unraid: the template carries the host widget mounts (Processor, Memory, Disks, Containers)
 - Plus a long list of fixes across the inbox, previews, uploads and rate limits
-
-### v1.13.1 (2026-09-22)
-- Weather widget: fixed a blank tile — v1.13.0 asked Open-Meteo for the extra readings in a way that dropped the current conditions from the request
-
-### v1.13.0 (2026-09-22)
-- Widgets: a widget set to two columns now shows more, not the same figures larger — the load average behind the processor percentage, the container that is failing by name, used against total disk space, the expiry date of a certificate, what the weather feels like
-- Widgets: row lists run in two columns on a wide tile, and narrow back to one on a one-column dashboard or a phone
-- Weather: the forecast request now also carries apparent temperature, wind, humidity and chance of rain
-- Kept widget: order by most recent, at random or by tag, with each link's address under its title
-
-### v1.12.0 (2026-09-21)
-- Inbox: Keep (Shift+K) moves a link to a new Kept tab with its note and tags, without filing it on a page
-- Kept: group by site, tag or age, file a whole group at once, or work through links one at a time; rows suggest where a link belongs and which tags fit
-- Undo: inbox, Kept, health and Config → Bookmarks changes can be taken back from their toast
-- Previews and icons: fetching shows progress, waits out rate limits and can be stopped
-- Logs: Record server log is a toggle in the log toolbar; every line carries a sequence number
-- New Kept widget; What's new now also shows v1.11.1–v1.11.8
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -91,7 +80,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-09-24</Date>
+  <Date>2026-09-25</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
