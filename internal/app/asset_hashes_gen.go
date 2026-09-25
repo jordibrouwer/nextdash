@@ -246,7 +246,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/visual-settings.js":                                  "c373da16066f",
 	"js/weather.js":                                          "1e7e9e115447",
 	"js/whats-new-modal.js":                                  "9096e8453b83",
-	"js/whats-new-stub.js":                                   "1702f912b4f4",
+	"js/whats-new-stub.js":                                   "837a90e920d6",
 	"js/widgets-layout-notice.js":                            "5721a189bf18",
 	"js/widgets-tutorial.js":                                 "4bd39fee3746",
 	"js/write-api.js":                                        "25afcd408905",

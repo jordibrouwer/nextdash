@@ -226,7 +226,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## v1.13.6 — 25 September 2026
 
-The video mark gets out of the row's way, the theme browser's Light and Dark filters do what they say, and the theme help and settings catch up with the characters introduced in v1.13.3 — in every language.
+The video mark gets out of the row's way, the theme browser's Light and Dark filters do what they say, and the theme help and settings catch up with the characters introduced in v1.13.3 — in every language. Recorded but not announced: the What's new window still leads with v1.13.4.
 
 ### Bookmarks
 

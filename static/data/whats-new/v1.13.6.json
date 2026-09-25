@@ -1,0 +1,31 @@
+{
+  "tag": "v1.13.6",
+  "date": "25 September 2026",
+  "releasedAt": "2026-09-25",
+  "hideFromModal": true,
+  "modalLead": "The video mark moves onto the icon, the theme browser's Light and Dark filters show what they say, and the theme settings and help are translated into every language.",
+  "sections": [
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The &#9654; sits on the icon.</strong> A video's mark was a chip after the name, beside the response time and the shortcut. It is now a small disc on the corner of the favicon, so the row keeps its width. With favicons off it stands beside the name, without a box."
+        }
+      ]
+    },
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Light and Dark show every theme in that half.</strong> In the theme browser, the two filters now turn every card to its light or dark half, so moving through the grid previews only light or only dark themes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Theme settings in your language.</strong> The characters, Effects and the other surface settings, and the help about them, are translated into Dutch, German, French, Spanish and Chinese."
+        }
+      ]
+    }
+  ]
+}
