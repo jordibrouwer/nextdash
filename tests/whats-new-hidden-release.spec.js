@@ -151,19 +151,17 @@ test.describe('a release flagged hideFromModal', () => {
     });
 
     // The cases above prove the mechanism against a fixture. This one asserts
-    // what the shipped files do with it. v1.13.1, v1.13.5 and v1.13.6 are fixes
-    // for the release before them and are held back the way v1.11.1 through
-    // v1.11.8 were, so they are skipped over. v1.13.7 leads the modal and is
-    // the app's version, and v1.13.4 still shows under it.
-    test('v1.13.1, v1.13.5 and v1.13.6 are held back and v1.13.7 leads the modal', async ({ page }) => {
+    // what the shipped files do with it. v1.13.1, v1.13.5 and v1.13.6 were held
+    // back when they shipped; v1.13.7 leads the modal and brings them back in,
+    // so nothing in the shipped index is hidden any more.
+    test('v1.13.7 leads the modal, and the releases held back before it show under it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
         expect(index[0].tag).toBe('v1.13.7');
-        expect(index[0].hideFromModal).toBeFalsy();
-        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.13.6', 'v1.13.5', 'v1.13.1']);
+        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual([]);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -178,9 +176,6 @@ test.describe('a release flagged hideFromModal', () => {
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
         expect(await shownTags()).toContain('v1.13.7');
-        expect(await shownTags()).not.toContain('v1.13.6');
-        expect(await shownTags()).not.toContain('v1.13.5');
-        expect(await shownTags()).not.toContain('v1.13.1');
 
         const scrollAndRead = async () => {
             await modal.evaluate((m) => {
@@ -189,7 +184,7 @@ test.describe('a release flagged hideFromModal', () => {
             });
             return shownTags();
         };
-        for (const tag of ['v1.13.4', 'v1.13.3', 'v1.13.2', 'v1.13.0', 'v1.12.0', 'v1.11.8', 'v1.11.7', 'v1.11.6', 'v1.11.5', 'v1.11.4', 'v1.11.3', 'v1.11.2', 'v1.11.1', 'v1.11.0']) {
+        for (const tag of ['v1.13.6', 'v1.13.5', 'v1.13.4', 'v1.13.3', 'v1.13.2', 'v1.13.1', 'v1.13.0', 'v1.12.0', 'v1.11.8', 'v1.11.0']) {
             await expect.poll(scrollAndRead, { timeout: 20_000 }).toContain(tag);
         }
     });
@@ -200,8 +195,8 @@ test.describe('a release flagged hideFromModal', () => {
         /*
          * The release token names what the modal leads with, so it moves for a
          * release that leads and stays put for one that is held back. v1.13.1,
-         * v1.13.5 and v1.13.6 were held back and are never named here; v1.13.7
-         * leads, so it does.
+         * v1.13.5 and v1.13.6 were held back and were never named here; v1.13.7
+         * leads, so it is.
          *
          * Leaving it behind is the quiet failure this pins: every install that
          * had already read v1.13.4's notes would simply never be shown v1.13.7.

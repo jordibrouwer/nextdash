@@ -227,7 +227,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## v1.13.7 — 25 September 2026
 
-The bookmark form is rebuilt around one read of the page, tag suggestions reach every place a tag is set, and the grid stops dropping to one column on any narrow window. Leads the What's new window.
+The bookmark form is rebuilt around one read of the page, tag suggestions reach every place a tag is set, and the grid stops dropping to one column on any narrow window. Leads the What's new window, and v1.13.1, v1.13.5 and v1.13.6, recorded but held back until now, are shown there as well.
 
 ### Bookmark form
 
