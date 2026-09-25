@@ -59,7 +59,9 @@ test('picking a gloss theme with the glow off offers to turn it on', async ({ pa
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(GLOSS);
 
     const offer = page.locator('#app-notification.show');
-    await expect(offer).toContainText(/gloss/i);
+    // Says what the theme has, not which group it came from: the offer fires
+    // for any theme that shines, most of which are not named Gloss.
+    await expect(offer).toContainText(/shine/i);
     await offer.locator('button, .app-notification-action').filter({ hasText: /turn on/i }).first().click();
     // What the page is drawn with: the answer belongs to this theme unless
     // the reader has asked for one glow across every theme, so the setting

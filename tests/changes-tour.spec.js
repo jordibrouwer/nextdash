@@ -153,8 +153,10 @@ test('a key a step names is drawn as a key', async ({ page }) => {
     // And the step draws three theme cards, the lacquered one with its badge.
     await expect(page.locator('.changes-tour-swatches i')).toHaveCount(3);
     // The theme browser's own word for it, in the reader's language -- not a
-    // literal, which showed the Dutch badge on an English dashboard.
-    await expect(page.locator('.changes-tour-swatches i.is-gloss b')).toHaveText('Gloss');
+    // literal, which showed the Dutch badge on an English dashboard. Since the
+    // archetypes, the badge a shining theme carries is its character, Lacquer;
+    // there has been no Gloss badge to point at.
+    await expect(page.locator('.changes-tour-swatches i.is-lacquer b')).toHaveText('Lacquer');
     // Colour, not grey: the chips take the theme's own accents.
     const chip = await page.locator('.changes-tour-chips u').first()
         .evaluate((el) => getComputedStyle(el).backgroundColor);
