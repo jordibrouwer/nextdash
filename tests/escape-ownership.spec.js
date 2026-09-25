@@ -65,6 +65,12 @@ const activeView = (page) => page.evaluate(() => window.dashboardInstance.active
 test.describe('Escape belongs to whatever is layered on top', () => {
     test('the inbox row menu takes it, and the inbox stays open', async ({ page }) => {
         await openInboxWithItems(page, ['Esc one', 'Esc two']);
+        // The poll above redraws the list, and the view's own refresh can
+        // redraw it again just after; a right-click aimed at a row being
+        // replaced never lands. Let the requests settle and anything floating
+        // over the list clear first.
+        await page.waitForLoadState('networkidle');
+        await dismissBlockingOverlays(page);
 
         await page.locator('.inbox-item').first().click({ button: 'right' });
         await page.waitForSelector('#bookmark-context-menu', { timeout: 10_000 });

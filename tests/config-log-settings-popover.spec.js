@@ -17,18 +17,23 @@ async function openLogsWithGlass(page) {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-    await page.evaluate(async () => {
-        await window.nextDashFetch('/api/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ themeDepth: 'glass' }),
+    // The depth is a server setting, and another worker on the same server can
+    // write a different one between this save and the reload -- the page then
+    // came up "rich". Save and reload until the page actually shows glass.
+    await expect(async () => {
+        await page.evaluate(async () => {
+            await window.nextDashFetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ themeDepth: 'glass' }),
+            });
         });
-    });
-    await page.reload();
-    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await expect(page.locator('body')).toHaveAttribute('data-depth', 'glass', { timeout: 2000 });
+    }).toPass({ timeout: 30_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await expect(page.locator('body')).toHaveAttribute('data-depth', 'glass');
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('logs'));
     await expect(page.locator('[data-log-settings-toggle]')).toBeVisible();
 }

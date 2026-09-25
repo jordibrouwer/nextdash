@@ -73,8 +73,12 @@ test('Shift+T opens at the top of its list, suggestions in view, however long th
         // The row's own tag sorts last, far down the list.
         await add({ name: `Top target ${h}`, url: `https://${h}/target`, tags: ['zz-late'] });
         await d.loadData?.();
-        window.TagSuggestLive.invalidate();
     }, host);
+    // The engine reads allBookmarks: without the seeds in it there is no
+    // suggestion to be in view at all.
+    await page.waitForFunction((h) => (window.dashboardInstance.allBookmarks || [])
+        .filter((b) => String(b.url || '').includes(h)).length >= 4, host, { timeout: 10_000 });
+    await page.evaluate(() => window.TagSuggestLive.invalidate());
     const url = `https://${host}/target`;
     const row = page.locator(`.bookmark-link[data-bookmark-url="${url}"]`);
     await expect(row).toBeVisible({ timeout: 10_000 });

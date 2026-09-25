@@ -61,8 +61,13 @@ test.describe('add-bookmark modal page dropdown', () => {
             });
         }, stamp);
         await page.evaluate(() => window.dashboardInstance.inbox?.openInboxView?.());
-        await expect.poll(async () => page.evaluate((s) => {
-            const items = window.dashboardInstance.inbox?.items || [];
+        // Asked for, not waited for: the view may have drawn from a list it
+        // loaded before the POST landed, and a background refresh noticing is
+        // slower and less certain than loading it again.
+        await expect.poll(async () => page.evaluate(async (s) => {
+            const inbox = window.dashboardInstance.inbox;
+            await inbox?.loadItems?.();
+            const items = inbox?.items || [];
             return items.some((i) => String(i.url).includes(String(s)));
         }, stamp), { timeout: 10_000 }).toBe(true);
 
