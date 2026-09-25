@@ -251,7 +251,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 Hovering a bookmark — or pressing **`Shift + V`** on the selected row — opens a card in a fixed order:
 
 1. **What the page is** — icon, title, one address and a status pill.
-2. **What it says** — image, description, publisher, author and date where the page declares them, your note and tags. A bookmark that is a video — YouTube, Vimeo, Dailymotion, or a file that ends in `.mp4` — carries a small **▶** on its row, and the card opens on the thumbnail with a play button over it.
+2. **What it says** — image, description, publisher, author and date where the page declares them, your note and tags. A bookmark that is a video — YouTube, Vimeo, Dailymotion, or a file that ends in `.mp4` — carries a small **▶** on the corner of its icon (beside the name when icons are off), and the card opens on the thumbnail with a play button over it.
 3. **What you know about it** — last check and ping, uptime, certificate expiry, the Fresh count, opens and last opened, shortcut and location.
 
 A row with nothing to say is left out. **Config → Appearance → Rows → Link preview cards** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows — the player is the **Video player** row in that list. `Shift + V` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
@@ -600,7 +600,7 @@ A category you just created stays visible even with *hide empty categories* on, 
 
 Each category header has **A–Z** and **Recent** chips; click the active one to go back to manual order. Pinned bookmarks always stay on top. A sorted category cannot be dragged — the cursor and a short note say so. Sorting is only a view; the stored order changes when you drag.
 
-Click a header, or press `Enter` on it, to fold the category. **`.`** folds or unfolds everything on the page, widgets included; the state is kept per page. **Always collapse categories** (Appearance → Grid) starts every category folded.
+Click a header, or press `Enter` on it, to fold the category. **`.`** folds or unfolds everything on the page, widgets included; the state is kept per page. **Start with categories collapsed** (Appearance → Grid) starts every category folded.
 
 ### 9.4 Moving and reordering bookmarks
 
@@ -864,36 +864,26 @@ A preset fills in a sample address, the useful path, the figures with labels and
 
 ### 12.1 Themes
 
-nextDash ships **121 theme families**, each with a light and a dark half — 242 themes in all. A fresh install starts on **Retro CRT**.
+nextDash ships **121 theme families**, each with a light and a dark half — 242 themes in all. A fresh install starts on **Tarnished Brass**, drawn at depth **Glass** with a **Soft** glow, because that is what the theme was made for.
 
-- **The theme browser** — **Browse…** under Appearance → Look, or **`Shift + A`** on the dashboard. One card per family with a light/dark switch, a search box, segments for *All*, *Favourites*, *Light* and *Dark*, and a star per family. Moving through it previews each theme on the real dashboard; nothing is saved until you pick one, and **Esc** puts back what you had.
-- **Quick mode** — switches between the light and dark half of your family.
+**Theme** on the Look tab lists every theme by name. Beside it:
+
+- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. One card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, and a row of **character chips** ([§12.2](#122-character)). Search matches a family's name, its character and the words of its line. A star keeps up to 24 families under *Favourites*. Moving through the grid previews each theme on the real dashboard, at the surfaces that theme was drawn for; nothing is saved until you pick one, and **Esc** puts back what you had.
+- **Quick mode** — switches between the light and dark half of the family you are on.
 - **Follow system dark mode** — shows the light half by day and the dark half by night, following the operating system, also in a background tab.
-- **Random theme** — **Off**, **On page refresh**, or **On view change** (switching between bookmarks, config, inbox, health or pages). Your saved theme stays underneath. With follow-system on, only halves that match the current mode are picked.
+- **Random theme** — **Off**, **On page refresh**, or **On view change** (switching between bookmarks, config, inbox, health or pages). Your saved theme stays underneath and comes back when you turn it off. With follow-system on, only halves that match the current mode are picked.
+- **Theme editor** — **Open the theme editor…** recolours any theme, or builds one of your own ([§12.5](#125-custom-themes)).
 - **`:theme <name>`** and **`:dark`** switch from the command palette.
 
-#### ✨ Gloss themes
+#### ✨ Themes that catch the light
 
-Most themes are matte. Ten **Gloss** families catch the light, each in a light and a dark half:
+How a theme catches the light is part of its character, not a group of themes of its own. The shine — a lit band across each surface and a brighter top edge — belongs to the **Lacquer** character; **Enamel** is glazed and rounder, and **Neon** lets the accent leave the surface as a halo. The **Lacquer** chip in the theme browser shows every family that shines.
 
-| Family | Character |
-|---|---|
-| **Gloss Obsidian** | Black glass with a cyan accent |
-| **Gloss Chrome** | Polished metal, cool greys |
-| **Gloss Candy** | Lacquered pink |
-| **Gloss Amber** | Warm amber |
-| **Gloss Emerald** | Deep green |
-| **Gloss Sapphire** | Deep blue |
-| **Gloss Neon Tide** | Neon teal on deep blue |
-| **Gloss Pearl** | Soft pearl and lilac tones |
-| **Gloss Rose Gold** | Warm rose metal |
-| **Gloss Ultraviolet** | Saturated violet |
+Ten families still carry *Gloss* in their name, from when they were the only ones that shone: **Gloss Obsidian**, **Chrome**, **Candy**, **Amber**, **Sapphire** and **Rose Gold** are Lacquer; **Gloss Emerald** and **Pearl** are Enamel; **Gloss Neon Tide** and **Ultraviolet** are Neon. Searching `gloss` finds them by name.
 
-Their surfaces carry a **lit band** and a brighter top edge, and they pair that with saturated accents, glass, rounder corners and a glow — lacquer rather than paint. Every name starts with *Gloss*, so they sort together; type `gloss` in the theme browser to see them all.
+The shine is drawn with the glow. When you pick a theme that shines while **Glow** is off, nextDash offers once to turn Glow to *Soft*; with Glow off, it looks matte. **Effects** set to *Off* also leaves the shine out ([§12.3](#123-surfaces)).
 
-The shine is drawn with the glow. When you pick a Gloss theme while **Glow** is off, nextDash offers once to switch it on; with Glow off, a Gloss theme looks matte.
-
-**Any theme can shine.** The **Gloss** slider in the theme editor (Custom themes) sets the sheen — how much light a raised surface catches — for a custom theme or a recoloured packaged theme. Zero draws no sheen.
+**Any theme can shine.** The **Gloss** slider in the theme editor sets how much light a raised surface catches, for a theme of your own or a recoloured packaged one ([§12.5](#125-custom-themes)).
 
 ### 12.2 Character
 
@@ -929,7 +919,8 @@ its answer with it.
 | **Depth** | **Follow the theme** (default) · Flat · Soft · Rich · Vivid · Glass — the steps add a tint in the greys, raised surfaces and a faint wash of light behind the page; Glass blurs what is behind a surface and sits beside the ladder rather than on it. Menus are never blurred. |
 | **Glow** | **Follow the theme** (default) · Off · Soft · Full — how far the theme's colour carries around a surface. Flat has no glow. |
 | **Effects** | **Follow the theme** (default) · Off · Held back · Full — how loudly the character is drawn: the shine, the glow, the grain, and how round the corners are. Off leaves the palette and nothing else. |
-| **These apply to** | Off, the three above belong to the theme you are on; **Every theme** holds them across the whole install. |
+| **Enable animations** | On · Off — off stills the motion across the app |
+| **Use these for every theme** | Off (default), the three above belong to the theme you are on and each theme keeps its own; on, they hold across the whole install and a theme brings nothing of its own. |
 | **This theme** | **Back to the theme's own** puts the three back to what the theme asks for. |
 | **Text contrast** | Soft · Normal · High · Maximum — how far the fainter text sits from its surface |
 | **Theme backdrop** | On · Off — the backdrop each theme builds from its own colours |
@@ -946,15 +937,14 @@ other theme keeps its own.
 
 - **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**.
 - **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL; pointing at a size previews it.
-- **Background** — **Auto** (follows the theme), **None**, **Gradient** or **Image URL**. **Opacity** fades it so the bookmarks stay readable. A background of your own is drawn over the theme backdrop.
-- **Enable animations** — on the Look tab with the surfaces; off stills the motion across the app.
+- **Background** — **Auto** (follows the theme), **None**, **Gradient** or **Image URL**. **Opacity** (65–100%) fades it so the bookmarks stay readable. A background of your own is drawn over the theme backdrop.
 
 ### 12.5 Custom themes
 
-**Make your own theme…** on the Look tab opens the theme editor as a page of its own; **← Look** above it goes back. A link to `/#config/appearance/custom-themes` opens it directly.
+**Open the theme editor…** on the Look tab opens the editor as a page of its own; **← Look** above it goes back. A link to `/#config/appearance/custom-themes` opens it directly.
 
-- **Your themes** — add, edit, reorder, delete, **⤓ export** to a JSON file, and **Import theme…**.
-- A custom theme can set everything a packaged theme can — colours, depth, glow, glass, corner radius and **Gloss** (the sheen) — and has a light and a dark half, like the built-in themes.
+- **Your themes** — **Add custom theme**, edit, reorder (↑ ↓), delete, **⤓** export to a JSON file, and **Import theme…**. A theme you make appears in the theme list beside the packaged ones.
+- A custom theme can set everything a packaged theme can: its colours, and under **Shape & character** its character, corner roundness, surface opacity, blur, glow, the **Gloss** slider (how much light a surface catches), the grain's direction and strength, the category titles, the backdrop pattern, and the depth and effects it asks to be drawn at. It has a light and a dark half, like the built-in themes.
 - A contrast check warns when text is too faint against its background.
 - **Packaged themes** — recolour any theme that ships, or the base light and dark palettes. **Reset defaults** puts a theme back.
 - Changes preview live on the dashboard behind config; leaving the tab drops an unsaved preview. On a phone the editor is read-only.
@@ -966,16 +956,17 @@ other theme keeps its own.
 | Setting | What it does |
 |---|---|
 | **Columns per row** | 1–6 |
-| **Layout preset** | Default, compact, cards, masonry, list, launcher (large icon tiles) and more |
-| **Density** | Auto, comfortable, compact, dense — one setting for the dashboard, health and the inbox |
+| **Layout preset** | Default, Compact, Cards, Terminal-ish, Masonry, List, Widgets and Launcher (large icon tiles) |
+| **Density** | Comfortable, Compact, Dense or Auto — one setting for the dashboard, health and the inbox |
 | **Category spacing** | Snug · Balanced (default) · Airy — the gap between rows of categories |
 | **Page margins** | Snug · Balanced (default) · Airy — the empty band left and right |
 | **Pack columns tightly** | Categories fill the columns without waiting for a full row |
 | **Hide empty categories** | |
-| **Launcher icon size** | For the launcher preset |
-| **Always collapse categories** | Every category starts folded |
-| **Items per category** | How many bookmarks show before *+ N more* |
-| **Categories across columns** | New categories spread or not; where *turn spreading off* applies |
+| **Launcher icon size** | Small, Normal or Large, for the Launcher preset |
+| **Start with categories collapsed** | Every category starts folded |
+| **Items per category** | 10–50 or Unlimited: how many bookmarks show before *+ N more*. Unlimited is not available while a category spreads |
+| **New categories spread across columns** | Only for categories made from now on ([§9.5](#95-spreading-a-category-across-columns)) |
+| **Turning spreading off covers** | The current page or every page — what **Turn off** acts on; it puts every category back to one column |
 
 Small drawings beside the shape settings show what a value looks like.
 
@@ -983,12 +974,13 @@ Small drawings beside the shape settings show what a value looks like.
 
 | Setting | What it does |
 |---|---|
-| **Icons and status colour** | Bookmark icons on or off, and whether a broken row takes the status colour |
-| **Shortcut letters** | **Always** · **On the row I am on** · **Never** |
-| **Row highlight** | How far a row lights up when you move to it: subtle (default) or strong |
-| **Status and ping** | Status colours, a loading state, ping times |
-| **Tags on rows** | And how many show before a count |
-| **Link preview cards** | Off · On hover · Keyboard only, the hover delay, and which rows the card shows ([§4](#4-the-dashboard)) |
+| **Show favicons** | Bookmark icons on or off. With icons on, a video's **▶** sits on the corner of its icon; with them off, beside the name |
+| **Change bookmark color when offline** | A broken row takes the status colour |
+| **Shortcut letters on rows** | **Always** (default; a column down the right of each category) · **Only on the row you are on** · **Never** — the shortcuts keep working in every mode |
+| **How a row lights up** | **Subtle** (default) or **Strong** — how far the accent carries across the row you are on |
+| **Show online/offline status** | Status colours on the rows; with it, **Show a loading state while checking** and **Show ping times** |
+| **Show tags on bookmark rows** | And **Tags shown before "+N"** |
+| **Link preview cards** | Off · On hover (default) · Keyboard only, a hover delay (Fast, Balanced, Calm) and **What the card shows**: image, site, author & date, video player, description, your note, tags, status & uptime, opens, Fresh count, shortcut & location ([§4](#4-the-dashboard)) |
 
 ### 12.7 Header and action buttons
 
@@ -1002,7 +994,7 @@ Each group has **Show all / Hide all**.
 ### 12.8 Date and weather
 
 - **Date & time** — show date, show time, date format, 12- or 24-hour clock. Where the clock and weather stand in the header is set on the Header tab ([§12.7](#127-header-and-action-buttons)).
-- **Weather** — on or off, browser location or a city, Celsius or Fahrenheit, refresh interval. The Weather widget reads the same settings.
+- **Weather** — on or off, **Location source** (a city you type, or *Automatic (by IP)*), Celsius or Fahrenheit, refresh interval. The Weather widget reads the same settings.
 - **Calendar** — **Calendar URL** (the link in the date popover) and **Calendar feed URL (.ics)** (what the Calendar widget reads).
 
 ### 12.9 Finding and resetting
@@ -1395,7 +1387,7 @@ The other tabs:
 
 **Help** has thirteen tabs: Getting started, Tips, Configuring, Appearance, Structure & bookmarks, Widgets, Search & keyboard, Health, Monitoring, Inbox, Statistics, Data & hosting and Logs. The search above the tabs covers every tab and About. Each topic has a 🔗 button that copies a link to it (`/#config/help/monitoring/health-cert`). A topic about something that can be switched off says whether it is on for you, with a button to the setting. **Tips** lists every keyboard tip, grouped, with its own filter. **Saving a link from anywhere** (Inbox tab) builds a bookmarklet for this install.
 
-**Guided tours.** Seven walkthroughs run over the real page rather than a picture of it: *What has changed*, *First steps*, *Health*, *Inbox*, *Fresh*, *Widgets* and *Spreading a category*. Replay any of them from **Help → Guided tours**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its eight steps say where the pages, the action buttons, config, the list, the widgets, the tags and the themes now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
+**Guided tours.** Seven walkthroughs run over the real page rather than a picture of it: *What has changed*, *First steps*, *Health*, *Inbox*, *Fresh*, *Widgets* and *Spreading a category*. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its eight steps say where the pages, the action buttons, config, the list, the widgets, the tags and the themes now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
 
 **About** has two tabs: **About nextDash** (what the project is, and links to nextdash.cc, GitHub, jordibrw.nl and Ko-fi) and **News & features** (every post from nextdash.cc, every release and every setting worth switching on, with source filters, and a button that bookmarks nextdash.cc so Fresh counts its posts).
 
@@ -1893,7 +1885,7 @@ It shows once per install, and not on phones. After finishing or dismissing it, 
 
 ### The weather does not show
 
-Set a city or allow location access under Appearance → Date & weather, and check that weather is switched on. The Weather widget says so when no location is set.
+Set a city, or choose *Automatic (by IP)*, under Appearance → Date & weather, and check that weather is switched on. The Weather widget says so when no location is set.
 
 ### The Calendar widget shows nothing
 
