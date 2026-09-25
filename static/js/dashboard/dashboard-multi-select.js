@@ -455,6 +455,73 @@ class DashboardMultiSelect {
             }
         };
 
+        /*
+         * What the engine would tag the selection, above the library.
+         *
+         * Each offer stands against particular rows -- the ones on the site
+         * that agrees on it -- so it says how many of the selection it is for,
+         * and a click tags only those. The same section, label and look as the
+         * row's own Shift+T popover.
+         */
+        const total = refs.length;
+        const live = window.TagSuggestLive;
+        const offeredTo = new Map();
+        if (live?.forDashBookmark) {
+            refs.forEach((ref) => {
+                live.forDashBookmark(d, ref.bookmark).forEach((offer) => {
+                    const keys = offeredTo.get(offer.tag) || new Set();
+                    keys.add(this.keyFor(ref.bookmark, d.currentPageId));
+                    offeredTo.set(offer.tag, keys);
+                });
+            });
+        }
+        const top = [...offeredTo.entries()]
+            .sort((a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0]))
+            .slice(0, 3);
+        if (top.length) {
+            const suggested = document.createElement('div');
+            suggested.className = 'tag-popover-suggested';
+            const label = document.createElement('div');
+            label.className = 'move-popover-section-label';
+            label.textContent = this.t('dashboard.tagPopoverSuggestedSection', 'Suggested');
+            suggested.appendChild(label);
+            top.forEach(([tag, keys]) => {
+                const item = document.createElement('div');
+                item.className = 'move-popover-item tag-popover-suggested-item';
+                item.setAttribute('role', 'option');
+                item.setAttribute('data-tag', tag);
+                item.setAttribute('aria-selected', 'false');
+                const check = document.createElement('span');
+                check.className = 'move-popover-check';
+                const text = document.createElement('span');
+                text.className = 'tag-popover-item-label';
+                text.textContent = `#${tag}`;
+                item.append(check, text);
+                if (keys.size < total) {
+                    const meta = document.createElement('span');
+                    meta.className = 'tag-popover-item-meta';
+                    meta.textContent = this.t('dashboard.multiSelectTagsPartial', 'on {count} of {total}')
+                        .replace('{count}', String(keys.size))
+                        .replace('{total}', String(total));
+                    item.appendChild(meta);
+                }
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    close();
+                    void this.applyTagToSelection(tag, 'add', { onlyKeys: keys });
+                });
+                suggested.appendChild(item);
+            });
+            pop.appendChild(suggested);
+            if (known.size) {
+                const all = document.createElement('div');
+                all.className = 'move-popover-section-label';
+                all.textContent = this.t('dashboard.tagPopoverAllTagsSection', 'All tags');
+                pop.appendChild(all);
+            }
+        }
+
         if (!known.size) {
             const empty = document.createElement('div');
             empty.className = 'tag-popover-empty-hint';
@@ -465,7 +532,6 @@ class DashboardMultiSelect {
             pop.appendChild(empty);
         }
 
-        const total = refs.length;
         [...known].sort().forEach((tag) => {
             const on = refs.filter((ref) => (ref.bookmark.tags || [])
                 .map((raw) => String(raw || '').trim().toLowerCase())
@@ -557,9 +623,12 @@ class DashboardMultiSelect {
      * Per-bookmark saves would be one request each and could leave the set half
      * tagged if one failed; the grid writes a whole page at a time anyway.
      */
-    async applyTagToSelection(tag, mode) {
+    async applyTagToSelection(tag, mode, { onlyKeys = null } = {}) {
         const d = this.dash;
-        const refs = this.resolveRefs();
+        // A suggestion is for some of the selection only: onlyKeys narrows
+        // the write, the rollback and the undo to those rows.
+        const refs = this.resolveRefs()
+            .filter((ref) => !onlyKeys || onlyKeys.has(this.keyFor(ref.bookmark, d.currentPageId)));
         if (!refs.length || !tag) {
             return;
         }
@@ -595,6 +664,7 @@ class DashboardMultiSelect {
             return;
         }
         void d.data?.fetchAndStoreDataRevision?.();
+        window.TagSuggestLive?.changed?.(d);
         // The same eight seconds a move and a delete offer. Twenty rows tagged
         // in one click is one misclick, and putting it right by hand means
         // finding every row again.
