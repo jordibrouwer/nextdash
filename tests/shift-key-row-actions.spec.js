@@ -125,7 +125,7 @@ test.describe('the rest of the family', () => {
         await selectFirstRow(page);
 
         await page.keyboard.press('Shift+E');
-        await expect(page.locator('.bookmark-inline-input').first()).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('.bookmark-inline-form [data-field="name"]')).toBeVisible({ timeout: 5000 });
     });
 
     test('; still opens it, for anyone who learned that key first', async ({ page }) => {
@@ -133,6 +133,6 @@ test.describe('the rest of the family', () => {
         await selectFirstRow(page);
 
         await page.keyboard.press(';');
-        await expect(page.locator('.bookmark-inline-input').first()).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('.bookmark-inline-form [data-field="name"]')).toBeVisible({ timeout: 5000 });
     });
 });

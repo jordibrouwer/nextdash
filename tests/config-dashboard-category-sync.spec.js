@@ -73,18 +73,18 @@ test.describe('config to dashboard category sync', () => {
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
 
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
+        // Through the page › category field; the hidden select behind it is
+        // what the save reads, so that is what is checked afterwards.
         const categorySelect = form.locator('.bookmark-inline-select:not(.bookmark-inline-toggle-select)').nth(1);
-        const targetCategory = await categorySelect.evaluate((el) => {
-            const opt = [...el.options].find((o) => o.value && o.value !== '__new__');
-            if (!opt) throw new Error('no category options available');
-            return opt.value;
-        });
-        await categorySelect.selectOption(targetCategory);
-        await expect(categorySelect).toHaveValue(targetCategory);
+        await form.locator('.bookmark-form-place-value').click();
+        const option = page.locator('.bookmark-form-place-pop .bookmark-form-place-option').first();
+        const targetCategory = await option.getAttribute('data-category-id');
+        await option.click();
+        await expect(categorySelect).toHaveValue(String(targetCategory));
         const savePromise = page.waitForResponse(
             (r) => r.url().includes('/api/bookmarks') && r.request().method() === 'POST' && r.ok(),
         );
-        await page.locator('#bookmark-form-modal .bookmark-inline-actions > .bookmark-inline-save').click();
+        await page.locator('#bookmark-form-modal .bookmark-inline-actions .bookmark-inline-save').click();
         await savePromise;
 
         // The change must reach the server, not just the in-page model.

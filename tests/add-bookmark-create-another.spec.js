@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, answerNoCategory } = require('./e2e-helpers');
 
 async function loadDashboard(page) {
     await page.goto('/');
@@ -64,16 +64,17 @@ test.describe('add bookmark — Create + New', () => {
 
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         await form.locator('input[type="url"]').fill('https://example.com');
-        await form.locator('.bookmark-inline-input').first().fill('Example One');
+        await form.locator('[data-field="name"]').fill('Example One');
         const pageBefore = await form.locator('.bookmark-inline-select').first().inputValue();
 
         await page.locator('#bookmark-form-create-another').click();
+        await answerNoCategory(page);
 
         // Modal stays open.
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
         // Fields cleared for the next entry.
         await expect(form.locator('input[type="url"]')).toHaveValue('');
-        await expect(form.locator('.bookmark-inline-input').first()).toHaveValue('');
+        await expect(form.locator('[data-field="name"]')).toHaveValue('');
         // Page selection preserved.
         await expect(form.locator('.bookmark-inline-select').first()).toHaveValue(pageBefore);
         // The first bookmark was posted.
@@ -81,8 +82,9 @@ test.describe('add bookmark — Create + New', () => {
 
         // A second bookmark can be added right away.
         await form.locator('input[type="url"]').fill('https://example.org');
-        await form.locator('.bookmark-inline-input').first().fill('Example Two');
+        await form.locator('[data-field="name"]').fill('Example Two');
         await page.locator('#bookmark-form-create-another').click();
+        await answerNoCategory(page);
         await expect.poll(() => posted.length).toBe(2);
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     });
@@ -100,8 +102,9 @@ test.describe('add bookmark — Create + New', () => {
 
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         await form.locator('input[type="url"]').fill(uniqueUrl);
-        await form.locator('.bookmark-inline-input').first().fill(uniqueName);
+        await form.locator('[data-field="name"]').fill(uniqueName);
         await page.locator('#bookmark-form-create-another').click();
+        await answerNoCategory(page);
 
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
         await expect(gridLink).toBeVisible({ timeout: 10_000 });
@@ -125,8 +128,9 @@ test.describe('add bookmark — Create + New', () => {
         await openAddBookmark(page);
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         await form.locator('input[type="url"]').fill('https://example.net');
-        await form.locator('.bookmark-inline-input').first().fill('Closes');
-        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
+        await form.locator('[data-field="name"]').fill('Closes');
+        await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
+        await answerNoCategory(page);
         await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/);
     });
 });

@@ -22229,6 +22229,42 @@ class DashboardConfig {
         return this._tagKeywords;
     }
 
+    /**
+     * Something outside this panel fed the engine: a tag taken or refused in
+     * the bookmark form or the side panel, a page read for words when a
+     * bookmark was saved. The words and the scan count were loaded once per
+     * session, so they are dropped here and read again on the next draw.
+     */
+    onTagEvidenceChanged() {
+        this._tagKeywordsPromise = null;
+        if (document.getElementById('config-bm-suggestions')) {
+            void this.ensureTagKeywords().then(() => {
+                this.renderTagSuggestionsSafe();
+                this.syncTagSuggestionsTabCount();
+            });
+            return;
+        }
+        this.syncTagSuggestionsTabCount();
+    }
+
+    /** The number on the Tag suggestions tab, redrawn without the strip. */
+    syncTagSuggestionsTabCount() {
+        const tab = document.querySelector('[data-bm-tab="tag-suggestions"]');
+        if (!tab) return;
+        const waiting = this.tagSuggestionGroupCount();
+        let badge = tab.querySelector('.config-subtab-count');
+        if (!waiting) {
+            badge?.remove();
+            return;
+        }
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'config-subtab-count';
+            tab.appendChild(badge);
+        }
+        badge.textContent = String(waiting);
+    }
+
     /** The words already read, and how many pages are still unread. */
     ensureTagKeywords() {
         if (this._tagKeywordsPromise) return this._tagKeywordsPromise;

@@ -784,34 +784,11 @@ class DashboardInbox {
         if (!live) return;
         const offers = live.forInboxItem(this.dash, item).slice(0, 2);
         if (!offers.length) return;
-        offers.forEach((offer) => {
-            const chip = document.createElement('span');
-            chip.className = 'tag-suggest-chip';
-
-            const add = document.createElement('button');
-            add.type = 'button';
-            add.className = 'tag-suggest-chip-add';
-            add.textContent = `#${offer.tag}`;
-            add.title = this.t('dashboard.tagSuggestAdd', `Tag this bookmark #${offer.tag}`, { tag: offer.tag });
-            add.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                void this.acceptSuggestedTag(item, offer.tag);
-            });
-
-            const off = document.createElement('button');
-            off.type = 'button';
-            off.className = 'tag-suggest-chip-dismiss';
-            off.textContent = '×';
-            off.title = this.t('dashboard.tagSuggestDismiss', `Stop proposing #${offer.tag} here`, { tag: offer.tag });
-            off.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                void this.dismissSuggestedTag(offer);
-            });
-
-            chip.append(add, off);
-            host.appendChild(chip);
+        window.TagSuggestChips.render(host, offers, {
+            limit: 2,
+            t: (key, fallback, params) => this.t(key, fallback, params),
+            onAccept: (tag) => { void this.acceptSuggestedTag(item, tag); },
+            onRefuse: (offer) => { void this.dismissSuggestedTag(offer); },
         });
     }
 
@@ -833,7 +810,7 @@ class DashboardInbox {
             if (stored) stored.tags = tags;
             // The engine answered before this write; the row it just tagged
             // would go on offering the tag it now carries.
-            window.TagSuggestLive?.invalidate?.();
+            window.TagSuggestLive?.changed?.(this.dash);
             if (this.isActiveView()) this.render();
         } catch {
             this.dash.showErrorNotification?.(this.t('dashboard.inboxTagsFailed', 'Could not save tags'));
@@ -1012,18 +989,11 @@ class DashboardInbox {
 
     /** Turn one down, in the list config reads and writes. */
     async dismissSuggestedTag(offer) {
-        const d = this.dash;
-        const live = window.TagSuggestLive;
-        if (!d.settings || !live) return;
-        const key = live.dismissKey(offer);
-        const before = Array.isArray(d.settings.dismissedTagSuggestions)
-            ? d.settings.dismissedTagSuggestions : [];
-        if (before.includes(key)) return;
-        d.settings.dismissedTagSuggestions = [...before, key];
-        live.invalidate();
-        if (this.isActiveView()) this.render();
-        await d.saveSettings?.();
+        await window.TagSuggestChips?.refuse(this.dash, offer, {
+            onUpdated: () => { if (this.isActiveView()) this.render(); },
+        });
     }
+
 
     /**
      * Copy a shareable link to one item.

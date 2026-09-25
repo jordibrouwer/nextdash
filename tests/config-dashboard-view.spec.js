@@ -808,7 +808,7 @@ test.describe('Shift+S opens config', () => {
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
         await page.locator('#config-bm-add').click();
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
-        const nameInput = page.locator('#bookmark-form-modal .bookmark-inline-form .bookmark-inline-input').first();
+        const nameInput = page.locator('#bookmark-form-modal .bookmark-inline-form [data-field="name"]');
         await nameInput.click();
         // Two capital S characters: a shortcut that ignored input focus would
         // swallow them and navigate instead.

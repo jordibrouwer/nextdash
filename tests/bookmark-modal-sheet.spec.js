@@ -165,29 +165,16 @@ test('and the fields are cut into it, not stacked on it', async ({ page }) => {
         .toBeLessThan(lum(g.sheet));
 });
 
-test('the two groups are one height, so the form reads as two columns', async ({ page }) => {
+test('the form is one group, read top to bottom', async ({ page }) => {
     await openForm(page);
 
-    const boxes = await page.evaluate(() =>
-        [...document.querySelectorAll('.bookmark-form-modal-body .bookmark-inline-col')]
-            .map((c) => {
-                const r = c.getBoundingClientRect();
-                return { top: Math.round(r.top), height: Math.round(r.height) };
-            }));
-
-    expect(boxes.length, 'the form is not in two groups').toBe(2);
-    expect(boxes[0].top, 'one group starts lower than the other').toBe(boxes[1].top);
-    // Two panels of different heights beside each other read as one panel and
-    // a leftover, which is what the gap between them used to say.
-    expect(boxes[0].height, 'the groups are different heights').toBe(boxes[1].height);
-});
-
-test('each group says what it is for', async ({ page }) => {
-    await openForm(page);
-
-    const titles = await page.locator('.bookmark-inline-group-title').allTextContents();
-    expect(titles.length, 'the groups are unlabelled again').toBe(2);
-    expect(titles[0].trim().length, 'a group title is empty').toBeGreaterThan(0);
+    // One column since the fields went into the order they are filled in:
+    // two groups by kind put the name and the address in different places
+    // from the page and the tags that follow them.
+    const count = await page.evaluate(() =>
+        document.querySelectorAll('.bookmark-form-modal-body .bookmark-inline-col').length);
+    expect(count, 'the form is split into groups again').toBe(1);
+    await expect(page.locator('.bookmark-inline-group-title')).toHaveCount(0);
 });
 
 test('the buttons stay at the foot rather than scrolling away', async ({ page }) => {
@@ -239,8 +226,7 @@ test('editing an existing bookmark gets the same sheet', async ({ page }) => {
     const boxes = await page.evaluate(() =>
         [...document.querySelectorAll('.bookmark-form-modal-body .bookmark-inline-col')]
             .map((c) => Math.round(c.getBoundingClientRect().height)));
-    expect(boxes.length, 'the edit form is not in two groups').toBe(2);
-    expect(boxes[0], 'the edit groups are different heights').toBe(boxes[1]);
+    expect(boxes.length, 'the edit form is not one group').toBe(1);
 
     // The chip names the key that was actually pressed to get here.
     expect((await page.locator('.bookmark-form-modal-key').textContent() || '').trim()).toBe(';');

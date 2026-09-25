@@ -181,12 +181,89 @@
         return `${String(suggestion?.pattern || '')}|${String(suggestion?.tag || '')}`.toLowerCase();
     }
 
+    const DRAFT = 'draft:form';
+    let keywordsPromise = null;
+
+    /** The words the scan round stored per address, loaded once and shared. */
+    function storedKeywords() {
+        if (!keywordsPromise) {
+            keywordsPromise = fetch('/api/tags/keywords', { cache: 'no-cache' })
+                .then((res) => (res.ok ? res.json() : null))
+                .then((data) => data?.keywords || {})
+                .catch(() => ({}));
+        }
+        return keywordsPromise;
+    }
+
+    function forgetKeywords() {
+        keywordsPromise = null;
+    }
+
+    /**
+     * What a bookmark that does not exist yet would be offered.
+     *
+     * The collection goes in as evidence, as it does for every other row --
+     * three filed bookmarks agreeing on a site is what the derived source
+     * needs, and a draft alone can never reach minGroup. Uncached: the draft
+     * changes with every keystroke in the tags field.
+     */
+    function forDraft(dash, draft) {
+        const engine = global.TagSuggestions?.suggest;
+        const url = String(draft?.url || '').trim();
+        if (!engine || !url) return [];
+        const tags = (Array.isArray(draft?.tags) ? draft.tags : [])
+            .map((tag) => String(tag).trim().toLowerCase()).filter(Boolean);
+        const items = itemsFor(dash).concat([{ key: DRAFT, url, name: '', tags }]);
+        const keywords = Array.isArray(draft?.keywords) && draft.keywords.length
+            ? { [DRAFT]: draft.keywords } : undefined;
+        let groups = [];
+        try {
+            groups = engine(items, {
+                rules: dash?.settings?.tagRules || [],
+                catalogue: global.TagCatalogue?.now?.() || [],
+                dismissed: dash?.settings?.dismissedTagSuggestions || [],
+                ...(keywords ? { keywords } : {}),
+            });
+        } catch {
+            groups = [];
+        }
+        return groups
+            .filter((group) => (group.keys || []).includes(DRAFT) && !tags.includes(group.tag))
+            .map((group) => ({ tag: group.tag, pattern: group.pattern, reason: group.reason }));
+    }
+
+    /** The offers standing against one filed bookmark on the dashboard. */
+    function forDashBookmark(dash, bookmark) {
+        const list = dash?.allBookmarks || [];
+        let index = list.indexOf(bookmark);
+        if (index < 0) {
+            index = list.findIndex((b) => b && b.url === bookmark?.url && (b.name || '') === (bookmark?.name || ''));
+        }
+        if (index < 0) return [];
+        return byKey(dash).get(keyFor('dash', index)) || [];
+    }
+
+    /**
+     * Something that feeds the engine changed -- a tag accepted, one refused,
+     * a page read for words. Everything that holds an answer drops it.
+     */
+    function changed(dash) {
+        invalidate();
+        forgetKeywords();
+        dash?.config?.onTagEvidenceChanged?.();
+    }
+
     global.TagSuggestLive = {
         ensureCatalogue,
         invalidate,
         byKey,
         forBookmark,
         forInboxItem,
+        forDraft,
+        forDashBookmark,
+        storedKeywords,
+        forgetKeywords,
+        changed,
         topTag,
         dismissKey,
         bookmarkKey,

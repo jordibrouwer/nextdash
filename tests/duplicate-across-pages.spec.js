@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, answerNoCategory } = require('./e2e-helpers');
 
 /**
  * Saving a link you already have somewhere else.
@@ -88,7 +88,7 @@ async function fillAddForm(page, name, url) {
     await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
     await form.locator('input[type="url"]').fill(url);
-    await form.locator('.bookmark-inline-input').first().fill(name);
+    await form.locator('[data-field="name"]').fill(name);
     return form;
 }
 
@@ -104,7 +104,7 @@ test.describe('the same link on another page', () => {
         await loadDashboard(page);
 
         const form = await fillAddForm(page, 'Work copy', url);
-        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
+        await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
 
         // The dialog names the page it is already on — an id would be no use,
         // and the page name is what the server sends for exactly this line.
@@ -114,6 +114,8 @@ test.describe('the same link on another page', () => {
         await expect(dialog.locator('.duplicate-existing a')).toHaveAttribute('href', url);
 
         await dialog.locator('.modal-button').first().click();
+        // Then the form asks about the missing category, as for any bookmark.
+        await answerNoCategory(page);
 
         await expect.poll(async () => {
             const list = await bookmarksOnPage(page, currentPageId);
@@ -135,7 +137,7 @@ test.describe('the same link on another page', () => {
         await loadDashboard(page);
 
         const form = await fillAddForm(page, 'Work copy', url);
-        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
+        await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
 
         const dialog = page.locator('#app-modal');
         await expect(dialog).toHaveClass(/show/, { timeout: 10_000 });
@@ -149,7 +151,7 @@ test.describe('the same link on another page', () => {
 });
 
 test.describe('the same link twice on one page', () => {
-    test('is refused, with no question asked', async ({ page }) => {
+    test('is not saved, and the form says where it already is', async ({ page }) => {
         const url = `https://example.com/dup-same-page-${Date.now()}.test`;
 
         await loadDashboard(page);
@@ -159,12 +161,17 @@ test.describe('the same link twice on one page', () => {
         await loadDashboard(page);
 
         const form = await fillAddForm(page, 'Second copy', url);
-        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
-        await page.waitForTimeout(1500);
+        await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
 
-        // No dialog: two copies on one page are a mistake in every case, so
-        // there is nothing to decide.
-        await expect(page.locator('#app-modal')).not.toHaveClass(/show/);
+        // A statement, not a question: a page keeps one copy of a link, so
+        // there is nothing to decide -- but it names the one that is there,
+        // where it used to fail with "Could not create bookmark".
+        const dialog = page.locator('#app-modal');
+        await expect(dialog).toHaveClass(/show/, { timeout: 10_000 });
+        await expect(dialog).toContainText('First copy');
+        await expect(dialog.locator('.modal-button')).toHaveCount(1);
+        await dialog.locator('.modal-button').first().click();
+        await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
         const list = await bookmarksOnPage(page, currentPageId);
         expect(list.filter((b) => b.url === url).length).toBe(1);
     });

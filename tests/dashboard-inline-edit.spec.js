@@ -32,7 +32,7 @@ test.describe('dashboard bookmark form modal', () => {
         expect(nameBefore.length).toBeGreaterThan(0);
 
         await page.keyboard.press(';');
-        const nameInput = page.locator('.bookmark-inline-input').first();
+        const nameInput = page.locator('.bookmark-inline-form [data-field="name"]');
         await expect(nameInput).toBeVisible({ timeout: 3000 });
         await expect.poll(async () => isBookmarkFormModalOpen(page)).toBe(true);
         await expect.poll(async () => page.evaluate(() => (
@@ -80,19 +80,20 @@ test.describe('dashboard bookmark form modal', () => {
         await page.keyboard.press(';');
         await expect(page.locator('.bookmark-inline-form').first()).toBeVisible({ timeout: 3000 });
         await page.locator('.bookmark-inline-form input[type="url"]').first().click({ force: true });
-        // Not .bookmark-inline-select on its own: the monitor-interval dropdown
-        // carries that class too and comes first in the DOM, but is hidden unless
-        // the bookmark is monitored. The point here is that clicking a visible
-        // field does not dismiss the form, so the click has to land on one.
-        await page.locator('.bookmark-inline-form .bookmark-inline-select:not(.bookmark-inline-toggle-select)')
-            .first().click({ force: true });
+        // The page › category field opens its own popover; clicking it, and
+        // Escape closing that popover, must leave the form where it is.
+        await page.locator('.bookmark-inline-form .bookmark-form-place-value').click();
+        await expect(page.locator('.bookmark-form-place-pop')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('.bookmark-form-place-pop')).toHaveCount(0);
+        await expect(bookmarkFormModal(page)).toHaveClass(/show/);
         await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i }).first().click();
         await expect(bookmarkFormModal(page)).not.toHaveClass(/show/);
     });
 
     test('can type in inline form without discard modal', async ({ page }) => {
         await page.keyboard.press(';');
-        const nameInput = page.locator('.bookmark-inline-form .bookmark-inline-input').first();
+        const nameInput = page.locator('.bookmark-inline-form [data-field="name"]');
         await expect(nameInput).toBeVisible({ timeout: 3000 });
         const original = await nameInput.inputValue();
         await page.waitForTimeout(600);
@@ -126,7 +127,7 @@ test.describe('dashboard bookmark form modal', () => {
         await page.keyboard.press('ArrowUp');
 
         await page.keyboard.press(';');
-        await expect(page.locator('.bookmark-inline-input').first()).toBeVisible({ timeout: 3000 });
+        await expect(page.locator('.bookmark-inline-form [data-field="name"]')).toBeVisible({ timeout: 3000 });
         await page.keyboard.press('Escape');
         await expect.poll(async () => isBookmarkFormModalOpen(page)).toBe(false);
     });
@@ -149,7 +150,7 @@ test.describe('dashboard bookmark form modal', () => {
         expect(target.url).not.toBe('');
 
         await page.keyboard.press(';');
-        const nameInput = page.locator('.bookmark-inline-form .bookmark-inline-input').first();
+        const nameInput = page.locator('.bookmark-inline-form [data-field="name"]');
         await expect(nameInput).toBeVisible({ timeout: 3000 });
         await page.waitForTimeout(600);
         const inputName = (await nameInput.inputValue()).trim();
@@ -214,7 +215,7 @@ test.describe('dashboard bookmark form modal', () => {
 
     test('clicking second field keeps editor open', async ({ page }) => {
         await page.keyboard.press(';');
-        const nameInput = page.locator('.bookmark-inline-form .bookmark-inline-input').first();
+        const nameInput = page.locator('.bookmark-inline-form [data-field="name"]');
         const urlInput = page.locator('.bookmark-inline-form input[type="url"]').first();
         await expect(nameInput).toBeVisible({ timeout: 3000 });
         await page.waitForTimeout(700);

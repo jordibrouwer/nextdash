@@ -1,6 +1,6 @@
 const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent,
-    prepareDashboardInteraction } = require('./e2e-helpers');
+    prepareDashboardInteraction, answerNoCategory } = require('./e2e-helpers');
 
 /*
  * Triage has to end, and it has to be about what is left to do.
@@ -115,7 +115,7 @@ test.describe('triage can be finished', () => {
         // Promote hands the screen to the bookmark form, which is why it is the
         // one action that closes the overlay.
         await page.keyboard.press('p');
-        const save = page.locator('#bookmark-form-modal .bookmark-inline-actions > .bookmark-inline-save');
+        const save = page.locator('#bookmark-form-modal .bookmark-inline-actions .bookmark-inline-save');
         await expect(save).toBeVisible({ timeout: 10_000 });
 
         // The flag that carries the run across the form.
@@ -123,6 +123,7 @@ test.describe('triage can be finished', () => {
             .toBe(true);
 
         await save.click();
+        await answerNoCategory(page);
 
         // Back where it left off, without a second press of t.
         await expect.poll(() => page.evaluate(

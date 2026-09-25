@@ -643,7 +643,7 @@ class DashboardUnsortedSelect {
             // Before the redraw, not after: the chips are drawn from the
             // engine's last answer, which was computed while these rows still
             // lacked the tag this write just gave them.
-            window.TagSuggestLive?.invalidate?.();
+            window.TagSuggestLive?.changed?.(d);
             await this.unsorted.loadAndRender();
             d.showNotification(
                 add
@@ -887,7 +887,7 @@ class DashboardUnsortedSelect {
             d.showNotification(this.t('unsortedBulkTagFailed', 'Could not change the tags'), 'error');
         } finally {
             this._busy = false;
-            window.TagSuggestLive?.invalidate?.();
+            window.TagSuggestLive?.changed?.(d);
             this.clear();
             await d.loadAllBookmarks?.();
             await this.unsorted.loadAndRender();

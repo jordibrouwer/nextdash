@@ -117,8 +117,9 @@ test.describe('fetching a favicon', () => {
 
         // An icon is already there: this is the case the button exists for,
         // when the stored one is wrong or stale.
-        await page.locator('#bookmark-form-modal [data-field-block="icon"] button', { hasText: /fetch/i })
-            .first().click();
+        // Fetch lives behind the pencil on the icon since the form's redesign.
+        await page.locator('#bookmark-form-modal .bookmark-form-card-pencil').click();
+        await page.locator('#bookmark-form-modal').getByRole('menuitem', { name: /fetch again/i }).click();
         await settle(page);
 
         expect(calls.preview, 'the Fetch button did not ask').toBeGreaterThan(0);
@@ -142,14 +143,15 @@ test.describe('fetching a favicon', () => {
         const calls = await stubIconFetch(page);
         await openEditor(page, { icon: 'hand-picked.ico' });
 
-        // Even a real change of address: the blur fetch fills an empty icon and
-        // leaves a chosen one alone. The Fetch button is how you ask for a new
-        // one, and it is one click away.
+        // Even a real change of address: the page is read again -- the card,
+        // the name suggestion and the tag suggestions need it -- but the icon
+        // is only downloaded when there is none. Fetch again, behind the
+        // pencil, is how you ask for a new one.
         await urlField(page).fill('https://changed.example.com/page');
         await urlField(page).blur();
         await settle(page);
 
-        expect(calls.preview, 'the blur fetch overrode a chosen icon').toBe(0);
+        expect(calls.download, 'the blur fetch overrode a chosen icon').toBe(0);
         await expect(iconField(page), 'the chosen icon was replaced')
             .toHaveValue('/data/icons/hand-picked.ico');
     });
@@ -183,10 +185,10 @@ test.describe('fetching a favicon', () => {
         await settle(page);
 
         expect(calls.preview, 'nothing was asked at all').toBeGreaterThan(0);
-        // A page with no icon of its own is an answer. It has to say so rather
-        // than leave the reader watching a field that never fills.
+        // A page with no icon of its own is an answer, and the card shows it as
+        // one: an empty icon square, not a field that never fills and not a
+        // status word.
         await expect(iconField(page), 'a failed fetch invented an icon').toHaveValue('');
-        await expect(page.locator('#bookmark-form-modal .bookmark-inline-icon-state').last())
-            .not.toBeEmpty();
+        await expect(page.locator('#bookmark-form-modal .bookmark-form-card-icon img')).toBeHidden();
     });
 });

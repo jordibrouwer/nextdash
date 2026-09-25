@@ -95,6 +95,11 @@ class TagAutocomplete {
             e.preventDefault();
             this._activeIndex = Math.max(this._activeIndex - 1, 0);
             this._highlightActive();
+        } else if (e.key === 'Tab' && this._activeIndex < 0) {
+            // Nothing chosen in the list: Tab moves on, the way it does
+            // everywhere else. Taking the first entry unasked filled in tag
+            // after tag and kept the keyboard in this field.
+            this._close();
         } else if (e.key === 'Tab' || e.key === 'Enter') {
             const items = this._items();
             const target = items[this._activeIndex] ?? items[0];
@@ -125,11 +130,14 @@ class TagAutocomplete {
         }
 
         this._dropdown.innerHTML = '';
-        this._activeIndex = 0;
+        // Something typed: its first completion is the likely one, and Tab or
+        // Enter takes it. Nothing typed -- the list just opened because the
+        // field has the focus -- nothing is chosen, so Tab moves on.
+        this._activeIndex = token ? 0 : -1;
 
         candidates.forEach((tag, i) => {
             const li = document.createElement('li');
-            li.className = 'tag-ac-item' + (i === 0 ? ' tag-ac-item-active' : '');
+            li.className = 'tag-ac-item' + (token && i === 0 ? ' tag-ac-item-active' : '');
             li.setAttribute('role', 'option');
             li.dataset.tag = tag;
 

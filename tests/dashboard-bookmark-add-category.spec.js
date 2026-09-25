@@ -63,17 +63,14 @@ test.describe('dashboard bookmark add category placement', () => {
 
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         await form.locator('input[type="url"]').fill(uniqueUrl);
-        await form.locator('.bookmark-inline-input').first().fill(uniqueName);
+        await form.locator('[data-field="name"]').fill(uniqueName);
         await form.locator('input[type="url"]').blur();
 
-        await page.waitForFunction(() => {
-            const selects = document.querySelectorAll('#bookmark-form-modal .bookmark-inline-select:not(.bookmark-inline-toggle-select)');
-            const catSelect = selects[selects.length - 1];
-            return catSelect && catSelect.options.length > 1;
-        }, { timeout: 10_000 });
-
-        await form.locator('.bookmark-inline-select:not(.bookmark-inline-toggle-select)').last().selectOption('media');
-        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
+        // Through the page › category field, the way someone picks it.
+        await form.locator('.bookmark-form-place-value').click();
+        await page.locator('.bookmark-form-place-pop .bookmark-form-place-option[data-category-id="media"]').first().click();
+        await expect(form.locator('.bookmark-form-place-value')).toContainText('›');
+        await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
         await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/, { timeout: 10_000 });
 
         const mediaSelector = `.category[data-category-id="media"]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`;

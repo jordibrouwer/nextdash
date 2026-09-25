@@ -1646,6 +1646,40 @@ class DashboardBookmarkRows {
         const items = [];
         const tagRows = this._collectRankedTagsForPopover(bookmarkRef.bookmark);
 
+        /*
+         * What the engine would tag this row, above the full list.
+         *
+         * Config, the inbox, Kept and the bookmark form all offer it; the one
+         * place a bookmark is tagged straight from the grid did not. Taking
+         * one is the same click as any other row here.
+         */
+        const offers = (window.TagSuggestLive?.forDashBookmark?.(d, bookmarkRef.bookmark) || []).slice(0, 3);
+        if (offers.length) {
+            const suggested = document.createElement('div');
+            suggested.className = 'tag-popover-suggested';
+            const label = document.createElement('div');
+            label.className = 'move-popover-section-label';
+            label.textContent = t('dashboard.tagPopoverSuggestedSection', 'Suggested');
+            suggested.appendChild(label);
+            offers.forEach(({ tag }) => {
+                const item = document.createElement('div');
+                item.className = 'move-popover-item tag-popover-suggested-item';
+                item.id = `tag-popover-sugg-${tag.replace(/[^a-z0-9_-]/g, '-')}`;
+                item.setAttribute('role', 'option');
+                item.setAttribute('data-tag', tag);
+                item.setAttribute('aria-selected', 'false');
+                const check = document.createElement('span');
+                check.className = 'move-popover-check';
+                const text = document.createElement('span');
+                text.className = 'tag-popover-item-label';
+                text.textContent = `#${tag}`;
+                item.append(check, text);
+                suggested.appendChild(item);
+                items.push(item);
+            });
+            pop.appendChild(suggested);
+        }
+
         if (tagRows.length > 0) {
             const sectionLabel = document.createElement('div');
             sectionLabel.className = 'move-popover-section-label';
@@ -2061,6 +2095,8 @@ class DashboardBookmarkRows {
             .then((ok) => {
                 if (ok) {
                     void d.data?.fetchAndStoreDataRevision?.();
+                    // Every answer about this row's tags is stale now.
+                    window.TagSuggestLive?.changed?.(d);
                     d.renderDashboard({ incremental: false });
                     return true;
                 }

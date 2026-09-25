@@ -211,26 +211,10 @@ html[data-theme] body:not([data-depth="flat"]) .bookmark-form-modal-dialog {
  * the dialog lands near 480px and the actions stay on screen.
  */
 @media (min-width: 860px) and (pointer: fine) {
+    /* One column now, so a narrower sheet: the fields are read top to
+       bottom, and a 900px line of them is a long way for the eye. */
     .bookmark-form-modal-dialog {
-        width: min(900px, 100%);
-    }
-
-    .bookmark-form-modal-body .bookmark-inline-form {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        column-gap: 20px;
-        /* Equal-height slabs: two groups, not one group and a shorter one. */
-        align-items: stretch;
-    }
-
-    /* Side by side there is nothing to stack, so the stacking gap goes. */
-    .bookmark-form-modal-body .bookmark-inline-form {
-        row-gap: 0;
-    }
-
-    /* The buttons belong to the whole form, not to the column they follow. */
-    .bookmark-form-modal-body .bookmark-inline-actions {
-        grid-column: 1 / -1;
+        width: min(620px, 100%);
     }
 }
 
@@ -277,7 +261,10 @@ body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-icon-previe
 
 /* Delete/discard confirms and other #app-modal prompts opened from the form. */
 body.bookmark-form-modal-open #app-modal.modal-overlay.show {
-    z-index: 10100;
+    /* A question the form asks is on top of everything the form has open:
+       the tag dropdown (10150), a field bubble (10160), the page › category
+       popover (10200). Below any of them it asks about a form it hides. */
+    z-index: 10300;
 }
 
 /* Tag autocomplete dropdown (appended to body) must sit above the form modal. */
@@ -409,4 +396,316 @@ body.bookmark-form-modal-open .tag-ac-dropdown {
     border-color: var(--accent-primary);
     color: var(--background-primary);
     font-weight: var(--font-weight-semibold, 600);
+}
+
+/* One column, in the order the form is filled in. */
+.bookmark-form-modal-body .bookmark-form-col {
+    display: grid;
+    gap: var(--space-3, 0.75rem);
+}
+.bookmark-form-modal-body .bookmark-form-place {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: var(--space-3, 0.75rem);
+}
+.bookmark-form-modal-body .bookmark-form-flags-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    flex-wrap: wrap;
+}
+.bookmark-form-modal-body .bookmark-form-flags-row .bookmark-inline-toggles {
+    margin-left: auto;
+}
+.bookmark-form-modal-body .bookmark-form-name-note {
+    margin: 0.25rem 0 0;
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-tertiary);
+}
+.bookmark-form-modal-body .bookmark-inline-actions {
+    justify-content: space-between;
+}
+.bookmark-form-modal-body .bookmark-inline-actions-end {
+    display: flex;
+    gap: var(--space-1-5, 0.35rem);
+    margin-left: auto;
+}
+@media (max-width: 640px) {
+    .bookmark-form-modal-body .bookmark-form-place { grid-template-columns: minmax(0, 1fr); }
+    .bookmark-form-modal-body .bookmark-form-card { display: none; }
+}
+
+/* What the page says about itself: a quiet card, not a panel of controls. */
+.bookmark-form-modal-body .bookmark-form-card {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: var(--space-3, 0.85rem);
+    align-items: center;
+    padding: var(--space-2, 0.6rem);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary);
+}
+.bookmark-form-modal-body .bookmark-form-card-icon {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-2, 6px);
+    background: var(--background-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.bookmark-form-modal-body .bookmark-form-card-icon img { width: 28px; height: 28px; object-fit: contain; }
+.bookmark-form-modal-body .bookmark-form-card-pencil {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+}
+.bookmark-form-modal-body .bookmark-form-card-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 5;
+    display: grid;
+    min-width: 9rem;
+    padding: 4px 0;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-modal, var(--background-primary));
+}
+.bookmark-form-modal-body .bookmark-form-card-menu button {
+    text-align: left;
+    padding: 6px 10px;
+    background: none;
+    border: 0;
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+.bookmark-form-modal-body .bookmark-form-card-host { font-size: var(--text-xs, 0.75rem); color: var(--text-secondary); }
+.bookmark-form-modal-body .bookmark-form-card-desc {
+    margin: 2px 0 0;
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-tertiary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.bookmark-form-modal-body .bookmark-form-card-image {
+    width: 96px;
+    height: 54px;
+    object-fit: cover;
+    border-radius: var(--radius-2, 6px);
+}
+
+.bookmark-form-modal-body .bookmark-form-name-action {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* Suggested tags under the tags field: quiet until you want them. */
+.bookmark-form-modal-body .bookmark-form-tags-suggest {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+.bookmark-form-modal-body .bookmark-form-tags-suggest[hidden] { display: none; }
+.bookmark-form-modal-body .tag-suggest-chips-label {
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-tertiary);
+}
+.bookmark-form-modal-body .bookmark-form-tags-suggest-refresh {
+    position: absolute;
+    right: 8px;
+    top: 26px;
+    border: 0;
+    background: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font: inherit;
+}
+.bookmark-form-modal-body .bookmark-inline-field:has(> .bookmark-form-tags-suggest-refresh) { position: relative; }
+
+/* Page › category: a field that opens the Move to… popover. */
+.bookmark-form-modal-body .bookmark-form-place-value {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+.bookmark-form-modal-body .bookmark-form-place-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.bookmark-form-modal-body .bookmark-form-place-caret {
+    color: var(--text-tertiary);
+    font-size: 0.8em;
+}
+/* Above the bookmark sheet, which sits above the dashboard's popovers. */
+.move-popover.bookmark-form-place-pop {
+    z-index: 10200;
+    max-width: min(24rem, calc(100vw - 1rem));
+}
+.bookmark-form-place-pop .bookmark-form-place-create .move-popover-check {
+    color: var(--accent-primary);
+}
+
+/* `hidden` means hidden in this form. Several parts are kept in the DOM as
+   the value the save reads -- the icon block, the page and category
+   selects -- and a class that sets `display` would otherwise put them back. */
+.bookmark-form-modal-body .bookmark-inline-form [hidden] {
+    display: none !important;
+}
+
+
+/* Suggested tags look like the tags on a bookmark in Shift+T's popover --
+   the same pill -- with a dashed edge because they are not on it yet. */
+.bookmark-form-modal-body .bookmark-form-tags-suggest .tag-suggest-chip {
+    background: var(--background-secondary);
+    border: 1px dashed var(--border-secondary);
+}
+.bookmark-form-modal-body .bookmark-form-tags-suggest .tag-suggest-chip-add {
+    font-size: calc(var(--font-size-controls) * 0.78);
+    color: var(--text-tertiary);
+    padding: var(--space-hairline, 0.12rem) 0.1rem var(--space-hairline, 0.12rem) var(--space-2, 0.45rem);
+}
+.bookmark-form-modal-body .bookmark-form-tags-suggest .tag-suggest-chip-add:hover,
+.bookmark-form-modal-body .bookmark-form-tags-suggest .tag-suggest-chip-add:focus-visible {
+    color: var(--text-primary);
+}
+.bookmark-form-modal-body .bookmark-form-tags-suggest .tag-suggest-chips-label {
+    font-size: calc(var(--font-size-controls) * 0.72);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+}
+
+/* The form's buttons are the theme's type, like every other control in it;
+   left alone a <button> falls back to the browser's own face. */
+.bookmark-form-modal-body .bookmark-inline-action-btn,
+.bookmark-form-modal-body .bookmark-inline-create-btn,
+.bookmark-form-modal-body .bookmark-form-card-pencil,
+.bookmark-form-modal-body .bookmark-form-card-menu button,
+.bookmark-form-modal-body .bookmark-form-place-value,
+.bookmark-form-modal-body .bookmark-form-info {
+    font-family: inherit;
+}
+.bookmark-form-modal-body .bookmark-form-card-letter {
+    font-size: 1.1rem;
+}
+.move-popover.bookmark-form-place-pop .bookmark-form-place-filter {
+    display: block;
+    width: calc(100% - 2 * var(--space-3, 0.85rem));
+    margin: 0 var(--space-3, 0.85rem) var(--space-1-5, 0.35rem);
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-4, 0.4rem);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: calc(var(--font-size-controls) * 0.88);
+}
+.move-popover.bookmark-form-place-pop .bookmark-form-place-filter:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+/* A scroll that reaches the end of the form, or of its popover, stops there
+   rather than carrying on into the page behind. */
+.bookmark-form-modal-body,
+.move-popover.bookmark-form-place-pop {
+    overscroll-behavior: contain;
+}
+.bookmark-form-modal-body .bookmark-form-card.is-loading .bookmark-form-card-desc {
+    font-style: italic;
+    color: var(--text-tertiary);
+}
+
+/* The pencil: a real control on the icon's corner, not a speck. */
+.bookmark-form-modal-body .bookmark-form-card-pencil {
+    right: -8px;
+    bottom: -8px;
+    width: 24px;
+    height: 24px;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font-size: 12px;
+    box-shadow: 0 1px 4px color-mix(in srgb, black 35%, transparent);
+    transition: border-color 0.12s ease, color 0.12s ease;
+}
+.bookmark-form-modal-body .bookmark-form-card-pencil:hover,
+.bookmark-form-modal-body .bookmark-form-card-pencil:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    outline: none;
+}
+
+/* Before an address: a link mark in a dashed box, and one line saying what
+   will appear. After a read that gave nothing: the same quiet line style. */
+.bookmark-form-modal-body .bookmark-form-card-blank {
+    display: inline-flex;
+    color: var(--text-tertiary);
+}
+.bookmark-form-modal-body .bookmark-form-card-blank svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.bookmark-form-modal-body .bookmark-form-card.is-idle .bookmark-form-card-icon {
+    background: transparent;
+    border: 1px dashed var(--border-primary);
+}
+.bookmark-form-modal-body .bookmark-form-card.is-idle .bookmark-form-card-host {
+    display: none;
+}
+.bookmark-form-modal-body .bookmark-form-card.is-idle .bookmark-form-card-desc,
+.bookmark-form-modal-body .bookmark-form-card.is-empty .bookmark-form-card-desc {
+    color: var(--text-tertiary);
+    font-style: italic;
+    -webkit-line-clamp: 3;
+}
+.bookmark-form-modal-body .bookmark-form-card.is-empty .bookmark-form-card-image {
+    display: none;
+}
+.bookmark-form-modal-body .bookmark-form-card-retry {
+    margin-top: 4px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-2xs, 0.7rem);
+    text-decoration: underline;
+    cursor: pointer;
+}
+.bookmark-form-modal-body .bookmark-form-card-retry:hover,
+.bookmark-form-modal-body .bookmark-form-card-retry:focus-visible {
+    color: var(--accent-primary);
 }

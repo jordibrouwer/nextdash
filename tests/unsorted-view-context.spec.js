@@ -258,12 +258,13 @@ test('Edit offers Unsorted as the page, and picking another one files the bookma
     await page.locator('#bookmark-context-menu [data-action="edit"]').click();
     await expect(page.locator('.bookmark-inline-form')).toBeVisible();
 
-    const pageSelect = page.locator('.bookmark-inline-form select.bookmark-inline-select').first();
-    // Staying put is the default: the bookmark's own page is an option rather
-    // than a gap that falls through to the first real page.
-    await expect(pageSelect).toHaveValue('999999');
+    // Staying put is the default: the bookmark's own page is where the field
+    // starts, rather than a gap that falls through to the first real page.
+    const place = page.locator('.bookmark-inline-form .bookmark-form-place-value');
+    await expect(place).toContainText(/unsorted/i);
 
-    await pageSelect.selectOption('1');
+    await place.click();
+    await page.locator('.bookmark-form-place-pop .bookmark-form-place-option[data-page-id="1"]').first().click();
     await page.locator('.bookmark-inline-save', { hasText: 'Save' }).click();
 
     // Gone from Unsorted, on the page, and the reader never left the view.

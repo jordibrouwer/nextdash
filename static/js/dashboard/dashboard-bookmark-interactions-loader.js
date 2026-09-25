@@ -122,6 +122,11 @@
         /** Called on every dashboard render — must not fetch the module. */
         _abortInlineEditForRender() {
             const d = this.dash;
+            // The bookmark form is its own sheet, not an edit in a grid row: a
+            // render of the grid behind it -- a favicon refresh, a feed poll --
+            // must not cancel its pending read of a new address or drop its
+            // context. That is what made a changed URL sometimes not update.
+            if (document.body.classList.contains('bookmark-form-modal-open')) return;
             if (d.inlineEditingBookmarkIndex !== null) {
                 if (this.hasInlineEditUnsavedChanges()) {
                     return;

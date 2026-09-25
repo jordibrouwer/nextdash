@@ -79,7 +79,7 @@ test.describe('health Edit → bookmark modal', () => {
 
         const form = bookmarkForm(page);
         await expect(form.locator('input[type="url"]')).toHaveValue(issue.url);
-        await expect(form.locator('.bookmark-inline-input').first()).toHaveValue(issue.name);
+        await expect(form.locator('[data-field="name"]')).toHaveValue(issue.name);
         // Edit mode retitles the form and drops "Create + New".
         await expect(page.locator('#bookmark-form-modal-title')).toHaveText(/edit/i);
         await expect(page.locator('#bookmark-form-create-another')).toHaveCount(0);
@@ -103,11 +103,11 @@ test.describe('health Edit → bookmark modal', () => {
 
         const newName = `Renamed from health ${Date.now()}`;
         const form = bookmarkForm(page);
-        await form.locator('.bookmark-inline-input').first().fill(newName);
+        await form.locator('[data-field="name"]').fill(newName);
 
         const savePost = page.waitForRequest((req) =>
             req.url().includes(`/api/bookmarks?page=${issue.pageId}`) && req.method() === 'POST');
-        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
+        await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
         const request = await savePost;
 
         // The whole page list is written back with the edited entry replaced.
@@ -177,10 +177,10 @@ test.describe('health Edit → bookmark modal', () => {
         await expect(form.locator('input[type="url"]')).toHaveValue(target.last.url);
 
         const newName = `Stale index edit ${Date.now()}`;
-        await form.locator('.bookmark-inline-input').first().fill(newName);
+        await form.locator('[data-field="name"]').fill(newName);
         const savePost = page.waitForRequest((r) =>
             r.url().includes(`/api/bookmarks?page=${target.pageId}`) && r.method() === 'POST');
-        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
+        await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
         const body = JSON.parse((await savePost).postData() || '[]');
 
         // The bookmark the URL names was renamed; index 0 was left alone.

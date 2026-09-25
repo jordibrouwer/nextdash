@@ -84,6 +84,10 @@ class DashboardInlineEdit {
         d.keyboardNavigation?.enable?.();
         window.FocusTrapUtils?.syncDashboardInert?.();
         const shell = this._formModalShell || document.getElementById('bookmark-form-modal');
+        if (this._formScrollLock) {
+            window.ScrollLock?.release?.(this._formScrollLock);
+            this._formScrollLock = null;
+        }
         if (shell) {
             shell.classList.remove('show');
             shell.setAttribute('aria-hidden', 'true');
@@ -198,13 +202,23 @@ class DashboardInlineEdit {
 
         shell.classList.add('show');
         shell.setAttribute('aria-hidden', 'false');
+        // The dashboard stands still behind the form: a wheel over it, or over
+        // a popover of its own, scrolled the page underneath. Refcounted, so a
+        // dialog opened on top of the form keeps the lock too.
+        if (!this._formScrollLock) {
+            this._formScrollLock = window.ScrollLock?.acquire?.('bookmark-form-modal') ?? null;
+        }
 
         const body = shell.querySelector('.bookmark-form-modal-body');
         body.innerHTML = '';
 
+        // Before the form is drawn, not after: disabling clears the grid's
+        // selection and hands the focus back to the row, which took it straight
+        // off the field the form had just focused -- editing opened with the
+        // focus behind the sheet.
+        d.keyboardNavigation?.disable?.();
         this._renderBookmarkForm(body, bookmarkRef, row);
 
-        d.keyboardNavigation?.disable?.();
         window.FocusTrapUtils?.syncDashboardInert?.();
         document.body.classList.add('bookmark-form-modal-open');
     }
@@ -461,6 +475,11 @@ class DashboardInlineEdit {
 
     _abortInlineEditForRender() {
         const d = this.dash;
+        // The bookmark form is its own sheet, not an edit in a grid row: a
+        // render of the grid behind it -- a favicon refresh, a feed poll --
+        // must not cancel its pending read of a new address or drop its
+        // context. That is what made a changed URL sometimes not update.
+        if (document.body.classList.contains('bookmark-form-modal-open')) return;
         if (d.inlineEditingBookmarkIndex !== null) {
             if (this.hasInlineEditUnsavedChanges()) {
                 return;
@@ -637,46 +656,18 @@ class DashboardInlineEdit {
         const form = document.createElement('div');
         form.className = 'bookmark-inline-form';
 
-        /*
-         * Two columns, not eleven stacked rows.
-         *
-         * Every field was full width in a 520px dialog, which made the form
-         * 735px tall for adding and 763px for editing -- more than a laptop
-         * browser leaves below its tabs, so the Save button sat under the fold
-         * and the dialog scrolled. The fields fall into two groups of almost
-         * equal height: what the bookmark is, and where it goes and how it is
-         * watched. Side by side they come to about 350px.
-         *
-         * Real elements rather than grid areas, so Tab runs down one column and
-         * then the other. On a narrow window CSS gives them `display: contents`
-         * and the single column returns exactly as it was.
-         */
-        const colWhat = document.createElement('div');
-        colWhat.className = 'bookmark-inline-col bookmark-inline-col-what';
-        const colWhere = document.createElement('div');
-        colWhere.className = 'bookmark-inline-col bookmark-inline-col-where';
-        form.appendChild(colWhat);
-        form.appendChild(colWhere);
+        // One column in the order a bookmark is filled in: address, name, what
+        // the page says, then where it goes and how it is watched. The two
+        // columns this replaces grouped the fields by kind, which is not the
+        // order anyone fills them in.
+        const col = document.createElement('div');
+        col.className = 'bookmark-inline-col bookmark-form-col';
+        form.appendChild(col);
+        const colWhat = col;
+        const colWhere = col;
 
         const cfg = (key, fallback) => d.configLabel(key, fallback);
 
-        /*
-         * Each column says what it is for.
-         *
-         * The split has always been there and has always been silent: the two
-         * groups only read as groups on a wide window, where the gap between
-         * them is the only thing saying so, and on a narrow one they run
-         * together into the eleven-row list the columns were built to avoid.
-         * A heading holds either way.
-         */
-        const mkGroupTitle = (text) => {
-            const title = document.createElement('h3');
-            title.className = 'bookmark-inline-group-title';
-            title.textContent = text;
-            return title;
-        };
-        colWhat.appendChild(mkGroupTitle(cfg('bookmarkGroupWhat', 'What it is')));
-        colWhere.appendChild(mkGroupTitle(cfg('bookmarkGroupWhere', 'Where it goes')));
 
         const mkField = (labelText, inputEl, errorEl) => {
             const wrap = document.createElement('div');
@@ -719,10 +710,32 @@ class DashboardInlineEdit {
         urlInput.className = 'bookmark-inline-input';
         urlInput.dataset.field = 'url';
         urlInput.value = bookmark.url || '';
-        colWhat.appendChild(nameField);
         colWhat.appendChild(mkField(cfg('urlLabelShort', 'URL'), urlInput, urlError));
+        colWhat.appendChild(nameField);
+        const nameNote = document.createElement('p');
+        nameNote.className = 'bookmark-form-name-note';
+        nameNote.hidden = true;
+        nameField.appendChild(nameNote);
+        // Filled in once syncSaveEnabled exists, further down.
+        let syncSaveFromTitle = () => {};
+        const title = window.BookmarkFormTitle.attach(nameInput, nameNote, {
+            t: (key, fallback) => d.language?.t(key) || fallback,
+            onChange: () => syncSaveFromTitle(),
+        });
+        // Editing: the name is the bookmark's own, so the page's title is only
+        // ever offered beside it, never written over it.
+        if (!isCreate) nameInput.dataset.touchedByReader = '1';
+        // Adding with a name the route brought along -- the inbox sends the
+        // link's own title -- is the same: that name was chosen, and the page's
+        // title is offered beside it.
+        if (isCreate && nameInput.value.trim()) nameInput.dataset.touchedByReader = '1';
+        const cardHost = document.createElement('div');
+        cardHost.className = 'bookmark-form-card';
+        colWhat.appendChild(cardHost);
 
         let pendingIcon = String(bookmark.icon || '').trim();
+        // True while the icon is one this form fetched for the current address.
+        let iconIsFetched = false;
         const iconPreview = document.createElement('div');
         iconPreview.className = 'bookmark-inline-icon-preview';
 
@@ -735,15 +748,6 @@ class DashboardInlineEdit {
         const iconActions = document.createElement('div');
         iconActions.className = 'bookmark-inline-icon-actions';
 
-        const setIconBtn = document.createElement('button');
-        setIconBtn.type = 'button';
-        setIconBtn.className = 'bookmark-inline-action-btn bookmark-inline-save';
-        setIconBtn.textContent = cfg('detailSetIconUrlBtn', 'Set URL');
-
-        const fetchIconBtn = document.createElement('button');
-        fetchIconBtn.type = 'button';
-        fetchIconBtn.className = 'bookmark-inline-action-btn';
-        fetchIconBtn.textContent = cfg('fetch', 'Fetch');
         let inlineAutoFetchTimer = null;
         let inlineAutoFetchInFlight = false;
 
@@ -764,10 +768,10 @@ class DashboardInlineEdit {
 
         const iconState = document.createElement('span');
         iconState.className = 'bookmark-inline-icon-state';
-        const iconFetchState = document.createElement('span');
-        iconFetchState.className = 'bookmark-inline-icon-state';
 
+        let card = null;
         const syncIconState = () => {
+            card?.setIcon(pendingIcon);
             iconState.textContent = pendingIcon
                 ? (d.language.t('config.iconSet') || 'Icon set')
                 : (d.language.t('config.iconNone') || 'No icon');
@@ -785,85 +789,21 @@ class DashboardInlineEdit {
             }
         };
 
-        setIconBtn.addEventListener('click', async () => {
-            const inputValue = (iconUrlInput.value || '').trim();
-            if (!inputValue) {
-                d.notifyDashboard('iconUrlRequired', 'Icon URL is required.', 'error');
-                return;
-            }
-            if (inputValue.startsWith('/data/icons/')) {
-                const existingIcon = inputValue.replace('/data/icons/', '').trim();
-                if (!existingIcon) {
-                    d.notifyDashboard('iconUrlRequired', 'Icon URL is required.', 'error');
-                    return;
-                }
-                pendingIcon = existingIcon;
-                syncIconState();
-                iconFetchState.textContent = d.tConfig('iconSet', 'Icon set');
-                d.notifyDashboard('iconUrlSet', 'Icon URL set.', 'success');
-                return;
-            }
-            setIconBtn.disabled = true;
-            iconFetchState.textContent = d.language.t('config.iconFetching') || 'Fetching...';
-            const nextIcon = await this.uploadBookmarkIconFromUrl(inputValue);
-            setIconBtn.disabled = false;
-            if (!nextIcon) {
-                iconFetchState.textContent = d.tConfig('iconFetchFailed', 'Fetch failed');
-                d.notifyConfig('iconUrlInvalid', 'Invalid or blocked icon URL.', 'error');
-                return;
-            }
-            pendingIcon = nextIcon;
-            iconUrlInput.value = `/data/icons/${nextIcon}`;
-            syncIconState();
-            iconFetchState.textContent = d.tConfig('iconFound', 'Found');
-            d.notifyDashboard('iconUrlSet', 'Icon URL set.', 'success');
-        });
-
-        fetchIconBtn.addEventListener('click', async () => {
-            const urlValue = (urlInput.value || '').trim();
-            if (!urlValue) {
-                d.notifyConfig('urlRequiredShort', 'URL is required.', 'error');
-                return;
-            }
-            fetchIconBtn.disabled = true;
-            iconFetchState.textContent = d.language.t('config.iconFetching') || 'Fetching...';
-            const fetchedIcon = await this.fetchAndAssignFaviconForUrl(urlValue);
-            fetchIconBtn.disabled = false;
-            if (!fetchedIcon) {
-                iconFetchState.textContent = d.tConfig('iconNotFound', 'Not found');
-                d.notifyConfig('faviconFetchFailed', 'Favicon fetch failed.', 'error');
-                return;
-            }
-            pendingIcon = fetchedIcon;
-            iconUrlInput.value = `/data/icons/${fetchedIcon}`;
-            syncIconState();
-            iconFetchState.textContent = d.tConfig('iconFound', 'Found');
-            d.notifyConfig('faviconFetched', 'Favicon fetched.', 'success');
-        });
         urlInput.addEventListener('blur', () => {
             if (!urlInput.dataset.touched) {
+                return;
+            }
+            // An emptied address is back to nothing to show.
+            if (!urlInput.value.trim()) {
+                lastFetchedUrl = '';
+                card?.setIdle();
                 return;
             }
             if (inlineAutoFetchTimer) {
                 clearTimeout(inlineAutoFetchTimer);
             }
-            inlineAutoFetchTimer = setTimeout(async () => {
-                const urlValue = (urlInput.value || '').trim();
-                if (!urlValue || pendingIcon || inlineAutoFetchInFlight) {
-                    return;
-                }
-                inlineAutoFetchInFlight = true;
-                iconFetchState.textContent = d.language.t('config.iconFetching') || 'Fetching...';
-                const fetchedIcon = await this.fetchAndAssignFaviconForUrl(urlValue);
-                inlineAutoFetchInFlight = false;
-                if (!fetchedIcon) {
-                    iconFetchState.textContent = d.language.t('config.iconNotFound') || 'Not found';
-                    return;
-                }
-                pendingIcon = fetchedIcon;
-                iconUrlInput.value = `/data/icons/${fetchedIcon}`;
-                syncIconState();
-                iconFetchState.textContent = d.language.t('config.iconFound') || 'Found';
+            inlineAutoFetchTimer = setTimeout(() => {
+                void runPreviewFetch();
             }, 250);
         });
 
@@ -885,6 +825,7 @@ class DashboardInlineEdit {
                 return;
             }
             pendingIcon = uploadedIcon;
+            iconIsFetched = false;
             iconUrlInput.value = `/data/icons/${uploadedIcon}`;
             syncIconState();
             d.notifyDashboard('iconUploaded', 'Icon uploaded.', 'success');
@@ -897,11 +838,7 @@ class DashboardInlineEdit {
         });
 
         iconActions.appendChild(uploadIconBtn);
-        iconActions.appendChild(fetchIconBtn);
-        iconActions.appendChild(setIconBtn);
         iconActions.appendChild(clearIconBtn);
-        iconActions.appendChild(iconState);
-        iconActions.appendChild(iconFetchState);
         const iconWrap = mkField(cfg('iconUrlOptional', 'Icon URL (opt)'), iconUrlInput);
         // Named so the stylesheet can put it away on a phone, where a row of
         // four icon buttons is most of a screen for a favicon that is fetched
@@ -911,8 +848,82 @@ class DashboardInlineEdit {
         iconWrap.appendChild(iconPreview);
         iconWrap.appendChild(iconFileInput);
         iconWrap.appendChild(iconActions);
-        colWhat.appendChild(iconWrap);
+        // The icon URL is no longer something to type: the input stays as the
+        // value the save reads, and the card (below) is what the reader sees.
+        iconUrlInput.hidden = true;
+        card = window.BookmarkFormCard.mount(cardHost, {
+            t: (key, fallback) => d.language?.t(key) || fallback,
+            onUpload: () => iconFileInput.click(),
+            onFetchAgain: () => { void runPreviewFetch({ force: true }); },
+            onClear: () => { pendingIcon = ''; iconUrlInput.value = ''; syncIconState(); },
+            onRetry: () => { void runPreviewFetch({ force: true }); },
+        });
+        // The old icon block stays in the form as the value the save reads --
+        // the URL input, the file input -- and out of sight: the card is what
+        // the reader sees and acts on.
+        iconWrap.hidden = true;
+        cardHost.appendChild(iconWrap);
         syncIconState();
+        if (isCreate && !String(bookmark.url || '').trim()) card.setIdle();
+        if (!isCreate) {
+            card.setLoading(bookmark.url || '');
+            card.setPreview({
+                url: bookmark.url,
+                description: bookmark.previewDesc || '',
+                image: bookmark.previewImage || '',
+            });
+        }
+        let lastFetchedUrl = isCreate ? '' : String(bookmark.url || '').trim();
+        const onPreview = (preview) => {
+            card.setPreview(preview || { url: urlInput.value.trim() });
+            title.offer(preview?.title, urlInput.value.trim());
+            void refreshSuggestions(Array.isArray(preview?.keywords) ? preview.keywords : []);
+        };
+        /*
+         * One read per address, and only the latest one counts.
+         *
+         * A second address while the first was still being read used to be
+         * skipped, and the first answer -- arriving last -- painted over the
+         * card. Each read now carries a number; an answer for an address that
+         * is no longer in the field is dropped.
+         *
+         * An icon this form fetched belongs to the address it came from, so a
+         * new address replaces it. One the reader uploaded, or the one the
+         * bookmark already had, is theirs and stays until Fetch again.
+         */
+        let fetchSeq = 0;
+        const runPreviewFetch = async ({ force = false } = {}) => {
+            const urlValue = (urlInput.value || '').trim();
+            if (!urlValue) return;
+            if (!force && urlValue === lastFetchedUrl) return;
+            lastFetchedUrl = urlValue;
+            const seq = ++fetchSeq;
+            inlineAutoFetchInFlight = true;
+            card.setLoading(urlValue);
+            title.fetching(urlValue);
+            draftKeywords = [];
+            const replaceIcon = force || !pendingIcon || iconIsFetched;
+            // The last address's icon is not this one's: the letter stands in
+            // until the new page answers.
+            if (iconIsFetched) card.setIcon('');
+            const { icon, preview } = await this.fetchPreviewAndIcon(urlValue, { withIcon: replaceIcon });
+            if (seq !== fetchSeq || !document.contains(form)) return;
+            inlineAutoFetchInFlight = false;
+            if (replaceIcon) {
+                if (icon) {
+                    pendingIcon = icon;
+                    iconUrlInput.value = `/data/icons/${icon}`;
+                    iconIsFetched = true;
+                } else if (iconIsFetched) {
+                    // The old address's icon is not this one's.
+                    pendingIcon = '';
+                    iconUrlInput.value = '';
+                    iconIsFetched = false;
+                }
+                syncIconState();
+            }
+            onPreview(preview);
+        };
 
         let noteInput = document.createElement('textarea');
         noteInput.className = 'bookmark-inline-textarea';
@@ -925,7 +936,85 @@ class DashboardInlineEdit {
         tagsInput.className = 'bookmark-inline-input';
         tagsInput.placeholder = cfg('detailTagsPlaceholder', 'work, dev, personal…');
         tagsInput.value = (Array.isArray(bookmark.tags) ? bookmark.tags : []).join(', ');
+        tagsInput.dataset.field = 'tags';
         const tagsField = mkField(cfg('detailTagsLabel', 'Tags'), tagsInput);
+        const tagsSuggest = document.createElement('div');
+        tagsSuggest.className = 'tag-suggest-chips bookmark-form-tags-suggest';
+        tagsSuggest.hidden = true;
+        tagsField.appendChild(tagsSuggest);
+        const tagsRefresh = document.createElement('button');
+        tagsRefresh.type = 'button';
+        tagsRefresh.className = 'bookmark-form-tags-suggest-refresh';
+        tagsRefresh.textContent = '↻';
+        tagsRefresh.setAttribute('aria-label', cfg('tagSuggestRefresh', 'Suggest tags again'));
+        tagsRefresh.title = cfg('tagSuggestRefresh', 'Suggest tags again');
+        tagsField.appendChild(tagsRefresh);
+
+        /*
+         * What the engine would tag this bookmark.
+         *
+         * The same answer Config, the inbox and Kept give, for a bookmark that
+         * may not exist yet: the collection is the evidence, the address and
+         * the tags in the field are the question, and the page's own words --
+         * from this form's fetch, or stored for a bookmark being edited --
+         * are the last source.
+         */
+        const currentTags = () => tagsInput.value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+        let draftKeywords = [];
+        const refreshSuggestions = async (keywords) => {
+            if (Array.isArray(keywords)) draftKeywords = keywords;
+            const live = window.TagSuggestLive;
+            const chips = window.TagSuggestChips;
+            const url = (urlInput.value || '').trim();
+            if (!live || !chips || !url) {
+                chips?.render(tagsSuggest, []);
+                return;
+            }
+            await live.ensureCatalogue();
+            if (!draftKeywords.length) {
+                draftKeywords = (await live.storedKeywords())[url] || [];
+            }
+            if (!document.contains(form)) return;
+            const offers = live.forDraft(d, { url, tags: currentTags(), keywords: draftKeywords });
+            chips.render(tagsSuggest, offers, {
+                limit: 3,
+                label: cfg('tagSuggestLabel', 'suggested'),
+                t: (key, fallback, params) => d.formatDashboardLabel(key.replace(/^dashboard\./, ''), params || {}, fallback),
+                onAccept: (tag) => {
+                    const tags = currentTags();
+                    if (!tags.includes(tag)) tags.push(tag);
+                    tagsInput.value = tags.join(', ');
+                    tagsInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    // The chips are redrawn, and the one that had the focus
+                    // goes with them; the tags field is where it belongs next.
+                    tagsInput.focus({ preventScroll: true });
+                    void refreshSuggestions();
+                },
+                onRefuse: (offer) => {
+                    tagsInput.focus({ preventScroll: true });
+                    void chips.refuse(d, offer, { onUpdated: () => { void refreshSuggestions(); } });
+                },
+            });
+        };
+        tagsRefresh.addEventListener('click', (e) => {
+            e.preventDefault();
+            void refreshSuggestions();
+        });
+        // Editing: the bookmark already has an address, so its suggestions are
+        // there from the start, from stored words and without reading the page.
+        if (!isCreate) void refreshSuggestions();
+        /*
+         * Adding with an address already in it -- a paste sent to Add
+         * bookmark, the inbox, `:new <url>`, the extension -- reads the page
+         * now. That address never had an input event, so the blur fetch below
+         * gave up on it and the form stayed empty until the reader left the
+         * field a second time.
+         */
+        if (isCreate && urlInput.value.trim()) {
+            const normalized = window.BookmarkUrlUtils?.ensureHttpUrl(urlInput.value) || urlInput.value.trim();
+            if (normalized !== urlInput.value) urlInput.value = normalized;
+            void runPreviewFetch();
+        }
         const sessionTags = new Set();
         (d.allBookmarks?.length ? d.allBookmarks : d.bookmarks ?? []).forEach((bm) => (
             (bm.tags || []).forEach((t) => sessionTags.add(t))
@@ -1083,19 +1172,23 @@ class DashboardInlineEdit {
         fillPageSelect(d.pages, sourcePageId);
         const pageField = mkField(cfg('page', 'Page'), pageSelect);
 
-        // Left: URL → Name → Icon → Note, everything that says what this is.
-        // Right: Page → Category → Tags → Shortcut → flags → availability, every
-        // choice about where it goes and whether it is watched.
-        //
-        // The flag row is created further down (it needs `cfg` and the bookmark
-        // state), so reserve its slot here and fill it in place.
+        // Tags, then where it goes, then how it is watched, then the note. The
+        // flag row is created further down (it needs the bookmark state), so
+        // its slot is reserved here and filled in place.
+        const place = document.createElement('div');
+        place.className = 'bookmark-form-place';
+        place.appendChild(pageField);
+        place.appendChild(catField);
+        place.appendChild(shortcutField);
+        const flagsRow = document.createElement('div');
+        flagsRow.className = 'bookmark-form-flags-row';
         const togglesSlot = document.createComment('bookmark-inline-toggles');
-        colWhat.appendChild(noteField);
-        colWhere.appendChild(pageField);
-        colWhere.appendChild(catField);
+        flagsRow.appendChild(togglesSlot);
         colWhere.appendChild(tagsField);
-        colWhere.appendChild(shortcutField);
-        colWhere.appendChild(togglesSlot);
+        colWhere.appendChild(place);
+        colWhere.appendChild(flagsRow);
+        colWhere.appendChild(noteField);
+        noteInput.dataset.field = 'note';
 
         const loadCategoriesForPage = async (pageId) => (
             Number(pageId) === currentPageId
@@ -1131,13 +1224,16 @@ class DashboardInlineEdit {
             },
         });
 
+        // Set once the page › category field exists: a create row that closes
+        // gives the field back its place.
+        let afterInlineCreate = () => {};
         const closeInlineCreate = (kind, ui, select) => {
             ui.box.hidden = true;
             ui.error.hidden = true;
             ui.input.value = '';
             select.hidden = false;
             select.value = lastSelected[kind];
-            select.focus({ preventScroll: true });
+            afterInlineCreate(kind, { created: false });
         };
 
         const openInlineCreate = (kind, ui, select) => {
@@ -1165,7 +1261,7 @@ class DashboardInlineEdit {
                     ui.error.hidden = true;
                     ui.input.value = '';
                     select.hidden = false;
-                    select.focus({ preventScroll: true });
+                    afterInlineCreate(kind, { created: true });
                     return null;
                 },
                 onCancel: () => closeInlineCreate(kind, ui, select),
@@ -1231,8 +1327,79 @@ class DashboardInlineEdit {
             lastSelected.category = catSelect.value;
         });
 
+        /*
+         * Page and category as one field. The two selects stay in the form,
+         * hidden, as the value the save reads; the field writes them.
+         */
+        pageField.hidden = true;
+        catField.hidden = true;
+        const placeHost = document.createElement('div');
+        const placeField = mkField(cfg('bookmarkPlaceLabel', 'Page › category'), placeHost);
+        place.insertBefore(placeField, shortcutField);
+        const pageNameOf = (pageId) => {
+            if (isUnsortedSource && Number(pageId) === Number(unsortedPageId)) {
+                return d.pageNav?.unsortedPageLabel?.() || 'Unsorted';
+            }
+            const found = (d.pages || []).find((p) => Number(p.id) === Number(pageId));
+            return found?.name || String(pageId || '');
+        };
+        const placeUi = window.BookmarkFormPlace.mount(placeHost, {
+            t: (key, fallback) => d.language?.t(key) || fallback,
+            getLabel: () => {
+                const catName = catSelect.selectedOptions?.[0]?.textContent || '—';
+                return `${pageNameOf(pageSelect.value)} › ${catSelect.value ? catName : '—'}`;
+            },
+            getValue: () => ({ pageId: pageSelect.value, categoryId: catSelect.value }),
+            getGroups: async () => {
+                const pages = [...(d.pages || [])];
+                const groups = await Promise.all(pages.map(async (p) => ({
+                    pageId: p.id,
+                    pageName: p.name || String(p.id),
+                    categories: (await loadCategoriesForPage(p.id))
+                        .map((c) => ({ id: c.id, name: c.name || c.id })),
+                })));
+                if (isUnsortedSource) {
+                    groups.unshift({ pageId: unsortedPageId, pageName: pageNameOf(unsortedPageId), categories: [{ id: '', name: '—' }] });
+                }
+                return groups;
+            },
+            onPick: async (pageId, categoryId) => {
+                if (String(pageSelect.value) !== String(pageId)) {
+                    pageSelect.value = String(pageId);
+                    lastSelected.page = String(pageId);
+                    await reloadCatSelectForPage(pageId, categoryId);
+                } else {
+                    catSelect.value = String(categoryId);
+                }
+                lastSelected.category = catSelect.value;
+                this.refreshInlineEditBaselineIfActive(bookmarkRef);
+            },
+            // The two create rows the selects always had, in the field's place.
+            onNewCategory: (name = '') => {
+                placeUi.hideTrigger();
+                openInlineCreate('category', catCreate, catSelect);
+                // What was typed in the popover's filter is the name meant.
+                if (name) catCreate.input.value = name;
+            },
+            onNewPage: () => {
+                placeUi.hideTrigger();
+                openInlineCreate('page', pageCreate, pageSelect);
+            },
+        });
+        placeField.appendChild(pageCreate.box);
+        placeField.appendChild(catCreate.box);
+        afterInlineCreate = (kind, { created }) => {
+            // A new page has no categories yet, so its first one is asked for
+            // straight away rather than leaving the bookmark on "—".
+            if (kind === 'page' && created) {
+                openInlineCreate('category', catCreate, catSelect);
+                return;
+            }
+            placeUi.showTrigger();
+        };
+
         if (bookmarkRef.scope === 'remote' && sourcePageId !== currentPageId) {
-            void reloadCatSelectForPage(sourcePageId);
+            void reloadCatSelectForPage(sourcePageId).then(() => placeUi.refresh());
         }
 
         // The three flags sit together as one compact row of toggle pills directly
@@ -1408,8 +1575,8 @@ class DashboardInlineEdit {
             });
         });
 
-        colWhere.insertBefore(toggleRow, togglesSlot);
-        colWhere.insertBefore(checkModeRow, togglesSlot);
+        flagsRow.insertBefore(checkModeRow, togglesSlot);
+        flagsRow.insertBefore(toggleRow, togglesSlot);
 
         const actions = document.createElement('div');
         actions.className = 'bookmark-inline-actions';
@@ -1490,9 +1657,15 @@ class DashboardInlineEdit {
             if (!validateForm(true)) {
                 return;
             }
+            const guard = await this.confirmBookmarkFormSave({ isCreate, bookmarkRef, urlInput, pageSelect, catSelect });
+            if (!guard.ok) {
+                if (guard.focus === 'place') placeUi.open?.();
+                return;
+            }
             saveBtn.dataset.saving = '1';
             try {
                 if (isCreate) {
+                    this._allowDuplicateOnce = guard.allowDuplicate === true;
                     await this.createBookmarkFromForm(bookmarkRef, {
                         nameInput,
                         urlInput,
@@ -1508,6 +1681,18 @@ class DashboardInlineEdit {
                         tagsInput,
                         getPendingIcon: () => pendingIcon,
                         resetPendingIcon: () => { pendingIcon = ''; syncIconState(); },
+                        // Create + New: the next bookmark starts from nothing,
+                        // not from the last one's preview, name and icon.
+                        resetForNext: () => {
+                            fetchSeq += 1;
+                            lastFetchedUrl = '';
+                            iconIsFetched = false;
+                            draftKeywords = [];
+                            title.reset();
+                            card.setIdle();
+                            card.setIcon('');
+                            window.TagSuggestChips?.render(tagsSuggest, []);
+                        },
                     }, { keepOpen });
                 } else {
                     await this.commitBookmarkInlineEdit(bookmarkRef, {
@@ -1526,6 +1711,9 @@ class DashboardInlineEdit {
                         getPendingIcon: () => pendingIcon,
                     }, row);
                 }
+                // A saved bookmark may carry new tags, and its page's words are
+                // now stored: whatever holds an answer about tags drops it.
+                window.TagSuggestLive?.changed?.(d);
             } finally {
                 delete saveBtn.dataset.saving;
             }
@@ -1566,6 +1754,7 @@ class DashboardInlineEdit {
             syncSaveEnabled();
         });
         syncSaveEnabled();
+        syncSaveFromTitle = () => syncSaveEnabled();
 
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
@@ -1602,13 +1791,6 @@ class DashboardInlineEdit {
             }
         });
 
-        actions.appendChild(saveBtn);
-        if (isCreate) {
-            actions.appendChild(createAnotherBtn);
-        }
-        actions.appendChild(cancelBtn);
-        actions.appendChild(deleteBtn);
-
         const hint = document.createElement('span');
         hint.className = 'bookmark-inline-hint';
         // The handler below already accepts metaKey alongside ctrlKey — this
@@ -1617,7 +1799,15 @@ class DashboardInlineEdit {
         hint.textContent = isMac
             ? d.formatDashboardLabel('inlineEditHintMac', {}, '⌘+Enter to save · Esc to cancel')
             : d.formatDashboardLabel('inlineEditHint', {}, 'Ctrl+Enter to save · Esc to cancel');
-        actions.appendChild(hint);
+        // Where you leave on the left -- the key hint when adding, Delete when
+        // editing -- and the ways out on the right, with the one that saves last.
+        actions.appendChild(isCreate ? hint : deleteBtn);
+        const actionsEnd = document.createElement('div');
+        actionsEnd.className = 'bookmark-inline-actions-end';
+        actionsEnd.appendChild(cancelBtn);
+        if (isCreate) actionsEnd.appendChild(createAnotherBtn);
+        actionsEnd.appendChild(saveBtn);
+        actions.appendChild(actionsEnd);
 
         form.appendChild(actions);
 
@@ -1661,10 +1851,10 @@ class DashboardInlineEdit {
             },
         };
         this.refreshInlineEditBaseline(bookmarkRef, d._inlineEditContext.fields);
-        // Adding starts on the address -- that is the one thing only you can
-        // supply, and the name usually arrives with the page title. Editing
-        // starts on the name, which is what is nearly always being changed.
-        (isCreate ? urlInput : nameInput).focus({ preventScroll: true });
+        // The form opens on the address, adding or editing: it is the first
+        // field, the one the rest -- card, name, suggestions -- is read from,
+        // and one place to start is easier to trust than two.
+        urlInput.focus({ preventScroll: true });
 
         const onGlobalEsc = async (e) => {
             if (e.key !== 'Escape') return;
@@ -1676,6 +1866,23 @@ class DashboardInlineEdit {
             // An open "New page/category" row owns Escape: it is the innermost thing
             // on screen, and this listener is in the capture phase, so without the
             // hand-off it would close the whole form before the row ever saw the key.
+            // The tag dropdown closes itself on Escape, on the input's own
+            // listener, which runs after this one; leave the key to it.
+            if (document.querySelector('.tag-ac-dropdown')) return;
+            const cardMenu = form.querySelector('.bookmark-form-card-menu:not([hidden])');
+            if (cardMenu) {
+                e.preventDefault();
+                e.stopPropagation();
+                cardMenu.__close?.();
+                return;
+            }
+            const placePop = document.querySelector('.bookmark-form-place-pop');
+            if (placePop) {
+                e.preventDefault();
+                e.stopPropagation();
+                placePop.__close?.();
+                return;
+            }
             const openCreateRow = form.querySelector('.bookmark-inline-create:not([hidden])');
             if (openCreateRow) {
                 e.preventDefault();
@@ -1692,7 +1899,52 @@ class DashboardInlineEdit {
             this.closeBookmarkFormModal();
         };
 
+        /*
+         * Tab walks the form, and only the form.
+         *
+         * Left to the browser, Tab follows the whole page's order, and a
+         * control outside the sheet -- the What's new star, the page tabs --
+         * could come next. While the form is open it decides: its own
+         * controls in their order, wrapping at both ends. A radio group is one
+         * stop, as the browser has it; arrows move inside it.
+         */
+        const onFormTab = (e) => {
+            if (e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;
+            if (!document.contains(form)) return;
+            const shell = this._formModalShell;
+            if (!shell?.classList.contains('show')) return;
+            // A dialog or popover on top owns the key.
+            if (document.querySelector('#app-modal.show, .bookmark-form-place-pop')) return;
+            // The tag list takes Tab to complete what was typed.
+            if (document.activeElement === tagsInput && document.querySelector('.tag-ac-dropdown .tag-ac-item-active')) return;
+            const seenRadio = new Set();
+            // The form, not the whole sheet: the header's × is for the mouse;
+            // Escape is its key.
+            const stops = [...form.querySelectorAll('input, select, textarea, button, a[href], [tabindex]')]
+                .filter((el) => !el.disabled && el.tabIndex >= 0 && !el.closest('[hidden], [inert]')
+                    && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden')
+                .filter((el) => {
+                    if (el.type !== 'radio' || !el.name) return true;
+                    if (seenRadio.has(el.name)) return false;
+                    const group = form.querySelectorAll(`input[type="radio"][name="${el.name}"]`);
+                    const checked = [...group].find((r) => r.checked) || group[0];
+                    if (checked !== el) return false;
+                    seenRadio.add(el.name);
+                    return true;
+                });
+            if (!stops.length) return;
+            const at = stops.indexOf(document.activeElement);
+            const next = at < 0
+                ? (e.shiftKey ? stops[stops.length - 1] : stops[0])
+                : stops[(at + (e.shiftKey ? -1 : 1) + stops.length) % stops.length];
+            e.preventDefault();
+            next.focus({ preventScroll: false });
+        };
+
         const globalCleanup = () => {
+            title.dispose();
+            document.removeEventListener('keydown', onFormTab, true);
+            placeUi.close();
             document.removeEventListener('keydown', onGlobalEsc, true);
             if (d._inlineEditGlobalCleanup === globalCleanup) d._inlineEditGlobalCleanup = null;
             if (d._inlineEditAutoFetchClear === clearInlineAutoFetchTimer) {
@@ -1711,8 +1963,74 @@ class DashboardInlineEdit {
         d._inlineEditAutoFetchClear = clearInlineAutoFetchTimer;
         d._inlineEditGlobalCleanup = globalCleanup;
         document.addEventListener('keydown', onGlobalEsc, true);
+        document.addEventListener('keydown', onFormTab, true);
     }
 
+
+    /**
+     * The questions a save asks before it writes.
+     *
+     * A bookmark needs a page, or there is nowhere to put it. One without a
+     * category lands under "—", which is rarely what anyone meant, so that is
+     * asked. And a link already saved is named: on another page a second copy
+     * is sometimes the point, so yes or no; on the same page the server keeps
+     * one, so the answer is a plain statement rather than a question it would
+     * then refuse.
+     *
+     * Resolves { ok, allowDuplicate, focus }.
+     */
+    async confirmBookmarkFormSave({ isCreate, bookmarkRef, urlInput, pageSelect, catSelect }) {
+        const d = this.dash;
+        const cfg = (key, fallback) => d.configLabel(key, fallback);
+        const modal = window.AppModal;
+        const pageId = String(pageSelect?.value || '').trim();
+        if (!pageId || pageId === '__new__') {
+            d.showErrorNotification?.(cfg('bookmarkNeedsPage', 'A bookmark needs a page. Choose one to save it.'));
+            return { ok: false, focus: 'place' };
+        }
+
+        const norm = (u) => String(u || '').trim().replace(/\/+$/, '').toLowerCase();
+        const url = norm(urlInput?.value);
+        const original = bookmarkRef?.bookmark;
+        const urlChanged = isCreate || norm(original?.url) !== url;
+        let allowDuplicate = false;
+        if (url && urlChanged) {
+            const pool = [...(d.allBookmarks || []), ...(d.unsortedBookmarks || [])];
+            const existing = pool.find((b) => b && b !== original && norm(b.url) === url);
+            if (existing) {
+                const pageOf = (b) => String(b.pageId ?? b.page ?? '');
+                const pageName = (id) => (d.pages || []).find((p) => String(p.id) === String(id))?.name || '';
+                const described = {
+                    ...existing,
+                    pageName: pageName(pageOf(existing)),
+                    categoryName: (d.categories || []).find((c) => String(c.id) === String(existing.category))?.name || '',
+                };
+                if (pageOf(existing) === pageId) {
+                    await modal?.alert?.({
+                        title: cfg('duplicateTitle', 'Already saved'),
+                        message: cfg('duplicateSamePage', 'This link is already on this page as “{name}”. A page keeps one copy of a link.')
+                            .replace('{name}', window.DuplicateBookmarkPrompt?.displayName?.(existing) || existing.name || ''),
+                    });
+                    return { ok: false };
+                }
+                if (!(await window.DuplicateBookmarkPrompt?.confirmSecondCopy?.(described))) {
+                    return { ok: false };
+                }
+                allowDuplicate = true;
+            }
+        }
+
+        if (!String(catSelect?.value || '').trim() && modal?.confirm) {
+            const yes = await modal.confirm({
+                title: cfg('bookmarkNoCategoryTitle', 'No category'),
+                message: cfg('bookmarkNoCategoryMessage', 'This bookmark has no category, so it goes under “—” on its page. Save it without one?'),
+                confirmText: cfg('bookmarkNoCategorySave', 'Save without'),
+                cancelText: cfg('bookmarkNoCategoryChoose', 'Choose a category'),
+            });
+            if (!yes) return { ok: false, focus: 'place' };
+        }
+        return { ok: true, allowDuplicate };
+    }
 
     async commitBookmarkInlineEdit(bookmarkRef, fields, row) {
         const d = this.dash;
@@ -1866,7 +2184,10 @@ class DashboardInlineEdit {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ page: pageId, bookmark, allowDuplicate: Boolean(allowDuplicate) }),
             });
-            let response = await post(false);
+            // The form already asked about a copy on another page, and got a yes.
+            const allowDuplicate = this._allowDuplicateOnce === true;
+            this._allowDuplicateOnce = false;
+            let response = await post(allowDuplicate);
             // Same question the bookmark form and quick add ask: the link is
             // already filed somewhere else, and a second copy is sometimes the
             // point. Declining leaves the form as it was rather than erroring.
@@ -1899,6 +2220,7 @@ class DashboardInlineEdit {
                 if (fields.iconUrlInput) fields.iconUrlInput.value = '';
                 if (fields.pinInput) fields.pinInput.checked = false;
                 if (typeof fields.resetPendingIcon === 'function') fields.resetPendingIcon();
+                if (typeof fields.resetForNext === 'function') fields.resetForNext();
                 if (fields.pageSelect) fields.pageSelect.value = keepPage;
                 if (fields.catSelect) fields.catSelect.value = keepCategory;
                 delete fields.nameInput.dataset.touched;
@@ -2151,32 +2473,40 @@ class DashboardInlineEdit {
     }
 
 
-    async fetchAndAssignFaviconForUrl(bookmarkUrl) {
+    /**
+     * One read of the page for everything the form wants from it.
+     *
+     * The preview answer carries the icon's address, the title, the page's
+     * own line, its image and its keywords. This used to keep the icon and
+     * drop the rest, so the form asked the page once and learned one thing.
+     */
+    async fetchPreviewAndIcon(bookmarkUrl, { withIcon = true } = {}) {
         const safeUrl = String(bookmarkUrl || '').trim();
-        if (!safeUrl) {
-            return '';
-        }
+        if (!safeUrl) return { icon: '', preview: null };
+        let preview = null;
         try {
-            const previewResponse = await dashFetch(`/api/bookmark-preview?url=${encodeURIComponent(safeUrl)}`);
-            if (previewResponse.ok) {
-                const preview = await previewResponse.json();
-                const previewIconUrl = String(preview?.icon || '').trim();
-                if (previewIconUrl) {
-                    const iconFromPreview = await this.uploadBookmarkIconFromUrl(previewIconUrl);
-                    if (iconFromPreview) {
-                        return iconFromPreview;
-                    }
-                }
-            }
+            const res = await dashFetch(`/api/bookmark-preview?url=${encodeURIComponent(safeUrl)}`);
+            if (res.ok) preview = await res.json();
         } catch (_error) {
-            // Ignore and continue fallback.
+            preview = null;
         }
-        const fallbackUrl = this.deriveFaviconFromBookmarkUrl(safeUrl);
-        if (!fallbackUrl) {
-            return '';
+        let icon = '';
+        // An icon already chosen is not replaced, so it is not downloaded
+        // either: every download is a file in data/icons.
+        if (!withIcon) return { icon, preview: preview ? { ...preview, url: preview.url || safeUrl } : null };
+        const previewIconUrl = String(preview?.icon || '').trim();
+        if (previewIconUrl) icon = await this.uploadBookmarkIconFromUrl(previewIconUrl);
+        if (!icon) {
+            const fallbackUrl = this.deriveFaviconFromBookmarkUrl(safeUrl);
+            if (fallbackUrl) icon = await this.uploadBookmarkIconFromUrl(fallbackUrl);
         }
-        return this.uploadBookmarkIconFromUrl(fallbackUrl);
+        return { icon, preview: preview ? { ...preview, url: preview.url || safeUrl } : null };
     }
+
+    async fetchAndAssignFaviconForUrl(bookmarkUrl) {
+        return (await this.fetchPreviewAndIcon(bookmarkUrl)).icon;
+    }
+
 
 
     ensureBookmarkMutationSnapshot() {

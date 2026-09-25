@@ -2,8 +2,7 @@
 const { test, expect } = require('./fixtures');
 const { captureRowWrites } = require('./config-bookmarks-helpers');
 const {
-    dismissOnboardingIfPresent, dismissBlockingOverlays, resetDashboardData, markWhatsNewSeen, WRITE_TOKEN,
-} = require('./e2e-helpers');
+    dismissOnboardingIfPresent, dismissBlockingOverlays, resetDashboardData, markWhatsNewSeen, WRITE_TOKEN, answerNoCategory } = require('./e2e-helpers');
 
 async function loadDashboard(page) {
     // Before the first navigation: the promo cards and the What's new modal
@@ -29,7 +28,7 @@ function bookmarkModalForm(page) {
 }
 
 function modalSaveBtn(page) {
-    return page.locator('#bookmark-form-modal .bookmark-inline-actions > .bookmark-inline-save');
+    return page.locator('#bookmark-form-modal .bookmark-inline-actions .bookmark-inline-save');
 }
 
 function modalPageSelect(page) {
@@ -230,12 +229,12 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         await page.locator('#config-bm-add').click();
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
         const form = bookmarkModalForm(page);
-        await form.locator('.bookmark-inline-input').first().fill('My own name');
+        await form.locator('[data-field="name"]').fill('My own name');
         const url = form.locator('input[type="url"]');
         await url.fill('https://example.com/other');
         await url.blur();
         await page.waitForTimeout(600);
-        await expect(form.locator('.bookmark-inline-input').first()).toHaveValue('My own name');
+        await expect(form.locator('[data-field="name"]')).toHaveValue('My own name');
     });
 
 });
@@ -398,8 +397,9 @@ test.describe('config bookmarks add button', () => {
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
         const form = bookmarkModalForm(page);
         await form.locator('input[type="url"]').fill(`https://example.com/config-add-test-${stamp}`);
-        await form.locator('.bookmark-inline-input').first().fill(name);
+        await form.locator('[data-field="name"]').fill(name);
         await modalSaveBtn(page).click();
+        await answerNoCategory(page);
 
         await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/);
         await expect(page.locator('.config-bm-row')).toHaveCount(before + 1);

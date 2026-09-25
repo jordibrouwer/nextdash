@@ -66,10 +66,10 @@ test.describe('bookmark form modal — fits without scrolling', () => {
 
     // A window genuinely shorter than the form still has to scroll — the point
     // is that the modal never scrolls while the room is there, not that it
-    // never scrolls at all. Narrow, because a wide window puts the fields in two
-    // columns and 620px is no longer short for that.
+    // never scrolls at all. 480px: the one-column form fits a 620px window now,
+    // so short has to mean shorter than that.
     test('a viewport too short for the form still scrolls rather than clipping', async ({ page }) => {
-        await page.setViewportSize({ width: 800, height: 620 });
+        await page.setViewportSize({ width: 800, height: 480 });
         await openAddBookmark(page);
 
         expect(await overflow(page)).toBeGreaterThan(0);
@@ -93,27 +93,22 @@ test.describe('bookmark form modal — fits without scrolling', () => {
      * use. The fields split into what the bookmark is and where it goes, which
      * are near enough the same height, and the dialog comes to about 450px.
      */
-    test('the form is two columns on a wide window', async ({ page }) => {
+    test('the form is one column and still short enough for a laptop', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 });
         await openAddBookmark(page);
 
         const layout = await page.evaluate(() => {
-            const cols = [...document.querySelectorAll('.bookmark-inline-col')];
-            const boxes = cols.map((c) => c.getBoundingClientRect());
             const dialog = document.querySelector('.bookmark-form-modal-dialog').getBoundingClientRect();
             return {
-                columns: cols.length,
-                sameTop: Math.abs(boxes[0].top - boxes[1].top) < 2,
-                sideBySide: boxes[1].left > boxes[0].right - 2,
+                columns: document.querySelectorAll('.bookmark-inline-col').length,
                 dialogHeight: Math.round(dialog.height),
             };
         });
-        expect(layout.columns).toBe(2);
-        expect(layout.sameTop).toBe(true);
-        expect(layout.sideBySide).toBe(true);
-        // 735 before. The margin is deliberate: this fails if the columns quietly
-        // stack again, and passes for any reasonable change to the fields.
-        expect(layout.dialogHeight).toBeLessThan(560);
+        expect(layout.columns).toBe(1);
+        // 735 for the old eleven stacked rows. One column in fill-in order, with
+        // the icon behind a pencil and page and category side by side, has to
+        // stay clear of that.
+        expect(layout.dialogHeight).toBeLessThan(660);
     });
 
     // Short enough that the old stacked form could not have fitted at all.
@@ -140,18 +135,12 @@ test.describe('bookmark form modal — fits without scrolling', () => {
         await openAddBookmark(page);
 
         const stacked = await page.evaluate(() => {
-            const cols = [...document.querySelectorAll('.bookmark-inline-col')];
-            const fields = [...document.querySelectorAll('.bookmark-inline-form .bookmark-inline-field')];
-            const lefts = new Set(fields.map((f) => Math.round(f.getBoundingClientRect().left)));
-            const boxes = cols.map((c) => c.getBoundingClientRect());
-            return {
-                groupsStacked: boxes.length === 2 && Math.round(boxes[1].top) >= Math.round(boxes[0].bottom),
-                groupLeftsAgree: new Set(boxes.map((b) => Math.round(b.left))).size === 1,
-                distinctLefts: lefts.size,
-            };
+            const col = document.querySelector('.bookmark-form-col');
+            const direct = [...col.children].filter((c) => c.classList.contains('bookmark-inline-field'));
+            const lefts = new Set(direct.map((f) => Math.round(f.getBoundingClientRect().left)));
+            return { columns: document.querySelectorAll('.bookmark-inline-col').length, distinctLefts: lefts.size };
         });
-        expect(stacked.groupsStacked, 'the groups sit beside each other on a narrow window').toBe(true);
-        expect(stacked.groupLeftsAgree, 'the groups do not share a left edge').toBe(true);
+        expect(stacked.columns).toBe(1);
         expect(stacked.distinctLefts).toBe(1);
     });
 
@@ -277,13 +266,7 @@ test.describe('bookmark form modal — fits without scrolling', () => {
                     noteShown: note.getBoundingClientRect().height > 0,
                     iconInputPresent: Boolean(icon.querySelector('input')),
                     noteInputPresent: Boolean(note.querySelector('textarea')),
-                    // Still one column, whatever the width says: the groups
-                    // are drawn boxes now, so they stack rather than dissolve.
-                    groupsStacked: (() => {
-                        const b = [...document.querySelectorAll('.bookmark-inline-col')]
-                            .map((c) => c.getBoundingClientRect());
-                        return b.length === 2 && Math.round(b[1].top) >= Math.round(b[0].bottom);
-                    })(),
+                    columns: document.querySelectorAll('.bookmark-inline-col').length,
                 };
             });
             expect(shape).toEqual({
@@ -291,7 +274,7 @@ test.describe('bookmark form modal — fits without scrolling', () => {
                 noteShown: false,
                 iconInputPresent: true,
                 noteInputPresent: true,
-                groupsStacked: true,
+                columns: 1,
             });
         } finally {
             await context.close();

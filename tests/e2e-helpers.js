@@ -620,7 +620,24 @@ async function openHealthToolbarMenu(page) {
     return menu;
 }
 
+/**
+ * The bookmark form asks before saving a bookmark with no category. Tests that
+ * save without choosing one answer "Save without" here; the question itself
+ * is covered in bookmark-form-save-guards.spec.js.
+ */
+async function answerNoCategory(page) {
+    const modal = page.locator('#app-modal.show');
+    try {
+        await modal.filter({ hasText: /no category/i }).waitFor({ state: 'visible', timeout: 3000 });
+    } catch {
+        return false;
+    }
+    await page.locator('#modal-actions .modal-button').first().click();
+    return true;
+}
+
 module.exports = {
+    answerNoCategory,
     GITHUB_STUB_PORT,
     RAINDROP_STUB_PORT,
     resetDashboardData,

@@ -58,237 +58,157 @@ async function deleteCategoryByName(page, pageId, name) {
     }, { targetPageId: pageId, targetName: name });
 }
 
-/** Page select is the first non-toggle select in the form, category the last. */
-function selects(page) {
-    const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
-    const real = form.locator('.bookmark-inline-select:not(.bookmark-inline-toggle-select)');
-    return { form, pageSelect: real.first(), catSelect: real.last() };
+/** The one field for where a bookmark goes, and the popover it opens. */
+function place(page) {
+    return page.locator('#bookmark-form-modal .bookmark-form-place-field');
 }
-
+function pop(page) {
+    return page.locator('.bookmark-form-place-pop');
+}
 function createRow(page, kind) {
     return page.locator(`#bookmark-form-modal .bookmark-inline-create[data-create-kind="${kind}"]`);
 }
 
-test.describe('bookmark form — create page and category from the dropdowns', () => {
-    test('both dropdowns offer a create entry at the top', async ({ page }) => {
+/** The value the save reads: the hidden category select behind the field. */
+async function chosenCategoryId(page) {
+    return page.evaluate(() => {
+        const sel = [...document.querySelectorAll('#bookmark-form-modal .bookmark-inline-select')]
+            .filter((s) => !s.classList.contains('bookmark-inline-toggle-select'));
+        return sel[sel.length - 1]?.value || '';
+    });
+}
+
+async function openPlace(page) {
+    await place(page).locator('.bookmark-form-place-value').click();
+    await expect(pop(page)).toBeVisible();
+}
+
+/*
+ * Page and category are one field.
+ *
+ * It opens the popover Move to… uses on the dashboard, and its first two rows
+ * make somewhere new through the create row the two selects always had: a
+ * name, Create, Cancel, and an error on the row itself.
+ */
+test.describe('bookmark form — page › category in one field', () => {
+    test('opens the Move to… popover, with the two create rows first', async ({ page }) => {
         await loadDashboard(page);
         await openAddBookmark(page);
-        const { pageSelect, catSelect } = selects(page);
-
-        const firstPageOption = pageSelect.locator('option').first();
-        await expect(firstPageOption).toHaveAttribute('value', '__new__');
-        await expect(firstPageOption).toHaveClass(/bookmark-inline-new-option/);
-
-        const firstCatOption = catSelect.locator('option').first();
-        await expect(firstCatOption).toHaveAttribute('value', '__new__');
-        await expect(firstCatOption).toHaveClass(/bookmark-inline-new-option/);
+        await expect(place(page).locator('.bookmark-form-place-value')).toContainText('›');
+        await openPlace(page);
+        const first = await pop(page).locator('.move-popover-item').evaluateAll((els) =>
+            els.slice(0, 2).map((el) => el.getAttribute('data-place-create')));
+        expect(first).toEqual(['category', 'page']);
     });
 
-    test('the form opens on a real page, not on the create entry', async ({ page }) => {
+    test('New category… creates it on the chosen page and selects it', async ({ page }) => {
         await loadDashboard(page);
         await openAddBookmark(page);
-        const { pageSelect } = selects(page);
-        await expect(pageSelect).not.toHaveValue('__new__');
-        await expect(createRow(page, 'page')).toBeHidden();
-        await expect(createRow(page, 'category')).toBeHidden();
-    });
-
-    test('choosing "New category…" creates it and selects it on the current page', async ({ page }) => {
-        await loadDashboard(page);
-        await openAddBookmark(page);
-        const { catSelect } = selects(page);
         const name = `E2E cat ${Date.now()}`;
-
-        await catSelect.selectOption('__new__');
+        await openPlace(page);
+        await pop(page).locator('[data-place-create="category"]').click();
         const row = createRow(page, 'category');
         await expect(row).toBeVisible();
-        await expect(catSelect).toBeHidden();
-
-        await row.locator('.bookmark-inline-create-input').fill(name);
-        await row.locator('.bookmark-inline-create-ok').click();
-
-        await expect(row).toBeHidden();
-        await expect(catSelect).toBeVisible();
-        await expect(catSelect.locator('option', { hasText: name })).toHaveCount(1);
-        // The new category is the selected one, ready for the bookmark being added.
-        const selectedText = await catSelect.locator('option:checked').textContent();
-        expect(selectedText).toBe(name);
-
-        const pageId = await page.evaluate(() => Number(window.dashboardInstance?.currentPageId) || 1);
-        await deleteCategoryByName(page, pageId, name);
-    });
-
-    test('a created category is persisted to the API for that page', async ({ page }) => {
-        await loadDashboard(page);
-        await openAddBookmark(page);
-        const { catSelect } = selects(page);
-        const name = `E2E persist ${Date.now()}`;
-
-        await catSelect.selectOption('__new__');
-        const row = createRow(page, 'category');
         await row.locator('.bookmark-inline-create-input').fill(name);
         await row.locator('.bookmark-inline-create-ok').click();
         await expect(row).toBeHidden();
-
+        await expect(place(page).locator('.bookmark-form-place-value')).toContainText(name);
         const pageId = await page.evaluate(() => Number(window.dashboardInstance?.currentPageId) || 1);
-        const stored = await page.evaluate(async (pid) => {
-            const res = await fetch(`/api/categories?page=${pid}`);
-            return res.ok ? await res.json() : [];
-        }, pageId);
+        const stored = await page.evaluate(async (pid) => (await (await fetch(`/api/categories?page=${pid}`)).json()), pageId);
         expect(stored.some((c) => c.name === name)).toBe(true);
-
         await deleteCategoryByName(page, pageId, name);
     });
 
-    test('choosing "New page…" creates the page and selects it', async ({ page }) => {
+    test('New page… creates the page, then asks for its first category', async ({ page }) => {
         await loadDashboard(page);
         await openAddBookmark(page);
-        const { pageSelect } = selects(page);
-        const name = `E2E page ${Date.now()}`;
-
-        await pageSelect.selectOption('__new__');
-        const row = createRow(page, 'page');
-        await expect(row).toBeVisible();
-        await expect(pageSelect).toBeHidden();
-
-        await row.locator('.bookmark-inline-create-input').fill(name);
-        await row.locator('.bookmark-inline-create-ok').click();
-
-        await expect(row).toBeHidden();
-        await expect(pageSelect).toBeVisible();
-        const selectedText = await pageSelect.locator('option:checked').textContent();
-        expect(selectedText).toBe(name);
-
-        const stored = await page.evaluate(async () => {
-            const res = await fetch('/api/pages');
-            return res.ok ? await res.json() : [];
-        });
-        expect(stored.some((p) => p.name === name)).toBe(true);
-
-        await deletePageByName(page, name);
-    });
-
-    test('a category created after a new page lands on that new page', async ({ page }) => {
-        await loadDashboard(page);
-        await openAddBookmark(page);
-        const { pageSelect, catSelect } = selects(page);
         const pageName = `E2E page ${Date.now()}`;
-        const catName = `E2E oncat ${Date.now()}`;
-
-        await pageSelect.selectOption('__new__');
-        const pageRow = createRow(page, 'page');
-        await pageRow.locator('.bookmark-inline-create-input').fill(pageName);
-        await pageRow.locator('.bookmark-inline-create-ok').click();
-        await expect(pageRow).toBeHidden();
-
-        const newPageId = Number(await pageSelect.inputValue());
-        expect(Number.isFinite(newPageId)).toBe(true);
-
-        await catSelect.selectOption('__new__');
+        await openPlace(page);
+        await pop(page).locator('[data-place-create="page"]').click();
+        await createRow(page, 'page').locator('.bookmark-inline-create-input').fill(pageName);
+        await createRow(page, 'page').locator('.bookmark-inline-create-ok').click();
         const catRow = createRow(page, 'category');
-        await catRow.locator('.bookmark-inline-create-input').fill(catName);
+        await expect(catRow).toBeVisible();
+        await catRow.locator('.bookmark-inline-create-input').fill('First');
         await catRow.locator('.bookmark-inline-create-ok').click();
-        await expect(catRow).toBeHidden();
-
-        const stored = await page.evaluate(async (pid) => {
-            const res = await fetch(`/api/categories?page=${pid}`);
-            return res.ok ? await res.json() : [];
-        }, newPageId);
-        expect(stored.some((c) => c.name === catName)).toBe(true);
-
+        await expect(place(page).locator('.bookmark-form-place-value')).toContainText(`${pageName} › First`);
         await deletePageByName(page, pageName);
     });
 
-    test('Cancel restores the previously selected value instead of leaving __new__', async ({ page }) => {
+    test('a duplicate name is refused on the row, which stays open', async ({ page }) => {
         await loadDashboard(page);
         await openAddBookmark(page);
-        const { pageSelect } = selects(page);
-        const before = await pageSelect.inputValue();
-
-        await pageSelect.selectOption('__new__');
-        const row = createRow(page, 'page');
-        await expect(row).toBeVisible();
-        await row.locator('.bookmark-inline-create-cancel').click();
-
-        await expect(row).toBeHidden();
-        await expect(pageSelect).toBeVisible();
-        await expect(pageSelect).toHaveValue(before);
-    });
-
-    test('the select never carries __new__ while the create row is open', async ({ page }) => {
-        await loadDashboard(page);
-        await openAddBookmark(page);
-        const { pageSelect, catSelect } = selects(page);
-        const pageBefore = await pageSelect.inputValue();
-        const catBefore = await catSelect.inputValue();
-
-        // A save while the row is open must target a real page/category, so the
-        // sentinel is swapped back out the moment the row appears.
-        await pageSelect.selectOption('__new__');
-        await expect(createRow(page, 'page')).toBeVisible();
-        await expect(pageSelect).toHaveValue(pageBefore);
-
-        await page.locator('#bookmark-form-modal .bookmark-inline-create[data-create-kind="page"] .bookmark-inline-create-cancel').click();
-
-        await catSelect.selectOption('__new__');
-        await expect(createRow(page, 'category')).toBeVisible();
-        await expect(catSelect).toHaveValue(catBefore);
-    });
-
-    test('a duplicate name is refused with an inline error and the row stays open', async ({ page }) => {
-        await loadDashboard(page);
-        await openAddBookmark(page);
-        const { catSelect } = selects(page);
-
-        // Reuse an existing category's name so the create is a genuine duplicate.
-        const existingName = await page.evaluate(() => {
-            const cats = window.dashboardInstance?.categories || [];
-            return cats.length ? String(cats[0].name || '') : '';
-        });
-        test.skip(!existingName, 'page has no categories to duplicate');
-
-        await catSelect.selectOption('__new__');
+        const existing = await page.evaluate(() => String((window.dashboardInstance?.categories || [])[0]?.name || ''));
+        test.skip(!existing, 'page has no categories');
+        await openPlace(page);
+        await pop(page).locator('[data-place-create="category"]').click();
         const row = createRow(page, 'category');
-        await row.locator('.bookmark-inline-create-input').fill(existingName);
+        await row.locator('.bookmark-inline-create-input').fill(existing);
         await row.locator('.bookmark-inline-create-ok').click();
-
         await expect(row).toBeVisible();
         await expect(row.locator('.bookmark-inline-conflict')).toBeVisible();
     });
 
-    test('Escape in the create input closes the row, not the whole modal', async ({ page }) => {
+    test('Escape closes the popover, and then the create row, not the form', async ({ page }) => {
         await loadDashboard(page);
         await openAddBookmark(page);
-        const { catSelect } = selects(page);
-
-        await catSelect.selectOption('__new__');
-        const row = createRow(page, 'category');
-        await expect(row).toBeVisible();
-        await row.locator('.bookmark-inline-create-input').press('Escape');
-
-        await expect(row).toBeHidden();
+        await openPlace(page);
+        await page.keyboard.press('Escape');
+        await expect(pop(page)).toHaveCount(0);
+        await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
+        await openPlace(page);
+        await pop(page).locator('[data-place-create="category"]').click();
+        await createRow(page, 'category').locator('.bookmark-inline-create-input').press('Escape');
+        await expect(createRow(page, 'category')).toBeHidden();
+        await expect(place(page).locator('.bookmark-form-place-value')).toBeVisible();
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     });
 
-    test('a bookmark saves into a category created from the form', async ({ page }) => {
+    test('typing in the popover finds a category; arrows and Enter pick it', async ({ page }) => {
+        await loadDashboard(page);
+        await openAddBookmark(page);
+        const target = await page.evaluate(() => {
+            const cats = (window.dashboardInstance?.categories || []).filter((c) => !c.isSmartCollection);
+            return cats.length ? { id: String(cats[cats.length - 1].id), name: String(cats[cats.length - 1].name) } : null;
+        });
+        test.skip(!target, 'page has no categories');
+        await place(page).locator('.bookmark-form-place-value').focus();
+        await page.keyboard.press('Enter');
+        await expect(pop(page)).toBeVisible();
+        await page.keyboard.type(target.name);
+        await expect(pop(page).locator('.bookmark-form-place-option')).toHaveCount(1);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Enter');
+        await expect(pop(page)).toHaveCount(0);
+        expect(await chosenCategoryId(page)).toBe(target.id);
+    });
+
+    test('a click beside the popover closes it', async ({ page }) => {
+        await loadDashboard(page);
+        await openAddBookmark(page);
+        await openPlace(page);
+        await page.locator('#bookmark-form-modal [data-field="url"]').click();
+        await expect(pop(page)).toHaveCount(0);
+    });
+
+    test('a bookmark saves into a category created from the field', async ({ page }) => {
         await loadDashboard(page);
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
         await openAddBookmark(page);
-
-        const { form, catSelect } = selects(page);
+        const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         const catName = `E2E save ${Date.now()}`;
         const url = `https://example.com/created-cat-${Date.now()}.test`;
 
-        await catSelect.selectOption('__new__');
-        const row = createRow(page, 'category');
-        await row.locator('.bookmark-inline-create-input').fill(catName);
-        await row.locator('.bookmark-inline-create-ok').click();
-        await expect(row).toBeHidden();
-        const catId = await catSelect.inputValue();
+        await openPlace(page);
+        await pop(page).locator('[data-place-create="category"]').click();
+        await createRow(page, 'category').locator('.bookmark-inline-create-input').fill(catName);
+        await createRow(page, 'category').locator('.bookmark-inline-create-ok').click();
+        await expect(place(page).locator('.bookmark-form-place-value')).toContainText(catName);
+        const catId = await chosenCategoryId(page);
 
         await form.locator('input[type="url"]').fill(url);
-        await form.locator('.bookmark-inline-input').first().fill('Created cat bookmark');
-        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
+        await form.locator('[data-field="name"]').fill('Created cat bookmark');
+        await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
         await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/, { timeout: 10_000 });
 
         await expect(page.locator(

@@ -60,7 +60,7 @@ test.describe('config: sections restored from the old config', () => {
         await page.keyboard.press('Shift+E');
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
-        await expect(form.locator('.bookmark-inline-input').first()).not.toHaveValue('');
+        await expect(form.locator('[data-field="name"]')).not.toHaveValue('');
         await expect(form.locator('input[type="url"]')).not.toHaveValue('');
     });
 
