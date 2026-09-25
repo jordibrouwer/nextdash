@@ -303,7 +303,7 @@
 .changes-tour-chips u:nth-child(2) { background: var(--accent-success, var(--accent-primary)); }
 .changes-tour-chips u:nth-child(3) { background: var(--accent-warning, var(--accent-primary)); }
 
-.changes-tour-swatches i.is-gloss {
+.changes-tour-swatches i.is-lacquer {
     background:
         linear-gradient(180deg,
             color-mix(in srgb, white 34%, transparent) 0%,
@@ -314,8 +314,8 @@
             color-mix(in srgb, var(--accent-primary) 18%, var(--background-secondary)) 100%);
 }
 
-/* The badge the theme browser puts on a Gloss family. */
-.changes-tour-swatches i.is-gloss b {
+/* The character badge the theme browser puts on a lacquered family. */
+.changes-tour-swatches i.is-lacquer b {
     position: absolute;
     top: 0.3rem;
     left: 0.35rem;

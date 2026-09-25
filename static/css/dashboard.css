@@ -3600,6 +3600,10 @@ a.bookmark-open:hover {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    /* The play mark hangs off this corner. No overflow clipping: the mark is
+       meant to break the icon's edge, which is what makes it read as a badge
+       on the icon rather than part of the picture. */
+    position: relative;
 }
 
 .empty-state--category {
@@ -4723,14 +4727,66 @@ body.no-animations .bookmarks-list.reorder-container::after {
     border-color: #fff;
 }
 
-/* A row that plays something. Same superscript place as the pin and the note,
-   so a row with several of them still reads as one line. The mark is a glyph
-   in the badge's own colour -- no fill or stroke of its own to go missing
-   under a theme that paints icons differently. */
-.bookmark-video-badge {
-    /* The triangle sits high in its em box; a hair of leading puts it on the
-       same line as the digits on the badge next to it. */
+/* A row that plays something.
+ *
+ * The mark takes its colour from the element, so no fill or stroke can go
+ * missing under a theme that paints icons its own way. It has two homes.
+ *
+ * On the favicon's corner, the way a video service draws play over a
+ * thumbnail. It is a disc rather than a bare triangle because it sits on a
+ * picture it does not choose, and it costs the row no width at all.
+ */
+.bookmark-video-badge.is-on-icon {
+    position: absolute;
+    /* In percentages of the icon, never in em: a browser's minimum font size
+       (Safari has one) raises small text, and a disc sized in the text's em
+       grew with it until it covered the whole favicon. */
+    right: -12%;
+    bottom: -12%;
+    width: 50%;
+    height: 50%;
+    border-radius: 50%;
+    /* The disc reads on a light favicon and a dark one alike, so it brings its
+       own ground rather than borrowing the row's. */
+    background: var(--accent-primary);
+    color: var(--background-primary);
+    /* A hairline in the page's own colour keeps the disc off the picture's
+       edge, so the two never smear into one shape. */
+    box-shadow: 0 0 0 1px var(--background-primary);
+    pointer-events: none;
+    user-select: none;
+}
+
+/* The triangle: a shape in the disc's text colour, in its optical middle --
+   a hair right of centre, because its weight is on the left. */
+.bookmark-video-badge.is-on-icon::before {
+    content: '';
+    position: absolute;
+    left: 36%;
+    top: 27%;
+    width: 38%;
+    height: 46%;
+    background: currentColor;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+/* The launcher draws icons at 32-64px, where half the tile would be a
+   second icon. A third of it still reads as a corner mark. */
+.layout-launcher .bookmark-video-badge.is-on-icon {
+    width: 34%;
+    height: 34%;
+    right: -6%;
+    bottom: -6%;
+}
+
+.bookmark-video-badge.is-bare {
+    flex-shrink: 0;
+    margin-left: 0.3em;
+    color: var(--accent-primary);
+    font-size: 0.72em;
     line-height: 1.05;
+    pointer-events: none;
+    user-select: none;
 }
 
 /* "Is this link still alive" is the question the rest of the app exists to

@@ -278,22 +278,6 @@
     text-transform: uppercase;
 }
 
-.theme-browser-card.is-gloss .theme-browser-swatches {
-    position: relative;
-}
-
-.theme-browser-card.is-gloss .theme-browser-swatches::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(180deg,
-        color-mix(in srgb, white 34%, transparent) 0%,
-        color-mix(in srgb, white 8%, transparent) 45%,
-        transparent 55%);
-    pointer-events: none;
-}
-
 .theme-browser-card-name {
     margin-right: auto;
 }

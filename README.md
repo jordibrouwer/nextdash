@@ -77,7 +77,7 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-themes.jpg" alt="Theme browser" width="100%" />
       <br />
-      <sub><b>Themes</b> — 122 theme families, each with a light and a dark half, searchable and filtered by mood. The Gloss filter shows the ten families that catch the light; press <kbd>Shift</kbd>+<kbd>A</kbd> to open the browser from anywhere.</sub>
+      <sub><b>Themes</b> — 121 theme families, each with a light and a dark half, searchable and filtered by character: lacquer, glass, velvet, terminal and eight more. Press <kbd>Shift</kbd>+<kbd>A</kbd> to open the browser from anywhere.</sub>
     </td>
   </tr>
 </table>
@@ -278,7 +278,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Appearance**
 
-- 121 theme families in light and dark — including ten glossy **Gloss** themes — in a browser with live preview, plus an editor for your own. *[Manual §12](MANUAL.md#12-appearance)*
+- 121 theme families in light and dark, each with a character that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — in a browser with live preview, plus an editor for your own. *[Manual §12](MANUAL.md#12-appearance)*
 - Character, depth, glow, effects and contrast for any theme; layout presets, columns, density, fonts and backdrops. *[Manual §12.3](MANUAL.md#123-surfaces)*
 - A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu. *[Manual §4](MANUAL.md#4-the-dashboard)*
 - Six languages: English, Dutch, German, French, Spanish and Chinese. *[Manual §15](MANUAL.md#15-config)*

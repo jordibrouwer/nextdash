@@ -492,8 +492,12 @@ class DashboardBookmarkRows {
         reorderHandle.title = dragLabel;
         lead.appendChild(reorderHandle);
 
+        // Kept in scope past the block below: the play mark rides this slot's
+        // corner, and it is decided further down, once the address has been
+        // read. Null when favicons are off, which is the mark's other home.
+        let iconSlot = null;
         if (d.settings.showIcons !== false) {
-            const iconSlot = document.createElement('span');
+            iconSlot = document.createElement('span');
             iconSlot.className = 'bookmark-icon-slot';
             lead.appendChild(iconSlot);
 
@@ -703,26 +707,43 @@ class DashboardBookmarkRows {
          * be there when the grid draws, and a bookmark carries no field for
          * it. The card's play button asks the same question, so the two can
          * never disagree about which rows are video.
+         *
+         * It rides the favicon's corner, the way a video service draws play
+         * over a thumbnail. The row is already a tight line -- name, response
+         * time, shortcut -- and a bordered chip after the name pushed all of
+         * that along for a mark that is worth a glance, not a column. The
+         * corner costs the line nothing, because the icon is already there.
+         *
+         * With favicons off there is no corner, so the mark goes back beside
+         * the name -- bare: a glyph in the accent colour, no box of its own.
          */
         if (d.settings.showVideoIcon !== false && window.VideoLinks?.isVideoLink?.(bookmark?.url)) {
             const videoBadge = document.createElement('span');
-            videoBadge.className = 'bookmark-video-badge bookmark-superscript-badge';
             /*
-             * A glyph, not an SVG.
+             * Not an SVG.
              *
              * The pin and the note draw a stroked icon, which needs its own
              * size and stroke rules to be visible; this one is a solid shape,
-             * and at badge size it disappeared under some themes. A character
-             * takes the badge's own colour and font size, so every theme --
-             * terminal, carbon, light -- draws it the way it draws the count
-             * on the fresh badge beside it.
+             * and at badge size it disappeared under some themes. Both forms
+             * below take their colour from the element, so every theme --
+             * terminal, carbon, light -- draws them the same way.
              */
-            videoBadge.textContent = '▶';
             const videoLabel = d.formatDashboardLabel('videoBookmarkBadge', {}, 'Plays a video');
             videoBadge.title = videoLabel;
             videoBadge.setAttribute('aria-label', videoLabel);
             videoBadge.setAttribute('role', 'img');
-            openLink.appendChild(videoBadge);
+            if (iconSlot) {
+                // No character on the icon: the triangle is drawn in CSS and
+                // sized to the icon. A character is sized by the font, and a
+                // browser's minimum font size grew it -- and the disc around
+                // it -- until it covered the favicon it sits on.
+                videoBadge.className = 'bookmark-video-badge is-on-icon';
+                iconSlot.appendChild(videoBadge);
+            } else {
+                videoBadge.textContent = '▶';
+                videoBadge.className = 'bookmark-video-badge is-bare';
+                openLink.appendChild(videoBadge);
+            }
         }
 
         const hasNote = bookmark && String(bookmark.note || '').trim();

@@ -151,12 +151,13 @@
         tags: `<span class="changes-tour-tags"><i>selfhosted</i><i>tools</i><i>docs</i><i class="is-own">+</i></span>`,
         /*
          * Three theme cards rather than three grey squares: a lacquered one
-         * with its badge and its lit band, and a light and a dark half of the
-         * same family. The colours come from the theme's own accents, so the
+         * with its character badge and its lit band, and a light and a dark
+         * half of the same family. The badge is the theme browser's own label
+         * for the character, so the two cannot drift apart again. The colours come from the theme's own accents, so the
          * drawing is in whatever theme the reader is actually looking at.
          */
         looks: `<span class="changes-tour-swatches">
-            <i class="is-gloss"><b>${esc(t('config.themeBadgeGloss', 'Gloss'))}</b><span class="changes-tour-chips"><u></u><u></u><u></u></span></i>
+            <i class="is-lacquer"><b>${esc(t('config.themeArchetype.lacquer', 'Lacquer'))}</b><span class="changes-tour-chips"><u></u><u></u><u></u></span></i>
             <i class="is-light"><span class="changes-tour-chips"><u></u><u></u><u></u></span></i>
             <i class="is-dark"><span class="changes-tour-chips"><u></u><u></u><u></u></span></i>
         </span>`,
