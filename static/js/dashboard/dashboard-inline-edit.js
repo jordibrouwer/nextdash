@@ -681,6 +681,28 @@ class DashboardInlineEdit {
             return wrap;
         };
 
+        /*
+         * An ⓘ after a field's label, the one the check group has always had.
+         *
+         * Not a Tab stop: the text is the input's own description, so a screen
+         * reader says it on the field, and the keyboard walk stays one stop per
+         * field.
+         */
+        const addInfo = (field, fieldEl, inputEl, text) => {
+            const label = fieldEl.querySelector('.bookmark-inline-label');
+            if (!label) return;
+            const info = document.createElement('button');
+            info.type = 'button';
+            info.className = 'bookmark-inline-checkmode-info bookmark-form-info';
+            info.dataset.infoFor = field;
+            info.tabIndex = -1;
+            info.textContent = 'i';
+            info.setAttribute('aria-label', text);
+            info.addEventListener('click', (e) => e.preventDefault());
+            label.appendChild(info);
+            window.FieldPopover?.attach(info, () => text, { describes: inputEl });
+        };
+
         // Same treatment as the shortcut warning: the message is a bubble on the
         // field, and the span behind it is the screen-reader copy. Printed under
         // the field it appeared while you were typing in it and pushed the rest
@@ -949,6 +971,8 @@ class DashboardInlineEdit {
         tagsRefresh.setAttribute('aria-label', cfg('tagSuggestRefresh', 'Suggest tags again'));
         tagsRefresh.title = cfg('tagSuggestRefresh', 'Suggest tags again');
         tagsField.appendChild(tagsRefresh);
+        addInfo('tags', tagsField, tagsInput, cfg('bookmarkTagsInfo',
+            'Comma-separated. Suggestions come from your rules, the catalogue, what other bookmarks on this site carry and the words on the page. ✕ turns one down for this site everywhere.'));
 
         /*
          * What the engine would tag this bookmark.
@@ -1081,6 +1105,8 @@ class DashboardInlineEdit {
         syncShortcutConflict(shortcutInput.value);
         const shortcutField = mkField(cfg('shortcut', 'Shortcut'), shortcutInput);
         shortcutField.appendChild(shortcutConflictHint);
+        addInfo('shortcut', shortcutField, shortcutInput, cfg('bookmarkShortcutInfo',
+            'Letters that open this bookmark from the dashboard. The grid keeps a few keys of its own; the field says when you pick one.'));
 
         // The "create" entry sits at the top of each dropdown, so adding a page or
         // category is one click away from the field it belongs to — no trip to the
@@ -1548,7 +1574,8 @@ class DashboardInlineEdit {
         // desktop case; this is the path that also works on touch.
         const checkModeInfo = document.createElement('button');
         checkModeInfo.type = 'button';
-        checkModeInfo.className = 'bookmark-inline-checkmode-info';
+        checkModeInfo.className = 'bookmark-inline-checkmode-info bookmark-form-info';
+        checkModeInfo.dataset.infoFor = 'check';
         checkModeInfo.textContent = 'i';
         checkModeInfo.title = cfg('checkModeExplainTitle', 'How availability checking works');
         checkModeInfo.setAttribute('aria-label', cfg('checkModeExplainTitle', 'How availability checking works'));

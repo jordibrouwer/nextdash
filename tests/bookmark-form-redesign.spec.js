@@ -496,3 +496,21 @@ test('an address whose read gave nothing can be tried again from the card', asyn
     await expect(form.locator('.bookmark-form-card-desc')).toHaveText('Answered this time');
     await expect(form.locator('[data-field="name"]')).toHaveValue('Second try');
 });
+
+test('tags, shortcut and check each carry an explanation in the same ⓘ', async ({ page }) => {
+    const form = await openAdd(page);
+    for (const field of ['tags', 'shortcut', 'check']) {
+        const info = form.locator(`.bookmark-form-info[data-info-for="${field}"]`);
+        await info.hover();
+        const bubble = page.locator('.field-popover');
+        await expect(bubble).toBeVisible();
+        await expect(bubble).not.toBeEmpty();
+        await page.mouse.move(0, 0);
+    }
+    // The tags text says where suggestions come from; the shortcut one what it does.
+    await form.locator('.bookmark-form-info[data-info-for="tags"]').hover();
+    await expect(page.locator('.field-popover')).toContainText('Suggestions');
+    // And the field itself is described, for a screen reader on the input.
+    const described = await form.locator('[data-field="tags"]').getAttribute('aria-describedby');
+    expect(described).toBeTruthy();
+});

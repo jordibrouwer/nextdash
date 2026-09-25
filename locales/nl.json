@@ -2527,6 +2527,8 @@
     "bookmarkNoCategorySave": "Save without",
     "bookmarkNoCategoryChoose": "Choose a category",
     "bookmarkPlaceNewPage": "New page…",
+    "bookmarkTagsInfo": "Comma-separated. Suggestions come from your rules, the catalogue, what other bookmarks on this site carry and the words on the page. ✕ turns one down for this site everywhere.",
+    "bookmarkShortcutInfo": "Letters that open this bookmark from the dashboard. The grid keeps a few keys of its own; the field says when you pick one.",
     "detailSetIconUrlBtn": "URL instellen",
     "detailTagsLabel": "Tags",
     "bookmarkGroupWhat": "Wat het is",

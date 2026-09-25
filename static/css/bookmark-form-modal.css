@@ -709,3 +709,10 @@ body.bookmark-form-modal-open .tag-ac-dropdown {
 .bookmark-form-modal-body .bookmark-form-card-retry:focus-visible {
     color: var(--accent-primary);
 }
+
+/* The ⓘ after a label: the check group's own button, set beside the text. */
+#bookmark-form-modal .bookmark-inline-label .bookmark-form-info {
+    margin-left: 6px;
+    vertical-align: 1px;
+    cursor: help;
+}
