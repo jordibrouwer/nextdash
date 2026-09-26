@@ -919,3 +919,69 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     flex-wrap: wrap;
     gap: var(--space-2, 0.5rem);
 }
+
+/* ── The panel fits the screen ───────────────────────────────────────────
+   A label above every field made the Edit section 528px on its own and the
+   panel ran past the bottom of a 950px window, into a scrollbar of its own.
+   Labels sit beside their fields instead, so the panel is normally read
+   whole; with every section open on a short window it still scrolls rather
+   than running off the screen. The bulk form keeps its stacked fields. */
+@media (min-width: 1200px) {
+    .config-bm-panel {
+        max-height: calc(100vh - var(--lvs-header-height, 0px) - 2 * var(--space-2, 0.5rem));
+        overflow: auto;
+        gap: var(--space-2, 0.5rem);
+        /* Below the section's sticky header, as the shell's rail stops below
+           it (list-view-shell.css, --lvs-header-height): at a flat 1rem the
+           panel's own head slid under it once the page scrolled. */
+        top: calc(var(--lvs-header-height, 0px) + var(--space-2, 0.5rem));
+    }
+
+    .config-bm-panel-head--single + .config-bm-panel-section .config-bm-panel-fields,
+    .config-bm-panel .config-bm-panel-section .config-bm-panel-fields {
+        gap: var(--space-1-5, 0.35rem);
+    }
+
+    .config-bm-panel-section .config-bm-field {
+        display: grid;
+        grid-template-columns: 4.5rem minmax(0, 1fr);
+        align-items: center;
+        column-gap: var(--space-2, 0.5rem);
+    }
+
+    .config-bm-panel-section .config-bm-field--inline {
+        display: flex;
+    }
+
+    /* The grid above outranks .config-bm-field[hidden]; the interval field
+       hides until Monitor is picked. */
+    .config-bm-panel-section .config-bm-field[hidden] {
+        display: none;
+    }
+
+    .config-bm-panel-section .config-bm-field .config-bm-field-status {
+        grid-column: 2;
+    }
+
+    .config-bm-panel-section .config-bm-field .config-text,
+    .config-bm-panel-section .config-bm-field .config-select {
+        padding-block: var(--space-1, 0.25rem);
+        /* .config-text carries an 8rem floor (config-view.css), which pushed
+           the text fields past the panel's edge in the narrower column. */
+        min-width: 0;
+    }
+
+    .config-bm-panel-section .config-bm-field textarea.config-text {
+        min-height: 2.6rem;
+    }
+
+    .config-bm-panel-section .config-bm-tags-suggest {
+        margin-top: 0;
+        margin-left: calc(4.5rem + var(--space-2, 0.5rem));
+    }
+
+    /* Title and its buttons on as few lines as the names allow. */
+    .config-bm-panel-head--single {
+        gap: var(--space-1-5, 0.35rem);
+    }
+}

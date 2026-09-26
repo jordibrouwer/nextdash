@@ -1251,6 +1251,22 @@
         if (host) host.innerHTML = this.renderWorkbenchNarrowButtons();
     },
 
+    /**
+     * Publish the section header's height on the workbench, under the name the
+     * list-view shell uses (--lvs-header-height), so the sticky panel stops
+     * below the sticky header instead of sliding under it. The header grows
+     * and shrinks with its breadcrumb, so it is watched rather than read once.
+     */
+    trackWorkbenchHeaderHeight(workbench) {
+        const head = document.querySelector('.config-view-head');
+        this._bmHeadObserver?.disconnect?.();
+        if (!workbench || !head || typeof ResizeObserver !== 'function') return;
+        const publish = () => workbench.style.setProperty('--lvs-header-height', `${Math.round(head.offsetHeight)}px`);
+        publish();
+        this._bmHeadObserver = new ResizeObserver(publish);
+        this._bmHeadObserver.observe(head);
+    },
+
     bindWorkbench(container) {
         // A redraw of the section (a write elsewhere, a filter from the hash)
         // keeps an open drawer or sheet open: its scroll lock is still held, so
@@ -1263,6 +1279,7 @@
             const scrim = root?.querySelector('[data-bm-scrim]');
             if (scrim) scrim.hidden = false;
         }
+        this.trackWorkbenchHeaderHeight(container.querySelector('#config-bm-workbench'));
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
         const panel = container.querySelector('#config-bm-panel');
         this.bindWorkbenchPanel(panel);

@@ -208,3 +208,18 @@ test.describe('config bookmarks redesign: phone', () => {
     expect(hit).toBe(true);
   });
 });
+
+test.describe('config bookmarks redesign: the panel fits', () => {
+  test('a selected bookmark\'s panel fits on screen without needing its scrollbar', async ({ page }) => {
+    await openConfigBookmarks(page);
+    await bmRow(page, 1).click();
+    await expect(page.locator('#config-bm-panel [data-bm-section="edit"]')).toHaveAttribute('open', '');
+    const m = await page.locator('#config-bm-panel').evaluate((el) => ({
+      bottom: Math.round(el.getBoundingClientRect().bottom),
+      inner: window.innerHeight,
+      overflowing: el.scrollHeight > el.clientHeight + 1,
+    }));
+    expect(m.overflowing).toBe(false);
+    expect(m.bottom).toBeLessThanOrEqual(m.inner);
+  });
+});
