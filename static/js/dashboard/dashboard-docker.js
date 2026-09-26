@@ -39,6 +39,14 @@ class DashboardDocker {
         this._pollTimer = null;
         this._checkedAt = null;
         this._escapeHandler = null;
+        // Containers with an action in flight, name -> phase ("stop",
+        // "pulling", ...). Kept here rather than on the row so a repaint
+        // mid-action keeps showing it.
+        this.busy = new Map();
+        // Rows picked with Cmd/Ctrl/Shift-click, for the bulk bar.
+        this.multi = new Set();
+        this._multiAnchor = null;
+        this.actions = typeof window.DockerActions === 'function' ? new window.DockerActions(this) : null;
         this.restoreViewState();
     }
 
@@ -192,11 +200,30 @@ class DashboardDocker {
                 return;
             }
 
+            // Row actions, on the selected container. Never while typing or
+            // with a modifier held, so Cmd+R still reloads the page.
+            const actionKey = { s: 'toggle-run', r: 'restart', p: 'toggle-pause', u: 'update', Delete: 'remove', Backspace: 'remove' }[e.key];
+            if (actionKey && !typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey && this.selected) {
+                const c = this.containers.find((x) => x.name === this.selected);
+                const action = this.resolveActionKey(actionKey, c);
+                if (c && action && this.actions?.allowed(c).includes(action)) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    void this.actions.run(action, c);
+                }
+                return;
+            }
+
             if (e.key !== 'Escape') return;
             if (menuOrModalOpen) return;
             if (typing) return;
             e.preventDefault();
             e.stopImmediatePropagation();
+            if (this.multi.size) {
+                this.multi.clear();
+                this.render();
+                return;
+            }
             // The drawer is the innermost thing on screen: the first Escape
             // drops it and leaves the list, the same order Health uses for its
             // own overlays.
@@ -479,8 +506,85 @@ class DashboardDocker {
         }
         if (this.status.control === false) {
             body.appendChild(this.buildReadOnlyLine());
+        } else {
+            body.appendChild(this.buildLegend());
+        }
+        if (this.multi.size >= 2 && this.status.control) {
+            body.appendChild(this.buildBulkBar());
         }
         body.appendChild(this.buildTable());
+    }
+
+    /** The row keys, as <kbd> chips; the keys stay untranslated, the labels do not. */
+    buildLegend() {
+        const wrap = document.createElement('div');
+        wrap.className = 'docker-legend';
+        [
+            ['s', this.t('dashboard.dockerLegendRun', 'start / stop')],
+            ['r', this.t('dashboard.dockerLegendRestart', 'restart')],
+            ['p', this.t('dashboard.dockerLegendPause', 'pause')],
+            ['u', this.t('dashboard.dockerLegendUpdate', 'update')],
+            ['Del', this.t('dashboard.dockerLegendRemove', 'remove')],
+        ].forEach(([key, label]) => {
+            const item = document.createElement('span');
+            item.className = 'docker-legend-item';
+            const kbd = document.createElement('kbd');
+            kbd.textContent = key;
+            const text = document.createElement('span');
+            text.textContent = label;
+            item.append(kbd, text);
+            wrap.appendChild(item);
+        });
+        return wrap;
+    }
+
+    buildBulkBar() {
+        const bar = document.createElement('div');
+        bar.className = 'docker-bulk';
+        bar.setAttribute('data-docker-bulk', '');
+        const count = document.createElement('span');
+        count.className = 'docker-bulk-count';
+        count.textContent = this.t('dashboard.dockerBulkSelected', '{count} selected', { count: this.multi.size });
+        bar.appendChild(count);
+        const picked = this.containers.filter((c) => this.multi.has(c.name));
+        ['start', 'stop', 'restart', 'update'].forEach((action) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'docker-action-btn';
+            btn.setAttribute('data-docker-bulk-action', action);
+            btn.textContent = this.actions?.label(action) || action;
+            btn.disabled = !picked.some((c) => this.actions?.allowed(c).includes(action));
+            btn.addEventListener('click', async () => {
+                await this.actions?.runBulk(action, picked);
+            });
+            bar.appendChild(btn);
+        });
+        return bar;
+    }
+
+    /** s and p toggle: the same key starts a stopped container and stops a running one. */
+    resolveActionKey(key, c) {
+        if (!c) return null;
+        if (key === 'toggle-run') return c.state === 'running' || c.state === 'paused' ? 'stop' : 'start';
+        if (key === 'toggle-pause') return c.state === 'paused' ? 'unpause' : 'pause';
+        return key;
+    }
+
+    setBusy(name, phase) {
+        if (phase) this.busy.set(name, phase);
+        else this.busy.delete(name);
+        this.render();
+    }
+
+    /** After an action: the drawer shows the container as it now is, or closes if it is gone. */
+    drawerRefresh() {
+        if (!this.drawerOpen || !this.selected) return;
+        const c = this.containers.find((x) => x.name === this.selected);
+        if (!c) {
+            this.closeDrawer();
+            return;
+        }
+        this.drawer?.open(c);
     }
 
     buildSetupCard() {
@@ -560,7 +664,13 @@ class DashboardDocker {
         const tr = document.createElement('tr');
         tr.className = 'docker-row';
         tr.setAttribute('data-docker-row', c.name);
-        tr.setAttribute('aria-selected', String(this.selected === c.name));
+        tr.setAttribute('data-state', c.state || '');
+        tr.setAttribute('aria-selected', String(this.selected === c.name || this.multi.has(c.name)));
+        const busy = this.busy.get(c.name);
+        if (busy) {
+            tr.setAttribute('data-docker-busy', busy);
+            tr.setAttribute('aria-busy', 'true');
+        }
         tr.tabIndex = -1;
 
         const nameCell = document.createElement('td');
@@ -585,7 +695,7 @@ class DashboardDocker {
 
         const stateCell = document.createElement('td');
         stateCell.className = 'docker-cell docker-cell--state';
-        stateCell.textContent = c.status || c.state || '';
+        stateCell.textContent = busy ? this.phaseText(busy) : (c.status || c.state || '');
         tr.appendChild(stateCell);
 
         const portsCell = document.createElement('td');
@@ -603,9 +713,53 @@ class DashboardDocker {
 
         tr.addEventListener('click', (e) => {
             if (e.target.closest('a')) return; // a port link handles its own click
+            if (e.metaKey || e.ctrlKey || e.shiftKey) {
+                this.toggleMulti(c.name, { range: e.shiftKey });
+                return;
+            }
+            if (this.multi.size) this.multi.clear();
+            this._multiAnchor = c.name;
             this.selectContainer(c.name, { openDrawer: true });
         });
         return tr;
+    }
+
+    phaseText(phase) {
+        const phases = {
+            pulling: ['dockerPhasePulling', 'pulling…'],
+            recreating: ['dockerPhaseRecreating', 'recreating…'],
+        };
+        const [key, fallback] = phases[phase] || ['dockerPhaseWorking', 'working…'];
+        return this.t(`dashboard.${key}`, fallback);
+    }
+
+    /**
+     * Cmd/Ctrl-click adds or drops one row; Shift-click takes the range from
+     * the last plain click. The row already open in the drawer counts as the
+     * first pick, so "click one, Cmd-click another" selects both.
+     */
+    toggleMulti(name, { range = false } = {}) {
+        if (!this.multi.size && this.selected) this.multi.add(this.selected);
+        if (range && this._multiAnchor) {
+            const rows = this.filteredSortedContainers().map((c) => c.name);
+            const a = rows.indexOf(this._multiAnchor);
+            const b = rows.indexOf(name);
+            if (a >= 0 && b >= 0) {
+                rows.slice(Math.min(a, b), Math.max(a, b) + 1).forEach((n) => this.multi.add(n));
+            }
+        } else if (this.multi.has(name)) {
+            this.multi.delete(name);
+        } else {
+            this.multi.add(name);
+        }
+        this._multiAnchor = this._multiAnchor || name;
+        // Two or more picked is a selection to act on, not one container to
+        // read: the drawer steps aside so the bulk bar is reachable.
+        if (this.multi.size >= 2 && this.drawerOpen) {
+            this.drawer?.close();
+            this.drawerOpen = false;
+        }
+        this.render();
     }
 
     /* ── Selection and the drawer ─────────────────────────────────────────

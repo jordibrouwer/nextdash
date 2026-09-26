@@ -220,10 +220,12 @@ class DockerDrawer {
         }
         header.appendChild(heading);
 
-        // Task 13 fills this with the action buttons allowed in the current state.
+        // The actions the container's current state allows; DockerActions
+        // decides which, so the drawer and the row keys never disagree.
         const actions = document.createElement('div');
         actions.setAttribute('data-docker-drawer-actions', '');
         actions.className = 'docker-drawer-actions';
+        this.view.actions?.renderButtons(actions, summary);
         header.appendChild(actions);
 
         return header;

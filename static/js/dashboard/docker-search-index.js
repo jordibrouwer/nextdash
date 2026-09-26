@@ -64,5 +64,24 @@
 
     function invalidate() { statusAt = 0; listAt = 0; }
 
-    window.DockerSearchIndex = { status, refresh, containers: () => list, match, matches, invalidate };
+    /**
+     * What can be done to a container right now. The one place this is
+     * decided, so the drawer, the row keys and the :docker palette agree. The
+     * own container and a read-only install offer nothing; update is offered
+     * whether or not a check has run, since a check that never ran should not
+     * hide a working button.
+     */
+    function allowedActions(container, control) {
+        if (!control || !container || container.self) return [];
+        switch (container.state) {
+            case 'running': return ['stop', 'restart', 'pause', 'update'];
+            case 'paused': return ['unpause', 'stop'];
+            case 'restarting': return ['stop'];
+            default: return ['start', 'update', 'remove'];
+        }
+    }
+
+    window.DockerSearchIndex = {
+        status, refresh, containers: () => list, match, matches, invalidate, allowedActions,
+    };
 })();

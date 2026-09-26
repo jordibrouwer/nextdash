@@ -173,6 +173,7 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-health-focus.js",
 	"js/dashboard/dashboard-docker.js",
 	"js/dashboard/dashboard-docker-drawer.js",
+	"js/dashboard/dashboard-docker-actions.js",
 	"js/dashboard/dashboard-inbox-triage.js",
 	"js/dashboard/dashboard-inbox.js",
 	// The kept tab of the inbox: its view and its selection layer, loaded

@@ -318,3 +318,79 @@
         width: 100%;
     }
 }
+
+/* ── Actions ─────────────────────────────────────────────────────────── */
+
+.docker-action-btn {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    cursor: pointer;
+}
+
+.docker-action-btn:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}
+
+.docker-action-btn--primary {
+    border-color: color-mix(in srgb, var(--accent-primary) 60%, transparent);
+    color: var(--accent-primary);
+}
+
+.docker-action-btn--danger:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
+    color: var(--accent-error);
+}
+
+.docker-action-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.docker-self-note {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.docker-row[data-docker-busy] .docker-cell--state {
+    color: var(--accent-primary);
+}
+
+.docker-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.3rem) var(--space-3, 0.75rem);
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.docker-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.docker-bulk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin: 0 0 var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: var(--background-secondary);
+}
+
+.docker-bulk-count {
+    margin-right: auto;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
