@@ -39,6 +39,12 @@
                        aria-label="${esc(this.t('config.bmFilters', 'Filters'))}">${this.renderWorkbenchRail()}</aside>
                 <section class="config-bm-main" aria-label="${esc(this.t('config.sectionBookmarks', 'Bookmarks'))}">
                     <div class="config-bm-toolbar">
+                        <label class="config-bm-search">
+                            <input type="search" class="config-text" id="config-bm-search"
+                                   placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}"
+                                   value="${esc(this.bmQuery || '')}">
+                            <kbd aria-hidden="true">/</kbd>
+                        </label>
                         <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
                         <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
                         <span id="config-bm-narrow-buttons" class="config-bm-narrow-buttons">${this.renderWorkbenchNarrowButtons()}</span>
@@ -58,15 +64,10 @@
     },
 
     renderWorkbenchRail() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        return `
-            <div class="config-bm-rail-search">
-                <input type="search" class="config-text" id="config-bm-search"
-                       placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}"
-                       value="${esc(this.bmQuery || '')}">
-                <kbd aria-hidden="true">/</kbd>
-            </div>
-            <div id="config-bm-rail-facets">${this.renderWorkbenchFacets()}</div>`;
+        // The search field lives in the toolbar now (renderBookmarksWorkbench),
+        // above the list rather than above the filters — the rail is nothing
+        // but filters, the way Health's is.
+        return `<div id="config-bm-rail-facets">${this.renderWorkbenchFacets()}</div>`;
     },
 
     bookmarkFacetCounts() {

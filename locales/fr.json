@@ -5887,7 +5887,6 @@
     "bulkIconsHint": "Demander son icône à chaque site, pour les lignes cochées qui n’en ont pas",
     "logRecordLabel": "Enregistrer le journal du serveur",
     "logManualRefreshNote": "Enregistrement en cours, mais cette vue ne se met pas à jour seule. Appuyez sur ↻ pour les lignes les plus récentes, ou choisissez un intervalle sous Actualiser dans ⚙ Paramètres du journal pour qu’elles apparaissent d’elles-mêmes.",
-    "bmNoteList": "Tous vos signets, de toutes les pages. Filtrez à gauche, modifiez à droite.",
     "bmNoteTags": "Renommez un tag partout où il est utilisé, fusionnez-en deux qui veulent dire la même chose, ou supprimez-en un.",
     "bmNoteTagSuggestions": "Les tags que nextDash ajouterait, regroupés pour accepter ou refuser tout un groupe d’un coup.",
     "bmNoteTagRules": "Vos propres règles : correspondance sur une partie d’une adresse ou d’un titre, et étiquetage de ce qu’elle attrape.",

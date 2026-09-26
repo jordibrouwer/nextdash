@@ -184,7 +184,8 @@ test.describe('Config → Bookmarks opens like a view', () => {
     test('its search box matches the one in Health', async ({ page }) => {
         await openDashboard(page);
         await openConfigBookmarks(page);
-        const config = await boxOf(page, '#config-bm-rail #config-bm-search');
+        // The search box moved from the rail into the toolbar.
+        const config = await boxOf(page, '.config-bm-toolbar #config-bm-search');
 
         await openHealth(page);
         const health = await boxOf(page, '.health-view-search-input');
@@ -192,8 +193,8 @@ test.describe('Config → Bookmarks opens like a view', () => {
         expect(config).not.toBeNull();
         expect(health).not.toBeNull();
         expect(config.radius).toBe(health.radius);
-        // Padding is not compared: the rail's box keeps room on the right for
-        // its `/` hint.
+        // Padding is not compared: this box keeps room on the right for its
+        // `/` hint.
         expect(config.background).toBe(health.background);
     });
 });

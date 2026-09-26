@@ -50,3 +50,31 @@ test.describe('config bookmarks redesign: rows', () => {
     expect(h).toBe(46);
   });
 });
+
+test.describe('config bookmarks redesign: rail and toolbar', () => {
+  test('the search field sits in the toolbar and / focuses it', async ({ page }) => {
+    await openConfigBookmarks(page);
+    await expect(page.locator('.config-bm-toolbar #config-bm-search')).toHaveCount(1);
+    await expect(page.locator('.config-bm-rail #config-bm-search')).toHaveCount(0);
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await page.keyboard.press('/');
+    await expect(page.locator('#config-bm-search')).toBeFocused();
+  });
+
+  test('the rail groups are not boxed, and the active filter is marked', async ({ page }) => {
+    await openConfigBookmarks(page);
+    const group = page.locator('.config-bm-rail-group').first();
+    const box = await group.evaluate((el) => {
+      const c = getComputedStyle(el);
+      return { border: c.borderTopWidth, bg: c.backgroundColor };
+    });
+    expect(box.border).toBe('0px');
+    expect(box.bg).toBe('rgba(0, 0, 0, 0)');
+    await expect(page.locator('.config-bm-rail-item.is-on').first()).toBeVisible();
+  });
+
+  test('the List tab has no intro sentence', async ({ page }) => {
+    await openConfigBookmarks(page);
+    await expect(page.getByText('Every bookmark you have, from every page')).toHaveCount(0);
+  });
+});

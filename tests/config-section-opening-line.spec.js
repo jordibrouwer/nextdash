@@ -59,8 +59,14 @@ test.describe('every config section opens the same way', () => {
 
             const seen = await readSection(page);
             expect(seen.band.length).toBeGreaterThan(10);
-            expect(seen.note.length).toBeGreaterThan(10);
-            expect(seen.note).not.toBe(seen.band);
+            if (section === 'bookmarks') {
+                // Bookmarks opens on the List tab, which has no note of its
+                // own any more — as Health's All filter has none.
+                expect(seen.note.length).toBe(0);
+            } else {
+                expect(seen.note.length).toBeGreaterThan(10);
+                expect(seen.note).not.toBe(seen.band);
+            }
         });
     }
 

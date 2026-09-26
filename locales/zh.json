@@ -5887,7 +5887,6 @@
     "bulkIconsHint": "为勾选中尚无图标的条目向各站点索取图标",
     "logRecordLabel": "记录服务器日志",
     "logManualRefreshNote": "正在记录，但此视图不会自动更新。按 ↻ 查看最新内容，或在 ⚙ 日志设置的「刷新」中选择间隔，让新内容自动出现。",
-    "bmNoteList": "来自所有页面的全部书签。左侧筛选，右侧编辑。",
     "bmNoteTags": "在所有使用处重命名标签、合并含义相同的两个标签，或删除某个标签。",
     "bmNoteTagSuggestions": "nextDash 建议添加的标签，按组排列，可整组接受或拒绝。",
     "bmNoteTagRules": "你自己的规则：匹配地址或标题的一部分，为匹配到的内容加标签。",

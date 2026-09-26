@@ -5887,7 +5887,6 @@
     "bulkIconsHint": "Pedir su icono a cada sitio, para las filas marcadas que no lo tienen",
     "logRecordLabel": "Registrar el log del servidor",
     "logManualRefreshNote": "Se está registrando, pero esta vista no se actualiza sola. Pulsa ↻ para ver las líneas más recientes, o elige un intervalo en Actualizar dentro de ⚙ Ajustes del log para que aparezcan solas.",
-    "bmNoteList": "Todos tus marcadores, de todas las páginas. Filtra a la izquierda, edita a la derecha.",
     "bmNoteTags": "Cambia el nombre de una etiqueta en todos los sitios donde se usa, une dos que signifiquen lo mismo o elimina una.",
     "bmNoteTagSuggestions": "Etiquetas que nextDash añadiría, agrupadas para que aceptes o rechaces un grupo entero de una vez.",
     "bmNoteTagRules": "Tus propias reglas: coincide con parte de una dirección o un título y etiqueta lo que atrapen.",

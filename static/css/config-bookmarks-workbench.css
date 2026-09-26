@@ -39,18 +39,37 @@
     min-width: 0;
 }
 
-.config-bm-rail-search {
+/* In the toolbar now, ahead of the count — Health's rail carries no search
+   box, so this one moved off it. */
+.config-bm-search {
     position: relative;
+    /* Same growth rule list-view-shell.css gives the views' own toolbar
+       search boxes: it takes the room the sort/count beside it do not
+       claim, rather than an <input>'s intrinsic width. */
+    flex: 1 1 14rem;
+    min-width: 0;
 }
 
-.config-bm-rail-search input {
+/* Copies .health-view-search-input (health-view.css:462) so the two views'
+   search boxes read as the same control; the growth rule stays the one on
+   the label above, not this one's own flex: 1 1 12rem. Radius is
+   --layout-radius-sm, not health's own declared --radius-4: inside Health's
+   toolbar `.lvs-toolbar input` (list-view-shell.css) wins that property and
+   is what the reader actually sees, so that is the value to match. */
+.config-bm-search input {
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
-    padding-right: 2rem;
+    padding: var(--space-1-5, 0.35rem) 2rem var(--space-1-5, 0.35rem) var(--space-2, 0.55rem);
+    border-radius: var(--layout-radius-sm);
+    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-text) * 0.914);
 }
 
-.config-bm-rail-search kbd {
+.config-bm-search kbd {
     position: absolute;
     right: var(--space-2, 0.5rem);
     top: 50%;
@@ -117,23 +136,30 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
     margin-top: var(--space-2, 0.5rem);
 }
 
+/* Plain text, not a filled pill: the rail around it carries no boxes any
+   more, and a coloured chip was the one shape left that did. */
 .config-bm-rail-token {
     display: inline-flex;
     gap: 0.3em;
     align-items: flex-start;
     white-space: normal;
     border: 0;
-    border-radius: var(--radius-3, 4px);
+    border-radius: var(--layout-radius-sm);
     padding: 1px 6px;
     font: inherit;
     font-size: var(--font-size-small);
     font-family: var(--font-family-mono, ui-monospace, monospace);
     color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    background: none;
     cursor: pointer;
     max-width: 100%;
     overflow-wrap: anywhere;
     text-align: left;
+}
+
+.config-bm-rail-token:hover,
+.config-bm-rail-token:focus-visible {
+    background: var(--background-secondary);
 }
 
 .config-bm-rail-clear-all,
@@ -147,53 +173,58 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
     cursor: pointer;
 }
 
+/* No box: a group here is a heading and its rows, the way .lvs-group in
+   list-view-shell.css is — the rail's own surface used to double as a card
+   round each one, which Health's rail does not have. */
 .config-bm-rail-group {
-    background: var(--bm-slab-bg);
-    border-radius: var(--bm-slab-radius);
-    padding: var(--space-1, 0.25rem) 6px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
 }
 
-html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
-    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
-}
-
+/* Values copied from .lvs-group-title (list-view-shell.css). */
 .config-bm-rail-title {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin: var(--space-1, 0.25rem) 0;
-    font-size: var(--font-size-small);
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: calc(var(--font-size-text) * 0.86);
+    letter-spacing: 0.05em;
     color: var(--text-secondary);
+    padding: 0 var(--space-2) var(--space-1);
 }
 
+/* Values copied from .lvs-filter (list-view-shell.css); the count and the
+   health dot are this rail's own, not part of that shared row. */
 .config-bm-rail-item {
     display: flex;
     /* A label that wraps keeps its count on the first line. */
     align-items: flex-start;
-    gap: 6px;
+    gap: var(--space-2);
     width: 100%;
+    padding: var(--space-1) var(--space-2);
     border: 0;
-    border-radius: var(--radius-3, 4px);
-    padding: 2px var(--space-1, 0.25rem);
-    background: none;
-    color: var(--text-primary);
+    background: transparent;
+    color: var(--text-secondary);
     font: inherit;
-    font-size: var(--font-size-controls);
+    font-size: var(--font-size-text);
     text-align: left;
+    border-radius: var(--layout-radius-sm);
     cursor: pointer;
 }
 
-.config-bm-rail-item:hover,
+.config-bm-rail-item:hover {
+    background: var(--background-secondary);
+}
+
 .config-bm-rail-item:focus-visible {
-    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
 }
 
 .config-bm-rail-item.is-on {
+    background: var(--background-secondary);
     color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    font-weight: 500;
 }
 
 .config-bm-rail-item.is-empty:not(.is-on) {

@@ -5887,7 +5887,6 @@
     "bulkIconsHint": "Jede Website nach ihrem Icon fragen, für die markierten Zeilen ohne",
     "logRecordLabel": "Serverprotokoll aufzeichnen",
     "logManualRefreshNote": "Wird aufgezeichnet, aber diese Ansicht aktualisiert sich nicht von selbst. Drücke ↻ für die neuesten Zeilen oder wähle unter Aktualisieren in ⚙ Protokolleinstellungen ein Intervall, damit sie von selbst erscheinen.",
-    "bmNoteList": "Jedes Lesezeichen, das du hast, von jeder Seite. Links filtern, rechts bearbeiten.",
     "bmNoteTags": "Benenne einen Tag überall um, wo er verwendet wird, führe zwei gleichbedeutende zusammen oder entferne einen.",
     "bmNoteTagSuggestions": "Tags, die nextDash hinzufügen würde, gruppiert, damit du eine ganze Gruppe auf einmal annehmen oder ablehnen kannst.",
     "bmNoteTagRules": "Deine eigenen Regeln: Treffer auf einen Teil einer Adresse oder eines Titels, und tagge, was sie fangen.",

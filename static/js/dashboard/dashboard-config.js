@@ -14658,7 +14658,11 @@ class DashboardConfig {
      */
     static SECTION_TAB_NOTES = {
         bookmarks: {
-            'list': ['config.bmNoteList', 'Every bookmark you have, from every page. Filter on the left, edit on the right.'],
+            /*
+             * No note for the List tab, as Health's All has none: it cost a
+             * line above the rail and the list to describe the library the
+             * reader is already looking at.
+             */
             'tags': ['config.bmNoteTags', 'Rename a tag everywhere it is used, merge two that mean the same, or remove one.'],
             'tag-suggestions': ['config.bmNoteTagSuggestions', 'Tags nextDash would add, grouped so you can accept or refuse a whole group at once.'],
             'tag-rules': ['config.bmNoteTagRules', 'Your own rules: match part of an address or a title, and tag what it catches.'],
@@ -22513,9 +22517,11 @@ class DashboardConfig {
             return `
                 <div class="config-panel">
                     <div class="config-crud-toolbar config-crud-toolbar--view">
-                        <input type="search" class="config-text" id="config-bm-search"
-                               placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}"
-                               value="${esc(this.bmQuery || '')}">
+                        <label class="config-bm-search">
+                            <input type="search" class="config-text" id="config-bm-search"
+                                   placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}"
+                                   value="${esc(this.bmQuery || '')}">
+                        </label>
                     </div>
                     <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
                 </div>`;

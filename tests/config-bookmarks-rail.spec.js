@@ -41,7 +41,8 @@ test.describe('the bookmarks workbench', () => {
         const panel = page.locator('#config-bm-panel');
         await expect(rail).toBeVisible();
         await expect(panel).toBeVisible();
-        await expect(rail.locator('#config-bm-search')).toBeVisible();
+        // The search field lives in the toolbar now, not the rail.
+        await expect(main.locator('.config-bm-toolbar #config-bm-search')).toBeVisible();
 
         const [r, m, p] = await Promise.all([rail, main, panel].map((l) => l.boundingBox()));
         expect(r && m && p, 'all three parts have a box').toBeTruthy();

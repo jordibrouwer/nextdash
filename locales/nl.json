@@ -5887,7 +5887,6 @@
     "bulkIconsHint": "Vraag elke site om zijn icoon, voor de aangevinkte rijen zonder",
     "logRecordLabel": "Serverlog bijhouden",
     "logManualRefreshNote": "Wordt bijgehouden, maar deze weergave werkt zichzelf niet bij. Druk op ↻ voor de nieuwste regels, of kies een interval onder Verversen in ⚙ Loginstellingen om ze vanzelf te laten verschijnen.",
-    "bmNoteList": "Elke bookmark die je hebt, van elke pagina. Filter links, bewerk rechts.",
     "bmNoteTags": "Hernoem een tag overal waar hij wordt gebruikt, voeg er twee samen die hetzelfde betekenen, of verwijder er een.",
     "bmNoteTagSuggestions": "Tags die nextDash zou toevoegen, gegroepeerd zodat je een hele groep in één keer accepteert of weigert.",
     "bmNoteTagRules": "Je eigen regels: laat een deel van een adres of titel overeenkomen, en tag wat het vangt.",
