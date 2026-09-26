@@ -52,6 +52,10 @@ services:
       # - NEXTDASH_HOST_ROOT=/host/root
       # Containers widget: where the socket above landed. Unset hides the widget.
       # - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+      # Docker view actions: start, stop, update and remove. A writable socket
+      # is root on the host -- :ro on the mount does not stop API writes -- so
+      # set NEXTDASH_WRITE_TOKEN as well. Unset keeps the view read-only.
+      # - NEXTDASH_DOCKER_CONTROL=1
       # Turn the daily GitHub release check or the nextdash.cc news feed off for everyone.
       # - DISABLE_UPDATE_CHECK=true
       # - DISABLE_NEWS_FEED=true
