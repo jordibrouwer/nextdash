@@ -149,3 +149,26 @@ test.describe('config bookmarks redesign: tag suggestions in the panel', () => {
     await expect.poll(() => posts.some((list) => list.some((b) => (b.tags || []).includes('panel-offer')))).toBe(true);
   });
 });
+
+test.describe('config bookmarks redesign: suggestions for a selection', () => {
+  test('two ticked rows get the tags their bookmarks share, and a chip fills the bulk tags field', async ({ page }) => {
+    await openConfigBookmarks(page);
+    // A predictable engine: one group covering both ticked rows, one covering
+    // a single row, so the shared tag must come first.
+    const keys = await Promise.all([1, 2].map((n) => bmRow(page, n).getAttribute('data-bm-key')));
+    await page.evaluate((ks) => {
+      window.TagSuggestions.suggest = () => [
+        { tag: 'only-one', pattern: 'p2', keys: [ks[1]], reason: { kind: 'rule' } },
+        { tag: 'shared-offer', pattern: 'p1', keys: ks, reason: { kind: 'rule' } },
+      ];
+    }, keys);
+    for (const n of [1, 2]) {
+      await bmRow(page, n).hover();
+      await bmRow(page, n).locator('.config-bm-tick').check();
+    }
+    const chips = page.locator('#config-bm-panel [data-bm-bulk-suggest] .tag-suggest-chip-add');
+    await expect(chips.first()).toHaveText('#shared-offer');
+    await chips.first().click();
+    await expect(page.locator('#config-bm-panel [data-bm-bulk-field="tags"]')).toHaveValue(/shared-offer/);
+  });
+});

@@ -507,6 +507,7 @@
         panel.dataset.bmPanelMode = mode;
         panel.dataset.bmPanelKey = key || '';
         void this.fillWorkbenchSuggestions(panel);
+        if (mode === 'bulk') void this.fillWorkbenchBulkSuggestions(panel);
         if (mode === 'bulk' && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });
         this.syncWorkbenchToolbar();
     },
@@ -550,6 +551,77 @@
             },
             onRefuse: (offer) => {
                 void chips.refuse(this.dash, offer, { onUpdated: () => { void this.fillWorkbenchSuggestions(panel); } });
+            },
+        });
+    },
+
+    /**
+     * The engine's offers for a selection, pooled, the tags most of the
+     * selected bookmarks share first -- the pooling the dashboard's
+     * multi-select tag popover does (dashboard-multi-select.js).
+     *
+     * One engine run over the collection with the words the scan stored, the
+     * run the Tag suggestions tab makes, rather than one per ticked bookmark:
+     * the same answers the single-bookmark panel gives, at the cost of one
+     * run whatever the size of the selection. Taking one writes it into the
+     * bulk tags field rather than saving, so Apply stays the one step that
+     * changes twenty bookmarks at once.
+     */
+    async fillWorkbenchBulkSuggestions(panel) {
+        const host = panel?.querySelector('[data-bm-bulk-suggest]');
+        const field = panel?.querySelector('[data-bm-bulk-field="tags"]');
+        const live = global.TagSuggestLive;
+        const chips = global.TagSuggestChips;
+        const engine = global.TagSuggestions?.suggest;
+        if (!host || !field || !live || !chips || !engine) return;
+        await live.ensureCatalogue();
+        const byUrl = await live.storedKeywords();
+        if (!host.isConnected || panel.dataset.bmPanelMode !== 'bulk') return;
+        const keywords = {};
+        (this.dash.allBookmarks || []).forEach((b) => {
+            const words = byUrl[String(b.url || '').trim()];
+            if (words?.length) keywords[this.bookmarkKey(b)] = words;
+        });
+        let groups = [];
+        try {
+            groups = engine(this.tagSuggestionItems(), {
+                rules: this.dash.settings?.tagRules || [],
+                catalogue: global.TagCatalogue?.now?.() || [],
+                dismissed: this.dash.settings?.dismissedTagSuggestions || [],
+                keywords,
+            });
+        } catch {
+            groups = [];
+        }
+        const typed = () => String(field.value || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+        const selected = this.bmSelected;
+        const offeredTo = new Map();
+        groups.forEach((group) => {
+            const count = (group.keys || []).filter((key) => selected.has(key)).length;
+            if (!count) return;
+            const seen = offeredTo.get(group.tag);
+            if (seen) seen.count += count;
+            else offeredTo.set(group.tag, { offer: { tag: group.tag, pattern: group.pattern, reason: group.reason }, count });
+        });
+        const already = new Set(typed());
+        const offers = [...offeredTo.entries()]
+            .filter(([tag]) => !already.has(tag))
+            .sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0]))
+            .map(([, entry]) => entry.offer);
+        chips.render(host, offers, {
+            limit: 3,
+            label: this.t('config.tagSuggestLabel', 'suggested'),
+            t: (k, fallback, params) => this.dash.formatDashboardLabel(k.replace(/^dashboard\./, ''), params || {}, fallback),
+            onAccept: (tag) => {
+                const tags = typed();
+                if (!tags.includes(tag)) tags.push(tag);
+                field.value = tags.join(', ');
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                field.focus({ preventScroll: true });
+                void this.fillWorkbenchBulkSuggestions(panel);
+            },
+            onRefuse: (offer) => {
+                void chips.refuse(this.dash, offer, { onUpdated: () => { void this.fillWorkbenchBulkSuggestions(panel); } });
             },
         });
     },
@@ -924,7 +996,8 @@
                     <div class="config-bm-segmented" role="group">${modeButtons}</div>
                     <input type="text" class="config-text" data-bm-bulk-field="tags"
                            value="${esc((draft.tags?.list || []).join(', '))}"
-                           placeholder="${esc(this.t('config.detailTagsPlaceholder', 'work, dev, personal…'))}">`)}
+                           placeholder="${esc(this.t('config.detailTagsPlaceholder', 'work, dev, personal…'))}">
+                    <div class="tag-suggest-chips config-bm-tags-suggest" data-bm-bulk-suggest hidden></div>`)}
                 ${field(this.t('config.pinnedShort', 'Pinned'), `
                     <span class="config-bm-panel-muted">${esc(pinSummary)}</span>
                     <span class="config-bm-segmented" role="group">
