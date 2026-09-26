@@ -48,6 +48,9 @@ type DockerMetrics struct {
 	Total     int `json:"total"`
 	Images    int `json:"images"`
 	Unhealthy int `json:"unhealthy"`
+	// Updates is how many images the last update check found newer versions
+	// of; the check itself belongs to the Docker view.
+	Updates int `json:"updates"`
 
 	// Named, because "one unhealthy" sends you looking and "one unhealthy:
 	// jellyfin" does not.
@@ -182,6 +185,11 @@ func readDocker() DockerMetrics {
 		}
 		if json.NewDecoder(info.Body).Decode(&payload) == nil {
 			out.Images = payload.Images
+		}
+	}
+	for _, update := range readDockerUpdateStore().Images {
+		if update.Status == "available" {
+			out.Updates++
 		}
 	}
 	return out

@@ -770,6 +770,10 @@ type Settings struct {
 	BackupExcludeSecrets           bool `json:"backupExcludeSecrets,omitempty"`
 	HealthAutoRecheckEnabled       bool `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int  `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
+	// DockerUpdateInterval is how often the Docker view asks the registries for
+	// newer images: "off", "6h", "12h" or "24h". Off by default -- like feeds,
+	// it reaches out to other hosts, so it waits to be asked.
+	DockerUpdateInterval string `json:"dockerUpdateInterval"`
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
 	// feed can then say when it has published something since you last opened
 	// it. Off by default because it is the only thing here that reaches out to
@@ -1616,6 +1620,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			AutoBackupEnabled:              true,
 			HealthAutoRecheckEnabled:       false,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
+			DockerUpdateInterval:           "off",
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -3829,6 +3834,7 @@ func (fs *FileStore) GetSettings() Settings {
 			AutoBackupEnabled:               true,
 			HealthAutoRecheckEnabled:        false,
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
+			DockerUpdateInterval:            "off",
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -4535,6 +4541,9 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.FontSize = normalizeFontSize(settings.FontSize)
 	settings.ShortcutDisplay = normalizeShortcutDisplay(settings.ShortcutDisplay)
 	settings.HealthAutoRecheckIntervalHours = clampHealthAutoRecheckIntervalHours(settings.HealthAutoRecheckIntervalHours)
+	if dockerUpdateIntervalDuration(settings.DockerUpdateInterval) == 0 {
+		settings.DockerUpdateInterval = "off"
+	}
 	// 0 stays 0 — it means "the built-in default" — and anything else is held
 	// inside the range a bounded sweep can afford.
 	if settings.HealthCheckTimeoutSeconds != 0 {

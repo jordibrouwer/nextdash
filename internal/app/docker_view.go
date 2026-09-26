@@ -55,13 +55,6 @@ type dockerViewContainer struct {
 	Self           bool               `json:"self,omitempty"`
 }
 
-// Replaced by the real update store in docker_updates.go (Task 8).
-type dockerImageUpdate struct{}
-
-func (h *Handlers) dockerUpdateSnapshot() map[string]*dockerImageUpdate {
-	return map[string]*dockerImageUpdate{}
-}
-
 // dockerHealthFromStatus reads the health word Docker appends to Status
 // ("Up 2 hours (healthy)") rather than requiring a second inspect call just
 // for the list.

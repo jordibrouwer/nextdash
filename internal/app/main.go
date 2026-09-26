@@ -217,6 +217,8 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/containers/{id}/env/{name}", handlers.DockerContainerEnvHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/stats", handlers.DockerContainerStatsHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/logs", handlers.DockerContainerLogsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/updates", handlers.DockerUpdatesHandler).Methods("GET")
+	r.HandleFunc("/api/docker/updates/check", handlers.DockerUpdatesCheckHandler).Methods("POST")
 	r.HandleFunc("/api/docker/containers/{id}/{action}", handlers.DockerActionHandler).Methods("POST")
 	// The one widget that reads from outside, by widget id rather than by URL.
 	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")
@@ -353,6 +355,8 @@ func Run(files assetFS) {
 	handlers.StartAutoBackupScheduler(schedulerStop)
 	// Periodic background health rechecks (opt-in, respects the setting + interval).
 	handlers.StartHealthRecheckScheduler(schedulerStop)
+	// Container image update checks, when an interval is set in Config.
+	handlers.StartDockerUpdateScheduler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence
