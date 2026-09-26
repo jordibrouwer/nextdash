@@ -2524,6 +2524,35 @@ class DashboardConfig {
         this.focusWorkbenchPanel(key);
     }
 
+    /**
+     * `s` and `c`: jump to the panel's Health section, already rendered for
+     * the selected row (repaintWorkbenchPanel runs on every selection move),
+     * so this only has to open it and, for `c`, hand focus to check mode.
+     */
+    openBmHealthPanelSection({ focusCheckMode = false } = {}) {
+        const section = document.querySelector('#config-bm-panel [data-bm-section="health"]');
+        if (!section) return;
+        section.open = true;
+        // Persisted directly rather than left to the native 'toggle' event:
+        // the scrollIntoView below can move the list's own scroll host, whose
+        // handler repaints the panel from workbenchOpenSections() before that
+        // event lands — see markWorkbenchSectionOpen.
+        this.markWorkbenchSectionOpen?.('health');
+        section.scrollIntoView({ block: 'nearest' });
+        if (focusCheckMode) section.querySelector('[data-check-mode]')?.focus();
+    }
+
+    /** `m`: the row's own right-click menu, opened at the row rather than the pointer. */
+    openBookmarkRowContextMenu(key) {
+        const menu = this.bookmarkContextMenu?.();
+        const bookmark = key ? this.findBookmarkByKey(key) : null;
+        if (!menu || !bookmark) return;
+        const row = document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(key)}"]`);
+        const rect = row?.getBoundingClientRect();
+        const point = rect ? { x: rect.left + 24, y: rect.top + rect.height / 2 } : { x: 0, y: 0 };
+        menu.show(key, bookmark, point);
+    }
+
     findBookmarkByKey(key) {
         // Both pools: a row acted on from the unsorted view is not in
         // allBookmarks, and a key resolved from the other side must still find
@@ -2813,12 +2842,43 @@ class DashboardConfig {
                 this.openBookmarkByKey(this._bmKeyboardKey);
                 return true;
             }
+            /*
+             * Health's own keys, brought in with its report (spec: "Keys").
+             * Gated on the row actually carrying a report issue rather than
+             * only on the module being loaded — pressed on a bookmark the
+             * report has not reached yet, none of these have anything to
+             * act on.
+             */
+            if (['p', 's', 'c', 'm', 'n', 'z'].includes(e.key)) {
+                const health = this._bmHealthModule;
+                const bookmark = this.findBookmarkByKey(this._bmKeyboardKey);
+                const issue = health && bookmark ? this.bmHealthIssue(bookmark) : null;
+                if (issue) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    if (e.key === 'p') void health.recheckIssue(issue);
+                    else if (e.key === 's') this.openBmHealthPanelSection();
+                    else if (e.key === 'c') this.openBmHealthPanelSection({ focusCheckMode: true });
+                    else if (e.key === 'm') this.openBookmarkRowContextMenu(this._bmKeyboardKey);
+                    else if (e.key === 'n') void health.toggleIgnore(issue);
+                    else if (e.key === 'z') void health.toggleIgnore(issue, { snooze: true });
+                    return true;
+                }
+            }
         }
         // With or without a row in focus: the panel is folded for the list.
         if (e.key === 'i') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.toggleWorkbenchPanel();
+            return true;
+        }
+        // R refreshes the report itself, not one row — needs the module, not a
+        // selected bookmark, so it works even before anything is picked.
+        if (e.key === 'R' && this._bmHealthModule) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.refreshBmHealth({ refresh: true });
             return true;
         }
         if (e.key === '/' && !isBmSearch) {
@@ -23642,6 +23702,16 @@ class DashboardConfig {
             ['g / G', this.t('config.bookmarksKeyFirstLast', 'first / last')],
             ['/', this.t('config.bookmarksKeySearch', 'search')],
             ['Esc', this.t('config.bookmarksKeyClear', 'clear')],
+            // Health's own keys, listed only once its report has something for
+            // them to act on — an empty list has nothing to re-check or ignore.
+            ...(this._bmHealthModule ? [
+                ['p', this.t('config.bmKeyRecheck', 're-check')],
+                ['s', this.t('config.bmKeyScore', 'score')],
+                ['c', this.t('config.bmKeyChecking', 'checking')],
+                ['Shift R', this.t('config.bmKeyRefreshReport', 'refresh report')],
+                ['m', this.t('config.bmKeyMenu', 'menu')],
+                ['n / z', this.t('config.bmKeyIgnoreSnooze', 'ignore / snooze')],
+            ] : []),
         ];
         return this.renderKeyboardLegendPairs(keys);
     }

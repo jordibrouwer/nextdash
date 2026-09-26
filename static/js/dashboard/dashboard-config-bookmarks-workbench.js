@@ -407,6 +407,27 @@
         }
     },
 
+    /**
+     * Record a section as open the same way the panel's own 'toggle' listener
+     * does, for code that sets `.open` on the <details> itself (the `s`/`c`
+     * keys) rather than through a click.
+     *
+     * Needed because the native 'toggle' event that would otherwise persist
+     * this lands a tick late: `s` follows the open with a scrollIntoView,
+     * which can itself trigger the list's scroll handler and repaint the
+     * panel before that event fires — reading a still-unpersisted set would
+     * repaint the section shut again.
+     */
+    markWorkbenchSectionOpen(name) {
+        const open = this.workbenchOpenSections();
+        open.add(name);
+        try {
+            global.localStorage?.setItem(SECTIONS_KEY, JSON.stringify([...open]));
+        } catch {
+            // Private window: the choice just does not outlive this repaint.
+        }
+    },
+
     renderWorkbenchSinglePanel(key) {
         const esc = (v) => this.dash.escapeHtml(v);
         const b = this.findBookmarkByKey(key);
@@ -1376,6 +1397,11 @@
             + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '');
         const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '—', never: true };
+        // Under a Health filter the reason and the score earn the tags and
+        // opens cells more than a fact this filter already narrowed on.
+        const healthIssue = this.bmHealthFilter ? this.bmHealthIssue(b) : null;
+        const healthReason = healthIssue ? (this._bmHealthModule?.reasonEntries(healthIssue)[0]?.label || '') : '';
+        const scoreTone = (score) => (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
         const crumbLabel = ctx.grouped ? '' : this.workbenchGroupLabel(b);
         const crumb = ctx.grouped ? '' : `<span class="config-bm-crumb" title="${esc(crumbLabel)}">${esc(crumbLabel)}</span>`;
         const classes = ['config-bm-row'];
@@ -1397,11 +1423,14 @@
                     ${ctx.isDuplicate(b) ? `<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>` : ''}
                     ${crumb}
                 </span>
-                <span class="config-bm-tags" role="gridcell">${tagChips}</span>
+                <span class="config-bm-tags" role="gridcell">${healthIssue
+                    ? `<span class="config-bm-reason">${esc(healthReason)}</span>` : tagChips}</span>
                 <span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned
                     ? `<span aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}</span>
                 <span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>
-                <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>
+                <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${healthIssue
+                    ? `<span class="config-bm-score" data-tone="${scoreTone(healthIssue.score)}">${esc(String(healthIssue.score))}</span>`
+                    : Number(b.openCount || 0)}</span>
                 <span class="config-bm-last" role="gridcell">${esc(last.label)}</span>
             </div>`;
     },

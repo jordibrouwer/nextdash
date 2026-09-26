@@ -122,3 +122,54 @@ test.describe('bookmarks: Health and Monitor sections in the panel', () => {
     await expect.poll(() => posts.length).toBeGreaterThan(0);
   });
 });
+
+test.describe('bookmarks: score column and Health\'s keys', () => {
+  const healthItem = (page, key) => page.locator(`#config-bm-rail [data-bm-rail="health"][data-value="${key}"]`);
+
+  async function selectRow(page, name) {
+    await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: name }) }).first().click();
+    // Clicking the row already moves the cursor without focusing a field;
+    // this only rules out a caret left over from an earlier step in the test.
+    await page.evaluate(() => document.activeElement?.blur?.());
+    // The keys below act on the row's report issue; a single key press does
+    // not retry the way an assertion does, so it has to land after the join
+    // rather than race it. The score panel only renders once both are true.
+    await expect(page.locator('#config-bm-panel .health-view-score-panel')).toBeAttached();
+  }
+
+  test('the row shows the score and reason under Broken, neither under All', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page);
+    await healthItem(page, 'broken').click();
+    const row = page.locator('#config-bm-list .config-bm-row').first();
+    await expect(row.locator('.config-bm-score')).toHaveText('25');
+    await expect(row).toContainText('HTTP 500');
+    await healthItem(page, 'broken').click();
+    const rowAll = page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[0].name }) }).first();
+    await expect(rowAll.locator('.config-bm-score')).toHaveCount(0);
+    await expect(rowAll.locator('.config-bm-reason')).toHaveCount(0);
+  });
+
+  test('p re-checks the selected row', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page);
+    const posts = [];
+    page.on('request', (r) => { if (r.method() === 'POST' && /health\/(update-status|cache-scan)/.test(r.url())) posts.push(r.url()); });
+    await selectRow(page, bookmarks[0].name);
+    await page.keyboard.press('p');
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+  });
+
+  test('Shift+R refetches the report with refresh', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page);
+    await selectRow(page, bookmarks[0].name);
+    const refreshed = page.waitForRequest((r) => /\/api\/bookmark-health\?refresh=1/.test(r.url()));
+    await page.keyboard.press('Shift+R');
+    await refreshed;
+  });
+
+  test('s opens the panel\'s Health section', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page);
+    await selectRow(page, bookmarks[0].name);
+    await page.keyboard.press('s');
+    await expect(page.locator('#config-bm-panel [data-bm-section="health"]')).toHaveAttribute('open', '');
+  });
+});

@@ -527,6 +527,16 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
     display: none;
 }
 
+/* Under a Health filter the tags cell carries the primary reason instead —
+   one line, clipped rather than wrapped, so the row keeps --bm-row-h. */
+.config-bm-reason {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
 .config-bm-opens,
 .config-bm-last {
     font-family: var(--font-family-mono, ui-monospace, monospace);
@@ -535,6 +545,26 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
     text-align: right;
     white-space: nowrap;
 }
+
+/* The opens column's stand-in under a Health filter: Health's own score
+   badge (.health-view-item-score, health-view.css), self-toned rather than
+   reading --health-view-band, since this row is not one of Health's own. */
+.config-bm-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.2rem;
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid color-mix(in srgb, var(--config-bm-score-tone) 35%, transparent);
+    background: color-mix(in srgb, var(--config-bm-score-tone) 14%, transparent);
+    color: var(--config-bm-score-tone);
+    font-weight: var(--font-weight-semibold);
+}
+
+.config-bm-score[data-tone="good"] { --config-bm-score-tone: var(--accent-success); }
+.config-bm-score[data-tone="warn"] { --config-bm-score-tone: var(--accent-warning); }
+.config-bm-score[data-tone="bad"] { --config-bm-score-tone: var(--accent-error); }
 
 /* ── Folded panel: more per row ───────────────────────────────────────── */
 
