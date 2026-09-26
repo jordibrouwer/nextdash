@@ -2669,6 +2669,21 @@ func themeAccentInfo(tc ThemeColors) string {
 		return "var(--accent-primary)"
 	}
 
+	hue := 0.0
+	if h, good := hexOklchHue(primary); good {
+		hue = h
+	}
+	hue = themeFreeHue(tc, hue)
+
+	return "oklch(" + formatFloat(math.Round(lightness*1000)/1000) +
+		" " + formatFloat(math.Round(chroma*1000)/1000) +
+		" " + formatFloat(math.Round(hue*10)/10) + ")"
+}
+
+// themeFreeHue is the hue furthest from the three colours that already mean
+// something -- success, warning and error -- or fallback when a theme gives
+// none of them a colour.
+func themeFreeHue(tc ThemeColors, fallback float64) float64 {
 	taken := []float64{}
 	for _, c := range []string{tc.AccentSuccess, tc.AccentWarning, tc.AccentError} {
 		if _, chr, good := hexOklch(c); !good || chr < 0.02 {
@@ -2678,34 +2693,64 @@ func themeAccentInfo(tc ThemeColors) string {
 			taken = append(taken, hue)
 		}
 	}
-
-	hue := 0.0
-	if h, good := hexOklchHue(primary); good {
-		hue = h
+	if len(taken) == 0 {
+		return fallback
 	}
-	if len(taken) > 0 {
-		best, bestGap := hue, -1.0
-		for candidate := 0.0; candidate < 360; candidate += 5 {
-			gap := 360.0
-			for _, other := range taken {
-				d := math.Abs(candidate - other)
-				if d > 180 {
-					d = 360 - d
-				}
-				if d < gap {
-					gap = d
-				}
+	best, bestGap := fallback, -1.0
+	for candidate := 0.0; candidate < 360; candidate += 5 {
+		gap := 360.0
+		for _, other := range taken {
+			d := math.Abs(candidate - other)
+			if d > 180 {
+				d = 360 - d
 			}
-			if gap > bestGap {
-				best, bestGap = candidate, gap
+			if d < gap {
+				gap = d
 			}
 		}
-		hue = best
+		if gap > bestGap {
+			best, bestGap = candidate, gap
+		}
 	}
+	return best
+}
 
+/*
+accentVividMinChroma is where an accent stops reading as grey, in OKLCH chroma.
+
+Measured over the built-ins: Monochrome Mist and Static Noise at 0, Paper Ink
+at 0.01, Gloss Chrome and Storm Petrel at 0.024-0.034 -- then a gap, and the
+first accent past it, Harbour Fog at 0.040, is a blue-grey that still reads as
+blue. Muted themes (Moss Stone, Salt Flat, Sumi Ink) keep their own colour.
+*/
+const accentVividMinChroma = 0.036
+
+/*
+themeAccentVivid is the accent when it has colour, and a colour when it has
+none.
+
+A handful of themes are grey on purpose -- chrome, ink on paper, static -- and
+--accent-info follows them into grey by design (see themeAccentInfo). A few
+marks exist to point rather than decorate: the container nextDash runs in, a
+row with an update waiting. On a grey theme those vanished. This keeps the
+theme's own lightness, so it sits in the palette, and takes the free hue at a
+chroma a reader sees as colour.
+*/
+func themeAccentVivid(tc ThemeColors) string {
+	primary := tc.AccentPrimary
+	if primary == "" {
+		primary = tc.AccentSuccess
+	}
+	lightness, chroma, ok := hexOklch(primary)
+	if !ok || chroma >= accentVividMinChroma {
+		return "var(--accent-primary)"
+	}
+	// Kept where a colour at this chroma still reads as one: near white or
+	// near black it would wash back out to grey.
+	lightness = math.Max(0.45, math.Min(0.8, lightness))
+	hue := themeFreeHue(tc, 250)
 	return "oklch(" + formatFloat(math.Round(lightness*1000)/1000) +
-		" " + formatFloat(math.Round(chroma*1000)/1000) +
-		" " + formatFloat(math.Round(hue*10)/10) + ")"
+		" 0.13 " + formatFloat(math.Round(hue*10)/10) + ")"
 }
 
 /*
@@ -3330,6 +3375,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --accent-warning: ` + s.AccentWarning + `;
     --accent-error: ` + s.AccentError + `;
     --accent-info: ` + themeAccentInfo(tc) + `;
+    --accent-vivid: ` + themeAccentVivid(tc) + `;
     --ink-dir: ` + themeInkDirection(s.BackgroundPrimary) + `;
     --theme-backdrop: ` + themeBackdropImage(selector, s) + `;
     --theme-surface-alpha: ` + themeSurfaceAlpha(tc) + `;

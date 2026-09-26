@@ -59,7 +59,7 @@
 .docker-row[data-docker-status="running"] { --docker-glow: var(--accent-success, #3c6); }
 .docker-row[data-docker-status="paused"] { --docker-glow: var(--accent-warning, #cb4); }
 .docker-row[data-docker-status="stopped"] { --docker-glow: var(--accent-error, #c55); }
-.docker-row[data-docker-status="updates"] { --docker-glow: var(--accent-info, var(--accent-primary)); }
+.docker-row[data-docker-status="updates"] { --docker-glow: var(--accent-vivid, var(--accent-primary)); }
 
 .docker-row[data-docker-status][aria-selected="true"] {
     box-shadow:
@@ -70,10 +70,10 @@
 /* The container nextDash itself runs in: a steady accent halo, so it is found
    without reading names -- and read as the one that offers no actions. */
 .docker-row[data-docker-self] {
-    background-color: color-mix(in srgb, var(--accent-primary) 9%, transparent);
+    background-color: color-mix(in srgb, var(--accent-vivid, var(--accent-primary)) 9%, transparent);
     box-shadow:
-        inset 3px 0 0 var(--accent-primary),
-        inset 0 0 14px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+        inset 3px 0 0 var(--accent-vivid, var(--accent-primary)),
+        inset 0 0 14px color-mix(in srgb, var(--accent-vivid, var(--accent-primary)) 28%, transparent);
 }
 
 .docker-row[data-docker-self] .docker-name::after {
@@ -82,8 +82,8 @@
     padding: 0 var(--space-1-5, 0.4rem);
     border-radius: var(--radius-pill, 999px);
     font-size: var(--text-xs, 0.72rem);
-    color: var(--accent-primary);
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    color: var(--accent-vivid, var(--accent-primary));
+    border: 1px solid color-mix(in srgb, var(--accent-vivid, var(--accent-primary)) 55%, transparent);
 }
 
 /* An action in flight pulses, so a long pull is visibly still working. */
@@ -102,7 +102,7 @@
 .docker-group-row[data-docker-group-status="running"] td { color: var(--accent-success, #3c6); }
 .docker-group-row[data-docker-group-status="paused"] td { color: var(--accent-warning, #cb4); }
 .docker-group-row[data-docker-group-status="stopped"] td { color: var(--accent-error, #c55); }
-.docker-group-row[data-docker-group-status="updates"] td { color: var(--accent-info, var(--accent-primary)); }
+.docker-group-row[data-docker-group-status="updates"] td { color: var(--accent-vivid, var(--accent-primary)); }
 
 .docker-cell {
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
@@ -148,8 +148,10 @@
     display: none;
 }
 
+/* --accent-vivid: the accent, or a colour on the few themes whose accent is
+   grey on purpose -- links and the marks below have to point. */
 .docker-port {
-    color: var(--accent-primary);
+    color: var(--accent-vivid, var(--accent-primary));
     text-decoration: none;
     font-variant-numeric: tabular-nums;
 }
@@ -550,7 +552,7 @@ html[data-theme] body:not([data-depth="flat"]) .docker-drawer {
    accent as the port links in the table, not the browser's own blue. */
 
 .docker-drawer a {
-    color: var(--accent-primary);
+    color: var(--accent-vivid, var(--accent-primary));
     text-decoration: none;
 }
 
