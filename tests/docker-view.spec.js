@@ -87,4 +87,64 @@ test.describe('docker view', () => {
     await page.goto('/#docker');
     await expect(page.locator('[data-docker-readonly]')).toContainText('NEXTDASH_DOCKER_CONTROL=1');
   });
+
+  test('Enter opens the drawer with details and hidden env', async ({ page }) => {
+    await mockDocker(page);
+    await page.goto('/#docker');
+    await page.locator('[data-docker-row="sonarr"]').click();
+    await page.keyboard.press('Enter');
+    const drawer = page.locator('[data-docker-drawer]');
+    await expect(drawer).toContainText('unless-stopped');
+    await expect(drawer).toContainText('172.17.0.5');
+    await expect(drawer).toContainText('/config');
+    await expect(drawer).not.toContainText('secret-value');
+    await drawer.locator('[data-docker-section="env"] summary').click();
+    await drawer.locator('[data-docker-env-reveal="API_KEY"]').click();
+    await expect(drawer.locator('[data-docker-env-value]')).toHaveText('secret-value');
+    await expect(page).toHaveURL(/#docker\/sonarr$/);
+  });
+
+  test('logs load on open and refresh on demand', async ({ page }) => {
+    const state = await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    const drawer = page.locator('[data-docker-drawer]');
+    await drawer.locator('[data-docker-section="logs"] summary').click();
+    await expect(drawer.locator('[data-docker-logs]')).toContainText('line two');
+    const before = state.calls.filter((c) => c.endsWith('/logs')).length;
+    await drawer.locator('[data-docker-logs-refresh]').click();
+    await expect.poll(() => state.calls.filter((c) => c.endsWith('/logs')).length).toBe(before + 1);
+  });
+
+  test('changes show releases as text with links, no HTML', async ({ page }) => {
+    await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    const changes = page.locator('[data-docker-section="changes"]');
+    await changes.locator('summary').click();
+    await expect(changes).toContainText('4.0.10');
+    await expect(changes).toContainText('## Fixes');
+    await expect(changes.locator('a[href="https://example.com/x"]')).toHaveAttribute('rel', /noopener/);
+    await expect(changes.locator('a[data-docker-link="source"]')).toHaveAttribute('href', 'https://github.com/linuxserver/docker-sonarr');
+  });
+
+  test('resources poll only while open', async ({ page }) => {
+    const state = await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    const res = page.locator('[data-docker-section="resources"]');
+    await res.locator('summary').click();
+    await expect(page.locator('[data-docker-cpu]')).toContainText('3.2');
+    await res.locator('summary').click();
+    const n = state.calls.filter((c) => c.endsWith('/stats')).length;
+    await page.waitForTimeout(2500);
+    expect(state.calls.filter((c) => c.endsWith('/stats')).length).toBe(n);
+  });
+
+  test('Escape closes the drawer before the view', async ({ page }) => {
+    await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    await expect(page.locator('[data-docker-drawer]')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-docker-drawer]')).toBeHidden();
+    await expect(page.locator('[data-docker-row]')).toHaveCount(4);
+    await expect(page).toHaveURL(/#docker$/);
+  });
 });

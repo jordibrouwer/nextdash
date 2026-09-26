@@ -34,6 +34,12 @@ class DashboardDockerLoader {
             await load('js/shared/list-view-shell.js', 'listViewShell',
                 () => typeof window.ListViewShell !== 'undefined');
         }
+        // The drawer's sections, loaded before the view module so mountShell()
+        // never constructs a DockerDrawer before the class exists.
+        if (typeof window.DockerDrawer !== 'function') {
+            await load('js/dashboard/dashboard-docker-drawer.js', 'dashboardDockerDrawer',
+                () => typeof window.DockerDrawer === 'function');
+        }
         if (typeof window.DashboardDocker !== 'function') {
             await load('js/dashboard/dashboard-docker.js', 'dashboardDockerModule',
                 () => typeof window.DashboardDocker === 'function');

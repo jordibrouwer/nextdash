@@ -130,9 +130,9 @@
 }
 
 /*
- * The Task 10/11 drawer: a fixed panel over the list, replaced by
- * dashboard-docker-drawer.js's sections in a later task without this host or
- * its open/close mechanics changing.
+ * The drawer: a fixed panel over the list. This host and its open/close
+ * mechanics live in dashboard-docker.js; dashboard-docker-drawer.js's
+ * DockerDrawer builds everything inside .docker-drawer.
  */
 .docker-drawer-host {
     position: fixed;
@@ -173,13 +173,144 @@
     color: var(--text-primary);
 }
 
-.docker-drawer-title {
-    margin: 0 var(--space-6, 2rem) var(--space-2, 0.5rem) 0;
+.docker-drawer-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    margin: 0 var(--space-6, 2rem) var(--space-3, 0.75rem) 0;
 }
 
-.docker-drawer-image {
+.docker-drawer-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-drawer-title {
+    margin: 0;
+}
+
+.docker-drawer-pill,
+.docker-drawer-health {
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-secondary);
+    background: var(--background-secondary);
+    border-radius: var(--radius-pill, 999px);
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+}
+
+.docker-drawer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-section {
+    border-top: 1px solid var(--border-primary);
+    padding: var(--space-2, 0.5rem) 0;
+}
+
+.docker-section summary {
+    cursor: pointer;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-controls);
+}
+
+.docker-section-body {
+    padding: var(--space-2, 0.5rem) 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+    font-size: var(--font-size-controls);
+}
+
+.docker-field-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+}
+
+.docker-field-label {
+    color: var(--text-secondary);
+}
+
+.docker-field-value {
+    text-align: right;
     word-break: break-all;
+}
+
+.docker-overview-link {
+    align-self: flex-start;
+    color: var(--accent-primary);
+}
+
+.docker-network-row,
+.docker-volume-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    word-break: break-all;
+}
+
+.docker-volume-readonly {
+    color: var(--text-tertiary, var(--text-secondary));
+    white-space: nowrap;
+}
+
+.docker-resource-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.docker-env-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-env-value {
+    word-break: break-all;
+}
+
+.docker-logs {
+    max-height: 20rem;
+    overflow: auto;
+    padding: var(--space-2, 0.5rem);
+    background: var(--background-tertiary, var(--background-primary));
+    border-radius: var(--radius-4, 6px);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-sm, 0.85rem);
+    white-space: pre-wrap;
+}
+
+.docker-release {
+    padding: var(--space-2, 0.5rem) 0;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.docker-release-heading {
+    font-weight: var(--font-weight-semibold);
+}
+
+.docker-release-meta {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-release-body {
+    margin-top: var(--space-1, 0.3rem);
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+    white-space: pre-wrap;
+}
+
+.docker-changes-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-2, 0.5rem);
 }
 
 @media (max-width: 720px) {

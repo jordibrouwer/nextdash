@@ -1,11 +1,10 @@
 /**
  * Docker view — the containers running on this machine, modelled on
  * DashboardHealth: the same shared shell, the same view-lifecycle shape, the
- * same escape handling. This is the Task 10/11 shell: listing, search,
- * filters, sort, grouping and the update check. The detail drawer here is a
- * minimal placeholder; a later task replaces it with dashboard-docker-drawer.js
- * without changing how it is opened (selectContainer) or addressed
- * (#docker/<name>).
+ * same escape handling. This file owns the shell: listing, search, filters,
+ * sort, grouping and the update check. The detail drawer's own sections live
+ * in dashboard-docker-drawer.js (a DockerDrawer instance); this file only
+ * owns the drawer host, when it opens/closes and the #docker/<name> address.
  */
 
 /** fetch() that never throws and answers null on anything but a 2xx JSON body. */
@@ -36,6 +35,7 @@ class DashboardDocker {
         this.drawerOpen = false;
         this.shell = null;
         this.drawerHost = null;
+        this.drawer = null;
         this._pollTimer = null;
         this._checkedAt = null;
         this._escapeHandler = null;
@@ -151,9 +151,11 @@ class DashboardDocker {
         }
         this._escapeHandler = (e) => {
             if (d.activeView !== DashboardDocker.VIEW) return;
-            const tag = document.activeElement?.tagName;
-            const typing = tag === 'TEXTAREA' || document.activeElement?.isContentEditable
-                || (tag === 'INPUT' && document.activeElement?.type !== 'checkbox');
+            const active = document.activeElement;
+            const tag = active?.tagName;
+            const isSearch = active?.matches?.('[data-docker-search]');
+            const typing = tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable
+                || (tag === 'INPUT' && active?.type !== 'checkbox');
 
             // The slash shortcut behaves the same way Config's bookmark search
             // does: it only fires when nothing is already capturing text input.
@@ -166,11 +168,32 @@ class DashboardDocker {
                 }
                 return;
             }
+
+            // Row navigation: ↑/↓ move the highlighted row, Enter opens its
+            // drawer. Allowed from the search box too — like Health's rows —
+            // so typing a filter and then arrowing into the results works.
+            const menuOrModalOpen = window.DashboardTagCloud?.modalOpen || d.isModalOpen?.()
+                || d.searchComponent?.isActive?.() || d.isInlineEditActive?.();
+            // Focus already inside the drawer owns its own Enter/arrows (a
+            // <summary> toggling, a reveal button, a link) — never hijacked here.
+            const inDrawer = Boolean(active?.closest?.('[data-docker-drawer]'));
+            const rowAncestor = active?.closest?.('.docker-row');
+            const onRowControl = Boolean(rowAncestor && active !== rowAncestor && active?.matches?.('a, button, input, select'));
+            if (!menuOrModalOpen && !inDrawer && !onRowControl && (typing ? isSearch : true)
+                && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (isSearch) active.blur();
+                if (e.key === 'Enter') {
+                    if (this.selected) this.selectContainer(this.selected, { openDrawer: true });
+                } else {
+                    this.moveRowSelection(e.key === 'ArrowDown' ? 1 : -1);
+                }
+                return;
+            }
+
             if (e.key !== 'Escape') return;
-            if (window.DashboardTagCloud?.modalOpen) return;
-            if (d.isModalOpen?.()) return;
-            if (d.searchComponent?.isActive?.()) return;
-            if (d.isInlineEditActive?.()) return;
+            if (menuOrModalOpen) return;
             if (typing) return;
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -310,10 +333,13 @@ class DashboardDocker {
         this.drawerHost.className = 'docker-drawer-host';
         this.drawerHost.hidden = true;
         container.appendChild(this.drawerHost);
+        this.drawer = new window.DockerDrawer(this);
         return this.shell;
     }
 
     _destroyShell() {
+        this.drawer?.close();
+        this.drawer = null;
         this.shell?.destroy?.();
         this.shell = null;
         this.drawerHost = null;
@@ -455,7 +481,6 @@ class DashboardDocker {
             body.appendChild(this.buildReadOnlyLine());
         }
         body.appendChild(this.buildTable());
-        this.renderDrawer();
     }
 
     buildSetupCard() {
@@ -583,76 +608,53 @@ class DashboardDocker {
         return tr;
     }
 
-    /* ── Selection and the (minimal) drawer ───────────────────────────────
-     * A later task swaps renderDrawer()'s body for dashboard-docker-drawer.js's
-     * sections; selectContainer(), the [data-docker-drawer] host and the
-     * #docker/<name> address all stay exactly as they are here. */
+    /* ── Selection and the drawer ─────────────────────────────────────────
+     * dashboard-docker-drawer.js's DockerDrawer owns everything inside
+     * [data-docker-drawer]; this view only owns the host, when it is open
+     * (this.drawerOpen, kept in sync with drawer.isOpen()) and the
+     * #docker/<name> address. */
 
     selectContainer(name, { openDrawer = true } = {}) {
         this.selected = name || null;
-        this.drawerOpen = Boolean(openDrawer && this.selected);
         this.restoreDockerHash();
         this.render();
+        if (this.selected && openDrawer) {
+            const c = this.containers.find((x) => x.name === this.selected) || { name: this.selected };
+            this.drawer?.open(c);
+        } else if (!this.selected) {
+            this.drawer?.close();
+        }
+        this.drawerOpen = Boolean(this.drawer?.isOpen());
     }
 
     closeDrawer() {
-        this._closeDrawerState();
+        this.drawer?.close();
+        this.drawerOpen = false;
+        this.selected = null;
         this.restoreDockerHash();
         this.render();
     }
 
     _closeDrawerState() {
+        this.drawer?.close();
         this.selected = null;
         this.drawerOpen = false;
-        if (this.drawerHost) {
-            this.drawerHost.hidden = true;
-            this.drawerHost.replaceChildren();
-        }
     }
 
-    renderDrawer() {
-        if (!this.drawerHost) return;
-        if (!this.drawerOpen || !this.selected) {
-            this.drawerHost.hidden = true;
-            this.drawerHost.replaceChildren();
-            return;
-        }
-        const c = this.containers.find((x) => x.name === this.selected);
-        this.drawerHost.hidden = false;
-        this.drawerHost.replaceChildren();
+    /** ↑/↓: moves the highlighted row and, if the drawer is already open,
+     * what it shows — without this, arrowing past the open container would
+     * leave the drawer pointed at a row that no longer looks selected. */
+    moveRowSelection(delta) {
+        const rows = this.filteredSortedContainers();
+        if (!rows.length) return;
+        let idx = rows.findIndex((c) => c.name === this.selected);
+        idx = idx < 0 ? (delta > 0 ? 0 : rows.length - 1) : (idx + delta + rows.length) % rows.length;
+        this.selectContainer(rows[idx].name, { openDrawer: this.drawerOpen });
+        this.focusRow(rows[idx].name);
+    }
 
-        const panel = document.createElement('div');
-        panel.setAttribute('data-docker-drawer', '');
-        panel.className = 'docker-drawer';
-        panel.setAttribute('role', 'dialog');
-        panel.setAttribute('aria-label', this.selected);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'docker-drawer-close';
-        closeBtn.setAttribute('aria-label', this.t('dashboard.dockerDrawerClose', 'Close'));
-        closeBtn.textContent = '×';
-        closeBtn.addEventListener('click', () => this.closeDrawer());
-        panel.appendChild(closeBtn);
-
-        const title = document.createElement('h3');
-        title.className = 'docker-drawer-title';
-        title.textContent = this.selected;
-        panel.appendChild(title);
-
-        if (c) {
-            const image = document.createElement('p');
-            image.className = 'docker-drawer-image';
-            image.textContent = c.image || '';
-            panel.appendChild(image);
-
-            const status = document.createElement('p');
-            status.className = 'docker-drawer-status';
-            status.textContent = c.status || c.state || '';
-            panel.appendChild(status);
-        }
-
-        this.drawerHost.appendChild(panel);
+    focusRow(name) {
+        this.shell?.body?.querySelector(`[data-docker-row="${CSS.escape(name)}"]`)?.focus({ preventScroll: false });
     }
 
     escape(text) {
