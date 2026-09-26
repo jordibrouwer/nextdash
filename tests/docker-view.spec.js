@@ -149,6 +149,22 @@ test.describe('docker view', () => {
     await expect(page).toHaveURL(/#docker$/);
   });
 
+  test('drawer links use the accent, like the port links', async ({ page }) => {
+    await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    const changes = page.locator('[data-docker-section="changes"]');
+    await changes.locator('summary').click();
+    const link = changes.locator('a[data-docker-link="source"]');
+    await expect(link).toBeVisible();
+    const [linkColor, portColor, underline] = await page.evaluate(() => {
+      const a = document.querySelector('[data-docker-section="changes"] a[data-docker-link="source"]');
+      const port = document.querySelector('.docker-port');
+      return [getComputedStyle(a).color, getComputedStyle(port).color, getComputedStyle(a).textDecorationLine];
+    });
+    expect(linkColor).toBe(portColor);
+    expect(underline).toBe('none');
+  });
+
   test('the drawer draws over the sticky header', async ({ page }) => {
     await mockDocker(page);
     await page.goto('/#docker/sonarr');

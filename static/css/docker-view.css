@@ -456,3 +456,30 @@
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
 }
+
+/* ── Links in the drawer ─────────────────────────────────────────────────
+   Source, registry and web UI, and the links inside release notes: the same
+   accent as the port links in the table, not the browser's own blue. */
+
+.docker-drawer a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.docker-drawer a:hover,
+.docker-drawer a:focus-visible {
+    text-decoration: underline;
+}
+
+.docker-changes-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.docker-changes-link::after,
+.docker-overview-link::after {
+    content: " ↗";
+    font-size: 0.85em;
+}
