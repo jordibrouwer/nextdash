@@ -483,11 +483,11 @@ test('the To triage tab and the header badge show the same number', async ({ pag
     await expect(tab).toHaveText('3', { timeout: 10_000 });
     await expect(badge).toHaveText('3');
 
-    // One of the three read, through the row's own button: it stays in the
-    // list, and leaves both counts at once.
+    // One of the three read, through the side panel's button: it stays in
+    // the list, and leaves both counts at once.
     const row = page.locator('.inbox-item', { hasText: 'Same 1' });
-    await row.hover();
-    await row.locator('[data-inbox-action="read"]').click();
+    await row.locator('.inbox-item-title').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-inbox-drawer-action="read"]').click();
     await expect(tab).toHaveText('2', { timeout: 10_000 });
     await expect(badge).toHaveText('2');
 });
@@ -620,6 +620,8 @@ test('Escape on the queue clears its ticks before it leaves', async ({ page }) =
         await window.dashboardInstance.inbox.openInboxView();
         await window.dashboardInstance.inbox.loadAndRender({ refresh: true });
     });
+    // The box shows on hover (one-line rows keep it out of sight at rest).
+    await page.locator('.inbox-item').first().hover();
     await page.locator('.inbox-item-check-input').first().check();
     await expect(page.locator('.inbox-selection-bar')).toBeVisible();
 

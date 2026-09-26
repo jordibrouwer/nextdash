@@ -56,7 +56,8 @@ test.describe('inbox summary tiles and added date', () => {
         // A freshly-seeded item counts toward All, Unread and This week (all >= 1).
         const seededRow = page.locator('.inbox-item').filter({ hasText: 'Tiles seed' });
         await expect(seededRow).toHaveCount(1);
-        await expect(seededRow.locator('.inbox-item-date')).toHaveText(/\w/);
+        // The added date rides on the row's "when" as its title.
+        await expect(seededRow.locator('.inbox-item-when')).toHaveAttribute('title', /\w/);
 
         // Clicking the Unread tile activates the unread filter.
         await page.locator('.lvs-rail [data-inbox-tile="unread"]').click();
@@ -64,7 +65,7 @@ test.describe('inbox summary tiles and added date', () => {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox.filter)).toBe('unread');
     });
 
-    test('inbox icon matches the health icon: 3rem square in the first column', async ({ page }) => {
+    test('inbox icon matches the health icon: 1.4rem square after the checkbox', async ({ page }) => {
         // Serve the favicon so the <img> loads instead of falling back to the glyph.
         const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', 'base64');
         await page.route('**/data/icons/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
@@ -81,18 +82,17 @@ test.describe('inbox summary tiles and added date', () => {
         });
         await page.waitForSelector('.inbox-item-thumb', { timeout: 15_000 });
 
-        // 3rem at the default 16px root = 48px.
+        // The one-line row's icon, the same 1.4rem Health's rows use.
         const thumb = page.locator('.inbox-item-thumb').first();
         const width = await thumb.evaluate((el) => el.getBoundingClientRect().width);
-        expect(Math.round(width)).toBe(48);
+        const healthWidth = await page.evaluate(() => 1.4 * parseFloat(getComputedStyle(document.documentElement).fontSize));
+        expect(Math.round(width)).toBe(Math.round(healthWidth));
 
         // A stored icon renders as an <img> resolved to /data/icons/, like health.
         const img = thumb.locator('.inbox-item-thumb-img');
         await expect(img).toHaveAttribute('src', '/data/icons/seed.png');
 
-        // The icon is the first laid-out child of the row (no leading checkbox
-        // column pushing it right): its left edge sits within the row's padding,
-        // matching the health view. The checkbox overlays it rather than preceding it.
+        // The icon follows the checkbox column, as on Health's one-line rows.
         const box = await page.evaluate(() => {
             const item = document.querySelector('.inbox-item');
             const th = item.querySelector('.inbox-item-thumb');
@@ -100,8 +100,9 @@ test.describe('inbox summary tiles and added date', () => {
             const tr = th.getBoundingClientRect();
             return { gap: tr.left - ir.left };
         });
-        // 0.85rem padding = ~13.6px; allow a small tolerance. A leading 1.4rem
-        // checkbox column would have pushed this past ~35px.
-        expect(box.gap).toBeLessThan(20);
+        // Row padding, the 1.1rem checkbox column and one gap: the same place
+        // Health's icon sits.
+        expect(box.gap).toBeGreaterThan(20);
+        expect(box.gap).toBeLessThan(60);
     });
 });

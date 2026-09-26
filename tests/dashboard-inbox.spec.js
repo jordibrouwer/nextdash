@@ -136,7 +136,7 @@ test.describe('dashboard inbox phase 1', () => {
         }, pastedUrl)).toBe(true);
     });
 
-    test('arrow keys navigate inbox items and Enter opens link', async ({ page }) => {
+    test('arrow keys navigate inbox items and o opens link', async ({ page }) => {
         await page.evaluate(() => {
             window.dashboardInstance.settings.inboxEnabled = true;
         });
@@ -158,7 +158,8 @@ test.describe('dashboard inbox phase 1', () => {
             request.url().includes('/api/inbox')
             && request.method() === 'PATCH'
         ));
-        await page.keyboard.press('Enter');
+        // Enter opens the side panel now; o (or Space) opens the link.
+        await page.keyboard.press('o');
         await readRequest;
     });
 

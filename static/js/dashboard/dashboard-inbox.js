@@ -27,6 +27,12 @@ class DashboardInbox {
         this.sort = 'newest';
         this.visibleLimit = 50;
         this.selectedItemId = null;
+        /**
+         * The row whose second line is open. Follows selectedItemId, except
+         * when the pointer merely hovered a row: hover selects, it does not
+         * open (the Health view's openKey).
+         */
+        this.openItemId = null;
         /** Deep-link target from `?ib_id=` — applied after the feed renders. */
         this.focusItemId = null;
         // Ids ticked for a bulk action. Kept separate from selectedItemId, which is
@@ -162,6 +168,9 @@ class DashboardInbox {
      * specific items without touching the rest.
      */
     renderBulkBar() {
+        // The panel steps aside once a real selection exists, so the bulk bar
+        // it would cover stays reachable (Containers does the same).
+        if (this.checkedIds.size >= 2) this.closeDrawer();
         const container = document.getElementById('dashboard-layout');
         if (!container || !this.isActiveView()) return;
         const existing = container.querySelector('.inbox-selection-bar');
@@ -747,14 +756,6 @@ class DashboardInbox {
         const promoted = Number(stats?.totalPromoted) || 0;
         const triaged = promoted + (Number(stats?.totalDeleted) || 0);
         return triaged ? Math.round((promoted / triaged) * 100) : null;
-    }
-
-    renderItemSource(item) {
-        const source = String(item?.source || '').trim();
-        if (!source || source === 'paste') {
-            return '';
-        }
-        return `<span class="inbox-item-source" data-inbox-source>${this.escape(source)}</span>`;
     }
 
     renderItemTags(item) {
@@ -2264,6 +2265,7 @@ class DashboardInbox {
     async leaveInboxView(pageId) {
         const d = this.dash;
         this._teardownLoadMoreObserver();
+        this.onLeaveDrawer();
         this._destroyShell();
         this.clearKeyboardSelection();
         d.setActiveView('bookmarks');
@@ -2277,6 +2279,7 @@ class DashboardInbox {
             return false;
         }
         this._teardownLoadMoreObserver();
+        this.onLeaveDrawer();
         this._destroyShell();
         this.clearKeyboardSelection();
         const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
@@ -2323,6 +2326,11 @@ class DashboardInbox {
             }
             e.preventDefault();
             e.stopImmediatePropagation();
+            // The side panel is the innermost thing on the queue.
+            if (this._drawer?.isOpen()) {
+                this.closeDrawer();
+                return;
+            }
             /*
              * One layer per press.
              *
@@ -2374,7 +2382,13 @@ class DashboardInbox {
             if (!id || id === this.selectedItemId) {
                 return;
             }
-            this.selectItemById(id);
+            // Hover selects; only a click or the keyboard opens the second line.
+            this._pointerSelecting = true;
+            try {
+                this.selectItemById(id);
+            } finally {
+                this._pointerSelecting = false;
+            }
         };
         container.addEventListener('pointerover', this._pointerHandler, true);
     }
@@ -2585,7 +2599,15 @@ class DashboardInbox {
         const selected = this.selectedItemId
             ? this.items.find((entry) => entry.id === this.selectedItemId)
             : null;
-        if ((e.key === 'Enter' || e.key === ' ') && selected) {
+        // Enter shows the details, as in Health and Containers; o and Space
+        // open the link.
+        if (e.key === 'Enter' && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.openDrawer(selected.id);
+            return true;
+        }
+        if ((e.key === ' ' || e.key === 'o') && selected) {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.openItem(selected);
@@ -2640,7 +2662,10 @@ class DashboardInbox {
             if (this.isSnoozed(selected)) {
                 void this.wakeItem(selected);
             } else {
-                const anchor = document.querySelector(`[data-inbox-id="${CSS.escape(selected.id)}"] [data-inbox-action="snooze"]`);
+                // The panel's Snooze button when it is open, else the row.
+                const anchor = (this._drawer?.isOpen()
+                    && this._drawer.base.panel?.querySelector('[data-inbox-drawer-action="snooze"]'))
+                    || document.querySelector(`[data-inbox-id="${CSS.escape(selected.id)}"]`);
                 this.openSnoozeMenu(selected, anchor);
             }
             return true;
@@ -2702,6 +2727,7 @@ class DashboardInbox {
         }
         document.querySelector(`[data-inbox-id="${CSS.escape(sid)}"]`)?.remove();
         this.refreshInboxSummary();
+        this._drawer?.refresh();
         const container = document.getElementById('dashboard-layout');
         if (this.isActiveView() && container && !container.querySelector('.inbox-item')) {
             if (!this.getFilteredItems().length) {
@@ -2710,25 +2736,12 @@ class DashboardInbox {
         }
     }
 
-    /** Patch the note line on an existing row after a light-weight edit. */
-    syncItemNoteInFeed(id) {
-        const item = this.items.find((entry) => entry.id === id);
-        const card = document.querySelector(`[data-inbox-id="${CSS.escape(String(id))}"]`);
-        if (!card || !item) {
-            return;
-        }
-        let noteEl = card.querySelector('.inbox-item-note');
-        const note = String(item.note || '').trim();
-        if (note) {
-            if (!noteEl) {
-                noteEl = document.createElement('p');
-                noteEl.className = 'inbox-item-note';
-                card.querySelector('.inbox-item-body')?.appendChild(noteEl);
-            }
-            noteEl.textContent = note;
-        } else {
-            noteEl?.remove();
-        }
+    /**
+     * After a light-weight note edit. The row no longer shows the note -- the
+     * side panel does -- so there is nothing in the row to patch.
+     */
+    syncItemNoteInFeed() {
+        this._drawer?.refresh();
     }
 
     /** Mark an item read without opening it — the keyboard "keep" action. */
@@ -2750,7 +2763,12 @@ class DashboardInbox {
         const card = document.querySelector(`[data-inbox-id="${CSS.escape(String(id))}"]`);
         card?.classList.remove('is-unread');
         card?.classList.add('is-read');
+        const item = this.items.find((entry) => entry.id === String(id));
+        const status = item ? this.inboxRowStatus(item) : null;
+        if (status) card?.setAttribute('data-lvs-status', status);
+        else card?.removeAttribute('data-lvs-status');
         this.refreshInboxSummary();
+        this._drawer?.refresh();
     }
 
     /**
@@ -3260,14 +3278,18 @@ class DashboardInbox {
         }
         this.selectedItemId = list[index]?.dataset?.inboxId || null;
         this.applyKeyboardSelection(list);
+        // An open panel follows the cursor, as in Containers and Health.
+        if (this._drawer?.isOpen() && this.selectedItemId) this.openDrawer(this.selectedItemId);
         return true;
     }
 
 
     applyKeyboardSelection(cards) {
         const list = Array.isArray(cards) && cards.length ? cards : this.getVisibleItemCards();
+        if (!this._pointerSelecting) this.openItemId = this.selectedItemId;
         list.forEach((card) => {
             const selected = card.dataset.inboxId === this.selectedItemId;
+            card.toggleAttribute('data-inbox-open', Boolean(this.openItemId) && card.dataset.inboxId === this.openItemId);
             card.classList.toggle('keyboard-selected', selected);
             // aria-current, not aria-selected: an <article> has no selected
             // state in ARIA, so the attribute was dropped and the row a screen
@@ -3289,6 +3311,8 @@ class DashboardInbox {
 
     clearKeyboardSelection() {
         this.selectedItemId = null;
+        this.openItemId = null;
+        document.querySelectorAll('.inbox-item[data-inbox-open]').forEach((card) => card.removeAttribute('data-inbox-open'));
         this.unbindPointerNavigation();
         this.closeSnoozeMenu();
         if (this._previewRefreshTimer) {
@@ -3307,6 +3331,8 @@ class DashboardInbox {
 
 
     syncKeyboardSelectionAfterRender() {
+        // The panel shows the item as the list now has it.
+        this._drawer?.refresh();
         if (document.activeElement?.classList?.contains('inbox-search-input')) {
             return;
         }
@@ -3520,6 +3546,13 @@ class DashboardInbox {
     /** True while an item is snoozed into the future (hidden from the main list). */
     isSnoozed(item) {
         return Number(item?.snoozedUntil || 0) > Date.now();
+    }
+
+    /** The row's glow (list-view-shell.css): unread stands out, the rest is quiet. */
+    inboxRowStatus(item) {
+        if (this.isSnoozed(item)) return 'muted';
+        if (!item?.readAt) return 'info';
+        return null;
     }
 
     snoozedCount() {
@@ -3969,6 +4002,8 @@ class DashboardInbox {
         if (!this.isEnabled()) {
             return false;
         }
+        // Triage shows one link at a time over the list; the panel's one link goes.
+        this.closeDrawer();
         if (!this.isActiveView()) {
             const opened = await this.openInboxView();
             if (!opened) {
@@ -4202,6 +4237,7 @@ class DashboardInbox {
             id: 'inbox',
             title: this.t('dashboard.inboxPageTitle', 'Inbox'),
             description: this.t('dashboard.inboxPageSubtitle', 'Links saved to read or review later'),
+            // The Kept tab still uses it; the queue hides it (dashboard-inbox.css).
             density: true,
             t: (key, fallback) => this.t(key, fallback),
             activeFilter: this.filter,
@@ -4442,6 +4478,8 @@ class DashboardInbox {
         const next = tab === 'kept' && this.keptEnabled() ? 'kept' : 'triage';
         if (next === this.tab) return;
         this.tab = next;
+        // The panel belongs to the queue's rows.
+        this.closeDrawer();
         // The kept list's selection bar is drawn into the layout, not into the
         // tab: ticks left behind on a switch stood over the queue offering
         // Delete and Move to… for rows that were no longer on screen.
@@ -5101,8 +5139,7 @@ class DashboardInbox {
         // feed-row is the shared card, feed-row--grid the shared column
         // anatomy (and with it the shared density setting); the unread edge is
         // the shared modifier.
-        card.className = 'feed-row feed-row--grid inbox-item'
-            + (item.readAt ? ' is-read' : ' is-unread feed-row--edge-accent');
+        card.className = 'feed-row inbox-item' + (item.readAt ? ' is-read' : ' is-unread');
         card.dataset.inboxId = item.id;
         card.dataset.bookmarkUrl = item.url || '';
         card.dataset.inboxShareName = item.previewTitle || item.title || item.domain || '';
@@ -5134,15 +5171,6 @@ class DashboardInbox {
             thumb = `<div class="inbox-item-thumb inbox-item-thumb--placeholder${enriching ? ' inbox-item-thumb--loading' : ''}" aria-hidden="true">🔗</div>`;
         }
 
-        // On a snoozed card, swap the Snooze button for a Wake one and show when it
-        // will resurface.
-        const snoozeBtn = snoozed
-            ? `<button type="button" class="inbox-action-btn" data-inbox-action="wake">${this.escape(this.t('dashboard.inboxWake', 'Wake now'))}<kbd>z</kbd></button>`
-            : `<button type="button" class="inbox-action-btn" data-inbox-action="snooze">${this.escape(this.t('dashboard.inboxSnooze', 'Snooze'))}<kbd>z</kbd></button>`;
-        const wakeLabel = snoozed
-            ? `<span class="inbox-item-snooze">${this.escape(this.t('dashboard.inboxSnoozedUntil', 'Sleeping until {time}', { time: this.formatSnoozeWake(item.snoozedUntil) }))}</span>`
-            : '';
-
         const checked = this.checkedIds.has(item.id);
         if (checked) {
             card.classList.add('is-checked');
@@ -5151,34 +5179,36 @@ class DashboardInbox {
         // is read as an unlabelled group and the title arrives a beat later.
         const titleId = `inbox-item-title-${item.id}`;
         card.setAttribute('aria-labelledby', titleId);
+        // The row's glow (list-view-shell.css): unread stands out, the rest is quiet.
+        const status = this.inboxRowStatus(item);
+        if (status) card.setAttribute('data-lvs-status', status);
+
+        /*
+         * Two lines. The first is what a reader scans: what, where, when. The
+         * second -- the three ways out of the inbox -- opens for the row that
+         * was clicked or reached by keyboard (dashboard-inbox.css). Everything
+         * else about the link is in the side panel.
+         */
+        const when = snoozed
+            ? this.t('dashboard.inboxSnoozedUntil', 'Sleeping until {time}', { time: this.formatSnoozeWake(item.snoozedUntil) })
+            : timeLabel;
         card.innerHTML = `
-            <label class="inbox-item-check">
-                <input type="checkbox" class="inbox-item-check-input"${checked ? ' checked' : ''}
-                    aria-label="${this.escape(this.t('dashboard.inboxSelectItem', 'Select {title}', { title }))}">
-            </label>
-            ${thumb}
-            <div class="inbox-item-body">
+            <div class="inbox-item-line1">
+                <label class="inbox-item-check">
+                    <input type="checkbox" class="inbox-item-check-input"${checked ? ' checked' : ''}
+                        aria-label="${this.escape(this.t('dashboard.inboxSelectItem', 'Select {title}', { title }))}">
+                </label>
+                ${thumb}
                 <h3 class="inbox-item-title" id="${this.escape(titleId)}">${this.escape(title)}</h3>
-                <p class="inbox-item-meta">
-                    <button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>
-                    ${addedLabel ? `<span class="inbox-item-date" title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}">${this.escape(addedLabel)}</span>` : ''}
-                    ${timeLabel ? `<span class="inbox-item-time">${this.escape(timeLabel)}</span>` : ''}
-                    ${this.renderItemSource(item)}
-                    ${wakeLabel}
-                </p>
-                ${item.previewDesc ? `<p class="inbox-item-desc">${this.escape(item.previewDesc)}</p>` : ''}
-                ${item.note ? `<p class="inbox-item-note">${this.escape(item.note)}</p>` : ''}
-                ${this.renderItemTags(item)}
-                <span class="tag-suggest-chips" data-inbox-suggest></span>
+                <button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>
+                <span class="inbox-item-when"${addedLabel && !snoozed ? ` title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}"` : ''}>${this.escape(when)}</span>
+            </div>
+            <div class="inbox-item-line2 lvs-row-line2">
                 <div class="feed-row-actions inbox-item-actions">
                     <div class="inbox-item-actions-inner">
                         <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
                         <button type="button" class="inbox-action-btn" data-inbox-action="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}<kbd>p</kbd></button>
                         ${this.keptEnabled() ? `<button type="button" class="inbox-action-btn" data-inbox-action="keep" title="${this.escape(this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, on the inbox\u2019s Kept tab, without giving it a page yet'))}">${this.escape(this.t('dashboard.inboxTriageKeep', 'Keep'))}<kbd>K</kbd></button>` : ''}
-                        ${item.readAt ? '' : `<button type="button" class="inbox-action-btn" data-inbox-action="read">${this.escape(this.t('dashboard.inboxMarkRead', 'Mark read'))}<kbd>r</kbd></button>`}
-                        ${snoozeBtn}
-                        <button type="button" class="inbox-action-btn" data-inbox-action="note">${this.escape(item.note ? this.t('dashboard.inboxEditNote', 'Edit note') : this.t('dashboard.inboxAddNote', 'Note'))}<kbd>n</kbd></button>
-                        <button type="button" class="inbox-action-btn inbox-action-btn--danger" data-inbox-action="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}<kbd>d</kbd></button>
                     </div>
                 </div>
             </div>
@@ -5221,30 +5251,6 @@ class DashboardInbox {
         // The checkbox is inside the row, which opens on click — without this,
         // ticking a box would also launch the link.
         card.querySelector('.inbox-item-check')?.addEventListener('click', (e) => e.stopPropagation());
-        this.fillSuggestChips(card, item);
-
-        // Same shape as the domain button below: a chip is a filter you can
-        // click, and clicking the active one clears it again.
-        card.querySelectorAll('[data-inbox-tag]').forEach((chip) => {
-            chip.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const tag = String(e.currentTarget.getAttribute('data-inbox-tag') || '').trim().toLowerCase();
-                if (!tag) return;
-                this.tagFilter = this.tagFilter === tag ? '' : tag;
-                this.filter = 'all';
-                this.visibleLimit = 50;
-                this.checkedIds.clear();
-                // The anchor a Shift+click range counts from belongs to the selection
-                // it was made in. Left standing across a filter change, a later
-                // Shift+click ticked everything back to a row this view never showed.
-                this.checkAnchorId = null;
-                this.focusItemId = null;
-                this._trackAction('filter', { filter: 'tag', via: 'tag-click' });
-                this.syncUrlState();
-                this.render();
-                this.dash.pageNav?.updatePageTitle?.();
-            });
-        });
 
         card.querySelector('.inbox-item-domain-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -5276,35 +5282,16 @@ class DashboardInbox {
             this.selectItemById(item.id);
             await this.keepItem(item);
         });
-        card.querySelector('[data-inbox-action="read"]')?.addEventListener('click', async () => {
-            this.selectItemById(item.id);
-            await this.markReadFromKeyboard(item);
-        });
-        card.querySelector('[data-inbox-action="snooze"]')?.addEventListener('click', (e) => {
-            this.selectItemById(item.id);
-            this.openSnoozeMenu(item, e.currentTarget);
-        });
-        card.querySelector('[data-inbox-action="wake"]')?.addEventListener('click', async () => {
-            this.selectItemById(item.id);
-            await this.wakeItem(item);
-        });
-        card.querySelector('[data-inbox-action="note"]')?.addEventListener('click', () => {
-            this.selectItemById(item.id);
-            void this.editNote(item);
-        });
-        card.querySelector('[data-inbox-action="delete"]')?.addEventListener('click', async () => {
-            await this.deleteItemWithUndo(item.id);
-        });
-
         // Pointer-hover selection is handled once at the container level via
         // bindPointerNavigation (pointerover); a per-card mouseenter would be a
         // redundant second binding for the same behaviour.
 
         card.addEventListener('click', (e) => {
-            if (e.target.closest('.inbox-action-btn')) {
+            if (e.target.closest('.inbox-action-btn, .inbox-item-domain-btn, .inbox-item-check, a')) {
                 return;
             }
             this.selectItemById(item.id);
+            this.openDrawer(item.id);
         });
         card.addEventListener('dblclick', (e) => {
             if (e.target.closest('.inbox-action-btn')) {
@@ -5317,6 +5304,65 @@ class DashboardInbox {
         d.contextMenu?.bindRow?.(card);
 
         return card;
+    }
+
+    /**
+     * A tag chip is a filter you can click, and clicking the active one clears
+     * it again -- the same shape as the domain button.
+     */
+    filterByTag(raw) {
+        const tag = String(raw || '').trim().toLowerCase();
+        if (!tag) return;
+        this.tagFilter = this.tagFilter === tag ? '' : tag;
+        this.filter = 'all';
+        this.visibleLimit = 50;
+        this.checkedIds.clear();
+        // The anchor a Shift+click range counts from belongs to the selection
+        // it was made in. Left standing across a filter change, a later
+        // Shift+click ticked everything back to a row this view never showed.
+        this.checkAnchorId = null;
+        this.focusItemId = null;
+        this._trackAction('filter', { filter: 'tag', via: 'tag-click' });
+        this.syncUrlState();
+        this.render();
+        this.dash.pageNav?.updatePageTitle?.();
+    }
+
+    /* ── Side panel ────────────────────────────────────────────────────── */
+
+    /** The side panel (dashboard-inbox-drawer.js), built on first use. */
+    get drawer() {
+        if (!this._drawer && typeof window.InboxDrawer === 'function') {
+            this._drawer = new window.InboxDrawer(this);
+        }
+        return this._drawer;
+    }
+
+    itemById(id) {
+        return (this.items || []).find((entry) => entry.id === id) || null;
+    }
+
+    /** Show one item in the side panel, selecting (and opening) its row. */
+    openDrawer(id, { section = null } = {}) {
+        const item = this.itemById(id);
+        const drawer = this.drawer;
+        if (!item || !drawer) return;
+        if (id !== this.selectedItemId || this.openItemId !== id) this.selectItemById(id);
+        drawer.open(item, { section });
+    }
+
+    closeDrawer() {
+        if (!this._drawer?.isOpen()) return;
+        this._drawer.close();
+        this.onDrawerClosed();
+    }
+
+    onDrawerClosed() {}
+
+    /** Leaving the view: the panel lives on <body>, so it goes explicitly. */
+    onLeaveDrawer() {
+        this._drawer?.destroy();
+        this._drawer = null;
     }
 
     openItem(item) {

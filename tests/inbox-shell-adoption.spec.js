@@ -112,10 +112,10 @@ test('the snoozed rail row hides at zero and reappears once something is snoozed
     const boxAtZero = await snoozedRow.boundingBox();
     expect(boxAtZero?.height ?? 0, 'a hidden row must not occupy layout height').toBe(0);
 
-    // Snooze the way a user does: the action strip only appears on hover.
+    // Snooze the way a user does: the row opens the side panel, which has it.
     const card = page.locator('.inbox-item').first();
-    await card.hover();
-    const snoozeBtn = card.locator('[data-inbox-action="snooze"]');
+    await card.locator('.inbox-item-title').click();
+    const snoozeBtn = page.locator('[data-lvs-drawer="inbox"] [data-inbox-drawer-action="snooze"]');
     await expect(snoozeBtn).toBeVisible();
     await snoozeBtn.click();
     await expect(page.locator('.inbox-snooze-menu')).toBeVisible();

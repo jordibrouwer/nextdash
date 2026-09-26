@@ -1173,6 +1173,9 @@ class Dashboard {
         if (previous === 'health' && view !== 'health') {
             this.health?.instance?.onLeaveDrawer?.();
         }
+        if (previous === 'inbox' && view !== 'inbox') {
+            this.inbox?.instance?.onLeaveDrawer?.();
+        }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);
         }

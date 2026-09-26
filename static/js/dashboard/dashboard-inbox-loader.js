@@ -43,6 +43,12 @@ class DashboardInboxLoader {
             await load('js/dashboard/dashboard-inbox-triage.js', 'dashboardInboxTriage',
                 () => typeof DashboardInboxTriage === 'function');
         }
+        // What the inbox puts in the side panel. The panel itself
+        // (list-view-drawer.js) is on every page already.
+        if (typeof window.InboxDrawer !== 'function') {
+            await load('js/dashboard/dashboard-inbox-drawer.js', 'dashboardInboxDrawer',
+                () => typeof window.InboxDrawer === 'function');
+        }
         if (typeof DashboardInbox === 'undefined') {
             await load('js/dashboard/dashboard-inbox.js', 'dashboardInboxModule',
                 () => typeof DashboardInbox === 'function');

@@ -223,6 +223,8 @@ test('the selection bar ticks every row the filter shows', async ({ page }) => {
     });
     await expect(page.locator('.inbox-item')).toHaveCount(3, { timeout: 10_000 });
 
+    // The box shows on hover (one-line rows keep it out of sight at rest).
+    await page.locator('.inbox-item').first().hover();
     await page.locator('.inbox-item-check-input').first().check();
     const selectAll = page.locator('.inbox-selection-bar [data-inbox-selection="select-all"]');
     await selectAll.click();

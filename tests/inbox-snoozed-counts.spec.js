@@ -72,8 +72,9 @@ test.describe('inbox counts exclude snoozed items', () => {
     async function snoozeFirstRow(page) {
         const rowsBefore = await page.locator('.inbox-item').count();
         const card = page.locator('.inbox-item').first();
-        await card.hover();
-        const btn = card.locator('[data-inbox-action="snooze"]');
+        // The row opens the side panel, which holds Snooze.
+        await card.locator('.inbox-item-title').click();
+        const btn = page.locator('[data-lvs-drawer="inbox"] [data-inbox-drawer-action="snooze"]');
         await expect(btn).toBeVisible();
         await btn.click();
         await expect(page.locator('.inbox-snooze-menu')).toBeVisible();

@@ -50,12 +50,12 @@ async function seed(page, hosts) {
     await expect(page.locator('.inbox-item')).toHaveCount(hosts.length);
 }
 
-/** Snooze the first row through its own button, as a reader would. */
+/** Snooze the first row through the side panel's button, as a reader would. */
 async function snoozeFirstRow(page) {
     const before = await page.locator('.inbox-item').count();
     const card = page.locator('.inbox-item').first();
-    await card.hover();
-    await card.locator('[data-inbox-action="snooze"]').click();
+    await card.locator('.inbox-item-title').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-inbox-drawer-action="snooze"]').click();
     await expect(page.locator('.inbox-snooze-menu')).toBeVisible();
     await page.locator('.inbox-snooze-option').first().click();
     await expect(page.locator('.inbox-item')).toHaveCount(before - 1);

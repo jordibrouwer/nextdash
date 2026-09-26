@@ -44,7 +44,7 @@ async function openInbox(page, items) {
 }
 
 test.describe('the inbox says what it knows', () => {
-    test('a row shows where the link came from, unless it was pasted', async ({ page }) => {
+    test('the side panel shows where the link came from, unless it was pasted', async ({ page }) => {
         await openInbox(page, [
             { title: 'Gap from extension', source: 'extension' },
             { title: 'Gap from paste', source: 'paste' },
@@ -53,11 +53,19 @@ test.describe('the inbox says what it knows', () => {
         const rows = page.locator('.inbox-item');
         await expect(rows.first()).toBeVisible({ timeout: 10_000 });
 
-        const shown = await page.evaluate(() => [...document.querySelectorAll('.inbox-item')]
-            .map((row) => ({
-                title: row.querySelector('.inbox-item-title')?.textContent?.trim() || '',
-                source: row.querySelector('[data-inbox-source]')?.textContent?.trim() || null,
-            })));
+        // Each row's Details section, read by opening its side panel.
+        const shown = [];
+        for (const title of ['Gap from extension', 'Gap from paste']) {
+            await page.locator('.inbox-item', { hasText: title }).first().locator('.inbox-item-title').click();
+            const details = page.locator('[data-lvs-drawer="inbox"] [data-lvs-section="details"]');
+            if (await details.getAttribute('open') === null) await details.locator('summary').click();
+            shown.push({
+                title,
+                source: (await details.locator('[data-inbox-source]').count())
+                    ? (await details.locator('[data-inbox-source]').textContent()).trim()
+                    : null,
+            });
+        }
 
         const fromExtension = shown.find((r) => r.title.includes('extension'));
         const fromPaste = shown.find((r) => r.title.includes('paste'));

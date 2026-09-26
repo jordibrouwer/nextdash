@@ -177,23 +177,26 @@ test.describe('inbox tags', () => {
         return stamp;
     }
 
-    test('tags are shown on the row', async ({ page }) => {
+    test('tags are shown in the side panel', async ({ page }) => {
         await openInbox(page);
         await seedTagged(page);
 
-        const row = page.locator('.inbox-item', { hasText: 'TAG tagged' }).first();
-        await expect(row.locator('[data-inbox-tag="reading"]')).toBeVisible();
-        await expect(row.locator('[data-inbox-tag="work"]')).toBeVisible();
-        // A row without tags gets no empty chip strip.
-        const plain = page.locator('.inbox-item', { hasText: 'TAG plain' }).first();
-        await expect(plain.locator('.inbox-item-tags')).toHaveCount(0);
+        const panel = page.locator('[data-lvs-drawer="inbox"] [data-lvs-section="tags"]');
+        await page.locator('.inbox-item', { hasText: 'TAG tagged' }).first().locator('.inbox-item-title').click();
+        await expect(panel.locator('[data-inbox-tag="reading"]')).toBeVisible();
+        await expect(panel.locator('[data-inbox-tag="work"]')).toBeVisible();
+        // An item without tags gets no empty chip strip.
+        await page.locator('.inbox-item', { hasText: 'TAG plain' }).first().locator('.inbox-item-title').click();
+        await expect(panel.locator('.inbox-item-tags')).toHaveCount(0);
     });
 
     test('clicking a tag filters to it, and clicking again clears it', async ({ page }) => {
         await openInbox(page);
         const stamp = await seedTagged(page);
 
-        await page.locator('[data-inbox-tag="reading"]').first().click();
+        const chip = page.locator('[data-lvs-drawer="inbox"] [data-inbox-tag="reading"]');
+        await page.locator('.inbox-item', { hasText: 'TAG tagged' }).first().locator('.inbox-item-title').click();
+        await chip.click();
         expect(await page.evaluate(() => window.dashboardInstance.inbox.tagFilter)).toBe('reading');
 
         // Asserted on the filtered set rather than a row count: the inbox is
@@ -212,7 +215,7 @@ test.describe('inbox tags', () => {
         expect(state.plainGone).toBe(true);
         expect(state.taggedShown).toBe(true);
 
-        await page.locator('[data-inbox-tag="reading"]').first().click();
+        await chip.click();
         expect(await page.evaluate(() => window.dashboardInstance.inbox.tagFilter)).toBe('');
     });
 
