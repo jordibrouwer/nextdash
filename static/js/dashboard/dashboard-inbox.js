@@ -388,6 +388,7 @@ class DashboardInbox {
             label: this.t('dashboard.inboxBulkTagsLabel',
                 'Tags to add to {count} links, separated by commas. Put - in front to remove one.',
                 { count: targets.length }),
+            items: targets,
         });
         if (typed === null) return;
         const words = typed.split(',').map((tag) => tag.trim().toLowerCase()).filter(Boolean);
@@ -5860,7 +5861,7 @@ class DashboardInbox {
     async editTags(item) {
         if (!item) return;
         const current = (Array.isArray(item.tags) ? item.tags : []).join(', ');
-        const next = await this.promptTags(current);
+        const next = await this.promptTags(current, { items: [item] });
         if (next === null) return;
 
         const tags = next.split(',')
@@ -5897,7 +5898,17 @@ class DashboardInbox {
         }
     }
 
-    promptTags(current, { label: labelText = '' } = {}) {
+    /**
+     * The tags dialog, for one link or a ticked selection (`items`).
+     *
+     * It offers what the bookmark form offers: tags that already exist as you
+     * type (TagAutocomplete), and the suggestion engine's chips for the links
+     * being tagged (TagSuggestLive / TagSuggestChips). Taking a chip writes it
+     * into the field rather than saving, so the dialog stays the one place
+     * where the change is decided. The chips sit above the field: the
+     * completion list opens below it on focus and would cover them.
+     */
+    promptTags(current, { label: labelText = '', items = [] } = {}) {
         const modal = window.AppModal;
         if (!modal || typeof modal.show !== 'function') {
             const value = window.prompt(this.t('dashboard.inboxTagsPrompt', 'Tags'), current);
@@ -5907,24 +5918,91 @@ class DashboardInbox {
             const label = this.escape(labelText
                 || this.t('dashboard.inboxTagsLabel', 'Tags for this link, separated by commas'));
             const placeholder = this.escape(this.t('dashboard.inboxTagsPlaceholder', 'reading, work, later'));
+            let input = null;
+            const done = (value) => {
+                if (input && typeof TagAutocomplete !== 'undefined') TagAutocomplete.detach(input);
+                resolve(value);
+            };
             modal.show({
                 title: this.t('dashboard.inboxTagsTitle', 'Inbox tags'),
                 htmlMessage: `
                     <label class="inbox-note-modal-label" for="inbox-tags-modal-input">${label}</label>
+                    <span id="inbox-tags-modal-suggest" class="tag-suggest-chips inbox-tags-modal-suggest" hidden></span>
                     <input id="inbox-tags-modal-input" class="inbox-note-modal-input" type="text" placeholder="${placeholder}">
                 `,
                 confirmText: this.t('dashboard.inboxTagsSave', 'Save tags'),
                 cancelText: this.t('dashboard.healthCancel', 'Cancel'),
                 initialFocusSelector: '#inbox-tags-modal-input',
-                onConfirm: () => {
-                    const input = document.getElementById('inbox-tags-modal-input');
-                    resolve(input ? input.value : '');
-                },
-                onCancel: () => resolve(null),
+                onConfirm: () => done(input ? input.value : ''),
+                onCancel: () => done(null),
             });
-            const input = document.getElementById('inbox-tags-modal-input');
-            if (input) input.value = current;
+            input = document.getElementById('inbox-tags-modal-input');
+            if (!input) return;
+            input.value = current;
+            this.attachTagAutocomplete(input);
+            this.renderTagDialogSuggestions(document.getElementById('inbox-tags-modal-suggest'), input, items);
         });
+    }
+
+    /**
+     * Every tag in use, on bookmarks and in the inbox, plus what is typed --
+     * the same pool the bookmark form completes from.
+     */
+    attachTagAutocomplete(input) {
+        if (typeof TagAutocomplete === 'undefined') return;
+        const d = this.dash;
+        const pool = new Set();
+        (d.allBookmarks?.length ? d.allBookmarks : d.bookmarks ?? [])
+            .forEach((bm) => (bm.tags || []).forEach((tag) => pool.add(String(tag).toLowerCase())));
+        (this.items || []).forEach((entry) => (entry.tags || []).forEach((tag) => pool.add(String(tag).toLowerCase())));
+        TagAutocomplete.attach(input, () => {
+            input.value.split(',').map((tag) => tag.trim().replace(/^-/, '').toLowerCase()).filter(Boolean)
+                .forEach((tag) => pool.add(tag));
+            return [...pool];
+        });
+    }
+
+    /**
+     * The engine's offers for the links in the dialog. For a selection, each
+     * link's top offers are pooled and the ones most links share come first --
+     * the same pooling the selection's Suggest popover uses.
+     */
+    renderTagDialogSuggestions(host, input, items) {
+        const live = window.TagSuggestLive;
+        const chips = window.TagSuggestChips;
+        if (!host || !live || !chips || !items.length) return;
+        const typedTags = () => input.value.split(',').map((tag) => tag.trim().toLowerCase()).filter(Boolean);
+        const draw = () => {
+            const byTag = new Map();
+            items.forEach((entry) => {
+                live.forInboxItem(this.dash, entry).slice(0, 2).forEach((offer) => {
+                    const seen = byTag.get(offer.tag);
+                    if (seen) seen.count += 1;
+                    else byTag.set(offer.tag, { offer, count: 1 });
+                });
+            });
+            const typed = new Set(typedTags());
+            const offers = [...byTag.values()]
+                .sort((a, b) => b.count - a.count)
+                .map((entry) => entry.offer)
+                .filter((offer) => !typed.has(offer.tag));
+            chips.render(host, offers, {
+                limit: items.length > 1 ? 5 : 3,
+                label: this.t('config.tagSuggestLabel', 'suggested'),
+                t: (key, fallback, params) => this.t(key, fallback, params),
+                onAccept: (tag) => {
+                    const tags = typedTags();
+                    if (!tags.includes(tag)) tags.push(tag);
+                    input.value = tags.join(', ');
+                    input.focus();
+                    draw();
+                },
+                onRefuse: (offer) => {
+                    void window.TagSuggestChips.refuse(this.dash, offer, { onUpdated: draw });
+                },
+            });
+        };
+        draw();
     }
 
     promptNote(current) {

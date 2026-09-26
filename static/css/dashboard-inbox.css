@@ -1347,3 +1347,15 @@ body.inbox-triage-active {
     color: var(--text-primary);
     line-height: 1.3;
 }
+
+/* The tags dialog's suggestions, between the label and the field. */
+.inbox-tags-modal-suggest {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.35rem);
+    margin: var(--space-1, 0.25rem) 0 var(--space-2, 0.5rem);
+}
+
+.inbox-tags-modal-suggest[hidden] {
+    display: none;
+}
