@@ -270,6 +270,8 @@
      *  wants what health knows without asking the server for it again. */
     window.HealthFacts = {
         get: getHealthFacts,
+        /** The key facts are filed under, for anything joining them to bookmarks. */
+        keyFor: factsKey,
         remember: rememberHealthFacts,
         /** Certificates by host, as the last report described them. */
         get certificates() { return healthCertificates; },

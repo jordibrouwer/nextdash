@@ -22468,6 +22468,7 @@ class DashboardConfig {
     ensureBookmarkRenderers() {
         const ready = () => window.DashboardConfigBookmarksReady === true
             && window.DashboardConfigWorkbenchReady === true
+            && window.DashboardConfigBookmarksHealthReady === true
             && Boolean(window.BookmarkWorkbenchModel);
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
@@ -22479,6 +22480,9 @@ class DashboardConfig {
                 'dashboardConfigBookmarks', () => window.DashboardConfigBookmarksReady === true))
             .then(() => load('js/dashboard/dashboard-config-bookmarks-workbench.js',
                 'dashboardConfigWorkbench', () => window.DashboardConfigWorkbenchReady === true))
+            // Health's part of the list, on top of the workbench.
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-health.js',
+                'dashboardConfigBookmarksHealth', () => window.DashboardConfigBookmarksHealthReady === true))
             .then(() => {
                 const waiting = this._bookmarksAwaitingRenderers === true;
                 this._bookmarksAwaitingRenderers = false;

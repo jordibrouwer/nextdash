@@ -1280,6 +1280,7 @@
             if (scrim) scrim.hidden = false;
         }
         this.trackWorkbenchHeaderHeight(container.querySelector('#config-bm-workbench'));
+        this.startBmHealth?.();
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
         const panel = container.querySelector('#config-bm-panel');
         this.bindWorkbenchPanel(panel);
