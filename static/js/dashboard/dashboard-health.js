@@ -1858,7 +1858,7 @@ class DashboardHealth {
      * you were on — and refreshes the report afterwards so the row reflects the
      * edit. Falls back to the old deep link when the modal isn't reachable.
      */
-    async editIssueInline(issue) {
+    async editIssueInModal(issue) {
         this.closeAllMenus();
         const d = this.dash;
         const pageId = Number(issue?.pageId);
@@ -7141,7 +7141,7 @@ class DashboardHealth {
             this.openIssue(issue);
         });
         row.querySelector('[data-health-action="edit"]')?.addEventListener('click', () => {
-            void this.editIssueInline(issue);
+            void this.editIssueInModal(issue);
         });
         row.querySelector('.health-view-more-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();

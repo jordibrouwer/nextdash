@@ -381,7 +381,7 @@ test.describe('health dashboard view', () => {
 
         // Decorative copy for sighted users — row buttons are the AT path.
         await expect(page.locator('.health-view-legend--bottom')).toHaveAttribute('aria-hidden', 'true');
-        await expect(page.locator('.health-view-legend')).toContainText('Enter / Space');
+        await expect(page.locator('.health-view-legend')).toContainText('o / Space');
     });
 
     // The legend and the cheat sheet both read from KeyboardViewLegends, so a
@@ -447,7 +447,7 @@ test.describe('health dashboard view', () => {
         // can never fail and would prove nothing.
         const keys = await page.locator('.health-view-legend kbd').allTextContents();
         const trimmed = keys.map((k) => k.trim());
-        for (const key of ['j / k', 's', 'i', 'p', 'f', 'R / ?', 'c', 'm', 'x', 'Enter / Space', 'Esc']) {
+        for (const key of ['j / k', 's', 'i', 'p', 'f', 'R', 'c', 'm', 'x', 'Enter', 'o / Space', 'Esc']) {
             expect(trimmed, `legend lists ${key}`).toContain(key);
         }
     });

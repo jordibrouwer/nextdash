@@ -217,3 +217,43 @@ test.describe('health redesign: side panel', () => {
     expect(posted).toMatchObject({ url: 'https://example.com/broken', expectStatus: '' });
   });
 });
+
+test.describe('health redesign: keys and phone', () => {
+  const drawer = (page) => page.locator('[data-lvs-drawer="health"] [data-lvs-drawer-panel]');
+
+  test('the legend teaches Enter for details and o / Space to open', async ({ page }) => {
+    await openHealthWith(page);
+    const legend = page.locator('.health-view-legend').first();
+    const keyFor = async (label) => legend.locator('.health-view-legend-item, li, span')
+      .filter({ hasText: label }).first().locator('kbd').allTextContents();
+    await expect(legend).toContainText('details');
+    expect((await keyFor('details')).join(' ')).toContain('Enter');
+    expect((await keyFor('open')).join(' ')).toMatch(/o/);
+    expect((await keyFor('refresh report')).join(' ')).not.toContain('?');
+  });
+
+  test('on a phone Enter opens the panel full screen, and Esc gives the scroll back', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    // The header's Health link is folded away at this width; the address opens it.
+    await page.route('**/api/bookmark-health**', (route) => route.fulfill({
+      status: 200, contentType: 'application/json', body: JSON.stringify(redesignReport()),
+    }));
+    await page.goto('/#health');
+    await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
+    await page.locator('[data-health-filter="all"]').first().click();
+    await page.waitForSelector('.health-view-item', { timeout: 15_000 });
+    const before = await page.evaluate(() => window.ScrollLock?.holders?.size ?? 0);
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await page.keyboard.press('j');
+    await page.keyboard.press('Enter');
+    await expect(drawer(page)).toBeVisible();
+    const box = await drawer(page).boundingBox();
+    const width = await page.evaluate(() => window.innerWidth);
+    expect(box.x).toBe(0);
+    expect(box.width).toBeGreaterThanOrEqual(width - 16);
+    expect(await page.evaluate(() => window.ScrollLock.holders.size)).toBe(before + 1);
+    await page.keyboard.press('Escape');
+    await expect(drawer(page)).toHaveCount(0);
+    expect(await page.evaluate(() => window.ScrollLock.holders.size)).toBe(before);
+  });
+});

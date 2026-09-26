@@ -147,7 +147,7 @@ class HealthDrawer {
             b.addEventListener('click', onClick);
             ctx.actions.appendChild(b);
         };
-        button('edit', this.t('healthEdit', 'Edit'), () => void view.editIssueInline(issue));
+        button('edit', this.t('healthEdit', 'Edit'), () => void view.editIssueInModal(issue));
         button('recheck', this.t('healthRecheck', 'Re-check'), () => void view.recheckIssue(issue));
         button('open', this.t('healthOpen', 'Open'), () => view.openIssue(issue));
     }

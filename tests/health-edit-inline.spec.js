@@ -122,6 +122,41 @@ test.describe('health Edit → bookmark modal', () => {
         await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
     });
 
+    test('Edit in the side panel saves, and the row and panel show the new name', async ({ page }) => {
+        const issue = await openHealthWithOneIssue(page);
+        // The report answers with whatever the bookmark is called now, so the
+        // refresh after a save has something new to show.
+        const current = { ...issue };
+        await page.route('**/api/bookmark-health**', (route) => route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                generatedAt: Date.now(),
+                summary: { totalBookmarks: 1, healthyCount: 0, brokenCount: 1, duplicateCount: 0, uncheckedCount: 0 },
+                issues: [current],
+                duplicateGroups: [],
+            }),
+        }));
+
+        await openHealthRow(page.locator('.health-view-item').first());
+        const drawer = page.locator('[data-lvs-drawer="health"] [data-lvs-drawer-panel]');
+        await expect(drawer.locator('.lvs-drawer-title')).toHaveText(issue.name);
+        await drawer.locator('[data-health-drawer-action="edit"]').click();
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible({ timeout: 15_000 });
+
+        const newName = `Renamed in the panel ${Date.now()}`;
+        const form = bookmarkForm(page);
+        await form.locator('[data-field="name"]').fill(newName);
+        page.on('request', (req) => {
+            if (req.url().includes(`/api/bookmarks?page=${issue.pageId}`) && req.method() === 'POST') current.name = newName;
+        });
+        await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
+
+        await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/, { timeout: 10_000 });
+        await expect(page.locator('.health-view-item .health-view-item-title').first()).toHaveText(newName);
+        await expect(drawer.locator('.lvs-drawer-title')).toHaveText(newName);
+    });
+
     test('a stale index in the report edits the bookmark the URL names', async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/');
