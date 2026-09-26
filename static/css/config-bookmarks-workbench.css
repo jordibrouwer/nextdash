@@ -802,7 +802,10 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
         width: min(420px, 100vw);
         max-height: none;
         border-radius: 0;
-        z-index: 1200;
+        /* Above the section's sticky header (sticky band + 1300), where the
+           shared side panel sits too (list-view-shell.css, .lvs-drawer-host):
+           at 1200 the header drew over the name field. */
+        z-index: calc(var(--layer-sticky-band, 5) + 1400);
         overflow: auto;
     }
 
@@ -822,7 +825,7 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
         display: block;
         position: fixed;
         inset: 0;
-        z-index: 1100;
+        z-index: calc(var(--layer-sticky-band, 5) + 1399);
         background: color-mix(in srgb, var(--background-primary) 60%, transparent);
     }
 }
@@ -847,7 +850,7 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
         max-height: none;
         padding: var(--space-3, 0.75rem);
         background: var(--surface-3, var(--background-secondary));
-        z-index: 1200;
+        z-index: calc(var(--layer-sticky-band, 5) + 1400);
         overflow: auto;
     }
 
@@ -856,7 +859,18 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     }
 
     .config-bm-row {
-        grid-template-columns: 16px 20px minmax(0, 1fr);
+        grid-template-columns: 1.1rem 1.4rem minmax(0, 1fr);
+    }
+
+    /* The search box takes a line of its own; the count and the Filters,
+       Details and Sort buttons share the next. On one line they ran off both
+       edges of a phone. */
+    .config-bm-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .config-bm-search {
+        flex: 1 1 100%;
     }
 
     .config-bm-tags,

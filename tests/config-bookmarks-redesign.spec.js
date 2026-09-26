@@ -172,3 +172,39 @@ test.describe('config bookmarks redesign: suggestions for a selection', () => {
     await expect(page.locator('#config-bm-panel [data-bm-bulk-field="tags"]')).toHaveValue(/shared-offer/);
   });
 });
+
+test.describe('config bookmarks redesign: phone', () => {
+  async function openAtPhone(page) {
+    await page.setViewportSize({ width: 375, height: 812 });
+    const { prepareDashboardInteraction } = require('./e2e-helpers');
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await prepareDashboardInteraction(page);
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
+  }
+
+  test('the toolbar fits the screen', async ({ page }) => {
+    await openAtPhone(page);
+    const out = await page.evaluate(() => [...document.querySelectorAll('.config-bm-toolbar > *')]
+      .filter((el) => el.getBoundingClientRect().width > 0)
+      .map((el) => { const r = el.getBoundingClientRect(); return { cls: el.className, left: Math.round(r.left), right: Math.round(r.right) }; })
+      .filter((b) => b.left < 0 || b.right > window.innerWidth));
+    expect(out).toEqual([]);
+  });
+
+  test('the panel sits above the section header', async ({ page }) => {
+    await openAtPhone(page);
+    await bmRow(page, 1).click();
+    // On a phone the panel is a sheet, opened from the toolbar.
+    await page.locator('[data-bm-open-drawer]').click();
+    const name = page.locator('#config-bm-panel [data-bm-field="name"]');
+    await expect(name).toBeVisible();
+    const hit = await name.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const top = document.elementFromPoint(r.left + 10, r.top + r.height / 2);
+      return top === el || el.contains(top);
+    });
+    expect(hit).toBe(true);
+  });
+});
