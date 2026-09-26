@@ -149,6 +149,20 @@ test.describe('docker view', () => {
     await expect(page).toHaveURL(/#docker$/);
   });
 
+  test('the drawer draws over the sticky header', async ({ page }) => {
+    await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    const drawer = page.locator('[data-docker-drawer]');
+    await expect(drawer).toContainText('sonarr');
+    const header = await page.locator('.lvs-header').boundingBox();
+    const box = await drawer.boundingBox();
+    // A point both cover: whatever is on top there must belong to the drawer.
+    const onTop = await page.evaluate(([x, y]) => Boolean(
+      document.elementFromPoint(x, y)?.closest('[data-docker-drawer]')),
+      [box.x + 20, header.y + header.height / 2]);
+    expect(onTop).toBe(true);
+  });
+
   test('phone: two-line rows and a fullscreen drawer', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await mockDocker(page);

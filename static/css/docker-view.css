@@ -145,7 +145,10 @@
     top: 0;
     right: 0;
     bottom: 0;
-    z-index: var(--z-drawer, 40);
+    /* Above the view's sticky header (list-view-shell.css, sticky band +
+       1300) now that the drawer sits on <body>, and below the app modal
+       (2000) so a confirmation still opens over it. */
+    z-index: calc(var(--layer-sticky-band, 5) + 1400);
     display: flex;
     pointer-events: none;
 }
