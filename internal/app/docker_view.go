@@ -185,7 +185,12 @@ func writeDockerError(w http.ResponseWriter, err error) {
 }
 
 func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
-	out := map[string]any{"socket": false, "control": dockerControlEnabled(), "reason": "", "self": dockerSelfID()}
+	// writeToken is whether one is set, never what it is: Config -> Containers
+	// says so beside the actions it protects.
+	out := map[string]any{
+		"socket": false, "control": dockerControlEnabled(), "reason": "",
+		"self": dockerSelfID(), "selfName": "", "writeToken": writeAccessToken() != "",
+	}
 	api, reason := newDockerAPI()
 	if api == nil {
 		out["reason"] = reason
@@ -199,6 +204,16 @@ func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		resp.Body.Close()
 		out["socket"] = true
+		if self := dockerSelfID(); self != "" {
+			if list, lerr := api.listContainers(ctx); lerr == nil {
+				for _, c := range list {
+					if isDockerSelf(c.ID, self) {
+						out["selfName"] = c.name()
+						break
+					}
+				}
+			}
+		}
 	}
 	writeJSON(w, out)
 }
@@ -379,7 +394,11 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	self := dockerSelfID()
 	updates := h.dockerUpdateSnapshot() // Task 8 fills this from the real store.
 	out := make([]dockerViewContainer, 0, len(list))
+	hidden := dockerHiddenSet()
 	for _, c := range list {
+		if hidden[c.name()] {
+			continue
+		}
 		v := toDockerView(c, self)
 		v.Update = updates[c.Image]
 		out = append(out, v)

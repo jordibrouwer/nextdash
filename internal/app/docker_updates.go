@@ -110,7 +110,11 @@ func (h *Handlers) runDockerUpdateCheck(ctx context.Context) (dockerUpdateStore,
 
 	now := time.Now().UnixMilli()
 	next := dockerUpdateStore{CheckedAt: now, Images: map[string]*dockerImageUpdate{}}
+	hidden := dockerHiddenSet()
 	for _, c := range list {
+		if hidden[c.name()] {
+			continue
+		}
 		if _, done := next.Images[c.Image]; done {
 			continue
 		}

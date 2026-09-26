@@ -470,6 +470,7 @@ func newDockerTestRouter(h *Handlers) http.Handler {
 	r.HandleFunc("/api/docker/containers/{id}/logs", h.DockerContainerLogsHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/changelog", h.DockerChangelogHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates", h.DockerUpdatesHandler).Methods("GET")
+	r.HandleFunc("/api/docker/github-token", h.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")
 	r.HandleFunc("/api/docker/updates/check", h.DockerUpdatesCheckHandler).Methods("POST")
 	r.HandleFunc("/api/docker/containers/{id}/{action}", h.DockerActionHandler).Methods("POST")
 	return r

@@ -119,9 +119,13 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 	out := DockerMetrics{MetricStatus: MetricStatus{Available: true}}
 	cutoff := time.Now().Add(-dockerRestartWindow).Unix()
 
+	hidden := dockerHiddenSet()
 	for _, item := range list {
-		out.Total++
 		name := containerName(item.Names)
+		if hidden[name] {
+			continue
+		}
+		out.Total++
 
 		switch item.State {
 		case "running":

@@ -141,6 +141,10 @@ func fetchGithubReleasesLive(ctx context.Context, owner, repo, current string) (
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("User-Agent", "nextDash")
+	// Optional, from Config -> Containers: 5000 requests an hour instead of 60.
+	if token := dockerGitHubToken(); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 	resp, err := dockerGitHubClient.Do(req)
 	if err != nil {
 		return nil, "unreachable"

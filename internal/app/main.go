@@ -219,6 +219,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/containers/{id}/logs", handlers.DockerContainerLogsHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/changelog", handlers.DockerChangelogHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates", handlers.DockerUpdatesHandler).Methods("GET")
+	r.HandleFunc("/api/docker/github-token", handlers.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")
 	r.HandleFunc("/api/docker/updates/check", handlers.DockerUpdatesCheckHandler).Methods("POST")
 	r.HandleFunc("/api/docker/containers/{id}/{action}", handlers.DockerActionHandler).Methods("POST")
 	// The one widget that reads from outside, by widget id rather than by URL.

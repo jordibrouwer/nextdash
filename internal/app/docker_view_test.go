@@ -14,7 +14,10 @@ import (
 // already points NEXTDASH_DATA_DIR at a temp dir -- no need to set it again.
 func dockerTestHandlers(t *testing.T) *Handlers {
 	t.Helper()
-	return newTestHandlers(t)
+	h := newTestHandlers(t)
+	h.wireDockerSettings()
+	t.Cleanup(func() { dockerHiddenNames = nil })
+	return h
 }
 
 func TestDockerContainersRouteListsTheReadModel(t *testing.T) {

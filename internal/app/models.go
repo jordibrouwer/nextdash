@@ -774,6 +774,13 @@ type Settings struct {
 	// newer images: "off", "6h", "12h" or "24h". Off by default -- like feeds,
 	// it reaches out to other hosts, so it waits to be asked.
 	DockerUpdateInterval string `json:"dockerUpdateInterval"`
+	// The Containers page in Config. Stored as "hidden" rather than "enabled"
+	// so a settings file from before this setting reads as on.
+	DockerViewHidden         bool     `json:"dockerViewHidden"`
+	DockerRefreshSeconds     int      `json:"dockerRefreshSeconds"`     // 2, 5, 10 or 30; list polling while the view is open
+	DockerLogLines           int      `json:"dockerLogLines"`           // 100, 200, 500 or 1000
+	DockerConfirmStopRestart bool     `json:"dockerConfirmStopRestart"` // ask before stop and restart as well
+	DockerHiddenContainers   []string `json:"dockerHiddenContainers"`   // names kept out of the view, search and widget
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
 	// feed can then say when it has published something since you last opened
 	// it. Off by default because it is the only thing here that reaches out to
@@ -4544,6 +4551,7 @@ func (fs *FileStore) GetSettings() Settings {
 	if dockerUpdateIntervalDuration(settings.DockerUpdateInterval) == 0 {
 		settings.DockerUpdateInterval = "off"
 	}
+	normalizeDockerSettings(&settings)
 	// 0 stays 0 — it means "the built-in default" — and anything else is held
 	// inside the range a bounded sweep can afford.
 	if settings.HealthCheckTimeoutSeconds != 0 {

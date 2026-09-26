@@ -305,6 +305,7 @@ func NewHandlers(store Store, files assetFS) *Handlers {
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
 	}
+	h.wireDockerSettings()
 	h.ensureHealthReportCond()
 	if store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
