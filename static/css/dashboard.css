@@ -5433,8 +5433,8 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
     align-items: center;
     padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
 /* Not a sheet: one that hangs from the header sizes itself against the header
@@ -5575,8 +5575,8 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) {
     align-items: center;
     padding: max(1.25rem, 2vw);
     box-sizing: border-box;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
 /* Not the sheet: it sizes itself against the header row it hangs from, and a
@@ -5741,9 +5741,9 @@ body.no-animations .bookmark-move-out {
     box-sizing: border-box;
     pointer-events: none;
     opacity: 0;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    background: var(--modal-scrim);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
     transition: opacity 0.2s ease-out;
 }
 

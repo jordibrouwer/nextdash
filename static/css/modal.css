@@ -1,4 +1,14 @@
 /* Modal Styles - EXACT copy of shortcut-search */
+/*
+ * The scrim behind every modal: search, the omnibox, the bookmark form, app
+ * dialogs, inbox triage and Health's walk-through. One pair of values, so
+ * opening any of them dims and softens the page the same way.
+ */
+:root {
+    --modal-scrim: rgba(0, 0, 0, 0.3);
+    --modal-scrim-blur: 3px;
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -13,7 +23,9 @@
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--modal-scrim);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
 .modal-overlay.show {
@@ -107,8 +119,8 @@ body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) {
     align-items: center;
     padding: max(1.25rem, 2vw);
     box-sizing: border-box;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
 body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) .modal {

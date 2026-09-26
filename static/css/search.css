@@ -17,9 +17,9 @@
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease-out, visibility 0s linear 0.2s;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    background: var(--modal-scrim);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
 .shortcut-search.show {

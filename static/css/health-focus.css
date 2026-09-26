@@ -10,12 +10,18 @@
 .health-focus-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1200;
+    /* Above the view's sticky header (+1300) and the side panel (+1400), so
+       the scrim covers them as it does behind every other modal; below the
+       app modal (2000), so a confirmation from the card opens over it. */
+    z-index: calc(var(--layer-sticky-band, 5) + 1500);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: var(--space-5, 1.5rem);
-    background: var(--background-modal, rgba(0, 0, 0, 0.6));
+    /* The same scrim as every other modal (modal.css). */
+    background: var(--modal-scrim);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
     animation: health-focus-fade 0.14s ease-out;
 }
 

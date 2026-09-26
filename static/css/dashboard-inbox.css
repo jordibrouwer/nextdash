@@ -543,8 +543,10 @@ body.inbox-triage-active {
     align-items: center;
     justify-content: center;
     padding: var(--space-4, 1rem);
-    background: color-mix(in srgb, var(--background-primary) 35%, transparent);
-    backdrop-filter: blur(6px);
+    /* The same scrim as every other modal (modal.css). */
+    background: var(--modal-scrim);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
 .inbox-triage-card {
