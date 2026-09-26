@@ -238,3 +238,25 @@ func (h *Handlers) maybeRunDockerUpdateCheck() {
 	}
 	logInfo(logComponentMutate, "the scheduled container update check found %s", plural(available, "update", "updates"))
 }
+
+// markDockerImageCurrent records that an update just brought this image up to
+// date, so the view drops its badge now rather than at the next check. The
+// digest the registry named is the one the pull fetched.
+func (h *Handlers) markDockerImageCurrent(image string) {
+	h.dockerUpdatesMu.Lock()
+	defer h.dockerUpdatesMu.Unlock()
+	store := readDockerUpdateStore()
+	entry := store.Images[image]
+	if entry == nil {
+		return
+	}
+	entry.Status = "current"
+	entry.Reason = ""
+	if entry.RemoteDigest != "" {
+		entry.LocalDigest = entry.RemoteDigest
+	}
+	entry.CheckedAt = time.Now().UnixMilli()
+	if err := writeIndentJSONFile(dockerUpdatesFilePath(), store); err != nil {
+		logWarn(logComponentMutate, "the update of %s went through, but its badge could not be cleared: %v", image, err)
+	}
+}

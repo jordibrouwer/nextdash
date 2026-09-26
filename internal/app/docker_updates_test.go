@@ -155,3 +155,32 @@ func TestDockerMetricsCountUpdates(t *testing.T) {
 		t.Fatalf("widget updates = %d, want 1", got.Updates)
 	}
 }
+
+// An update that went through is current at once: the badge must not wait for
+// the next check to notice what the update itself just did.
+func TestDockerUpdateMarksImageCurrent(t *testing.T) {
+	host := withTestRegistry(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Docker-Content-Digest", "sha256:new")
+	})
+	f := startFakeDocker(t)
+	ref := host + "/app:1"
+	id := strings.Repeat("a", 64)
+	f.add(fakeContainer{ID: id, Name: "web", Image: ref, ImageID: "sha256:old", State: "running"})
+	f.images[ref] = fakeImage{ID: "sha256:old", RepoDigests: []string{host + "/app@sha256:old"}}
+	f.images[ref+"@new"] = fakeImage{ID: "sha256:newimg", RepoDigests: []string{host + "/app@sha256:new"}}
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	h := dockerTestHandlers(t)
+	if _, err := h.runDockerUpdateCheck(context.Background()); err != nil {
+		t.Fatalf("check: %v", err)
+	}
+	if h.dockerUpdateSnapshot()[ref].Status != "available" {
+		t.Fatal("setup: expected an update to be available")
+	}
+	router := newDockerTestRouter(h)
+	if rec := dockerPost(router, "/api/docker/containers/web/update"); rec.Code != http.StatusOK {
+		t.Fatalf("update: %d %s", rec.Code, rec.Body)
+	}
+	if u := h.dockerUpdateSnapshot()[ref]; u == nil || u.Status != "current" {
+		t.Fatalf("after update = %+v, want current", u)
+	}
+}

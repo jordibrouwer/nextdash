@@ -105,6 +105,9 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		var outcome dockerRecreateResult
 		outcome, err = h.dockerRecreate(ctx, api, c)
 		result["update"] = outcome
+		if err == nil && (outcome.Phase == "done" || outcome.Phase == "already-current") {
+			h.markDockerImageCurrent(c.Image)
+		}
 	}
 
 	logActivity(activityCategoryMutate, "docker."+action, map[string]any{
