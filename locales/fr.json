@@ -197,7 +197,6 @@
     "inboxNoMatches": "Aucun lien correspondant",
     "inboxNoMatchesHint": "Essayez un autre filtre ou terme de recherche",
     "inboxHelpHint": "Comment fonctionne la boîte de réception",
-    "inboxNoteAll": "Tout ce qui attend une décision. Les liens reportés ne sont pas ici — ils reviennent d'eux-mêmes une fois leur délai écoulé.",
     "inboxNoteUnread": "Les liens que vous n'avez pas encore ouverts ni conservés. Ouvrir un lien le marque comme lu ; le conserver avec r le marque comme lu sans l'ouvrir.",
     "inboxNoteSnoozed": "Mis de côté jusqu'à une heure que vous avez choisie, le plus proche en premier. Ceux-ci sont masqués dans les autres filtres jusqu'à leur réveil, et Réveiller maintenant en ramène un plus tôt.",
     "inboxNoteNoted": "Les liens sur lesquels vous avez laissé une note — la raison pour laquelle vous les avez enregistrés, pour quand le titre seul ne suffit plus.",

@@ -197,7 +197,6 @@
     "inboxNoMatches": "Geen overeenkomende links",
     "inboxNoMatchesHint": "Probeer een ander filter of zoekterm",
     "inboxHelpHint": "Hoe de inbox werkt",
-    "inboxNoteAll": "Alles wat op een beslissing wacht. Uitgestelde links staan hier niet — die komen vanzelf terug zodra hun tijd om is.",
     "inboxNoteUnread": "Links die je nog niet hebt geopend of bewaard. Openen markeert een link als gelezen; bewaren met r markeert hem als gelezen zonder hem te openen.",
     "inboxNoteSnoozed": "Opzijgezet tot een tijd die jij hebt gekozen, eerst wat het eerst wakker wordt. Deze zijn verborgen in de andere filters tot ze wakker worden, en met Nu wekken haal je er een eerder terug.",
     "inboxNoteNoted": "Links waar je een notitie bij hebt gezet — de reden dat je hem bewaarde, voor als de titel alleen niet meer genoeg zegt.",

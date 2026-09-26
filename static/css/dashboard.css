@@ -9428,31 +9428,15 @@ body[data-action-bar="bottom"] #dashboard-layout {
  * switching only flips which of them is shown.
  */
 /*
- * The strip gets a row of its own in the shell's grid. Without an area it
- * landed in an implicit row after the body -- the tabs read as a footer under
- * the list they switch.
+ * The strip sits in the shell header's action row, before the buttons. A row
+ * of its own above the header pushed the whole view down by its height, so
+ * switching between Health and the inbox made the page jump.
  */
-.lvs:has(.inbox-tabs) {
-    grid-template-areas:
-        'tabs   tabs'
-        'header header'
-        'rail   main';
-}
-
-.lvs.inbox-kept-tab:has(.inbox-tabs) {
-    grid-template-areas:
-        'tabs'
-        'header'
-        'main';
-}
-
 .inbox-tabs:not([hidden]) {
-    grid-area: tabs;
     display: flex;
+    align-items: center;
     gap: var(--space-1, 0.25rem);
-    padding: 0 0 var(--space-2, 0.5rem);
-    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
-    margin-bottom: var(--space-2, 0.5rem);
+    margin-right: var(--space-2, 0.5rem);
 }
 
 .inbox-tab {

@@ -564,7 +564,9 @@ test('Escape clears the kept selection, then goes to the queue, then to the dash
     await page.locator('.unsorted-row-check-input').first().check();
     await expect(page.locator('.unsorted-select-toolbar')).toBeVisible();
 
-    await page.locator('.unsorted-view-count, .inbox-tabs').first().click();
+    // Off the checkbox onto something neutral: the header title. The tab
+    // strip now sits among the header buttons, so its middle is a tab.
+    await page.locator('.inbox-layout .lvs-title').click();
     await page.keyboard.press('Escape');
     await expect(page.locator('.unsorted-select-toolbar')).toHaveCount(0);
     expect(await page.evaluate(() => window.dashboardInstance.inbox.tab)).toBe('kept');

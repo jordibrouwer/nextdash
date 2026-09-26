@@ -197,7 +197,6 @@
     "inboxNoMatches": "Ningún enlace coincide",
     "inboxNoMatchesHint": "Prueba otro filtro u otra búsqueda",
     "inboxHelpHint": "Cómo funciona la bandeja",
-    "inboxNoteAll": "Todo lo que espera una decisión. Los enlaces pospuestos no están aquí: vuelven solos cuando llega su hora.",
     "inboxNoteUnread": "Enlaces que aún no has abierto ni conservado. Abrir uno lo marca como leído; conservarlo con r lo marca sin abrirlo.",
     "inboxNoteSnoozed": "Apartados hasta la hora que elegiste, los más próximos primero. Quedan ocultos en los demás filtros hasta que despiertan, y Recuperar ahora trae uno antes de tiempo.",
     "inboxNoteNoted": "Enlaces en los que dejaste una nota: el motivo por el que los guardaste, para cuando el título ya no lo diga.",

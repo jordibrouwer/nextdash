@@ -208,7 +208,6 @@
     "inboxNoMatches": "No matching links",
     "inboxNoMatchesHint": "Try another filter or search term",
     "inboxHelpHint": "How the inbox works",
-    "inboxNoteAll": "Everything waiting for a decision. Snoozed links are not here — they come back on their own when their time is up.",
     "inboxNoteUnread": "Links you have not opened or kept yet. Opening one marks it read; keeping it with r marks it read without opening.",
     "inboxNoteSnoozed": "Set aside until a time you picked, soonest first. These are hidden from the other filters until they wake, and Wake now brings one back early.",
     "inboxNoteNoted": "Links you left a note on — the reason you saved it, for when the title alone no longer says.",

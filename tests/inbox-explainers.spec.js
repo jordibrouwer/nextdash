@@ -65,14 +65,13 @@ async function seed(page, n, expected = n) {
 }
 
 test.describe('inbox view explanations', () => {
-    test('the note under the toolbar describes the active filter', async ({ page }) => {
+    test('All has no note, as in Health; a narrowed filter has one', async ({ page }) => {
         await openInbox(page);
         await seed(page, 2);
 
-        const note = page.locator('.inbox-filter-note');
-        await expect(note).toBeVisible();
-        // The "All" note's job is to say where the snoozed links went.
-        await expect(note).toContainText(/snoozed/i);
+        await expect(page.locator('.inbox-filter-note')).toHaveCount(0);
+        await page.locator('[data-inbox-filter="unread"]').click();
+        await expect(page.locator('.inbox-filter-note')).toContainText(/opened|kept/i);
     });
 
     test('the note changes with the filter', async ({ page }) => {
@@ -80,14 +79,16 @@ test.describe('inbox view explanations', () => {
         await seed(page, 2);
 
         const note = page.locator('.inbox-filter-note');
-        const all = await note.textContent();
-
         await page.locator('[data-inbox-filter="unread"]').click();
         await expect(page.locator('[data-inbox-filter="unread"]')).toHaveClass(/is-active/);
         const unread = await note.textContent();
-
-        expect(unread).not.toBe(all);
         expect(unread).toMatch(/opened|kept/i);
+
+        await page.evaluate(() => {
+            window.dashboardInstance.inbox.filter = 'noted';
+            window.dashboardInstance.inbox.render();
+        });
+        await expect(note).not.toHaveText(unread);
     });
 
     test('the note renders on a filter that matched nothing', async ({ page }) => {

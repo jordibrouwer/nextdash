@@ -197,7 +197,6 @@
     "inboxNoMatches": "Keine passenden Links",
     "inboxNoMatchesHint": "Anderen Filter oder Suchbegriff versuchen",
     "inboxHelpHint": "So funktioniert der Eingang",
-    "inboxNoteAll": "Alles, was auf eine Entscheidung wartet. Zurückgestellte Links stehen nicht hier — sie kommen von selbst zurück, sobald ihre Zeit um ist.",
     "inboxNoteUnread": "Links, die Sie noch nicht geöffnet oder behalten haben. Öffnen markiert einen Link als gelesen; Behalten mit r markiert ihn als gelesen, ohne ihn zu öffnen.",
     "inboxNoteSnoozed": "Bis zu einem von Ihnen gewählten Zeitpunkt beiseitegelegt, das Nächste zuerst. Diese sind in den anderen Filtern ausgeblendet, bis sie aufwachen; mit Jetzt wecken holen Sie einen früher zurück.",
     "inboxNoteNoted": "Links, zu denen Sie eine Notiz hinterlassen haben — der Grund, warum Sie sie gespeichert haben, für den Fall, dass der Titel allein nichts mehr sagt.",

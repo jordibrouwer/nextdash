@@ -1208,10 +1208,14 @@ class DashboardInbox {
      */
     filterExplanation(filter = this.filter) {
         const notes = {
-            all: this.t('dashboard.inboxNoteAll', 'Everything waiting for a decision. Snoozed links are not here — they come back on their own when their time is up.'),
             unread: this.t('dashboard.inboxNoteUnread', 'Links you have not opened or kept yet. Opening one marks it read; keeping it with r marks it read without opening.'),
             snoozed: this.t('dashboard.inboxNoteSnoozed', 'Set aside until a time you picked, soonest first. These are hidden from the other filters until they wake, and Wake now brings one back early.'),
             noted: this.t('dashboard.inboxNoteNoted', 'Links you left a note on — the reason you saved it, for when the title alone no longer says.'),
+            /*
+             * No note for All, as in Health: it cost a line above every row
+             * to describe the list the reader is already looking at, and put
+             * the inbox's first row lower than Health's.
+             */
         };
         return notes[filter] || '';
     }
@@ -4342,7 +4346,7 @@ class DashboardInbox {
     }
 
     /**
-     * The strip above the shell: the queue, and what was kept out of it.
+     * The strip in the shell's header: the queue, and what was kept out of it.
      *
      * Built once with the shell and only relabelled afterwards, like the rest
      * of the chrome. The count beside Kept comes from the array the dashboard
@@ -4415,7 +4419,9 @@ class DashboardInbox {
         window.addEventListener('keydown', this._tabStripKeys, true);
         this._triageTabBtn = make('triage', this.t('dashboard.inboxTabTriage', 'To triage'));
         this._keptTabBtn = make('kept', this.t('dashboard.inboxTabKept', 'Kept'));
-        shell.root.insertBefore(strip, shell.root.firstChild);
+        // In the header's action row, not above the header: a row of its own
+        // put the inbox a strip lower than Health, and the view jumped.
+        shell.headerActions.insertBefore(strip, shell.headerActions.firstChild);
         this._tabStrip = strip;
         this.syncTabStrip();
         return strip;
