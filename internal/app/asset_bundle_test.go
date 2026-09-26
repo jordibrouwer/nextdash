@@ -2,8 +2,10 @@ package app
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // The template stays the source of truth: the bundle is what the marked block
@@ -107,5 +109,76 @@ func TestSearchBlockRendersAnInertMarkerNotAScript(t *testing.T) {
 	}
 	if !strings.Contains(out, `data-nextdash-search-js="/static/bundle/search.js?v=abc"`) {
 		t.Fatalf("the loader has no address to fetch: %s", out)
+	}
+}
+
+// bundleWorkdir lays out a template and one view stylesheet in a temp dir and
+// runs the test from there, so the bundle is built from files the test owns.
+func bundleWorkdir(t *testing.T, css string) string {
+	t.Helper()
+	dir := t.TempDir()
+	must := func(err error) {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	must(os.MkdirAll(filepath.Join(dir, "templates"), 0o755))
+	must(os.MkdirAll(filepath.Join(dir, "static", "css"), 0o755))
+	must(os.WriteFile(filepath.Join(dir, "templates", "dashboard.html"), []byte(
+		"<!-- bundle:css -->\n<link href=\"{{asset \"css/base.css\"}}\">\n<!-- /bundle:css -->\n"+
+			"<!-- bundle:css-views -->\n<link href=\"{{asset \"css/view.css\"}}\">\n<!-- /bundle:css-views -->\n"), 0o644))
+	must(os.WriteFile(filepath.Join(dir, "static", "css", "base.css"), []byte("body{}"), 0o644))
+	must(os.WriteFile(filepath.Join(dir, "static", "css", "view.css"), []byte(css), 0o644))
+	t.Chdir(dir)
+	resetAssetBundles()
+	t.Cleanup(resetAssetBundles)
+	return dir
+}
+
+func touchWrite(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// A later mtime, whatever the filesystem's clock resolution.
+	later := time.Now().Add(2 * time.Second)
+	if err := os.Chtimes(path, later, later); err != nil {
+		t.Fatal(err)
+	}
+}
+
+/*
+With ./static mounted live, a bundle built once at startup kept serving the
+stylesheets as they were then: the Config -> Containers colours were on disk and
+missing from the page until the container restarted. In that mode the bundles
+follow their files, and the page names the new hash so no browser keeps the old.
+*/
+func TestBundlesFollowTheirFilesWhenStaticIsMutable(t *testing.T) {
+	t.Setenv("NEXTDASH_STATIC_MUTABLE", "1")
+	dir := bundleWorkdir(t, ".one{}")
+	first := buildAssetBundles(nil)
+	if !strings.Contains(string(first.viewCSS.content), ".one{}") {
+		t.Fatalf("first build = %q", first.viewCSS.content)
+	}
+	touchWrite(t, filepath.Join(dir, "static", "css", "view.css"), ".two{}")
+	second := buildAssetBundles(nil)
+	if !strings.Contains(string(second.viewCSS.content), ".two{}") {
+		t.Fatalf("after an edit the bundle still serves %q", second.viewCSS.content)
+	}
+	if second.viewCSS.hash == first.viewCSS.hash || second.generation == first.generation {
+		t.Fatal("an edited bundle must get a new hash and a new generation, or the page keeps the old address")
+	}
+	if third := buildAssetBundles(nil); third.generation != second.generation {
+		t.Fatal("nothing changed, so nothing may be rebuilt")
+	}
+}
+
+func TestBundlesAreBuiltOnceWhenStaticIsFixed(t *testing.T) {
+	t.Setenv("NEXTDASH_STATIC_MUTABLE", "")
+	dir := bundleWorkdir(t, ".one{}")
+	first := buildAssetBundles(nil)
+	touchWrite(t, filepath.Join(dir, "static", "css", "view.css"), ".two{}")
+	if again := buildAssetBundles(nil); again.viewCSS.hash != first.viewCSS.hash {
+		t.Fatal("outside dev mode the bundle is fixed for the life of the process")
 	}
 }

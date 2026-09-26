@@ -240,6 +240,12 @@ func (h *Handlers) pageTemplateFuncsFor() template.FuncMap {
 
 func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Template, error) {
 	key := strings.Join(templateFiles, "|")
+	// The page embeds the bundle addresses. When live static edits rebuild a
+	// bundle its address changes, and a page cached from before would keep
+	// sending browsers to the old one; the generation makes it a new page.
+	if staticAssetsMutable() {
+		key += fmt.Sprintf("|bundles-%d", buildAssetBundles(h.files).generation)
+	}
 
 	h.pageTemplatesMu.RLock()
 	if h.pageTemplates != nil {
