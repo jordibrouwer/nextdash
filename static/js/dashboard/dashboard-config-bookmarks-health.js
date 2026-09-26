@@ -41,7 +41,10 @@
         },
 
         rebuildBmHealthJoin(health) {
+            this._bmHealthModule = health;
             this._bmHealthReport = health.report || null;
+            // The rail's counts are cached against this: a new report is a new count.
+            this._bmHealthGen = (this._bmHealthGen || 0) + 1;
             const byUrl = new Map();
             (health.report?.issues || []).forEach((issue) => {
                 const key = global.HealthFacts?.keyFor?.(issue.url);
@@ -54,6 +57,59 @@
         bmHealthIssue(b) {
             const key = global.HealthFacts?.keyFor?.(b?.url);
             return key ? (this._bmHealthByUrl?.get(key) || null) : null;
+        },
+
+        /**
+         * Whether a bookmark falls under one of Health's filters, with the
+         * Health module's own meaning. A bookmark the report does not know
+         * (the report not loaded yet, or a bookmark added since) falls under
+         * none, rather than being guessed into one.
+         */
+        bmHealthMatches(b, key) {
+            const issue = this.bmHealthIssue(b);
+            const health = this._bmHealthModule;
+            if (!issue || !health) return false;
+            try {
+                return Boolean(health.matchesFilter(issue, key));
+            } catch {
+                return false;
+            }
+        },
+
+        /** Every Health filter one bookmark falls under, for the rail's counts. */
+        bmHealthKeys(b) {
+            if (!this._bmHealthModule) return [];
+            return global.DashboardConfig.HEALTH_FILTERS.filter((key) => this.bmHealthMatches(b, key));
+        },
+
+        /** The filter's name as the Health view gives it. */
+        bmHealthFilterLabel(key) {
+            const label = this._bmHealthModule?.filterLabel?.(key);
+            return label || key;
+        },
+
+        /**
+         * The collection's health at the top of the rail: the rows Health's
+         * own summary shows (score, trend with its sparkline, broken, uptime),
+         * drawn from its shellSummary() rather than recomputed here.
+         */
+        renderBmHealthSummary() {
+            const health = this._bmHealthModule;
+            if (!health?.report) return '';
+            let rows = [];
+            try {
+                rows = health.shellSummary() || [];
+            } catch {
+                return '';
+            }
+            const esc = (v) => this.dash.escapeHtml(v);
+            const body = rows.filter((row) => row && (row.value !== '' || row.extraNode)).map((row) => `
+                <div class="config-bm-health-summary-row"${row.tone ? ` data-tone="${esc(row.tone)}"` : ''}>
+                    <span class="config-bm-health-summary-label">${esc(row.label)}</span>
+                    <span class="config-bm-health-summary-value">${esc(row.value ?? '')}</span>
+                    ${row.extraNode?.outerHTML || ''}
+                </div>`).join('');
+            return body ? `<div class="config-bm-health-summary" data-bm-health-summary>${body}</div>` : '';
         },
 
         /** Re-read the report (refresh: ask the server to run the checks again). */

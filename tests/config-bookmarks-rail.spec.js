@@ -111,16 +111,21 @@ test.describe('the bookmarks workbench', () => {
     });
 
     test('the health facet filters on what health knows', async ({ page }) => {
+        // One known-broken bookmark, as the health report describes it: the
+        // facet is Health's own Broken filter now, read from that report.
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
+        const url = await page.evaluate(() => window.dashboardInstance.allBookmarks[0].url);
+        await page.route('**/api/bookmark-health**', (route) => route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                generatedAt: Date.now(),
+                summary: { brokenCount: 1 },
+                issues: [{ url, status: 'broken', flags: ['broken'], score: 20, brokenSince: Date.now() - 1000, reasons: [] }],
+            }),
+        }));
         await openBookmarks(page);
-        // One known-broken, checked bookmark, as the health report would describe it.
-        const url = await page.evaluate(() => {
-            const c = window.dashboardInstance.config;
-            const b = c.dash.allBookmarks[0];
-            b.checkStatus = true;
-            window.HealthFacts.remember({ issues: [{ url: b.url, brokenSince: Date.now() - 1000 }] });
-            c.repaintBookmarksList();
-            return b.url;
-        });
         const broken = page.locator('#config-bm-rail [data-bm-rail="health"][data-value="broken"]');
         await expect(broken.locator('.config-bm-rail-count')).toHaveText('1');
         await broken.click();

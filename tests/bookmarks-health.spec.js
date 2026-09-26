@@ -32,3 +32,26 @@ test.describe('bookmarks: the health report joined in', () => {
     })).toBeGreaterThan(0);
   });
 });
+
+test.describe('bookmarks: Health filters in the rail', () => {
+  const healthItem = (page, key) => page.locator(`#config-bm-rail [data-bm-rail="health"][data-value="${key}"]`);
+
+  test('the rail lists Health\'s filters with their counts', async ({ page }) => {
+    await openBookmarksWithHealth(page);
+    await expect(healthItem(page, 'broken').locator('.config-bm-rail-count')).toHaveText('1');
+    await expect(healthItem(page, 'stale').locator('.config-bm-rail-count')).toHaveText('1');
+    await expect(healthItem(page, 'monitored')).toHaveCount(1);
+  });
+
+  test('picking Broken narrows the list to the broken bookmark', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page);
+    await healthItem(page, 'broken').click();
+    await expect(page.locator('#config-bm-list .config-bm-row')).toHaveCount(1);
+    await expect(page.locator('#config-bm-list .config-bm-title').first()).toHaveText(bookmarks[0].name);
+  });
+
+  test('the rail opens with the collection\'s health summary', async ({ page }) => {
+    await openBookmarksWithHealth(page);
+    await expect(page.locator('#config-bm-rail [data-bm-health-summary]')).toContainText('%');
+  });
+});

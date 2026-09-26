@@ -985,3 +985,48 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
         gap: var(--space-1-5, 0.35rem);
     }
 }
+
+/* ── Health's summary at the top of the rail ─────────────────────────────
+   The rows Health's own summary shows (dashboard-config-bookmarks-health.js
+   renderBmHealthSummary), in the slab the shell's summary uses. */
+.config-bm-health-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    margin-bottom: var(--space-2, 0.5rem);
+    border-radius: var(--radius-5, 8px);
+    background: var(--surface-3, var(--background-secondary));
+    font-size: var(--font-size-small);
+}
+
+.config-bm-health-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+}
+
+.config-bm-health-summary-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.config-bm-health-summary-row[data-tone="good"] .config-bm-health-summary-value { color: var(--accent-success); }
+.config-bm-health-summary-row[data-tone="warn"] .config-bm-health-summary-value { color: var(--accent-warning); }
+.config-bm-health-summary-row[data-tone="bad"] .config-bm-health-summary-value { color: var(--accent-error); }
+
+.config-bm-health-summary-row svg {
+    flex-basis: 100%;
+    width: 100%;
+    height: auto;
+}
+
+/* The Health filters' dots, beside the four the rail had. */
+.config-bm-health-dot.is-content,
+.config-bm-health-dot.is-stale,
+.config-bm-health-dot.is-certificates { background: var(--accent-warning); }
+.config-bm-health-dot.is-monitored { background: var(--accent-vivid, var(--accent-primary)); }
+.config-bm-health-dot.is-duplicate,
+.config-bm-health-dot.is-unused { background: var(--text-tertiary); }

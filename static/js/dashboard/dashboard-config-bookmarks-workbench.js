@@ -75,7 +75,7 @@
     bookmarkFacetCounts() {
         const all = this.configBookmarkPool();
         const token = JSON.stringify([this._bmVisibleToken, all.length,
-            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0]);
+            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0, this._bmHealthGen || 0]);
         if (this._bmFacetSource === all && this._bmFacetToken === token && this._bmFacets) return this._bmFacets;
         const tests = this.bookmarkFilterTests();
         const cleanupKeys = Object.keys(global.DashboardConfig.CLEANUP_FILTERS);
@@ -93,7 +93,7 @@
                 test: tests.category,
             },
             tag: { keys: (b) => (b.tags || []).map((t) => String(t).trim().toLowerCase()), test: tests.tag },
-            health: { keys: (b) => [this.bookmarkHealthState(b)], test: tests.health },
+            health: { keys: (b) => this.bmHealthKeys?.(b) || [], test: tests.health },
         });
         this._bmFacetSource = all;
         this._bmFacetToken = token;
@@ -162,7 +162,7 @@
             token('category', this.railCategoryLabel(pageId || this.bmPageFilter, categoryId));
         }
         tags.forEach((t) => token(`tag:${t}`, `#${t}`));
-        if (this.bmHealthFilter) token('health', this.railHealthLabel(this.bmHealthFilter));
+        if (this.bmHealthFilter) token('health', this.bmHealthFilterLabel?.(this.bmHealthFilter) || this.bmHealthFilter);
         const tokenRow = tokens.length ? `
             <div class="config-bm-rail-tokens">${tokens.join('')}
                 <button type="button" class="config-bm-rail-clear-all" data-bm-rail-clear="all">${esc(this.t('config.clearBookmarkFilters', 'Clear filters'))}</button>
@@ -232,21 +232,22 @@
                 : this.t('config.bmAllTags', 'all'))}</button>`
             : '';
 
-        const anyChecked = (this.dash.allBookmarks || []).some((b) => b.checkStatus === true);
-        const health = anyChecked
+        // Health's own filters, once its report has been joined in.
+        const health = this._bmHealthByUrl
             ? global.DashboardConfig.HEALTH_FILTERS
-                .map((k) => entry('health', k, this.railHealthLabel(k), counts.health.get(k) || 0,
+                .map((k) => entry('health', k, this.bmHealthFilterLabel(k), counts.health.get(k) || 0,
                     this.bmHealthFilter === k, `<span class="config-bm-health-dot is-${k}" aria-hidden="true"></span>`))
                 .join('')
             : '';
 
         return `
+            ${this.renderBmHealthSummary?.() || ''}
             ${tokenRow}
             ${group(this.t('config.bmViews', 'Views'), views, viewsMore)}
+            ${group(this.t('config.bmHealth', 'Health'), health)}
             ${group(this.t('config.bmPages', 'Pages'), pages)}
             ${group(this.t('config.bmCategories', 'Categories'), categories)}
-            ${group(this.t('config.bmTags', 'Tags'), tagList, tagsMore)}
-            ${group(this.t('config.bmHealth', 'Health'), health)}`;
+            ${group(this.t('config.bmTags', 'Tags'), tagList, tagsMore)}`;
     },
 
     railHealthLabel(key) {
@@ -976,7 +977,7 @@
             acc[s] = (acc[s] || 0) + 1;
             return acc;
         }, {});
-        const health = global.DashboardConfig.HEALTH_FILTERS.filter((k) => states[k])
+        const health = global.DashboardConfig.HEALTH_STATES.filter((k) => states[k])
             .map((k) => `<span><span class="config-bm-health-dot is-${k}"></span> ${states[k]} ${esc(this.railHealthLabel(k).toLowerCase())}</span>`)
             .join(' · ');
         const dirty = Object.keys(draft).length > 0;

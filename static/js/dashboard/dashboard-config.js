@@ -22836,7 +22836,11 @@ class DashboardConfig {
      */
     static UNSORTED_VIEW = 'unsorted';
 
-    static HEALTH_FILTERS = ['healthy', 'broken', 'down', 'unchecked'];
+    /** A bookmark's state as its health facts give it: the row's glow and the bulk summary. */
+    static HEALTH_STATES = ['healthy', 'broken', 'down', 'unchecked'];
+
+    /** The Health filters, with the Health module's meaning (matchesFilter). */
+    static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'healthy'];
 
     /** True while the bookmark list is showing the kept bookmarks. */
     isUnsortedBookmarkView() {
@@ -22914,7 +22918,7 @@ class DashboardConfig {
                     ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
                     : cleanup(b);
             },
-            health: (b) => !health || this.bookmarkHealthState(b) === health,
+            health: (b) => !health || Boolean(this.bmHealthMatches?.(b, health)),
         };
     }
 
