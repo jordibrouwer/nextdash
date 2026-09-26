@@ -1030,3 +1030,40 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
 .config-bm-health-dot.is-monitored { background: var(--accent-vivid, var(--accent-primary)); }
 .config-bm-health-dot.is-duplicate,
 .config-bm-health-dot.is-unused { background: var(--text-tertiary); }
+
+/* The Health section's check mode as a row of three buttons, as in the
+   mockup, rather than the menu with a sentence under each option that the
+   badge popover draws: the sentences are the button's title here. */
+.config-bm-health-check {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+}
+
+.config-bm-health-check .health-check-option {
+    width: auto;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 4px);
+}
+
+.config-bm-health-check .health-check-option.is-active {
+    border-color: var(--accent-primary);
+}
+
+.config-bm-health-check .health-check-option-body {
+    display: none;
+}
+
+.config-bm-health-check .health-check-interval {
+    flex-basis: 100%;
+}
+
+.config-bm-panel .health-view-score-panel,
+.config-bm-panel .health-view-expect-panel,
+.config-bm-panel .health-expect-form {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+}

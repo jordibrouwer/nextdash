@@ -55,3 +55,70 @@ test.describe('bookmarks: Health filters in the rail', () => {
     await expect(page.locator('#config-bm-rail [data-bm-health-summary]')).toContainText('%');
   });
 });
+
+test.describe('bookmarks: Health and Monitor sections in the panel', () => {
+  const section = (page, name) => page.locator(`#config-bm-panel [data-bm-section="${name}"]`);
+
+  async function pick(page, name) {
+    await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: name }) }).first().click();
+    await expect(page.locator('#config-bm-panel .config-bm-panel-title')).toHaveText(name);
+  }
+
+  async function open(page, name) {
+    const s = section(page, name);
+    if (await s.getAttribute('open') === null) await s.locator('summary').click();
+    return s;
+  }
+
+  test('the Health section shows the broken bookmark\'s reason and score breakdown', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page);
+    await pick(page, bookmarks[0].name);
+    const health = await open(page, 'health');
+    await expect(health).toContainText('HTTP 500');
+    await expect(health.locator('.health-view-score-item').first()).toBeVisible();
+    await expect(health.locator('[data-check-mode]')).toHaveCount(3);
+  });
+
+  test('expectations saved in the panel post the bookmark\'s URL', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page, (issues) => issues.map((issue, i) => (i === 0
+      ? { ...issue, monitor: true, checkStatus: true } : issue)));
+    let posted = null;
+    await page.route('**/api/health/expectations', async (route) => {
+      posted = route.request().postDataJSON();
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'success', expectText: posted.expectText }) });
+    });
+    await pick(page, bookmarks[0].name);
+    const health = await open(page, 'health');
+    await health.locator('[data-expect-text]').fill('Welcome');
+    await health.locator('[data-expect-save]').click();
+    await expect.poll(() => posted?.expectText).toBe('Welcome');
+    expect(posted.url).toBe(bookmarks[0].url);
+  });
+
+  test('the Monitor section appears for a monitored bookmark only', async ({ page }) => {
+    const now = Date.now();
+    const { bookmarks } = await openBookmarksWithHealth(page, (issues) => issues.map((issue, i) => (i === 0 ? {
+      ...issue, monitor: true, checkStatus: true,
+      monitorStats: { intervalMinutes: 5, uptime24h: { ratio: 0.9, samples: 10 }, heartbeat: [
+        { state: 'up', from: now - 600000, to: now - 300000, up: 1, down: 0, avgMs: 100 },
+        { state: 'up', from: now - 300000, to: now, up: 1, down: 0, avgMs: 120 },
+      ], incidents: [], totalChecks: 10, lastSample: now },
+    } : issue)));
+    await pick(page, bookmarks[0].name);
+    await expect(section(page, 'monitor')).toHaveCount(1);
+    const monitor = await open(page, 'monitor');
+    await expect(monitor.locator('.health-monitor-stats')).toBeVisible();
+    await pick(page, bookmarks[1].name);
+    await expect(section(page, 'monitor')).toHaveCount(0);
+  });
+
+  test('Re-check in Actions asks the server to check that bookmark', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page);
+    const posts = [];
+    page.on('request', (r) => { if (r.method() === 'POST' && /health\/(update-status|cache-scan)/.test(r.url())) posts.push(r.url()); });
+    await pick(page, bookmarks[0].name);
+    const actions = await open(page, 'actions');
+    await actions.locator('[data-bm-health-action="recheck"]').click();
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+  });
+});

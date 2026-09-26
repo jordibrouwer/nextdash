@@ -5945,6 +5945,7 @@
     "bmFieldChecking": "Checking",
     "bmSectionEdit": "Edit",
     "bmSectionActions": "Actions",
+    "bmSectionMonitor": "Monitor & history",
     "bmUsage": "Usage",
     "bmUptime7d": "{pct}% up this week",
     "bmNotSaved": "Not saved — retry",

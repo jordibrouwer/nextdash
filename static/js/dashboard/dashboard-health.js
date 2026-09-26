@@ -365,6 +365,13 @@ class DashboardHealth {
      * from cache and the caller would still see stale rows. Plain callers may
      * join an in-flight refresh — that result is at least as fresh.
      */
+    /** Call fn with every report fetched from now on. */
+    onReportLoaded(fn) {
+        if (typeof fn !== 'function') return;
+        this._reportListeners = this._reportListeners || [];
+        if (!this._reportListeners.includes(fn)) this._reportListeners.push(fn);
+    }
+
     fetchReport({ refresh = false } = {}) {
         if (this._loadPromise) {
             if (refresh && !this._loadPromiseRefresh) {
@@ -398,6 +405,12 @@ class DashboardHealth {
                 // replaces what the badge left — otherwise a refresh in this
                 // view would leave the cards quoting the older figures.
                 window.HealthFacts?.remember?.(this.report);
+                // Anyone drawing from this report outside the view (Config →
+                // Bookmarks) hears about every new one, whichever action or
+                // refresh fetched it.
+                (this._reportListeners || []).forEach((fn) => {
+                    try { fn(this.report); } catch { /* one listener's bug is its own */ }
+                });
                 return this.report;
             })
             .finally(() => {
@@ -6403,6 +6416,7 @@ class DashboardHealth {
                 class="health-view-menu-item health-check-option${isActive ? ' is-active' : ''}"
                 role="radio"
                 aria-checked="${isActive ? 'true' : 'false'}"
+                title="${this.escape(body)}"
                 data-check-mode="${mode}"
             >
                 <span class="health-check-option-label">${this.escape(label)}</span>

@@ -16,7 +16,10 @@
 
     const PANEL_KEY = 'nextdash.bmPanelCollapsed';
     const SECTIONS_KEY = 'nextdash.configBm.sections';
-    const SECTIONS_DEFAULT = ['edit', 'health'];
+    // Edit only: Health carries the score, check mode and the expectations
+    // form now, and open by default it ran the panel past the screen. It is
+    // one click, or s, away; what the reader opens is remembered.
+    const SECTIONS_DEFAULT = ['edit'];
 
     Object.assign(global.DashboardConfig.prototype, {
 
@@ -472,14 +475,19 @@
                     <span class="config-bm-field-status" role="status"></span>
                 </label>
             </div>`)}
-            ${this.workbenchSection('health', this.t('config.bmHealth', 'Health'), `
+            ${this.workbenchSection('health', this.t('config.bmHealth', 'Health'), this.renderBmHealthSection?.(b) || `
                 <p class="config-bm-panel-fact"><span class="config-bm-health-dot is-${esc(state)}"></span> ${esc(this.railHealthLabel(state))}</p>
                 ${facts?.lastError ? `<p class="config-bm-panel-muted">${esc(facts.lastError)}</p>` : ''}
                 ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}`)}
+            ${(() => {
+                const monitor = this.renderBmMonitorSection?.(b) || '';
+                return monitor ? this.workbenchSection('monitor', this.t('config.bmSectionMonitor', 'Monitor & history'), monitor) : '';
+            })()}
             ${this.workbenchSection('usage', this.t('config.bmUsage', 'Usage'), `
                 <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>
                 <p class="config-bm-panel-muted">${esc(this.t('config.bookmarkStatLastOpened', 'Last opened'))}: ${esc(fmt(b.lastOpened).label)}</p>`)}
             ${this.workbenchSection('actions', this.t('config.bmSectionActions', 'Actions'), `<div class="config-bm-panel-foot">
+                ${this.renderBmHealthActions?.(b) || ''}
                 <button type="button" class="config-btn config-btn--small" data-bm-panel-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>
                 <button type="button" class="config-btn config-btn--small" data-bm-panel-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>
                 <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.delete', 'Delete'))}</button>
@@ -507,6 +515,8 @@
         panel.dataset.bmPanelSig = sig;
         panel.dataset.bmPanelMode = mode;
         panel.dataset.bmPanelKey = key || '';
+        // After the key: the Health parts find their bookmark by it.
+        this.bindBmHealthPanel?.(panel);
         void this.fillWorkbenchSuggestions(panel);
         if (mode === 'bulk') void this.fillWorkbenchBulkSuggestions(panel);
         if (mode === 'bulk' && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });
@@ -629,7 +639,7 @@
 
     workbenchPanelSig(mode, key) {
         const bulk = mode === 'bulk' ? [...this.bmSelected].sort().join(',') + JSON.stringify(this._bmBulkDraft || {}) : '';
-        return `${mode}|${key}|${bulk}|${(this.dash.allBookmarks || []).length}`;
+        return `${mode}|${key}|${bulk}|${(this.dash.allBookmarks || []).length}|${this._bmHealthGen || 0}`;
     },
 
     /**
