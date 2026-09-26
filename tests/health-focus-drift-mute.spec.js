@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, dismissWhatsNewIfPresent, openHealthRow } = require('./e2e-helpers');
+const { prepareDashboardInteraction, dismissWhatsNewIfPresent, openHealthRow, openHealthDrawerSection } = require('./e2e-helpers');
 
 /**
  * Focus mode, bulk drift-accept, per-bookmark muting, and the overflow counts.
@@ -266,26 +266,16 @@ test.describe('per-bookmark alert muting', () => {
     });
 
 
-    // The menu grew a keyword box, status codes, two checkboxes and a Save
-    // button over three releases, and ended up 531px of content in a 382px
-    // window: five controls including Save sat below a scrollbar. It is a menu
-    // again — three modes, an interval, and a way through to the rest.
-    test('the check-mode menu fits without a scrollbar', async ({ page }) => {
+    // The check-mode menu once grew a keyword box, status codes, two
+    // checkboxes and a Save button, and five controls ended up below a
+    // scrollbar. In the side panel the mode and the form are two sections.
+    test('the check mode section holds the modes, not the form', async ({ page }) => {
         await openHealthView(page);
 
-        const row = page.locator('.health-view-item', { hasText: 'Drift C' });
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
-        const menu = row.locator('.health-check-menu');
-        await expect(menu).toBeVisible();
-
-        const fits = await menu.evaluate((el) => el.scrollHeight <= el.clientHeight + 1);
-        expect(fits, 'the check-mode menu scrolls again').toBe(true);
-
-        // The form is not in there any more, only the entry that opens it.
-        await expect(menu.locator('[data-expect-save]')).toHaveCount(0);
-        await expect(menu.locator('[data-expect-text]')).toHaveCount(0);
-        await expect(menu.locator('[data-expect-open]')).toHaveCount(1);
+        const section = await openHealthDrawerSection(page.locator('.health-view-item', { hasText: 'Drift C' }), 'check');
+        await expect(section.locator('.health-check-option')).toHaveCount(3);
+        await expect(section.locator('[data-expect-save]')).toHaveCount(0);
+        await expect(section.locator('[data-expect-text]')).toHaveCount(0);
     });
 
     // Save below the fold was the worst of it: the form could be filled in with
@@ -293,12 +283,9 @@ test.describe('per-bookmark alert muting', () => {
     test('every control in the expectations panel is reachable without scrolling', async ({ page }) => {
         await openHealthView(page);
 
-        const row = page.locator('.health-view-item', { hasText: 'Drift C' });
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
-        await row.locator('[data-expect-open]').click();
+        const section = await openHealthDrawerSection(page.locator('.health-view-item', { hasText: 'Drift C' }), 'expect');
 
-        const panel = row.locator('.health-view-expect-panel');
+        const panel = section.locator('.health-view-expect-panel');
         await expect(panel).toBeVisible();
         await expect(panel.locator('[data-expect-save]')).toBeVisible();
 
@@ -331,17 +318,10 @@ test.describe('per-bookmark alert muting', () => {
             });
         });
 
-        // The expectations moved out of the check-mode popover and into the
-        // row's own panel: the menu now only picks a mode, and carries an entry
-        // that opens the panel.
-        const row = page.locator('.health-view-item', { hasText: 'Drift A' });
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
-        const menu = row.locator('.health-check-menu');
-        await expect(menu).toBeVisible();
-        await menu.locator('[data-expect-open]').click();
+        // The expectations live in the side panel's own section.
+        const section = await openHealthDrawerSection(page.locator('.health-view-item', { hasText: 'Drift A' }), 'expect');
 
-        const panel = row.locator('.health-view-expect-panel');
+        const panel = section.locator('.health-view-expect-panel');
         await expect(panel).toBeVisible();
         await panel.locator('[data-notify-muted]').check();
         await panel.locator('[data-expect-save]').click();

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, dismissWhatsNewIfPresent, openHealthToolbarMenu } = require('./e2e-helpers');
+const { prepareDashboardInteraction, dismissWhatsNewIfPresent, openHealthToolbarMenu, openHealthRow, openHealthDrawerSection } = require('./e2e-helpers');
 
 /**
  * Health as a dashboard view (the inbox-shaped one).
@@ -793,8 +793,8 @@ test.describe('health dashboard view', () => {
         await openHealthView(page);
 
         await page.keyboard.press('j');
-        const panel = page.locator('.health-view-item.keyboard-selected .health-view-score-panel');
-        await expect(panel).toBeHidden();
+        const panel = page.locator('[data-lvs-drawer="health"] [data-lvs-section="score"] .health-view-score-panel');
+        await expect(panel).toHaveCount(0);
 
         await page.keyboard.press('s');
         await expect(panel).toBeVisible();
@@ -808,7 +808,7 @@ test.describe('health dashboard view', () => {
         expect(100 - deducted).toBe(25);
 
         await page.keyboard.press('s');
-        await expect(panel).toBeHidden();
+        await expect(panel).toHaveCount(0);
     });
 
     test('Escape returns to the bookmark grid', async ({ page }) => {
@@ -850,18 +850,19 @@ test.describe('health dashboard view', () => {
         await badge.focus();
         await page.keyboard.press('Enter');
 
-        await expect(page.locator('.health-view-item .health-view-score-panel').first()).toBeVisible();
+        await expect(page.locator('[data-lvs-drawer="health"] .health-view-score-panel')).toBeVisible();
         expect(page.url()).not.toContain('/config');
         await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
     });
 });
 
 /**
- * Enlarging a monitored row's statistics. The row strip only has room for a 24h
- * figure and one ping; these cover the modal that shows the rest.
+ * A monitored bookmark's statistics, in the side panel's Monitor & history
+ * section. The row's first line only has room for one figure.
  */
-test.describe('health view — enlarged monitor statistics', () => {
+test.describe('health view — monitor statistics in the side panel', () => {
     const monitoredRow = '.health-view-item:has-text("Monitored one")';
+    const monitorSection = '[data-lvs-drawer="health"] [data-lvs-section="monitor"]';
 
     async function openMonitored(page) {
         await openHealthView(page);
@@ -869,29 +870,34 @@ test.describe('health view — enlarged monitor statistics', () => {
         await page.waitForSelector(monitoredRow);
     }
 
-    test('the enlarge button appears only on rows with monitoring data', async ({ page }) => {
+    async function openStats(page, name = 'Monitored one') {
+        return openHealthDrawerSection(page.locator(`.health-view-item:has-text("${name}")`), 'monitor');
+    }
+
+    test('the statistics appear only for rows with monitoring data', async ({ page }) => {
         await openMonitored(page);
 
-        // Monitored and sampled: the button is there.
-        await expect(page.locator(`${monitoredRow} .health-monitor-expand-btn`)).toHaveCount(1);
-        // Monitored but awaiting a first check has nothing to enlarge.
-        await expect(
-            page.locator('.health-view-item:has-text("Monitored pending") .health-monitor-expand-btn')
-        ).toHaveCount(0);
+        // Monitored and sampled: the statistics are there.
+        const section = await openStats(page);
+        await expect(section.locator('.health-monitor-stats')).toHaveCount(1);
+        // Monitored but awaiting a first check has nothing to show yet.
+        const pending = await openStats(page, 'Monitored pending');
+        await expect(pending.locator('.health-monitor-stats')).toHaveCount(0);
+        await expect(pending.locator('.health-monitor-strip.is-pending')).toHaveCount(1);
 
-        // And an unmonitored row has no strip at all.
+        // And an unmonitored row has no monitor section at all.
         await page.click('[data-health-filter="broken"]');
         await page.waitForSelector('.health-view-item:has-text("Broken one")');
-        await expect(
-            page.locator('.health-view-item:has-text("Broken one") .health-monitor-expand-btn')
-        ).toHaveCount(0);
+        await openHealthRow(page.locator('.health-view-item:has-text("Broken one")'));
+        await expect(page.locator('[data-lvs-drawer="health"] .lvs-drawer-title')).toHaveText('Broken one');
+        await expect(page.locator(monitorSection)).toHaveCount(0);
     });
 
-    test('the modal shows the windows the row strip has no room for', async ({ page }) => {
+    test('the section shows the windows the row has no room for', async ({ page }) => {
         await openMonitored(page);
-        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+        await openStats(page);
 
-        const stats = page.locator('.health-monitor-stats');
+        const stats = page.locator(`${monitorSection} .health-monitor-stats`);
         await expect(stats).toBeVisible();
 
         // 7d and 30d are the point of enlarging: the row only ever shows 24h.
@@ -917,7 +923,7 @@ test.describe('health view — enlarged monitor statistics', () => {
         await openMonitored(page);
 
         await page.click(`${monitoredRow} .health-view-item-score`);
-        const panel = page.locator(`${monitoredRow} .health-view-score-panel`);
+        const panel = page.locator('[data-lvs-drawer="health"] .health-view-score-panel');
         await expect(panel).toBeVisible();
         await expect(panel.locator('.health-view-score-item-cost').first()).toHaveText('12m');
         await expect(panel.locator('.health-view-score-item-cost').nth(1)).toHaveText('3m');
@@ -930,12 +936,13 @@ test.describe('health view — enlarged monitor statistics', () => {
         await page.click(`${monitoredRow} .health-view-item-title`);
         await page.keyboard.press('i');
 
-        await expect(page.locator('.health-monitor-stats')).toBeVisible();
+        await expect(page.locator(monitorSection)).toHaveAttribute('open', '');
+        await expect(page.locator(`${monitorSection} .health-monitor-stats`)).toBeVisible();
     });
 
     test('the chart offers one hit target per measured bucket, gaps excluded', async ({ page }) => {
         await openMonitored(page);
-        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+        await openStats(page);
 
         // 40 buckets, minus the 'unknown' gap at 12 and the two down buckets at
         // 20/21 whose avgMs is 0 — a point you cannot read a response time from
@@ -951,7 +958,7 @@ test.describe('health view — enlarged monitor statistics', () => {
 
     test('the readout opens on the latest measurement and follows a click', async ({ page }) => {
         await openMonitored(page);
-        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+        await openStats(page);
 
         // Opens pre-filled with the most recent point rather than an empty box:
         // bucket 39 is 120 + (39 % 7) * 15 = 180ms.
@@ -981,7 +988,7 @@ test.describe('health view — enlarged monitor statistics', () => {
 
     test('arrow keys walk the chart and skip over gaps', async ({ page }) => {
         await openMonitored(page);
-        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+        await openStats(page);
 
         const readout = page.locator('[data-health-readout] .health-monitor-readout-value');
 
@@ -1003,14 +1010,14 @@ test.describe('health view — enlarged monitor statistics', () => {
         await page.keyboard.press('ArrowLeft');
         await expect(page.locator('.health-sparkline-hit[data-point="11"]')).toBeFocused();
 
-        // Arrows are ours, but Escape still belongs to the modal.
+        // Arrows are ours, but Escape still closes the panel.
         await page.keyboard.press('Escape');
-        await expect(page.locator('.health-monitor-stats')).toBeHidden();
+        await expect(page.locator(monitorSection)).toHaveCount(0);
     });
 
     test('the chart is a single tab stop, not one per measurement', async ({ page }) => {
         await openMonitored(page);
-        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+        await openStats(page);
 
         // 37 tabbable points would mean 37 presses to reach Close. A roving
         // tabindex keeps the whole chart to one stop.
@@ -1024,17 +1031,16 @@ test.describe('health view — enlarged monitor statistics', () => {
         await expect(page.locator('.health-sparkline-hit[tabindex="0"]')).toHaveCount(1);
     });
 
-    test('Escape closes the modal and leaves the health view open', async ({ page }) => {
+    test('Escape closes the panel and leaves the health view open', async ({ page }) => {
         await openMonitored(page);
-        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
-        await expect(page.locator('.health-monitor-stats')).toBeVisible();
+        await openStats(page);
+        await expect(page.locator(`${monitorSection} .health-monitor-stats`)).toBeVisible();
 
-        // The regression this guards: the view's own Escape handler runs in the
-        // capture phase, so without the isModalOpen guard this would close the
-        // whole view instead of just the overlay.
+        // The view's own Escape handler runs in the capture phase; the panel
+        // is asked first, so this closes the panel rather than the view.
         await page.keyboard.press('Escape');
 
-        await expect(page.locator('.health-monitor-stats')).toBeHidden();
+        await expect(page.locator(monitorSection)).toHaveCount(0);
         await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
         expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('health');
     });

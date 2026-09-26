@@ -368,6 +368,8 @@ test.describe('an open, after a reload', () => {
         const target = page.locator('.health-view-item').filter({ hasText: bookmarks[0].name }).first();
         test.skip(!(await target.count()), 'the seeded bookmark is not a health issue on this install');
         await target.click();
+        // The click opened the side panel over the header's right edge.
+        await page.keyboard.press('Escape');
         await page.locator('.health-view-focus-btn').click();
         await expect(card(page)).toBeVisible({ timeout: 15_000 });
         await expect(card(page).locator('.health-focus-title')).toContainText(bookmarks[0].name);

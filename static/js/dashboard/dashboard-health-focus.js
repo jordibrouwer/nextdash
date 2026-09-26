@@ -112,6 +112,8 @@ class DashboardHealthFocus {
             return false;
         }
 
+        // One bookmark at a time replaces the side panel's one bookmark.
+        this.health.closeDrawer?.();
         this.queue = filtered.map((issue) => this.health.issueKey(issue));
         const from = this.health.selectedKey ? this.queue.indexOf(this.health.selectedKey) : -1;
         this.position = from >= 0 ? from : 0;

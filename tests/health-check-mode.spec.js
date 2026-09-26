@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, openHealthToolbarMenu, openHealthRow } = require('./e2e-helpers');
+const { prepareDashboardInteraction, openHealthToolbarMenu, openHealthDrawerSection } = require('./e2e-helpers');
 
 /**
  * Changing a bookmark's check mode from inside the health view.
@@ -75,43 +75,26 @@ async function captureCheckMode(page, status = 200) {
 }
 
 test.describe('health view check mode', () => {
-    test('each row shows its current mode as a button', async ({ page }) => {
+    test('the row no longer carries the mode; the side panel does', async ({ page }) => {
         await openHealthView(page);
 
-        const badges = page.locator('.health-check-mode');
-        await expect(badges).toHaveCount(3);
-        await expect(badges.nth(0)).toHaveClass(/is-monitor/);
-        await expect(badges.nth(1)).toHaveClass(/is-periodic/);
-        await expect(badges.nth(2)).toHaveClass(/is-off/);
+        // Moved out of the row with Re-check: the row keeps Open, Edit and More.
+        await expect(page.locator('.health-view-item .health-check-mode')).toHaveCount(0);
+        await expect(page.locator('.health-view-item [data-health-action="recheck"]')).toHaveCount(0);
 
-        // The badge is the control, so it must be reachable and announced as one.
-        await expect(badges.nth(0)).toHaveAttribute('aria-haspopup', 'menu');
-        await expect(badges.nth(0)).toHaveAttribute('aria-expanded', 'false');
-    });
-
-    test('clicking the badge opens a popover with the active mode marked', async ({ page }) => {
-        await openHealthView(page);
-
-        await openHealthRow(page.locator('.health-view-item').first());
-        await page.locator('.health-view-item').first().locator('.health-check-mode').click();
-        const menu = page.locator('.health-view-item').first().locator('.health-check-menu');
-        await expect(menu).toBeVisible();
-
+        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
         // Three named options rather than a control that cycles.
-        await expect(menu.locator('.health-check-option')).toHaveCount(3);
-        await expect(menu.locator('[data-check-mode="monitor"]')).toHaveAttribute('aria-checked', 'true');
-        await expect(menu.locator('[data-check-mode="off"]')).toHaveAttribute('aria-checked', 'false');
-        await expect(page.locator('.health-check-mode').first()).toHaveAttribute('aria-expanded', 'true');
+        await expect(section.locator('.health-check-option')).toHaveCount(3);
+        await expect(section.locator('[data-check-mode="monitor"]')).toHaveAttribute('aria-checked', 'true');
+        await expect(section.locator('[data-check-mode="off"]')).toHaveAttribute('aria-checked', 'false');
     });
 
     test('choosing a mode posts the row reference and its URL', async ({ page }) => {
         await openHealthView(page);
         const calls = await captureCheckMode(page);
 
-        const row = page.locator('.health-view-item').nth(2);
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
-        await row.locator('[data-check-mode="monitor"]').click();
+        const section = await openHealthDrawerSection(page.locator('.health-view-item').nth(2), 'check');
+        await section.locator('[data-check-mode="monitor"]').click();
 
         await expect.poll(() => calls.length).toBe(1);
         // The URL rides along with the index so the server can reject a stale row.
@@ -131,10 +114,8 @@ test.describe('health view check mode', () => {
         await page.fill('.health-view-search-input', 'Unchecked');
         await expect(page.locator('.health-view-item')).toHaveCount(1);
 
-        const row = page.locator('.health-view-item').first();
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
-        await row.locator('[data-check-mode="periodic"]').click();
+        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
+        await section.locator('[data-check-mode="periodic"]').click();
 
         // The old route was a deep link out of the view; the whole point is that
         // the user keeps their place.
@@ -144,46 +125,30 @@ test.describe('health view check mode', () => {
         await expect(page.locator('.health-view-search-input')).toHaveValue('Unchecked');
     });
 
-    test('selecting the mode a row already has closes without writing', async ({ page }) => {
+    test('selecting the mode a row already has writes nothing', async ({ page }) => {
         await openHealthView(page);
         const calls = await captureCheckMode(page);
 
-        const row = page.locator('.health-view-item').first();
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
-        await row.locator('[data-check-mode="monitor"]').click();
+        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
+        await section.locator('[data-check-mode="monitor"]').click();
 
-        await expect(row.locator('.health-check-menu')).toBeHidden();
+        await page.waitForTimeout(300);
         expect(calls).toHaveLength(0);
     });
 
-    test('c opens the popover for the keyboard-selected row', async ({ page }) => {
+    test('c opens the side panel on the check mode for the keyboard-selected row', async ({ page }) => {
         await openHealthView(page);
 
         await page.keyboard.press('ArrowDown');
         await expect(page.locator('.health-view-item.keyboard-selected')).toHaveCount(1);
         await page.keyboard.press('c');
 
-        await expect(page.locator('.health-view-item').first().locator('.health-check-menu')).toBeVisible();
+        const section = page.locator('[data-lvs-drawer="health"] [data-lvs-section="check"]');
+        await expect(section).toHaveAttribute('open', '');
+        await expect(section.locator('.health-check-option')).toHaveCount(3);
     });
 
-    test('Escape closes the popover without leaving the view', async ({ page }) => {
-        await openHealthView(page);
-
-        const row = page.locator('.health-view-item').first();
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
-        await expect(row.locator('.health-check-menu')).toBeVisible();
-        await page.keyboard.press('Escape');
-
-        await expect(row.locator('.health-check-menu')).toBeHidden();
-        // Escape must dismiss the menu only — closing the whole view here would
-        // lose the user's place in the list.
-        await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
-        await expect(row.locator('.health-check-mode')).toBeFocused();
-    });
-
-    test('the overflow menu names the current mode and opens the popover', async ({ page }) => {
+    test('the overflow menu names the current mode and opens the panel on it', async ({ page }) => {
         await openHealthView(page);
 
         // Row actions only surface on the selected row, so drive it by keyboard
@@ -193,13 +158,13 @@ test.describe('health view check mode', () => {
 
         const row = page.locator('.health-view-item').first();
         const item = row.locator('[data-menu-action="checkmode"]');
-        // Naming the current mode saves opening the popover just to read it.
+        // Naming the current mode saves opening the panel just to read it.
         await expect(item).toContainText('Monitor');
 
         await item.click();
         // It hands off rather than duplicating the options, so one place explains
         // what the modes mean.
-        await expect(row.locator('.health-check-menu')).toBeVisible();
+        await expect(page.locator('[data-lvs-drawer="health"] [data-lvs-section="check"]')).toHaveAttribute('open', '');
         await expect(row.locator('.health-view-menu[data-menu-owner="more"]')).toBeHidden();
     });
 
@@ -306,9 +271,8 @@ test.describe('health view check mode', () => {
         await captureCheckMode(page, 409);
 
         const row = page.locator('.health-view-item').nth(2);
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
-        await row.locator('[data-check-mode="monitor"]').click();
+        const section = await openHealthDrawerSection(row, 'check');
+        await section.locator('[data-check-mode="monitor"]').click();
 
         // Wait for this toast, not for the notification element. The one-time
         // "Shift + Q switches the search mode" tip from 79c29ec9 lands on the
@@ -374,7 +338,6 @@ test.describe('health view check mode', () => {
         }, null, { timeout: 15_000 });
         await page.click('[data-health-filter="all"]');
         await page.waitForSelector('.health-view-item', { timeout: 15_000 });
-        await openHealthRow(page.locator('.health-view-item').first());
-        await page.click('.health-check-mode');
+        await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
     }
 });

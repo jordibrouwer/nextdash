@@ -1170,6 +1170,9 @@ class Dashboard {
         if (previous === 'docker' && view !== 'docker') {
             this.docker?.instance?.onLeave?.();
         }
+        if (previous === 'health' && view !== 'health') {
+            this.health?.instance?.onLeaveDrawer?.();
+        }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);
         }

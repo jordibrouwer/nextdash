@@ -2348,3 +2348,79 @@ body.no-animations .health-view-item-score-caret {
         padding-left: 0;
     }
 }
+
+/* ── Side panel (dashboard-health-drawer.js) ─────────────────────────────
+   The slab is the shared one (list-view-shell.css, .lvs-drawer*). What
+   follows is what a bookmark's sections need inside it: the markup the row's
+   inline panels used, without the boxes that framed them in a row. */
+
+.health-drawer-url {
+    font-size: var(--font-size-controls);
+    overflow-wrap: anywhere;
+}
+
+.health-drawer-where,
+.health-drawer-tags {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.health-drawer-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+}
+
+.health-drawer-tag {
+    padding: 0 var(--space-1-5, 0.4rem);
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+}
+
+.health-drawer-reasons {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.health-drawer-since,
+.health-drawer-empty {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.health-drawer .health-view-score-panel,
+.health-drawer .health-view-expect-panel {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+.health-drawer .health-expect-form {
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+.health-drawer-check {
+    gap: var(--space-1, 0.25rem);
+}
+
+.health-drawer-check .health-check-option {
+    width: 100%;
+    text-align: left;
+}
+
+.health-drawer .health-monitor-strip {
+    margin-top: 0;
+}
+
+/* The first line's monitor fact: down reads as a failure, uptime as a note. */
+.health-view-item-monitor {
+    color: var(--text-secondary);
+}
+
+.health-view-item-monitor.is-down {
+    color: var(--accent-error);
+}

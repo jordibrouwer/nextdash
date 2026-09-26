@@ -78,10 +78,8 @@ class DashboardHealth {
          * not moved, and the browser reports that as a hover.
          */
         this._pointerSelectArmed = true;
-        this.expandedScores = new Set();
-        // Rows whose expectations panel is open, keyed the same way as
-        // expandedScores so both survive a re-render identically.
-        this.expandedExpect = new Set();
+        /** The side panel (dashboard-health-drawer.js), built on first open. */
+        this._drawer = null;
         /** Collapses the fleet panel's worst/slower/incidents lists, leaving just
          *  the three uptime tiles — a long "All monitors" block otherwise pushes
          *  the row list off screen on a collection with a lot of history. */
@@ -440,8 +438,8 @@ class DashboardHealth {
         try {
             /*
              * The credential names ride along with the report rather than being
-             * fetched when a panel opens: syncExpectPanel is synchronous and
-             * called from a dozen places, and the names are two dozen bytes of
+             * fetched when a panel opens: the expectations form is built
+             * synchronously, and the names are two dozen bytes of
              * labels — cheaper to have than to wait for.
              */
             await Promise.all([this.fetchReport({ refresh }), this.loadHealthCredentials()]);
@@ -628,6 +626,7 @@ class DashboardHealth {
         this.clearKeyboardSelection();
         this.clearHandledRows();
         this.focusIssueKey = null;
+        this.onLeaveDrawer();
         // The shell's scroll and resize listeners live on window, so leaving the
         // handle behind would keep measuring a header that is no longer here.
         this._destroyShell();
@@ -682,6 +681,14 @@ class DashboardHealth {
             if (d.isModalOpen()) return;
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
+            // The side panel is the innermost thing on the view: the first
+            // Escape closes it, the next one the view.
+            if (this._drawer?.isOpen()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.closeDrawer();
+                return;
+            }
             // An open selection takes Escape before the view does: closing Health
             // outright would lose the list the user was working through, and
             // clearing ticks is the smaller, more likely intent. Checked ahead of
@@ -1028,6 +1035,8 @@ class DashboardHealth {
         this.focusIssueKey = this.selectedKey;
         this.applyKeyboardSelection(rows);
         this.syncUrlState();
+        // An open panel follows the cursor, as in Containers.
+        if (this._drawer?.isOpen()) this.openDrawer(this.selectedKey);
     }
 
     applyKeyboardSelection(rows) {
@@ -1223,6 +1232,16 @@ class DashboardHealth {
             this.toggleScorePanel(this.selectedKey);
             return true;
         }
+        // o opens the bookmark itself; Enter now opens the side panel.
+        if (e.key === 'o' && this.selectedKey) {
+            const issue = this.selectedIssue();
+            if (issue) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.openIssue(issue);
+            }
+            return true;
+        }
         // f opens focus mode on the row under the cursor. Deliberately not
         // gated on selectedKey: opening it from a cold list should start at the
         // top rather than do nothing.
@@ -1238,10 +1257,11 @@ class DashboardHealth {
             this.toggleMenu(this.selectedKey, 'more');
             return true;
         }
+        // c: the check mode, which lives in the side panel.
         if (e.key === 'c' && this.selectedKey) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.toggleMenu(this.selectedKey, 'check');
+            this.openDrawer(this.selectedKey, { section: 'check' });
             return true;
         }
         if (e.key === 'p' && this.selectedKey) {
@@ -1255,17 +1275,26 @@ class DashboardHealth {
         }
         if (e.key === 'i' && this.selectedKey) {
             const issue = this.selectedIssue();
-            // Silently ignored on a row with nothing to enlarge, rather than
-            // opening an empty modal.
+            // Silently ignored on a row with no monitor history, rather than
+            // opening the panel on a section that is not there.
             if (this.hasMonitorStats(issue)) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                this.openMonitorStats(issue);
+                this.openDrawer(this.selectedKey, { section: 'monitor' });
                 return true;
             }
             return false;
         }
-        if ((e.key === 'Enter' || e.key === ' ') && this.selectedKey) {
+        // Enter shows the details, as in Containers; Space still opens the
+        // bookmark, beside o.
+        if (e.key === 'Enter' && this.selectedKey) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (isSearch) target.blur();
+            this.openDrawer(this.selectedKey);
+            return true;
+        }
+        if (e.key === ' ' && this.selectedKey) {
             const issue = this.selectedIssue();
             if (issue) {
                 e.preventDefault();
@@ -1312,7 +1341,7 @@ class DashboardHealth {
             if (!document.querySelector('.health-view-menu:not([hidden])')) return;
             // Both menu wrappers, or a click on an option would dismiss the menu
             // before the option's own handler ever ran.
-            if (e.target.closest?.('.health-view-menu-wrap, .health-check-mode-wrap')) return;
+            if (e.target.closest?.('.health-view-menu-wrap')) return;
             this.closeAllMenus();
         };
         document.addEventListener('click', this._outsideMenuHandler, true);
@@ -1370,82 +1399,90 @@ class DashboardHealth {
         this._pointerMoveHandler = null;
     }
 
-    /* ── Score panel ───────────────────────────────────────────────────── */
+    /* ── Side panel ────────────────────────────────────────────────────── */
 
-    toggleScorePanel(key, force) {
-        const next = typeof force === 'boolean' ? force : !this.expandedScores.has(key);
-        if (next) {
-            this.expandedScores.add(key);
-        } else {
-            this.expandedScores.delete(key);
+    /** The side panel, built on first use; null where the script never loaded. */
+    get drawer() {
+        if (!this._drawer && typeof window.HealthDrawer === 'function') {
+            this._drawer = new window.HealthDrawer(this);
         }
-        this.syncScorePanel(key);
+        return this._drawer;
     }
 
-    syncScorePanel(key) {
-        const row = document.querySelector(`.health-view-item[data-health-key="${CSS.escape(key)}"]`);
-        if (!row) return;
-        const panel = row.querySelector('.health-view-score-panel');
-        const button = row.querySelector('.health-view-item-score');
-        const expanded = this.expandedScores.has(key);
-        if (panel) panel.hidden = !expanded;
-        button?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    issueByKey(key) {
+        if (!key) return null;
+        return this.getFilteredIssues().find((i) => this.issueKey(i) === key)
+            || (this.report?.issues || []).find((i) => this.issueKey(i) === key)
+            || null;
     }
-
-    /* ── Expectations panel ────────────────────────────────────────────── */
 
     /**
-     * What "healthy" means for one bookmark, in the row's own width.
-     *
-     * These controls lived in the check-mode popover until they outgrew it: a
-     * keyword, status codes, two checkboxes and a Save button do not fit in a
-     * 192px menu, and five of them ended up below a scrollbar — Save among
-     * them, so it was possible to fill the form in and never see the way to
-     * store it. Opening in the row instead gives the fields the full width and
-     * puts every control on screen at once.
-     *
-     * Mirrors toggleScorePanel deliberately: same expand-in-place shape, same
-     * Set-of-keys bookkeeping, so the row has one way of showing more rather
-     * than two that behave differently.
+     * Show one bookmark in the side panel, selecting its row. section opens
+     * one part on arrival: the score for `s` and the score button, the monitor
+     * for `i`, the expectations for the check menu's entry.
      */
-    toggleExpectPanel(key, force) {
-        const next = typeof force === 'boolean' ? force : !this.expandedExpect.has(key);
-        if (next) {
-            this.expandedExpect.add(key);
-        } else {
-            this.expandedExpect.delete(key);
-        }
-        this.syncExpectPanel(key);
-        if (next) {
-            // The keyword is the field people come here for, so focus lands
-            // there rather than on the panel itself.
-            const row = document.querySelector(`.health-view-item[data-health-key="${CSS.escape(key)}"]`);
-            row?.querySelector('[data-expect-text]')?.focus({ preventScroll: true });
-        }
+    openDrawer(key, { section = null } = {}) {
+        const issue = this.issueByKey(key);
+        const drawer = this.drawer;
+        if (!issue || !drawer) return;
+        if (key !== this.selectedKey) this.selectRowByKey(key);
+        drawer.open(issue, { section });
+        this.syncScoreButtons();
     }
 
-    syncExpectPanel(key) {
-        const row = document.querySelector(`.health-view-item[data-health-key="${CSS.escape(key)}"]`);
-        if (!row) return;
-        const panel = row.querySelector('.health-view-expect-panel');
-        const expanded = this.expandedExpect.has(key);
-        if (panel) {
-            // Built on open rather than rendered hidden into every row. A form
-            // per monitored row costs real DOM for something almost never
-            // looked at, and its labels would sit in the row's text content —
-            // enough to make "the muted bookmark" match every monitored row
-            // that merely *offers* the mute checkbox.
-            if (expanded && !panel.firstElementChild) {
-                const issue = this.getFilteredIssues().find((i) => this.issueKey(i) === key)
-                    || (this.report?.issues || []).find((i) => this.issueKey(i) === key);
-                if (issue) {
-                    panel.innerHTML = this.renderExpectPanel(issue);
-                    this.bindExpectPanel(row, issue, key);
-                }
-            }
-            panel.hidden = !expanded;
+    closeDrawer() {
+        if (!this._drawer?.isOpen()) return;
+        this._drawer.close();
+        this.onDrawerClosed();
+    }
+
+    onDrawerClosed() {
+        this.syncScoreButtons();
+    }
+
+    /** Leaving the view: the panel lives on <body>, so it goes explicitly. */
+    onLeaveDrawer() {
+        this._drawer?.destroy();
+        this._drawer = null;
+    }
+
+    /** The score button says whether its breakdown is the one on screen. */
+    syncScoreButtons() {
+        const key = this._drawer?.isOpen() ? this._drawer.currentKey() : null;
+        document.querySelectorAll('.health-view-item .health-view-item-score').forEach((button) => {
+            const mine = button.closest('.health-view-item')?.dataset.healthKey === key;
+            button.setAttribute('aria-expanded', mine ? 'true' : 'false');
+        });
+    }
+
+    /** `s` and the score button: the panel on the score, or closed again. */
+    toggleScorePanel(key) {
+        const drawer = this.drawer;
+        const scoreOpen = drawer?.isOpen() && drawer.currentKey() === key
+            && drawer.base.panel?.querySelector('[data-lvs-section="score"]')?.open;
+        if (scoreOpen) {
+            this.closeDrawer();
+            return;
         }
-        row.querySelector('[data-expect-open]')?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        this.openDrawer(key, { section: 'score' });
+    }
+
+    /**
+     * What "healthy" means for one bookmark: the panel's Expectations section.
+     *
+     * These controls lived in the check-mode popover until they outgrew it,
+     * then in a panel that unfolded inside the row; the side panel gives them
+     * its full height, so every control, Save included, is on screen at once.
+     */
+    toggleExpectPanel(key, force) {
+        if (force === false) {
+            const details = this._drawer?.base.panel?.querySelector('[data-lvs-section="expect"]');
+            if (details) details.open = false;
+            return;
+        }
+        this.openDrawer(key, { section: 'expect' });
+        // The keyword is the field people come here for, so focus lands there.
+        this._drawer?.base.panel?.querySelector('[data-expect-text]')?.focus({ preventScroll: true });
     }
 
     /**
@@ -1465,7 +1502,7 @@ class DashboardHealth {
 
         const close = () => {
             this.toggleExpectPanel(key, false);
-            row.querySelector('.health-check-mode')?.focus({ preventScroll: true });
+            row.closest?.('[data-lvs-section]')?.querySelector('summary')?.focus({ preventScroll: true });
         };
 
         panel.addEventListener('keydown', (e) => {
@@ -3216,11 +3253,11 @@ class DashboardHealth {
             this.dash.showNotification?.(saved.expectText || saved.expectStatus || saved.watchDrift
                 ? this.t('dashboard.healthExpectSaved', 'Expectations saved.')
                 : this.t('dashboard.healthExpectCleared', 'Expectations cleared.'), 'success');
-            // Closed before the re-render rather than after, so the panel does
-            // not flash back open for a frame on its way out. A failed save
-            // deliberately leaves it open — the values are still in the fields
-            // and closing would throw away what was typed.
-            this.expandedExpect.delete(key);
+            // Out of the field before the re-render, which rebuilds the side
+            // panel with what was stored -- it leaves a panel alone while a
+            // field in it has focus. A failed save keeps the focus, and with it
+            // what was typed.
+            if (wrap.contains(document.activeElement)) document.activeElement.blur();
             await this.loadAndRender({ refresh: true });
             return 'changed';
         } catch {
@@ -3760,6 +3797,9 @@ class DashboardHealth {
         this.syncKeyboardSelectionAfterRender();
         this.applyPendingIssueFocus();
         this.restoreKeptPlace();
+        // The panel shows the bookmark as the report now has it.
+        this._drawer?.refresh();
+        this.syncScoreButtons();
     }
 
     render() {
@@ -6347,39 +6387,12 @@ class DashboardHealth {
     }
 
     /**
-     * The check-mode badge, which doubles as the control that changes it. Making
-     * the existing label the button costs no extra room in the row and puts the
-     * control exactly where the eye already goes to ask "why has this row no
-     * heartbeat?".
-     *
-     * An unchecked row shows a muted placeholder rather than a full badge: most
-     * bookmarks are unchecked, and a solid "Not checked" pill on every one of them
-     * would drown the rows that do carry a mode. CSS lifts it into view on hover
-     * and keyboard selection.
+     * The three modes, each with its one-line explanation, and for a monitor
+     * its interval: the side panel's Check mode section. Named options rather
+     * than a control that cycles -- periodic is cheap and answers "is this
+     * link alive", monitor is the expensive tier that records uptime.
      */
-    renderCheckModeBadge(issue, key) {
-        const mode = this.checkModeOf(issue);
-        const meta = this.checkModeMeta(mode);
-        const title = `${meta.hint} — ${this.t('dashboard.healthCheckModeChange', 'click to change')}`;
-        return `<button type="button"
-            class="health-check-mode ${meta.cls}"
-            aria-haspopup="menu"
-            aria-expanded="false"
-            data-menu-toggle="${this.escape(key)}"
-            data-menu-kind="check"
-            title="${this.escape(title)}"
-            aria-label="${this.escape(title)}"
-        >${this.escape(meta.label)}<kbd>c</kbd></button>`;
-    }
-
-    /**
-     * The check-mode popover: three named options rather than a control that
-     * cycles. The modes are not interchangeable — periodic is cheap and answers
-     * "is this link alive", monitor is the expensive tier that records uptime —
-     * so each carries its one-line explanation instead of leaving the user to
-     * guess what the next click will select.
-     */
-    renderCheckModeMenu(issue, key) {
+    renderCheckModeChoices(issue) {
         const active = this.checkModeOf(issue);
         // Same three options, same order and same sentences as the dashboard
         // right-click menu; only the markup around them differs.
@@ -6388,7 +6401,7 @@ class DashboardHealth {
             const isActive = mode === active;
             return `<button type="button"
                 class="health-view-menu-item health-check-option${isActive ? ' is-active' : ''}"
-                role="menuitemradio"
+                role="radio"
                 aria-checked="${isActive ? 'true' : 'false'}"
                 data-check-mode="${mode}"
             >
@@ -6397,7 +6410,7 @@ class DashboardHealth {
             </button>`;
         }).join('');
 
-        // How often a monitor runs, changeable from the row rather than only from
+        // How often a monitor runs, changeable here rather than only from
         // the bookmark editor: this is the screen where you see the heartbeat and
         // decide the cadence is wrong. Shown only for a row already monitoring —
         // on an off/periodic row there is no interval to change, and picking one
@@ -6411,7 +6424,7 @@ class DashboardHealth {
                         const current = window.CheckMode.intervalOf(issue) === mins;
                         return `<button type="button"
                             class="health-check-interval-btn${current ? ' is-active' : ''}"
-                            role="menuitemradio" aria-checked="${current ? 'true' : 'false'}"
+                            role="radio" aria-checked="${current ? 'true' : 'false'}"
                             data-check-interval="${mins}"
                         >${this.escape(window.CheckMode.intervalLabel(mins))}</button>`;
                     }).join('')
@@ -6419,32 +6432,7 @@ class DashboardHealth {
             </span>`
             : '';
 
-        // The way to everything else this bookmark can be told about itself.
-        //
-        // Expectations, drift watching and muting used to sit in this menu, and
-        // between them they made it a form: 531px of content in a 382px window
-        // on a 192px-wide popover, with five controls — including Save — below
-        // the fold. A menu picks one thing and closes; that was a settings panel
-        // wearing a menu's clothes. They now open in the row's own expanding
-        // panel, which is the full width of the row rather than a popover's, so
-        // nothing wraps to three lines and the Save button is on screen.
-        const expectEntry = active === window.CheckMode.MONITOR
-            ? `<button type="button" class="health-view-menu-item health-check-expect-open"
-                    role="menuitem" data-expect-open>
-                <span class="health-check-option-label">${this.escape(this.t('dashboard.healthExpectLabel', 'Expected response'))}</span>
-                <span class="health-check-option-body">${this.escape(this.t(
-                    'dashboard.healthExpectMenuHint',
-                    'Keyword, status codes, rot watching and alerts'
-                ))}</span>
-            </button>`
-            : '';
-
-        // A span, not a div: this popover lives inside the row's <p> meta line, and
-        // a block-level child there would make the parser close the paragraph
-        // early, stranding the menu outside the row it belongs to.
-        return `<span class="health-view-menu health-check-menu" role="menu" hidden
-            data-menu-for="${this.escape(key)}" data-menu-owner="check"
-            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}${intervalRow}${expectEntry}</span>`;
+        return `${items}${intervalRow}`;
     }
 
     /**
@@ -6554,12 +6542,29 @@ class DashboardHealth {
     }
 
     /** The monitor strip under the row meta: heartbeat, uptime, sparkline. */
+    /**
+     * The monitor's one-word state for the row's first line: down for how long,
+     * or the 24-hour uptime. The strip with the heartbeat is in the panel.
+     */
+    renderRowMonitorFact(issue) {
+        if (!issue?.monitor) return '';
+        const stats = issue.monitorStats;
+        if (!stats) {
+            return `<span class="health-view-item-monitor is-pending">${this.escape(this.t('dashboard.healthMonitorPendingShort', 'monitor · no checks yet'))}</span>`;
+        }
+        if (stats.downSince) {
+            return `<span class="health-view-item-monitor is-down">${this.escape(this.t('dashboard.healthDownSince', 'Down for {duration}', { duration: this.formatDuration(Date.now() - stats.downSince) }))}</span>`;
+        }
+        const uptime = this.formatUptime(stats.uptime24h);
+        if (!uptime) return '';
+        return `<span class="health-view-item-monitor" title="${this.escape(this.t('dashboard.healthUptime24hTitle', 'Uptime over the last 24 hours'))}">${this.escape(this.t('dashboard.healthMonitorUptimeShort', 'monitor · {uptime}', { uptime }))}</span>`;
+    }
+
     renderMonitorStrip(issue) {
         const stats = issue?.monitorStats;
         if (!issue?.monitor) return '';
         if (!stats) {
             // Monitored but never checked — say so, rather than showing 0%.
-            // No expand button here: there are no statistics to enlarge yet.
             return `<div class="health-monitor-strip is-pending">
                 <span class="health-monitor-pending">${this.escape(this.t('dashboard.healthMonitorPending', 'Monitoring — awaiting first check'))}</span>
             </div>`;
@@ -6586,7 +6591,6 @@ class DashboardHealth {
         const ping = !stats.downSince && stats.lastPingMs > 0
             ? `<span class="health-monitor-ping">${this.escape(stats.lastPingMs)}ms</span>`
             : '';
-        const expandLabel = this.t('dashboard.healthStatsExpand', 'Enlarge statistics');
 
         return `<div class="health-monitor-strip">
             ${this.renderHeartbeat(stats)}
@@ -6594,11 +6598,6 @@ class DashboardHealth {
             ${this.renderSparkline(stats)}
             ${ping}
             ${down}
-            <button type="button" class="health-monitor-expand-btn" data-health-action="stats"
-                aria-haspopup="dialog"
-                title="${this.escape(expandLabel)}"
-                aria-label="${this.escape(expandLabel)}"
-            >⤢<kbd>i</kbd></button>
         </div>`;
     }
 
@@ -6754,51 +6753,15 @@ class DashboardHealth {
     }
 
     /**
-     * Enlarge one row's monitoring statistics in a modal.
-     *
-     * Escape needs no special handling here: this view's own Escape handler bows
-     * out while a modal is open (isModalOpen sees #app-modal.show), so Escape
-     * closes the modal and leaves the list behind it untouched.
-     */
-    openMonitorStats(issue) {
-        if (!this.hasMonitorStats(issue)) return;
-        // The button can be reached from an open menu; leaving it open would strand
-        // it behind the overlay.
-        this.closeAllMenus();
-        window.nextdashTrack?.('health:monitor-stats');
-
-        const title = issue.name || issue.previewTitle || this.formatUrlDisplay(issue.url);
-        if (typeof window.AppModal?.show !== 'function') return;
-        window.AppModal.show({
-            title,
-            htmlMessage: this.buildMonitorStatsHtml(issue),
-            confirmText: this.t('dashboard.healthStatsClose', 'Close'),
-            showCancel: false,
-            modalClass: 'health-monitor-stats-modal',
-            modalMaxWidth: '44rem',
-            // Focus returns to the row, not the toolbar, so j/k keep working where
-            // the user left off.
-            onHide: () => {
-                this.applyKeyboardSelection();
-            },
-        });
-        // show() is synchronous and has already written the body into #modal-text.
-        this.bindMonitorChart(issue);
-        document.getElementById('modal-text')
-            ?.querySelector('[data-monitor-export]')
-            ?.addEventListener('click', () => this.exportMonitorHistory(issue));
-    }
-
-    /**
      * Make the enlarged chart readable: clicking, hovering or tabbing to a point
      * writes its response time and measurement time into the readout under the
      * chart, and ←/→ walk the series from a selected point.
      *
-     * Bound per open. The modal replaces #modal-text wholesale on the next show(),
-     * so the listeners go with it and there is nothing to tear down.
+     * Bound per open. The side panel rebuilds its sections on the next open, so
+     * the listeners go with them and there is nothing to tear down.
      */
-    bindMonitorChart(issue) {
-        const modalText = document.getElementById('modal-text');
+    bindMonitorChart(issue, root = document.getElementById('modal-text')) {
+        const modalText = root;
         const svg = modalText?.querySelector('.health-sparkline--large');
         const readout = modalText?.querySelector('[data-health-readout]');
         if (!svg || !readout) return;
@@ -7108,8 +7071,7 @@ class DashboardHealth {
         const extraReasons = reasons.length > 1
             ? this.t('dashboard.healthMoreReasons', '+{count} more', { count: reasons.length - 1 })
             : '';
-        const expanded = this.expandedScores.has(key);
-        const expectOpen = this.expandedExpect.has(key);
+        const expanded = this._drawer?.isOpen() && this._drawer.currentKey() === key;
         const iconSrc = this.resolveIssueIconSrc(issue.icon);
         const icon = iconSrc
             ? `<img class="health-view-item-icon-img" src="${this.escape(iconSrc)}" alt="" loading="lazy">`
@@ -7136,6 +7098,7 @@ class DashboardHealth {
                 <span class="health-view-item-reason-wrap">
                     ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
                     ${this.renderBrokenSince(issue)}
+                    ${this.renderRowMonitorFact(issue)}
                     ${extraReasons ? `<span class="health-view-item-more-reasons">${this.escape(extraReasons)}</span>` : ''}
                 </span>
                 <button type="button" class="health-view-item-score" aria-expanded="${expanded ? 'true' : 'false'}" aria-label="${this.escape(this.t('dashboard.healthScoreToggle', 'Score {score} — show breakdown', { score: issue.score }))}">
@@ -7145,7 +7108,6 @@ class DashboardHealth {
             <div class="health-view-line2 lvs-row-line2">
                 <div class="feed-row-actions health-view-item-actions">
                     <div class="health-view-item-actions-inner">
-                        <button type="button" class="health-view-action-btn" data-health-action="recheck">${this.escape(this.t('dashboard.healthRecheck', 'Re-check'))}<kbd>p</kbd></button>
                         <button type="button" class="health-view-action-btn" data-health-action="open">${this.escape(this.t('dashboard.healthOpen', 'Open'))}</button>
                         <button type="button" class="health-view-action-btn" data-health-action="edit">${this.escape(this.t('dashboard.healthEdit', 'Edit'))}</button>
                         <div class="health-view-menu-wrap">
@@ -7160,16 +7122,9 @@ class DashboardHealth {
                     ${this.renderDriftBadge(issue)}
                     ${this.renderIgnoredBadge(issue)}
                     ${this.renderMutedBadge(issue)}
-                    <span class="health-check-mode-wrap">
-                        ${this.renderCheckModeBadge(issue, key)}
-                        ${this.renderCheckModeMenu(issue, key)}
-                    </span>
                     ${this.renderLastOpened(issue)}
                 </div>
             </div>
-            ${this.renderMonitorStrip(issue)}
-            <div class="health-view-score-panel" ${expanded ? '' : 'hidden'}>${this.renderScorePanel(issue)}</div>
-            <div class="health-view-expect-panel" ${expectOpen ? '' : 'hidden'}>${expectOpen ? this.renderExpectPanel(issue) : ''}</div>
         `;
 
         const iconImg = row.querySelector('.health-view-item-icon-img');
@@ -7180,22 +7135,13 @@ class DashboardHealth {
         }, { once: true });
 
         row.querySelector('.health-view-item-score')?.addEventListener('click', () => {
-            this.selectRowByKey(key);
             this.toggleScorePanel(key);
-        });
-        row.querySelector('[data-health-action="recheck"]')?.addEventListener('click', () => {
-            void this.recheckIssue(issue);
         });
         row.querySelector('[data-health-action="open"]')?.addEventListener('click', () => {
             this.openIssue(issue);
         });
         row.querySelector('[data-health-action="edit"]')?.addEventListener('click', () => {
             void this.editIssueInline(issue);
-        });
-        row.querySelector('[data-health-action="stats"]')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.selectRowByKey(key);
-            this.openMonitorStats(issue);
         });
         row.querySelector('.health-view-more-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -7219,38 +7165,6 @@ class DashboardHealth {
             this.selectRowByKey(key);
             this.toggleMenu(key, 'more', { at: { x: e.clientX, y: e.clientY } });
         });
-        row.querySelector('.health-check-mode')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.selectRowByKey(key);
-            this.toggleMenu(key, 'check');
-        });
-        row.querySelectorAll('[data-check-mode]').forEach((item) => {
-            item.addEventListener('click', (e) => {
-                e.stopPropagation();
-                void this.setCheckMode(issue, item.getAttribute('data-check-mode'));
-            });
-        });
-        row.querySelectorAll('[data-check-interval]').forEach((item) => {
-            item.addEventListener('click', (e) => {
-                e.stopPropagation();
-                void this.setMonitorInterval(issue, Number(item.getAttribute('data-check-interval')));
-            });
-        });
-
-        // Opens the expectations panel on the row and closes the menu behind it,
-        // so the panel is not competing with a popover for the same screen.
-        row.querySelector('[data-expect-open]')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.closeAllMenus();
-            this.toggleExpectPanel(key, true);
-        });
-
-        // The panel's own controls are bound when it is built, which happens on
-        // first open rather than at render time.
-        if (row.querySelector('.health-view-expect-panel')?.firstElementChild) {
-            this.bindExpectPanel(row, issue, key);
-        }
-
         const menuActions = {
             dashboard: () => this.openIssueInDashboard(issue),
             redirect: () => void this.detectRedirect(issue),
@@ -7263,9 +7177,12 @@ class DashboardHealth {
             'copy-url': () => this.copyIssueUrl(issue),
             share: () => void this.shareIssue(issue),
             delete: () => void this.deleteIssue(issue),
-            // Hand off to the popover rather than duplicating the three options
-            // here, so there is one place that explains what the modes mean.
-            checkmode: () => this.toggleMenu(key, 'check'),
+            // Hand off to the side panel rather than duplicating the three
+            // options here, so there is one place that explains the modes.
+            checkmode: () => {
+                this.closeAllMenus();
+                this.openDrawer(key, { section: 'check' });
+            },
             ignore: () => void this.toggleIgnore(issue),
             snooze: () => void this.toggleIgnore(issue, { snooze: true }),
         };
@@ -7323,7 +7240,10 @@ class DashboardHealth {
                 this.multiSelect.clear();
                 return;
             }
+            // A link in the row keeps its own click.
+            if (e.target.closest('a')) return;
             this.selectRowByKey(key);
+            this.openDrawer(key);
         });
         row.addEventListener('dblclick', (e) => {
             if (e.target.closest('button')) return;

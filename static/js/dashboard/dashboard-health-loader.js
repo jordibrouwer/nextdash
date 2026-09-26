@@ -47,6 +47,12 @@ class DashboardHealthLoader {
             await load('js/shared/list-view-shell.js', 'listViewShell',
                 () => typeof window.ListViewShell !== 'undefined');
         }
+        // What Health puts in the side panel. The panel itself
+        // (list-view-drawer.js) is on every page already.
+        if (typeof window.HealthDrawer !== 'function') {
+            await load('js/dashboard/dashboard-health-drawer.js', 'dashboardHealthDrawer',
+                () => typeof window.HealthDrawer === 'function');
+        }
         if (typeof window.DashboardHealth !== 'function') {
             await load('js/dashboard/dashboard-health.js', 'dashboardHealthModule',
                 () => typeof window.DashboardHealth === 'function');

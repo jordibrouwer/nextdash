@@ -647,8 +647,23 @@ async function openHealthRow(row) {
     await row.locator('.health-view-line2').waitFor({ state: 'visible' });
 }
 
+/**
+ * Open a Health row's side panel on one section and return that section.
+ * The row click opens the panel; the section may already be open from a
+ * remembered state, so it is only clicked when closed.
+ */
+async function openHealthDrawerSection(row, name) {
+    const page = row.page();
+    await openHealthRow(row);
+    const section = page.locator(`[data-lvs-drawer="health"] [data-lvs-section="${name}"]`);
+    await section.waitFor({ state: 'attached' });
+    if (await section.getAttribute('open') === null) await section.locator('summary').click();
+    return section;
+}
+
 module.exports = {
     openHealthRow,
+    openHealthDrawerSection,
     answerNoCategory,
     GITHUB_STUB_PORT,
     RAINDROP_STUB_PORT,

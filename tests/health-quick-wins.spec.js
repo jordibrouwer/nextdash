@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, openHealthRow } = require('./e2e-helpers');
+const { prepareDashboardInteraction, openHealthDrawerSection } = require('./e2e-helpers');
 
 /**
  * Four small additions to the health view: the monitor interval changeable from
@@ -91,12 +91,10 @@ test.describe('health view quick wins', () => {
             });
         });
 
-        const row = page.locator('.health-view-item').first();
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
+        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
 
         // The picker is only offered on a row that is already monitoring.
-        const picker = row.locator('.health-check-interval');
+        const picker = section.locator('.health-check-interval');
         await expect(picker).toBeVisible();
         await expect(picker.locator('.health-check-interval-btn.is-active')).toHaveText('15m');
 
@@ -110,7 +108,7 @@ test.describe('health view quick wins', () => {
         expect(writes[0].url).toBe('https://example.com/mon');
     });
 
-    test('choosing the current interval closes the menu without writing', async ({ page }) => {
+    test('choosing the current interval writes nothing', async ({ page }) => {
         await openHealthView(page);
 
         /** @type {any[]} */
@@ -120,12 +118,10 @@ test.describe('health view quick wins', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
 
-        const row = page.locator('.health-view-item').first();
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
-        await row.locator('[data-check-interval="15"]').click();
+        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
+        await section.locator('[data-check-interval="15"]').click();
 
-        await expect(row.locator('.health-check-menu')).toBeHidden();
+        await page.waitForTimeout(300);
         expect(writes).toHaveLength(0);
     });
 
@@ -133,17 +129,16 @@ test.describe('health view quick wins', () => {
         await openHealthView(page);
 
         // The second row has no monitoring, so there is no cadence to change.
-        const row = page.locator('.health-view-item').nth(1);
-        await openHealthRow(row);
-        await row.locator('.health-check-mode').click();
-        await expect(row.locator('.health-check-menu')).toBeVisible();
-        await expect(row.locator('.health-check-interval')).toHaveCount(0);
+        const section = await openHealthDrawerSection(page.locator('.health-view-item').nth(1), 'check');
+        await expect(section.locator('.health-check-option')).toHaveCount(3);
+        await expect(section.locator('.health-check-interval')).toHaveCount(0);
     });
 
-    test('the row shows how many checks the uptime rests on', async ({ page }) => {
+    test('the side panel shows how many checks the uptime rests on', async ({ page }) => {
         await openHealthView(page);
 
-        const uptime = page.locator('.health-view-item').first().locator('.health-monitor-uptime');
+        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'monitor');
+        const uptime = section.locator('.health-monitor-strip .health-monitor-uptime');
         await expect(uptime).toContainText('100%');
         await expect(uptime.locator('.health-monitor-uptime-samples')).toHaveText('/96');
         // The accessible name carries the same fact as a sentence, so the bare

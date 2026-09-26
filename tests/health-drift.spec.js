@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, openHealthRow } = require('./e2e-helpers');
+const { prepareDashboardInteraction, openHealthDrawerSection } = require('./e2e-helpers');
 
 /**
  * Rot signals: a bookmark that quietly stopped pointing where it was saved,
@@ -51,17 +51,14 @@ test.describe('drift watching', () => {
                 body: JSON.stringify({ status: 'success', watchDrift: posted.watchDrift }) });
         });
 
-        // Drift watching lives in the row's expectations panel now, reached
-        // from the check-mode menu rather than crammed into it.
-        await openHealthRow(page.locator('.health-view-item').first());
-        await page.locator('.health-check-mode').click();
-        await page.locator('[data-expect-open]').click();
-        const checkbox = page.locator('[data-watch-drift]');
+        // Drift watching lives in the side panel's Expectations section.
+        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'expect');
+        const checkbox = section.locator('[data-watch-drift]');
         await expect(checkbox).toBeVisible();
         await expect(checkbox).not.toBeChecked();
 
         await checkbox.check();
-        await page.locator('[data-expect-save]').click();
+        await section.locator('[data-expect-save]').click();
 
         await expect.poll(() => posted?.watchDrift).toBe(true);
         // Sent alongside the keyword/status fields, not through a separate
