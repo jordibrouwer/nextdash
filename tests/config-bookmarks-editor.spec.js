@@ -167,6 +167,8 @@ test.describe('config bookmarks editor', () => {
 
     test('ticking two rows turns the panel into the bulk form', async ({ page }) => {
         await openBookmarks(page);
+        // The box shows on hover (rows keep it out of sight at rest, as in Health).
+        await page.locator('#config-bm-list .config-bm-row').first().hover();
         await page.locator('[data-bm-tick]').first().check();
         await page.locator('[data-bm-tick]').nth(1).check();
         const panel = page.locator('#config-bm-panel');
@@ -179,6 +181,8 @@ test.describe('config bookmarks editor', () => {
     test('bulk tags posts the tag onto every ticked bookmark', async ({ page }) => {
         const posts = await capturePosts(page);
         await openBookmarks(page);
+        // The box shows on hover (rows keep it out of sight at rest, as in Health).
+        await page.locator('#config-bm-list .config-bm-row').first().hover();
         await page.locator('[data-bm-tick]').first().check();
         await page.locator('[data-bm-tick]').nth(1).check();
         await page.fill('#config-bm-panel [data-bm-bulk-field="tags"]', 'bulktag');
@@ -427,7 +431,7 @@ test.describe('a category always exists on the page it is used on', () => {
             String(window.dashboardInstance.pages[window.dashboardInstance.pages.length - 1].id));
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
-        await page.waitForSelector('[data-bm-tick]');
+        await page.waitForSelector('[data-bm-tick]', { state: 'attached' });
         // Two ticked rows, the categorised one among them: the bulk form only
         // appears for a selection of more than one.
         await page.evaluate((cat) => {

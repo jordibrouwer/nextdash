@@ -10,7 +10,9 @@
 .config-bm-workbench {
     --bm-rail-w: 176px;
     --bm-panel-w: 260px;
-    --bm-row-h: 44px;
+    /* Health's row (health-view.css): 8px, a 29px line, 8px, a 1px rule.
+       The virtual list reads this, so it must be the drawn height. */
+    --bm-row-h: 46px;
     --bm-head-h: 32px;
     --bm-slab-bg: var(--surface-2, var(--background-secondary));
     --bm-slab-radius: var(--radius-5, 8px);
@@ -262,10 +264,6 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
 }
 
 .config-bm-row {
-    background: var(--bm-slab-bg);
-}
-
-.config-bm-row {
     display: grid;
     /* The name column carries a floor: CSS Grid hands a fixed-max track
        (tags) its full share before a bare `1fr` ever sees a pixel, so
@@ -275,13 +273,20 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
 
        The floor is what a title needs to be read: the columns to its right
        are capped rather than wide, so the name keeps the slack. */
-    grid-template-columns: 16px 20px minmax(10rem, 1fr) minmax(0, 6rem) 3.5rem 5.5rem;
+    grid-template-columns: 1.1rem 1.4rem minmax(10rem, 1fr) minmax(0, 6rem) 3.5rem 5.5rem;
     align-items: center;
-    gap: var(--space-2, 0.5rem);
+    gap: var(--space-3, 0.75rem);
     height: var(--bm-row-h);
     box-sizing: border-box;
     overflow: hidden;
     cursor: default;
+    /* Health's row: rows touch, a rule between them, no slab of their own.
+       background-color only, never the shorthand: the glow is a
+       background-image (list-view-shell.css, [data-lvs-status]). */
+    padding-inline: var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--border-primary);
+    background-color: transparent;
+    font-size: var(--font-size-controls);
 }
 
 .config-bm-group-head {
@@ -298,26 +303,13 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
     background: none;
     box-shadow: none;
     border-radius: 0;
-    font-size: var(--font-size-small);
-    letter-spacing: 0.08em;
+    /* The inbox's date heads (.inbox-date-group-title): a caption over rows
+       that read as one table. */
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--text-secondary);
-}
-
-.config-bm-row.is-group-start {
-    border-radius: var(--bm-slab-radius) var(--bm-slab-radius) 0 0;
-}
-
-.config-bm-row.is-group-end {
-    border-radius: 0 0 var(--bm-slab-radius) var(--bm-slab-radius);
-}
-
-.config-bm-row.is-group-start.is-group-end {
-    border-radius: var(--bm-slab-radius);
-}
-
-html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
-    box-shadow: 0 6px 14px -10px var(--shadow-color, rgba(0, 0, 0, 0.5));
+    color: var(--text-tertiary);
 }
 
 .config-bm-group-select {
@@ -354,16 +346,38 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
 }
 
 .config-bm-row:hover {
-    background: color-mix(in srgb, var(--accent-primary) 6%, var(--bm-slab-bg));
+    background-color: var(--background-secondary);
 }
 
 .config-bm-row.is-checked {
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--bm-slab-bg));
+    background-color: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
 }
 
 .config-bm-row.keyboard-selected {
-    background: color-mix(in srgb, var(--accent-primary) 18%, var(--bm-slab-bg));
-    box-shadow: inset 2px 0 0 var(--accent-primary);
+    background-color: var(--background-secondary);
+    box-shadow:
+        inset 3px 0 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+/* The checkbox rests out of sight until the pointer, the focus or a live
+   selection asks for it, as on Health's and the inbox's rows. */
+.config-bm-tick-cell {
+    visibility: hidden;
+}
+
+.config-bm-row:hover .config-bm-tick-cell,
+.config-bm-row:focus-within .config-bm-tick-cell,
+.config-bm-row.keyboard-selected .config-bm-tick-cell,
+.config-bm-row.is-checked .config-bm-tick-cell,
+#config-bm-list:has(.config-bm-tick:checked) .config-bm-tick-cell {
+    visibility: visible;
+}
+
+@media (hover: none) {
+    .config-bm-tick-cell {
+        visibility: visible;
+    }
 }
 
 .config-bm-tick-cell,
@@ -380,13 +394,13 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
  */
 .config-bm-row .health-view-item-icon,
 .config-bm-row .config-bm-icon {
-    width: 20px;
-    height: 20px;
+    width: 1.4rem;
+    height: 1.4rem;
     border: 0;
     background: none;
     border-radius: 4px;
     flex: none;
-    font-size: 14px;
+    font-size: 0.9rem;
     line-height: 1;
 }
 
@@ -423,22 +437,21 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     overflow: hidden;
 }
 
-.config-bm-name .config-bm-health-dot {
-    align-self: center;
-}
-
 .config-bm-title {
     flex: 0 1 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: var(--font-size-controls);
+    font-weight: 600;
+    line-height: 1.35;
     color: var(--text-primary);
 }
 
 .config-bm-domain,
 .config-bm-crumb {
-    font-family: var(--font-family-mono, ui-monospace, monospace);
-    font-size: var(--font-size-small);
+    font-size: var(--font-size-controls);
+    font-weight: 400;
     color: var(--text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -502,7 +515,7 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     .config-bm-workbench.is-panel-collapsed .config-bm-row {
         /* Every column here is a fact about the bookmark; the name is the
            bookmark. Caps trimmed all round so the title reads in full. */
-        grid-template-columns: 16px 20px minmax(14rem, 1fr) minmax(0, 6rem) 1.5rem 3.5rem 7rem 5rem 3rem 5rem;
+        grid-template-columns: 1.1rem 1.4rem minmax(14rem, 1fr) minmax(0, 6rem) 1.5rem 3.5rem 3rem 5rem;
     }
 
 

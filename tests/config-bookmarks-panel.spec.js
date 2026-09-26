@@ -115,7 +115,9 @@ test.describe('the bookmark panel', () => {
         await expect.poll(() => page.evaluate((k) =>
             window.dashboardInstance.config.findBookmarkByKey(k)?.pinned === true, key)).toBe(true);
         const row = page.locator(`#config-bm-list .config-bm-row[data-bm-key="${key}"]`);
-        const extras = ['.config-bm-pinned', '.config-bm-key', '.config-bm-checkmode', '.config-bm-added'];
+        // Check mode and added left the row for the panel; pinned and the
+        // shortcut are the folded panel's extra columns.
+        const extras = ['.config-bm-pinned', '.config-bm-key'];
         // Panel open: no pin anywhere in the row, and no extra columns.
         await expect(row.locator('.config-bm-name svg')).toHaveCount(0);
         for (const sel of extras) await expect(row.locator(sel)).toBeHidden();
@@ -137,14 +139,12 @@ test.describe('the bookmark panel', () => {
         await openBookmarks(page);
         await focusFirstRow(page);
         const row = page.locator('#config-bm-list .config-bm-row').first();
-        await expect(row.locator('.config-bm-checkmode')).toBeHidden();
+        await expect(row.locator('.config-bm-key')).toBeHidden();
         await page.keyboard.press('i');
         await expect(page.locator('#config-bm-workbench')).toHaveClass(/is-panel-collapsed/);
-        await expect(row.locator('.config-bm-checkmode')).toBeVisible();
-        await expect(row.locator('.config-bm-added')).toBeVisible();
+        await expect(row.locator('.config-bm-key')).toBeVisible();
         await page.keyboard.press('i');
-        await expect(row.locator('.config-bm-checkmode')).toBeHidden();
-        await expect(row.locator('.config-bm-added')).toBeHidden();
+        await expect(row.locator('.config-bm-key')).toBeHidden();
     });
 
     test('Edit in the right-click menu opens the panel, not a dialog', async ({ page }) => {

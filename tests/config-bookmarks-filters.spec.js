@@ -61,6 +61,8 @@ test.describe('what the bookmark list is narrowed to', () => {
 
     test('a selection survives a filter change, and says what it is hiding', async ({ page }) => {
         await openBookmarks(page);
+        // The box shows on hover (rows keep it out of sight at rest, as in Health).
+        await page.locator('#config-bm-list .config-bm-row').first().hover();
         await page.locator('#config-bm-list .config-bm-row input[type="checkbox"]').first().check();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmSelected.size)).toBe(1);
 

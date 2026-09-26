@@ -153,7 +153,11 @@ test.describe('the bulk form', () => {
                     .slice(0, 2);
             });
             test.skip(keys.length < 2, 'needs two categorised bookmarks');
-            for (const k of keys) await page.locator(`[data-bm-tick="${k}"]`).check();
+            // The box shows on hover (rows keep it out of sight at rest, as in Health).
+            for (const k of keys) {
+                await page.locator(`#config-bm-list .config-bm-row[data-bm-key="${k}"]`).hover();
+                await page.locator(`[data-bm-tick="${k}"]`).check();
+            }
             const urls = await page.evaluate((ks) => ks.map((k) =>
                 window.dashboardInstance.config.findBookmarkByKey(k).url), keys);
             const panel = page.locator('#config-bm-panel');

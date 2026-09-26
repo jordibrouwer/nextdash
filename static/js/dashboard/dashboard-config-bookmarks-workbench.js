@@ -1202,6 +1202,21 @@
         return items;
     },
 
+    /**
+     * The row's glow, the same mapping as Health's rows: broken red, a monitor
+     * that is down amber, a monitored and healthy one in the accent, healthy
+     * green, and nothing for a bookmark that is never checked.
+     */
+    workbenchRowStatus(b) {
+        const state = this.bookmarkHealthState(b);
+        if (state === 'broken') return 'bad';
+        if (state === 'down') return 'warn';
+        if (state === 'healthy') {
+            return global.HealthFacts?.get?.(b?.url)?.monitor ? 'info' : 'good';
+        }
+        return null;
+    },
+
     renderWorkbenchRow(item, ctx) {
         const esc = ctx.esc;
         const b = item.bookmark;
@@ -1209,7 +1224,9 @@
         const ticked = this.bmSelected.has(key);
         const title = b.name || this.formatBookmarkUrlDisplay(b.url) || b.url;
         const domain = this.formatBookmarkUrlDisplay(b.url);
-        const state = this.bookmarkHealthState(b);
+        // The glow (list-view-shell.css) says what the dot before the title
+        // used to, in the same colours Health's rows use.
+        const status = this.workbenchRowStatus(b);
         const tags = (b.tags || []).map((t) => String(t).trim()).filter(Boolean);
         // Every tag, and a count for the ones that do not fit; fitWorkbenchTags
         // decides which, once the row has a width.
@@ -1217,15 +1234,6 @@
             + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '');
         const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '—', never: true };
-        const cm = global.CheckMode;
-        const checkMode = cm?.of?.(b) || 'off';
-        const checkMeta = cm?.meta?.(checkMode);
-        const checkLabel = checkMode === 'off' || !checkMeta
-            ? '—'
-            : checkMeta.badge + (checkMode === 'monitor' ? ` · ${cm.intervalLabel(cm.intervalOf(b))}` : '');
-        const added = b.createdAt
-            ? (global.formatLastOpened?.(b.createdAt, { t: this.lastOpenedTranslator() })?.label || '—')
-            : '—';
         const crumbLabel = ctx.grouped ? '' : this.workbenchGroupLabel(b);
         const crumb = ctx.grouped ? '' : `<span class="config-bm-crumb" title="${esc(crumbLabel)}">${esc(crumbLabel)}</span>`;
         const classes = ['config-bm-row'];
@@ -1234,7 +1242,7 @@
         if (item.groupEnd) classes.push('is-group-end');
         const feed = global.BookmarkFeedRow;
         return `
-            <div class="${classes.join(' ')}" data-bm-key="${esc(key)}" role="row" tabindex="-1"
+            <div class="${classes.join(' ')}" data-bm-key="${esc(key)}"${status ? ` data-lvs-status="${status}"` : ''} role="row" tabindex="-1"
                  aria-selected="${ticked ? 'true' : 'false'}" aria-posinset="${item.index + 1}" aria-setsize="${ctx.setSize}">
                 <label class="config-bm-tick-cell" role="gridcell">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
@@ -1242,7 +1250,6 @@
                 </label>
                 <span class="config-bm-icon-cell" role="gridcell">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
                 <span class="config-bm-name" role="gridcell">
-                    <span class="config-bm-health-dot is-${esc(state)}" title="${esc(this.railHealthLabel(state))}"></span>
                     <span class="config-bm-title">${esc(title)}</span>
                     <span class="config-bm-domain">${esc(domain)}</span>
                     ${ctx.isDuplicate(b) ? `<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>` : ''}
@@ -1252,8 +1259,6 @@
                 <span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned
                     ? `<span aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}</span>
                 <span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>
-                <span class="config-bm-extra config-bm-checkmode" role="gridcell" title="${esc(`${this.t('config.bmFieldChecking', 'Checking')}: ${checkMeta?.hint || ''}`)}">${esc(checkLabel)}</span>
-                <span class="config-bm-extra config-bm-added" role="gridcell" title="${esc(this.t('config.bookmarkStatAdded', 'Added'))}">${esc(added)}</span>
                 <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>
                 <span class="config-bm-last" role="gridcell">${esc(last.label)}</span>
             </div>`;

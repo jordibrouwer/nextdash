@@ -129,6 +129,8 @@ test('giving a kept bookmark a page and a category files it', async ({ page }) =
     await clearSelection(page);
     // By key, not by position: the model filters before the list repaints, so
     // the first rendered row can still be the previous query's.
+    // The box shows on hover (rows keep it out of sight at rest, as in Health).
+    await page.locator('#config-bm-list [data-bm-key*="cfg-move.example"]').hover();
     await page.locator('#config-bm-list [data-bm-key*="cfg-move.example"] input[type="checkbox"]')
         .check();
     await expect.poll(async () => page.evaluate(() => {
@@ -169,6 +171,8 @@ test('a whole selection can be filed at once, with a category', async ({ page })
     await expect.poll(async () => (await configView(page)).visible.length, { timeout: 10_000 }).toBe(2);
 
     await clearSelection(page);
+    // The box shows on hover (rows keep it out of sight at rest, as in Health).
+    await page.locator('#config-bm-list [data-bm-key*="cfg-bulkone.example"]').hover();
     await page.locator('#config-bm-list [data-bm-key*="cfg-bulkone.example"] input[type="checkbox"]')
         .check();
     await page.locator('#config-bm-list [data-bm-key*="cfg-bulktwo.example"] input[type="checkbox"]')
