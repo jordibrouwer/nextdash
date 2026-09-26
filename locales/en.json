@@ -1937,6 +1937,7 @@
     "widgetSystemNoProc": "Not reading this machine yet — mount /proc and set NEXTDASH_HOST_PROC.",
     "widgetSystemUnsupported": "This reading is available on Linux hosts.",
     "widgetSystemNoDocker": "Not connected to Docker — mount the socket and set NEXTDASH_DOCKER_SOCKET.",
+    "widgetSystemDockerDenied": "No access to the Docker socket — see Help → System widgets.",
     "widgetSystemNoMounts": "No disks chosen yet — name them in this widget’s settings.",
     "widgetSystemReadFailed": "This machine answered with something unreadable.",
     "widgetType.disks": "Disks",

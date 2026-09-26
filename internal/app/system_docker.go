@@ -154,7 +154,7 @@ func readDocker() DockerMetrics {
 
 	resp, err := client.Get("http://docker/" + dockerAPIVersion + "/containers/json?all=1")
 	if err != nil {
-		return DockerMetrics{MetricStatus: MetricStatus{Reason: reasonNoDockerSocket}}
+		return DockerMetrics{MetricStatus: MetricStatus{Reason: dockerDialReason(err)}}
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {

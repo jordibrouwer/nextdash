@@ -200,3 +200,56 @@ func TestDockerClientIsBuiltOncePerSocket(t *testing.T) {
 		t.Error("an idle connection to the daemon is never given up")
 	}
 }
+
+/*
+A socket that exists but refuses this user is a permissions problem, not a
+missing mount. Telling someone who already mounted the socket to mount it sends
+them in a circle -- which is what happened on Unraid, where the socket is
+root:281 and the app runs as nextdash.
+*/
+func TestDockerReasonSeparatesDeniedFromMissing(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores socket permissions")
+	}
+	dir, err := os.MkdirTemp("", "nd")
+	if err != nil {
+		t.Fatalf("temp dir: %v", err)
+	}
+	defer os.RemoveAll(dir)
+	socket := filepath.Join(dir, "d.sock")
+	listener, err := net.Listen("unix", socket)
+	if err != nil {
+		t.Skipf("unix sockets unavailable here: %v", err)
+	}
+	defer listener.Close()
+	if err := os.Chmod(socket, 0o000); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+
+	t.Setenv("NEXTDASH_DOCKER_SOCKET", socket)
+	if got := readDocker(); got.Reason != reasonDockerSocketDenied {
+		t.Fatalf("reason = %q, want %q", got.Reason, reasonDockerSocketDenied)
+	}
+
+	t.Setenv("NEXTDASH_DOCKER_SOCKET", filepath.Join(dir, "absent.sock"))
+	if got := readDocker(); got.Reason != reasonNoDockerSocket {
+		t.Fatalf("missing socket reason = %q, want %q", got.Reason, reasonNoDockerSocket)
+	}
+}
+
+// Reading and changing are separate grants: the socket alone never lets
+// nextDash stop anything.
+func TestDockerControlEnabled(t *testing.T) {
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "")
+	if dockerControlEnabled() {
+		t.Fatal("control must be off by default")
+	}
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	if !dockerControlEnabled() {
+		t.Fatal("NEXTDASH_DOCKER_CONTROL=1 must enable control")
+	}
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "true")
+	if dockerControlEnabled() {
+		t.Fatal("only the literal 1 enables control")
+	}
+}
