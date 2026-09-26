@@ -1126,7 +1126,7 @@ class DashboardHealth {
             return true;
         }
 
-        if ((e.key === 'R' || e.key === 'r' || e.key === '?') && !onRowControl && !isSearch) {
+        if ((e.key === 'R' || e.key === 'r') && !onRowControl && !isSearch) {
             e.preventDefault();
             e.stopImmediatePropagation();
             window.nextdashRecordKey?.('R');
@@ -6154,7 +6154,7 @@ class DashboardHealth {
         } catch { /* history is unavailable in some embedded contexts */ }
     }
 
-    /** Keyboard R / ?: reload the cached report, not a full retest-all run. */
+    /** Keyboard R: reload the cached report, not a full retest-all run. */
     async refreshReportFromKeyboard() {
         window.nextdashTrack?.('health:refresh-report');
         // Reloading on purpose is how you ask for the list as it stands now.

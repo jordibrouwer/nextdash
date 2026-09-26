@@ -88,7 +88,7 @@ for (const view of VIEWS) {
       await expect(page.locator('#cheat-sheet-filter')).toBeVisible();
     });
 
-    if (view.name !== 'health') {
+    {
       test('? opens the finders', async ({ page }) => {
         await openView(page, view);
         await page.keyboard.press('?');
