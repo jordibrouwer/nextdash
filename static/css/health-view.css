@@ -2344,6 +2344,17 @@ body.no-animations .health-view-item-score-caret {
         grid-column: 3 / -1;
     }
 
+    /* Title and score share the first line; domain and reason go under. */
+    .health-view-line1 .health-view-item-title {
+        grid-row: 1;
+        grid-column: 3;
+    }
+
+    .health-view-line1 .health-view-item-score {
+        grid-row: 1;
+        grid-column: 4;
+    }
+
     .health-view-item .health-view-line2 {
         padding-left: 0;
     }

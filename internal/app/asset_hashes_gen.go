@@ -30,7 +30,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/fresh-tutorial.css":                                 "983ee01b35d7",
 	"css/health-focus.css":                                   "1e318ca222e5",
 	"css/health-tutorial.css":                                "4af5cc90e682",
-	"css/health-view.css":                                    "32ef8f2ca757",
+	"css/health-view.css":                                    "753d9d702d3a",
 	"css/inbox-tutorial.css":                                 "8fccb678de98",
 	"css/layer-tokens.css":                                   "08162134ac4c",
 	"css/list-view-shell.css":                                "78fffa68820a",
