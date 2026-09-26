@@ -15,6 +15,8 @@
     if (typeof global.DashboardConfig !== 'function') return;
 
     const PANEL_KEY = 'nextdash.bmPanelCollapsed';
+    const SECTIONS_KEY = 'nextdash.configBm.sections';
+    const SECTIONS_DEFAULT = ['edit', 'health'];
 
     Object.assign(global.DashboardConfig.prototype, {
 
@@ -377,6 +379,30 @@
             `<option value="${m}"${Number(selected) === m ? ' selected' : ''}>${esc(cm.intervalLabel(m))}</option>`)).join('');
     },
 
+    /**
+     * One collapsible part of the panel, in the shared side panel's markup
+     * (.lvs-drawer-section, list-view-shell.css), so Config's panel folds the
+     * way Health's and the inbox's do. Which parts are open is remembered.
+     */
+    workbenchSection(name, label, body) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const open = this.workbenchOpenSections().has(name);
+        return `<details class="lvs-drawer-section config-bm-panel-section" data-bm-section="${esc(name)}"${open ? ' open' : ''}>
+                <summary>${esc(label)}</summary>
+                <div class="lvs-drawer-section-body">${body}</div>
+            </details>`;
+    },
+
+    workbenchOpenSections() {
+        try {
+            const raw = global.localStorage?.getItem(SECTIONS_KEY);
+            const arr = raw ? JSON.parse(raw) : null;
+            return new Set(Array.isArray(arr) ? arr : SECTIONS_DEFAULT);
+        } catch {
+            return new Set(SECTIONS_DEFAULT);
+        }
+    },
+
     renderWorkbenchSinglePanel(key) {
         const esc = (v) => this.dash.escapeHtml(v);
         const b = this.findBookmarkByKey(key);
@@ -416,13 +442,14 @@
                     <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
                     <span class="config-bm-panel-title">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
                 </div>
+                ${/^https?:\/\//i.test(String(b.url || '')) ? `<a class="config-bm-panel-url" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(this.formatBookmarkUrlDisplay(b.url))}</a>` : ''}
                 <div class="config-bm-panel-actions">
                     <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
                     <button type="button" class="config-btn config-btn--small" data-bm-panel-action="edit-dialog"
                             title="${esc(this.t('config.bmEditDialogTitle', 'Open the full edit dialog (Shift+E)'))}">${esc(this.t('config.bmEditDialog', 'Edit in dialog'))} <kbd>Shift</kbd><kbd>E</kbd></button>
                 </div>
             </header>
-            <div class="config-bm-panel-fields">
+            ${this.workbenchSection('edit', this.t('config.bmSectionEdit', 'Edit'), `<div class="config-bm-panel-fields">
                 ${this.renderWorkbenchField('name', this.t('config.bookmarkNameLabel', 'Name'), input('name', b.name))}
                 ${this.renderWorkbenchField('url', this.t('config.bmFieldUrl', 'URL'), input('url', b.url, 'spellcheck="false"'))}
                 ${this.renderWorkbenchField('page', this.t('config.page', 'Page'), `<select class="config-select" data-bm-field="page">${pageOptions}</select>`)}
@@ -443,21 +470,19 @@
                     <select class="config-select" data-bm-field="monitorInterval">${this.workbenchIntervalOptions(global.CheckMode?.intervalOf?.(b))}</select>
                     <span class="config-bm-field-status" role="status"></span>
                 </label>
-            </div>
-            <section class="config-bm-panel-facts">
-                <h3>${esc(this.t('config.bmHealth', 'Health'))}</h3>
-                <p><span class="config-bm-health-dot is-${esc(state)}"></span> ${esc(this.railHealthLabel(state))}</p>
+            </div>`)}
+            ${this.workbenchSection('health', this.t('config.bmHealth', 'Health'), `
+                <p class="config-bm-panel-fact"><span class="config-bm-health-dot is-${esc(state)}"></span> ${esc(this.railHealthLabel(state))}</p>
                 ${facts?.lastError ? `<p class="config-bm-panel-muted">${esc(facts.lastError)}</p>` : ''}
-                ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}
-                <h3>${esc(this.t('config.bmUsage', 'Usage'))}</h3>
+                ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}`)}
+            ${this.workbenchSection('usage', this.t('config.bmUsage', 'Usage'), `
                 <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>
-                <p class="config-bm-panel-muted">${esc(this.t('config.bookmarkStatLastOpened', 'Last opened'))}: ${esc(fmt(b.lastOpened).label)}</p>
-            </section>
-            <footer class="config-bm-panel-foot">
+                <p class="config-bm-panel-muted">${esc(this.t('config.bookmarkStatLastOpened', 'Last opened'))}: ${esc(fmt(b.lastOpened).label)}</p>`)}
+            ${this.workbenchSection('actions', this.t('config.bmSectionActions', 'Actions'), `<div class="config-bm-panel-foot">
                 <button type="button" class="config-btn config-btn--small" data-bm-panel-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>
                 <button type="button" class="config-btn config-btn--small" data-bm-panel-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>
                 <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.delete', 'Delete'))}</button>
-            </footer>`;
+            </div>`)}`;
     },
 
     repaintWorkbenchPanel() {
@@ -707,6 +732,20 @@
     bindWorkbenchPanel(panel) {
         if (!panel || panel.dataset.bmPanelWired === '1') return;
         panel.dataset.bmPanelWired = '1';
+        // toggle does not bubble; captured here so every repaint's sections
+        // report without a listener each.
+        panel.addEventListener('toggle', (e) => {
+            const section = e.target.closest?.('[data-bm-section]');
+            if (!section || section !== e.target) return;
+            const open = this.workbenchOpenSections();
+            if (section.open) open.add(section.dataset.bmSection);
+            else open.delete(section.dataset.bmSection);
+            try {
+                global.localStorage?.setItem(SECTIONS_KEY, JSON.stringify([...open]));
+            } catch {
+                // Storage unavailable: sections just stop remembering.
+            }
+        }, true);
         panel.addEventListener('click', (e) => {
             if (e.target.closest('[data-bm-panel-toggle]')) {
                 this.toggleWorkbenchPanel();

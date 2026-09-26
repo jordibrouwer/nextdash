@@ -78,3 +78,74 @@ test.describe('config bookmarks redesign: rail and toolbar', () => {
     await expect(page.getByText('Every bookmark you have, from every page')).toHaveCount(0);
   });
 });
+
+test.describe('config bookmarks redesign: panel', () => {
+  const { captureRowWrites } = require('./config-bookmarks-helpers');
+  const section = (page, name) => page.locator(`#config-bm-panel [data-bm-section="${name}"]`);
+
+  test('the panel has Edit, Health, Usage and Actions sections, and the URL as a link', async ({ page }) => {
+    await openConfigBookmarks(page);
+    await bmRow(page, 1).click();
+    for (const name of ['edit', 'health', 'usage', 'actions']) {
+      await expect(section(page, name)).toHaveCount(1);
+    }
+    await expect(section(page, 'edit').locator('[data-bm-field="name"]')).toBeVisible();
+    await expect(page.locator('#config-bm-panel .config-bm-panel-head a[href^="http"]')).toHaveCount(1);
+  });
+
+  test('a closed section stays closed on the next bookmark', async ({ page }) => {
+    await openConfigBookmarks(page);
+    await bmRow(page, 1).click();
+    const health = section(page, 'health');
+    if (await health.getAttribute('open') !== null) await health.locator('summary').click();
+    await expect(health).not.toHaveAttribute('open', '');
+    await bmRow(page, 2).click();
+    await expect(section(page, 'health')).toHaveCount(1);
+    await expect(section(page, 'health')).not.toHaveAttribute('open', '');
+  });
+
+  test('a live field still saves from inside its section', async ({ page }) => {
+    const posts = await captureRowWrites(page);
+    await openConfigBookmarks(page);
+    await bmRow(page, 1).click();
+    const note = section(page, 'edit').locator('[data-bm-field="note"]');
+    await note.fill('from the edit section');
+    await note.blur();
+    await expect.poll(() => posts.some((list) => list.some((b) => b.note === 'from the edit section'))).toBe(true);
+  });
+
+  test('the panel reads as the shared slab', async ({ page }) => {
+    await openConfigBookmarks(page);
+    await bmRow(page, 1).click();
+    const radius = await page.locator('#config-bm-panel').evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+    const drawerRadius = await page.evaluate(() => {
+      const probe = document.createElement('div');
+      probe.className = 'lvs-drawer';
+      probe.style.position = 'absolute';
+      document.body.appendChild(probe);
+      const r = getComputedStyle(probe).borderTopLeftRadius;
+      probe.remove();
+      return r;
+    });
+    expect(radius).toBe(drawerRadius);
+  });
+});
+
+test.describe('config bookmarks redesign: tag suggestions in the panel', () => {
+  const { captureRowWrites } = require('./config-bookmarks-helpers');
+
+  test('the Edit section offers the engine\'s tags, and taking one saves it', async ({ page }) => {
+    const posts = await captureRowWrites(page);
+    await openConfigBookmarks(page);
+    // A predictable engine: the same call the bookmark form makes.
+    await page.evaluate(() => {
+      window.TagSuggestLive.forDraft = () => [{ tag: 'panel-offer', pattern: 'p', reason: { kind: 'rule' } }];
+    });
+    await bmRow(page, 1).click();
+    const chip = page.locator('#config-bm-panel [data-bm-section="edit"] [data-bm-suggest] .tag-suggest-chip-add');
+    await expect(chip).toHaveText('#panel-offer');
+    await chip.click();
+    await expect(page.locator('#config-bm-panel [data-bm-field="tags"]')).toHaveValue(/panel-offer/);
+    await expect.poll(() => posts.some((list) => list.some((b) => (b.tags || []).includes('panel-offer')))).toBe(true);
+  });
+});

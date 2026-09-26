@@ -880,3 +880,28 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     font-weight: var(--font-weight-medium);
     color: var(--text-secondary);
 }
+
+/* The panel's parts fold like the shared side panel's sections
+   (.lvs-drawer-section, list-view-shell.css); these are Config's own bits. */
+.config-bm-panel-url {
+    font-size: var(--font-size-small);
+    color: var(--accent-vivid, var(--accent-primary));
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.config-bm-panel-url:hover,
+.config-bm-panel-url:focus-visible {
+    text-decoration: underline;
+}
+
+.config-bm-panel-section .config-bm-panel-fact,
+.config-bm-panel-section .config-bm-panel-muted {
+    margin: 0;
+}
+
+.config-bm-panel-section .config-bm-panel-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}

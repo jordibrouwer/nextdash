@@ -5943,6 +5943,8 @@
     "bmFieldShortcut": "Shortcut",
     "bmFieldNote": "Note",
     "bmFieldChecking": "Checking",
+    "bmSectionEdit": "Edit",
+    "bmSectionActions": "Actions",
     "bmUsage": "Usage",
     "bmUptime7d": "{pct}% up this week",
     "bmNotSaved": "Not saved — retry",
