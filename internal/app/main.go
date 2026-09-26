@@ -209,6 +209,14 @@ func Run(files assetFS) {
 	// Which disks this machine has, so the settings can offer them rather
 	// than asking somebody to type a mountpoint from memory.
 	r.HandleFunc("/api/system/mounts", handlers.SystemMountsHandler).Methods("GET")
+	// The Docker view. Reading needs NEXTDASH_DOCKER_SOCKET; every POST below
+	// also needs NEXTDASH_DOCKER_CONTROL=1 and passes the write token.
+	r.HandleFunc("/api/docker/status", handlers.DockerStatusHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers", handlers.DockerContainersHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}", handlers.DockerContainerDetailHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/env/{name}", handlers.DockerContainerEnvHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/stats", handlers.DockerContainerStatsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/logs", handlers.DockerContainerLogsHandler).Methods("GET")
 	// The one widget that reads from outside, by widget id rather than by URL.
 	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")
 	// The same fetch, made once on demand and answered in full: what the

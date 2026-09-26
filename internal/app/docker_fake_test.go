@@ -12,6 +12,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 /*
@@ -210,7 +212,7 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 
 	case r.Method == "GET" && strings.HasPrefix(path, "/containers/") && strings.HasSuffix(path, "/logs"):
 		id := strings.TrimSuffix(strings.TrimPrefix(path, "/containers/"), "/logs")
-		f.handleLogs(w, id)
+		f.handleLogs(w, r, id)
 		return
 	}
 
@@ -261,6 +263,15 @@ func (f *fakeDocker) handleInspect(w http.ResponseWriter, id string) {
 // arrives here exactly as the caller wrote it.
 func (f *fakeDocker) handleImageInspect(w http.ResponseWriter, ref string) {
 	img, ok := f.images[ref]
+	if !ok {
+		// The daemon answers to an image id as well as to a reference.
+		for _, candidate := range f.images {
+			if candidate.ID == ref {
+				img, ok = candidate, true
+				break
+			}
+		}
+	}
 	if !ok {
 		writeJSONFake(w, http.StatusNotFound, map[string]string{"message": "no such image"})
 		return
@@ -385,12 +396,15 @@ func (f *fakeDocker) handleStats(w http.ResponseWriter, id string) {
 	})
 }
 
-func (f *fakeDocker) handleLogs(w http.ResponseWriter, id string) {
+func (f *fakeDocker) handleLogs(w http.ResponseWriter, r *http.Request, id string) {
 	c := f.resolve(id)
 	if c == nil {
 		writeJSONFake(w, http.StatusNotFound, map[string]string{"message": "no such container"})
 		return
 	}
+	// Recorded with the query string so a test can confirm the client clamped
+	// tail before the request ever left the process.
+	f.record("GET", "/containers/"+c.ID+"/logs?"+r.URL.RawQuery)
 	w.WriteHeader(http.StatusOK)
 	for _, line := range c.Logs {
 		full := line + "\n"
@@ -400,4 +414,19 @@ func (f *fakeDocker) handleLogs(w http.ResponseWriter, id string) {
 		_, _ = w.Write(header)
 		_, _ = w.Write([]byte(full))
 	}
+}
+
+// newDockerTestRouter registers exactly the /api/docker routes main.go
+// registers, on a real mux.Router so mux.Vars(r) resolves {id} and {name} the
+// way production requests see them. Keep this list and main.go's in sync --
+// every task that adds a route adds it here too.
+func newDockerTestRouter(h *Handlers) http.Handler {
+	r := mux.NewRouter()
+	r.HandleFunc("/api/docker/status", h.DockerStatusHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers", h.DockerContainersHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}", h.DockerContainerDetailHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/env/{name}", h.DockerContainerEnvHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/stats", h.DockerContainerStatsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/logs", h.DockerContainerLogsHandler).Methods("GET")
+	return r
 }
