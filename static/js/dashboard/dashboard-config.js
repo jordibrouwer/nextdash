@@ -1930,6 +1930,7 @@ class DashboardConfig {
         } else if (this.section === 'logs') {
             this.bindLogsActions(container);
         } else if (this.section === 'widgets') {
+            this.bindDockerSettingsBlock(container);
             this.bindWidgetsTabs(container);
             this.bindWidgetsEditor(container);
             void this.loadWidgetsEditor();
@@ -15099,9 +15100,60 @@ class DashboardConfig {
         return `
             <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
                 'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
+            ${this.renderDockerSettingsBlock()}
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-widgets-body" role="tabpanel" tabindex="0">${this.renderWidgetsTab()}</div>
         `;
+    }
+
+    /*
+     * The Docker widget reads containers; this is the one setting that also
+     * *acts* on them — checking registries on a schedule rather than only when
+     * someone presses the button in the view. It lives beside the widgets
+     * rather than inside one widget's own settings, because the schedule runs
+     * whether or not a Docker tile is on any page.
+     */
+    renderDockerSettingsBlock() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const interval = this.dash.settings?.dockerUpdateInterval || 'off';
+        const options = [
+            ['off', 'dockerIntervalOff', 'Off'],
+            ['6h', 'dockerInterval6h', 'Every 6 hours'],
+            ['12h', 'dockerInterval12h', 'Every 12 hours'],
+            ['24h', 'dockerInterval24h', 'Every 24 hours'],
+        ].map(([value, key, fallback]) => `<option value="${esc(value)}"${value === interval ? ' selected' : ''}>${
+            esc(this.t(`dashboard.${key}`, fallback))}</option>`).join('');
+        return `
+            <section class="config-widget-type-group config-docker-settings">
+                <h4 class="config-widget-type-group-title">${esc(this.t('dashboard.dockerSettingsTitle', 'Docker'))}</h4>
+                <label class="config-field">
+                    <span>${esc(this.t('dashboard.dockerSettingsInterval', 'Check for image updates'))}</span>
+                    <select class="config-select" data-setting="dockerUpdateInterval">${options}</select>
+                </label>
+                <p class="config-field-hint" data-docker-actions-status></p>
+            </section>`;
+    }
+
+    /** Wires the select above and fills the status line from /api/docker/status. */
+    bindDockerSettingsBlock(container) {
+        const select = container.querySelector('[data-setting="dockerUpdateInterval"]');
+        if (select && !select._dockerBound) {
+            select._dockerBound = true;
+            select.addEventListener('change', () => {
+                this.dash.settings.dockerUpdateInterval = select.value;
+                void this.saveSettingsWithFeedback();
+            });
+        }
+        const status = container.querySelector('[data-docker-actions-status]');
+        if (!status) return;
+        fetch('/api/docker/status').then((res) => (res.ok ? res.json() : null)).then((data) => {
+            if (!status.isConnected) return; // the view moved on before this answered
+            status.textContent = data?.control
+                ? this.t('dashboard.dockerActionsOn', 'Actions: on')
+                : this.t('dashboard.dockerActionsOff', 'Actions: off — set NEXTDASH_DOCKER_CONTROL=1');
+        }).catch(() => {
+            if (status.isConnected) status.textContent = '';
+        });
     }
 
     renderWidgetsTab() {

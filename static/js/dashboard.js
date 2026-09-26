@@ -479,12 +479,15 @@ class Dashboard {
             } else if ((bootHash === 'health' || bootHash.startsWith('health/'))
                 && this.activeView !== 'health' && this.health?.isEnabled?.()) {
                 await this.health.openHealthView();
-            } else if ((bootHash === 'docker' || bootHash.startsWith('docker/'))
+            } else if ((bootHash === 'docker' || bootHash.startsWith('docker/') || bootHash.startsWith('docker?'))
                 && this.activeView !== 'docker') {
                 const select = bootHash.startsWith('docker/')
                     ? decodeURIComponent(bootHash.slice('docker/'.length))
                     : null;
-                await this.docker?.openDockerView?.({ select });
+                const filter = bootHash.startsWith('docker?')
+                    ? new URLSearchParams(bootHash.slice('docker?'.length)).get('filter')
+                    : null;
+                await this.docker?.openDockerView?.({ select, filter });
             } else if (bootHash === 'unsorted' && this.settings?.unsortedEnabled !== false) {
                 // The setting rather than the module: the kept list loads with
                 // the inbox, and this runs before either of them is there.
@@ -1039,12 +1042,16 @@ class Dashboard {
                 }
                 return;
             }
-            if (hash === 'docker' || hash.startsWith('docker/')) {
+            if (hash === 'docker' || hash.startsWith('docker/') || hash.startsWith('docker?')) {
                 const select = hash.startsWith('docker/') ? decodeURIComponent(hash.slice('docker/'.length)) : null;
+                const filter = hash.startsWith('docker?')
+                    ? new URLSearchParams(hash.slice('docker?'.length)).get('filter')
+                    : null;
                 if (this.activeView !== 'docker') {
-                    return this.docker?.openDockerView?.({ select });
+                    return this.docker?.openDockerView?.({ select, filter });
                 }
                 if (select) this.docker?.selectContainer?.(select, { openDrawer: true });
+                if (filter) this.docker?.applyFilter?.(filter);
                 return;
             }
             // Kept is a tab of the inbox now; the address it always had still

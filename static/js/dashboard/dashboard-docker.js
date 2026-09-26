@@ -112,10 +112,11 @@ class DashboardDocker {
         history.replaceState(history.state, '', next);
     }
 
-    async openDockerView({ select, section } = {}) {
+    async openDockerView({ select, section, filter } = {}) {
         const d = this.dash;
         if (d.activeView === DashboardDocker.VIEW) {
             if (select) this.selectContainer(select, { openDrawer: true, section });
+            if (filter) this.applyFilter(filter);
             return true;
         }
         if (d.isInlineEditActive?.() && !(await d.confirmInlineEditBeforeNavigation?.())) {
@@ -133,6 +134,11 @@ class DashboardDocker {
         } else {
             this.restoreDockerHash();
         }
+        // Applied after the render above rather than folded into it, the same
+        // way a widget's link into Health sets its filter after the fact:
+        // one path handles "arrived with a filter" whether the view was
+        // already open or is only just mounting.
+        if (filter) this.applyFilter(filter);
         this.startPolling();
         return true;
     }
@@ -354,12 +360,14 @@ class DashboardDocker {
         container.tabIndex = -1;
         this.shell = window.ListViewShell.mount(container, this.shellConfig());
         this.buildToolbar(this.shell.toolbar);
-        // The drawer is a sibling of the shell's own root, not a child of the
-        // body it repaints — a table redraw must never carry the drawer away.
+        // The drawer lives on <body>, not in the layout: an ancestor there
+        // contains position:fixed, which left the phone drawer short of the
+        // screen. Outside the shell's body as well, so a table redraw never
+        // carries it away.
         this.drawerHost = document.createElement('div');
         this.drawerHost.className = 'docker-drawer-host';
         this.drawerHost.hidden = true;
-        container.appendChild(this.drawerHost);
+        document.body.appendChild(this.drawerHost);
         this.drawer = new window.DockerDrawer(this);
         return this.shell;
     }
@@ -369,6 +377,8 @@ class DashboardDocker {
         this.drawer = null;
         this.shell?.destroy?.();
         this.shell = null;
+        // On <body>, so clearing the layout no longer takes it along.
+        this.drawerHost?.remove();
         this.drawerHost = null;
     }
 
@@ -396,7 +406,7 @@ class DashboardDocker {
                 <input type="checkbox" data-docker-group>
                 <span>${this.escape(this.t('dashboard.dockerGroupByProject', 'Group by project'))}</span>
             </label>
-            <button type="button" data-docker-check>${this.escape(this.t('dashboard.dockerCheckUpdates', 'Check for updates'))}</button>
+            <button type="button" class="lvs-action" data-docker-check>${this.escape(this.t('dashboard.dockerCheckUpdates', 'Check for updates'))}</button>
             <span data-docker-checked-at class="docker-checked-at"></span>
         `;
         this.bindToolbar(host);
@@ -710,6 +720,14 @@ class DashboardDocker {
             portsCell.appendChild(a);
         });
         tr.appendChild(portsCell);
+
+        // Phone-width second line (image + first public port); CSS hides it
+        // at desktop and shows it, in place of the image/ports cells, below 768px.
+        const line2 = document.createElement('div');
+        line2.className = 'docker-row-line2';
+        const firstPort = (c.ports || []).find((p) => p && p.public);
+        line2.textContent = [c.image || '', firstPort ? String(firstPort.public) : ''].filter(Boolean).join(' · ');
+        tr.appendChild(line2);
 
         tr.addEventListener('click', (e) => {
             if (e.target.closest('a')) return; // a port link handles its own click

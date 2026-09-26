@@ -113,6 +113,7 @@ class DockerDrawer {
         this._logsLoaded = false;
         this._changesLoaded = false;
         this._els = null;
+        this._scrollLockToken = null;
     }
 
     t(key, fallback, params) {
@@ -133,8 +134,23 @@ class DockerDrawer {
         this._detail = null;
         this._logsLoaded = false;
         this._changesLoaded = false;
+        this._acquireScrollLock();
         this._buildSkeleton(typeof container === 'string' ? { name } : container);
         void this._loadDetail(name);
+    }
+
+    /** Fullscreen phone drawer takes the page scroll lock; switching to another
+     * container while already open reuses the same held token (no double acquire). */
+    _acquireScrollLock() {
+        if (this._scrollLockToken) return;
+        if (!window.matchMedia?.('(max-width: 767px)').matches) return;
+        this._scrollLockToken = window.ScrollLock?.acquire('docker-drawer') ?? null;
+    }
+
+    _releaseScrollLock() {
+        if (!this._scrollLockToken) return;
+        window.ScrollLock?.release(this._scrollLockToken);
+        this._scrollLockToken = null;
     }
 
     /** Opens one section on arrival, as :docker <name> logs asks. */
@@ -145,6 +161,7 @@ class DockerDrawer {
 
     close() {
         this._stopResourcePolling();
+        this._releaseScrollLock();
         this._open = false;
         this._name = null;
         this._detail = null;

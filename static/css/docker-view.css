@@ -80,6 +80,12 @@
     gap: var(--space-1, 0.3rem);
 }
 
+/* Second phone line (name/state stay in the normal cells); hidden until
+   the mobile media query below turns it on. */
+.docker-row-line2 {
+    display: none;
+}
+
 .docker-port {
     color: var(--accent-primary);
     text-decoration: none;
@@ -313,9 +319,60 @@
     margin-top: var(--space-2, 0.5rem);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 767px) {
+    .docker-legend {
+        display: none;
+    }
+
+    /* Rows collapse to two lines: name+state stay in their cells, image and
+       first port move into .docker-row-line2 (built in dashboard-docker.js). */
+    .docker-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
+        padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    }
+
+    .docker-row .docker-cell {
+        display: block;
+        padding: 0;
+    }
+
+    .docker-cell--name {
+        flex: 1 1 auto;
+    }
+
+    .docker-cell--state {
+        flex: 0 0 auto;
+        text-align: right;
+    }
+
+    .docker-cell--image,
+    .docker-cell--ports {
+        display: none;
+    }
+
+    .docker-row-line2 {
+        display: block;
+        flex: 0 0 100%;
+        color: var(--text-secondary);
+        font-size: var(--text-xs, 0.72rem);
+    }
+
+    /* Drawer host is anchored top/right/bottom already; left:0 makes it
+       cover the whole viewport (inset: 0) while it is open. */
+    .docker-drawer-host {
+        inset: 0;
+    }
+
+    /* The viewport, not the host: a percentage came out short of the screen
+       inside the dashboard layout. */
     .docker-drawer {
-        width: 100%;
+        box-sizing: border-box;
+        width: 100vw;
+        max-width: none;
+        border-left: 0;
     }
 }
 

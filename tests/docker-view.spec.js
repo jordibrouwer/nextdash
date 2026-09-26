@@ -1,5 +1,6 @@
 const { test, expect } = require('./fixtures');
 const { mockDocker } = require('./helpers/docker-mock');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 test.describe('docker view', () => {
   test('opens from #docker and lists containers', async ({ page }) => {
@@ -146,5 +147,31 @@ test.describe('docker view', () => {
     await expect(page.locator('[data-docker-drawer]')).toBeHidden();
     await expect(page.locator('[data-docker-row]')).toHaveCount(4);
     await expect(page).toHaveURL(/#docker$/);
+  });
+
+  test('phone: two-line rows and a fullscreen drawer', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await mockDocker(page);
+    await page.goto('/#docker');
+    const row = page.locator('[data-docker-row="sonarr"]');
+    // Wait for real content before dismissing, like dashboard-bookmark-drag —
+    // otherwise the quick-start card can still be mounting when we look for it
+    // and then arrives later, on top of the list, at this width.
+    await row.waitFor({ state: 'visible' });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    const startLocks = await page.evaluate(() => window.ScrollLock?.holders.size ?? 0);
+    await expect(row.locator('.docker-row-line2')).toBeVisible();
+    await row.click();
+    await page.keyboard.press('Enter');
+    // Fullscreen from the left edge. ScrollLock keeps a scrollbar gutter so
+    // the page does not jump; a phone's overlay scrollbar has none.
+    const box = await page.locator('[data-docker-drawer]').boundingBox();
+    const viewport = await page.evaluate(() => window.innerWidth);
+    expect(box.x).toBe(0);
+    expect(box.width).toBeGreaterThanOrEqual(viewport - 16);
+    await page.keyboard.press('Escape');
+    expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).not.toBe('hidden');
+    expect(await page.evaluate(() => window.ScrollLock?.holders.size ?? 0)).toBe(startLocks);
   });
 });
