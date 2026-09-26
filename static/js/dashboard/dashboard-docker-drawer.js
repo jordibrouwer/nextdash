@@ -2,9 +2,9 @@
  * Docker detail drawer — the sections behind a container row: overview,
  * network, volumes, resources, environment, logs and what's changed.
  *
- * Owns everything inside [data-docker-drawer]; dashboard-docker.js still owns
- * the host, the hash (#docker/<name>) and the selectContainer()/closeDrawer()
- * entry points. Every value reaches the page through textContent or a DOM
+ * The panel is the shared ListViewDrawer; this fills it with a container's
+ * sections. dashboard-docker.js owns the hash (#docker/<name>) and the
+ * selectContainer()/closeDrawer() entry points. Every value reaches the page through textContent or a DOM
  * node built by hand — release bodies are markdown with no sanitizer in this
  * repo, so nothing here ever touches innerHTML with data from the server.
  */
@@ -12,24 +12,6 @@
 const DOCKER_SECTIONS_KEY = 'nextdash.docker.sections';
 const DOCKER_SECTIONS_DEFAULT = ['overview'];
 const DOCKER_SECTION_KEYS = ['overview', 'network', 'volumes', 'resources', 'env', 'logs', 'changes'];
-
-function dockerLoadOpenSections() {
-    try {
-        const raw = localStorage.getItem(DOCKER_SECTIONS_KEY);
-        const arr = raw ? JSON.parse(raw) : null;
-        return new Set(Array.isArray(arr) ? arr : DOCKER_SECTIONS_DEFAULT);
-    } catch {
-        return new Set(DOCKER_SECTIONS_DEFAULT);
-    }
-}
-
-function dockerSaveOpenSections(set) {
-    try {
-        localStorage.setItem(DOCKER_SECTIONS_KEY, JSON.stringify([...set]));
-    } catch {
-        // Storage unavailable or full — sections just stop remembering.
-    }
-}
 
 /** fetch() that never throws and answers null on anything but a 2xx JSON body. */
 async function dockerDrawerFetchJSON(url, init) {
@@ -105,15 +87,22 @@ function renderReleaseText(body) {
 class DockerDrawer {
     constructor(view) {
         this.view = view;
-        this._open = false;
         this._name = null;
         this._detail = null;
-        this._openSections = dockerLoadOpenSections();
         this._statsTimer = null;
         this._logsLoaded = false;
         this._changesLoaded = false;
         this._els = null;
-        this._scrollLockToken = null;
+        // The panel itself -- host, placement, phone fullscreen, ScrollLock and
+        // remembered sections -- is the shared one (list-view-drawer.js); this
+        // class fills it with a container's sections.
+        this.base = new window.ListViewDrawer({
+            id: 'docker',
+            storageKey: DOCKER_SECTIONS_KEY,
+            defaultSections: DOCKER_SECTIONS_DEFAULT,
+            closeLabel: this.t('dockerDrawerClose', 'Close'),
+            onClose: () => this._onBaseClosed(),
+        });
     }
 
     t(key, fallback, params) {
@@ -121,172 +110,113 @@ class DockerDrawer {
     }
 
     isOpen() {
-        return this._open;
+        return this.base.isOpen();
     }
 
-    /** container: a row summary ({name, state, health, …}) or a bare name string. */
     /** Config -> Containers: how many lines the Logs section asks for. */
     logLines() {
         const n = Number(this.view.dash?.settings?.dockerLogLines);
         return [100, 200, 500, 1000].includes(n) ? n : 200;
     }
 
+    /** container: a row summary ({name, state, health, …}) or a bare name string. */
     open(container) {
         const name = typeof container === 'string' ? container : container?.name;
         if (!name) return;
         this._stopResourcePolling();
-        this._open = true;
         this._name = name;
         this._detail = null;
         this._logsLoaded = false;
         this._changesLoaded = false;
-        this._acquireScrollLock();
         this._buildSkeleton(typeof container === 'string' ? { name } : container);
         void this._loadDetail(name);
     }
 
-    /** Fullscreen phone drawer takes the page scroll lock; switching to another
-     * container while already open reuses the same held token (no double acquire). */
-    _acquireScrollLock() {
-        if (this._scrollLockToken) return;
-        if (!window.matchMedia?.('(max-width: 767px)').matches) return;
-        this._scrollLockToken = window.ScrollLock?.acquire('docker-drawer') ?? null;
-    }
-
-    _releaseScrollLock() {
-        if (!this._scrollLockToken) return;
-        window.ScrollLock?.release(this._scrollLockToken);
-        this._scrollLockToken = null;
-    }
-
     /** Opens one section on arrival, as :docker <name> logs asks. */
     openSection(key) {
-        const details = this.view.drawerHost?.querySelector(`[data-docker-section="${key}"]`);
-        if (details && !details.open) details.open = true;
+        this.base.openSection(key);
     }
 
     close() {
         this._stopResourcePolling();
-        this._releaseScrollLock();
-        this._open = false;
         this._name = null;
         this._detail = null;
         this._els = null;
-        const host = this.view.drawerHost;
-        if (host) {
-            host.hidden = true;
-            host.replaceChildren();
-        }
+        // Silent: the view closing the drawer already knows it did.
+        this.base.close({ silent: true });
+    }
+
+    /** The panel's own close button: the view drops its selection as well. */
+    _onBaseClosed() {
+        this._stopResourcePolling();
+        this._name = null;
+        this._detail = null;
+        this._els = null;
+        this.view.closeDrawer();
     }
 
     refresh() {
-        if (!this._open || !this._name) return;
+        if (!this.isOpen() || !this._name) return;
         void this._loadDetail(this._name);
     }
 
     /* ── Building the panel ───────────────────────────────────────────── */
 
     _buildSkeleton(summary) {
-        const host = this.view.drawerHost;
-        if (!host) return;
-        host.hidden = false;
-        host.replaceChildren();
-
-        const panel = document.createElement('div');
-        panel.setAttribute('data-docker-drawer', '');
-        panel.className = 'docker-drawer';
-        panel.setAttribute('role', 'dialog');
-        panel.setAttribute('aria-label', summary.name);
-
-        panel.appendChild(this._buildHeader(summary));
-
         const els = { sections: {} };
-        DOCKER_SECTION_KEYS.forEach((key) => {
-            const { details, body } = this._buildSection(key);
-            panel.appendChild(details);
-            els.sections[key] = body;
+        this.base.open(summary.name, {
+            title: summary.name,
+            onSectionToggle: (key, open) => this._onSectionToggle(key, open),
+            build: (panel, ctx) => {
+                // The Containers specs and styles still address these.
+                panel.setAttribute('data-docker-drawer', '');
+                panel.classList.add('docker-drawer');
+                this._fillHeader(ctx, summary);
+                DOCKER_SECTION_KEYS.forEach((key) => {
+                    const titleKey = `dockerSection${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+                    const body = ctx.section(key, this.t(titleKey, key));
+                    body.parentElement.setAttribute('data-docker-section', key);
+                    body.classList.add('docker-section-body');
+                    els.sections[key] = body;
+                });
+            },
         });
         this._els = els;
         this._wireOverviewNetworkVolumesEnv(els);
         this._wireResources(els);
         this._wireLogs(els);
         this._wireChanges(els);
-
-        host.appendChild(panel);
+        // Sections restored open fire their toggle before _els exists; run
+        // their loads now that it does.
+        DOCKER_SECTION_KEYS.forEach((key) => {
+            if (els.sections[key]?.parentElement?.open) this._onSectionToggle(key, true);
+        });
     }
 
-    _buildHeader(summary) {
-        const header = document.createElement('div');
-        header.className = 'docker-drawer-header';
-
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'docker-drawer-close';
-        closeBtn.setAttribute('aria-label', this.t('dockerDrawerClose', 'Close'));
-        closeBtn.textContent = '×';
-        closeBtn.addEventListener('click', () => this.view.closeDrawer());
-        header.appendChild(closeBtn);
-
-        const heading = document.createElement('div');
-        heading.className = 'docker-drawer-heading';
-        const title = document.createElement('h3');
-        title.className = 'docker-drawer-title';
-        title.textContent = summary.name;
-        heading.appendChild(title);
-
+    _fillHeader(ctx, summary) {
         const pill = document.createElement('span');
         pill.className = 'docker-drawer-pill';
         pill.setAttribute('data-docker-state', '');
         pill.textContent = summary.status || summary.state || '';
-        heading.appendChild(pill);
+        ctx.heading.appendChild(pill);
 
         if (summary.health) {
             const health = document.createElement('span');
             health.className = 'docker-drawer-health';
             health.setAttribute('data-docker-health', '');
             health.textContent = summary.health;
-            heading.appendChild(health);
+            ctx.heading.appendChild(health);
         }
-        header.appendChild(heading);
 
         // The actions the container's current state allows; DockerActions
         // decides which, so the drawer and the row keys never disagree.
-        const actions = document.createElement('div');
-        actions.setAttribute('data-docker-drawer-actions', '');
-        actions.className = 'docker-drawer-actions';
-        this.view.actions?.renderButtons(actions, summary);
-        header.appendChild(actions);
-
-        return header;
-    }
-
-    _buildSection(key) {
-        const details = document.createElement('details');
-        details.setAttribute('data-docker-section', key);
-        details.className = 'docker-section';
-
-        const summary = document.createElement('summary');
-        const titleKey = `dockerSection${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-        summary.textContent = this.t(titleKey, key);
-        details.appendChild(summary);
-
-        const body = document.createElement('div');
-        body.className = 'docker-section-body';
-        details.appendChild(body);
-
-        // Attached before the initial open is applied, so a section restored
-        // open from localStorage still fires its own load.
-        details.addEventListener('toggle', () => this._onSectionToggle(key, details.open));
-        details.open = this._openSections.has(key);
-
-        return { details, body };
+        ctx.actions.setAttribute('data-docker-drawer-actions', '');
+        ctx.actions.classList.add('docker-drawer-actions');
+        this.view.actions?.renderButtons(ctx.actions, summary);
     }
 
     _onSectionToggle(key, open) {
-        if (open) this._openSections.add(key);
-        else this._openSections.delete(key);
-        dockerSaveOpenSections(this._openSections);
-
+        if (!this._els) return;
         if (key === 'logs' && open && !this._logsLoaded) {
             this._logsLoaded = true;
             void this._loadLogs();
@@ -296,7 +226,7 @@ class DockerDrawer {
             void this._loadChanges();
         }
         if (key === 'resources') {
-            if (open && this._open) this._startResourcePolling();
+            if (open && this.isOpen()) this._startResourcePolling();
             else this._stopResourcePolling();
         }
     }
@@ -323,9 +253,9 @@ class DockerDrawer {
         this._renderVolumes(els.sections.volumes, detail);
         this._renderEnv(els.sections.env, detail);
 
-        const pill = this.view.drawerHost?.querySelector('[data-docker-state]');
+        const pill = this.base.panel?.querySelector('[data-docker-state]');
         if (pill && detail) pill.textContent = detail.status || detail.state || '';
-        const health = this.view.drawerHost?.querySelector('[data-docker-health]');
+        const health = this.base.panel?.querySelector('[data-docker-health]');
         if (health && detail?.health) health.textContent = detail.health;
     }
 

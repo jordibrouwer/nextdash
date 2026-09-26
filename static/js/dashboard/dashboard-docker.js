@@ -417,43 +417,20 @@ class DashboardDocker {
         container.tabIndex = -1;
         this.shell = window.ListViewShell.mount(container, this.shellConfig());
         this.buildToolbar(this.shell.toolbar);
-        // The drawer lives on <body>, not in the layout: an ancestor there
-        // contains position:fixed, which left the phone drawer short of the
-        // screen. Outside the shell's body as well, so a table redraw never
-        // carries it away.
-        this.drawerHost = document.createElement('div');
-        this.drawerHost.className = 'docker-drawer-host';
-        this.drawerHost.hidden = true;
-        document.body.appendChild(this.drawerHost);
+        // The side panel is the shared one (list-view-drawer.js): a host on
+        // <body>, placed below the page header, fullscreen on a phone.
         this.drawer = new window.DockerDrawer(this);
-        // The drawer starts where the view does, below the page header, like
-        // Config -> Bookmarks' panel -- the header's own buttons stay reachable.
-        this._placeDrawer = () => this.placeDrawerHost();
-        window.addEventListener('scroll', this._placeDrawer, { passive: true });
-        window.addEventListener('resize', this._placeDrawer, { passive: true });
-        this.placeDrawerHost();
+        this.drawerHost = this.drawer.base.mount();
+        this.drawerHost.classList.add('docker-drawer-host');
         return this.shell;
     }
 
-    placeDrawerHost() {
-        const host = this.drawerHost;
-        const layout = document.getElementById('dashboard-layout');
-        if (!host || !layout) return;
-        host.style.top = `${Math.max(0, Math.round(layout.getBoundingClientRect().top))}px`;
-    }
-
     _destroyShell() {
-        if (this._placeDrawer) {
-            window.removeEventListener('scroll', this._placeDrawer);
-            window.removeEventListener('resize', this._placeDrawer);
-            this._placeDrawer = null;
-        }
         this.drawer?.close();
+        this.drawer?.base.destroy();
         this.drawer = null;
         this.shell?.destroy?.();
         this.shell = null;
-        // On <body>, so clearing the layout no longer takes it along.
-        this.drawerHost?.remove();
         this.drawerHost = null;
     }
 
@@ -778,13 +755,20 @@ class DashboardDocker {
         tr.className = 'docker-row';
         tr.setAttribute('data-docker-row', c.name);
         tr.setAttribute('data-state', c.state || '');
-        // What the row's glow says: its status group, and the own container.
-        tr.setAttribute('data-docker-status', this.statusGroup(c));
-        if (c.self) tr.setAttribute('data-docker-self', '');
+        // What the row's glow says, in the shared vocabulary (list-view-shell.css);
+        // data-docker-* stay for the specs and the view's own rules.
+        const group = this.statusGroup(c);
+        tr.setAttribute('data-docker-status', group);
+        tr.setAttribute('data-lvs-status', { updates: 'info', running: 'good', paused: 'warn', stopped: 'bad' }[group] || 'muted');
+        if (c.self) {
+            tr.setAttribute('data-docker-self', '');
+            tr.setAttribute('data-lvs-self', '');
+        }
         tr.setAttribute('aria-selected', String(this.selected === c.name || this.multi.has(c.name)));
         const busy = this.busy.get(c.name);
         if (busy) {
             tr.setAttribute('data-docker-busy', busy);
+            tr.setAttribute('data-lvs-busy', '');
             tr.setAttribute('aria-busy', 'true');
         }
         tr.tabIndex = -1;

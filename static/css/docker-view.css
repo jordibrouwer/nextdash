@@ -42,41 +42,10 @@
     box-shadow: inset 2px 0 0 var(--accent-primary);
 }
 
-/*
- * Status, at a glance: a soft glow from the row's left edge in the colour of
- * what the container is doing. Drawn with a gradient rather than a solid
- * tint so the row still reads as part of one table.
- */
-.docker-row[data-docker-status] {
-    --docker-glow: transparent;
-    background-image: linear-gradient(90deg,
-        color-mix(in srgb, var(--docker-glow) 22%, transparent) 0,
-        color-mix(in srgb, var(--docker-glow) 6%, transparent) 40%,
-        transparent 75%);
-    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--docker-glow) 80%, transparent);
-}
-
-.docker-row[data-docker-status="running"] { --docker-glow: var(--accent-success, #3c6); }
-.docker-row[data-docker-status="paused"] { --docker-glow: var(--accent-warning, #cb4); }
-.docker-row[data-docker-status="stopped"] { --docker-glow: var(--accent-error, #c55); }
-.docker-row[data-docker-status="updates"] { --docker-glow: var(--accent-vivid, var(--accent-primary)); }
-
-.docker-row[data-docker-status][aria-selected="true"] {
-    box-shadow:
-        inset 3px 0 0 var(--accent-primary),
-        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
-}
-
-/* The container nextDash itself runs in: a steady accent halo, so it is found
-   without reading names -- and read as the one that offers no actions. */
-.docker-row[data-docker-self] {
-    background-color: color-mix(in srgb, var(--accent-vivid, var(--accent-primary)) 9%, transparent);
-    box-shadow:
-        inset 3px 0 0 var(--accent-vivid, var(--accent-primary)),
-        inset 0 0 14px color-mix(in srgb, var(--accent-vivid, var(--accent-primary)) 28%, transparent);
-}
-
-.docker-row[data-docker-self] .docker-name::after {
+/* The status glow, the own-container halo and the busy pulse are shared:
+   list-view-shell.css, keyed on data-lvs-status / -self / -busy. Only the
+   label is the Containers view's own. */
+.docker-row[data-lvs-self] .docker-name::after {
     content: "nextDash";
     margin-left: var(--space-2, 0.5rem);
     padding: 0 var(--space-1-5, 0.4rem);
@@ -86,18 +55,7 @@
     border: 1px solid color-mix(in srgb, var(--accent-vivid, var(--accent-primary)) 55%, transparent);
 }
 
-/* An action in flight pulses, so a long pull is visibly still working. */
-.docker-row[data-docker-busy] {
-    animation: docker-row-busy 1.4s ease-in-out infinite;
-}
 
-@keyframes docker-row-busy {
-    50% { background-color: color-mix(in srgb, var(--accent-primary) 12%, transparent); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .docker-row[data-docker-busy] { animation: none; }
-}
 
 .docker-group-row[data-docker-group-status="running"] td { color: var(--accent-success, #3c6); }
 .docker-group-row[data-docker-group-status="paused"] td { color: var(--accent-warning, #cb4); }
@@ -200,85 +158,10 @@
 }
 
 /*
- * The drawer: a fixed panel over the list. This host and its open/close
- * mechanics live in dashboard-docker.js; dashboard-docker-drawer.js's
- * DockerDrawer builds everything inside .docker-drawer.
+ * The drawer frame -- host, slab, head, close, sections -- is the shared one
+ * (list-view-shell.css, .lvs-drawer*). What follows is what a container's
+ * panel adds inside it.
  */
-.docker-drawer-host {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    /* Above the view's sticky header (list-view-shell.css, sticky band +
-       1300) now that the drawer sits on <body>, and below the app modal
-       (2000) so a confirmation still opens over it. */
-    z-index: calc(var(--layer-sticky-band, 5) + 1400);
-    display: flex;
-    pointer-events: none;
-}
-
-/* A slab like Config -> Bookmarks' side panel: the same surface, radius and
-   edge light, floating a step in from the window rather than a sheet glued to
-   its edge. */
-.docker-drawer {
-    position: relative;
-    box-sizing: border-box;
-    width: 24rem;
-    max-width: calc(100vw - 2 * var(--space-4, 1rem));
-    height: calc(100% - 2 * var(--space-4, 1rem));
-    margin: var(--space-4, 1rem) var(--space-4, 1rem) var(--space-4, 1rem) 0;
-    overflow-y: auto;
-    padding: var(--space-4, 1rem);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 0.75rem);
-    background: var(--surface-3, var(--background-secondary));
-    border-radius: var(--radius-5, 8px);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
-    pointer-events: auto;
-}
-
-html[data-theme] body:not([data-depth="flat"]) .docker-drawer {
-    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast), 0 8px 28px rgba(0, 0, 0, 0.3);
-}
-
-.docker-drawer-close {
-    position: absolute;
-    top: var(--space-2, 0.5rem);
-    right: var(--space-2, 0.5rem);
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 1.25rem;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.docker-drawer-close:hover {
-    color: var(--text-primary);
-}
-
-.docker-drawer-header {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.5rem);
-    margin: 0 var(--space-6, 2rem) 0 0;
-}
-
-.docker-drawer-heading {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2, 0.5rem);
-}
-
-.docker-drawer-title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    overflow-wrap: anywhere;
-}
-
 .docker-drawer-pill,
 .docker-drawer-health {
     font-size: var(--text-xs, 0.72rem);
@@ -292,34 +175,6 @@ html[data-theme] body:not([data-depth="flat"]) .docker-drawer {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2, 0.5rem);
-}
-
-.docker-section {
-    border-top: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
-    padding: var(--space-2, 0.5rem) 0 0;
-}
-
-/* Section titles read like the panel's field labels in Config -> Bookmarks. */
-.docker-section summary {
-    cursor: pointer;
-    font-size: var(--font-size-small);
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-}
-
-.docker-section[open] summary,
-.docker-section summary:hover {
-    color: var(--text-primary);
-}
-
-.docker-section-body {
-    padding: var(--space-2, 0.5rem) 0 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1-5, 0.4rem);
-    font-size: var(--font-size-controls);
 }
 
 .docker-field-row {
@@ -452,23 +307,6 @@ html[data-theme] body:not([data-depth="flat"]) .docker-drawer {
         font-size: var(--text-xs, 0.72rem);
     }
 
-    /* The drawer positions itself against the viewport directly, with only
-       top/left plus explicit vw/vh sizes — not left+right (or inset), which
-       this app's `scrollbar-gutter: stable` (dashboard.css) resolves against
-       a containing block a scrollbar's width narrower than the real
-       viewport. vw/vh read the true viewport, so this is genuinely edge
-       to edge regardless of the host's own (unaffected, still pointer-events:
-       none) box. */
-    .docker-drawer {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        max-width: none;
-        margin: 0;
-        border-radius: 0;
-    }
 }
 
 /* ── Actions ─────────────────────────────────────────────────────────── */
@@ -551,15 +389,6 @@ html[data-theme] body:not([data-depth="flat"]) .docker-drawer {
    Source, registry and web UI, and the links inside release notes: the same
    accent as the port links in the table, not the browser's own blue. */
 
-.docker-drawer a {
-    color: var(--accent-vivid, var(--accent-primary));
-    text-decoration: none;
-}
-
-.docker-drawer a:hover,
-.docker-drawer a:focus-visible {
-    text-decoration: underline;
-}
 
 .docker-changes-links {
     display: flex;

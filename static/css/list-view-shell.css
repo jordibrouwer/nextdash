@@ -546,3 +546,192 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
         display: none;
     }
 }
+
+/* ── Row status and the second line ──────────────────────────────────────
+   Shared by every list view. A row says what it is with data-lvs-status; the
+   glow is a gradient from its left edge in that colour, soft enough that a
+   hundred rows still read as one table. Grown in the Containers view. */
+
+[data-lvs-status] {
+    --lvs-glow: transparent;
+    background-image: linear-gradient(90deg,
+        color-mix(in srgb, var(--lvs-glow) 22%, transparent) 0,
+        color-mix(in srgb, var(--lvs-glow) 6%, transparent) 40%,
+        transparent 75%);
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--lvs-glow) 80%, transparent);
+}
+
+[data-lvs-status="good"] { --lvs-glow: var(--accent-success, #3c6); }
+[data-lvs-status="warn"] { --lvs-glow: var(--accent-warning, #cb4); }
+[data-lvs-status="bad"] { --lvs-glow: var(--accent-error, #c55); }
+[data-lvs-status="info"] { --lvs-glow: var(--accent-vivid, var(--accent-primary)); }
+[data-lvs-status="muted"] { --lvs-glow: var(--text-tertiary, var(--text-secondary)); }
+
+[data-lvs-status][aria-selected="true"] {
+    box-shadow:
+        inset 3px 0 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+/* The row that stands for nextDash itself: a steady halo, found without
+   reading names. */
+[data-lvs-self] {
+    background-color: color-mix(in srgb, var(--accent-vivid, var(--accent-primary)) 9%, transparent);
+    box-shadow:
+        inset 3px 0 0 var(--accent-vivid, var(--accent-primary)),
+        inset 0 0 14px color-mix(in srgb, var(--accent-vivid, var(--accent-primary)) 28%, transparent);
+}
+
+/* Work in flight pulses, so a long action is visibly still going. */
+[data-lvs-busy] {
+    animation: lvs-row-busy 1.4s ease-in-out infinite;
+}
+
+@keyframes lvs-row-busy {
+    50% { background-color: color-mix(in srgb, var(--accent-primary) 12%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-lvs-busy] { animation: none; }
+}
+
+/* ── Side panel ──────────────────────────────────────────────────────────
+   list-view-drawer.js. A slab like Config -> Bookmarks' side panel -- the same
+   surface, radius and edge light -- floating a step in from the window. The
+   host sits on <body>; its top is set to the view's own top so the page
+   header stays reachable. */
+
+.lvs-drawer-host {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    /* Above the view's sticky header (sticky band + 1300, above) and below
+       the app modal (2000), so a confirmation still opens over it. */
+    z-index: calc(var(--layer-sticky-band, 5) + 1400);
+    display: flex;
+    pointer-events: none;
+}
+
+.lvs-drawer {
+    position: relative;
+    box-sizing: border-box;
+    width: 24rem;
+    max-width: calc(100vw - 2 * var(--space-4, 1rem));
+    height: calc(100% - 2 * var(--space-4, 1rem));
+    margin: var(--space-4, 1rem) var(--space-4, 1rem) var(--space-4, 1rem) 0;
+    overflow-y: auto;
+    padding: var(--space-4, 1rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    background: var(--surface-3, var(--background-secondary));
+    border-radius: var(--radius-5, 8px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+    pointer-events: auto;
+}
+
+html[data-theme] body:not([data-depth="flat"]) .lvs-drawer {
+    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast), 0 8px 28px rgba(0, 0, 0, 0.3);
+}
+
+.lvs-drawer-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    margin: 0 var(--space-6, 2rem) 0 0;
+}
+
+.lvs-drawer-close {
+    position: absolute;
+    top: var(--space-2, 0.5rem);
+    right: var(--space-2, 0.5rem);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.lvs-drawer-close:hover {
+    color: var(--text-primary);
+}
+
+.lvs-drawer-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.lvs-drawer-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.lvs-drawer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.lvs-drawer-actions:empty {
+    display: none;
+}
+
+.lvs-drawer-section {
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    padding: var(--space-2, 0.5rem) 0 0;
+}
+
+/* Section titles read like the field labels in Config -> Bookmarks. */
+.lvs-drawer-section summary {
+    cursor: pointer;
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.lvs-drawer-section[open] summary,
+.lvs-drawer-section summary:hover {
+    color: var(--text-primary);
+}
+
+.lvs-drawer-section-body {
+    padding: var(--space-2, 0.5rem) 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+    font-size: var(--font-size-controls);
+}
+
+.lvs-drawer a {
+    color: var(--accent-vivid, var(--accent-primary));
+    text-decoration: none;
+}
+
+.lvs-drawer a:hover,
+.lvs-drawer a:focus-visible {
+    text-decoration: underline;
+}
+
+@media (max-width: 767px) {
+    /* Against the viewport with top/left and vw/vh, never left+right or inset:
+       this app's `scrollbar-gutter: stable` narrows the containing block that
+       left+right resolve against by a scrollbar's width. */
+    .lvs-drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        max-width: none;
+        margin: 0;
+        border-radius: 0;
+    }
+}
