@@ -294,7 +294,13 @@ class DashboardDocker {
         this._pollTimer = setInterval(() => {
             if (document.visibilityState !== 'visible' || !this.isActiveView()) return;
             void this.refreshContainers();
-        }, 5000);
+        }, this.refreshMs());
+    }
+
+    /** Config -> Containers: 2, 5, 10 or 30 seconds, 5 when unset. */
+    refreshMs() {
+        const seconds = Number(this.dash.settings?.dockerRefreshSeconds);
+        return ([2, 5, 10, 30].includes(seconds) ? seconds : 5) * 1000;
     }
 
     stopPolling() {

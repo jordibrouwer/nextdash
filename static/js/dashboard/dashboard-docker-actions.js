@@ -82,6 +82,19 @@
                     cancelText: this.t('dockerCancel', 'Cancel'),
                 }));
             }
+            // Config -> Containers can ask for stop and restart as well.
+            if ((action === 'stop' || action === 'restart')
+                    && this.view.dash?.settings?.dockerConfirmStopRestart === true) {
+                const message = this.t(action === 'stop' ? 'dockerConfirmStopBody' : 'dockerConfirmRestartBody',
+                    action === 'stop' ? 'Stop {name}?' : 'Restart {name}?', { name: container.name });
+                if (typeof modal?.confirm !== 'function') return window.confirm(message);
+                return Boolean(await modal.confirm({
+                    title: this.label(action),
+                    message,
+                    confirmText: this.label(action),
+                    cancelText: this.t('dockerCancel', 'Cancel'),
+                }));
+            }
             if (action === 'remove') {
                 const message = this.t('dockerConfirmRemoveBody',
                     'Remove {name}? Its volumes and image stay.', { name: container.name });

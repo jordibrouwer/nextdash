@@ -54,9 +54,14 @@
         return (container.ports || []).some((p) => String(p.public || p.private) === q);
     }
 
+    /** Config -> Containers can switch the view off; search follows it. */
+    function enabled() {
+        return window.dashboardInstance?.settings?.dockerViewEnabled !== false;
+    }
+
     function match(query, limit = 5) {
         const q = String(query || '').trim().toLowerCase();
-        if (!q) return [];
+        if (!q || !enabled()) return [];
         const hits = list.filter((c) => matches(c, q));
         const rank = (c) => (c.name.toLowerCase().startsWith(q) ? 0 : 1) + (c.state === 'running' ? 0 : 2);
         return hits.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name)).slice(0, limit);
@@ -85,6 +90,6 @@
     function statusNow() { return statusValue; }
 
     window.DockerSearchIndex = {
-        status, statusNow, refresh, containers: () => list, match, matches, invalidate, allowedActions,
+        status, statusNow, refresh, containers: () => (enabled() ? list : []), match, matches, invalidate, allowedActions, enabled,
     };
 })();

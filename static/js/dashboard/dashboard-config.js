@@ -45,6 +45,7 @@ class DashboardConfig {
         'behavior',
         'data-backups',
         'widgets',
+        'containers',
         'stats',
         'help',
         'logs',
@@ -61,6 +62,11 @@ class DashboardConfig {
      * this list grows one section at a time.
      */
     static SECTION_MODULES = {
+        containers: {
+            file: 'js/dashboard/dashboard-config-containers.js',
+            datasetKey: 'dashboardConfigContainers',
+            ready: () => window.DashboardConfigContainersReady === true,
+        },
         logs: {
             file: 'js/dashboard/dashboard-config-logs.js',
             datasetKey: 'dashboardConfigLogs',
@@ -1700,6 +1706,7 @@ class DashboardConfig {
             behavior: ['config.sectionBehavior', 'Behavior'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
             widgets: ['config.sectionWidgets', 'Widgets'],
+            containers: ['config.sectionContainers', 'Containers'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],
@@ -1929,8 +1936,10 @@ class DashboardConfig {
             void this.loadBackupData();
         } else if (this.section === 'logs') {
             this.bindLogsActions(container);
+        } else if (this.section === 'containers') {
+            this.bindControlPanels(container, 'behavior');
+            this.bindContainersSection(container);
         } else if (this.section === 'widgets') {
-            this.bindDockerSettingsBlock(container);
             this.bindWidgetsTabs(container);
             this.bindWidgetsEditor(container);
             void this.loadWidgetsEditor();
@@ -2954,6 +2963,11 @@ class DashboardConfig {
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
         feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
+        dockerViewEnabled: ['docker', 'containers', 'view'],
+        dockerRefreshSeconds: ['docker', 'containers', 'refresh', 'poll'],
+        dockerLogLines: ['docker', 'containers', 'logs'],
+        dockerUpdateInterval: ['docker', 'containers', 'updates', 'registry', 'image'],
+        dockerConfirmStopRestart: ['docker', 'containers', 'confirm', 'stop', 'restart'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
         statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
         statusOfflineRetryDelayMs: ['offline', 'retry', 'delay', 'status'],
@@ -3624,6 +3638,9 @@ class DashboardConfig {
         }
         if (this.section === 'bookmarks') {
             return this.renderBookmarksSection();
+        }
+        if (this.section === 'containers') {
+            return this.renderContainersSection();
         }
         if (this.section === 'stats') {
             return this.renderStats();
@@ -11651,6 +11668,12 @@ class DashboardConfig {
         feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
         feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
+        // Containers
+        dockerViewEnabled: { def: true },
+        dockerRefreshSeconds: { def: 5 },
+        dockerLogLines: { def: 200 },
+        dockerUpdateInterval: { def: 'off' },
+        dockerConfirmStopRestart: { def: false },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
         statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 450 },
@@ -11962,6 +11985,50 @@ class DashboardConfig {
         const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()
             || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
         return [
+            // Config -> Containers: the Docker view's own settings, drawn and
+            // saved like Behavior's. The connection status, the hidden list and
+            // the GitHub token are hand-built beside these (config-containers).
+            {
+                section: 'containers',
+                tab: null,
+                title: t('config.containersGroupView', 'View'),
+                note: t('config.containersGroupViewNote', 'The Containers view, its button in the header and its rows in search.'),
+                controls: [
+                    bool('dockerViewEnabled', 'config.dockerViewEnabledLabel', 'Show the Containers view'),
+                    { field: 'dockerRefreshSeconds', type: 'select', label: t('config.dockerRefreshLabel', 'Refresh the list every'), options: [
+                        opt(2, t('config.dockerRefresh2', '2 seconds')),
+                        opt(5, t('config.dockerRefresh5', '5 seconds')),
+                        opt(10, t('config.dockerRefresh10', '10 seconds')),
+                        opt(30, t('config.dockerRefresh30', '30 seconds')),
+                    ] },
+                    { field: 'dockerLogLines', type: 'select', label: t('config.dockerLogLinesLabel', 'Log lines to show'), options: [
+                        opt(100, '100'), opt(200, '200'), opt(500, '500'), opt(1000, '1000'),
+                    ] },
+                ],
+            },
+            {
+                section: 'containers',
+                tab: null,
+                title: t('config.containersGroupUpdates', 'Updates'),
+                note: t('config.containersGroupUpdatesNote', 'Asks the registries whether a newer image is waiting. Off by default because it makes outbound requests.'),
+                controls: [
+                    { field: 'dockerUpdateInterval', type: 'select', label: t('config.dockerUpdateIntervalLabel', 'Check for image updates'), options: [
+                        opt('off', t('dashboard.dockerIntervalOff', 'Off')),
+                        opt('6h', t('dashboard.dockerInterval6h', 'Every 6 hours')),
+                        opt('12h', t('dashboard.dockerInterval12h', 'Every 12 hours')),
+                        opt('24h', t('dashboard.dockerInterval24h', 'Every 24 hours')),
+                    ] },
+                ],
+            },
+            {
+                section: 'containers',
+                tab: null,
+                title: t('config.containersGroupSafety', 'Safety'),
+                note: t('config.containersGroupSafetyNote', 'Update and remove always ask first. This adds stop and restart.'),
+                controls: [
+                    bool('dockerConfirmStopRestart', 'config.dockerConfirmStopRestartLabel', 'Also confirm stop and restart'),
+                ],
+            },
             // Config → Bookmarks had no settings at all; the list made these
             // choices on the user's behalf and forgot them between visits.
             {
@@ -14442,6 +14509,11 @@ class DashboardConfig {
         if (field === 'linkPreviewMode') {
             d.settings.showLinkPreviewCards = value !== 'off';
         }
+        // The header button and the search rows follow the switch at once.
+        if (field === 'dockerViewEnabled') {
+            window.DockerSearchIndex?.invalidate?.();
+            void d.docker?.renderNavButton?.();
+        }
         if (special === 'previewCard') {
             const panels = document.getElementById('config-appearance-body');
             if (panels) this.paintPreviewSample(panels);
@@ -14615,6 +14687,7 @@ class DashboardConfig {
             'appearance': ['config.helpNoteAppearance', 'Themes, type, and the choices that change how the dashboard looks.'],
             'organizing': ['config.helpNoteOrganizing', 'Pages, categories, tags — how a bookmark finds its place.'],
             'widgets': ['config.helpNoteWidgets', 'The blocks that hold something other than bookmarks, and what each one shows.'],
+            'containers': ['config.helpNoteContainers', 'The Containers view: its connection, how often it refreshes, and what it leaves out.'],
             'search': ['config.helpNoteSearch', 'Reaching anything from the keyboard: search, shortcuts, and the command line.'],
             'health': ['config.helpNoteHealth', 'How nextDash checks that your links still answer, and what to do with the ones that do not.'],
             'monitoring': ['config.helpNoteMonitoring', 'Watching a service rather than a link, and being told when it stops responding.'],
@@ -15100,60 +15173,9 @@ class DashboardConfig {
         return `
             <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
                 'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
-            ${this.renderDockerSettingsBlock()}
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-widgets-body" role="tabpanel" tabindex="0">${this.renderWidgetsTab()}</div>
         `;
-    }
-
-    /*
-     * The Docker widget reads containers; this is the one setting that also
-     * *acts* on them — checking registries on a schedule rather than only when
-     * someone presses the button in the view. It lives beside the widgets
-     * rather than inside one widget's own settings, because the schedule runs
-     * whether or not a Docker tile is on any page.
-     */
-    renderDockerSettingsBlock() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const interval = this.dash.settings?.dockerUpdateInterval || 'off';
-        const options = [
-            ['off', 'dockerIntervalOff', 'Off'],
-            ['6h', 'dockerInterval6h', 'Every 6 hours'],
-            ['12h', 'dockerInterval12h', 'Every 12 hours'],
-            ['24h', 'dockerInterval24h', 'Every 24 hours'],
-        ].map(([value, key, fallback]) => `<option value="${esc(value)}"${value === interval ? ' selected' : ''}>${
-            esc(this.t(`dashboard.${key}`, fallback))}</option>`).join('');
-        return `
-            <section class="config-widget-type-group config-docker-settings">
-                <h4 class="config-widget-type-group-title">${esc(this.t('dashboard.dockerSettingsTitle', 'Docker'))}</h4>
-                <label class="config-field">
-                    <span>${esc(this.t('dashboard.dockerSettingsInterval', 'Check for image updates'))}</span>
-                    <select class="config-select" data-setting="dockerUpdateInterval">${options}</select>
-                </label>
-                <p class="config-field-hint" data-docker-actions-status></p>
-            </section>`;
-    }
-
-    /** Wires the select above and fills the status line from /api/docker/status. */
-    bindDockerSettingsBlock(container) {
-        const select = container.querySelector('[data-setting="dockerUpdateInterval"]');
-        if (select && !select._dockerBound) {
-            select._dockerBound = true;
-            select.addEventListener('change', () => {
-                this.dash.settings.dockerUpdateInterval = select.value;
-                void this.saveSettingsWithFeedback();
-            });
-        }
-        const status = container.querySelector('[data-docker-actions-status]');
-        if (!status) return;
-        fetch('/api/docker/status').then((res) => (res.ok ? res.json() : null)).then((data) => {
-            if (!status.isConnected) return; // the view moved on before this answered
-            status.textContent = data?.control
-                ? this.t('dashboard.dockerActionsOn', 'Actions: on')
-                : this.t('dashboard.dockerActionsOff', 'Actions: off — set NEXTDASH_DOCKER_CONTROL=1');
-        }).catch(() => {
-            if (status.isConnected) status.textContent = '';
-        });
     }
 
     renderWidgetsTab() {

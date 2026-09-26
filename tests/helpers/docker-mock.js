@@ -25,7 +25,13 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     const path = url.pathname.replace('/api/docker', '');
     state.calls.push(`${req.method()} ${path}`);
     const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
-    if (path === '/status') return json({ socket: state.socket, control: state.control, reason: state.socket ? '' : 'no-docker-socket', self: 'd'.repeat(12) });
+    if (path === '/status') return json({ socket: state.socket, control: state.control, reason: state.socket ? '' : 'no-docker-socket',
+      self: 'd'.repeat(12), selfName: state.socket ? 'nextdash' : '', writeToken: Boolean(state.writeToken) });
+    if (path === '/github-token') {
+      if (req.method() === 'PUT') state.githubToken = true;
+      if (req.method() === 'DELETE') state.githubToken = false;
+      return json({ set: Boolean(state.githubToken) });
+    }
     if (path === '/containers') return json({ available: state.socket, containers: state.socket ? state.containers : [] });
     if (path === '/updates') return json({ checkedAt: Date.now() - 3 * 3600e3, images: {} });
     if (path === '/updates/check') return json({ checkedAt: Date.now(), images: {} });

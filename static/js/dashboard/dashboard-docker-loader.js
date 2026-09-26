@@ -16,6 +16,11 @@ class DashboardDockerLoader {
         this._escapeHandler = null;
     }
 
+    /** Config -> Containers can switch the view off; absent means on. */
+    isEnabled() {
+        return this.dash.settings?.dockerViewEnabled !== false;
+    }
+
     isActiveView() {
         return this.dash.activeView === DashboardDockerLoader.VIEW;
     }
@@ -72,6 +77,12 @@ class DashboardDockerLoader {
     }
 
     async openDockerView(...args) {
+        // Switched off in Config: the address leads home rather than to a
+        // view the reader asked not to have.
+        if (!this.isEnabled()) {
+            this.dash.pageNav?.restoreBookmarksViewForPage?.(this.dash.currentPageId);
+            return false;
+        }
         // The view stylesheet rides in the bundle nothing requests until a view
         // is actually opened. Awaited, so the view does not paint unstyled.
         await window.ViewStyles?.ensureViewStyles?.();
@@ -168,8 +179,9 @@ class DashboardDockerLoader {
         const host = document.getElementById('page-nav-docker-host');
         if (!host) return;
         host.innerHTML = '';
+        if (!this.isEnabled()) return;
         const status = await window.DockerSearchIndex?.status?.();
-        if (!status?.socket) return;
+        if (!status?.socket || !this.isEnabled()) return;
 
         const raw = this.dash?.language?.t?.('dashboard.dockerView');
         const label = raw && raw !== 'dashboard.dockerView' ? raw : 'Containers';

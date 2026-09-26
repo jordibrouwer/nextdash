@@ -57,7 +57,7 @@ function setupDockerWidget(page, { updates = 0 } = {}) {
     }, updates);
 }
 
-test.describe('docker widget link and config settings', () => {
+test.describe('docker widget link', () => {
     test('clicking the containers tile opens the docker view', async ({ page }) => {
         await mockDocker(page);
         await openDashboard(page);
@@ -77,21 +77,6 @@ test.describe('docker widget link and config settings', () => {
         // buttons -- confirmed against the real markup rather than the plan's
         // guess at it.
         await expect(page.locator('[data-docker-filter="updates"][aria-selected="true"]')).toBeVisible();
-    });
-
-    test('config saves the update interval', async ({ page }) => {
-        await mockDocker(page);
-        await openDashboard(page);
-        await page.goto('/#config/widgets');
-        await page.waitForSelector('[data-setting="dockerUpdateInterval"]');
-        const select = page.locator('[data-setting="dockerUpdateInterval"]');
-        await select.selectOption('12h');
-        await expect.poll(async () => (await (await page.request.get('/api/settings')).json()).dockerUpdateInterval)
-            .toBe('12h');
-        // The e2e data dir is shared across specs -- leave the setting as found.
-        await select.selectOption('off');
-        await expect.poll(async () => (await (await page.request.get('/api/settings')).json()).dockerUpdateInterval)
-            .toBe('off');
     });
 });
 

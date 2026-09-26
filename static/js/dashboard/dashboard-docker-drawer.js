@@ -125,6 +125,12 @@ class DockerDrawer {
     }
 
     /** container: a row summary ({name, state, health, …}) or a bare name string. */
+    /** Config -> Containers: how many lines the Logs section asks for. */
+    logLines() {
+        const n = Number(this.view.dash?.settings?.dockerLogLines);
+        return [100, 200, 500, 1000].includes(n) ? n : 200;
+    }
+
     open(container) {
         const name = typeof container === 'string' ? container : container?.name;
         if (!name) return;
@@ -509,7 +515,7 @@ class DockerDrawer {
     async _loadLogs() {
         const name = this._name;
         if (!name) return;
-        const data = await dockerDrawerFetchJSONAuth(`/api/docker/containers/${encodeURIComponent(name)}/logs?tail=200`);
+        const data = await dockerDrawerFetchJSONAuth(`/api/docker/containers/${encodeURIComponent(name)}/logs?tail=${this.logLines()}`);
         if (name !== this._name || !this._els?.logsEl) return;
         this._els.logsEl.textContent = Array.isArray(data?.lines) ? data.lines.join('\n') : '';
     }

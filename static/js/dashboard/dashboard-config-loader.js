@@ -26,6 +26,7 @@ class DashboardConfigLoader {
         'behavior',
         'data-backups',
         'widgets',
+        'containers',
         'stats',
         'help',
         'logs',

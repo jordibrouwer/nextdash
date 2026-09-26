@@ -571,3 +571,62 @@ html[data-theme] body:not([data-depth="flat"]) .docker-drawer {
     content: " ↗";
     font-size: 0.85em;
 }
+
+/* ── Config -> Containers ────────────────────────────────────────────────
+   The panels are Behavior's own (config-panel, config-field); these are the
+   few things a schema panel has no class for. */
+
+.config-docker-state {
+    font-size: var(--font-size-controls);
+    text-align: right;
+}
+
+.config-docker-state[data-tone="good"] { color: var(--accent-success, #3c6); }
+.config-docker-state[data-tone="warn"] { color: var(--accent-warning, #cb4); }
+.config-docker-state[data-tone="bad"] { color: var(--accent-error, #c55); }
+.config-docker-state[data-tone="muted"] { color: var(--text-secondary); }
+
+.config-docker-snippet {
+    margin: var(--space-2, 0.5rem) 0 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-secondary);
+    font-size: var(--font-size-small);
+    white-space: pre;
+    overflow-x: auto;
+}
+
+.config-docker-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-docker-chips:empty {
+    display: none;
+}
+
+.config-docker-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
+    padding: 0.1rem 0.25rem 0.1rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--font-size-controls);
+}
+
+.config-docker-chip-remove {
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    line-height: 1;
+    padding: 0 0.3rem;
+    cursor: pointer;
+}
+
+.config-docker-chip-remove:hover,
+.config-docker-chip-remove:focus-visible {
+    color: var(--accent-error, #c55);
+}

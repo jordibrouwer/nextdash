@@ -3910,7 +3910,7 @@ class SearchCommandsComponent {
      */
     handleDockerCommand(args) {
         const index = window.DockerSearchIndex;
-        if (!index) return [];
+        if (!index || index.enabled?.() === false) return [];
         const control = index.statusNow?.()?.control === true;
         const list = index.containers?.() || [];
         const nameArg = String(args[0] || '').trim();
