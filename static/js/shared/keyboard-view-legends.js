@@ -28,7 +28,8 @@
     /** @type {LegendRow[]} */
     const INBOX_VIEW = [
         { keys: 'j / k', legendKey: 'inboxKeyMove', cheatKey: 'ivMove', fallback: 'move' },
-        { keys: 'Enter / Space', legendKey: 'inboxKeyOpen', cheatKey: 'ivOpen', fallback: 'open' },
+        { keys: 'Enter', legendKey: 'inboxKeyDetails', cheatKey: 'ivDetails', fallback: 'details' },
+        { keys: 'o / Space', legendKey: 'inboxKeyOpen', cheatKey: 'ivOpen', fallback: 'open' },
         { keys: 'p', legendKey: 'inboxKeyPromote', cheatKey: 'ivPromote', fallback: 'promote' },
         { keys: 'n', legendKey: 'inboxKeyNote', cheatKey: 'ivNote', fallback: 'note' },
         // r marks read and Shift+K keeps, here and on triage's card alike.

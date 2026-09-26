@@ -1,5 +1,5 @@
 const { test, expect } = require('./fixtures');
-const { openInboxWith, item } = require('./helpers/inbox-report');
+const { openInboxWith, stubInbox, item } = require('./helpers/inbox-report');
 
 test.describe('inbox redesign: rows', () => {
   test('line one carries title, domain and when; the rest is not in the row', async ({ page }) => {
@@ -160,5 +160,34 @@ test.describe('inbox redesign: side panel', () => {
     await item(page, 'Read one').hover();
     await item(page, 'Read one').locator('.inbox-item-check-input').check();
     await expect(drawer(page)).toHaveCount(0);
+  });
+});
+
+test.describe('inbox redesign: keys and phone', () => {
+  test('the legend teaches Enter for details and o / Space to open', async ({ page }) => {
+    await openInboxWith(page);
+    const keys = (await page.locator('.inbox-legend kbd, .inbox-view-legend kbd').allTextContents()).map((k) => k.trim());
+    expect(keys).toContain('Enter');
+    expect(keys).toContain('o / Space');
+  });
+
+  test('on a phone the panel is full screen and Esc gives the scroll back', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    // The header's inbox link is folded away at this width; the address opens it.
+    await stubInbox(page);
+    await page.goto('/#inbox');
+    await page.waitForSelector('.inbox-layout .inbox-item', { timeout: 15_000 });
+    const before = await page.evaluate(() => window.ScrollLock?.holders?.size ?? 0);
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await page.keyboard.press('j');
+    await page.keyboard.press('Enter');
+    const panel = page.locator('[data-lvs-drawer="inbox"] [data-lvs-drawer-panel]');
+    await expect(panel).toBeVisible();
+    const box = await panel.boundingBox();
+    expect(box.x).toBe(0);
+    expect(box.width).toBeGreaterThanOrEqual(await page.evaluate(() => window.innerWidth) - 16);
+    await page.keyboard.press('Escape');
+    await expect(panel).toHaveCount(0);
+    expect(await page.evaluate(() => window.ScrollLock.holders.size)).toBe(before);
   });
 });

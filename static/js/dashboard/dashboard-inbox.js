@@ -4125,8 +4125,8 @@ class DashboardInbox {
                 (key, fallback) => this.t(`dashboard.${key}`, fallback),
             )
             : [];
-        if (keys.length > 1) {
-            keys.splice(2, 0, ['dblclick', this.t('dashboard.inboxKeyDblClick', 'open')]);
+        if (keys.length > 2) {
+            keys.splice(3, 0, ['dblclick', this.t('dashboard.inboxKeyDblClick', 'open')]);
         }
         legend.innerHTML = keys
             .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
