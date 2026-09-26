@@ -79,7 +79,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'trash', 'export', 'import', 'tour', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
+                commands: ['config', 'backup', 'trash', 'export', 'import', 'tour', 'metadata', 'health', 'docker', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
             },
         ];
         // Which groups are open. None is, until the reader opens one: the
@@ -161,6 +161,7 @@ class SearchCommandsComponent {
             'open': this.handleOpenCommand.bind(this),
             'find': this.handleFindCommand.bind(this),
             'health': this.handleHealthCommand.bind(this),
+            'docker': this.handleDockerCommand.bind(this),
             'dark': this.handleDarkCommand.bind(this),
             'title': this.handleTitleCommand.bind(this),
             'lang': this.handleLangCommand.bind(this),
@@ -3585,6 +3586,10 @@ class SearchCommandsComponent {
             }];
         }
 
+        if (scope === 'docker') {
+            return [this._dockerOpenRow()];
+        }
+
         if (scope === 'health') {
             return [{
                 name: this._t('commands.gotoHealth', 'Open health view'),
@@ -3687,6 +3692,7 @@ class SearchCommandsComponent {
                 { name: '', shortcut: ':GOTO', completion: ':goto config ', type: 'command-completion' },
                 { name: '', shortcut: ':GOTO', completion: ':goto stats ', type: 'command-completion' },
                 { name: '', shortcut: ':GOTO', completion: ':goto health ', type: 'command-completion' },
+                { name: '', shortcut: ':GOTO', completion: ':goto docker ', type: 'command-completion' },
             );
             return rows;
         }
@@ -3698,6 +3704,9 @@ class SearchCommandsComponent {
         }
         if ('health'.startsWith(scope) && scope !== 'health') {
             return [{ name: '', shortcut: ':GOTO', completion: ':goto health ', type: 'command-completion' }];
+        }
+        if ('docker'.startsWith(scope) && scope !== 'docker') {
+            return [{ name: '', shortcut: ':GOTO', completion: ':goto docker ', type: 'command-completion' }];
         }
         if ('all'.startsWith(scope)) {
             return [{
@@ -3876,6 +3885,84 @@ class SearchCommandsComponent {
                 return { navigate: true };
             },
         }));
+    }
+
+    _dockerOpenRow() {
+        return {
+            name: this._t('commands.gotoDocker', 'Open containers view'),
+            shortcut: ':DOCKER',
+            type: 'command',
+            action: () => {
+                this._closeCommandPalette();
+                void window.dashboardInstance?.docker?.openDockerView?.();
+                return { navigate: true };
+            },
+        };
+    }
+
+    /**
+     * :docker, :docker <name>, :docker <name> <action>.
+     *
+     * The names come from DockerSearchIndex's cache, filled when the panel
+     * opened, and the actions from the same allowedActions() the view uses --
+     * so the palette never offers what the view would refuse. Update and remove
+     * open the view's own confirmation, over whatever page is showing.
+     */
+    handleDockerCommand(args) {
+        const index = window.DockerSearchIndex;
+        if (!index) return [];
+        const control = index.statusNow?.()?.control === true;
+        const list = index.containers?.() || [];
+        const nameArg = String(args[0] || '').trim();
+        const complete = (c) => ({
+            name: `${c.name} — ${c.state || ''}`,
+            shortcut: ':DOCKER',
+            completion: `:docker ${c.name} `,
+            type: 'command-completion',
+        });
+
+        if (!nameArg) {
+            return [this._dockerOpenRow(), ...list.slice(0, 8).map(complete)];
+        }
+        const exact = list.find((c) => c.name === nameArg);
+        if (!exact || args.length < 2) {
+            const hits = typeof index.match === 'function' ? index.match(nameArg, 8) : [];
+            return hits.map(complete);
+        }
+
+        const partial = String(args[1] || '').toLowerCase();
+        const labels = {
+            start: this._t('dashboard.dockerActionStart', 'Start'),
+            stop: this._t('dashboard.dockerActionStop', 'Stop'),
+            restart: this._t('dashboard.dockerActionRestart', 'Restart'),
+            pause: this._t('dashboard.dockerActionPause', 'Pause'),
+            unpause: this._t('dashboard.dockerActionUnpause', 'Resume'),
+            update: this._t('dashboard.dockerActionUpdate', 'Update'),
+            remove: this._t('dashboard.dockerActionRemove', 'Remove'),
+            open: this._t('commands.dockerOpenOne', 'Open'),
+            logs: this._t('commands.dockerLogs', 'Logs of'),
+        };
+        const actions = [...(index.allowedActions?.(exact, control) || []), 'open', 'logs'];
+        return actions
+            .filter((action) => action.startsWith(partial) || labels[action].toLowerCase().startsWith(partial))
+            .map((action) => ({
+                name: `${labels[action]} ${exact.name}`,
+                shortcut: ':DOCKER',
+                type: 'command',
+                action: () => {
+                    this._closeCommandPalette();
+                    const docker = window.dashboardInstance?.docker;
+                    if (action === 'open' || action === 'logs') {
+                        void docker?.openDockerView?.({
+                            select: exact.name,
+                            section: action === 'logs' ? 'logs' : null,
+                        });
+                    } else {
+                        void docker?.runAction?.(action, exact.name);
+                    }
+                    return { navigate: true };
+                },
+            }));
     }
 
     handleHealthCommand(args, fullQuery) {

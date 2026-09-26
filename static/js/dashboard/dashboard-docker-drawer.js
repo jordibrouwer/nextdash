@@ -137,6 +137,12 @@ class DockerDrawer {
         void this._loadDetail(name);
     }
 
+    /** Opens one section on arrival, as :docker <name> logs asks. */
+    openSection(key) {
+        const details = this.view.drawerHost?.querySelector(`[data-docker-section="${key}"]`);
+        if (details && !details.open) details.open = true;
+    }
+
     close() {
         this._stopResourcePolling();
         this._open = false;

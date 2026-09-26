@@ -81,7 +81,10 @@
         }
     }
 
+    /** The last status fetched, without waiting: for the synchronous palette. */
+    function statusNow() { return statusValue; }
+
     window.DockerSearchIndex = {
-        status, refresh, containers: () => list, match, matches, invalidate, allowedActions,
+        status, statusNow, refresh, containers: () => list, match, matches, invalidate, allowedActions,
     };
 })();

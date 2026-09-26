@@ -112,10 +112,10 @@ class DashboardDocker {
         history.replaceState(history.state, '', next);
     }
 
-    async openDockerView({ select } = {}) {
+    async openDockerView({ select, section } = {}) {
         const d = this.dash;
         if (d.activeView === DashboardDocker.VIEW) {
-            if (select) this.selectContainer(select, { openDrawer: true });
+            if (select) this.selectContainer(select, { openDrawer: true, section });
             return true;
         }
         if (d.isInlineEditActive?.() && !(await d.confirmInlineEditBeforeNavigation?.())) {
@@ -129,7 +129,7 @@ class DashboardDocker {
         d.pageNav?.updateDocumentTitle?.();
         await this.loadAndRender();
         if (select) {
-            this.selectContainer(select, { openDrawer: true });
+            this.selectContainer(select, { openDrawer: true, section });
         } else {
             this.restoreDockerHash();
         }
@@ -768,13 +768,14 @@ class DashboardDocker {
      * (this.drawerOpen, kept in sync with drawer.isOpen()) and the
      * #docker/<name> address. */
 
-    selectContainer(name, { openDrawer = true } = {}) {
+    selectContainer(name, { openDrawer = true, section = null } = {}) {
         this.selected = name || null;
         this.restoreDockerHash();
         this.render();
         if (this.selected && openDrawer) {
             const c = this.containers.find((x) => x.name === this.selected) || { name: this.selected };
             this.drawer?.open(c);
+            if (section) this.drawer?.openSection?.(section);
         } else if (!this.selected) {
             this.drawer?.close();
         }

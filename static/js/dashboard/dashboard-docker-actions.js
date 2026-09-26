@@ -149,8 +149,14 @@
             const reason = body?.reason;
             if (reason === 'docker-control-off') {
                 // The setting changed under an open page: show the view as it
-                // now is rather than a button that keeps failing.
-                await this.view.loadAndRender();
+                // now is rather than a button that keeps failing. From the
+                // palette, outside the view, there is nothing to repaint.
+                window.DockerSearchIndex?.invalidate?.();
+                if (this.view.isActiveView()) {
+                    await this.view.loadAndRender();
+                } else {
+                    this.notify(this.t('dockerReadOnly', 'Read-only — set NEXTDASH_DOCKER_CONTROL=1 to manage containers.'), 'error');
+                }
                 return;
             }
             const messages = {

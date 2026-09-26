@@ -114,6 +114,21 @@ class DashboardDockerLoader {
         return this._module?.restoreDockerHash?.(...args);
     }
 
+    /**
+     * One action from outside the view -- the :docker palette. The module is
+     * loaded for its dialogs and requests, but the view is not opened: the
+     * reader stays where they are and sees the result as a notice.
+     */
+    async runAction(action, name) {
+        const mod = await this.load();
+        if (!mod.status) mod.status = await window.DockerSearchIndex?.status?.();
+        const fresh = await window.DockerSearchIndex?.refresh?.();
+        if (!mod.isActiveView() && Array.isArray(fresh)) mod.containers = fresh;
+        const container = mod.containers.find((c) => c.name === name);
+        if (!container || !mod.actions) return false;
+        return mod.actions.run(action, container);
+    }
+
     selectContainer(...args) {
         if (this._module) return this._module.selectContainer?.(...args);
         return this.load().then((mod) => mod.selectContainer?.(...args));

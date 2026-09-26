@@ -2536,6 +2536,11 @@ class SearchComponent {
         { id: 'recent', prefix: '*', labelKey: 'dashboard.headerRecentsLabel', fallback: 'recents' },
     ];
 
+    /** Sections that are headed in the one list but have no rail tab of their own. */
+    static EXTRA_SECTIONS = [
+        { id: 'containers', labelKey: 'dashboard.scopeContainers', fallback: 'containers' },
+    ];
+
     /** How many rows of one kind the one list shows before it says "more". */
     static SCOPE_SECTION_CAP = 5;
 
@@ -2663,7 +2668,8 @@ class SearchComponent {
 
     /** A heading in the one list: read, never selected. */
     _sectionHead(scopeId, count) {
-        const scope = SearchComponent.SCOPES.find((s) => s.id === scopeId);
+        const scope = SearchComponent.SCOPES.find((s) => s.id === scopeId)
+            || SearchComponent.EXTRA_SECTIONS.find((s) => s.id === scopeId);
         return {
             type: 'scope-section',
             scope: scopeId,
@@ -2694,10 +2700,15 @@ class SearchComponent {
          * way to save it as a bookmark. Stacking one heading over one finder
          * row here would replace that with something thinner.
          */
-        if (!bookmarkMatches.length) return bookmarkMatches;
-
         const cap = SearchComponent.SCOPE_SECTION_CAP;
         const query = this._stripModeSwitchPrefix(this.currentQuery).trim();
+        const containers = this._dockerContainerMatches(query, cap);
+        if (!bookmarkMatches.length) {
+            // A container alone still answers: a word that names a container
+            // and no bookmark is not a miss.
+            if (!containers.length) return bookmarkMatches;
+            return [this._sectionHead('containers', containers.length), ...containers];
+        }
         const out = [];
 
         if (bookmarkMatches.length) {
@@ -2719,6 +2730,11 @@ class SearchComponent {
         if (finders.length) {
             out.push(this._sectionHead('finders', finders.length));
             out.push(...finders);
+        }
+
+        if (containers.length) {
+            out.push(this._sectionHead('containers', containers.length));
+            out.push(...containers);
         }
 
         return out.length ? out : bookmarkMatches;
@@ -2815,6 +2831,40 @@ class SearchComponent {
         // The open event is fired from _trackModeOpen(), which knows whether this
         // is a plain search, commands, or finders — see updateSearch().
         this.searchActive = true;
+        this._refreshDockerIndex();
+    }
+
+    /**
+     * Containers answer search from a cache, because search is synchronous and
+     * the daemon is not. Filled when the panel opens; if the names arrive after
+     * the first keystroke, the query runs again so they are not missed.
+     */
+    _refreshDockerIndex() {
+        const index = window.DockerSearchIndex;
+        if (!index?.refresh) return;
+        const before = index.containers().length;
+        void index.refresh().then((list) => {
+            if (!this.searchActive || !this.currentQuery) return;
+            if ((list?.length || 0) !== before) this.updateSearch();
+        }).catch(() => {});
+    }
+
+    /** Container rows for one query, shaped like any other match. */
+    _dockerContainerMatches(query, cap) {
+        const index = window.DockerSearchIndex;
+        if (!index?.match) return [];
+        return index.match(query, cap).map((container) => {
+            const port = (container.ports || []).find((p) => p && p.public);
+            return {
+                type: 'docker-container',
+                scope: 'containers',
+                name: container.name,
+                shortcut: container.state === 'running' ? 'UP' : String(container.state || '').toUpperCase(),
+                meta: [container.image, port ? String(port.public) : ''].filter(Boolean).join(' · '),
+                container,
+                action: () => window.dashboardInstance?.docker?.openDockerView?.({ select: container.name }),
+            };
+        });
     }
 
     showSearch() {
@@ -3469,6 +3519,10 @@ class SearchComponent {
             const currentValueClass = match.current === true ? ' is-current-value' : '';
             matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + whatsNewClass + groupChildClass + currentValueClass;
             matchElement.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
+            if (match.type === 'docker-container') {
+                matchElement.setAttribute('data-match-type', 'docker-container');
+                matchElement.setAttribute('data-state', match.container?.state || '');
+            }
 
             // Get the display name based on match type
             let displayName;
@@ -3569,6 +3623,9 @@ class SearchComponent {
                     this.recordSearchHistory(this.currentQuery);
                     match.action();
                     this.closeSearch();
+                } else if (match.type === 'docker-container') {
+                    this.closeSearch();
+                    match.action();
                 } else if (match.type === 'history') {
                     this.currentQuery = match.completion;
                     this.updateSearch();
@@ -3723,6 +3780,9 @@ class SearchComponent {
                 this.recordSearchHistory(this.currentQuery);
                 selectedMatch.action();
                 this.closeSearch();
+            } else if (selectedMatch.type === 'docker-container') {
+                this.closeSearch();
+                selectedMatch.action();
             } else if (selectedMatch.type === 'mode-hint') {
                 // Do the thing the hint describes rather than only naming it:
                 // Enter or a click runs the same query the other way.
