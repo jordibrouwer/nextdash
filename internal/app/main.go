@@ -217,6 +217,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/containers/{id}/env/{name}", handlers.DockerContainerEnvHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/stats", handlers.DockerContainerStatsHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/logs", handlers.DockerContainerLogsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/changelog", handlers.DockerChangelogHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates", handlers.DockerUpdatesHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates/check", handlers.DockerUpdatesCheckHandler).Methods("POST")
 	r.HandleFunc("/api/docker/containers/{id}/{action}", handlers.DockerActionHandler).Methods("POST")
