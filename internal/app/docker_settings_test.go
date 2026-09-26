@@ -132,3 +132,11 @@ func TestDockerStatusSaysWriteTokenAndSelfName(t *testing.T) {
 	}
 	_ = context.Background()
 }
+
+// A settings file from before this setting keeps the view on.
+func TestDockerViewEnabledDefaultsOn(t *testing.T) {
+	h := dockerTestHandlers(t)
+	if !h.store.GetSettings().DockerViewEnabled {
+		t.Fatal("the containers view must be on by default")
+	}
+}

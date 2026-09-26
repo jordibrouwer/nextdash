@@ -774,9 +774,9 @@ type Settings struct {
 	// newer images: "off", "6h", "12h" or "24h". Off by default -- like feeds,
 	// it reaches out to other hosts, so it waits to be asked.
 	DockerUpdateInterval string `json:"dockerUpdateInterval"`
-	// The Containers page in Config. Stored as "hidden" rather than "enabled"
-	// so a settings file from before this setting reads as on.
-	DockerViewHidden         bool     `json:"dockerViewHidden"`
+	// The Containers view, its header button and its rows in search. On by
+	// default; a settings file from before this setting reads as on.
+	DockerViewEnabled        bool     `json:"dockerViewEnabled"`
 	DockerRefreshSeconds     int      `json:"dockerRefreshSeconds"`     // 2, 5, 10 or 30; list polling while the view is open
 	DockerLogLines           int      `json:"dockerLogLines"`           // 100, 200, 500 or 1000
 	DockerConfirmStopRestart bool     `json:"dockerConfirmStopRestart"` // ask before stop and restart as well
@@ -1628,6 +1628,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			HealthAutoRecheckEnabled:       false,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:           "off",
+			DockerViewEnabled:              true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -3842,6 +3843,7 @@ func (fs *FileStore) GetSettings() Settings {
 			HealthAutoRecheckEnabled:        false,
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:            "off",
+			DockerViewEnabled:               true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -4485,6 +4487,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["inboxEnabled"]; !ok {
 			settings.InboxEnabled = true
+		}
+		if _, ok := rawSettings["dockerViewEnabled"]; !ok {
+			settings.DockerViewEnabled = true
 		}
 		if _, ok := rawSettings["unsortedEnabled"]; !ok {
 			settings.UnsortedEnabled = true
