@@ -2,7 +2,7 @@ const { test, expect } = require('./fixtures');
 const { prepareDashboardInteraction } = require('./e2e-helpers');
 
 /**
- * Structure → Categories and Pages read like Health's rows: one line each,
+ * Structure → Categories, Pages and Finders read like Health's rows: one line each,
  * touching, the name as text until you reach for it, the buttons out of sight
  * until the row is hovered or focused.
  */
@@ -14,14 +14,15 @@ async function openStructure(page, tab) {
   await prepareDashboardInteraction(page);
   await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
   if (tab !== 'categories') {
-    await page.locator('#config-view-body').getByText('Pages', { exact: true }).first().click();
+    const label = tab === 'finders' ? 'Finders' : 'Pages';
+    await page.locator('#config-view-body').getByText(label, { exact: true }).first().click();
   }
   await page.waitForSelector(`.config-crud-list--table .config-crud-row`, { timeout: 15_000 });
   await page.mouse.move(0, 0);
   await page.evaluate(() => document.activeElement?.blur?.());
 }
 
-for (const [tab, nameSel] of [['categories', '[data-cat="name"]'], ['pages', '[data-page="name"]']]) {
+for (const [tab, nameSel] of [['categories', '[data-cat="name"]'], ['pages', '[data-page="name"]'], ['finders', '[data-finder="name"]']]) {
   test.describe(`structure ${tab} as a table`, () => {
     test('a row is as tall as a Health row, and rows touch', async ({ page }) => {
       await openStructure(page, tab);

@@ -7143,7 +7143,7 @@ body.no-animations .config-new-features-panel-star {
    One line per row, touching, a rule between them; the name reads as text
    until the pointer or the focus reaches it, and the buttons stay out of
    sight until then. Same measures as .health-view-item (health-view.css):
-   46px, the title at 600. Only these two lists carry --table; Finders,
+   46px, the title at 600. Categories, Pages and Finders carry --table;
    Collections and Tags keep their cards. */
 .config-crud-list--table {
     gap: 0;
@@ -7151,7 +7151,8 @@ body.no-animations .config-new-features-panel-star {
 
 .config-crud-list--table .config-crud-row {
     box-sizing: border-box;
-    height: 46px;
+    /* A floor, not a height: a finder with a warning under its URL grows. */
+    min-height: 46px;
     padding: 0 var(--space-3, 0.75rem);
     gap: var(--space-3, 0.75rem);
     border: 0;
@@ -7196,9 +7197,23 @@ body.no-animations .config-new-features-panel-star {
 
 .config-crud-list--table [data-cat="name"],
 .config-crud-list--table [data-page="name"],
+.config-crud-list--table [data-finder="name"],
 .config-crud-list--table .config-widget-category-name {
     font-size: var(--font-size-controls);
     font-weight: 600;
+}
+
+/* A finder whose URL lacks %s says so on a line of its own under the row's
+   fields, rather than squeezing in beside them. */
+.config-crud-list--table .config-crud-fields:has(.config-field-warning) {
+    flex-wrap: wrap;
+    padding-block: var(--space-1-5, 0.35rem);
+}
+
+.config-crud-list--table .config-crud-fields .config-field-warning {
+    flex-basis: 100%;
+    margin: 0;
+    padding-left: calc(var(--space-2, 0.5rem) + 1px);
 }
 
 /* A widget's name is plain text; it lines up with the fields' text above

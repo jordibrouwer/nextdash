@@ -15586,7 +15586,9 @@ class DashboardConfig {
                     <input type="text" class="config-text config-finder-shortcut" data-finder="shortcut" data-index="${i}" placeholder="${esc(this.t('config.finderShortcutPlaceholder', 'key'))}" value="${esc(f.shortcut || '')}">
                     ${warning}
                 </div>
-                <button type="button" class="config-btn config-btn--small config-btn--danger" data-finder-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                <div class="config-crud-row-actions">
+                    <button type="button" class="config-btn config-btn--small config-btn--danger" data-finder-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                </div>
             </li>
         `;
         }).join('');
@@ -15605,7 +15607,7 @@ class DashboardConfig {
                 addLabel: this.t('config.finderAdd', 'Add finder'),
             })}
             ${this.renderPtCountLabel('finders', visible.length, this._finders.length)}
-            <ul class="config-crud-list">${rows || `<li class="config-panel-empty">${esc(empty)}</li>`}</ul>
+            <ul class="config-crud-list config-crud-list--table">${rows || `<li class="config-panel-empty">${esc(empty)}</li>`}</ul>
         `;
     }
 
