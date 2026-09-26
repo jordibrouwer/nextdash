@@ -1432,6 +1432,51 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     display: none;
 }
 
+/*
+ * Docker's nav icon renders into this host from JS (renderNavButton in
+ * dashboard-docker-loader.js) only once a socket is known, so its styling
+ * lives here in the base bundle rather than in docker-view.css — that sheet
+ * only loads once the view itself is opened, which is too late for a button
+ * that has to look right before anyone has clicked it.
+ */
+.page-nav-docker-host {
+    display: flex;
+    align-items: center;
+}
+
+.page-nav-docker-host:empty {
+    display: none;
+}
+
+.page-nav-docker-host a.docker-link-anchor {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    border-radius: var(--layout-radius-sm, 8px);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+}
+
+.page-nav-docker-host a.docker-link-anchor:hover {
+    color: var(--text-primary);
+}
+
+.page-nav-docker-host a.docker-link-anchor.active {
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-primary);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.page-nav-docker-host .docker-link-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+}
+
 /* On a touch device wide enough to keep the desktop layout — a tablet, or a
    phone in landscape — the page tabs stay on screen and are tapped with a
    finger. They measured 28x33 there, under the 44px both iOS and Android ask

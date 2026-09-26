@@ -812,6 +812,18 @@ class DashboardData {
             matchesHash: (hash) => hash === '#config' || hash.startsWith('#config/'),
             isEnabled: (d) => Boolean(d.config?.isEnabled?.()),
         },
+        {
+            view: 'docker',
+            layoutClass: 'docker-layout',
+            // #docker/<name> selects and opens a container, same shape as
+            // health's own sub-hash.
+            matchesHash: (hash) => hash === '#docker' || hash.startsWith('#docker/'),
+            // No settings gate of its own yet — reachability is the socket and
+            // control env vars the view itself checks, not something this
+            // table can see — so always true, same as health's would be with
+            // no setting behind it.
+            isEnabled: () => true,
+        },
     ];
 
     /**

@@ -256,6 +256,9 @@ class Dashboard {
         this.health = typeof window.createDashboardHealthLoader === 'function'
             ? window.createDashboardHealthLoader(this)
             : (typeof DashboardHealth === 'function' ? new DashboardHealth(this) : null);
+        this.docker = typeof window.createDashboardDockerLoader === 'function'
+            ? window.createDashboardDockerLoader(this)
+            : null;
         // Config is loaded on first open (dashboard-config-loader.js); the stub
         // answers the shell's pre-open calls so this stays a plain assignment.
         this.config = typeof window.createDashboardConfigLoader === 'function'
@@ -341,7 +344,9 @@ class Dashboard {
             this.setupPasteToQuickAdd();
             this.inbox.setupEscapeShortcut();
             this.health?.setupEscapeShortcut();
+            this.docker?.setupEscapeShortcut();
             this.config?.setupEscapeShortcut();
+            void this.docker?.renderNavButton?.();
             if (typeof QuickAddWidget === 'function') {
                 this.quickAddWidget = new QuickAddWidget(this);
             }
@@ -474,6 +479,12 @@ class Dashboard {
             } else if ((bootHash === 'health' || bootHash.startsWith('health/'))
                 && this.activeView !== 'health' && this.health?.isEnabled?.()) {
                 await this.health.openHealthView();
+            } else if ((bootHash === 'docker' || bootHash.startsWith('docker/'))
+                && this.activeView !== 'docker') {
+                const select = bootHash.startsWith('docker/')
+                    ? decodeURIComponent(bootHash.slice('docker/'.length))
+                    : null;
+                await this.docker?.openDockerView?.({ select });
             } else if (bootHash === 'unsorted' && this.settings?.unsortedEnabled !== false) {
                 // The setting rather than the module: the kept list loads with
                 // the inbox, and this runs before either of them is there.
@@ -1028,6 +1039,14 @@ class Dashboard {
                 }
                 return;
             }
+            if (hash === 'docker' || hash.startsWith('docker/')) {
+                const select = hash.startsWith('docker/') ? decodeURIComponent(hash.slice('docker/'.length)) : null;
+                if (this.activeView !== 'docker') {
+                    return this.docker?.openDockerView?.({ select });
+                }
+                if (select) this.docker?.selectContainer?.(select, { openDrawer: true });
+                return;
+            }
             // Kept is a tab of the inbox now; the address it always had still
             // opens it, so every saved link keeps working.
             if (hash === 'unsorted') {
@@ -1064,6 +1083,10 @@ class Dashboard {
                 }
                 if (!restoring && this.activeView === 'health') {
                     this.health?.restoreHealthHash?.();
+                    return;
+                }
+                if (!restoring && this.activeView === 'docker') {
+                    this.docker?.restoreDockerHash?.();
                     return;
                 }
                 const pageIndex = parseInt(hash, 10) - 1;
