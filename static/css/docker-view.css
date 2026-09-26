@@ -360,17 +360,19 @@
         font-size: var(--text-xs, 0.72rem);
     }
 
-    /* Drawer host is anchored top/right/bottom already; left:0 makes it
-       cover the whole viewport (inset: 0) while it is open. */
-    .docker-drawer-host {
-        inset: 0;
-    }
-
-    /* The viewport, not the host: a percentage came out short of the screen
-       inside the dashboard layout. */
+    /* The drawer positions itself against the viewport directly, with only
+       top/left plus explicit vw/vh sizes — not left+right (or inset), which
+       this app's `scrollbar-gutter: stable` (dashboard.css) resolves against
+       a containing block a scrollbar's width narrower than the real
+       viewport. vw/vh read the true viewport, so this is genuinely edge
+       to edge regardless of the host's own (unaffected, still pointer-events:
+       none) box. */
     .docker-drawer {
-        box-sizing: border-box;
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100vw;
+        height: 100vh;
         max-width: none;
         border-left: 0;
     }
