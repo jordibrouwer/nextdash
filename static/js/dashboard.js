@@ -1165,6 +1165,11 @@ class Dashboard {
         if (previous === 'inbox' && view !== 'inbox') {
             this.unsorted?.select?.clear?.();
         }
+        // The containers drawer sits on <body>, outside the layout the next
+        // view repaints, so leaving has to take it down explicitly.
+        if (previous === 'docker' && view !== 'docker') {
+            this.docker?.instance?.onLeave?.();
+        }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);
         }

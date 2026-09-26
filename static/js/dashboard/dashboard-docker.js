@@ -47,6 +47,7 @@ class DashboardDocker {
         this.multi = new Set();
         this._multiAnchor = null;
         this.actions = typeof window.DockerActions === 'function' ? new window.DockerActions(this) : null;
+        this.menu = typeof window.DockerRowMenu === 'function' ? new window.DockerRowMenu(this) : null;
         this.restoreViewState();
     }
 
@@ -84,7 +85,9 @@ class DashboardDocker {
             saved = null;
         }
         this.sort = saved?.sort || 'name';
-        this.group = Boolean(saved?.group);
+        // Older saves stored a boolean for "group by project".
+        const group = saved?.group === true ? 'project' : saved?.group;
+        this.group = ['project', 'status'].includes(group) ? group : 'none';
         this.filter = saved?.filter || 'all';
     }
 
@@ -127,7 +130,7 @@ class DashboardDocker {
         d.inbox?.clearKeyboardSelection?.();
         d.setActiveView(DashboardDocker.VIEW);
         window.nextdashTrack?.('view:docker');
-        d.pageNav?.updateDocumentTitle?.();
+        d.pageNav?.setActiveDockerTab?.();
         await this.loadAndRender();
         if (select) {
             this.selectContainer(select, { openDrawer: true, section });
@@ -141,6 +144,19 @@ class DashboardDocker {
         if (filter) this.applyFilter(filter);
         this.startPolling();
         return true;
+    }
+
+    /**
+     * Another view took the layout. The drawer lives on <body>, so it would
+     * stay on screen over that view unless it is taken down here; polling and
+     * the row menu stop with it.
+     */
+    onLeave() {
+        this.stopPolling();
+        this.menu?.close();
+        this._closeDrawerState();
+        this._destroyShell();
+        this.multi.clear();
     }
 
     closeDockerView() {
@@ -165,6 +181,9 @@ class DashboardDocker {
         }
         this._escapeHandler = (e) => {
             if (d.activeView !== DashboardDocker.VIEW) return;
+            // The row menu owns the keyboard while it is open; its own handler
+            // closes it, and Escape must not also close the view underneath.
+            if (document.getElementById('docker-row-menu')) return;
             const active = document.activeElement;
             const tag = active?.tagName;
             const isSearch = active?.matches?.('[data-docker-search]');
@@ -291,14 +310,26 @@ class DashboardDocker {
             btn.disabled = true;
             btn.setAttribute('aria-busy', 'true');
         }
+        // A check asks a registry per image and takes seconds; the overlay says
+        // it is working, then what it found.
+        const overlay = window.ProgressOverlay;
+        overlay?.show?.(
+            this.t('dashboard.dockerCheckingTitle', 'Checking for updates'),
+            this.t('dashboard.dockerCheckingStatus', 'Asking the registries about {count} containers…',
+                { count: this.containers.length }));
         try {
             const res = await window.nextDashFetch('/api/docker/updates/check', { method: 'POST' });
             if (!res.ok) throw new Error('check failed');
             const body = await res.json().catch(() => null);
             this._checkedAt = body?.checkedAt || Date.now();
             await this.refreshContainers();
+            const found = this.containers.filter((c) => c.update?.status === 'available').length;
+            overlay?.finish?.(found
+                ? this.t('dashboard.dockerCheckFound', '{count} updates available', { count: found })
+                : this.t('dashboard.dockerCheckNone', 'Everything is up to date'));
         } catch {
-            window.AppNotification?.showError?.(this.t('dashboard.dockerCheckFailed', 'Could not check for updates'));
+            overlay?.hide?.();
+            window.AppNotification?.show?.(this.t('dashboard.dockerCheckFailed', 'Could not check for updates'), 'error');
         } finally {
             if (btn) {
                 btn.disabled = false;
@@ -344,7 +375,27 @@ class DashboardDocker {
                 dataAttrs: { 'data-docker-filter': row.key },
             })),
             onFilter: (key, via) => this.applyFilter(key, via),
+            summary: this.shellSummary(),
         };
+    }
+
+    /**
+     * The rail's figures, the way Health and Inbox fill the same space: what
+     * runs, what is waiting for an update, what is not well.
+     */
+    shellSummary() {
+        const list = this.containers || [];
+        const running = list.filter((c) => c.state === 'running').length;
+        const updates = list.filter((c) => c.update?.status === 'available').length;
+        const unhealthy = list.filter((c) => c.health === 'unhealthy').length;
+        return [
+            { key: 'running', label: this.t('dashboard.dockerSummaryRunning', 'Running'),
+                value: `${running} / ${list.length}`, tone: running === list.length ? 'good' : '' },
+            { key: 'updates', label: this.t('dashboard.dockerSummaryUpdates', 'Updates'),
+                value: String(updates), tone: updates ? 'warn' : '' },
+            { key: 'unhealthy', label: this.t('dashboard.dockerSummaryUnhealthy', 'Unhealthy'),
+                value: String(unhealthy), tone: unhealthy ? 'bad' : '' },
+        ];
     }
 
     /** Mounts the shell once; later renders reuse it and repaint only the body. */
@@ -369,10 +420,28 @@ class DashboardDocker {
         this.drawerHost.hidden = true;
         document.body.appendChild(this.drawerHost);
         this.drawer = new window.DockerDrawer(this);
+        // The drawer starts where the view does, below the page header, like
+        // Config -> Bookmarks' panel -- the header's own buttons stay reachable.
+        this._placeDrawer = () => this.placeDrawerHost();
+        window.addEventListener('scroll', this._placeDrawer, { passive: true });
+        window.addEventListener('resize', this._placeDrawer, { passive: true });
+        this.placeDrawerHost();
         return this.shell;
     }
 
+    placeDrawerHost() {
+        const host = this.drawerHost;
+        const layout = document.getElementById('dashboard-layout');
+        if (!host || !layout) return;
+        host.style.top = `${Math.max(0, Math.round(layout.getBoundingClientRect().top))}px`;
+    }
+
     _destroyShell() {
+        if (this._placeDrawer) {
+            window.removeEventListener('scroll', this._placeDrawer);
+            window.removeEventListener('resize', this._placeDrawer);
+            this._placeDrawer = null;
+        }
         this.drawer?.close();
         this.drawer = null;
         this.shell?.destroy?.();
@@ -402,10 +471,11 @@ class DashboardDocker {
             <input type="search" data-docker-search value="${this.escape(this.query)}"
                    placeholder="${searchLabel}" autocomplete="off" spellcheck="false" aria-label="${searchLabel}">
             <select data-docker-sort aria-label="${this.escape(this.t('dashboard.dockerSortLabel', 'Sort containers'))}">${sortOptions}</select>
-            <label class="docker-view-group-label">
-                <input type="checkbox" data-docker-group>
-                <span>${this.escape(this.t('dashboard.dockerGroupByProject', 'Group by project'))}</span>
-            </label>
+            <select data-docker-group aria-label="${this.escape(this.t('dashboard.dockerGroupLabel', 'Group containers'))}">
+                <option value="none">${this.escape(this.t('dashboard.dockerGroupNone', 'no groups'))}</option>
+                <option value="project">${this.escape(this.t('dashboard.dockerGroupByProject', 'by project'))}</option>
+                <option value="status">${this.escape(this.t('dashboard.dockerGroupByStatus', 'by status'))}</option>
+            </select>
             <button type="button" class="lvs-action" data-docker-check>${this.escape(this.t('dashboard.dockerCheckUpdates', 'Check for updates'))}</button>
             <span data-docker-checked-at class="docker-checked-at"></span>
         `;
@@ -432,7 +502,7 @@ class DashboardDocker {
         });
 
         host.querySelector('[data-docker-group]')?.addEventListener('change', (e) => {
-            this.group = Boolean(e.target.checked);
+            this.group = e.target.value || 'none';
             this.persistViewState();
             this.render();
         });
@@ -450,8 +520,8 @@ class DashboardDocker {
         if (search && search.value !== this.query) search.value = this.query;
         const sortSelect = host.querySelector('[data-docker-sort]');
         if (sortSelect && sortSelect.value !== this.sort) sortSelect.value = this.sort;
-        const groupBox = host.querySelector('[data-docker-group]');
-        if (groupBox) groupBox.checked = this.group;
+        const groupSelect = host.querySelector('[data-docker-group]');
+        if (groupSelect && groupSelect.value !== this.group) groupSelect.value = this.group;
         const checkedAt = host.querySelector('[data-docker-checked-at]');
         if (checkedAt) checkedAt.textContent = this.checkedAtText();
     }
@@ -500,6 +570,7 @@ class DashboardDocker {
     render() {
         if (!this.shell) return;
         this.shell.setActive(this.filter);
+        this.shell.setSummary?.(this.shellSummary());
         this.shell.setCounts({
             all: this.filterCount('all'),
             running: this.filterCount('running'),
@@ -639,7 +710,7 @@ class DashboardDocker {
         const table = document.createElement('table');
         table.className = 'docker-table';
         const tbody = document.createElement('tbody');
-        if (this.group) {
+        if (this.group === 'project' || this.group === 'status') {
             this.appendGroupedRows(tbody, list);
         } else {
             list.forEach((c) => tbody.appendChild(this.buildRow(c)));
@@ -648,22 +719,48 @@ class DashboardDocker {
         return table;
     }
 
-    /** Grouped by compose project; the project-less group sorts last. */
+    /** Which status group a container belongs in; an update outranks its state. */
+    statusGroup(c) {
+        if (c.update?.status === 'available') return 'updates';
+        if (c.state === 'running') return 'running';
+        if (c.state === 'paused') return 'paused';
+        return 'stopped';
+    }
+
+    /**
+     * Grouped by compose project (project-less last) or by status (updates,
+     * running, paused, stopped -- the order that needs attention first).
+     */
     appendGroupedRows(tbody, list) {
+        const byStatus = this.group === 'status';
         const groups = new Map();
         list.forEach((c) => {
-            const key = c.composeProject || '';
+            const key = byStatus ? this.statusGroup(c) : (c.composeProject || '');
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key).push(c);
         });
-        const keys = [...groups.keys()].filter((k) => k !== '').sort((a, b) => a.localeCompare(b));
-        if (groups.has('')) keys.push('');
+        let keys;
+        if (byStatus) {
+            keys = ['updates', 'running', 'paused', 'stopped'].filter((k) => groups.has(k));
+        } else {
+            keys = [...groups.keys()].filter((k) => k !== '').sort((a, b) => a.localeCompare(b));
+            if (groups.has('')) keys.push('');
+        }
+        const statusLabels = {
+            updates: this.t('dashboard.dockerFilterUpdates', 'Updates'),
+            running: this.t('dashboard.dockerFilterRunning', 'Running'),
+            paused: this.t('dashboard.dockerGroupPaused', 'Paused'),
+            stopped: this.t('dashboard.dockerFilterStopped', 'Stopped'),
+        };
         keys.forEach((key) => {
             const heading = document.createElement('tr');
             heading.className = 'docker-group-row';
+            if (byStatus) heading.setAttribute('data-docker-group-status', key);
             const cell = document.createElement('td');
             cell.colSpan = 4;
-            cell.textContent = key || this.t('dashboard.dockerNoProject', 'No project');
+            cell.textContent = byStatus
+                ? statusLabels[key]
+                : (key || this.t('dashboard.dockerNoProject', 'No project'));
             heading.appendChild(cell);
             tbody.appendChild(heading);
             groups.get(key).forEach((c) => tbody.appendChild(this.buildRow(c)));
@@ -675,6 +772,9 @@ class DashboardDocker {
         tr.className = 'docker-row';
         tr.setAttribute('data-docker-row', c.name);
         tr.setAttribute('data-state', c.state || '');
+        // What the row's glow says: its status group, and the own container.
+        tr.setAttribute('data-docker-status', this.statusGroup(c));
+        if (c.self) tr.setAttribute('data-docker-self', '');
         tr.setAttribute('aria-selected', String(this.selected === c.name || this.multi.has(c.name)));
         const busy = this.busy.get(c.name);
         if (busy) {
@@ -728,6 +828,15 @@ class DashboardDocker {
         const firstPort = (c.ports || []).find((p) => p && p.public);
         line2.textContent = [c.image || '', firstPort ? String(firstPort.public) : ''].filter(Boolean).join(' · ');
         tr.appendChild(line2);
+
+        // Right-click opens the row's menu at the cursor, the way a bookmark
+        // or health row answers the mouse. Shift keeps the browser's own menu.
+        tr.addEventListener('contextmenu', (e) => {
+            if (e.shiftKey || this.dash.isModalOpen?.()) return;
+            e.preventDefault();
+            e.stopPropagation();
+            this.menu?.open(c, { x: e.clientX, y: e.clientY });
+        });
 
         tr.addEventListener('click', (e) => {
             if (e.target.closest('a')) return; // a port link handles its own click

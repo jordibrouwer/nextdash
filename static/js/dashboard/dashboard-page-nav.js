@@ -166,6 +166,8 @@ class DashboardPageNav {
                 displayName = (d.inbox?.activeTab?.() === 'kept'
                     ? this.unsortedPageLabel()
                     : this.t('dashboard.inboxPageTitle', 'Inbox')).toLowerCase();
+            } else if (d.activeView === 'docker') {
+                displayName = this.t('dashboard.dockerView', 'Containers').toLowerCase();
             } else if (d.activeView === 'health') {
                 displayName = this.t('dashboard.health', 'health');
             } else if (d.activeView === 'config') {
@@ -210,7 +212,8 @@ class DashboardPageNav {
             ? (d.inbox?.activeTab?.() === 'kept' ? this.unsortedPageLabel() : this.inboxPageLabel())
             : (d.activeView === 'health'
                 ? this.healthPageLabel()
-                : (d.activeView === 'config' ? this.configPageLabel() : ''));
+                : (d.activeView === 'config' ? this.configPageLabel()
+                    : (d.activeView === 'docker' ? this.t('dashboard.dockerView', 'Containers') : '')));
         if (viewName) {
             if (d.settings?.enableCustomTitle) {
                 const base = (d.settings.customTitle || '').trim();
@@ -286,6 +289,7 @@ class DashboardPageNav {
         // but are the same kind of destination — keep their active state in step
         // with the tabs.
         d.visual?.syncHealthLinkActiveState?.();
+        d.docker?.syncNavActiveState?.();
         d.visual?.syncConfigLinkActiveState?.();
         d.visual?.syncDashboardLinkActiveState?.();
         // The inbox tab is built here, so this is where the destination cluster
@@ -310,6 +314,13 @@ class DashboardPageNav {
     }
 
 
+
+    /** Containers open from their header icon, like health. */
+    setActiveDockerTab() {
+        this.setActivePageNavButton(this.dash.currentPageId);
+        this.updatePageTitle();
+        this.updateDocumentTitle();
+    }
 
     /** Config has no tab of its own either: it opens from the header link. */
     setActiveConfigTab() {

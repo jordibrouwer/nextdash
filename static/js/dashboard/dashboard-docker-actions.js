@@ -110,9 +110,20 @@
         async send(action, container) {
             const name = container.name;
             let phaseTimer = null;
+            const overlay = action === 'update' ? window.ProgressOverlay : null;
             this.view.setBusy(name, action === 'update' ? 'pulling' : action);
             if (action === 'update') {
-                phaseTimer = setTimeout(() => this.view.setBusy(name, 'recreating'), PHASE_RECREATING_AFTER_MS);
+                // A pull can take minutes; the row alone is easy to miss, so the
+                // overlay says what is happening, as it does for other long work.
+                overlay?.show?.(
+                    this.t('dockerUpdatingTitle', 'Updating {name}', { name }),
+                    this.t('dockerPhasePullingLong', 'Pulling the newest image…'));
+                phaseTimer = setTimeout(() => {
+                    this.view.setBusy(name, 'recreating');
+                    overlay?.show?.(
+                        this.t('dockerUpdatingTitle', 'Updating {name}', { name }),
+                        this.t('dockerPhaseRecreatingLong', 'Recreating the container with the same settings…'));
+                }, PHASE_RECREATING_AFTER_MS);
             }
             let res = null;
             let body = null;
@@ -129,16 +140,21 @@
             window.DockerSearchIndex?.invalidate?.();
 
             if (!res || !res.ok) {
+                overlay?.hide?.();
                 await this.explain(res, body);
                 return { ok: false };
             }
             const phase = body?.update?.phase;
+            if (overlay) {
+                if (phase === 'rolled-back') overlay.hide?.();
+                else overlay.finish?.(phase === 'already-current'
+                    ? this.t('dockerUpdateAlreadyCurrent', '{name} already runs the newest image.', { name })
+                    : this.t('dockerUpdateDone', '{name} is up to date.', { name }));
+            }
             if (phase === 'rolled-back') {
                 this.notify(this.t('dockerUpdateRolledBack',
                     'The update of {name} failed at "{step}"; the previous container is running again.',
                     { name, step: body.update.failedStep || '?' }), 'error');
-            } else if (phase === 'already-current') {
-                this.notify(this.t('dockerUpdateAlreadyCurrent', '{name} already runs the newest image.', { name }), 'success');
             }
             await this.view.refreshContainers();
             this.view.drawerRefresh?.();
@@ -206,4 +222,191 @@
     }
 
     window.DockerActions = DockerActions;
+})();
+
+/**
+ * The right-click menu on a container row.
+ *
+ * Built on the same `.move-popover` surface as the bookmark row's menu, so it
+ * looks and moves the same: arrow keys, Enter, Escape, a click outside. Every
+ * entry is something the drawer or a row key already does -- this is one more
+ * way in, not new behaviour.
+ */
+(function () {
+    class DockerRowMenu {
+        constructor(view) {
+            this.view = view;
+            this._cleanup = null;
+        }
+
+        t(key, fallback, params) {
+            return this.view.t(`dashboard.${key}`, fallback, params);
+        }
+
+        close() {
+            if (this._cleanup) this._cleanup();
+        }
+
+        entries(c) {
+            const actions = this.view.actions;
+            const allowed = actions ? actions.allowed(c) : [];
+            const keys = { start: 's', stop: 's', restart: 'r', pause: 'p', unpause: 'p', update: 'u', remove: 'Del' };
+            const icons = { start: '▶', stop: '■', restart: '↻', pause: '⏸', unpause: '▶', update: '⇡', remove: '✕' };
+            const list = [{ id: 'open', label: this.t('dockerMenuDetails', 'Details'), icon: 'ⓘ', key: 'Enter' }];
+            allowed.filter((a) => a !== 'remove').forEach((a) => {
+                list.push({ id: a, label: actions.label(a), icon: icons[a], key: keys[a] });
+            });
+            list.push({ id: 'logs', label: this.t('dockerMenuLogs', 'Show logs'), icon: '≡', divider: true });
+            const webui = this.webuiFor(c);
+            if (webui) list.push({ id: 'webui', label: this.t('dockerLinkWebUI', 'Web UI'), icon: '↗' });
+            list.push({ id: 'copy-name', label: this.t('dockerMenuCopyName', 'Copy name'), icon: '⧉' });
+            list.push({ id: 'copy-id', label: this.t('dockerMenuCopyId', 'Copy ID'), icon: '⧉' });
+            if (allowed.includes('remove')) {
+                list.push({ id: 'remove', label: actions.label('remove'), icon: icons.remove, key: keys.remove, danger: true });
+            }
+            return list;
+        }
+
+        webuiFor(c) {
+            if (c.webui) return String(c.webui).replace('[IP]', window.location.hostname);
+            const port = (c.ports || []).find((p) => p && p.public && p.type !== 'udp');
+            return port ? `http://${window.location.hostname}:${port.public}` : '';
+        }
+
+        open(c, point) {
+            this.close();
+            window.EscapeOwner?.registerOwner?.('docker-row-menu', {
+                isOpen: () => Boolean(document.getElementById('docker-row-menu')),
+            });
+
+            const pop = document.createElement('div');
+            pop.id = 'docker-row-menu';
+            pop.className = 'move-popover bookmark-context-menu docker-row-menu';
+            pop.setAttribute('role', 'menu');
+            pop.setAttribute('aria-label', this.t('dockerMenuTitle', 'Container actions'));
+
+            const head = document.createElement('div');
+            head.className = 'move-popover-current-hint';
+            head.textContent = c.name;
+            pop.appendChild(head);
+
+            const items = [];
+            this.entries(c).forEach((entry) => {
+                if (entry.divider || entry.danger) {
+                    const divider = document.createElement('div');
+                    divider.className = 'move-popover-divider';
+                    pop.appendChild(divider);
+                }
+                const item = document.createElement('div');
+                item.className = 'move-popover-item' + (entry.danger ? ' is-danger' : '');
+                item.setAttribute('role', 'menuitem');
+                item.setAttribute('data-docker-menu-action', entry.id);
+                const icon = document.createElement('span');
+                icon.className = 'move-popover-check';
+                icon.textContent = entry.icon || '';
+                const label = document.createElement('span');
+                label.textContent = entry.label;
+                item.append(icon, label);
+                if (entry.key) {
+                    const kbd = document.createElement('kbd');
+                    kbd.className = 'move-popover-item-key';
+                    kbd.textContent = entry.key;
+                    kbd.setAttribute('aria-hidden', 'true');
+                    item.appendChild(kbd);
+                }
+                pop.appendChild(item);
+                items.push(item);
+            });
+
+            document.body.appendChild(pop);
+            this.position(pop, point);
+
+            let focused = 0;
+            const setFocus = (idx) => {
+                focused = idx;
+                items.forEach((el, i) => {
+                    el.classList.toggle('is-focused', i === idx);
+                    el.tabIndex = i === idx ? 0 : -1;
+                });
+                items[idx]?.focus({ preventScroll: true });
+            };
+
+            let onOutside = null;
+            const close = () => {
+                pop.remove();
+                document.removeEventListener('keydown', onKey, true);
+                if (onOutside) {
+                    document.removeEventListener('click', onOutside);
+                    document.removeEventListener('contextmenu', onOutside);
+                }
+                window.removeEventListener('resize', close);
+                window.removeEventListener('scroll', close, true);
+                if (this._cleanup === close) this._cleanup = null;
+            };
+            this._cleanup = close;
+
+            const run = (item) => {
+                const id = item.getAttribute('data-docker-menu-action');
+                close();
+                void this.run(id, c);
+            };
+            const onKey = (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); return; }
+                if (e.key === 'ArrowDown') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focused + 1) % items.length); return; }
+                if (e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focused - 1 + items.length) % items.length); return; }
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopImmediatePropagation(); if (items[focused]) run(items[focused]); }
+            };
+            items.forEach((item, idx) => {
+                item.addEventListener('mouseenter', () => setFocus(idx));
+                item.addEventListener('click', () => run(item));
+            });
+            document.addEventListener('keydown', onKey, true);
+            window.addEventListener('resize', close);
+            window.addEventListener('scroll', close, true);
+            setTimeout(() => {
+                onOutside = (e) => { if (!pop.contains(e.target)) close(); };
+                document.addEventListener('click', onOutside);
+                document.addEventListener('contextmenu', onOutside);
+            }, 0);
+            requestAnimationFrame(() => setFocus(0));
+        }
+
+        /** Kept on screen: flipped left or up when the cursor is near an edge. */
+        position(pop, point) {
+            const margin = 8;
+            const w = pop.offsetWidth || 220;
+            const h = pop.offsetHeight || 220;
+            let left = point.x;
+            let top = point.y;
+            if (left + w + margin > window.innerWidth) left = point.x - w;
+            if (top + h + margin > window.innerHeight) top = point.y - h;
+            left = Math.max(margin, Math.min(left, window.innerWidth - w - margin));
+            top = Math.max(margin, Math.min(top, window.innerHeight - h - margin));
+            pop.style.left = `${Math.round(left)}px`;
+            pop.style.top = `${Math.round(top)}px`;
+        }
+
+        async run(id, c) {
+            const view = this.view;
+            if (id === 'open') {
+                view.selectContainer(c.name, { openDrawer: true });
+            } else if (id === 'logs') {
+                view.selectContainer(c.name, { openDrawer: true, section: 'logs' });
+            } else if (id === 'webui') {
+                window.open(this.webuiFor(c), '_blank', 'noopener');
+            } else if (id === 'copy-name' || id === 'copy-id') {
+                const text = id === 'copy-name' ? c.name : c.id;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    window.AppNotification?.show?.(this.t('dockerMenuCopied', 'Copied'), 'success');
+                } catch {
+                    window.AppNotification?.show?.(this.t('dockerMenuCopyFailed', 'Could not copy'), 'error');
+                }
+            } else {
+                await view.actions?.run(id, c);
+            }
+        }
+    }
+
+    window.DockerRowMenu = DockerRowMenu;
 })();

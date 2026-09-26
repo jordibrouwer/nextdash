@@ -114,6 +114,16 @@ class DashboardDockerLoader {
         return this._module?.restoreDockerHash?.(...args);
     }
 
+    /** The header icon shows it is the open view, the way health's does. */
+    syncNavActiveState() {
+        const anchor = document.querySelector('#page-nav-docker-host .docker-link-anchor');
+        if (!anchor) return;
+        const active = this.isActiveView();
+        anchor.classList.toggle('active', active);
+        if (active) anchor.setAttribute('aria-current', 'page');
+        else anchor.removeAttribute('aria-current');
+    }
+
     /**
      * One action from outside the view -- the :docker palette. The module is
      * loaded for its dialogs and requests, but the view is not opened: the
