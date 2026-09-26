@@ -83,6 +83,11 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer release()
 
+	// The server's WriteTimeout is a minute; pulling a large image is not. The
+	// answer would be cut off while the update carried on, and the reader would
+	// see a failure for something that worked.
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(dockerActionTimeout + time.Minute))
+
 	// Detached from the request: a stop or an update the reader started should
 	// finish even if the tab that asked for it was closed.
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), dockerActionTimeout)
