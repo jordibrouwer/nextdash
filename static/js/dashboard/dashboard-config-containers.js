@@ -76,11 +76,13 @@
                 ${empty}
                 <div class="config-field">
                     <label class="config-field-label" for="config-docker-hide-input">${esc(this.t('config.dockerHideLabel', 'Hide a container'))}</label>
-                    <input type="text" id="config-docker-hide-input" class="config-text" list="config-docker-hide-names"
-                           autocomplete="off" spellcheck="false"
-                           placeholder="${esc(this.t('config.dockerHidePlaceholder', 'Container name'))}">
-                    <datalist id="config-docker-hide-names"></datalist>
-                    <button type="button" class="config-btn" data-docker-hide-add>${esc(this.t('config.dockerHideAdd', 'Hide'))}</button>
+                    <span class="config-docker-hide-row">
+                        <input type="text" id="config-docker-hide-input" class="config-text" list="config-docker-hide-names"
+                               autocomplete="off" spellcheck="false"
+                               placeholder="${esc(this.t('config.dockerHidePlaceholder', 'Container name'))}">
+                        <datalist id="config-docker-hide-names"></datalist>
+                        <button type="button" class="config-btn" data-docker-hide-add>${esc(this.t('config.dockerHideAdd', 'Hide'))}</button>
+                    </span>
                 </div>
             </div>`;
     },

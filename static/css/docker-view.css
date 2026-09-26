@@ -630,3 +630,10 @@ html[data-theme] body:not([data-depth="flat"]) .docker-drawer {
 .config-docker-chip-remove:focus-visible {
     color: var(--accent-error, #c55);
 }
+
+/* Input and its button share the control column, as one row. */
+.config-docker-hide-row {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
