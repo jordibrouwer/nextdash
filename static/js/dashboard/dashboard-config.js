@@ -24286,6 +24286,30 @@ class DashboardConfig {
             this.repaintBookmarksList();
         }, { root: root || null, rootMargin: '160px' });
         this._bmLoadMoreObserver.observe(sentinel);
+        this.fillBookmarkListToScreen(sentinel, root);
+    }
+
+    /**
+     * Load the next page while the sentinel is already on screen.
+     *
+     * The observer only reports a crossing, and a page that fits on screen
+     * (a page size of 10 on a tall window) draws its sentinel inside the
+     * viewport: it never crosses in, so the list sat at one page however far
+     * the reader scrolled, and every sort put it back there. Filling the screen
+     * first leaves the sentinel below the fold, where the next scroll brings it
+     * in the way the observer expects. A list longer than the screen is left
+     * alone, so an idle list still does not page on its own.
+     */
+    fillBookmarkListToScreen(sentinel, root) {
+        requestAnimationFrame(() => {
+            if (!sentinel.isConnected || this.section !== 'bookmarks') return;
+            const bottom = root ? root.getBoundingClientRect().bottom : window.innerHeight;
+            if (sentinel.getBoundingClientRect().top > bottom + 160) return;
+            const total = this.visibleBookmarks().length;
+            if (this.bmVisibleLimit >= total) return;
+            this.bmVisibleLimit += this.bmPageSize();
+            this.repaintBookmarksList();
+        });
     }
 
     repaintBookmarksList() {

@@ -128,3 +128,46 @@ test.describe('config bookmark list paging', () => {
         expect(await rowCount(page)).toBe(PAGE);
     });
 });
+
+/**
+ * A page size that fits on screen (Config → Bookmarks → Settings allows 10).
+ *
+ * The sentinel is then on screen the moment the list draws, so it never
+ * "comes into view" on a scroll, and the observer never had a crossing to
+ * report: the list sat at 10 however far you scrolled, and every sort, which
+ * starts over at one page, put it back there.
+ */
+test.describe('config bookmark list paging, small page size', () => {
+    async function openSmallPages(page) {
+        await page.setViewportSize({ width: 1500, height: 950 });
+        await openSeededBookmarks(page, TOTAL).catch(() => {});
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.configBookmarksPageSize = 10;
+            const c = window.dashboardInstance.config;
+            c.resetBookmarkVisibleLimit();
+            c.repaintBookmarksList();
+        });
+    }
+
+    test('the list fills the screen rather than stopping at one short page', async ({ page }) => {
+        await openSmallPages(page);
+        await expect.poll(() => loadedCount(page), { timeout: 5_000 }).toBeGreaterThan(10);
+        const sentinelBelow = await page.evaluate(() => {
+            const s = document.querySelector('[data-bm-load-more]');
+            return !s || s.getBoundingClientRect().top > window.innerHeight;
+        });
+        expect(sentinelBelow).toBe(true);
+    });
+
+    test('after a sort, scrolling still loads the rest', async ({ page }) => {
+        await openSmallPages(page);
+        await page.locator('#config-bm-sort').selectOption('name');
+        // Ten pages of ten: one scroll per page, with room to spare.
+        for (let i = 0; i < 40; i += 1) {
+            if (await loadedCount(page) >= TOTAL) break;
+            await scrollToBottom(page);
+            await page.waitForTimeout(200);
+        }
+        await expect.poll(() => loadedCount(page), { timeout: 5_000 }).toBe(TOTAL);
+    });
+});
