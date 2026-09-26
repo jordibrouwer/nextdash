@@ -155,12 +155,8 @@ class DashboardToolbar {
              * prefix, typed inside the panel (search.js registers `*` for it).
              */
             if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '*') {
-                // Recent bookmarks is a dashboard surface; inert in a
-                // full-container view. (! stays live everywhere -- see below --
-                // and is deliberately not given this same guard.)
-                if (!d.isBookmarksView()) {
-                    return;
-                }
+                // Like > : ? and !, recents open from every view: opening a
+                // bookmark you just used is as useful from health as from the grid.
                 // The sheet closes on the same key that would otherwise stack
                 // the panel on top of it.
                 if (d.isRecentBookmarksModalOpen?.() === true) {

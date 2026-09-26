@@ -820,13 +820,13 @@ class SearchComponent {
             return;
         }
 
-        // Search, commands, finders and quick-add are bookmarks-dashboard
-        // buttons; their keys go inert in a full-container view instead of
-        // popping dashboard chrome over inbox/health/config. isBookmarksView()
-        // per its own docstring, rather than naming the views this is NOT.
+        // Search, commands and finders open from every view: the overlay is
+        // how a reader gets anywhere, and a view is no reason to lose it. A
+        // view that gives one of these keys a meaning of its own claims it in
+        // its own handler first. Quick-add stays with the bookmark grid.
         if (!this.searchActive && window.dashboardInstance && !window.dashboardInstance.isBookmarksView()
                 && !window.dashboardInstance._leavingConfig
-                && (key === '>' || key === ':' || key === '?' || e.key === '+')) {
+                && e.key === '+') {
             return;
         }
 

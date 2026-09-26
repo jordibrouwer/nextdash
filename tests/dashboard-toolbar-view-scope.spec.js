@@ -101,16 +101,26 @@ test.describe('the header actions, and what the keys do inside a view', () => {
         });
     }
 
-    test('a disabled shortcut (>) does nothing inside a view', async ({ page }) => {
+    // Search, commands, finders and recents open from every view now; quick
+    // add is the one that stays with the bookmark grid.
+    test('> opens search inside a view', async ({ page }) => {
         await openConfig(page);
         await page.keyboard.press('>');
+        await expect(page.locator('#shortcut-search.show')).toBeVisible();
+        expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('config');
+    });
+
+    test('a disabled shortcut (+) does nothing inside a view', async ({ page }) => {
+        await openConfig(page);
+        await page.keyboard.press('+');
         // Nothing to poll for -- the point is that nothing happens. A fixed
         // wait is the only way to see a key that is supposed to do nothing.
         await page.waitForTimeout(300);
-        const searchOpen = await page.evaluate(
-            () => document.getElementById('shortcut-search')?.classList.contains('show') === true,
+        const opened = await page.evaluate(
+            () => document.getElementById('shortcut-search')?.classList.contains('show') === true
+                || Boolean(document.querySelector('.modal-overlay.show')),
         );
-        expect(searchOpen).toBe(false);
+        expect(opened).toBe(false);
         expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('config');
     });
 

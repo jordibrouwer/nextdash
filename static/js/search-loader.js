@@ -134,10 +134,10 @@
         if (event.ctrlKey || event.metaKey || event.altKey) return;
         if (isTypingTarget(event.target)) return;
         if (!OPENING_KEYS.includes(event.key)) return;
-        // Every key this shim opens belongs to the bookmarks dashboard; before
-        // the real bundle lands to enforce that itself, don't let the race
-        // open dashboard chrome over inbox, health or config.
-        if (global.dashboardInstance && !global.dashboardInstance.isBookmarksView?.()) return;
+        // > : ? * open the overlay from any view, as they do once the bundle
+        // is in. `/` is the one key a view keeps: config, the containers view
+        // and the tag cloud use it for their own search or filter.
+        if (event.key === '/' && global.dashboardInstance && !global.dashboardInstance.isBookmarksView?.()) return;
         event.preventDefault();
         event.stopImmediatePropagation();
         loadThenOpen(event.key);
