@@ -636,7 +636,19 @@ async function answerNoCategory(page) {
     return true;
 }
 
+/**
+ * Open a Health row's second line the way a reader does: a click on the row.
+ * The actions and the badges (check mode, drift, muted, ignored, handled) live
+ * there since the redesign, out of sight until the row is focused.
+ * @param {import('@playwright/test').Locator} row
+ */
+async function openHealthRow(row) {
+    await row.locator('.health-view-item-domain').click();
+    await row.locator('.health-view-line2').waitFor({ state: 'visible' });
+}
+
 module.exports = {
+    openHealthRow,
     answerNoCategory,
     GITHUB_STUB_PORT,
     RAINDROP_STUB_PORT,

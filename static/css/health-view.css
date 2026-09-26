@@ -691,8 +691,8 @@
 /* The card, its hover and its keyboard-cursor state now live in feed-row.css,
    shared with Inbox and Config → Bookmarks. What stays here is the part that is
    genuinely Health's: the severity edge classes the JS still writes. */
-.health-view-item.is-broken { border-left: 3px solid var(--accent-error); }
-.health-view-item.is-warn { border-left: 3px solid var(--accent-warning); }
+/* Broken and warn used to draw their own left border; the shared status glow
+   (data-lvs-status, list-view-shell.css) says it now. */
 
 
 .health-view-item-icon {
@@ -2208,4 +2208,143 @@ body.no-animations .health-view-item-score-caret {
 
 .health-view-focus-btn--primary:hover {
     background: color-mix(in srgb, var(--accent-primary) 20%, var(--background-secondary));
+}
+
+
+/* ── Redesign: one line per bookmark, a second for the focused one ─────────
+   The row was a card of four stacked lines; a list of fifty was fifty cards.
+   Now it is a table row -- what, where, why, how bad -- and the actions and
+   the qualifying badges open underneath only for the row in focus. The glow
+   comes from data-lvs-status. */
+
+.health-view-item.feed-row {
+    display: block;
+    padding: var(--space-2, 0.45rem) var(--space-3, 0.75rem);
+    border: 0;
+    border-bottom: 1px solid var(--border-primary);
+    border-radius: 0;
+    background-color: transparent;
+}
+
+.health-view-item.feed-row:hover {
+    background-color: var(--background-secondary);
+}
+
+.health-view-item.feed-row.keyboard-selected {
+    background-color: var(--background-secondary);
+    box-shadow:
+        inset 3px 0 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+.health-view-line1 {
+    display: grid;
+    grid-template-columns: 1.1rem 1.4rem minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.4fr) auto;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    min-height: 1.8rem;
+}
+
+.health-view-line1 .health-view-item-icon {
+    width: 1.4rem;
+    height: 1.4rem;
+    font-size: 0.9rem;
+}
+
+.health-view-line1 .health-view-item-title {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.health-view-item-domain,
+.health-view-item-reason-wrap {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.health-view-item-reason-wrap > * + *::before {
+    content: " · ";
+}
+
+.health-view-line1 .health-view-item-score {
+    justify-self: end;
+}
+
+/* The second line: actions, then the badges that qualify the first. */
+.health-view-item .health-view-line2 {
+    display: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.45rem) 0 var(--space-1, 0.2rem) calc(1.1rem + 1.4rem + 2 * var(--space-3, 0.75rem));
+}
+
+/* data-health-open only (dashboard-health.js, openKey), set by a click or
+   the keyboard. Not aria-selected: hovering selects without opening. Not
+   :focus-within either: a ticked checkbox kept its row open, and the next
+   click lower down closed it mid-click -- the rows shifted and the click
+   landed beside the box it aimed at. */
+.health-view-item[data-health-open] .health-view-line2 {
+    display: flex;
+}
+
+.health-view-item-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.health-view-item-badges:empty {
+    display: none;
+}
+
+/* The checkbox rests out of sight until the pointer, the focus or a live
+   selection asks for it -- a column of empty boxes was the loudest thing in
+   a quiet list. */
+.health-view-item .health-view-select {
+    visibility: hidden;
+}
+
+.health-view-item:hover .health-view-select,
+.health-view-item:focus-within .health-view-select,
+.health-view-item[aria-selected="true"] .health-view-select,
+.health-view-feed:has(.health-view-select-box:checked) .health-view-select {
+    visibility: visible;
+}
+
+/* Status group headings in the colour of the rows under them. */
+.health-view-status-group[data-health-group-status="bad"] .health-view-status-group-title { color: var(--accent-error); }
+.health-view-status-group[data-health-group-status="warn"] .health-view-status-group-title { color: var(--accent-warning); }
+.health-view-status-group[data-health-group-status="info"] .health-view-status-group-title { color: var(--accent-vivid, var(--accent-primary)); }
+.health-view-status-group[data-health-group-status="good"] .health-view-status-group-title { color: var(--accent-success); }
+
+.health-view-status-group-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+@media (max-width: 767px) {
+    .health-view-line1 {
+        grid-template-columns: 1.1rem 1.4rem minmax(0, 1fr) auto;
+    }
+
+    .health-view-item-domain,
+    .health-view-item-reason-wrap {
+        grid-column: 3 / -1;
+    }
+
+    .health-view-item .health-view-line2 {
+        padding-left: 0;
+    }
 }

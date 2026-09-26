@@ -144,7 +144,9 @@ test.describe('health view right-click menu', () => {
         await rows.nth(0).click({ button: 'right', position: { x: 60, y: 20 } });
         await expect(openMenu(page)).toHaveAttribute('data-menu-for', '1:0');
 
-        await rows.nth(1).click({ button: 'right', position: { x: 60, y: 20 } });
+        // Rows are one line now, so the first row's menu (opened at the cursor)
+        // covers the second row where the old test clicked; aim right of it.
+        await rows.nth(1).click({ button: 'right', position: { x: 520, y: 12 } });
         // Exactly one, on the second row: the first row's menu closed rather than
         // leaving two menus up at once.
         await expect(openMenu(page)).toHaveCount(1);

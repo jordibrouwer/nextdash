@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, dismissWhatsNewIfPresent } = require('./e2e-helpers');
+const { prepareDashboardInteraction, dismissWhatsNewIfPresent, openHealthRow } = require('./e2e-helpers');
 
 /**
  * Focus mode, bulk drift-accept, per-bookmark muting, and the overflow counts.
@@ -115,8 +115,10 @@ async function openHealthView(page) {
 
 /** Tick a row's selection box by its visible name. */
 async function selectRow(page, name) {
-    await page.locator('.health-view-item', { hasText: name })
-        .locator('.health-view-select-box').check();
+    const row = page.locator('.health-view-item', { hasText: name });
+    // The box rests hidden until the pointer is over its row.
+    await row.hover();
+    await row.locator('.health-view-select-box').check();
 }
 
 test.describe('health focus mode', () => {
@@ -256,6 +258,7 @@ test.describe('per-bookmark alert muting', () => {
         await openHealthView(page);
 
         const muted = page.locator('.health-view-item', { hasText: 'Drift C' });
+        await openHealthRow(muted);
         await expect(muted.locator('.health-muted-badge')).toBeVisible();
 
         const notMuted = page.locator('.health-view-item', { hasText: 'Drift A' });
@@ -271,6 +274,7 @@ test.describe('per-bookmark alert muting', () => {
         await openHealthView(page);
 
         const row = page.locator('.health-view-item', { hasText: 'Drift C' });
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
         const menu = row.locator('.health-check-menu');
         await expect(menu).toBeVisible();
@@ -290,6 +294,7 @@ test.describe('per-bookmark alert muting', () => {
         await openHealthView(page);
 
         const row = page.locator('.health-view-item', { hasText: 'Drift C' });
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
         await row.locator('[data-expect-open]').click();
 
@@ -330,6 +335,7 @@ test.describe('per-bookmark alert muting', () => {
         // row's own panel: the menu now only picks a mode, and carries an entry
         // that opens the panel.
         const row = page.locator('.health-view-item', { hasText: 'Drift A' });
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
         const menu = row.locator('.health-check-menu');
         await expect(menu).toBeVisible();

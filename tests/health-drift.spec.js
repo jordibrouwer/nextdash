@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { prepareDashboardInteraction, openHealthRow } = require('./e2e-helpers');
 
 /**
  * Rot signals: a bookmark that quietly stopped pointing where it was saved,
@@ -53,6 +53,7 @@ test.describe('drift watching', () => {
 
         // Drift watching lives in the row's expectations panel now, reached
         // from the check-mode menu rather than crammed into it.
+        await openHealthRow(page.locator('.health-view-item').first());
         await page.locator('.health-check-mode').click();
         await page.locator('[data-expect-open]').click();
         const checkbox = page.locator('[data-watch-drift]');

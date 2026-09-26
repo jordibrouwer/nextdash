@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openHealthRow } = require('./e2e-helpers');
 
 /**
  * Telling the health report to stop reporting one condition.
@@ -85,6 +85,7 @@ test.describe('ignoring a condition', () => {
             health.render();
         });
 
+        await openHealthRow(ourRow(page));
         await expect(ourRow(page).locator('.health-view-ignored-badge')).toBeVisible({ timeout: 15_000 });
         await expect(ourRow(page).locator('.health-view-ignored-badge')).toContainText('ignored');
     });

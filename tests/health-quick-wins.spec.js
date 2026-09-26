@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { prepareDashboardInteraction, openHealthRow } = require('./e2e-helpers');
 
 /**
  * Four small additions to the health view: the monitor interval changeable from
@@ -92,6 +92,7 @@ test.describe('health view quick wins', () => {
         });
 
         const row = page.locator('.health-view-item').first();
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
 
         // The picker is only offered on a row that is already monitoring.
@@ -120,6 +121,7 @@ test.describe('health view quick wins', () => {
         });
 
         const row = page.locator('.health-view-item').first();
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
         await row.locator('[data-check-interval="15"]').click();
 
@@ -132,6 +134,7 @@ test.describe('health view quick wins', () => {
 
         // The second row has no monitoring, so there is no cadence to change.
         const row = page.locator('.health-view-item').nth(1);
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
         await expect(row.locator('.health-check-menu')).toBeVisible();
         await expect(row.locator('.health-check-interval')).toHaveCount(0);

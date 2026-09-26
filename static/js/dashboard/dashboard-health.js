@@ -62,6 +62,11 @@ class DashboardHealth {
         this.searchQuery = '';
         this.visibleLimit = 50;
         this.selectedKey = null;
+        // The row whose second line is open. It follows the selection, except
+        // when the pointer merely passes over a row: hover selects (so keys act
+        // on what is under the mouse) but opening a line under a moving cursor
+        // would push the rows below it around.
+        this.openKey = null;
         /** Deep-link target from `?hv_id=` — applied after the feed renders. */
         this.focusIssueKey = null;
         this.focusIssueWiden = false;
@@ -92,7 +97,8 @@ class DashboardHealth {
          */
         this._handledAnchors = new Map();
         /** Group the list by site instead of by status; see groupFilteredIssues. */
-        this.groupByHost = false;
+        // none | site | status. Replaces the old on/off "group by site".
+        this.groupBy = 'none';
         this._searchRenderTimer = null;
         this._loadPromise = null;
         this._loadPromiseRefresh = false;
@@ -905,7 +911,24 @@ class DashboardHealth {
         // the count so the scale is visible without counting rows. Works under
         // every filter and sort, because "which site is this" does not depend on
         // either.
-        if (this.groupByHost) {
+        if (this.groupBy === 'status') {
+            // The same five the row glow uses, worst first, so a heading and
+            // the colour of the rows under it always agree.
+            const labels = {
+                bad: this.t('dashboard.healthGroupBad', 'Broken'),
+                warn: this.t('dashboard.healthGroupWarn', 'Needs a look'),
+                info: this.t('dashboard.healthGroupInfo', 'Monitored'),
+                muted: this.t('dashboard.healthGroupMuted', 'Quiet'),
+                good: this.t('dashboard.healthGroupGood', 'Healthy'),
+            };
+            const order = ['bad', 'warn', 'info', 'muted', 'good'];
+            const buckets = new Map(order.map((key) => [key, []]));
+            issues.forEach((issue) => buckets.get(this.healthRowStatus(issue)).push(issue));
+            return order
+                .filter((key) => buckets.get(key).length)
+                .map((key) => ({ key: `status:${key}`, status: key, label: labels[key], items: buckets.get(key) }));
+        }
+        if (this.groupBy === 'site') {
             const buckets = new Map();
             issues.forEach((issue) => {
                 const host = this.formatUrlDisplay(issue?.url) || this.t('dashboard.healthNoHost', 'no address');
@@ -1009,6 +1032,7 @@ class DashboardHealth {
 
     applyKeyboardSelection(rows) {
         const list = Array.isArray(rows) && rows.length ? rows : this.getVisibleRows();
+        if (!this._pointerSelecting) this.openKey = this.selectedKey;
         // A render replaces every row element, so the ticks have to be painted
         // back on from the key set — the DOM is not where the selection lives.
         if (this._multiSelect?.isActive()) {
@@ -1020,6 +1044,7 @@ class DashboardHealth {
             const selected = row.dataset.healthKey === this.selectedKey;
             row.classList.toggle('keyboard-selected', selected);
             row.setAttribute('aria-selected', selected ? 'true' : 'false');
+            row.toggleAttribute('data-health-open', Boolean(this.openKey) && row.dataset.healthKey === this.openKey);
             if (selected) {
                 // Instant while a kept place is waiting to be restored. A smooth
                 // scroll keeps running for hundreds of milliseconds, long after
@@ -1039,6 +1064,8 @@ class DashboardHealth {
 
     clearKeyboardSelection() {
         this.selectedKey = null;
+        this.openKey = null;
+        document.querySelectorAll('.health-view-item[data-health-open]').forEach((row) => row.removeAttribute('data-health-open'));
         this.unbindPointerNavigation();
         this.closeAllMenus();
         if (this._outsideMenuHandler) {
@@ -1318,7 +1345,12 @@ class DashboardHealth {
             const row = e.target.closest?.('.health-view-item');
             const key = row?.dataset?.healthKey;
             if (!key || key === this.selectedKey) return;
-            this.selectRowByKey(key);
+            this._pointerSelecting = true;
+            try {
+                this.selectRowByKey(key);
+            } finally {
+                this._pointerSelecting = false;
+            }
         };
         // Only a real movement arms it; pointerover alone never does.
         this._pointerMoveHandler = () => { this._pointerSelectArmed = true; };
@@ -3565,7 +3597,8 @@ class DashboardHealth {
             id: 'health',
             title: this.t('dashboard.healthPageTitle', 'Health'),
             description: this.t('dashboard.healthPageSubtitle', 'Bookmarks that need attention'),
-            density: true,
+            // One-line rows need no reading density of their own.
+            density: false,
             t: (key, fallback) => this.t(key, fallback),
             activeFilter: this.filter,
             // Two dozen specs select `[data-health-filter="duplicate"]
@@ -3833,6 +3866,7 @@ class DashboardHealth {
         groups.forEach((group) => {
             const section = document.createElement('section');
             section.className = 'health-view-status-group';
+            if (group.status) section.setAttribute('data-health-group-status', group.status);
             // A flat run (the common case) has no heading; an empty <h3> would
             // leave its margin behind as a gap above the first row.
             section.innerHTML = group.label
@@ -5326,8 +5360,13 @@ class DashboardHealth {
                    aria-label="${searchLabel}">
             <select class="health-view-sort-select"
                     aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
-            <button type="button" class="health-view-groupby-btn" aria-pressed="false"
-                    title="${this.escape(this.t('dashboard.healthGroupByHostHint', 'One host down takes every bookmark on it with it. Grouped by site, that reads as one problem.'))}">${this.escape(this.t('dashboard.healthGroupByHost', 'Group by site'))}</button>
+            <select class="health-view-groupby-select" data-health-group
+                    aria-label="${this.escape(this.t('dashboard.healthGroupLabel', 'Group bookmarks'))}"
+                    title="${this.escape(this.t('dashboard.healthGroupByHostHint', 'One host down takes every bookmark on it with it. Grouped by site, that reads as one problem.'))}">
+                <option value="none">${this.escape(this.t('dashboard.healthGroupNone', 'no groups'))}</option>
+                <option value="site">${this.escape(this.t('dashboard.healthGroupBySite', 'by site'))}</option>
+                <option value="status">${this.escape(this.t('dashboard.healthGroupByStatus', 'by status'))}</option>
+            </select>
         `;
         this.bindToolbar(host);
         this.syncToolbar();
@@ -5362,11 +5401,13 @@ class DashboardHealth {
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
 
-        host.querySelector('.health-view-groupby-btn')?.addEventListener('click', () => {
-            this.groupByHost = !this.groupByHost;
-            this._trackAction('group-by-host', { on: this.groupByHost });
+        host.querySelector('[data-health-group]')?.addEventListener('change', (e) => {
+            this.groupBy = ['site', 'status'].includes(e.target.value) ? e.target.value : 'none';
+            this._trackAction('group-by', { by: this.groupBy });
             this._resetFeedPaging();
             this.render();
+            // Back to the list, as the sort select does, or j/k would go dead.
+            document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
     }
 
@@ -5381,10 +5422,9 @@ class DashboardHealth {
         if (sortSelect && sortSelect.value !== this.sort) {
             sortSelect.value = this.sort;
         }
-        const groupBtn = host.querySelector('.health-view-groupby-btn');
-        if (groupBtn) {
-            groupBtn.classList.toggle('is-active', this.groupByHost);
-            groupBtn.setAttribute('aria-pressed', this.groupByHost ? 'true' : 'false');
+        const groupSelect = host.querySelector('[data-health-group]');
+        if (groupSelect && groupSelect.value !== this.groupBy) {
+            groupSelect.value = this.groupBy;
         }
     }
 
@@ -7016,6 +7056,25 @@ class DashboardHealth {
         return `<div class="health-view-menu" role="menu" hidden data-menu-for="${this.escape(key)}" data-menu-owner="more" aria-label="${this.escape(this.t('dashboard.healthMore', 'More actions'))}">${items.join('')}</div>`;
     }
 
+    /**
+     * What a row's glow says, in the shared list vocabulary: broken is bad,
+     * anything that wants a second look is warn, a monitor is info, a row the
+     * reader has quietened is muted, and the rest is good. Broken wins over
+     * everything, because a muted outage is still an outage.
+     */
+    healthRowStatus(issue) {
+        if (issue?.status === 'broken') return 'bad';
+        if ((issue?.watchDrift && issue?.driftNoticed) || this.certFor(issue)
+            || this.scoreClass(issue?.score) === 'warn') {
+            return 'warn';
+        }
+        if (issue?.monitor) return 'info';
+        if (issue?.notifyMuted || this.ignoredFlagsOf(issue).length || issue?.status === 'unchecked') {
+            return 'muted';
+        }
+        return 'good';
+    }
+
     createIssueElement(issue) {
         const key = this.issueKey(issue);
         const row = document.createElement('article');
@@ -7026,7 +7085,7 @@ class DashboardHealth {
         // --grid carries the shared alignment and the density padding; it
         // deliberately declares no columns, so --with-select keeps the checkbox
         // track (feed-row.css:171).
-        row.className = `feed-row feed-row--with-select feed-row--grid health-view-item ${this.bandClass(issue.score)}`;
+        row.className = `feed-row health-view-item ${this.bandClass(issue.score)}`;
         if (broken) {
             row.classList.add('is-broken', 'feed-row--edge-error');
         } else if (this.scoreClass(issue.score) === 'warn') {
@@ -7056,42 +7115,34 @@ class DashboardHealth {
             ? `<img class="health-view-item-icon-img" src="${this.escape(iconSrc)}" alt="" loading="lazy">`
             : '🔗';
 
+        // The row's glow (list-view-shell.css) says what it is at a glance.
+        row.setAttribute('data-lvs-status', this.healthRowStatus(issue));
+
+        /*
+         * Two lines. The first is what a reader scans: what, where, why, how
+         * bad. The second -- actions and the badges that qualify the first --
+         * opens for the focused row only (health-view.css), so a list of fifty
+         * reads as fifty lines instead of fifty cards.
+         */
         row.innerHTML = `
-            <label class="health-view-select" title="${this.escape(this.t('dashboard.healthSelectRow', 'Select this bookmark'))}">
-                <input type="checkbox" class="health-view-select-box"
-                    aria-label="${this.escape(this.t('dashboard.healthSelectRow', 'Select this bookmark'))}">
-            </label>
-            <div class="health-view-item-icon" aria-hidden="true">${icon}</div>
-            <div class="health-view-item-body">
-                <div class="health-view-item-head">
-                    <h3 class="health-view-item-title">${this.escape(title)}</h3>
-                    ${handled ? `<span class="health-view-item-handled" title="${this.escape(this.t('dashboard.healthHandledHint', 'You have acted on this one. It stays where it was until you change the filter or reload the report.'))}">${this.escape(this.t('dashboard.healthHandledBadge', 'handled'))}</span>` : ''}
-                    <button type="button" class="health-view-item-score" aria-expanded="${expanded ? 'true' : 'false'}" aria-label="${this.escape(this.t('dashboard.healthScoreToggle', 'Score {score} — show breakdown', { score: issue.score }))}">
-                        ${this.escape(issue.score)}<span class="health-view-item-score-caret" aria-hidden="true">▸</span>
-                    </button>
-                </div>
-                <p class="health-view-item-meta">
-                    <span class="health-view-item-meta-primary">
-                        <span>${this.escape(domain)}</span>
-                        ${this.renderCertBadge(issue)}
-                        ${this.renderDriftBadge(issue)}
-                        ${this.renderIgnoredBadge(issue)}
-                        ${this.renderMutedBadge(issue)}
-                        <span class="health-check-mode-wrap">
-                            ${this.renderCheckModeBadge(issue, key)}
-                            ${this.renderCheckModeMenu(issue, key)}
-                        </span>
-                    </span>
-                    <span class="health-view-item-meta-trail">
-                        ${this.renderLastOpened(issue)}
-                        ${this.renderBrokenSince(issue)}
-                        ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
-                        ${extraReasons ? `<span>${this.escape(extraReasons)}</span>` : ''}
-                    </span>
-                </p>
-                ${this.renderMonitorStrip(issue)}
-                <div class="health-view-score-panel" ${expanded ? '' : 'hidden'}>${this.renderScorePanel(issue)}</div>
-                <div class="health-view-expect-panel" ${expectOpen ? '' : 'hidden'}>${expectOpen ? this.renderExpectPanel(issue) : ''}</div>
+            <div class="health-view-line1">
+                <label class="health-view-select" title="${this.escape(this.t('dashboard.healthSelectRow', 'Select this bookmark'))}">
+                    <input type="checkbox" class="health-view-select-box"
+                        aria-label="${this.escape(this.t('dashboard.healthSelectRow', 'Select this bookmark'))}">
+                </label>
+                <div class="health-view-item-icon" aria-hidden="true">${icon}</div>
+                <h3 class="health-view-item-title">${this.escape(title)}</h3>
+                <span class="health-view-item-domain">${this.escape(domain)}</span>
+                <span class="health-view-item-reason-wrap">
+                    ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
+                    ${this.renderBrokenSince(issue)}
+                    ${extraReasons ? `<span class="health-view-item-more-reasons">${this.escape(extraReasons)}</span>` : ''}
+                </span>
+                <button type="button" class="health-view-item-score" aria-expanded="${expanded ? 'true' : 'false'}" aria-label="${this.escape(this.t('dashboard.healthScoreToggle', 'Score {score} — show breakdown', { score: issue.score }))}">
+                    ${this.escape(issue.score)}<span class="health-view-item-score-caret" aria-hidden="true">▸</span>
+                </button>
+            </div>
+            <div class="health-view-line2 lvs-row-line2">
                 <div class="feed-row-actions health-view-item-actions">
                     <div class="health-view-item-actions-inner">
                         <button type="button" class="health-view-action-btn" data-health-action="recheck">${this.escape(this.t('dashboard.healthRecheck', 'Re-check'))}<kbd>p</kbd></button>
@@ -7103,7 +7154,22 @@ class DashboardHealth {
                         </div>
                     </div>
                 </div>
+                <div class="health-view-item-badges">
+                    ${handled ? `<span class="health-view-item-handled" title="${this.escape(this.t('dashboard.healthHandledHint', 'You have acted on this one. It stays where it was until you change the filter or reload the report.'))}">${this.escape(this.t('dashboard.healthHandledBadge', 'handled'))}</span>` : ''}
+                    ${this.renderCertBadge(issue)}
+                    ${this.renderDriftBadge(issue)}
+                    ${this.renderIgnoredBadge(issue)}
+                    ${this.renderMutedBadge(issue)}
+                    <span class="health-check-mode-wrap">
+                        ${this.renderCheckModeBadge(issue, key)}
+                        ${this.renderCheckModeMenu(issue, key)}
+                    </span>
+                    ${this.renderLastOpened(issue)}
+                </div>
             </div>
+            ${this.renderMonitorStrip(issue)}
+            <div class="health-view-score-panel" ${expanded ? '' : 'hidden'}>${this.renderScorePanel(issue)}</div>
+            <div class="health-view-expect-panel" ${expectOpen ? '' : 'hidden'}>${expectOpen ? this.renderExpectPanel(issue) : ''}</div>
         `;
 
         const iconImg = row.querySelector('.health-view-item-icon-img');

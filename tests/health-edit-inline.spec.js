@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, prepareDashboardInteraction } = require('./e2e-helpers');
+const { markWhatsNewSeen, prepareDashboardInteraction, openHealthRow } = require('./e2e-helpers');
 
 /**
  * Health Edit opens the shared bookmark modal — the same form Promote uses —
@@ -66,6 +66,7 @@ test.describe('health Edit → bookmark modal', () => {
     async function clickEdit(page) {
         const healthRow = page.locator('.health-view-item').first();
         await healthRow.hover();
+        await openHealthRow(healthRow);
         await healthRow.locator('[data-health-action="edit"]').click();
     }
 

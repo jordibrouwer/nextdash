@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, openHealthRow } = require('./e2e-helpers');
 
 /**
  * The health list must not move under the hands of the person working through it.
@@ -134,6 +134,7 @@ test.describe('a row you acted on stays where it was', () => {
 
         const row = page.locator(`.health-view-item[data-health-key="${target.key}"]`);
         await expect(row).toHaveClass(/health-view-item--handled/);
+        await openHealthRow(row);
         await expect(row.locator('.health-view-item-handled')).toBeVisible();
 
         // Asking the list a different question drops the anchor: the row is gone

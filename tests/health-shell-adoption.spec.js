@@ -101,14 +101,14 @@ test('search, sort and the overflow menu keep their hooks', async ({ page }) => 
     await expect(page.locator('.health-view-menu--toolbar')).toBeVisible();
 });
 
-test('rows keep their checkbox column under the shared grid', async ({ page }) => {
+test('rows keep their checkbox in the first line', async ({ page }) => {
+    // The shared card grid gave way to a one-line row (health redesign): the
+    // checkbox is the first track of that line, resting hidden until asked.
     await openHealth(page);
     const row = page.locator('.health-view-item').first();
-    await expect(row).toHaveClass(/feed-row--with-select/);
-    await expect(row).toHaveClass(/feed-row--grid/);
-    await expect(row.locator('.health-view-select-box')).toHaveCount(1);
-    const tracks = await row.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
-    expect(tracks, 'the checkbox column was lost').toBe(3);
+    await expect(row.locator('.health-view-line1 .health-view-select-box')).toHaveCount(1);
+    const first = await row.locator('.health-view-line1').evaluate((el) => el.firstElementChild?.className);
+    expect(first).toContain('health-view-select');
 });
 
 /**

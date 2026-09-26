@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, openHealthToolbarMenu } = require('./e2e-helpers');
+const { prepareDashboardInteraction, openHealthToolbarMenu, openHealthRow } = require('./e2e-helpers');
 
 /**
  * Changing a bookmark's check mode from inside the health view.
@@ -92,6 +92,7 @@ test.describe('health view check mode', () => {
     test('clicking the badge opens a popover with the active mode marked', async ({ page }) => {
         await openHealthView(page);
 
+        await openHealthRow(page.locator('.health-view-item').first());
         await page.locator('.health-view-item').first().locator('.health-check-mode').click();
         const menu = page.locator('.health-view-item').first().locator('.health-check-menu');
         await expect(menu).toBeVisible();
@@ -108,6 +109,7 @@ test.describe('health view check mode', () => {
         const calls = await captureCheckMode(page);
 
         const row = page.locator('.health-view-item').nth(2);
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
         await row.locator('[data-check-mode="monitor"]').click();
 
@@ -130,6 +132,7 @@ test.describe('health view check mode', () => {
         await expect(page.locator('.health-view-item')).toHaveCount(1);
 
         const row = page.locator('.health-view-item').first();
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
         await row.locator('[data-check-mode="periodic"]').click();
 
@@ -146,6 +149,7 @@ test.describe('health view check mode', () => {
         const calls = await captureCheckMode(page);
 
         const row = page.locator('.health-view-item').first();
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
         await row.locator('[data-check-mode="monitor"]').click();
 
@@ -167,6 +171,7 @@ test.describe('health view check mode', () => {
         await openHealthView(page);
 
         const row = page.locator('.health-view-item').first();
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
         await expect(row.locator('.health-check-menu')).toBeVisible();
         await page.keyboard.press('Escape');
@@ -301,6 +306,7 @@ test.describe('health view check mode', () => {
         await captureCheckMode(page, 409);
 
         const row = page.locator('.health-view-item').nth(2);
+        await openHealthRow(row);
         await row.locator('.health-check-mode').click();
         await row.locator('[data-check-mode="monitor"]').click();
 
@@ -368,6 +374,7 @@ test.describe('health view check mode', () => {
         }, null, { timeout: 15_000 });
         await page.click('[data-health-filter="all"]');
         await page.waitForSelector('.health-view-item', { timeout: 15_000 });
+        await openHealthRow(page.locator('.health-view-item').first());
         await page.click('.health-check-mode');
     }
 });

@@ -30,16 +30,17 @@ async function healthView(page) {
 }
 
 test.describe('reading the list by site', () => {
-    test('the toggle groups every row under its host', async ({ page }) => {
+    test('grouping by site puts every row under its host', async ({ page }) => {
         await healthView(page);
-        await page.locator('.health-view-groupby-btn').click();
+        // The on/off button is a select now: none / site / status.
+        await page.locator('select[data-health-group]').selectOption('site');
         await page.waitForTimeout(500);
 
         const grouped = await page.evaluate(() => {
             const h = window.dashboardInstance.health._module || window.dashboardInstance.health;
             const groups = h.groupFilteredIssues(h.getFilteredIssues());
             return {
-                on: h.groupByHost,
+                on: h.groupBy === 'site',
                 keys: groups.map((g) => g.key),
                 // Biggest site first: the one with the most rows behind it is the
                 // one worth looking at.
@@ -51,7 +52,7 @@ test.describe('reading the list by site', () => {
         expect(grouped.keys.every((k) => k.startsWith('host:'))).toBe(true);
         expect([...grouped.sizes]).toEqual([...grouped.sizes].sort((a, b) => b - a));
 
-        await page.locator('.health-view-groupby-btn').click();
+        await page.locator('select[data-health-group]').selectOption('none');
         await page.waitForTimeout(400);
         expect(await page.evaluate(() => {
             const h = window.dashboardInstance.health._module || window.dashboardInstance.health;
