@@ -7138,3 +7138,100 @@ body.no-animations .config-new-features-panel-star {
     line-height: 1.3;
     color: var(--text-primary);
 }
+
+/* ── Structure → Categories and Pages as Health-style rows ─────────────────
+   One line per row, touching, a rule between them; the name reads as text
+   until the pointer or the focus reaches it, and the buttons stay out of
+   sight until then. Same measures as .health-view-item (health-view.css):
+   46px, the title at 600. Only these two lists carry --table; Finders,
+   Collections and Tags keep their cards. */
+.config-crud-list--table {
+    gap: 0;
+}
+
+.config-crud-list--table .config-crud-row {
+    box-sizing: border-box;
+    height: 46px;
+    padding: 0 var(--space-3, 0.75rem);
+    gap: var(--space-3, 0.75rem);
+    border: 0;
+    border-bottom: 1px solid var(--border-primary);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.config-crud-list--table .config-crud-row:hover,
+.config-crud-list--table .config-crud-row:focus-within {
+    background-color: var(--background-secondary);
+}
+
+.config-crud-list--table .config-crud-row.keyboard-selected {
+    background-color: var(--background-secondary);
+    border-color: var(--border-primary);
+    box-shadow:
+        inset 3px 0 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+.config-crud-list--table .config-crud-fields {
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+/* Text until it is reached for; the field it is comes back on hover or focus. */
+.config-crud-list--table .config-crud-fields .config-text {
+    padding-block: var(--space-1, 0.25rem);
+    padding-inline: var(--space-2, 0.5rem);
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+
+.config-crud-list--table .config-crud-fields .config-text:hover,
+.config-crud-list--table .config-crud-fields .config-text:focus {
+    border-color: var(--border-primary);
+    background: var(--background-primary);
+}
+
+.config-crud-list--table [data-cat="name"],
+.config-crud-list--table [data-page="name"],
+.config-crud-list--table .config-widget-category-name {
+    font-size: var(--font-size-controls);
+    font-weight: 600;
+}
+
+/* A widget's name is plain text; it lines up with the fields' text above
+   and below it (their padding plus their 1px border). */
+.config-crud-list--table .config-widget-category-name {
+    padding-left: calc(var(--space-2, 0.5rem) + 1px);
+}
+
+.config-crud-list--table .config-color {
+    width: 22px;
+    height: 22px;
+}
+
+/* Out of sight, not out of reach: opacity keeps the buttons in the tab
+   order, and reaching one with Tab shows the row's set. */
+.config-crud-list--table .config-crud-row-actions {
+    flex-wrap: nowrap;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.config-crud-list--table .config-crud-row:hover .config-crud-row-actions,
+.config-crud-list--table .config-crud-row:focus-within .config-crud-row-actions,
+.config-crud-list--table .config-crud-row.keyboard-selected .config-crud-row-actions {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .config-crud-list--table .config-crud-row-actions {
+        opacity: 1;
+    }
+}
+
+body.no-animations .config-crud-list--table .config-crud-row-actions {
+    transition: none;
+}

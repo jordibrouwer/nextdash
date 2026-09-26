@@ -16620,7 +16620,7 @@ class DashboardConfig {
             ])}
             ${this.renderPtCountLabel('pages', visible.length, pages.length)}
             ${rows
-                ? `<ul class="config-crud-list">${rows}</ul>`
+                ? `<ul class="config-crud-list config-crud-list--table">${rows}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.pagesNoMatch', 'No pages match your search.'))}</p>`}
         `;
     }
@@ -20987,7 +20987,8 @@ class DashboardConfig {
                 ? rows
                 : this.interleaveWidgetRows(rows);
             body = `${summary}${this.renderPtCountLabel('categories', visible.length, this._categories.length)}${rows
-                ? `<ul class="config-crud-list">${withWidgets}</ul>`
+                // --table: rows read like Health's (config-view.css).
+                ? `<ul class="config-crud-list config-crud-list--table">${withWidgets}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.categoriesNoMatch', 'No categories match your search.'))}</p>`}`;
         }
         const pagePicker = `
