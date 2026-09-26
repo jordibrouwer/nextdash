@@ -44,6 +44,7 @@ type fakeContainer struct {
 	Mounts                                  []map[string]any
 	Networks                                map[string]map[string]any
 	RestartPolicy                           string
+	NetworkMode                             string
 	Logs                                    []string
 	created                                 bool // set once /containers/create has made it
 }
@@ -198,6 +199,17 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 
 	case r.Method == "POST" && strings.HasPrefix(path, "/networks/") && strings.HasSuffix(path, "/connect"):
 		f.record("POST", path)
+		var body struct {
+			Container      string         `json:"Container"`
+			EndpointConfig map[string]any `json:"EndpointConfig"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if c := f.resolve(body.Container); c != nil {
+			if c.Networks == nil {
+				c.Networks = map[string]map[string]any{}
+			}
+			c.Networks[strings.TrimSuffix(strings.TrimPrefix(path, "/networks/"), "/connect")] = body.EndpointConfig
+		}
 		w.WriteHeader(http.StatusOK)
 		return
 
@@ -250,6 +262,7 @@ func (f *fakeDocker) handleInspect(w http.ResponseWriter, id string) {
 		"Config": map[string]any{"Image": c.Image, "Env": c.Env, "Labels": c.Labels},
 		"HostConfig": map[string]any{
 			"RestartPolicy": map[string]any{"Name": c.RestartPolicy}, "Binds": []string{},
+			"NetworkMode": c.NetworkMode,
 		},
 		"Mounts": c.Mounts,
 		"NetworkSettings": map[string]any{
@@ -344,15 +357,42 @@ func (f *fakeDocker) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeJSONFake(w, http.StatusInternalServerError, map[string]string{"message": "boom"})
 		return
 	}
+	// The daemon refuses a name that is taken, which is why recreate has to
+	// rename the old container out of the way first.
+	for _, c := range f.containers {
+		if c.Name == name {
+			writeJSONFake(w, http.StatusConflict, map[string]string{"message": "name in use"})
+			return
+		}
+	}
 	var body struct {
-		Image string `json:"Image"`
+		Image      string            `json:"Image"`
+		Env        []string          `json:"Env"`
+		Labels     map[string]string `json:"Labels"`
+		HostConfig struct {
+			NetworkMode   string `json:"NetworkMode"`
+			RestartPolicy struct {
+				Name string `json:"Name"`
+			} `json:"RestartPolicy"`
+		} `json:"HostConfig"`
+		NetworkingConfig struct {
+			EndpointsConfig map[string]map[string]any `json:"EndpointsConfig"`
+		} `json:"NetworkingConfig"`
 	}
 	_ = json.NewDecoder(r.Body).Decode(&body)
 	id := name + strings.Repeat("0", 64-len(name))
 	if len(id) > 64 {
 		id = id[:64]
 	}
-	f.containers[id] = &fakeContainer{ID: id, Name: name, Image: body.Image, State: "created", created: true}
+	networks := map[string]map[string]any{}
+	for net, cfg := range body.NetworkingConfig.EndpointsConfig {
+		networks[net] = cfg
+	}
+	f.containers[id] = &fakeContainer{
+		ID: id, Name: name, Image: body.Image, ImageID: f.images[body.Image].ID, State: "created",
+		Env: body.Env, Labels: body.Labels, RestartPolicy: body.HostConfig.RestartPolicy.Name,
+		NetworkMode: body.HostConfig.NetworkMode, Networks: networks, created: true,
+	}
 	writeJSONFake(w, http.StatusCreated, map[string]string{"Id": id})
 }
 
@@ -428,5 +468,6 @@ func newDockerTestRouter(h *Handlers) http.Handler {
 	r.HandleFunc("/api/docker/containers/{id}/env/{name}", h.DockerContainerEnvHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/stats", h.DockerContainerStatsHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/logs", h.DockerContainerLogsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/{action}", h.DockerActionHandler).Methods("POST")
 	return r
 }

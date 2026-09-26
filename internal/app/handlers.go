@@ -37,9 +37,11 @@ type Handlers struct {
 	healthHistoryMu   sync.Mutex
 	healthTrendMu     sync.Mutex
 	healthReportMu    sync.RWMutex
-	healthReport      BookmarkHealthReport
-	healthReportAt    time.Time
-	healthReportOK    bool
+	// One Docker action per container at a time, keyed by container id.
+	dockerBusy     sync.Map
+	healthReport   BookmarkHealthReport
+	healthReportAt time.Time
+	healthReportOK bool
 	// healthReportGen is the store's write count when this report was built.
 	// A cached report whose generation no longer matches describes bookmarks
 	// that have since changed, however recently it was built.
