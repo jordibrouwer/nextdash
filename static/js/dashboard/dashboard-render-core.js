@@ -949,7 +949,8 @@ class DashboardRenderCore {
             d.health.render();
             return;
         }
-        if (d.activeView === 'config' && d.config?.isEnabled?.()) {
+        // The Bookmarks view ('library') is the config module's too.
+        if ((d.activeView === 'config' || d.activeView === 'library') && d.config?.isEnabled?.()) {
             if (blockForInlineEdit) {
                 return;
             }

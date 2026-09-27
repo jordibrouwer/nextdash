@@ -158,7 +158,9 @@ class DashboardConfigLoader {
     }
 
     isActiveView() {
-        return this.dash.activeView === DashboardConfigLoader.VIEW;
+        // The Bookmarks view is drawn by the config module too.
+        const view = this.dash.activeView;
+        return view === DashboardConfigLoader.VIEW || view === 'library';
     }
 
     /** Delegates to the loaded module; config must be open so the module exists. */
@@ -228,7 +230,18 @@ class DashboardConfigLoader {
         return this._loadPromise;
     }
 
+    /** The Bookmarks view (#bookmarks): the config module's list, full size. */
+    async openLibraryView() {
+        const mod = await this.loadForOpen();
+        return mod.openLibraryView();
+    }
+
     async openConfigView(section) {
+        const mod = await this.loadForOpen();
+        return mod.openConfigView(section);
+    }
+
+    async loadForOpen() {
         let mod;
         try {
             // The Help tab's strings are not in the startup payload — a third of
@@ -252,7 +265,7 @@ class DashboardConfigLoader {
             }
             throw err;
         }
-        return mod.openConfigView(section);
+        return mod;
     }
 
     /**

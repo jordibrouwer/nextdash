@@ -432,7 +432,8 @@
         if (ctx.triageOpen) return 'inbox-triage';
         if (ctx.activeView === 'health') return 'health';
         if (ctx.activeView === 'inbox') return 'inbox';
-        if (ctx.activeView === 'config') return 'config';
+        // The Bookmarks view is config's bookmark list, keys and all.
+        if (ctx.activeView === 'config' || ctx.activeView === 'library') return 'config';
         return 'bookmarks';
     }
 

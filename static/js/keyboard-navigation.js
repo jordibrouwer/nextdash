@@ -125,7 +125,10 @@ class KeyboardNavigation {
             const config = this.dashboard.config;
             const configDomActive = layoutEl?.classList.contains('config-layout');
             if (configDomActive && config?.isEnabled?.()) {
-                if (this.dashboard.activeView !== 'config') {
+                // The Bookmarks view wears config's layout as well, and is
+                // not to be turned into Config by a key press.
+                const view = this.dashboard.activeView;
+                if (view !== 'config' && view !== 'library') {
                     this.dashboard.setActiveView('config', { silent: true });
                 }
                 config.handleKeyboardNavigation?.(e);

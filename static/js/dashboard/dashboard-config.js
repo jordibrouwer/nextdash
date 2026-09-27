@@ -14,6 +14,22 @@ class DashboardConfig {
     static VIEW = 'config';
 
     /**
+     * The Bookmarks view: the bookmark list full size at #bookmarks, drawn by
+     * this same instance with none of Config's navigation around it. Its own
+     * view id because 'bookmarks' is already the grid's.
+     */
+    static LIBRARY_VIEW = 'library';
+
+    /** `#bookmarks…` read as the `#config/bookmarks…` every hash reader here knows. */
+    static libraryHashAsConfig(hash) {
+        const raw = String(hash || '').replace(/^#/, '');
+        if (raw === 'bookmarks' || raw.startsWith('bookmarks/') || raw.startsWith('bookmarks?')) {
+            return `#config/${raw}`;
+        }
+        return hash;
+    }
+
+    /**
      * The gap between rows of a selection sweep.
      *
      * The icon and preview endpoints allow sixty a minute per client, shared
@@ -139,6 +155,8 @@ class DashboardConfig {
     constructor(dashboard) {
         this.dash = dashboard;
         this.section = 'overview';
+        // True while this instance is drawing the Bookmarks view rather than Config.
+        this.standalone = false;
         this.aboutTab = 'colophon';
         this.loading = false;
         this._loadPromise = null;
@@ -275,7 +293,8 @@ class DashboardConfig {
     }
 
     isActiveView() {
-        return this.dash.activeView === DashboardConfig.VIEW;
+        const view = this.dash.activeView;
+        return view === DashboardConfig.VIEW || view === DashboardConfig.LIBRARY_VIEW;
     }
 
     /**
@@ -639,6 +658,10 @@ class DashboardConfig {
     }
 
     hashForSection(section) {
+        if (this.standalone) {
+            const page = this.bmPageFilter ? `/${encodeURIComponent(this.bmPageFilter)}` : '';
+            return `bookmarks${page}${this.bookmarksFilterQuery()}`;
+        }
         if (!section || section === 'overview') return 'config';
         if (section === 'bookmarks') {
             const page = this.bmPageFilter ? `/${encodeURIComponent(this.bmPageFilter)}` : '';
@@ -676,7 +699,7 @@ class DashboardConfig {
              * an entry per section would turn one Back into six -- so Back
              * leaves config entirely, the way Escape does.
              */
-            const wasOnConfig = String(window.location.hash || '').startsWith('#config');
+            const wasOnConfig = String(window.location.hash || '').startsWith(this.standalone ? '#bookmarks' : '#config');
             if (wasOnConfig || !window.DashboardHistory?.pushLocation?.(next)) {
                 history.replaceState(history.state, '', next);
             }
@@ -689,7 +712,10 @@ class DashboardConfig {
         // inbox and page buttons in the header. Those changed what was on
         // screen without config ever hearing about it, so the memory kept an
         // older tab.
-        this.saveLastConfigLocation();
+        //
+        // Not from the Bookmarks view: that is not a place in Config to come
+        // back to, and a bare #config would have opened on it.
+        if (!this.standalone) this.saveLastConfigLocation();
     }
 
     /**
@@ -948,6 +974,8 @@ class DashboardConfig {
             return false;
         }
         const targetSection = this.resolveConfigOpenTarget(section);
+        // From the Bookmarks view: the same instance, but Config's own shell.
+        this.standalone = false;
         if (d.activeView === DashboardConfig.VIEW) {
             if (targetSection !== this.section) {
                 this.section = targetSection;
@@ -986,16 +1014,68 @@ class DashboardConfig {
         return true;
     }
 
+    /**
+     * Open the Bookmarks view: the list, full size, at #bookmarks.
+     *
+     * The same workbench Config → Bookmarks draws, in the same instance --
+     * only the shell around it differs, and the address it writes.
+     */
+    async openLibraryView() {
+        const d = this.dash;
+        const hash = DashboardConfig.libraryHashAsConfig(window.location.hash);
+        if (d.activeView === DashboardConfig.LIBRARY_VIEW) {
+            this.applyLibraryHash(window.location.hash);
+            return true;
+        }
+        if (d.isInlineEditActive() && !(await d.confirmInlineEditBeforeNavigation())) {
+            return false;
+        }
+        d._abortInlineEditForRender?.();
+        d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+        d.inbox?.clearKeyboardSelection?.();
+        d.health?.clearKeyboardSelection?.();
+        this.clearListKeyboardSelection();
+        this.clearBookmarkKeyboardSelection();
+        this.standalone = true;
+        this.section = 'bookmarks';
+        this.bmTab = 'list';
+        void this.ensureBookmarkRenderers();
+        void this.ensureSection('bookmarks');
+        if (String(hash).startsWith('#config/bookmarks')) {
+            this.applyBookmarksPageFromHash(hash);
+            this.applyBookmarksFiltersFromHash(hash);
+        }
+        d.setActiveView(DashboardConfig.LIBRARY_VIEW);
+        window.nextdashTrack?.('view:library');
+        d.pageNav?.updateDocumentTitle?.();
+        d.pageNav?.updatePageTitle?.();
+        await this.loadAndRender();
+        this.restoreConfigHash();
+        return true;
+    }
+
+    /** A #bookmarks… hash changed while the view is open: follow its page and filters. */
+    applyLibraryHash(hash) {
+        const asConfig = DashboardConfig.libraryHashAsConfig(hash);
+        const page = this.applyBookmarksPageFromHash(asConfig);
+        const filters = this.applyBookmarksFiltersFromHash(asConfig);
+        if (page || filters) {
+            this.invalidateVisibleBookmarks();
+            this.render();
+        }
+    }
+
     closeConfigView() {
         this.closeWorkbenchOverlays?.();
         const d = this.dash;
-        if (d.activeView !== DashboardConfig.VIEW) {
+        if (!this.isActiveView()) {
             return false;
         }
         // Every way out remembers where you were, not just Shift+H and Shift+I.
         // The five-minute expiry in loadLastConfigLocation is what keeps that
-        // from turning into a tab that greets you forever.
-        this.saveLastConfigLocation();
+        // from turning into a tab that greets you forever. The Bookmarks view
+        // is not a place in Config, so leaving it remembers nothing.
+        if (!this.standalone) this.saveLastConfigLocation();
         // The save indicator lives on <body>, so leaving the view has to take it
         // down; otherwise a "Saved" would linger over the dashboard.
         clearTimeout(this._saveStateTimer);
@@ -1877,6 +1957,7 @@ class DashboardConfig {
         this.closeWorkbenchOverlaysOffList();
         container.classList.remove('inbox-layout', 'health-layout', 'tag-filter-layout');
         container.classList.add('config-layout', 'page-transition');
+        container.classList.toggle('library-layout', this.standalone);
         // Only the parts that changed. The rail, the search button and the panel
         // frame are the same markup on every render — rebuilding them threw away
         // the scroll position and cost a layout pass per section switch, on a
@@ -1908,10 +1989,13 @@ class DashboardConfig {
         const panel = container.querySelector('#config-view-body');
         const title = container.querySelector('.config-view-section-title');
         if (!panel || !title) return false;
+        // Between Config and the Bookmarks view the shell itself differs.
+        const shellIsLibrary = Boolean(container.querySelector('.config-view--library'));
+        if (shellIsLibrary !== this.standalone) return false;
         const esc = (v) => this.dash.escapeHtml(v);
-        title.textContent = this.sectionLabel(this.section);
+        if (!this.standalone) title.textContent = this.sectionLabel(this.section);
         const main = container.querySelector('.config-view-main');
-        if (main) main.setAttribute('aria-labelledby', `config-section-${esc(this.section)}`);
+        if (main && !this.standalone) main.setAttribute('aria-labelledby', `config-section-${esc(this.section)}`);
         panel.innerHTML = this.renderSection();
         return true;
     }
@@ -3585,6 +3669,7 @@ class DashboardConfig {
     }
 
     renderShell() {
+        if (this.standalone) return this.renderLibraryShell();
         const esc = (v) => this.dash.escapeHtml(v);
         const panelId = 'config-section-panel';
         const activeNavId = `config-section-${this.section}`;
@@ -3669,6 +3754,32 @@ class DashboardConfig {
                 </div>
                 <div class="config-view-main" id="${panelId}" role="tabpanel" tabindex="0"
                      aria-labelledby="${activeNavId}">
+                    <div class="config-view-body" id="config-view-body">
+                        ${this.renderSection()}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * The Bookmarks view's shell: Config's band and body, without its section
+     * rail -- the list brings a rail of its own -- so the list runs the width
+     * of the page the way Health's does.
+     */
+    renderLibraryShell() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.bmLibraryTitle', 'Bookmarks');
+        return `
+            <div class="config-view config-view--library">
+                <div class="config-view-head lvs-header">
+                    <div class="lvs-header-text">
+                        <h2 class="config-view-section-title lvs-title">${esc(label)}</h2>
+                        <p class="config-view-head-breadcrumb lvs-description" hidden></p>
+                    </div>
+                    <div class="lvs-header-actions"></div>
+                </div>
+                <div class="config-view-main" id="config-section-panel" role="region" aria-label="${esc(label)}" tabindex="0">
                     <div class="config-view-body" id="config-view-body">
                         ${this.renderSection()}
                     </div>
@@ -21674,6 +21785,13 @@ class DashboardConfig {
         // behind once it left, standing the tab strip a row lower than the
         // strip on every other section. The count goes to the band too, in
         // the header actions, where Health and Inbox carry theirs.
+        // The Bookmarks view is the list alone: the other tabs stay in Config.
+        if (this.standalone) {
+            return `
+                <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
+                <div id="config-bm-body" role="region" tabindex="0">${this.renderBookmarksListTab()}</div>
+            `;
+        }
         return `
             <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>

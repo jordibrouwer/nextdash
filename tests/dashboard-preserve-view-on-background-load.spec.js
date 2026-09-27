@@ -41,6 +41,9 @@ test.describe('FULL_CONTAINER_VIEWS table covers every known view', () => {
                 healthHash: byView.health.matchesHash('#health'),
                 configHash: byView.config.matchesHash('#config'),
                 configSectionHash: byView.config.matchesHash('#config/appearance'),
+                libraryHash: byView.library.matchesHash('#bookmarks'),
+                libraryFilteredHash: byView.library.matchesHash('#bookmarks?health=broken'),
+                libraryLayoutClass: byView.library.layoutClass,
                 bookmarksHashRejected: table.some((entry) => entry.matchesHash('#3')),
                 inboxLayoutClass: byView.inbox.layoutClass,
                 healthLayoutClass: byView.health.layoutClass,
@@ -49,7 +52,10 @@ test.describe('FULL_CONTAINER_VIEWS table covers every known view', () => {
             };
         });
 
-        expect(results.names.sort()).toEqual(['config', 'health', 'inbox']);
+        expect(results.names.sort()).toEqual(['config', 'docker', 'health', 'inbox', 'library']);
+        expect(results.libraryHash).toBe(true);
+        expect(results.libraryFilteredHash).toBe(true);
+        expect(results.libraryLayoutClass).toBe('library-layout');
         expect(results.inboxHash).toBe(true);
         expect(results.healthHash).toBe(true);
         expect(results.configHash).toBe(true);

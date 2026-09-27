@@ -488,6 +488,9 @@ class Dashboard {
                     ? new URLSearchParams(bootHash.slice('docker?'.length)).get('filter')
                     : null;
                 await this.docker?.openDockerView?.({ select, filter });
+            } else if ((bootHash === 'bookmarks' || bootHash.startsWith('bookmarks/') || bootHash.startsWith('bookmarks?'))
+                && this.activeView !== 'library' && this.config?.isEnabled?.()) {
+                await this.config.openLibraryView();
             } else if (bootHash === 'unsorted' && this.settings?.unsortedEnabled !== false) {
                 // The setting rather than the module: the kept list loads with
                 // the inbox, and this runs before either of them is there.
@@ -1054,6 +1057,15 @@ class Dashboard {
                 if (filter) this.docker?.applyFilter?.(filter);
                 return;
             }
+            // The Bookmarks view: its filters ride in the query, so a change
+            // while it is open is a change of filters, not a new view.
+            if (hash === 'bookmarks' || hash.startsWith('bookmarks/') || hash.startsWith('bookmarks?')) {
+                if (this.activeView !== 'library') {
+                    return this.config?.openLibraryView?.();
+                }
+                this.config?.instance?.applyLibraryHash?.(`#${hash}`);
+                return;
+            }
             // Kept is a tab of the inbox now; the address it always had still
             // opens it, so every saved link keeps working.
             if (hash === 'unsorted') {
@@ -1094,6 +1106,10 @@ class Dashboard {
                 }
                 if (!restoring && this.activeView === 'docker') {
                     this.docker?.restoreDockerHash?.();
+                    return;
+                }
+                if (!restoring && this.activeView === 'library') {
+                    this.config?.instance?.restoreConfigHash?.();
                     return;
                 }
                 const pageIndex = parseInt(hash, 10) - 1;

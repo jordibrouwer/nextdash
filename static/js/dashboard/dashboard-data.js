@@ -813,6 +813,14 @@ class DashboardData {
             isEnabled: (d) => Boolean(d.config?.isEnabled?.()),
         },
         {
+            // Bookmarks, full size (#bookmarks). 'library' because 'bookmarks'
+            // is the grid's own view id; drawn by the config module.
+            view: 'library',
+            layoutClass: 'library-layout',
+            matchesHash: (hash) => hash === '#bookmarks' || hash.startsWith('#bookmarks/') || hash.startsWith('#bookmarks?'),
+            isEnabled: (d) => Boolean(d.config?.isEnabled?.()),
+        },
+        {
             view: 'docker',
             layoutClass: 'docker-layout',
             // #docker/<name> selects and opens a container, same shape as
@@ -1325,7 +1333,8 @@ class DashboardData {
             d.inbox.render?.();
             return;
         }
-        if (d.activeView === 'config' && d.config?.isEnabled?.()) {
+        // The Bookmarks view ('library') is the config module's too.
+        if ((d.activeView === 'config' || d.activeView === 'library') && d.config?.isEnabled?.()) {
             if (d.isInlineEditActive() && !despiteModal) {
                 return;
             }

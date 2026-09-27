@@ -85,6 +85,15 @@
     }
 }
 
+/* The Bookmarks view: Config's band and body without its section rail, so
+   the list runs the width of the page the way Health's does. */
+.config-view--library {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+        "header"
+        "main";
+}
+
 /* ── Section navigation ─────────────────────────────────────────────────── */
 
 /*

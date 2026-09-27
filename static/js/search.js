@@ -726,7 +726,7 @@ class SearchComponent {
         if (dash?._leavingConfig) {
             return false;
         }
-        if (dash?.activeView === 'config') {
+        if (dash?.activeView === 'config' || dash?.activeView === 'library') {
             return true;
         }
         return document.getElementById('dashboard-layout')?.classList.contains('config-layout') ?? false;

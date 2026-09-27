@@ -172,6 +172,8 @@ class DashboardPageNav {
                 displayName = this.t('dashboard.health', 'health');
             } else if (d.activeView === 'config') {
                 displayName = this.t('config.viewBreadcrumbRoot', 'Config').toLowerCase();
+            } else if (d.activeView === 'library') {
+                displayName = this.t('dashboard.libraryView', 'Bookmarks').toLowerCase();
             } else {
                 const defaultTitle = d.language.t('dashboard.defaultPageTitle');
                 displayName = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
@@ -213,7 +215,8 @@ class DashboardPageNav {
             : (d.activeView === 'health'
                 ? this.healthPageLabel()
                 : (d.activeView === 'config' ? this.configPageLabel()
-                    : (d.activeView === 'docker' ? this.t('dashboard.dockerView', 'Containers') : '')));
+                    : (d.activeView === 'docker' ? this.t('dashboard.dockerView', 'Containers')
+                        : (d.activeView === 'library' ? this.t('dashboard.libraryView', 'Bookmarks') : ''))));
         if (viewName) {
             if (d.settings?.enableCustomTitle) {
                 const base = (d.settings.customTitle || '').trim();
