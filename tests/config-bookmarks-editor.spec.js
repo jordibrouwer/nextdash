@@ -91,8 +91,16 @@ async function capturePosts(page) {
     return captureRowWrites(page);
 }
 
-/** Sort the list flat, so each row carries its own page › category crumb. */
+/**
+ * Sort the list flat, so each row carries its own page › category crumb.
+ *
+ * Group used to follow Sort (grouped only for "Page order"); it is its own
+ * control now (task 2.4), defaulting to "by category" for whoever had "Page
+ * order" open -- so a plain sort change no longer ungroups the list, and
+ * "no groups" has to be asked for on its own.
+ */
 async function sortFlat(page) {
+    await page.selectOption('#config-bm-group', '');
     await page.selectOption('#config-bm-sort', 'name');
     await expect(page.locator('#config-bm-list .config-bm-feed')).not.toHaveClass(/is-grouped/);
 }
@@ -194,6 +202,11 @@ test.describe('config bookmarks editor', () => {
     test('the toolbar sorts', async ({ page }) => {
         await openBookmarks(page);
         await expect(page.locator('#config-bm-sort')).toBeVisible();
+        // Sort only orders rows within a group (task 2.4); a global A-Z check
+        // needs the list flat, which Sort alone no longer guarantees now that
+        // Group is its own control (it opens on "by category" here, page's
+        // default sort being "Page order").
+        await page.selectOption('#config-bm-group', '');
         await page.selectOption('#config-bm-sort', 'name');
         const names = await page.locator('.config-bm-title').allTextContents();
         const sorted = [...names].sort((a, b) => a.localeCompare(b));

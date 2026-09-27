@@ -18,13 +18,20 @@ test.describe('groups in the bookmark list', () => {
         await page.selectOption('#config-bm-sort', 'page');
         const heads = page.locator('#config-bm-list .config-bm-group-head');
         await expect(heads).toHaveCount(3);
-        await expect(heads.first()).toContainText('2');
+        // "No category" (Plex) sorts first under Group = category (task 2.4's
+        // page-then-category order), ahead of any named category -- the two-row
+        // "mon" slab is found by its key rather than assumed to be the first one.
+        await expect(page.locator('#config-bm-list .config-bm-group-head[data-bm-group$="::mon"]')).toContainText('2');
         await expect(page.locator('#config-bm-list .config-bm-crumb')).toHaveCount(0);
         await expect(page.locator('#config-bm-list .config-bm-row.is-group-start')).toHaveCount(3);
     });
 
     test('any other order is one slab, and every row says where it lives', async ({ page }) => {
         await openBookmarksWithRows(page, ROWS);
+        // Group and Sort used to be coupled: sorting by anything but "Page
+        // order" was the only way to get one slab. Group is its own control
+        // now (task 2.4), so "no groups" is asked for directly.
+        await page.selectOption('#config-bm-group', '');
         await page.selectOption('#config-bm-sort', 'opens');
         await expect(page.locator('#config-bm-list .config-bm-group-head')).toHaveCount(0);
         await expect(page.locator('#config-bm-list .config-bm-crumb')).toHaveCount(4);
@@ -132,7 +139,9 @@ test.describe('groups in the bookmark list', () => {
     test('select group ticks the whole group', async ({ page }) => {
         await openBookmarksWithRows(page, ROWS);
         await page.selectOption('#config-bm-sort', 'page');
-        await page.locator('#config-bm-list .config-bm-group-head').first()
+        // "No category" sorts first (see the test above); the two-row "mon"
+        // slab is picked by its key.
+        await page.locator('#config-bm-list .config-bm-group-head[data-bm-group$="::mon"]')
             .locator('[data-bm-select-group]').click();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmSelected.size)).toBe(2);
         await expect(page.locator('#config-bm-list .config-bm-row[aria-selected="true"]')).toHaveCount(2);
@@ -176,6 +185,10 @@ test.describe('groups in the bookmark list', () => {
         await expect(label).toContainText(name, { ignoreCase: true });
         expect(await fits(label)).toBe(true);
 
+        // Group is its own control now (task 2.4): dropping to "no groups" is
+        // what used to happen implicitly from sorting by anything but "Page
+        // order", which is what this half of the test is after.
+        await page.selectOption('#config-bm-group', '');
         await page.selectOption('#config-bm-sort', 'opens');
         const crumb = page.locator('#config-bm-list .config-bm-row').first().locator('.config-bm-crumb');
         await expect(crumb).toHaveText(new RegExp(` › ${name}$`));

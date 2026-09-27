@@ -205,6 +205,10 @@ class DashboardConfig {
         // preference. Health and Inbox both remember their sort; this list was
         // the only one that reset to page order on every visit.
         this.bmSort = null;
+        // null until first rendered, same as bmSort -- see defaultBookmarksGroup
+        // for the rule that picks what an instance with no group of its own yet
+        // opens on.
+        this.bmGroup = null;
         this.bmVisibleLimit = this.bmPageSize();
         this.bmSelected = new Set();
         this.bmSelectAnchor = null;
@@ -617,6 +621,14 @@ class DashboardConfig {
         if (tags.length) add('tag', tags.join(','));
         const sort = this.bmSort ?? this.defaultBookmarksSort();
         if (sort && sort !== this.defaultBookmarksSort()) add('sort', sort);
+        // '' ("no groups") is a real, chooseable value, not "unset" -- add()
+        // drops empty strings, so it rides as the word 'none' instead.
+        const group = this.bmGroup ?? this.defaultBookmarksGroup();
+        // Compared against the snapshot this instance opened on, not a fresh
+        // defaultBookmarksGroup() -- see the comment where that snapshot is
+        // taken (renderBookmarksListTab) for why a live read would not work.
+        const openedOnGroup = this._bmGroupDefaultAtLoad ?? this.defaultBookmarksGroup();
+        if (group !== openedOnGroup) add('group', group || 'none');
         return params.length ? `?${params.join('&')}` : '';
     }
 
@@ -634,7 +646,7 @@ class DashboardConfig {
         const at = raw.indexOf('?');
         const params = new URLSearchParams(at < 0 ? '' : raw.slice(at + 1));
         const before = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup]);
 
         this.bmQuery = params.get('q') || '';
         this.bmCategoryFilter = params.get('cat') || '';
@@ -647,9 +659,14 @@ class DashboardConfig {
         this.bmTagFilter = tags;
         const sort = params.get('sort') || '';
         if (sort) this.bmSort = sort;
+        const groupParam = params.get('group');
+        if (groupParam != null) {
+            const group = groupParam === 'none' ? '' : groupParam;
+            if (DashboardConfig.BM_GROUPS.includes(group)) this.bmGroup = group;
+        }
 
         const after = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup]);
         if (before === after) return false;
         this._bmDuplicateUrls = null;
         this.resetBookmarkVisibleLimit();
@@ -22691,7 +22708,7 @@ class DashboardConfig {
 
     bookmarkSortOptionsHtml() {
         const esc = (v) => this.dash.escapeHtml(v);
-        return [
+        const options = [
             ['page', this.t('config.sortByPage', 'Page order')],
             ['name', this.t('config.sortByName', 'Name (A–Z)')],
             ['url', this.t('config.sortByUrl', 'URL')],
@@ -22700,8 +22717,29 @@ class DashboardConfig {
             ['lastOpened', this.t('config.sortByLastOpened', 'Last opened')],
             ['opens', this.t('config.sortByOpens', 'Most opened')],
             ['pinned', this.t('config.sortByPinned', 'Pinned first')],
-        ].map(([v, label]) =>
+        ];
+        // Only means anything once a Health filter has picked out issues to
+        // score, so it is not offered the rest of the time -- an option that
+        // sorts nothing differently would just be a dead choice in the list.
+        if (this.bmHealthFilter) options.push(['score', this.t('config.sortByScore', 'Health score')]);
+        return options.map(([v, label]) =>
             `<option value="${esc(v)}" ${this.bmSort === v ? 'selected' : ''}>${esc(label)}</option>`
+        ).join('');
+    }
+
+    /** Group options for the toolbar's Group select, next to Sort. */
+    bookmarkGroupOptionsHtml() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = this.bmGroup ?? this.defaultBookmarksGroup();
+        return [
+            ['', this.t('config.bmGroupNone', 'No groups')],
+            ['page', this.t('config.bmGroupByPage', 'Page')],
+            ['category', this.t('config.bmGroupByCategory', 'Category')],
+            ['site', this.t('config.bmGroupBySite', 'Site')],
+            ['status', this.t('config.bmGroupByStatus', 'Status')],
+            ['tag', this.t('config.bmGroupByTag', 'Tag')],
+        ].map(([v, label]) =>
+            `<option value="${esc(v)}" ${current === v ? 'selected' : ''}>${esc(label)}</option>`
         ).join('');
     }
 
@@ -22710,6 +22748,16 @@ class DashboardConfig {
         // moves the array identity the memo keys on, so a paint starts fresh.
         this.invalidateVisibleBookmarks();
         if (this.bmSort == null) this.bmSort = this.defaultBookmarksSort();
+        if (this.bmGroup == null) {
+            this.bmGroup = this.defaultBookmarksGroup();
+            // Frozen at the moment this instance opens, before any explicit
+            // pick: bookmarksFilterQuery() compares against this rather than
+            // a fresh defaultBookmarksGroup(), because picking a group writes
+            // it to the very same localStorage that function reads -- without
+            // the freeze, the pick would become "the default" the instant it
+            // was made, and never make it into the hash at all.
+            this._bmGroupDefaultAtLoad = this.bmGroup;
+        }
         void this.ensureBookmarkRenderers();
         if (typeof this.renderBookmarksWorkbench !== 'function') {
             // The rail (and its search box) only exists once the workbench
@@ -22987,6 +23035,155 @@ class DashboardConfig {
         return allowed.includes(stored) ? stored : 'page';
     }
 
+    /** '' groups nothing; every other value names a workbenchGroupKey shape. */
+    static BM_GROUPS = ['', 'page', 'category', 'site', 'status', 'tag'];
+
+    /**
+     * Group order for the "status" group: worst first, so what needs looking
+     * at is on top. Deliberately not HEALTH_STATES, which lists healthy first
+     * for the bulk-selection summary line -- a different question ("what does
+     * this selection contain, roughly in order of how alarming it is to read")
+     * than this one ("what should the reader see first").
+     */
+    static BM_STATUS_GROUP_ORDER = ['broken', 'down', 'healthy', 'unchecked'];
+
+    /** Where the toolbar's Group choice lives between reloads. */
+    static BM_GROUP_KEY = 'nextdash.bmGroup';
+
+    /**
+     * The group this list opens on.
+     *
+     * A plain client preference, in localStorage rather than a server setting
+     * like configBookmarksSort: Group is new, and giving it a field on the
+     * server model is out of scope for adding it. Nobody has chosen a group
+     * yet the very first time this runs after the update lands, and for them
+     * the list must not silently change shape: whoever had Sort on "Page
+     * order" already saw it grouped by page › category, as a side effect of
+     * that sort being the one case workbenchGrouped() special-cased. That
+     * shape carries over as an explicit Group of its own so their list looks
+     * the same as it always did. Anyone who sorts any other way, or who has
+     * already chosen a Group -- even "No groups" -- gets exactly that.
+     */
+    defaultBookmarksGroup() {
+        let stored = null;
+        try {
+            stored = window.localStorage?.getItem(DashboardConfig.BM_GROUP_KEY);
+        } catch { /* private window: fall through to the rule below */ }
+        if (stored != null && DashboardConfig.BM_GROUPS.includes(stored)) return stored;
+        return (this.bmSort ?? this.defaultBookmarksSort()) === 'page' ? 'category' : '';
+    }
+
+    /** The group actually in effect: Duplicates always groups by URL, whatever Group says. */
+    bmActiveGroup() {
+        if (this.bmHealthFilter === 'duplicate') return 'url';
+        return this.bmGroup ?? this.defaultBookmarksGroup();
+    }
+
+    /**
+     * Category order within one page: the order the page's own category list
+     * puts them in (drag-reordered in Structure, fetched by
+     * loadBookmarkCategoriesForPage). Alphabetical -- knownCategories()'s own
+     * fallback -- until that fetch has landed for this page, correcting
+     * itself once prefetchAllBookmarkCategories() repaints. "No category"
+     * sorts first, matching how the Category *sort* already puts '' before
+     * any name.
+     */
+    bmCategoryOrderIndex(pageId) {
+        const key = String(pageId ?? '');
+        if (!this._bmCatOrderCache || this._bmCatOrderCacheRev !== this._bmCategoryRevision) {
+            this._bmCatOrderCache = new Map();
+            this._bmCatOrderCacheRev = this._bmCategoryRevision;
+        }
+        if (this._bmCatOrderCache.has(key)) return this._bmCatOrderCache.get(key);
+        const raw = this._bmCategoriesCache.get(key);
+        const ids = Array.isArray(raw) && raw.length
+            ? raw.map((c) => String(c?.id ?? c?.name ?? ''))
+            : this.knownCategories(key).map((c) => c.id);
+        const index = new Map();
+        ids.forEach((id, i) => { if (id && !index.has(id)) index.set(id, i); });
+        this._bmCatOrderCache.set(key, index);
+        return index;
+    }
+
+    /** A bookmark's place in its page's category order; "no category" sorts first. */
+    bmCategoryOrderValue(b) {
+        const cat = b.category || '';
+        if (!cat) return -1;
+        const index = this.bmCategoryOrderIndex(b.pageId);
+        return index.has(cat) ? index.get(cat) : index.size;
+    }
+
+    /**
+     * The domain for the "site" group. Not HealthFacts.keyFor: that key keeps
+     * the path (it is built to tell two pages on one host apart for the
+     * health join and duplicate detection), and grouping "by site" means the
+     * opposite -- every path on a host in one group. Plain hostname, a
+     * leading www. dropped, same as the grid's own display host.
+     */
+    bmGroupSiteKey(b) {
+        const utils = window.BookmarkUrlUtils;
+        const host = utils?.bookmarkDisplayHostnameFromUrl?.(b?.url);
+        if (host) return host.toLowerCase();
+        try {
+            return new URL(String(b?.url || '')).hostname.replace(/^www\./i, '').toLowerCase();
+        } catch {
+            return '';
+        }
+    }
+
+    /**
+     * The tag a bookmark groups under: the alphabetically-first one.
+     *
+     * A bookmark can carry several tags, and the spec this followed asked for
+     * it to appear under each -- but every row here is one entry in a flat
+     * array that workbenchItems() slices for the virtual-list window and that
+     * bookmarkKey() derives its identity from by position among same-URL
+     * duplicates; putting the same bookmark in the array twice would give two
+     * rows the same key (breaking selection and the row-count in "n shown of
+     * total"), and the window math would no longer agree with aria-setsize.
+     * First tag alphabetically is the fallback that keeps one row per
+     * bookmark; noted in the task report rather than silently done.
+     */
+    bmGroupFirstTag(b) {
+        const tags = (Array.isArray(b?.tags) ? b.tags : [])
+            .map((t) => String(t).trim().toLowerCase()).filter(Boolean);
+        tags.sort((a, c) => a.localeCompare(c));
+        return tags[0] || '';
+    }
+
+    /** A comparator that gathers rows into one group's worth of consecutive entries, in group order. */
+    bmGroupComparator(mode) {
+        const pages = this.pageOrderIndex();
+        const pageIdx = (id) => (pages.has(String(id)) ? pages.get(String(id)) : -1);
+        if (mode === 'url') {
+            const keyFor = (b) => window.HealthFacts?.keyFor?.(b.url) || String(b.url || '');
+            return (a, b) => keyFor(a).localeCompare(keyFor(b));
+        }
+        if (mode === 'page') {
+            return (a, b) => pageIdx(a.pageId) - pageIdx(b.pageId);
+        }
+        if (mode === 'category') {
+            return (a, b) => (pageIdx(a.pageId) - pageIdx(b.pageId)) || (this.bmCategoryOrderValue(a) - this.bmCategoryOrderValue(b));
+        }
+        if (mode === 'site') {
+            return (a, b) => this.bmGroupSiteKey(a).localeCompare(this.bmGroupSiteKey(b));
+        }
+        if (mode === 'status') {
+            const order = DashboardConfig.BM_STATUS_GROUP_ORDER;
+            const idx = (b) => {
+                const i = order.indexOf(this.bookmarkHealthState(b));
+                return i < 0 ? order.length : i;
+            };
+            return (a, b) => idx(a) - idx(b);
+        }
+        if (mode === 'tag') {
+            // Untagged sorts last: an empty key would otherwise read as "before A".
+            const tagFor = (b) => this.bmGroupFirstTag(b) || '￿';
+            return (a, b) => tagFor(a).localeCompare(tagFor(b));
+        }
+        return null;
+    }
+
     /** Rows per load step, from settings; the constant is the fallback. */
     bmPageSize() {
         const n = Number(this.dash?.settings?.configBookmarksPageSize);
@@ -23166,7 +23363,7 @@ class DashboardConfig {
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
             this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmHealthFilter,
-            this.bmSort ?? this.defaultBookmarksSort(),
+            this.bmSort ?? this.defaultBookmarksSort(), this.bmActiveGroup(),
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -23207,13 +23404,22 @@ class DashboardConfig {
                 if (dp !== 0) return dp;
                 return pageIndex(a.pageId) - pageIndex(b.pageId);
             },
+            // Worst first: only offered (bookmarkSortOptionsHtml) while a
+            // Health filter is active, so there is always an issue to score.
+            score: (a, b) => Number(this.bmHealthIssue?.(a)?.score ?? 100) - Number(this.bmHealthIssue?.(b)?.score ?? 100),
         }[this.bmSort ?? this.defaultBookmarksSort()] || null;
         const sorted = cmp ? [...rows].sort(cmp) : rows;
-        if (this.bmHealthFilter !== 'duplicate') return sorted;
-        // Copies of one URL side by side, for the grouping to find; stable,
-        // so the chosen sort still orders the copies within a group.
-        const keyFor = (b) => window.HealthFacts?.keyFor?.(b.url) || String(b.url || '');
-        return [...sorted].sort((a, b) => keyFor(a).localeCompare(keyFor(b)));
+        // Group is independent of Sort: Sort orders every row, then a stable
+        // second pass gathers them into their groups (in group order) without
+        // disturbing the sort's order *within* each group -- the same trick
+        // Duplicates already used to put copies of one URL side by side, now
+        // generalised to whichever group (or none) is in effect. workbenchItems()
+        // groups strictly consecutive rows, so this order is what makes that
+        // grouping actually work rather than splitting one group in two.
+        const groupMode = this.bmActiveGroup();
+        if (!groupMode) return sorted;
+        const groupCmp = this.bmGroupComparator(groupMode);
+        return groupCmp ? [...sorted].sort(groupCmp) : sorted;
     }
 
     /**
@@ -23990,6 +24196,25 @@ class DashboardConfig {
             });
         };
         wire('#config-bm-sort', 'bmSort');
+        const groupSelect = container.querySelector('#config-bm-group');
+        if (groupSelect) {
+            groupSelect.addEventListener('change', () => {
+                this.bmGroup = groupSelect.value;
+                // A deliberate pick, so it survives past this address bar --
+                // localStorage, not a server setting; see defaultBookmarksGroup.
+                try {
+                    window.localStorage?.setItem(DashboardConfig.BM_GROUP_KEY, groupSelect.value);
+                } catch { /* private window: this visit still gets the choice */ }
+                this.resetBookmarkVisibleLimit();
+                this._bmDuplicateUrls = null;
+                this.repaintBookmarksList();
+                this.updateBookmarkListChrome();
+                // Group rides in the address the way every other bookmark
+                // filter does, so a link to "grouped by site" is one to hand
+                // someone rather than a state only this tab remembers.
+                this.restoreConfigHash();
+            });
+        }
         void this.ensureBookmarkCategoriesForFilter().then(() => {
             this.repaintBookmarksList();
         });

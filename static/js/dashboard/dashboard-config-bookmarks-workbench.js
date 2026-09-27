@@ -60,6 +60,10 @@
                         <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
                         <span id="config-bm-narrow-buttons" class="config-bm-narrow-buttons">${this.renderWorkbenchNarrowButtons()}</span>
                         <span class="config-bm-toolbar-spacer"></span>
+                        <label class="config-bm-group">
+                            <span>${esc(this.t('config.groupLabel', 'Group'))}</span>
+                            <select class="config-select" id="config-bm-group">${this.bookmarkGroupOptionsHtml()}</select>
+                        </label>
                         <label class="config-bm-sort">
                             <span>${esc(this.t('config.sortLabel', 'Sort'))}</span>
                             <select class="config-select" id="config-bm-sort">${this.bookmarkSortOptionsHtml()}</select>
@@ -1563,19 +1567,54 @@
         }
     },
 
+    /** Whether the list draws group headers at all -- bmActiveGroup() decides which shape. */
     workbenchGrouped() {
-        // Duplicates are only readable side by side: grouped by the URL they share.
-        if (this.bmHealthFilter === 'duplicate') return true;
-        return (this.bmSort ?? this.defaultBookmarksSort()) === 'page';
+        return this.bmActiveGroup() !== '';
     },
 
+    /**
+     * The key workbenchItems() groups consecutive rows by.
+     *
+     * Must land on the same order computeVisibleBookmarks()'s bmGroupComparator
+     * produces, or two runs of the same group that are not adjacent in the
+     * sorted rows would draw as two separate headers.
+     */
     workbenchGroupKey(b) {
-        if (this.bmHealthFilter === 'duplicate') return global.HealthFacts?.keyFor?.(b.url) || b.url;
-        return `${b.pageId}::${b.category || ''}`;
+        switch (this.bmActiveGroup()) {
+            case 'url': return global.HealthFacts?.keyFor?.(b.url) || b.url;
+            case 'page': return String(b.pageId);
+            case 'category': return `${b.pageId}::${b.category || ''}`;
+            case 'site': return this.bmGroupSiteKey(b);
+            case 'status': return this.bookmarkHealthState(b);
+            case 'tag': return this.bmGroupFirstTag(b);
+            default: return '';
+        }
     },
 
+    /** The group header's own label -- what the active Group is, not where a bookmark is filed (see workbenchCrumbLabel). */
     workbenchGroupLabel(b) {
-        if (this.bmHealthFilter === 'duplicate') return b.url || '';
+        switch (this.bmActiveGroup()) {
+            case 'url': return b.url || '';
+            case 'page': return this.pageLabel(b.pageId);
+            case 'category': return this.workbenchCrumbLabel(b);
+            case 'site': return this.bmGroupSiteKey(b) || b.url || '';
+            case 'status': return this.railHealthLabel(this.bookmarkHealthState(b));
+            case 'tag': {
+                const tag = this.bmGroupFirstTag(b);
+                return tag ? `#${tag}` : this.t('config.bmGroupNoTags', 'No tags');
+            }
+            default: return '';
+        }
+    },
+
+    /**
+     * Where a bookmark is filed, page › category -- shown as the row's crumb
+     * (see ctx.showCrumb) whenever the group headers do not already say it:
+     * page, category and Duplicates' URL groups make it redundant, but
+     * grouping by site, status or tag still leaves "where does this actually
+     * live" worth saying on the row, same as no grouping at all.
+     */
+    workbenchCrumbLabel(b) {
         const page = this.pageLabel(b.pageId);
         if (!b.category) return page;
         return `${page} › ${this.railCategoryLabel(b.pageId, b.category)}`;
@@ -1634,8 +1673,8 @@
         const healthIssue = this.bmHealthFilter ? this.bmHealthIssue(b) : null;
         const healthReason = healthIssue ? (this._bmHealthModule?.reasonEntries(healthIssue)[0]?.label || '') : '';
         const scoreTone = (score) => (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
-        const crumbLabel = ctx.grouped ? '' : this.workbenchGroupLabel(b);
-        const crumb = ctx.grouped ? '' : `<span class="config-bm-crumb" title="${esc(crumbLabel)}">${esc(crumbLabel)}</span>`;
+        const crumbLabel = ctx.showCrumb ? this.workbenchCrumbLabel(b) : '';
+        const crumb = ctx.showCrumb ? `<span class="config-bm-crumb" title="${esc(crumbLabel)}">${esc(crumbLabel)}</span>` : '';
         const classes = ['config-bm-row'];
         if (ticked) classes.push('is-checked');
         if (item.groupStart) classes.push('is-group-start');
@@ -1772,6 +1811,10 @@
         const ctx = {
             esc,
             grouped: this.workbenchGrouped(),
+            // The crumb repeats what a page/category/URL group header already
+            // says, so it only earns its place when the headers say something
+            // else (site, status, tag) or there are none at all.
+            showCrumb: !['page', 'category', 'url'].includes(this.bmActiveGroup()),
             setSize: all.length,
             isDuplicate: (b) => {
                 const url = this.canonicalStatsUrlKey(b.url);

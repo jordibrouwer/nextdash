@@ -88,6 +88,7 @@
     flex: 1;
 }
 
+.config-bm-group,
 .config-bm-sort {
     display: inline-flex;
     align-items: center;
