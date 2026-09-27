@@ -168,6 +168,7 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-bookmarks-health-modal.js",
 	"js/dashboard/dashboard-config-bookmarks-usage.js",
 	"js/dashboard/dashboard-bookmarks-structure-modal.js",
+	"js/dashboard/dashboard-bookmarks-checking-modal.js",
 	"js/shared/bookmark-workbench-model.js",
 	"js/dashboard/dashboard-news-stream.js",
 	"js/health-reason-utils.js",

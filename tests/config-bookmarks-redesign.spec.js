@@ -31,7 +31,9 @@ test.describe('config bookmarks redesign: rows', () => {
       facts.get = orig;
       return out;
     });
-    expect(status).toEqual({ healthy: 'good', monitored: 'info', broken: 'bad', down: 'warn', unchecked: null });
+    // Nothing checks the last one: its own grey, not an absent colour that
+    // would pass for a quiet healthy row.
+    expect(status).toEqual({ healthy: 'good', monitored: 'info', broken: 'bad', down: 'warn', unchecked: 'off' });
   });
 
   test('the checkbox rests hidden and shows on hover', async ({ page }) => {

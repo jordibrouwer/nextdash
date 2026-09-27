@@ -22690,6 +22690,7 @@ class DashboardConfig {
             && window.DashboardBookmarksHealthModalReady === true
             && window.DashboardConfigBookmarksUsageReady === true
             && window.DashboardBookmarksStructureModalReady === true
+            && window.DashboardBookmarksCheckingModalReady === true
             && Boolean(window.BookmarkWorkbenchModel);
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
@@ -22713,6 +22714,9 @@ class DashboardConfig {
             // Pages and categories, managed from the list.
             .then(() => load('js/dashboard/dashboard-bookmarks-structure-modal.js',
                 'dashboardBookmarksStructureModal', () => window.DashboardBookmarksStructureModalReady === true))
+            // Turning checking on for the bookmarks nothing checks.
+            .then(() => load('js/dashboard/dashboard-bookmarks-checking-modal.js',
+                'dashboardBookmarksCheckingModal', () => window.DashboardBookmarksCheckingModalReady === true))
             .then(() => {
                 const waiting = this._bookmarksAwaitingRenderers === true;
                 this._bookmarksAwaitingRenderers = false;
@@ -22801,6 +22805,7 @@ class DashboardConfig {
     cleanupFilterLabel(key) {
         const map = {
             never: ['config.cleanupFilterNever', 'Never opened'],
+            nocheck: ['config.cleanupFilterNoCheck', 'Not checked'],
             once: ['config.cleanupFilterOnce', 'Opened once and never again'],
             untagged: ['config.cleanupFilterUntagged', 'Without tags'],
             insecure: ['config.cleanupFilterInsecure', 'Not using HTTPS'],
@@ -23216,6 +23221,8 @@ class DashboardConfig {
      */
     static CLEANUP_FILTERS = {
         never: (b) => window.BookmarkPredicates.match('never', b),
+        // Nothing checks it: a broken one only shows up when it is clicked.
+        nocheck: (b) => (window.CheckMode?.of?.(b) || 'off') === 'off',
         once: (b) => window.BookmarkPredicates.match('once', b),
         untagged: (b) => window.BookmarkPredicates.match('untagged', b),
         insecure: (b) => window.BookmarkPredicates.match('insecure', b),

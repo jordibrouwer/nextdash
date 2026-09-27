@@ -114,6 +114,11 @@
                 return '';
             }
             const esc = (v) => this.dash.escapeHtml(v);
+            // Beside Health's rows, the one it has no row for: how many
+            // bookmarks nothing checks at all.
+            const off = (this.configBookmarkPool?.() || this.dash.allBookmarks || [])
+                .filter((b) => (global.CheckMode?.of?.(b) || 'off') === 'off').length;
+            if (off) rows.push({ label: this.t('config.cleanupFilterNoCheck', 'Not checked'), value: String(off), tone: 'muted' });
             const body = rows.filter((row) => row && (row.value !== '' || row.extraNode)).map((row) => `
                 <div class="config-bm-health-summary-row"${row.tone ? ` data-tone="${esc(row.tone)}"` : ''}>
                     <span class="config-bm-health-summary-label">${esc(row.label)}</span>
@@ -325,7 +330,29 @@
             if (this.section !== 'bookmarks' || !this.isActiveView?.()) return;
             this.repaintWorkbenchRail?.();
             if (this.bmHealthFilter) this.repaintBookmarksList?.();
+            else this.syncWorkbenchRowsHealth();
             this.repaintWorkbenchPanel?.();
+        },
+
+        /**
+         * A new report, into the rows already drawn: their colour and their
+         * score, set on the same nodes. Redrawing the rows instead is what
+         * took a row away from under a pointer that had just reached it.
+         */
+        syncWorkbenchRowsHealth() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const tone = (score) => (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
+            document.querySelectorAll('#config-bm-list .config-bm-row').forEach((row) => {
+                const b = this.findBookmarkByKey(this.bookmarkRowKey(row));
+                if (!b) return;
+                const status = this.workbenchRowStatus?.(b);
+                if (status) row.setAttribute('data-lvs-status', status);
+                const cell = row.querySelector('.config-bm-row-score');
+                const issue = this.bmHealthIssue(b);
+                const score = issue && Number.isFinite(Number(issue.score)) ? Number(issue.score) : null;
+                const html = score == null ? '' : `<span class="config-bm-score" data-tone="${tone(score)}">${esc(String(score))}</span>`;
+                if (cell && cell.innerHTML !== html) cell.innerHTML = html;
+            });
         },
 
         /** Kicked when the list is bound: load once, repaint when it lands. */

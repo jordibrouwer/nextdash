@@ -60,6 +60,7 @@
                         <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
                         <span id="config-bm-narrow-buttons" class="config-bm-narrow-buttons">${this.renderWorkbenchNarrowButtons()}</span>
                         <span class="config-bm-toolbar-spacer"></span>
+                        ${this.renderEnableCheckingButton?.() || ''}
                         <label class="config-bm-group">
                             <span>${esc(this.t('config.groupLabel', 'Group'))}</span>
                             <select class="config-select" id="config-bm-group">${this.bookmarkGroupOptionsHtml()}</select>
@@ -1568,7 +1569,8 @@
         if (root && root.dataset.bmOverlayWired !== '1') {
             root.dataset.bmOverlayWired = '1';
             root.addEventListener('click', (e) => {
-                if (e.target.closest('[data-bm-scrim]')) this.closeWorkbenchOverlays();
+                if (e.target.closest('[data-bm-enable-checking]')) this.openCheckingModal?.();
+                else if (e.target.closest('[data-bm-scrim]')) this.closeWorkbenchOverlays();
                 else if (e.target.closest('[data-bm-open-sheet]')) this.openWorkbenchOverlay('sheet');
                 else if (e.target.closest('[data-bm-open-drawer]')) {
                     if (this.standalone) this._libDrawerWanted = true;
@@ -1654,13 +1656,28 @@
      * green, and nothing for a bookmark that is never checked.
      */
     workbenchRowStatus(b) {
+        // Every row says where it stands. Health's own colour once its report
+        // knows the bookmark (healthRowStatus: red, amber, the monitor's blue,
+        // green); and a bookmark nothing checks is "off", its own grey, so
+        // that never being checked cannot read as being fine. A problem the
+        // report found anyway -- a broken page seen on a load -- still wins.
+        const mode = global.CheckMode?.of?.(b) || 'off';
+        const issue = this.bmHealthIssue?.(b);
+        const health = this._bmHealthModule;
+        if (issue && typeof health?.healthRowStatus === 'function') {
+            const status = health.healthRowStatus(issue);
+            if (status === 'bad' || status === 'warn' || status === 'info') return status;
+            if (mode === 'monitor') return 'info';
+            return mode === 'off' ? 'off' : status;
+        }
         const state = this.bookmarkHealthState(b);
         if (state === 'broken') return 'bad';
         if (state === 'down') return 'warn';
+        if (mode === 'off') return 'off';
         if (state === 'healthy') {
-            return global.HealthFacts?.get?.(b?.url)?.monitor ? 'info' : 'good';
+            return mode === 'monitor' || global.HealthFacts?.get?.(b?.url)?.monitor ? 'info' : 'good';
         }
-        return null;
+        return 'muted';
     },
 
     renderWorkbenchRow(item, ctx) {
@@ -1680,11 +1697,14 @@
             + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '');
         const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '—', never: true };
-        // Under a Health filter the reason and the score earn the tags and
-        // opens cells more than a fact this filter already narrowed on.
-        const healthIssue = this.bmHealthFilter ? this.bmHealthIssue(b) : null;
+        // Under a Health filter the reason earns the tags cell more than a
+        // fact this filter already narrowed on. The score closes every row,
+        // as it does in Health.
+        const issue = this.bmHealthIssue?.(b) || null;
+        const healthIssue = this.bmHealthFilter ? issue : null;
         const healthReason = healthIssue ? (this._bmHealthModule?.reasonEntries(healthIssue)[0]?.label || '') : '';
         const scoreTone = (score) => (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
+        const score = issue && Number.isFinite(Number(issue.score)) ? Number(issue.score) : null;
         const crumbLabel = ctx.showCrumb ? this.workbenchCrumbLabel(b) : '';
         const crumb = ctx.showCrumb ? `<span class="config-bm-crumb" title="${esc(crumbLabel)}">${esc(crumbLabel)}</span>` : '';
         const classes = ['config-bm-row'];
@@ -1711,10 +1731,10 @@
                 <span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned
                     ? `<span aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}</span>
                 <span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>
-                <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${healthIssue
-                    ? `<span class="config-bm-score" data-tone="${scoreTone(healthIssue.score)}">${esc(String(healthIssue.score))}</span>`
-                    : Number(b.openCount || 0)}</span>
+                <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>
                 <span class="config-bm-last" role="gridcell">${esc(last.label)}</span>
+                <span class="config-bm-row-score" role="gridcell">${score == null ? ''
+                    : `<span class="config-bm-score" data-tone="${scoreTone(score)}">${esc(String(score))}</span>`}</span>
             </div>`;
     },
 

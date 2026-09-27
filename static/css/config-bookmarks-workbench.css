@@ -1824,3 +1824,176 @@ html body .config-bm-more-menu .config-btn {
 .config-bm-panel-head--single + .config-bm-tabs {
     margin-top: var(--space-1, 0.25rem);
 }
+
+/* ── Row status and score ─────────────────────────────────────────────── */
+
+/*
+ * The score closes the row, as in Health -- in the Bookmarks view, where the
+ * list has the page's width. Config's list shares its width with the panel
+ * column and goes without; its rows keep the columns they had.
+ */
+.config-bm-row-score {
+    justify-self: end;
+}
+
+.config-bm-workbench:not(.is-library) .config-bm-row-score {
+    display: none;
+}
+
+@media (min-width: 800px) {
+    .config-bm-workbench.is-library .config-bm-row {
+        grid-template-columns: 1.1rem 1.4rem minmax(14rem, 1fr) minmax(0, 6rem) 1.5rem 3.5rem 3rem 5rem 2.6rem;
+    }
+}
+
+@media (max-width: 799px) {
+    .config-bm-workbench.is-library .config-bm-row {
+        grid-template-columns: 1.1rem 1.4rem minmax(0, 1fr) 2.6rem;
+    }
+}
+
+/*
+ * Not checked at all: grey like Health's muted rows, with the edge dashed, so
+ * a row nothing checks does not pass for a quiet healthy one.
+ */
+.config-bm-row[data-lvs-status="off"] {
+    --lvs-glow: var(--text-tertiary, var(--text-secondary));
+    box-shadow: none;
+    background-image:
+        repeating-linear-gradient(180deg,
+            color-mix(in srgb, var(--lvs-glow) 75%, transparent) 0 5px,
+            transparent 5px 9px),
+        linear-gradient(90deg,
+            color-mix(in srgb, var(--lvs-glow) 14%, transparent) 0,
+            color-mix(in srgb, var(--lvs-glow) 4%, transparent) 40%,
+            transparent 75%);
+    background-size: 3px 100%, 100% 100%;
+    background-repeat: no-repeat;
+}
+
+.config-bm-row[data-lvs-status="off"][aria-selected="true"] {
+    box-shadow:
+        inset 3px 0 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+/* The toolbar's way into turning checking on for the rest. */
+.config-bm-enable-checking {
+    border-style: dashed;
+}
+
+/* ── Turning checking on ──────────────────────────────────────────────── */
+
+.config-checking-overlay {
+    z-index: 1990;
+}
+
+.config-checking-overlay .config-checking-modal {
+    max-width: min(40rem, calc(100vw - 2rem));
+    width: 100%;
+    max-height: calc(100vh - 4rem);
+    overflow: auto;
+    scrollbar-gutter: stable;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-checking-modal section {
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    padding-top: var(--space-2, 0.5rem);
+}
+
+.config-checking-modal h3 {
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-checking-lead,
+.config-checking-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.config-checking-modes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-checking-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.config-checking-mode span {
+    color: var(--text-secondary);
+}
+
+.config-checking-mode.is-on {
+    border-color: var(--accent-primary);
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+.config-checking-opt {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    align-items: flex-start;
+    margin: var(--space-1, 0.25rem) 0;
+    font-size: var(--font-size-small);
+}
+
+.config-checking-opt small {
+    display: block;
+    color: var(--text-secondary);
+}
+
+.config-checking-pages {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 2px var(--space-3, 0.75rem);
+    margin: 0 0 var(--space-2, 0.5rem) 1.6rem;
+    font-size: var(--font-size-small);
+}
+
+.config-checking-page span {
+    color: var(--text-secondary);
+}
+
+.config-checking-interval {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    align-items: center;
+    margin-top: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+}
+
+.config-checking-summary {
+    margin: 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--radius-5, 8px);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    font-size: var(--font-size-small);
+}
+
+.config-checking-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+}

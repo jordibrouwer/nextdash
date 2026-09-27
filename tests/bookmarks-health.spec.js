@@ -169,15 +169,15 @@ test.describe('bookmarks: score column and Health\'s keys', () => {
     await expect(page.locator('#config-bm-panel .health-view-score-panel')).toBeAttached();
   }
 
-  test('the row shows the score and reason under Broken, neither under All', async ({ page }) => {
-    const { bookmarks } = await openBookmarksWithHealth(page);
+  test('the row shows its reason under Broken, and its score either way', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page, undefined, { view: 'library' });
     await healthItem(page, 'broken').click();
     const row = page.locator('#config-bm-list .config-bm-row').first();
     await expect(row.locator('.config-bm-score')).toHaveText('25');
     await expect(row).toContainText('HTTP 500');
     await healthItem(page, 'broken').click();
     const rowAll = page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[0].name }) }).first();
-    await expect(rowAll.locator('.config-bm-score')).toHaveCount(0);
+    await expect(rowAll.locator('.config-bm-row-score .config-bm-score')).toHaveText('25');
     await expect(rowAll.locator('.config-bm-reason')).toHaveCount(0);
   });
 
