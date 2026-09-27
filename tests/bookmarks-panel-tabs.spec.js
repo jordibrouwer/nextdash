@@ -122,3 +122,17 @@ test('a long address does not push the score out of the panel', async ({ page })
   const head = await panel.locator('.config-bm-panel-head').boundingBox();
   expect(head.x + head.width).toBeLessThanOrEqual(p.x + p.width);
 });
+
+test('switching tabs keeps the head where it is', async ({ page }) => {
+  const { bookmarks } = await openBookmarksWithHealth(page, undefined, { view: 'library' });
+  await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[0].name }) }).first().click();
+  const slab = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+  // The side panel keeps room for its scrollbar, so a tab long enough to
+  // scroll does not narrow the head and tabs above it.
+  expect(await slab.evaluate((el) => getComputedStyle(el).scrollbarGutter)).toBe('stable');
+  const width = async () => (await slab.locator('.config-bm-tabs').boundingBox()).width;
+  await slab.locator('[data-bm-tab-panel="details"]').click();
+  const before = await width();
+  await slab.locator('[data-bm-tab-panel="health"]').click();
+  expect(await width()).toBe(before);
+});

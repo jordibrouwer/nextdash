@@ -621,6 +621,10 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
     height: calc(100% - 2 * var(--space-4, 1rem));
     margin: var(--space-4, 1rem) var(--space-4, 1rem) var(--space-4, 1rem) 0;
     overflow-y: auto;
+    /* Room for the scrollbar whether or not it is there: a tab or section
+       long enough to scroll otherwise narrowed everything by its width, and
+       the head and tabs jumped sideways on every switch. */
+    scrollbar-gutter: stable;
     padding: var(--space-4, 1rem);
     display: flex;
     flex-direction: column;
