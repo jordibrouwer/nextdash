@@ -130,6 +130,22 @@ test.describe('bookmark health, in large', () => {
     await expect(modal(page)).toHaveAttribute('data-range', '30');
   });
 
+  test('the period list sits level with the buttons beside it', async ({ page }) => {
+    await stubHistory(page);
+    const { bookmarks } = await open(page);
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    const boxes = await modal(page).locator('.bm-health-large-buttons').evaluate((host) =>
+      [...host.querySelectorAll('select, button, a')].map((el) => {
+        const r = el.getBoundingClientRect();
+        return { mid: r.top + r.height / 2, h: r.height };
+      }));
+    const mids = boxes.map((b) => b.mid);
+    expect(Math.max(...mids) - Math.min(...mids)).toBeLessThanOrEqual(1);
+    const heights = boxes.map((b) => b.h);
+    expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(2);
+  });
+
   test('the charts read out their values under the pointer', async ({ page }) => {
     await stubHistory(page);
     const { bookmarks } = await open(page);

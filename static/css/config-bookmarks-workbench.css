@@ -2676,6 +2676,7 @@ html body .config-bm-more-menu .config-btn {
 .bm-health-large-buttons {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-1, 0.25rem);
     justify-content: flex-end;
 }
@@ -2921,7 +2922,29 @@ html body .config-bm-more-menu .config-btn {
     color: var(--text-primary);
 }
 
+/* The period list, level with the small buttons beside it: the label is a
+   box of its own rather than a line of text, and the list takes their height. */
+.bm-health-large-range {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+}
+
+.bm-health-large-buttons > * {
+    box-sizing: border-box;
+    height: 1.75rem;
+    margin: 0;
+}
+
 .bm-health-large-range .config-select {
+    box-sizing: border-box;
+    height: 100%;
+    margin: 0;
+    padding-block: 0;
     font-size: var(--font-size-small);
-    padding-block: 0.15rem;
+}
+
+.bm-health-large-buttons > a.config-btn {
+    display: inline-flex;
+    align-items: center;
 }
