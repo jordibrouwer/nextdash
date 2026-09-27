@@ -5,22 +5,12 @@ const { markWhatsNewSeen, prepareDashboardInteraction } = require('./e2e-helpers
 /**
  * The three bulk actions that fetch a page rather than read the report.
  *
- * Rebuilding a preview, refreshing a favicon and keeping a copy on disk were
- * each on a row's own menu, which is where the tedium was: a filter that finds
- * forty bookmarks with no preview is exactly the case for doing them at once.
- *
- * They are the slow ones — a local copy fetches every asset on a page — so what
- * these tests pin is as much about the waiting as the doing: one request at a
- * time, a bar that counts, a refusal that stops the sweep instead of repeating
- * itself forty times.
+ * Rebuilding a preview, refreshing a favicon and keeping a copy on disk, for a
+ * whole selection in the Bookmarks view. They are the slow ones — a local copy
+ * fetches every asset on a page — so what these tests pin is as much about the
+ * waiting as the doing: one request at a time, a bar that counts, a refusal
+ * that stops the sweep instead of repeating itself forty times.
  */
-
-async function dismissFaviconOverlay(page) {
-    await page.evaluate(() => {
-        const overlay = document.getElementById('favicon-prefetch-overlay');
-        if (overlay) overlay.hidden = true;
-    });
-}
 
 async function seedAndSelect(page, count) {
     await markWhatsNewSeen(page);
@@ -46,19 +36,16 @@ async function seedAndSelect(page, count) {
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
     await prepareDashboardInteraction(page);
-    await page.evaluate(async () => {
+    // The runner the Bookmarks view's bulk panel hands its ticks to
+    // (bmHealthBulkRunner), over Health's own report.
+    const picked = await page.evaluate(async (list) => {
         const d = window.dashboardInstance;
-        await d.health.openHealthView();
         await d.health.loadAndRender({ refresh: true });
-    });
-    await dismissFaviconOverlay(page);
-    await page.locator('[data-health-filter="all"]').click();
-    await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 20_000 });
-
-    const picked = await page.evaluate((list) => {
-        const h = window.dashboardInstance.health;
-        const issues = h.getFilteredIssues().filter((i) => list.includes(String(i.url).trim()));
-        issues.forEach((i) => h.multiSelect.toggle(h.issueKey(i)));
+        const h = await d.health.load();
+        const issues = h.report.issues.filter((i) => list.includes(String(i.url).trim()));
+        const runner = new window.DashboardHealthMultiSelect(h);
+        runner.selected = new Set(issues.map((i) => h.issueKey(i)));
+        window.__runner = runner;
         return issues.length;
     }, urls);
     expect(picked).toBe(count);
@@ -66,23 +53,6 @@ async function seedAndSelect(page, count) {
 }
 
 test.describe('health bulk: the three that fetch a page', () => {
-    test.afterEach(async ({ page }) => {
-        await page.evaluate(() => {
-            try {
-                const key = window.DashboardHealth?.STATE_KEY;
-                if (key) localStorage.removeItem(key);
-            } catch { /* private mode */ }
-        }).catch(() => { /* page already closed */ });
-    });
-
-    test('the bulk bar offers all three', async ({ page }) => {
-        await seedAndSelect(page, 2);
-        for (const action of ['preview', 'favicon', 'local-copy']) {
-            await expect(page.locator(`.health-view-bulk-bar [data-bulk="${action}"], [data-bulk="${action}"]`).first())
-                .toBeVisible();
-        }
-    });
-
     /*
      * One at a time, not twenty at once.
      *
@@ -110,7 +80,7 @@ test.describe('health bulk: the three that fetch a page', () => {
                 }
                 return original.apply(this, arguments);
             };
-            await window.dashboardInstance.health.multiSelect.bulkRebuildPreviews();
+            await window.__runner.bulkRebuildPreviews();
             window.fetch = original;
             return { calls, peak };
         });
@@ -146,8 +116,8 @@ test.describe('health bulk: the three that fetch a page', () => {
                 }
                 return original.apply(this, arguments);
             };
-            const picked = window.dashboardInstance.health.multiSelect.selectedIssues().map((i) => i.url);
-            await window.dashboardInstance.health.multiSelect.bulkRefreshFavicons();
+            const picked = window.__runner.selectedIssues().map((i) => i.url);
+            await window.__runner.bulkRefreshFavicons();
             window.fetch = original;
             window.BookmarkPreviewService.fetchAndUploadFavicon = originalIcon;
             return { writes, picked };
@@ -182,7 +152,7 @@ test.describe('health bulk: the three that fetch a page', () => {
             const h = window.dashboardInstance.health;
             const confirm = h.confirm;
             h.confirm = async () => true;
-            await h.multiSelect.bulkCaptureLocalCopies();
+            await window.__runner.bulkCaptureLocalCopies();
             h.confirm = confirm;
             window.fetch = original;
             return n;
@@ -206,7 +176,7 @@ test.describe('health bulk: the three that fetch a page', () => {
             const confirm = h.confirm;
             let title = '';
             h.confirm = async (t) => { title = t; return false; };
-            await h.multiSelect.bulkCaptureLocalCopies();
+            await window.__runner.bulkCaptureLocalCopies();
             h.confirm = confirm;
             window.fetch = original;
             return { title, captures };

@@ -1,70 +1,16 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 /**
- * The three additions the health view carries for link rot: a list that can be
- * read by site, a report of what has rotted, and a way to fix a domain move on
- * a whole selection at once.
+ * The rot report: what has rotted in the collection, from the Bookmarks view's
+ * Collection menu.
  */
-
-async function healthView(page) {
-    await markWhatsNewSeen(page);
-    await page.goto('/');
-    await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
-    // Wait for the instance before dismissing: the quick-setup dialog and the
-    // health tour are only reachable once it exists, so dismissing first leaves
-    // both to open later and swallow the clicks below.
-    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
-    await dismissOnboardingIfPresent(page);
-    await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.dashboardInstance.health.openHealthView());
-    await page.waitForTimeout(1200);
-    await page.evaluate(() => {
-        const h = window.dashboardInstance.health._module || window.dashboardInstance.health;
-        h.filter = 'all';
-        h._resetFeedPaging();
-        h.render();
-    });
-    await page.waitForSelector('.health-view-item', { timeout: 20_000 });
-}
-
-test.describe('reading the list by site', () => {
-    test('grouping by site puts every row under its host', async ({ page }) => {
-        await healthView(page);
-        // The on/off button is a select now: none / site / status.
-        await page.locator('select[data-health-group]').selectOption('site');
-        await page.waitForTimeout(500);
-
-        const grouped = await page.evaluate(() => {
-            const h = window.dashboardInstance.health._module || window.dashboardInstance.health;
-            const groups = h.groupFilteredIssues(h.getFilteredIssues());
-            return {
-                on: h.groupBy === 'site',
-                keys: groups.map((g) => g.key),
-                // Biggest site first: the one with the most rows behind it is the
-                // one worth looking at.
-                sizes: groups.map((g) => g.items.length),
-            };
-        });
-        expect(grouped.on).toBe(true);
-        expect(grouped.keys.length).toBeGreaterThan(0);
-        expect(grouped.keys.every((k) => k.startsWith('host:'))).toBe(true);
-        expect([...grouped.sizes]).toEqual([...grouped.sizes].sort((a, b) => b - a));
-
-        await page.locator('select[data-health-group]').selectOption('none');
-        await page.waitForTimeout(400);
-        expect(await page.evaluate(() => {
-            const h = window.dashboardInstance.health._module || window.dashboardInstance.health;
-            return h.groupFilteredIssues(h.getFilteredIssues()).map((g) => g.key);
-        })).toEqual(['flat']);
-    });
-});
-
 test.describe('the rot report', () => {
     test('opens with a section per finding, and says so when there is nothing', async ({ page }) => {
-        await healthView(page);
-        await page.locator('.health-view-rot-btn').click();
+        await openBookmarksWithHealth(page);
+        await page.locator('.config-view--library [data-bm-header-more]').click();
+        await page.locator('[data-bm-header-menu] [data-bm-rot-report]').click();
         const modal = page.locator('.health-rot-modal');
         await expect(modal).toBeVisible({ timeout: 10_000 });
 
@@ -72,23 +18,5 @@ test.describe('the rot report', () => {
         expect(headings.length).toBe(5);
         expect(headings.join(' ')).toMatch(/Gone without saying so/i);
         expect(headings.join(' ')).toMatch(/Failing for over a month/i);
-    });
-});
-
-test.describe('a domain move is one action', () => {
-    test('the bulk bar offers following redirects', async ({ page }) => {
-        await healthView(page);
-        // Rendered from the module rather than reached through a click: the bar
-        // only exists while rows are selected, and what is being pinned here is
-        // that the action is on it at all.
-        const html = await page.evaluate(() => {
-            const h = window.dashboardInstance.health._module || window.dashboardInstance.health;
-            const ms = h.multiSelect || h._multiSelect || h.multiSelectController;
-            if (!ms?.renderToolbar) return '';
-            ms.selected = new Set([h.issueKey(h.getFilteredIssues()[0])]);
-            return ms.renderToolbar() || '';
-        });
-        expect(html).toContain('data-bulk="heal"');
-        expect(html).toMatch(/Follow redirects/i);
     });
 });

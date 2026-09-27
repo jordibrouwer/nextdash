@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, dismissWhatsNewIfPresent } = require('./e2e-helpers');
+const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 /**
  * What the review card knows about the bookmark it is asking you to judge.
@@ -20,10 +20,9 @@ const { prepareDashboardInteraction, dismissWhatsNewIfPresent } = require('./e2e
  * off, rather than whatever the seeded bookmarks happen to score.
  */
 
-/** A bookmark the report already has preview metadata for. */
+/** What the report says of the first bookmark: preview metadata already in hand. */
 const WITH_PREVIEW = {
-    pageId: 1, index: 0, pageName: 'dev', name: 'Never opened one',
-    url: 'https://example.com/never-opened', category: 'tools',
+    name: 'Never opened one',
     status: 'unused', score: 60, duplicateCount: 0,
     flags: ['unused'],
     openCount: 0, lastOpened: 0,
@@ -35,47 +34,30 @@ const WITH_PREVIEW = {
     reasonDetails: [{ code: 'never_opened', penalty: 10 }],
 };
 
-/** A bookmark with no preview stored, so the card has to ask for one. */
+/** The second: no preview stored, so the card has to ask for one. */
 const WITHOUT_PREVIEW = {
-    pageId: 1, index: 1, pageName: 'dev', name: 'Bare one',
-    url: 'https://example.com/bare', category: 'tools',
+    name: 'Bare one',
     status: 'unused', score: 65, duplicateCount: 0,
     flags: ['unused'],
     openCount: 0, lastOpened: 0,
+    previewTitle: '', previewDesc: '', previewImage: '',
     reasons: ['Never opened'],
     reasonDetails: [{ code: 'never_opened', penalty: 10 }],
 };
 
-function report() {
-    return {
-        generatedAt: Date.now(),
-        summary: {
-            totalBookmarks: 2, healthyCount: 0, brokenCount: 0,
-            duplicateCount: 0, uncheckedCount: 0, staleCount: 0, unusedCount: 2,
-        },
-        issues: [WITH_PREVIEW, WITHOUT_PREVIEW],
-        duplicateGroups: [],
-    };
-}
-
 /**
- * Open the health view on a mocked report, with the preview fold reset.
+ * The Bookmarks view over a report that knows only the first two bookmarks,
+ * as the two above, with the preview fold reset.
  *
  * The fold is remembered in localStorage across sessions, so a test that did not
  * clear it would pass or fail depending on what the previous one chose.
  */
 async function openHealthView(page, { previewBody } = {}) {
-    await page.route('**/api/bookmark-health**', async (route) => {
-        await route.fulfill({
-            status: 200, contentType: 'application/json', body: JSON.stringify(report()),
-        });
-    });
     await page.route('**/api/bookmark-preview**', async (route) => {
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
             body: JSON.stringify(previewBody || {
-                url: 'https://example.com/bare',
                 title: 'A fetched preview title',
                 description: 'A description that had to be asked for.',
                 image: '',
@@ -85,29 +67,19 @@ async function openHealthView(page, { previewBody } = {}) {
     await page.addInitScript(() => {
         try { localStorage.removeItem('nextdashHealthFocusPreviewCollapsed'); } catch { /* ignore */ }
     });
-    await page.goto('/');
-    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-    await prepareDashboardInteraction(page);
-    await page.click('.health-link a.health-link-anchor');
-    // Waits for the view, not for a row: the view opens on the Broken filter and
-    // this report has no broken rows, so waiting for a row here would be waiting
-    // for something the fixture deliberately does not contain.
-    await page.waitForSelector('#dashboard-layout.health-layout .health-view-filter-group',
-        { timeout: 15_000 });
-    await dismissWhatsNewIfPresent(page);
-    await page.locator('.health-view-filter-group > [data-health-filter="all"]').click();
-    await expect(page.locator('.health-view-item')).toHaveCount(2);
+    await openBookmarksWithHealth(page, (issues) => [
+        { ...issues[0], ...WITH_PREVIEW },
+        { ...issues[1], ...WITHOUT_PREVIEW },
+    ]);
 }
 
 /**
- * Open the card on the first row.
- *
- * Through the toolbar button a user actually presses rather than by calling
- * focus.open(), so the queue, the cursor and the overlay are in the state the
- * real entry point leaves them in.
+ * Open the card on the first row, through the button a user presses (Work
+ * through) rather than by calling focus.open(), so the queue, the cursor and
+ * the overlay are in the state the real entry point leaves them in.
  */
 async function openCard(page) {
-    await page.locator('.health-view-focus-btn').click();
+    await page.locator('[data-bm-work-through]').click();
     await expect(page.locator('.health-focus-card')).toBeVisible();
 }
 
@@ -140,7 +112,7 @@ test.describe('the review card', () => {
 
         // The open really was persisted, not merely painted.
         const state = await page.evaluate(() => {
-            const issue = window.dashboardInstance.health._module.focus.currentIssue();
+            const issue = window.dashboardInstance.config.instance._libFocus.currentIssue();
             return { openCount: issue.openCount, lastOpened: issue.lastOpened };
         });
         expect(state.openCount).toBe(1);
@@ -194,7 +166,7 @@ test.describe('the review card', () => {
 
     test('says so plainly when the page offers no preview at all', async ({ page }) => {
         await openHealthView(page, {
-            previewBody: { url: 'https://example.com/bare', title: '', description: '', image: '' },
+            previewBody: { title: '', description: '', image: '' },
         });
         await openCard(page);
         await page.locator('.health-focus-card [data-focus="next"]').click();
@@ -268,8 +240,7 @@ test.describe('putting one aside for a month', () => {
         });
 
         const before = await page.evaluate(() => {
-            const health = window.dashboardInstance.health._module || window.dashboardInstance.health;
-            return health.focus.queue.length;
+            return window.dashboardInstance.config.instance._libFocus.queue.length;
         });
 
         await page.locator('.health-focus-card [data-focus="snooze"]').click();
@@ -282,8 +253,7 @@ test.describe('putting one aside for a month', () => {
         // And the session moved on: a card that keeps showing what you have
         // just dealt with is not counting honestly.
         const after = await page.evaluate(() => {
-            const health = window.dashboardInstance.health._module || window.dashboardInstance.health;
-            return health.focus.queue.length;
+            return window.dashboardInstance.config.instance._libFocus.queue.length;
         });
         expect(after).toBeLessThan(before);
     });
@@ -298,8 +268,7 @@ test.describe('putting one aside for a month', () => {
         await openCard(page);
 
         const offered = await page.evaluate(() => {
-            const health = window.dashboardInstance.health._module || window.dashboardInstance.health;
-            const focus = health.focus;
+            const focus = window.dashboardInstance.config.instance._libFocus;
             // The queue holds keys; currentIssue resolves one against the live
             // report, which is what run() hands every action.
             const issue = focus.currentIssue();

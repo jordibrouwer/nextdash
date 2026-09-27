@@ -43,13 +43,6 @@ const boxOf = (page, selector) => page.evaluate((sel) => {
     };
 }, selector);
 
-const openHealth = async (page) => {
-    await page.evaluate(() => window.dashboardInstance.health.openHealthView());
-    await page.waitForFunction(
-        () => document.querySelector('#dashboard-layout.health-layout'), null, { timeout: 15_000 });
-    await page.waitForTimeout(400);
-};
-
 const openInbox = async (page) => {
     await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
     await page.waitForFunction(
@@ -69,7 +62,7 @@ test.describe('the three views share one row', () => {
     // built for a windowed list with group slabs rather than the shared
     // feed-row card Health and Inbox still use. Only the Inbox/Health half of
     // this claim still holds, so that is what is left asserted.
-    test('the health and inbox rows are still built from the shared card', async ({ page }) => {
+    test('the inbox rows are still built from the shared card', async ({ page }) => {
         await openDashboard(page);
         await openInbox(page);
         expect(await page.evaluate(() => {
@@ -106,29 +99,6 @@ test.describe('the three views share one row', () => {
 // summary tiles; its counts live in the filter rail.
 
 test.describe('rounded is the shared shape', () => {
-    test('Health and Inbox round their filter group the same way', async ({ page }) => {
-        await openDashboard(page);
-
-        await openHealth(page);
-        // The list-view shell unified what used to differ here: Inbox no
-        // longer wraps its filters in a pill-shaped group — that markup
-        // (.inbox-filter-group) is gone, and .lvs-group--filters carries no
-        // shape of its own (0px radius, no border, no background). Each
-        // filter is now its own row, sharing the same small radius token
-        // Health's group already used. .health-view-filter-group is kept as
-        // an alias on the shell's filter *list* container (0px radius, the
-        // group's own box) — comparing shape means comparing individual rows
-        // on both sides, so this reads .lvs-filter here too.
-        const health = await boxOf(page, '.lvs-filter');
-        await openInbox(page);
-        const inbox = await boxOf(page, '.lvs-filter');
-
-        expect(health).not.toBeNull();
-        expect(inbox).not.toBeNull();
-        expect(parseFloat(health.radius)).toBeGreaterThan(0);
-        expect(inbox.radius).toBe(health.radius);
-    });
-
     test('nothing in the three views is squared off any more', async ({ page }) => {
         await openDashboard(page);
 
@@ -180,22 +150,5 @@ test.describe('the Bookmarks view opens like a view', () => {
         // The count is the number of bookmarks, not a placeholder.
         expect(Number(header.badge)).toBe(await page.evaluate(
             () => (window.dashboardInstance.allBookmarks || []).length));
-    });
-
-    test('its search box matches the one in Health', async ({ page }) => {
-        await openDashboard(page);
-        await openConfigBookmarks(page);
-        // The search box moved from the rail into the toolbar.
-        const config = await boxOf(page, '.config-bm-toolbar #config-bm-search');
-
-        await openHealth(page);
-        const health = await boxOf(page, '.health-view-search-input');
-
-        expect(config).not.toBeNull();
-        expect(health).not.toBeNull();
-        expect(config.radius).toBe(health.radius);
-        // Padding is not compared: this box keeps room on the right for its
-        // `/` hint.
-        expect(config.background).toBe(health.background);
     });
 });

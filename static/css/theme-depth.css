@@ -1005,8 +1005,6 @@ html[data-theme="bone-china-light"] body {
     --theme-title-spacing: 0.02em;
 }
 
-
-
 /*
  * Gloss on the surfaces that are not cards.
  *
@@ -1027,7 +1025,7 @@ body:not([data-depth="flat"]):is([data-action-bar="bottom"], [data-action-bar="l
     .dashboard-section.section-controls .header-shortcuts,
 body:not([data-depth="flat"]):not([data-header-buttons="plain"]) .dashboard-section.section-controls .header-destinations :is(
     .dashboard-link-anchor,
-    .health-link-anchor,
+    .library-link-anchor,
     .config-link-anchor,
     .page-nav-btn--inbox
 ) {

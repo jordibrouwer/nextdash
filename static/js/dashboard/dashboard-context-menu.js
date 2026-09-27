@@ -941,35 +941,13 @@ class DashboardContextMenu {
     }
 
     /**
-     * Open the Health view with this bookmark's row selected.
-     *
-     * The health key is `pageId:index` against the page's stored order, which
-     * is what `scope: 'current'` already carries. A smart-collection or
-     * cross-page row (`scope: 'remote'`) has no such index — its position in the
-     * rendered list is not its position on its own page — so that one is
-     * resolved from the server rather than guessed.
+     * "Show in Health": the Bookmarks view, on this bookmark's Health tab.
      */
     async revealInHealth(bookmarkRef) {
-        const d = this.dash;
         const pageId = Number(bookmarkRef?.pageId);
-        if (!Number.isFinite(pageId)) return;
-
-        let index = bookmarkRef.scope === 'current' ? Number(bookmarkRef.index) : -1;
-        if (!(index >= 0)) {
-            const url = String(bookmarkRef.bookmark?.url || '').trim();
-            try {
-                const res = await fetch(`/api/bookmarks?page=${pageId}`);
-                const list = res.ok ? await res.json() : null;
-                index = Array.isArray(list)
-                    ? list.findIndex((entry) => String(entry?.url || '').trim() === url)
-                    : -1;
-            } catch {
-                index = -1;
-            }
-        }
-        if (!(index >= 0)) return;
-
-        await d.config?.openViewFromTile?.('health', null, `${pageId}:${index}`);
+        const url = String(bookmarkRef?.bookmark?.url || '').trim();
+        if (!Number.isFinite(pageId) || !url) return;
+        await this.dash.config?.openLibraryOnBookmark?.(pageId, url);
     }
 
     runAction(action, row, bookmarkRef, options = {}) {

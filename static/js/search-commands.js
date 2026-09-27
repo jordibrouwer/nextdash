@@ -10,7 +10,6 @@ class SearchCommandsComponent {
     static GUIDED_TOURS = [
         { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps' },
-        { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health' },
         { id: 'inboxTutorialV2', labelKey: 'config.tourInbox', label: 'Inbox' },
         { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
@@ -3591,7 +3590,7 @@ class SearchCommandsComponent {
 
         if (scope === 'health') {
             return [{
-                name: this._t('commands.gotoHealth', 'Open health view'),
+                name: this._t('commands.gotoHealth', 'Open the Bookmarks view on the broken ones'),
                 shortcut: ':GOTO',
                 type: 'command',
                 action: () => {
@@ -3742,7 +3741,7 @@ class SearchCommandsComponent {
         }));
         if (stale.length > cap) {
             rows.push({
-                name: `Showing ${cap} of ${stale.length} — open health view for full list`,
+                name: `Showing ${cap} of ${stale.length} — open the Bookmarks view for the full list`,
                 shortcut: '→',
                 type: 'command',
                 action: () => {
@@ -4004,7 +4003,7 @@ class SearchCommandsComponent {
 
         if (!sub) {
             const rows = [{
-                name: 'Open health view',
+                name: 'Open the Bookmarks view on the broken ones',
                 shortcut: ':HEALTH',
                 type: 'command',
                 action: () => {
@@ -4423,30 +4422,18 @@ class SearchCommandsComponent {
     }
 
     /**
-     * Opens the health view filtered to bookmarks with no checking, which is where
-     * the bulk "Monitor these N" button lives. The command stops there on purpose:
-     * the button confirms first and names its blast radius, and a command line is
+     * Opens the Bookmarks view on the bookmarks nothing checks, where Turn on
+     * checking… offers the modes. The command stops there on purpose: the
+     * modal confirms first and names its blast radius, and a command line is
      * the wrong place to skip that.
      */
     async _openUncheckedInHealth(dashboard) {
-        const health = dashboard.health;
-        if (!health) return;
-        if (!health.isActiveView?.()) {
-            await health.openHealthView?.();
-        }
-        health.filter = 'unchecked';
-        health.visibleLimit = 50;
-        health.render?.();
+        await dashboard.config?.openViewFromTile?.('health', 'unchecked');
     }
 
-    /** Opens the health view if needed, then runs its bulk disable (with confirm). */
+    /** Health's own bulk disable (it confirms first). */
     async _disableAllChecking(dashboard) {
-        const health = dashboard.health;
-        if (!health) return;
-        if (!health.isActiveView?.()) {
-            await health.openHealthView?.();
-        }
-        await health.disableAllChecking?.(document.querySelector('.health-view-checkoff-btn'));
+        await dashboard.health?.disableAllChecking?.();
     }
 
     /** :telemetry on|off — privacy-friendly usage analytics (same setting as Config → General → Advanced → Privacy). */

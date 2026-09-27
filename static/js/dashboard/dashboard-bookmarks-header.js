@@ -168,23 +168,40 @@
 
         /** Health's walk over the list as this view shows it. */
         startLibraryWorkThrough() {
-            const health = this._bmHealthModule;
-            const Focus = global.DashboardHealthFocus;
-            if (!health || typeof Focus !== 'function') return;
             const issues = () => this.visibleBookmarks().map((b) => this.bmHealthIssue(b)).filter(Boolean);
             if (!issues().length) {
                 this.notify(this.t('config.bmWorkThroughEmpty', 'Nothing in this list to work through.'), 'info');
                 return;
             }
+            this.libraryFocus(issues)?.open();
+        },
+
+        /**
+         * The dashboard's daily review, walked here: the notice's queue on
+         * Health's card, over this view.
+         */
+        startLibraryReviewSession({ limit } = {}) {
+            const issues = () => this.visibleBookmarks().map((b) => this.bmHealthIssue(b)).filter(Boolean);
+            return Boolean(this.libraryFocus(issues)?.openSession({ limit }));
+        },
+
+        /**
+         * Health's walk (DashboardHealthFocus) over a thin stand-in for the
+         * Health module: it answers getFilteredIssues from this view, and has
+         * no view of its own to redraw or re-address.
+         */
+        libraryFocus(issues) {
+            const health = this._bmHealthModule;
+            const Focus = global.DashboardHealthFocus;
+            if (!health || typeof Focus !== 'function') return null;
             const view = Object.create(health);
             view.getFilteredIssues = issues;
-            // The Health view is not open: nothing of it to redraw or re-address.
             view.syncUrlState = () => {};
             view.render = () => {};
             view.closeDrawer = () => {};
             view.applyFilter = () => {};
             this._libFocus = new Focus(view);
-            this._libFocus.open();
+            return this._libFocus;
         },
 
         /** ⓘ: what the view is and how it is worked. */

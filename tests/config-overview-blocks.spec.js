@@ -121,7 +121,7 @@ test.describe('Config overview — figures and blocks', () => {
         await expect(rows.first().locator('.config-attention-chip')).toBeVisible();
     });
 
-    test('a problem hands off to health with its filter', async ({ page }) => {
+    test('a problem hands off to the Bookmarks view on its filter', async ({ page }) => {
         await openOverview(page);
 
         // Found by where the chip goes, not by the wording of the sentence:
@@ -129,9 +129,8 @@ test.describe('Config overview — figures and blocks', () => {
         await page.locator('.config-attention-chip[data-overview-go*="broken"]').first().click();
 
         await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.activeView)).toBe('health');
-        expect(await page.evaluate(() => window.dashboardInstance.health.instance?.filter
-            ?? window.dashboardInstance.health.filter)).toBe('broken');
+            window.dashboardInstance.activeView)).toBe('library');
+        expect(await page.evaluate(() => window.dashboardInstance.config.instance.bmHealthFilter)).toBe('broken');
     });
 
     test('a clean install says so instead of listing zeroes', async ({ page }) => {

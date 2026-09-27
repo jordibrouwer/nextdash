@@ -2,7 +2,6 @@
 const { test, expect } = require('./fixtures');
 const {
     prepareDashboardInteraction,
-    dismissWhatsNewIfPresent,
     dismissOnboardingIfPresent,
     dismissBlockingOverlays,
     markWhatsNewSeen,
@@ -147,7 +146,7 @@ test.describe('a review session, from the offer to the end', () => {
         await notice.locator('[data-health-review-action="start"]').click();
         await expect(card(page)).toBeVisible({ timeout: 15_000 });
         expect(await page.evaluate(() =>
-            Boolean(window.dashboardInstance.health._module.focus.session))).toBe(true);
+            Boolean(window.dashboardInstance.config.instance._libFocus.session))).toBe(true);
 
         // ── The first card, worst first ─────────────────────────────────────
         await expect(card(page).locator('.health-focus-title')).toHaveText('Broken one');
@@ -203,13 +202,13 @@ test.describe('a review session, from the offer to the end', () => {
             status: 200, contentType: 'application/json', body: '{"success":true}',
         }));
         const queueBefore = await page.evaluate(() =>
-            window.dashboardInstance.health._module.focus.queue.length);
+            window.dashboardInstance.config.instance._libFocus.queue.length);
 
         await card(page).locator('[data-focus="delete"]').click();
         // Skipping is not handling; a delete is. This is the number the end of
         // the session reports, and the reason the whole thing is bounded.
         await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.health._module.focus.session.handled)).toBe(1);
+            window.dashboardInstance.config.instance._libFocus.session.handled)).toBe(1);
 
         // ── To the end, and the count ───────────────────────────────────────
         // The deleted row left the queue, so what is left is one shorter than
@@ -232,10 +231,10 @@ test.describe('a review session, from the offer to the end', () => {
             await again.click();
             await expect(card(page)).toBeVisible();
             const session = await page.evaluate(() =>
-                window.dashboardInstance.health._module.focus.session);
+                window.dashboardInstance.config.instance._libFocus.session);
             expect(session.handled).toBe(0);
             expect(await page.evaluate(() =>
-                window.dashboardInstance.health._module.focus.position)).toBe(0);
+                window.dashboardInstance.config.instance._libFocus.position)).toBe(0);
         }
     });
 
@@ -246,75 +245,24 @@ test.describe('a review session, from the offer to the end', () => {
      * abandoned session that suppressed tomorrow's offer would be the app
      * answering a question on the reader's behalf.
      */
-    test('leaving halfway lands on the row you were on, and answers nothing', async ({ page }) => {
+    test('leaving halfway answers nothing', async ({ page }) => {
         await loadDashboard(page);
         await page.route('**/api/bookmark-preview**', (route) => route.fulfill({
             status: 200, contentType: 'application/json',
             body: JSON.stringify({ title: '', description: '', image: '' }),
         }));
 
-        // Open the view and widen it through the pill a reader would click,
-        // before starting the session.
-        //
-        // A session queues from every issue, while the list behind it is still
-        // on whatever filter was chosen. Leaving onto a hidden row now widens
-        // the list to All (tested below); here the list is widened first, so
-        // this test is about the leaving alone.
-        await page.click('.health-link a.health-link-anchor');
-        await page.waitForSelector('#dashboard-layout.health-layout .health-view-filter-group',
-            { timeout: 15_000 });
-        await dismissWhatsNewIfPresent(page);
-        await page.locator('.health-view-filter-group > [data-health-filter="all"]').click();
-        await expect(page.locator('.health-view-item')).toHaveCount(5);
-
         await page.evaluate(() => window.HealthReviewSession.start());
         await expect(card(page)).toBeVisible({ timeout: 15_000 });
 
         await page.keyboard.press('j');
         await expect(card(page).locator('.health-focus-title')).toHaveText('Second one');
-        const landingKey = await page.evaluate(() => {
-            const focus = window.dashboardInstance.health._module.focus;
-            return focus.queue[focus.position];
-        });
         await page.keyboard.press('Escape');
         await expect(page.locator('.health-focus-overlay')).toHaveCount(0);
-
-        // The cursor is left on the card that was showing, not on the row the
-        // session started from: someone two rows deep means to continue there.
-        expect(await page.evaluate(() =>
-            window.dashboardInstance.health._module.selectedKey)).toBe(landingKey);
-        await expect(page.locator('.health-view-item[aria-selected="true"]')).toHaveCount(1);
-        await expect(page.locator('.health-view-item[aria-selected="true"]'))
-            .toContainText('Second one');
 
         // And tomorrow's offer is still owed an answer: walking away is not the
         // same as saying "done for today", which is a decision someone makes.
         expect(await page.evaluate(() => window.HealthReviewSession.isDoneToday())).toBe(false);
-    });
-});
-
-test.describe('a review session left on a row the filter hides', () => {
-    test('widens the list to All so the cursor lands on that row', async ({ page }) => {
-        await loadDashboard(page);
-        await page.route('**/api/bookmark-preview**', (route) => route.fulfill({
-            status: 200, contentType: 'application/json',
-            body: JSON.stringify({ title: '', description: '', image: '' }),
-        }));
-        await page.click('.health-link a.health-link-anchor');
-        await page.waitForSelector('#dashboard-layout.health-layout .health-view-filter-group',
-            { timeout: 15_000 });
-        await dismissWhatsNewIfPresent(page);
-        // Left on the default Broken filter: only 'Broken one' is listed.
-        await page.evaluate(() => window.HealthReviewSession.start());
-        await expect(card(page)).toBeVisible({ timeout: 15_000 });
-        await page.keyboard.press('j');
-        await expect(card(page).locator('.health-focus-title')).toHaveText('Second one');
-        await page.keyboard.press('Escape');
-        await expect(page.locator('.health-focus-overlay')).toHaveCount(0);
-
-        await expect(page.locator('.health-view-item[aria-selected="true"]')).toHaveCount(1);
-        await expect(page.locator('.health-view-item[aria-selected="true"]')).toContainText('Second one');
-        expect(await page.evaluate(() => window.dashboardInstance.health._module.filter)).toBe('all');
     });
 });
 
@@ -357,20 +305,16 @@ test.describe('an open, after a reload', () => {
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
         await dismissBlockingOverlays(page);
-        await page.click('.health-link a.health-link-anchor');
-        await page.waitForSelector('#dashboard-layout.health-layout .health-view-filter-group', { timeout: 20_000 });
-        await dismissWhatsNewIfPresent(page);
-        await page.locator('.health-view-filter-group > [data-health-filter="all"]').click();
-        await page.waitForSelector('.health-view-item', { timeout: 20_000 });
-
-        // Open the seeded row through the card, which is the path this whole
-        // feature is about.
-        const target = page.locator('.health-view-item').filter({ hasText: bookmarks[0].name }).first();
-        test.skip(!(await target.count()), 'the seeded bookmark is not a health issue on this install');
-        await target.click();
-        // The click opened the side panel over the header's right edge.
-        await page.keyboard.press('Escape');
-        await page.locator('.health-view-focus-btn').click();
+        // The Bookmarks view, searched down to the seeded bookmark, and its
+        // walk: the path this whole feature is about.
+        await page.evaluate((name) => {
+            window.location.hash = `#bookmarks?${new URLSearchParams({ q: name })}`;
+        }, bookmarks[0].name);
+        await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 20_000 });
+        const workThrough = page.locator('[data-bm-work-through]');
+        test.skip(!(await workThrough.count()), 'health is off on this install');
+        await workThrough.click();
+        test.skip(!(await card(page).count()), 'the seeded bookmark is not a health issue on this install');
         await expect(card(page)).toBeVisible({ timeout: 15_000 });
         await expect(card(page).locator('.health-focus-title')).toContainText(bookmarks[0].name);
         await card(page).locator('[data-focus="open"]').click();

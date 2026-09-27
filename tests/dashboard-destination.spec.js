@@ -55,16 +55,16 @@ test('it stands with the destinations, at their size', async ({ page }) => {
         };
         return {
             dashboard: box('.dashboard-link-anchor'),
-            health: box('.health-link-anchor'),
+            library: box('.library-link-anchor'),
             config: box('.config-link-anchor'),
             inDestinations: Boolean(document.querySelector('.header-destinations .dashboard-link')),
         };
     });
 
     expect(seen.inDestinations, 'the button is not in the destination cluster').toBe(true);
-    // Before inbox, health and config: it is the way back, so it leads them.
-    expect(seen.dashboard.x).toBeLessThan(seen.health.x);
-    expect(seen.dashboard.height, 'it is drawn at a different size').toBe(seen.health.height);
+    // Before Bookmarks, inbox and config: it is the way back, so it leads them.
+    expect(seen.dashboard.x).toBeLessThan(seen.library.x);
+    expect(seen.dashboard.height, 'it is drawn at a different size').toBe(seen.library.height);
     // It is lit here — the grid is what is open — so it carries the plate plus
     // the bloom the other three take when their view is the one you are in.
     expect(seen.dashboard.shadow.startsWith(seen.config.shadow),
@@ -83,9 +83,9 @@ test('it is lit on the grid and dark in a view', async ({ page }) => {
     await page.waitForSelector('.config-view', { timeout: 20_000 });
     await expect.poll(lit, { timeout: 10_000 }).toBe(false);
 
-    await page.evaluate(() => window.dashboardInstance.health?.openHealthView?.());
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await page.waitForTimeout(600);
-    expect(await lit(), 'the dashboard icon is lit inside health').toBe(false);
+    expect(await lit(), 'the dashboard icon is lit inside the Bookmarks view').toBe(false);
 });
 
 test('it comes back to the page you left, without reloading', async ({ page }) => {

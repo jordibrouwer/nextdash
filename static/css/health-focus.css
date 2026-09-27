@@ -340,37 +340,6 @@
     }
 }
 
-/* The toolbar entry point. Sized and coloured like the other toolbar buttons;
-   only the key hint is extra. */
-.health-view-focus-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-hairline, 0.1rem);
-    padding: var(--space-1, 0.3rem) var(--space-2, 0.6rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-4, 0.4rem);
-    background: var(--background-primary);
-    color: var(--text-secondary);
-    font-family: inherit;
-    font-size: var(--text-sm, 0.78rem);
-    cursor: pointer;
-}
-
-.health-view-focus-btn:hover {
-    color: var(--text-primary);
-    border-color: var(--border-secondary);
-}
-
-.health-view-focus-btn kbd {
-    margin-left: var(--space-1, 0.3rem);
-    padding: var(--space-hairline, 0.02rem) var(--space-1, 0.28rem);
-    border: 1px solid var(--border-secondary);
-    border-radius: var(--radius-3, 0.25rem);
-    font-family: inherit;
-    font-size: var(--text-2xs, 0.66rem);
-    opacity: 0.75;
-}
-
 /* The end of a review session. Same card, no row on it — what is left to show
    is a count and a decision about tomorrow. */
 .health-focus-card--done {

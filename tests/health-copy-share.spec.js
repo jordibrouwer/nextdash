@@ -1,62 +1,43 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 /**
- * Copy URL and Share in the health view's per-row More menu.
- *
- * Both delegate to the dashboard's right-click menu rather than reimplementing
- * the share sheet and its clipboard fallback, so what these specs cover is that
- * the health rows reach that behaviour with the right bookmark — the name and
- * URL of the row whose menu was opened, not of some other row.
- *
- * The report is mocked so the row under test is a known name/URL pair rather
- * than whatever the seeded bookmarks happen to be.
+ * Share, from the Bookmarks view's side panel (⋯ → Share link): Health's
+ * shareIssue, which hands the dashboard's right-click menu the bookmark rather
+ * than reimplementing the share sheet and its clipboard fallback. What these
+ * cover is that the right bookmark gets there, and how the fallback speaks.
  */
 
-const TARGET = { name: 'Broken one', url: 'https://example.com/broken' };
+const drawer = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
 
-function report() {
-    return {
-        generatedAt: Date.now(),
-        summary: { totalBookmarks: 2, healthyCount: 1, brokenCount: 1, duplicateCount: 0, uncheckedCount: 0 },
-        issues: [
-            {
-                pageId: 1, index: 0, pageName: 'dev', name: TARGET.name,
-                url: TARGET.url, category: 'tools',
-                status: 'broken', score: 25, duplicateCount: 0,
-                lastChecked: 1752000000000,
-                reasons: ['HTTP 500'],
-                reasonDetails: [{ code: 'last_error', detail: 'HTTP 500', penalty: 60 }],
-            },
-            {
-                pageId: 1, index: 1, pageName: 'dev', name: 'Healthy one',
-                url: 'https://example.com/fine', category: 'tools',
-                status: 'healthy', score: 100, duplicateCount: 0,
-                lastChecked: 1752000000000,
-                reasons: [], reasonDetails: [],
-            },
-        ],
-        duplicateGroups: [],
-    };
+/** The first bookmark's panel, and its Share in the ⋯ menu. */
+async function share(page) {
+    await page.locator('#config-bm-list .config-bm-row').first().click();
+    await drawer(page).locator('[data-bm-more-toggle]').click();
+    await drawer(page).locator('[data-bm-more-menu] [data-bm-health-action="share"]').click();
 }
 
-async function openHealthView(page) {
-    await page.route('**/api/bookmark-health**', async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify(report()),
-        });
+async function open(page) {
+    const { bookmarks } = await openBookmarksWithHealth(page);
+    const first = await page.evaluate(() => {
+        const cfg = window.dashboardInstance.config.instance;
+        const key = document.querySelector('#config-bm-list .config-bm-row')?.getAttribute('data-bm-key');
+        const b = cfg.findBookmarkByKey(key);
+        return { name: b.name, url: b.url };
     });
-    await page.goto('/');
-    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-    await prepareDashboardInteraction(page);
-    await page.click('.health-link a.health-link-anchor');
-    await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
+    return { bookmarks, first };
 }
 
-/** Record clipboard writes and remove Web Share, the no-share-sheet case. */
+/** What Share hands over: the Bookmarks view, searched for this bookmark. */
+async function expectedShareUrl(page, target) {
+    return page.evaluate((url) => {
+        const health = window.dashboardInstance.health;
+        const issue = health.report.issues.find((row) => row.url === url);
+        return health.buildIssueShareUrl(issue);
+    }, target.url);
+}
+
 async function stubClipboardOnly(page) {
     await page.evaluate(() => {
         // @ts-ignore - removing an optional platform API on purpose
@@ -69,95 +50,22 @@ async function stubClipboardOnly(page) {
     });
 }
 
-/**
- * Open the first row's More menu. Clicked through the DOM because the row
- * actions only surface on hover, which a synthetic click cannot hold.
- */
-async function openRowMenu(page) {
-    await page.evaluate(() => document.querySelector('.health-view-more-btn').click());
-    await page.waitForSelector('.health-view-menu:not([hidden])', { timeout: 10_000 });
-}
-
-async function runMenuAction(page, action) {
-    await page.evaluate((a) => {
-        document.querySelector(`.health-view-menu:not([hidden]) [data-menu-action="${a}"]`).click();
-    }, action);
-}
-
-/** Share copies/opens a deep link to this row in the health view. */
-async function expectedShareClipboardLine(page) {
-    return page.evaluate(({ name }) => {
-        const health = window.dashboardInstance.health;
-        const issue = health.report.issues.find((row) => row.name === name);
-        const url = health.buildIssueShareUrl(issue);
-        return `${name} — ${url}`;
-    }, { name: TARGET.name });
-}
-
-async function expectedShareUrl(page) {
-    return page.evaluate(({ name }) => {
-        const health = window.dashboardInstance.health;
-        const issue = health.report.issues.find((row) => row.name === name);
-        return health.buildIssueShareUrl(issue);
-    }, { name: TARGET.name });
-}
-
-test.describe('health view row menu — copy and share', () => {
-    test.describe.configure({ mode: 'serial' });
-
-    test('the More menu offers Copy URL and Share', async ({ page }) => {
-        await openHealthView(page);
-        await openRowMenu(page);
-
-        const actions = await page.evaluate(() => Array.from(
-            document.querySelectorAll('.health-view-menu:not([hidden]) [data-menu-action]')
-        ).map((el) => el.getAttribute('data-menu-action')));
-
-        expect(actions).toContain('copy-url');
-        expect(actions).toContain('share');
-        // Placed with the other link actions rather than among the repair or
-        // remove entries, so Delete stays last and alone under its own label.
-        expect(actions.indexOf('copy-url')).toBeLessThan(actions.indexOf('delete'));
+test.describe('Share from the side panel', () => {
+    test('the link finds the bookmark again in the Bookmarks view', async ({ page }) => {
+        const { first } = await open(page);
+        const url = new URL(await expectedShareUrl(page, first));
+        expect(url.hash.startsWith('#bookmarks?')).toBe(true);
+        expect(new URLSearchParams(url.hash.slice('#bookmarks?'.length)).get('q')).toBe(first.url);
+        // And followed, it lands on that bookmark.
+        await page.goto(`${url.pathname}${url.search}${url.hash}`);
+        await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
+        await expect(page.locator('#config-bm-list .config-bm-title', { hasText: first.name }).first()).toBeVisible();
+        expect(await page.locator('#config-bm-list .config-bm-row').count()).toBeLessThanOrEqual(3);
     });
 
-    /**
-     * The entry names what will actually happen. Promising a share sheet and
-     * then copying instead is what made the feature read as broken: on desktop
-     * Chrome and Firefox there is no navigator.share, so clicking "Share…" put
-     * text on the clipboard and opened nothing.
-     */
-    test('the share entry is labelled Share when a share sheet exists', async ({ page }) => {
-        // Installed before any script runs, since the row markup is built once.
-        await page.addInitScript(() => {
-            Object.defineProperty(navigator, 'share', {
-                configurable: true, writable: true,
-                value: () => Promise.resolve(),
-            });
-        });
-        await openHealthView(page);
-        await openRowMenu(page);
-
-        const label = await page.evaluate(() => document
-            .querySelector('.health-view-menu:not([hidden]) [data-menu-action="share"]')?.textContent.trim());
-        expect(label).toBe('Share…');
-    });
-
-    test('the share entry names the copy when there is no share sheet', async ({ page }) => {
-        // Headless Chromium has no navigator.share, so this is the default path.
-        await openHealthView(page);
-        await openRowMenu(page);
-
-        const label = await page.evaluate(() => document
-            .querySelector('.health-view-menu:not([hidden]) [data-menu-action="share"]')?.textContent.trim());
-        expect(label).toBe('Copy name + URL');
-    });
-
-    /**
-     * The toast names the reason when the origin is what withheld the share
-     * sheet, because that one is the user's to fix: Safari and Chromium both
-     * implement Web Share and both hide it outside a secure context, so a
-     * dashboard on http://192.168.x.x has no sheet while the same instance over
-     * HTTPS does. Without the hint the copy reads as the share having failed.
+    /*
+     * Web Share needs a secure context. Opened over plain HTTP on a LAN address
+     * the sheet is not offered at all; the copy toast says why.
      */
     test('the fallback toast explains an insecure origin', async ({ page }) => {
         await page.addInitScript(() => {
@@ -165,103 +73,32 @@ test.describe('health view row menu — copy and share', () => {
             // context, so the LAN case has to be simulated.
             Object.defineProperty(window, 'isSecureContext', { configurable: true, value: false });
         });
-        await openHealthView(page);
+        await open(page);
         await stubClipboardOnly(page);
-        await openRowMenu(page);
-        await runMenuAction(page, 'share');
-
+        await share(page);
         await expect(page.locator('.app-notification')).toContainText(/HTTPS|localhost/i, { timeout: 10_000 });
     });
 
     test('a plain fallback toast carries no origin hint', async ({ page }) => {
-        // Secure context, but no Web Share — desktop Chrome and Firefox. Nothing
-        // about the address is wrong here, so naming HTTPS would misdirect.
-        await openHealthView(page);
+        // Secure context, but no Web Share — desktop Chrome and Firefox.
+        await open(page);
         await stubClipboardOnly(page);
-        await openRowMenu(page);
-        await runMenuAction(page, 'share');
-
-        // The copy toast by its own text, so the assertion below is about this
-        // message rather than about whichever tip happens to be on screen.
+        await share(page);
         const copied = page.locator('.app-notification', { hasText: /copied|gekopieerd|kopiert|copié/i });
         await expect(copied).toBeVisible({ timeout: 10_000 });
         await expect(copied).not.toContainText(/HTTPS/i);
     });
 
-    /**
-     * navigator.share can exist and still refuse every call. Safari on macOS
-     * exposes it over plain HTTP — localhost included, which it otherwise
-     * reports as a secure context — and answers NotAllowedError each time.
-     * Feature detection alone therefore promises a sheet the browser will not
-     * open, which is how this reached a user as "share does nothing".
-     */
-    test('a refused share re-labels the entry and says why', async ({ page }) => {
-        await page.addInitScript(() => {
-            Object.defineProperty(navigator, 'share', {
-                configurable: true, writable: true,
-                value: () => {
-                    const err = new Error('refused');
-                    err.name = 'NotAllowedError';
-                    return Promise.reject(err);
-                },
-            });
-        });
-        await openHealthView(page);
-        await page.evaluate(() => {
-            window.__writes = [];
-            Object.defineProperty(navigator, 'clipboard', {
-                configurable: true,
-                value: { writeText: (t) => { window.__writes.push(t); return Promise.resolve(); } },
-            });
-        });
-
-        // Advertised, because the browser claims the capability.
-        await openRowMenu(page);
-        expect(await page.evaluate(() => document
-            .querySelector('.health-view-menu:not([hidden]) [data-menu-action="share"]')?.textContent.trim()))
-            .toBe('Share…');
-
-        await runMenuAction(page, 'share');
-
-        // The link still reaches the clipboard, and the message names the real
-        // reason rather than sending the user after HTTPS they already have.
-        await expect.poll(() => page.evaluate(() => window.__writes.length)).toBe(1);
-        // Named, not "whatever toast is up": the one-time "Shift + Q switches
-        // the search mode" tip from 79c29ec9 lands on the first load after the
-        // upgrade and holds the slot until it times out.
-        await expect(page.locator('.app-notification', { hasText: /will not open a share sheet/i }))
-            .toBeVisible({ timeout: 10_000 });
-
-        // And the entry stops promising a sheet it has already failed to open.
-        await openRowMenu(page);
-        await expect.poll(() => page.evaluate(() => document
-            .querySelector('.health-view-menu:not([hidden]) [data-menu-action="share"]')?.textContent.trim()))
-            .toBe('Copy name + URL');
-    });
-
-    test('Copy URL copies that row\'s address and closes the menu', async ({ page }) => {
-        await openHealthView(page);
+    test('with no share sheet it copies the name and the link', async ({ page }) => {
+        const { first } = await open(page);
         await stubClipboardOnly(page);
-        await openRowMenu(page);
-        await runMenuAction(page, 'copy-url');
-
-        await expect.poll(() => page.evaluate(() => window.__writes)).toEqual([TARGET.url]);
-        await expect(page.locator('.health-view-menu:not([hidden])')).toHaveCount(0);
+        await share(page);
+        const url = await expectedShareUrl(page, first);
+        await expect.poll(() => page.evaluate(() => window.__writes)).toEqual([`${first.name} — ${url}`]);
     });
 
-    test('Share falls back to name and URL when there is no share sheet', async ({ page }) => {
-        await openHealthView(page);
-        await stubClipboardOnly(page);
-        await openRowMenu(page);
-        await runMenuAction(page, 'share');
-
-        // Share deep-links the row in the health view rather than the raw bookmark URL.
-        await expect.poll(() => page.evaluate(() => window.__writes))
-            .toEqual([await expectedShareClipboardLine(page)]);
-    });
-
-    test('Share works before the context menu module has loaded', async ({ page }) => {
-        await openHealthView(page);
+    test('it works before the context menu module has loaded', async ({ page }) => {
+        const { first } = await open(page);
         await stubClipboardOnly(page);
         await page.evaluate(() => {
             const loader = window.dashboardInstance.contextMenu;
@@ -269,14 +106,13 @@ test.describe('health view row menu — copy and share', () => {
             loader._modulePromise = null;
             delete window.DashboardContextMenu;
         });
-        await openRowMenu(page);
-        await runMenuAction(page, 'share');
-        await expect.poll(() => page.evaluate(() => window.__writes))
-            .toEqual([await expectedShareClipboardLine(page)]);
+        await share(page);
+        const url = await expectedShareUrl(page, first);
+        await expect.poll(() => page.evaluate(() => window.__writes)).toEqual([`${first.name} — ${url}`]);
     });
 
-    test('Share hands the sheet the row\'s own title and URL', async ({ page }) => {
-        await openHealthView(page);
+    test('the sheet gets the bookmark\'s own title and the link', async ({ page }) => {
+        const { first } = await open(page);
         await page.evaluate(() => {
             window.__shared = [];
             Object.defineProperty(navigator, 'share', {
@@ -285,50 +121,15 @@ test.describe('health view row menu — copy and share', () => {
                 value: (data) => { window.__shared.push(data); return Promise.resolve(); },
             });
         });
-        await openRowMenu(page);
-        await runMenuAction(page, 'share');
-
+        await share(page);
         await expect.poll(() => page.evaluate(() => window.__shared)).toHaveLength(1);
         const call = await page.evaluate(() => window.__shared[0]);
-        expect(call.url).toBe(await expectedShareUrl(page));
-        expect(call.title).toBe(TARGET.name);
-    });
-
-    /**
-     * navigator.share() is gesture-gated: it only opens a sheet while the click
-     * that triggered it is still the active user activation. closeAllMenus()
-     * hides the menu holding the focused button, and hiding the focused element
-     * ends that gesture in Safari — so closing before sharing meant the sheet
-     * was refused and only the clipboard fallback ran, while the dashboard's
-     * own menu worked. The call has to be reached with the menu still open.
-     */
-    test('the share sheet is reached before the menu closes', async ({ page }) => {
-        await openHealthView(page);
-        await page.evaluate(() => {
-            window.__menuOpenAtShare = null;
-            const d = window.dashboardInstance;
-            const orig = d.contextMenu.shareBookmark.bind(d.contextMenu);
-            d.contextMenu.shareBookmark = (bookmark, row) => {
-                window.__menuOpenAtShare = Array.from(
-                    document.querySelectorAll('.health-view-menu')
-                ).some((m) => !m.hidden);
-                return orig(bookmark, row);
-            };
-            Object.defineProperty(navigator, 'share', {
-                configurable: true, writable: true, value: () => Promise.resolve(),
-            });
-        });
-
-        await openRowMenu(page);
-        await runMenuAction(page, 'share');
-
-        await expect.poll(() => page.evaluate(() => window.__menuOpenAtShare)).toBe(true);
-        // And it still closes once the sheet has been handed the bookmark.
-        await expect(page.locator('.health-view-menu:not([hidden])')).toHaveCount(0);
+        expect(call.url).toBe(await expectedShareUrl(page, first));
+        expect(call.title).toBe(first.name);
     });
 
     test('a cancelled share sheet copies nothing', async ({ page }) => {
-        await openHealthView(page);
+        await open(page);
         await page.evaluate(() => {
             window.__writes = [];
             window.__shared = [];
@@ -347,14 +148,9 @@ test.describe('health view row menu — copy and share', () => {
                 },
             });
         });
-        await openRowMenu(page);
-        await runMenuAction(page, 'share');
-
-        // The sheet has to have been opened for the cancel to mean anything —
-        // without this the assertion below passes just as well when the menu
-        // entry does nothing at all.
+        await share(page);
+        // The sheet has to have been opened for the cancel to mean anything.
         await expect.poll(() => page.evaluate(() => window.__shared.length)).toBe(1);
-
         // Dismissing the sheet is a finished decision, not a failure to route around.
         expect(await page.evaluate(() => window.__writes)).toEqual([]);
     });

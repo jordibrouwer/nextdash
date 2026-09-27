@@ -25,7 +25,6 @@ class DashboardPageNav {
             d._pageNavIncludesViewChange = true;
             d.setActiveView('bookmarks');
             d.inbox?.clearKeyboardSelection?.();
-            d.health?.clearKeyboardSelection?.();
         }
 
         if (targetPageId === Number(d.currentPageId)) {
@@ -95,7 +94,6 @@ class DashboardPageNav {
         d.keyboardNavigation?.clearSelection?.();
         d.keyboardNavigation?.scheduleUpdate?.();
         d.inbox?.clearKeyboardSelection?.();
-        d.health?.clearKeyboardSelection?.();
         return true;
     }
 
@@ -121,15 +119,6 @@ class DashboardPageNav {
         if (bc) return this.capitalizeTrail(bc);
         const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
         return inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
-    }
-
-
-    healthPageLabel() {
-        const d = this.dash;
-        const bc = d.health?.headerBreadcrumb?.();
-        if (bc) return this.capitalizeTrail(bc);
-        const healthLabel = d.language?.t?.('dashboard.healthPageTitle');
-        return healthLabel && healthLabel !== 'dashboard.healthPageTitle' ? healthLabel : 'Health';
     }
 
 
@@ -168,8 +157,6 @@ class DashboardPageNav {
                     : this.t('dashboard.inboxPageTitle', 'Inbox')).toLowerCase();
             } else if (d.activeView === 'docker') {
                 displayName = this.t('dashboard.dockerView', 'Containers').toLowerCase();
-            } else if (d.activeView === 'health') {
-                displayName = this.t('dashboard.health', 'health');
             } else if (d.activeView === 'config') {
                 displayName = this.t('config.viewBreadcrumbRoot', 'Config').toLowerCase();
             } else if (d.activeView === 'library') {
@@ -212,11 +199,9 @@ class DashboardPageNav {
         const d = this.dash;
         const viewName = d.activeView === 'inbox'
             ? (d.inbox?.activeTab?.() === 'kept' ? this.unsortedPageLabel() : this.inboxPageLabel())
-            : (d.activeView === 'health'
-                ? this.healthPageLabel()
-                : (d.activeView === 'config' ? this.configPageLabel()
-                    : (d.activeView === 'docker' ? this.t('dashboard.dockerView', 'Containers')
-                        : (d.activeView === 'library' ? this.t('dashboard.libraryView', 'Bookmarks') : ''))));
+            : (d.activeView === 'config' ? this.configPageLabel()
+                : (d.activeView === 'docker' ? this.t('dashboard.dockerView', 'Containers')
+                    : (d.activeView === 'library' ? this.t('dashboard.libraryView', 'Bookmarks') : '')));
         if (viewName) {
             if (d.settings?.enableCustomTitle) {
                 const base = (d.settings.customTitle || '').trim();
@@ -310,14 +295,6 @@ class DashboardPageNav {
 
 
     /** Health has no tab of its own: it opens from the header icon. */
-    setActiveHealthTab() {
-        this.setActivePageNavButton(this.dash.currentPageId);
-        this.updatePageTitle();
-        this.updateDocumentTitle();
-    }
-
-
-
     /** Containers open from their header icon, like health. */
     setActiveDockerTab() {
         this.setActivePageNavButton(this.dash.currentPageId);

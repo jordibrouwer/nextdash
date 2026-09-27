@@ -1,89 +1,13 @@
-/* ─── Health view (dashboard) ───────────────────────────────────────────────
-   Sibling of dashboard-inbox.css: the two mount on the same shared shell
-   (list-view-shell.css) and share the row grammar (feed-row.css), so what is
-   left here is what genuinely differs for health — the row's own layout,
-   monitoring, filters and explainers. Read those files alongside this one;
-   where health still diverges from inbox, the difference is commented here.
-   ------------------------------------------------------------------------- */
-
-/*
- * Health is a shell host now: the header, the rail, the summary and the
- * toolbar row are .lvs chrome, and this element only frames them. Wider than
- * the old 52rem because the rail takes 200px off the left before the rows
- * start — the same width the inbox took for the same reason.
- *
- * The width/centering, the search input's flex sizing and the header
- * action buttons' display used to each get an identical rule here and in
- * dashboard-inbox.css. All three now live once in list-view-shell.css, as
- * .lvs-host, .lvs-toolbar-slot input[type="search"] and
- * .lvs-header-actions button — mount() already stamps .lvs-host on this
- * element and both views' search inputs are type="search".
- */
+/* ─── Health's parts in the Bookmarks view ──────────────────────────────────
+   What the Health module draws into the Bookmarks view's side panel and
+   modals: score panel, check-mode choices, expectations form, monitor strip
+   and statistics, badges, the rot report. The Health view these were written
+   for is gone; its own layout went with it. */
 
 /* The wrap is the menu's anchor, and in the header it must not stretch the row. */
 .lvs-header-actions .health-view-menu-wrap {
     display: inline-flex;
     align-items: center;
-}
-
-/* The way from a symptom on this screen to the setting behind it. A real
-   button rather than the text link it used to be, where an underlined word
-   read as part of the sentence beside it instead of something to press.
-   Quiet styling still — it is a signpost, not an action. It now lives inside
-   the header's overflow menu (syncHeaderMenu()) rather than beside the score,
-   so this base rule only has to hold its own against the menu's item styling,
-   not match a neighbour's line height any more. */
-.health-view-settings-link {
-    flex-shrink: 0;
-    /* An outline, not a border: it paints outside the box, so the button reads
-       as a button without adding the 2px that a border would. */
-    border: none;
-    outline: 1px solid var(--border-primary);
-    background: var(--background-secondary);
-    padding: 0 var(--space-2, 0.5rem);
-    color: var(--text-secondary);
-    font-family: inherit;
-    font-size: var(--font-size-controls);
-    line-height: inherit;
-    cursor: pointer;
-}
-
-.health-view-settings-link:hover {
-    color: var(--accent-primary);
-    outline-color: var(--accent-primary);
-}
-
-/* Thicker rather than a different colour: the resting state already uses the
-   outline, so focus has to be visible against it without the ring growing into
-   the line box. */
-.health-view-settings-link:focus-visible {
-    color: var(--accent-primary);
-    outline: 2px solid var(--accent-primary);
-    outline-offset: 1px;
-}
-
-/* ─── Collection trend ──────────────────────────────────────────────────── */
-
-/* The note and the trend share one row: the explanation is one or two lines of
-   text that leave the right-hand half of the row empty, and that gap is exactly
-   where the chart belongs. It used to sit at the end of the toolbar's button
-   row, taking whatever sliver the buttons left over — too small to read a trend
-   off, which defeated the point of drawing one. */
-.health-view-note-row {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-5, 1.5rem);
-    margin: var(--space-2, 0.6rem) 0 var(--space-4, 0.9rem);
-}
-
-/* The note keeps its own top margin from the shared stylesheet; inside this row
-   the flex gap owns the spacing instead. It is the only thing in the row now —
-   the trend chart moved into the tile above and its dialog. */
-.health-view-note-row .view-filter-note {
-    flex: 1 1 0;
-    min-width: 12rem;
-    margin: 0;
-    align-self: flex-start;
 }
 
 /* The chart itself, as drawn inside its dialog. Kept compact: it is a glance at
@@ -98,109 +22,6 @@
     border-radius: var(--layout-radius-sm, 8px);
 }
 
-.health-view-trend-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2, 0.5rem);
-}
-
-.health-view-trend-title {
-    font-size: var(--text-xs, 0.7rem);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Smaller than the toolbar's ℹ: this one annotates a panel, not the view. */
-.health-view-trend-help {
-    flex: none;
-    font-size: var(--text-xs, 0.7rem);
-    line-height: 1;
-    padding: var(--space-hairline, 0.1rem) var(--space-1, 0.3rem);
-}
-
-/* Holds the chart, the axis labels and the hit zones in one positioned box. */
-.health-view-trend-plot {
-    position: relative;
-    display: flex;
-    /* Room for the axis labels, which sit outside the plot area so the stretched
-       viewBox cannot distort them. */
-    padding-left: var(--space-6, 2.1rem);
-}
-
-.health-view-trend-axis {
-    position: absolute;
-    left: 0;
-    font-size: var(--text-2xs, 0.6rem);
-    line-height: 1;
-    color: var(--text-tertiary);
-    opacity: 0.7;
-    font-variant-numeric: tabular-nums;
-    pointer-events: none;
-}
-
-/* All three rules are labelled now that the chart has room for them: at the
-   height it had beside the filter note, a second number crowded the plot. */
-.health-view-trend-axis--max { top: 0; }
-.health-view-trend-axis--mid { top: 50%; transform: translateY(-50%); }
-.health-view-trend-axis--min { bottom: 0; }
-
-/* The span the line covers, under the plot. Without it "90 days" was a caption
-   and the reader had to take the dates on trust. */
-.health-view-trend-xaxis {
-    display: flex;
-    justify-content: space-between;
-    padding-left: var(--space-6, 2.1rem);
-    margin-top: var(--space-hairline, 0.15rem);
-    font-size: var(--text-2xs, 0.6rem);
-    color: var(--text-tertiary);
-    opacity: 0.75;
-    font-variant-numeric: tabular-nums;
-}
-
-/* One transparent button per day, filling the plot. */
-.health-view-trend-zones {
-    position: absolute;
-    inset: 0 0 0 2.1rem;
-}
-
-.health-view-trend-zone {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    cursor: default;
-}
-
-.health-view-trend-zone.is-active {
-    background: color-mix(in srgb, var(--accent-success) 12%, transparent);
-}
-
-/* Below the plot rather than above it: above, the readout covered the panel's
-   own title, which is the one label that should never be obscured. */
-.health-view-trend-tip {
-    position: absolute;
-    top: calc(100% - 0.15rem);
-    transform: translateX(-50%);
-    z-index: 2;
-    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
-    border: 1px solid var(--border-secondary);
-    border-radius: var(--radius-3, 0.25rem);
-    background: var(--background-primary);
-    color: var(--text-primary);
-    font-size: var(--text-2xs, 0.65rem);
-    line-height: 1.4;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-    pointer-events: none;
-}
-
 /* The rail's compact stand-in for .health-view-trend-chart below — same
    currentColor line, no grid, no axis labels, sized for the 200px rail
    rather than the note row or the modal. */
@@ -213,47 +34,6 @@
     height: 1.6rem;
 }
 
-.health-view-trend-chart {
-    color: var(--accent-success);
-    opacity: 0.85;
-    /* preserveAspectRatio="none" on the SVG lets the fixed 0–100 viewBox stretch
-       to whatever box this row gives it, so the height is a layout decision
-       rather than a constant baked into the path data. */
-    width: 100%;
-    min-width: 0;
-    /* With the head and foot rows this lands the block at about the height of
-       the three-line note beside it. */
-    height: 2.6rem;
-}
-
-/* The hover readout drops into this row, so it hides the caption rather than
-   overlapping it — the caption is static text the reader has already taken in,
-   while the readout is what they asked for by pointing at the chart. */
-.health-view-trend-plot.is-probing + .health-view-trend-foot {
-    visibility: hidden;
-}
-
-.health-view-trend-foot {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-2, 0.5rem);
-}
-
-.health-view-trend-caption,
-.health-view-trend-now {
-    font-size: var(--text-2xs, 0.68rem);
-    color: var(--text-secondary);
-    opacity: 0.75;
-    white-space: nowrap;
-}
-
-.health-view-trend-now {
-    font-variant-numeric: tabular-nums;
-    color: var(--accent-success);
-    opacity: 0.9;
-}
-
 /* On narrow screens the two stack, and the chart takes the full width rather
    than a third of it. */
 @media (max-width: 900px) {
@@ -262,216 +42,6 @@
         gap: var(--space-3, 0.7rem);
     }
 
-}
-/* The chart in its dialog keeps the size it had in the note row rather than
-   stretching to the modal's width, where the line would flatten out. */
-.health-trend-modal .health-view-trend {
-    border: 0;
-    padding: 0;
-}
-
-/* In the dialog the chart is the subject, not a glance beside a sentence: tall
-   enough that a two-point move on a fixed 0–100 axis is visible, and wide
-   enough that ninety days do not sit on top of each other. */
-.health-trend-modal .health-view-trend-chart {
-    height: 15rem;
-}
-
-.health-trend-modal .health-view-trend-axis,
-.health-trend-modal .health-view-trend-xaxis {
-    font-size: var(--text-2xs, 0.68rem);
-    opacity: 0.9;
-}
-
-@media (max-width: 620px) {
-    .health-trend-modal .health-view-trend-chart {
-        height: 11rem;
-    }
-}
-/* The explainer is four separate points; without this they run together into
-   one wall of text, because the modal body has no paragraph spacing of its own. */
-.health-trend-explainer-modal p + p {
-    margin-top: var(--space-3, 0.7rem);
-}
-
-/* ─── Collection-wide monitoring ────────────────────────────────────────── */
-
-.health-fleet {
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    padding: var(--space-3, 0.85rem) var(--space-4, 0.9rem) var(--space-3, 0.7rem);
-    margin-bottom: var(--space-4, 0.9rem);
-    background: var(--background-secondary, transparent);
-}
-
-.health-fleet-head {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: var(--space-2, 0.5rem);
-    margin-bottom: var(--space-3, 0.7rem);
-}
-
-.health-fleet-title {
-    margin: 0;
-    font-size: var(--text-base, 0.9rem);
-    font-weight: var(--font-weight-semibold);
-}
-
-.health-fleet-headline {
-    font-size: var(--text-xs, 0.75rem);
-    color: var(--accent-success);
-}
-
-.health-fleet-headline.is-down {
-    color: var(--accent-error);
-    font-weight: 600;
-}
-
-.health-fleet-avg {
-    font-size: var(--text-xs, 0.72rem);
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-}
-
-/* Pins to the row's right edge whether or not .health-fleet-avg is present —
-   giving the margin to the button rather than to avg means the anchor point
-   does not move depending on which fields happen to be in the report. */
-.health-fleet-collapse-btn {
-    margin-left: auto;
-    padding: var(--space-1, 0.25rem) var(--space-2, 0.6rem);
-    border-radius: var(--radius-4, 0.4rem);
-    border: 1px solid var(--border-secondary);
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: var(--text-xs, 0.72rem);
-    cursor: pointer;
-    flex: 0 0 auto;
-}
-
-.health-fleet-collapse-btn:hover,
-.health-fleet-collapse-btn:focus-visible {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-    color: var(--accent-primary);
-}
-
-.health-fleet-details[hidden] {
-    display: none;
-}
-
-.health-fleet-block {
-    margin-top: var(--space-3, 0.75rem);
-}
-
-.health-fleet-heading {
-    margin: 0 0 var(--space-1-5, 0.35rem);
-    font-size: var(--text-xs, 0.72rem);
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.health-fleet-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.2rem);
-}
-
-/* The outage list is the one that can run long, so it scrolls inside the panel
-   rather than pushing the row list off screen. */
-.health-fleet-list--incidents {
-    max-height: 14rem;
-    overflow-y: auto;
-}
-
-.health-fleet-row {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2, 0.5rem);
-    font-size: var(--text-xs, 0.75rem);
-    padding: var(--space-hairline, 0.15rem) 0;
-}
-
-.health-fleet-row-name {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.health-fleet-row-value {
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-    flex: 0 0 auto;
-}
-
-.health-fleet-row-value.is-worse {
-    color: var(--accent-warning);
-}
-
-.health-fleet-row-when,
-.health-fleet-row-ping {
-    font-size: var(--text-2xs, 0.68rem);
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-    flex: 0 0 auto;
-}
-
-.health-fleet-row-tag {
-    font-size: var(--text-2xs, 0.65rem);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-3, 4px);
-    padding: 0 var(--space-1, 0.25rem);
-    flex: 0 0 auto;
-}
-
-.health-fleet-row.is-down .health-fleet-row-value,
-.health-fleet-row.is-down .health-fleet-row-tag {
-    color: var(--accent-error);
-    border-color: color-mix(in srgb, var(--accent-error) 40%, transparent);
-}
-
-.health-fleet-more {
-    margin: var(--space-1-5, 0.35rem) 0 0;
-    font-size: var(--text-2xs, 0.68rem);
-    color: var(--text-secondary);
-    opacity: 0.8;
-}
-/* Score bands. Thresholds mirror scoreClass() in health.js: >=90 good,
-   >=70 warn, else bad. Set as a variable so badge, row accent and the
-   breakdown total all tint from one place. */
-.health-view-band-good { --health-view-band: var(--accent-success); }
-.health-view-band-warn { --health-view-band: var(--accent-warning); }
-.health-view-band-bad { --health-view-band: var(--accent-error); }
-/* Inside the menu the count is doing a different job than on an inline pill.
-   On a pill it trails a label you can already read, so 70% opacity is enough
-   to keep it subordinate. In a closed menu it is the only thing saying that
-   three stale bookmarks are hiding behind "More" — at the same weight it reads
-   as decoration and gets skipped. Pushed to the right edge, given its own
-   ground and full opacity, it becomes a column of quantities you can scan. */
-.health-view-filter-overflow-menu .health-view-menu-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3, 0.75rem);
-}
-.health-view-search-input {
-    flex: 1 1 12rem;
-    min-width: 8rem;
-    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.55rem);
-    border-radius: var(--radius-4, 0.4rem);
-    border: 1px solid var(--border-primary);
-    /* The surface the rows and the band are drawn on, not the page colour: a
-       field painted in --background-primary reads as a hole in the view rather
-       than as part of it. Same token the panels and tiles use. */
-    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
-    color: var(--text-primary);
-    font-family: var(--font-family-main);
-    font-size: calc(var(--font-size-text) * 0.914);
 }
 
 /* The rot report: a list per finding, tight enough that five of them fit on
@@ -511,46 +81,7 @@
     font-size: var(--text-xs, 0.74rem);
 }
 
-/* Toggles grouping the list by site. Sits beside the sort because it answers
-   the same kind of question — how the list is arranged, not what is in it. */
-.health-view-groupby-btn {
-    padding: var(--space-1, 0.3rem) var(--space-2, 0.55rem);
-    border-radius: var(--radius-4, 0.4rem);
-    border: 1px solid var(--border-primary);
-    /* Same surface as the field beside it: on --background-primary the button
-       read as a white plate on a themed page. */
-    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
-    color: var(--text-secondary);
-    font-family: var(--font-family-main);
-    font-size: calc(var(--font-size-text) * 0.914);
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.health-view-groupby-btn:hover {
-    color: var(--text-primary);
-}
-
-.health-view-groupby-btn.is-active {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
-}
-
-.health-view-sort-select {
-    padding: var(--space-1, 0.3rem) var(--space-1-5, 0.4rem);
-    border-radius: var(--radius-4, 0.4rem);
-    border: 1px solid var(--border-primary);
-    background: var(--background-primary);
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: var(--text-sm, 0.78rem);
-    cursor: pointer;
-}
-
-.health-view-retest-btn,
-.health-view-load-more-btn,
-.health-view-retry-btn {
+.health-view-retest-btn {
     padding: var(--space-1-5, 0.35rem) var(--space-3, 0.7rem);
     border-radius: var(--radius-4, 0.4rem);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
@@ -561,7 +92,6 @@
 }
 
 .health-view-retest-btn[disabled],
-.health-view-fetch-previews-btn[disabled],
 .health-view-open-broken-btn[disabled] {
     opacity: 0.55;
     cursor: default;
@@ -574,14 +104,8 @@
    had no rule at all, so each rendered as the browser's default grey button:
    square, 2px outset, in a row of soft-cornered ones. Easy to miss, because
    they are only on screen while their own filter is. */
-.health-view-select-all-btn,
-.health-view-export-btn,
-.health-view-history-export-btn,
-.health-view-rot-btn,
-.health-view-trend-open-btn,
+
 .health-view-open-broken-btn,
-.health-view-merge-duplicates-btn,
-.health-view-fetch-previews-btn,
 .health-view-checkoff-btn {
     padding: var(--space-1-5, 0.35rem) var(--space-3, 0.7rem);
     border-radius: var(--radius-4, 0.4rem);
@@ -592,14 +116,7 @@
     cursor: pointer;
 }
 
-.health-view-select-all-btn:hover,
-.health-view-export-btn:hover,
-.health-view-history-export-btn:hover,
-.health-view-rot-btn:hover,
-.health-view-trend-open-btn:hover,
-.health-view-open-broken-btn:hover:not([disabled]),
-.health-view-merge-duplicates-btn:hover,
-.health-view-fetch-previews-btn:hover:not([disabled]) {
+.health-view-open-broken-btn:hover:not([disabled]) {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
     color: var(--accent-primary);
 }
@@ -614,86 +131,8 @@
     cursor: default;
 }
 
-/* Same shape as its "off" counterpart, but tinted toward the accent rather than
-   the error colour: this one adds monitoring rather than taking it away. */
-.health-view-bulk-monitor-btn,
-.health-view-bulk-periodic-btn {
-    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.7rem);
-    border-radius: var(--radius-4, 0.4rem);
-    border: 1px solid var(--border-secondary);
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: var(--text-sm, 0.8rem);
-    cursor: pointer;
-}
-
-.health-view-bulk-monitor-btn:hover,
-.health-view-bulk-periodic-btn:hover {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-}
-
-.health-view-load-more-btn {
-    display: block;
-    width: 100%;
-    margin-top: var(--space-1-5, 0.35rem);
-}
-
-/* ─── Feed ──────────────────────────────────────────────────────────────── */
-
-.health-view-feed {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 0.65rem);
-}
-
-/* Status sections on the All filter under the Status sort — mirrors Inbox's
-   date groups (.inbox-date-group). Every other filter/sort combination
-   renders a single unlabelled group, so this costs nothing when unused. */
-.health-view-status-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.55rem);
-}
-
-.health-view-status-group-title {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-1-5, 0.4rem);
-    margin: var(--space-1-5, 0.35rem) 0 0;
-    font-size: var(--text-xs, 0.72rem);
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--text-tertiary);
-}
-
-.health-view-status-group-count {
-    font-variant-numeric: tabular-nums;
-    opacity: 0.7;
-}
-
-.health-view-status-group-items {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 0.65rem);
-}
-
-.health-view-load-sentinel {
-    height: 1px;
-    width: 100%;
-    pointer-events: none;
-}
-
-/* Favicon column is 3rem, shared with the inbox feed so the two read as one
-   system: health rows are scannable status lines, not previews, but the icon is
-   large enough to recognise the site at a glance. */
-/* The card, its hover and its keyboard-cursor state now live in feed-row.css,
-   shared with Inbox and Config → Bookmarks. What stays here is the part that is
-   genuinely Health's: the severity edge classes the JS still writes. */
 /* Broken and warn used to draw their own left border; the shared status glow
    (data-lvs-status, list-view-shell.css) says it now. */
-
 
 .health-view-item-icon {
     width: 3rem;
@@ -715,22 +154,6 @@
     object-fit: contain;
 }
 
-.health-view-item-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-2, 0.6rem);
-}
-
-.health-view-item-title {
-    margin: 0;
-    font-size: var(--font-size-controls);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-}
-
 /* How long a row has been failing, beside the reason. Muted like the other
    trail items — it is context for the failure, not a second failure. */
 .health-view-item-broken-since {
@@ -738,14 +161,6 @@
     white-space: nowrap;
 }
 
-/*
- * "gone from the web since March 2019".
- *
- * Stronger than the failing-for label beside it, because it says something
- * heavier: the page is not slow or misconfigured, it is over. Same muted family
- * rather than an alarm colour -- the row is already marked as failing, and a
- * second red thing would compete with the first.
- */
 /*
  * "copy saved here" — the one hopeful thing on a failing row.
  *
@@ -764,141 +179,10 @@
     font-style: italic;
 }
 
-/* A row you have acted on that no longer matches the filter. It keeps its
-   place in the list until the filter, sort or search changes, or the report is
-   reloaded on purpose — a list you are working through should not close the gap
-   behind you. Dimmed rather than removed, so the position still reads as
-   "done", not as "still to do". */
-.health-view-item--handled {
-    opacity: 0.62;
-}
-
-.health-view-item--handled:hover,
-.health-view-item--handled:focus-within {
-    opacity: 1;
-}
-
-.health-view-item-handled {
-    flex-shrink: 0;
-    align-self: center;
-    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.4rem);
-    border-radius: var(--radius-pill, 999px);
-    border: 1px solid var(--border-color);
-    background: var(--bg-tertiary, transparent);
-    color: var(--text-tertiary);
-    font-size: var(--text-2xs, 0.65rem);
-    letter-spacing: 0.03em;
-    text-transform: lowercase;
-    white-space: nowrap;
-}
-
 /* Reasons that cost no points sit under their own heading, so a full score with
    "Never opened" listed under it does not read as broken arithmetic. */
 .health-view-score-intro--notes {
     margin-top: var(--space-2, 0.55rem);
-}
-
-/* Row score doubles as the breakdown disclosure — it is a real <button>. */
-.health-view-item-score {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 0.2rem);
-    min-width: 2.5rem;
-    justify-content: center;
-    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
-    border-radius: var(--radius-pill, 999px);
-    border: 1px solid color-mix(in srgb, var(--health-view-band) 35%, transparent);
-    background: color-mix(in srgb, var(--health-view-band) 14%, transparent);
-    color: var(--health-view-band);
-    font-size: var(--text-xs, 0.72rem);
-    font-weight: var(--font-weight-semibold);
-    font-family: inherit;
-    cursor: pointer;
-}
-
-.health-view-item-score:hover {
-    background: color-mix(in srgb, var(--health-view-band) 24%, transparent);
-}
-
-.health-view-item-score-caret {
-    font-size: var(--text-2xs, 0.6rem);
-    opacity: 0.8;
-    transition: transform 0.15s ease;
-}
-
-.health-view-item-score[aria-expanded="true"] .health-view-item-score-caret {
-    transform: rotate(90deg);
-}
-
-.health-view-item-meta {
-    margin: var(--space-1, 0.2rem) 0 0;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3, 0.75rem);
-    font-size: var(--text-sm, 0.78rem);
-    color: var(--text-secondary);
-    min-width: 0;
-}
-
-.health-view-item-meta-primary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem);
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-/* Last opened and issue reasons share one right column so the date line aligns
-   down the feed regardless of domain or check-mode width on the left. */
-.health-view-item-meta-trail {
-    flex: 0 0 auto;
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: flex-end;
-    gap: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem);
-    max-width: 58%;
-    text-align: right;
-}
-
-.health-view-item-reason {
-    color: var(--text-secondary);
-}
-
-/* ─── Last opened ───────────────────────────────────────────────────────────
-   Always present, so the meta line keeps one shape across rows rather than a
-   field that appears and disappears. Quieter than the reason beside it: it is
-   context for the row, not a finding about it. */
-.health-view-item-opened {
-    color: var(--text-secondary);
-    opacity: 0.85;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-}
-
-/* Never opened is a finding — the same signal the Stale filter and the score
-   act on — so it carries the weight the neutral timestamps deliberately do not. */
-.health-view-item-opened.is-never {
-    color: var(--text-muted, var(--text-secondary));
-    opacity: 1;
-    font-style: italic;
-}
-
-.health-view-item.is-broken .health-view-item-reason {
-    color: var(--accent-error);
-}
-
-/* ─── Check-mode badge ──────────────────────────────────────────────────────
-   Names why a row does or does not have a heartbeat, and doubles as the control
-   that changes it: the label is already where the eye goes to ask the question,
-   so making it the button costs no extra room in the row. */
-
-.health-check-mode-wrap {
-    position: relative;
-    display: inline-flex;
 }
 
 .health-check-mode {
@@ -960,8 +244,6 @@
     display: inline;
 }
 
-/* ─── Check-mode popover ─────────────────────────────────────────────────── */
-
 /* An explicit width, not a min-width. The menu is absolutely positioned inside
    .health-check-mode-wrap, an inline-flex sitting in a flex item with
    `min-width: 0` — so it shrank to the trigger button's width (192px) and
@@ -1005,18 +287,6 @@
     padding: var(--space-2, 0.5rem) var(--space-2, 0.6rem) var(--space-hairline, 0.15rem);
     border-top: 1px solid var(--border-color);
     margin-top: var(--space-1, 0.3rem);
-}
-
-/* The menu entry that opens the expectations panel. Same two-line shape as the
-   three mode options above it, so the menu reads as one list rather than a list
-   with something bolted on. */
-.health-check-expect-open {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-hairline, 0.1rem);
-    border-top: 1px solid var(--border-color);
-    margin-top: var(--space-1, 0.3rem);
-    padding-top: var(--space-2, 0.45rem);
 }
 
 /* ─── Expectations panel ────────────────────────────────────────────────
@@ -1322,42 +592,6 @@
 .health-monitor-pending {
     font-style: italic;
     opacity: 0.8;
-}
-
-/* Enlarge button. Pushed to the end of the strip and kept quiet until the row is
-   hovered or selected — same treatment as the check-mode kbd hint, so a list of
-   monitored rows is not a column of icons competing with the heartbeats. */
-.health-monitor-expand-btn {
-    margin-left: auto;
-    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
-    border: 1px solid transparent;
-    border-radius: var(--layout-radius-sm, 8px);
-    background: transparent;
-    color: inherit;
-    font-family: inherit;
-    font-size: var(--text-sm, 0.8rem);
-    line-height: 1.4;
-    opacity: 0.45;
-    cursor: pointer;
-    transition: opacity 0.12s ease, border-color 0.12s ease;
-}
-
-.health-view-item:hover .health-monitor-expand-btn,
-.health-view-item.keyboard-selected .health-monitor-expand-btn,
-.health-monitor-expand-btn:focus-visible {
-    opacity: 1;
-    border-color: var(--border-secondary);
-}
-
-.health-monitor-expand-btn kbd {
-    display: none;
-    margin-left: var(--space-1, 0.25rem);
-    font-size: var(--text-2xs, 0.62rem);
-    opacity: 0.7;
-}
-
-.health-view-item.keyboard-selected .health-monitor-expand-btn kbd {
-    display: inline;
 }
 
 .health-view-score-item.is-ongoing .health-view-score-item-cost {
@@ -1668,19 +902,6 @@
     color: var(--health-view-band);
 }
 
-/* ─── Row actions ───────────────────────────────────────────────────────── */
-
-/* Inbox shows actions on every card. Health lists run to dozens of rows, so they
-   stay collapsed until the row is hovered, focused, or keyboard-selected —
-   quieter than inbox, same button sizing.
-
-   grid-template-rows 0fr → 1fr collapses the row's height rather than only its
-   opacity: reserving the space would leave every row padded with a strip of
-   emptiness. The buttons keep their box (no display:none), so they stay
-   focusable and Tab still reveals them via :focus-within. */
-/* The action bar's reveal is in feed-row.css. */
-
-
 /* Never hide an action from assistive tech or keyboard users: opacity:0 keeps
    the buttons focusable, and focus-within reveals them on Tab. */
 .health-view-action-btn {
@@ -1697,11 +918,6 @@
 .health-view-action-btn:hover {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
     color: var(--accent-primary);
-}
-
-.health-view-action-btn--danger:hover {
-    border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
-    color: var(--accent-error);
 }
 
 .health-view-action-btn[disabled] {
@@ -1771,16 +987,6 @@
     bottom: calc(100% + 0.3rem);
 }
 
-/* Opened by right-click rather than the ⋯ button: positionMenuAtPoint() writes
-   `top`/`left` inline, so the button-relative offset must not also apply.
-   `bottom: auto` matters because the row's actions bar can be reached while the
-   menu carries --up from an earlier open. */
-.health-view-menu--at-cursor {
-    top: 0;
-    left: 0;
-    bottom: auto;
-}
-
 .health-view-menu-item {
     padding: var(--space-2, 0.45rem) var(--space-3, 0.85rem);
     margin: 0 var(--space-1, 0.3rem);
@@ -1806,125 +1012,21 @@
     color: var(--text-primary);
 }
 
-.health-view-menu-item--danger {
-    color: var(--accent-error);
-}
-
-.health-view-menu-item--danger:hover,
-.health-view-menu-item--danger:focus-visible {
-    background: color-mix(in srgb, var(--accent-error) 14%, var(--background-primary));
-    color: var(--accent-error);
-}
-
 .health-view-menu-item[disabled] {
     opacity: 0.5;
     cursor: default;
 }
 
-.health-view-menu-label {
-    margin: 0;
-    padding: var(--space-2, 0.5rem) var(--space-3, 0.85rem) var(--space-1, 0.2rem);
-    font-size: calc(var(--font-size-controls) * 0.68);
-    font-weight: var(--font-weight-medium);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text-tertiary);
-}
-
-.health-view-menu-label--danger {
-    color: color-mix(in srgb, var(--accent-error) 75%, var(--text-tertiary));
-}
-
-/* ─── Groups, empty states ──────────────────────────────────────────────── */
-
-.health-view-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.55rem);
-}
-
-.health-view-group-title {
-    margin: var(--space-1-5, 0.35rem) 0 0;
-    font-size: var(--text-xs, 0.72rem);
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--text-tertiary);
-}
-
-.health-view-group-items {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 0.65rem);
-}
-
-.health-view-empty-state,
-.health-view-empty {
-    padding: var(--space-6, 2rem) var(--space-4, 1rem);
-    text-align: center;
-    color: var(--text-secondary);
-}
-
-.health-view-empty-title {
-    margin: 0 0 var(--space-1-5, 0.35rem);
-    font-size: var(--font-size-controls);
-    color: var(--text-primary);
-}
-
-.health-view-empty-hint {
-    margin: 0;
-    font-size: var(--text-sm, 0.85rem);
-}
-
-.health-view-retry-btn {
-    margin-top: var(--space-3, 0.85rem);
-}
-
-/* Keyboard shortcut hints below the list so a long scroll never hides them. */
-/* ─── Explaining the view ───────────────────────────────────────────────── */
-
-/* The filter note, the ℹ button and the explainer modal are styled by
-   view-explainers.css, shared with the inbox. The elements carry both the shared
-   class and the `.health-view-*` one below — the shared class does the styling,
-   the view-specific one stays as the hook this view's markup and tests already
-   use. Nothing is restated here, so the two views cannot drift apart. */
-
-.health-view-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1, 0.3rem) var(--space-3, 0.8rem);
-    padding: 0 var(--space-1-5, 0.35rem);
-    margin: 0;
-    font-size: var(--text-xs, 0.72rem);
-    color: var(--text-tertiary);
-}
-
-/* The dashboard's own "> search" hint sits below the layout container; the
-   bottom padding keeps the legend clear of it. */
-.health-view-legend--bottom {
-    padding-bottom: 1.25rem;
-}
-
-.health-view-legend kbd {
-    padding: var(--space-hairline, 0.05rem) var(--space-1, 0.3rem);
-    border-radius: var(--radius-2, 3px);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
-    font-size: var(--text-2xs, 0.68rem);
-}
-
 /* ─── Motion & narrow viewports ─────────────────────────────────────────── */
 
 body.no-animations .health-view-item,
-body.no-animations .health-view-item-actions,
-body.no-animations .health-view-item-score-caret {
+body.no-animations .health-view-item-actions {
     transition: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
     .health-view-item,
-    .health-view-item-actions,
-    .health-view-item-score-caret {
+    .health-view-item-actions {
         transition: none !important;
     }
 }
@@ -1940,27 +1042,13 @@ body.no-animations .health-view-item-score-caret {
 }
 
 @media (max-width: 520px) {
-    /* The row name is the only way to tell fleet-panel rows apart, and the
-       title tooltip that would otherwise reveal the full name/URL never fires
-       on touch — so below the width where ellipsis is most likely to bite,
-       let it wrap instead of hiding text a mouse-less visitor cannot recover. */
-    .health-fleet-row-name {
-        white-space: normal;
-        overflow: visible;
-        text-overflow: clip;
-    }
 
     .health-view-item-actions {
         grid-template-rows: 1fr;
         margin-top: var(--space-2, 0.55rem);
         opacity: 1;
     }
-}/* The toolbar buttons share one shape in classic (0.4rem); keep them sharing
-   one shape here rather than pinning each to its own radius. *//* ─── Feed rows ─────────────────────────────────────────────────────────── *//* Hover must not erase the severity marker, so each state restates its bar. *//* ─── Row actions ───────────────────────────────────────────────────────── *//* ─── Monitor statistics (modal) ────────────────────────────────────────── */
-
-/* ─── Motion preferences ────────────────────────────────────────────────── */
-
-/* .health-view-tile and button.health-view-tile:hover named here used to
+}/* .health-view-tile and button.health-view-tile:hover named here used to
    carry the tile's own lift/transition reset; that markup is gone (1d3e2dfe
    merged the tile into `.lvs-filter`), and its reduced-motion counterpart now
    lives beside the rule it reduces, in list-view-shell.css. */
@@ -1997,219 +1085,14 @@ body.no-animations .health-view-item-score-caret {
     outline-offset: 2px;
 }
 
-/* ─── Multi-select ───────────────────────────────────────────────────────────
-   The tick box takes a third grid column, but only once a selection is open or
-   the row is hovered: an always-visible checkbox on every row turns a reading
-   list into a form, and most visits here are reading, not selecting. */
-
-/* The box keeps its width and hit area at all times and only fades out: a
-   zero-width control is unclickable, not merely invisible, so collapsing it
-   would make the first tick of a selection a game of pixel-hunting. */
-.health-view-select {
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    width: 1.1rem;
-    padding-top: var(--space-hairline, 0.15rem);
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.12s ease;
-}
-
-.health-view-item:hover .health-view-select,
-.health-view-item:focus-within .health-view-select,
-.health-view-feed.has-multi-select .health-view-select,
-.health-view-item.is-multi-selected .health-view-select {
-    opacity: 1;
-}
-
-.health-view-select-box {
-    width: 1rem;
-    height: 1rem;
-    margin: 0;
-    accent-color: var(--accent-primary);
-    cursor: pointer;
-}
-
 .health-view-item.is-multi-selected {
     border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
     background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
 }
 
-/* Bulk-action bar. Deliberately the very same .config-bulk-bar the bookmarks
-   editor uses — same position above the list, same grouping, same select+Apply
-   pairs — so ticking rows works the same way in both places. Only the spacing
-   below is Health's own, because this bar sits inside the feed column. */
-.health-bulk-bar {
-    margin-bottom: var(--space-3, 0.85rem);
-}
-
 #health-bulk-bar:empty {
     display: none;
 }
-
-@media (prefers-reduced-motion: reduce) {
-    .health-view-select {
-        transition: none;
-    }
-}
-
-/* The series picker above the trend chart. Nine counters are recorded every day
-   and the chart drew one of them; these switch between the six that answer a
-   question someone actually asks. */
-.health-view-trend-series {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: var(--space-1, 0.2rem);
-    margin-left: auto;
-}
-
-.health-view-trend-series-btn {
-    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.4rem);
-    border: 1px solid transparent;
-    border-radius: var(--radius-3, 0.3rem);
-    background: none;
-    color: var(--text-tertiary);
-    font: inherit;
-    font-size: var(--text-2xs, 0.68rem);
-    cursor: pointer;
-}
-
-.health-view-trend-series-btn:hover {
-    color: var(--text-secondary);
-}
-
-.health-view-trend-series-btn.is-active {
-    border-color: color-mix(in srgb, var(--accent-primary) 40%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
-    color: var(--accent-primary);
-}
-
-/*
- * What a row is not reporting.
- *
- * Quiet, because it is the absence of a problem rather than one: it sits in the
- * meta line beside the domain, in the tertiary colour the other badges use for
- * context rather than alarm. Without it an ignore would be invisible everywhere
- * except the Ignored list, and a toggle with no visible state is one nobody
- * trusts.
- */
-.health-view-ignored-badge {
-    flex: none;
-    font-size: var(--text-xs, 0.7rem);
-    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.4rem);
-    border-radius: var(--radius-pill, 999px);
-    border: 1px dashed var(--border-secondary);
-    color: var(--text-tertiary);
-    white-space: nowrap;
-}
-
-/*
- * The toolbar's own ⋯, and what sits behind it.
- *
- * Eight buttons stood on two lines between the filters and the first bookmark.
- * Two stay out — Work through, which is the reason to be on this screen at all,
- * and Rot report — and the rest wait here with the settings link that used to
- * live on the header.
- *
- * The menu reuses .health-view-menu wholesale, so it inherits the row menu's
- * placement, elevation and keyboard behaviour; only the anchor differs, which
- * is why the action row has to establish a positioning context.
- */
-/*
- * Sized to the buttons it stands among rather than to itself.
- *
- * Left to its own padding it came out 30x24 against their 34px, which on a row
- * of soft-cornered buttons reads as a rendering fault rather than a control.
- * The glyph is set larger than the labels beside it because three dots at
- * 0.8rem are three specks.
- */
-.health-view-toolbar-more {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 2.1rem;
-    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem);
-    border: 1px solid var(--border-secondary);
-    border-radius: var(--radius-4, 0.4rem);
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: var(--text-md, 1rem);
-    line-height: 1;
-    cursor: pointer;
-}
-
-.health-view-toolbar-more:hover,
-.health-view-toolbar-more[aria-expanded="true"] {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
-    color: var(--text-primary);
-}
-
-.health-view-toolbar-more:focus-visible {
-    outline: 2px solid var(--accent-color, #4a90d9);
-    outline-offset: 1px;
-}
-
-/* Anchored to the ⋯ rather than to a row, and wide enough for the longest
-   label ("Turn checking off for all 12 shown") without wrapping to two lines. */
-/*
- * Anchored to the ⋯ itself, through the same wrap the row menus use.
- *
- * Pinning it to the action row instead put it at the far right of the window:
- * that row is flex-basis 100%, so "right: 0" is the edge of the view rather
- * than the edge of the button. The wrap is an inline-flex span around button
- * and menu, which is exactly the box the menu should hang from.
- */
-.health-view-menu--toolbar {
-    min-width: 14rem;
-}
-
-/* Inside the menu the buttons are menu items, whatever they look like on a
-   toolbar: full width, left aligned, no box of their own. */
-.health-view-menu--toolbar > button {
-    width: 100%;
-    justify-content: flex-start;
-    padding: var(--space-1-5, 0.4rem) var(--space-3, 0.7rem);
-    border: 0;
-    border-radius: 0;
-    background: none;
-    color: var(--text-primary);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.health-view-menu--toolbar > button:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
-}
-
-.health-view-menu--toolbar > button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-
-/* The settings link is the one entry that leaves the view rather than acting
-   on the list, so it sits under a rule instead of among the actions. */
-.health-view-menu--toolbar > .health-view-settings-link {
-    margin-top: var(--space-1, 0.3rem);
-    padding-top: var(--space-2, 0.45rem);
-    border-top: 1px solid var(--border-secondary);
-    color: var(--text-secondary);
-}
-
-/* Work through is why anyone opens this view; it reads as the one thing to do
-   rather than the first of several. */
-.health-view-focus-btn--primary {
-    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
-    font-weight: var(--font-weight-semibold);
-}
-
-.health-view-focus-btn--primary:hover {
-    background: color-mix(in srgb, var(--accent-primary) 20%, var(--background-secondary));
-}
-
 
 /* ── Redesign: one line per bookmark, a second for the focused one ─────────
    The row was a card of four stacked lines; a list of fifty was fifty cards.
@@ -2237,165 +1120,12 @@ body.no-animations .health-view-item-score-caret {
         inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
 }
 
-.health-view-line1 {
-    display: grid;
-    grid-template-columns: 1.1rem 1.4rem minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.4fr) auto;
-    align-items: center;
-    gap: var(--space-3, 0.75rem);
-    min-height: 1.8rem;
-}
-
-.health-view-line1 .health-view-item-icon {
-    width: 1.4rem;
-    height: 1.4rem;
-    font-size: 0.9rem;
-}
-
-.health-view-line1 .health-view-item-title {
-    margin: 0;
-    font-size: var(--font-size-controls);
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.health-view-item-domain,
-.health-view-item-reason-wrap {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-}
-
-.health-view-item-reason-wrap > * + *::before {
-    content: " · ";
-}
-
-.health-view-line1 .health-view-item-score {
-    justify-self: end;
-}
-
-/* The second line: actions, then the badges that qualify the first. */
-.health-view-item .health-view-line2 {
-    display: none;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-    padding: var(--space-2, 0.45rem) 0 var(--space-1, 0.2rem) calc(1.1rem + 1.4rem + 2 * var(--space-3, 0.75rem));
-}
-
-/* data-health-open only (dashboard-health.js, openKey), set by a click or
-   the keyboard. Not aria-selected: hovering selects without opening. Not
-   :focus-within either: a ticked checkbox kept its row open, and the next
-   click lower down closed it mid-click -- the rows shifted and the click
-   landed beside the box it aimed at. */
-.health-view-item[data-health-open] .health-view-line2 {
-    display: flex;
-}
-
-.health-view-item-badges {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2, 0.5rem);
-    font-size: var(--font-size-small);
-    color: var(--text-secondary);
-}
-
-.health-view-item-badges:empty {
-    display: none;
-}
-
-/* The checkbox rests out of sight until the pointer, the focus or a live
-   selection asks for it -- a column of empty boxes was the loudest thing in
-   a quiet list. */
-.health-view-item .health-view-select {
-    visibility: hidden;
-}
-
-.health-view-item:hover .health-view-select,
-.health-view-item:focus-within .health-view-select,
-.health-view-item[aria-selected="true"] .health-view-select,
-.health-view-feed:has(.health-view-select-box:checked) .health-view-select {
-    visibility: visible;
-}
-
-/* Status group headings in the colour of the rows under them. */
-.health-view-status-group[data-health-group-status="bad"] .health-view-status-group-title { color: var(--accent-error); }
-.health-view-status-group[data-health-group-status="warn"] .health-view-status-group-title { color: var(--accent-warning); }
-.health-view-status-group[data-health-group-status="info"] .health-view-status-group-title { color: var(--accent-vivid, var(--accent-primary)); }
-.health-view-status-group[data-health-group-status="good"] .health-view-status-group-title { color: var(--accent-success); }
-
-.health-view-status-group-items {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-}
-
-@media (max-width: 767px) {
-    .health-view-line1 {
-        grid-template-columns: 1.1rem 1.4rem minmax(0, 1fr) auto;
-    }
-
-    .health-view-item-domain,
-    .health-view-item-reason-wrap {
-        grid-column: 3 / -1;
-    }
-
-    /* Title and score share the first line; domain and reason go under. */
-    .health-view-line1 .health-view-item-title {
-        grid-row: 1;
-        grid-column: 3;
-    }
-
-    .health-view-line1 .health-view-item-score {
-        grid-row: 1;
-        grid-column: 4;
-    }
-
-    .health-view-item .health-view-line2 {
-        padding-left: 0;
-    }
-}
-
-/* ── Side panel (dashboard-health-drawer.js) ─────────────────────────────
-   The slab is the shared one (list-view-shell.css, .lvs-drawer*). What
-   follows is what a bookmark's sections need inside it: the markup the row's
-   inline panels used, without the boxes that framed them in a row. */
-
-.health-drawer-url {
-    font-size: var(--font-size-controls);
-    overflow-wrap: anywhere;
-}
-
-.health-drawer-where,
-.health-drawer-tags {
-    margin: 0;
-    font-size: var(--font-size-small);
-    color: var(--text-secondary);
-}
-
-.health-drawer-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1, 0.25rem);
-}
-
-.health-drawer-tag {
-    padding: 0 var(--space-1-5, 0.4rem);
-    border: 1px solid var(--border-primary);
-    border-radius: 999px;
-}
-
 .health-drawer-reasons {
     margin: 0;
     padding-left: 1.1rem;
 }
 
-.health-drawer-since,
-.health-drawer-empty {
+.health-drawer-since {
     margin: 0;
     color: var(--text-secondary);
 }
@@ -2414,24 +1144,6 @@ body.no-animations .health-view-item-score-caret {
     background: none;
 }
 
-.health-drawer-check {
-    gap: var(--space-1, 0.25rem);
-}
-
-.health-drawer-check .health-check-option {
-    width: 100%;
-    text-align: left;
-}
-
 .health-drawer .health-monitor-strip {
     margin-top: 0;
-}
-
-/* The first line's monitor fact: down reads as a failure, uptime as a note. */
-.health-view-item-monitor {
-    color: var(--text-secondary);
-}
-
-.health-view-item-monitor.is-down {
-    color: var(--accent-error);
 }

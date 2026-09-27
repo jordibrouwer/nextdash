@@ -941,14 +941,6 @@ class DashboardRenderCore {
             d.inbox.render();
             return;
         }
-        if (d.activeView === 'health' && d.health?.isEnabled?.()) {
-            d.data?.schedulePageBookmarksHealIfNeeded?.();
-            if (blockForInlineEdit) {
-                return;
-            }
-            d.health.render();
-            return;
-        }
         // The Bookmarks view ('library') is the config module's too.
         if ((d.activeView === 'config' || d.activeView === 'library') && d.config?.isEnabled?.()) {
             if (blockForInlineEdit) {
@@ -992,7 +984,7 @@ class DashboardRenderCore {
         d._bookmarkGridRenderedAt = Date.now();
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
-        container.classList.remove('inbox-layout', 'health-layout', 'config-layout');
+        container.classList.remove('inbox-layout', 'config-layout');
 
         d._abortInlineEditForRender();
         window.DashboardSmartWhyPopover?.hide?.();

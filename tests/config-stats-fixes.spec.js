@@ -131,11 +131,11 @@ test.describe('the controls belong to the section, not to one tab', () => {
         await expect(page.locator('[data-stats-action="export"]')).toHaveCount(1);
     });
 
-    test('the health tab offers a way into the health view', async ({ page }) => {
+    test('the health tab offers a way into the Bookmarks view', async ({ page }) => {
         await openStats(page, 'health');
         await page.locator('[data-stats-action="open-health-view"]').click();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView),
-            { timeout: 15_000 }).toBe('health');
+            { timeout: 15_000 }).toBe('library');
     });
 });
 

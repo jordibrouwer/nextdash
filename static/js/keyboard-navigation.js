@@ -110,18 +110,6 @@ class KeyboardNavigation {
                 }
             }
 
-            const health = this.dashboard.health;
-            const healthDomActive = layoutEl?.classList.contains('health-layout');
-            if (healthDomActive && health?.isEnabled?.()) {
-                if (this.dashboard.activeView !== 'health') {
-                    this.dashboard.setActiveView('health', { silent: true });
-                }
-                health.handleKeyboardNavigation?.(e);
-                // Return either way: the bookmark grid is not on screen, so its
-                // shortcuts must not fire against health rows.
-                return;
-            }
-
             const config = this.dashboard.config;
             const configDomActive = layoutEl?.classList.contains('config-layout');
             if (configDomActive && config?.isEnabled?.()) {

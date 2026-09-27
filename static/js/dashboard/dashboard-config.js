@@ -1008,7 +1008,6 @@ class DashboardConfig {
         d._abortInlineEditForRender?.();
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         d.inbox?.clearKeyboardSelection?.();
-        d.health?.clearKeyboardSelection?.();
         this.clearListKeyboardSelection();
         this.clearBookmarkKeyboardSelection();
         this.section = targetSection;
@@ -1051,7 +1050,6 @@ class DashboardConfig {
         d._abortInlineEditForRender?.();
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         d.inbox?.clearKeyboardSelection?.();
-        d.health?.clearKeyboardSelection?.();
         this.clearListKeyboardSelection();
         this.clearBookmarkKeyboardSelection();
         this.standalone = true;
@@ -1059,6 +1057,10 @@ class DashboardConfig {
         this.bmTab = 'list';
         void this.ensureBookmarkRenderers();
         void this.ensureSection('bookmarks');
+        // The Health module and its report, started with the view's own
+        // scripts rather than after its first paint: the join landing late
+        // redrew the side panel under whatever was being typed in it.
+        if (d.health?.isEnabled?.()) void d.health.load?.()?.catch?.(() => {});
         if (String(hash).startsWith('#config/bookmarks')) {
             this.applyBookmarksPageFromHash(hash);
             this.applyBookmarksFiltersFromHash(hash);
@@ -1471,6 +1473,10 @@ class DashboardConfig {
         // letter accelerators -- o, m -- went the same way. The Escape branch
         // below has always asked this question; the rest of the keys had not.
         if (this._bmContextMenu?.isOpen?.() && e.key !== 'Escape') return false;
+        // Work through (Health's walk) is the same: its card binds its keys
+        // on document too, and the list took them first -- the walk never
+        // moved.
+        if (this._libFocus?.active) return false;
         if (d.isModalOpen?.()) return false;
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
@@ -1990,7 +1996,7 @@ class DashboardConfig {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
         this.closeWorkbenchOverlaysOffList();
-        container.classList.remove('inbox-layout', 'health-layout', 'tag-filter-layout');
+        container.classList.remove('inbox-layout', 'tag-filter-layout');
         container.classList.add('config-layout', 'page-transition');
         container.classList.toggle('library-layout', this.standalone);
         // Only the parts that changed. The rail, the search button and the panel
@@ -5020,38 +5026,43 @@ class DashboardConfig {
     }
 
     /**
-     * A tile hands off to the view that acts on it (health with a filter, inbox).
-     *
-     * `focusKey` is a health issue key (`pageId:index`) to select on arrival —
-     * used by "Show in Health" on a single bookmark. focusIssue widens the
-     * filter by itself when the row would otherwise be hidden, so it is passed
-     * instead of a filter rather than alongside one.
+     * A tile hands off to the view that acts on it: health problems to the
+     * Bookmarks view on that health filter, the inbox to the inbox.
      */
-    openViewFromTile(view, filter, focusKey = null) {
+    openViewFromTile(view, filter) {
         const d = this.dash;
         // The overview's "something needs attention" rows. Worth separating from
-        // an ordinary view:health, because it says the summary is what sent
+        // an ordinary view:library, because it says the summary is what sent
         // people there — and which problem type did it.
         this._trackAction('tile-open', { view, ...(filter ? { filter } : {}) });
-        if (view === 'health' && d.health?.openHealthView) {
-            return (async () => {
-                await d.health.openHealthView();
-                const mod = d.health.instance;
-                if (filter && mod) {
-                    mod.filter = filter;
-                    if (mod.isActiveView?.()) {
-                        mod.render();
-                    }
-                }
-                if (focusKey && mod?.focusIssue) {
-                    mod.focusIssue(focusKey);
-                }
-            })();
+        if (view === 'health') {
+            const health = DashboardConfig.HEALTH_FILTERS.includes(filter) ? filter : '';
+            history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}#bookmarks${health ? `?health=${health}` : ''}`);
+            return this.openLibraryView();
         }
         if (view === 'inbox' && d.inbox?.openInboxView) {
             return d.inbox.openInboxView();
         }
         return Promise.resolve();
+    }
+
+    /**
+     * One bookmark's health, from outside the Bookmarks view (the grid's "Show
+     * in Health"): the view with nothing filtered away, the row under the
+     * cursor and its panel open on Health.
+     */
+    async openLibraryOnBookmark(pageId, url) {
+        history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}#bookmarks`);
+        await this.openLibraryView();
+        const wanted = String(url || '').trim();
+        const b = (this.dash.allBookmarks || []).find((x) => Number(x.pageId) === Number(pageId)
+            && String(x.url || '').trim() === wanted);
+        if (!b) return false;
+        if (this.bookmarksFiltersActive()) this.clearBookmarkFilters();
+        this._bmKeyboardKey = this.bookmarkKey(b);
+        this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
+        this.openBmHealthPanelSection();
+        return true;
     }
 
     /* ── Data & backups ────────────────────────────────────────────────────── */
@@ -17876,8 +17887,6 @@ class DashboardConfig {
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
-        { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health',
-          whereKey: 'config.tourWhereHealth', where: 'the next time you open Health' },
         { id: 'inboxTutorialV2', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },
         { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh',

@@ -100,23 +100,6 @@ test.describe('view analytics events', () => {
         expect(setting.props.value).toBeUndefined();
     });
 
-    test('health reports filter and sort choices', async ({ page }) => {
-        await openConfig(page);
-        await page.evaluate(() => window.dashboardInstance.health.openHealthView());
-        await page.waitForTimeout(800);
-        await captureTracks(page);
-
-        await page.evaluate(() => {
-            document.querySelector('[data-health-filter="all"]')?.click();
-        });
-
-        const seen = await tracks(page);
-        const filter = seen.find((t) => t.name === 'health:filter');
-        expect(filter).toBeTruthy();
-        expect(filter.props.via).toBe('pill');
-        expect(filter.props.filter).toBe('all');
-    });
-
     test('inbox reports filter choices', async ({ page }) => {
         await openConfig(page);
         await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());

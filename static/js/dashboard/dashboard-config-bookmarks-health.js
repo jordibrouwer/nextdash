@@ -120,7 +120,7 @@
                 .filter((b) => (global.CheckMode?.of?.(b) || 'off') === 'off').length;
             if (off) rows.push({ label: this.t('config.cleanupFilterNoCheck', 'Not checked'), value: String(off), tone: 'muted' });
             const body = rows.filter((row) => row && (row.value !== '' || row.extraNode)).map((row) => `
-                <div class="config-bm-health-summary-row"${row.tone ? ` data-tone="${esc(row.tone)}"` : ''}>
+                <div class="config-bm-health-summary-row"${row.key ? ` data-summary-key="${esc(row.key)}"` : ''}${row.tone ? ` data-tone="${esc(row.tone)}"` : ''}>
                     <span class="config-bm-health-summary-label">${esc(row.label)}</span>
                     <span class="config-bm-health-summary-value">${esc(row.value ?? '')}</span>
                     ${row.extraNode?.outerHTML || ''}

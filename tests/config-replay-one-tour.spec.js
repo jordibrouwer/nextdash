@@ -45,25 +45,25 @@ test.describe('a single tour can be replayed', () => {
 
         await page.evaluate(() => {
             const s = window.DiscoverabilityState;
-            s.markTipSeen('healthTutorialV2', { persist: false });
             s.markTipSeen('inboxTutorialV2', { persist: false });
+            s.markTipSeen('freshTutorialV1', { persist: false });
             s.markTipSeen('tipSearch', { persist: false });
         });
 
         // The panel redraws from the seen list, so the buttons know which
         // tours are replayable.
         await page.evaluate(() => window.dashboardInstance.config.render());
-        const health = page.locator('[data-replay-tour="healthTutorialV2"]');
-        await expect(health).toBeVisible({ timeout: 10_000 });
-        await health.click();
+        const inbox = page.locator('[data-replay-tour="inboxTutorialV2"]');
+        await expect(inbox).toBeVisible({ timeout: 10_000 });
+        await inbox.click();
 
         await expect.poll(() => page.evaluate(
-            () => window.DiscoverabilityState.hasSeenTip('healthTutorialV2')
+            () => window.DiscoverabilityState.hasSeenTip('inboxTutorialV2')
         ), { timeout: 10_000 }).toBe(false);
 
         // The others are untouched — that is the whole difference from the
         // reset button sitting above these.
-        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('inboxTutorialV2'))).toBe(true);
+        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('freshTutorialV1'))).toBe(true);
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('tipSearch'))).toBe(true);
     });
 
@@ -71,13 +71,13 @@ test.describe('a single tour can be replayed', () => {
         await openBehaviorGeneral(page);
 
         await page.evaluate(() => {
-            window.DiscoverabilityState.init({ seenTips: ['healthTutorialV2'] });
+            window.DiscoverabilityState.init({ seenTips: ['inboxTutorialV2'] });
             window.dashboardInstance.config.render();
         });
 
         // Seen: replayable. Unseen: shown, but not as a button that pretends to
         // put back something that was never taken away.
-        await expect(page.locator('[data-replay-tour="healthTutorialV2"]')).toBeEnabled({ timeout: 10_000 });
-        await expect(page.locator('[data-replay-tour="inboxTutorialV2"]')).toBeDisabled();
+        await expect(page.locator('[data-replay-tour="inboxTutorialV2"]')).toBeEnabled({ timeout: 10_000 });
+        await expect(page.locator('[data-replay-tour="freshTutorialV1"]')).toBeDisabled();
     });
 });

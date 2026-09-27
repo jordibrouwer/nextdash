@@ -45,7 +45,7 @@ test.describe('view layout survives a window resize', () => {
         });
     }
 
-    for (const view of ['health', 'inbox']) {
+    for (const view of ['inbox']) {
         test(`${view} keeps its layout across shrink and regrow`, async ({ page, browserName }) => {
             test.skip(browserName !== 'chromium', 'CDP metrics override is chromium-only');
 

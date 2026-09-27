@@ -145,11 +145,14 @@ test.describe('the badge fetches the counts, not the whole report', () => {
         expect(answer.factsBytes).toBeLessThan(answer.fullBytes);
     });
 
-    test('the health view still gets the full report', async ({ page }) => {
+    test('the Bookmarks view still gets the full report', async ({ page }) => {
         await openDashboard(page);
         const full = await page.evaluate(async () => {
             const d = window.dashboardInstance;
-            await d.health.openHealthView();
+            window.location.hash = '#bookmarks';
+            for (let i = 0; i < 100 && !d.health.instance?.report; i += 1) {
+                await new Promise((r) => setTimeout(r, 100));
+            }
             const report = d.health.instance?.report;
             return {
                 issues: (report?.issues || []).length,

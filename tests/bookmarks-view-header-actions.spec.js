@@ -123,8 +123,7 @@ test('the Bookmarks icon in the header carries the count of problems', async ({ 
   await page.evaluate(() => window.dashboardInstance.updateHealthBadge());
   const library = page.locator('.library-link a .health-badge');
   await expect(library).toHaveText('1');
-  await expect(library).toHaveText(await page.locator('.health-link a .health-badge').textContent());
-  // On the icon's own corner, as Health's is on its.
+  // On the icon's own corner.
   const [badge, anchor] = [await library.boundingBox(), await page.locator('.library-link a').boundingBox()];
   const cx = badge.x + badge.width / 2;
   const cy = badge.y + badge.height / 2;

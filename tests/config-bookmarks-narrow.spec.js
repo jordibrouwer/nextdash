@@ -40,8 +40,8 @@ test.describe('the Bookmarks view on a narrow screen', () => {
         await openNarrow(page);
         await page.click('[data-bm-open-sheet]');
         expect(await locked(page)).toBeGreaterThan(0);
-        await page.evaluate(() => { window.location.hash = '#health'; });
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('health');
+        await page.evaluate(() => { window.location.hash = '#inbox'; });
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('inbox');
         await expect.poll(() => locked(page)).toBe(0);
     });
 });

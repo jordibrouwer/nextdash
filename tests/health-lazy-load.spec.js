@@ -2,7 +2,7 @@
 const { test, expect } = require('./fixtures');
 
 /**
- * dashboard-health.js and its helpers are fetched on first open rather than on
+ * dashboard-health.js and its helpers are fetched on first use rather than on
  * every dashboard load (dashboard-health-loader.js).
  */
 async function waitReady(page) {
@@ -33,7 +33,7 @@ test.describe('health lazy load', () => {
         expect(await page.evaluate(() => Boolean(window.dashboardInstance.health))).toBe(true);
     });
 
-    test('opening health fetches the module once and renders the view', async ({ page }) => {
+    test('the Bookmarks view fetches the module once', async ({ page }) => {
         /** @type {string[]} */
         const requested = [];
         page.on('request', (req) => {
@@ -43,16 +43,16 @@ test.describe('health lazy load', () => {
 
         await page.goto('/');
         await waitReady(page);
-        await page.evaluate(() => window.dashboardInstance.health.openHealthView());
-
-        await expect(page.locator('.health-layout')).toBeVisible();
-        expect(await page.evaluate(() => typeof window.DashboardHealth)).toBe('function');
+        await page.evaluate(() => { window.location.hash = '#bookmarks'; });
+        await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
+        await expect.poll(() => page.evaluate(() => typeof window.DashboardHealth)).toBe('function');
         expect(requested).toHaveLength(1);
         expect(requested[0]).toMatch(/dashboard-health\.js\?v=[0-9a-f]+$/);
 
-        await page.evaluate(() => window.dashboardInstance.health.closeHealthView());
-        await page.evaluate(() => window.dashboardInstance.health.openHealthView());
-        await expect(page.locator('.health-layout')).toBeVisible();
+        // Away and back: loaded already, not fetched again.
+        await page.evaluate(() => { window.location.hash = '#1'; });
+        await page.evaluate(() => { window.location.hash = '#bookmarks'; });
+        await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
         expect(requested).toHaveLength(1);
     });
 });

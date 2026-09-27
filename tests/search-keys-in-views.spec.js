@@ -1,7 +1,7 @@
 const { test, expect } = require('./fixtures');
 const { mockDocker } = require('./helpers/docker-mock');
 const {
-  markWhatsNewSeen, markHealthTutorialSeen, markInboxTutorialSeen, markConfigSettingPromosSeen, dismissBlockingOverlays,
+  markWhatsNewSeen, markInboxTutorialSeen, markConfigSettingPromosSeen, dismissBlockingOverlays,
 } = require('./e2e-helpers');
 
 /*
@@ -11,7 +11,7 @@ const {
  */
 const VIEWS = [
   { name: 'bookmarks', hash: '#1', ready: '.bookmark-link' },
-  { name: 'health', hash: '#health', ready: '.health-layout' },
+  { name: 'library', hash: '#bookmarks', ready: '#config-bm-list .config-bm-row' },
   { name: 'inbox', hash: '#inbox', ready: '.inbox-layout' },
   { name: 'config', hash: '#config', ready: '.config-layout' },
   { name: 'docker', hash: '#docker', ready: '[data-docker-row]' },
@@ -19,7 +19,6 @@ const VIEWS = [
 
 async function openView(page, view) {
   await markWhatsNewSeen(page);
-  await markHealthTutorialSeen(page);
   await markInboxTutorialSeen(page);
   await markConfigSettingPromosSeen(page);
   await mockDocker(page);
@@ -52,7 +51,7 @@ for (const view of VIEWS) {
     });
 
     // Every letter and digit typed into the overlay lands in it: a view
-    // handler that took one (docker's r = restart, health's r = refresh)
+    // handler that took one (docker's r = restart, Bookmarks' p = re-check)
     // would leave a gap in the query, or fire an action behind the overlay.
     test('no view shortcut fires while typing in search', async ({ page }) => {
       await openView(page, view);
@@ -66,7 +65,10 @@ for (const view of VIEWS) {
       await expect(query(page)).toHaveText(typed);
       expect(await page.evaluate(() => location.hash)).toBe(hashBefore);
       expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe(view.name === 'bookmarks' ? 'bookmarks' : view.name);
-      expect(posts.filter((p) => !p.includes('/api/activity') && !p.includes('/api/telemetry') && !p.includes('/api/client'))).toEqual([]);
+      // The status monitor's batched write (status.js) runs on its own clock
+      // wherever bookmarks are listed; it is not a key taken.
+      expect(posts.filter((p) => !p.includes('/api/activity') && !p.includes('/api/telemetry') && !p.includes('/api/client')
+        && !p.includes('/api/health/statuses'))).toEqual([]);
     });
 
     test(': opens the commands', async ({ page }) => {

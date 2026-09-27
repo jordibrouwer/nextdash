@@ -207,7 +207,9 @@ test('a slid-away bar stays away while you browse the views', async ({ page }) =
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
 
     const steps = [
-        ['Shift+H', 'health'],
+        ['Shift+H', 'library'],
+        // The first Escape clears the Broken filter Shift+H opened on.
+        ['Escape', 'library'],
         ['Escape', 'bookmarks'],
         ['Shift+I', 'inbox'],
         ['Escape', 'bookmarks'],

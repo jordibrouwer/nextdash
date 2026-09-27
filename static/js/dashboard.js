@@ -173,7 +173,6 @@ class Dashboard {
             this.renderDateWeatherLine();
             this.updateHealthBadge();
             this.inbox?.restoreViewIfNeeded?.();
-            this.health?.restoreViewIfNeeded?.();
             this.maybeRefreshAfterConfigReturn();
         });
         this.searchComponent = null;
@@ -342,7 +341,6 @@ class Dashboard {
             this.setupReorderUndoShortcut();
             this.setupPasteToQuickAdd();
             this.inbox.setupEscapeShortcut();
-            this.health?.setupEscapeShortcut();
             this.docker?.setupEscapeShortcut();
             this.config?.setupEscapeShortcut();
             void this.docker?.renderNavButton?.();
@@ -475,8 +473,8 @@ class Dashboard {
              */
             if (bootHash === 'inbox' && this.activeView !== 'inbox' && this.inbox?.isEnabled?.()) {
                 await this.inbox.openInboxView();
-            } else if ((bootHash === 'health' || bootHash.startsWith('health/'))
-                && this.activeView !== 'health' && this.health?.isEnabled?.()) {
+            } else if (bootHash === 'health' || bootHash.startsWith('health/')) {
+                // The Health view's old address: the Bookmarks view, on its filter.
                 await this.health.openHealthView();
             } else if ((bootHash === 'docker' || bootHash.startsWith('docker/') || bootHash.startsWith('docker?'))
                 && this.activeView !== 'docker') {
@@ -1038,11 +1036,9 @@ class Dashboard {
                 }
                 return;
             }
+            // The Health view's old address: the Bookmarks view, on its filter.
             if (hash === 'health' || hash.startsWith('health/')) {
-                if (this.activeView !== 'health') {
-                    return this.health?.openHealthView?.();
-                }
-                return;
+                return this.health?.openHealthView?.();
             }
             if (hash === 'docker' || hash.startsWith('docker/') || hash.startsWith('docker?')) {
                 const select = hash.startsWith('docker/') ? decodeURIComponent(hash.slice('docker/'.length)) : null;
@@ -1097,10 +1093,6 @@ class Dashboard {
                 const restoring = window.DashboardHistory?.isRestoring?.() === true;
                 if (!restoring && this.activeView === 'inbox') {
                     this.inbox?.restoreInboxHash?.();
-                    return;
-                }
-                if (!restoring && this.activeView === 'health') {
-                    this.health?.restoreHealthHash?.();
                     return;
                 }
                 if (!restoring && this.activeView === 'docker') {
@@ -1184,9 +1176,6 @@ class Dashboard {
         // view repaints, so leaving has to take it down explicitly.
         if (previous === 'docker' && view !== 'docker') {
             this.docker?.instance?.onLeave?.();
-        }
-        if (previous === 'health' && view !== 'health') {
-            this.health?.instance?.onLeaveDrawer?.();
         }
         // The preview card belongs to the grid row under the pointer. A view
         // that replaces the grid takes that row away without a mouseleave, and

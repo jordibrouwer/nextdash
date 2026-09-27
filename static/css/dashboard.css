@@ -1633,32 +1633,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     outline: none;
 }
 
-/*
- * The health link breathes in the theme's own accent.
- *
- * It asked for --accent-primary-rgb, which nothing has ever defined: the theme
- * block writes colours, not channel triplets. So all 222 themes fell through
- * to the literal rgba(66, 135, 245) behind it -- a blue from nowhere, pulsing
- * on a green terminal and on a paper theme alike.
- *
- * color-mix rather than a new triplet token: the accent is already there as a
- * colour, and mixing it with transparent is how every other fade in this
- * stylesheet is written.
- */
-@keyframes healthLinkShimmer {
-    0% {
-        text-shadow: 0 0 0 transparent;
-    }
-    50% {
-        text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 60%, transparent);
-    }
-    100% {
-        text-shadow: 0 0 0 transparent;
-    }
-}
-
 .library-link a,
-.health-link a,
 .config-link a {
     text-decoration: none;
     font-size: var(--font-size-controls);
@@ -1668,24 +1643,9 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     color: var(--text-secondary);
 }
 
-.health-link a {
-    animation: healthLinkShimmer 3s ease-in-out infinite;
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.35em;
-}
-
 .library-link a:hover,
-.health-link a:hover,
 .config-link a:hover {
     color: var(--text-primary);
-}
-
-.health-link a:hover {
-    animation: none;
-    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 80%, transparent);
 }
 
 .health-badge {
@@ -1719,14 +1679,12 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
    share one chrome; spacing is .header-actions / .header-destinations gap. */
 .dashboard-link--icon,
 .library-link--icon,
-.health-link--icon,
 .config-link--icon {
     margin-left: 0;
 }
 
 .dashboard-link--icon a,
 .library-link--icon a,
-.health-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
     animation: none;
@@ -1740,7 +1698,6 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 
 .dashboard-link--icon a:hover,
 .library-link--icon a:hover,
-.health-link--icon a:hover,
 .config-link--icon a:hover,
 .header-destinations .page-nav-btn--inbox:hover {
     color: var(--text-primary);
@@ -1751,7 +1708,6 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
    same kind of tab as page tabs, so "you are here" must look the same. */
 .dashboard-link--icon a,
 .library-link--icon a,
-.health-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
     border-bottom: 2px solid transparent;
@@ -1759,7 +1715,6 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 
 .dashboard-link--icon a.active,
 .library-link--icon a.active,
-.health-link--icon a.active,
 .config-link--icon a.active,
 .header-destinations .page-nav-btn--inbox.active {
     background: var(--background-secondary);
@@ -1771,7 +1726,6 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 
 .dashboard-link--icon .dashboard-link-icon,
 .library-link--icon .library-link-icon,
-.health-link--icon .health-link-icon,
 .config-link--icon .config-link-icon,
 .header-destinations .page-nav-btn--inbox .page-tab-icon--svg {
     width: 1.15rem;
@@ -1787,8 +1741,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 /* Inline pill counter after the icon (overrides the absolute superscript dot). */
-.library-link--icon .health-badge,
-.health-link--icon .health-badge {
+.library-link--icon .health-badge {
     position: static;
     top: auto;
     right: auto;
@@ -1803,8 +1756,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     color: var(--accent-error);
 }
 
-.library-link--icon .health-badge.health-badge-warn,
-.health-link--icon .health-badge.health-badge-warn {
+.library-link--icon .health-badge.health-badge-warn {
     border-color: color-mix(in srgb, var(--accent-warning) 45%, transparent);
     background: color-mix(in srgb, var(--accent-warning) 20%, transparent);
     color: var(--accent-warning);
@@ -1814,8 +1766,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
    dead link. The two are told apart by movement, not hue: only the down state
    pulses the link (see .library-link.is-health-alert). Explicit here so the
    base .health-badge red still applies even beside the warn override above. */
-.library-link--icon .health-badge.health-badge-down,
-.health-link--icon .health-badge.health-badge-down {
+.library-link--icon .health-badge.health-badge-down {
     border-color: color-mix(in srgb, var(--accent-error) 55%, transparent);
     background: color-mix(in srgb, var(--accent-error) 22%, transparent);
     color: var(--accent-error);
@@ -2819,7 +2770,6 @@ body[data-category-spacing="airy"] {
     --category-row-gap: var(--space-7, 3rem);
 }
 
-
 /* Keep terminal rows single-line in dense layouts (e.g. 6 columns). */
 .dashboard-grid.layout-terminal .status-text {
     display: none !important;
@@ -3623,7 +3573,6 @@ a.bookmark-open:hover {
     display: none;
 }
 
-
 .bookmark-icon-slot {
     width: 1.15em;
     height: 1.15em;
@@ -3978,7 +3927,6 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     gap: var(--space-hairline, 0.15rem);
     min-width: 0;
 }
-
 
 /* ─── Flag toggles (pinned / status check / monitor) ─────────────────────────
    One horizontal row of pills instead of three stacked checkbox rows: the flags
@@ -4509,7 +4457,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     vertical-align: -0.05em;
 }
 
-
 @keyframes smartRecentPromote {
     0% {
         transform: translateY(10px);
@@ -5000,7 +4947,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     position: relative;
 }
 
-
 /* Copy-URL row flash */
 @keyframes bookmarkCopyFlash {
     0%   { opacity: 0.45; }
@@ -5021,7 +4967,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     body.no-animations .bookmark-link.bookmark-copy-flash::after {
     animation: none;
 }
-
 
 /* Launcher scale-pulse on open */
 @keyframes bookmarkPulse {
@@ -5149,7 +5094,6 @@ body[data-show-recent-button="false"][data-show-cheatsheet-button="false"][data-
    not opacity, so Tab cannot land in it either. What's New (outside
    .button-container) is untouched. */
 body:has(#dashboard-layout.config-layout) .button-container,
-body:has(#dashboard-layout.health-layout) .button-container,
 body:has(#dashboard-layout.inbox-layout) .button-container,
 /* The actions moved into the header; the scoping had to move with them, or
    Health and Inbox draw a fold-all and an add-bookmark for a grid that is not
@@ -5428,7 +5372,6 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     padding: 0.1rem 0.35rem;
 }
 
-
 .recent-bookmarks-empty {
     padding: var(--space-5, 1.5rem) var(--space-2, 0.5rem);
     color: var(--text-tertiary);
@@ -5502,9 +5445,6 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-ne
 }
 
 /* Inbox intro modal — centered above the inbox feed */
-
-
-
 
 /* Page overview modal — centered compact shell */
 /*
@@ -5875,13 +5815,9 @@ body.no-animations .bookmark-move-out {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
     }
-    /* Decorative looping, nothing waits on it */
-    .health-link a { animation: none !important; }
     /* Date popover entrance */
     .date-popover { animation: none !important; }
 }
-
-
 
 /* ─── Row tag chips ──────────────────────────────────────────────────────── */
 
@@ -6231,9 +6167,6 @@ body[data-grid-keys="shown"] .dashboard-legend {
     }
 }
 
-
-
-
 /*
  * A widget's body: a card inside an otherwise frameless grid.
  *
@@ -6490,8 +6423,6 @@ button.dashboard-widget-row.keyboard-selected {
 .dashboard-widget-row--warn .dashboard-widget-row-detail {
     color: var(--accent-warning);
 }
-
-
 
 /* A figure with its qualifier beside it — the inbox count and how old the
    oldest is, the neglected count and the threshold that produced it. The
@@ -7746,7 +7677,6 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     cursor: default;
 }
 
-
 /*
  * The track fills the middle zone rather than sizing to its tabs.
  *
@@ -8225,7 +8155,6 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .docker-link-anchor,
 .dashboard-section.section-controls .header-actions .library-link-anchor,
-.dashboard-section.section-controls .header-actions .health-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
     position: relative;
@@ -8246,7 +8175,6 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .docker-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .library-link-anchor:hover,
-.dashboard-section.section-controls .header-actions .health-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
     color: var(--text-primary);
@@ -8254,7 +8182,6 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
-.dashboard-section.section-controls .header-actions .health-link-icon,
 .dashboard-section.section-controls .header-actions .config-link-icon {
     width: 18px;
     height: 18px;
@@ -8269,8 +8196,7 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
  * their own square: 14px, filled, white on the colour that says what it is.
  */
 .dashboard-section.section-controls .header-actions .page-inbox-badge,
-.dashboard-section.section-controls .header-actions .library-link--icon .health-badge,
-.dashboard-section.section-controls .header-actions .health-link--icon .health-badge {
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge {
     position: absolute;
     top: -6px;
     right: -6px;
@@ -8304,19 +8230,16 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     color: var(--background-primary);
 }
 
-.dashboard-section.section-controls .header-actions .library-link--icon .health-badge,
-.dashboard-section.section-controls .header-actions .health-link--icon .health-badge {
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge {
     background: var(--accent-error);
 }
 
-.dashboard-section.section-controls .header-actions .library-link--icon .health-badge.health-badge-warn,
-.dashboard-section.section-controls .header-actions .health-link--icon .health-badge.health-badge-warn {
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge.health-badge-warn {
     background: var(--accent-warning);
     color: var(--text-on-warning, #000);
 }
 
-.dashboard-section.section-controls .header-actions .library-link--icon .health-badge.health-badge-down,
-.dashboard-section.section-controls .header-actions .health-link--icon .health-badge.health-badge-down {
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge.health-badge-down {
     background: var(--accent-error);
     color: #fff;
 }
@@ -8359,7 +8282,7 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 .header-track .page-nav-overflow,
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .docker-link-anchor,
-.dashboard-section.section-controls .header-actions .health-link-anchor,
+.dashboard-section.section-controls .header-actions .library-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
     box-shadow: var(--header-plate-shadow);
@@ -8384,13 +8307,12 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 .header-track .page-nav-overflow:active,
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active,
 .dashboard-section.section-controls .header-actions .docker-link-anchor:active,
-.dashboard-section.section-controls .header-actions .health-link-anchor:active,
+.dashboard-section.section-controls .header-actions .library-link-anchor:active,
 .dashboard-section.section-controls .header-actions .config-link-anchor:active {
     box-shadow:
         inset 0 1px 3px color-mix(in srgb, #000 calc(45% * var(--theme-depth, 1)), transparent);
     transform: translateY(calc(0.5px * var(--theme-depth, 1)));
 }
-
 
 /* ── The band as the window narrows ───────────────────────────────────────────
    One line, and a fixed order of what it gives up when the zones no longer add
@@ -8511,7 +8433,6 @@ body[data-header-fit="3"] .dashboard-section.section-controls .header-top {
     }
 }
 
-
 /*
  * The tag cloud is an action like the others.
  *
@@ -8554,7 +8475,7 @@ body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
 .dashboard-section.section-controls .header-actions .docker-link-anchor.active,
-.dashboard-section.section-controls .header-actions .health-link-anchor.active,
+.dashboard-section.section-controls .header-actions .library-link-anchor.active,
 .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
     background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
@@ -8564,7 +8485,6 @@ body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:
         var(--header-plate-shadow),
         0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
 }
-
 
 /* ── The line under the band ─────────────────────────────────────────────────
    The second half of "waiting on a bookmark": a 2px rule under the header,
@@ -8658,7 +8578,7 @@ body[data-header-buttons="plain"] .header-track .page-nav-overflow,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor,
-body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
     border: none;
@@ -8676,7 +8596,7 @@ body[data-header-buttons="plain"] .header-track .page-nav-overflow:hover,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor:hover,
-body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
     border-color: transparent;
@@ -8689,7 +8609,7 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
 body[data-header-buttons="plain"] .header-track .page-nav-btn.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor.active,
-body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
     border-bottom-color: var(--accent-primary);
@@ -8702,7 +8622,7 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:active,
 body[data-header-buttons="plain"] .header-track .page-nav-btn:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor:active,
-body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active {
     box-shadow: none;
@@ -9518,8 +9438,6 @@ body[data-action-bar="bottom"] #dashboard-layout {
 .lvs.inbox-kept-tab .lvs-rail {
     display: none;
 }
-
-
 
 /* The kept list's three controls, in the shell's toolbar row. */
 .inbox-toolbar-kept:not([hidden]) .unsorted-view-toolbar {

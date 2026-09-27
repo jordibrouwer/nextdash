@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openHealthToolbarMenu } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
  * Exporting recorded uptime samples.
@@ -8,31 +8,18 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, o
  * The samples are the one thing the monitor produces that cannot be recomputed —
  * a 30-day window takes 30 days to earn back — and they never reach the client:
  * the health report carries only derived numbers. So the export is a server
- * endpoint, and the buttons are navigations to it rather than a CSV built here.
+ * endpoint, and the side panel's Export is a navigation to it rather than a
+ * CSV built here.
  */
 
 async function openHealth(page) {
     await page.setViewportSize({ width: 1400, height: 900 });
     await markWhatsNewSeen(page);
-    await page.goto('/#health');
+    await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.health, null, { timeout: 20_000 });
-}
-
-/** Open the health view already on a given filter, via its deep link. */
-async function openHealthFiltered(page, filter) {
-    await page.setViewportSize({ width: 1400, height: 900 });
-    await markWhatsNewSeen(page);
-    await page.goto(`/?hv_filter=${filter}#health`);
-    await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
-    await dismissOnboardingIfPresent(page);
-    await dismissBlockingOverlays(page);
-    await page.waitForFunction(() => !!window.dashboardInstance?.health, null, { timeout: 20_000 });
-    // The export buttons moved behind `⋯` in d4e22e33, so they are in the DOM
-    // but hidden. The overflow button is what says the toolbar has rendered.
-    await page.waitForSelector('[data-health-toolbar-more]', { timeout: 15_000 });
 }
 
 /** Parse a CSV body the way a spreadsheet would, BOM stripped. */
@@ -106,41 +93,6 @@ test.describe('uptime history export', () => {
         // write token the way delete and restore do.
         const res = await page.request.get('/api/health/history-export');
         expect(res.status()).toBe(200);
-    });
-
-    test('the toolbar offers history export only on the Monitored filter', async ({ page }) => {
-        // The deep link is the filter's own entry point — the same one the health
-        // badge uses for an outage.
-        await openHealthFiltered(page, 'all');
-        await expect(page.locator('.health-view-history-export-btn')).toHaveCount(0);
-        // The row-list export stays available everywhere; the two are different
-        // exports and must not be confused for one another.
-        await expect(page.locator('.health-view-export-btn')).toHaveCount(1);
-
-        await openHealthFiltered(page, 'monitored');
-        await expect(page.locator('.health-view-history-export-btn')).toHaveCount(1);
-    });
-
-    test('the two export buttons are labelled distinctly, not both just "Export"', async ({ page }) => {
-        // Side by side on the Monitored filter, "Export" and "Export history" read
-        // as the same action until you hover one — the row list export needs its
-        // own word so the pair is not a coin toss.
-        await openHealthFiltered(page, 'monitored');
-
-        await expect(page.locator('.health-view-export-btn')).toHaveText(/export rows/i);
-        await expect(page.locator('.health-view-history-export-btn')).toHaveText(/export history/i);
-    });
-
-    test('the toolbar button downloads the CSV', async ({ page }) => {
-        await openHealthFiltered(page, 'monitored');
-        await openHealthToolbarMenu(page);
-        await page.locator('.health-view-history-export-btn').waitFor({ state: 'visible' });
-
-        const [download] = await Promise.all([
-            page.waitForEvent('download', { timeout: 15_000 }),
-            page.locator('.health-view-history-export-btn').click(),
-        ]);
-        expect(download.suggestedFilename()).toMatch(/nextdash-uptime-.*\.csv/);
     });
 
     test('an empty history still yields a parseable header-only CSV', async ({ page }) => {

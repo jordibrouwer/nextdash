@@ -122,20 +122,6 @@ async function dismissWhatsNewIfPresent(page) {
 }
 
 /**
- * Mark the one-time Health tutorial as seen so opening the Health view in a
- * test does not pop the modal mid-flow. Written straight into
- * DiscoverabilityState rather than relying on a later save: the tutorial
- * checks hasSeenTip() synchronously the instant openHealthView() finishes
- * rendering, before any test would have a chance to dismiss it first.
- * @param {import('@playwright/test').Page} page
- */
-async function markHealthTutorialSeen(page) {
-    await page.evaluate(() => {
-        window.DiscoverabilityState?.markTipSeen?.('healthTutorialV2', { persist: false });
-    });
-}
-
-/**
  * The same, for the one-time Inbox tutorial. openInboxView() checks the tip
  * before it even fetches the tour's script, so marking it here is enough to
  * keep the modal out of every spec that only wants the inbox list.
@@ -208,7 +194,6 @@ async function dismissBlockingOverlays(page) {
     await dismissWhatsNewIfPresent(page);
     await dismissAppNotificationIfPresent(page);
     await suppressStatusEmptyHint(page);
-    await markHealthTutorialSeen(page);
     await markInboxTutorialSeen(page);
     await markWidgetsTutorialSeen(page);
     await markChangesTourSeen(page);
@@ -601,26 +586,6 @@ async function openInboxToolbarMenu(page) {
 }
 
 /**
- * Open the health view's toolbar overflow menu, returning the menu locator.
- *
- * d4e22e33 kept the toolbar's everyday buttons and filed the rest behind `⋯`:
- * Export rows, the history export, Open broken, Merge duplicates, Fetch
- * previews, Retest all and Check off all moved into a menu that renders
- * `hidden`. A test that clicks one of them has to open the menu first, the way
- * a user does — the same move openInboxToolbarMenu makes for the inbox.
- * Safe to call twice: an already-open menu is left open.
- */
-async function openHealthToolbarMenu(page) {
-    const menu = page.locator('.health-view-menu--toolbar[data-menu-for="toolbar"]');
-    if (await menu.isVisible().catch(() => false)) {
-        return menu;
-    }
-    await page.locator('[data-health-toolbar-more]').click();
-    await menu.waitFor({ state: 'visible' });
-    return menu;
-}
-
-/**
  * The bookmark form asks before saving a bookmark with no category. Tests that
  * save without choosing one answer "Save without" here; the question itself
  * is covered in bookmark-form-save-guards.spec.js.
@@ -636,34 +601,7 @@ async function answerNoCategory(page) {
     return true;
 }
 
-/**
- * Open a Health row's second line the way a reader does: a click on the row.
- * The actions and the badges (check mode, drift, muted, ignored, handled) live
- * there since the redesign, out of sight until the row is focused.
- * @param {import('@playwright/test').Locator} row
- */
-async function openHealthRow(row) {
-    await row.locator('.health-view-item-domain').click();
-    await row.locator('.health-view-line2').waitFor({ state: 'visible' });
-}
-
-/**
- * Open a Health row's side panel on one section and return that section.
- * The row click opens the panel; the section may already be open from a
- * remembered state, so it is only clicked when closed.
- */
-async function openHealthDrawerSection(row, name) {
-    const page = row.page();
-    await openHealthRow(row);
-    const section = page.locator(`[data-lvs-drawer="health"] [data-lvs-section="${name}"]`);
-    await section.waitFor({ state: 'attached' });
-    if (await section.getAttribute('open') === null) await section.locator('summary').click();
-    return section;
-}
-
 module.exports = {
-    openHealthRow,
-    openHealthDrawerSection,
     answerNoCategory,
     GITHUB_STUB_PORT,
     RAINDROP_STUB_PORT,
@@ -677,7 +615,6 @@ module.exports = {
     dismissWhatsNewIfPresent,
     dismissAppNotificationIfPresent,
     suppressStatusEmptyHint,
-    markHealthTutorialSeen,
     markInboxTutorialSeen,
     markWidgetsTutorialSeen,
     markChangesTourSeen,
@@ -692,6 +629,5 @@ module.exports = {
     tapShortcutLetter,
     selectKeyboardBookmark,
     openInboxToolbarMenu,
-    openHealthToolbarMenu,
     waitForFaviconPrefetch,
 };

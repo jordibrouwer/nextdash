@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, dismissWhatsNewIfPresent } = require('./e2e-helpers');
+const { prepareDashboardInteraction } = require('./e2e-helpers');
 
 /**
  * Bookmarks left pointing at a category that no longer exists.
@@ -101,79 +101,22 @@ test.describe('orphaned categories reach the health report', () => {
     });
 });
 
-test.describe('the health view surfaces orphaned categories', () => {
-    function orphanReport() {
-        return {
-            generatedAt: Date.now(),
-            summary: {
-                totalBookmarks: 2,
-                healthyCount: 1,
-                orphanedCategoryCount: 1,
-            },
-            issues: [
-                {
-                    pageId: 1, index: 0, pageName: 'dev', name: 'Orphaned row',
-                    url: 'https://example.com/orphaned', category: 'ghost',
-                    status: 'orphaned-category', score: 85, duplicateCount: 0,
-                    flags: ['orphaned-category'],
-                    reasons: ['Category "ghost" no longer exists'],
-                    reasonDetails: [
-                        { code: 'orphaned_category', params: { category: 'ghost' }, penalty: 15 },
-                    ],
-                },
-                {
-                    pageId: 1, index: 1, pageName: 'dev', name: 'Fine row',
-                    url: 'https://example.com/fine', category: 'tools',
-                    status: 'healthy', score: 100, duplicateCount: 0,
-                    flags: ['healthy'], reasons: [], reasonDetails: [],
-                },
-            ],
-            duplicateGroups: [],
-        };
-    }
-
-    async function openHealthWithOrphan(page) {
-        await page.route('**/api/bookmark-health**', async (route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify(orphanReport()),
-            });
-        });
+test.describe('the reason names the missing category', () => {
+    test('in the reader\'s language, with the category id the bookmark still points at', async ({ page }) => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await prepareDashboardInteraction(page);
-        await dismissWhatsNewIfPresent(page);
-        // The view opens on the Broken filter and this report has none, which
-        // would leave the list empty; #health's own deep link starts on All.
-        await page.goto('/?hv_filter=all#health');
-        await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
-    }
-
-    test('the row explains which category went missing, in the reader\'s language', async ({ page }) => {
-        await openHealthWithOrphan(page);
-
-        const row = page.locator('.health-view-item', { hasText: 'Orphaned row' }).first();
-        await expect(row).toBeVisible();
-        // Translated through health-reason-utils rather than showing the raw
-        // code, and carrying the category id the bookmark still points at.
-        await expect(row).toContainText('ghost');
-        await expect(row).not.toContainText('orphaned_category');
-    });
-
-    test('the filter narrows to exactly the orphaned rows', async ({ page }) => {
-        await openHealthWithOrphan(page);
-
-        // It used to live behind an overflow menu; every filter is a pill in one
-        // scrolling row now (3ea26f11). Driven through the real pill rather than
-        // by setting state, so this still covers it appearing at all.
-        const pill = page.locator('.health-view-filter-group [data-health-filter="orphaned-category"]');
-        await expect(pill).toHaveCount(1);
-        await pill.scrollIntoViewIfNeeded();
-        await pill.click();
-        await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
-
-        await expect(page.locator('.health-view-item', { hasText: 'Orphaned row' })).toHaveCount(1);
-        await expect(page.locator('.health-view-item', { hasText: 'Fine row' })).toHaveCount(0);
+        const labels = await page.evaluate(async () => {
+            const health = await window.dashboardInstance.health.load();
+            const issue = {
+                pageId: 1, index: 0, name: 'Orphaned row', url: 'https://example.com/orphaned',
+                status: 'orphaned-category', flags: ['orphaned-category'],
+                reasons: ['Category "ghost" no longer exists'],
+                reasonDetails: [{ code: 'orphaned_category', params: { category: 'ghost' }, penalty: 15 }],
+            };
+            return health.reasonEntries(issue).map((entry) => entry.label).join(' | ');
+        });
+        // Translated through health-reason-utils rather than showing the raw code.
+        expect(labels).toContain('ghost');
+        expect(labels).not.toContain('orphaned_category');
     });
 });

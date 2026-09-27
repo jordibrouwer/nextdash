@@ -592,11 +592,7 @@ class DashboardHealthFocus {
             if (e.ctrlKey || e.altKey || e.metaKey) return;
 
             const handlers = {
-                // Escape is deliberately absent: the health view installs its
-                // own capture-phase Escape handler when it loads, which runs
-                // ahead of this one and closes focus mode from there. Binding
-                // it here as well would leave two paths for one key, only one
-                // of which is ever reached.
+                Escape: () => this.close(),
                 ArrowDown: () => this.move(1),
                 j: () => this.move(1),
                 ArrowUp: () => this.move(-1),
@@ -615,12 +611,15 @@ class DashboardHealthFocus {
             e.stopImmediatePropagation();
             handler();
         };
-        document.addEventListener('keydown', this._onKeydown, true);
+        // On window, capturing: ahead of every document listener, the
+        // dashboard's own keyboard handling among them, which is registered
+        // at start-up and would otherwise take Escape and leave the view.
+        window.addEventListener('keydown', this._onKeydown, true);
     }
 
     unbindKeys() {
         if (this._onKeydown) {
-            document.removeEventListener('keydown', this._onKeydown, true);
+            window.removeEventListener('keydown', this._onKeydown, true);
             this._onKeydown = null;
         }
     }

@@ -525,40 +525,35 @@ test.describe('a figure on a tile opens the rows behind it', () => {
         await page.waitForSelector('.dashboard-widget-health-row', { timeout: 15_000 });
     }
 
-    test('clicking a figure opens health on that filter', async ({ page }) => {
+    test('clicking a figure opens the Bookmarks view on that filter', async ({ page }) => {
         await withHealthWidget(page);
 
-        // "Down now" — not the view's default, so arriving on it proves the
+        // "Down now" -- not the view's default, so arriving on it proves the
         // filter travelled rather than the view simply opening.
         await page.locator('[data-health-filter="monitored"]').first().click();
 
         await expect.poll(async () => page.evaluate(() => ({
             view: window.dashboardInstance.activeView,
-            filter: (window.dashboardInstance.health?.instance || window.dashboardInstance.health)?.filter,
-        })), { timeout: 15_000 }).toEqual({ view: 'health', filter: 'monitored' });
+            filter: window.dashboardInstance.config.instance?.bmHealthFilter,
+        })), { timeout: 15_000 }).toEqual({ view: 'library', filter: 'monitored' });
     });
 
     test('the filter is in the address, so the view can be returned to', async ({ page }) => {
         await withHealthWidget(page);
         await page.locator('[data-health-filter="content"]').first().click();
-        await expect.poll(async () => page.url(), { timeout: 15_000 }).toContain('hv_filter=content');
+        await expect.poll(async () => page.url(), { timeout: 15_000 }).toContain('#bookmarks?health=content');
     });
 
-    test('every figure carries a filter the view accepts', async ({ page }) => {
+    test('every figure carries a filter the Bookmarks view accepts', async ({ page }) => {
         await withHealthWidget(page);
         const filters = await page.evaluate(() =>
             [...document.querySelectorAll('.dashboard-widget-health-row')].map((r) => r.dataset.healthFilter));
         expect(filters.length).toBeGreaterThan(0);
-
-        const accepted = await page.evaluate(async (keys) => {
-            await window.dashboardInstance.health?.load?.();
-            const cls = (window.dashboardInstance.health?.instance || window.dashboardInstance.health)?.constructor;
-            const valid = cls?.PERSISTED_FILTERS;
-            return keys.map((key) => !!valid?.has(key));
-        }, filters);
-        // A key the view does not accept lands on the default, and the click
-        // then reads as having gone to the wrong place.
-        expect(accepted).not.toContain(false);
+        const valid = await page.evaluate(() => window.DashboardConfig?.HEALTH_FILTERS
+            || ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'healthy']);
+        // A key the view does not accept opens it unfiltered, and the click
+        // then reads as having gone to the wrong place. `all` is that on purpose.
+        expect(filters.filter((key) => key !== 'all' && !valid.includes(key))).toEqual([]);
     });
 });
 

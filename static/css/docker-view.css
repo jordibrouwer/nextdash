@@ -55,8 +55,6 @@
     border: 1px solid color-mix(in srgb, var(--accent-vivid, var(--accent-primary)) 55%, transparent);
 }
 
-
-
 .docker-group-row[data-docker-group-status="running"] td { color: var(--accent-success, #3c6); }
 .docker-group-row[data-docker-group-status="paused"] td { color: var(--accent-warning, #cb4); }
 .docker-group-row[data-docker-group-status="stopped"] td { color: var(--accent-error, #c55); }
@@ -162,8 +160,7 @@
  * (list-view-shell.css, .lvs-drawer*). What follows is what a container's
  * panel adds inside it.
  */
-.docker-drawer-pill,
-.docker-drawer-health {
+.docker-drawer-pill {
     font-size: var(--text-xs, 0.72rem);
     color: var(--text-secondary);
     background: var(--background-secondary);
@@ -388,7 +385,6 @@
 /* ── Links in the drawer ─────────────────────────────────────────────────
    Source, registry and web UI, and the links inside release notes: the same
    accent as the port links in the table, not the browser's own blue. */
-
 
 .docker-changes-links {
     display: flex;

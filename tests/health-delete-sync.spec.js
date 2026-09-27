@@ -3,15 +3,15 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, prepareDashboardInteraction } = require('./e2e-helpers');
 
 /**
- * Deleting a bookmark in the health view must clear it from the dashboard grid
- * without a page reload. The health view deletes through its own endpoint and
- * used to leave the dashboard's in-memory copies alone, so the bookmark lingered
- * on the grid until the page was reloaded.
+ * Deleting a bookmark through Health (Work through's d) must clear it from the
+ * dashboard grid without a page reload. Health deletes through its own endpoint
+ * and used to leave the dashboard's in-memory copies alone, so the bookmark
+ * lingered on the grid until the page was reloaded.
  *
  * Runs against the real server (not a mocked report): the delete mutates the
  * store, and the point is that the live dashboard state follows.
  */
-test('deleting in the health view removes the bookmark from the dashboard live', async ({ page }) => {
+test('deleting through Health removes the bookmark from the dashboard live', async ({ page }) => {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
@@ -38,10 +38,9 @@ test('deleting in the health view removes the bookmark from the dashboard live',
     const gridLink = page.locator(`.bookmark-link[data-bookmark-url="${url}"]`).first();
     await expect(gridLink).toHaveCount(1);
 
-    // Open the health view and delete the row through the view's own path.
+    // Delete the row through Health's own path (Work through's d).
     const deleted = await page.evaluate(async (targetUrl) => {
         const d = window.dashboardInstance;
-        await d.health.openHealthView();
         // The report is cached server-side for minutes, so a freshly-added
         // bookmark is not in the first read — force a fresh one.
         await d.health.loadAndRender({ refresh: true });

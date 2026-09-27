@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openHealthRow } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
  * Telling the health report to stop reporting one condition.
@@ -30,64 +30,33 @@ async function healthWithAnUnusedBookmark(page) {
             // No category: an id that matches nothing on the page would make
             // the row orphaned as well, and this test is about one condition.
             name: 'Archive of things', url: 'https://archive-ignore.example/' } }) });
+        await window.dashboardInstance.health.loadAndRender({ refresh: true });
     });
-    await page.evaluate(async () => {
-        const health = window.dashboardInstance.health;
-        await health.openHealthView();
-        await health.loadAndRender({ refresh: true });
-        health.filter = 'unused';
-        health.render();
-    });
-    await expect(page.locator('.health-view-item').first()).toBeVisible({ timeout: 15_000 });
 }
-
-/** The row for our bookmark, wherever it sits in the list. */
-const ourRow = (page) => page.locator('.health-view-item', { hasText: 'Archive of things' });
 
 const countFor = (page, filter) => page.evaluate(
     ([f]) => window.dashboardInstance.health.filterCount(f), [filter]);
 
+/** Health's own write, as the side panel's "Ignore this condition" makes it. */
+const ignore = (page, change) => page.evaluate(async (c) => {
+    const health = window.dashboardInstance.health;
+    const issue = health.report.issues.find((i) => i.name === 'Archive of things');
+    await health.writeIgnores(issue, c);
+    await health.loadAndRender({ refresh: true });
+}, change);
+
 test.describe('ignoring a condition', () => {
-    test('n takes the row out of the list it is filtered on, and back', async ({ page }) => {
+    test('an ignored condition leaves its filter, and comes back', async ({ page }) => {
         await healthWithAnUnusedBookmark(page);
         const before = await countFor(page, 'unused');
         expect(before).toBeGreaterThan(0);
 
-        await page.evaluate(() => {
-            const health = window.dashboardInstance.health;
-            health.selectRowByKey(health.issueKey(
-                health.getFilteredIssues().find((i) => i.name === 'Archive of things')));
-        });
-        await page.keyboard.press('n');
-
+        await ignore(page, { add: ['unused'] });
         await expect.poll(() => countFor(page, 'unused'), { timeout: 15_000 }).toBe(before - 1);
         await expect.poll(() => countFor(page, 'ignored'), { timeout: 10_000 }).toBeGreaterThan(0);
 
-        // The same key gives it back — that is what makes one letter enough.
-        await page.evaluate(() => {
-            const health = window.dashboardInstance.health;
-            health.filter = 'ignored';
-            health.render();
-            health.selectRowByKey(health.issueKey(
-                health.getFilteredIssues().find((i) => i.name === 'Archive of things')));
-        });
-        await page.keyboard.press('n');
+        await ignore(page, { remove: ['unused'] });
         await expect.poll(() => countFor(page, 'unused'), { timeout: 15_000 }).toBe(before);
-    });
-
-    test('the row says what it is not reporting', async ({ page }) => {
-        await healthWithAnUnusedBookmark(page);
-        await page.evaluate(async () => {
-            const health = window.dashboardInstance.health;
-            const issue = health.getFilteredIssues().find((i) => i.name === 'Archive of things');
-            await health.writeIgnores(issue, { add: ['unused'] });
-            health.filter = 'ignored';
-            health.render();
-        });
-
-        await openHealthRow(ourRow(page));
-        await expect(ourRow(page).locator('.health-view-ignored-badge')).toBeVisible({ timeout: 15_000 });
-        await expect(ourRow(page).locator('.health-view-ignored-badge')).toContainText('ignored');
     });
 
     test('ignoring one condition leaves the others reporting', async ({ page }) => {
@@ -123,25 +92,5 @@ test.describe('ignoring a condition', () => {
         const after = await ours();
         expect(after.flags).not.toContain('unused');
         expect(after.flags).toContain('broken');
-    });
-
-    test('the filter pill only appears once something is ignored', async ({ page }) => {
-        await healthWithAnUnusedBookmark(page);
-        await page.evaluate(async () => {
-            const health = window.dashboardInstance.health;
-            const issues = health.report.issues.filter((i) => (i.ignoredFlags || []).length);
-            for (const issue of issues) await health.writeIgnores(issue, { clear: true });
-            health.render();
-        });
-        // The rail declares every filter and hides what is empty, so the pill
-        // is in the DOM from the first render -- hidden, not absent.
-        await expect(page.locator('[data-health-filter="ignored"]')).toBeHidden({ timeout: 10_000 });
-
-        await page.evaluate(async () => {
-            const health = window.dashboardInstance.health;
-            const issue = health.report.issues.find((i) => i.name === 'Archive of things');
-            await health.writeIgnores(issue, { add: ['unused'] });
-        });
-        await expect(page.locator('[data-health-filter="ignored"]')).toBeVisible({ timeout: 10_000 });
     });
 });

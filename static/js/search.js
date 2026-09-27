@@ -742,12 +742,6 @@ class SearchComponent {
         if (this._isInboxViewActive()) {
             return true;
         }
-        if (dash?.activeView === 'health') {
-            return true;
-        }
-        if (document.getElementById('dashboard-layout')?.classList.contains('health-layout')) {
-            return true;
-        }
         if (this._isConfigViewActive()) {
             return true;
         }

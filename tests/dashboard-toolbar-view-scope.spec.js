@@ -36,17 +36,11 @@ async function openConfig(page) {
     await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
 }
 
-async function markHealthTipSeen(page) {
-    await page.evaluate(() => {
-        window.DiscoverabilityState?.markTipSeen?.('healthTutorialV2', { persist: false });
-    });
-}
-
-async function openHealth(page) {
+/** Shift+H: the Bookmarks view, on its broken ones. */
+async function openBookmarksView(page) {
     await loadDashboard(page);
-    await markHealthTipSeen(page);
     await page.keyboard.press('Shift+H');
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('health');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('library');
 }
 
 async function openInbox(page) {
@@ -59,7 +53,7 @@ async function openInbox(page) {
 
 const VIEWS = [
     { name: 'config', open: openConfig, layoutClass: 'config-layout' },
-    { name: 'health', open: openHealth, layoutClass: 'health-layout' },
+    { name: 'the Bookmarks view', open: openBookmarksView, layoutClass: 'library-layout' },
     { name: 'inbox', open: openInbox, layoutClass: 'inbox-layout' },
 ];
 
@@ -134,9 +128,8 @@ test.describe('the header actions, and what the keys do inside a view', () => {
         await openConfig(page);
 
         // Shift+H switches views even while sitting inside a different one.
-        await markHealthTipSeen(page);
         await page.keyboard.press('Shift+H');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('health');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('library');
 
         // A digit switches pages, which also returns to the bookmarks grid --
         // the actions should be back too. They live in the header band now;

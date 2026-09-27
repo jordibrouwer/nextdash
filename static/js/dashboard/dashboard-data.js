@@ -393,7 +393,8 @@ class DashboardData {
                 const initialHash = window.location.hash.substring(1);
                 if (initialHash === 'inbox' && d.inbox?.isEnabled?.()) {
                     await d.inbox.openInboxView();
-                } else if (initialHash === 'health' && d.health?.isEnabled?.()) {
+                } else if (initialHash === 'health' || initialHash.startsWith('health/')) {
+                    // The Health view's old address: the Bookmarks view, on its filter.
                     await d.health.openHealthView();
                 } else if ((initialHash === 'config' || initialHash.startsWith('config/')) && d.config?.isEnabled?.()) {
                     // Bare #config means “open config”, not “open Overview”; a
@@ -620,10 +621,6 @@ class DashboardData {
             await d.inbox.loadAndRender();
             return true;
         }
-        if (d.activeView === 'health' && d.health?.isEnabled?.()) {
-            await d.health.loadAndRender({ refresh: true });
-            return true;
-        }
         if (d.needsCrossPageBookmarks?.()) {
             await this.loadAllBookmarks();
         }
@@ -795,14 +792,6 @@ class DashboardData {
             isEnabled: (d) => Boolean(d.inbox?.isEnabled?.()),
         },
         {
-            view: 'health',
-            layoutClass: 'health-layout',
-            // The Monitors section carries a hash path (#health/monitors), so
-            // match the prefix the way config's own deep links do.
-            matchesHash: (hash) => hash === '#health' || hash.startsWith('#health/'),
-            isEnabled: (d) => Boolean(d.health?.isEnabled?.()),
-        },
-        {
             view: 'config',
             layoutClass: 'config-layout',
             // Config deep links carry a section (#config/appearance), so match
@@ -815,7 +804,11 @@ class DashboardData {
             // is the grid's own view id; drawn by the config module.
             view: 'library',
             layoutClass: 'library-layout',
-            matchesHash: (hash) => hash === '#bookmarks' || hash.startsWith('#bookmarks/') || hash.startsWith('#bookmarks?'),
+            // #health too: the Health view's old address, which leads here
+            // (DashboardHealthLoader.openHealthView) -- a load finishing
+            // before that redirect must not rewrite it to the page number.
+            matchesHash: (hash) => hash === '#bookmarks' || hash.startsWith('#bookmarks/') || hash.startsWith('#bookmarks?')
+                || hash === '#health' || hash.startsWith('#health/'),
             isEnabled: (d) => Boolean(d.config?.isEnabled?.()),
         },
         {
@@ -913,7 +906,7 @@ class DashboardData {
         //  - activeView, for the ordinary case;
         //  - the layout class, because this runs several awaits deep: a load that
         //    started while the grid was up can land after the user has opened a view,
-        //    and would then rewrite the hash from #health back to #1.
+        //    and would then rewrite the hash from #inbox back to #1.
         const layoutEl = document.getElementById('dashboard-layout');
         const hash = window.location.hash;
         const preserveView = DashboardData.FULL_CONTAINER_VIEWS.some(({ view, layoutClass, matchesHash, isEnabled }) => (
@@ -1240,14 +1233,13 @@ class DashboardData {
 
     /**
      * Reload bookmark data and repaint every surface that reads it — grid, config
-     * bookmarks list, health, inbox, search — after add/edit/delete.
+     * bookmarks list, inbox, search — after add/edit/delete.
      */
     async refreshAfterBookmarkMutation(options = {}) {
         const d = this.dash;
         const pageIds = this._bookmarkMutationPageIds(options);
         const {
             animate = false,
-            refreshHealthReport = true,
             repaintActiveView = true,
             despiteModal = false,
         } = options;
@@ -1271,7 +1263,7 @@ class DashboardData {
         d.updateSearchComponent?.();
 
         if (repaintActiveView) {
-            this.repaintBookmarkMutationSurfaces({ animate, refreshHealthReport, despiteModal });
+            this.repaintBookmarkMutationSurfaces({ animate, despiteModal });
         } else {
             d.config?.repaintBookmarksList?.();
         }
@@ -1293,7 +1285,7 @@ class DashboardData {
         return Number.isFinite(single) && single > 0 ? [single] : [];
     }
 
-    repaintBookmarkMutationSurfaces({ animate = false, refreshHealthReport = true, despiteModal = false } = {}) {
+    repaintBookmarkMutationSurfaces({ animate = false, despiteModal = false } = {}) {
         const d = this.dash;
 
         // The Unsorted widget keeps what /api/unsorted answered the first time
@@ -1313,17 +1305,6 @@ class DashboardData {
         // removed or reordered, both falling through to the full render below.
         const renderOpts = { animate, despiteModal };
 
-        if (d.activeView === 'health' && d.health?.isEnabled?.()) {
-            if (d.isInlineEditActive() && !despiteModal) {
-                return;
-            }
-            if (refreshHealthReport && typeof d.health.loadAndRender === 'function') {
-                void d.health.loadAndRender({ refresh: true });
-            } else {
-                d.health.render?.();
-            }
-            return;
-        }
         if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
             if (d.isInlineEditActive() && !despiteModal) {
                 return;

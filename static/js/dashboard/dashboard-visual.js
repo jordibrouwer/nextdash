@@ -354,14 +354,9 @@ class DashboardVisual {
     }
 
 
-    /**
-     * The badge on the Bookmarks icon, and its polling. The header's own
-     * Health icon went with the Health view; one left over from before is
-     * taken down here.
-     */
+    /** The badge on the Bookmarks icon, and its polling. */
     updateHealthDashboardVisibility() {
         const d = this.dash;
-        document.querySelector('.health-link')?.remove();
         if (d.health?.isEnabled?.() !== false) {
             this.updateHealthBadge();
             this.syncHealthBadgePolling();

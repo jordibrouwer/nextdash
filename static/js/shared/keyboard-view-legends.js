@@ -1,29 +1,11 @@
 /**
- * Shared keyboard rows for health/inbox views — inline legends and the cheat sheet
+ * Shared keyboard rows for the inbox views — inline legends and the cheat sheet
  * modal both read from here so keys cannot drift apart.
  */
 (function (global) {
     'use strict';
 
     /** @typedef {{ keys: string, legendKey: string, cheatKey: string, fallback: string }} LegendRow */
-
-    /** @type {LegendRow[]} */
-    const HEALTH_VIEW = [
-        { keys: 'j / k', legendKey: 'healthKeyMove', cheatKey: 'hvMove', fallback: 'move' },
-        { keys: 's', legendKey: 'healthKeyScore', cheatKey: 'hvScore', fallback: 'score' },
-        { keys: 'i', legendKey: 'healthKeyStats', cheatKey: 'hvStats', fallback: 'statistics' },
-        { keys: 'p', legendKey: 'healthKeyRecheck', cheatKey: 'hvRecheck', fallback: 're-check' },
-        { keys: 'f', legendKey: 'healthKeyFocus', cheatKey: 'hvFocus', fallback: 'work through', printFallback: 'Work through the list one row at a time' },
-        { keys: 'R', legendKey: 'healthKeyRefresh', cheatKey: 'hvRefresh', fallback: 'refresh report' },
-        { keys: 'c', legendKey: 'healthKeyCheckMode', cheatKey: 'hvCheckMode', fallback: 'checking' },
-        { keys: 'm', legendKey: 'healthKeyMore', cheatKey: 'hvMore', fallback: 'more actions' },
-        { keys: 'x', legendKey: 'healthKeySelect', cheatKey: 'hvSelect', fallback: 'select' },
-        { keys: 'n / z', legendKey: 'healthKeyIgnore', cheatKey: 'hvIgnore', fallback: 'ignore · snooze', printFallback: 'Stop reporting the condition you are filtered on — z for 30 days' },
-        { keys: 'Enter', legendKey: 'healthKeyDetails', cheatKey: 'hvDetails', fallback: 'details' },
-        { keys: 'o / Space', legendKey: 'healthKeyOpen', cheatKey: 'hvOpen', fallback: 'open' },
-        { keys: 'g / G / Home / End', legendKey: 'healthKeyFirstLast', cheatKey: 'hvFirstLast', fallback: 'first / last' },
-        { keys: 'Esc', legendKey: 'healthKeyClose', cheatKey: 'hvClose', fallback: 'back to bookmarks' },
-    ];
 
     /** @type {LegendRow[]} */
     const INBOX_VIEW = [
@@ -126,7 +108,6 @@
     global.KeyboardViewLegends = {
         DASHBOARD_VIEW,
         KEPT_VIEW,
-        HEALTH_VIEW,
         INBOX_VIEW,
         INBOX_TRIAGE,
         toLegendPairs,

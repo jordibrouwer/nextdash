@@ -132,12 +132,9 @@ test.describe('the inbox searches the summary it stores', () => {
 test.describe('an uptime window says what it could not cover', () => {
     test('a monitor with a week of samples does not print a bare 30 days', async ({ page }) => {
         await dashboard(page);
-        // The health module is loaded on demand, so open the view before asking
-        // it to render anything.
-        await page.evaluate(() => window.dashboardInstance.health?.openHealthView?.());
-        await page.waitForTimeout(1500);
-        const tiles = await page.evaluate(() => {
-            const health = window.dashboardInstance.health?._module || window.dashboardInstance.health;
+        // The health module is loaded on demand.
+        const tiles = await page.evaluate(async () => {
+            const health = await window.dashboardInstance.health.load();
             const day = 24 * 3600_000;
             const html = health.renderUptimeTiles({
                 uptime24h: { ratio: 1, samples: 288 },

@@ -25,7 +25,7 @@ async function openDashboard(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => {
-        ['healthTutorialV2', 'inboxTutorialV2', 'changesTourV1', 'widgetsTutorialV1']
+        ['inboxTutorialV2', 'changesTourV1', 'widgetsTutorialV1']
             .forEach((id) => window.DiscoverabilityState?.markTipSeen?.(id, { persist: true }));
     });
 }

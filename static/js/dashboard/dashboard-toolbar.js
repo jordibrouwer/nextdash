@@ -38,11 +38,10 @@ class DashboardToolbar {
                 when: () => d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false,
             },
             {
-                selector: '.health-link-anchor',
-                labelKey: 'dashboard.health',
-                keys: ['Shift+H'],
+                selector: '.library-link-anchor',
+                labelKey: 'dashboard.libraryView',
+                keys: [],
                 header: true,
-                when: () => d.health?.isEnabled?.(),
             },
             {
                 selector: '.config-link-anchor',
@@ -421,9 +420,10 @@ class DashboardToolbar {
         const d = this.dash;
 
         /*
-         * Health and config open in place, whatever the address looks like.
+         * The Bookmarks view and config open in place, whatever the address
+         * looks like.
          *
-         * They are anchors to `/#health` and `/#config`, which is a hash change
+         * They are anchors to `/#bookmarks` and `/#config`, which is a hash change
          * -- and therefore a soft route -- only while the address has nothing
          * else in it. Come from the inbox or a health filter and the URL
          * carries a query string (ib_filter, hv_sort and friends), so the same
@@ -437,7 +437,7 @@ class DashboardToolbar {
          */
         document.addEventListener('click', (e) => {
             const anchor = e.target?.closest?.(
-                '.config-link-anchor, .health-link-anchor, .library-link-anchor, .dashboard-link-anchor'
+                '.config-link-anchor, .library-link-anchor, .dashboard-link-anchor'
             );
             if (!anchor) return;
             // Leave the browser's own gestures alone: a modified click or a
@@ -447,8 +447,6 @@ class DashboardToolbar {
             e.preventDefault();
             if (anchor.classList.contains('config-link-anchor')) {
                 void d.config?.openConfigView?.();
-            } else if (anchor.classList.contains('health-link-anchor')) {
-                void d.health?.openHealthView?.();
             } else if (anchor.classList.contains('library-link-anchor')) {
                 void d.config?.openLibraryView?.();
             } else {
@@ -878,7 +876,7 @@ class DashboardToolbar {
         const dateLine = document.querySelector('.date-time-line')?.textContent?.trim() || '';
         const page = d.pages.find((p) => p.id === d.currentPageId);
         const pageName = page?.name || '';
-        const badge = document.querySelector('.health-link a .health-badge');
+        const badge = document.querySelector('.library-link a .health-badge');
         const parts = [];
         if (dateLine) parts.push(dateLine);
         if (pageName) parts.push(pageName);

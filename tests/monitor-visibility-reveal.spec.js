@@ -294,77 +294,59 @@ test.describe('the new setting is marked as new', () => {
     });
 });
 
-test.describe('reaching the Health view from a bookmark', () => {
-    test('the dashboard right-click menu opens the row in Health', async ({ page }) => {
+/** The bookmark under the Bookmarks view's cursor, and whether its Health tab is showing. */
+const landed = (page) => page.evaluate(() => {
+    const d = window.dashboardInstance;
+    const cfg = d.config.instance;
+    const b = cfg?._bmKeyboardKey ? cfg.findBookmarkByKey(cfg._bmKeyboardKey) : null;
+    return {
+        view: d.activeView,
+        url: b?.url ?? null,
+        health: document.querySelector('.lvs-drawer-host[data-lvs-drawer="library"] [data-bm-tab-panel="health"]')
+            ?.getAttribute('aria-selected') === 'true',
+    };
+});
+
+test.describe('reaching a bookmark\'s health from the dashboard', () => {
+    test('the right-click menu opens it in the Bookmarks view, on Health', async ({ page }) => {
         await load(page);
         const url = await setMode(page, 0, 'monitor');
 
-        // Read the key off the row being clicked rather than assuming index 0:
-        // earlier specs in this file reorder the page, so the bookmark set up
-        // by setMode is not necessarily the first one any more.
         // Not .first(): the same bookmark also renders inside the "Today" smart
-        // collection, and a collection row carries no meaningful page-local
-        // index — clicking it opens a different bookmark than the one asserted.
+        // collection.
         const row = page.locator(
             `[data-category-id]:not([data-category-id^="__smart"]) .bookmark-link[data-bookmark-url="${url}"]`
         ).first();
-        const key = await row.evaluate((el) =>
-            `${window.dashboardInstance.currentPageId}:${el.getAttribute('data-bookmark-index')}`);
-
         await row.click({ button: 'right' });
         const menu = page.locator('#bookmark-context-menu');
         await expect(menu).toBeVisible();
         await menu.locator('[data-action="health"]').click();
 
-        // Landed on the right row. focusIssue widens the filter by itself, so
-        // the row is reachable even though the default filter is `broken` and
-        // a healthy monitor is not in it.
-        await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.health?.instance?.selectedKey), { timeout: 10_000 }).toBe(key);
-        await expect(page.locator(`.health-view-item[data-health-key="${key}"]`)).toHaveCount(1);
+        await expect.poll(() => landed(page), { timeout: 10_000 }).toEqual({ view: 'library', url, health: true });
     });
 
     /**
-     * The entry is offered whatever the bookmark's mode is.
-     *
-     * It was first restricted to checked bookmarks, on the assumption that an
-     * unchecked one has nothing to show there. That was wrong: the health
-     * report covers the whole library — an unchecked bookmark has a row, and
-     * the `unchecked` filter and tile exist to find it — and that row is where
-     * checking gets turned on. The restriction hid the destination from the
-     * bookmarks that most needed it.
+     * The entry is offered whatever the bookmark's mode is: the health report
+     * covers the whole library, and an unchecked bookmark's Health tab is where
+     * checking gets turned on.
      */
     test('a bookmark with checking off is still offered the entry', async ({ page }) => {
         await load(page);
         const url = await setMode(page, 0, 'off');
-
-        // Key read off the row, not assumed to be index 0 — earlier specs in
-        // this file reorder the page.
-        // Not .first(): the same bookmark also renders inside the "Today" smart
-        // collection, and a collection row carries no meaningful page-local
-        // index — clicking it opens a different bookmark than the one asserted.
         const row = page.locator(
             `[data-category-id]:not([data-category-id^="__smart"]) .bookmark-link[data-bookmark-url="${url}"]`
         ).first();
-        const key = await row.evaluate((el) =>
-            `${window.dashboardInstance.currentPageId}:${el.getAttribute('data-bookmark-index')}`);
-
         await row.click({ button: 'right' });
         const menu = page.locator('#bookmark-context-menu');
         await expect(menu).toBeVisible();
         await menu.locator('[data-action="health"]').click();
 
-        await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.health?.instance?.selectedKey), { timeout: 10_000 }).toBe(key);
-        // Really on screen, not just selected in memory.
-        await expect(page.locator(`.health-view-item[data-health-key="${key}"]`)).toHaveCount(1);
+        await expect.poll(() => landed(page), { timeout: 10_000 }).toEqual({ view: 'library', url, health: true });
     });
 
     /**
-     * A smart-collection row is rendered from `allBookmarks` and carries no
-     * page-local index, so the key has to be resolved rather than read off the
-     * row. Getting this wrong opens a different bookmark than the one that was
-     * right-clicked, which looks like it worked.
+     * A smart-collection row carries no page-local index; the bookmark is found
+     * by its page and address, so it is this one and not the row beneath it.
      */
     test('a smart-collection row opens its own bookmark, not the row beneath it', async ({ page }) => {
         await load(page);
@@ -374,33 +356,12 @@ test.describe('reaching the Health view from a bookmark', () => {
 
         await row.click({ button: 'right' });
         await page.locator('#bookmark-context-menu [data-action="health"]').click();
-        // Park the cursor clear of the feed: the row list scrolls under it, and
-        // a stationary pointer over a moving list selects whatever lands there.
-        await page.mouse.move(5, 5);
-
-        await expect.poll(async () => page.evaluate(() => {
-            const mod = window.dashboardInstance.health?.instance;
-            const key = mod?.selectedKey;
-            if (!key) return null;
-            return (mod.report?.issues || []).find((i) => `${i.pageId}:${i.index}` === key)?.url ?? null;
-        }), { timeout: 10_000 }).toBe(url);
+        await expect.poll(async () => (await landed(page)).url, { timeout: 10_000 }).toBe(url);
     });
 
-    /**
-     * The `remote` branch of revealInHealth: a reference with a page id but no
-     * page-local index, which is what a cross-page row resolves to. Its index
-     * has to come from the server, because the row's position in the rendered
-     * list is not its position on its own page.
-     *
-     * Driven through revealInHealth directly — the seeded dashboard renders its
-     * smart collections from the current page, so no row on screen produces
-     * this shape, and a test that only right-clicks would leave the branch
-     * unexercised while appearing to cover it.
-     */
-    test('a reference without a page-local index resolves it from the server', async ({ page }) => {
+    test('a reference from another page is found by its address', async ({ page }) => {
         await load(page);
         const url = await page.evaluate(() => window.dashboardInstance.bookmarks[2].url);
-
         await page.evaluate(async (u) => {
             const d = window.dashboardInstance;
             await d.contextMenu.revealInHealth({
@@ -409,31 +370,6 @@ test.describe('reaching the Health view from a bookmark', () => {
                 bookmark: { url: u },
             });
         }, url);
-        await page.mouse.move(5, 5);
-
-        await expect.poll(async () => page.evaluate(() => {
-            const mod = window.dashboardInstance.health?.instance;
-            const key = mod?.selectedKey;
-            if (!key) return null;
-            return (mod.report?.issues || []).find((i) => `${i.pageId}:${i.index}` === key)?.url ?? null;
-        }), { timeout: 10_000 }).toBe(url);
-    });
-
-    test('the bookmark list opens the row\'s Health in its panel', async ({ page }) => {
-        await load(page);
-        await page.evaluate(() => { window.location.hash = '#bookmarks'; });
-        await page.locator('#config-bm-list .config-bm-row').first().waitFor();
-        // The report has to be joined in before the menu can offer Health.
-        await page.waitForFunction(() => Boolean(window.dashboardInstance.config?.instance?._bmHealthByUrl?.size));
-
-        const row = page.locator('#config-bm-list .config-bm-row').first();
-        await row.click({ button: 'right' });
-        await expect(page.locator('.config-bm-context-menu [data-action="health"]')).toHaveCount(0);
-        const item = page.locator('.config-bm-context-menu [data-action="health-details"]');
-        await expect(item).toBeVisible();
-        await item.click();
-
-        const drawer = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
-        await expect(drawer.locator('[data-bm-pane="health"]')).toBeVisible();
+        await expect.poll(async () => (await landed(page)).url, { timeout: 10_000 }).toBe(url);
     });
 });

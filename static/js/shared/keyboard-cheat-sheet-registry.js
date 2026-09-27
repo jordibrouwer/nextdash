@@ -22,7 +22,6 @@
 
     /** Rows a section pulls from KeyboardViewLegends instead of listing itself. */
     const LEGEND_SOURCES = {
-        HEALTH_VIEW: 'HEALTH_VIEW',
         INBOX_VIEW: 'INBOX_VIEW',
         INBOX_TRIAGE: 'INBOX_TRIAGE',
     };
@@ -48,10 +47,10 @@
                 {
                     keys: 'Shift + H',
                     cheatKey: 'navHealthView',
-                    fallback: 'Open Health — bookmarks that need attention',
+                    fallback: 'Open the Bookmarks view on the broken ones',
                     when: (ctx) => ctx.healthEnabled,
                     print: true,
-                    printFallback: 'Open Health',
+                    printFallback: 'Bookmarks, broken ones',
                 },
                 {
                     keys: 'Shift + S',
@@ -179,42 +178,6 @@
                 { keys: 'Click', cheatKey: 'msPlainClick', fallback: 'With a selection open, a plain click clears it instead of opening the bookmark' },
                 { keys: 'Esc', cheatKey: 'msClear', fallback: 'Clear the selection' },
                 { keys: 'Delete', cheatKey: 'msDelete', fallback: 'Delete everything selected — one confirmation for the whole set; recoverable from the trash' },
-            ],
-        },
-        // Only when the view exists, matching the Shift+H entry above: teaching row
-        // shortcuts for a view someone cannot open is noise. These mirror the legend
-        // under the health list, which is the same set in context.
-        {
-            id: 'sectionHealthView',
-            titleKey: 'sectionHealthView',
-            titleFallback: 'Health view',
-            contextId: 'health',
-            when: (ctx) => ctx.healthEnabled,
-            legend: LEGEND_SOURCES.HEALTH_VIEW,
-            print: true,
-        },
-        // Its own section for the same reason the grid's is: these rows act on a
-        // selection, not on the focused row, and mean nothing until one is open.
-        // The keys deliberately match the grid's — x, X, Ctrl/Cmd+A, Esc — so the
-        // second place you tick rows is not a second set to learn.
-        {
-            id: 'sectionHealthMultiSelect',
-            titleKey: 'sectionHealthMultiSelect',
-            titleFallback: 'Selecting several health rows',
-            contextId: 'health',
-            when: (ctx) => ctx.healthEnabled,
-            rows: [
-                // Not printed. A heading plus two rows spilled the A4 sheet onto a
-                // third page, and the printed Health view section already carries
-                // `x` from the shared legend — enough to teach that selecting
-                // exists, with the rest a keypress away in the modal.
-                { keys: 'x', cheatKey: 'hmsToggleRow', fallback: 'Tick the focused row and move to the next — so a run of rows is x-x-x' },
-                { keys: 'X', cheatKey: 'hmsSelectAll', fallback: 'Tick every row the current filter shows; pressing it again unticks them' },
-                { keys: 'Ctrl/Cmd + A', cheatKey: 'hmsSelectAllKeys', fallback: 'Tick every row the current filter shows; pressing it again unticks them' },
-                { keys: 'Alt + click', cheatKey: 'hmsCtrlClick', fallback: 'Add or remove a single row with the mouse' },
-                { keys: 'Shift + click', cheatKey: 'hmsShiftClick', fallback: 'Extend the selection to the clicked row' },
-                { keys: 'Click', cheatKey: 'hmsPlainClick', fallback: 'With a selection open, a plain click clears it' },
-                { keys: 'Esc', cheatKey: 'hmsClear', fallback: 'Clear the selection — the health view itself stays open' },
             ],
         },
         {
@@ -430,7 +393,6 @@
     /** Which section a cheat sheet opened from this view should lead with. */
     function activeContextId(ctx) {
         if (ctx.triageOpen) return 'inbox-triage';
-        if (ctx.activeView === 'health') return 'health';
         if (ctx.activeView === 'inbox') return 'inbox';
         // The Bookmarks view is config's bookmark list, keys and all.
         if (ctx.activeView === 'config' || ctx.activeView === 'library') return 'config';

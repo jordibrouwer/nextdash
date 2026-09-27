@@ -99,7 +99,7 @@ test.describe('custom collection rules', () => {
     });
 });
 
-test('drift reaches the header badge instead of only the Health filter', async ({ page }) => {
+test('drift reaches the header badge', async ({ page }) => {
     await load(page);
     const r = await page.evaluate(() => {
         const u = window.HealthBadgeUtils;
@@ -109,7 +109,8 @@ test('drift reaches the header badge instead of only the Health filter', async (
     // Warning tier, not red: a drifted link still returns 200 and looks fine.
     expect(r.drift).toBe(3);
     expect(r.warn).toBeGreaterThanOrEqual(3);
-    expect(r.href).toBe('/?hv_filter=drift#health');
+    // The Bookmarks view has no drift filter of its own: the badge opens it whole.
+    expect(r.href).toBe('/#bookmarks');
 });
 
 test('a page description is searchable, below the note', async ({ page }) => {

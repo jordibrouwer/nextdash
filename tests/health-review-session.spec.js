@@ -45,7 +45,7 @@ test.describe('a review session', () => {
         await expect(card).toBeVisible({ timeout: 15_000 });
 
         const queue = await page.evaluate(() => {
-            const focus = window.dashboardInstance.health._module.focus;
+            const focus = window.dashboardInstance.config.instance._libFocus;
             return { length: focus.queue.length, session: focus.session };
         });
         expect(queue.length).toBeLessThanOrEqual(10);
@@ -67,7 +67,7 @@ test.describe('a review session', () => {
         // Walk to the end the way the keyboard does. Skipping is not handling,
         // so the count below has to be 0 of N rather than N of N.
         const length = await page.evaluate(() =>
-            window.dashboardInstance.health._module.focus.queue.length);
+            window.dashboardInstance.config.instance._libFocus.queue.length);
         for (let i = 0; i < length; i += 1) {
             await page.keyboard.press('j');
             await page.waitForTimeout(120);
@@ -101,7 +101,7 @@ test.describe('the offer on the dashboard', () => {
         await card.locator('[data-health-review-action="start"]').click();
         await expect(page.locator('.health-focus-card')).toBeVisible({ timeout: 15_000 });
         expect(await page.evaluate(() =>
-            Boolean(window.dashboardInstance.health._module.focus.session))).toBe(true);
+            Boolean(window.dashboardInstance.config.instance._libFocus.session))).toBe(true);
     });
 
     test('Not today answers it, without touching the health data', async ({ page }) => {

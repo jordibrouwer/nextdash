@@ -1,62 +1,31 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, openHealthToolbarMenu, openHealthDrawerSection } = require('./e2e-helpers');
+const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 /**
- * Changing a bookmark's check mode from inside the health view.
- *
- * The report is mocked so each row's mode is fixed rather than depending on what
- * the seeded bookmarks happen to be. The write itself is intercepted too: this
- * spec is about the view keeping its place while the mode changes, and the
- * endpoint's own behaviour is covered by the Go tests.
+ * Changing a bookmark's check mode from the Bookmarks view's side panel, which
+ * writes through Health's own setCheckMode. The write is intercepted: the
+ * endpoint's behaviour is covered by the Go tests.
  */
 
-function issue(overrides = {}) {
-    return {
-        pageId: 1, index: 0, pageName: 'dev', category: 'tools',
-        status: 'ok', score: 90, duplicateCount: 0,
-        lastChecked: 1752000000000, reasons: [], reasonDetails: [],
-        ...overrides,
-    };
-}
+const drawer = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+const checking = (page) => drawer(page).locator('[data-bm-pane="health"] [data-bm-acc="checking"]');
 
-function report() {
-    return {
-        generatedAt: Date.now(),
-        summary: { totalBookmarks: 3, healthyCount: 3, brokenCount: 0, duplicateCount: 0, uncheckedCount: 0 },
-        issues: [
-            issue({ index: 0, name: 'Monitored one', url: 'https://example.com/mon', monitor: true }),
-            issue({ index: 1, name: 'Periodic one', url: 'https://example.com/per', checkStatus: true }),
-            // No lastChecked, so this is the row the "Never checked" filter finds.
-            issue({ index: 2, name: 'Unchecked one', url: 'https://example.com/off', lastChecked: 0 }),
-        ],
-        duplicateGroups: [],
-    };
-}
+/** The first three bookmarks: monitored, periodic, not checked. */
+const modes = (issues) => issues.map((issue, i) => ({
+    ...issue,
+    status: 'healthy', flags: ['healthy'], score: 100, reasons: [], reasonDetails: [],
+    monitor: i === 0,
+    checkStatus: i === 1,
+}));
 
-async function openHealthView(page) {
-    await page.route('**/api/bookmark-health**', async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify(report()),
-        });
-    });
-    await page.goto('/');
-    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-    await prepareDashboardInteraction(page);
-    await page.click('.health-link a.health-link-anchor');
-    await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
-    // Wait for the mocked report to land before touching a filter: the pills are
-    // counted from it, so clicking earlier picks a filter that still reads 0.
-    await page.waitForFunction(() => {
-        const h = window.dashboardInstance?.healthView || window.dashboardInstance?.health;
-        return h?.report?.issues?.length === 3;
-    }, null, { timeout: 15_000 });
-    // The view opens on the "broken" filter; these rows are deliberately healthy,
-    // because this spec is about check mode rather than scoring.
-    await page.click('[data-health-filter="all"]');
-    await page.waitForSelector('.health-view-item', { timeout: 15_000 });
+async function openChecking(page, bookmark) {
+    await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmark.name }) }).first().click();
+    await drawer(page).locator('[data-bm-tab-panel="health"]').click();
+    const section = checking(page);
+    if (await section.getAttribute('open') === null) await section.locator('summary').click();
+    await expect(section.locator('[data-check-mode]')).toHaveCount(3);
+    return section;
 }
 
 /** Capture check-mode writes without letting them touch the store. */
@@ -74,270 +43,66 @@ async function captureCheckMode(page, status = 200) {
     return calls;
 }
 
-test.describe('health view check mode', () => {
-    test('the row no longer carries the mode; the side panel does', async ({ page }) => {
-        await openHealthView(page);
-
-        // Moved out of the row with Re-check: the row keeps Open, Edit and More.
-        await expect(page.locator('.health-view-item .health-check-mode')).toHaveCount(0);
-        await expect(page.locator('.health-view-item [data-health-action="recheck"]')).toHaveCount(0);
-
-        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
-        // Three named options rather than a control that cycles.
-        await expect(section.locator('.health-check-option')).toHaveCount(3);
+test.describe('check mode from the side panel', () => {
+    test('three named options, the current one checked', async ({ page }) => {
+        const { bookmarks } = await openBookmarksWithHealth(page, modes);
+        const section = await openChecking(page, bookmarks[0]);
         await expect(section.locator('[data-check-mode="monitor"]')).toHaveAttribute('aria-checked', 'true');
         await expect(section.locator('[data-check-mode="off"]')).toHaveAttribute('aria-checked', 'false');
     });
 
     test('choosing a mode posts the row reference and its URL', async ({ page }) => {
-        await openHealthView(page);
+        const { bookmarks } = await openBookmarksWithHealth(page, modes);
         const calls = await captureCheckMode(page);
-
-        const section = await openHealthDrawerSection(page.locator('.health-view-item').nth(2), 'check');
+        const section = await openChecking(page, bookmarks[2]);
         await section.locator('[data-check-mode="monitor"]').click();
 
         await expect.poll(() => calls.length).toBe(1);
         // The URL rides along with the index so the server can reject a stale row.
         expect(calls[0]).toMatchObject({
-            pageId: 1,
-            index: 2,
-            url: 'https://example.com/off',
+            pageId: bookmarks[2].pageId,
+            url: bookmarks[2].url,
             mode: 'monitor',
         });
-    });
-
-    test('the view stays open and keeps its filter while the mode changes', async ({ page }) => {
-        await openHealthView(page);
-        await captureCheckMode(page);
-
-        // Search narrows the list to one row; both it and the filter must survive.
-        await page.fill('.health-view-search-input', 'Unchecked');
-        await expect(page.locator('.health-view-item')).toHaveCount(1);
-
-        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
-        await section.locator('[data-check-mode="periodic"]').click();
-
-        // The old route was a deep link out of the view; the whole point is that
-        // the user keeps their place.
-        await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
-        expect(await page.evaluate(() => window.location.hash)).toBe('#health');
-        await expect(page.locator('.health-view-filter-btn.is-active')).toContainText('All');
-        await expect(page.locator('.health-view-search-input')).toHaveValue('Unchecked');
+        expect(Number.isInteger(calls[0].index)).toBe(true);
     });
 
     test('selecting the mode a row already has writes nothing', async ({ page }) => {
-        await openHealthView(page);
+        const { bookmarks } = await openBookmarksWithHealth(page, modes);
         const calls = await captureCheckMode(page);
-
-        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
+        const section = await openChecking(page, bookmarks[0]);
         await section.locator('[data-check-mode="monitor"]').click();
-
-        await page.waitForTimeout(300);
-        expect(calls).toHaveLength(0);
-    });
-
-    test('c opens the side panel on the check mode for the keyboard-selected row', async ({ page }) => {
-        await openHealthView(page);
-
-        await page.keyboard.press('ArrowDown');
-        await expect(page.locator('.health-view-item.keyboard-selected')).toHaveCount(1);
-        await page.keyboard.press('c');
-
-        const section = page.locator('[data-lvs-drawer="health"] [data-lvs-section="check"]');
-        await expect(section).toHaveAttribute('open', '');
-        await expect(section.locator('.health-check-option')).toHaveCount(3);
-    });
-
-    test('the overflow menu names the current mode and opens the panel on it', async ({ page }) => {
-        await openHealthView(page);
-
-        // Row actions only surface on the selected row, so drive it by keyboard
-        // the way the rest of the health specs do.
-        await page.keyboard.press('j');
-        await page.keyboard.press('m');
-
-        const row = page.locator('.health-view-item').first();
-        const item = row.locator('[data-menu-action="checkmode"]');
-        // Naming the current mode saves opening the panel just to read it.
-        await expect(item).toContainText('Monitor');
-
-        await item.click();
-        // It hands off rather than duplicating the options, so one place explains
-        // what the modes mean.
-        await expect(page.locator('[data-lvs-drawer="health"] [data-lvs-section="check"]')).toHaveAttribute('open', '');
-        await expect(row.locator('.health-view-menu[data-menu-owner="more"]')).toBeHidden();
-    });
-
-    test('the legend teaches c alongside the other row shortcuts', async ({ page }) => {
-        await openHealthView(page);
-        await expect(page.locator('.health-view-legend')).toContainText('c');
-    });
-
-    test('the bulk monitor button is offered on a narrowed list, never on All', async ({ page }) => {
-        await openHealthView(page);
-
-        // openHealthView leaves the view on "All", where bulk enabling would mean
-        // the whole collection — the one thing it must not be able to do.
-        await expect(page.locator('.health-view-bulk-monitor-btn')).toHaveCount(0);
-
-        await page.click('[data-health-filter="unchecked"]');
-        const btn = page.locator('.health-view-bulk-monitor-btn');
-        await expect(btn).toHaveCount(1);
-        // The count names the blast radius, and it is the visible list.
-        await expect(btn).toContainText('1');
-    });
-
-    // These buttons act on the filtered list while the bulk bar right below them
-    // acts on the ticked rows, and with a selection open both are on screen at
-    // once. "Monitor these 3" sat a few pixels above "2 selected" with nothing
-    // saying which set was which, so the label names its own scope now.
-    test('the bulk enable label says it acts on the shown rows, not the ticked ones', async ({ page }) => {
-        await openHealthView(page);
-
-        await page.click('[data-health-filter="unchecked"]');
-        const btn = page.locator('.health-view-bulk-monitor-btn');
-        await expect(btn).toHaveCount(1);
-
-        // "shown" is the word that separates it from the selection bar.
-        await expect(btn).toContainText(/shown/i);
-        await expect(btn, 'the ambiguous wording is back').not.toContainText(/these \d/i);
-
-        // The tooltip says the same thing the long way round.
-        expect(await btn.getAttribute('title')).toMatch(/not the ticked rows/i);
-    });
-
-    test('bulk monitor confirms, then posts only the visible rows', async ({ page }) => {
-        await openHealthView(page);
-        /** @type {any[]} */
-        const calls = [];
-        await page.route('**/api/health/check-mode-all', async (route) => {
-            calls.push(JSON.parse(route.request().postData() || '{}'));
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({ mode: 'monitor', changed: 1, skipped: 0 }),
-            });
-        });
-
-        await page.click('[data-health-filter="unchecked"]');
-        // The bulk buttons render alongside Retest all and Check off, which
-        // d4e22e33 filed behind `⋯`. Reading them needs no menu — count and
-        // text work on a hidden node — but clicking one does.
-        await openHealthToolbarMenu(page);
-        await page.click('.health-view-bulk-monitor-btn');
-
-        // Confirmation is mandatory: the count is the only view of the impact.
-        // #app-modal specifically: other dialogs (the tag cloud) sit in the DOM
-        // from load, so a generic [role=dialog] would match the wrong one.
-        const dialog = page.locator('#app-modal');
-        await expect(dialog).toBeVisible();
-        expect(calls).toHaveLength(0);
-
-        await dialog.getByRole('button', { name: /confirm/i }).click();
-
-        await expect.poll(() => calls.length).toBe(1);
-        expect(calls[0].mode).toBe('monitor');
-        // Named targets, so the server cannot be asked to enable everything.
-        expect(Array.isArray(calls[0].targets)).toBe(true);
-        expect(calls[0].targets).toHaveLength(1);
-        expect(calls[0].targets[0]).toMatchObject({ pageId: 1, index: 2, url: 'https://example.com/off' });
-    });
-
-    test('cancelling the bulk confirmation writes nothing', async ({ page }) => {
-        await openHealthView(page);
-        /** @type {any[]} */
-        const calls = [];
-        await page.route('**/api/health/check-mode-all', async (route) => {
-            calls.push(JSON.parse(route.request().postData() || '{}'));
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-        });
-
-        await page.click('[data-health-filter="unchecked"]');
-        // The bulk buttons render alongside Retest all and Check off, which
-        // d4e22e33 filed behind `⋯`. Reading them needs no menu — count and
-        // text work on a hidden node — but clicking one does.
-        await openHealthToolbarMenu(page);
-        await page.click('.health-view-bulk-monitor-btn');
-        const dialog = page.locator('#app-modal');
-        await expect(dialog).toBeVisible();
-        await dialog.getByRole('button', { name: /cancel/i }).click();
-
-        await expect(dialog).toBeHidden();
-        expect(calls).toHaveLength(0);
+        await page.waitForTimeout(400);
+        expect(calls).toEqual([]);
     });
 
     test('a stale row is reported rather than silently retried', async ({ page }) => {
-        await openHealthView(page);
-        await captureCheckMode(page, 409);
-
-        const row = page.locator('.health-view-item').nth(2);
-        const section = await openHealthDrawerSection(row, 'check');
+        const { bookmarks } = await openBookmarksWithHealth(page, modes);
+        const calls = await captureCheckMode(page, 409);
+        const section = await openChecking(page, bookmarks[2]);
         await section.locator('[data-check-mode="monitor"]').click();
-
-        // Wait for this toast, not for the notification element. The one-time
-        // "Shift + Q switches the search mode" tip from 79c29ec9 lands on the
-        // first load after the upgrade and holds the slot, so asserting on
-        // whatever is on screen reads that instead.
         await expect(page.locator('.app-notification')).toContainText(/refreshed/i, { timeout: 10_000 });
+        expect(calls.length).toBe(1);
     });
 
     /**
-     * CheckMode.intervalOf() reads a flat `monitorIntervalMinutes` field. A raw
-     * Bookmark has it; a health-report issue used not to — HealthIssue only
-     * carried the interval nested under monitorStats, which itself does not
-     * exist until the bookmark has at least one sample (buildMonitorStats
-     * returns nil for an empty history). So a first fix that only taught
-     * intervalOf to fall back to monitorStats.intervalMinutes still defaulted
-     * to 15m for exactly the row someone would test this on: one just switched
-     * to Monitor, or whose interval was just changed, with no check having run
-     * yet. HealthIssue now carries monitorIntervalMinutes directly, set from
-     * the bookmark regardless of sample history, which is what these two cases
-     * cover.
+     * CheckMode.intervalOf() reads a flat `monitorIntervalMinutes` field. The
+     * report carries it directly, whether or not the bookmark has any samples
+     * yet (monitorStats is absent until then): both shapes are covered.
      */
     test('the interval accent is correct with an established history', async ({ page }) => {
-        await mockHealthWithInterval(page, {
-            monitor: true, monitorIntervalMinutes: 30,
+        const { bookmarks } = await openBookmarksWithHealth(page, (issues) => modes(issues).map((issue, i) => (i === 0 ? {
+            ...issue, monitorIntervalMinutes: 30,
             monitorStats: { intervalMinutes: 30, uptime24h: {}, uptime7d: {}, uptime30d: {}, totalChecks: 10 },
-        });
-        await openInterval(page);
-        await expect(page.locator('.health-check-interval-btn.is-active')).toHaveText('30m');
+        } : issue)));
+        const section = await openChecking(page, bookmarks[0]);
+        await expect(section.locator('.health-check-interval-btn.is-active')).toHaveText('30m');
     });
 
     test('the interval accent is correct with no samples yet', async ({ page }) => {
-        // The exact shape buildMonitorStats produces for an empty history: the
-        // field is absent from the JSON entirely (nil in Go, omitempty).
-        await mockHealthWithInterval(page, { monitor: true, monitorIntervalMinutes: 60 });
-        await openInterval(page);
-        await expect(page.locator('.health-check-interval-btn.is-active')).toHaveText('1h');
+        const { bookmarks } = await openBookmarksWithHealth(page, (issues) => modes(issues).map((issue, i) => (i === 0
+            ? { ...issue, monitorIntervalMinutes: 60 } : issue)));
+        const section = await openChecking(page, bookmarks[0]);
+        await expect(section.locator('.health-check-interval-btn.is-active')).toHaveText('1h');
     });
-
-    async function mockHealthWithInterval(page, issueOverrides) {
-        await page.route('**/api/bookmark-health**', (route) => route.fulfill({
-            status: 200, contentType: 'application/json',
-            body: JSON.stringify({
-                generatedAt: Date.now(),
-                summary: { totalBookmarks: 1, healthyCount: 1, brokenCount: 0, duplicateCount: 0, uncheckedCount: 0 },
-                issues: [issue({
-                    index: 0, name: 'Interval accent', url: 'https://example.com/interval-accent',
-                    ...issueOverrides,
-                })],
-                duplicateGroups: [],
-            }),
-        }));
-    }
-
-    async function openInterval(page) {
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await prepareDashboardInteraction(page);
-        await page.click('.health-link a.health-link-anchor');
-        await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
-        await page.waitForFunction(() => {
-            const h = window.dashboardInstance?.healthView || window.dashboardInstance?.health;
-            return h?.report?.issues?.length === 1;
-        }, null, { timeout: 15_000 });
-        await page.click('[data-health-filter="all"]');
-        await page.waitForSelector('.health-view-item', { timeout: 15_000 });
-        await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
-    }
 });

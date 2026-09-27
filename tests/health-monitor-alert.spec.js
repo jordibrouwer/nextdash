@@ -3,7 +3,7 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * The header health link flags a live monitor outage differently from an
+ * The header's Bookmarks icon flags a live monitor outage differently from an
  * ordinary dead link: a distinct badge, a one-off pulse when the outage count
  * rises, and a cooldown so a flapping monitor cannot pulse the header on every
  * check.
@@ -15,12 +15,12 @@ test.describe('health monitor down alert', () => {
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.waitForSelector('.health-link', { timeout: 10_000 });
+        await page.waitForSelector('.library-link', { timeout: 10_000 });
     });
 
     test('a down monitor gets its own badge, above broken and warn', async ({ page }) => {
         const badge = await page.evaluate(() => {
-            const anchor = document.querySelector('.health-link a');
+            const anchor = document.querySelector('.library-link a');
             // Down, broken and warn all present at once: the most severe wins.
             window.HealthBadgeUtils.applyHealthBadgeToAnchor(
                 anchor,
@@ -41,13 +41,13 @@ test.describe('health monitor down alert', () => {
             window.HealthBadgeUtils.buildHealthPageHref({ monitorDown: 1, broken: 3 })
         );
         // Down beats broken: the monitored list is where the outage is.
-        expect(href).toBe('/?hv_filter=monitored#health');
+        expect(href).toBe('/#bookmarks?health=monitored');
     });
 
     test('the link pulses when the outage count rises, but not on first sight or recovery', async ({ page }) => {
         const r = await page.evaluate(() => {
             const v = window.dashboardInstance.visual;
-            const link = document.querySelector('.health-link');
+            const link = document.querySelector('.library-link');
             const has = () => link.classList.contains('is-health-alert');
             v._lastMonitorDownCount = undefined;
             v._lastHealthAlertAt = 0;
@@ -73,7 +73,7 @@ test.describe('health monitor down alert', () => {
     test('a flapping monitor is silenced by the cooldown until it expires', async ({ page }) => {
         const r = await page.evaluate(() => {
             const v = window.dashboardInstance.visual;
-            const link = document.querySelector('.health-link');
+            const link = document.querySelector('.library-link');
             const has = () => link.classList.contains('is-health-alert');
             v._lastMonitorDownCount = 1;
             v._lastHealthAlertAt = Date.now();     // just alerted

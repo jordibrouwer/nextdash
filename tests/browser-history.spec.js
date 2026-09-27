@@ -148,9 +148,9 @@ test('Back walks views, not the filters set inside them', async ({ page }) => {
     }
     // Through the module rather than a header button: which buttons the header
     // shows depends on settings, and this test is about history, not chrome.
-    await page.evaluate(() => window.dashboardInstance.health?.openHealthView?.());
+    await page.evaluate(() => window.dashboardInstance.config?.openConfigView?.('appearance'));
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView),
-        { timeout: 25_000 }).toBe('health');
+        { timeout: 25_000 }).toBe('config');
 
     // One step back is the inbox, not the previous filter.
     await page.goBack();

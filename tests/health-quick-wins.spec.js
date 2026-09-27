@@ -1,11 +1,11 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, openHealthDrawerSection } = require('./e2e-helpers');
+const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 /**
- * Four small additions to the health view: the monitor interval changeable from
- * the row, monitoring columns in the CSV, the sample count behind an uptime
- * percentage, and the report's age in the header.
+ * Small things Health adds to the Bookmarks view: the monitor interval
+ * changeable from the side panel, the sample count behind an uptime
+ * percentage, and the report's age in the rail's summary.
  */
 
 function monitorStats(intervalMinutes = 15) {
@@ -35,49 +35,31 @@ function monitorStats(intervalMinutes = 15) {
     };
 }
 
-function report({ generatedAt = Date.now(), interval = 15 } = {}) {
-    return {
-        generatedAt,
-        summary: {
-            totalBookmarks: 2, healthyCount: 2, brokenCount: 0, duplicateCount: 0,
-            uncheckedCount: 0, staleCount: 0, unusedCount: 0, monitoredCount: 1,
-        },
-        issues: [
-            {
-                pageId: 1, index: 0, pageName: 'dev', name: 'Monitored one',
-                url: 'https://example.com/mon', category: 'tools',
-                status: 'healthy', flags: ['healthy'], score: 100, duplicateCount: 0,
-                lastChecked: Date.now(), reasons: [], reasonDetails: [],
-                monitor: true, checkStatus: false,
-                monitorIntervalMinutes: interval,
-                monitorStats: monitorStats(interval),
-            },
-            {
-                pageId: 1, index: 1, pageName: 'dev', name: 'Plain one',
-                url: 'https://example.com/plain', category: 'tools',
-                status: 'healthy', flags: ['healthy'], score: 100, duplicateCount: 0,
-                lastChecked: Date.now(), reasons: [], reasonDetails: [],
-            },
-        ],
-        duplicateGroups: [],
-    };
+/** The first bookmark monitored every `interval` minutes, the second plain. */
+function shape({ interval = 15 } = {}) {
+    return (issues) => issues.slice(0, 2).map((issue, i) => ({
+        ...issue,
+        status: 'healthy', flags: ['healthy'], score: 100, reasons: [], reasonDetails: [],
+        ...(i === 0 ? { monitor: true, checkStatus: false, monitorIntervalMinutes: interval, monitorStats: monitorStats(interval) } : {}),
+    }));
 }
 
-async function openHealthView(page, body = report()) {
-    await page.route('**/api/bookmark-health**', async (route) => {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
-    });
-    // "healthy" rather than the default "broken": this fixture is deliberately
-    // all-healthy, since it is about monitoring rather than scoring.
-    await page.goto('/?hv_filter=healthy#health');
-    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-    await prepareDashboardInteraction(page);
-    await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
+const drawer = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+
+/** One section of a bookmark's Health tab, opened. */
+async function openSection(page, bookmark, name) {
+    await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmark.name }) }).first().click();
+    await drawer(page).locator('[data-bm-tab-panel="health"]').click();
+    const section = drawer(page).locator(`[data-bm-pane="health"] [data-bm-acc="${name}"]`);
+    if (await section.getAttribute('open') === null) await section.locator('summary').click();
+    return section;
 }
 
-test.describe('health view quick wins', () => {
+const age = (page) => page.locator('#config-bm-rail .lvs-summary [data-summary-key="age"] .config-bm-health-summary-value');
+
+test.describe('health quick wins', () => {
     test('the interval picker writes the chosen cadence and keeps the mode', async ({ page }) => {
-        await openHealthView(page);
+        const { bookmarks } = await openBookmarksWithHealth(page, shape());
 
         /** @type {any[]} */
         const writes = [];
@@ -91,9 +73,7 @@ test.describe('health view quick wins', () => {
             });
         });
 
-        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
-
-        // The picker is only offered on a row that is already monitoring.
+        const section = await openSection(page, bookmarks[0], 'checking');
         const picker = section.locator('.health-check-interval');
         await expect(picker).toBeVisible();
         await expect(picker.locator('.health-check-interval-btn.is-active')).toHaveText('15m');
@@ -102,113 +82,49 @@ test.describe('health view quick wins', () => {
 
         await expect.poll(() => writes.length).toBe(1);
         expect(writes[0].monitorIntervalMinutes).toBe(60);
-        // The mode travels with it: this is a cadence change, not a re-enable, and
-        // sending a different mode here would flip the row off monitoring.
+        // The mode travels with it: a cadence change, not a re-enable.
         expect(writes[0].mode).toBe('monitor');
-        expect(writes[0].url).toBe('https://example.com/mon');
+        expect(writes[0].url).toBe(bookmarks[0].url);
     });
 
     test('choosing the current interval writes nothing', async ({ page }) => {
-        await openHealthView(page);
-
+        const { bookmarks } = await openBookmarksWithHealth(page, shape());
         /** @type {any[]} */
         const writes = [];
         await page.route('**/api/health/check-mode', async (route) => {
             writes.push(JSON.parse(route.request().postData() || '{}'));
             await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
-
-        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'check');
+        const section = await openSection(page, bookmarks[0], 'checking');
         await section.locator('[data-check-interval="15"]').click();
-
         await page.waitForTimeout(300);
         expect(writes).toHaveLength(0);
     });
 
-    test('the interval picker is hidden on a row that is not monitored', async ({ page }) => {
-        await openHealthView(page);
-
-        // The second row has no monitoring, so there is no cadence to change.
-        const section = await openHealthDrawerSection(page.locator('.health-view-item').nth(1), 'check');
-        await expect(section.locator('.health-check-option')).toHaveCount(3);
+    test('the interval picker is hidden on a bookmark that is not monitored', async ({ page }) => {
+        const { bookmarks } = await openBookmarksWithHealth(page, shape());
+        const section = await openSection(page, bookmarks[1], 'checking');
+        await expect(section.locator('[data-check-mode]')).toHaveCount(3);
         await expect(section.locator('.health-check-interval')).toHaveCount(0);
     });
 
-    test('the side panel shows how many checks the uptime rests on', async ({ page }) => {
-        await openHealthView(page);
-
-        const section = await openHealthDrawerSection(page.locator('.health-view-item').first(), 'monitor');
-        const uptime = section.locator('.health-monitor-strip .health-monitor-uptime');
+    test('the panel shows how many checks the uptime rests on', async ({ page }) => {
+        const { bookmarks } = await openBookmarksWithHealth(page, shape());
+        await openSection(page, bookmarks[0], 'monitor');
+        const uptime = drawer(page).locator('.health-monitor-strip .health-monitor-uptime').first();
         await expect(uptime).toContainText('100%');
         await expect(uptime.locator('.health-monitor-uptime-samples')).toHaveText('/96');
-        // The accessible name carries the same fact as a sentence, so the bare
-        // "/96" is not all a screen reader gets.
+        // The accessible name carries the same fact as a sentence.
         await expect(uptime).toHaveAttribute('aria-label', /96 checks/);
     });
 
-    test('the header says how old the report is', async ({ page }) => {
-        await openHealthView(page, report({ generatedAt: Date.now() - 25 * 60 * 1000 }));
-
-        const age = page.locator('.lvs-summary [data-lvs-summary-key="age"] .lvs-summary-value');
-        await expect(age).toBeVisible();
-        await expect(age).toHaveText(/25m/);
+    test('the summary says how old the report is', async ({ page }) => {
+        await openBookmarksWithHealth(page, shape(), { report: () => ({ generatedAt: Date.now() - 25 * 60 * 1000 }) });
+        await expect(age(page)).toHaveText(/25m/);
     });
 
     test('a report generated moments ago reads "just now", not 0m', async ({ page }) => {
-        await openHealthView(page, report({ generatedAt: Date.now() - 5000 }));
-
-        await expect(page.locator('.lvs-summary [data-lvs-summary-key="age"] .lvs-summary-value'))
-            .toHaveText(/just now/i);
-    });
-
-    test('the CSV export carries the monitoring columns', async ({ page }) => {
-        await openHealthView(page);
-
-        // Capture the download rather than writing to disk.
-        const csv = await page.evaluate(() => new Promise((resolve) => {
-            const health = window.dashboardInstance.healthView || window.dashboardInstance.health;
-            const original = health.downloadFile.bind(health);
-            health.downloadFile = (name, content) => {
-                health.downloadFile = original;
-                resolve(content);
-            };
-            health.exportFilteredCsv();
-        }));
-
-        const [header, monitored, plain] = String(csv).split('\r\n');
-        expect(header).toContain('Monitor interval (min)');
-        expect(header).toContain('Uptime 24h');
-        expect(header).toContain('Checks recorded');
-
-        // The monitored row carries real numbers; uptime is a bare number so a
-        // spreadsheet can average the column.
-        expect(monitored).toContain('15');
-        expect(monitored).toContain('100');
-        expect(monitored).toContain('142');
-
-        // The unmonitored row leaves them blank rather than writing zeroes, which
-        // would read as 0% uptime. Every field is quoted, so blank is `""`.
-        const cells = plain.split(',');
-        expect(cells.slice(-6)).toEqual(['""', '""', '""', '""', '""', '""']);
-    });
-
-    test('an export with no monitored rows keeps the original columns', async ({ page }) => {
-        const plainOnly = report();
-        plainOnly.issues = plainOnly.issues.filter((i) => !i.monitor);
-        await openHealthView(page, plainOnly);
-
-        const csv = await page.evaluate(() => new Promise((resolve) => {
-            const health = window.dashboardInstance.healthView || window.dashboardInstance.health;
-            const original = health.downloadFile.bind(health);
-            health.downloadFile = (name, content) => {
-                health.downloadFile = original;
-                resolve(content);
-            };
-            health.exportFilteredCsv();
-        }));
-
-        const header = String(csv).split('\r\n')[0];
-        expect(header).not.toContain('Uptime 24h');
-        expect(header).toContain('Issues');
+        await openBookmarksWithHealth(page, shape(), { report: () => ({ generatedAt: Date.now() - 5000 }) });
+        await expect(age(page)).toHaveText(/just now/i);
     });
 });

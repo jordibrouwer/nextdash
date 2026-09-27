@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, markHealthTutorialSeen } = require('./e2e-helpers');
+const { prepareDashboardInteraction } = require('./e2e-helpers');
 
 /**
  * Changing a bookmark's availability checking from the dashboard right-click
@@ -76,9 +76,6 @@ async function setup(page) {
     // seen opens the What's new modal on load, and that marks the grid inert —
     // every row then reads as "not stable" and never takes a click.
     await prepareDashboardInteraction(page);
-    // One test here walks into the health view, where the one-time tour would
-    // otherwise open over the list it is about to click.
-    await markHealthTutorialSeen(page);
     await page.evaluate(() => document.querySelectorAll('.quickstart-card').forEach((el) => el.remove()));
 }
 
@@ -222,22 +219,18 @@ test.describe('dashboard check-mode menu', () => {
     });
 
     /**
-     * The health view and the dashboard keep separate caches of the same
-     * bookmark. Refreshing the health report alone left the dashboard holding
-     * the pre-change mode, so going back and acting on the bookmark used the
-     * old setting until a hard reload.
+     * Health and the dashboard keep separate caches of the same bookmark.
+     * Refreshing the health report alone left the dashboard holding the
+     * pre-change mode, so going back and acting on the bookmark used the old
+     * setting until a hard reload.
      */
-    test('a mode set in the health view is live on the dashboard', async ({ page }) => {
+    test('a mode set through Health is live on the dashboard', async ({ page }) => {
         await setup(page);
         const url = await (await firstRow(page)).getAttribute('data-bookmark-url');
-
-        await page.click('.health-link a.health-link-anchor');
-        await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
-        await page.click('[data-health-filter="all"]').catch(() => {});
-        await page.waitForSelector('.health-view-item', { timeout: 15_000 });
+        await page.evaluate(() => window.dashboardInstance.health.loadAndRender({ refresh: true }));
 
         const applied = await page.evaluate(async (target) => {
-            const hv = window.dashboardInstance.health || window.dashboardInstance.healthView;
+            const hv = await window.dashboardInstance.health.load();
             const issue = (hv?.report?.issues || []).find((i) => i.url === target);
             if (!issue) return false;
             await hv.setCheckMode(issue, 'monitor');

@@ -1,27 +1,21 @@
 /**
- * Lazy loader for the health view.
+ * Lazy loader for the health module.
  *
- * dashboard-health.js is one of the largest scripts on the dashboard and most
- * sessions never open the health view — parsing it on every load costs every
- * bookmark page for nothing. This stub owns the small surface the shell touches
- * before health is ever opened and fetches the real module on first use.
+ * dashboard-health.js is one of the largest scripts on the dashboard, and only
+ * the Bookmarks view and a few actions need it -- parsing it on every load
+ * costs every bookmark page for nothing. This stub stands in for it (d.health)
+ * and fetches the real module on first use. The Health view it once opened is
+ * gone; its addresses lead to the Bookmarks view (openHealthView).
  */
 class DashboardHealthLoader {
-    static VIEW = 'health';
-
     constructor(dashboard) {
         this.dash = dashboard;
         this._module = null;
         this._loadPromise = null;
-        this._escapeHandler = null;
     }
 
     isEnabled() {
         return this.dash.settings?.healthViewEnabled !== false;
-    }
-
-    isActiveView() {
-        return this.dash.activeView === DashboardHealthLoader.VIEW;
     }
 
     get instance() {
@@ -47,12 +41,6 @@ class DashboardHealthLoader {
             await load('js/shared/list-view-shell.js', 'listViewShell',
                 () => typeof window.ListViewShell !== 'undefined');
         }
-        // What Health puts in the side panel. The panel itself
-        // (list-view-drawer.js) is on every page already.
-        if (typeof window.HealthDrawer !== 'function') {
-            await load('js/dashboard/dashboard-health-drawer.js', 'dashboardHealthDrawer',
-                () => typeof window.HealthDrawer === 'function');
-        }
         if (typeof window.DashboardHealth !== 'function') {
             await load('js/dashboard/dashboard-health.js', 'dashboardHealthModule',
                 () => typeof window.DashboardHealth === 'function');
@@ -70,12 +58,6 @@ class DashboardHealthLoader {
             await load('js/dashboard/dashboard-health-focus.js', 'dashboardHealthFocus',
                 () => typeof window.DashboardHealthFocus === 'function');
         }
-        // The one-time tutorial is only ever read from openHealthView(), so it
-        // has no reason to cost anything on a session that never opens Health.
-        if (typeof window.HealthTutorial === 'undefined') {
-            await load('js/health-tutorial.js', 'healthTutorialModule',
-                () => typeof window.HealthTutorial !== 'undefined');
-        }
     }
 
     load() {
@@ -87,8 +69,6 @@ class DashboardHealthLoader {
                 throw new Error('health module loaded without defining DashboardHealth');
             }
             this._module = new window.DashboardHealth(this.dash);
-            this._teardownEscapeShortcut();
-            this._module.setupEscapeShortcut?.();
             return this._module;
         }).catch((err) => {
             this._loadPromise = null;
@@ -133,50 +113,6 @@ class DashboardHealthLoader {
         return this.dash?.config?.openLibraryView?.();
     }
 
-    closeHealthView(...args) {
-        return this._module?.closeHealthView?.(...args) ?? this.closeHealthViewWhileLoading();
-    }
-
-    closeHealthViewWhileLoading() {
-        const d = this.dash;
-        if (!this.isActiveView()) {
-            return false;
-        }
-        this._teardownEscapeShortcut();
-        const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
-        if (restored) {
-            d.keyboardNavigation?.scheduleUpdate?.();
-        }
-        return restored;
-    }
-
-    restoreViewIfNeeded(...args) {
-        if (!this.isActiveView() || !this.isEnabled()) {
-            return;
-        }
-        if (this._module) {
-            return this._module.restoreViewIfNeeded(...args);
-        }
-        void this.load().then((mod) => mod.restoreViewIfNeeded(...args));
-    }
-
-    restoreHealthHash(...args) {
-        return this._module?.restoreHealthHash?.(...args);
-    }
-
-    setupEscapeShortcut() {
-        // Unlike the other two stubs, Escape during loading closes the half-open
-        // view rather than falling through — the view is already on screen.
-        window.LazyScript.bindStubEscape(this, (e) => {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            this.closeHealthViewWhileLoading();
-        });
-    }
-
-    _teardownEscapeShortcut() {
-        window.LazyScript.unbindStubEscape(this);
-    }
 }
 
 function createHealthLoader(dashboard) {

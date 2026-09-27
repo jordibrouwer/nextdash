@@ -1,7 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
 const {
-    markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, markHealthTutorialSeen,
+    markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
 } = require('./e2e-helpers');
 
 /**
@@ -10,9 +10,8 @@ const {
  * The tag-filter shortcut and the view-level Escape handlers both listen on
  * document. Config used to listen in the bubble phase without claiming the
  * event, so leaving config also cleared an active tag filter — a second action
- * the user never asked for, with nothing on screen explaining it. Health has
- * always claimed the key in the capture phase; these tests hold config to the
- * same behaviour and keep health honest as the reference.
+ * the user never asked for, with nothing on screen explaining it. These tests
+ * hold config to claiming the key in the capture phase.
  */
 async function openDashboard(page) {
     await page.setViewportSize({ width: 1400, height: 900 });
@@ -22,9 +21,6 @@ async function openDashboard(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 20_000 });
-    // The health case opens the view for the first time, and the one-time tour
-    // would take the Escape this test is about.
-    await markHealthTutorialSeen(page);
 }
 
 /** Apply a tag filter through the same API the tag cloud itself calls. */
@@ -52,23 +48,6 @@ test.describe('escape leaves an active tag filter alone', () => {
             .poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 10_000 })
             .toBe('bookmarks');
         // ...and did not also clear the filter on the way out.
-        expect(await page.evaluate(() => window.dashboardInstance._tagFilters)).toEqual(['probe-tag']);
-    });
-
-    test('closing health keeps the tag filter', async ({ page }) => {
-        await openDashboard(page);
-        await applyTagFilter(page);
-        await page.evaluate(() => window.dashboardInstance.health.openHealthView());
-        await expect
-            .poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 10_000 })
-            .toBe('health');
-
-        await page.evaluate(() => document.activeElement?.blur());
-        await page.keyboard.press('Escape');
-
-        await expect
-            .poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 10_000 })
-            .toBe('bookmarks');
         expect(await page.evaluate(() => window.dashboardInstance._tagFilters)).toEqual(['probe-tag']);
     });
 

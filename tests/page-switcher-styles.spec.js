@@ -228,7 +228,7 @@ test('the choice survives a reload', async ({ page }) => {
     ), { timeout: 10_000 }).toBe('text');
 });
 
-test('the page you were last on stays marked in config, health and the inbox', async ({ page }) => {
+test('the page you were last on stays marked in config, Bookmarks and the inbox', async ({ page }) => {
     await openWithPages(page);
     await chooseStyle(page, 'classic');
     // Onto the second page, so the mark is not simply the first tab.
@@ -247,9 +247,9 @@ test('the page you were last on stays marked in config, health and the inbox', a
     await expect.poll(async () => (await marked()).view).toBe('config');
     expect(await marked()).toEqual({ count: 1, right: true, view: 'config' });
 
-    await page.evaluate(() => window.dashboardInstance.health?.openHealthView?.());
-    await expect.poll(async () => (await marked()).view).toBe('health');
-    expect(await marked()).toEqual({ count: 1, right: true, view: 'health' });
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
+    await expect.poll(async () => (await marked()).view).toBe('library');
+    expect(await marked()).toEqual({ count: 1, right: true, view: 'library' });
 
     await page.evaluate(() => window.dashboardInstance.inbox?.openInboxView?.());
     await expect.poll(async () => (await marked()).view).toBe('inbox');

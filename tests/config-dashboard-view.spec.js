@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markHealthTutorialSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
  * Config as a dashboard view — Phase 1 scaffold.
@@ -15,16 +15,13 @@ async function loadDashboard(page) {
     // Wide enough that the header shows its destinations rather than folding
     // them behind the overflow control. The header gained that fold with the
     // one-row rewrite, and at Playwright's default 1280x720 the config and
-    // health links are in the DOM but not clickable — which is what these tests
+    // Bookmarks links are in the DOM but not clickable — which is what these tests
     // then timed out on, waiting for `.config-link a`.
     await page.setViewportSize({ width: 1500, height: 950 });
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    // Shift+H lands in the health view, where the one-time tour would open a
-    // modal over it and swallow the next shortcut.
-    await markHealthTutorialSeen(page);
 }
 
 /**
@@ -70,9 +67,9 @@ test.describe('config dashboard view (scaffold)', () => {
 
     /**
      * The header config link is an icon, not the word "config", and carries the
-     * same --icon treatment as health so the three destinations read as one set.
+     * same --icon treatment as Bookmarks so the destinations read as one set.
      */
-    test('the config link is an icon styled like the health icon', async ({ page }) => {
+    test('the config link is an icon styled like the Bookmarks icon', async ({ page }) => {
         await loadDashboard(page);
 
         const anchor = page.locator('.config-link a.config-link-anchor');
@@ -81,7 +78,7 @@ test.describe('config dashboard view (scaffold)', () => {
         expect((await anchor.innerText()).trim()).toBe('');
         await expect(anchor).toHaveAttribute('aria-label', /.+/);
 
-        // Same box metrics as the health icon, from the shared --icon rules.
+        // Same box metrics as the Bookmarks icon, from the shared --icon rules.
         const boxes = await page.evaluate(() => {
             const pick = (sel) => {
                 const el = document.querySelector(sel);
@@ -89,9 +86,9 @@ test.describe('config dashboard view (scaffold)', () => {
                 const s = getComputedStyle(el);
                 return { pad: s.padding, radius: s.borderTopLeftRadius, display: s.display };
             };
-            return { health: pick('.health-link a'), config: pick('.config-link a') };
+            return { library: pick('.library-link a'), config: pick('.config-link a') };
         });
-        if (boxes.health) expect(boxes.config).toEqual(boxes.health);
+        expect(boxes.config).toEqual(boxes.library);
     });
 
     /**
@@ -247,7 +244,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-config-section="appearance"]')).toHaveClass(/is-active/);
     });
 
-    test('a broken-links row hands off to the health view', async ({ page }) => {
+    test('a broken-links row hands off to the Bookmarks view on Broken', async ({ page }) => {
         // Mock the health report so a broken count exists; loadOverviewData refetches
         // this endpoint, so forcing the in-memory report alone would be clobbered.
         await page.route('**/api/bookmark-health**', async (route) => {
@@ -274,8 +271,8 @@ test.describe('config dashboard view (scaffold)', () => {
 
         await expect
             .poll(() => page.evaluate(() => window.dashboardInstance.activeView))
-            .toBe('health');
-        expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('broken');
+            .toBe('library');
+        expect(await page.evaluate(() => window.dashboardInstance.config.instance.bmHealthFilter)).toBe('broken');
     });
 
     test('the data & backups section renders tiles and the stored list', async ({ page }) => {
@@ -914,7 +911,7 @@ test.describe('config remembers last location', () => {
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
         await page.locator('#config-section-panel').focus();
         await page.keyboard.press('Shift+H');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('health');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('library');
 
         await page.keyboard.press('Shift+S');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');

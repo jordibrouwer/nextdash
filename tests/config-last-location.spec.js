@@ -122,7 +122,7 @@ test.describe('config remembers where you were', () => {
         // The header buttons and page tabs swap the view around config: it
         // never runs closeConfigView, never hears the keystroke, and used to
         // leave the memory holding whatever an earlier exit had written.
-        await page.evaluate(() => window.dashboardInstance.health.openHealthView());
+        await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
         await page.waitForFunction(() => window.dashboardInstance.activeView !== 'config', null, { timeout: 10_000 });
 
         const saved = await stored(page);
@@ -143,7 +143,7 @@ test.describe('config remembers where you were', () => {
             data.savedAt = Date.now() - (4.5 * 60 * 1000);
             localStorage.setItem(k, JSON.stringify(data));
         }, KEY);
-        await page.evaluate(() => window.dashboardInstance.health.openHealthView());
+        await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
         await page.waitForFunction(() => window.dashboardInstance.activeView !== 'config', null, { timeout: 10_000 });
 
         // Leaving restamps it, so the clock starts here rather than expiring

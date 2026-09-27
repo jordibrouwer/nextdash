@@ -28,7 +28,7 @@ async function openDashboard(page) {
 }
 
 test.describe('FULL_CONTAINER_VIEWS table covers every known view', () => {
-    test('inbox, health and config each match their own hash, layout class and activeView', async ({ page }) => {
+    test('inbox, config and the Bookmarks view each match their own hash, layout class and activeView', async ({ page }) => {
         await openDashboard(page);
 
         const results = await page.evaluate(() => {
@@ -38,7 +38,8 @@ test.describe('FULL_CONTAINER_VIEWS table covers every known view', () => {
             return {
                 names: table.map((entry) => entry.view),
                 inboxHash: byView.inbox.matchesHash('#inbox'),
-                healthHash: byView.health.matchesHash('#health'),
+                // The Health view's old address leads to the Bookmarks view.
+                healthHash: byView.library.matchesHash('#health'),
                 configHash: byView.config.matchesHash('#config'),
                 configSectionHash: byView.config.matchesHash('#config/appearance'),
                 libraryHash: byView.library.matchesHash('#bookmarks'),
@@ -46,13 +47,12 @@ test.describe('FULL_CONTAINER_VIEWS table covers every known view', () => {
                 libraryLayoutClass: byView.library.layoutClass,
                 bookmarksHashRejected: table.some((entry) => entry.matchesHash('#3')),
                 inboxLayoutClass: byView.inbox.layoutClass,
-                healthLayoutClass: byView.health.layoutClass,
                 configLayoutClass: byView.config.layoutClass,
                 isEnabledIsCallable: table.every((entry) => typeof entry.isEnabled(d) === 'boolean'),
             };
         });
 
-        expect(results.names.sort()).toEqual(['config', 'docker', 'health', 'inbox', 'library']);
+        expect(results.names.sort()).toEqual(['config', 'docker', 'inbox', 'library']);
         expect(results.libraryHash).toBe(true);
         expect(results.libraryFilteredHash).toBe(true);
         expect(results.libraryLayoutClass).toBe('library-layout');
@@ -62,7 +62,6 @@ test.describe('FULL_CONTAINER_VIEWS table covers every known view', () => {
         expect(results.configSectionHash).toBe(true);
         expect(results.bookmarksHashRejected).toBe(false);
         expect(results.inboxLayoutClass).toBe('inbox-layout');
-        expect(results.healthLayoutClass).toBe('health-layout');
         expect(results.configLayoutClass).toBe('config-layout');
         expect(results.isEnabledIsCallable).toBe(true);
     });
@@ -70,7 +69,6 @@ test.describe('FULL_CONTAINER_VIEWS table covers every known view', () => {
 
 test.describe('a background page-data load does not evict an open full-container view', () => {
     for (const { hash, layoutClass, label } of [
-        { hash: '#health', layoutClass: 'health-layout', label: 'health' },
         { hash: '#inbox', layoutClass: 'inbox-layout', label: 'inbox' },
     ]) {
         test(`${label}: hash, layout class and activeView all survive`, async ({ page }) => {

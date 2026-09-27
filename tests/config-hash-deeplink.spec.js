@@ -51,9 +51,10 @@ test.describe('config deep links', () => {
     });
 
     test('a fresh load of #health and #inbox still work', async ({ page }) => {
+        // #health is the Health view's old address: the Bookmarks view now.
         await page.goto('/#health');
         await waitReady(page);
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('health');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('library');
 
         await page.goto('/#inbox');
         await waitReady(page);
