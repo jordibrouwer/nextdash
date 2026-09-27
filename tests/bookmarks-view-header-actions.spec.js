@@ -131,3 +131,56 @@ test('the Bookmarks icon in the header carries the count of problems', async ({ 
   expect(Math.abs(cx - (anchor.x + anchor.width))).toBeLessThanOrEqual(badge.width);
   expect(Math.abs(cy - anchor.y)).toBeLessThanOrEqual(badge.height);
 });
+
+/*
+ * The Health view's collection-wide tools, carried into the Collection menu
+ * before that view goes: each offered while it has something to act on, and
+ * each run by Health's own method, against the same endpoint.
+ */
+test.describe('bookmarks view: the Collection menu\'s checks', () => {
+  test('Retest all and Open broken links are offered, with the broken count', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await band(page).locator('[data-bm-header-more]').click();
+    await expect(menu(page).locator('[data-bm-header-action="retest"]')).toBeVisible();
+    await expect(menu(page).locator('[data-bm-header-action="open-broken"]')).toContainText('1');
+    // Nothing in the fixture lacks a preview: nothing to offer for it.
+    await expect(menu(page).locator('[data-bm-header-action="fetch-previews"]')).toHaveCount(0);
+  });
+
+  test('Retest all runs the retest over the whole collection', async ({ page }) => {
+    const asked = [];
+    await page.route('**/api/health/retest-all**', (route) => {
+      asked.push(route.request().url());
+      return route.fulfill({ json: { tested: 3 } });
+    });
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await fromMenu(page, '[data-bm-header-action="retest"]');
+    await expect.poll(() => asked.length).toBe(1);
+    expect(asked[0]).toContain('scope=all');
+  });
+
+  test('Open broken links asks first, then asks the server which to open', async ({ page }) => {
+    const asked = [];
+    await page.route('**/api/health/open-broken', (route) => {
+      asked.push(route.request().postData());
+      return route.fulfill({ json: { urls: [], totalBroken: 1 } });
+    });
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await fromMenu(page, '[data-bm-header-action="open-broken"]');
+    await expect(page.locator('#app-modal.show')).toBeVisible();
+    expect(asked).toEqual([]);
+    await page.locator('#app-modal.show .modal-button').first().click();
+    await expect.poll(() => asked.length).toBe(1);
+  });
+
+  test('Merge duplicates with several groups shows them in the list', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await page.evaluate(() => {
+      const health = window.dashboardInstance.config._bmHealthModule;
+      const two = [{ bookmarks: [{}, {}] }, { bookmarks: [{}, {}] }];
+      health.duplicateGroups = () => two;
+    });
+    await fromMenu(page, '[data-bm-header-action="merge"]');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmCleanupFilter)).toBe('duplicate');
+  });
+});

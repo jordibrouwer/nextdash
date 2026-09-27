@@ -27,10 +27,25 @@
                 item('data-bm-open-health-modal', t('config.bmHealthModalTitle', 'Collection health'), 'h'),
                 item('data-bm-rot-report', t('dashboard.healthRot', 'Rot report')),
             ] : [];
+            // What the Health view's toolbar did to the whole collection, each
+            // offered only while it has something to act on.
+            const health = healthOn ? this._bmHealthModule : null;
+            const count = (fn) => { try { return Number(fn()) || 0; } catch { return 0; } };
+            const broken = health ? count(() => health.brokenCount()) : 0;
+            const noPreview = health ? count(() => health.filterCount('missing-preview')) : 0;
+            const dupes = health ? count(() => health.duplicateGroups().length) : 0;
+            const checked = health ? count(() => health.checkedCount()) : 0;
             const organise = [
                 item('data-bm-open-structure', t('config.bmStructureButton', 'Pages & categories'), '⇧P'),
+                dupes ? item('data-bm-header-action="merge"', `${t('dashboard.mergeDuplicateGroup', 'Merge duplicate group')}…`, String(dupes)) : '',
                 unchecked ? item('data-bm-header-action="checking"', `${t('config.bmCheckingTitle', 'Turn on checking')}…`, String(unchecked)) : '',
             ];
+            const checks = health ? [
+                item('data-bm-header-action="retest"', t('dashboard.healthRetest', 'Retest all')),
+                broken ? item('data-bm-header-action="open-broken"', `${t('dashboard.openBrokenLinks', 'Open broken links')}…`, String(broken)) : '',
+                noPreview ? item('data-bm-header-action="fetch-previews"', `${t('dashboard.healthFetchPreviews', 'Fetch previews')}…`, String(noPreview)) : '',
+                checked ? item('data-bm-header-action="check-off"', `${t('dashboard.healthCheckOff', 'Checking off')}…`) : '',
+            ] : [];
             const rest = [
                 item('data-bm-export', t('config.bmExportCsv', 'Export CSV')),
                 healthOn ? item('data-bm-header-action="refresh"', t('config.bmKeyRefreshReport', 'refresh report').replace(/^./, (c) => c.toUpperCase()), '⇧R') : '',
@@ -47,6 +62,7 @@
                     <div class="config-structure-menu config-bm-header-menu" role="menu" data-bm-header-menu hidden>
                         ${look.length ? heading(t('config.bmMenuLookAt', 'Look at')) + look.join('') + '<hr>' : ''}
                         ${heading(t('config.bmMenuOrganise', 'Organise'))}${organise.join('')}<hr>
+                        ${checks.length ? heading(t('config.bmMenuChecks', 'Checks')) + checks.join('') + '<hr>' : ''}
                         ${rest.join('')}
                     </div>
                 </span>
@@ -71,15 +87,56 @@
                 if (action === 'refresh') void this.refreshBmHealth?.({ refresh: true });
                 else if (action === 'checking') this.openCheckingModal?.();
                 else if (action === 'settings') void this._bmHealthModule?.openStatusHealthSettings?.();
+                else void this.runLibraryCollectionAction(action);
             } else {
                 return false;
             }
             return true;
         },
 
+        /**
+         * The collection-wide tools the Health view's toolbar carried, run by
+         * Health's own methods. Each reloads the report, and the view hears of
+         * it (onReportLoaded); what they change on the bookmarks themselves
+         * is read back here.
+         */
+        async runLibraryCollectionAction(action) {
+            const health = this._bmHealthModule;
+            if (!health) return;
+            if (action === 'merge') {
+                const groups = (health.duplicateGroups() || []).filter((g) => (g?.bookmarks || []).length > 1);
+                // One group is merged at once; more, and the list shows them,
+                // each with its own Merge in the side panel's ⋯.
+                if (groups.length > 1) {
+                    if (this.bmCleanupFilter !== 'duplicate') this.toggleRailFilter('cleanup', 'duplicate');
+                    return;
+                }
+                if (groups.length === 1) await health.mergeDuplicateGroup(groups[0]);
+            } else if (action === 'retest') {
+                await health.retestAll();
+            } else if (action === 'open-broken') {
+                await health.openBrokenLinks();
+            } else if (action === 'fetch-previews') {
+                await health.fetchMissingPreviews();
+            } else if (action === 'check-off') {
+                await health.disableAllChecking();
+            } else {
+                return;
+            }
+            await this.dash.loadAllBookmarks?.();
+            this.invalidateVisibleBookmarks?.();
+            this.repaintBookmarksList?.();
+        },
+
         /** Open until a pick, Escape or a click anywhere else. */
         openLibraryHeaderMenu(button, menu) {
             this.closeLibraryHeaderMenu();
+            // Drawn afresh on each opening: its counts are the report's now,
+            // not the one the band was drawn with.
+            const fresh = document.createElement('div');
+            fresh.innerHTML = this.renderLibraryHeaderActions();
+            const items = fresh.querySelector('[data-bm-header-menu]');
+            if (items) menu.innerHTML = items.innerHTML;
             menu.hidden = false;
             button.setAttribute('aria-expanded', 'true');
             const away = (e) => {
