@@ -74,3 +74,15 @@ test.describe('bookmark panel: the Health tab', () => {
     await expect.poll(() => page.evaluate(() => document.activeElement?.hasAttribute('data-check-mode'))).toBe(true);
   });
 });
+
+test('an accordion head is set apart from its body by tone', async ({ page }) => {
+  const { bookmarks } = await openBookmarksWithHealth(page, undefined, { view: 'library' });
+  await openHealthTab(page, bookmarks[0].name);
+  const why = acc(page, 'why');
+  const [head, body] = await Promise.all([
+    why.locator('summary').evaluate((el) => getComputedStyle(el).backgroundColor),
+    why.locator('.lvs-drawer-section-body').evaluate((el) => getComputedStyle(el.parentElement).backgroundColor),
+  ]);
+  expect(head).not.toBe(body);
+  expect(head).not.toBe('rgba(0, 0, 0, 0)');
+});

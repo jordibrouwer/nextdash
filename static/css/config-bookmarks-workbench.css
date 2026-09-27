@@ -2087,26 +2087,61 @@ html body .config-bm-more-menu .config-btn {
     min-width: 0;
 }
 
+/*
+ * Each section a card of its own: the head tinted with the theme's accent,
+ * the body on the page's own background. Separated by tone rather than by
+ * a hairline, which in several themes was too faint to tell a head from
+ * the text under it. Tokens only, so every theme, light or dark, carries it.
+ */
 .config-bm-acc-list {
     display: flex;
     flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
 }
 
 .config-bm-acc {
-    border-top: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
+    border-radius: var(--radius-5, 8px);
+    overflow: hidden;
+    background: var(--background-primary);
 }
 
 .config-bm-acc > summary {
     display: flex;
     align-items: center;
     gap: var(--space-2, 0.5rem);
-    padding: var(--space-2, 0.5rem) 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     cursor: pointer;
+    list-style: none;
+    background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
     font-size: var(--font-size-small);
     font-weight: 600;
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--text-secondary);
+}
+
+.config-bm-acc > summary::-webkit-details-marker {
+    display: none;
+}
+
+.config-bm-acc > summary::before {
+    content: '▸';
+    color: var(--accent-primary);
+}
+
+.config-bm-acc[open] > summary::before {
+    content: '▾';
+}
+
+.config-bm-acc > summary:hover {
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
+}
+
+.config-bm-acc[open] > summary {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+    color: var(--text-primary);
 }
 
 .config-bm-acc > summary > span:first-child {
@@ -2121,5 +2156,6 @@ html body .config-bm-more-menu .config-btn {
 }
 
 .config-bm-acc > .lvs-drawer-section-body {
-    padding-bottom: var(--space-3, 0.75rem);
+    padding: var(--space-3, 0.75rem);
+    border-top: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
 }
