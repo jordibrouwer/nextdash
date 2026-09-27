@@ -11,7 +11,7 @@ const { prepareDashboardInteraction, markWhatsNewSeen } = require('./e2e-helpers
  * leaves it unseen, to exercise the tour itself.
  */
 
-const STEPS = 5;
+const STEPS = 6;
 
 async function openInboxWithoutMarkingTutorialSeen(page) {
     // What's new is a different overlay from the tutorial and this file has no
@@ -32,11 +32,16 @@ async function openInboxWithoutMarkingTutorialSeen(page) {
         if (d?.settings) {
             d.settings.onboardingCompleted = true;
             d.settings.inboxEnabled = true;
+            // 'respects enableSessionTips: false' turns tips off, and a settings
+            // save anywhere after it carries that to the server; every later
+            // test that waits for the tour to open by itself would then wait
+            // for nothing.
+            d.settings.enableSessionTips = true;
         }
         const state = window.DiscoverabilityState;
         if (state?.exportState) {
             const exported = state.exportState();
-            exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV2');
+            exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV3');
             state.init?.(exported);
         }
     });
@@ -47,7 +52,7 @@ async function openInboxWithoutMarkingTutorialSeen(page) {
 const modal = (page) => page.locator('#app-modal.show .inbox-tutorial-modal');
 
 test.describe('inbox tutorial', () => {
-    test('shows on first visit to the inbox, with five steps', async ({ page }) => {
+    test('shows on first visit to the inbox, with six steps', async ({ page }) => {
         await openInboxWithoutMarkingTutorialSeen(page);
 
         await expect(modal(page)).toBeVisible();
@@ -82,10 +87,11 @@ test.describe('inbox tutorial', () => {
         }
         expect(titles).toEqual([
             'A waiting room for links',
+            'Read, snoozed, noted',
+            'The side panel',
             'Every link leaves one of three ways',
-            'Kept: worth keeping, no page yet',
-            'How to keep a link',
-            'The keys, and where this tour lives',
+            'Kept links wait in Bookmarks › Unsorted',
+            'Triage, and the keys',
         ]);
         await expect(page.locator('.inbox-tutorial-progress')).toHaveText(`Step ${STEPS} of ${STEPS}`);
 
@@ -108,7 +114,7 @@ test.describe('inbox tutorial', () => {
         await page.locator('.modal-actions .modal-button', { hasText: 'Got it' }).click();
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
 
-        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('inboxTutorialV2'));
+        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('inboxTutorialV3'));
         expect(seen).toBe(true);
     });
 
@@ -118,7 +124,7 @@ test.describe('inbox tutorial', () => {
         await page.keyboard.press('Escape');
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
 
-        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('inboxTutorialV2'));
+        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('inboxTutorialV3'));
         expect(seen).toBe(true);
     });
 
@@ -134,7 +140,7 @@ test.describe('inbox tutorial', () => {
             const state = window.DiscoverabilityState;
             if (state?.exportState) {
                 const exported = state.exportState();
-                exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV2');
+                exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV3');
                 state.init?.(exported);
             }
         });
@@ -180,5 +186,63 @@ test.describe('inbox tutorial', () => {
         await expect(page.locator('.inbox-tutorial-scene svg.itv')).toHaveCount(1);
         await page.keyboard.press('Escape');
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
+    });
+
+    /**
+     * The scenes move -- links stream in, a row dims as read, the panel slides
+     * in, a kept row flies to the Bookmarks icon -- but a reader who asked for
+     * less motion gets the same pictures standing still. The still frame is
+     * the resting state of every animation, so it still tells the whole story.
+     */
+    test('the scenes animate, and stand still under reduced motion', async ({ page }) => {
+        await openInboxWithoutMarkingTutorialSeen(page);
+        await expect(modal(page)).toBeVisible();
+
+        const running = () => page.evaluate(() =>
+            [...document.querySelectorAll('.inbox-tutorial-scene .itv-anim')]
+                .filter((n) => getComputedStyle(n).animationName !== 'none').length);
+
+        for (let i = 0; i < STEPS; i += 1) {
+            expect(await running(), `step ${i + 1} has a moving part`).toBeGreaterThan(0);
+            if (i < STEPS - 1) {
+                await page.locator('.modal-actions .modal-button', { hasText: 'Next' }).click();
+                await page.waitForTimeout(120);
+            }
+        }
+
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        expect(await running()).toBe(0);
+        await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+        // The app's own switch, for a browser that does not say so.
+        await page.evaluate(() => document.body.classList.add('no-animations'));
+        expect(await running()).toBe(0);
+    });
+
+    /** Labels come from the locale, so a translated inbox gets a translated tour. */
+    test('the scenes carry no hard-coded English labels', async ({ page }) => {
+        await openInboxWithoutMarkingTutorialSeen(page);
+        await expect(modal(page)).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#app-modal.show')).toHaveCount(0);
+        await page.evaluate(() => {
+            const lang = window.dashboardInstance.language;
+            const orig = lang.t.bind(lang);
+            lang.t = (k) => (k.startsWith('dashboard.inbox') ? 'XX' : orig(k));
+            window.InboxTutorial.open();
+        });
+        const words = new Set();
+        for (let i = 0; i < STEPS; i += 1) {
+            (await page.locator('.inbox-tutorial-scene text').allTextContents())
+                .forEach((t) => words.add(t.trim()));
+            if (i < STEPS - 1) {
+                // The confirm button is first; its label is 'XX' now too.
+                await page.locator('.modal-actions .modal-button').first().click();
+                await page.waitForTimeout(80);
+            }
+        }
+        const english = [...words].filter((w) =>
+            /\b(read|keep|promote|snooze|delete|note|move|share|paste|gone|unsorted|bookmarks|tour)\b/i.test(w));
+        expect(english).toEqual([]);
     });
 });

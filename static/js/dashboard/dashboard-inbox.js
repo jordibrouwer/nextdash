@@ -13,7 +13,7 @@ class DashboardInbox {
      * separately — and the whole point of a seen-check here is to not fetch it
      * at all once the tour is done. Both copies must stay in step.
      */
-    static TUTORIAL_TIP_ID = 'inboxTutorialV2';
+    static TUTORIAL_TIP_ID = 'inboxTutorialV3';
 
     constructor(dashboard) {
         this.dash = dashboard;

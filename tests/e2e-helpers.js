@@ -129,7 +129,7 @@ async function dismissWhatsNewIfPresent(page) {
  */
 async function markInboxTutorialSeen(page) {
     await page.evaluate(() => {
-        window.DiscoverabilityState?.markTipSeen?.('inboxTutorialV2', { persist: false });
+        window.DiscoverabilityState?.markTipSeen?.('inboxTutorialV3', { persist: false });
     });
 }
 

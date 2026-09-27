@@ -10,7 +10,7 @@ class SearchCommandsComponent {
     static GUIDED_TOURS = [
         { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps' },
-        { id: 'inboxTutorialV2', labelKey: 'config.tourInbox', label: 'Inbox' },
+        { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox' },
         { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
         { id: 'spreadTutorialV1', labelKey: 'config.tourSpread', label: 'Spreading a category' },
