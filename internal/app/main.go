@@ -253,6 +253,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/health/delete-bookmark", handlers.DeleteHealthBookmark).Methods("POST")
 	r.HandleFunc("/api/health/delete-bookmarks", handlers.DeleteHealthBookmarksBulk).Methods("POST")
 	r.HandleFunc("/api/health/history-export", handlers.ExportHealthHistory).Methods("GET")
+	r.HandleFunc("/api/health/history", handlers.HealthHistoryView).Methods("GET")
 	r.HandleFunc("/api/health/archive-snapshot", handlers.ArchiveSnapshot).Methods("GET")
 	// Asking the archive to keep a copy, rather than hoping someone already
 	// did. Behind the write token: it spends a shared daily budget.
