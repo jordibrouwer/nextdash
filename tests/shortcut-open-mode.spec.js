@@ -112,39 +112,21 @@ test.describe('typing a bookmark shortcut', () => {
     });
 });
 
-test.describe('Inbox is its own tab in Behavior', () => {
-    test('the tab exists and carries the inbox settings', async ({ page }) => {
+test.describe('Inbox is its own section in Config', () => {
+    test('the section exists and carries the inbox settings; Behavior keeps Fresh', async ({ page }) => {
         await dashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.waitForSelector('[data-behavior-tab]', { timeout: 15_000 });
 
         const tabs = await page.locator('[data-behavior-tab]').evaluateAll(
             (els) => els.map((el) => el.getAttribute('data-behavior-tab')));
-        expect(tabs).toContain('inbox');
+        expect(tabs).toContain('fresh');
+        expect(tabs).not.toContain('inbox');
         // Search keeps its name for what it is now, without the inbox tacked on.
         const searchLabel = await page.locator('[data-behavior-tab="search"]').innerText();
         expect(searchLabel.toLowerCase()).not.toContain('inbox');
 
-        await page.locator('[data-behavior-tab="inbox"]').click();
-        await page.waitForTimeout(600);
-        const body = await page.locator('#config-behavior-body').innerText();
-        expect(body.toLowerCase()).toContain('inbox');
-        expect(await page.locator('#config-behavior-body [data-behavior-field="inboxEnabled"]').count())
-            .toBeGreaterThan(0);
-    });
-
-    test('the shortcut choice is on Search, as three cards with an info button', async ({ page }) => {
-        await dashboard(page);
-        await page.evaluate(() => {
-            const c = window.dashboardInstance.config;
-            (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
-            c.behaviorTab = 'search';
-            c.render();
-        });
-        await page.waitForTimeout(800);
-
-        const cards = page.locator('#config-behavior-body [data-behavior-field="shortcutOpenMode"][data-behavior-type="cards"]');
-        expect(await cards.count()).toBe(3);
-        await expect(page.locator('#config-behavior-body [data-info-field="shortcutOpenMode"]')).toHaveCount(1);
+        await page.locator('[data-config-section="inbox"]').click();
+        await expect(page.locator('#config-inbox-body [data-behavior-field="inboxEnabled"]')).toHaveCount(1);
     });
 });

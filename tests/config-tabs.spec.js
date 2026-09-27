@@ -36,11 +36,11 @@ test('Appearance opens on its first tab, with the settings already there', async
 test('Behavior has five tabs, and the moved settings are where the tabs say', async ({ page }) => {
     await open(page, '#config/behavior');
     await expect(page.locator('[data-behavior-tab]')).toHaveText(
-        ['General', 'Keyboard & search', 'Inbox & Fresh', 'Status & alerts', 'Privacy & sync']);
+        ['General', 'Keyboard & search', 'Fresh', 'Status & alerts', 'Privacy & sync']);
 
     await page.locator('[data-behavior-tab="search"]').click();
     await expect(page.locator('[data-behavior-field="globalShortcuts"]')).toBeVisible();
-    await page.locator('[data-behavior-tab="inbox"]').click();
+    await page.locator('[data-behavior-tab="fresh"]').click();
     await expect(page.locator('[data-behavior-field="feedsEnabled"]')).toBeVisible();
     await page.locator('[data-behavior-tab="privacy"]').click();
     await expect(page.locator('[data-behavior-field="enableSessionTips"]')).toBeVisible();
@@ -48,9 +48,10 @@ test('Behavior has five tabs, and the moved settings are where the tabs say', as
 });
 
 test('an old tab link opens the tab that holds its settings now', async ({ page }) => {
-    await open(page, '#config/behavior/fresh');
-    await expect(page.locator('[data-behavior-tab="inbox"]')).toHaveAttribute('aria-selected', 'true');
-    await expect.poll(() => hash(page)).toBe('#config/behavior/inbox');
+    // Inbox & Fresh was the tab's name while it held the inbox's settings too.
+    await open(page, '#config/behavior/inbox');
+    await expect(page.locator('[data-behavior-tab="fresh"]')).toHaveAttribute('aria-selected', 'true');
+    await expect.poll(() => hash(page)).toBe('#config/behavior/fresh');
 
     await page.goto('/#config/appearance/grid');
     await expect(page.locator('[data-appearance-tab="layout"]')).toHaveAttribute('aria-selected', 'true');

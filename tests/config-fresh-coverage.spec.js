@@ -20,8 +20,7 @@ async function openFreshPanel(page) {
     await page.evaluate(() => {
         const c = window.dashboardInstance.config;
         (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
-        // Fresh shares a tab with the inbox.
-        c.behaviorTab = 'inbox';
+        c.behaviorTab = 'fresh';
         c.render();
     });
     await page.waitForSelector('[data-config-action="findFeeds"]', { timeout: 15_000 });

@@ -22,6 +22,7 @@ class DashboardConfigLoader {
         'overview',
         'appearance',
         'bookmarks',
+        'inbox',
         'structure',
         'behavior',
         'data-backups',
@@ -98,6 +99,8 @@ class DashboardConfigLoader {
             // Mirrors DashboardConfig.APPEARANCE_TAB_ALIASES: a location saved
             // while the header tab was called "toolbar" still opens it.
             if (section === 'appearance' && subTab === 'toolbar') subTab = 'header';
+            // Mirrors DashboardConfig.BEHAVIOR_TAB_ALIASES.
+            if (section === 'behavior' && subTab === 'inbox') subTab = 'fresh';
             return { section, subTab: subTab || null };
         } catch {
             return null;

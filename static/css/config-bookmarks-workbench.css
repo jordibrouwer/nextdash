@@ -2920,3 +2920,21 @@ html body .config-bm-more-menu .config-btn {
         box-sizing: border-box;
     }
 }
+
+/* ── Config → Inbox: the preview ──────────────────────────────────────── */
+
+/* The Inbox's own rows (dashboard-inbox.css), as the settings make them. */
+.config-inbox-view-preview-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    align-self: stretch;
+    min-width: 0;
+}
+
+.config-inbox-view-preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.35rem);
+    margin-top: var(--space-2, 0.5rem);
+}

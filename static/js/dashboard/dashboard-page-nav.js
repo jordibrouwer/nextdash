@@ -317,7 +317,12 @@ class DashboardPageNav {
         if (!badge) {
             return;
         }
-        const unread = d.inbox?.unreadCount?.() || 0;
+        // Config → Inbox: no count, what is unread (as it was), or everything awake.
+        const s = d.settings || {};
+        const unread = s.inboxViewBadge === false ? 0
+            : (s.inboxViewBadgeCounts === 'all'
+                ? (d.inbox?.instance?.activeItems?.().length || 0)
+                : (d.inbox?.unreadCount?.() || 0));
         // The To triage tab shows this same number; moved together here, so
         // no path that updates the badge can leave the tab behind. Through
         // the loaded module only -- asking the loader would fetch the inbox

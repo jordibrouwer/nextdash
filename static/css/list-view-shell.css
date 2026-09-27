@@ -762,3 +762,42 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-drawer-frame {
         border-radius: 0;
     }
 }
+
+/*
+ * A rail folded away (Config → Inbox): the list takes the width, and the
+ * rail waits behind a Filters button that lays it over the page as a sheet.
+ * Below 720px the rail is a strip above the list already, and stays one.
+ */
+@media (min-width: 721px) {
+    .lvs.is-rail-folded {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            'header'
+            'main';
+    }
+
+    .lvs.is-rail-folded .lvs-rail {
+        display: none;
+    }
+
+    .lvs.is-rail-folded.is-rail-open .lvs-rail {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(280px, 100vw);
+        max-height: none;
+        padding: var(--space-3, 0.75rem);
+        background: var(--surface-3, var(--background-secondary));
+        border-right: 1px solid var(--border-primary);
+        z-index: calc(var(--layer-sticky-band, 5) + 1400);
+        overflow: auto;
+    }
+}
+
+@media (max-width: 720px) {
+    .inbox-rail-toggle {
+        display: none;
+    }
+}

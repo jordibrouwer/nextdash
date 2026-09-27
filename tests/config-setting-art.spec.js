@@ -172,11 +172,9 @@ test.describe('the settings that are a place, not a size', () => {
         await dismissBlockingOverlays(page);
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
-            // Quick add & inbox, where the paste destination lives — it moved
-            // off the Search tab when the inbox settings were grouped.
-            c.behaviorTab = 'inbox';
-            c.render();
+            // Config → Inbox, where the paste destination lives with the
+            // inbox's other settings.
+            c.openConfigView('inbox');
         });
         await page.waitForTimeout(800);
 

@@ -179,7 +179,7 @@ test('every special in the schema is one setBehavior actually handles', async ({
     // pool takes effect on the next reload and looks like it did nothing.
     // `healthBadge` redraws the Bookmarks icon's count (Config → Bookmarks → View).
     const handled = ['language', 'datetime', 'chrome', 'chromeRender', 'render', 'shortcutTooltips',
-        'visual', 'feeds', 'previewCard', 'siteNews', 'search', 'healthBadge'];
+        'visual', 'feeds', 'previewCard', 'siteNews', 'search', 'healthBadge', 'inboxBadge'];
     expect(used.length).toBeGreaterThan(3);
     expect(used.filter((s) => !handled.includes(s))).toEqual([]);
 });

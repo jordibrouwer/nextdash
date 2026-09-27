@@ -57,6 +57,7 @@ class DashboardConfig {
         'overview',
         'appearance',
         'bookmarks',
+        'inbox',
         'structure',
         'behavior',
         'data-backups',
@@ -78,6 +79,11 @@ class DashboardConfig {
      * this list grows one section at a time.
      */
     static SECTION_MODULES = {
+        inbox: {
+            file: 'js/dashboard/dashboard-config-inbox.js',
+            datasetKey: 'dashboardConfigInbox',
+            ready: () => window.DashboardConfigInboxReady === true,
+        },
         containers: {
             file: 'js/dashboard/dashboard-config-containers.js',
             datasetKey: 'dashboardConfigContainers',
@@ -1808,6 +1814,7 @@ class DashboardConfig {
             overview: ['config.sectionOverview', 'Overview'],
             'structure': ['config.sectionStructure', 'Structure'],
             bookmarks: ['config.sectionBookmarks', 'Bookmarks'],
+            inbox: ['config.sectionInbox', 'Inbox'],
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
@@ -1972,6 +1979,9 @@ class DashboardConfig {
         if (this.section === 'bookmarks' && !this.standalone && this.bmTab === 'view') {
             return { section: 'bookmarks', tab: 'view' };
         }
+        if (this.section === 'inbox') {
+            return { section: 'inbox', tab: 'general' };
+        }
         return null;
     }
 
@@ -2064,6 +2074,9 @@ class DashboardConfig {
         } else if (this.section === 'containers') {
             this.bindControlPanels(container, 'behavior');
             this.bindContainersSection(container);
+        } else if (this.section === 'inbox') {
+            this.bindControlPanels(container, 'behavior');
+            this.bindInboxSection?.(container);
         } else if (this.section === 'widgets') {
             this.bindWidgetsTabs(container);
             this.bindWidgetsEditor(container);
@@ -3202,6 +3215,20 @@ class DashboardConfig {
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
         feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
+        inboxViewFilter: ['inbox', 'filter', 'unread', 'opens'],
+        inboxViewSort: ['inbox', 'sort', 'order', 'newest', 'oldest'],
+        inboxViewAddress: ['inbox', 'address', 'url', 'domain', 'site'],
+        inboxViewUnreadMark: ['inbox', 'unread', 'mark', 'edge'],
+        inboxViewRail: ['inbox', 'rail', 'filters', 'fold'],
+        inboxViewPanelWidth: ['inbox', 'panel', 'drawer', 'width', 'wide'],
+        inboxViewCloseOutside: ['inbox', 'panel', 'drawer', 'close'],
+        inboxViewClick: ['inbox', 'click', 'select', 'panel'],
+        inboxViewDblClick: ['inbox', 'double click', 'note', 'open'],
+        inboxViewBadge: ['inbox', 'badge', 'count', 'header', 'icon'],
+        inboxViewBadgeCounts: ['inbox', 'badge', 'count', 'unread'],
+        inboxViewKeyLegend: ['inbox', 'keys', 'legend', 'keyboard'],
+        inboxShowInPageTabs: ['inbox', 'header', 'icon', 'tab'],
+        inboxDeleteAfterPromote: ['inbox', 'promote', 'remove', 'bookmark'],
         dockerViewEnabled: ['docker', 'containers', 'view'],
         dockerRefreshSeconds: ['docker', 'containers', 'refresh', 'poll'],
         dockerLogLines: ['docker', 'containers', 'logs'],
@@ -3907,6 +3934,9 @@ class DashboardConfig {
         }
         if (this.section === 'containers') {
             return this.renderContainersSection();
+        }
+        if (this.section === 'inbox') {
+            return this.renderInboxSection();
         }
         if (this.section === 'stats') {
             return this.renderStats();
@@ -11891,6 +11921,21 @@ class DashboardConfig {
         inboxEnabled: { info: ['inboxEnabledInfoTitle', 'inboxEnabledInfoMessage'], def: true },
         unsortedEnabled: { hint: 'unsortedEnabledHint', def: true },
         keepAutoFile: { hint: 'keepAutoFileHint', def: false },
+        inboxShowInPageTabs: { info: ['inboxShowInPageTabsInfoTitle', 'inboxShowInPageTabsInfoMessage'], def: true },
+        inboxDeleteAfterPromote: { info: ['inboxDeleteAfterPromoteInfoTitle', 'inboxDeleteAfterPromoteInfoMessage'], def: true },
+        // Config → Inbox: the Inbox view
+        inboxViewFilter: { info: ['inboxViewFilterInfoTitle', 'inboxViewFilterInfoMessage'], def: 'last' },
+        inboxViewSort: { info: ['inboxViewSortInfoTitle', 'inboxViewSortInfoMessage'], def: 'last' },
+        inboxViewAddress: { info: ['inboxViewAddressInfoTitle', 'inboxViewAddressInfoMessage'], def: 'domain' },
+        inboxViewUnreadMark: { info: ['inboxViewUnreadMarkInfoTitle', 'inboxViewUnreadMarkInfoMessage'], def: true },
+        inboxViewRail: { info: ['inboxViewRailInfoTitle', 'inboxViewRailInfoMessage'], def: 'open' },
+        inboxViewPanelWidth: { info: ['inboxViewPanelWidthInfoTitle', 'inboxViewPanelWidthInfoMessage'], def: 'normal' },
+        inboxViewCloseOutside: { info: ['inboxViewCloseOutsideInfoTitle', 'inboxViewCloseOutsideInfoMessage'], def: true },
+        inboxViewClick: { info: ['inboxViewClickInfoTitle', 'inboxViewClickInfoMessage'], def: 'panel' },
+        inboxViewDblClick: { info: ['inboxViewDblClickInfoTitle', 'inboxViewDblClickInfoMessage'], def: 'open' },
+        inboxViewBadge: { info: ['inboxViewBadgeInfoTitle', 'inboxViewBadgeInfoMessage'], def: true },
+        inboxViewBadgeCounts: { info: ['inboxViewBadgeCountsInfoTitle', 'inboxViewBadgeCountsInfoMessage'], def: 'unread' },
+        inboxViewKeyLegend: { info: ['inboxViewKeyLegendInfoTitle', 'inboxViewKeyLegendInfoMessage'], def: 'below' },
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
@@ -12985,13 +13030,14 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
-                tab: 'inbox',
-                title: t('config.generalGroupQuickAdd', 'Quick add & inbox'),
+                section: 'inbox',
+                tab: 'general',
+                title: t('config.inboxGroupCollecting', 'Collecting'),
                 note: t('config.generalGroupQuickAddNote', 'What happens when you paste a URL onto the dashboard — add it straight away, or collect it in the inbox to sort later.'),
                 controls: [
-                    bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
                     bool('inboxEnabled', 'config.inboxEnabledLabel', 'Enable the inbox'),
+                    bool('inboxShowInPageTabs', 'config.inboxShowInPageTabsLabel', 'Show the inbox in the header'),
+                    bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
                     // Keeping is a step in the inbox's own flow, so its switch
                     // stands with the inbox rather than among the header's
                     // icons, where it used to read as "show an icon" while it
@@ -13003,6 +13049,91 @@ class DashboardConfig {
                     { field: 'pasteDestination', type: 'select', label: t('config.pasteDestinationLabel', 'Paste destination'), art: 'flow', options: [
                         opt('ask', t('config.pasteDestinationAsk', 'Ask each time')), opt('bookmark', t('config.pasteDestinationBookmark', 'New bookmark')),
                         opt('inbox', t('config.pasteDestinationInbox', 'Inbox')),
+                    ] },
+                    bool('inboxDeleteAfterPromote', 'config.inboxDeleteAfterPromoteLabel', 'Remove from the inbox once promoted'),
+                ],
+            },
+            // Config → Inbox: how the Inbox view looks and behaves, the way
+            // Bookmarks → View does it for the Bookmarks view.
+            {
+                section: 'inbox',
+                tab: 'general',
+                title: t('config.bmViewGroupList', 'The list'),
+                controls: [
+                    { field: 'inboxViewFilter', type: 'select', label: t('config.inboxViewFilterLabel', 'Opens on'), options: [
+                        opt('last', t('config.inboxViewFilterLast', 'The filter used last')),
+                        opt('all', t('dashboard.inboxFilterAll', 'All')),
+                        opt('unread', t('dashboard.inboxFilterUnread', 'Unread')),
+                        opt('snoozed', t('dashboard.inboxFilterSnoozed', 'Snoozed')),
+                        opt('noted', t('dashboard.inboxFilterNoted', 'With note')),
+                    ] },
+                    { field: 'inboxViewSort', type: 'select', label: t('config.inboxViewSortLabel', 'Sorted by'), options: [
+                        opt('last', t('config.inboxViewSortLast', 'The order used last')),
+                        opt('newest', t('config.inboxViewSortNewest', 'Newest first')),
+                        opt('oldest', t('config.inboxViewSortOldest', 'Oldest first')),
+                        opt('title', t('config.inboxViewSortTitle', 'Title')),
+                        opt('domain', t('config.inboxViewSortDomain', 'Site')),
+                    ] },
+                    { field: 'inboxViewAddress', type: 'select', label: t('config.bmViewAddressLabel', 'Address in the row'), options: [
+                        opt('domain', t('config.bmViewAddressDomain', 'Domain')),
+                        opt('full', t('config.bmViewAddressFull', 'Full address')),
+                        opt('hidden', t('config.bmViewAddressHidden', 'Hidden')),
+                    ] },
+                    bool('inboxViewUnreadMark', 'config.inboxViewUnreadMarkLabel', 'Mark unread rows'),
+                ],
+            },
+            {
+                section: 'inbox',
+                tab: 'general',
+                title: t('config.inboxGroupRailPanel', 'Rail and side panel'),
+                controls: [
+                    { field: 'inboxViewRail', type: 'select', label: t('config.bmViewRailLabel', 'The rail on the left'), options: [
+                        opt('open', t('config.bmViewRailOpen', 'Open')),
+                        opt('folded', t('config.bmViewRailFolded', 'Folded')),
+                    ] },
+                    { field: 'inboxViewPanelWidth', type: 'select', label: t('config.bmViewPanelWidthLabel', 'Width'), options: [
+                        opt('normal', t('config.bmViewWidthNormal', 'Normal')),
+                        opt('wide', t('config.bmViewWidthWide', 'Wide')),
+                    ] },
+                    bool('inboxViewCloseOutside', 'config.bmViewCloseOutsideLabel', 'Close on a click beside it'),
+                ],
+            },
+            {
+                section: 'inbox',
+                tab: 'general',
+                title: t('config.bmViewGroupClicks', 'Clicking'),
+                controls: [
+                    { field: 'inboxViewClick', type: 'select', label: t('config.bmViewClickLabel', 'A click on a row'), options: [
+                        opt('panel', t('config.bmViewClickPanel', 'Opens the side panel')),
+                        opt('select', t('config.bmViewClickSelect', 'Only selects it')),
+                    ] },
+                    { field: 'inboxViewDblClick', type: 'select', label: t('config.bmViewDblClickLabel', 'A double click'), options: [
+                        opt('open', t('config.inboxViewDblOpen', 'Opens the link')),
+                        opt('note', t('config.inboxViewDblNote', 'Edits the note')),
+                    ] },
+                ],
+            },
+            {
+                section: 'inbox',
+                tab: 'general',
+                title: t('config.inboxGroupBadge', 'Header icon'),
+                controls: [
+                    { field: 'inboxViewBadge', type: 'checkbox', special: 'inboxBadge', label: t('config.inboxViewBadgeLabel', 'A count on the Inbox icon') },
+                    { field: 'inboxViewBadgeCounts', type: 'select', special: 'inboxBadge', label: t('config.bmViewBadgeCountsLabel', 'The count shows'), options: [
+                        opt('unread', t('config.inboxViewBadgeUnread', 'What is unread')),
+                        opt('all', t('config.inboxViewBadgeAll', 'Everything awake')),
+                    ] },
+                ],
+            },
+            {
+                section: 'inbox',
+                tab: 'general',
+                title: t('config.bmViewGroupKeys', 'Keys'),
+                controls: [
+                    { field: 'inboxViewKeyLegend', type: 'select', label: t('config.bmViewKeyLegendLabel', 'The key legend'), options: [
+                        opt('below', t('config.bmViewLegendBelow', 'Below the list')),
+                        opt('above', t('config.bmViewLegendAbove', 'Above the list')),
+                        opt('off', t('config.bmViewLegendOff', 'Hidden')),
                     ] },
                 ],
             },
@@ -13116,9 +13247,8 @@ class DashboardConfig {
                 ],
             },
             {
-                // Shares a tab with the inbox: both are about what arrives.
                 section: 'behavior',
-                tab: 'inbox',
+                tab: 'fresh',
                 title: t('config.feedsTitle', 'Fresh'),
                 note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
                 controls: [
@@ -14460,10 +14590,11 @@ class DashboardConfig {
     // search (the keys are how search is reached), and onboarding and the
     // device-only switch joined privacy, which is where "what does this app do
     // on its own" is already answered.
-    static BEHAVIOR_TABS = ['general', 'search', 'inbox', 'status', 'privacy'];
+    // The inbox's own settings moved to Config → Inbox; Fresh kept the tab.
+    static BEHAVIOR_TABS = ['general', 'search', 'fresh', 'status', 'privacy'];
 
     /** Behavior tabs that were folded into another one still open it. */
-    static BEHAVIOR_TAB_ALIASES = { fresh: 'inbox' };
+    static BEHAVIOR_TAB_ALIASES = { inbox: 'fresh' };
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -14477,7 +14608,7 @@ class DashboardConfig {
             general: ['config.behaviorTabGeneral', 'General'],
             datetime: ['config.behaviorTabDateTime', 'Date & weather'],
             search: ['config.behaviorTabKeyboardSearch', 'Keyboard & search'],
-            inbox: ['config.behaviorTabInboxFresh', 'Inbox & Fresh'],
+            fresh: ['config.behaviorTabFresh', 'Fresh'],
             status: ['config.behaviorTabStatusAlerts', 'Status & alerts'],
             privacy: ['config.behaviorTabPrivacySync', 'Privacy & sync'],
         };
@@ -14921,6 +15052,9 @@ class DashboardConfig {
             case 'healthBadge':
                 // The count on the Bookmarks icon is drawn by the badge refresh.
                 void d.updateHealthBadge?.();
+                break;
+            case 'inboxBadge':
+                d.pageNav?.updateInboxTabBadge?.();
                 break;
             case 'shortcutTooltips':
                 // The popovers are listeners bound to the toolbar buttons, not
@@ -15432,6 +15566,19 @@ class DashboardConfig {
             if (body) {
                 body.innerHTML = this.renderBmTab();
                 this.bindControlPanels(body, 'behavior');
+                this._fillShellHeadFromSection(container);
+                this.labelSettingsControls();
+                restoreFocus();
+            }
+            return;
+        }
+        // Config → Inbox: the panels and the preview above them, redrawn.
+        if (this.section === 'inbox') {
+            const body = document.getElementById('config-inbox-body');
+            if (body && typeof this.renderInboxBody === 'function') {
+                body.innerHTML = this.renderInboxBody();
+                this.bindControlPanels(body, 'behavior');
+                this.bindInboxSection?.(body);
                 this._fillShellHeadFromSection(container);
                 this.labelSettingsControls();
                 restoreFocus();
@@ -28171,7 +28318,7 @@ class DashboardConfig {
     static HELP_PANEL_FEATURES = {
         'config.helpInboxTitle': {
             isOn: (s) => s.inboxEnabled !== false,
-            go: { section: 'behavior', behaviorTab: 'inbox' },
+            go: { section: 'inbox' },
         },
         'config.helpHealthTitle': {
             isOn: (s) => s.showStatus === true || s.healthAutoRecheckEnabled === true,

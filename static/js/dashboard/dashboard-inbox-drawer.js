@@ -20,6 +20,10 @@ class InboxDrawer {
             defaultSections: INBOX_SECTIONS_DEFAULT,
             closeLabel: this.t('inboxDrawerClose', 'Close'),
             onClose: () => this.view.onDrawerClosed?.(),
+            // Config → Inbox: a press beside the panel closes it (a row moves
+            // it instead), unless the setting keeps it open.
+            closeOnOutside: (target) => this.view.dash?.settings?.inboxViewCloseOutside !== false
+                && !target.closest('.inbox-item'),
         });
     }
 
@@ -43,6 +47,8 @@ class InboxDrawer {
             title,
             build: (panel, ctx) => {
                 panel.classList.add('inbox-drawer', 'config-bm-drawer');
+                // Config → Inbox: the wider panel.
+                panel.parentElement?.classList.toggle('is-wide', this.view.dash?.settings?.inboxViewPanelWidth === 'wide');
                 panel.setAttribute('data-inbox-drawer', item.id);
                 // The layout carries its own name; the side panel's heading
                 // would say it twice (as in the Bookmarks view).

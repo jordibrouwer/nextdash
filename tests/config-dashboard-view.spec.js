@@ -714,8 +714,9 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.locator('[data-behavior-tab="search"]').click();
         await expect(page.locator('[data-behavior-field="enableFuzzySuggestions"]')).toBeVisible();
         // Pasting a URL is an inbox errand — where it lands is decided beside
-        // the inbox switch, not among the search settings.
-        await page.locator('[data-behavior-tab="inbox"]').click();
+        // the inbox switch, in Config → Inbox, not among the search settings.
+        await expect(page.locator('[data-behavior-field="pasteDestination"]')).toHaveCount(0);
+        await page.locator('[data-config-section="inbox"]').click();
         await expect(page.locator('[data-behavior-field="pasteDestination"]')).toBeVisible();
     });
 

@@ -1361,10 +1361,17 @@ class DashboardInbox {
 
         if (fromUrl) return;
 
+        // Config → Inbox can fix the filter and the order the view opens on;
+        // 'last' is what this browser did the time before.
+        const s = this.dash.settings || {};
+        const fixedFilter = DashboardInbox.FILTERS.has(s.inboxViewFilter) ? s.inboxViewFilter : null;
+        const fixedSort = DashboardInbox.SORTS.has(s.inboxViewSort) ? s.inboxViewSort : null;
+        if (fixedFilter) this.filter = fixedFilter;
+        if (fixedSort) this.sort = fixedSort;
         try {
             const stored = JSON.parse(localStorage.getItem(DashboardInbox.STATE_KEY) || '{}');
-            if (DashboardInbox.FILTERS.has(stored.filter)) this.filter = stored.filter;
-            if (DashboardInbox.SORTS.has(stored.sort)) this.sort = stored.sort;
+            if (!fixedFilter && DashboardInbox.FILTERS.has(stored.filter)) this.filter = stored.filter;
+            if (!fixedSort && DashboardInbox.SORTS.has(stored.sort)) this.sort = stored.sort;
             // A stored site can name a host that has since left the inbox;
             // pruneDomainFilter() drops it on the next render rather than
             // filtering the feed down to nothing.
@@ -3556,7 +3563,8 @@ class DashboardInbox {
     /** The row's glow (list-view-shell.css): unread stands out, the rest is quiet. */
     inboxRowStatus(item) {
         if (this.isSnoozed(item)) return 'muted';
-        if (!item?.readAt) return 'info';
+        // Config → Inbox can draw every row the same.
+        if (!item?.readAt) return this.dash.settings?.inboxViewUnreadMark === false ? null : 'info';
         return null;
     }
 
@@ -4542,6 +4550,40 @@ class DashboardInbox {
      * caret back into. Only the two selects' contents are refreshed, by
      * syncToolbar().
      */
+    /**
+     * Config → Inbox: the rail on the left, or folded behind a Filters button
+     * that lays it over the page -- the Bookmarks view's sheet, at every width.
+     */
+    applyRailSetting(shell) {
+        const folded = this.dash.settings?.inboxViewRail === 'folded';
+        shell.root.classList.toggle('is-rail-folded', folded);
+        if (!folded) shell.root.classList.remove('is-rail-open');
+        let toggle = this._ownToolbar?.querySelector('[data-inbox-rail-toggle]');
+        if (folded && !toggle && this._ownToolbar) {
+            toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'lvs-action inbox-rail-toggle';
+            toggle.setAttribute('data-inbox-rail-toggle', '');
+            toggle.textContent = this.t('dashboard.inboxFiltersButton', 'Filters');
+            toggle.addEventListener('click', () => {
+                const open = !shell.root.classList.contains('is-rail-open');
+                shell.root.classList.toggle('is-rail-open', open);
+                toggle.setAttribute('aria-expanded', String(open));
+            });
+            // A pick in the rail, or a click anywhere else, lays it away again.
+            shell.rail.addEventListener('click', (e) => {
+                if (e.target.closest('button')) shell.root.classList.remove('is-rail-open');
+            });
+            document.addEventListener('pointerdown', (e) => {
+                if (!shell.root.classList.contains('is-rail-open')) return;
+                if (shell.rail.contains(e.target) || toggle.contains(e.target)) return;
+                shell.root.classList.remove('is-rail-open');
+            }, true);
+            this._ownToolbar.insertBefore(toggle, this._ownToolbar.firstChild);
+        }
+        if (toggle) toggle.hidden = !folded;
+    }
+
     buildToolbar(host) {
         const searchLabel = this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'));
         host.innerHTML = `
@@ -4877,6 +4919,7 @@ class DashboardInbox {
             return;
         }
         this.applyTabToChrome();
+        this.applyRailSetting(shell);
         // On the kept tab the body belongs to the unsorted module: everything
         // below here is about the queue, down to the filters and the bulk bar.
         if (this.activeTab() === 'kept') {
@@ -5047,7 +5090,15 @@ class DashboardInbox {
         const sleeping = this.renderSnoozedFooter();
         if (sleeping) body.appendChild(sleeping);
 
-        body.appendChild(this.renderLegend());
+        // Config → Inbox: the legend under the list (as it was), above it, or off.
+        const legendAt = this.dash.settings?.inboxViewKeyLegend || 'below';
+        if (legendAt === 'above') {
+            const legend = this.renderLegend();
+            legend.classList.add('is-above');
+            body.insertBefore(legend, body.querySelector('.inbox-feed') || body.firstChild);
+        } else if (legendAt !== 'off') {
+            body.appendChild(this.renderLegend());
+        }
 
         if (body.querySelector('.inbox-feed')) {
             this.bindPointerNavigation(container);
@@ -5153,7 +5204,10 @@ class DashboardInbox {
         card.tabIndex = -1;
 
         const title = item.previewTitle || item.title || item.domain || item.url;
-        const domain = item.domain || this.formatUrlDisplay(item.url);
+        // Config → Inbox: the site (as it was), the whole address, or none.
+        const address = this.dash.settings?.inboxViewAddress || 'domain';
+        const domain = address === 'hidden' ? ''
+            : (address === 'full' ? this.formatUrlDisplay(item.url) : (item.domain || this.formatUrlDisplay(item.url)));
         const timeLabel = this.formatRelativeTime(item.addedAt);
         const addedLabel = this.formatAddedDate(item.addedAt);
         const snoozed = this.isSnoozed(item);
@@ -5206,7 +5260,7 @@ class DashboardInbox {
                 </label>
                 ${thumb}
                 <h3 class="inbox-item-title" id="${this.escape(titleId)}">${this.escape(title)}</h3>
-                <button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>
+                ${domain ? `<button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>` : ''}
                 <span class="inbox-item-when"${addedLabel && !snoozed ? ` title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}"` : ''}>${this.escape(when)}</span>
             </div>
         `;
@@ -5274,14 +5328,20 @@ class DashboardInbox {
                 return;
             }
             this.selectItemById(item.id);
-            this.openDrawer(item.id);
+            // Config → Inbox can have a click only select the row; an open
+            // panel follows it either way.
+            if (this.dash.settings?.inboxViewClick !== 'select' || this._drawer?.isOpen()) {
+                this.openDrawer(item.id);
+            }
         });
         card.addEventListener('dblclick', (e) => {
             if (e.target.closest('.inbox-action-btn')) {
                 return;
             }
             e.preventDefault();
-            this.openItem(item);
+            // Open the link, or (Config → Inbox) its note, ready to type in.
+            if (this.dash.settings?.inboxViewDblClick === 'note') this.openNote(item.id);
+            else this.openItem(item);
         });
 
         d.contextMenu?.bindRow?.(card);
@@ -5332,6 +5392,13 @@ class DashboardInbox {
         if (!item || !drawer) return;
         if (id !== this.selectedItemId || this.openItemId !== id) this.selectItemById(id);
         drawer.open(item, { section });
+    }
+
+    /** The side panel on the item's note, with the caret in it. */
+    openNote(id) {
+        this.openDrawer(id, { section: 'note' });
+        const input = this._drawer?.base?.panel?.querySelector('[data-inbox-note]');
+        input?.focus({ preventScroll: true });
     }
 
     closeDrawer() {

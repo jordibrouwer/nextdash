@@ -906,6 +906,20 @@ type Settings struct {
 	BmViewBadge        bool     `json:"bmViewBadge"`        // A count on the header's Bookmarks icon (default on)
 	BmViewBadgeCounts  string   `json:"bmViewBadgeCounts"`  // What that count counts: broken/all
 	BmViewKeyLegend    string   `json:"bmViewKeyLegend"`    // The key legend: below/above the list, or off
+
+	// Config → Inbox: how the Inbox view looks and behaves.
+	InboxViewFilter       string `json:"inboxViewFilter"`       // Opens on: last/all/unread/snoozed/noted
+	InboxViewSort         string `json:"inboxViewSort"`         // Sorted by: last/newest/oldest/title/domain
+	InboxViewAddress      string `json:"inboxViewAddress"`      // The row's address: domain/full/hidden
+	InboxViewUnreadMark   bool   `json:"inboxViewUnreadMark"`   // Unread rows stand out (default on)
+	InboxViewRail         string `json:"inboxViewRail"`         // The rail: open/folded
+	InboxViewPanelWidth   string `json:"inboxViewPanelWidth"`   // Side panel width: normal/wide
+	InboxViewCloseOutside bool   `json:"inboxViewCloseOutside"` // A click beside the side panel closes it (default on)
+	InboxViewClick        string `json:"inboxViewClick"`        // A click on a row: panel/select
+	InboxViewDblClick     string `json:"inboxViewDblClick"`     // A double click on a row: open/note
+	InboxViewBadge        bool   `json:"inboxViewBadge"`        // A count on the header's Inbox icon (default on)
+	InboxViewBadgeCounts  string `json:"inboxViewBadgeCounts"`  // What that count counts: unread/all
+	InboxViewKeyLegend    string `json:"inboxViewKeyLegend"`    // The key legend: below/above the list, or off
 }
 
 // SavedSearch is a query the user named and kept from the search bar.
@@ -1622,6 +1636,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BmViewRowColors:                 true,
 			BmViewCloseOutside:              true,
 			BmViewBadge:                     true,
+			InboxViewUnreadMark:             true,
+			InboxViewCloseOutside:           true,
+			InboxViewBadge:                  true,
 			BookmarkDeleteConfirmFrom:       defaultBookmarkDeleteConfirmFrom,
 			DefaultMonitorIntervalMin:       defaultMonitorIntervalMinutes,
 			NewBookmarkCheckMode:            defaultNewBookmarkCheckMode,
@@ -3237,6 +3254,42 @@ func clampBookmarkViewSettings(s *Settings) {
 	s.BmViewRailBlocks = bmViewKnown(s.BmViewRailBlocks, bmViewRailBlocks)
 }
 
+// inboxViewChoices lists what each Inbox view setting accepts; the first is
+// its default, the view as it was before it had settings.
+var inboxViewChoices = map[string][]string{
+	"filter":      {"last", "all", "unread", "snoozed", "noted"},
+	"sort":        {"last", "newest", "oldest", "title", "domain"},
+	"address":     {"domain", "full", "hidden"},
+	"rail":        {"open", "folded"},
+	"panelWidth":  {"normal", "wide"},
+	"click":       {"panel", "select"},
+	"dblClick":    {"open", "note"},
+	"badgeCounts": {"unread", "all"},
+	"keyLegend":   {"below", "above", "off"},
+}
+
+func inboxViewChoice(kind, value string) string {
+	choices := inboxViewChoices[kind]
+	for _, c := range choices {
+		if c == value {
+			return value
+		}
+	}
+	return choices[0]
+}
+
+func clampInboxViewSettings(s *Settings) {
+	s.InboxViewFilter = inboxViewChoice("filter", s.InboxViewFilter)
+	s.InboxViewSort = inboxViewChoice("sort", s.InboxViewSort)
+	s.InboxViewAddress = inboxViewChoice("address", s.InboxViewAddress)
+	s.InboxViewRail = inboxViewChoice("rail", s.InboxViewRail)
+	s.InboxViewPanelWidth = inboxViewChoice("panelWidth", s.InboxViewPanelWidth)
+	s.InboxViewClick = inboxViewChoice("click", s.InboxViewClick)
+	s.InboxViewDblClick = inboxViewChoice("dblClick", s.InboxViewDblClick)
+	s.InboxViewBadgeCounts = inboxViewChoice("badgeCounts", s.InboxViewBadgeCounts)
+	s.InboxViewKeyLegend = inboxViewChoice("keyLegend", s.InboxViewKeyLegend)
+}
+
 var configBookmarksSortModes = map[string]bool{
 	"page": true, "name": true, "url": true, "category": true,
 	"recent": true, "lastOpened": true, "opens": true, "pinned": true,
@@ -3309,6 +3362,7 @@ func clampBookmarkSettings(s *Settings) {
 		s.BookmarkStaleDays = 365
 	}
 	clampBookmarkViewSettings(s)
+	clampInboxViewSettings(s)
 	// 0 stays 0: it means "the built-in default", which is what an install that
 	// never chose an interval has. Anything else is held between daily and
 	// monthly — a backup less often than that is not a safety net, and more
@@ -3894,6 +3948,9 @@ func (fs *FileStore) GetSettings() Settings {
 			BmViewRowColors:                 true,
 			BmViewCloseOutside:              true,
 			BmViewBadge:                     true,
+			InboxViewUnreadMark:             true,
+			InboxViewCloseOutside:           true,
+			InboxViewBadge:                  true,
 			BookmarkDeleteConfirmFrom:       defaultBookmarkDeleteConfirmFrom,
 			DefaultMonitorIntervalMin:       defaultMonitorIntervalMinutes,
 			NewBookmarkCheckMode:            defaultNewBookmarkCheckMode,
@@ -3953,6 +4010,7 @@ func (fs *FileStore) GetSettings() Settings {
 			UpdateCheckEnabled:     true,
 		}
 		clampBookmarkViewSettings(&settings)
+		clampInboxViewSettings(&settings)
 		fs.readCache.settings = settings
 		fs.readCache.settingsOK = true
 		return settings
@@ -3972,6 +4030,10 @@ func (fs *FileStore) GetSettings() Settings {
 			"bmViewRowColors":    &settings.BmViewRowColors,
 			"bmViewCloseOutside": &settings.BmViewCloseOutside,
 			"bmViewBadge":        &settings.BmViewBadge,
+			// And the Inbox view's.
+			"inboxViewUnreadMark":   &settings.InboxViewUnreadMark,
+			"inboxViewCloseOutside": &settings.InboxViewCloseOutside,
+			"inboxViewBadge":        &settings.InboxViewBadge,
 		} {
 			if _, ok := rawSettings[key]; !ok {
 				*field = true
@@ -4702,6 +4764,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 	// Read as the view reads it: a setting the file never had is its default.
 	clampBookmarkViewSettings(&settings)
+	clampInboxViewSettings(&settings)
 
 	fs.readCache.settings = settings
 	fs.readCache.settingsOK = true
