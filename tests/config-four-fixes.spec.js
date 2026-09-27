@@ -112,62 +112,14 @@ test.describe('config bookmarks', () => {
     });
 
     /*
-     * The Statistics scope selector lives on the config instance for the whole
-     * session. The Bookmarks tiles fell back to computeStats(), which honours
-     * it, so they counted one page while the list beneath counted everything.
-     */
-    test('the summary tiles count the library, not the Statistics scope', async ({ page }) => {
-        await openConfig(page);
-
-        const counts = await page.evaluate(() => {
-            const d = window.dashboardInstance;
-            const cfg = d.config;
-            const original = d.allBookmarks;
-            const originalPages = d.pages;
-            // Two real pages, so scoping to one is a genuine narrowing --
-            // statsScopePage resolves the filter against d.pages, and the
-            // fixture ships a single page where the bug cannot show itself.
-            d.pages = [{ id: 1, name: 'One' }, { id: 2, name: 'Two' }];
-            d.allBookmarks = [
-                { url: 'https://a.example/1', pageId: 1, category: '', tags: [] },
-                { url: 'https://a.example/2', pageId: 1, category: '', tags: [] },
-                { url: 'https://b.example/1', pageId: 2, category: '', tags: [] },
-            ];
-            const total = d.allBookmarks.length;
-            const read = () => {
-                // computeStats caches on a key that does not include our stand-in
-                // data, so clear it between reads.
-                cfg._statsCache = null;
-                cfg._statsCacheKey = '';
-                return Number(cfg.bookmarksSummaryTiles(null).find((t) => t.key === 'total')?.value);
-            };
-            const before = read();
-            cfg.statsPageFilter = '2';
-            const after = read();
-            cfg.statsPageFilter = '';
-            cfg._statsCache = null;
-            cfg._statsCacheKey = '';
-            d.allBookmarks = original;
-            d.pages = originalPages;
-            return { total, before, after };
-        });
-
-        expect(counts.before).toBe(counts.total);
-        // The Statistics scope does not move the Bookmarks tiles.
-        expect(counts.after).toBe(counts.total);
-    });
-});
-
-test.describe('config, second round', () => {
-    /*
-     * The context menu hands focus back to its row on close, and then Select
-     * repainted the whole list -- destroying that row without putting focus
-     * anywhere. j/k then walked the section rail instead of the list.
+     * A menu hands focus back to its row on close, and then a full repaint of
+     * the list destroyed that row without putting focus anywhere: j and k had
+     * nothing to walk from.
      */
     test('a full list repaint keeps focus on the row it was on', async ({ page }) => {
         await openConfig(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
-        await page.waitForTimeout(1200);
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
+        await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
 
         const kept = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config;

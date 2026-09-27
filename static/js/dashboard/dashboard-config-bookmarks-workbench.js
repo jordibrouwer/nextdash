@@ -14,11 +14,6 @@
 
     if (typeof global.DashboardConfig !== 'function') return;
 
-    const SECTIONS_KEY = 'nextdash.configBm.sections';
-    // Edit only: Health carries the score, check mode and the expectations
-    // form now, and open by default it ran the panel past the screen. It is
-    // one click, or s, away; what the reader opens is remembered.
-    const SECTIONS_DEFAULT = ['edit'];
     // The panel's tabs, in bar order; the reader's choice is kept across rows.
     const PANEL_TABS = ['details', 'health', 'usage'];
     const PANEL_TAB_KEY = 'nextdash.bm.panelTab';
@@ -394,30 +389,6 @@
         const head = mixed ? [`<option value=""${selected ? '' : ' selected'}>${esc(this.t('config.bmMixed', 'mixed'))}</option>`] : [];
         return head.concat((cm?.INTERVAL_CHOICES || []).map((m) =>
             `<option value="${m}"${Number(selected) === m ? ' selected' : ''}>${esc(cm.intervalLabel(m))}</option>`)).join('');
-    },
-
-    /**
-     * One collapsible part of the panel, in the shared side panel's markup
-     * (.lvs-drawer-section, list-view-shell.css), so Config's panel folds the
-     * way Health's and the inbox's do. Which parts are open is remembered.
-     */
-    workbenchSection(name, label, body) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const open = this.workbenchOpenSections().has(name);
-        return `<details class="lvs-drawer-section config-bm-panel-section" data-bm-section="${esc(name)}"${open ? ' open' : ''}>
-                <summary>${esc(label)}</summary>
-                <div class="lvs-drawer-section-body">${body}</div>
-            </details>`;
-    },
-
-    workbenchOpenSections() {
-        try {
-            const raw = global.localStorage?.getItem(SECTIONS_KEY);
-            const arr = raw ? JSON.parse(raw) : null;
-            return new Set(Array.isArray(arr) ? arr : SECTIONS_DEFAULT);
-        } catch {
-            return new Set(SECTIONS_DEFAULT);
-        }
     },
 
     renderWorkbenchSinglePanel(key) {
@@ -1054,18 +1025,6 @@
                 global.localStorage?.setItem(`nextdash.bm.acc.${group}`, JSON.stringify(open));
             } catch {
                 // Private window: the choice lasts until the next bookmark.
-            }
-        }, true);
-        panel.addEventListener('toggle', (e) => {
-            const section = e.target.closest?.('[data-bm-section]');
-            if (!section || section !== e.target) return;
-            const open = this.workbenchOpenSections();
-            if (section.open) open.add(section.dataset.bmSection);
-            else open.delete(section.dataset.bmSection);
-            try {
-                global.localStorage?.setItem(SECTIONS_KEY, JSON.stringify([...open]));
-            } catch {
-                // Storage unavailable: sections just stop remembering.
             }
         }, true);
         panel.addEventListener('click', (e) => {

@@ -3910,53 +3910,6 @@ class DashboardConfig {
         )}</p>`;
     }
 
-    /** Headline counts — pass a subset stats object when filters are active. */
-    bookmarksSummaryTiles(stats) {
-        // The whole library when no filter is on, counted here rather than
-        // through computeStats(): that one is narrowed by statsPageFilter, the
-        // Statistics scope selector, which lives on the instance for the whole
-        // session. Setting it there and coming back to Bookmarks left these
-        // tiles counting one page while the list and the count label beneath
-        // them counted everything, with nothing on screen to explain it.
-        const s = stats || this.computeBookmarkSubsetStats(this.dash.allBookmarks || []);
-        const pct = s.total ? Math.round((s.tagged / s.total) * 100) : 0;
-        return [
-            {
-                key: 'total',
-                tone: 'accent',
-                label: this.t('config.statsBookmarks', 'Bookmarks'),
-                value: s.total,
-            },
-            {
-                key: 'tagged',
-                tone: 'neutral',
-                label: this.t('config.statsTaggedBookmarks', 'Tagged'),
-                value: s.tagged,
-                detail: s.total
-                    ? this.t('config.bookmarksTileTaggedPct', '{pct}% of total').replace('{pct}', String(pct))
-                    : undefined,
-            },
-            {
-                key: 'categories',
-                tone: 'neutral',
-                label: this.t('config.statsCategoryCount', 'Categories'),
-                value: s.categories,
-            },
-            {
-                key: 'shortcut',
-                tone: 'neutral',
-                label: this.t('config.statsWithShortcut', 'With a shortcut'),
-                value: s.withShortcut,
-            },
-            {
-                key: 'monitored',
-                tone: s.monitored > 0 ? 'accent' : 'neutral',
-                label: this.t('config.statsMonitored', 'Monitored'),
-                value: s.monitored,
-            },
-        ];
-    }
-
     renderTile(tile) {
         const esc = (v) => this.dash.escapeHtml(v);
         const clickable = Boolean(tile.action);
@@ -22000,17 +21953,6 @@ class DashboardConfig {
         this.updateBookmarkListChrome();
     }
 
-    /** Add or remove one tag, leaving the rest of the selection alone. */
-    toggleBookmarkTagFilter(tag) {
-        const wanted = String(tag || '').trim().toLowerCase();
-        if (!wanted) return;
-        const current = this.bookmarkTagFilters();
-        const next = current.includes(wanted)
-            ? current.filter((t) => t !== wanted)
-            : current.concat(wanted);
-        this.setBookmarkTagFilters(next);
-    }
-
     filterBookmarksByTag(tag) {
         if (!tag) return;
         // Clicking a tag chip on a row means "show me this tag", replacing any
@@ -23995,68 +23937,6 @@ class DashboardConfig {
             },
         });
         this.watchAddBookmarkModal();
-    }
-
-    async recheckBookmarkByKey(key) {
-        if (this._bmBusyKeys.has(key)) return;
-        const bookmark = this.findBookmarkByKey(key);
-        const url = String(bookmark?.url || '').trim();
-        if (!url) return;
-        const record = await this.findBookmarkRecord(key);
-        this._bmBusyKeys.add(key);
-        this.syncBookmarkRowBusy(key, true);
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const persist = async (status, errorDetail, pingMs, httpStatus) => {
-            const cacheURL = url.replace(/\/+$/, '').toLowerCase();
-            if (cacheURL) {
-                await fetcher('/api/health/cache-scan', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        url: cacheURL,
-                        status,
-                        pingMs: pingMs || 0,
-                        error: errorDetail,
-                        code: Number(httpStatus) || 0,
-                    }),
-                }).catch(() => {});
-            }
-            if (record) {
-                await fetcher('/api/health/update-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        pageId: record.pageId,
-                        index: record.index,
-                        url: record.record?.url,
-                        status,
-                        error: status === 'online' ? '' : errorDetail,
-                    }),
-                });
-            }
-        };
-        try {
-            const res = await fetcher(`/api/ping?url=${encodeURIComponent(url)}`);
-            if (!res.ok) throw new Error(`ping HTTP ${res.status}`);
-            const result = await res.json();
-            const status = result.status === 'online' ? 'online' : 'offline';
-            const errorDetail = String(result.errorDetail || '').trim()
-                || (status === 'online' ? '' : this.t('dashboard.healthPingFailed', 'ping failed'));
-            await persist(status, errorDetail, result.ping, result.httpStatus);
-            this.dash.updateHealthBadge?.();
-            this.notify(
-                status === 'online'
-                    ? this.t('dashboard.healthRecheckOnline', 'Reachable')
-                    : this.t('dashboard.healthRecheckOffline', 'Unreachable: {error}', { error: errorDetail || 'offline' }),
-                status === 'online' ? 'success' : 'error',
-                { duration: 3500 }
-            );
-        } catch {
-            this.notify(this.t('dashboard.healthRecheckFailed', 'Could not re-check this bookmark'), 'error');
-        } finally {
-            this._bmBusyKeys.delete(key);
-            this.syncBookmarkRowBusy(key, false);
-        }
     }
 
     openBookmarkOnDashboard(b) {
