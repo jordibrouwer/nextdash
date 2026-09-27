@@ -154,9 +154,9 @@ class DashboardConfigContextMenu {
         ];
 
         // The Bookmarks view: fewer entries, in groups. Pin, the dashboard,
-        // the title and favicon refreshes and Select are left to the panel,
-        // the grid and the tick box, and Re-check to the Health tab; a local
-        // copy is saved from here.
+        // the title and favicon refreshes, Select, local copies and the Web
+        // Archive are left to the panel, the grid and the tick box, and
+        // Re-check to the Health tab.
         if (c.standalone) {
             const group = (items) => items.map((item, i) => (i === 0 ? { ...item, divider: true } : item));
             return [
@@ -168,10 +168,6 @@ class DashboardConfigContextMenu {
                     { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
                     // Re-checking is the Health tab's, one click from here.
                     ...healthItems.filter((item) => item.id !== 'recheck'),
-                ]),
-                ...group([
-                    { id: 'save-copy', label: this.t('config.contextSaveCopy', 'Save a local copy'), icon: '⤓' },
-                    { id: 'archive', label: this.t('dashboard.healthArchive', 'Find in Web Archive'), icon: '🏛' },
                 ]),
                 ...group(filterItems),
                 { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true },
@@ -579,9 +575,6 @@ class DashboardConfigContextMenu {
                 break;
             case 'edit':
                 c.focusWorkbenchPanel(key);
-                break;
-            case 'save-copy':
-                await c.saveBmLocalCopy?.(bookmark);
                 break;
             // No per-row pin writer exists — the editor and the bulk bar are the
             // only two, and bulkPin already takes a list. One bookmark is a list
