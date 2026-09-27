@@ -1189,6 +1189,10 @@ class Dashboard {
         if (previous === 'health' && view !== 'health') {
             this.health?.instance?.onLeaveDrawer?.();
         }
+        // The preview card belongs to the grid row under the pointer. A view
+        // that replaces the grid takes that row away without a mouseleave, and
+        // the card stayed over the new view until something else closed it.
+        this.preview?.hideBookmarkPreviewCard?.();
         // The Bookmarks view's side panel sits on <body> too.
         if (previous === 'library' && view !== 'library') {
             this.config?.instance?.closeLibraryDrawer?.();

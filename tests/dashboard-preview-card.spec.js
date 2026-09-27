@@ -171,3 +171,18 @@ test.describe('the preview card', () => {
         expect(String(described.text).length).toBeGreaterThan(0);
     });
 });
+
+test.describe('the preview card and the Bookmarks view', () => {
+    test('a card left open on the dashboard does not follow into the Bookmarks view', async ({ page }) => {
+        await openDashboard(page, 'hover');
+        const row = page.locator('.bookmark-link .bookmark-open').first();
+        await row.hover();
+        await expect(page.locator('.bookmark-preview-card.is-visible')).toBeVisible({ timeout: 10_000 });
+        // The header icon, clicked by keyboard focus rather than the pointer,
+        // so the pointer never leaves the row the card belongs to.
+        await page.locator('.library-link a.library-link-anchor').focus();
+        await page.keyboard.press('Enter');
+        await expect(page.locator('#dashboard-layout')).toHaveClass(/library-layout/);
+        await expect(page.locator('.bookmark-preview-card.is-visible')).toHaveCount(0);
+    });
+});
