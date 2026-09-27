@@ -166,3 +166,14 @@ test('Open, Edit and Re-check sit on one row, without keycaps', async ({ page })
   await expect(actions.locator('kbd')).toHaveCount(0);
   await expect(page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .config-bm-tabs kbd')).toHaveCount(0);
 });
+
+test('the head is set off from the tabs by room and a line', async ({ page }) => {
+  const { bookmarks } = await openBookmarksWithHealth(page, undefined, { view: 'library' });
+  await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[0].name }) }).first().click();
+  const slab = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+  const head = slab.locator('.config-bm-panel-head');
+  expect(await head.evaluate((el) => getComputedStyle(el).borderBottomStyle)).toBe('solid');
+  const buttons = await slab.locator('.config-bm-panel-actions').boundingBox();
+  const tabs = await slab.locator('.config-bm-tabs').boundingBox();
+  expect(tabs.y - (buttons.y + buttons.height)).toBeGreaterThanOrEqual(12);
+});

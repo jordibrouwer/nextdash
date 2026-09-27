@@ -1802,3 +1802,25 @@ html body .config-bm-more-menu .config-btn {
     font-size: var(--font-size-small);
     white-space: nowrap;
 }
+
+/*
+ * The head ends where the tabs begin: room under its buttons and a hairline
+ * across the whole panel. Without them the buttons stood right on the tab
+ * bar and the two read as one block.
+ */
+.config-bm-panel-head--single {
+    padding-bottom: var(--space-3, 0.75rem);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+}
+
+/* In the side panel the line runs to the slab's edges, past its padding. */
+.config-bm-drawer .config-bm-panel-head--single {
+    margin-left: calc(-1 * var(--space-4, 1rem));
+    margin-right: calc(-1 * var(--space-4, 1rem));
+    padding-left: var(--space-4, 1rem);
+    padding-right: var(--space-4, 1rem);
+}
+
+.config-bm-panel-head--single + .config-bm-tabs {
+    margin-top: var(--space-1, 0.25rem);
+}
