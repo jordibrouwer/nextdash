@@ -27,14 +27,14 @@ const tabNames = (page, attr) => page.evaluate((a) =>
     [...document.querySelectorAll(`[${a}]`)].map((b) => b.getAttribute(a)), attr);
 
 test.describe('where Tags lives', () => {
-    test('Bookmarks carries it, between List and Tag suggestions', async ({ page }) => {
+    test('Bookmarks carries it, between View and Tag suggestions', async ({ page }) => {
         await openConfig(page, 'bookmarks');
         const tabs = await tabNames(page, 'data-bm-tab');
 
         expect(tabs).toContain('tags');
-        // The order is the point: the list, then the words on it, then what the
-        // app proposes adding to them.
-        expect(tabs.indexOf('tags')).toBe(tabs.indexOf('list') + 1);
+        // The order is the point: how the list looks, then the words on it, then
+        // what the app proposes adding to them.
+        expect(tabs.indexOf('tags')).toBe(tabs.indexOf('view') + 1);
         expect(tabs.indexOf('tags')).toBe(tabs.indexOf('tag-suggestions') - 1);
     });
 
@@ -91,7 +91,7 @@ test.describe('where Tags lives', () => {
         // subTabFromHash refused every Bookmarks tab, because the segment after
         // /bookmarks/ is usually a page filter. A page id is a number and a tab
         // is a word, so the two can be told apart — and until they were, every
-        // deep link into a Bookmarks tab opened List.
+        // deep link into a Bookmarks tab opened the first one.
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmTab)).toBe('tags');
         await expect(page.locator('#config-tag-filter')).toBeVisible();
     });
