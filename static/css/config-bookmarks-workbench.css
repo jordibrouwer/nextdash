@@ -2196,10 +2196,10 @@ html body .config-bm-more-menu .config-btn {
     gap: var(--space-1, 0.25rem);
     min-width: 14rem;
     padding: var(--space-1, 0.25rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-5, 8px);
-    background: var(--background-modal, var(--background-primary));
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--surface-float-border);
+    border-radius: var(--surface-menu-radius);
+    background: var(--surface-float-bg);
+    box-shadow: var(--surface-menu-shadow);
 }
 
 .config-structure-menu > button[role="menuitem"] {

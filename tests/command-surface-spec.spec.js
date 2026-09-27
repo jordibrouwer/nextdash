@@ -73,7 +73,9 @@ test.describe('the command surface', () => {
          */
         expect(surface.borderRadius, 'the sheet has a card corner')
             .toBe(await radiusPx(page, '--radius-5'));
-        expect(surface.backdropFilter).toContain('blur(8px)');
+        // Solid at flat, like every floating surface: only glass blurs
+        // (theme-depth.css, --surface-float-blur).
+        expect(surface.backdropFilter).toBe('none');
         // Lifted off the page, not resting on it: the spec draws 0 24px 64px.
         expect(surface.boxShadow, `no deep drop under the sheet: ${surface.boxShadow}`)
             .toMatch(/0px 24px 64px/);

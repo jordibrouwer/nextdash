@@ -239,10 +239,10 @@ body.no-animations .inbox-item-thumb--loading {
     flex-direction: column;
     min-width: 10rem;
     padding: var(--space-1, 0.3rem);
-    border-radius: var(--layout-radius-sm, 8px);
-    border: 1px solid var(--border-primary);
-    background: var(--background-primary);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+    border-radius: var(--surface-menu-radius);
+    border: 1px solid var(--surface-float-border);
+    background: var(--surface-float-bg);
+    box-shadow: var(--surface-menu-shadow);
 }
 
 .inbox-snooze-option {
@@ -553,10 +553,12 @@ body.inbox-triage-active {
     width: min(100%, 40rem);
     max-height: min(92vh, 44rem);
     overflow: auto;
-    border-radius: var(--layout-radius-md, 12px);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
-    box-shadow: 0 18px 48px color-mix(in srgb, #000 22%, transparent);
+    border-radius: var(--surface-float-radius);
+    border: 1px solid var(--surface-float-border);
+    background: var(--surface-float-bg);
+    backdrop-filter: var(--surface-float-blur);
+    -webkit-backdrop-filter: var(--surface-float-blur);
+    box-shadow: var(--surface-modal-shadow);
     padding: var(--space-4, 1rem) var(--space-4, 1.1rem) var(--space-4, 1.1rem);
 }
 
@@ -1096,10 +1098,10 @@ body.inbox-triage-active {
     display: flex;
     flex-direction: column;
     gap: var(--space-hairline, 0.05rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-6, 0.65rem);
-    background: var(--background-secondary);
-    box-shadow: 0 10px 30px rgb(0 0 0 / 28%);
+    border: 1px solid var(--surface-float-border);
+    border-radius: var(--surface-menu-radius);
+    background: var(--surface-float-bg);
+    box-shadow: var(--surface-menu-shadow);
 }
 
 .inbox-menu[hidden] {

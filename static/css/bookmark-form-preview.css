@@ -72,11 +72,12 @@
     min-width: min(22rem, 100%);
     max-width: min(28rem, calc(100vw - 2rem));
     padding: var(--space-2, 0.5rem) var(--space-3, 0.65rem);
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
-    border-radius: var(--radius-5, 8px);
-    background: var(--background-primary);
-    box-shadow: 0 10px 28px color-mix(in srgb, var(--background-primary) 20%, transparent),
-        0 0 0 1px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    border: 1px solid var(--surface-float-border);
+    border-radius: var(--surface-float-radius);
+    background: var(--surface-float-bg);
+    backdrop-filter: var(--surface-float-blur);
+    -webkit-backdrop-filter: var(--surface-float-blur);
+    box-shadow: var(--surface-panel-shadow);
     pointer-events: none;
 }
 

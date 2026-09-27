@@ -1738,12 +1738,12 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-hairline, 0.05rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-6, 0.65rem);
-    background: var(--background-secondary);
+    border: 1px solid var(--surface-float-border);
+    border-radius: var(--surface-menu-radius);
+    background: var(--surface-float-bg);
     color: var(--text-primary);
     font-family: var(--font-family-main);
-    box-shadow: 0 4px 18px color-mix(in srgb, var(--text-primary) 14%, transparent);
+    box-shadow: var(--surface-menu-shadow);
     /* Tall enough for its own contents. This used to cap at min(70vh, 24rem),
        which put a scrollbar inside a context menu on any row whose repair
        options ran long — and a menu you have to scroll is a menu whose last

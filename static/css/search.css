@@ -45,12 +45,12 @@
 .search-container {
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
-    border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
-    border-radius: var(--radius-5, 8px);
-    background: color-mix(in srgb, var(--background-modal) 90%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 24px 64px color-mix(in srgb, black 60%, transparent);
+    border: 1px solid var(--surface-float-border);
+    border-radius: var(--surface-float-radius);
+    background: var(--surface-float-bg);
+    backdrop-filter: var(--surface-float-blur);
+    -webkit-backdrop-filter: var(--surface-float-blur);
+    box-shadow: var(--surface-modal-shadow);
     display: flex;
     flex-direction: column;
     max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));

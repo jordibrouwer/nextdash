@@ -478,23 +478,6 @@ body:not([data-depth="flat"]) .dashboard-widget .dashboard-widget-body {
     background-image: var(--surface-grain), var(--surface-gloss);
 }
 
-/*
- * A modal keeps its own background.
- *
- * background-modal is deliberately translucent and the modern layout blurs what
- * is behind it; replacing that with an opaque surface would trade a good effect
- * for a smaller one. What it gets from the ladder is the edge — the lit top
- * line and a border that has stopped being a full-strength outline.
- */
-body:not([data-depth="flat"]) .modal {
-    border: 1px solid var(--hairline-strong);
-    box-shadow:
-        var(--edge-light),
-        var(--edge-dark),
-        0 24px 64px rgba(0, 0, 0, 0.28),
-        0 2px 8px rgba(0, 0, 0, 0.12);
-}
-
 /* ── Selection, scrollbars ─────────────────────────────────────────────────
    Two things no theme has ever touched, both visible on every screen. */
 
@@ -1037,4 +1020,46 @@ body:not([data-depth="flat"]) :is(.config-btn, .dashboard-widget-health-row, .da
 body:not([data-depth="flat"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"])
     .dashboard-section.section-controls .header-shortcuts .search-button:hover {
     background-image: var(--gloss-hover);
+}
+
+/* ── Floating surfaces ─────────────────────────────────────────────────────
+ * Every modal, panel and menu is painted from these, so a theme's depth
+ * reaches all of them alike instead of the few a selector list remembered.
+ * Three heights of one material: the same ground, rim and (under glass) blur;
+ * only the shadow says how far it floats.
+ *
+ *   modal  -- dialogs, the search and command window, the bookmark form,
+ *             Work through, inbox triage.
+ *   panel  -- side panels and the hover preview.
+ *   menu   -- context menus, dropdowns and popovers. Never blurred: a blurred
+ *             menu became a composited layer that swallowed the clicks aimed at
+ *             it, so menus read --surface-float-blur nowhere.
+ *
+ * The ground is the bookmark form's sheet colour: the page with a touch of
+ * ink in it, so a surface stands off what it covers even at flat, where there
+ * is no shadow to say so, and solid, so a panel with no scrim behind it does
+ * not show the list through. Glass (theme-character.css) swaps it for its
+ * overlay tier and adds the blur. One corner for all three: the one every
+ * overlay takes, not a card's.
+ */
+html[data-theme] body {
+    --surface-float-bg: color-mix(in srgb, var(--text-primary) 5%, var(--background-primary));
+    --surface-float-border: color-mix(in srgb, var(--border-primary) 75%, transparent);
+    --surface-float-radius: var(--radius-5, 8px);
+    --surface-menu-radius: var(--radius-5, 8px);
+    --surface-float-blur: none;
+    --surface-modal-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+    --surface-panel-shadow: 0 12px 36px rgba(0, 0, 0, 0.24), 0 2px 6px rgba(0, 0, 0, 0.1);
+    --surface-menu-shadow: 0 12px 32px rgba(0, 0, 0, 0.22), 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Every depth but flat lights the rim, as it does the tiles. */
+html[data-theme] body:not([data-depth="flat"]) {
+    --surface-float-border: var(--hairline-strong);
+    --surface-modal-shadow: var(--edge-light), var(--edge-dark),
+        0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+    --surface-panel-shadow: var(--edge-light), var(--edge-dark),
+        0 12px 36px color-mix(in srgb, black calc(24% * var(--theme-depth)), transparent), 0 2px 6px rgba(0, 0, 0, 0.1);
+    --surface-menu-shadow: var(--edge-light), var(--edge-dark),
+        0 12px 32px color-mix(in srgb, black calc(30% * var(--theme-depth)), transparent), 0 1px 4px rgba(0, 0, 0, 0.1);
 }
