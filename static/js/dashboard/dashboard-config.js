@@ -1902,10 +1902,16 @@ class DashboardConfig {
         const context = this._changedFilterContext();
         // Bookmarks has no changed-settings filter; it carries a count of what
         // the section holds, the way Health and Inbox do on the same band.
+        // The Bookmarks view's band carries the way to Collection health too,
+        // the way Health's band carries Work through and Rot report.
+        const healthButton = this.standalone && this.dash.settings?.healthViewEnabled !== false
+            ? `<button type="button" class="lvs-action" data-bm-open-health-modal>${this.dash.escapeHtml(
+                this.t('config.bmHealthModalTitle', 'Collection health'))}</button>`
+            : '';
         const markup = context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
-                ? `<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
+                ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
                 : '');
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
@@ -1921,6 +1927,12 @@ class DashboardConfig {
          * one order that had no binder at all.
          */
         if (actions) this.bindChangedFilter(head);
+        if (actions && actions.dataset.bmHealthWired !== '1') {
+            actions.dataset.bmHealthWired = '1';
+            actions.addEventListener('click', (e) => {
+                if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
+            });
+        }
         const bar = null;
         // Only swapped when the body actually rendered one: this runs again on
         // every repaint, and clearing the band unconditionally threw away the

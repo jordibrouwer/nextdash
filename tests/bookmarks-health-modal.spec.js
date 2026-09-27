@@ -87,3 +87,12 @@ test.describe('bookmarks: the collection health modal', () => {
     await expect(page.locator('#app-modal.show')).toContainText('Collection health');
   });
 });
+
+test('a Collection health button in the view\'s header opens it', async ({ page }) => {
+  await openBookmarksWithHealth(page, undefined, { view: 'library' });
+  const button = page.locator('.config-view--library .lvs-header-actions [data-bm-open-health-modal]');
+  await expect(button).toBeVisible();
+  await expect(button).toHaveText('Collection health');
+  await button.click();
+  await expect(page.locator('#app-modal.show')).toContainText('Collection health');
+});
