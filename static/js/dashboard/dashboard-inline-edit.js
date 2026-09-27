@@ -1230,6 +1230,10 @@ class DashboardInlineEdit {
 
         const reloadCatSelectForPage = async (pageId, preferredId) => {
             const cats = await loadCategoriesForPage(pageId);
+            // Loads are not awaited in order: a promote asks for the destination
+            // page's list while the remote branch asks for the source page's.
+            // Whichever lands last used to win; only the selected page's counts.
+            if (String(pageSelect.value) !== String(pageId)) return;
             const wanted = preferredId !== undefined ? preferredId : catSelect.value;
             const matched = fillCatSelect(cats, wanted);
             // No match from previous page — default to first real category so bookmark doesn't land in Others

@@ -271,6 +271,53 @@ test('an unsorted bookmark is promoted from its side panel, through the bookmark
     }), { timeout: 15_000 }).toBe(0);
 });
 
+/*
+ * The form loads two category lists on open: the destination page's, for the
+ * promote, and Unsorted's, because the bookmark lives on a page other than the
+ * current one. Unsorted's is a network fetch that usually lands last, and it
+ * used to overwrite the destination's list -- the page said "Home", the
+ * category said "—", and the save filed the bookmark with no category. Slowing
+ * that fetch down makes the order certain.
+ */
+test('promoting keeps the destination page\'s category when Unsorted\'s categories load late', async ({ page }) => {
+    await openBookmarksSection(page, [kept('late')]);
+    await openUnsortedView(page);
+    await clearSelection(page);
+    await page.locator('#config-bm-search').fill('Cfg late');
+    await expect.poll(async () => (await configView(page)).visible, { timeout: 10_000 }).toEqual(['Cfg late']);
+
+    let unsortedCategoriesServed = false;
+    await page.route('**/api/categories?page=999999*', async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        await route.continue();
+        unsortedCategoriesServed = true;
+    });
+    const expected = await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        const destination = (d.config.instance || d.config).bookmarkPromoteDestination();
+        return destination === Number(d.currentPageId) ? String(d.categories?.[0]?.id || '') : null;
+    });
+    expect(expected).toBeTruthy();
+
+    await page.locator('#config-bm-list [data-bm-key*="cfg-late.example"] .config-bm-title').click();
+    await sidePanel(page).locator('[data-bm-panel-action="promote"]').click();
+    const form = page.locator('#bookmark-form-modal');
+    await expect(form.locator('#bookmark-form-modal-title')).toHaveText('Promote bookmark');
+    await expect.poll(() => unsortedCategoriesServed, { timeout: 5_000 }).toBe(true);
+    // Give the late list a moment to be applied, had it been going to be.
+    await page.waitForTimeout(200);
+    const category = () => page.evaluate(() => window.dashboardInstance._inlineEditContext?.fields?.catSelect?.value);
+    expect(await category()).toBe(expected);
+
+    await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
+    await expect(form).toBeHidden();
+    await expect.poll(async () => page.evaluate(async () => {
+        const res = await fetch('/api/bookmarks?all=true', { cache: 'no-store' });
+        const list = await res.json();
+        return (Array.isArray(list) ? list : []).filter((b) => b.name === 'Cfg late').map((b) => String(b.category));
+    }), { timeout: 15_000 }).toEqual([expected]);
+});
+
 test('the row menu offers Promote on an unsorted bookmark only', async ({ page }) => {
     await openBookmarksSection(page, [kept('menu')]);
     await clearSelection(page);
