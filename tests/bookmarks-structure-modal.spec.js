@@ -44,12 +44,14 @@ test.describe('pages and categories modal', () => {
     await expect(page.locator('#config-bm-rail')).toContainText('Renamed page');
   });
 
-  test('Show on a page row filters the list to it and closes the modal', async ({ page }) => {
+  test('Show its bookmarks, under a page row\'s ⋯, filters the list to it and closes the modal', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
     await page.locator('#config-bm-rail [data-bm-manage="pages"]').click();
     const row = modal(page).locator('[data-page-row]').first();
     const pageId = await row.getAttribute('data-page-row');
-    await row.locator('[data-structure-show]').click();
+    await row.hover();
+    await row.locator('[data-structure-more]').click();
+    await modal(page).locator('[data-structure-menu] [data-structure-proxy="show"]').click();
     await expect(modal(page)).toHaveCount(0);
     await expect(page).toHaveURL(new RegExp(`#bookmarks/${pageId}`));
   });
@@ -69,7 +71,8 @@ test.describe('pages and categories modal', () => {
     await page.locator('#config-bm-rail [data-bm-manage="pages"]').click();
     await modal(page).locator('[data-page-add]').click();
     const last = modal(page).locator('[data-page-row]').last();
-    await last.locator('[data-page-delete]').click();
+    await last.locator('[data-structure-more]').click();
+    await modal(page).locator('[data-structure-menu] [data-structure-proxy="delete"]').click();
     const confirm = page.locator('#config-confirm-modal, #app-modal.show').first();
     await expect(confirm).toBeVisible();
     // The confirmation is on top: its own button is what a click reaches.
@@ -185,5 +188,28 @@ test.describe('pages and categories modal: the rest of its actions', () => {
     await page.locator('#config-confirm-modal button, #app-modal.show button').filter({ hasText: /merge|confirm/i }).last().click();
     await expect.poll(() => patches.length).toBeGreaterThan(0);
     expect(patches[0].updates.every((u) => u.fields?.category === options[0])).toBe(true);
+  });
+});
+
+test.describe('pages and categories modal: one screen', () => {
+  test('it fits the screen, lists in two columns, and keeps its buttons under ⋯', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await page.locator('#config-bm-rail [data-bm-manage="categories"]').click();
+    const box = modal(page).locator('.config-structure-modal');
+    await expect(box).toBeVisible();
+    const m = await box.evaluate((el) => ({ over: el.scrollHeight > el.clientHeight + 1, bottom: el.getBoundingClientRect().bottom, inner: window.innerHeight }));
+    expect(m.over).toBe(false);
+    expect(m.bottom).toBeLessThanOrEqual(m.inner);
+    const cols = await modal(page).locator('.config-crud-list--table').evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+    expect(cols).toBe(2);
+    const row = modal(page).locator('[data-cat-row]').first();
+    expect((await row.boundingBox()).height).toBeLessThanOrEqual(34);
+    await expect(row.locator('[data-cat-duplicate]')).toBeHidden();
+    await row.hover();
+    await row.locator('[data-structure-more]').click();
+    const menu = modal(page).locator('[data-structure-menu]');
+    for (const proxy of ['show', 'duplicate', 'spread', 'delete']) {
+      await expect(menu.locator(`[data-structure-proxy="${proxy}"]`)).toHaveCount(1);
+    }
   });
 });

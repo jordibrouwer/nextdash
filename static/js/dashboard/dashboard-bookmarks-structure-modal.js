@@ -50,10 +50,10 @@
                 <div class="modal config-structure-modal" role="dialog" aria-modal="true" aria-labelledby="config-structure-title">
                     <div class="modal-header config-structure-head">
                         <span class="modal-title" id="config-structure-title">${esc(this.t('config.bmStructureTitle', 'Pages and categories'))}</span>
+                        <div class="config-subtabs config-structure-tabs" role="tablist">${tabs}</div>
                         <button type="button" class="config-structure-close" data-structure-close
                                 aria-label="${esc(this.t('config.bmCloseDetails', 'Close'))}">×</button>
                     </div>
-                    <div class="config-subtabs" role="tablist">${tabs}</div>
                     <div class="config-structure-body" data-pt-host>
                         <div id="config-pt-body" role="tabpanel" tabindex="0">${this.renderPtTab()}</div>
                     </div>
@@ -85,6 +85,14 @@
                 const more = e.target.closest('[data-structure-more]');
                 if (more) {
                     this.openStructureRowMenu(more);
+                    return;
+                }
+                const proxied = e.target.closest('[data-structure-proxy]');
+                if (proxied) {
+                    const row = proxied.closest('[data-page-row], [data-cat-row]');
+                    const target = row?.querySelector(proxied.getAttribute('data-proxy-selector'));
+                    this.closeStructureRowMenu();
+                    target?.click();
                     return;
                 }
                 const action = e.target.closest('[data-structure-action]');
@@ -202,11 +210,30 @@
             menu.className = 'config-structure-menu';
             menu.setAttribute('data-structure-menu', '');
             menu.setAttribute('role', 'menu');
+            // The row's own buttons, which the modal keeps out of sight to fit
+            // two columns on one screen: offered here, and pressed for real,
+            // so their confirmations and undo are the editor's own.
+            const proxy = (name, selector, label) => {
+                const btn = row.querySelector(selector);
+                if (!btn || btn.disabled) return '';
+                return `<button type="button" role="menuitem" data-structure-proxy="${name}" data-proxy-selector="${esc(selector)}"${
+                    name === 'delete' ? ' class="is-danger"' : ''}>${esc(label)}</button>`;
+            };
+            const spreadOn = row.querySelector('[data-cat-spread]')?.getAttribute('aria-pressed') === 'true';
             menu.innerHTML = isPage
-                ? item('open-dashboard', t('bmStructureOpenDashboard', 'Open on the dashboard'))
+                ? proxy('show', '[data-structure-show]', t('bmStructureShowBookmarks', 'Show its bookmarks'))
+                    + item('open-dashboard', t('bmStructureOpenDashboard', 'Open on the dashboard'))
                     + item('move-all', t('bmStructureMoveAll', 'Move all bookmarks to…'))
-                : item('move-page', t('bmStructureMoveToPage', 'Move to page…'))
-                    + item('merge', t('bmStructureMergeInto', 'Merge into…'));
+                    + proxy('duplicate', '[data-page-duplicate]', t('pageDuplicate', 'Duplicate'))
+                    + proxy('delete', '[data-page-delete]', t('bmStructureDeletePage', 'Delete page…'))
+                : proxy('show', '[data-structure-show]', t('bmStructureShowBookmarks', 'Show its bookmarks'))
+                    + proxy('spread', '[data-cat-spread]', spreadOn
+                        ? t('bmStructureSpreadOff', 'Stop spreading across columns')
+                        : t('categorySpreadLabel', 'Spread across columns'))
+                    + item('move-page', t('bmStructureMoveToPage', 'Move to page…'))
+                    + item('merge', t('bmStructureMergeInto', 'Merge into…'))
+                    + proxy('duplicate', '[data-cat-duplicate]', t('pageDuplicate', 'Duplicate'))
+                    + proxy('delete', '[data-cat-delete]', t('bmStructureDeleteCategory', 'Delete category…'));
             this._structureMenuFor = isPage
                 ? { kind: 'page', pageId: row.getAttribute('data-page-row') }
                 : { kind: 'category', pageId: this._catPageId, categoryId: row.getAttribute('data-cat-id') };
