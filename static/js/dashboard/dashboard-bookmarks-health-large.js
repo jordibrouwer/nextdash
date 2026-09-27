@@ -199,7 +199,26 @@
                 root.innerHTML = this.renderBmHealthLarge(b, issue, this._bmLargeHist, this._bmLargeRange);
                 root.querySelector('[data-bm-large-range]')?.focus();
             });
+            // The check list's search and its "only failures": the rows are
+            // drawn again from the period's checks, the rest stays put.
+            root.addEventListener('input', (e) => {
+                if (!e.target.closest?.('[data-bm-large-log-q]')) return;
+                this._bmLargeLogQuery = e.target.value;
+                this.repaintBmLargeLog();
+            });
             root.addEventListener('click', (e) => {
+                const tabEl = e.target.closest('[data-bm-large-tab]');
+                if (tabEl && root.querySelector('[data-bm-health-large]')) {
+                    this.setBmLargeTab(tabEl.getAttribute('data-bm-large-tab'));
+                    return;
+                }
+                const errorsEl = e.target.closest('[data-bm-large-log-errors]');
+                if (errorsEl) {
+                    this._bmLargeLogErrors = !this._bmLargeLogErrors;
+                    errorsEl.setAttribute('aria-pressed', String(this._bmLargeLogErrors));
+                    this.repaintBmLargeLog();
+                    return;
+                }
                 const el = e.target.closest('[data-bm-large-action]');
                 if (!el || !root.querySelector('[data-bm-health-large]')) return;
                 const action = el.getAttribute('data-bm-large-action');
@@ -213,6 +232,7 @@
                         .finally(() => { if (this._bmLargeKey === key) void this.openBmHealthLarge(key, { keepRange: true }); });
                 } else if (action === 'prev') this.stepBmHealthLarge(-1);
                 else if (action === 'next') this.stepBmHealthLarge(1);
+                else if (action === 'export' && issue) this._bmHealthModule?.exportMonitorHistory?.(issue);
                 else if (action === 'monitor') {
                     global.AppModal.hide();
                     this.focusWorkbenchPanel?.(key);
@@ -220,6 +240,70 @@
                     this.openBmHealthAcc?.('checking');
                 }
             });
+        },
+
+        /** The tab it opens on: the reader's last, Overview at first. */
+        bmLargeTab() {
+            try {
+                return global.localStorage?.getItem('nextdash.bm.healthLargeTab') === 'checks' ? 'checks' : 'overview';
+            } catch {
+                return 'overview';
+            }
+        },
+
+        setBmLargeTab(tab) {
+            const root = document.getElementById('modal-text');
+            if (!root) return;
+            root.querySelectorAll('[data-bm-large-tab]').forEach((btn) => {
+                const on = btn.getAttribute('data-bm-large-tab') === tab;
+                btn.classList.toggle('is-active', on);
+                btn.setAttribute('aria-selected', on ? 'true' : 'false');
+                btn.tabIndex = on ? 0 : -1;
+            });
+            root.querySelectorAll('[data-bm-large-pane]').forEach((pane) => {
+                pane.hidden = pane.getAttribute('data-bm-large-pane') !== tab;
+            });
+            try { global.localStorage?.setItem('nextdash.bm.healthLargeTab', tab); } catch { /* private mode */ }
+            // The charts on the tab just shown are measured now they have a width.
+            this.fitBmLargeCharts();
+        },
+
+        /** The check list's rows: the period's checks, newest first, filtered. */
+        renderBmLargeLogRows() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const t = (key, fallback) => this.t(`config.${key}`, fallback);
+            const all = this._bmLargeLog || [];
+            const q = String(this._bmLargeLogQuery || '').trim().toLowerCase();
+            const cause = (s) => (s.up ? '' : (s.code ? `HTTP ${s.code}` : t('bmLargeNoAnswer', 'no answer')));
+            const rows = all.filter((s) => (!this._bmLargeLogErrors || !s.up)).filter((s) => {
+                if (!q) return true;
+                const when = new Date(s.t).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                return [when, s.code ? String(s.code) : '', cause(s), s.up ? 'up' : 'down', s.maint ? 'maintenance' : '']
+                    .some((v) => v.toLowerCase().includes(q));
+            });
+            const LIMIT = 300;
+            const shown = rows.slice(0, LIMIT);
+            const body = shown.map((s) => `<tr${s.up ? '' : ' class="is-down"'}>
+                <td>${esc(new Date(s.t).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</td>
+                <td><span class="bm-health-large-log-dot" data-tone="${s.maint ? 'muted' : (s.up ? 'good' : 'bad')}"></span>${esc(s.maint ? t('bmLargeLogMaint', 'maintenance') : (s.up ? t('bmLargeLogUp', 'up') : t('bmLargeLogDown', 'down')))}</td>
+                <td>${esc(s.code ? String(s.code) : '—')}</td>
+                <td>${esc(s.ms ? `${s.ms} ms` : '—')}</td>
+                <td>${esc(cause(s) || '—')}</td>
+            </tr>`).join('');
+            const note = rows.length > LIMIT
+                ? t('bmLargeLogMore', 'The newest {shown} of {n}; the export has them all.').replace('{shown}', String(LIMIT)).replace('{n}', rows.length.toLocaleString())
+                : t('bmLargeLogCount', '{n} checks').replace('{n}', rows.length.toLocaleString());
+            return { body: body || `<tr><td colspan="5" class="config-bm-panel-muted">${esc(t('bmLargeLogNone', 'No checks match.'))}</td></tr>`, note };
+        },
+
+        repaintBmLargeLog() {
+            const root = document.getElementById('modal-text');
+            const tbody = root?.querySelector('[data-bm-large-log-body]');
+            if (!tbody) return;
+            const { body, note } = this.renderBmLargeLogRows();
+            tbody.innerHTML = body;
+            const noteEl = root.querySelector('[data-bm-large-log-note]');
+            if (noteEl) noteEl.textContent = note;
         },
 
         /* ── The body ─────────────────────────────────────────────────── */
@@ -445,13 +529,42 @@
                     ${last ? `<div class="config-bm-usage-kv"><span>${esc(t('bmLargeLastAnswer', 'Last answer'))}</span><span>${esc(`${last.code || t('bmLargeNoAnswer', 'no answer')}${last.ms ? ` · ${last.ms} ms` : ''}`)}</span></div>` : ''}`
                     : none(noChecks), true);
 
+            // 11. Every check of the period, newest first: searchable, the
+            // failures alone at a click, and the whole history as CSV.
+            this._bmLargeLog = [...rawRange].sort((a, c) => c.t - a.t);
+            const log = this.renderBmLargeLogRows();
+            const logCard = card('log', t('bmLargeLogTitle', 'Every check'), rawLabel,
+                rawRange.length ? `<div class="bm-health-large-log-tools">
+                        <input type="search" class="config-text" data-bm-large-log-q value="${esc(this._bmLargeLogQuery || '')}"
+                               placeholder="${esc(t('bmLargeLogSearch', 'Search: 502, timeout, a date…'))}" aria-label="${esc(t('bmLargeLogSearchLabel', 'Search the checks'))}">
+                        <button type="button" class="config-btn config-btn--small" data-bm-large-log-errors aria-pressed="${this._bmLargeLogErrors ? 'true' : 'false'}">${esc(t('bmLargeLogErrors', 'Only failures'))}</button>
+                        <button type="button" class="config-btn config-btn--small" data-bm-large-action="export">${esc(t('bmLargeLogExport', 'Export CSV'))}</button>
+                    </div>
+                    <div class="bm-health-large-log-scroll">
+                        <table class="bm-health-large-log">
+                            <thead><tr><th>${esc(t('bmLargeLogWhen', 'Time'))}</th><th>${esc(t('bmLargeLogState', 'State'))}</th><th>${esc(t('bmLargeLogCode', 'Code'))}</th><th>${esc(t('bmLargeLogMs', 'Response'))}</th><th>${esc(t('bmLargeLogCause', 'Cause'))}</th></tr></thead>
+                            <tbody data-bm-large-log-body>${log.body}</tbody>
+                        </table>
+                    </div>
+                    <p class="config-bm-panel-muted bm-health-large-log-note" data-bm-large-log-note>${esc(log.note)}</p>`
+                    : none(noChecks), true);
+
+            const tab = this.bmLargeTab();
+            const tabButton = (name, label) => `<button type="button" class="config-bm-tab${tab === name ? ' is-active' : ''}" role="tab"
+                aria-selected="${tab === name ? 'true' : 'false'}" tabindex="${tab === name ? 0 : -1}" data-bm-large-tab="${name}">${esc(label)}</button>`;
             return `<div class="bm-health-large" data-bm-health-large data-loading="${loading ? '1' : '0'}" data-range="${esc(range)}">
                 ${head}
-                <div class="bm-health-large-grid">
+                <div class="config-bm-tabs bm-health-modal-tabs" role="tablist">
+                    ${tabButton('overview', t('bmLargeTabOverview', 'Overview'))}
+                    ${tabButton('checks', t('bmLargeTabChecks', 'Checks'))}
+                </div>
+                <div class="bm-health-large-grid" role="tabpanel" data-bm-large-pane="overview"${tab === 'overview' ? '' : ' hidden'}>
                     ${uptimeCard}${responseCard}${codesCard}
                     ${barsCard}${incCard}${scoreCard}
+                </div>
+                <div class="bm-health-large-grid" role="tabpanel" data-bm-large-pane="checks"${tab === 'checks' ? '' : ' hidden'}>
                     ${heatCard}${certCard}${keptCard}
-                    ${checksCard}
+                    ${checksCard}${logCard}
                 </div>
                 <p class="bm-health-large-foot">${esc(t('bmLargeFoot', 'Checks are kept one by one for 30 days, and as a summary per day for 90. ← and → go to the previous and next bookmark.'))}</p>
             </div>`;

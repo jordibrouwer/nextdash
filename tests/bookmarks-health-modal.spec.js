@@ -191,3 +191,69 @@ test('+N pages opens the rest of the pages in the card, and folds them again', a
   await expect(page.locator('#app-modal.show')).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => String(window.dashboardInstance.config.bmPageFilter))).toBe(pageId);
 });
+
+/*
+ * Two tabs: the collection at a glance, then the monitors and the collection's
+ * course over time, each with room for more than one screen would hold.
+ */
+test('Monitors & trend: the course in any series, every monitor together, remembered', async ({ page }) => {
+  await page.addInitScript(() => { try { localStorage.removeItem('nextdash.bm.healthModalTab'); } catch {} });
+  const day = 86400000;
+  const now = Date.now();
+  await openBookmarksWithHealth(
+    page,
+    (issues) => issues.map((issue, i) => (i === 0 ? { ...issue, monitor: true } : issue)),
+    {
+      view: 'library',
+      report: (issues) => ({
+        summary: fullSummary(issues),
+        trend: [
+          { t: now - 2 * day, n: 10, h: 8, c: 80, b: 2 },
+          { t: now - day, n: 10, h: 9, c: 85, b: 1 },
+          { t: now, n: 10, h: 10, c: 90, b: 0 },
+        ],
+        fleet: {
+          monitors: 2,
+          uptime24h: { ratio: 0.9, samples: 10 },
+          uptime7d: { ratio: 0.95, samples: 50 },
+          uptime30d: { ratio: 0.99, samples: 200 },
+          downNow: 0,
+          avgResponseMs: 120,
+          worst: [{ url: 'https://slow.example.com', name: 'Slow site', ratio: 0.8, samples: 40 }],
+          slower: [{ url: 'https://slow.example.com', name: 'Slow site', baselineMs: 100, recentMs: 300, changePct: 200 }],
+          incidents: [{ url: 'https://slow.example.com', name: 'Slow site', start: now - 3600000, durationMs: 600000, reason: 'HTTP 502' }],
+          totalIncidents: 3,
+        },
+      }),
+    },
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
+  const modal = page.locator('#app-modal.show');
+  const tab = (name) => modal.locator(`[data-bm-health-modal-tab="${name}"]`);
+  await expect(tab('overview')).toHaveAttribute('aria-selected', 'true');
+  await expect(modal.locator('[data-bm-health-modal-card="score"]')).toBeVisible();
+  await expect(modal.locator('[data-bm-health-modal-card="trend"]')).toBeHidden();
+
+  await tab('monitors').click();
+  await expect(modal.locator('[data-bm-health-modal-card="score"]')).toBeHidden();
+  const trend = modal.locator('[data-bm-health-modal-card="trend"]');
+  await expect(trend).toBeVisible();
+  await expect(trend.locator('svg')).toHaveAttribute('aria-label', /80% → 100%/);
+  await trend.locator('[data-bm-health-trend-series="broken"]').click();
+  await expect(modal.locator('[data-bm-health-modal-card="trend"] svg')).toHaveAttribute('aria-label', /2 → 0/);
+  await expect(modal.locator('[data-bm-health-trend-series="broken"]')).toHaveAttribute('aria-pressed', 'true');
+
+  await expect(modal.locator('[data-bm-health-modal-card="fleet-uptime"]')).toContainText('all 2 monitors');
+  await expect(modal.locator('[data-bm-health-modal-card="fleet-worst"]')).toContainText('Slow site');
+  await expect(modal.locator('[data-bm-health-modal-card="fleet-slower"]')).toContainText('+200%');
+  const outages = modal.locator('[data-bm-health-modal-card="fleet-outages"]');
+  await expect(outages).toContainText('Outages (3)');
+  await expect(outages).toContainText('HTTP 502');
+  await expect(outages).toContainText('2 more in the last 30 days');
+
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
+  await expect(page.locator('#app-modal.show [data-bm-health-modal-tab="monitors"]')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#app-modal.show [data-bm-health-modal-card="trend"]')).toBeVisible();
+});

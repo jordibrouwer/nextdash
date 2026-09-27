@@ -2647,17 +2647,24 @@ body[data-density-mode="dense"] .config-bm-workbench {
 .bm-health-large-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    /* Placed rather than flowed: the score's reasons are the tallest card and
-       take the right-hand column down three rows, so the rest packs in
-       beside it and the whole fits one screen. */
+    /* Placed rather than flowed. Overview: the score's reasons are the
+       tallest card and take the right-hand column down two rows. Checks: the
+       hours and the last day on top, every check of the period beneath. */
     grid-template-areas:
         "uptime response response codes"
-        "days days incidents score"
-        "hours hours cert score"
-        "checks checks kept score";
+        "days days incidents score";
     gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     align-items: start;
 }
+
+.bm-health-large-grid[data-bm-large-pane="checks"] {
+    grid-template-areas:
+        "hours hours cert kept"
+        "checks checks cert kept"
+        "log log log log";
+}
+
+.bm-health-large-grid[hidden] { display: none; }
 
 .bm-health-large-card {
     margin: 0;
@@ -2674,6 +2681,7 @@ body[data-density-mode="dense"] .config-bm-workbench {
 .bm-health-large-card[data-bm-large-card="cert"] { grid-area: cert; }
 .bm-health-large-card[data-bm-large-card="kept"] { grid-area: kept; }
 .bm-health-large-card[data-bm-large-card="checks"] { grid-area: checks; }
+.bm-health-large-card[data-bm-large-card="log"] { grid-area: log; }
 
 @media (max-width: 900px) {
     .bm-health-large-grid {
@@ -2682,10 +2690,15 @@ body[data-density-mode="dense"] .config-bm-workbench {
             "uptime codes"
             "response response"
             "days days"
+            "incidents score";
+    }
+
+    .bm-health-large-grid[data-bm-large-pane="checks"] {
+        grid-template-areas:
             "hours hours"
-            "incidents score"
             "cert kept"
-            "checks checks";
+            "checks checks"
+            "log log";
     }
 }
 
@@ -2993,3 +3006,195 @@ body[data-density-mode="dense"] .config-bm-workbench {
 .modal.bm-health-large .modal-body {
     scrollbar-gutter: stable;
 }
+
+/* ── Collection health: its two tabs ──────────────────────────────────── */
+
+/* The subtitle on the left, the tabs on the right, one line between them. */
+.bm-health-modal-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.bm-health-modal-head .bm-health-modal-subtitle {
+    margin: 0;
+}
+
+.bm-health-modal-tabs {
+    grid-template-columns: repeat(2, auto);
+    justify-content: start;
+    width: max-content;
+}
+
+.bm-health-modal-tabs .config-bm-tab {
+    padding-inline: var(--space-3, 0.75rem);
+}
+
+.bm-health-modal-head .bm-health-modal-tabs {
+    margin: 0;
+}
+
+.bm-health-large .bm-health-modal-tabs {
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+/* Monitors & trend: the course across the top, the monitors in a row under it. */
+.bm-health-modal-wide-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--space-3, 0.75rem);
+}
+
+.bm-health-modal-wide-grid .bm-health-modal-card {
+    margin: 0;
+}
+
+.bm-health-modal-wide-grid .bm-health-modal-card.is-wide {
+    grid-column: 1 / -1;
+}
+
+.bm-health-modal-series-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-series {
+    padding: 1px var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-xs, 0.75rem);
+    cursor: pointer;
+}
+
+.bm-health-modal-series.is-on {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--text-primary);
+}
+
+/* Scaled whole, never stretched: no preserveAspectRatio="none". */
+.bm-health-modal-trend-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 13rem;
+}
+
+.bm-health-modal-trend-chart .is-line {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.bm-health-modal-trend-chart .is-axis {
+    stroke: var(--border-primary);
+}
+
+.bm-health-modal-trend-chart .is-label {
+    font-size: 11px;
+    fill: var(--text-secondary);
+}
+
+/* The day under the pointer: an invisible target that shows itself on hover. */
+.bm-health-modal-trend-hit {
+    fill: var(--accent-primary);
+    opacity: 0;
+    cursor: default;
+}
+
+.bm-health-modal-trend-hit:hover {
+    opacity: 1;
+}
+
+.bm-health-modal-bar-track i[data-tone="good"] { background: var(--accent-success); }
+.bm-health-modal-bar-track i[data-tone="warn"] { background: var(--accent-warning); }
+.bm-health-modal-bar-track i[data-tone="bad"] { background: var(--accent-error); }
+
+.bm-health-modal-monitor-list.is-three li b {
+    font-weight: 600;
+}
+
+.bm-health-modal-empty {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.78rem);
+}
+
+.bm-health-modal-monitor-list b.is-down {
+    color: var(--accent-error);
+}
+
+/* Every check of the period: its own scroll, so the modal keeps its size. */
+.bm-health-large-log-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.375rem);
+    align-items: center;
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.bm-health-large-log-tools input[type="search"] {
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+
+.bm-health-large-log-tools [aria-pressed="true"] {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.bm-health-large-log-scroll {
+    max-height: 16rem;
+    overflow-y: auto;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-4, 6px);
+}
+
+.bm-health-large-log {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+}
+
+.bm-health-large-log th {
+    position: sticky;
+    top: 0;
+    background: var(--background-modal, var(--background-primary));
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.bm-health-large-log th,
+.bm-health-large-log td {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 50%, transparent);
+    white-space: nowrap;
+}
+
+.bm-health-large-log tr.is-down td { color: var(--accent-error); }
+
+.bm-health-large-log-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-right: var(--space-1, 0.25rem);
+    border-radius: 50%;
+    background: var(--text-tertiary, var(--text-secondary));
+}
+
+.bm-health-large-log-dot[data-tone="good"] { background: var(--accent-success); }
+.bm-health-large-log-dot[data-tone="bad"] { background: var(--accent-error); }
+
+.bm-health-large-log-note { margin: var(--space-1, 0.25rem) 0 0; }

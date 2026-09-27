@@ -79,7 +79,29 @@
 
         /* ── Assembling the body ─────────────────────────────────────────── */
 
+        /** The tab the modal opens on: the reader's last, Overview at first. */
+        bmHealthModalTab() {
+            try {
+                const tab = global.localStorage?.getItem('nextdash.bm.healthModalTab');
+                return tab === 'monitors' ? 'monitors' : 'overview';
+            } catch {
+                return 'overview';
+            }
+        },
+
+        /** Two tabs: the collection at a glance, then its monitors and its course over time. */
+        renderBmHealthModalTabs(tab) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const button = (name, label) => `<button type="button" class="config-bm-tab${tab === name ? ' is-active' : ''}" role="tab"
+                aria-selected="${tab === name ? 'true' : 'false'}" tabindex="${tab === name ? 0 : -1}" data-bm-health-modal-tab="${name}">${esc(label)}</button>`;
+            return `<div class="config-bm-tabs bm-health-modal-tabs" role="tablist" aria-label="${esc(this.t('config.bmHealthModalTitle', 'Collection health'))}">
+                ${button('overview', this.t('config.bmHealthModalTabOverview', 'Overview'))}
+                ${button('monitors', this.t('config.bmHealthModalTabMonitors', 'Monitors & trend'))}
+            </div>`;
+        },
+
         renderBmHealthModal(health) {
+            const tab = this.bmHealthModalTab();
             const cards = [
                 this.renderBmHealthModalScoreCard(health),
                 this.renderBmHealthModalStandCard(health),
@@ -90,9 +112,157 @@
                 this.renderBmHealthModalMonitorsCard(health),
                 this.renderBmHealthModalCertsCard(health),
             ].filter(Boolean).join('');
-            return `${this.renderBmHealthModalSubtitle(health)}
-                <div class="bm-health-modal-grid">${cards}</div>
+            // The tabs share the subtitle's line: a row of their own would
+            // cost the overview the room that keeps it on one screen.
+            return `<div class="bm-health-modal-head">
+                    ${this.renderBmHealthModalSubtitle(health)}
+                    ${this.renderBmHealthModalTabs(tab)}
+                </div>
+                <div class="bm-health-modal-pane" role="tabpanel" data-bm-health-modal-pane="overview"${tab === 'overview' ? '' : ' hidden'}>
+                    <div class="bm-health-modal-grid">${cards}</div>
+                </div>
+                <div class="bm-health-modal-pane" role="tabpanel" data-bm-health-modal-pane="monitors"${tab === 'monitors' ? '' : ' hidden'}>
+                    ${this.renderBmHealthModalMonitorsPane(health)}
+                </div>
                 ${this.renderBmHealthModalFooter(health)}`;
+        },
+
+        /* ── Monitors & trend ─────────────────────────────────────────────── */
+
+        renderBmHealthModalMonitorsPane(health) {
+            return `<div class="bm-health-modal-wide-grid">
+                ${this.renderBmHealthModalTrendCard(health)}
+                ${this.renderBmHealthModalFleetCards(health)}
+            </div>`;
+        },
+
+        /**
+         * The collection over 90 days, one point a day, in any of the series
+         * the report keeps: the chart the Health view drew, full width here.
+         */
+        renderBmHealthModalTrendCard(health) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const allSeries = global.DashboardHealth?.TREND_SERIES || [];
+            const active = allSeries.find((s) => s.id === (this._bmTrendSeries || 'healthy')) || allSeries[0];
+            const points = health.trendPoints();
+            const pills = allSeries.map((s) => `<button type="button" class="bm-health-modal-series${s.id === active?.id ? ' is-on' : ''}"
+                aria-pressed="${s.id === active?.id ? 'true' : 'false'}" data-bm-health-trend-series="${esc(s.id)}">${esc(health.t(`dashboard.${s.labelKey}`, s.fallback))}</button>`).join('');
+            const values = active ? points.map((p) => health.trendPercent(p, active)) : [];
+            const known = values.filter((v) => v !== null);
+            let chart;
+            if (known.length < 2) {
+                chart = `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalTrendEmpty', 'A course takes two days of reports; there is one so far.'))}</p>`;
+            } else {
+                const w = 640;
+                const h = 150;
+                const pad = 12;
+                const max = active.mode === 'percent' ? 100 : Math.max(1, ...known) * 1.1;
+                const step = (w - pad * 2) / Math.max(1, values.length - 1);
+                const x = (i) => pad + i * step;
+                const y = (v) => h - pad - (v / max) * (h - pad * 2);
+                const segments = [];
+                let current = [];
+                values.forEach((v, i) => {
+                    if (v === null) {
+                        if (current.length > 1) segments.push(current);
+                        current = [];
+                        return;
+                    }
+                    current.push(`${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+                });
+                if (current.length > 1) segments.push(current);
+                const unit = active.mode === 'percent' ? '%' : '';
+                const dots = values.map((v, i) => (v === null ? '' : `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="6" class="bm-health-modal-trend-hit"
+                    data-tip="${esc(`${new Date(points[i].t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}: ${v}${unit}`)}"><title>${esc(`${new Date(points[i].t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}: ${v}${unit}`)}</title></circle>`)).join('');
+                const first = points[0]?.t ? new Date(points[0].t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
+                const last = points[points.length - 1]?.t ? new Date(points[points.length - 1].t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
+                chart = `<svg class="bm-health-modal-trend-chart" viewBox="0 0 ${w} ${h + 16}" role="img"
+                        aria-label="${esc(`${health.t(`dashboard.${active.labelKey}`, active.fallback)}: ${known[0]}${unit} → ${known[known.length - 1]}${unit}`)}">
+                    <line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" class="is-axis"></line>
+                    ${segments.map((pts) => `<polyline points="${pts.join(' ')}" class="is-line"></polyline>`).join('')}
+                    ${dots}
+                    <text x="${pad}" y="${h + 12}" class="is-label">${esc(first)}</text>
+                    <text x="${w - pad}" y="${h + 12}" text-anchor="end" class="is-label">${esc(last)}</text>
+                    <text x="${w - pad}" y="${pad + 2}" text-anchor="end" class="is-label">${esc(`${Math.round(max)}${unit}`)}</text>
+                </svg>`;
+            }
+            const title = this.t('config.bmHealthModalTrendTitle', 'Over time ({days} days)').replace('{days}', String(points.length || 0));
+            return `<section class="bm-health-modal-card is-wide" data-bm-health-modal-card="trend">
+                <h3 class="bm-health-modal-card-title">${esc(title)}</h3>
+                <div class="bm-health-modal-series-row">${pills}</div>
+                ${chart}
+            </section>`;
+        },
+
+        /** Every monitor together: uptime, the least available, the slowing and the outages. */
+        renderBmHealthModalFleetCards(health) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const fleet = health.report?.fleet;
+            if (!fleet || !Number(fleet.monitors)) {
+                return this.bmHealthModalCard('fleet', this.t('config.bmHealthModalFleetTitle', 'Monitors'),
+                    `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalFleetNone',
+                        'Nothing is monitored yet. Set a bookmark to Monitor to see its uptime here.'))}</p>`);
+            }
+            const noData = health.t('dashboard.healthStatsNoData', 'no data');
+            const bar = (ratio) => `<span class="bm-health-modal-bar-track"><i
+                data-tone="${ratio >= 0.999 ? 'good' : ratio >= 0.95 ? 'warn' : 'bad'}" style="width:${Math.max(2, Math.round((ratio || 0) * 100))}%"></i></span>`;
+            const windows = [
+                [health.t('dashboard.healthStatsUptime24h', '24 hours'), fleet.uptime24h],
+                [health.t('dashboard.healthStatsUptime7d', '7 days'), fleet.uptime7d],
+                [health.t('dashboard.healthStatsUptime30d', '30 days'), fleet.uptime30d],
+            ].map(([label, win]) => `<div class="bm-health-modal-bar-row is-static">
+                <span class="bm-health-modal-bar-label">${esc(label)}</span>${bar(Number(win?.ratio))}
+                <span>${esc(health.formatUptime(win) || noData)}</span></div>`).join('');
+            const uptime = this.bmHealthModalCard('fleet-uptime',
+                this.t('config.bmHealthModalFleetUptime', 'Uptime, all {count} monitors').replace('{count}', String(fleet.monitors)),
+                `<div class="bm-health-modal-bars">${windows}</div>`);
+
+            const worst = (Array.isArray(fleet.worst) ? fleet.worst : []).slice(0, 6);
+            const worstRows = worst.map((m) => `<div class="bm-health-modal-bar-row is-static">
+                <span class="bm-health-modal-bar-label" title="${esc(m.url || '')}">${esc(m.name || health.formatUrlDisplay(m.url))}</span>${bar(Number(m.ratio))}
+                <span>${esc(health.formatUptime({ ratio: m.ratio, samples: m.samples }) || '—')}</span></div>`).join('');
+            const least = this.bmHealthModalCard('fleet-worst', this.t('config.bmHealthModalFleetWorst', 'Least available (7 days)'),
+                worstRows ? `<div class="bm-health-modal-bars">${worstRows}</div>`
+                    : `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalFleetAllUp', 'Every monitor answered every time.'))}</p>`);
+
+            const slower = (Array.isArray(fleet.slower) ? fleet.slower : []).slice(0, 6);
+            const slowerRows = slower.map((m) => `<li><span title="${esc(m.url || '')}">${esc(m.name || health.formatUrlDisplay(m.url))}</span>
+                <span>${esc(`${Math.round(Number(m.baselineMs) || 0)} → ${Math.round(Number(m.recentMs) || 0)} ms`)}</span>
+                <b class="is-down">+${esc(String(Math.round(Number(m.changePct) || 0)))}%</b></li>`).join('');
+            const slowing = this.bmHealthModalCard('fleet-slower', this.t('config.bmHealthModalFleetSlower', 'Slower than last week'),
+                slowerRows ? `<ul class="bm-health-modal-monitor-list is-three">${slowerRows}</ul>`
+                    : `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalFleetNoneSlower', 'Nothing has slowed down.'))}</p>`);
+
+            const incidents = Array.isArray(fleet.incidents) ? fleet.incidents : [];
+            const total = Number(fleet.totalIncidents) || incidents.length;
+            const incidentRows = incidents.slice(0, 8).map((i) => `<li><span title="${esc(i.url || '')}">${esc(i.name || health.formatUrlDisplay(i.url))}</span>
+                <span>${esc([i.start ? new Date(i.start).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '',
+                    i.ongoing ? health.t('dashboard.healthFleetOngoing', 'ongoing') : health.formatDuration(i.durationMs),
+                    i.reason || ''].filter(Boolean).join(' · '))}</span></li>`).join('');
+            const more = total > incidents.slice(0, 8).length
+                ? `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalFleetMoreOutages', '{n} more in the last 30 days').replace('{n}', String(total - incidents.slice(0, 8).length)))}</p>` : '';
+            const outages = this.bmHealthModalCard('fleet-outages',
+                this.t('config.bmHealthModalFleetOutages', 'Outages ({count})').replace('{count}', String(total)),
+                incidentRows ? `<ul class="bm-health-modal-monitor-list">${incidentRows}</ul>${more}`
+                    : `<p class="bm-health-modal-empty">${esc(health.t('dashboard.healthStatsNoIncidents', 'No outages recorded.'))}</p>`);
+            return `${uptime}${least}${slowing}${outages}`;
+        },
+
+        /** Show one tab, in place, and remember it for the next opening. */
+        setBmHealthModalTab(tab) {
+            const root = document.getElementById('modal-text');
+            if (!root) return;
+            root.querySelectorAll('[data-bm-health-modal-tab]').forEach((btn) => {
+                const on = btn.getAttribute('data-bm-health-modal-tab') === tab;
+                btn.classList.toggle('is-active', on);
+                btn.setAttribute('aria-selected', on ? 'true' : 'false');
+                btn.tabIndex = on ? 0 : -1;
+            });
+            root.querySelectorAll('[data-bm-health-modal-pane]').forEach((pane) => {
+                pane.hidden = pane.getAttribute('data-bm-health-modal-pane') !== tab;
+            });
+            try { global.localStorage?.setItem('nextdash.bm.healthModalTab', tab); } catch { /* private mode */ }
+            this.fitBmHealthModal();
         },
 
         bmHealthModalCard(key, title, body) {
@@ -513,6 +683,19 @@
             if (!root || root.dataset.bmHealthModalWired === '1') return;
             root.dataset.bmHealthModalWired = '1';
             root.addEventListener('click', (e) => {
+                const tabEl = e.target.closest('[data-bm-health-modal-tab]');
+                if (tabEl) {
+                    this.setBmHealthModalTab(tabEl.getAttribute('data-bm-health-modal-tab'));
+                    return;
+                }
+                const seriesEl = e.target.closest('[data-bm-health-trend-series]');
+                if (seriesEl) {
+                    this._bmTrendSeries = seriesEl.getAttribute('data-bm-health-trend-series');
+                    const card = root.querySelector('[data-bm-health-modal-card="trend"]');
+                    const health = this._bmHealthModule;
+                    if (card && health) card.outerHTML = this.renderBmHealthModalTrendCard(health);
+                    return;
+                }
                 const filterEl = e.target.closest('[data-bm-health-modal-filter]');
                 if (filterEl) {
                     const key = filterEl.getAttribute('data-bm-health-modal-filter');

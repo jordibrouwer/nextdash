@@ -10,6 +10,7 @@ const HOUR = 3600000;
 const DAY = 24 * HOUR;
 const modal = (page) => page.locator('#app-modal.show [data-bm-health-large]');
 const card = (page, name) => modal(page).locator(`[data-bm-large-card="${name}"]`);
+const tab = (page, name) => modal(page).locator(`[data-bm-large-tab="${name}"]`);
 
 async function stubHistory(page, { samples = null, days = null } = {}) {
   const now = Date.now();
@@ -57,7 +58,12 @@ const row = (page, name) => page.locator('#config-bm-list .config-bm-row', { has
 
 test.describe('bookmark health, in large', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => { try { localStorage.removeItem('nextdash.bm.panelTab'); } catch {} });
+    await page.addInitScript(() => {
+      try {
+        localStorage.removeItem('nextdash.bm.panelTab');
+        localStorage.removeItem('nextdash.bm.healthLargeTab');
+      } catch {}
+    });
   });
 
   test('Open charts in the Health tab opens it, every card filled from the checks', async ({ page }) => {
@@ -105,7 +111,10 @@ test.describe('bookmark health, in large', () => {
     // measurement is not a stretch anyone sees; 320 drawn at 578 was.
     const ratios = () => modal(page).locator('svg.bm-health-large-line, svg.bm-health-large-days, svg.bm-health-large-heat')
       .evaluateAll((svgs) => svgs.map((svg) => Math.abs(svg.getBoundingClientRect().width / svg.viewBox.baseVal.width - 1)));
-    await expect.poll(async () => Math.max(...(await ratios()))).toBeLessThanOrEqual(0.01);
+    await expect.poll(async () => Math.max(...(await ratios()).slice(0, 2))).toBeLessThanOrEqual(0.01);
+    // The hours chart waits on the Checks tab, measured once it is shown.
+    await tab(page, 'checks').click();
+    await expect.poll(async () => Math.abs((await ratios())[2])).toBeLessThanOrEqual(0.01);
     expect((await ratios()).length).toBe(3);
   });
 
@@ -170,10 +179,12 @@ test.describe('bookmark health, in large', () => {
     await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
     await expect(modal(page)).toHaveAttribute('data-loading', '0');
     const tip = page.locator('#app-modal.show .bm-large-tip');
+    await tab(page, 'checks').click();
     const down = card(page, 'hours').locator('rect[data-tone="bad"]').first();
     await down.hover();
     await expect(tip).toBeVisible();
     await expect(tip).toContainText(/down/);
+    await tab(page, 'overview').click();
     await card(page, 'codes').locator('.bm-health-large-codes > div').first().hover();
     await expect(tip).toContainText(/^2xx: 2/);
     await card(page, 'response').locator('.is-point').first().hover({ force: true });
@@ -207,5 +218,67 @@ test.describe('bookmark health, in large', () => {
     await expect(modal(page)).toHaveAttribute('data-loading', '0');
     await expect(card(page, 'hours')).toContainText(/Not enough checks/);
     await expect(card(page, 'hours').locator('[data-bm-large-action="monitor"]')).toHaveCount(1);
+  });
+
+  test('two tabs: Overview first, Checks remembered for next time', async ({ page }) => {
+    await stubHistory(page);
+    const { bookmarks } = await open(page);
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    await expect(modal(page)).toHaveAttribute('data-loading', '0');
+    await expect(tab(page, 'overview')).toHaveAttribute('aria-selected', 'true');
+    for (const name of ['uptime', 'response', 'days', 'codes', 'incidents', 'score']) await expect(card(page, name)).toBeVisible();
+    for (const name of ['hours', 'cert', 'kept', 'checks', 'log']) await expect(card(page, name)).toBeHidden();
+    await tab(page, 'checks').click();
+    for (const name of ['hours', 'cert', 'kept', 'checks', 'log']) await expect(card(page, name)).toBeVisible();
+    await expect(card(page, 'uptime')).toBeHidden();
+    // A new period keeps the tab it was chosen on.
+    await modal(page).locator('[data-bm-large-range]').selectOption('7');
+    await expect(card(page, 'log')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    await expect(tab(page, 'checks')).toHaveAttribute('aria-selected', 'true');
+    await expect(card(page, 'log')).toBeVisible();
+  });
+
+  test('every check of the period: newest first, searched, failures alone, exported', async ({ page }) => {
+    await stubHistory(page);
+    const { bookmarks } = await open(page);
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    await expect(modal(page)).toHaveAttribute('data-loading', '0');
+    await tab(page, 'checks').click();
+    const log = card(page, 'log');
+    const rows = log.locator('tbody tr');
+    await expect(rows).toHaveCount(5);
+    // Newest first: an hour ago, no answer at all.
+    await expect(rows.first()).toContainText('no answer');
+    await expect(rows.first()).toHaveClass(/is-down/);
+    await expect(log.locator('[data-bm-large-log-note]')).toHaveText('5 checks');
+
+    await log.locator('[data-bm-large-log-errors]').click();
+    await expect(rows).toHaveCount(2);
+    await log.locator('[data-bm-large-log-q]').fill('502');
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText('HTTP 502');
+    await log.locator('[data-bm-large-log-errors]').click();
+    await log.locator('[data-bm-large-log-q]').fill('301');
+    await expect(rows).toHaveCount(1);
+    await log.locator('[data-bm-large-log-q]').fill('zzz');
+    await expect(rows).toHaveText(['No checks match.']);
+
+    // The list scrolls inside its card, not the modal.
+    const overflow = await log.locator('.bm-health-large-log-scroll').evaluate((el) => getComputedStyle(el).overflowY);
+    expect(overflow).toBe('auto');
+
+    // The download itself is the health module's, as from the side panel.
+    await page.evaluate(() => {
+      const health = window.dashboardInstance.config._bmHealthModule;
+      health.downloadUrl = (href) => { window.__exported = href; };
+    });
+    await log.locator('[data-bm-large-action="export"]').click();
+    await expect.poll(() => page.evaluate(() => window.__exported || '')).toContain('/api/health/history-export?url=');
+    expect(await page.evaluate(() => decodeURIComponent(window.__exported))).toContain(bookmarks[0].url);
   });
 });
