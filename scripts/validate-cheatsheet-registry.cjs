@@ -49,10 +49,10 @@ console.log('Validating cheat sheet registry…');
  */
 const KNOWN_UNTRANSLATED = new Set([
     'bmQuickTag',
-    'cbMoveEditCopy', 'cbCategory', 'cbFilter', 'cbOpenTagCat', 'cbGotoNav',
+    'cbMoveEditCopy', 'cbCategory', 'cbFilter', 'cbOpenTagCat',
     'sectionCommandsNavigation', 'cnPage', 'cnRecent', 'cnOverview', 'cnWhatsnew', 'cnReload', 'cnConfig',
     'caDisplayToggles', 'caDisplayMore', 'caCollections',
-    'sectionCommandsTools', 'ctBackup', 'ctMetadata', 'ctMonitor', 'ctTelemetry',
+    'sectionCommandsTools', 'ctBackup', 'ctMonitor', 'ctTelemetry',
 ]);
 
 /* 1. Every locale key the registry can ask for exists in en. */

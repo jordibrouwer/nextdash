@@ -129,7 +129,7 @@
                 { keys: 'Shift + F10 on category', cheatKey: 'bmCategoryMenuKey', fallback: 'Open the category menu — rename, spread, add or delete (the Menu key does the same)' },
                 { keys: 'Delete on category', cheatKey: 'bmCategoryDeleteKey', fallback: 'Delete the focused category — confirm first; its bookmarks are kept' },
                 { keys: 'Shift + L', cheatKey: 'bmShare', fallback: 'Share the focused bookmark, or copy its name and URL where no share sheet exists', print: true, printFallback: 'Share the focused bookmark — copies name + URL where there is no share sheet' },
-                { keys: 'Shift + R', cheatKey: 'bmRevealHealth', fallback: 'Open the focused bookmark on its own row in Health', print: true },
+                { keys: 'Shift + R', cheatKey: 'bmRevealHealth', fallback: 'Open the focused bookmark in the Bookmarks view, on its Health tab', print: true, printFallback: 'Show in the Bookmarks view' },
                 { keys: 't', cheatKey: 'bmFilterTag', fallback: 'Filter the grid to the focused bookmark\u2019s tag; several tags open the picker', print: true },
                 { keys: 'Ctrl + C', cheatKey: 'bmCopyUrl', fallback: 'Copy URL of focused bookmark (row flashes green)' },
                 { keys: 'Shift + V', cheatKey: 'bmTogglePreview', fallback: 'Toggle hover preview card on focused bookmark' },
@@ -189,6 +189,35 @@
             ],
         },
         {
+            id: 'sectionLibraryView',
+            titleKey: 'sectionLibraryView',
+            titleFallback: 'Bookmarks view',
+            contextId: 'library',
+            when: (ctx) => ctx.configEnabled,
+            print: true,
+            rows: [
+                { keys: 'j / k', cheatKey: 'lvMove', fallback: 'Move through the list', print: true },
+                { keys: 'Enter / o', cheatKey: 'lvOpen', fallback: 'Open the bookmark under the cursor', print: true },
+                { keys: 'i', cheatKey: 'lvPanel', fallback: 'Open or close the side panel', print: true },
+                { keys: '1 / 2 / 3  ·  [ / ]', cheatKey: 'lvPanelTabs', fallback: 'Details, Health or Usage in the side panel' },
+                { keys: 'e / Shift + E', cheatKey: 'lvEdit', fallback: 'Edit in the side panel / in the full dialog', print: true },
+                { keys: 'x / Shift + X', cheatKey: 'lvSelect', fallback: 'Select a row / a range of rows' },
+                { keys: 'd', cheatKey: 'lvDelete', fallback: 'Delete the bookmark (undo is offered)' },
+                { keys: 'g / G', cheatKey: 'lvFirstLast', fallback: 'First / last row' },
+                { keys: '/', cheatKey: 'lvSearch', fallback: 'Search the list', print: true },
+                { keys: 'f', cheatKey: 'lvWorkThrough', fallback: 'Work through the list one bookmark at a time', print: true },
+                { keys: 'h', cheatKey: 'lvCollectionHealth', fallback: 'Collection health: score, what is wrong, monitors and trend', print: true },
+                { keys: 'Shift + H (on a row)', cheatKey: 'lvHealthLarge', fallback: 'That bookmark\'s health in large: uptime, response time, every check' },
+                { keys: 'p', cheatKey: 'lvRecheck', fallback: 'Re-check the bookmark now' },
+                { keys: 's / c', cheatKey: 'lvScoreChecking', fallback: 'Its score / its checking, in the Health tab' },
+                { keys: 'n / z', cheatKey: 'lvIgnoreSnooze', fallback: 'Ignore / snooze what the report says about it' },
+                { keys: 'm', cheatKey: 'lvMenu', fallback: 'The row menu' },
+                { keys: 'Shift + R', cheatKey: 'lvRefresh', fallback: 'Refresh the health report' },
+                { keys: 'Shift + P / Shift + C', cheatKey: 'lvStructure', fallback: 'Pages and categories: drag, move and merge them over the list' },
+                { keys: 'Esc', cheatKey: 'lvEsc', fallback: 'Clear the selection, close the panel, then leave the view' },
+            ],
+        },
+        {
             id: 'sectionInboxView',
             titleKey: 'sectionInboxView',
             titleFallback: 'Inbox view',
@@ -210,6 +239,23 @@
             print: true,
         },
         {
+            id: 'sectionDockerView',
+            titleKey: 'sectionDockerView',
+            titleFallback: 'Containers view',
+            contextId: 'docker',
+            when: (ctx) => ctx.dockerEnabled,
+            print: true,
+            rows: [
+                { keys: '↑ / ↓', cheatKey: 'dkMove', fallback: 'Move through the containers', print: true },
+                { keys: 'Enter', cheatKey: 'dkOpen', fallback: 'Open the container\'s side panel', print: true },
+                { keys: '/', cheatKey: 'dkSearch', fallback: 'Search the containers' },
+                { keys: 's / r / p', cheatKey: 'dkRun', fallback: 'Start or stop / restart / pause the selected container', print: true },
+                { keys: 'u', cheatKey: 'dkUpdate', fallback: 'Update the selected container', print: true },
+                { keys: 'Delete', cheatKey: 'dkRemove', fallback: 'Remove the selected container (asks first)' },
+                { keys: 'Esc', cheatKey: 'dkEsc', fallback: 'Clear the selection, close the panel, then leave the view' },
+            ],
+        },
+        {
             id: 'sectionConfigView',
             titleKey: 'sectionConfigView',
             titleFallback: 'Config view',
@@ -229,10 +275,6 @@
                 { keys: 'Enter / Space (list row)', cheatKey: 'cvListEdit', fallback: 'Focus the first field in the selected list row' },
                 { keys: 'g / G (list row)', cheatKey: 'cvListFirstLast', fallback: 'Jump to the first / last row in one of those lists' },
                 { keys: '/ (Bookmarks → Tags)', cheatKey: 'cvListFilter', fallback: 'Focus the tag filter while on the Tags sub-tab' },
-                { keys: 'j / k (Bookmarks list)', cheatKey: 'cvBmMove', fallback: 'Move between bookmark rows when focus is in the list panel' },
-                { keys: 'Enter / Space (bookmark row)', cheatKey: 'cvBmEdit', fallback: 'Open the inline editor for the selected bookmark' },
-                { keys: 'g / G (Bookmarks list)', cheatKey: 'cvBmFirstLast', fallback: 'Jump to the first / last bookmark row' },
-                { keys: '/ (Bookmarks)', cheatKey: 'cvBmFilter', fallback: 'Focus the bookmark search field' },
                 { keys: 'Ctrl/Cmd + Shift + K', cheatKey: 'cvSettingsJump', fallback: 'Find a setting, section, or help topic', print: true, printFallback: 'Find a setting' },
                 { keys: '< / Shift + S', cheatKey: 'cvClose', fallback: 'Return to the dashboard from config', print: true, printKeys: 'Shift + S / <', printFallback: 'Return to dashboard' },
                 { keys: 'Esc', cheatKey: 'cvEsc', fallback: 'Close bookmark editor, clear list selection, or exit config', print: true, printFallback: 'Close editor or exit config' },
@@ -305,12 +347,12 @@
                 { keys: ':open tag <name> / :open category <name>', printOmit: true, cheatKey: 'cbOpenTagCat', fallback: 'Open bookmarks matching a tag or category on the current page' },
                 { keys: ':open last [n]', printOmit: true, cheatKey: 'cbOpenLast', fallback: 'Open the N most recently opened bookmarks on this page (default 5, max 50; tab batch capped at 15; :open recent is an alias)' },
                 { keys: ':goto <url or domain>', cheatKey: 'cbGoto', fallback: 'Navigate directly — full URLs open as-is, bare domains get https:// prepended' },
-                { keys: ':goto config / stats / health', printOmit: true, cheatKey: 'cbGotoNav', fallback: 'Quick navigation to config, stats, or health view' },
-                { keys: ':duplicate / :duplicates', cheatKey: 'cbDuplicates', fallback: 'Find bookmarks with duplicate URLs across all pages (opens Health duplicates view)', printFallback: 'Find duplicate URLs across all pages' },
+                { keys: ':goto config / stats / health / docker', printOmit: true, cheatKey: 'cbGotoNav', fallback: 'Quick navigation to config, stats, the Bookmarks view on broken ones, or Containers' },
+                { keys: ':duplicate / :duplicates', cheatKey: 'cbDuplicates', fallback: 'Find bookmarks with duplicate URLs across all pages (opens the Bookmarks view on duplicates)', printFallback: 'Find duplicate URLs across all pages' },
                 { keys: ':history / :history clear', printOmit: true, cheatKey: 'cbHistory', fallback: 'Browse recent searches from the command bar / wipe all search history' },
                 { keys: ':stale <days>', printOmit: true, cheatKey: 'cbStale', fallback: 'Show bookmarks not opened in <days> days (default 30)' },
-                { keys: ':health [filter]', cheatKey: 'caHealth', fallback: 'Open health view — broken / duplicate / stale / refresh' },
-                { keys: ':health page [n]', printOmit: true, cheatKey: 'cbHealthPage', fallback: 'Open health view with a specific page context' },
+                { keys: ':health [filter]', cheatKey: 'caHealth', fallback: 'Open the Bookmarks view on a health filter — broken / duplicate / stale; refresh re-scans' },
+                { keys: ':health page [n]', printOmit: true, cheatKey: 'cbHealthPage', fallback: 'Open the Bookmarks view on one page' },
                 { keys: ':save / :saved', printOmit: true, cheatKey: 'cbSave', fallback: 'Save the current search query / show saved searches' },
             ],
         },
@@ -323,6 +365,7 @@
                 { keys: ':page', cheatKey: 'cnPage', fallback: 'Switch page by name or number — palette stays open, ✓ on current page' },
                 { keys: ':page new <name>', printOmit: true, cheatKey: 'cnPageNew', fallback: 'Create a page and go to it (n in the page overview does the same)' },
                 { keys: ':inbox', cheatKey: 'cnInbox', fallback: 'Open Inbox (Shift + I)', print: true },
+                { keys: ':docker [name]', cheatKey: 'cnDocker', fallback: 'Open Containers, or find a container and start, stop or update it from the palette' },
                 { keys: ':inbox triage', printOmit: true, cheatKey: 'cnInboxTriage', fallback: 'Triage inbox items one by one' },
                 { keys: ':recent', cheatKey: 'cnRecent', fallback: 'Open recent bookmarks modal (same as *)' },
                 { keys: ':overview', printOmit: true, cheatKey: 'cnOverview', fallback: 'Open page overview with bookmark counts (same as ,)' },
@@ -362,7 +405,7 @@
             rows: [
                 { keys: ':backup / :export', cheatKey: 'ctBackup', fallback: 'Open config backups or download a ZIP backup immediately' },
                 { keys: ':trash', cheatKey: 'ctTrash', fallback: 'Open the trash — deleted bookmarks, pages and categories wait 30 days', print: true, printFallback: 'Open the trash' },
-                { keys: ':metadata', printOmit: true, cheatKey: 'ctMetadata', fallback: 'Open health missing previews or config bookmarks metadata view' },
+                { keys: ':metadata', printOmit: true, cheatKey: 'ctMetadata', fallback: 'Open the Bookmarks view on missing previews, or Config → Bookmarks' },
                 { keys: ':monitor off', printOmit: true, cheatKey: 'ctMonitor', fallback: 'Turn availability checking off for every bookmark at once (asks for confirmation first)' },
                 { keys: ':telemetry on / off', printOmit: true, cheatKey: 'ctTelemetry', fallback: 'Turn privacy-friendly analytics on or off (same as Config → General → Advanced → Privacy; reloads the page)' },
             ],
@@ -392,6 +435,7 @@
             inboxEnabled: Boolean(d.inbox?.isEnabled?.()),
             inboxInPageTabs: d.settings?.inboxShowInPageTabs !== false,
             healthEnabled: Boolean(d.health?.isEnabled?.()),
+            dockerEnabled: Boolean(d.docker?.isEnabled?.()),
             configEnabled: Boolean(d.config?.isEnabled?.()),
             tagCloudShortcutVisible: Boolean(d.isTagCloudDesktopShortcutVisible?.()),
             triageOpen: Boolean(d.inbox?.triage?.isOpen?.()),
@@ -402,8 +446,9 @@
     function activeContextId(ctx) {
         if (ctx.triageOpen) return 'inbox-triage';
         if (ctx.activeView === 'inbox') return 'inbox';
-        // The Bookmarks view is config's bookmark list, keys and all.
-        if (ctx.activeView === 'config' || ctx.activeView === 'library') return 'config';
+        if (ctx.activeView === 'library') return 'library';
+        if (ctx.activeView === 'docker') return 'docker';
+        if (ctx.activeView === 'config') return 'config';
         return 'bookmarks';
     }
 
