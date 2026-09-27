@@ -568,8 +568,10 @@ test.describe('config: font size applies live', () => {
 test.describe('config help coverage', () => {
     // About left Help for a section of its own; Tips and Monitoring joined it,
     // the second because Health had grown to nine panels against a median of
-    // four.
-    const TABS = ['start', 'tips', 'config', 'organizing', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data'];
+    // four. Bookmarks and Containers joined later still, the first taking
+    // "working through the list" with it when the standalone health view was
+    // replaced by the Bookmarks view.
+    const TABS = ['start', 'tips', 'config', 'organizing', 'bookmarks', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data', 'containers'];
 
     test('every tab renders prose with no unresolved locale keys', async ({ page }) => {
         const errors = [];

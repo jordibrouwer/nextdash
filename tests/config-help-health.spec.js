@@ -33,15 +33,20 @@ async function openInboxHelp(page) {
     await openHelpTab(page, 'inbox');
 }
 
+async function openBookmarksHelp(page) {
+    await openHelpTab(page, 'bookmarks');
+}
+
 test.describe('config help — health', () => {
-    test('splits into three panels, each with real prose', async ({ page }) => {
+    test('splits into two panels, each with real prose', async ({ page }) => {
         await openHealthHelp(page);
 
         const body = page.locator('#config-help-body');
-        // Availability, working the list, and the walkthrough. The monitoring
-        // half — uptime, expectations, certificates, drift, maintenance windows
-        // and alerts — is its own tab, asserted below.
-        await expect(body.locator('.config-panel')).toHaveCount(3);
+        // Availability and the walkthrough. "Working through the list" moved to
+        // the Bookmarks view tab when the standalone health view did; the
+        // monitoring half — uptime, expectations, certificates, drift,
+        // maintenance windows and alerts — is its own tab, asserted below.
+        await expect(body.locator('.config-panel')).toHaveCount(2);
 
         // A missing key renders as the key itself; nothing here may look like one.
         await expect(body).not.toContainText('config.help');
@@ -67,18 +72,22 @@ test.describe('config help — health', () => {
         await expect(body).toContainText(/Slower than last week/i);
         await expect(body).toContainText(/Outages/i);
 
-        // The trend, and the reason its axis is fixed.
-        await expect(body).toContainText(/0–100/);
+        // The trend, and its series.
+        await expect(body).toContainText(/healthy %/i);
         await expect(body).toContainText(/90 days/i);
     });
 
     test('covers the interval picker and the tiles that sound alike', async ({ page }) => {
         await openHealthHelp(page);
-        const body = page.locator('#config-help-body');
+        const healthBody = page.locator('#config-help-body');
+        await expect(healthBody).toContainText(/Check interval/i);
 
-        await expect(body).toContainText(/Check interval/i);
-        await expect(body).toContainText(/Stale/i);
-        await expect(body).toContainText(/Unused/i);
+        // "Stale" and "Unused" are rail filters in the Bookmarks view now,
+        // documented on that tab since the standalone health view was removed.
+        await openBookmarksHelp(page);
+        const bmBody = page.locator('#config-help-body');
+        await expect(bmBody).toContainText(/Stale/i);
+        await expect(bmBody).toContainText(/Unused/i);
     });
 
     test('covers drift detection: all three kinds, and how a baseline is set', async ({ page }) => {
@@ -97,7 +106,9 @@ test.describe('config help — health', () => {
     });
 
     test('covers focus mode, including the key and where it starts', async ({ page }) => {
-        await openHealthHelp(page);
+        // Work through moved to the Bookmarks view tab along with the rest of
+        // "working through the list" when the standalone health view did.
+        await openBookmarksHelp(page);
         const body = page.locator('#config-help-body');
 
         await expect(body).toContainText(/Work through/);
@@ -261,8 +272,10 @@ test.describe('config help — translations', () => {
         // Dutch, so asserting it is gone would fail on a correct nl translation.
         const tabs = {
             health: {
-                count: 3,
-                english: ['Availability & health', 'Working through the list'],
+                // Availability and the walkthrough; "Working through the list"
+                // moved to the Bookmarks view tab with the standalone health view.
+                count: 2,
+                english: ['Availability & health', 'Setting up one monitored bookmark, start to finish'],
             },
             monitoring: {
                 // Seven since Fresh was given a panel of its own here: stats,

@@ -3111,6 +3111,11 @@ class DashboardConfig {
         { tab: 'organizing', titleKey: 'config.helpWorkspaceTitle', fallback: 'Structure' },
         { tab: 'organizing', titleKey: 'config.helpBookmarksTitle', fallback: 'Bookmarks' },
         { tab: 'organizing', titleKey: 'config.helpTagsTitle', fallback: 'Tags & collections' },
+        { tab: 'bookmarks', titleKey: 'config.helpLibraryTitle', fallback: 'The Bookmarks view' },
+        { tab: 'bookmarks', titleKey: 'config.helpCollectionHealthTitle', fallback: 'Collection health' },
+        { tab: 'bookmarks', titleKey: 'config.helpBmKeysTitle', fallback: 'Keys' },
+        { tab: 'containers', titleKey: 'config.helpContainersTitle', fallback: 'The Containers view' },
+        { tab: 'containers', titleKey: 'config.helpContainersConfigTitle', fallback: 'Setting it up' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
         { tab: 'search', titleKey: 'config.helpFindersTitle', fallback: 'Finders' },
         { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
@@ -3122,6 +3127,7 @@ class DashboardConfig {
         // used to land a tab away from the thing it named.
         { tab: 'inbox', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
         { tab: 'inbox', titleKey: 'config.helpInboxWorkTitle', fallback: 'Working through the inbox' },
+        { tab: 'inbox', titleKey: 'config.helpInboxUnsortedTitle', fallback: 'Kept links: Bookmarks → Unsorted' },
         { tab: 'inbox', titleKey: 'config.helpInboxTourTitle', fallback: 'The one-time tour' },
         { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
         { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
@@ -15213,6 +15219,7 @@ class DashboardConfig {
             'config': ['config.helpNoteConfig', 'How this config view is laid out, and where to look for a setting.'],
             'appearance': ['config.helpNoteAppearance', 'Themes, type, and the choices that change how the dashboard looks.'],
             'organizing': ['config.helpNoteOrganizing', 'Pages, categories, tags — how a bookmark finds its place.'],
+            'bookmarks': ['config.helpNoteBookmarks', 'The Bookmarks view: the rail, the list, the side panel, and Collection health.'],
             'widgets': ['config.helpNoteWidgets', 'The blocks that hold something other than bookmarks, and what each one shows.'],
             'containers': ['config.helpNoteContainers', 'The Containers view: its connection, how often it refreshes, and what it leaves out.'],
             'search': ['config.helpNoteSearch', 'Reaching anything from the keyboard: search, shortcuts, and the command line.'],
@@ -27455,7 +27462,7 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'appearance', 'organizing', 'widgets', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+    static HELP_TABS = ['start', 'tips', 'config', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
 
     helpTabLabel(tab) {
         const map = {
@@ -27463,10 +27470,15 @@ class DashboardConfig {
             config: ['config.helpTabConfig', 'Configuring'],
             appearance: ['config.helpTabAppearance', 'Appearance'],
             organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
+            bookmarks: ['config.helpTabBookmarks', 'Bookmarks view'],
             widgets: ['config.helpTabWidgets', 'Widgets'],
+            containers: ['config.helpTabContainers', 'Containers'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
             tips: ['config.helpTabTips', 'Tips'],
-            health: ['config.helpTabHealth', 'Health'],
+            // Health kept its checks and its walkthrough; the list it used to
+            // hold moved to the Bookmarks view, so "Health" on its own
+            // overpromised what is still on this tab.
+            health: ['config.helpTabHealth', 'Checks & health'],
             monitoring: ['config.helpTabMonitoring', 'Monitoring'],
             inbox: ['config.helpTabInbox', 'Inbox'],
             stats: ['config.helpTabStats', 'Statistics'],
@@ -27651,7 +27663,9 @@ class DashboardConfig {
             case 'config': return this.renderHelpConfig();
             case 'appearance': return this.renderHelpAppearance();
             case 'organizing': return this.renderHelpOrganizing();
+            case 'bookmarks': return this.renderHelpBookmarks();
             case 'widgets': return this.renderHelpWidgets();
+            case 'containers': return this.renderHelpContainers();
             case 'search': return this.renderHelpSearch();
             case 'tips': return this.renderHelpTipsTab();
             case 'health': return this.renderHelpHealth();
@@ -27731,6 +27745,11 @@ class DashboardConfig {
         themes: { from: 'config', to: 'appearance' },
         appearance: { from: 'config', to: 'appearance' },
         'server-log': { from: 'data', to: 'logs' },
+        // The health view is the Bookmarks view now; a link copied before this
+        // release named the panel that used to describe it.
+        'health-view': { from: 'health', to: 'bookmarks' },
+        // The Kept tab is gone — its replacement, config.helpInboxUnsortedTitle,
+        // stays on the same tab, so no redirect is needed for it.
     };
 
     /**
@@ -27743,8 +27762,13 @@ class DashboardConfig {
         'config.helpHealthTitle': [
             { tab: 'monitoring', panel: 'health-stats', labelKey: 'config.helpHealthStatsTitle', label: 'Uptime, trends & statistics' },
             { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
+            { tab: 'bookmarks', panel: 'bm-panel', labelKey: 'config.helpBmPanelTitle', label: 'The side panel' },
         ],
-        'config.helpHealthViewTitle': [
+        // The panel that used to carry this content, config.helpHealthViewTitle,
+        // is gone from the health tab; config.helpLibraryTitle covers the same
+        // ground on the bookmarks tab now.
+        'config.helpLibraryTitle': [
+            { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
             { tab: 'monitoring', panel: 'health-drift', labelKey: 'config.helpHealthDriftTitle', label: 'Redirect, title & content drift' },
         ],
         'config.helpHealthWalkthroughTitle': [
@@ -27752,7 +27776,7 @@ class DashboardConfig {
             { tab: 'monitoring', panel: 'health-maintenance', labelKey: 'config.helpHealthMaintenanceTitle', label: 'Maintenance windows' },
         ],
         'config.helpHealthStatsTitle': [
-            { tab: 'health', panel: 'health-view', labelKey: 'config.helpHealthViewTitle', label: 'Working through the list' },
+            { tab: 'bookmarks', panel: 'library', labelKey: 'config.helpLibraryTitle', label: 'The Bookmarks view' },
         ],
         'config.helpHealthCertTitle': [
             { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
@@ -27761,6 +27785,9 @@ class DashboardConfig {
             { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
         ],
         'config.helpNotificationsTitle': [
+            { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
+        ],
+        'config.helpBmPanelTitle': [
             { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
         ],
     };
@@ -28112,6 +28139,51 @@ class DashboardConfig {
             { kind: 'keys', value: ['/'], captionKey: 'config.helpArtTagCloud', caption: 'The tag cloud' },
         ],
 
+        // ── Bookmarks view ─────────────────────────────────────────────────
+        // Carried over from the old health view's art: the tiles are a rail
+        // of filters now, not a row of tiles, so the caption moved with it.
+        'config.helpLibraryTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['bad', { k: 'config.statsBroken', d: 'Broken' }],
+                    ['warn', { k: 'config.statsDuplicates', d: 'Duplicates' }],
+                    ['idle', { k: 'config.statsStale', d: 'Stale' }],
+                    ['off', { k: 'config.statsUnchecked', d: 'Unchecked' }],
+                ],
+                captionKey: 'config.helpArtHealthTiles', caption: 'The filters, in the rail',
+            },
+            { kind: 'keys', value: ['Shift + H'] },
+        ],
+        'config.helpBmPanelTitle': [
+            {
+                kind: 'steps',
+                value: [
+                    { k: 'config.bmTabDetails', d: 'Details' },
+                    { k: 'config.bmHealth', d: 'Health' },
+                    { k: 'config.bmUsage', d: 'Usage' },
+                ],
+                captionKey: 'config.helpArtBmPanelTabs', caption: 'Three tabs, or 1 / 2 / 3',
+            },
+        ],
+        'config.helpBmWorkThroughTitle': [
+            { kind: 'keys', value: ['f', 'p', 'd', 'z'], captionKey: 'config.helpArtBmWorkKeys', caption: 'One bookmark at a time' },
+        ],
+
+        // ── Containers ─────────────────────────────────────────────────────
+        'config.helpContainersTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['ok', { k: 'dashboard.dockerFilterRunning', d: 'Running' }],
+                    ['off', { k: 'dashboard.dockerFilterStopped', d: 'Stopped' }],
+                    ['warn', { k: 'dashboard.dockerFilterUpdates', d: 'Updates' }],
+                ],
+                captionKey: 'config.helpArtContainerFilters', caption: 'What the filters ask',
+            },
+            { kind: 'keys', value: ['s', 'r', 'p', 'u'], captionKey: 'config.helpArtContainerKeys', caption: 'Start/stop, restart, pause, update' },
+        ],
+
         // ── Search & keyboard ──────────────────────────────────────────────
         'config.helpSearchTitle': [
             { kind: 'keys', value: ['>', ':', '?'], captionKey: 'config.helpArtThreeModes', caption: 'Three modes, one overlay' },
@@ -28138,7 +28210,7 @@ class DashboardConfig {
                 captionKey: 'config.helpArtOverlayKeys', caption: 'The overlays',
             },
             {
-                kind: 'keys', value: ['Shift + H', 'Shift + I', 'Shift + S'],
+                kind: 'keys', value: ['Shift + H', 'Shift + U', 'Shift + I', 'Shift + S'],
                 captionKey: 'config.helpArtViewKeys', caption: 'The views',
             },
             {
@@ -28162,19 +28234,6 @@ class DashboardConfig {
                 ],
                 captionKey: 'config.helpArtCheckModes', caption: 'Three availability modes',
             },
-        ],
-        'config.helpHealthViewTitle': [
-            {
-                kind: 'states',
-                value: [
-                    ['bad', { k: 'config.statsBroken', d: 'Broken' }],
-                    ['warn', { k: 'config.statsDuplicates', d: 'Duplicates' }],
-                    ['idle', { k: 'config.statsStale', d: 'Stale' }],
-                    ['off', { k: 'config.statsUnchecked', d: 'Unchecked' }],
-                ],
-                captionKey: 'config.helpArtHealthTiles', caption: 'The tiles that filter the list',
-            },
-            { kind: 'keys', value: ['Shift + H'] },
         ],
         'config.helpHealthWalkthroughTitle': [
             {
@@ -28274,7 +28333,7 @@ class DashboardConfig {
                 ],
                 captionKey: 'config.helpArtInboxRoute', caption: 'Where a pasted link goes',
             },
-            { kind: 'keys', value: ['Shift + I', '0'] },
+            { kind: 'keys', value: ['Shift + I'] },
         ],
         'config.helpInboxWorkTitle': [
             {
@@ -28302,11 +28361,13 @@ class DashboardConfig {
             },
         ],
         /*
-         * The Kept tab is a branch in the queue, not a step after it: a link
-         * either goes on a page or waits here, and it waits without staying in
-         * the queue. Drawn as the branch it is, with the key that takes it.
+         * Keeping a link is a branch in the queue, not a step after it: a link
+         * either goes on a page or waits in Bookmarks › Unsorted, and it waits
+         * without staying in the queue. Drawn as the branch it is, with the
+         * key that takes it. The Kept tab this used to describe is gone; the
+         * branch itself is the same shape, so only its second leaf changed.
          */
-        'config.helpInboxKeptTitle': [
+        'config.helpInboxUnsortedTitle': [
             {
                 kind: 'keys', value: ['Shift', 'K'],
                 captionKey: 'config.helpArtKeptKey', caption: 'Out of the queue, not off the list',
@@ -28317,7 +28378,7 @@ class DashboardConfig {
                     { k: 'config.helpArtKeptQueue', d: 'In the queue' },
                     [
                         { k: 'config.helpArtKeptFiled', d: 'Filed on a page' },
-                        { k: 'config.helpArtKeptWaiting', d: 'Kept, waiting' },
+                        { k: 'config.helpArtKeptUnsorted', d: 'Bookmarks › Unsorted' },
                     ],
                 ],
             },
@@ -28330,8 +28391,8 @@ class DashboardConfig {
         ],
         'config.helpInboxTourTitle': [
             {
-                kind: 'steps', value: ['', '', '', '', '', '', ''],
-                captionKey: 'config.helpArtTourSteps', caption: 'Seven steps, shown once',
+                kind: 'steps', value: ['', '', '', '', ''],
+                captionKey: 'config.helpArtTourSteps', caption: 'Five steps, shown once',
             },
         ],
         'config.helpCaptureTitle': [
@@ -28421,6 +28482,10 @@ class DashboardConfig {
         'config.helpFreshTitle': {
             isOn: (s) => s.feedsEnabled === true,
             go: { section: 'behavior', behaviorTab: 'fresh' },
+        },
+        'config.helpContainersTitle': {
+            isOn: (s) => s.dockerViewEnabled !== false,
+            go: { section: 'containers' },
         },
     };
 
@@ -28551,6 +28616,33 @@ class DashboardConfig {
                 'config.helpTagsBody', '');
     }
 
+    /**
+     * The Bookmarks view: the library the health view used to be a corner of.
+     *
+     * Health's own list, filters and working-through were folded into this
+     * view when the standalone Health view was removed — a bookmark's
+     * availability is one more thing to filter the library by, not a reason
+     * for a second screen. This tab documents the view itself; Availability &
+     * health (the "health" tab) still covers what a check means and how to
+     * set one up.
+     */
+    renderHelpBookmarks() {
+        return this.helpPanel('config.helpLibraryTitle', 'The Bookmarks view',
+            'config.helpLibraryBody', '')
+            + this.helpPanel('config.helpCollectionHealthTitle', 'Collection health',
+                'config.helpCollectionHealthBody', '')
+            + this.helpPanel('config.helpBmPanelTitle', 'The side panel',
+                'config.helpBmPanelBody', '')
+            + this.helpPanel('config.helpBmWorkThroughTitle', 'Working through the list',
+                'config.helpBmWorkThroughBody', '')
+            + this.helpPanel('config.helpBmKeysTitle', 'Keys',
+                'config.helpBmKeysBody', '')
+            + this.helpPanel('config.helpBmStructureTitle', 'Pages & categories, from the view',
+                'config.helpBmStructureBody', '')
+            + this.helpPanel('config.helpBmViewSettingsTitle', 'Settings for this view',
+                'config.helpBmViewSettingsBody', '');
+    }
+
     /*
      * Widgets, as a tab of its own.
      *
@@ -28581,6 +28673,14 @@ class DashboardConfig {
                 'config.helpWidgetServicesBody', '');
     }
 
+    /** Containers: a view of its own, for a Docker host rather than a bookmark. */
+    renderHelpContainers() {
+        return this.helpPanel('config.helpContainersTitle', 'The Containers view',
+            'config.helpContainersBody', '')
+            + this.helpPanel('config.helpContainersConfigTitle', 'Setting it up',
+                'config.helpContainersConfigBody', '');
+    }
+
     renderHelpSearch() {
         const esc = (v) => this.dash.escapeHtml(v);
         // Finders and commands get their own panels rather than a paragraph
@@ -28609,10 +28709,12 @@ class DashboardConfig {
      * without scrolling past the other three.
      */
     renderHelpHealth() {
+        // "Working through the list" used to be a panel here — it described
+        // the health view, which is now the Bookmarks view. That content
+        // lives on the bookmarks tab now; HELP_PANEL_MOVED sends an old link
+        // to config.helpHealthViewTitle there.
         return this.helpPanel('config.helpHealthTitle', 'Availability & health',
             'config.helpHealthBody', '')
-            + this.helpPanel('config.helpHealthViewTitle', 'Working through the list',
-                'config.helpHealthViewBody', '')
             + this.helpPanel('config.helpHealthWalkthroughTitle', 'Setting up one monitored bookmark, start to finish',
                 'config.helpHealthWalkthroughBody', '');
     }
@@ -28711,8 +28813,11 @@ class DashboardConfig {
                 'config.helpInboxWorkBody', '')
             + this.helpPanel('config.helpInboxTriageTitle', 'Triage mode',
                 'config.helpInboxTriageBody', '')
-            + this.helpPanel('config.helpInboxKeptTitle', 'The Kept tab',
-                'config.helpInboxKeptBody', '')
+            // The Kept tab is gone: keeping a link now sends it to Bookmarks →
+            // Unsorted instead of a second inbox tab. HELP_PANEL_MOVED sends an
+            // old link to config.helpInboxKeptTitle here.
+            + this.helpPanel('config.helpInboxUnsortedTitle', 'Kept links: Bookmarks → Unsorted',
+                'config.helpInboxUnsortedBody', '')
             + this.helpPanel('config.helpInboxSettingsTitle', 'Settings behind the scenes',
                 'config.helpInboxSettingsBody', '')
             // Last, not first: someone reading this page has already found the
@@ -29077,7 +29182,8 @@ class DashboardConfig {
             kbd('Shift + B', this.t('config.tipAddBookmarkShift', 'Open the new-bookmark form')),
             kbd('.', this.t('config.tipCollapseAll', 'Collapse or expand every category')),
             kbd('Shift + W', this.t('config.tipCategoryWidth', 'Set how many columns the focused category covers')),
-            kbd('Shift + H', this.t('config.tipHealth', 'Open the health view')),
+            kbd('Shift + H', this.t('config.tipHealth', 'Open the Bookmarks view, on Broken')),
+            kbd('Shift + U', this.t('config.helpTipUnsorted', 'Open Bookmarks → Unsorted')),
             kbd('Shift + I', this.t('config.tipInbox', 'Open the inbox')),
             kbd('Shift + S', this.t('config.tipConfig', 'Open config')),
         ];

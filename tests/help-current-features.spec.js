@@ -38,7 +38,9 @@ async function openHelp(page, tab) {
 const CASES = [
     { tab: 'search', needles: [/typing a bookmark shortcut/i, /short pause/i] },
     { tab: 'organizing', needles: [/already saved this on/i, /come back where you were/i, /Fresh/] },
-    { tab: 'health', needles: [/ten links, two minutes/i, /rot report/i] },
+    // "Working through the list" — and the Ten links / Rot report cards it
+    // covers — moved to the Bookmarks view tab with the standalone health view.
+    { tab: 'bookmarks', needles: [/ten links, two minutes/i, /rot report/i] },
     { tab: 'config', needles: [/tab you used last/i, /all devices/i, /duplicate/i] },
     { tab: 'inbox', needles: [/integrations\//i, /share sheet/i] },
     // The log rebuild: a level and a component on every line, one control for

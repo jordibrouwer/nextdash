@@ -174,8 +174,11 @@ test.describe('help says what is switched on here', () => {
 
         // The button uses the Overview jump shape, whose handler is bound to
         // the overview body — without wiring here it renders and does nothing.
+        // Inbox settings moved out of Behavior into their own section, so the
+        // jump target follows: HELP_PANEL_FEATURES.helpInboxTitle.go now names
+        // {section:'inbox'}.
         await state.locator('[data-overview-go]').click();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section),
-            { timeout: 10_000 }).toBe('behavior');
+            { timeout: 10_000 }).toBe('inbox');
     });
 });
