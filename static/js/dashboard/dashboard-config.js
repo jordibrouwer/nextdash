@@ -22017,8 +22017,71 @@ class DashboardConfig {
                 <div class="config-bm-view-bar">
                     <a class="config-btn config-btn--small" href="#bookmarks" data-bm-open-view>${esc(this.t('config.bmViewOpen', 'Open the Bookmarks view'))} ↗</a>
                 </div>
+                ${this.renderBookmarksViewPreview()}
                 ${this.renderControlPanels(this.panelsFor('bookmarks', 'view'), 'behavior')}
             </div>`;
+    }
+
+    /**
+     * What the settings below make of the view: two of the reader's own rows
+     * and the head of the side panel, drawn by the view's own renderers from
+     * the settings as they stand. The whole tab is redrawn on each change
+     * (repaintActiveControlPanels), so this follows every one. Only a
+     * picture: inert, and hidden from assistive technology.
+     */
+    renderBookmarksViewPreview() {
+        if (typeof this.renderWorkbenchRow !== 'function') return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const now = Date.now();
+        const day = 86400000;
+        const own = (this.dash.allBookmarks || []).filter((b) => b?.url && b?.name);
+        // The reader's most used, so the columns have something to say; a
+        // made-up pair on an empty dashboard.
+        const rows = own.length >= 2
+            ? [...own].sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0)).slice(0, 2)
+            : [
+                { name: 'nextDash', url: 'https://nextdash.cc/docs/getting-started', tags: ['home', 'docs'], openCount: 14,
+                    lastOpened: now - 2 * 3600000, createdAt: now - 40 * day, openLog: [1, 3, 4, 8, 9, 12].map((d) => now - d * day) },
+                { name: 'Weather', url: 'https://weather.example/forecast', tags: ['daily'], openCount: 3,
+                    lastOpened: now - 5 * day, createdAt: now - 200 * day, openLog: [5, 11].map((d) => now - d * day) },
+            ];
+        const ctx = { esc, grouped: false, showCrumb: false, setSize: 2, isDuplicate: () => false };
+        const rowHtml = rows.map((b, index) => this.renderWorkbenchRow({ type: 'row', bookmark: b, index }, ctx)).join('');
+        const legendAt = this.dash.settings?.bmViewKeyLegend || 'below';
+        const legend = legendAt === 'off' || typeof this.renderBookmarkKeyboardLegend !== 'function' ? ''
+            : `<p class="config-bm-keyboard-legend">${this.renderBookmarkKeyboardLegend()}</p>`;
+        // The panel's head: the tab it opens on, at the width it opens at.
+        const first = rows[0];
+        const fixedTab = this.dash.settings?.bmViewPanelTab;
+        const tab = fixedTab && fixedTab !== 'last' ? fixedTab : 'details';
+        const tabs = [['details', this.t('config.bmTabDetails', 'Details')], ['health', this.t('config.bmHealth', 'Health')], ['usage', this.t('config.bmUsage', 'Usage')]]
+            .map(([name, label]) => `<span class="config-bm-tab${name === tab ? ' is-active' : ''}">${esc(label)}</span>`).join('');
+        const wide = this.dash.settings?.bmViewPanelWidth === 'wide';
+        const workbenchClass = typeof this.workbenchViewClasses === 'function' ? this.workbenchViewClasses() : 'config-bm-workbench is-library';
+        const columnStyle = typeof this.workbenchColumnStyle === 'function' ? this.workbenchColumnStyle() : '';
+        return `
+            <section class="config-panel config-bm-view-preview" aria-hidden="true" inert data-bm-view-preview>
+                <h3 class="config-panel-title">${esc(this.t('config.bmViewPreview', 'Preview'))}</h3>
+                <div class="config-bm-view-preview-body">
+                    <div class="${esc(workbenchClass)} config-bm-view-preview-list" style="${esc(columnStyle)}">
+                        <div class="config-bm-feed">
+                            ${legendAt === 'above' ? legend : ''}
+                            ${rowHtml}
+                            ${legendAt === 'below' ? legend : ''}
+                        </div>
+                    </div>
+                    <div class="config-bm-view-preview-panel${wide ? ' is-wide' : ''}">
+                        <header class="config-bm-panel-head config-bm-panel-head--single">
+                            <div class="config-bm-panel-heading">
+                                <span class="config-bm-panel-icon">${this.renderBookmarkIcon(first)}</span>
+                                <span class="config-bm-panel-title">${esc(first.name || '')}</span>
+                            </div>
+                            <span class="config-bm-panel-url">${esc(this.formatBookmarkUrlDisplay(first.url))}</span>
+                        </header>
+                        <div class="config-bm-tabs">${tabs}</div>
+                    </div>
+                </div>
+            </section>`;
     }
 
     /** Which sub-tab of Bookmarks is showing. */

@@ -2863,3 +2863,60 @@ html body .config-bm-more-menu .config-btn {
     display: inline-flex;
     align-items: center;
 }
+
+/* ── Config → Bookmarks → View: the preview ───────────────────────────── */
+
+/* Two rows and the side panel's head, as the settings below make them. A
+   picture, not a control: nothing in it takes a pointer. */
+.config-bm-view-preview-body {
+    /* The rows take the panel's full width, as they take the page's in the
+       view; the side panel's head sits under them. */
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    align-items: flex-start;
+    pointer-events: none;
+}
+
+.config-bm-view-preview-list {
+    display: block;
+    align-self: stretch;
+    min-width: 0;
+}
+
+/* The ticks rest hidden in the list until a hover; here they stay hidden. */
+.config-bm-view-preview-list .config-bm-row {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.config-bm-view-preview-panel {
+    flex: 0 0 auto;
+    width: 18rem;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--surface-2, var(--background-secondary));
+    transition: width 0.2s ease;
+}
+
+/* Wide is to Normal as 32rem to 24rem. */
+.config-bm-view-preview-panel.is-wide {
+    width: 24rem;
+}
+
+.config-bm-view-preview-panel .config-bm-panel-url {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+@media (max-width: 799px) {
+    .config-bm-view-preview-panel,
+    .config-bm-view-preview-panel.is-wide {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}

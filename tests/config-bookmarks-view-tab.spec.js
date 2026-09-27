@@ -46,3 +46,24 @@ test.describe('Config → Bookmarks → View', () => {
     await expect(page.locator('.config-view-head .config-changed-count')).toContainText(/default/i);
   });
 });
+
+test.describe('Config → Bookmarks → View: the preview', () => {
+  test('shows two rows and the panel head, and follows a change', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await openView(page);
+    const preview = page.locator('[data-bm-view-preview]');
+    await expect(preview.locator('.config-bm-row')).toHaveCount(2);
+    await expect(preview.locator('.config-bm-panel-head')).toHaveCount(1);
+    const height = () => preview.locator('.config-bm-row').first().evaluate((el) => Math.round(el.getBoundingClientRect().height));
+    expect(await height()).toBe(46);
+    const density = page.locator('.config-bm-view-tab select[data-behavior-field="bmViewDensity"]');
+    await density.selectOption('compact');
+    try {
+      await expect.poll(height).toBe(36);
+    } finally {
+      // Back to the default, so the shared data dir is left as found.
+      await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewDensity"]').selectOption('comfortable');
+      await expect(page.locator('.config-view-head .config-changed-count')).toContainText(/default/i);
+    }
+  });
+});
