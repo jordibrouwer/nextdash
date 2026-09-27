@@ -1105,3 +1105,14 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     border: 0;
     background: none;
 }
+
+/* Health's form lays its fields out at 17rem minimum, wider than this
+   panel: one column that shrinks, or the fields run past the edge. */
+.config-bm-panel .health-expect-form {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.config-bm-panel .health-expect-field,
+.config-bm-panel .health-expect-input {
+    min-width: 0;
+}

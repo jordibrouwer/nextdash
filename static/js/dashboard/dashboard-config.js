@@ -22937,8 +22937,19 @@ class DashboardConfig {
             .filter((b) => String(b?.pageId) === wanted);
     }
 
-    /** Where this bookmark stands with the checker, from what the dashboard already knows. */
+    /**
+     * Where this bookmark stands with the checker. The Health report decides
+     * once it has landed -- a bookmark it calls broken is broken here too,
+     * whether or not the scheduler checks it -- and what the dashboard
+     * already knows stands in until then.
+     */
     bookmarkHealthState(b) {
+        const issue = this.bmHealthIssue?.(b);
+        if (issue) {
+            if (Number(issue.monitorStats?.downSince) > 0) return 'down';
+            if (issue.status === 'broken') return 'broken';
+            return issue.lastChecked ? 'healthy' : 'unchecked';
+        }
         const model = window.BookmarkWorkbenchModel;
         if (!model) return b?.checkStatus === true ? 'healthy' : 'unchecked';
         return model.healthState(b, window.HealthFacts?.get?.(b?.url) || null);

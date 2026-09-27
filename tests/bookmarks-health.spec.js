@@ -50,6 +50,18 @@ test.describe('bookmarks: Health filters in the rail', () => {
     await expect(page.locator('#config-bm-list .config-bm-title').first()).toHaveText(bookmarks[0].name);
   });
 
+  test('a bookmark the report calls broken glows broken, checked by the scheduler or not', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page, (issues) => issues.map((issue, i) => (i === 1
+      ? { ...issue, status: 'broken', flags: ['broken'], score: 20, reasons: ['DNS lookup failed'] } : issue)));
+    await page.evaluate((url) => {
+      const b = window.dashboardInstance.allBookmarks.find((x) => x.url === url);
+      b.checkStatus = false;
+    }, bookmarks[1].url);
+    await healthItem(page, 'broken').click();
+    const row = page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[1].name }) }).first();
+    await expect(row).toHaveAttribute('data-lvs-status', 'bad');
+  });
+
   test('the rail opens with the collection\'s health summary', async ({ page }) => {
     await openBookmarksWithHealth(page);
     await expect(page.locator('#config-bm-rail [data-bm-health-summary]')).toContainText('%');
@@ -77,6 +89,20 @@ test.describe('bookmarks: Health and Monitor sections in the panel', () => {
     await expect(health).toContainText('HTTP 500');
     await expect(health.locator('.health-view-score-item').first()).toBeVisible();
     await expect(health.locator('[data-check-mode]')).toHaveCount(3);
+  });
+
+  test('the Health section fits inside the panel', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page);
+    await pick(page, bookmarks[0].name);
+    await open(page, 'health');
+    await expect(section(page, 'health').locator('.health-expect-form')).toBeVisible();
+    const overflow = await page.evaluate(() => {
+      const panel = document.querySelector('#config-bm-panel').getBoundingClientRect();
+      return [...document.querySelectorAll('#config-bm-panel [data-bm-section="health"] *')]
+        .filter((el) => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > panel.right + 1)
+        .map((el) => el.className);
+    });
+    expect(overflow).toEqual([]);
   });
 
   test('expectations saved in the panel post the bookmark\'s URL', async ({ page }) => {
