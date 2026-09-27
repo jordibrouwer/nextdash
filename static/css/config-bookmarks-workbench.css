@@ -2621,3 +2621,235 @@ html body .config-bm-more-menu .config-btn {
     border: 0;
     border-top: 1px solid var(--border-primary);
 }
+
+/* ── One bookmark's health, in large ──────────────────────────────────────
+   dashboard-bookmarks-health-large.js. Collection health's shell and cards
+   (.bm-health-modal), laid out on a grid so the wide charts span two
+   columns; one screen, no scrolling at a laptop's size. */
+.bm-health-large {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.bm-health-large-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+}
+
+.bm-health-large-icon {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.bm-health-large-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: var(--radius-4, 6px);
+}
+
+.bm-health-large-name {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.bm-health-large-name > * {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.bm-health-large-ring {
+    width: 3.5rem;
+    height: 3.5rem;
+}
+
+.bm-health-large-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    justify-content: flex-end;
+}
+
+.bm-health-large-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* Placed rather than flowed: the score's reasons are the tallest card and
+       take the right-hand column down three rows, so the rest packs in
+       beside it and the whole fits one screen. */
+    grid-template-areas:
+        "uptime response response codes"
+        "days days incidents score"
+        "hours hours cert score"
+        "checks checks kept score";
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    align-items: start;
+}
+
+.bm-health-large-card {
+    margin: 0;
+    min-width: 0;
+}
+
+.bm-health-large-card[data-bm-large-card="uptime"] { grid-area: uptime; }
+.bm-health-large-card[data-bm-large-card="response"] { grid-area: response; }
+.bm-health-large-card[data-bm-large-card="codes"] { grid-area: codes; }
+.bm-health-large-card[data-bm-large-card="days"] { grid-area: days; }
+.bm-health-large-card[data-bm-large-card="incidents"] { grid-area: incidents; }
+.bm-health-large-card[data-bm-large-card="score"] { grid-area: score; }
+.bm-health-large-card[data-bm-large-card="hours"] { grid-area: hours; }
+.bm-health-large-card[data-bm-large-card="cert"] { grid-area: cert; }
+.bm-health-large-card[data-bm-large-card="kept"] { grid-area: kept; }
+.bm-health-large-card[data-bm-large-card="checks"] { grid-area: checks; }
+
+@media (max-width: 900px) {
+    .bm-health-large-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "uptime codes"
+            "response response"
+            "days days"
+            "hours hours"
+            "incidents score"
+            "cert kept"
+            "checks checks";
+    }
+}
+
+.bm-health-large-card .bm-health-modal-card-title {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.bm-health-large-answer {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    color: var(--text-primary);
+}
+
+.bm-health-large-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-1, 0.25rem);
+    margin-bottom: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.bm-health-large-tiles > div {
+    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.375rem);
+    font-size: 0.85em;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-4, 6px);
+}
+
+.bm-health-large-tiles b {
+    display: block;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.bm-health-large [data-tone="good"] { --tone: var(--accent-success); }
+.bm-health-large [data-tone="warn"] { --tone: var(--accent-warning); }
+.bm-health-large [data-tone="bad"] { --tone: var(--accent-error); }
+.bm-health-large [data-tone="info"] { --tone: var(--accent-primary); }
+.bm-health-large [data-tone="muted"] { --tone: color-mix(in srgb, var(--text-tertiary) 45%, transparent); }
+
+.bm-health-large-line .is-line {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 1.6;
+    vector-effect: non-scaling-stroke;
+}
+
+.bm-health-large-line .is-axis {
+    stroke: var(--border-primary);
+    vector-effect: non-scaling-stroke;
+}
+
+.bm-health-large-line .is-p95 {
+    stroke: var(--accent-warning);
+    stroke-dasharray: 3 3;
+    vector-effect: non-scaling-stroke;
+}
+
+.bm-health-large-line .is-label {
+    font-size: 7px;
+    fill: var(--text-secondary);
+}
+
+.bm-health-large-days rect,
+.bm-health-large-heat rect {
+    fill: var(--tone);
+}
+
+.bm-health-large-codes > div {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr) 3.5rem;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+    padding: 1px 0;
+}
+
+.bm-health-large-codes i {
+    display: block;
+    height: 0.5rem;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--tone);
+}
+
+.bm-health-large-codes > div > span:last-child {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.bm-health-large-incidents > div {
+    display: grid;
+    grid-template-columns: 7rem 4.5rem minmax(0, 1fr);
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+    padding: 2px 0;
+    border-top: 1px dashed color-mix(in srgb, var(--border-primary) 70%, transparent);
+}
+
+.bm-health-large-incidents > div:first-child {
+    border-top: 0;
+}
+
+.bm-health-large-ticks {
+    display: flex;
+    height: 1.25rem;
+    gap: 1px;
+    margin-bottom: var(--space-2, 0.5rem);
+    border-radius: var(--radius-3, 4px);
+    overflow: hidden;
+}
+
+.bm-health-large-ticks i {
+    flex: 1 1 0;
+    min-width: 1px;
+    background: var(--tone);
+}
+
+.bm-health-large-foot {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.bm-health-large-open {
+    align-self: flex-start;
+    margin-top: var(--space-1, 0.25rem);
+}

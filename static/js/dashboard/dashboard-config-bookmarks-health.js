@@ -227,6 +227,8 @@
                         <span class="config-bm-health-state is-${state.cls}">${esc(state.label)}</span>
                         ${chips ? `<span class="config-bm-health-chips">${chips}</span>` : ''}
                         <span class="config-bm-health-line">${line}</span>
+                        ${this.standalone ? `<button type="button" class="config-btn config-btn--small bm-health-large-open" data-bm-panel-action="health-large"
+                            title="${esc(t('bmLargeOpenTitle', 'Every chart of this bookmark, in large (Shift+H)'))}">${esc(t('bmLargeOpen', 'Open charts'))} ⤢</button>` : ''}
                     </div>
                     ${strip}
                 </div>

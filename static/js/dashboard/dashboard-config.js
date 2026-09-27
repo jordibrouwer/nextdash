@@ -3029,6 +3029,17 @@ class DashboardConfig {
             this.openBmHealthModal?.();
             return true;
         }
+        // H: the selected bookmark's health, in large -- as h is the whole
+        // collection's.
+        if (e.key === 'H' && this._bmHealthModule && this.standalone) {
+            const key = this._bmKeyboardKey || (this.workbenchPanelMode?.() === 'single' ? this.workbenchPanelKey?.() : '');
+            if (key && this.bmHealthIssue?.(this.findBookmarkByKey(key))) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.openBmHealthLarge?.(key);
+                return true;
+            }
+        }
         if (e.key === '/' && !isBmSearch) {
             const search = document.getElementById('config-bm-search');
             if (search) {
@@ -22757,6 +22768,9 @@ class DashboardConfig {
             // The view's band: Work through, Rot report, Export, ⋯ and ⓘ.
             .then(() => load('js/dashboard/dashboard-bookmarks-header.js',
                 'dashboardBookmarksHeader', () => window.DashboardBookmarksHeaderReady === true))
+            // One bookmark's health, in large.
+            .then(() => load('js/dashboard/dashboard-bookmarks-health-large.js',
+                'dashboardBookmarksHealthLarge', () => window.DashboardBookmarksHealthLargeReady === true))
             .then(() => {
                 const waiting = this._bookmarksAwaitingRenderers === true;
                 this._bookmarksAwaitingRenderers = false;
@@ -24088,6 +24102,9 @@ class DashboardConfig {
                 break;
             case 'open-new-tab':
                 this.openBookmarkByKey(key, { newTab: true });
+                break;
+            case 'health-large':
+                void this.openBmHealthLarge?.(key);
                 break;
             case 'rebuild-preview':
                 void this.rebuildBmPreview?.(bookmark);

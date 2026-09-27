@@ -168,6 +168,7 @@ class DashboardConfigContextMenu {
                     { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
                     // Re-checking is the Health tab's, one click from here.
                     ...healthItems.filter((item) => item.id !== 'recheck'),
+                    ...(healthItems.length ? [{ id: 'health-large', label: this.t('config.contextHealthLarge', 'Health charts…'), icon: '⤢' }] : []),
                 ]),
                 ...group(filterItems),
                 { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true },
