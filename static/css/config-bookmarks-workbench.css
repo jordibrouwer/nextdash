@@ -2853,3 +2853,75 @@ html body .config-bm-more-menu .config-btn {
     align-self: flex-start;
     margin-top: var(--space-1, 0.25rem);
 }
+
+/* The values under the pointer. */
+#modal-text:has([data-bm-health-large]) {
+    position: relative;
+}
+
+.bm-large-tip {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.bm-large-tip[hidden] {
+    display: none;
+}
+
+.bm-health-large [data-tip] {
+    cursor: crosshair;
+}
+
+.bm-health-large .is-hit {
+    fill: transparent;
+}
+
+.bm-health-large .is-hit.is-tipped {
+    fill: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.bm-health-large-line .is-point {
+    fill: var(--accent-primary);
+    opacity: 0;
+}
+
+.bm-health-large-line .is-point.is-tipped {
+    opacity: 1;
+}
+
+.bm-health-large-heat rect.is-tipped,
+.bm-health-large-ticks i.is-tipped {
+    outline: 1px solid var(--text-primary);
+}
+
+.bm-health-large-codes > div.is-tipped {
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+.bm-health-large-big {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.bm-health-large-big b {
+    font-size: 1.6rem;
+    color: var(--text-primary);
+}
+
+.bm-health-large-range .config-select {
+    font-size: var(--font-size-small);
+    padding-block: 0.15rem;
+}

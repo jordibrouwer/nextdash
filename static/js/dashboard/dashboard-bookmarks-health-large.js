@@ -16,20 +16,30 @@
 
     const DAY = 86400000;
     const HOUR = 3600000;
+    /** The periods on offer: today, then days. 30 is where it opens. */
+    const BM_LARGE_RANGES = ['today', '7', '14', '30', '90'];
 
     Object.assign(global.DashboardConfig.prototype, {
-        /** Open it for one bookmark, by its row key. */
-        async openBmHealthLarge(key) {
+        /**
+         * Open it for one bookmark, by its row key. It opens on the last 30
+         * days; ← and → and a refill keep the period that was chosen.
+         */
+        async openBmHealthLarge(key, { keepRange = false } = {}) {
             const b = this.findBookmarkByKey(key);
             const issue = b ? this.bmHealthIssue?.(b) : null;
             if (!b || !issue || typeof global.AppModal?.show !== 'function') return;
+            const open = Boolean(document.querySelector('#app-modal.show #modal-text [data-bm-health-large]'));
+            if (!keepRange || !open || !BM_LARGE_RANGES.includes(this._bmLargeRange)) this._bmLargeRange = '30';
             this._bmLargeKey = key;
             const show = (hist) => {
-                const html = this.renderBmHealthLarge(b, issue, hist);
+                this._bmLargeHist = hist;
+                const html = this.renderBmHealthLarge(b, issue, hist, this._bmLargeRange);
                 const root = document.getElementById('modal-text');
-                // Already open (a refill, or ← and →): the body is replaced in place.
+                // Already open (a refill, a new period, or ← and →): the body is replaced in place.
                 if (root && document.querySelector('#app-modal.show #modal-text [data-bm-health-large]')) {
                     root.innerHTML = html;
+                    const title = document.getElementById('modal-title');
+                    if (title) title.textContent = b.name || this.formatBookmarkUrlDisplay(b.url);
                     return;
                 }
                 global.AppModal.show({
@@ -68,7 +78,7 @@
             const at = keys.indexOf(this._bmLargeKey);
             if (at < 0) return;
             const next = keys[(at + delta + keys.length) % keys.length];
-            if (next && next !== this._bmLargeKey) void this.openBmHealthLarge(next);
+            if (next && next !== this._bmLargeKey) void this.openBmHealthLarge(next, { keepRange: true });
         },
 
         bindBmHealthLargeKeys() {
@@ -94,6 +104,54 @@
             const root = document.getElementById('modal-text');
             if (!root || root.dataset.bmHealthLargeWired === '1') return;
             root.dataset.bmHealthLargeWired = '1';
+            // Every value on a chart reads out under the pointer (or a tap):
+            // one tip for the modal, filled from the data-tip of what is hovered.
+            const tip = () => {
+                let el = root.querySelector('.bm-large-tip');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.className = 'bm-large-tip';
+                    el.setAttribute('role', 'tooltip');
+                    el.hidden = true;
+                    root.appendChild(el);
+                }
+                return el;
+            };
+            const showTip = (e) => {
+                const target = e.target.closest?.('[data-bm-health-large] [data-tip]');
+                const el = tip();
+                root.querySelectorAll('.is-tipped').forEach((n) => n.classList.remove('is-tipped'));
+                if (!target) {
+                    el.hidden = true;
+                    return;
+                }
+                target.classList.add('is-tipped');
+                el.textContent = target.getAttribute('data-tip');
+                el.hidden = false;
+                const box = root.getBoundingClientRect();
+                const x = e.clientX - box.left + root.scrollLeft;
+                const y = e.clientY - box.top + root.scrollTop;
+                const left = Math.min(x + 12, root.scrollWidth - el.offsetWidth - 4);
+                el.style.left = `${Math.max(4, left)}px`;
+                el.style.top = `${Math.max(4, y - el.offsetHeight - 10)}px`;
+            };
+            root.addEventListener('pointermove', showTip);
+            root.addEventListener('pointerdown', showTip);
+            root.addEventListener('pointerleave', () => {
+                const el = root.querySelector('.bm-large-tip');
+                if (el) el.hidden = true;
+            });
+            // A new period redraws from the checks already fetched.
+            root.addEventListener('change', (e) => {
+                const select = e.target.closest?.('[data-bm-large-range]');
+                if (!select || !root.querySelector('[data-bm-health-large]')) return;
+                this._bmLargeRange = BM_LARGE_RANGES.includes(select.value) ? select.value : '30';
+                const b = this.findBookmarkByKey(this._bmLargeKey);
+                const issue = b ? this.bmHealthIssue?.(b) : null;
+                if (!b || !issue) return;
+                root.innerHTML = this.renderBmHealthLarge(b, issue, this._bmLargeHist, this._bmLargeRange);
+                root.querySelector('[data-bm-large-range]')?.focus();
+            });
             root.addEventListener('click', (e) => {
                 const el = e.target.closest('[data-bm-large-action]');
                 if (!el || !root.querySelector('[data-bm-health-large]')) return;
@@ -105,7 +163,7 @@
                 else if (action === 'recheck' && issue) {
                     el.disabled = true;
                     void Promise.resolve(this._bmHealthModule?.recheckIssue?.(issue))
-                        .finally(() => { if (this._bmLargeKey === key) void this.openBmHealthLarge(key); });
+                        .finally(() => { if (this._bmLargeKey === key) void this.openBmHealthLarge(key, { keepRange: true }); });
                 } else if (action === 'prev') this.stepBmHealthLarge(-1);
                 else if (action === 'next') this.stepBmHealthLarge(1);
                 else if (action === 'monitor') {
@@ -119,7 +177,7 @@
 
         /* ── The body ─────────────────────────────────────────────────── */
 
-        renderBmHealthLarge(b, issue, hist) {
+        renderBmHealthLarge(b, issue, hist, range = '30') {
             const esc = (v) => this.dash.escapeHtml(v);
             const t = (key, fallback) => this.t(`config.${key}`, fallback);
             const health = this._bmHealthModule;
@@ -136,6 +194,24 @@
             const modeLabel = global.CheckMode?.meta?.(mode)?.label || mode;
             const interval = mode === 'monitor' ? global.CheckMode?.intervalLabel?.(global.CheckMode?.intervalOf?.(b)) || '' : '';
             const pct = (r) => (r == null || !Number.isFinite(Number(r)) ? '—' : `${Math.round(Number(r) * 1000) / 10}%`);
+            const dur = (ms) => (ms > 0 ? health?.formatDuration?.(ms) || '' : '—');
+
+            // The period: from midnight for today, else the last N days. The
+            // checks kept one by one cover 30 days; past that, the day summaries.
+            const midnight = new Date(now);
+            midnight.setHours(0, 0, 0, 0);
+            const isToday = range === 'today';
+            const nDays = isToday ? 1 : Number(range) || 30;
+            const from = isToday ? midnight.getTime() : now - nDays * DAY;
+            const sampleDays = Number(hist?.sampleDays) || 30;
+            const rawCovers = nDays <= sampleDays;
+            const rangeLabel = isToday ? t('bmLargeToday', 'today')
+                : t('bmLargeLastDays', 'last {n} days').replace('{n}', String(nDays));
+            const rawLabel = rawCovers ? rangeLabel : t('bmLargeLastDays', 'last {n} days').replace('{n}', String(sampleDays));
+            const inRange = samples.filter((s) => s.t >= from && !s.maint);
+            const rawFrom = rawCovers ? from : now - sampleDays * DAY;
+            const rawRange = samples.filter((s) => s.t >= rawFrom && !s.maint);
+
             const card = (name, title, answer, body, wide = false) => `
                 <section class="bm-health-modal-card bm-health-large-card${wide ? ' is-wide' : ''}" data-bm-large-card="${name}">
                     <h3 class="bm-health-modal-card-title"><span>${esc(title)}</span>${answer ? `<span class="bm-health-large-answer">${esc(answer)}</span>` : ''}</h3>
@@ -146,17 +222,18 @@
             const noChecks = loading ? t('bmLargeLoading', 'Loading the checks…')
                 : t('bmLargeNeedsMonitor', 'Not enough checks for this chart. Monitor records one every few minutes.');
 
-            // Head: the bookmark, its state, its score.
+            // Head: the bookmark, the period, its score.
             const circ = 2 * Math.PI * 26;
             const dash = Math.max(0, Math.min(100, score)) / 100 * circ;
-            const checks30 = samples.filter((s) => s.t >= now - 30 * DAY).length;
+            const rangeName = (r) => (r === 'today' ? t('bmLargeRangeToday', 'Today')
+                : t('bmLargeRangeDays', '{n} days').replace('{n}', r));
             const head = `
                 <div class="bm-health-large-head">
                     <span class="bm-health-large-icon">${global.BookmarkFeedRow?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
                     <div class="bm-health-large-name">
                         <a class="config-bm-panel-url" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(this.formatBookmarkUrlDisplay(b.url))}</a>
                         <span class="config-bm-panel-muted">${esc([modeLabel, interval,
-                            checks30 ? t('bmLargeChecksIn30', '{n} checks in 30 days').replace('{n}', checks30.toLocaleString()) : '',
+                            inRange.length ? t('bmLargeChecksInRange', '{n} checks, {range}').replace('{n}', inRange.length.toLocaleString()).replace('{range}', rangeLabel) : '',
                             Number(issue.lastChecked) > 0 ? t('bmHealthChecked', 'Checked {d} ago').replace('{d}', health?.formatDuration?.(now - Number(issue.lastChecked)) || '') : '',
                         ].filter(Boolean).join(' · '))}</span>
                     </div>
@@ -167,6 +244,11 @@
                         <text x="32" y="37" text-anchor="middle">${esc(String(score))}</text>
                     </svg>
                     <div class="bm-health-large-buttons">
+                        <label class="bm-health-large-range">
+                            <select class="config-select" data-bm-large-range aria-label="${esc(t('bmLargeRange', 'Period'))}">
+                                ${BM_LARGE_RANGES.map((r) => `<option value="${r}"${r === range ? ' selected' : ''}>${esc(rangeName(r))}</option>`).join('')}
+                            </select>
+                        </label>
                         <button type="button" class="config-btn config-btn--small" data-bm-large-action="prev" title="${esc(t('bmLargePrev', 'Previous bookmark (←)'))}">←</button>
                         <button type="button" class="config-btn config-btn--small" data-bm-large-action="next" title="${esc(t('bmLargeNext', 'Next bookmark (→)'))}">→</button>
                         <button type="button" class="config-btn config-btn--small config-btn--primary" data-bm-large-action="recheck">${esc(t('bmKeyRecheck', 're-check').replace(/^./, (c) => c.toUpperCase()))}</button>
@@ -175,36 +257,84 @@
                     </div>
                 </div>`;
 
-            // 1. Uptime.
+            // 1. Uptime: the period's, then the fixed windows beside it.
+            const dayFrom = (() => { const d = new Date(from); d.setUTCHours(0, 0, 0, 0); return d.getTime(); })();
+            const rangeDays = days.filter((d) => d.d >= dayFrom);
+            const [upN, allN] = rawCovers
+                ? [inRange.filter((s) => s.up).length, inRange.length]
+                : [rangeDays.reduce((a, d) => a + d.u, 0), rangeDays.reduce((a, d) => a + d.n, 0)];
             const daysTotal = days.reduce((a, d) => a + d.n, 0);
             const daysUp = days.reduce((a, d) => a + d.u, 0);
             const incidents = Array.isArray(stats.incidents) ? stats.incidents : [];
-            const down30 = incidents.filter((i) => Number(i.start) >= now - 30 * DAY)
-                .reduce((a, i) => a + (Number(i.durationMs) || (i.ongoing ? now - Number(i.start) : 0)), 0);
-            const uptimeCard = card('uptime', t('bmLargeUptime', 'Uptime'), '', `
+            const incRange = incidents.filter((i) => Number(i.start) + (Number(i.durationMs) || 0) >= from);
+            const downRange = incRange.reduce((a, i) => {
+                const start = Math.max(from, Number(i.start));
+                const end = i.ongoing ? now : Number(i.start) + (Number(i.durationMs) || 0);
+                return a + Math.max(0, end - start);
+            }, 0);
+            const uptimeCard = card('uptime', t('bmLargeUptime', 'Uptime'), rangeLabel, `
+                <div class="bm-health-large-big"><b>${esc(allN ? pct(upN / allN) : '—')}</b>
+                    <span>${esc(t('bmLargeDownFor', 'down {d}').replace('{d}', dur(downRange)))}</span></div>
                 <div class="bm-health-large-tiles">
                     <div><b>${esc(pct(stats.uptime24h?.ratio))}</b>${esc(t('bmLarge24h', '24 hours'))}</div>
                     <div><b>${esc(pct(stats.uptime7d?.ratio))}</b>${esc(t('bmLarge7d', '7 days'))}</div>
                     <div><b>${esc(pct(stats.uptime30d?.ratio))}</b>${esc(t('bmLarge30d', '30 days'))}</div>
                     <div><b>${esc(daysTotal ? pct(daysUp / daysTotal) : '—')}</b>${esc(t('bmLarge90d', '90 days'))}</div>
-                </div>
-                <div class="config-bm-usage-kv"><span>${esc(t('bmLargeDown30', 'Down in 30 days'))}</span><span>${esc(down30 ? health?.formatDuration?.(down30) || '' : '—')}</span></div>`);
+                </div>`);
 
-            // 2. Response time: the daily means over 90 days, the spread from the checks kept.
-            const withPing = samples.filter((s) => s.up && s.ms > 0).map((s) => s.ms).sort((x, y) => x - y);
-            const avg = withPing.length ? Math.round(withPing.reduce((a, v) => a + v, 0) / withPing.length) : 0;
-            const p95 = withPing.length ? withPing[Math.min(withPing.length - 1, Math.floor(withPing.length * 0.95))] : 0;
-            const pingDays = days.filter((d) => d.p > 0);
-            const responseCard = card('response', t('bmLargeResponse', 'Response time, 90 days'),
-                withPing.length ? t('bmLargeAvgP95', 'avg {a} ms · p95 {p} ms').replace('{a}', String(avg)).replace('{p}', String(p95)) : '',
-                pingDays.length >= 2 ? this.bmLargeLineChart(pingDays.map((d) => ({ x: d.d, y: d.p })), now - 90 * DAY, now, p95, esc)
-                    : none(noChecks), true);
+            // 2. Response time over the period: the checks in buckets while
+            // they reach back far enough, else each day's mean.
+            const pinged = inRange.filter((s) => s.up && s.ms > 0);
+            const sorted = pinged.map((s) => s.ms).sort((x, y) => x - y);
+            const avg = sorted.length ? Math.round(sorted.reduce((a, v) => a + v, 0) / sorted.length) : 0;
+            const p95 = sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))] : 0;
+            let points = [];
+            if (rawCovers) {
+                const buckets = 96;
+                const span = Math.max(1, (now - from) / buckets);
+                const sums = new Array(buckets).fill(0);
+                const counts = new Array(buckets).fill(0);
+                pinged.forEach((s) => {
+                    const i = Math.min(buckets - 1, Math.floor((s.t - from) / span));
+                    sums[i] += s.ms;
+                    counts[i] += 1;
+                });
+                points = sums.map((sum, i) => (counts[i] ? { x: from + (i + 0.5) * span, y: sum / counts[i] } : null)).filter(Boolean);
+            } else {
+                points = rangeDays.filter((d) => d.p > 0).map((d) => ({ x: d.d + DAY / 2, y: d.p }));
+            }
+            const dayMean = rangeDays.filter((d) => d.p > 0);
+            const answer = sorted.length
+                ? t('bmLargeAvgP95', 'avg {a} ms · p95 {p} ms').replace('{a}', String(avg)).replace('{p}', String(p95))
+                : (dayMean.length ? t('bmLargeAvg', 'avg {a} ms').replace('{a}', String(Math.round(dayMean.reduce((a, d) => a + d.p, 0) / dayMean.length))) : '');
+            const responseCard = card('response', `${t('bmLargeResponseTitle', 'Response time')}, ${rangeLabel}`, answer,
+                points.length >= 2 ? this.bmLargeLineChart(points, from, now, rawCovers ? p95 : 0, esc, isToday) : none(noChecks), true);
 
-            // 3. Uptime per day, 90 days.
-            const dayBars = card('days', t('bmLargePerDay', 'Uptime per day, 90 days'), daysTotal ? pct(daysUp / daysTotal) : '',
-                days.length ? this.bmLargeDayBars(days, now, esc) : none(noChecks), true);
+            // 3. Uptime over time: per hour today, per day otherwise.
+            let bars = [];
+            if (isToday) {
+                for (let h = 0; h < 24; h += 1) {
+                    const at = midnight.getTime() + h * HOUR;
+                    const inHour = inRange.filter((s) => s.t >= at && s.t < at + HOUR);
+                    bars.push({ ratio: inHour.length ? inHour.filter((s) => s.up).length / inHour.length : null,
+                        n: inHour.length, label: `${String(h).padStart(2, '0')}:00` });
+                }
+            } else {
+                const byDay = new Map(days.map((d) => [d.d, d]));
+                const first = new Date(now - (nDays - 1) * DAY);
+                first.setUTCHours(0, 0, 0, 0);
+                for (let i = 0; i < nDays; i += 1) {
+                    const d = byDay.get(first.getTime() + i * DAY);
+                    bars.push({ ratio: d && d.n ? d.u / d.n : null, n: d?.n || 0,
+                        label: new Date(first.getTime() + i * DAY).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) });
+                }
+            }
+            const hasBars = bars.some((x) => x.ratio != null);
+            const barsCard = card('days', isToday ? t('bmLargePerHourToday', 'Uptime per hour, today')
+                : `${t('bmLargePerDayTitle', 'Uptime per day')}, ${rangeLabel}`, allN ? pct(upN / allN) : '',
+                hasBars ? this.bmLargeBars(bars, esc) : none(noChecks), true);
 
-            // 4. HTTP answers, from the checks kept.
+            // 4. HTTP answers in the period (as far as the checks kept reach).
             const classes = [
                 { key: '2xx', test: (c) => c >= 200 && c < 300, tone: 'good' },
                 { key: '3xx', test: (c) => c >= 300 && c < 400, tone: 'info' },
@@ -212,24 +342,24 @@
                 { key: '5xx', test: (c) => c >= 500, tone: 'bad' },
                 { key: t('bmLargeNoAnswer', 'no answer'), test: (c) => !c, tone: 'muted' },
             ];
-            const counted = classes.map((cl) => ({ ...cl, n: samples.filter((s) => !s.maint && cl.test(s.code)).length }));
+            const counted = classes.map((cl) => ({ ...cl, n: rawRange.filter((s) => cl.test(s.code)).length }));
             const maxN = Math.max(1, ...counted.map((c) => c.n));
-            const codesCard = card('codes', t('bmLargeCodes', 'HTTP answers, 30 days'), '', samples.length
+            const codesCard = card('codes', t('bmLargeCodesTitle', 'HTTP answers'), rawLabel, rawRange.length
                 ? `<div class="bm-health-large-codes">${counted.map((c) => `
-                    <div><span>${esc(c.key)}</span><i data-tone="${c.tone}" style="width:${Math.max(c.n ? 2 : 0, Math.round((c.n / maxN) * 100))}%"></i><span>${c.n.toLocaleString()}</span></div>`).join('')}</div>`
+                    <div data-tip="${esc(`${c.key}: ${c.n.toLocaleString()} (${rawRange.length ? Math.round((c.n / rawRange.length) * 1000) / 10 : 0}%)`)}"><span>${esc(c.key)}</span><i data-tone="${c.tone}" style="width:${Math.max(c.n ? 2 : 0, Math.round((c.n / maxN) * 100))}%"></i><span>${c.n.toLocaleString()}</span></div>`).join('')}</div>`
                 : none(noChecks));
 
-            // 5. Availability by hour, 30 days × 24 hours.
-            const heatCard = card('hours', t('bmLargeHours', 'Availability by hour, 30 days'),
+            // 5. Availability by hour over the period (at most the 30 days of checks kept).
+            const heatDays = Math.min(nDays, sampleDays);
+            const heatCard = card('hours', `${t('bmLargeHoursTitle', 'Availability by hour')}, ${rawLabel}`,
                 t('bmLargeHoursKey', 'red down · amber slow · grey no checks'),
-                samples.length ? this.bmLargeHeatmap(samples, now, p95, esc) : none(noChecks), true);
+                rawRange.length ? this.bmLargeHeatmap(samples, now, p95, esc, heatDays) : none(noChecks), true);
 
-            // 6. Incidents.
-            const inc30 = incidents.filter((i) => Number(i.start) >= now - 30 * DAY);
+            // 6. Incidents in the period.
             const incCard = card('incidents', t('bmLargeIncidents', 'Incidents'),
-                t('bmLargeIncidentCount', '{n} in 30 days').replace('{n}', String(inc30.length)),
-                inc30.length || incidents.length
-                    ? `<div class="bm-health-large-incidents">${incidents.slice(-5).reverse().map((i) => `
+                t('bmLargeIncidentCountIn', '{n}, {range}').replace('{n}', String(incRange.length)).replace('{range}', rangeLabel),
+                incRange.length
+                    ? `<div class="bm-health-large-incidents">${incRange.slice(-5).reverse().map((i) => `
                         <div><span>${esc(new Date(Number(i.start)).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>
                         <span>${esc(i.ongoing ? t('bmLargeOngoing', 'ongoing') : health?.formatDuration?.(Number(i.durationMs) || 0) || '')}</span>
                         <span>${esc(i.reason || '')}</span></div>`).join('')}</div>`
@@ -264,15 +394,15 @@
             const checksCard = card('checks', t('bmLargeLast24', 'Checks, last 24 hours'),
                 day.length ? t('bmLargeChecksCount', '{n} checks').replace('{n}', String(day.length)) : '',
                 day.length ? `<div class="bm-health-large-ticks">${day.map((s) => `<i data-tone="${s.maint ? 'muted' : (s.up ? 'good' : 'bad')}"
-                    title="${esc(`${new Date(s.t).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} · ${s.code || '—'}${s.ms ? ` · ${s.ms} ms` : ''}`)}"></i>`).join('')}</div>
+                    data-tip="${esc(`${new Date(s.t).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} · ${s.code || '—'}${s.ms ? ` · ${s.ms} ms` : ''}`)}"></i>`).join('')}</div>
                     ${last ? `<div class="config-bm-usage-kv"><span>${esc(t('bmLargeLastAnswer', 'Last answer'))}</span><span>${esc(`${last.code || t('bmLargeNoAnswer', 'no answer')}${last.ms ? ` · ${last.ms} ms` : ''}`)}</span></div>` : ''}`
                     : none(noChecks), true);
 
-            return `<div class="bm-health-large" data-bm-health-large data-loading="${loading ? '1' : '0'}">
+            return `<div class="bm-health-large" data-bm-health-large data-loading="${loading ? '1' : '0'}" data-range="${esc(range)}">
                 ${head}
                 <div class="bm-health-large-grid">
                     ${uptimeCard}${responseCard}${codesCard}
-                    ${dayBars}${incCard}${scoreCard}
+                    ${barsCard}${incCard}${scoreCard}
                     ${heatCard}${certCard}${keptCard}
                     ${checksCard}
                 </div>
@@ -281,68 +411,76 @@
         },
 
         /** A line over time, with a dashed p95 line when there is one. */
-        bmLargeLineChart(points, from, to, p95, esc) {
+        bmLargeLineChart(points, from, to, p95, esc, hours = false) {
             const w = 320;
             const h = 70;
             const max = Math.max(p95 || 0, ...points.map((p) => p.y)) * 1.1 || 1;
             const x = (v) => 4 + ((v - from) / Math.max(1, to - from)) * (w - 8);
             const y = (v) => 6 + h - (v / max) * h;
             const path = points.map((p) => `${x(p.x).toFixed(1)},${y(p.y).toFixed(1)}`).join(' ');
-            const date = (ms) => new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+            const label = (ms) => (hours
+                ? new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+                : new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }));
             return `<svg class="bm-health-large-line" viewBox="0 0 ${w} ${h + 18}" width="100%" height="${h + 18}" role="img" preserveAspectRatio="none">
                 <line x1="4" y1="${h + 6}" x2="${w - 4}" y2="${h + 6}" class="is-axis"></line>
                 ${p95 ? `<line x1="4" y1="${y(p95).toFixed(1)}" x2="${w - 4}" y2="${y(p95).toFixed(1)}" class="is-p95"></line>` : ''}
                 <polyline points="${path}" class="is-line"></polyline>
-                <text x="4" y="${h + 16}" class="is-label">${esc(date(from))}</text>
-                <text x="${w - 4}" y="${h + 16}" text-anchor="end" class="is-label">${esc(date(to))}</text>
+                ${points.map((p) => `<circle cx="${x(p.x).toFixed(1)}" cy="${y(p.y).toFixed(1)}" r="3" class="is-point"
+                    data-tip="${esc(`${hours ? new Date(p.x).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : new Date(p.x).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}: ${Math.round(p.y)} ms`)}"></circle>`).join('')}
+                <text x="4" y="${h + 16}" class="is-label">${esc(label(from))}</text>
+                <text x="${w - 4}" y="${h + 16}" text-anchor="end" class="is-label">${esc(label(to))}</text>
                 <text x="${w - 4}" y="12" text-anchor="end" class="is-label">${Math.round(max)} ms</text>
             </svg>`;
         },
 
-        /** One bar a day for 90 days: its height the share of checks that answered. */
-        bmLargeDayBars(days, now, esc) {
-            const byDay = new Map(days.map((d) => [d.d, d]));
-            const first = new Date(now - 89 * DAY);
-            first.setUTCHours(0, 0, 0, 0);
-            const bars = [];
-            for (let i = 0; i < 90; i += 1) {
-                const d = byDay.get(first.getTime() + i * DAY);
-                const ratio = d && d.n ? d.u / d.n : null;
-                const tone = ratio == null ? 'muted' : ratio >= 0.999 ? 'good' : ratio >= 0.95 ? 'warn' : 'bad';
-                const hgt = ratio == null ? 2 : Math.max(3, Math.round(ratio * 40));
-                const label = new Date(first.getTime() + i * DAY).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-                bars.push(`<rect x="${i * 3.4}" y="${42 - hgt}" width="2.6" height="${hgt}" data-tone="${tone}"><title>${esc(`${label}: ${ratio == null ? '—' : `${Math.round(ratio * 1000) / 10}%`}`)}</title></rect>`);
-            }
-            return `<svg class="bm-health-large-days" viewBox="0 0 306 44" width="100%" height="48" preserveAspectRatio="none" role="img">${bars.join('')}</svg>`;
+        /** One bar per hour or per day: its height the share of checks that answered. */
+        bmLargeBars(bars, esc) {
+            const w = 306;
+            const step = w / bars.length;
+            const bw = Math.max(1, step * 0.76);
+            const rects = bars.map((bar, i) => {
+                const tone = bar.ratio == null ? 'muted' : bar.ratio >= 0.999 ? 'good' : bar.ratio >= 0.95 ? 'warn' : 'bad';
+                const hgt = bar.ratio == null ? 2 : Math.max(3, Math.round(bar.ratio * 40));
+                const tip = `${bar.label}: ${bar.ratio == null ? this.t('config.bmLargeTipNoChecks', 'no checks') : `${Math.round(bar.ratio * 1000) / 10}%`}${bar.n ? ` · ${bar.n} ${this.t('config.bmLargeTipChecks', 'checks')}` : ''}`;
+                // The whole column answers the pointer, not just the bar's height.
+                return `<rect x="${(i * step).toFixed(2)}" y="0" width="${step.toFixed(2)}" height="44" class="is-hit" data-tip="${esc(tip)}"></rect>
+                    <rect x="${(i * step).toFixed(2)}" y="${42 - hgt}" width="${bw.toFixed(2)}" height="${hgt}" data-tone="${tone}" pointer-events="none"></rect>`;
+            });
+            return `<svg class="bm-health-large-days" viewBox="0 0 ${w} 44" width="100%" height="48" preserveAspectRatio="none" role="img">${rects.join('')}</svg>`;
         },
 
-        /** 30 days across, 24 hours down: down, slow, fine or no checks. */
-        bmLargeHeatmap(samples, now, p95, esc) {
-            const start = new Date(now - 29 * DAY);
+        /** The period's days across (today: one), 24 hours down: down, slow, fine or no checks. */
+        bmLargeHeatmap(samples, now, p95, esc, nDays = 30) {
+            const start = new Date(now - (nDays - 1) * DAY);
             start.setHours(0, 0, 0, 0);
             const cells = new Map();
             samples.forEach((s) => {
-                if (s.t < start.getTime()) return;
+                if (s.t < start.getTime() || s.maint) return;
                 const dayIdx = Math.floor((s.t - start.getTime()) / DAY);
                 const hour = new Date(s.t).getHours();
                 const k = `${dayIdx}:${hour}`;
                 const c = cells.get(k) || { up: 0, down: 0, slow: 0 };
-                if (s.maint) return;
                 if (!s.up) c.down += 1;
                 else if (p95 && s.ms > p95) c.slow += 1;
                 else c.up += 1;
                 cells.set(k, c);
             });
+            const cw = 300 / nDays;
             const rects = [];
-            for (let d = 0; d < 30; d += 1) {
+            for (let d = 0; d < nDays; d += 1) {
                 for (let hr = 0; hr < 24; hr += 1) {
                     const c = cells.get(`${d}:${hr}`);
                     const tone = !c ? 'muted' : c.down ? 'bad' : c.slow ? 'warn' : 'good';
-                    rects.push(`<rect x="${d * 10}" y="${hr * 4}" width="9" height="3.4" data-tone="${tone}"></rect>`);
+                    const when = new Date(start.getTime() + d * DAY + hr * HOUR);
+                    const tip = `${when.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} ${String(hr).padStart(2, '0')}:00 · ${c
+                        ? [c.up ? `${c.up} ${this.t('config.bmLargeTipUp', 'up')}` : '', c.slow ? `${c.slow} ${this.t('config.bmLargeTipSlow', 'slow')}` : '',
+                            c.down ? `${c.down} ${this.t('config.bmLargeTipDown', 'down')}` : ''].filter(Boolean).join(', ')
+                        : this.t('config.bmLargeTipNoChecks', 'no checks')}`;
+                    rects.push(`<rect x="${(d * cw).toFixed(2)}" y="${hr * 4}" width="${Math.max(0.5, cw - 1).toFixed(2)}" height="3.4" data-tone="${tone}" data-tip="${esc(tip)}"></rect>`);
                 }
             }
             return `<svg class="bm-health-large-heat" viewBox="0 0 300 96" width="100%" height="92" preserveAspectRatio="none" role="img"
-                aria-label="${esc(this.t('config.bmLargeHours', 'Availability by hour, 30 days'))}">${rects.join('')}</svg>`;
+                aria-label="${esc(this.t('config.bmLargeHoursTitle', 'Availability by hour'))}">${rects.join('')}</svg>`;
         },
     });
 

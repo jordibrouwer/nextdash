@@ -21,7 +21,16 @@ async function stubHistory(page, { samples = null, days = null } = {}) {
     { t: now - 5 * DAY, u: true, p: 90, c: 301 },
   ];
   const start = new Date(now - 40 * DAY); start.setUTCHours(0, 0, 0, 0);
-  const d = days ?? [{ d: start.getTime(), n: 20, u: 19, p: 200 }, { d: start.getTime() + DAY, n: 20, u: 20, p: 150 }];
+  // As the server serves them: the folded days, and the checks kept folded in.
+  const dayOf = (ms) => { const x = new Date(ms); x.setUTCHours(0, 0, 0, 0); return x.getTime(); };
+  const byDay = new Map();
+  s.forEach((x) => {
+    const e = byDay.get(dayOf(x.t)) || { d: dayOf(x.t), n: 0, u: 0, p: 0 };
+    e.n += 1;
+    if (x.u) e.u += 1;
+    byDay.set(e.d, e);
+  });
+  const d = days ?? [{ d: start.getTime(), n: 20, u: 19, p: 200 }, { d: start.getTime() + DAY, n: 20, u: 20, p: 150 }, ...byDay.values()];
   const asked = [];
   await page.route('**/api/health/history?**', (route) => {
     asked.push(route.request().url());
@@ -66,12 +75,14 @@ test.describe('bookmark health, in large', () => {
       await expect(card(page, name)).toHaveCount(1);
     }
     await expect(card(page, 'uptime')).toContainText('50%');
-    // 90 days from the daily summaries as served (the server folds the checks in): 39 of 40.
-    await expect(card(page, 'uptime')).toContainText('97.5%');
+    // 90 days from the daily summaries as served, the checks folded in: 42 of 45.
+    await expect(card(page, 'uptime')).toContainText('93.3%');
     const codes = await card(page, 'codes').locator('.bm-health-large-codes > div').evaluateAll((rows) =>
       rows.map((r) => [r.firstElementChild.textContent.trim(), r.lastElementChild.textContent.trim()]));
     expect(codes).toEqual([['2xx', '2'], ['3xx', '1'], ['4xx', '0'], ['5xx', '1'], ['no answer', '1']]);
-    await expect(card(page, 'days').locator('rect')).toHaveCount(90);
+    // It opens on the last 30 days: a bar a day.
+    await expect(modal(page).locator('[data-bm-large-range]')).toHaveValue('30');
+    await expect(card(page, 'days').locator('rect[data-tone]')).toHaveCount(30);
     await expect(card(page, 'hours').locator('rect')).toHaveCount(720);
     await expect(card(page, 'hours').locator('rect[data-tone="bad"]')).not.toHaveCount(0);
     await expect(card(page, 'checks').locator('.bm-health-large-ticks i')).toHaveCount(4);
@@ -79,6 +90,61 @@ test.describe('bookmark health, in large', () => {
     // One screen: nothing to scroll.
     const m = await page.locator('#app-modal.show .modal-body').evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight }));
     expect(m.sh).toBeLessThanOrEqual(m.ch + 1);
+  });
+
+  test('the period is chosen from a list, and every chart follows it', async ({ page }) => {
+    await stubHistory(page);
+    const { bookmarks } = await open(page);
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    await expect(modal(page)).toHaveAttribute('data-loading', '0');
+    const range = modal(page).locator('[data-bm-large-range]');
+    const options = await range.locator('option').evaluateAll((os) => os.map((o) => o.value));
+    expect(options).toEqual(['today', '7', '14', '30', '90']);
+
+    await range.selectOption('7');
+    await expect(modal(page)).toHaveAttribute('data-range', '7');
+    await expect(card(page, 'days').locator('rect[data-tone]')).toHaveCount(7);
+    await expect(card(page, 'hours').locator('rect')).toHaveCount(7 * 24);
+    // The check five days ago is in; nothing older.
+    await expect(card(page, 'codes')).toContainText('3xx');
+
+    await range.selectOption('today');
+    await expect(card(page, 'days').locator('rect[data-tone]')).toHaveCount(24);
+    await expect(card(page, 'hours').locator('rect')).toHaveCount(24);
+    const codesToday = await card(page, 'codes').locator('.bm-health-large-codes > div').evaluateAll((rows) =>
+      rows.map((r) => r.lastElementChild.textContent.trim()));
+    expect(codesToday[1]).toBe('0'); // the 3xx was five days ago
+
+    await range.selectOption('90');
+    await expect(card(page, 'days').locator('rect[data-tone]')).toHaveCount(90);
+    // Past the 30 days of single checks, the chart says how far they reach.
+    await expect(card(page, 'codes')).toContainText('last 30 days');
+
+    // → keeps the period chosen; opening afresh starts on 30 again.
+    await page.keyboard.press('ArrowRight');
+    await expect(modal(page)).toHaveAttribute('data-range', '90');
+    await page.keyboard.press('Escape');
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    await expect(modal(page)).toHaveAttribute('data-range', '30');
+  });
+
+  test('the charts read out their values under the pointer', async ({ page }) => {
+    await stubHistory(page);
+    const { bookmarks } = await open(page);
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    await expect(modal(page)).toHaveAttribute('data-loading', '0');
+    const tip = page.locator('#app-modal.show .bm-large-tip');
+    const down = card(page, 'hours').locator('rect[data-tone="bad"]').first();
+    await down.hover();
+    await expect(tip).toBeVisible();
+    await expect(tip).toContainText(/down/);
+    await card(page, 'codes').locator('.bm-health-large-codes > div').first().hover();
+    await expect(tip).toContainText(/^2xx: 2/);
+    await card(page, 'response').locator('.is-point').first().hover({ force: true });
+    await expect(tip).toContainText(/ms$/);
   });
 
   test('the row menu and Shift+H open it too; → goes to the next bookmark', async ({ page }) => {
