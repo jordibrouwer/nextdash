@@ -1657,6 +1657,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     }
 }
 
+.library-link a,
 .health-link a,
 .config-link a {
     text-decoration: none;
@@ -1676,6 +1677,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     gap: 0.35em;
 }
 
+.library-link a:hover,
 .health-link a:hover,
 .config-link a:hover {
     color: var(--text-primary);
@@ -1716,12 +1718,14 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 /* Icon variant: pages, health, config, and inbox (in the destination cluster)
    share one chrome; spacing is .header-actions / .header-destinations gap. */
 .dashboard-link--icon,
+.library-link--icon,
 .health-link--icon,
 .config-link--icon {
     margin-left: 0;
 }
 
 .dashboard-link--icon a,
+.library-link--icon a,
 .health-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
@@ -1735,6 +1739,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 .dashboard-link--icon a:hover,
+.library-link--icon a:hover,
 .health-link--icon a:hover,
 .config-link--icon a:hover,
 .header-destinations .page-nav-btn--inbox:hover {
@@ -1745,6 +1750,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 /* Active state matched to .page-nav-btn.active: header destinations are the
    same kind of tab as page tabs, so "you are here" must look the same. */
 .dashboard-link--icon a,
+.library-link--icon a,
 .health-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
@@ -1752,6 +1758,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 .dashboard-link--icon a.active,
+.library-link--icon a.active,
 .health-link--icon a.active,
 .config-link--icon a.active,
 .header-destinations .page-nav-btn--inbox.active {
@@ -1763,6 +1770,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 .dashboard-link--icon .dashboard-link-icon,
+.library-link--icon .library-link-icon,
 .health-link--icon .health-link-icon,
 .config-link--icon .config-link-icon,
 .header-destinations .page-nav-btn--inbox .page-tab-icon--svg {

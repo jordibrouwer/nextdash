@@ -437,7 +437,7 @@ class DashboardToolbar {
          */
         document.addEventListener('click', (e) => {
             const anchor = e.target?.closest?.(
-                '.config-link-anchor, .health-link-anchor, .dashboard-link-anchor'
+                '.config-link-anchor, .health-link-anchor, .library-link-anchor, .dashboard-link-anchor'
             );
             if (!anchor) return;
             // Leave the browser's own gestures alone: a modified click or a
@@ -449,6 +449,8 @@ class DashboardToolbar {
                 void d.config?.openConfigView?.();
             } else if (anchor.classList.contains('health-link-anchor')) {
                 void d.health?.openHealthView?.();
+            } else if (anchor.classList.contains('library-link-anchor')) {
+                void d.config?.openLibraryView?.();
             } else {
                 /*
                  * Back to the dashboard, at the page you left it on.

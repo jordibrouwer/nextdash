@@ -292,6 +292,7 @@ class DashboardPageNav {
         // but are the same kind of destination — keep their active state in step
         // with the tabs.
         d.visual?.syncHealthLinkActiveState?.();
+        d.visual?.syncLibraryLinkActiveState?.();
         d.docker?.syncNavActiveState?.();
         d.visual?.syncConfigLinkActiveState?.();
         d.visual?.syncDashboardLinkActiveState?.();

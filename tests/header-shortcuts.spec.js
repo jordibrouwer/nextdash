@@ -315,12 +315,15 @@ test('the hairline needs something on both sides of it', async ({ page }) => {
     await apply({ showSearchButton: true });
     await expect.poll(rules, { timeout: 5_000 }).toBe(1);
 
-    // And the other way round: the actions stand, the destinations do not.
+    // And the other way round: every destination that can be switched off is.
+    // Bookmarks cannot -- it is always in the header -- so the rule keeps the
+    // side it stands against.
     await apply({
         showDashboardButton: false, showInboxButton: false,
         showConfigButton: false, showHealthDashboard: false, unsortedEnabled: false,
     });
-    await expect.poll(rules, { timeout: 5_000 }).toBe(0);
+    await expect(page.locator('.library-link a.library-link-anchor')).toBeVisible();
+    await expect.poll(rules, { timeout: 5_000 }).toBe(1);
 
     // Settings live on the server for the whole file, so put the header back
     // the way the tests after this one expect to find it.

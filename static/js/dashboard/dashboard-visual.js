@@ -369,6 +369,20 @@ class DashboardVisual {
      * reaches it — without this the health view would be the only view with no
      * indication of where you are.
      */
+    /** Mark the header Bookmarks icon while the Bookmarks view is open. */
+    syncLibraryLinkActiveState() {
+        const anchor = document.querySelector('.library-link a.library-link-anchor');
+        if (!anchor) return;
+        const active = this.dash.activeView === 'library';
+        anchor.classList.toggle('active', active);
+        if (active) {
+            anchor.setAttribute('aria-current', 'page');
+        } else {
+            anchor.removeAttribute('aria-current');
+        }
+    }
+
+
     syncHealthLinkActiveState() {
         const d = this.dash;
         const anchor = document.querySelector('.health-link a.health-link-anchor');

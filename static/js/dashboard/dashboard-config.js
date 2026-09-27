@@ -1047,8 +1047,7 @@ class DashboardConfig {
         }
         d.setActiveView(DashboardConfig.LIBRARY_VIEW);
         window.nextdashTrack?.('view:library');
-        d.pageNav?.updateDocumentTitle?.();
-        d.pageNav?.updatePageTitle?.();
+        d.pageNav?.setActiveConfigTab?.();
         await this.loadAndRender();
         this.restoreConfigHash();
         return true;
