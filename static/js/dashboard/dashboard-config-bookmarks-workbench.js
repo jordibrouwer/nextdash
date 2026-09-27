@@ -540,8 +540,8 @@
                         </div>
                     </span>
                 </div>
-                ${/^https?:\/\//i.test(String(b.url || '')) ? `<a class="config-bm-panel-url" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(this.formatBookmarkUrlDisplay(b.url))}</a>` : ''}
-                ${where && this.standalone ? `<p class="config-bm-panel-where">${esc(where)}</p>` : ''}
+                ${/^https?:\/\//i.test(String(b.url || '')) ? `<a class="config-bm-panel-url" href="${esc(b.url)}" title="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(this.formatBookmarkUrlDisplay(b.url))}</a>` : ''}
+                ${where && this.standalone ? `<p class="config-bm-panel-where" title="${esc(where)}">${esc(where)}</p>` : ''}
                 <div class="config-bm-panel-actions">
                     <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
                     <button type="button" class="config-btn config-btn--small" data-bm-panel-action="edit-dialog"

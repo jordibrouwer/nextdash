@@ -1663,11 +1663,17 @@ html body .config-bm-more-menu .config-btn {
     min-width: 0;
 }
 
-.config-bm-panel-url {
+/* One line each, cut short with an ellipsis: an address or a place that
+   wrapped made the head taller for one bookmark than the next, and the tabs
+   under it jumped on every switch. The whole address is its title. */
+.config-bm-panel-url,
+.config-bm-panel-where {
+    display: block;
     min-width: 0;
     max-width: 100%;
-    overflow-wrap: anywhere;
-    word-break: break-all;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 /* ── Usage tab ────────────────────────────────────────────────────────── */

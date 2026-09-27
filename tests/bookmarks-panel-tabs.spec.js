@@ -105,6 +105,39 @@ test.describe('bookmark panel tabs', () => {
   });
 });
 
+test('a long address stays on one line, so the head and tabs do not move between bookmarks', async ({ page }) => {
+  const { bookmarks } = await openBookmarksWithHealth(page, (issues) => issues, {
+    view: 'library',
+    prepare: () => {
+      const [long, short] = window.dashboardInstance.allBookmarks;
+      long.url = `https://example.com/${'averyveryverylongpathsegmentwithoutanybreaks'.repeat(4)}`;
+      short.url = 'https://example.org/';
+    },
+  });
+  const row = (name) => page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: name }) }).first();
+  const drawer = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+  const measure = async () => {
+    const url = drawer.locator('.config-bm-panel-head .config-bm-panel-url');
+    await expect(url).toBeVisible();
+    return {
+      url: await url.evaluate((el) => {
+        // One line is under twice the font size, whatever the line height.
+        const oneLine = el.getBoundingClientRect().height < 2 * parseFloat(getComputedStyle(el).fontSize);
+        return { lines: oneLine ? 1 : 2, title: el.title };
+      }),
+      tabs: Math.round((await drawer.locator('.config-bm-tabs').boundingBox()).y),
+    };
+  };
+  await row(bookmarks[0].name).click();
+  const long = await measure();
+  await row(bookmarks[1].name).click();
+  const short = await measure();
+  expect(long.url.lines).toBe(1);
+  // The whole address is still there, on hover.
+  expect(long.url.title).toContain('averyveryverylong');
+  expect(long.tabs).toBe(short.tabs);
+});
+
 test('a long address does not push the score out of the panel', async ({ page }) => {
   const { bookmarks } = await openBookmarksWithHealth(page, (issues) => issues, {
     view: 'library',
