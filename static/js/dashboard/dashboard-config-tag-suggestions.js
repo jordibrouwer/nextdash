@@ -137,11 +137,15 @@
             return;
         }
 
+        // Health-style rows (config-view.css, .config-crud-list--table): one
+        // touching line each, the rule's text reading as a name, Remove out
+        // of sight until the row is hovered or focused -- the same table
+        // Structure's Categories and Pages already use.
         const list = document.createElement('div');
-        list.className = 'config-suggestions-list config-suggestion-rules-list';
+        list.className = 'config-crud-list config-crud-list--table config-suggestions-list config-suggestion-rules-list';
         rules.forEach((rule, index) => {
             const row = document.createElement('div');
-            row.className = 'config-suggestion-row config-suggestion-row--rule';
+            row.className = 'config-crud-row config-suggestion-row config-suggestion-row--rule';
             row.setAttribute('data-tag-rule', String(index));
             const text = document.createElement('span');
             text.className = 'config-suggestion-rule-text';
@@ -151,18 +155,26 @@
             remove.className = 'config-btn config-btn--small config-btn--danger';
             remove.setAttribute('data-tag-rule-remove', String(index));
             remove.textContent = t('config.tagRuleRemove', 'Remove');
-            row.append(text, remove);
+            const actions = document.createElement('div');
+            actions.className = 'config-crud-row-actions';
+            actions.appendChild(remove);
+            row.append(text, actions);
             list.appendChild(row);
         });
         container.appendChild(list);
     }
 
     function renderList(t, groups, ctx) {
+        // Same Health-style table as Structure's Categories and Pages: one
+        // touching 46px line per proposal, Apply/No thanks out of sight until
+        // the row is reached. The column template (tag, pattern, count,
+        // reason) stays a subgrid so long hosts don't shove the columns
+        // around; only the row's own box (border, hover, height) is shared.
         const list = document.createElement('ul');
-        list.className = 'config-suggestions-list config-suggestions-list--proposals';
+        list.className = 'config-crud-list config-crud-list--table config-suggestions-list config-suggestions-list--proposals';
         groups.slice(0, MAX_ROWS).forEach((group, index) => {
             const row = document.createElement('li');
-            row.className = 'config-suggestion-row config-suggestion-row--proposal';
+            row.className = 'config-crud-row config-suggestion-row config-suggestion-row--proposal';
             row.setAttribute('data-tag-suggestion', String(index));
 
             const tag = document.createElement('span');
@@ -210,7 +222,7 @@
             dismiss.textContent = t('config.tagSuggestionDismiss', 'No thanks');
 
             const actions = document.createElement('span');
-            actions.className = 'config-suggestion-actions';
+            actions.className = 'config-suggestion-actions config-crud-row-actions';
             actions.append(apply, dismiss);
 
             row.append(tag, pattern, count, why, actions);
@@ -394,11 +406,11 @@
             wrap.appendChild(head);
 
             const list = document.createElement('div');
-            list.className = 'config-suggestions-list config-suggestion-rules-list';
+            list.className = 'config-crud-list config-crud-list--table config-suggestions-list config-suggestion-rules-list';
             refused.forEach((entry) => {
                 const [pattern, tag] = String(entry).split('|');
                 const row = document.createElement('div');
-                row.className = 'config-suggestion-row config-suggestion-row--rule';
+                row.className = 'config-crud-row config-suggestion-row config-suggestion-row--rule';
                 row.setAttribute('data-tag-suggestion-refused', String(entry));
                 const text = document.createElement('span');
                 text.className = 'config-suggestion-rule-text';
@@ -410,7 +422,10 @@
                 back.className = 'config-btn config-btn--small';
                 back.setAttribute('data-tag-suggestion-restore-one', String(entry));
                 back.textContent = t('config.tagSuggestionRestoreOne', 'Offer again');
-                row.append(text, back);
+                const actions = document.createElement('div');
+                actions.className = 'config-crud-row-actions';
+                actions.appendChild(back);
+                row.append(text, actions);
                 list.appendChild(row);
             });
             wrap.appendChild(list);

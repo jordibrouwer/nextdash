@@ -5964,17 +5964,9 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /* A proposal reads as a row of a table: five columns in the same places on
-   every line, in the bordered card the bookmark list already uses, so the
-   panel is scanned down a column rather than read sentence by sentence. */
-.config-suggestion-row--proposal,
-.config-suggestion-row--rule {
-    align-items: center;
-    padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-secondary, transparent);
-}
-
+   every line. The row itself is a Health-style .config-crud-row (config-view.css,
+   --table rules above) -- touching, bottom-rule, hover-revealed actions --
+   so only the column template stays here. */
 .config-suggestion-row--proposal {
     display: grid;
     grid-template-columns: minmax(5rem, 8rem) minmax(6rem, 1fr) auto minmax(6rem, max-content) auto;
@@ -7148,12 +7140,13 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-primary);
 }
 
-/* ── Structure → Categories and Pages as Health-style rows ─────────────────
+/* ── Config lists as Health-style rows ──────────────────────────────────────
    One line per row, touching, a rule between them; the name reads as text
    until the pointer or the focus reaches it, and the buttons stay out of
    sight until then. Same measures as .health-view-item (health-view.css):
-   46px, the title at 600. Categories, Pages and Finders carry --table;
-   Collections and Tags keep their cards. */
+   46px, the title at 600. Structure's Categories, Pages and Finders carry
+   --table, and so do Bookmarks' Tags, Tag suggestions and Your rules;
+   only Collections keeps its cards. */
 .config-crud-list--table {
     gap: 0;
 }
@@ -7207,6 +7200,9 @@ body.no-animations .config-new-features-panel-star {
 .config-crud-list--table [data-cat="name"],
 .config-crud-list--table [data-page="name"],
 .config-crud-list--table [data-finder="name"],
+.config-crud-list--table [data-tag-rename],
+.config-crud-list--table .config-suggestion-tag,
+.config-crud-list--table .config-suggestion-rule-text,
 .config-crud-list--table .config-widget-category-name {
     font-size: var(--font-size-controls);
     font-weight: 600;

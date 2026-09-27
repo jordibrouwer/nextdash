@@ -16483,7 +16483,9 @@ class DashboardConfig {
                     <input type="text" class="config-text" data-tag-rename="${esc(tag)}" value="${esc(tag)}">
                     ${this.renderStatMeta(count, scales[i], 'config.tagBookmarkCount', '{count} bookmarks')}
                 </div>
-                <button type="button" class="config-btn config-btn--small config-btn--danger" data-tag-delete="${esc(tag)}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                <div class="config-crud-row-actions">
+                    <button type="button" class="config-btn config-btn--small config-btn--danger" data-tag-delete="${esc(tag)}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                </div>
             </li>
         `).join('');
         return `
@@ -16511,7 +16513,8 @@ class DashboardConfig {
             </div>
             ${this.renderPtCountLabel('tags', visible.length, this._tagList.length)}
             ${rows
-                ? `<ul class="config-crud-list">${rows}</ul>`
+                // --table: rows read like Health's / Structure's (config-view.css).
+                ? `<ul class="config-crud-list config-crud-list--table">${rows}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.tagsNoMatch', 'No tags match your filter.'))}</p>`}
         `;
     }
