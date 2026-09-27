@@ -54,6 +54,8 @@ test.describe('Config → Bookmarks → View: the preview', () => {
     const preview = page.locator('[data-bm-view-preview]');
     await expect(preview.locator('.config-bm-row')).toHaveCount(2);
     await expect(preview.locator('.config-bm-panel-head')).toHaveCount(1);
+    // A fixed example, not the reader's own most used bookmark.
+    await expect(preview.locator('.config-bm-panel-title')).toHaveText('GitHub');
     const domains = () => preview.locator('.config-bm-domain').count();
     expect(await domains()).toBe(2);
     await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewAddress"]').selectOption('hidden');

@@ -22221,17 +22221,15 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const now = Date.now();
         const day = 86400000;
-        const own = (this.dash.allBookmarks || []).filter((b) => b?.url && b?.name);
-        // The reader's most used, so the columns have something to say; a
-        // made-up pair on an empty dashboard.
-        const rows = own.length >= 2
-            ? [...own].sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0)).slice(0, 2)
-            : [
-                { name: 'nextDash', url: 'https://nextdash.cc/docs/getting-started', tags: ['home', 'docs'], openCount: 14,
-                    lastOpened: now - 2 * 3600000, createdAt: now - 40 * day, openLog: [1, 3, 4, 8, 9, 12].map((d) => now - d * day) },
-                { name: 'Weather', url: 'https://weather.example/forecast', tags: ['daily'], openCount: 3,
-                    lastOpened: now - 5 * day, createdAt: now - 200 * day, openLog: [5, 11].map((d) => now - d * day) },
-            ];
+        // A fixed pair rather than the reader's own most used: the preview
+        // shows the settings, and a neutral example says that better than a
+        // site of their own that happens to top the list.
+        const rows = [
+            { name: 'GitHub', url: 'https://github.com', tags: ['code', 'daily'], openCount: 14,
+                lastOpened: now - 2 * 3600000, createdAt: now - 40 * day, openLog: [1, 3, 4, 8, 9, 12].map((d) => now - d * day) },
+            { name: 'Weather', url: 'https://weather.example/forecast', tags: ['daily'], openCount: 3,
+                lastOpened: now - 5 * day, createdAt: now - 200 * day, openLog: [5, 11].map((d) => now - d * day) },
+        ];
         const ctx = { esc, grouped: false, showCrumb: false, setSize: 2, isDuplicate: () => false };
         const rowHtml = rows.map((b, index) => this.renderWorkbenchRow({ type: 'row', bookmark: b, index }, ctx)).join('');
         const legendAt = this.dash.settings?.bmViewKeyLegend || 'below';
