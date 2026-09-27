@@ -322,7 +322,7 @@ test.describe('the bookmark panel', () => {
         await expect(edit).toHaveAttribute('title', /Shift\+E/);
         // Both actions stay inside the panel.
         const box = await panel.boundingBox();
-        for (const btn of await panel.locator('.config-bm-panel-actions .config-btn').all()) {
+        for (const btn of await panel.locator('.config-bm-panel-actions .config-btn:visible').all()) {
             const b = await btn.boundingBox();
             expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width + 1);
         }

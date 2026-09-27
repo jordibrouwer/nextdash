@@ -1485,6 +1485,9 @@ class DashboardConfig {
             }
         }
 
+        // The side panel's tabs, before [ ] step Config's sub-tabs.
+        if (this.handleWorkbenchPanelTabKey?.(e)) return true;
+
         if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
             let subTabDelta = 0;
             const inChoiceControl = Boolean(target?.closest?.('.config-choices, .config-bg-swatches'));
@@ -2613,16 +2616,14 @@ class DashboardConfig {
      * so this only has to open it and, for `c`, hand focus to check mode.
      */
     openBmHealthPanelSection({ focusCheckMode = false } = {}) {
+        // In the Bookmarks view the side panel may be closed: s opens it.
+        if (this.standalone) {
+            this._libDrawerWanted = true;
+            this.repaintWorkbenchPanel?.();
+        }
+        this.setWorkbenchPanelTab?.('health');
         const section = document.querySelector('#config-bm-panel [data-bm-section="health"]');
-        if (!section) return;
-        section.open = true;
-        // Persisted directly rather than left to the native 'toggle' event:
-        // the scrollIntoView below can move the list's own scroll host, whose
-        // handler repaints the panel from workbenchOpenSections() before that
-        // event lands — see markWorkbenchSectionOpen.
-        this.markWorkbenchSectionOpen?.('health');
-        section.scrollIntoView({ block: 'nearest' });
-        if (focusCheckMode) section.querySelector('[data-check-mode]')?.focus();
+        if (focusCheckMode) section?.querySelector('[data-check-mode]')?.focus();
     }
 
     /** `m`: the row's own right-click menu, opened at the row rather than the pointer. */

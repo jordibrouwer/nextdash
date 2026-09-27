@@ -76,10 +76,16 @@ test.describe('bookmarks: Health and Monitor sections in the panel', () => {
     await expect(page.locator('#config-bm-panel .config-bm-panel-title')).toHaveText(name);
   }
 
+  // The panel's tabs: Health (with Monitor) and Details; the actions are
+  // the head's, the rest of them under ⋯.
   async function open(page, name) {
-    const s = section(page, name);
-    if (await s.getAttribute('open') === null) await s.locator('summary').click();
-    return s;
+    const tab = { edit: 'details', health: 'health', monitor: 'health' }[name];
+    if (tab) {
+      await page.locator(`#config-bm-panel [data-bm-tab-panel="${tab}"]`).click();
+      return section(page, name);
+    }
+    await page.locator('#config-bm-panel [data-bm-more-toggle]').click();
+    return page.locator('#config-bm-panel .config-bm-panel-head');
   }
 
   test('the Health section shows the broken bookmark\'s reason and score breakdown', async ({ page }) => {
@@ -138,7 +144,7 @@ test.describe('bookmarks: Health and Monitor sections in the panel', () => {
     await expect(section(page, 'monitor')).toHaveCount(0);
   });
 
-  test('Re-check in Actions asks the server to check that bookmark', async ({ page }) => {
+  test('Re-check in the panel\'s head asks the server to check that bookmark', async ({ page }) => {
     const { bookmarks } = await openBookmarksWithHealth(page);
     const posts = [];
     page.on('request', (r) => { if (r.method() === 'POST' && /health\/(update-status|cache-scan)/.test(r.url())) posts.push(r.url()); });
@@ -192,11 +198,11 @@ test.describe('bookmarks: score column and Health\'s keys', () => {
     await refreshed;
   });
 
-  test('s opens the panel\'s Health section', async ({ page }) => {
+  test('s opens the panel\'s Health tab', async ({ page }) => {
     const { bookmarks } = await openBookmarksWithHealth(page);
     await selectRow(page, bookmarks[0].name);
     await page.keyboard.press('s');
-    await expect(page.locator('#config-bm-panel [data-bm-section="health"]')).toHaveAttribute('open', '');
+    await expect(page.locator('#config-bm-panel [data-bm-pane="health"]')).toBeVisible();
   });
 });
 
@@ -265,9 +271,8 @@ test.describe('bookmarks: Health\'s bulk actions and duplicates', () => {
     await expect(head.locator('.config-bm-group-label')).toContainText(bookmarks[0].url);
     await expect(head.locator('.config-bm-group-count')).toHaveText('2');
     await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[0].name }) }).first().click();
-    const actions = page.locator('#config-bm-panel [data-bm-section="actions"]');
-    if (await actions.getAttribute('open') === null) await actions.locator('summary').click();
-    await actions.locator('[data-bm-health-action="merge"]').click();
+    await page.locator('#config-bm-panel [data-bm-more-toggle]').click();
+    await page.locator('#config-bm-panel [data-bm-more-menu] [data-bm-health-action="merge"]').click();
     await page.locator('#app-modal.show').getByRole('button', { name: /Merge duplicates/i }).click();
     await expect.poll(() => merges.length).toBe(1);
     expect(merges[0].targetPageId).toBe(bookmarks[0].pageId);

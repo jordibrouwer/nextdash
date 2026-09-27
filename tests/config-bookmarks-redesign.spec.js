@@ -83,25 +83,16 @@ test.describe('config bookmarks redesign: panel', () => {
   const { captureRowWrites } = require('./config-bookmarks-helpers');
   const section = (page, name) => page.locator(`#config-bm-panel [data-bm-section="${name}"]`);
 
-  test('the panel has Edit, Health, Usage and Actions sections, and the URL as a link', async ({ page }) => {
+  test('the panel has Details, Health and Usage tabs, the actions in its head, and the URL as a link', async ({ page }) => {
+    await page.addInitScript(() => { try { localStorage.removeItem('nextdash.bm.panelTab'); } catch {} });
     await openConfigBookmarks(page);
     await bmRow(page, 1).click();
-    for (const name of ['edit', 'health', 'usage', 'actions']) {
-      await expect(section(page, name)).toHaveCount(1);
+    for (const name of ['details', 'health', 'usage']) {
+      await expect(page.locator(`#config-bm-panel [data-bm-tab-panel="${name}"]`)).toHaveCount(1);
     }
     await expect(section(page, 'edit').locator('[data-bm-field="name"]')).toBeVisible();
+    await expect(page.locator('#config-bm-panel .config-bm-panel-head [data-bm-panel-action="open"]')).toBeVisible();
     await expect(page.locator('#config-bm-panel .config-bm-panel-head a[href^="http"]')).toHaveCount(1);
-  });
-
-  test('a closed section stays closed on the next bookmark', async ({ page }) => {
-    await openConfigBookmarks(page);
-    await bmRow(page, 1).click();
-    const health = section(page, 'health');
-    if (await health.getAttribute('open') !== null) await health.locator('summary').click();
-    await expect(health).not.toHaveAttribute('open', '');
-    await bmRow(page, 2).click();
-    await expect(section(page, 'health')).toHaveCount(1);
-    await expect(section(page, 'health')).not.toHaveAttribute('open', '');
   });
 
   test('a live field still saves from inside its section', async ({ page }) => {
@@ -213,7 +204,8 @@ test.describe('config bookmarks redesign: the panel fits', () => {
   test('a selected bookmark\'s panel fits on screen without needing its scrollbar', async ({ page }) => {
     await openConfigBookmarks(page);
     await bmRow(page, 1).click();
-    await expect(page.locator('#config-bm-panel [data-bm-section="edit"]')).toHaveAttribute('open', '');
+    await page.locator('#config-bm-panel [data-bm-tab-panel="details"]').click();
+    await expect(page.locator('#config-bm-panel [data-bm-pane="details"]')).toBeVisible();
     const m = await page.locator('#config-bm-panel').evaluate((el) => ({
       bottom: Math.round(el.getBoundingClientRect().bottom),
       inner: window.innerHeight,

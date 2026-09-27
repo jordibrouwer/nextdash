@@ -1484,3 +1484,171 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-drawer .config-bm-pane
         grid-template-columns: 1fr;
     }
 }
+
+/* ── The panel's tabs (Details, Health, Usage) ───────────────────────── */
+
+.config-bm-panel-where {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-panel-heading .config-bm-score {
+    flex: none;
+}
+
+/* The rest of the actions, under ⋯ in the head. */
+.config-bm-more {
+    position: relative;
+}
+
+.config-bm-more-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    min-width: 14rem;
+    padding: var(--space-1, 0.25rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-modal, var(--background-primary));
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.config-bm-more-menu[hidden] {
+    display: none;
+}
+
+html body .config-bm-more-menu .config-btn {
+    justify-content: flex-start;
+    text-align: left;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+}
+
+.config-bm-more-menu .config-btn:hover,
+.config-bm-more-menu .config-btn:focus-visible {
+    background: var(--background-secondary);
+}
+
+/* A segmented bar: plain words next to each other read as text, not tabs. */
+.config-bm-tabs {
+    display: flex;
+    gap: 3px;
+    padding: 3px;
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.config-bm-tab {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1, 0.25rem);
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    border: 0;
+    border-radius: calc(var(--radius-5, 8px) - 2px);
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+}
+
+.config-bm-tab:hover {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--background-primary) 50%, transparent);
+}
+
+.config-bm-tab.is-active {
+    color: var(--accent-primary);
+    background: var(--background-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+}
+
+.config-bm-tab kbd {
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
+.config-bm-tab-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-error);
+}
+
+.config-bm-pane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-bm-pane[hidden] {
+    display: none;
+}
+
+.config-bm-pane-sub {
+    margin: var(--space-2, 0.5rem) 0 0;
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-bm-usage-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.config-bm-usage-tiles > div {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-4, 6px);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-usage-tiles b {
+    display: block;
+    color: var(--text-primary);
+    font-size: 1.05em;
+}
+
+/*
+ * The head's first line is a grid, so the score and ⋯ keep their place at
+ * the right edge whatever the name or the address below it does. In Safari
+ * a long address with nowhere to break widened the head past the panel and
+ * carried the score out with it: every part of the head may shrink, and the
+ * address breaks anywhere.
+ */
+.config-bm-panel,
+.config-bm-panel-head,
+.config-bm-panel-body {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.config-bm-panel-head--single .config-bm-panel-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    min-width: 0;
+}
+
+.config-bm-panel-url {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+}

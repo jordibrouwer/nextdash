@@ -164,8 +164,11 @@
                 + (health.hasMonitorStats(issue) ? health.buildMonitorStatsHtml(issue) : '');
         },
 
-        /** Health's row actions, for the Actions section. */
-        renderBmHealthActions(b) {
+        /**
+         * Health's row actions. The panel's head carries Re-check itself, so
+         * its ⋯ menu asks for the rest with `skip`.
+         */
+        renderBmHealthActions(b, { skip = [] } = {}) {
             const health = this._bmHealthModule;
             const issue = this.bmHealthIssue(b);
             if (!health || !issue) return '';
@@ -173,7 +176,7 @@
             const t = (key, fallback) => health.t(`dashboard.${key}`, fallback);
             const button = (action, label) => `<button type="button" class="config-btn config-btn--small" data-bm-health-action="${action}">${esc(label)}</button>`;
             return [
-                button('recheck', t('healthRecheck', 'Re-check')),
+                skip.includes('recheck') ? '' : button('recheck', t('healthRecheck', 'Re-check')),
                 button('redirect', t('healthMenuRedirect', 'Detect redirect')),
                 button('title', t('healthMenuTitle', 'Refresh title')),
                 button('archive', t('healthMenuArchive', 'Open archived copy')),

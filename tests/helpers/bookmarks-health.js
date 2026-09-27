@@ -5,9 +5,10 @@ const { prepareDashboardInteraction } = require('../e2e-helpers');
  * bookmarks, so the join has real URLs to match. The first bookmark is broken,
  * the second stale, the rest healthy; `shape` can rewrite the issues, and
  * `report` adds fields to the report itself (duplicateGroups, say); `prepare`
- * runs in the page before the bookmarks are read.
+ * runs in the page before the bookmarks are read; `view: 'library'` opens the
+ * Bookmarks view instead of Config → Bookmarks.
  */
-async function openBookmarksWithHealth(page, shape = (issues) => issues, { report = () => ({}), prepare = null } = {}) {
+async function openBookmarksWithHealth(page, shape = (issues) => issues, { report = () => ({}), prepare = null, view = 'config' } = {}) {
   await page.setViewportSize({ width: 1500, height: 950 });
   await page.goto('/');
   await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
@@ -32,7 +33,9 @@ async function openBookmarksWithHealth(page, shape = (issues) => issues, { repor
     }),
   }));
   await prepareDashboardInteraction(page);
-  await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+  // 'library' is the Bookmarks view (#bookmarks); 'config' is Config → Bookmarks.
+  if (view === 'library') await page.evaluate(() => { window.location.hash = '#bookmarks'; });
+  else await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
   await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
   return { bookmarks, issues };
 }
