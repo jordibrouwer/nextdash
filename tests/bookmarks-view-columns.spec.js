@@ -55,3 +55,28 @@ test.describe('bookmarks view: added and usage columns', () => {
     await expect(row(page, bookmarks[0].name).locator('.config-bm-spark')).toBeHidden();
   });
 });
+
+test('tag chips stay whole inside their cell, whatever the width', async ({ page }) => {
+  const { bookmarks } = await openBookmarksWithHealth(page, undefined, {
+    view: 'library',
+    prepare: () => {
+      window.dashboardInstance.allBookmarks.slice(0, 4).forEach((b) => { b.tags = ['social', 'humor', 'weblog', 'events']; });
+    },
+  });
+  for (const width of [900, 1080, 1440]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.waitForTimeout(250);
+    const spill = await page.locator('#config-bm-list .config-bm-row').evaluateAll((rows) => rows.flatMap((r) => {
+      const cell = r.querySelector('.config-bm-tags');
+      if (!cell) return [];
+      const c = cell.getBoundingClientRect();
+      return [...cell.querySelectorAll('.config-bm-tag:not([hidden])')]
+        .filter((t) => { const b = t.getBoundingClientRect(); return b.left < c.left - 0.5 || b.right > c.right + 0.5; })
+        .map((t) => t.textContent);
+    }));
+    expect(spill, `chips cut at ${width}px`).toEqual([]);
+    // And at least one chip or its count is shown for a tagged bookmark.
+    await expect(page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[0].name }) })
+      .first().locator('.config-bm-tag:not([hidden])').first()).toBeVisible();
+  }
+});

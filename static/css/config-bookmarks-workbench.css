@@ -1865,8 +1865,11 @@ html body .config-bm-more-menu .config-btn {
 }
 
 @media (min-width: 800px) {
+    /* The tags keep room for one chip and its count: squeezed to nothing,
+       the chip that fitWorkbenchTags left showing was cut in half. The name
+       gives way first. */
     .config-bm-workbench.is-library .config-bm-row {
-        grid-template-columns: 1.1rem 1.4rem minmax(14rem, 1fr) minmax(0, 6rem) 1.5rem 3.5rem 3rem 5rem 2.6rem;
+        grid-template-columns: 1.1rem 1.4rem minmax(8rem, 1fr) minmax(5rem, 6rem) 1.5rem 3.5rem 3rem 5rem 2.6rem;
     }
 }
 
@@ -1879,7 +1882,7 @@ html body .config-bm-more-menu .config-btn {
 
 @media (min-width: 1100px) {
     .config-bm-workbench.is-library .config-bm-row {
-        grid-template-columns: 1.1rem 1.4rem minmax(14rem, 1fr) minmax(0, 9rem) 1.5rem 3.5rem 4.5rem 3rem 5rem 5.5rem 2.6rem;
+        grid-template-columns: 1.1rem 1.4rem minmax(10rem, 1fr) minmax(5rem, 9rem) 1.5rem 3.5rem 4.5rem 3rem 5rem 5.5rem 2.6rem;
     }
 
     .config-bm-workbench.is-library .config-bm-spark {
