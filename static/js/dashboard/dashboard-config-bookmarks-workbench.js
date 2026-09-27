@@ -699,7 +699,11 @@
         // After the key: the Health parts find their bookmark by it.
         this.bindBmHealthPanel?.(panel);
         void this.fillWorkbenchSuggestions(panel);
-        if (mode === 'single') void this.fillBmDetailsCopies?.(panel, this.findBookmarkByKey(key));
+        if (mode === 'single') {
+            const b = this.findBookmarkByKey(key);
+            void this.fillBmDetailsCopies?.(panel, b);
+            if (this.standalone) void this.fillBmDetailsPreview?.(panel, b);
+        }
         if (mode === 'bulk') void this.fillWorkbenchBulkSuggestions(panel);
         // (The Bookmarks view opens its side panel for a selection itself.)
         if (mode === 'bulk' && !this.standalone && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });

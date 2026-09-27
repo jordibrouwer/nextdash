@@ -58,6 +58,31 @@ test.describe('bookmark panel: Details', () => {
     await expect(acc(details(page), 'preview')).toContainText('I\'m here \u2013 now');
   });
 
+  test('what the server already knows of the preview fills in what the bookmark lacks', async ({ page }) => {
+    const asked = [];
+    await page.route('**/api/bookmark-preview?**', (route) => {
+      asked.push(route.request().url());
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ title: 'Cached title', description: 'Cached description', image: '/data/preview-images/cached.png' }) });
+    });
+    const { bookmarks } = await open(page, () => {
+      const [first, second] = window.dashboardInstance.allBookmarks;
+      // Saved before the image was: title and text, but no picture.
+      Object.assign(second, { previewTitle: 'Stored title', previewDesc: 'Stored', previewImage: '', previewEnriched: false });
+      // Already answered for: nothing to ask.
+      Object.assign(first, { previewTitle: 'Done', previewImage: '/data/preview-images/done.png', previewEnriched: true });
+    });
+    await pick(page, bookmarks[1].name);
+    const preview = acc(details(page), 'preview');
+    await preview.locator('summary').click();
+    await expect(preview.locator('.config-bm-usage-kv', { hasText: 'Image' })).toContainText('yes');
+    await expect(details(page).locator('.config-bm-details-viz img.config-bm-details-image')).toHaveAttribute('src', '/data/preview-images/cached.png');
+    expect(asked.length).toBe(1);
+    await pick(page, bookmarks[0].name);
+    await expect(acc(details(page), 'preview').locator('.config-bm-usage-kv', { hasText: 'Image' })).toContainText('yes');
+    expect(asked.length).toBe(1);
+  });
+
   test('checking is Health\'s: no field in Details, a chip that leads there', async ({ page }) => {
     const { bookmarks } = await open(page);
     await pick(page, bookmarks[1].name);

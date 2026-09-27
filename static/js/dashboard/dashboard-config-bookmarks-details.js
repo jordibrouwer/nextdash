@@ -125,6 +125,45 @@
         },
 
         /** Ask the server which copies it keeps of this bookmark, and draw them. */
+        /**
+         * The server's preview for a bookmark saved before it had one in full.
+         *
+         * The hover card asks for it the same way and keeps it on the bookmark
+         * in memory, so Details says what the card shows rather than "no
+         * image" beside a picture. Asked once per bookmark: previewEnriched
+         * marks one the server has answered for, as the card's shortcut does.
+         */
+        async fillBmDetailsPreview(panel, b) {
+            if (!b?.url || b.previewEnriched || String(b.previewImage || '').trim() || this._bmPreviewAsked?.has(b.url)) return;
+            this._bmPreviewAsked = this._bmPreviewAsked || new Set();
+            this._bmPreviewAsked.add(b.url);
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            let preview = null;
+            try {
+                const res = await fetcher(`/api/bookmark-preview?url=${encodeURIComponent(b.url)}`);
+                if (res.ok) preview = await res.json();
+            } catch {
+                return;
+            }
+            if (!preview) return;
+            // What the bookmark has stays; only what it lacks is filled in.
+            b.previewTitle = b.previewTitle || preview.title || '';
+            b.previewDesc = b.previewDesc || preview.description || '';
+            b.previewImage = b.previewImage || preview.image || '';
+            b.previewEnriched = true;
+            // Only while it is still this bookmark's panel. The summary and
+            // the Preview section are redrawn in place: the rest of the panel,
+            // and whatever is being typed in it, stays as it is.
+            if (!panel?.isConnected || this.findBookmarkByKey(panel.dataset.bmPanelKey) !== b) return;
+            const viz = panel.querySelector('[data-bm-pane="details"] .config-bm-details-viz');
+            if (viz) viz.outerHTML = this.renderBmDetailsSummary(b);
+            const section = panel.querySelector('[data-bm-acc="preview"]');
+            const body = section?.querySelector(':scope > .lvs-drawer-section-body');
+            if (body) body.innerHTML = this.renderBmDetailsPreview(b);
+            const answer = section?.querySelector(':scope > summary .config-bm-acc-answer');
+            if (answer && String(b.previewTitle || '').trim()) answer.textContent = this.t('config.bmDetailsFetched', 'fetched');
+        },
+
         async fillBmDetailsCopies(panel, b) {
             const host = panel?.querySelector('[data-bm-copies]');
             const count = panel?.querySelector('[data-bm-copies-count]');
