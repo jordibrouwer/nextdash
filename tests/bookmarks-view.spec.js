@@ -186,3 +186,24 @@ test.describe('bookmarks view: the side panel closes from outside', () => {
     await expect(drawer(page)).toBeVisible();
   });
 });
+
+test('the health summary in the rail is the same tile as Health\'s, edges and all', async ({ page }) => {
+  const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
+  await openBookmarksWithHealth(page, undefined, { view: 'library' });
+  await page.evaluate(() => { document.body.dataset.depth = 'rich'; });
+  const tile = page.locator('#config-bm-rail [data-bm-health-summary]');
+  await expect(tile).toBeVisible();
+  // Health's own summary tile: .lvs-summary, which the themes light and lift.
+  const look = await tile.evaluate((el) => {
+    const probe = document.createElement('div');
+    probe.className = 'lvs-summary';
+    el.parentElement.appendChild(probe);
+    const want = getComputedStyle(probe);
+    const got = getComputedStyle(el);
+    const out = { got: [got.boxShadow, got.backgroundColor, got.borderRadius], want: [want.boxShadow, want.backgroundColor, want.borderRadius] };
+    probe.remove();
+    return out;
+  });
+  expect(look.got).toEqual(look.want);
+  expect(look.got[0]).not.toBe('none');
+});

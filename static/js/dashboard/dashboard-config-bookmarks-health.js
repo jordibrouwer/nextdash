@@ -128,7 +128,9 @@
             // No aria-label: the rows already read as text (score, trend,
             // updated), which says more than a fixed label would, and
             // role="button" is enough to announce that Enter/Space act on it.
-            return body ? `<div class="config-bm-health-summary" data-bm-health-summary
+            // .lvs-summary: Health's own tile, so a theme's edges, glow and
+            // (under glass) blur reach this one the same way.
+            return body ? `<div class="config-bm-health-summary lvs-summary" data-bm-health-summary
                 role="button" tabindex="0">${body}</div>` : '';
         },
 

@@ -1051,15 +1051,13 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
 /* ── Health's summary at the top of the rail ─────────────────────────────
    The rows Health's own summary shows (dashboard-config-bookmarks-health.js
    renderBmHealthSummary), in the slab the shell's summary uses. */
+/* Ground, corner and padding are .lvs-summary's (list-view-shell.css), the
+   tile Health's rail carries; the theme's edges come with that class. */
 .config-bm-health-summary {
-    display: flex;
-    flex-direction: column;
     gap: 2px;
-    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     margin-bottom: var(--space-2, 0.5rem);
-    border-radius: var(--radius-5, 8px);
-    background: var(--surface-3, var(--background-secondary));
     font-size: var(--font-size-small);
+    cursor: pointer;
 }
 
 .config-bm-health-summary-row {
