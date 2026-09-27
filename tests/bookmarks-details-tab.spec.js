@@ -44,6 +44,20 @@ test.describe('bookmark panel: Details', () => {
     await expect(details(page).locator('[data-bm-field="name"]')).toBeVisible();
   });
 
+  test('a preview stored with HTML entities reads as text', async ({ page }) => {
+    const { bookmarks } = await open(page, () => {
+      const b = window.dashboardInstance.allBookmarks[1];
+      b.previewTitle = 'I&#039;m here &#8211; now';
+      b.previewDesc = 'Fish &amp; chips';
+    });
+    await pick(page, bookmarks[1].name);
+    const viz = details(page).locator('.config-bm-details-viz');
+    await expect(viz.locator('.config-bm-details-title')).toHaveText('I\'m here \u2013 now');
+    await expect(viz.locator('.config-bm-details-desc')).toHaveText('Fish & chips');
+    await acc(details(page), 'preview').locator('summary').click();
+    await expect(acc(details(page), 'preview')).toContainText('I\'m here \u2013 now');
+  });
+
   test('checking is Health\'s: no field in Details, a chip that leads there', async ({ page }) => {
     const { bookmarks } = await open(page);
     await pick(page, bookmarks[1].name);

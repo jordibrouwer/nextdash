@@ -16,12 +16,19 @@
     if (typeof global.DashboardConfig !== 'function') return;
 
     Object.assign(global.DashboardConfig.prototype, {
+        /** A stored preview field as text: older previews still hold the
+         *  site's entities (&#039;), which escaping would print as written. */
+        bmPreviewText(value) {
+            const text = String(value || '').trim();
+            return this.dash.preview?.decodeEntities?.(text) ?? text;
+        },
+
         /** The summary on top of Details. */
         renderBmDetailsSummary(b) {
             const esc = (v) => this.dash.escapeHtml(v);
             const t = (key, fallback) => this.t(`config.${key}`, fallback);
-            const title = String(b.previewTitle || '').trim();
-            const desc = String(b.previewDesc || '').trim();
+            const title = this.bmPreviewText(b.previewTitle);
+            const desc = this.bmPreviewText(b.previewDesc);
             // Only a copy this server cached: a remote image would tell the
             // site behind it that someone looked (preview-card-no-third-party).
             const image = /^\/(?!\/)/.test(String(b.previewImage || '')) ? b.previewImage : '';
@@ -92,7 +99,7 @@
             const kv = (label, value) => `<div class="config-bm-usage-kv"><span>${esc(label)}</span><span>${esc(value)}</span></div>`;
             const button = (action, label) => `<button type="button" class="config-btn config-btn--small" data-bm-panel-action="${action}">${esc(label)}</button>`;
             return `
-                ${kv(t('bmDetailsPreviewTitle', 'Title'), String(b.previewTitle || '').trim() || '—')}
+                ${kv(t('bmDetailsPreviewTitle', 'Title'), this.bmPreviewText(b.previewTitle) || '—')}
                 ${kv(t('bmDetailsPreviewDesc', 'Description'), String(b.previewDesc || '').trim() ? yes : no)}
                 ${kv(t('bmDetailsPreviewImage', 'Image'), String(b.previewImage || '').trim() ? yes : no)}
                 ${kv(t('bmDetailsIcon', 'Icon'), String(b.icon || '').trim() ? yes : no)}
