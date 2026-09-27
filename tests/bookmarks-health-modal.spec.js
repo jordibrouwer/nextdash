@@ -257,3 +257,46 @@ test('Monitors & trend: the course in any series, every monitor together, rememb
   await expect(page.locator('#app-modal.show [data-bm-health-modal-tab="monitors"]')).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#app-modal.show [data-bm-health-modal-card="trend"]')).toBeVisible();
 });
+
+/*
+ * Smaller still: the Monitors card leaves the overview (it is whole on its own
+ * tab), and in the narrow columns every figure stays inside its card.
+ */
+test('at 1000x620 the Monitors card gives way, and nothing spills out of a card', async ({ page }) => {
+  await page.addInitScript(() => { try { localStorage.removeItem('nextdash.bm.healthModalTab'); } catch {} });
+  await openBookmarksWithHealth(
+    page,
+    (issues) => issues.map((issue, i) => (i === 0 ? { ...issue, monitor: true } : issue)),
+    {
+      view: 'library',
+      report: (issues) => ({
+        summary: fullSummary(issues),
+        fleet: {
+          monitors: 1,
+          uptime24h: { ratio: 1, samples: 10 },
+          uptime7d: { ratio: 1, samples: 50 },
+          uptime30d: { ratio: 1, samples: 200 },
+          downNow: 0,
+          avgResponseMs: 120,
+          worst: [],
+          incidents: [],
+        },
+      }),
+    },
+  );
+  await page.setViewportSize({ width: 1000, height: 620 });
+  await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
+  const body = page.locator('#app-modal.show .modal-body');
+  await expect.poll(() => body.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
+  await expect(body.locator('[data-bm-health-modal-card="monitors"]')).toBeHidden();
+  const spills = await body.locator('[data-bm-health-modal-pane="overview"] .bm-health-modal-card').evaluateAll((cards) =>
+    cards.filter((c) => c.offsetParent).flatMap((card) => {
+      const edge = card.getBoundingClientRect().right;
+      return [...card.querySelectorAll('span, b, i, div')]
+        .filter((el) => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > edge + 1)
+        .map((el) => `${card.dataset.bmHealthModalCard}: ${el.className || el.tagName} "${el.textContent.trim().slice(0, 20)}"`);
+    }));
+  expect(spills).toEqual([]);
+  await body.locator('[data-bm-health-modal-tab="monitors"]').click();
+  await expect(body.locator('[data-bm-health-modal-card="fleet-uptime"]')).toBeVisible();
+});

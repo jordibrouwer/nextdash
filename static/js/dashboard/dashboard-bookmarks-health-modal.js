@@ -59,7 +59,9 @@
             const body = document.querySelector('#app-modal.show .modal-body');
             const grid = body?.querySelector('.bm-health-modal-grid');
             if (!body || !grid) return;
-            const TIERS = ['is-snug', 'is-snugger', 'is-smallest'];
+            // The last step leaves out the Monitors card: the Monitors & trend
+            // tab has all of it, so the overview can do without.
+            const TIERS = ['is-snug', 'is-snugger', 'is-smallest', 'is-without-monitors'];
             const fits = () => body.scrollHeight <= body.clientHeight + 1;
             grid.classList.remove(...TIERS);
             for (const tier of TIERS) {
@@ -514,7 +516,7 @@
                 const mode = CM?.of ? CM.of(issue) : (issue.monitor ? 'monitor' : (issue.checkStatus ? 'periodic' : 'off'));
                 counts[mode] = (counts[mode] || 0) + 1;
             });
-            const tile = (mode, label) => `<div class="bm-health-modal-tile">
+            const tile = (mode, label) => `<div class="bm-health-modal-tile" title="${esc(label)}">
                 <b data-bm-health-modal-count="check-${esc(mode)}">${counts[mode] || 0}</b><span>${esc(label)}</span></div>`;
             const tiles = [
                 tile('off', CM ? CM.meta(CM.OFF).label : this.t('config.checkModeOff', 'Off')),

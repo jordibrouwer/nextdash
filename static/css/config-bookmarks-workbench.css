@@ -1196,7 +1196,9 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
 .bm-health-modal-bar-row,
 .bm-health-modal-page-row {
     display: grid;
-    grid-template-columns: 9rem 1fr 2.5rem;
+    /* Every column may give: in a narrow card the label shortens with "…"
+       rather than pushing the count out past the card's edge. */
+    grid-template-columns: minmax(0, 9rem) minmax(1rem, 1fr) minmax(1.5rem, auto);
     align-items: center;
     gap: var(--space-2, 0.5rem);
     width: 100%;
@@ -1211,7 +1213,7 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
 }
 
 .bm-health-modal-page-row {
-    grid-template-columns: 7rem 1fr 3rem 2.5rem;
+    grid-template-columns: minmax(0, 7rem) minmax(1rem, 1fr) minmax(2rem, auto) minmax(1.5rem, auto);
 }
 
 .bm-health-modal-page-row.is-static {
@@ -1248,7 +1250,13 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
     text-decoration: underline;
 }
 
+.bm-health-modal-bar-count {
+    text-align: right;
+}
+
+.bm-health-modal-bar-label,
 .bm-health-modal-page-name {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1322,12 +1330,16 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
 /* 6. Checking coverage / 7. Monitors share the same tile and kv shape */
 .bm-health-modal-tiles {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-2, 0.5rem);
     margin-bottom: var(--space-2, 0.5rem);
 }
 
 .bm-health-modal-tile {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-3, 4px);
@@ -1409,9 +1421,9 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
     }
 }
 
-/* Three steps down, taken one at a time until the cards fit the window
+/* Four steps down, taken one at a time until the cards fit the window
    without a scrollbar (fitBmHealthModal): tighter spacing, then more and
-   narrower columns, then smaller type. */
+   narrower columns, then smaller type, then no Monitors card. */
 .bm-health-modal-grid.is-snug {
     column-gap: var(--space-2, 0.5rem);
 }
@@ -1445,6 +1457,14 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
 .bm-health-modal-grid.is-smallest .bm-health-modal-bar-row,
 .bm-health-modal-grid.is-smallest .bm-health-modal-page-row {
     font-size: var(--text-2xs, 0.7rem);
+}
+
+/* The fourth step: the Monitors card goes, being whole on its own tab.
+   Narrower columns than the third step's would fit more, but the counts and
+   the coverage tiles no longer fit inside their cards; below this, the modal
+   scrolls. */
+.bm-health-modal-grid.is-without-monitors [data-bm-health-modal-card="monitors"] {
+    display: none;
 }
 
 /* ── The panel's tabs (Details, Health, Usage) ───────────────────────── */
