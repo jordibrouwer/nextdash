@@ -1663,6 +1663,15 @@ html body .config-bm-more-menu .config-btn {
     min-width: 0;
 }
 
+/* In the Bookmarks view's side panel the name keeps to one line too, for the
+   same reason; Config's narrow column still gives it two. */
+.config-bm-drawer .config-bm-panel-head--single .config-bm-panel-title {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* One line each, cut short with an ellipsis: an address or a place that
    wrapped made the head taller for one bookmark than the next, and the tabs
    under it jumped on every switch. The whole address is its title. */

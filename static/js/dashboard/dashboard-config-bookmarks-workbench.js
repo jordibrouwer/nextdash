@@ -479,10 +479,10 @@
         const scoreTone = score == null ? '' : (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
         // Config's panel is a 260px column: there the head keeps to Open,
         // Edit and ⋯, and page › category is left to the form below it.
-        const where = [
-            b.category ? `${this.pageLabel(b.pageId)} › ${this.railCategoryLabel(b.pageId, b.category)}` : this.pageLabel(b.pageId),
-            b.shortcut ? `${this.t('config.bmFieldShortcut', 'Shortcut').toLowerCase()} ${b.shortcut}` : '',
-        ].filter(Boolean).join(' · ');
+        // The shortcut is not repeated here: the form and the list both show it.
+        const where = b.category
+            ? `${this.pageLabel(b.pageId)} › ${this.railCategoryLabel(b.pageId, b.category)}`
+            : this.pageLabel(b.pageId);
         // A problem worth a look: the dot on the Health tab says so without opening it.
         const troubled = state === 'broken' || state === 'down' || (issue && issue.status === 'broken');
         const tab = this.workbenchPanelTab();
@@ -527,7 +527,7 @@
             <header class="config-bm-panel-head config-bm-panel-head--single">
                 <div class="config-bm-panel-heading">
                     <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
-                    <span class="config-bm-panel-title">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
+                    <span class="config-bm-panel-title" title="${esc(b.name || b.url || '')}">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
                     ${score == null ? '' : `<span class="config-bm-score" data-tone="${scoreTone}">${esc(String(score))}</span>`}
                     <span class="config-bm-more">
                         <button type="button" class="config-btn config-btn--small" data-bm-more-toggle aria-haspopup="menu" aria-expanded="false"

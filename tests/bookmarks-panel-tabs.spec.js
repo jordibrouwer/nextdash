@@ -111,6 +111,8 @@ test('a long address stays on one line, so the head and tabs do not move between
     prepare: () => {
       const [long, short] = window.dashboardInstance.allBookmarks;
       long.url = `https://example.com/${'averyveryverylongpathsegmentwithoutanybreaks'.repeat(4)}`;
+      long.name = 'A name long enough to need two lines in the panel head, easily';
+      long.shortcut = 'LONGX';
       short.url = 'https://example.org/';
     },
   });
@@ -128,8 +130,13 @@ test('a long address stays on one line, so the head and tabs do not move between
       tabs: Math.round((await drawer.locator('.config-bm-tabs').boundingBox()).y),
     };
   };
-  await row(bookmarks[0].name).click();
+  await row('A name long enough').click();
   const long = await measure();
+  const title = drawer.locator('.config-bm-panel-head .config-bm-panel-title');
+  expect(await title.evaluate((el) => el.getBoundingClientRect().height < 2 * parseFloat(getComputedStyle(el).fontSize))).toBe(true);
+  await expect(title).toHaveAttribute('title', /A name long enough/);
+  // The shortcut is the form's and the list's to show, not the head's.
+  await expect(drawer.locator('.config-bm-panel-where')).not.toContainText('LONGX');
   await row(bookmarks[1].name).click();
   const short = await measure();
   expect(long.url.lines).toBe(1);
