@@ -2749,7 +2749,8 @@ body[data-density-mode="dense"] .config-bm-workbench {
 }
 
 .bm-health-large-line .is-label {
-    font-size: 7px;
+    /* Real pixels now: the chart is drawn at its own width. */
+    font-size: 10px;
     fill: var(--text-secondary);
 }
 
@@ -2985,4 +2986,10 @@ body[data-density-mode="dense"] .config-bm-workbench {
     flex-wrap: wrap;
     gap: var(--space-1-5, 0.35rem);
     margin-top: var(--space-2, 0.5rem);
+}
+
+/* The charts are drawn at their card's measured width (fitBmLargeCharts): a
+   scrollbar that came and went would change that width after the fact. */
+.modal.bm-health-large .modal-body {
+    scrollbar-gutter: stable;
 }

@@ -35,6 +35,7 @@
                 this._bmLargeRange = BM_LARGE_RANGES.includes(start) ? start : '30';
             }
             this._bmLargeKey = key;
+            this._bmLargeArgs = { b, issue };
             const show = (hist) => {
                 this._bmLargeHist = hist;
                 const html = this.renderBmHealthLarge(b, issue, hist, this._bmLargeRange);
@@ -44,6 +45,7 @@
                     root.innerHTML = html;
                     const title = document.getElementById('modal-title');
                     if (title) title.textContent = b.name || this.formatBookmarkUrlDisplay(b.url);
+                    this.fitBmLargeCharts();
                     return;
                 }
                 global.AppModal.show({
@@ -57,12 +59,53 @@
                 });
                 this.bindBmHealthLarge();
                 this.bindBmHealthLargeKeys();
+                this.fitBmLargeCharts();
             };
             show(null);
             const hist = await this.fetchBmHealthHistory(b.url);
             // Moved on to another bookmark, or closed, meanwhile.
             if (this._bmLargeKey !== key || !document.querySelector('#app-modal.show #modal-text [data-bm-health-large]')) return;
             show(hist);
+        },
+
+        /**
+         * The charts drawn at the width they are shown at.
+         *
+         * They were drawn 320 wide and stretched to their card, which pulled
+         * the dates and the dots out of shape on a wide screen. The card is
+         * measured once it is on screen and the body drawn again at that width
+         * when it differs -- and again whenever the body changes size.
+         */
+        fitBmLargeCharts() {
+            const root = document.getElementById('modal-text');
+            if (!root?.querySelector('[data-bm-health-large]') || !this._bmLargeArgs) return;
+            // Each kind in its own card, and the cards are not all one width.
+            const widths = { ...(this._bmLargeW || {}) };
+            let changed = false;
+            ['line', 'days', 'heat'].forEach((kind) => {
+                const svg = root.querySelector(`[data-bm-health-large] svg.bm-health-large-${kind}`);
+                const width = Math.floor(svg?.getBoundingClientRect().width || 0);
+                if (width > 80 && Math.abs(width - (widths[kind] || 0)) > 2) {
+                    widths[kind] = width;
+                    changed = true;
+                }
+            });
+            if (changed) {
+                this._bmLargeW = widths;
+                const { b, issue } = this._bmLargeArgs;
+                root.innerHTML = this.renderBmHealthLarge(b, issue, this._bmLargeHist, this._bmLargeRange);
+            }
+            // The body's own size, not the window's: a scrollbar coming or
+            // going narrows the cards without any resize event.
+            if (!this._bmLargeResize && typeof global.ResizeObserver === 'function') {
+                let frame = 0;
+                this._bmLargeResize = new global.ResizeObserver(() => {
+                    if (!document.querySelector('#app-modal.show #modal-text [data-bm-health-large]')) return;
+                    cancelAnimationFrame(frame);
+                    frame = requestAnimationFrame(() => this.fitBmLargeCharts());
+                });
+                this._bmLargeResize.observe(root);
+            }
         },
 
         async fetchBmHealthHistory(url) {
@@ -416,7 +459,8 @@
 
         /** A line over time, with a dashed p95 line when there is one. */
         bmLargeLineChart(points, from, to, p95, esc, hours = false) {
-            const w = 320;
+            // Drawn at the card's own width (fitBmLargeCharts), so nothing stretches.
+            const w = this._bmLargeW?.line || 320;
             const h = 70;
             const max = Math.max(p95 || 0, ...points.map((p) => p.y)) * 1.1 || 1;
             const x = (v) => 4 + ((v - from) / Math.max(1, to - from)) * (w - 8);
@@ -425,7 +469,7 @@
             const label = (ms) => (hours
                 ? new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
                 : new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }));
-            return `<svg class="bm-health-large-line" viewBox="0 0 ${w} ${h + 18}" width="100%" height="${h + 18}" role="img" preserveAspectRatio="none">
+            return `<svg class="bm-health-large-line" viewBox="0 0 ${w} ${h + 18}" width="100%" height="${h + 18}" role="img">
                 <line x1="4" y1="${h + 6}" x2="${w - 4}" y2="${h + 6}" class="is-axis"></line>
                 ${p95 ? `<line x1="4" y1="${y(p95).toFixed(1)}" x2="${w - 4}" y2="${y(p95).toFixed(1)}" class="is-p95"></line>` : ''}
                 <polyline points="${path}" class="is-line"></polyline>
@@ -439,7 +483,7 @@
 
         /** One bar per hour or per day: its height the share of checks that answered. */
         bmLargeBars(bars, esc) {
-            const w = 306;
+            const w = this._bmLargeW?.days || 306;
             const step = w / bars.length;
             const bw = Math.max(1, step * 0.76);
             const rects = bars.map((bar, i) => {
@@ -450,7 +494,7 @@
                 return `<rect x="${(i * step).toFixed(2)}" y="0" width="${step.toFixed(2)}" height="44" class="is-hit" data-tip="${esc(tip)}"></rect>
                     <rect x="${(i * step).toFixed(2)}" y="${42 - hgt}" width="${bw.toFixed(2)}" height="${hgt}" data-tone="${tone}" pointer-events="none"></rect>`;
             });
-            return `<svg class="bm-health-large-days" viewBox="0 0 ${w} 44" width="100%" height="48" preserveAspectRatio="none" role="img">${rects.join('')}</svg>`;
+            return `<svg class="bm-health-large-days" viewBox="0 0 ${w} 44" width="100%" height="44" role="img">${rects.join('')}</svg>`;
         },
 
         /** The period's days across (today: one), 24 hours down: down, slow, fine or no checks. */
@@ -469,7 +513,8 @@
                 else c.up += 1;
                 cells.set(k, c);
             });
-            const cw = 300 / nDays;
+            const W = this._bmLargeW?.heat || 300;
+            const cw = W / nDays;
             const rects = [];
             for (let d = 0; d < nDays; d += 1) {
                 for (let hr = 0; hr < 24; hr += 1) {
@@ -483,7 +528,7 @@
                     rects.push(`<rect x="${(d * cw).toFixed(2)}" y="${hr * 4}" width="${Math.max(0.5, cw - 1).toFixed(2)}" height="3.4" data-tone="${tone}" data-tip="${esc(tip)}"></rect>`);
                 }
             }
-            return `<svg class="bm-health-large-heat" viewBox="0 0 300 96" width="100%" height="92" preserveAspectRatio="none" role="img"
+            return `<svg class="bm-health-large-heat" viewBox="0 0 ${W} 96" width="100%" height="96" role="img"
                 aria-label="${esc(this.t('config.bmLargeHoursTitle', 'Availability by hour'))}">${rects.join('')}</svg>`;
         },
     });

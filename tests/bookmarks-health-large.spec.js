@@ -92,6 +92,23 @@ test.describe('bookmark health, in large', () => {
     expect(m.sh).toBeLessThanOrEqual(m.ch + 1);
   });
 
+  // Drawn at the width they are shown at: a chart stretched to its card
+  // pulls its dates and dots out of shape.
+  test('the charts are drawn at their own width, not stretched', async ({ page }) => {
+    await stubHistory(page);
+    const { bookmarks } = await open(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    await expect(modal(page)).toHaveAttribute('data-loading', '0');
+    // Within one percent: a card that settles a few pixels after the last
+    // measurement is not a stretch anyone sees; 320 drawn at 578 was.
+    const ratios = () => modal(page).locator('svg.bm-health-large-line, svg.bm-health-large-days, svg.bm-health-large-heat')
+      .evaluateAll((svgs) => svgs.map((svg) => Math.abs(svg.getBoundingClientRect().width / svg.viewBox.baseVal.width - 1)));
+    await expect.poll(async () => Math.max(...(await ratios()))).toBeLessThanOrEqual(0.01);
+    expect((await ratios()).length).toBe(3);
+  });
+
   test('the period is chosen from a list, and every chart follows it', async ({ page }) => {
     await stubHistory(page);
     const { bookmarks } = await open(page);
