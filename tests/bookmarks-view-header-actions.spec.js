@@ -39,6 +39,16 @@ test.describe('bookmarks view: the band\'s actions', () => {
     await expect(page).toHaveURL(/#bookmarks/);
   });
 
+  test('Work through\'s buttons sit side by side on one row', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await band(page).locator('[data-bm-work-through]').click();
+    const buttons = page.locator('.health-focus-overlay .health-focus-actions button');
+    await expect(buttons.first()).toBeVisible();
+    expect(await buttons.count()).toBeGreaterThanOrEqual(5);
+    const tops = await buttons.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+    expect(new Set(tops).size).toBe(1);
+  });
+
   test('f starts it from the list', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
     await page.evaluate(() => document.activeElement?.blur?.());

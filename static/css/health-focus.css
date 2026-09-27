@@ -26,7 +26,8 @@
 }
 
 .health-focus-card {
-    width: min(34rem, 100%);
+    /* Wide enough for its five actions on one row. */
+    width: min(42rem, 100%);
     max-height: 85vh;
     overflow-y: auto;
     padding: var(--space-5, 1.5rem);
@@ -277,6 +278,11 @@
     flex-wrap: wrap;
     gap: var(--space-2, 0.5rem);
     margin-bottom: var(--space-4, 0.9rem);
+}
+
+.health-focus-actions .config-btn {
+    padding-inline: var(--space-3, 0.75rem);
+    white-space: nowrap;
 }
 
 /* The key hint rides inside its button, the same pairing the row actions use,
