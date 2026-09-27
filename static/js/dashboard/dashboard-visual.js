@@ -549,8 +549,11 @@ class DashboardVisual {
     async updateHealthBadge() {
         const d = this.dash;
         const anchor = document.querySelector('.health-link a');
+        // The Bookmarks icon carries the same count: Health lives in that view
+        // too, and stays there when its own icon is switched off.
+        const library = document.querySelector('.library-link a');
         const utils = window.HealthBadgeUtils;
-        if (!anchor || !utils) return false;
+        if ((!anchor && !library) || !utils) return false;
 
         try {
             const summary = await utils.fetchBookmarkHealthSummary();
@@ -577,10 +580,13 @@ class DashboardVisual {
             // fills the uptime tile without a trip through the health view.
             d.renderCore?.refreshWidgets?.('uptime');
             // keepHref: the icon opens the view; its href is only the middle-click path.
-            utils.applyHealthBadgeToAnchor(anchor, summary, d.language, {
-                keepHref: true,
-                onApplied: (counts) => this.maybePulseHealthAlert(counts?.monitorDown || 0),
-            });
+            if (anchor) {
+                utils.applyHealthBadgeToAnchor(anchor, summary, d.language, {
+                    keepHref: true,
+                    onApplied: (counts) => this.maybePulseHealthAlert(counts?.monitorDown || 0),
+                });
+            }
+            if (library) utils.applyHealthBadgeToAnchor(library, summary, d.language, { keepHref: true });
             d.updateMiniStatusLine();
             return true;
         } catch (e) {

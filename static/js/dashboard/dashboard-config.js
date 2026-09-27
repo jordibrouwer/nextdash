@@ -1904,13 +1904,7 @@ class DashboardConfig {
         // the section holds, the way Health and Inbox do on the same band.
         // The Bookmarks view's band carries the way to Collection health too,
         // the way Health's band carries Work through and Rot report.
-        const healthButton = (this.standalone
-            ? `<button type="button" class="lvs-action" data-bm-open-structure>${this.dash.escapeHtml(
-                this.t('config.bmStructureButton', 'Pages & categories'))}</button>`
-            : '') + (this.standalone && this.dash.settings?.healthViewEnabled !== false
-            ? `<button type="button" class="lvs-action" data-bm-open-health-modal>${this.dash.escapeHtml(
-                this.t('config.bmHealthModalTitle', 'Collection health'))}</button>`
-            : '');
+        const healthButton = this.standalone ? (this.renderLibraryHeaderActions?.() || '') : '';
         const markup = context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
@@ -1935,6 +1929,7 @@ class DashboardConfig {
             actions.addEventListener('click', (e) => {
                 if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
                 else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
+                else this.handleLibraryHeaderClick?.(e);
             });
         }
         const bar = null;
@@ -2871,6 +2866,13 @@ class DashboardConfig {
             return false;
         }
 
+        // f: Work through, as in Health.
+        if (!e.shiftKey && e.key === 'f' && this.standalone && typeof this.startLibraryWorkThrough === 'function') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.startLibraryWorkThrough();
+            return true;
+        }
         // Shift+P and Shift+C: pages and categories, in the modal over the list.
         if (e.shiftKey && (e.key === 'P' || e.key === 'C') && typeof this.openStructureModal === 'function') {
             e.preventDefault();
@@ -22712,6 +22714,7 @@ class DashboardConfig {
             && window.DashboardBookmarksStructureModalReady === true
             && window.DashboardBookmarksCheckingModalReady === true
             && window.DashboardConfigBookmarksDetailsReady === true
+            && window.DashboardBookmarksHeaderReady === true
             && Boolean(window.BookmarkWorkbenchModel);
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
@@ -22741,6 +22744,9 @@ class DashboardConfig {
             // The panel's Details tab.
             .then(() => load('js/dashboard/dashboard-config-bookmarks-details.js',
                 'dashboardConfigBookmarksDetails', () => window.DashboardConfigBookmarksDetailsReady === true))
+            // The view's band: Work through, Rot report, Export, ⋯ and ⓘ.
+            .then(() => load('js/dashboard/dashboard-bookmarks-header.js',
+                'dashboardBookmarksHeader', () => window.DashboardBookmarksHeaderReady === true))
             .then(() => {
                 const waiting = this._bookmarksAwaitingRenderers === true;
                 this._bookmarksAwaitingRenderers = false;
@@ -24106,6 +24112,8 @@ class DashboardConfig {
             ['g / G', this.t('config.bookmarksKeyFirstLast', 'first / last')],
             ['/', this.t('config.bookmarksKeySearch', 'search')],
             ['Esc', this.t('config.bookmarksKeyClear', 'clear')],
+            ['Shift P / C', this.t('config.bmKeyStructure', 'pages / categories')],
+            ...(this.standalone ? [['f', this.t('config.bmKeyWorkThrough', 'work through')]] : []),
             // Health's own keys, listed only once its report has something for
             // them to act on — an empty list has nothing to re-check or ignore.
             ...(this._bmHealthModule ? [

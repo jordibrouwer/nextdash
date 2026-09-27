@@ -1787,6 +1787,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 /* Inline pill counter after the icon (overrides the absolute superscript dot). */
+.library-link--icon .health-badge,
 .health-link--icon .health-badge {
     position: static;
     top: auto;
@@ -1802,6 +1803,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     color: var(--accent-error);
 }
 
+.library-link--icon .health-badge.health-badge-warn,
 .health-link--icon .health-badge.health-badge-warn {
     border-color: color-mix(in srgb, var(--accent-warning) 45%, transparent);
     background: color-mix(in srgb, var(--accent-warning) 20%, transparent);
@@ -1812,6 +1814,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
    dead link. The two are told apart by movement, not hue: only the down state
    pulses the link (see .health-link.is-health-alert). Explicit here so the
    base .health-badge red still applies even beside the warn override above. */
+.library-link--icon .health-badge.health-badge-down,
 .health-link--icon .health-badge.health-badge-down {
     border-color: color-mix(in srgb, var(--accent-error) 55%, transparent);
     background: color-mix(in srgb, var(--accent-error) 22%, transparent);
@@ -8264,6 +8267,7 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
  * their own square: 14px, filled, white on the colour that says what it is.
  */
 .dashboard-section.section-controls .header-actions .page-inbox-badge,
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge,
 .dashboard-section.section-controls .header-actions .health-link--icon .health-badge {
     position: absolute;
     top: -6px;
@@ -8298,15 +8302,18 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     color: var(--background-primary);
 }
 
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge,
 .dashboard-section.section-controls .header-actions .health-link--icon .health-badge {
     background: var(--accent-error);
 }
 
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge.health-badge-warn,
 .dashboard-section.section-controls .header-actions .health-link--icon .health-badge.health-badge-warn {
     background: var(--accent-warning);
     color: var(--text-on-warning, #000);
 }
 
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge.health-badge-down,
 .dashboard-section.section-controls .header-actions .health-link--icon .health-badge.health-badge-down {
     background: var(--accent-error);
     color: #fff;

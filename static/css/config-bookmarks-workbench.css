@@ -2464,3 +2464,18 @@ html body .config-bm-more-menu .config-btn {
     border: 0;
     padding: 0;
 }
+
+/* The band's ⋯: anchored to its button, above the list. */
+.config-bm-header-more {
+    position: relative;
+}
+
+.config-bm-header-menu {
+    right: 0;
+    left: auto;
+    z-index: calc(var(--layer-sticky-band, 5) + 20);
+}
+
+.config-bm-header-menu[hidden] {
+    display: none;
+}
