@@ -284,12 +284,18 @@
                 `data-bm-health-modal-page="${esc(r.pageId)}"`)).join('');
             let restHtml = '';
             if (rest.length) {
+                // The rest are drawn too, folded away: "+N pages" opens them
+                // in the card, which then scrolls on its own so the modal
+                // stays one screen.
+                const extra = rest.map((r) => row(r.name, r.healthyPct, r.broken,
+                    `data-bm-health-modal-page="${esc(r.pageId)}" hidden`, ' is-extra')).join('');
                 const restTotal = rest.reduce((sum, r) => sum + r.total, 0);
                 const restHealthy = rest.reduce((sum, r) => sum + Math.round((r.healthyPct / 100) * r.total), 0);
                 const restBroken = rest.reduce((sum, r) => sum + r.broken, 0);
                 const restPct = restTotal ? Math.round((restHealthy / restTotal) * 100) : 100;
                 const moreLabel = this.t('config.bmHealthModalMorePages', '+{n} pages').replace('{n}', String(rest.length));
-                restHtml = row(moreLabel, restPct, restBroken, '', ' is-static');
+                restHtml = extra + row(moreLabel, restPct, restBroken,
+                    `data-bm-health-modal-pages-toggle aria-expanded="false" data-more-label="${esc(moreLabel)}"`, ' is-toggle');
             }
             return this.bmHealthModalCard('pages', this.t('config.bmHealthModalPagesTitle', 'By page'),
                 `<div class="bm-health-modal-pages">${shownHtml}${restHtml}</div>`);
@@ -439,6 +445,26 @@
             this.updateConfigShellHead();
         },
 
+        /** "+N pages": the rest of the pages in the card, or folded away again. */
+        toggleBmHealthModalPages(toggle) {
+            const list = toggle.closest('.bm-health-modal-pages');
+            if (!list) return;
+            const open = toggle.getAttribute('aria-expanded') !== 'true';
+            list.querySelectorAll('.is-extra').forEach((el) => { el.hidden = !open; });
+            list.classList.toggle('is-expanded', open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            const name = toggle.querySelector('.bm-health-modal-page-name');
+            if (name) {
+                name.textContent = open
+                    ? this.t('config.bmHealthModalFewerPages', 'Show fewer')
+                    : toggle.getAttribute('data-more-label');
+            }
+            // The figures summed up the rest; with the rest on show they
+            // would count those pages twice.
+            toggle.querySelectorAll('.bm-health-modal-page-track, .bm-health-modal-page-pct, .bm-health-modal-page-broken')
+                .forEach((el) => { el.style.visibility = open ? 'hidden' : ''; });
+        },
+
         /** Same idea as toggleRailFilter's 'page' branch, forced rather than toggled. */
         applyBmHealthModalPage(pageId) {
             this.bmPageFilter = pageId;
@@ -462,6 +488,11 @@
                     const key = filterEl.getAttribute('data-bm-health-modal-filter');
                     global.AppModal.hide();
                     this.applyBmHealthModalFilter(key);
+                    return;
+                }
+                const toggle = e.target.closest('[data-bm-health-modal-pages-toggle]');
+                if (toggle) {
+                    this.toggleBmHealthModalPages(toggle);
                     return;
                 }
                 const pageEl = e.target.closest('[data-bm-health-modal-page]');

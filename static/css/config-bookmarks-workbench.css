@@ -1329,6 +1329,31 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
     color: var(--text-secondary);
 }
 
+.bm-health-modal-page-row.is-toggle {
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-page-row.is-toggle .bm-health-modal-page-name {
+    color: var(--accent-primary);
+}
+
+.bm-health-modal-page-row[hidden] {
+    display: none;
+}
+
+/* Every page on show: the card scrolls on its own, the modal stays put. */
+.bm-health-modal-pages.is-expanded {
+    max-height: 14rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.bm-health-modal-pages.is-expanded .is-toggle {
+    position: sticky;
+    bottom: 0;
+    background: var(--surface-3, var(--background-secondary));
+}
+
 .bm-health-modal-bar-row:hover .bm-health-modal-bar-label {
     text-decoration: underline;
 }

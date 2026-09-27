@@ -6150,6 +6150,7 @@
     "bmKeyHealthModal": "collection health",
     "bmHealthModalTitle": "Collection health",
     "bmCollectionMenu": "Collection",
+    "bmHealthModalFewerPages": "Show fewer",
     "bmSparkTitle": "{n} opens in the last 30 days",
     "bmSparkNone": "No opens in the last 30 days",
     "bmAddedTitle": "Added {date}",

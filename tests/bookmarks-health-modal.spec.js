@@ -126,3 +126,34 @@ test('it fits a laptop screen without scrolling, every card in view', async ({ p
   const m = await body.evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight }));
   expect(m.sh).toBeLessThanOrEqual(m.ch + 1);
 });
+
+test('+N pages opens the rest of the pages in the card, and folds them again', async ({ page }) => {
+  await openBookmarksWithHealth(
+    page,
+    // Seven pages' worth, so two are past the five the card shows.
+    (issues) => issues.map((issue, i) => ({ ...issue, pageId: 9000 + (i % 7) })),
+    { view: 'library', report: (issues) => ({ summary: fullSummary(issues) }) },
+  );
+  await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
+  const card = page.locator('#app-modal.show [data-bm-health-modal-card="pages"]');
+  const rows = card.locator('[data-bm-health-modal-page]');
+  const toggle = card.locator('[data-bm-health-modal-pages-toggle]');
+  await expect(rows.filter({ visible: true })).toHaveCount(5);
+  await expect(toggle).toContainText('+2 pages');
+  await toggle.click();
+  await expect(rows.filter({ visible: true })).toHaveCount(7);
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  // Still one screen.
+  const body = page.locator('#app-modal.show .modal-body');
+  const m = await body.evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight }));
+  expect(m.sh).toBeLessThanOrEqual(m.ch + 1);
+  await toggle.click();
+  await expect(rows.filter({ visible: true })).toHaveCount(5);
+  // A page from the rest filters the list to it, like any other.
+  await toggle.click();
+  const last = rows.last();
+  const pageId = await last.getAttribute('data-bm-health-modal-page');
+  await last.click();
+  await expect(page.locator('#app-modal.show')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => String(window.dashboardInstance.config.bmPageFilter))).toBe(pageId);
+});
