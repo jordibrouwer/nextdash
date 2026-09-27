@@ -72,7 +72,6 @@ const BODY_MIRRORED = {
     showTitle: 'data-show-title',
     showDate: 'data-show-date',
     showConfigButton: 'data-show-config-button',
-    showHealthDashboard: 'data-show-health-dashboard',
     showCheatSheetButton: 'data-show-cheatsheet-button',
     showAddBookmarkButton: 'data-show-add-bookmark-button',
     showSearchButton: 'data-show-search-button',
@@ -178,8 +177,9 @@ test('every special in the schema is one setBehavior actually handles', async ({
     // `search` hands the search component a new pool: it keeps its own copy,
     // built when the data loads, so a setting that decides what goes into that
     // pool takes effect on the next reload and looks like it did nothing.
+    // `healthBadge` redraws the Bookmarks icon's count (Config → Bookmarks → View).
     const handled = ['language', 'datetime', 'chrome', 'chromeRender', 'render', 'shortcutTooltips',
-        'visual', 'feeds', 'previewCard', 'siteNews', 'search'];
+        'visual', 'feeds', 'previewCard', 'siteNews', 'search', 'healthBadge'];
     expect(used.length).toBeGreaterThan(3);
     expect(used.filter((s) => !handled.includes(s))).toEqual([]);
 });

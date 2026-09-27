@@ -35,7 +35,6 @@ const HEADER_PANEL = [
     ['showTitle', true],
     ['showDashboardButton', true],
     ['showInboxButton', true],
-    ['showHealthDashboard', true],
     ['showConfigButton', true],
 ];
 

@@ -80,7 +80,6 @@ class Dashboard {
             showTime: true,
             timeFormat: '24h',
             showConfigButton: true,
-            showHealthDashboard: true,
             showRecentButton: false,
 
             showCheatSheetButton: false,

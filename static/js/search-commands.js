@@ -2654,7 +2654,6 @@ class SearchCommandsComponent {
             title: 'showTitle',
             dashboard: 'showDashboardButton',
             inbox: 'showInboxButton',
-            health: 'showHealthDashboard',
             config: 'showConfigButton',
         };
         const aliases = { pagetabs: 'tabs', pagenames: 'names', home: 'dashboard' };

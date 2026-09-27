@@ -413,7 +413,6 @@ type Settings struct {
 	WeatherUnit                     string `json:"weatherUnit"`         // celsius or fahrenheit
 	WeatherRefreshMinutes           int    `json:"weatherRefreshMinutes"`
 	ShowConfigButton                bool   `json:"showConfigButton"`
-	ShowHealthDashboard             bool   `json:"showHealthDashboard"`
 	ShowPagesButton                 bool   `json:"showPagesButton"`
 	ShowInboxButton                 bool   `json:"showInboxButton"`
 	ShowDashboardButton             bool   `json:"showDashboardButton"`
@@ -1507,7 +1506,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			WeatherUnit:               "celsius",
 			WeatherRefreshMinutes:     30,
 			ShowConfigButton:          true,
-			ShowHealthDashboard:       true,
 			ShowPagesButton:           true,
 			ShowInboxButton:           true,
 			ShowDashboardButton:       true,
@@ -3807,7 +3805,6 @@ func (fs *FileStore) GetSettings() Settings {
 			WeatherUnit:                     "celsius",
 			WeatherRefreshMinutes:           30,
 			ShowConfigButton:                true,
-			ShowHealthDashboard:             true,
 			ShowPagesButton:                 true,
 			ShowInboxButton:                 true,
 			ShowDashboardButton:             true,
@@ -4142,10 +4139,6 @@ func (fs *FileStore) GetSettings() Settings {
 		 * is, and the client's own FIELD_META agreed with this one. Both are
 		 * one toggle away in Config for anyone who wants them back.
 		 */
-		// Health is always available and can no longer be disabled. Force it on
-		// regardless of any legacy stored value so users who previously turned it
-		// off get it back.
-		settings.ShowHealthDashboard = true
 		if _, ok := rawSettings["showConfigButton"]; !ok {
 			settings.ShowConfigButton = true
 		}

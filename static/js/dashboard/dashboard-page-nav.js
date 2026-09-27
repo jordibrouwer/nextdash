@@ -291,7 +291,6 @@ class DashboardPageNav {
         // The health and config icons live in the header, outside this container,
         // but are the same kind of destination — keep their active state in step
         // with the tabs.
-        d.visual?.syncHealthLinkActiveState?.();
         d.visual?.syncLibraryLinkActiveState?.();
         d.docker?.syncNavActiveState?.();
         d.visual?.syncConfigLinkActiveState?.();

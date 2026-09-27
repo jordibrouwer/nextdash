@@ -231,7 +231,7 @@ test.describe('config: sections restored from the old config', () => {
     test('the header toggles live on the toolbar tab', async ({ page }) => {
         await loadDashboard(page);
         await openAppearanceTab(page, 'header');
-        for (const f of ['showPageTabs', 'showTitle', 'showConfigButton', 'showHealthDashboard']) {
+        for (const f of ['showPageTabs', 'showTitle', 'showConfigButton']) {
             await expect(page.locator(`[data-behavior-field="${f}"]`)).toBeVisible();
         }
     });
@@ -362,7 +362,6 @@ test.describe('config: sections restored from the old config', () => {
             ['buttonbar', 'showRecentButton', 'data-show-recent-button'],
             ['buttonbar', 'showCheatSheetButton', 'data-show-cheatsheet-button'],
             ['header', 'showConfigButton', 'data-show-config-button'],
-            ['header', 'showHealthDashboard', 'data-show-health-dashboard'],
             ['header', 'showTitle', 'data-show-title'],
         ];
         for (const [tab, field, attr] of pairs) {

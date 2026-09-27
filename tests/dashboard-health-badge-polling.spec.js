@@ -47,7 +47,6 @@ async function openWithBadge(page, { failRequests = false } = {}) {
     // Arm the poller through the real entry point.
     await page.evaluate(() => {
         const d = window.dashboardInstance;
-        d.settings.showHealthDashboard = true;
         d.visual.syncHealthBadgePolling();
     });
 }
@@ -183,22 +182,5 @@ test.describe('health badge polling', () => {
         // And the backoff is reset, so the next poll comes at the base delay
         // rather than whatever the outage had crept up to.
         expect(await armedFor(page)).toBe(base);
-    });
-
-    test('the health view is left to refresh itself, but polling resumes after it', async ({ page }) => {
-        await openWithBadge(page);
-        const { base } = await constants(page);
-
-        await page.evaluate(() => { window.dashboardInstance.activeView = 'health'; });
-        const before = await requestCount(page);
-        await pollOnce(page);
-
-        expect(await requestCount(page), 'polled while the health view was open').toBe(before);
-        // Still armed — otherwise leaving the view would never resume polling.
-        expect(await armedFor(page)).toBe(base);
-
-        await page.evaluate(() => { window.dashboardInstance.activeView = 'bookmarks'; });
-        await pollOnce(page);
-        expect(await requestCount(page)).toBe(before + 1);
     });
 });

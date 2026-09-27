@@ -340,35 +340,6 @@ class DashboardVisual {
     }
 
 
-    /**
-     * The header health icon opens the health view in place.
-     */
-    bindHealthLinkToView(healthLink) {
-        const d = this.dash;
-        const anchor = healthLink?.querySelector?.('a.health-link-anchor');
-        if (!anchor || anchor.dataset.healthViewBound === '1') {
-            return;
-        }
-        anchor.dataset.healthViewBound = '1';
-        anchor.addEventListener('click', (e) => {
-            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
-                return;
-            }
-            if (!d.health?.isEnabled?.()) {
-                return;
-            }
-            e.preventDefault();
-            void d.health.openHealthView();
-        });
-    }
-
-
-    /**
-     * Mark the header health icon as the current view, the way an active page tab is
-     * marked. It is an <a> outside #page-navigation, so setActivePageNavButton never
-     * reaches it — without this the health view would be the only view with no
-     * indication of where you are.
-     */
     /** Mark the header Bookmarks icon while the Bookmarks view is open. */
     syncLibraryLinkActiveState() {
         const anchor = document.querySelector('.library-link a.library-link-anchor');
@@ -383,52 +354,18 @@ class DashboardVisual {
     }
 
 
-    syncHealthLinkActiveState() {
-        const d = this.dash;
-        const anchor = document.querySelector('.health-link a.health-link-anchor');
-        if (!anchor) {
-            return;
-        }
-        const active = d.activeView === 'health';
-        anchor.classList.toggle('active', active);
-        // aria-current, not aria-selected: this is a link, not a tab in a tablist.
-        if (active) {
-            anchor.setAttribute('aria-current', 'page');
-        } else {
-            anchor.removeAttribute('aria-current');
-        }
-    }
-
-
+    /**
+     * The badge on the Bookmarks icon, and its polling. The header's own
+     * Health icon went with the Health view; one left over from before is
+     * taken down here.
+     */
     updateHealthDashboardVisibility() {
         const d = this.dash;
-        let healthLink = document.querySelector('.health-link');
-
-        if (d.settings.showHealthDashboard === true) {
-            if (!healthLink) {
-                healthLink = document.createElement('div');
-                healthLink.className = 'health-link health-link--icon';
-                const healthLabel = d.language.t('dashboard.health');
-                const raw = healthLabel !== 'dashboard.health' ? healthLabel : 'health';
-                // Escaped for the same reason as the config label above.
-                const label = d.escapeHtml ? d.escapeHtml(raw) : raw;
-                healthLink.innerHTML = `<a href="/#health" class="health-link-anchor" aria-label="${label}" title="${label}"><svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></a>`;
-
-                const host = this.headerDestinationsHost();
-                if (host) {
-                    const configLink = host.querySelector('.config-link');
-                    if (configLink) {
-                        host.insertBefore(healthLink, configLink);
-                    } else {
-                        host.appendChild(healthLink);
-                    }
-                }
-            }
-            this.bindHealthLinkToView(healthLink);
+        document.querySelector('.health-link')?.remove();
+        if (d.health?.isEnabled?.() !== false) {
             this.updateHealthBadge();
             this.syncHealthBadgePolling();
-        } else if (healthLink) {
-            healthLink.remove();
+        } else {
             this.stopHealthBadgePolling();
         }
     }
@@ -453,7 +390,7 @@ class DashboardVisual {
     syncHealthBadgePolling() {
         this.stopHealthBadgePolling();
         const d = this.dash;
-        if (d.settings.showHealthDashboard !== true) {
+        if (d.health?.isEnabled?.() === false) {
             return;
         }
         const base = DashboardVisual.HEALTH_POLL_BASE_MS;
@@ -486,15 +423,10 @@ class DashboardVisual {
                 // background tab for a request it must not make anyway.
                 return;
             }
-            // The health view refreshes itself; skipping keeps the badge from
-            // duplicating that work, but polling must resume on the way out, so
-            // this reschedules rather than returning like the hidden case.
-            if (d.activeView !== 'health') {
-                const ok = await this.updateHealthBadge();
-                this._healthBadgePollDelay = ok
-                    ? base
-                    : Math.min(this._healthBadgePollDelay * 2, max);
-            }
+            const ok = await this.updateHealthBadge();
+            this._healthBadgePollDelay = ok
+                ? base
+                : Math.min(this._healthBadgePollDelay * 2, max);
             schedule(this._healthBadgePollDelay);
         };
         const start = () => {
@@ -548,12 +480,10 @@ class DashboardVisual {
      */
     async updateHealthBadge() {
         const d = this.dash;
-        const anchor = document.querySelector('.health-link a');
-        // The Bookmarks icon carries the same count: Health lives in that view
-        // too, and stays there when its own icon is switched off.
+        // The Bookmarks icon carries the count: Health lives in that view.
         const library = document.querySelector('.library-link a');
         const utils = window.HealthBadgeUtils;
-        if ((!anchor && !library) || !utils) return false;
+        if (!library || !utils) return false;
 
         try {
             const summary = await utils.fetchBookmarkHealthSummary();
@@ -579,14 +509,8 @@ class DashboardVisual {
             // And the per-row uptime the same store now keeps, which is what
             // fills the uptime tile without a trip through the health view.
             d.renderCore?.refreshWidgets?.('uptime');
-            // keepHref: the icon opens the view; its href is only the middle-click path.
-            if (anchor) {
-                utils.applyHealthBadgeToAnchor(anchor, summary, d.language, {
-                    keepHref: true,
-                    onApplied: (counts) => this.maybePulseHealthAlert(counts?.monitorDown || 0),
-                });
-            }
-            if (library) this.applyLibraryBadge(library, summary, utils);
+            this.applyLibraryBadge(library, summary, utils);
+            this.maybePulseHealthAlert(utils.summarizeHealthCounts(summary).monitorDown || 0);
             d.updateMiniStatusLine();
             return true;
         } catch (e) {
@@ -646,14 +570,14 @@ class DashboardVisual {
         }
         this._lastHealthAlertAt = now;
 
-        const link = document.querySelector('.health-link');
+        const link = document.querySelector('.library-link');
         if (!link) return;
         link.classList.remove('is-health-alert');
         // Reflow so a repeat alert replays the animation rather than being ignored
         // as a no-op class toggle.
         void link.offsetWidth;
         link.classList.add('is-health-alert');
-        const anchor = link.querySelector('.health-link-anchor');
+        const anchor = link.querySelector('.library-link-anchor');
         const done = () => link.classList.remove('is-health-alert');
         if (anchor) {
             anchor.addEventListener('animationend', done, { once: true });

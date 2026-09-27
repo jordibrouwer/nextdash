@@ -320,7 +320,7 @@ test('the hairline needs something on both sides of it', async ({ page }) => {
     // side it stands against.
     await apply({
         showDashboardButton: false, showInboxButton: false,
-        showConfigButton: false, showHealthDashboard: false, unsortedEnabled: false,
+        showConfigButton: false, unsortedEnabled: false,
     });
     await expect(page.locator('.library-link a.library-link-anchor')).toBeVisible();
     await expect.poll(rules, { timeout: 5_000 }).toBe(1);
@@ -329,7 +329,7 @@ test('the hairline needs something on both sides of it', async ({ page }) => {
     // the way the tests after this one expect to find it.
     await apply({
         showDashboardButton: true, showInboxButton: true,
-        showConfigButton: true, showHealthDashboard: true, unsortedEnabled: true,
+        showConfigButton: true, unsortedEnabled: true,
     });
     await expect.poll(rules, { timeout: 5_000 }).toBe(1);
 });
@@ -497,19 +497,16 @@ test('the destination you are in is the lit one', async ({ page }) => {
         return { active: el.classList.contains('active'), background: c.backgroundColor, border: c.borderTopColor };
     }, sel);
 
-    const resting = await read('.health-link-anchor');
-    expect(resting.active, 'health is marked active on the dashboard').toBe(false);
+    const resting = await read('.library-link-anchor');
+    expect(resting.active, 'Bookmarks is marked active on the dashboard').toBe(false);
 
-    await page.evaluate(() => {
-        window.DiscoverabilityState?.markTipSeen?.('healthTutorialV2', { persist: false });
-    });
-    await page.keyboard.press('Shift+H');
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('health');
+    await page.locator('.library-link-anchor').click();
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('library');
     await page.waitForTimeout(400);
 
-    const lit = await read('.health-link-anchor');
-    expect(lit.active, 'health is not marked active in its own view').toBe(true);
-    expect(lit.background, 'the health icon looks the same inside health as outside it')
+    const lit = await read('.library-link-anchor');
+    expect(lit.active, 'Bookmarks is not marked active in its own view').toBe(true);
+    expect(lit.background, 'the Bookmarks icon looks the same inside its view as outside it')
         .not.toBe(resting.background);
     expect(lit.border, 'the lit destination keeps the resting border').not.toBe(resting.border);
 });
@@ -563,7 +560,7 @@ test('the destinations are as big as the action group', async ({ page }) => {
         };
         return {
             group: height('.header-shortcuts'),
-            health: height('.health-link-anchor'),
+            library: height('.library-link-anchor'),
             config: height('.config-link-anchor'),
             // One hairline, between what you do and where you go. The one in
             // front of the actions went with the standalone pages button: a
@@ -575,7 +572,7 @@ test('the destinations are as big as the action group', async ({ page }) => {
         };
     });
 
-    expect(seen.health).toBe(seen.group);
+    expect(seen.library).toBe(seen.group);
     expect(seen.config).toBe(seen.group);
     expect(seen.dividers, 'the header kept a rule with nothing on one side of it').toBe(1);
     expect(seen.pagesInGroup, 'the pages button is not in the action group').toBe(true);

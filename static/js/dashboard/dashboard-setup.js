@@ -51,7 +51,6 @@ class DashboardSetup {
             d.settings.rowHighlight === 'strong' ? 'strong' : 'subtle');
         document.body.setAttribute('data-show-date', d.settings.showDate);
         document.body.setAttribute('data-show-config-button', d.settings.showConfigButton !== false);
-        document.body.setAttribute('data-show-health-dashboard', d.settings.showHealthDashboard === true);
         document.body.setAttribute('data-show-pages-button', d.settings.showPagesButton !== false);
         document.body.setAttribute('data-show-inbox-button', d.settings.showInboxButton !== false);
         document.body.setAttribute('data-show-dashboard-button', d.settings.showDashboardButton !== false);

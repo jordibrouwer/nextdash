@@ -67,11 +67,11 @@ test.describe('the chrome toggles are grouped', () => {
         // panel, which is why this is three more than the toggles named below; the clock's placement sits with the clock, in
         // Behavior → Date & weather.
         const all = panels.flatMap((p) => p.fields);
-        expect(all).toHaveLength(24);
-        expect(new Set(all).size).toBe(24);
+        expect(all).toHaveLength(23);
+        expect(new Set(all).size).toBe(23);
         expect(all).toEqual(expect.arrayContaining([
             'headerButtonStyle', 'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showDashboardButton',
-            'showInboxButton', 'showHealthDashboard', 'showConfigButton', 'showPagesButton',
+            'showInboxButton', 'showConfigButton', 'showPagesButton',
             'showAddBookmarkButton', 'showSearchButton', 'showCommandsButton', 'showFindersButton',
             'showRecentButton', 'showCheatSheetButton', 'showCollapseAllButton', 'showTagCloudButton',
             'actionBarPosition', 'actionBarEnabled', 'actionBarAutoHideSeconds', 'showActionKeys',
@@ -195,6 +195,12 @@ test.describe('Show all / Hide all', () => {
             document.body.getAttribute('data-show-title'))).toBe('false');
         await expect.poll(() => page.evaluate(() =>
             document.body.getAttribute('data-show-config-button'))).toBe('false');
+        // Put the header back for the tests after this one. They used to find
+        // one field on regardless -- the Health icon, forced on at every load --
+        // and so never noticed that Hide all had been left behind.
+        await headerPanel.locator('[data-behavior-bulk="show"]').click();
+        await expect(page.locator('[data-behavior-field="showTitle"]')).toBeChecked();
+        await page.waitForTimeout(700);
     });
 
     test('the count follows, and the pair disables at the ends', async ({ page }) => {
@@ -208,9 +214,11 @@ test.describe('Show all / Hide all', () => {
         await expect(headerPanel.locator('[data-behavior-bulk="hide"]')).toBeDisabled();
 
         await headerPanel.locator('[data-behavior-bulk="show"]').click();
-        await expect(count).toHaveText(/\b7\D+7\b/);
+        await expect(count).toHaveText(/\b6\D+6\b/);
         await expect(headerPanel.locator('[data-behavior-bulk="show"]')).toBeDisabled();
         await expect(page.locator('[data-behavior-field="showPageTabs"]')).toBeChecked();
+        // Let the save land: the next test reads the header from the server.
+        await page.waitForTimeout(700);
     });
 
     /**
@@ -231,10 +239,19 @@ test.describe('Show all / Hide all', () => {
         await page.waitForTimeout(600);
 
         expect(saves, `five fields must not mean five writes (saw ${saves})`).toBe(1);
+        // And back, for the tests after this one.
+        await headerPanel.locator('[data-behavior-bulk="show"]').click();
+        await expect(page.locator('[data-behavior-field="showTitle"]')).toBeChecked();
+        await page.waitForTimeout(700);
     });
 
     test('the change survives a reload', async ({ page }) => {
         await openToolbarTab(page);
+        const before = await page.evaluate(() => {
+            const s = window.dashboardInstance.settings;
+            return Object.fromEntries(['showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showDashboardButton',
+                'showInboxButton', 'showConfigButton'].map((k) => [k, s[k]]));
+        });
         const headerPanel = page.locator('.config-panel').filter({ has: page.locator('[data-behavior-field="showPageTabs"]') });
         await headerPanel.locator('[data-behavior-bulk="hide"]').click();
         await expect(page.locator('[data-behavior-field="showTitle"]')).not.toBeChecked();
@@ -243,6 +260,13 @@ test.describe('Show all / Hide all', () => {
         await openToolbarTab(page);
         await expect(page.locator('[data-behavior-field="showTitle"]')).not.toBeChecked();
         await expect(page.locator('[data-behavior-field="showConfigButton"]')).not.toBeChecked();
+        // Settings live on the server for the whole run: put the header back
+        // as it was, or the next test to open this panel finds Hide all done.
+        await page.evaluate(async (was) => {
+            const d = window.dashboardInstance;
+            Object.assign(d.settings, was);
+            await d.data.saveSettings();
+        }, before);
     });
 });
 
