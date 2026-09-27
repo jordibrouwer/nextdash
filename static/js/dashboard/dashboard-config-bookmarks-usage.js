@@ -24,7 +24,36 @@
     const RANK_BARS = 24;
 
     Object.assign(global.DashboardConfig.prototype, {
-        renderBmUsage(b) {
+        /**
+         * The Usage tab in the Health tab's layout: the tiles and the weeks on
+         * top, the rest -- its life, how it compares, its habits -- folded,
+         * each head saying its answer.
+         */
+        renderBmUsagePane(b) {
+            const t = (key, fallback) => this.t(`config.${key}`, fallback);
+            const now = Date.now();
+            const parts = this.bmUsageParts(b);
+            const history = this.renderBmUsageHistory(b, now);
+            const opens = Number(b.openCount) || 0;
+            const counts = (this.dash.allBookmarks || []).map((x) => Number(x.openCount) || 0).sort((x, y) => y - x);
+            const rank = opens ? counts.findIndex((n) => n <= opens) + 1 : 0;
+            const acc = (name, label, answer, body, open) => this.workbenchAcc('usage', name, label, answer, body, open);
+            return `
+                <div class="config-bm-usage-viz">
+                    <div class="config-bm-usage-tiles">${parts.tiles}</div>
+                    ${history.chart}
+                </div>
+                <div class="config-bm-acc-list">
+                    ${acc('life', t('bmUsageLife', 'Its life so far'), parts.lifeAnswer,
+                        `${this.renderBmUsageTimeline({ created: Number(b.createdAt) || 0, updated: Number(b.updatedAt) || 0, last: Number(b.lastOpened) || 0, now })}${parts.life}`)}
+                    ${acc('compared', t('bmUsageCompared', 'Compared with the rest'),
+                        rank ? t('bmUsageOrdinal', '#{n}').replace('{n}', String(rank)) + ` / ${counts.length}` : t('bmUsageNeverOpened', 'never opened'),
+                        this.renderBmUsageRank(b), true)}
+                    ${acc('habits', t('bmUsageHabits', 'Habits'), history.habitsAnswer, history.habits)}
+                </div>`;
+        },
+
+        bmUsageParts(b) {
             const esc = (v) => this.dash.escapeHtml(v);
             const t = (key, fallback) => this.t(`config.${key}`, fallback);
             const now = Date.now();
@@ -70,14 +99,11 @@
                 kv(t('bmUsageLastOpened', 'Last opened'), last ? dateLabel(last, true) : t('bmUsageNever', 'never')),
             ].join('');
 
-            return `
-                <div class="config-bm-usage-tiles">${tiles}</div>
-                <h4 class="config-bm-pane-sub">${esc(t('bmUsageLife', 'Its life so far'))}</h4>
-                ${this.renderBmUsageTimeline({ created, updated, last, now })}
-                ${life}
-                <h4 class="config-bm-pane-sub">${esc(t('bmUsageCompared', 'Compared with the rest'))}</h4>
-                ${this.renderBmUsageRank(b)}
-                ${this.renderBmUsageHistory(b, now)}`;
+            return {
+                tiles,
+                life,
+                lifeAnswer: created ? t('bmUsageAddedAgo', 'added {ago}').replace('{ago}', ago(created)) : t('bmUsageNotRecorded', 'not recorded'),
+            };
         },
 
         /** Added, edited and last opened as marks on one line from "added" to now. */
@@ -162,10 +188,15 @@
             const esc = (v) => this.dash.escapeHtml(v);
             const t = (key, fallback) => this.t(`config.${key}`, fallback);
             const log = (Array.isArray(b.openLog) ? b.openLog : []).map(Number).filter((ts) => ts > 0 && ts <= now);
-            const head = `<h4 class="config-bm-pane-sub">${esc(t('bmUsageWeeks', 'Opens, last 12 weeks'))}</h4>`;
+            const head = `<div class="config-bm-usage-caption">${esc(t('bmUsageWeeks', 'Opens, last 12 weeks'))}</div>`;
+            const notYet = t('bmUsageHabitsNotYet', 'Too few opens recorded yet to tell.');
             if (!log.length) {
-                return `${head}<p class="config-bm-panel-muted" data-bm-usage-history="empty">${esc(t('bmUsageNoHistory',
-                    'No opens recorded yet. Opens are counted from now on, and the chart fills as it is used.'))}</p>`;
+                return {
+                    chart: `${head}<p class="config-bm-panel-muted" data-bm-usage-history="empty">${esc(t('bmUsageNoHistory',
+                        'No opens recorded yet. Opens are counted from now on, and the chart fills as it is used.'))}</p>`,
+                    habits: `<p class="config-bm-panel-muted">${esc(notYet)}</p>`,
+                    habitsAnswer: t('bmUsageHabitsNone', 'not yet'),
+                };
             }
             const weeks = new Array(CHART_WEEKS).fill(0);
             log.forEach((ts) => {
@@ -198,10 +229,16 @@
             const hour = top(byHour);
             const hours = `${String(hour).padStart(2, '0')}:00–${String((hour + 1) % 24).padStart(2, '0')}:00`;
             // A weekday and an hour out of two opens is a coincidence, not a habit.
-            const habits = log.length >= 5 ? `
+            const enough = log.length >= 5;
+            const habits = enough ? `
                 <div class="config-bm-usage-kv"><span>${esc(t('bmUsageBusiestDay', 'Busiest day'))}</span><span>${esc(weekday)}</span></div>
-                <div class="config-bm-usage-kv"><span>${esc(t('bmUsageUsualHour', 'Usually opened'))}</span><span>${esc(hours)}</span></div>` : '';
-            return `${head}${chart}${habits}`;
+                <div class="config-bm-usage-kv"><span>${esc(t('bmUsageUsualHour', 'Usually opened'))}</span><span>${esc(hours)}</span></div>`
+                : `<p class="config-bm-panel-muted">${esc(notYet)}</p>`;
+            return {
+                chart: `${head}${chart}`,
+                habits,
+                habitsAnswer: enough ? `${weekday}, ${hours}` : t('bmUsageHabitsNone', 'not yet'),
+            };
         },
     });
 

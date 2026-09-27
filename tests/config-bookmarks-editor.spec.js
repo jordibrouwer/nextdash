@@ -119,6 +119,11 @@ test.beforeAll(async ({ browser }) => {
 
 test.describe('config bookmarks editor', () => {
     test('the panel carries every field of a bookmark', async ({ page }) => {
+        // A report that does not know the bookmark: checking stays in the
+        // form then, since the Health tab has nothing to set it on.
+        await page.route('**/api/bookmark-health**', (route) => route.fulfill({
+            status: 200, contentType: 'application/json', body: JSON.stringify({ generatedAt: Date.now(), summary: {}, issues: [] }),
+        }));
         await openBookmarks(page);
         const panel = await openFirstEditor(page);
         for (const name of ['name', 'url', 'page', 'category', 'tags', 'shortcut', 'note', 'pinned', 'checkMode']) {

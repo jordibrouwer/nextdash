@@ -498,6 +498,31 @@
             }</button>`;
         };
         const pane = (name, body) => `<section class="config-bm-pane" role="tabpanel" data-bm-pane="${name}"${name === tab ? '' : ' hidden'}>${body}</section>`;
+        // The form. In the Bookmarks view it is the Details tab's first
+        // section; Config's narrow panel column shows it alone.
+        const editForm = `<div class="config-bm-panel-section" data-bm-section="edit"><div class="config-bm-panel-fields">
+                ${this.renderWorkbenchField('name', this.t('config.bookmarkNameLabel', 'Name'), input('name', b.name))}
+                ${this.renderWorkbenchField('url', this.t('config.bmFieldUrl', 'URL'), input('url', b.url, 'spellcheck="false"'))}
+                ${this.renderWorkbenchField('page', this.t('config.page', 'Page'), `<select class="config-select" data-bm-field="page">${pageOptions}</select>`)}
+                ${this.renderWorkbenchField('category', this.t('config.category', 'Category'), `<select class="config-select" data-bm-field="category">${catOptions}</select>`)}
+                ${this.renderWorkbenchField('tags', this.t('config.bmFieldTags', 'Tags'), input('tags', (b.tags || []).join(', ')))}
+                <div class="tag-suggest-chips config-bm-tags-suggest" data-bm-suggest hidden></div>
+                ${this.renderWorkbenchField('shortcut', this.t('config.bmFieldShortcut', 'Shortcut'), input('shortcut', b.shortcut, 'maxlength="5"'))}
+                ${this.renderWorkbenchField('note', this.t('config.bmFieldNote', 'Note'),
+                    `<textarea class="config-text" rows="2" data-bm-field="note" data-original="${esc(b.note || '')}">${esc(b.note || '')}</textarea>`)}
+                <label class="config-bm-field config-bm-field--inline" data-bm-field-wrap="pinned">
+                    <input type="checkbox" data-bm-field="pinned"${b.pinned ? ' checked' : ''}>
+                    <span class="config-bm-field-label">${esc(this.t('config.pinnedShort', 'Pinned'))}</span>
+                    <span class="config-bm-field-status" role="status"></span>
+                </label>
+                ${issue ? '' : `
+                ${this.renderWorkbenchField('checkMode', this.t('config.bmFieldChecking', 'Checking'), `<select class="config-select" data-bm-field="checkMode">${modeOptions}</select>`)}
+                <label class="config-bm-field" data-bm-field-wrap="monitorInterval"${mode === 'monitor' ? '' : ' hidden'}>
+                    <span class="config-bm-field-label">${esc(this.t('config.bmFieldInterval', 'Interval'))}</span>
+                    <select class="config-select" data-bm-field="monitorInterval">${this.workbenchIntervalOptions(global.CheckMode?.intervalOf?.(b))}</select>
+                    <span class="config-bm-field-status" role="status"></span>
+                </label>`}
+            </div></div>`;
         return `
             <header class="config-bm-panel-head config-bm-panel-head--single">
                 <div class="config-bm-panel-heading">
@@ -530,28 +555,21 @@
                 ${tabButton('health', this.t('config.bmHealth', 'Health'), 2)}
                 ${tabButton('usage', this.t('config.bmUsage', 'Usage'), 3)}
             </div>
-            ${pane('details', `<div class="config-bm-panel-section" data-bm-section="edit"><div class="config-bm-panel-fields">
-                ${this.renderWorkbenchField('name', this.t('config.bookmarkNameLabel', 'Name'), input('name', b.name))}
-                ${this.renderWorkbenchField('url', this.t('config.bmFieldUrl', 'URL'), input('url', b.url, 'spellcheck="false"'))}
-                ${this.renderWorkbenchField('page', this.t('config.page', 'Page'), `<select class="config-select" data-bm-field="page">${pageOptions}</select>`)}
-                ${this.renderWorkbenchField('category', this.t('config.category', 'Category'), `<select class="config-select" data-bm-field="category">${catOptions}</select>`)}
-                ${this.renderWorkbenchField('tags', this.t('config.bmFieldTags', 'Tags'), input('tags', (b.tags || []).join(', ')))}
-                <div class="tag-suggest-chips config-bm-tags-suggest" data-bm-suggest hidden></div>
-                ${this.renderWorkbenchField('shortcut', this.t('config.bmFieldShortcut', 'Shortcut'), input('shortcut', b.shortcut, 'maxlength="5"'))}
-                ${this.renderWorkbenchField('note', this.t('config.bmFieldNote', 'Note'),
-                    `<textarea class="config-text" rows="2" data-bm-field="note" data-original="${esc(b.note || '')}">${esc(b.note || '')}</textarea>`)}
-                <label class="config-bm-field config-bm-field--inline" data-bm-field-wrap="pinned">
-                    <input type="checkbox" data-bm-field="pinned"${b.pinned ? ' checked' : ''}>
-                    <span class="config-bm-field-label">${esc(this.t('config.pinnedShort', 'Pinned'))}</span>
-                    <span class="config-bm-field-status" role="status"></span>
-                </label>
-                ${this.renderWorkbenchField('checkMode', this.t('config.bmFieldChecking', 'Checking'), `<select class="config-select" data-bm-field="checkMode">${modeOptions}</select>`)}
-                <label class="config-bm-field" data-bm-field-wrap="monitorInterval"${mode === 'monitor' ? '' : ' hidden'}>
-                    <span class="config-bm-field-label">${esc(this.t('config.bmFieldInterval', 'Interval'))}</span>
-                    <select class="config-select" data-bm-field="monitorInterval">${this.workbenchIntervalOptions(global.CheckMode?.intervalOf?.(b))}</select>
-                    <span class="config-bm-field-status" role="status"></span>
-                </label>
-            </div></div>`)}
+            ${pane('details', !this.standalone ? editForm : `
+                ${this.renderBmDetailsSummary?.(b) || ''}
+                <div class="config-bm-acc-list">
+                ${this.workbenchAcc('details', 'edit', this.t('config.bmSectionEdit', 'Edit'), this.t('config.bmDetailsSavesAsYouGo', 'saves as you go'),
+                    `${editForm}`, true)}
+                ${this.workbenchAcc('details', 'address', this.t('config.bmDetailsAddress', 'Address'),
+                    this.formatBookmarkUrlDisplay(b.url), this.renderBmDetailsAddress?.(b) || '')}
+                ${this.workbenchAcc('details', 'preview', this.t('config.bmDetailsPreviewIcon', 'Preview & icon'),
+                    String(b.previewTitle || '').trim() ? this.t('config.bmDetailsFetched', 'fetched') : this.t('config.bmDetailsNotFetched', 'not fetched'),
+                    this.renderBmDetailsPreview?.(b) || '')}
+                ${this.workbenchAcc('details', 'copies', this.t('config.bmDetailsCopies', 'Local copies'), '…', this.renderBmDetailsCopies?.(b) || '')}
+                ${this.workbenchAcc('details', 'remove', this.t('config.bmDetailsRemove', 'Remove'), '',
+                    `<div class="config-bm-details-buttons"><button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.bmDetailsDelete', 'Delete bookmark'))}</button></div>
+                     <p class="config-bm-panel-muted">${esc(this.t('config.bmDetailsDeleteHint', 'It goes to the trash; undo is offered right after.'))}</p>`)}
+                </div>`)}
             ${pane('health', this.renderBmHealthPane?.(b)
                 ? `<div data-bm-section="health">${this.renderBmHealthPane(b)}</div>`
                 : `
@@ -559,8 +577,27 @@
                     <p class="config-bm-panel-fact"><span class="config-bm-health-dot is-${esc(state)}"></span> ${esc(this.railHealthLabel(state))}</p>
                     ${facts?.lastError ? `<p class="config-bm-panel-muted">${esc(facts.lastError)}</p>` : ''}
                     ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}</div></div>`)}
-            ${pane('usage', this.renderBmUsage?.(b) || `
+            ${pane('usage', this.renderBmUsagePane?.(b) || `
                 <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>`)}`;
+    },
+
+    /**
+     * One section of a tab's accordion, in the Health tab's markup: its head
+     * says its answer, and which sections are open is remembered per tab.
+     */
+    workbenchAcc(group, name, label, answer, body, openByDefault = false) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        let stored = null;
+        try {
+            stored = JSON.parse(global.localStorage?.getItem(`nextdash.bm.acc.${group}`) || 'null');
+        } catch {
+            stored = null;
+        }
+        const open = Array.isArray(stored) ? stored.includes(name) : openByDefault;
+        return `<details class="config-bm-acc" data-bm-acc="${name}" data-bm-acc-group="${group}"${open ? ' open' : ''}>
+                <summary><span>${esc(label)}</span><span class="config-bm-acc-answer">${esc(answer)}</span></summary>
+                <div class="lvs-drawer-section-body">${body}</div>
+            </details>`;
     },
 
     /* ── The panel's tabs ──────────────────────────────────────────────── */
@@ -662,6 +699,7 @@
         // After the key: the Health parts find their bookmark by it.
         this.bindBmHealthPanel?.(panel);
         void this.fillWorkbenchSuggestions(panel);
+        if (mode === 'single') void this.fillBmDetailsCopies?.(panel, this.findBookmarkByKey(key));
         if (mode === 'bulk') void this.fillWorkbenchBulkSuggestions(panel);
         // (The Bookmarks view opens its side panel for a selection itself.)
         if (mode === 'bulk' && !this.standalone && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });
@@ -1048,6 +1086,18 @@
         panel.dataset.bmPanelWired = '1';
         // toggle does not bubble; captured here so every repaint's sections
         // report without a listener each.
+        // The Details and Usage accordions remember what the reader opens.
+        panel.addEventListener('toggle', (e) => {
+            const acc = e.target.closest?.('[data-bm-acc-group]');
+            if (!acc || acc !== e.target) return;
+            const group = acc.getAttribute('data-bm-acc-group');
+            const open = [...panel.querySelectorAll(`[data-bm-acc-group="${group}"][open]`)].map((d) => d.getAttribute('data-bm-acc'));
+            try {
+                global.localStorage?.setItem(`nextdash.bm.acc.${group}`, JSON.stringify(open));
+            } catch {
+                // Private window: the choice lasts until the next bookmark.
+            }
+        }, true);
         panel.addEventListener('toggle', (e) => {
             const section = e.target.closest?.('[data-bm-section]');
             if (!section || section !== e.target) return;
@@ -1070,6 +1120,22 @@
                 // "Show the ones never opened": the rail's own view for them.
                 const view = usageShow.getAttribute('data-bm-usage-show');
                 if (this.bmCleanupFilter !== view) this.toggleRailFilter('cleanup', view);
+                return;
+            }
+            const read = e.target.closest('[data-bm-copy-read]');
+            if (read) {
+                global.open(read.getAttribute('data-bm-copy-read'), '_blank', 'noopener,noreferrer');
+                return;
+            }
+            if (e.target.closest('[data-bm-copy-save]')) {
+                const b = this.findBookmarkByKey(panel.dataset.bmPanelKey);
+                if (b) void this.saveBmLocalCopy?.(b);
+                return;
+            }
+            if (e.target.closest('[data-bm-details-checking]')) {
+                // Checking is set on the Health tab: take the reader there.
+                this.setWorkbenchPanelTab('health');
+                this.openBmHealthAcc?.('checking')?.querySelector('[data-check-mode]')?.focus();
                 return;
             }
             const tabBtn = e.target.closest('[data-bm-tab-panel]');

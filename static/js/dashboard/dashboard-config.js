@@ -22711,6 +22711,7 @@ class DashboardConfig {
             && window.DashboardConfigBookmarksUsageReady === true
             && window.DashboardBookmarksStructureModalReady === true
             && window.DashboardBookmarksCheckingModalReady === true
+            && window.DashboardConfigBookmarksDetailsReady === true
             && Boolean(window.BookmarkWorkbenchModel);
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
@@ -22737,6 +22738,9 @@ class DashboardConfig {
             // Turning checking on for the bookmarks nothing checks.
             .then(() => load('js/dashboard/dashboard-bookmarks-checking-modal.js',
                 'dashboardBookmarksCheckingModal', () => window.DashboardBookmarksCheckingModalReady === true))
+            // The panel's Details tab.
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-details.js',
+                'dashboardConfigBookmarksDetails', () => window.DashboardConfigBookmarksDetailsReady === true))
             .then(() => {
                 const waiting = this._bookmarksAwaitingRenderers === true;
                 this._bookmarksAwaitingRenderers = false;
@@ -24066,6 +24070,17 @@ class DashboardConfig {
             case 'copy-url':
                 this.copyBookmarkUrl(bookmark);
                 break;
+            case 'open-new-tab':
+                window.open(bookmark.url, '_blank', 'noopener,noreferrer');
+                break;
+            case 'rebuild-preview':
+                void this.rebuildBmPreview?.(bookmark);
+                break;
+            case 'recover': {
+                const issue = this.bmHealthIssue?.(bookmark);
+                if (issue) void this._bmHealthModule?.recoverFromArchive(issue);
+                break;
+            }
             case 'share':
                 void this.shareBookmark(bookmark);
                 break;

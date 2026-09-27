@@ -42,6 +42,9 @@
             || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254);
     }
 
+    // Details' Address says it too.
+    global.DashboardConfig.isHomeAddress = isHomeAddress;
+
     Object.assign(global.DashboardConfig.prototype, {
         uncheckedBookmarks() {
             return (this.configBookmarkPool?.() || this.dash.allBookmarks || []).filter(isOff);

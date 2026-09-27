@@ -194,6 +194,11 @@ test.describe('the bookmark panel', () => {
         // Recorded and passed on: the mode has to be stored for the panel to
         // keep showing the interval after the refresh.
         const posts = await captureRowWrites(page);
+        // A report that does not know the bookmark: the form keeps checking
+        // then (the Health tab sets it otherwise).
+        await page.route('**/api/bookmark-health**', (route) => route.fulfill({
+            status: 200, contentType: 'application/json', body: JSON.stringify({ generatedAt: Date.now(), summary: {}, issues: [] }),
+        }));
         await openBookmarks(page);
         const key = await focusFirstRow(page);
         const url = await page.evaluate((k) => window.dashboardInstance.config.findBookmarkByKey(k).url, key);

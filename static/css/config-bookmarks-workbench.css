@@ -2353,3 +2353,114 @@ html body .config-bm-more-menu .config-btn {
 .config-structure-menu > button[role="menuitem"].is-danger {
     color: var(--accent-error);
 }
+
+/* ── Details and Usage in the Health tab's layout ─────────────────────── */
+
+.config-bm-details-viz,
+.config-bm-usage-viz {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--background-primary) 70%, transparent);
+}
+
+.config-bm-details-card {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: var(--space-3, 0.75rem);
+    align-items: start;
+}
+
+.config-bm-details-card.is-text {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.config-bm-details-image {
+    width: 84px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: var(--radius-4, 6px);
+}
+
+.config-bm-details-title {
+    font-weight: 700;
+}
+
+.config-bm-details-desc {
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.config-bm-details-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+}
+
+.config-bm-details-chip {
+    padding: 0 var(--space-1-5, 0.4rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 80%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--background-secondary) 60%, transparent);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.92em;
+}
+
+.config-bm-details-chip[hidden] {
+    display: none;
+}
+
+.config-bm-details-chip.is-tag {
+    color: var(--accent-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+.config-bm-details-chip.is-warn,
+.config-bm-usage-kv .is-warn {
+    color: var(--accent-warning);
+}
+
+.config-bm-details-chip.is-link {
+    cursor: pointer;
+    color: var(--accent-primary);
+}
+
+.config-bm-details-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.config-bm-details-copy {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2, 0.5rem);
+    align-items: center;
+    padding: var(--space-1, 0.25rem) 0;
+    border-top: 1px dashed color-mix(in srgb, var(--border-primary) 70%, transparent);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-details-copy:first-child {
+    border-top: 0;
+}
+
+.config-bm-usage-caption {
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+/* The form keeps its own fields' layout inside its section. */
+.config-bm-acc .config-bm-panel-section {
+    border: 0;
+    padding: 0;
+}
