@@ -123,11 +123,18 @@
             host.hidden = false;
             host.replaceChildren();
 
+            // Two boxes: the frame carries the slab -- ground, corner, edges,
+            // shadow -- and clips; the panel inside it scrolls. A panel that
+            // was both scrolled its content up to its edges, and in Safari
+            // over them.
+            const frame = document.createElement('div');
+            frame.className = 'lvs-drawer-frame';
+            frame.setAttribute('data-lvs-drawer-panel', '');
+            frame.setAttribute('role', 'dialog');
+            frame.setAttribute('aria-label', this.ariaLabel ? this.ariaLabel(key) : String(title || key));
             const panel = document.createElement('div');
             panel.className = 'lvs-drawer';
-            panel.setAttribute('data-lvs-drawer-panel', '');
-            panel.setAttribute('role', 'dialog');
-            panel.setAttribute('aria-label', this.ariaLabel ? this.ariaLabel(key) : String(title || key));
+            frame.appendChild(panel);
             // The page under the panel stays put while the panel is scrolled:
             // CSS contains the overscroll of a panel that scrolls, and this
             // covers one too short to, which the browser would pass straight
@@ -168,7 +175,7 @@
                 section: (name, label) => this._section(panel, name, label),
             };
             this._panel = panel;
-            host.appendChild(panel);
+            host.appendChild(frame);
             if (typeof build === 'function') build(panel, ctx);
             return panel;
         }

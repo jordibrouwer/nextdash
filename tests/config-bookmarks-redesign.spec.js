@@ -113,7 +113,7 @@ test.describe('config bookmarks redesign: panel', () => {
     const radius = await page.locator('#config-bm-panel').evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
     const drawerRadius = await page.evaluate(() => {
       const probe = document.createElement('div');
-      probe.className = 'lvs-drawer';
+      probe.className = 'lvs-drawer-frame';
       probe.style.position = 'absolute';
       document.body.appendChild(probe);
       const r = getComputedStyle(probe).borderTopLeftRadius;

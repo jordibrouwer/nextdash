@@ -613,13 +613,30 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
     pointer-events: none;
 }
 
-.lvs-drawer {
+.lvs-drawer-frame {
     position: relative;
     box-sizing: border-box;
     width: 24rem;
     max-width: calc(100vw - 2 * var(--space-4, 1rem));
     height: calc(100% - 2 * var(--space-4, 1rem));
     margin: var(--space-4, 1rem) var(--space-4, 1rem) var(--space-4, 1rem) 0;
+    /* The slab, and the margin the panel scrolls inside: scrolled content is
+       cut off half a step short of the edge, never drawn over it. */
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-2, 0.5rem);
+    overflow: hidden;
+    background: var(--surface-3, var(--background-secondary));
+    border-radius: var(--radius-5, 8px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+    pointer-events: auto;
+}
+
+.lvs-drawer {
+    position: relative;
+    box-sizing: border-box;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     /* Scrolling past the panel's end does not carry on into the list. */
     overscroll-behavior: contain;
@@ -627,17 +644,13 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
        long enough to scroll otherwise narrowed everything by its width, and
        the head and tabs jumped sideways on every switch. */
     scrollbar-gutter: stable;
-    padding: var(--space-4, 1rem);
+    padding: var(--space-2, 0.5rem);
     display: flex;
     flex-direction: column;
     gap: var(--space-3, 0.75rem);
-    background: var(--surface-3, var(--background-secondary));
-    border-radius: var(--radius-5, 8px);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
-    pointer-events: auto;
 }
 
-html[data-theme] body:not([data-depth="flat"]) .lvs-drawer {
+html[data-theme] body:not([data-depth="flat"]) .lvs-drawer-frame {
     box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast), 0 8px 28px rgba(0, 0, 0, 0.3);
 }
 
@@ -730,7 +743,7 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-drawer {
     /* Against the viewport with top/left and vw/vh, never left+right or inset:
        this app's `scrollbar-gutter: stable` narrows the containing block that
        left+right resolve against by a scrollbar's width. */
-    .lvs-drawer {
+    .lvs-drawer-frame {
         position: fixed;
         top: 0;
         left: 0;
@@ -738,6 +751,8 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-drawer {
         height: 100vh;
         max-width: none;
         margin: 0;
+        /* The screen is the frame: no edge to keep content off. */
+        padding: 0;
         border-radius: 0;
     }
 }

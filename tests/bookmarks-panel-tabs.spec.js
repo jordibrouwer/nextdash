@@ -242,18 +242,19 @@ test.describe('bookmark panel: scrolling stays in it', () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(before);
   });
 
-  test('its top and bottom edges stay drawn while it scrolls', async ({ page }) => {
+  test('scrolled content stops short of its top and bottom edges', async ({ page }) => {
     const { bookmarks } = await open(page);
     await page.setViewportSize({ width: 1280, height: 520 });
     await pick(page, bookmarks[1].name);
     // The drawer slides in: let it settle before measuring its edge.
     await page.waitForTimeout(400);
-    const box = await drawer(page).boundingBox();
-    // The middle of each edge, one pixel high: the corners are rounded.
-    const strip = (y) => ({ x: Math.round(box.x + box.width * 0.2), y: Math.round(y), width: Math.round(box.width * 0.6), height: 1 });
+    const box = await page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer-frame').boundingBox();
+    // The middle of each edge, from the edge a few pixels in: the corners are
+    // rounded, and scrolled content has to stop short of the edge.
+    const strip = (y) => ({ x: Math.round(box.x + box.width * 0.2), y: Math.round(y), width: Math.round(box.width * 0.6), height: 5 });
     const edges = async () => [
       await page.screenshot({ clip: strip(box.y) }),
-      await page.screenshot({ clip: strip(box.y + box.height - 1) }),
+      await page.screenshot({ clip: strip(box.y + box.height - 5) }),
     ];
     const [top0, bottom0] = await edges();
     await drawer(page).evaluate((el) => { el.scrollTop = Math.floor((el.scrollHeight - el.clientHeight) / 2); });
