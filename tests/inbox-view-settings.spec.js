@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { openInboxWith, item } = require('./helpers/inbox-report');
+const { openInboxWith, stubInbox, item } = require('./helpers/inbox-report');
 const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 /**
@@ -115,6 +115,14 @@ test.describe('Config → Inbox', () => {
         await page.locator('#config-inbox-body select[data-behavior-field="inboxViewAddress"]').selectOption('hidden');
         await expect(page.locator('[data-inbox-view-preview] .inbox-item')).toHaveCount(2);
         await expect(page.locator('[data-inbox-view-preview] .inbox-item-domain')).toHaveCount(0);
+    });
+
+    test('the preview shows the same two examples, never the reader\'s own items', async ({ page }) => {
+        await stubInbox(page);
+        await openConfigInbox(page, 'list');
+        // The reader's inbox has three items (stubbed); the rows are still the examples.
+        const titles = page.locator('[data-inbox-view-preview] .inbox-item-title');
+        await expect(titles).toHaveText(['How we cut our build time in half', 'Weekly reading list']);
     });
 });
 

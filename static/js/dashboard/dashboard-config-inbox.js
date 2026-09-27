@@ -3,8 +3,8 @@
  *
  * What lands in the inbox and how the Inbox view looks. The settings are
  * schema panels (behaviorSchema, section 'inbox'), drawn, filtered, reset and
- * saved the way Behavior's are; this file adds the preview above them: two of
- * the reader's own inbox items, drawn by the Inbox's own row renderer, and the
+ * saved the way Behavior's are; this file adds the preview above them: two
+ * example items, drawn by the Inbox's own row renderer, and the
  * head of its side panel -- redrawn on every change, as Bookmarks -> View's is.
  */
 (function (global) {
@@ -12,7 +12,11 @@
 
     if (typeof global.DashboardConfig !== 'function') return;
 
-    /** Stand-ins for an inbox with fewer than two items in it. */
+    /**
+     * The preview's two rows: always these, never the reader's own items. The
+     * preview shows the settings, and a neutral pair says that better than
+     * whatever happens to be at the top of the inbox.
+     */
     function sampleItems() {
         const now = Date.now();
         return [
@@ -141,15 +145,12 @@
         try {
             await global.ViewStyles?.ensureViewStyles?.();
             mod = await this.dash.inbox?.load?.();
-            if (mod && !Array.isArray(mod.items)) mod.items = [];
-            if (mod && !mod.items.length && typeof mod.fetchItems === 'function') await mod.fetchItems();
         } catch {
             mod = null;
         }
         // A newer paint has started since: this one's rows would be stale.
         if (token !== this._inboxPreviewToken || !rowsHost.isConnected || !mod) return;
-        const own = (mod.activeItems?.() || mod.items || []).slice(0, 2);
-        const items = own.length >= 2 ? own : sampleItems();
+        const items = sampleItems();
         const rows = items.map((item) => {
             try {
                 return mod.createItemElement(item);
