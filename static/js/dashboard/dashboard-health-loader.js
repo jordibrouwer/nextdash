@@ -89,8 +89,9 @@ class DashboardHealthLoader {
     static bookmarksHashFor(search, hash) {
         const params = new URLSearchParams(search || '');
         const path = String(hash || '').replace(/^#/, '');
-        const known = window.DashboardConfig?.HEALTH_FILTERS
-            || ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'healthy'];
+        const known = window.DashboardConfig?.HEALTH_FILTER_KEYS
+            || ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'healthy',
+                'drift', 'missing-preview', 'shortcut-conflict', 'orphaned-category', 'ignored'];
         const filter = path === 'health/monitors' ? 'monitored' : ((params.get('hv_filter') || 'broken').toLowerCase());
         const out = new URLSearchParams();
         if (known.includes(filter)) out.set('health', filter);
@@ -105,12 +106,17 @@ class DashboardHealthLoader {
         const target = this.isEnabled()
             ? DashboardHealthLoader.bookmarksHashFor(here.search, here.hash)
             : '#bookmarks';
-        // The hv_* parameters were the Health view's; nothing reads them now.
+        // The hv_* parameters were the Health view's. hv_refresh asked for a
+        // fresh scan on arrival, and a saved link that says so still gets one;
+        // the rest are carried over above or have no meaning left.
         const params = new URLSearchParams(here.search);
+        const refresh = ['1', 'true'].includes(String(params.get('hv_refresh') || '').toLowerCase());
         [...params.keys()].filter((k) => k.startsWith('hv_')).forEach((k) => params.delete(k));
         const qs = params.toString();
         history.replaceState(history.state, '', `${here.pathname}${qs ? `?${qs}` : ''}${target}`);
-        return this.dash?.config?.openLibraryView?.();
+        const opened = await this.dash?.config?.openLibraryView?.();
+        if (refresh && this.isEnabled()) await this.load().then((health) => health?.loadAndRender?.({ refresh: true }));
+        return opened;
     }
 
 }

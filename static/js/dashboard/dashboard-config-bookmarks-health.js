@@ -349,6 +349,8 @@
                 button('favicons', t('healthBulkFavicon', 'Refresh favicons')),
                 button('previews', t('healthBulkPreview', 'Rebuild previews')),
                 button('local-copy', t('healthBulkLocalCopy', 'Save a copy on this disk')),
+                button('mute', t('healthBulkMute', 'Mute alerts')),
+                button('unmute', t('healthBulkUnmute', 'Unmute')),
                 drifting ? button('accept-drift', t('healthBulkAcceptDrift', 'Accept drift ({count})', { count: drifting })) : '',
             ].join('')}</div>`;
         },
@@ -361,6 +363,8 @@
                 favicons: () => runner.bulkRefreshFavicons(),
                 previews: () => runner.bulkRebuildPreviews(),
                 'local-copy': () => runner.bulkCaptureLocalCopies(),
+                mute: () => runner.bulkSetMuted(true),
+                unmute: () => runner.bulkSetMuted(false),
                 'accept-drift': () => runner.bulkAcceptDrift(),
             }[action];
             await run?.();

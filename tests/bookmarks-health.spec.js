@@ -233,6 +233,28 @@ test.describe('bookmarks: Health\'s bulk actions and duplicates', () => {
     await expect.poll(() => posts.length).toBe(2);
   });
 
+  test('Mute alerts and Unmute change the ticked bookmarks in one request each', async ({ page }) => {
+    await openBookmarksWithHealth(page);
+    const bodies = [];
+    await page.route('**/api/health/expectations-bulk', (route) => {
+      const body = JSON.parse(route.request().postData() || '{}');
+      bodies.push(body);
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ changed: (body.targets || []).length, skipped: 0 }) });
+    });
+    await tickFirst(page, 2);
+    await page.locator('#config-bm-panel [data-bm-health-bulk="mute"]').click();
+    await expect.poll(() => bodies.length).toBe(1);
+    expect(bodies[0].notifyMuted).toBe(true);
+    expect(bodies[0].targets).toHaveLength(2);
+    await expect(page.locator('.app-notification', { hasText: 'Alerts muted on 2' })).toBeVisible();
+
+    await tickFirst(page, 2);
+    await page.locator('#config-bm-panel [data-bm-health-bulk="unmute"]').click();
+    await expect.poll(() => bodies.length).toBe(2);
+    expect(bodies[1].notifyMuted).toBe(false);
+  });
+
   test('Accept drift is offered only when a ticked bookmark has drifted', async ({ page }) => {
     await openBookmarksWithHealth(page);
     await tickFirst(page, 2);

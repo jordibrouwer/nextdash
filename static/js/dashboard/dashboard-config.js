@@ -666,7 +666,7 @@ class DashboardConfig {
         this.bmCleanupFilter = (DashboardConfig.CLEANUP_FILTERS[filter]
             || filter === DashboardConfig.UNSORTED_VIEW) ? filter : '';
         const health = params.get('health') || '';
-        this.bmHealthFilter = DashboardConfig.HEALTH_FILTERS.includes(health) ? health : '';
+        this.bmHealthFilter = DashboardConfig.isHealthFilterKey(health) ? health : '';
         const tags = (params.get('tag') || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
         this.bmTagFilter = tags;
         const sort = params.get('sort') || '';
@@ -5080,7 +5080,7 @@ class DashboardConfig {
         // people there — and which problem type did it.
         this._trackAction('tile-open', { view, ...(filter ? { filter } : {}) });
         if (view === 'health') {
-            const health = DashboardConfig.HEALTH_FILTERS.includes(filter) ? filter : '';
+            const health = DashboardConfig.isHealthFilterKey(filter) ? filter : '';
             history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}#bookmarks${health ? `?health=${health}` : ''}`);
             return this.openLibraryView();
         }
@@ -23704,6 +23704,20 @@ class DashboardConfig {
 
     /** The Health filters, with the Health module's meaning (matchesFilter). */
     static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'healthy'];
+
+    /**
+     * Every health filter the list can be narrowed by: the rail's nine, and the
+     * kinds only Collection health, the overview and :health name (drift, a
+     * missing preview, a shortcut conflict...). The rail draws the first set;
+     * an address, a tile or a command may carry any of these, and one left
+     * out here was dropped on the way in -- the list then opened unfiltered.
+     */
+    static HEALTH_FILTER_KEYS = [...DashboardConfig.HEALTH_FILTERS,
+        'drift', 'missing-preview', 'shortcut-conflict', 'orphaned-category', 'ignored'];
+
+    static isHealthFilterKey(key) {
+        return DashboardConfig.HEALTH_FILTER_KEYS.includes(String(key || ''));
+    }
 
     /** True while the bookmark list is showing the kept bookmarks. */
     isUnsortedBookmarkView() {

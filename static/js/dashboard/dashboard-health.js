@@ -2339,7 +2339,7 @@ class DashboardHealth {
             const message = remaining > 0
                 ? `${this.t('dashboard.openBrokenLinks', 'Open broken links')} ${this.t(
                     'dashboard.openBrokenRemaining',
-                    '({remaining} more in health view.)',
+                    '({remaining} more in the Bookmarks view.)',
                     { remaining }
                 )}`
                 : this.t('dashboard.openBrokenLinks', 'Open broken links');

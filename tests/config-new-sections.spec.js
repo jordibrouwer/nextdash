@@ -37,7 +37,8 @@ test.describe('config: sections restored from the old config', () => {
         // Bookmarks is the collection it shows. Appearance opens that group
         // rather than sitting under the collection, which is where an ordering
         // by how often a section is opened had put it.
-        expect(order.slice(0, 4)).toEqual(['overview', 'appearance', 'bookmarks', 'structure']);
+        // Inbox follows Bookmarks: the other collection, with its own settings.
+        expect(order.slice(0, 5)).toEqual(['overview', 'appearance', 'bookmarks', 'inbox', 'structure']);
     });
 
     test('the Bookmarks view lists bookmarks and filters by search', async ({ page }) => {
@@ -265,7 +266,7 @@ test.describe('config: sections restored from the old config', () => {
         await loadDashboard(page);
         await openSection(page, 'behavior');
 
-        for (const tab of ['general', 'search', 'inbox', 'status']) {
+        for (const tab of ['general', 'search', 'fresh', 'status']) {
             await page.locator(`[data-behavior-tab="${tab}"]`).click();
             const panels = await page.locator('.config-panel').count();
             const notes = await page.locator('.config-panel-note').count();

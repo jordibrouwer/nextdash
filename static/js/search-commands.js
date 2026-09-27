@@ -3809,27 +3809,27 @@ class SearchCommandsComponent {
         ];
     }
 
+    /**
+     * Where a :health command lands: the Bookmarks view, which is where the
+     * Health view's filters live now. Written as that view's own address
+     * rather than the old #health one, so nothing is lost in a redirect -- a
+     * page, a search and every health kind the list can be narrowed by.
+     * `refresh` stays #health's: its redirect is what runs the scan on arrival.
+     */
     buildHealthViewUrl(options = {}) {
-        const filters = ['all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked', 'stale', 'unused', 'missing-preview', 'healthy'];
-        const params = new URLSearchParams();
         const filter = (options.filter || 'all').toLowerCase();
-        if (filter && filter !== 'all' && filters.includes(filter)) {
-            params.set('hv_filter', filter);
-        }
-        if (options.page != null && String(options.page).trim() !== '' && String(options.page) !== 'all') {
-            params.set('page', String(options.page));
-        }
-        if (options.sort) {
-            params.set('hv_sort', options.sort);
-        }
-        if (options.query) {
-            params.set('hv_q', options.query);
-        }
         if (options.refresh) {
-            params.set('hv_refresh', '1');
+            const params = new URLSearchParams({ hv_refresh: '1' });
+            if (filter !== 'all') params.set('hv_filter', filter);
+            return `/?${params.toString()}#health`;
         }
+        const params = new URLSearchParams();
+        if (filter !== 'all') params.set('health', filter);
+        if (options.query) params.set('q', options.query);
+        const page = options.page != null && String(options.page).trim() !== '' && String(options.page) !== 'all'
+            ? `/${encodeURIComponent(String(options.page))}` : '';
         const qs = params.toString();
-        return qs ? `/?${qs}#health` : '/#health';
+        return `/#bookmarks${page}${qs ? `?${qs}` : ''}`;
     }
 
     _handleHealthPageCommand(dashboard, pageArgs) {
@@ -4007,7 +4007,7 @@ class SearchCommandsComponent {
                 shortcut: ':HEALTH',
                 type: 'command',
                 action: () => {
-                    window.location.href = this.buildHealthViewUrl();
+                    window.location.href = this.buildHealthViewUrl({ filter: 'broken' });
                     return { navigate: true };
                 }
             }];
@@ -4405,7 +4405,7 @@ class SearchCommandsComponent {
             const unchecked = issues.filter((i) => !i?.lastChecked).length;
             rows.push({
                 name: unchecked > 0
-                    ? t('monitorCmdOn', 'on — review the {count} never-checked bookmarks in the health view', { count: unchecked })
+                    ? t('monitorCmdOn', 'on — review the {count} never-checked bookmarks in the Bookmarks view', { count: unchecked })
                     : t('monitorCmdOnNone', 'on — every bookmark has been checked at least once'),
                 shortcut: ':MONITOR',
                 stateId: 'monitor:on',

@@ -276,6 +276,69 @@ class DashboardHealthMultiSelect {
     }
 
     /**
+     * Mute or unmute alerts for the selection, in one request.
+     *
+     * Through the bulk expectations endpoint, which changes only the fields it
+     * is given: muting must not also clear the keyword checks or the drift
+     * baselines these bookmarks carry, which is exactly what sending them
+     * through the single-bookmark endpoint — where every field replaces what is
+     * stored — would have done.
+     */
+    async bulkSetMuted(muted) {
+        const issues = this.selectedIssues();
+        if (!issues.length) return;
+        window.nextdashTrack?.('health:bulk-mute', { count: issues.length, muted });
+
+        const targets = issues
+            .map((issue) => ({
+                pageId: Number(issue.pageId ?? issue.pageID ?? 0),
+                index: Number(issue.index ?? -1),
+                url: issue.url || '',
+            }))
+            .filter((t) => t.pageId > 0 && t.index >= 0 && t.url);
+        if (!targets.length) return;
+
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/health/expectations-bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targets, notifyMuted: muted }),
+            });
+            if (!res.ok) {
+                throw new Error(`bulk mute HTTP ${res.status}`);
+            }
+            const body = await res.json().catch(() => ({}));
+            await this.health.loadAndRender({ refresh: true });
+            const changed = Number(body?.changed) || 0;
+            const skipped = Number(body?.skipped) || 0;
+            if (skipped > 0) {
+                // Same wording as the check-mode batch: a row the report has
+                // gone stale on is not a failure to hide.
+                this.dash.showNotification(
+                    this.t(
+                        'dashboard.healthBulkMutePartial',
+                        'Changed {count} bookmark(s); {stale} had changed — reload the report',
+                        { count: changed, stale: skipped }
+                    ),
+                    'warning'
+                );
+                return;
+            }
+            this.dash.showNotification(
+                muted
+                    ? this.t('dashboard.healthBulkMuteDone', 'Alerts muted on {count} bookmark(s)', { count: changed })
+                    : this.t('dashboard.healthBulkUnmuteDone', 'Alerts unmuted on {count} bookmark(s)', { count: changed }),
+                'success'
+            );
+        } catch (_error) {
+            this.dash.showErrorNotification(
+                this.t('dashboard.healthBulkMuteFailed', 'Could not change alert muting')
+            );
+        }
+    }
+
+    /**
      * Accept the drift findings on every ticked row at once.
      *
      * The situation this exists for is never one row: a rebrand, a docs move,
