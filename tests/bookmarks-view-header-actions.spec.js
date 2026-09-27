@@ -2,21 +2,32 @@ const { test, expect } = require('./fixtures');
 const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 /**
- * The Bookmarks view's band carries Health's header: Work through, Rot
- * report, the view's own buttons, Export, ⋯ and ⓘ. The header icon carries
- * Health's badge.
+ * The Bookmarks view's band carries Health's header: Work through as its
+ * one button, everything else in one Collection menu, and ⓘ. The header
+ * icon carries Health's badge.
  */
 
 const band = (page) => page.locator('.config-view--library .lvs-header-actions');
+const menu = (page) => band(page).locator('[data-bm-header-menu]');
+
+/** Opens the header's Collection menu and clicks one of its items. */
+async function fromMenu(page, sel) {
+  await band(page).locator('[data-bm-header-more]').click();
+  await menu(page).locator(sel).click();
+}
 
 test.describe('bookmarks view: the band\'s actions', () => {
-  test('every action is there', async ({ page }) => {
+  test('Work through, one Collection menu and ⓘ; the rest is in the menu', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
-    for (const sel of ['[data-bm-work-through]', '[data-bm-rot-report]', '[data-bm-open-structure]',
-      '[data-bm-open-health-modal]', '[data-bm-export]', '[data-bm-header-more]', '[data-bm-help]']) {
-      await expect(band(page).locator(sel)).toHaveCount(1);
-    }
     await expect(band(page).locator('[data-bm-work-through]')).toContainText('Work through');
+    await expect(band(page).locator('[data-bm-header-more]')).toContainText('Collection');
+    await expect(band(page).locator('[data-bm-help]')).toBeVisible();
+    await expect(band(page).locator('button:visible')).toHaveCount(3);
+    await band(page).locator('[data-bm-header-more]').click();
+    for (const sel of ['[data-bm-open-health-modal]', '[data-bm-rot-report]', '[data-bm-open-structure]',
+      '[data-bm-export]', '[data-bm-header-action="refresh"]', '[data-bm-header-action="settings"]']) {
+      await expect(menu(page).locator(sel)).toBeVisible();
+    }
   });
 
   test('Work through walks the list as the view has it', async ({ page }) => {
@@ -35,10 +46,11 @@ test.describe('bookmarks view: the band\'s actions', () => {
     await expect(page.locator('.health-focus-overlay')).toBeVisible();
   });
 
-  test('Rot report and ⓘ open their explanations', async ({ page }) => {
+  test('Rot report, from the menu, and ⓘ open their explanations', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
-    await band(page).locator('[data-bm-rot-report]').click();
+    await fromMenu(page, '[data-bm-rot-report]');
     await expect(page.locator('#app-modal.show')).toBeVisible();
+    await expect(menu(page)).toBeHidden();
     await page.keyboard.press('Escape');
     await expect(page.locator('#app-modal.show')).toHaveCount(0);
     await band(page).locator('[data-bm-help]').click();
@@ -48,19 +60,29 @@ test.describe('bookmarks view: the band\'s actions', () => {
   test('Export downloads the list as it stands', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
     const download = page.waitForEvent('download');
-    await band(page).locator('[data-bm-export]').click();
+    await fromMenu(page, '[data-bm-export]');
     expect((await download).suggestedFilename()).toMatch(/\.csv$/);
   });
 
-  test('⋯ holds Health settings and a refresh of the report', async ({ page }) => {
+  test('Refresh report in the menu asks for a fresh report', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
-    await band(page).locator('[data-bm-header-more]').click();
-    const menu = band(page).locator('[data-bm-header-menu]');
-    await expect(menu).toBeVisible();
     const refreshed = page.waitForRequest((r) => /\/api\/bookmark-health\?refresh=1/.test(r.url()));
-    await menu.locator('[data-bm-header-action="refresh"]').click();
+    await fromMenu(page, '[data-bm-header-action="refresh"]');
     await refreshed;
-    await expect(menu.locator('[data-bm-header-action="settings"]')).toHaveCount(1);
+  });
+
+  test('the menu closes on Escape and on a click outside it', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    const more = band(page).locator('[data-bm-header-more]');
+    await more.click();
+    await expect(menu(page)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(menu(page)).toBeHidden();
+    await expect(more).toHaveAttribute('aria-expanded', 'false');
+    await more.click();
+    await expect(menu(page)).toBeVisible();
+    await page.locator('.config-view--library .lvs-header-text').click();
+    await expect(menu(page)).toBeHidden();
   });
 });
 

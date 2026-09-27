@@ -2479,3 +2479,34 @@ html body .config-bm-more-menu .config-btn {
 .config-bm-header-menu[hidden] {
     display: none;
 }
+
+.config-bm-header-menu > button[role="menuitem"] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-bm-header-menu kbd {
+    font: inherit;
+    font-size: var(--font-size-xs, 0.75rem);
+    color: var(--text-secondary);
+    background: none;
+    border: 0;
+    padding: 0;
+}
+
+.config-bm-header-menu-h {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem) 0;
+    font-size: var(--font-size-xs, 0.75rem);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-bm-header-menu hr {
+    width: 100%;
+    margin: var(--space-1, 0.25rem) 0;
+    border: 0;
+    border-top: 1px solid var(--border-primary);
+}

@@ -8,6 +8,12 @@ const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 const modal = (page) => page.locator('[data-structure-modal]');
 
+/** Pages & categories, from the Collection menu in the view's header. */
+async function openFromHeader(page) {
+  await page.locator('.config-view--library .lvs-header-actions [data-bm-header-more]').click();
+  await page.locator('.config-view--library [data-bm-header-menu] [data-bm-open-structure]').click();
+}
+
 test.describe('pages and categories modal', () => {
   test('Manage beside the rail\'s Pages opens it on Pages, with a count per page', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
@@ -89,7 +95,7 @@ test.describe('pages and categories modal: the rest of its actions', () => {
 
   async function openWithSecondPage(page) {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
-    await page.locator('.config-view--library .lvs-header-actions [data-bm-open-structure]').click();
+    await openFromHeader(page);
     await expect(modal(page)).toBeVisible();
     // One page more than there was: the data dir is shared, so "two" is not
     // something this test can count on.
@@ -98,11 +104,12 @@ test.describe('pages and categories modal: the rest of its actions', () => {
     await expect(modal(page).locator('[data-page-row]')).toHaveCount(before + 1);
   }
 
-  test('a button in the view\'s header opens it', async ({ page }) => {
+  test('the view header\'s Collection menu opens it', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
-    const button = page.locator('.config-view--library .lvs-header-actions [data-bm-open-structure]');
-    await expect(button).toHaveText('Pages & categories');
-    await button.click();
+    await page.locator('.config-view--library .lvs-header-actions [data-bm-header-more]').click();
+    const item = page.locator('.config-view--library [data-bm-header-menu] [data-bm-open-structure]');
+    await expect(item).toContainText('Pages & categories');
+    await item.click();
     await expect(modal(page)).toBeVisible();
   });
 
@@ -153,7 +160,7 @@ test.describe('pages and categories modal: the rest of its actions', () => {
 
   test('Open on the dashboard goes to that page', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
-    await page.locator('.config-view--library .lvs-header-actions [data-bm-open-structure]').click();
+    await openFromHeader(page);
     const row = modal(page).locator('[data-page-row]').first();
     await rowMenu(row).click();
     await modal(page).locator('[data-structure-menu] [data-structure-action="open-dashboard"]').click();
@@ -175,7 +182,7 @@ test.describe('pages and categories modal: the rest of its actions', () => {
       patches.push(JSON.parse(route.request().postData() || '{}'));
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'success', updated: 1, missing: [] }) });
     });
-    await page.locator('.config-view--library .lvs-header-actions [data-bm-open-structure]').click();
+    await openFromHeader(page);
     await modal(page).locator('[data-pt-tab="categories"]').click();
     const row = modal(page).locator('[data-cat-row]').first();
     await expect(row).toBeVisible();

@@ -1,6 +1,7 @@
 /**
- * The Bookmarks view's band: what Health's header offered -- Work through,
- * Rot report, a ⋯ of the rest and an ⓘ -- beside the view's own buttons.
+ * The Bookmarks view's band: Work through as its one button, the rest of
+ * what Health's header offered and the view's own actions in one Collection
+ * menu, and an ⓘ.
  *
  * Work through is Health's own walk (DashboardHealthFocus), handed the list as
  * this view shows it rather than as the Health view would: a thin stand-in for
@@ -18,24 +19,35 @@
             const esc = (v) => this.dash.escapeHtml(v);
             const t = (key, fallback) => this.t(key, fallback);
             const healthOn = this.dash.settings?.healthViewEnabled !== false;
-            const more = esc(t('dashboard.healthToolbarMore', 'More actions'));
             const help = esc(t('config.bmHelpTitle', 'How the Bookmarks view works'));
+            const unchecked = this.uncheckedBookmarks?.().length || 0;
+            const item = (attrs, label, key = '') => `<button type="button" role="menuitem" ${attrs}><span>${esc(label)}</span>${key ? `<kbd>${esc(key)}</kbd>` : ''}</button>`;
+            const heading = (label) => `<div class="config-bm-header-menu-h" role="presentation">${esc(label)}</div>`;
+            const look = healthOn ? [
+                item('data-bm-open-health-modal', t('config.bmHealthModalTitle', 'Collection health'), 'h'),
+                item('data-bm-rot-report', t('dashboard.healthRot', 'Rot report')),
+            ] : [];
+            const organise = [
+                item('data-bm-open-structure', t('config.bmStructureButton', 'Pages & categories'), '⇧P'),
+                unchecked ? item('data-bm-header-action="checking"', `${t('config.bmCheckingTitle', 'Turn on checking')}…`, String(unchecked)) : '',
+            ];
+            const rest = [
+                item('data-bm-export', t('config.bmExportCsv', 'Export CSV')),
+                healthOn ? item('data-bm-header-action="refresh"', t('config.bmKeyRefreshReport', 'refresh report').replace(/^./, (c) => c.toUpperCase()), '⇧R') : '',
+                healthOn ? item('data-bm-header-action="settings"', t('config.bmHealthSettings', 'Health settings')) : '',
+            ];
+            // Work through is what the view is worked with; the rest is looked
+            // at now and then, so it waits in one menu rather than a row of
+            // equal buttons.
             return `
                 ${healthOn ? `<button type="button" class="lvs-action lvs-action--primary" data-bm-work-through
-                        title="${esc(t('config.bmWorkThroughHint', 'Go through this list one bookmark at a time'))}">${esc(t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>
-                <button type="button" class="lvs-action" data-bm-rot-report
-                        title="${esc(t('dashboard.healthRotHint', 'What has gone, moved or been failing for a long time'))}">${esc(t('dashboard.healthRot', 'Rot report'))}</button>` : ''}
-                <button type="button" class="lvs-action" data-bm-open-structure>${esc(t('config.bmStructureButton', 'Pages & categories'))}</button>
-                ${healthOn ? `<button type="button" class="lvs-action" data-bm-open-health-modal>${esc(t('config.bmHealthModalTitle', 'Collection health'))}</button>` : ''}
-                <button type="button" class="lvs-action" data-bm-export
-                        title="${esc(t('config.bmExportHint', 'The list as it stands, as a CSV file'))}">${esc(t('config.bmExport', 'Export'))}</button>
+                        title="${esc(t('config.bmWorkThroughHint', 'Go through this list one bookmark at a time'))}">${esc(t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>` : ''}
                 <span class="config-bm-header-more">
-                    <button type="button" class="lvs-action lvs-action--overflow" data-bm-header-more aria-haspopup="menu" aria-expanded="false"
-                            title="${more}" aria-label="${more}">⋯</button>
+                    <button type="button" class="lvs-action" data-bm-header-more aria-haspopup="menu" aria-expanded="false">${esc(t('config.bmCollectionMenu', 'Collection'))} <span aria-hidden="true">▾</span></button>
                     <div class="config-structure-menu config-bm-header-menu" role="menu" data-bm-header-menu hidden>
-                        ${healthOn ? `<button type="button" role="menuitem" data-bm-header-action="refresh">${esc(t('config.bmKeyRefreshReport', 'refresh report').replace(/^./, (c) => c.toUpperCase()))} <kbd>⇧R</kbd></button>` : ''}
-                        ${this.uncheckedBookmarks?.().length ? `<button type="button" role="menuitem" data-bm-header-action="checking">${esc(t('config.bmCheckingTitle', 'Turn on checking'))}…</button>` : ''}
-                        ${healthOn ? `<button type="button" role="menuitem" data-bm-header-action="settings">${esc(t('config.bmHealthSettings', 'Health settings'))}</button>` : ''}
+                        ${look.length ? heading(t('config.bmMenuLookAt', 'Look at')) + look.join('') + '<hr>' : ''}
+                        ${heading(t('config.bmMenuOrganise', 'Organise'))}${organise.join('')}<hr>
+                        ${rest.join('')}
                     </div>
                 </span>
                 <button type="button" class="lvs-action view-help-btn" data-bm-help aria-haspopup="dialog" title="${help}" aria-label="${help}">ℹ</button>`;
@@ -44,6 +56,7 @@
         /** Clicks in the band; true when one was taken. */
         handleLibraryHeaderClick(e) {
             const on = (sel) => e.target.closest(sel);
+            if (on('[data-bm-header-menu] [role="menuitem"]')) this.closeLibraryHeaderMenu();
             if (on('[data-bm-work-through]')) this.startLibraryWorkThrough();
             else if (on('[data-bm-rot-report]')) this._bmHealthModule?.showRotReport?.();
             else if (on('[data-bm-export]')) this.bulkExportCsv?.(this.visibleBookmarks());
@@ -51,13 +64,10 @@
             else if (on('[data-bm-header-more]')) {
                 const button = on('[data-bm-header-more]');
                 const menu = button.parentElement?.querySelector('[data-bm-header-menu]');
-                if (menu) {
-                    menu.hidden = !menu.hidden;
-                    button.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
-                }
+                if (menu?.hidden) this.openLibraryHeaderMenu(button, menu);
+                else this.closeLibraryHeaderMenu();
             } else if (on('[data-bm-header-action]')) {
                 const action = on('[data-bm-header-action]').getAttribute('data-bm-header-action');
-                this.closeLibraryHeaderMenu();
                 if (action === 'refresh') void this.refreshBmHealth?.({ refresh: true });
                 else if (action === 'checking') this.openCheckingModal?.();
                 else if (action === 'settings') void this._bmHealthModule?.openStatusHealthSettings?.();
@@ -67,9 +77,36 @@
             return true;
         },
 
+        /** Open until a pick, Escape or a click anywhere else. */
+        openLibraryHeaderMenu(button, menu) {
+            this.closeLibraryHeaderMenu();
+            menu.hidden = false;
+            button.setAttribute('aria-expanded', 'true');
+            const away = (e) => {
+                if (e.type === 'keydown') {
+                    if (e.key !== 'Escape') return;
+                    // Escape is the menu's alone while it is open.
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    this.closeLibraryHeaderMenu();
+                    button.focus();
+                } else if (!e.target.closest?.('.config-bm-header-more')) {
+                    this.closeLibraryHeaderMenu();
+                }
+            };
+            document.addEventListener('pointerdown', away, true);
+            window.addEventListener('keydown', away, true);
+            this._libHeaderMenuAway = away;
+        },
+
         closeLibraryHeaderMenu() {
             document.querySelectorAll('[data-bm-header-menu]').forEach((m) => { m.hidden = true; });
             document.querySelectorAll('[data-bm-header-more]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+            if (this._libHeaderMenuAway) {
+                document.removeEventListener('pointerdown', this._libHeaderMenuAway, true);
+                window.removeEventListener('keydown', this._libHeaderMenuAway, true);
+                this._libHeaderMenuAway = null;
+            }
         },
 
         /** Health's walk over the list as this view shows it. */
