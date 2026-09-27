@@ -150,11 +150,7 @@ class DashboardPageNav {
         if (titleElement) {
             let displayName;
             if (d.activeView === 'inbox') {
-                // The kept tab names itself, so the title says which of the
-                // view's two lists is on screen.
-                displayName = (d.inbox?.activeTab?.() === 'kept'
-                    ? this.unsortedPageLabel()
-                    : this.t('dashboard.inboxPageTitle', 'Inbox')).toLowerCase();
+                displayName = this.t('dashboard.inboxPageTitle', 'Inbox').toLowerCase();
             } else if (d.activeView === 'docker') {
                 displayName = this.t('dashboard.dockerView', 'Containers').toLowerCase();
             } else if (d.activeView === 'config') {
@@ -198,7 +194,7 @@ class DashboardPageNav {
     updateDocumentTitle() {
         const d = this.dash;
         const viewName = d.activeView === 'inbox'
-            ? (d.inbox?.activeTab?.() === 'kept' ? this.unsortedPageLabel() : this.inboxPageLabel())
+            ? this.inboxPageLabel()
             : (d.activeView === 'config' ? this.configPageLabel()
                 : (d.activeView === 'docker' ? this.t('dashboard.dockerView', 'Containers')
                     : (d.activeView === 'library' ? this.t('dashboard.libraryView', 'Bookmarks') : '')));
@@ -323,11 +319,6 @@ class DashboardPageNav {
             : (s.inboxViewBadgeCounts === 'all'
                 ? (d.inbox?.instance?.activeItems?.().length || 0)
                 : (d.inbox?.unreadCount?.() || 0));
-        // The To triage tab shows this same number; moved together here, so
-        // no path that updates the badge can leave the tab behind. Through
-        // the loaded module only -- asking the loader would fetch the inbox
-        // just to count it.
-        d.inbox?.instance?.syncTabStrip?.({ fromBadge: true });
         const previous = Number(this._lastInboxBadgeCount) || 0;
         if (unread > 0) {
             badge.textContent = String(unread);

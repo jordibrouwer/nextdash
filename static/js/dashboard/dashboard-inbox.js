@@ -46,13 +46,6 @@ class DashboardInbox {
         this._statsFailed = false;
         this.triage = typeof DashboardInboxTriage === 'function' ? new DashboardInboxTriage(this) : null;
         this._searchRenderTimer = null;
-        /**
-         * Which of the view's two tabs is up: the triage queue, or the pile
-         * kept out of it. One view with two lists rather than two destinations
-         * in the header -- keeping a link is a step in this flow, not a place
-         * of its own.
-         */
-        this.tab = 'triage';
         /** The mounted ListViewShell handle, or null before the first render. */
         this.shell = null;
         this._fetchPromise = null;
@@ -315,13 +308,13 @@ class DashboardInbox {
         this.clearChecked();
         d._widgetUnsorted = null;
         await d.loadAllBookmarks?.();
-        this.syncTabStrip();
+        this.syncBadge();
         this.bumpKeptCounters();
         if (this.isActiveView()) this.render();
         const kept = leaving.length - filedElsewhere;
         if (kept) {
             d.showNotification(
-                this.t('dashboard.inboxBulkKept', 'Kept {count} — on the Kept tab', { count: kept }),
+                this.t('dashboard.inboxBulkKept', 'Kept {count} — in Bookmarks → Unsorted', { count: kept }),
                 'success',
                 {
                     duration: 8000,
@@ -367,7 +360,7 @@ class DashboardInbox {
         }
         d._widgetUnsorted = null;
         await d.loadAllBookmarks?.();
-        this.syncTabStrip();
+        this.syncBadge();
         if (this.isActiveView()) await this.loadAndRender({ refresh: true });
         d.showNotification(
             back
@@ -591,14 +584,13 @@ class DashboardInbox {
                     pageLabel(page))).join('');
         };
         /*
-         * Then the category, the way Kept's Move to… asks it: a batch filed
-         * loose on a page is a batch still to be sorted, only somewhere else.
-         * The same lookup, so the two pickers list the same categories.
+         * Then the category: a batch filed loose on a page is a batch still to
+         * be sorted, only somewhere else.
          */
         const showCategories = async (page) => {
             menu.innerHTML = title(pageLabel(page))
                 + option('data-promote-back', `← ${this.t('dashboard.inboxPromoteToPage', 'Promote to page')}`);
-            const categories = await d.unsorted?.select?.categoriesOnPage?.(page) || [];
+            const categories = await this.categoriesOnPage(page);
             if (!menu.isConnected) return;
             menu.innerHTML += categories.map((category) => option(
                 `data-promote-category="${this.escape(category.id)}" data-page="${this.escape(String(page.id))}"`,
@@ -822,7 +814,7 @@ class DashboardInbox {
     /**
      * What the engine would call the ticked rows, and what it would write.
      *
-     * Shown before it writes, the same popover the kept list opens: a tag
+     * Shown before it writes: a tag
      * applied to twenty rows is not something to discover afterwards. Each
      * line is a tag and the number of ticked rows it covers, ticked on --
      * accepting them is why the reader came -- and unticking one leaves those
@@ -995,7 +987,6 @@ class DashboardInbox {
             onUpdated: () => { if (this.isActiveView()) this.render(); },
         });
     }
-
 
     /**
      * Copy a shareable link to one item.
@@ -1418,10 +1409,7 @@ class DashboardInbox {
             setOrDelete('ib_tag', String(this.tagFilter || '').trim(), !String(this.tagFilter || '').trim());
             setOrDelete('ib_id', String(this.focusItemId || '').trim(), !String(this.focusItemId || '').trim());
             const query = params.toString();
-            // The kept tab keeps its own address; this call would otherwise
-            // undo restoreInboxHash a moment after it wrote it.
-            const hash = this.activeTab() === 'kept' ? '#unsorted' : '#inbox';
-            history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}${hash}`);
+            history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}#inbox`);
         } catch { /* history is unavailable in some embedded contexts */ }
     }
 
@@ -2074,9 +2062,7 @@ class DashboardInbox {
      * syncUrlState stay replaceState -- they are not places you navigated to.
      */
     restoreInboxHash() {
-        // The kept tab keeps the address it always had, so every link and
-        // bookmark to #unsorted still opens what it names.
-        const wanted = this.activeTab() === 'kept' ? '#unsorted' : '#inbox';
+        const wanted = '#inbox';
         if (window.location.hash === wanted) return;
         const next = `${window.location.pathname}${window.location.search}${wanted}`;
         if (!window.DashboardHistory?.pushLocation?.(next)) {
@@ -2132,7 +2118,7 @@ class DashboardInbox {
                 : found.pageLabel;
             await this.completePromote(item.id);
             await d.loadAllBookmarks?.();
-            this.syncTabStrip();
+            this.syncBadge();
             d.showNotification(
                 this.t('dashboard.inboxAutoFiled', `Filed on ${place}`, { place }),
                 'success', { duration: 5000 });
@@ -2151,22 +2137,15 @@ class DashboardInbox {
         });
     }
 
-    async openInboxView({ tab } = {}) {
+    async openInboxView() {
         const d = this.dash;
         if (!this.isEnabled()) {
             return false;
         }
         this.ensureSuggestCatalogue();
-        // A tab named by the caller is what Shift+U, #unsorted and the widget's
-        // "view all" ask for, and it has to be honoured on a view that is
-        // already open as well as on one being opened.
-        const wanted = tab === 'kept' && this.keptEnabled() ? 'kept'
-            : (tab === 'triage' ? 'triage' : null);
         if (d.activeView === DashboardInbox.VIEW) {
-            if (wanted && wanted !== this.tab) this.setTab(wanted, 'link');
             return true;
         }
-        if (wanted) this.tab = wanted;
         if (d.isInlineEditActive() && !(await d.confirmInlineEditBeforeNavigation())) {
             return false;
         }
@@ -2256,10 +2235,6 @@ class DashboardInbox {
     }
 
     async maybeShowTutorial() {
-        // On the queue only. Arriving on Kept comes from a link, Shift+U or
-        // the widget -- someone already on their way somewhere -- and the Tour
-        // button in that band is there for when they want it.
-        if (this.activeTab() === 'kept') return;
         if (window.DiscoverabilityState?.hasSeenTip?.(DashboardInbox.TUTORIAL_TIP_ID)) return;
         if (this.dash.settings?.enableSessionTips === false) return;
         if (typeof window.InboxTutorial === 'undefined') {
@@ -2284,7 +2259,6 @@ class DashboardInbox {
         return d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
     }
 
-
     closeInboxView() {
         const d = this.dash;
         if (d.activeView !== DashboardInbox.VIEW) {
@@ -2300,7 +2274,6 @@ class DashboardInbox {
         }
         return restored;
     }
-
 
     setupEscapeShortcut() {
         const d = this.dash;
@@ -2344,23 +2317,9 @@ class DashboardInbox {
                 return;
             }
             /*
-             * One layer per press.
-             *
-             * On Kept: the ticks first, then the tab itself, back to the
-             * queue. On the queue: its ticks first, then the view, back to the
-             * dashboard page that was on screen. A single press used to skip
-             * every layer at once -- the selection, the tab and the view -- so
-             * clearing a mis-tick meant leaving the inbox and coming back.
+             * One layer per press: the ticks first, then the view, back to
+             * the dashboard page that was on screen.
              */
-            if (this.activeTab() === 'kept') {
-                const select = d.unsorted?.select;
-                if (select?.isActive?.()) {
-                    select.clear();
-                    return;
-                }
-                this.setTab('triage', 'escape');
-                return;
-            }
             if (this.checkedIds.size) {
                 this.clearChecked();
                 return;
@@ -2369,7 +2328,6 @@ class DashboardInbox {
         };
         document.addEventListener('keydown', this._escapeHandler, true);
     }
-
 
     bindPointerNavigation(container) {
         if (!container) {
@@ -2405,7 +2363,6 @@ class DashboardInbox {
         container.addEventListener('pointerover', this._pointerHandler, true);
     }
 
-
     unbindPointerNavigation() {
         if (this._pointerContainer && this._pointerHandler) {
             this._pointerContainer.removeEventListener('pointerover', this._pointerHandler, true);
@@ -2413,7 +2370,6 @@ class DashboardInbox {
         this._pointerContainer = null;
         this._pointerHandler = null;
     }
-
 
     selectItemById(id) {
         const nextId = String(id || '').trim();
@@ -2424,57 +2380,9 @@ class DashboardInbox {
         this.applyKeyboardSelection();
     }
 
-
     handleKeyboardNavigation(e) {
         const d = this.dash;
         if (!this.isActiveView() || !this.isEnabled()) {
-            return false;
-        }
-        /*
-         * The kept tab is not this list.
-         *
-         * These keys move a cursor through the queue's rows and act on the row
-         * it lands on. On the kept tab that queue is hidden, so every one of
-         * them was spent on rows nobody could see -- and the arrows never
-         * reached the grid navigation the kept list actually uses, which is
-         * why x over that list did nothing at all.
-         */
-        if (this.activeTab() === 'kept') {
-            // One key is this list's own: the run over it, the way f opens the
-            // health view's. Everything else belongs to the grid below.
-            const typing = e.target?.tagName === 'INPUT' || e.target?.tagName === 'TEXTAREA'
-                || e.target?.isContentEditable;
-            /*
-             * b: back to the inbox, for the row under the cursor -- or for the
-             * ticked rows when there are any, the way the selection bar's own
-             * button reads them. The run over the list has had it as B on the
-             * card; the list had no key at all, so the way back was a
-             * right-click.
-             */
-            if (e.key === 'b' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
-                const select = d.unsorted?.select;
-                const nav = d.keyboardNavigation;
-                const rowKey = nav?.navigableElements?.[nav.currentIndex]?.dataset?.unsortedKey || '';
-                const current = rowKey
-                    ? (d.unsorted?._bookmarks || []).find((b) => select?.keyFor(b) === rowKey)
-                    : null;
-                const rows = select?.isActive?.() ? select.selectedBookmarks() : (current ? [current] : []);
-                if (rows.length) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    void select.sendToInbox(rows);
-                    return true;
-                }
-            }
-            if (e.key === 'f' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
-                const review = d.unsorted?.review;
-                if (review && !review.isOpen()) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    review.open();
-                    return true;
-                }
-            }
             return false;
         }
         if (this.triage?.isOpen?.()) {
@@ -2903,19 +2811,6 @@ class DashboardInbox {
 
         const apply = (until) => {
             this.closeSnoozeMenu();
-            /*
-             * A caller that owns what happens next.
-             *
-             * The kept list parks a bookmark rather than an inbox item: the
-             * row has to travel to the queue first and be put to sleep there,
-             * which is neither of the two paths below. It wants the presets
-             * and the date field, nothing else.
-             */
-            if (typeof options.onPicked === 'function') {
-                const value = Number(until);
-                if (value > Date.now()) options.onPicked(value);
-                return;
-            }
             if (Array.isArray(bulkTargets)) {
                 void this.bulkSnooze(bulkTargets, until);
             } else if (typeof options.onApplied === 'function') {
@@ -3259,11 +3154,9 @@ class DashboardInbox {
         );
     }
 
-
     getVisibleItemCards() {
         return Array.from(document.querySelectorAll('.inbox-feed .inbox-item'));
     }
-
 
     moveKeyboardSelection(delta, cards, { wrap = true } = {}) {
         const list = Array.isArray(cards) && cards.length ? cards : this.getVisibleItemCards();
@@ -3295,7 +3188,6 @@ class DashboardInbox {
         return true;
     }
 
-
     applyKeyboardSelection(cards) {
         const list = Array.isArray(cards) && cards.length ? cards : this.getVisibleItemCards();
         if (!this._pointerSelecting) this.openItemId = this.selectedItemId;
@@ -3320,7 +3212,6 @@ class DashboardInbox {
         });
     }
 
-
     clearKeyboardSelection() {
         this.selectedItemId = null;
         this.openItemId = null;
@@ -3341,7 +3232,6 @@ class DashboardInbox {
         });
     }
 
-
     syncKeyboardSelectionAfterRender() {
         // The panel shows the item as the list now has it.
         this._drawer?.refresh();
@@ -3354,7 +3244,6 @@ class DashboardInbox {
         }
         this.applyKeyboardSelection(cards);
     }
-
 
     /**
      * The durable lifetime aggregate behind /api/inbox-stats.
@@ -4250,8 +4139,6 @@ class DashboardInbox {
             id: 'inbox',
             title: this.t('dashboard.inboxPageTitle', 'Inbox'),
             description: this.t('dashboard.inboxPageSubtitle', 'Links saved to read or review later'),
-            // The Kept tab still uses it; the queue hides it (dashboard-inbox.css).
-            density: true,
             t: (key, fallback) => this.t(key, fallback),
             activeFilter: this.filter,
             // Specs select `[data-inbox-filter="all"] .inbox-filter-count`, so
@@ -4294,7 +4181,6 @@ class DashboardInbox {
         // stop being swallowed; without a tabindex that focus() does nothing.
         container.tabIndex = -1;
         this.shell = window.ListViewShell.mount(container, this.shellConfig());
-        this.buildTabStrip(this.shell);
         /*
          * Two of everything above the body, side by side and one of them
          * hidden.
@@ -4306,25 +4192,17 @@ class DashboardInbox {
          */
         this._ownToolbar = document.createElement('div');
         this._ownToolbar.className = 'inbox-toolbar-own';
-        this._keptToolbar = document.createElement('div');
-        this._keptToolbar.className = 'inbox-toolbar-kept';
-        this.shell.toolbar.append(this._ownToolbar, this._keptToolbar);
+        this.shell.toolbar.append(this._ownToolbar);
         this._ownActions = document.createElement('div');
         this._ownActions.className = 'inbox-actions-own';
-        this._keptActions = document.createElement('div');
-        this._keptActions.className = 'inbox-actions-kept';
-        this.shell.headerActions.append(this._ownActions, this._keptActions);
+        this.shell.headerActions.append(this._ownActions);
         this._ownBody = document.createElement('div');
         this._ownBody.className = 'inbox-body-own';
         // Each body is the panel its tab controls, so a screen reader moving
         // off the strip lands in the list the strip just named.
         this._ownBody.id = 'inbox-panel-triage';
         this._ownBody.setAttribute('role', 'tabpanel');
-        this._keptBody = document.createElement('div');
-        this._keptBody.className = 'inbox-body-kept';
-        this._keptBody.id = 'inbox-panel-kept';
-        this._keptBody.setAttribute('role', 'tabpanel');
-        this.shell.body.append(this._ownBody, this._keptBody);
+        this.shell.body.append(this._ownBody);
         this.buildToolbar(this._ownToolbar);
         this.buildHeaderActions(this._ownActions);
         return this.shell;
@@ -4335,211 +4213,62 @@ class DashboardInbox {
         this.shell = null;
     }
 
-    /* ── The two tabs ──────────────────────────────────────────────────────── */
+    /**
+     * The categories a page holds.
+     *
+     * The page on screen is already loaded, so it is read from what the
+     * dashboard has. Every other page is asked for -- reading them off the
+     * bookmarks that carry them showed an id where a name belongs, and left
+     * out every category nobody has filed anything in yet, which on a page
+     * made for the purpose is all of them. The bookmarks stay as the fallback
+     * for a request that does not answer.
+     */
+    async categoriesOnPage(page) {
+        const d = this.dash;
+        const byId = new Map();
+        if (String(d.currentPageId) === String(page.id)) {
+            (d.categories || []).filter((c) => !c.isSmartCollection).forEach((c) => {
+                if (c?.id) byId.set(String(c.id), String(c.name || c.id));
+            });
+        } else {
+            try {
+                const res = await fetch(`/api/categories?page=${encodeURIComponent(page.id)}`);
+                if (res.ok) {
+                    const list = await res.json();
+                    (Array.isArray(list) ? list : []).forEach((category) => {
+                        if (category?.isSmartCollection || !category?.id) return;
+                        byId.set(String(category.id), String(category.name || category.id));
+                    });
+                }
+            } catch { /* the bookmarks below are the fallback */ }
+        }
+        (d.allBookmarks || [])
+            .filter((bookmark) => String(bookmark?.pageId) === String(page.id))
+            .forEach((bookmark) => {
+                const id = String(bookmark?.category || '').trim();
+                if (id && !byId.has(id)) byId.set(id, id);
+            });
+        return [...byId.entries()]
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    /* ── Keep ──────────────────────────────────────────────────────────────── */
 
     /**
-     * True when kept bookmarks have a tab to stand on at all.
+     * Whether Keep is on: a kept link waits in Bookmarks → Unsorted until it
+     * is promoted onto a page.
      *
-     * Read from the setting rather than from the module: this is asked while
-     * the view is being built, and the module it would ask is loaded by the
-     * same loader that builds this one.
+     * Read from the setting rather than from a module: this is asked while
+     * the view is being built.
      */
     keptEnabled() {
         return this.dash.settings?.unsortedEnabled !== false;
     }
 
-    /** The tab actually showing: kept only while kept is switched on. */
-    activeTab() {
-        return this.tab === 'kept' && this.keptEnabled() ? 'kept' : 'triage';
-    }
-
-    /**
-     * The strip in the shell's header: the queue, and what was kept out of it.
-     *
-     * Built once with the shell and only relabelled afterwards, like the rest
-     * of the chrome. The count beside Kept comes from the array the dashboard
-     * already keeps in step with every mutation, so the strip asks nothing of
-     * its own.
-     */
-    buildTabStrip(shell) {
-        const strip = document.createElement('div');
-        strip.className = 'inbox-tabs';
-        strip.setAttribute('role', 'tablist');
-        strip.setAttribute('aria-label', this.t('dashboard.inboxTabsLabel', 'Inbox tabs'));
-
-        const make = (tab, label) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'inbox-tab';
-            btn.dataset.inboxTab = tab;
-            btn.setAttribute('role', 'tab');
-            btn.setAttribute('aria-controls', tab === 'kept' ? 'inbox-panel-kept' : 'inbox-panel-triage');
-            const text = document.createElement('span');
-            text.className = 'inbox-tab-label';
-            text.textContent = label;
-            btn.appendChild(text);
-            // Both tabs say how much they hold. Only Kept used to, so the
-            // queue -- the list that asks for attention -- was the one without
-            // a number.
-            const count = document.createElement('span');
-            count.className = 'inbox-tab-count';
-            btn.appendChild(count);
-            if (tab === 'kept') this._keptCountEl = count;
-            else this._triageCountEl = count;
-            btn.addEventListener('click', () => this.setTab(tab, 'click'));
-            strip.appendChild(btn);
-            return btn;
-        };
-        /*
-         * The keyboard a tablist promises.
-         *
-         * Calling the strip a tablist is a claim about the arrows: they move
-         * between the tabs, and the strip is one stop in the tab order rather
-         * than one per tab. Without it the roles said one thing and the keys
-         * did another, which is worse than no roles at all.
-         */
-        this._tabStripKeys = (event) => {
-            if (!strip.isConnected || !strip.contains(document.activeElement)) return;
-            const order = ['triage', 'kept'].filter(
-                (tab) => tab === 'triage' || this.keptEnabled());
-            if (order.length < 2) return;
-            const at = Math.max(0, order.indexOf(this.activeTab()));
-            let next = null;
-            if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-                next = order[(at - 1 + order.length) % order.length];
-            } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-                next = order[(at + 1) % order.length];
-            } else if (event.key === 'Home') {
-                next = order[0];
-            } else if (event.key === 'End') {
-                next = order[order.length - 1];
-            }
-            if (!next) return;
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            this.setTab(next, 'keyboard');
-            this._focusActiveTab();
-        };
-        // On the window in capture, gated on the focus being in the strip. The
-        // grid's own navigation is bound to document and claims Home and End
-        // for the first and last row, so anything bound there -- or on the
-        // strip itself -- hears those two only after they are gone.
-        window.addEventListener('keydown', this._tabStripKeys, true);
-        this._triageTabBtn = make('triage', this.t('dashboard.inboxTabTriage', 'To triage'));
-        this._keptTabBtn = make('kept', this.t('dashboard.inboxTabKept', 'Kept'));
-        // In the header's action row, not above the header: a row of its own
-        // put the inbox a strip lower than Health, and the view jumped.
-        shell.headerActions.insertBefore(strip, shell.headerActions.firstChild);
-        this._tabStrip = strip;
-        this.syncTabStrip();
-        return strip;
-    }
-
-    /** Which tab is lit, what the count says, and whether Kept is offered. */
-    syncTabStrip({ fromBadge = false } = {}) {
-        // And the header badge, which shows the To triage number too: every
-        // repaint of the strip moves it, so neither can be left a count behind
-        // the other. The badge calls back in with fromBadge, which stops the
-        // pair from calling each other forever.
-        if (!fromBadge) this.dash.pageNav?.updateInboxTabBadge?.();
-        if (!this._tabStrip) return;
-        const tab = this.activeTab();
-        const kept = this.keptEnabled();
-        this._tabStrip.hidden = !kept;
-        if (this._triageTabBtn) {
-            this._triageTabBtn.classList.toggle('is-active', tab === 'triage');
-            this._triageTabBtn.setAttribute('aria-selected', String(tab === 'triage'));
-            // Roving: the strip is one stop, and it is the active tab.
-            this._triageTabBtn.tabIndex = tab === 'triage' ? 0 : -1;
-        }
-        if (this._keptTabBtn) {
-            this._keptTabBtn.classList.toggle('is-active', tab === 'kept');
-            this._keptTabBtn.setAttribute('aria-selected', String(tab === 'kept'));
-            this._keptTabBtn.tabIndex = tab === 'kept' ? 0 : -1;
-            this._keptTabBtn.hidden = !kept;
-        }
-        if (this._keptCountEl) {
-            const count = (this.dash.unsortedBookmarks || []).length;
-            this._keptCountEl.textContent = count ? String(count) : '';
-        }
-        if (this._triageCountEl) {
-            /*
-             * The header badge's own number: unread and awake.
-             *
-             * The tab used to count every row, read or not, so the same queue
-             * read 27 in the header and 56 on the tab. One count, from one
-             * place, cannot disagree with itself -- and "waiting to be read"
-             * is the number that goes to zero when the queue is dealt with.
-             */
-            const waiting = this.unreadCount?.() || 0;
-            this._triageCountEl.textContent = waiting ? String(waiting) : '';
-        }
-    }
-
-    /** Put the focus back on whichever tab is now selected. */
-    _focusActiveTab() {
-        const btn = this.activeTab() === 'kept' ? this._keptTabBtn : this._triageTabBtn;
-        btn?.focus?.({ preventScroll: true });
-    }
-
-    /**
-     * Switch tabs: the chrome each one owns is shown or hidden, never rebuilt.
-     *
-     * The rail goes with the triage tab. Kept filters itself from its own
-     * toolbar, and an empty column of filters beside it would be chrome that
-     * says nothing.
-     */
-    setTab(tab, via = 'click') {
-        const next = tab === 'kept' && this.keptEnabled() ? 'kept' : 'triage';
-        if (next === this.tab) return;
-        this.tab = next;
-        // The panel belongs to the queue's rows.
-        this.closeDrawer();
-        // The kept list's selection bar is drawn into the layout, not into the
-        // tab: ticks left behind on a switch stood over the queue offering
-        // Delete and Move to… for rows that were no longer on screen.
-        if (next !== 'kept') this.dash.unsorted?.select?.clear?.();
-        this._trackAction('tab', { tab: next, via });
-        this.applyTabToChrome();
-        this.restoreInboxHash();
-        if (next === 'kept') {
-            void this.dash.unsorted?.loadAndRender?.();
-        } else {
-            this.render();
-        }
-    }
-
-    /** Show the half of the chrome the active tab owns, hide the other. */
-    applyTabToChrome() {
-        const kept = this.activeTab() === 'kept';
-        const flip = (own, other) => {
-            if (own) own.hidden = kept;
-            if (other) other.hidden = !kept;
-        };
-        // The band says which list is up, and on the kept tab it says what to
-        // do with what is in it: the one question a kept link poses is where
-        // it should go, and the answer used to be hidden in the row menu.
-        const description = this.shell?.root?.querySelector('.lvs-description');
-        if (description) {
-            description.textContent = kept
-                ? this.t('dashboard.unsortedTabDescription',
-                    'Kept links without a page yet. File one on a page, or send it back to the queue.')
-                : this.t('dashboard.inboxPageSubtitle', 'Links saved to read or review later');
-        }
-        flip(this._ownToolbar, this._keptToolbar);
-        flip(this._ownActions, this._keptActions);
-        flip(this._ownBody, this._keptBody);
-        if (this.shell?.root) {
-            this.shell.root.classList.toggle('inbox-kept-tab', kept);
-        }
-        this.syncTabStrip();
-        if (kept) {
-            this.dash.unsorted?.mountInto?.({
-                body: this._keptBody,
-                toolbar: this._keptToolbar,
-                actions: this._keptActions,
-            });
-        }
+    /** The header badge, after anything that moved the count. */
+    syncBadge() {
+        this.dash.pageNav?.updateInboxTabBadge?.();
     }
 
     /**
@@ -4691,7 +4420,7 @@ class DashboardInbox {
         host.innerHTML = `
             <button type="button" class="lvs-action lvs-action--primary inbox-triage-btn inbox-triage-btn--primary">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
             <button type="button" class="lvs-action inbox-tour-btn" data-inbox-tour
-                    title="${this.escape(this.t('dashboard.inboxTourHint', 'A short tour of the inbox and the Kept tab'))}">${this.escape(this.t('dashboard.inboxTour', 'Tour'))}</button>
+                    title="${this.escape(this.t('dashboard.inboxTourHint', 'A short tour of the inbox'))}">${this.escape(this.t('dashboard.inboxTour', 'Tour'))}</button>
             <span class="inbox-menu-wrap">
                 <button type="button" class="lvs-action lvs-action--overflow inbox-toolbar-more" data-inbox-toolbar-more
                         aria-haspopup="menu" aria-expanded="false"
@@ -4918,14 +4647,7 @@ class DashboardInbox {
         if (!shell) {
             return;
         }
-        this.applyTabToChrome();
         this.applyRailSetting(shell);
-        // On the kept tab the body belongs to the unsorted module: everything
-        // below here is about the queue, down to the filters and the bulk bar.
-        if (this.activeTab() === 'kept') {
-            void d.unsorted?.loadAndRender?.();
-            return;
-        }
         const container = document.getElementById('dashboard-layout');
 
         d._abortInlineEditForRender?.();
@@ -5110,7 +4832,6 @@ class DashboardInbox {
         this.applyPendingItemFocus();
         this.announceListState(filtered.length);
     }
-
 
     /**
      * A line under the list for the links that are asleep.
@@ -5465,8 +5186,7 @@ class DashboardInbox {
 
     async keepItem(item) {
         const d = this.dash;
-        // The same switch the kept tab answers to: with keeping off there is
-        // nowhere for this to land that the reader can reach.
+        // With keeping off there is nowhere for this to land.
         if (!this.keptEnabled()) return false;
         this._trackAction('keep');
         // Where the link is on screen *now*: the write below re-renders the
@@ -5532,13 +5252,11 @@ class DashboardInbox {
             // the life of the tab; a link kept from here is exactly what makes
             // that answer wrong.
             d._widgetUnsorted = null;
-            // And the list the strip counts. Keep is the one action that adds
-            // to the kept page, and nothing else on this path reloads the
-            // bookmarks -- so without this the count beside the Kept tab stood
-            // still until the reader switched tabs or reloaded, at exactly the
-            // moment it was meant to say where the link went.
+            // Keep is the one action that adds to the kept page, and nothing
+            // else on this path reloads the bookmarks: Bookmarks → Unsorted
+            // would not have it until the next reload.
             await d.loadAllBookmarks?.();
-            this.syncTabStrip();
+            this.syncBadge();
             await this.completePromote(item.id);
             this.announceKeep(item, { createdCopy });
             return true;
@@ -5585,7 +5303,7 @@ class DashboardInbox {
     announceKeep(item, { createdCopy = true } = {}) {
         const d = this.dash;
         d.showNotification(
-            this.t('dashboard.inboxKeptToast', 'Kept — on the Kept tab'),
+            this.t('dashboard.inboxKeptToast', 'Kept — in Bookmarks → Unsorted'),
             'success',
             {
                 duration: 6000,
@@ -5618,12 +5336,8 @@ class DashboardInbox {
     keepFlightTarget() {
         const inCard = document.querySelector('#inbox-triage-overlay .inbox-triage-kept-count');
         if (inCard) return inCard;
-        const tab = document.querySelector('[data-inbox-tab="kept"]:not([hidden])');
-        // The count when it has something in it; an empty one has no box to
-        // fly into -- the first keep of all lands on a count that is blank.
-        const count = tab?.querySelector('.inbox-tab-count');
-        if (count && count.getBoundingClientRect().width > 0) return count;
-        return tab || null;
+        // Kept links wait in Bookmarks → Unsorted: the row flies to its icon.
+        return document.querySelector('.library-link-anchor, .library-link a') || null;
     }
 
     flyToKept(from, target) {
@@ -5633,11 +5347,8 @@ class DashboardInbox {
     /**
      * A copy of a row, flying from where it was to where it went.
      *
-     * Shared by both directions -- Keep sends a row to the Kept tab, Back to
-     * the inbox sends one to the queue's -- so the two moves look like one
-     * another, which is what makes the second read as the undoing of the
-     * first. `land` runs when it arrives, or straight away when there is
-     * nothing to animate.
+     * Keep sends a row to the Bookmarks icon, where Unsorted is. `land` runs
+     * when it arrives, or straight away when there is nothing to animate.
      */
     flyTo(from, target, land) {
         const to = target?.getBoundingClientRect?.();
@@ -5683,51 +5394,9 @@ class DashboardInbox {
         setTimeout(() => el.classList.remove('is-bumped'), 900);
     }
 
-    /**
-     * The row box a kept bookmark sits in on screen, for a flight back to the
-     * queue. Measured before the write: the list redraws after it.
-     */
-    keptRowSource(bookmark, key) {
-        // Compared as a value rather than through a selector: the key joins
-        // the address and the name with a NUL, which CSS.escape rewrites to a
-        // replacement character, so a selector built from it never matches.
-        const row = key
-            ? [...document.querySelectorAll('.unsorted-view .bookmark-link[data-unsorted-key]')]
-                .find((el) => el.dataset.unsortedKey === key)
-            : null;
-        const rect = row?.getBoundingClientRect?.();
-        if (!rect || rect.width < 1 || rect.height < 1) return null;
-        return {
-            left: rect.left, top: rect.top, width: rect.width, height: rect.height,
-            title: bookmark?.name || bookmark?.url || '',
-        };
-    }
-
-    /** Fly rows back to the queue's tab, which steps up as they land. */
-    flyBackToQueue(sources) {
-        const tab = document.querySelector('[data-inbox-tab="triage"]:not([hidden])');
-        // Into the count, like Keep flies into Kept's; the label when the
-        // queue was empty and the count has no box yet.
-        const count = tab?.querySelector('.inbox-tab-count');
-        const label = count && count.getBoundingClientRect().width > 0
-            ? count
-            : (tab?.querySelector('.inbox-tab-label') || tab);
-        // A handful is the gesture; forty ghosts at once is noise, and each
-        // is a layer the browser has to composite.
-        const shown = (sources || []).filter(Boolean).slice(0, 6);
-        if (!shown.length) {
-            this.bump(label);
-            return;
-        }
-        shown.forEach((from, i) => {
-            setTimeout(() => this.flyTo(from, label, () => this.bump(label)), i * 70);
-        });
-    }
-
     /** The count the link landed in steps up, visibly. */
     bumpKeptCounters() {
         const counts = [
-            document.querySelector('[data-inbox-tab="kept"] .inbox-tab-count'),
             document.querySelector('#inbox-triage-overlay .inbox-triage-kept-count'),
         ].filter(Boolean);
         const total = (this.dash.unsortedBookmarks || []).length;
@@ -5779,7 +5448,7 @@ class DashboardInbox {
             }
             d._widgetUnsorted = null;
             await d.loadAllBookmarks?.();
-            this.syncTabStrip();
+            this.syncBadge();
             if (this.isActiveView()) await this.loadAndRender({ refresh: true });
         } catch {
             d.showNotification(this.t('dashboard.inboxKeepUndoFailed', 'Could not take the keep back'), 'error');

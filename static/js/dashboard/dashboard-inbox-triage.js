@@ -543,7 +543,7 @@ class DashboardInboxTriage {
                 <p class="inbox-triage-kicker">${this.escape(this.t('dashboard.inboxTriage', 'Triage inbox'))}</p>
                 <p class="inbox-triage-progress">${this.escape(progress)}</p>
                 ${this.inbox.keptEnabled?.() ? `<span class="inbox-triage-kept-count" title="${this.escape(
-                    this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, on the inbox\u2019s Kept tab, without giving it a page yet'))}">${this.escape(
+                    this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, in Bookmarks → Unsorted, without giving it a page yet'))}">${this.escape(
                     this.t('dashboard.inboxTriageKeptCount', `Kept ${(this.inbox.dash.unsortedBookmarks || []).length}`,
                         { count: (this.inbox.dash.unsortedBookmarks || []).length }))}</span>` : ''}
                 <button type="button" class="inbox-triage-close" aria-label="${this.escape(this.t('dashboard.inboxTriageClose', 'Close'))}">×</button>
@@ -567,8 +567,8 @@ class DashboardInboxTriage {
                 <button type="button" class="inbox-action-btn" data-triage="note">${this.escape(noteLabel)} <kbd>N</kbd></button>
                 <button type="button" class="inbox-action-btn inbox-action-btn--danger" data-triage="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))} <kbd>D</kbd></button>
             </div>
-            <p class="inbox-triage-hint">${this.escape(this.t('dashboard.inboxTriageHint', 'J/K next · O open · P promote · R mark read · Shift+K keep (to Kept) · Z snooze · N note · D delete · Esc close'))}</p>
-            <p class="inbox-triage-hint inbox-triage-keep-hint">${this.escape(this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, on the inbox\u2019s Kept tab, without giving it a page yet'))}</p>
+            <p class="inbox-triage-hint">${this.escape(this.t('dashboard.inboxTriageHint', 'J/K next · O open · P promote · R mark read · Shift+K keep (to Unsorted) · Z snooze · N note · D delete · Esc close'))}</p>
+            <p class="inbox-triage-hint inbox-triage-keep-hint">${this.escape(this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, in Bookmarks → Unsorted, without giving it a page yet'))}</p>
         `;
 
         // Rewriting the card destroys whatever was focused inside it, which

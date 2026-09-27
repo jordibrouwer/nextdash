@@ -580,38 +580,17 @@ test('the destinations are as big as the action group', async ({ page }) => {
 });
 
 /*
- * Kept bookmarks are the inbox's second tab (they were a view of their own,
- * with a header icon, until the Unsorted-in-Inbox change). Shift+U still
- * reaches them; there is no fourth icon to click.
+ * Kept bookmarks wait in Bookmarks → Unsorted. Shift+U goes there; there is
+ * no icon of their own to click.
  */
-test('Shift+U opens the inbox on its Kept tab, with no header icon of its own', async ({ page }) => {
+test('Shift+U opens the Bookmarks view on Unsorted, with no header icon of its own', async ({ page }) => {
     await openDashboard(page);
 
     await page.keyboard.press('Shift+U');
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('inbox');
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.inbox?.tab)).toBe('kept');
-    await expect(page.locator('.unsorted-view')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('library');
+    await expect(page).toHaveURL(/#bookmarks\?filter=unsorted$/);
+    await expect(page.locator('[data-bm-rail="cleanup"][data-value="unsorted"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.unsorted-link-anchor')).toHaveCount(0);
-});
-
-test('turning keeping off takes the Kept tab away without a reload', async ({ page }) => {
-    await openDashboard(page);
-    await page.keyboard.press('Shift+U');
-    await expect(page.locator('[data-inbox-tab="kept"]')).toBeVisible();
-
-    await page.evaluate(() => {
-        const d = window.dashboardInstance;
-        d.settings.unsortedEnabled = false;
-        d.inbox.syncTabStrip();
-    });
-    await expect(page.locator('[data-inbox-tab="kept"]')).toBeHidden();
-
-    await page.evaluate(() => {
-        const d = window.dashboardInstance;
-        d.settings.unsortedEnabled = true;
-        d.inbox.syncTabStrip();
-    });
-    await expect(page.locator('[data-inbox-tab="kept"]')).toBeVisible();
 });
 
 /*

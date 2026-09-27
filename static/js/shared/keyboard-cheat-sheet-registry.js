@@ -53,6 +53,14 @@
                     printFallback: 'Bookmarks, broken ones',
                 },
                 {
+                    keys: 'Shift + U',
+                    cheatKey: 'navUnsortedView',
+                    fallback: 'Open the Bookmarks view on Unsorted — kept links waiting for a page',
+                    when: (ctx) => ctx.configEnabled,
+                    print: true,
+                    printFallback: 'Bookmarks, unsorted',
+                },
+                {
                     keys: 'Shift + S',
                     cheatKey: 'navSettingsView',
                     fallback: 'Open config — settings, pages, and bookmarks',

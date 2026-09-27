@@ -34,8 +34,7 @@ class DashboardConfig {
      *
      * The icon and preview endpoints allow sixty a minute per client, shared
      * with the hover previews and the link checks, so a sweep that goes flat
-     * out spends most of its time being refused. Same value as the kept
-     * list's sweep (dashboard-unsorted-select.js SWEEP_INTERVAL_MS).
+     * out spends most of its time being refused.
      */
     static SELECTION_SWEEP_INTERVAL_MS = 1200;
 
@@ -25901,16 +25900,15 @@ class DashboardConfig {
     /* ── Fetching icons and previews for a selection ─────────────────────── */
 
     /**
-     * The fields a preview answer leaves on a bookmark. The kept list writes
-     * the same set (dashboard-unsorted.js PREVIEW_FIELDS); a preview fetched
-     * here has to end up on the record for the same reason it does there --
-     * the server caches its own answer, but that cache is not the bookmark.
+     * The fields a preview answer leaves on a bookmark. A preview fetched here
+     * has to end up on the record: the server caches its own answer, but that
+     * cache is not the bookmark.
      */
     static PREVIEW_FIELDS = ['previewTitle', 'previewDesc', 'previewImage',
         'previewImageSource', 'previewSiteName', 'previewAuthor', 'previewPublishedAt',
         'previewEmbedHtml', 'previewContentLength', 'previewEnriched'];
 
-    /** Already answered for: the same test the kept list's button counts by. */
+    /** Already answered for. */
     bookmarkHasPreview(bookmark) {
         return bookmark?.previewEnriched === true
             || !!String(bookmark?.previewTitle || '').trim()
@@ -25931,8 +25929,7 @@ class DashboardConfig {
      * server through an endpoint that allows sixty a minute per client --
      * shared with the hover previews, the link checks and the icon prefetch.
      * A refusal is not a failure: the server says how long to wait, and the
-     * row is asked for again. The same shape as the kept list's sweep
-     * (dashboard-unsorted-select.js), so the two behave alike.
+     * row is asked for again.
      */
     async runSelectionSweep(targets, { title, run, done }) {
         let ok = 0;

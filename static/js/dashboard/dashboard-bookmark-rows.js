@@ -1359,19 +1359,6 @@ class DashboardBookmarkRows {
 
     async showMovePopover(anchorEl, bookmark, bookmarkIndex) {
         const d = this.dash;
-        /*
-         * Not from inside Unsorted.
-         *
-         * The row menu there no longer offers Move to..., because a kept
-         * bookmark is filed by being given a category in Edit -- which moves it
-         * onto that page and out of this view in one step. Shift+M is the same
-         * action by another route, and leaving it live would make the keyboard
-         * do what the menu had just stopped offering. Moving a bookmark *into*
-         * Unsorted is untouched: that is this popover opened from a page.
-         */
-        if (d.unsorted?.isActiveView?.()) {
-            return;
-        }
         if (d._movePopoverCleanup) {
             d._movePopoverCleanup();
             d._movePopoverCleanup = null;
@@ -1807,18 +1794,6 @@ class DashboardBookmarkRows {
                 d._tagPopoverCleanup = null;
             }
             window.FocusTrapUtils?.syncDashboardInert?.();
-            /*
-             * The Unsorted view refuses to repaint while a popover is open --
-             * its loadAndRender bails on `.move-popover`, which this one is,
-             * so that the row the popover hangs off cannot be detached under
-             * it. Nothing repainted it afterwards either, so a tag added here
-             * did not reach the grid until the next visit: grouping by tag
-             * still showed the row untagged. The popover is gone by the time
-             * this runs, so the guard no longer stands in the way.
-             */
-            if (d.unsorted?.isActiveView?.()) {
-                void d.unsorted.loadAndRender();
-            }
         };
         unbindPosition = this._attachActionPopoverPositioning(pop, anchorEl);
         d._tagPopoverCleanup = close;

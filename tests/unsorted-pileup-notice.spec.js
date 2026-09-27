@@ -77,9 +77,10 @@ test('says something once when kept links have been sitting for a month', async 
     await expect(card).toBeVisible({ timeout: 10_000 });
     await expect(card).toContainText('12');
 
-    // Its one action opens the list where the work is.
-    await card.getByRole('button', { name: /show|kept|open/i }).first().click();
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox?.tab), { timeout: 10_000 }).toBe('kept');
+    // Its one action opens the list where the work is: Bookmarks → Unsorted.
+    await card.getByRole('button', { name: /open unsorted/i }).click();
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 10_000 }).toBe('library');
+    await expect(page).toHaveURL(/#bookmarks\?filter=unsorted$/);
 });
 
 test('stays quiet over a small or recent pile', async ({ page }) => {

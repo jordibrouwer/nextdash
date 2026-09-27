@@ -119,7 +119,7 @@ class InboxDrawer {
             { action: 'open', label: this.t('inboxOpen', 'Open'), primary: true },
             { action: 'promote', label: this.t('inboxPromote', 'Promote'), title: this.t('inboxPromoteHint', 'Give it a page (p)') },
             ...(view.keptEnabled() ? [{ action: 'keep', label: this.t('inboxTriageKeep', 'Keep'),
-                title: `${this.t('inboxKeepExplains', 'Keeps the link for good, on the inbox’s Kept tab, without giving it a page yet')} (Shift+K)` }] : []),
+                title: `${this.t('inboxKeepExplains', 'Keeps the link for good, in Bookmarks → Unsorted, without giving it a page yet')} (Shift+K)` }] : []),
         ];
         const more = [
             item.readAt

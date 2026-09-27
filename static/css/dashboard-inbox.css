@@ -159,8 +159,6 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     gap: var(--space-3, 0.65rem);
 }
 
-
-
 /* 3rem square, shared with the health feed (.health-view-item-icon) so the two
    read as one system. Inbox has no stored favicon — the preview image is shown
    here on `contain`, and a link glyph fills in when there is none. */
@@ -222,13 +220,7 @@ body.no-animations .inbox-item-thumb--loading {
     line-height: 1.35;
 }
 
-
-
-
 /* ─── Snooze ──────────────────────────────────────────────────────────────── */
-
-
-
 
 /* Duration popover — a floating menu positioned in JS, so it is fixed to the
    viewport and layered above the feed. */
@@ -266,7 +258,6 @@ body.no-animations .inbox-item-thumb--loading {
 
 /* The action bar's reveal is in feed-row.css; .inbox-item-actions-inner is
    covered by its `.feed-row-actions > *` rule. */
-
 
 .inbox-action-btn {
     display: inline-flex;
@@ -860,9 +851,6 @@ body.inbox-triage-active {
 
 /* ─── Motion preferences ────────────────────────────────────────────────── */
 
-@media (prefers-reduced-motion: reduce) {
-}
-
 /* ─── Lifetime statistics ────────────────────────────────────────────────────
    Behind the toolbar's Stats button. The figures come from /api/inbox-stats,
    which survives items being triaged away — the config view reads the same
@@ -956,7 +944,6 @@ body.inbox-triage-active {
     color: var(--accent-primary);
 }
 
-
 /*
  * The card that ends a triage run.
  *
@@ -1007,7 +994,6 @@ body.inbox-triage-active {
     outline: 2px solid var(--accent-color, #4a90d9);
     outline-offset: 2px;
 }
-
 
 /* The line under the stats grid that says which way the week went. */
 .inbox-stats-trend {
@@ -1183,12 +1169,6 @@ body.inbox-triage-active {
 
 .inbox-item.feed-row.is-checked {
     background-color: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
-}
-
-/* Kept keeps its compact/comfortable choice; the queue's one-line rows do
-   not need it. The shell is shared, so the toggle hides on the queue only. */
-.inbox-layout .lvs:not(.inbox-kept-tab) .lvs-density {
-    display: none;
 }
 
 .inbox-item-line1 {

@@ -1,7 +1,7 @@
 /**
  * Suggested tags, drawn as chips.
  *
- * The form, the Config side panel, the inbox and the kept list all offer the
+ * The form, the Config side panel and the inbox all offer the
  * engine's answers the same way: `+ tag` takes one, `✕` refuses it for the
  * site everywhere. Four copies of the same forty lines is how they would
  * start looking and behaving differently, so they share this one. It draws

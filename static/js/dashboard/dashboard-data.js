@@ -786,9 +786,7 @@ class DashboardData {
         {
             view: 'inbox',
             layoutClass: 'inbox-layout',
-            // Both of the inbox's tabs: the kept list is a tab of this view
-            // and keeps the address it always had.
-            matchesHash: (hash) => hash === '#inbox' || hash === '#unsorted',
+            matchesHash: (hash) => hash === '#inbox',
             isEnabled: (d) => Boolean(d.inbox?.isEnabled?.()),
         },
         {
@@ -804,11 +802,11 @@ class DashboardData {
             // is the grid's own view id; drawn by the config module.
             view: 'library',
             layoutClass: 'library-layout',
-            // #health too: the Health view's old address, which leads here
-            // (DashboardHealthLoader.openHealthView) -- a load finishing
+            // #health and #unsorted too: the old addresses of the Health view
+            // and the Inbox's Kept tab, which lead here -- a load finishing
             // before that redirect must not rewrite it to the page number.
             matchesHash: (hash) => hash === '#bookmarks' || hash.startsWith('#bookmarks/') || hash.startsWith('#bookmarks?')
-                || hash === '#health' || hash.startsWith('#health/'),
+                || hash === '#health' || hash.startsWith('#health/') || hash === '#unsorted',
             isEnabled: (d) => Boolean(d.config?.isEnabled?.()),
         },
         {

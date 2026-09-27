@@ -70,8 +70,6 @@ async function bootstrap(page, kept) {
         });
         const s = window.dashboardInstance?.settings;
         if (s) { s.unsortedSort = 'added-desc'; s.unsortedGroup = 'none'; }
-        const u = window.dashboardInstance?.unsorted;
-        if (u) { u.sort = 'added-desc'; u.groupBy = 'none'; u.searchQuery = ''; u.brokenOnly = false; }
     });
 
     await page.evaluate(async (kept) => {
@@ -177,22 +175,13 @@ test('renaming a kept bookmark reaches search without a reload', async ({ page }
 
     // Through the editor, not by calling the sync helper: that helper lives in
     // the lazily-loaded inline-edit module, so a direct call before the module
-    // lands is answered by the loader proxy and quietly does nothing. The row
-    // menu loads it, which is what every real edit does too.
-    await page.evaluate(() => window.dashboardInstance.unsorted.openUnsortedView());
-    await expect(page.locator('.unsorted-view-search-input')).toBeVisible();
-    await page.locator('.unsorted-view-search-input').fill('iso-rename.example');
-
-    const row = page.locator('.bookmark-link[data-unsorted-key]').first();
-    await expect(row).toHaveAttribute('data-context-menu-bound', '1');
-    await row.evaluate((node) => {
-        const rect = node.getBoundingClientRect();
-        node.dispatchEvent(new MouseEvent('contextmenu', {
-            bubbles: true, cancelable: true,
-            clientX: Math.round(rect.left + 20), clientY: Math.round(rect.top + 5),
-        }));
-    });
-    await page.locator('#bookmark-context-menu [data-action="edit"]').click();
+    // lands is answered by the loader proxy and quietly does nothing. The
+    // Bookmarks view's Edit opens the same form every real edit uses.
+    await page.evaluate(() => window.dashboardInstance.openUnsortedBookmarks());
+    await page.locator('#config-bm-search').fill('iso-rename.example');
+    const row = page.locator('#config-bm-list [data-bm-key*="iso-rename.example"]').first();
+    await row.locator('.config-bm-title').click();
+    await page.locator('.lvs-drawer-host[data-lvs-drawer="library"] [data-bm-panel-action="edit-dialog"]').click();
     await expect(page.locator('.bookmark-inline-form')).toBeVisible();
 
     // The name field by name: the form opens with the address first now.

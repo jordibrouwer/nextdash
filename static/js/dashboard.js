@@ -218,8 +218,6 @@ class Dashboard {
         this.configSync = new DashboardConfigSync(this);
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
-        // Built by the inbox loader, with the view it belongs to.
-        this.unsorted = null;
         this.multiSelect = new DashboardMultiSelect(this);
         // Narrowing the page you are on, as opposed to searching everything.
         this.gridFilter = typeof DashboardGridFilter === 'function'
@@ -489,10 +487,9 @@ class Dashboard {
             } else if ((bootHash === 'bookmarks' || bootHash.startsWith('bookmarks/') || bootHash.startsWith('bookmarks?'))
                 && this.activeView !== 'library' && this.config?.isEnabled?.()) {
                 await this.config.openLibraryView();
-            } else if (bootHash === 'unsorted' && this.settings?.unsortedEnabled !== false) {
-                // The setting rather than the module: the kept list loads with
-                // the inbox, and this runs before either of them is there.
-                await this.inbox?.openInboxView?.({ tab: 'kept' });
+            } else if (bootHash === 'unsorted') {
+                // The Inbox's Kept tab's old address: Bookmarks → Unsorted now.
+                await this.openUnsortedBookmarks({ replace: true });
             }
 
             if (this.config?.isEnabled?.()
@@ -575,6 +572,28 @@ class Dashboard {
     }
 
 
+
+    /**
+     * Bookmarks → Unsorted: where a kept link waits for a page, and where it
+     * is promoted from. The Inbox's Kept tab was this list a second time;
+     * every way that led there -- Shift+U, #unsorted, the widget, the Keep
+     * notice -- comes here.
+     */
+    async openUnsortedBookmarks({ replace = false } = {}) {
+        const target = '#bookmarks?filter=unsorted';
+        if (window.location.hash !== target) {
+            if (replace) {
+                history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}${target}`);
+            } else {
+                history.pushState(history.state, '', `${window.location.pathname}${window.location.search}${target}`);
+            }
+        }
+        if (this.activeView === 'library') {
+            this.config?.instance?.applyLibraryHash?.(target);
+            return true;
+        }
+        return this.config?.openLibraryView?.();
+    }
 
     showNotification(message, type = 'error', { undoCallback = null, duration = 5000, onAction = null, actionLabel = null, durationMs = null } = {}) {
         return this.notifications.showNotification(...arguments);
@@ -1062,10 +1081,9 @@ class Dashboard {
                 this.config?.instance?.applyLibraryHash?.(`#${hash}`);
                 return;
             }
-            // Kept is a tab of the inbox now; the address it always had still
-            // opens it, so every saved link keeps working.
+            // The Kept tab's old address, so every saved link keeps working.
             if (hash === 'unsorted') {
-                return this.inbox?.openInboxView?.({ tab: 'kept' });
+                return this.openUnsortedBookmarks({ replace: true });
             }
             if (hash === 'config' || hash.startsWith('config/')) {
                 const genericConfig = hash === 'config';
@@ -1130,15 +1148,6 @@ class Dashboard {
         // A popover the selection opened is the top layer: Escape closes that
         // first and leaves the ticks alone, the way the row menus behave. Only
         // the next press drops the selection.
-        if (typeof this._unsortedMovePopoverClose === 'function') {
-            this._unsortedMovePopoverClose();
-            return true;
-        }
-        const unsortedSelect = this.unsorted?.isActiveView?.() ? this.unsorted.select : null;
-        if (unsortedSelect?.isActive?.()) {
-            unsortedSelect.clear();
-            return true;
-        }
         if (this.multiSelect?.isActive?.()) {
             this.multiSelect.clear();
             return true;
@@ -1166,12 +1175,6 @@ class Dashboard {
         // restoreBookmarksViewForPage.
         if (previous === 'bookmarks' && view !== 'bookmarks') {
             this.data?.rememberScrollForPage?.(Number(this.currentPageId));
-        }
-        // Ticks are a state of that view, not of the app. Left standing, the
-        // bulk bar would come back with the view holding rows the reader
-        // stopped thinking about several screens ago.
-        if (previous === 'inbox' && view !== 'inbox') {
-            this.unsorted?.select?.clear?.();
         }
         // The containers drawer sits on <body>, outside the layout the next
         // view repaints, so leaving has to take it down explicitly.

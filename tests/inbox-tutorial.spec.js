@@ -11,7 +11,7 @@ const { prepareDashboardInteraction, markWhatsNewSeen } = require('./e2e-helpers
  * leaves it unseen, to exercise the tour itself.
  */
 
-const STEPS = 9;
+const STEPS = 5;
 
 async function openInboxWithoutMarkingTutorialSeen(page) {
     // What's new is a different overlay from the tutorial and this file has no
@@ -47,7 +47,7 @@ async function openInboxWithoutMarkingTutorialSeen(page) {
 const modal = (page) => page.locator('#app-modal.show .inbox-tutorial-modal');
 
 test.describe('inbox tutorial', () => {
-    test('shows on first visit to the inbox, with nine steps', async ({ page }) => {
+    test('shows on first visit to the inbox, with five steps', async ({ page }) => {
         await openInboxWithoutMarkingTutorialSeen(page);
 
         await expect(modal(page)).toBeVisible();
@@ -85,10 +85,6 @@ test.describe('inbox tutorial', () => {
             'Every link leaves one of three ways',
             'Kept: worth keeping, no page yet',
             'How to keep a link',
-            'Each kept row tells you what it knows',
-            'File a whole pile at once',
-            'Or work through it, one link at a time',
-            'Nothing on Kept is stuck',
             'The keys, and where this tour lives',
         ]);
         await expect(page.locator('.inbox-tutorial-progress')).toHaveText(`Step ${STEPS} of ${STEPS}`);
@@ -167,13 +163,8 @@ test.describe('inbox tutorial', () => {
         expect(requested).toEqual([]);
     });
 
-    /**
-     * The tour is a button away on both tabs.
-     *
-     * Shown once, it was gone for good -- and most of it is about the Kept
-     * tab, which a reader may not open until long after the first visit.
-     */
-    test('Tour opens it again from the queue and from the Kept tab, seen or not', async ({ page }) => {
+    /** Shown once, it would be gone for good: Tour brings it back, seen or not. */
+    test('Tour opens it again, seen or not', async ({ page }) => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await prepareDashboardInteraction(page);
@@ -189,10 +180,5 @@ test.describe('inbox tutorial', () => {
         await expect(page.locator('.inbox-tutorial-scene svg.itv')).toHaveCount(1);
         await page.keyboard.press('Escape');
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
-
-        await page.locator('[data-inbox-tab="kept"]').click();
-        await page.locator('.unsorted-view-tour-btn').click();
-        await expect(modal(page)).toBeVisible();
-        await expect(page.locator('.inbox-tutorial-progress')).toHaveText(`Step 1 of ${STEPS}`);
     });
 });

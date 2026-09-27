@@ -70,40 +70,6 @@ async function bootstrap(page, { kept = [], settings = {} } = {}) {
     }, { rows: kept, patch: settings });
 }
 
-const hintsFor = (page, name) =>
-    page.locator(`.unsorted-view .bookmark-link:has-text("${name}") + .unsorted-row-hints`);
-
-test('a kept row offers the page its neighbours are filed on', async ({ page }) => {
-    await bootstrap(page, { kept: [{ name: 'Where Me', url: 'https://dest.example/new', createdAt: 5000 }] });
-    await seedFiled(page, { host: 'dest.example', category: 'docs', count: 3 });
-    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView({ tab: 'kept' }));
-    await expect(page.locator('.bookmark-link[data-unsorted-key]').first()).toBeVisible();
-
-    const chip = hintsFor(page, 'Where Me').locator('.unsorted-row-destination');
-    await expect(chip).toBeVisible({ timeout: 10_000 });
-    await expect(chip).toContainText('docs');
-
-    await chip.click();
-
-    // Filed: off the kept page, onto the page and category its neighbours use.
-    await expect.poll(async () => page.evaluate(async () => {
-        const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
-        return (data.bookmarks || []).some((b) => b.url === 'https://dest.example/new');
-    }), { timeout: 20_000 }).toBe(false);
-    await expect.poll(async () => page.evaluate(async () => {
-        const rows = await (await fetch('/api/bookmarks?page=1', { cache: 'no-store' })).json();
-        return (Array.isArray(rows) ? rows : []).find((b) => b.url === 'https://dest.example/new')?.category || '';
-    }), { timeout: 20_000 }).toBe('docs');
-});
-
-test('a row nothing agrees about is offered nothing', async ({ page }) => {
-    await bootstrap(page, { kept: [{ name: 'Lonely', url: 'https://lonely.example/x', createdAt: 5000 }] });
-    await page.evaluate(() => window.dashboardInstance.inbox.openInboxView({ tab: 'kept' }));
-    await expect(page.locator('.bookmark-link[data-unsorted-key]').first()).toBeVisible();
-
-    await expect(hintsFor(page, 'Lonely').locator('.unsorted-row-destination')).toHaveCount(0);
-});
-
 test('with auto-file on, Keep puts a link straight where its neighbours are', async ({ page }) => {
     await bootstrap(page, { kept: [], settings: { keepAutoFile: true } });
     await seedFiled(page, { host: 'auto.example', category: 'reading', count: 3 });

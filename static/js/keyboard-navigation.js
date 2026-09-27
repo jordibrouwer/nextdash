@@ -93,21 +93,9 @@ class KeyboardNavigation {
                 if (this.dashboard.activeView !== 'inbox') {
                     this.dashboard.setActiveView('inbox', { silent: true });
                 }
-                if (inbox.handleKeyboardNavigation?.(e)) {
-                    return;
-                }
-                /*
-                 * The kept tab draws the ordinary bookmark grid.
-                 *
-                 * Everything else the inbox shows is its own feed, which owns
-                 * every key while it is up -- so this returned unconditionally
-                 * and the grid's navigation never ran. On the kept tab that
-                 * left a grid of bookmarks with no arrows, no Enter and no x,
-                 * while the same rows on a page answer to all three.
-                 */
-                if (inbox.activeTab?.() !== 'kept') {
-                    return;
-                }
+                // The inbox's own feed owns every key while it is up.
+                inbox.handleKeyboardNavigation?.(e);
+                return;
             }
 
             const config = this.dashboard.config;
@@ -1492,31 +1480,6 @@ class KeyboardNavigation {
                 {
                     const row = this.navigableElements[this.currentIndex];
                     if (!row) {
-                        break;
-                    }
-                    /*
-                     * The kept list keeps its own selection.
-                     *
-                     * Its rows carry the grid's classes, so x reached the
-                     * grid's multi-select and ticked a row in a layer this
-                     * list never reads -- the bulk bar stayed empty and the
-                     * one key a list of two hundred rows needs did nothing.
-                     */
-                    const keptKey = row.dataset?.unsortedKey;
-                    // Shift+X takes the row's whole group, the way it takes a
-                    // category on the dashboard.
-                    if (keptKey && key === 'X' && this.dashboard?.unsorted?.select) {
-                        const select = this.dashboard.unsorted.select;
-                        const rows = select.groupOfRow(row);
-                        if (rows?.length) select.toggleGroup(rows);
-                        else select.toggleKey(keptKey);
-                        break;
-                    }
-                    if (keptKey && this.dashboard?.unsorted?.select) {
-                        this.dashboard.unsorted.select.toggleKey(keptKey);
-                        if (this.currentIndex < this.navigableElements.length - 1) {
-                            this.selectElement(this.currentIndex + 1);
-                        }
                         break;
                     }
                     if (key === 'X') {
