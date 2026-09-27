@@ -52,6 +52,8 @@
         rebuildBmHealthJoin(health) {
             this._bmHealthModule = health;
             this._bmHealthReport = health.report || null;
+            // Under a Health filter the rows themselves come from the report.
+            this.invalidateVisibleBookmarks?.();
             // The rail's counts are cached against this: a new report is a new count.
             this._bmHealthGen = (this._bmHealthGen || 0) + 1;
             const byUrl = new Map();
@@ -175,7 +177,82 @@
                 button('ignore', t('healthMenuIgnore', 'Ignore this condition')),
                 button('snooze', t('healthMenuSnooze', 'Snooze 30 days')),
                 button('share', t('healthMenuShare', 'Share link')),
+                this.bmHealthDuplicateGroup(b) ? button('merge', t('mergeDuplicateGroup', 'Merge duplicate group')) : '',
             ].join('');
+        },
+
+        /** The report's duplicate group this bookmark belongs to, or null. */
+        bmHealthDuplicateGroup(b) {
+            const health = this._bmHealthModule;
+            const keyFor = global.HealthFacts?.keyFor;
+            const key = keyFor?.(b?.url);
+            if (!health || !key) return null;
+            return (health.duplicateGroups?.() || []).find((group) => Array.isArray(group?.bookmarks)
+                && group.bookmarks.length > 1
+                && keyFor(group.url || group.bookmarks[0]?.url) === key) || null;
+        },
+
+        /**
+         * Health's own multi-select, ticked with the workbench's selection, so
+         * its sweeps -- the pacing, the progress overlay, the confirmations,
+         * the 412 that stops a local-copy run -- run unchanged. A separate
+         * instance from the Health view's, whose ticks are the reader's there.
+         */
+        bmHealthBulkRunner() {
+            const health = this._bmHealthModule;
+            const MultiSelect = global.DashboardHealthMultiSelect;
+            if (!health || typeof MultiSelect !== 'function') return null;
+            if (this._bmHealthRunner?.health !== health) this._bmHealthRunner = new MultiSelect(health);
+            const runner = this._bmHealthRunner;
+            runner.selected = new Set(this.bookmarksFromKeys([...this.bmSelected])
+                .map((b) => this.bmHealthIssue(b))
+                .filter(Boolean)
+                .map((issue) => health.issueKey(issue)));
+            return runner;
+        },
+
+        /** Health's bulk actions for the bulk panel; '' when no ticked row is in the report. */
+        renderBmHealthBulkActions() {
+            const runner = this.bmHealthBulkRunner();
+            if (!runner?.selected.size) return '';
+            const esc = (v) => this.dash.escapeHtml(v);
+            const t = (key, fallback, vars) => runner.t(`dashboard.${key}`, fallback, vars);
+            const button = (action, label) => `<button type="button" class="config-btn config-btn--small" data-bm-health-bulk="${action}">${esc(label)}</button>`;
+            const drifting = runner.driftingSelected().length;
+            return `<div class="config-bm-health-bulk">${[
+                button('recheck', t('healthBulkRecheck', 'Re-check')),
+                button('favicons', t('healthBulkFavicon', 'Refresh favicons')),
+                button('previews', t('healthBulkPreview', 'Rebuild previews')),
+                button('local-copy', t('healthBulkLocalCopy', 'Save a copy on this disk')),
+                drifting ? button('accept-drift', t('healthBulkAcceptDrift', 'Accept drift ({count})', { count: drifting })) : '',
+            ].join('')}</div>`;
+        },
+
+        async runBmHealthBulk(action) {
+            const runner = this.bmHealthBulkRunner();
+            if (!runner) return;
+            const run = {
+                recheck: () => runner.bulkRecheck(),
+                favicons: () => runner.bulkRefreshFavicons(),
+                previews: () => runner.bulkRebuildPreviews(),
+                'local-copy': () => runner.bulkCaptureLocalCopies(),
+                'accept-drift': () => runner.bulkAcceptDrift(),
+            }[action];
+            await run?.();
+        },
+
+        /**
+         * Merge through Health, then re-read the bookmarks: the merge deletes
+         * rows server-side, and the list reads a pool nothing has patched.
+         */
+        async mergeBmDuplicateGroup(b) {
+            const health = this._bmHealthModule;
+            const group = this.bmHealthDuplicateGroup(b);
+            if (!health || !group) return;
+            await health.mergeDuplicateGroup(group);
+            await this.dash.loadAllBookmarks?.();
+            this.invalidateVisibleBookmarks?.();
+            this.repaintBookmarksList?.();
         },
 
         /** Wire the parts above after the panel has been drawn. */
@@ -210,6 +287,7 @@
                 ignore: () => health.toggleIgnore(issue),
                 snooze: () => health.toggleIgnore(issue, { snooze: true }),
                 share: () => health.shareIssue(issue),
+                merge: () => this.mergeBmDuplicateGroup(b),
             };
             panel.querySelectorAll('[data-bm-health-action]').forEach((el) => {
                 el.addEventListener('click', () => void run[el.getAttribute('data-bm-health-action')]?.());

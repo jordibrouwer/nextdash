@@ -173,3 +173,77 @@ test.describe('bookmarks: score column and Health\'s keys', () => {
     await expect(page.locator('#config-bm-panel [data-bm-section="health"]')).toHaveAttribute('open', '');
   });
 });
+
+test.describe('bookmarks: Health\'s bulk actions and duplicates', () => {
+  const healthItem = (page, key) => page.locator(`#config-bm-rail [data-bm-rail="health"][data-value="${key}"]`);
+
+  async function tickFirst(page, n) {
+    await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+    for (let i = 0; i < n; i += 1) {
+      await page.keyboard.press('j');
+      await page.keyboard.press('x');
+    }
+    await expect(page.locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-mode', 'bulk');
+  }
+
+  test('bulk Re-check posts one re-check per ticked bookmark', async ({ page }) => {
+    await openBookmarksWithHealth(page);
+    const posts = [];
+    // update-status only: a re-check also writes the URL's cache entry, one
+    // per bookmark as well, but best-effort and skipped for odd URLs.
+    page.on('request', (r) => { if (r.method() === 'POST' && /health\/update-status/.test(r.url())) posts.push(r.url()); });
+    await tickFirst(page, 2);
+    await page.locator('#config-bm-panel [data-bm-health-bulk="recheck"]').click();
+    await expect.poll(() => posts.length).toBe(2);
+  });
+
+  test('Accept drift is offered only when a ticked bookmark has drifted', async ({ page }) => {
+    await openBookmarksWithHealth(page);
+    await tickFirst(page, 2);
+    await expect(page.locator('#config-bm-panel [data-bm-health-bulk="recheck"]')).toBeVisible();
+    await expect(page.locator('#config-bm-panel [data-bm-health-bulk="accept-drift"]')).toHaveCount(0);
+  });
+
+  test('Accept drift appears for drifted bookmarks', async ({ page }) => {
+    await openBookmarksWithHealth(page, (issues) => issues.map((issue) => ({ ...issue, watchDrift: true, driftNoticed: Date.now() })));
+    await tickFirst(page, 2);
+    await expect(page.locator('#config-bm-panel [data-bm-health-bulk="accept-drift"]')).toHaveCount(1);
+  });
+
+  test('Duplicates groups the list by URL, and Merge posts the group', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(
+      page,
+      (issues) => issues.map((issue, i) => (i < 2 ? { ...issue, duplicateCount: 2, flags: ['duplicate'] } : issue)),
+      {
+        // Two real copies of one URL, so the list has a pair to group.
+        prepare: () => {
+          const d = window.dashboardInstance;
+          d.allBookmarks[1].url = d.allBookmarks[0].url;
+        },
+        report: (issues) => ({
+          duplicateGroups: [{
+            url: issues[0].url,
+            bookmarks: [issues[0], issues[1]].map((x) => ({ pageId: x.pageId, index: x.index, name: x.name, url: x.url })),
+          }],
+        }),
+      },
+    );
+    const merges = [];
+    await page.route('**/api/health/merge-duplicates', (route) => {
+      merges.push(route.request().postDataJSON());
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{"count":1}' });
+    });
+    await healthItem(page, 'duplicate').click();
+    const head = page.locator('#config-bm-list .config-bm-group-head');
+    await expect(head).toHaveCount(1);
+    await expect(head.locator('.config-bm-group-label')).toContainText(bookmarks[0].url);
+    await expect(head.locator('.config-bm-group-count')).toHaveText('2');
+    await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[0].name }) }).first().click();
+    const actions = page.locator('#config-bm-panel [data-bm-section="actions"]');
+    if (await actions.getAttribute('open') === null) await actions.locator('summary').click();
+    await actions.locator('[data-bm-health-action="merge"]').click();
+    await page.locator('#app-modal.show').getByRole('button', { name: /Merge duplicates/i }).click();
+    await expect.poll(() => merges.length).toBe(1);
+    expect(merges[0].targetPageId).toBe(bookmarks[0].pageId);
+  });
+});

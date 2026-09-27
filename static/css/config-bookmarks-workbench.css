@@ -745,6 +745,14 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     margin: 2px 0;
 }
 
+/* Health's bulk actions under the selection's health line. */
+.config-bm-health-bulk {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
 .config-bm-panel-muted {
     color: var(--text-secondary);
     font-size: var(--font-size-small);

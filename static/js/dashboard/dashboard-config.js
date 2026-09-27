@@ -23060,7 +23060,12 @@ class DashboardConfig {
                 return pageIndex(a.pageId) - pageIndex(b.pageId);
             },
         }[this.bmSort ?? this.defaultBookmarksSort()] || null;
-        return cmp ? [...rows].sort(cmp) : rows;
+        const sorted = cmp ? [...rows].sort(cmp) : rows;
+        if (this.bmHealthFilter !== 'duplicate') return sorted;
+        // Copies of one URL side by side, for the grouping to find; stable,
+        // so the chosen sort still orders the copies within a group.
+        const keyFor = (b) => window.HealthFacts?.keyFor?.(b.url) || String(b.url || '');
+        return [...sorted].sort((a, b) => keyFor(a).localeCompare(keyFor(b)));
     }
 
     /**

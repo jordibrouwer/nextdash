@@ -1012,6 +1012,7 @@
             .map((k) => `<span><span class="config-bm-health-dot is-${k}"></span> ${states[k]} ${esc(this.railHealthLabel(k).toLowerCase())}</span>`)
             .join(' · ');
         const dirty = Object.keys(draft).length > 0;
+        const healthBulk = this.renderBmHealthBulkActions?.() || '';
 
         return `
             <header class="config-bm-panel-head">
@@ -1039,7 +1040,7 @@
                 ${field(this.t('config.bmFieldChecking', 'Checking'), `<select class="config-select" data-bm-bulk-field="checkMode">${modeOptions}</select>`)}
                 ${intervalField}
             </div>
-            ${health ? `<section class="config-bm-panel-facts"><h3>${esc(this.t('config.bmHealth', 'Health'))}</h3><p>${health}</p></section>` : ''}
+            ${health || healthBulk ? `<section class="config-bm-panel-facts"><h3>${esc(this.t('config.bmHealth', 'Health'))}</h3>${health ? `<p>${health}</p>` : ''}${healthBulk}</section>` : ''}
             <footer class="config-bm-panel-foot">
                 <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-bulk-action="apply"${dirty ? '' : ' disabled'}>${esc(this.t('config.bmApplyTo', 'Apply to {n}').replace('{n}', String(n)))}</button>
                 <button type="button" class="config-btn config-btn--small" data-bm-bulk-action="export">${esc(this.t('config.bulkExportCsv', 'Export CSV'))}</button>
@@ -1194,6 +1195,11 @@
                 this.redrawBulkPanel();
                 return;
             }
+            const healthBulk = e.target.closest('[data-bm-health-bulk]');
+            if (healthBulk) {
+                void this.runBmHealthBulk(healthBulk.getAttribute('data-bm-health-bulk'));
+                return;
+            }
             const action = e.target.closest('[data-bm-bulk-action]')?.getAttribute('data-bm-bulk-action');
             if (!action) return;
             if (action === 'apply') void this.applyWorkbenchBulk();
@@ -1336,14 +1342,18 @@
     },
 
     workbenchGrouped() {
+        // Duplicates are only readable side by side: grouped by the URL they share.
+        if (this.bmHealthFilter === 'duplicate') return true;
         return (this.bmSort ?? this.defaultBookmarksSort()) === 'page';
     },
 
     workbenchGroupKey(b) {
+        if (this.bmHealthFilter === 'duplicate') return global.HealthFacts?.keyFor?.(b.url) || b.url;
         return `${b.pageId}::${b.category || ''}`;
     },
 
     workbenchGroupLabel(b) {
+        if (this.bmHealthFilter === 'duplicate') return b.url || '';
         const page = this.pageLabel(b.pageId);
         if (!b.category) return page;
         return `${page} › ${this.railCategoryLabel(b.pageId, b.category)}`;
