@@ -1081,6 +1081,9 @@ class DashboardConfig {
         d.pageNav?.setActiveConfigTab?.();
         await this.loadAndRender();
         this.restoreConfigHash();
+        // Not awaited: the view is already usable, and a slow script fetch
+        // must not hold up the navigation that asked for it.
+        void this.maybeShowLibraryTour?.();
         return true;
     }
 
@@ -15663,6 +15666,13 @@ class DashboardConfig {
      * configuration; which pages you have kept is part of the collection.
      */
     // The list is the Bookmarks view's (#bookmarks); Config keeps what shapes it.
+    /*
+     * The one-time Bookmarks view tour's tip id, repeated from
+     * bookmarks-tutorial.js so the view can skip fetching the tour once it has
+     * been seen. Both must agree.
+     */
+    static LIBRARY_TOUR_TIP_ID = 'bookmarksTutorialV1';
+
     static BM_TABS = ['view', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
@@ -18069,6 +18079,8 @@ class DashboardConfig {
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },
+        { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view',
+          whereKey: 'config.tourWhereBookmarks', where: 'the next time you open the Bookmarks view' },
         { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh',
           whereKey: 'config.tourWhereFresh', where: 'the next time you open Fresh' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',

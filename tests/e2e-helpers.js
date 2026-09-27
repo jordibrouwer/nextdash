@@ -134,6 +134,18 @@ async function markInboxTutorialSeen(page) {
 }
 
 /**
+ * The same, for the one-time Bookmarks view tour. The view checks the tip
+ * before fetching the tour's script, so marking it here keeps the modal out
+ * of every spec that only wants the list.
+ * @param {import('@playwright/test').Page} page
+ */
+async function markBookmarksTutorialSeen(page) {
+    await page.evaluate(() => {
+        window.DiscoverabilityState?.markTipSeen?.('bookmarksTutorialV1', { persist: false });
+    });
+}
+
+/**
  * The same, for the one-time "what has changed" tour.
  * @param {import('@playwright/test').Page} page
  */
@@ -195,6 +207,7 @@ async function dismissBlockingOverlays(page) {
     await dismissAppNotificationIfPresent(page);
     await suppressStatusEmptyHint(page);
     await markInboxTutorialSeen(page);
+    await markBookmarksTutorialSeen(page);
     await markWidgetsTutorialSeen(page);
     await markChangesTourSeen(page);
     const searchPromo = page.locator('.dashboard-search-promo');
@@ -616,6 +629,7 @@ module.exports = {
     dismissAppNotificationIfPresent,
     suppressStatusEmptyHint,
     markInboxTutorialSeen,
+    markBookmarksTutorialSeen,
     markWidgetsTutorialSeen,
     markChangesTourSeen,
     dismissBlockingOverlays,

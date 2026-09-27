@@ -66,7 +66,41 @@
                         ${rest.join('')}
                     </div>
                 </span>
+                <button type="button" class="lvs-action" data-bm-tour
+                        title="${esc(t('config.bmTourHint', 'A tour of the Bookmarks view'))}">${esc(t('dashboard.inboxTour', 'Tour'))}</button>
                 <button type="button" class="lvs-action view-help-btn" data-bm-help aria-haspopup="dialog" title="${help}" aria-label="${help}">ℹ</button>`;
+        },
+
+        /**
+         * The tour's script, fetched on demand: a reader who has done the tour
+         * never pays for it again. Named in two places, like the inbox tour's.
+         */
+        async loadLibraryTour() {
+            if (typeof global.BookmarksTutorial !== 'undefined') return true;
+            try {
+                await global.LazyScript.loadScriptOnce('js/bookmarks-tutorial.js', 'bookmarksTutorialModule',
+                    () => typeof global.BookmarksTutorial !== 'undefined');
+                return true;
+            } catch {
+                // A tour that cannot be fetched is not worth an error toast.
+                return false;
+            }
+        },
+
+        /** First visit: the tour, once. Checked before the script is fetched at all. */
+        async maybeShowLibraryTour() {
+            if (global.DiscoverabilityState?.hasSeenTip?.(global.DashboardConfig.LIBRARY_TOUR_TIP_ID)) return;
+            if (this.dash.settings?.enableSessionTips === false) return;
+            if (!(await this.loadLibraryTour())) return;
+            // The reader may have left while the script came in.
+            if (this.dash.activeView !== global.DashboardConfig.LIBRARY_VIEW) return;
+            global.BookmarksTutorial?.maybeShow?.();
+        },
+
+        /** The Tour button: seen or not. */
+        async openLibraryTour() {
+            if (!(await this.loadLibraryTour())) return;
+            global.BookmarksTutorial?.open?.();
         },
 
         /** Clicks in the band; true when one was taken. */
@@ -77,6 +111,7 @@
             else if (on('[data-bm-rot-report]')) this._bmHealthModule?.showRotReport?.();
             else if (on('[data-bm-export]')) this.bulkExportCsv?.(this.visibleBookmarks());
             else if (on('[data-bm-help]')) this.showLibraryExplainer();
+            else if (on('[data-bm-tour]')) void this.openLibraryTour();
             else if (on('[data-bm-header-more]')) {
                 const button = on('[data-bm-header-more]');
                 const menu = button.parentElement?.querySelector('[data-bm-header-menu]');

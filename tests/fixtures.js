@@ -106,6 +106,32 @@ const test = base.test.extend({
      * opens a page does not get one just to be watched.
      */
     page: async ({ page }, use, testInfo) => {
+        // The Bookmarks view tour opens by itself on a first visit, and a spec
+        // that cold-loads #bookmarks meets it before dismissBlockingOverlays()
+        // can mark it seen: the tour wins the race and eats the first click.
+        // Specs also re-init the tips outright ({ seenTips: [...] }), which
+        // would bring it back. So every init() keeps the tip seen, unless the
+        // page says it wants the tour -- bookmarks-tutorial.spec.js, which is
+        // about the tour, sets window.__e2eWantBookmarksTour first.
+        await page.addInitScript(() => {
+            let state;
+            Object.defineProperty(window, 'DiscoverabilityState', {
+                configurable: true,
+                get() { return state; },
+                set(value) {
+                    if (value && typeof value.init === 'function') {
+                        const init = value.init;
+                        value.init = function seededInit(saved, ...rest) {
+                            if (window.__e2eWantBookmarksTour) return init.call(this, saved, ...rest);
+                            const seeded = { ...(saved || {}) };
+                            seeded.seenTips = [...new Set([...(seeded.seenTips || []), 'bookmarksTutorialV1'])];
+                            return init.call(this, seeded, ...rest);
+                        };
+                    }
+                    state = value;
+                },
+            });
+        });
         await use(page);
         if (testInfo.status === testInfo.expectedStatus) return;
         try {

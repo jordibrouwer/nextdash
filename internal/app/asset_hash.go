@@ -189,6 +189,7 @@ var lazyLoadedAssets = []string{
 	// The kept tab of the inbox: its view and its selection layer, loaded
 	// with the inbox rather than on every dashboard visit.
 	"js/inbox-tutorial.js",
+	"js/bookmarks-tutorial.js",
 	"js/widgets-tutorial.js",
 	"js/dashboard/dashboard-inline-edit.js",
 	"js/dashboard/dashboard-context-menu.js",
