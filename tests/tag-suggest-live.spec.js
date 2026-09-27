@@ -58,7 +58,9 @@ async function bootstrap(page, { kept = KEPT, rules = RULES, dismissed = [] } = 
     }, { rows: kept, tagRules: rules, refused: dismissed });
 }
 
-test('an inbox row offers the tag its rule proposes, and takes it on a click', async ({ page }) => {
+// The offer sits in the row's side panel, under Tags, since the rows went to
+// one line (68520c39): a chip on a one-line row had nowhere to go.
+test('an inbox link offers the tag its rule proposes, and takes it on a click', async ({ page }) => {
     await bootstrap(page, { kept: [] });
     const url = `https://ruled.example/inbox-${Date.now()}`;
     await page.evaluate(async (u) => {
@@ -73,8 +75,8 @@ test('an inbox row offers the tag its rule proposes, and takes it on a click', a
     await expect.poll(() => page.evaluate(() =>
         (window.dashboardInstance.inbox.items || []).length), { timeout: 10_000 }).toBeGreaterThan(0);
 
-    const chip = page.locator('.inbox-item', { hasText: 'Ruled inbox link' })
-        .locator('.tag-suggest-chip-add');
+    await page.locator('.inbox-item', { hasText: 'Ruled inbox link' }).locator('.inbox-item-title').click();
+    const chip = page.locator('.lvs-drawer-host[data-lvs-drawer="inbox"] [data-inbox-suggest] .tag-suggest-chip-add');
     await expect(chip).toHaveText('#reading', { timeout: 10_000 });
     await chip.click();
 
@@ -108,8 +110,11 @@ test('the inbox selection bar tags a whole queue by what is suggested for it', a
     await expect.poll(() => page.evaluate(() =>
         (window.dashboardInstance.inbox.items || []).length), { timeout: 10_000 }).toBeGreaterThan(1);
 
-    await page.locator('.inbox-item-check-input').nth(0).check();
-    await page.locator('.inbox-item-check-input').nth(1).check();
+    // The box shows on hover (one-line rows keep it out of sight at rest).
+    for (const n of [0, 1]) {
+        await page.locator('.inbox-item').nth(n).hover();
+        await page.locator('.inbox-item-check-input').nth(n).check();
+    }
     await page.locator('.inbox-selection-bar [data-inbox-selection="suggest"]').click();
 
     const popover = page.locator('#inbox-suggest-popover');
