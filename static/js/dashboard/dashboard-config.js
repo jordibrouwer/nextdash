@@ -11966,7 +11966,6 @@ class DashboardConfig {
         // Config → Bookmarks → View: every default is how the view behaved
         // before it had settings (models.go, clampBookmarkViewSettings).
         bmViewGroup: { info: ['bmViewGroupInfoTitle', 'bmViewGroupInfoMessage'], def: 'last' },
-        bmViewDensity: { info: ['bmViewDensityInfoTitle', 'bmViewDensityInfoMessage'], def: 'comfortable' },
         bmViewAddress: { info: ['bmViewAddressInfoTitle', 'bmViewAddressInfoMessage'], def: 'full' },
         bmViewRowColors: { info: ['bmViewRowColorsInfoTitle', 'bmViewRowColorsInfoMessage'], def: true },
         bmViewColumns: { info: ['bmViewColumnsInfoTitle', 'bmViewColumnsInfoMessage'], def: null },
@@ -12351,10 +12350,6 @@ class DashboardConfig {
                     ] },
                     { field: 'configBookmarksPageSize', type: 'number', min: 10, max: 500, step: 10,
                         label: t('config.configBookmarksPageSizeLabel', 'Rows per load') },
-                    { field: 'bmViewDensity', type: 'select', label: t('config.bmViewDensityLabel', 'Row height'), options: [
-                        opt('comfortable', t('config.bmViewDensityComfortable', 'Comfortable')),
-                        opt('compact', t('config.bmViewDensityCompact', 'Compact')),
-                    ] },
                     { field: 'bmViewAddress', type: 'select', label: t('config.bmViewAddressLabel', 'Address in the row'), options: [
                         opt('full', t('config.bmViewAddressFull', 'Full address')),
                         opt('domain', t('config.bmViewAddressDomain', 'Domain')),
@@ -22184,7 +22179,16 @@ class DashboardConfig {
      * picture: inert, and hidden from assistive technology.
      */
     renderBookmarksViewPreview() {
-        if (typeof this.renderWorkbenchRow !== 'function') return '';
+        if (typeof this.renderWorkbenchRow !== 'function') {
+            // The rows are the Bookmarks view's own and its renderers load on
+            // demand: draw the tab again once they are here.
+            void this.ensureBookmarkRenderers?.().then(() => {
+                if (typeof this.renderWorkbenchRow === 'function' && this.section === 'bookmarks' && this.bmTab === 'view') {
+                    this.repaintActiveControlPanels();
+                }
+            });
+            return '';
+        }
         const esc = (v) => this.dash.escapeHtml(v);
         const now = Date.now();
         const day = 86400000;
@@ -24603,6 +24607,21 @@ class DashboardConfig {
         });
         container.querySelector('#config-bm-add')
             ?.addEventListener('click', () => this.openAddBookmarkModal());
+        // Row height is the app's one density setting; the rows are redrawn at
+        // their new height, which the windowed list reads back from the CSS.
+        container.querySelector('.config-bm-density')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-lvs-density]');
+            if (!btn) return;
+            window.ListDensity?.set?.(btn.getAttribute('data-lvs-density'));
+        });
+        if (!this._bmDensityListener) {
+            this._bmDensityListener = () => {
+                document.querySelectorAll('.config-bm-density [data-lvs-density]').forEach((b) => b.setAttribute(
+                    'aria-pressed', String(b.getAttribute('data-lvs-density') === window.ListDensity?.get?.())));
+                if (this.isActiveView() && this.section === 'bookmarks') this.repaintBookmarksList();
+            };
+            window.addEventListener('nextdash:list-density', this._bmDensityListener);
+        }
         container.querySelector('#config-bm-list')?.addEventListener('click', (e) => {
             if (e.target.closest('[data-bm-empty-add]')) {
                 this.openAddBookmarkModal();

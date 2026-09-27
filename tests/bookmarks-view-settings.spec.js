@@ -32,10 +32,31 @@ const row = (page, n = 0) => page.locator('#config-bm-list .config-bm-row').nth(
 const drawerFrame = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer-frame');
 
 test.describe('Bookmarks view: View settings, the list', () => {
-  test('compact rows are shorter', async ({ page }) => {
-    await open(page, { bmViewDensity: 'compact' });
-    const h = await row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height));
-    expect(h).toBe(36);
+  // Row height is the app's one density setting, as in the other list views.
+  test('rows follow the app\'s density: comfortable taller, dense shorter', async ({ page }) => {
+    const height = () => row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height));
+    await open(page, { densityMode: 'comfortable' });
+    expect(await height()).toBe(56);
+  });
+
+  test('dense rows are shorter than the compact default', async ({ page }) => {
+    await open(page, { densityMode: 'dense' });
+    expect(await row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(40);
+  });
+
+  test('the toolbar\'s pair switches it, and the list is redrawn at the new height', async ({ page }) => {
+    await open(page, { densityMode: 'compact' });
+    const height = () => row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height));
+    expect(await height()).toBe(46);
+    await page.locator('.config-bm-toolbar [data-lvs-density="comfortable"]').click();
+    await expect.poll(height).toBe(56);
+    await expect(page.locator('.config-bm-toolbar [data-lvs-density="comfortable"]')).toHaveAttribute('aria-pressed', 'true');
+    // The windowed list lays out rows at the height it reads back.
+    const gap = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll('#config-bm-list .config-bm-row')];
+      return rows.length > 1 ? Math.round(rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().top) : 56;
+    });
+    expect(gap).toBeGreaterThanOrEqual(56);
   });
 
   test('the address shows only the site, or not at all', async ({ page }) => {
@@ -169,18 +190,17 @@ test('a View setting changed in Config reaches the view', async ({ page }) => {
   await openBookmarks(page);
   await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
   await page.locator('[data-bm-tab="view"]').click();
-  const density = page.locator('.config-bm-view-tab select[data-behavior-field="bmViewDensity"]');
-  await density.selectOption('compact');
+  const address = page.locator('.config-bm-view-tab select[data-behavior-field="bmViewAddress"]');
+  await address.selectOption('hidden');
   try {
     await page.locator('.config-bm-view-tab [data-bm-open-view]').click();
     await page.waitForSelector('#config-bm-workbench #config-bm-list .config-bm-row', { timeout: 15_000 });
-    const h = await row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height));
-    expect(h).toBe(36);
+    await expect(page.locator('#config-bm-list .config-bm-domain')).toHaveCount(0);
   } finally {
     // Back to the default, so the shared data dir is left as found.
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
     await page.locator('[data-bm-tab="view"]').click();
-    await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewDensity"]').selectOption('comfortable');
+    await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewAddress"]').selectOption('full');
     await page.waitForTimeout(500);
   }
 });

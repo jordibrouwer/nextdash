@@ -16,7 +16,7 @@ func TestBookmarkViewSettingsDefaults(t *testing.T) {
 	fresh := NewStore().GetSettings()
 	check := func(label string, s Settings) {
 		t.Helper()
-		if s.BmViewGroup != "last" || s.BmViewDensity != "comfortable" || s.BmViewAddress != "full" ||
+		if s.BmViewGroup != "last" || s.BmViewAddress != "full" ||
 			s.BmViewRail != "open" || s.BmViewPanelTab != "last" || s.BmViewPanelWidth != "normal" ||
 			s.BmViewClick != "panel" || s.BmViewDblClick != "open" || s.BmViewHealthRange != "30" ||
 			s.BmViewBadgeCounts != "broken" || s.BmViewUsageDays != 30 || s.BmViewKeyLegend != "below" {
@@ -33,7 +33,7 @@ func TestBookmarkViewSettingsDefaults(t *testing.T) {
 
 	dir := t.TempDir()
 	t.Setenv("NEXTDASH_DATA_DIR", dir)
-	if err := os.WriteFile(filepath.Join(dir, "settings.json"), []byte(`{"theme":"x","bmViewDensity":"huge"}`), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "settings.json"), []byte(`{"theme":"x","bmViewAddress":"huge"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	check("older file", NewStore().GetSettings())

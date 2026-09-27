@@ -890,7 +890,6 @@ type Settings struct {
 	// Every default is what the view did before it had settings, so an install
 	// that never opens the tab sees no change. A list left empty means all.
 	BmViewGroup        string   `json:"bmViewGroup"`        // Group the list opens on: last (as last left)/none/page/category/site/status/tag
-	BmViewDensity      string   `json:"bmViewDensity"`      // Row height: comfortable/compact
 	BmViewAddress      string   `json:"bmViewAddress"`      // Address in the row: full/domain/hidden
 	BmViewRowColors    bool     `json:"bmViewRowColors"`    // Rows coloured by their health (default on)
 	BmViewColumns      []string `json:"bmViewColumns"`      // Columns shown (null = all, [] = none)
@@ -3188,7 +3187,6 @@ var categorySpreadResetScopes = map[string]bool{"page": true, "all": true}
 // its default, the view as it was before it had settings.
 var bmViewChoices = map[string][]string{
 	"group":       {"last", "none", "page", "category", "site", "status", "tag"},
-	"density":     {"comfortable", "compact"},
 	"address":     {"full", "domain", "hidden"},
 	"rail":        {"open", "folded"},
 	"panelTab":    {"last", "details", "health", "usage"},
@@ -3235,7 +3233,6 @@ func bmViewKnown(values, known []string) []string {
 
 func clampBookmarkViewSettings(s *Settings) {
 	s.BmViewGroup = bmViewChoice("group", s.BmViewGroup)
-	s.BmViewDensity = bmViewChoice("density", s.BmViewDensity)
 	s.BmViewAddress = bmViewChoice("address", s.BmViewAddress)
 	s.BmViewRail = bmViewChoice("rail", s.BmViewRail)
 	s.BmViewPanelTab = bmViewChoice("panelTab", s.BmViewPanelTab)

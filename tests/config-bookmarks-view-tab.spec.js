@@ -18,7 +18,7 @@ async function openView(page) {
 }
 
 const FIELDS = [
-  'bmViewGroup', 'configBookmarksSort', 'configBookmarksPageSize', 'bmViewDensity', 'bmViewAddress', 'bmViewRowColors',
+  'bmViewGroup', 'configBookmarksSort', 'configBookmarksPageSize', 'bmViewAddress', 'bmViewRowColors',
   'bmViewColumns', 'bmViewUsageDays', 'bmViewRail', 'bmViewRailBlocks', 'bmViewPanelTab', 'bmViewCloseOutside',
   'bmViewPanelWidth', 'bmViewClick', 'bmViewDblClick', 'bmViewHealthRange', 'bmViewBadge', 'bmViewBadgeCounts', 'bmViewKeyLegend',
 ];
@@ -37,12 +37,12 @@ test.describe('Config → Bookmarks → View', () => {
   test('a change is saved, and marked as changed', async ({ page }) => {
     await openView(page);
     const saved = page.waitForRequest((r) => r.method() === 'POST' && /\/api\/settings/.test(r.url())
-      && (r.postData() || '').includes('"bmViewDensity":"compact"'));
-    await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewDensity"]').selectOption('compact');
+      && (r.postData() || '').includes('"bmViewAddress":"domain"'));
+    await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewAddress"]').selectOption('domain');
     await saved;
     await expect(page.locator('.config-view-head .config-changed-count')).toContainText(/1 of/);
     // Back to the default, so the shared data dir is left as found.
-    await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewDensity"]').selectOption('comfortable');
+    await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewAddress"]').selectOption('full');
     await expect(page.locator('.config-view-head .config-changed-count')).toContainText(/default/i);
   });
 });
@@ -54,15 +54,14 @@ test.describe('Config → Bookmarks → View: the preview', () => {
     const preview = page.locator('[data-bm-view-preview]');
     await expect(preview.locator('.config-bm-row')).toHaveCount(2);
     await expect(preview.locator('.config-bm-panel-head')).toHaveCount(1);
-    const height = () => preview.locator('.config-bm-row').first().evaluate((el) => Math.round(el.getBoundingClientRect().height));
-    expect(await height()).toBe(46);
-    const density = page.locator('.config-bm-view-tab select[data-behavior-field="bmViewDensity"]');
-    await density.selectOption('compact');
+    const domains = () => preview.locator('.config-bm-domain').count();
+    expect(await domains()).toBe(2);
+    await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewAddress"]').selectOption('hidden');
     try {
-      await expect.poll(height).toBe(36);
+      await expect.poll(domains).toBe(0);
     } finally {
       // Back to the default, so the shared data dir is left as found.
-      await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewDensity"]').selectOption('comfortable');
+      await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewAddress"]').selectOption('full');
       await expect(page.locator('.config-view-head .config-changed-count')).toContainText(/default/i);
     }
   });

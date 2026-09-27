@@ -1834,10 +1834,20 @@ html body .config-bm-more-menu .config-btn {
     }
 }
 
-/* View: compact rows. The virtual list reads --bm-row-h, so this is the
-   drawn height too. */
-.config-bm-workbench.is-compact {
-    --bm-row-h: 36px;
+/* Row height follows the app's one density setting (densityMode), as the
+   other list views' rows do; compact and auto are the 46px it always was.
+   The virtual list reads --bm-row-h, so this is the drawn height too. */
+body[data-density-mode="comfortable"] .config-bm-workbench {
+    --bm-row-h: 56px;
+}
+
+body[data-density-mode="dense"] .config-bm-workbench {
+    --bm-row-h: 40px;
+}
+
+/* The pair sits with the toolbar's other controls, not pushed to its end. */
+.config-bm-toolbar .config-bm-density {
+    margin-left: 0;
 }
 
 /* View: the rail folded away at every width, behind the Filters button --

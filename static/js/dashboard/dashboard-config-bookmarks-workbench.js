@@ -61,10 +61,29 @@
         return `--bm-cols-wide: ${wide}; --bm-cols-large: ${large}; --bm-cols-mid: ${mid}; --bm-cols-narrow: ${narrow};`;
     },
 
+    /**
+     * Row height: the one app-wide setting (densityMode) the other list views
+     * follow, with the same pair of buttons their toolbars carry.
+     */
+    renderWorkbenchDensityToggle() {
+        const density = global.ListDensity;
+        if (!density) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = density.get();
+        const buttons = density.TOGGLE_DENSITIES.map((value) => {
+            const label = value === 'compact'
+                ? this.t('dashboard.listDensityCompact', 'Compact rows')
+                : this.t('dashboard.listDensityComfortable', 'Comfortable rows');
+            return `<button type="button" class="lvs-density-btn" data-lvs-density="${esc(value)}"
+                        aria-pressed="${current === value ? 'true' : 'false'}" aria-label="${esc(label)}" title="${esc(label)}">${value === 'compact' ? '≡' : '☰'}</button>`;
+        }).join('');
+        return `<div class="lvs-density config-bm-density" role="group"
+                     aria-label="${esc(this.t('dashboard.listDensityGroup', 'Row density'))}">${buttons}</div>`;
+    },
+
     /** The workbench's classes: what View sets on the list as a whole. */
     workbenchViewClasses() {
         const classes = ['config-bm-workbench', 'is-panel-collapsed', 'is-library'];
-        if (this.bmViewSetting('bmViewDensity', 'comfortable') === 'compact') classes.push('is-compact');
         if (this.bmViewSetting('bmViewRail', 'open') === 'folded') classes.push('is-rail-folded');
         return classes.join(' ');
     },
@@ -102,6 +121,7 @@
                             <span>${esc(this.t('config.sortLabel', 'Sort'))}</span>
                             <select class="config-select" id="config-bm-sort">${this.bookmarkSortOptionsHtml()}</select>
                         </label>
+                        ${this.renderWorkbenchDensityToggle()}
                         <button type="button" class="config-btn config-btn--primary config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     </div>
                     <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
