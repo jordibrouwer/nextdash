@@ -249,11 +249,13 @@ test.describe('bookmark panel: scrolling stays in it', () => {
     // The drawer slides in: let it settle before measuring its edge.
     await page.waitForTimeout(400);
     const box = await drawer(page).boundingBox();
-    // The middle of each edge, one pixel high: the corners are rounded.
-    const strip = (y) => ({ x: Math.round(box.x + box.width * 0.2), y: Math.round(y), width: Math.round(box.width * 0.6), height: 1 });
+    // The middle of each edge, from the rim a few pixels in: the corners are
+    // rounded, and scrolled content has to stop short of the rim, not run
+    // into it.
+    const strip = (y) => ({ x: Math.round(box.x + box.width * 0.2), y: Math.round(y), width: Math.round(box.width * 0.6), height: 5 });
     const edges = async () => [
       await page.screenshot({ clip: strip(box.y) }),
-      await page.screenshot({ clip: strip(box.y + box.height - 1) }),
+      await page.screenshot({ clip: strip(box.y + box.height - 5) }),
     ];
     const [top0, bottom0] = await edges();
     await drawer(page).evaluate((el) => { el.scrollTop = Math.floor((el.scrollHeight - el.clientHeight) / 2); });

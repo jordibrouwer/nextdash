@@ -627,7 +627,16 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
        long enough to scroll otherwise narrowed everything by its width, and
        the head and tabs jumped sideways on every switch. */
     scrollbar-gutter: stable;
-    padding: var(--space-4, 1rem);
+    /* The panel scrolls inside a margin of its own: a wide transparent border
+       over its ground, which the scrolled content is clipped short of, and
+       the visible rim drawn as an outline, which paints above the content.
+       Padding alone scrolls with the content, so text and chips ran right up
+       to the rim, and in Safari over it. Border plus padding is the 1rem the
+       panel always had. */
+    border: var(--space-2, 0.5rem) solid transparent;
+    padding: var(--space-2, 0.5rem);
+    outline: 1px solid var(--surface-float-border);
+    outline-offset: -1px;
     display: flex;
     flex-direction: column;
     gap: var(--space-3, 0.75rem);
@@ -637,7 +646,6 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
     border-radius: var(--surface-float-radius);
     box-shadow: var(--surface-panel-shadow);
     pointer-events: auto;
-    border: 1px solid var(--surface-float-border);
 }
 
 .lvs-drawer-head {

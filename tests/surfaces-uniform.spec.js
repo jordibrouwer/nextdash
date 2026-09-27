@@ -21,7 +21,10 @@ async function paint(locator, tier) {
     const got = getComputedStyle(el);
     const pick = (cs) => ({
       bg: cs.backgroundColor, image: cs.backgroundImage, shadow: cs.boxShadow,
-      border: cs.borderTopColor, filter: cs.backdropFilter,
+      // The side panel draws its rim as an outline, over a transparent
+      // border it scrolls inside (list-view-shell.css).
+      border: cs.outlineStyle !== 'none' && cs.borderTopColor === 'rgba(0, 0, 0, 0)' ? cs.outlineColor : cs.borderTopColor,
+      filter: cs.backdropFilter,
     });
     const out = { got: pick(got), want: pick(want) };
     probe.remove();
