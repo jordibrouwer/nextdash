@@ -64,8 +64,8 @@ test('keeping from the row flies it to the Kept tab and says so', async ({ page 
     const url = await queue(page, 'Fly me');
 
     const row = page.locator('.inbox-item', { hasText: 'Fly me' });
-    await row.hover();
-    await row.locator('[data-inbox-action="keep"]').click();
+    await row.locator('.inbox-item-title').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-action="keep"]').click();
 
     // The flight: a copy of the row, on its way to the tab.
     await expect(page.locator('.keep-flight')).toHaveCount(1, { timeout: 5_000 });
@@ -85,8 +85,8 @@ test('the toast undoes the keep', async ({ page }) => {
     const url = await queue(page, 'Undo me');
 
     const row = page.locator('.inbox-item', { hasText: 'Undo me' });
-    await row.hover();
-    await row.locator('[data-inbox-action="keep"]').click();
+    await row.locator('.inbox-item-title').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-action="keep"]').click();
     await expect.poll(() => keptHas(page, url), { timeout: 15_000 }).toBe(true);
 
     await page.locator('.app-notification', { hasText: 'Kept' }).locator('.app-notification-action').click();
@@ -115,14 +115,16 @@ test('keeping from the triage card lands on the card own Kept counter', async ({
 /**
  * Keep had no key in the list: r marks read there and k moves up, so the
  * one exit with a tab of its own was reachable by mouse only. Shift+K, shown
- * on the row's button and in the legend under the list.
+ * on the side panel's button and in the legend under the list.
  */
 test('Shift+K keeps the row under the cursor, and the list says so', async ({ page }) => {
     await bootstrap(page);
     const url = await queue(page, 'Key me');
 
-    await expect(page.locator('.inbox-item', { hasText: 'Key me' })
-        .locator('[data-inbox-action="keep"] kbd')).toHaveText('K');
+    // The side panel's Keep names its key in its title, as Bookmarks' buttons do.
+    await page.locator('.inbox-item', { hasText: 'Key me' }).locator('.inbox-item-title').click();
+    await expect(page.locator('[data-lvs-drawer="inbox"] [data-slp-action="keep"]')).toHaveAttribute('title', /Shift\+K/);
+    await page.keyboard.press('Escape');
     const legend = page.locator('.inbox-body-own .inbox-legend');
     await expect(legend.locator('span', { has: page.locator('kbd', { hasText: /^K$/ }) }))
         .toContainText('Kept');
@@ -173,8 +175,8 @@ test('sending a kept link back flies it to the queue tab', async ({ page }) => {
 
 async function keepRow(page, title) {
     const row = page.locator('.inbox-item', { hasText: title });
-    await row.hover();
-    await row.locator('[data-inbox-action="keep"]').click();
+    await row.locator('.inbox-item-title').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-action="keep"]').click();
 }
 
 async function addBookmark(page, pageId, bookmark) {

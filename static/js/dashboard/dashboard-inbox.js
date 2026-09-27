@@ -5191,10 +5191,9 @@ class DashboardInbox {
         if (status) card.setAttribute('data-lvs-status', status);
 
         /*
-         * Two lines. The first is what a reader scans: what, where, when. The
-         * second -- the three ways out of the inbox -- opens for the row that
-         * was clicked or reached by keyboard (dashboard-inbox.css). Everything
-         * else about the link is in the side panel.
+         * One line: what, where, when. The ways out of the inbox -- Open,
+         * Promote, Keep -- are the side panel's buttons, as Open, Edit and
+         * Re-check are in the Bookmarks view; the keys still work on the row.
          */
         const when = snoozed
             ? this.t('dashboard.inboxSnoozedUntil', 'Sleeping until {time}', { time: this.formatSnoozeWake(item.snoozedUntil) })
@@ -5209,15 +5208,6 @@ class DashboardInbox {
                 <h3 class="inbox-item-title" id="${this.escape(titleId)}">${this.escape(title)}</h3>
                 <button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>
                 <span class="inbox-item-when"${addedLabel && !snoozed ? ` title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}"` : ''}>${this.escape(when)}</span>
-            </div>
-            <div class="inbox-item-line2 lvs-row-line2">
-                <div class="feed-row-actions inbox-item-actions">
-                    <div class="inbox-item-actions-inner">
-                        <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
-                        <button type="button" class="inbox-action-btn" data-inbox-action="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}<kbd>p</kbd></button>
-                        ${this.keptEnabled() ? `<button type="button" class="inbox-action-btn" data-inbox-action="keep" title="${this.escape(this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, on the inbox\u2019s Kept tab, without giving it a page yet'))}">${this.escape(this.t('dashboard.inboxTriageKeep', 'Keep'))}<kbd>K</kbd></button>` : ''}
-                    </div>
-                </div>
             </div>
         `;
 
@@ -5275,20 +5265,6 @@ class DashboardInbox {
             );
         });
 
-        card.querySelector('[data-inbox-action="open"]')?.addEventListener('click', () => {
-            this.openItem(item);
-        });
-        card.querySelector('[data-inbox-action="promote"]')?.addEventListener('click', () => {
-            this.promoteItem(item);
-        });
-        // Keep, on the row: every other way out of the queue had a button
-        // here, and the one with a tab of its own was reachable only from
-        // triage or the right-click menu.
-        card.querySelector('[data-inbox-action="keep"]')?.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            this.selectItemById(item.id);
-            await this.keepItem(item);
-        });
         // Pointer-hover selection is handled once at the container level via
         // bindPointerNavigation (pointerover); a per-card mouseenter would be a
         // redundant second binding for the same behaviour.
@@ -5821,6 +5797,15 @@ class DashboardInbox {
         if (next === null || next === current) {
             return;
         }
+        await this.saveNote(item, next, options);
+    }
+
+    /**
+     * Store a note: the dialog's and the side panel's, which edits it in
+     * place. quiet: no toast, for a save the panel shows by itself.
+     */
+    async saveNote(item, next, options = {}) {
+        if (!item) return false;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const clearParam = next.trim() === '' ? '?clearNote=1' : '';
         try {
@@ -5843,15 +5828,19 @@ class DashboardInbox {
                     this.render();
                 }
             }
-            this.dash.showNotification(
-                next.trim()
-                    ? this.t('dashboard.inboxNoteSaved', 'Note saved')
-                    : this.t('dashboard.inboxNoteCleared', 'Note removed'),
-                'success',
-                { duration: 2500 }
-            );
+            if (!options.quiet) {
+                this.dash.showNotification(
+                    next.trim()
+                        ? this.t('dashboard.inboxNoteSaved', 'Note saved')
+                        : this.t('dashboard.inboxNoteCleared', 'Note removed'),
+                    'success',
+                    { duration: 2500 }
+                );
+            }
+            return true;
         } catch {
             this.dash.showNotification(this.t('dashboard.inboxNoteFailed', 'Could not save the note'), 'error');
+            return false;
         }
     }
 

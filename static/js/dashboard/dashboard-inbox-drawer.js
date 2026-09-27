@@ -9,7 +9,7 @@
  * cannot disagree about what an action does.
  */
 const INBOX_SECTIONS_KEY = 'nextdash.inbox.sections';
-const INBOX_SECTIONS_DEFAULT = ['preview', 'note', 'tags'];
+const INBOX_SECTIONS_DEFAULT = [];
 
 class InboxDrawer {
     constructor(view) {
@@ -35,25 +35,29 @@ class InboxDrawer {
         return this.base.currentKey();
     }
 
-    /** section: one to open on arrival. */
+    /** section: one to open on arrival (an accordion section's name). */
     open(item, { section = null } = {}) {
         if (!item) return;
         const title = item.previewTitle || item.title || item.domain || item.url;
         this.base.open(item.id, {
             title,
             build: (panel, ctx) => {
-                panel.classList.add('inbox-drawer');
+                panel.classList.add('inbox-drawer', 'config-bm-drawer');
                 panel.setAttribute('data-inbox-drawer', item.id);
-                this._fillHead(ctx, item);
-                if (String(item.previewImage || '').trim() || item.previewDesc) {
-                    this._fillPreview(ctx.section('preview', this.t('inboxDrawerPreview', 'Preview')), item);
-                }
-                this._fillNote(ctx.section('note', this.t('inboxDrawerNote', 'Note')), item);
-                this._fillTags(ctx.section('tags', this.t('inboxDrawerTags', 'Tags')), item);
-                this._fillDetails(ctx.section('details', this.t('inboxDrawerDetails', 'Details')), item);
+                // The layout carries its own name; the side panel's heading
+                // would say it twice (as in the Bookmarks view).
+                ctx.heading.hidden = true;
+                panel.insertAdjacentHTML('beforeend', this._render(item));
+                this._wire(panel, item);
             },
         });
-        if (section) this.base.openSection(section);
+        if (section) {
+            const acc = this.base.panel?.querySelector(`[data-slp-acc="${CSS.escape(section)}"]`);
+            if (acc) {
+                acc.open = true;
+                acc.scrollIntoView?.({ block: 'nearest' });
+            }
+        }
     }
 
     close() {
@@ -79,101 +83,155 @@ class InboxDrawer {
             this.view.onDrawerClosed?.();
             return;
         }
-        const open = Array.from(this.base.panel?.querySelectorAll('.lvs-drawer-section[open]') || [])
-            .map((el) => el.getAttribute('data-lvs-section'));
+        // Which sections are open is remembered by the layout itself.
         const scroll = this.base.panel?.scrollTop || 0;
         this.open(item);
-        open.forEach((name) => this.base.openSection(name));
         if (this.base.panel) this.base.panel.scrollTop = scroll;
     }
 
-    /* ── Head ─────────────────────────────────────────────────────────── */
+    /* ── The layout (shared/side-panel-layout.js) ─────────────────────── */
 
-    _button(host, action, label, onClick) {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'lvs-action';
-        b.setAttribute('data-inbox-drawer-action', action);
-        b.textContent = label;
-        b.addEventListener('click', onClick);
-        host.appendChild(b);
-        return b;
-    }
-
-    _fillHead(ctx, item) {
+    _render(item) {
         const view = this.view;
+        const L = window.SidePanelLayout;
+        const esc = (v) => view.escape(v);
         const url = String(item.url || '');
-        if (/^https?:\/\//i.test(url)) {
-            const link = document.createElement('a');
-            link.className = 'inbox-drawer-url';
-            link.href = url;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.textContent = view.formatUrlDisplay(url);
-            ctx.head.insertBefore(link, ctx.actions);
-        }
+        const snoozed = view.isSnoozed(item);
+        const iconSrc = view.resolveIconSrc(item.icon) || String(item.previewImage || '').trim();
+        const icon = window.BookmarkFeedRow?.renderIcon?.(iconSrc, esc)
+            || (iconSrc ? `<img src="${esc(iconSrc)}" alt="" loading="lazy">` : '🔗');
+        const source = String(item.source || '').trim();
+        const added = view.formatAddedDate(item.addedAt);
+        const where = [
+            view.formatRelativeTime(item.addedAt) ? this.t('inboxDrawerAddedAgo', 'added {when}', { when: view.formatRelativeTime(item.addedAt) }) : '',
+            source && source !== 'paste' ? this.t('inboxDrawerVia', 'via {source}', { source }) : '',
+        ].filter(Boolean).join(' · ');
+        const badge = snoozed
+            ? { text: this.t('inboxDrawerSleepingBadge', 'sleeping'), tone: 'muted' }
+            : (item.readAt ? { text: this.t('inboxDrawerReadBadge', 'read'), tone: 'muted' } : { text: this.t('inboxDrawerUnread', 'unread'), tone: 'info' });
+        const actions = [
+            { action: 'open', label: this.t('inboxOpen', 'Open'), primary: true },
+            { action: 'promote', label: this.t('inboxPromote', 'Promote'), title: this.t('inboxPromoteHint', 'Give it a page (p)') },
+            ...(view.keptEnabled() ? [{ action: 'keep', label: this.t('inboxTriageKeep', 'Keep'),
+                title: `${this.t('inboxKeepExplains', 'Keeps the link for good, on the inbox’s Kept tab, without giving it a page yet')} (Shift+K)` }] : []),
+        ];
+        const more = [
+            item.readAt
+                ? { action: 'unread', label: this.t('inboxMarkUnread', 'Mark unread') }
+                : { action: 'read', label: this.t('inboxMarkRead', 'Mark read') },
+            snoozed
+                ? { action: 'wake', label: this.t('inboxWake', 'Wake now') }
+                : { action: 'snooze', label: this.t('inboxSnooze', 'Snooze') },
+            { action: 'share', label: this.t('inboxCopyItemLink', 'Copy link to this item') },
+            { action: 'delete', label: this.t('inboxDelete', 'Delete'), danger: true },
+        ];
+        L.moreLabel = this.t('inboxMoreActions', 'More actions');
+        const head = L.head(esc, {
+            icon, title: item.previewTitle || item.title || item.domain || url, badge, more,
+            url: /^https?:\/\//i.test(url) ? url : '', urlLabel: view.formatUrlDisplay(url), where, actions,
+        });
 
-        if (item.readAt) {
-            this._button(ctx.actions, 'unread', this.t('inboxMarkUnread', 'Mark unread'), () => void view.markUnreadFromRow(item));
-        } else {
-            this._button(ctx.actions, 'read', this.t('inboxMarkRead', 'Mark read'), () => void view.markReadFromKeyboard(item));
-        }
-        if (view.isSnoozed(item)) {
-            this._button(ctx.actions, 'wake', this.t('inboxWake', 'Wake now'), () => void view.wakeItem(item));
-        } else {
-            this._button(ctx.actions, 'snooze', this.t('inboxSnooze', 'Snooze'), (e) => view.openSnoozeMenu(item, e.currentTarget));
-        }
-        this._button(ctx.actions, 'note',
-            item.note ? this.t('inboxEditNote', 'Edit note') : this.t('inboxAddNote', 'Note'),
-            () => void view.editNote(item));
-        this._button(ctx.actions, 'delete', this.t('inboxDelete', 'Delete'), () => void view.deleteItemWithUndo(item.id))
-            .classList.add('lvs-action--danger');
-    }
-
-    /* ── Sections ─────────────────────────────────────────────────────── */
-
-    _fillPreview(body, item) {
-        const view = this.view;
+        // The summary: the preview as the site gives it, then the facts.
         const img = String(item.previewImage || '').trim();
-        body.innerHTML = (img ? `<img class="inbox-drawer-preview-img" src="${view.escape(img)}" alt="" loading="lazy">` : '')
-            + (item.previewDesc ? `<p class="inbox-drawer-desc">${view.escape(item.previewDesc)}</p>` : '');
-        body.querySelector('.inbox-drawer-preview-img')?.addEventListener('error', (e) => e.currentTarget.remove(), { once: true });
+        const ptitle = String(item.previewTitle || '').trim();
+        const desc = String(item.previewDesc || '').trim();
+        const card = ptitle || desc || img
+            ? `<div class="config-bm-details-card${img ? '' : ' is-text'}">
+                    ${img ? `<img class="config-bm-details-image inbox-drawer-preview-img" src="${esc(img)}" alt="" loading="lazy">` : ''}
+                    <div class="config-bm-details-text">
+                        ${ptitle ? `<div class="config-bm-details-title">${esc(ptitle)}</div>` : ''}
+                        ${desc ? `<div class="config-bm-details-desc inbox-drawer-desc">${esc(desc)}</div>` : ''}
+                    </div>
+                </div>`
+            : `<p class="config-bm-panel-muted">${esc(this.t('inboxDrawerNoPreview', 'No preview yet.'))}</p>`;
+        const tags = (Array.isArray(item.tags) ? item.tags : []).filter(Boolean);
+        const chips = [
+            ...tags.map((tag) => L.chip(esc, `#${tag}`, 'is-tag')),
+            L.chip(esc, /^https:\/\//i.test(url) ? 'https' : this.t('inboxDrawerPlain', 'plain http'), /^https:\/\//i.test(url) ? '' : 'is-warn'),
+            added ? L.chip(esc, this.t('inboxDrawerAddedOn', 'added {date}', { date: added })) : '',
+            item.note ? L.chip(esc, this.t('inboxDrawerHasNote', 'note')) : '',
+        ].join('');
+        const summary = L.viz(`${card}<div class="config-bm-details-chips">${chips}</div>`);
+
+        const field = (label, value, attr = '') => (value
+            ? `<div class="config-bm-usage-kv"><span>${esc(label)}</span><span${attr}>${esc(value)}</span></div>`
+            : '');
+        const details = [
+            field(this.t('inboxDrawerSource', 'Source'), source && source !== 'paste' ? source : '', ' data-inbox-source'),
+            field(this.t('inboxDrawerAdded', 'Added'), added),
+            field(this.t('inboxDrawerRead', 'Read'), item.readAt ? view.formatAddedDate(item.readAt) : this.t('inboxDrawerNotYet', 'not yet')),
+            field(this.t('inboxDrawerSleeping', 'Sleeping until'), snoozed ? view.formatSnoozeWake(item.snoozedUntil) : ''),
+        ].join('');
+        const note = String(item.note || '');
+        const sections = [
+            L.acc(esc, 'inbox', 'note', this.t('inboxDrawerNote', 'Note'),
+                note ? this.t('inboxDrawerNoteSaves', 'saves as you go') : this.t('inboxDrawerNoneYet', 'none yet'),
+                `<label class="config-bm-field inbox-drawer-note-field">
+                    <textarea class="config-text inbox-drawer-note-input" data-inbox-note rows="3"
+                        aria-label="${esc(this.t('inboxDrawerNote', 'Note'))}"
+                        placeholder="${esc(this.t('inboxDrawerNotePlaceholder', 'A line on why this was saved'))}">${esc(note)}</textarea>
+                    <span class="config-bm-field-status" role="status" data-inbox-note-status></span>
+                </label>`, true),
+            L.acc(esc, 'inbox', 'tags', this.t('inboxDrawerTags', 'Tags'),
+                tags.length ? this.t('inboxDrawerTagCount', '{n} tags', { n: tags.length }) : this.t('inboxDrawerNoneYet', 'none yet'),
+                `${view.renderItemTags(item) || `<p class="config-bm-panel-muted">${esc(this.t('inboxDrawerNoTags', 'No tags yet.'))}</p>`}
+                 <span class="tag-suggest-chips" data-inbox-suggest></span>
+                 <div class="config-bm-details-buttons">
+                    <button type="button" class="config-btn config-btn--small" data-slp-action="tags">${esc(this.t('inboxTagsEdit', 'Edit tags'))}</button>
+                 </div>`, true),
+            L.acc(esc, 'inbox', 'details', this.t('inboxDrawerDetails', 'Details'),
+                item.readAt ? this.t('inboxDrawerReadBadge', 'read') : this.t('inboxDrawerUnread', 'unread'), details),
+            L.acc(esc, 'inbox', 'remove', this.t('inboxDrawerRemove', 'Remove'), '',
+                `<div class="config-bm-details-buttons">
+                    <button type="button" class="config-btn config-btn--small config-btn--danger" data-slp-action="delete">${esc(this.t('inboxDelete', 'Delete'))}</button>
+                 </div>
+                 <p class="config-bm-panel-muted">${esc(this.t('inboxDrawerDeleteHint', 'Undo is offered right after.'))}</p>`),
+        ];
+        return `${head}${summary}${L.accList(sections)}`;
     }
 
-    _fillNote(body, item) {
+    _wire(panel, item) {
         const view = this.view;
-        body.innerHTML = item.note
-            ? `<p class="inbox-drawer-note">${view.escape(item.note)}</p>`
-            : `<p class="inbox-drawer-empty">${view.escape(this.t('inboxDrawerNoNote', 'No note yet.'))}</p>`;
-    }
-
-    /** The tags (a click filters, as it did on the row) and the engine's offers. */
-    _fillTags(body, item) {
-        const view = this.view;
-        body.innerHTML = `${view.renderItemTags(item)}<span class="tag-suggest-chips" data-inbox-suggest></span>`;
-        body.querySelectorAll('[data-inbox-tag]').forEach((chip) => {
+        window.SidePanelLayout.bind(panel, {
+            group: 'inbox',
+            onAction: (action, button) => this._act(action, item, button),
+        });
+        panel.querySelector('.inbox-drawer-preview-img')?.addEventListener('error', (e) => e.currentTarget.remove(), { once: true });
+        panel.querySelectorAll('[data-inbox-tag]').forEach((chip) => {
             chip.addEventListener('click', () => view.filterByTag(chip.getAttribute('data-inbox-tag')));
         });
-        view.fillSuggestChips(body, item);
-        const actions = document.createElement('div');
-        actions.className = 'inbox-drawer-section-actions';
-        this._button(actions, 'tags', this.t('inboxTagsAction', 'Tags'), () => void view.editTags(item));
-        body.appendChild(actions);
+        view.fillSuggestChips(panel, item);
+
+        // The note is edited where it is read, and kept on leaving the field.
+        const note = panel.querySelector('[data-inbox-note]');
+        const status = panel.querySelector('[data-inbox-note-status]');
+        note?.addEventListener('change', async () => {
+            const next = note.value;
+            if (next.trim() === String(item.note || '').trim()) return;
+            const ok = await view.saveNote(item, next, { skipRender: true, quiet: true });
+            if (status) status.textContent = ok ? this.t('inboxNoteSaved', 'Note saved') : this.t('inboxNoteFailed', 'Could not save the note');
+            if (ok) item.note = next.trim();
+        });
     }
 
-    _fillDetails(body, item) {
+    _act(action, item, button) {
         const view = this.view;
-        const row = (label, value, attr = '') => (value
-            ? `<div class="inbox-drawer-field"><span class="inbox-drawer-field-label">${view.escape(label)}</span><span${attr}>${view.escape(value)}</span></div>`
-            : '');
-        // Paste is how most links arrive, so it goes unsaid.
-        const source = String(item.source || '').trim();
-        body.innerHTML = [
-            row(this.t('inboxDrawerSource', 'Source'), source && source !== 'paste' ? source : '', ' data-inbox-source'),
-            row(this.t('inboxDrawerAdded', 'Added'), view.formatAddedDate(item.addedAt)),
-            row(this.t('inboxDrawerRead', 'Read'), item.readAt ? view.formatAddedDate(item.readAt) : ''),
-            row(this.t('inboxDrawerSleeping', 'Sleeping until'), view.isSnoozed(item) ? view.formatSnoozeWake(item.snoozedUntil) : ''),
-        ].join('');
+        switch (action) {
+            case 'open': view.openItem(item); break;
+            case 'promote': view.promoteItem(item); break;
+            case 'keep':
+                view.selectItemById(item.id);
+                void view.keepItem(item);
+                break;
+            case 'read': void view.markReadFromKeyboard(item); break;
+            case 'unread': void view.markUnreadFromRow(item); break;
+            case 'snooze': view.openSnoozeMenu(item, button); break;
+            case 'wake': void view.wakeItem(item); break;
+            case 'share': void view.copyItemLink(item.id); break;
+            case 'tags': void view.editTags(item); break;
+            case 'delete': void view.deleteItemWithUndo(item.id); break;
+            default: break;
+        }
     }
 }
 

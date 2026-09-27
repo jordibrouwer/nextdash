@@ -115,7 +115,8 @@ test('the snoozed rail row hides at zero and reappears once something is snoozed
     // Snooze the way a user does: the row opens the side panel, which has it.
     const card = page.locator('.inbox-item').first();
     await card.locator('.inbox-item-title').click();
-    const snoozeBtn = page.locator('[data-lvs-drawer="inbox"] [data-inbox-drawer-action="snooze"]');
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-more]').click();
+    const snoozeBtn = page.locator('[data-lvs-drawer="inbox"] [data-slp-action="snooze"]');
     await expect(snoozeBtn).toBeVisible();
     await snoozeBtn.click();
     await expect(page.locator('.inbox-snooze-menu')).toBeVisible();

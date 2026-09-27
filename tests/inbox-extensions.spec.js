@@ -181,7 +181,7 @@ test.describe('inbox tags', () => {
         await openInbox(page);
         await seedTagged(page);
 
-        const panel = page.locator('[data-lvs-drawer="inbox"] [data-lvs-section="tags"]');
+        const panel = page.locator('[data-lvs-drawer="inbox"] [data-slp-acc="tags"]');
         await page.locator('.inbox-item', { hasText: 'TAG tagged' }).first().locator('.inbox-item-title').click();
         await expect(panel.locator('[data-inbox-tag="reading"]')).toBeVisible();
         await expect(panel.locator('[data-inbox-tag="work"]')).toBeVisible();

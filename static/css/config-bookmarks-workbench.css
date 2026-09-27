@@ -566,6 +566,29 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
 .config-bm-score[data-tone="good"] { --config-bm-score-tone: var(--accent-success); }
 .config-bm-score[data-tone="warn"] { --config-bm-score-tone: var(--accent-warning); }
 .config-bm-score[data-tone="bad"] { --config-bm-score-tone: var(--accent-error); }
+.config-bm-score[data-tone="info"] { --config-bm-score-tone: var(--accent-primary); }
+.config-bm-score[data-tone="muted"] { --config-bm-score-tone: var(--text-tertiary); }
+
+/* The same badge in the other views' side panels (side-panel-layout.js):
+   a word -- unread, running -- rather than a number. */
+.config-bm-score.slp-badge {
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+}
+
+/* Inbox's note, edited in place. */
+.inbox-drawer-note-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.inbox-drawer-note-input {
+    width: 100%;
+    min-height: 4.5rem;
+    resize: vertical;
+    box-sizing: border-box;
+}
 
 /* ── Folded panel: more per row ───────────────────────────────────────── */
 

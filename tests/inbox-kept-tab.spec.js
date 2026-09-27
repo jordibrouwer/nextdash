@@ -367,8 +367,9 @@ test('the inbox row keeps a link with its own button', async ({ page }) => {
     const row = page.locator('.inbox-item', { hasText: 'Row keep' });
     await expect(row).toBeVisible({ timeout: 10_000 });
 
-    await row.hover();
-    await row.locator('[data-inbox-action="keep"]').click();
+    await row.locator('.inbox-item-title').click();
+
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-action="keep"]').click();
 
     await expect.poll(async () => page.evaluate(async (u) => {
         const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
@@ -448,8 +449,8 @@ test('the To triage tab counts the queue, and follows it', async ({ page }) => {
 
     // Keep one: the queue shrinks and says so.
     const row = page.locator('.inbox-item', { hasText: 'Count 1' });
-    await row.hover();
-    await row.locator('[data-inbox-action="keep"]').click();
+    await row.locator('.inbox-item-title').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-action="keep"]').click();
     await expect(count).toHaveText('1', { timeout: 10_000 });
 });
 
@@ -487,7 +488,8 @@ test('the To triage tab and the header badge show the same number', async ({ pag
     // the list, and leaves both counts at once.
     const row = page.locator('.inbox-item', { hasText: 'Same 1' });
     await row.locator('.inbox-item-title').click();
-    await page.locator('[data-lvs-drawer="inbox"] [data-inbox-drawer-action="read"]').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-more]').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-action="read"]').click();
     await expect(tab).toHaveText('2', { timeout: 10_000 });
     await expect(badge).toHaveText('2');
 });
@@ -513,8 +515,9 @@ test('Promote opens the form with the item tags filled in', async ({ page }) => 
     const row = page.locator('.inbox-item', { hasText: 'Tagged promote' });
     await expect(row).toBeVisible({ timeout: 10_000 });
 
-    await row.hover();
-    await row.locator('[data-inbox-action="promote"]').click();
+    await row.locator('.inbox-item-title').click();
+
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-action="promote"]').click();
 
     const modal = page.locator('#bookmark-form-modal.show');
     await expect(modal).toBeVisible({ timeout: 10_000 });

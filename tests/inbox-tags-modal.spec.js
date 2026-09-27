@@ -21,7 +21,7 @@ test.describe('inbox tags dialog', () => {
   test('typing offers tags that already exist', async ({ page }) => {
     await openInboxWith(page);
     await item(page, 'Read one').locator('.inbox-item-title').click();
-    await page.locator('[data-lvs-drawer="inbox"] [data-inbox-drawer-action="tags"]').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-action="tags"]').click();
     await input(page).fill('wo');
     await expect(page.locator('.tag-ac-dropdown .tag-ac-item', { hasText: 'work' })).toBeVisible();
   });
@@ -30,7 +30,7 @@ test.describe('inbox tags dialog', () => {
     await openInboxWith(page);
     await stubSuggestions(page);
     await item(page, 'Read one').locator('.inbox-item-title').click();
-    await page.locator('[data-lvs-drawer="inbox"] [data-inbox-drawer-action="tags"]').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-action="tags"]').click();
     const chip = page.locator('#inbox-tags-modal-suggest .tag-suggest-chip-add', { hasText: '#for-ib-read' });
     await expect(chip).toBeVisible();
     await chip.click();

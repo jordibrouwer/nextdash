@@ -57,7 +57,7 @@ test.describe('the inbox says what it knows', () => {
         const shown = [];
         for (const title of ['Gap from extension', 'Gap from paste']) {
             await page.locator('.inbox-item', { hasText: title }).first().locator('.inbox-item-title').click();
-            const details = page.locator('[data-lvs-drawer="inbox"] [data-lvs-section="details"]');
+            const details = page.locator('[data-lvs-drawer="inbox"] [data-slp-acc="details"]');
             if (await details.getAttribute('open') === null) await details.locator('summary').click();
             shown.push({
                 title,

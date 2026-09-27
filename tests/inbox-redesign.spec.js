@@ -26,16 +26,14 @@ test.describe('inbox redesign: rows', () => {
     await expect(row.locator('.inbox-item-when')).toContainText(/sleeping/i);
   });
 
-  test('line two opens for the keyboard row, with Open, Promote and Keep only', async ({ page }) => {
+  test('a row is one line; Open, Promote and Keep are the side panel\'s buttons', async ({ page }) => {
     await openInboxWith(page);
-    await page.evaluate(() => document.activeElement?.blur?.());
-    await expect(page.locator('.inbox-item-line2:visible')).toHaveCount(0);
-    await page.keyboard.press('j');
-    const line2 = page.locator('.inbox-item[data-inbox-open] .inbox-item-line2');
-    await expect(line2).toBeVisible();
-    const actions = await line2.locator('[data-inbox-action]').evaluateAll((els) => els.map((e) => e.dataset.inboxAction));
+    await expect(page.locator('.inbox-item-line2')).toHaveCount(0);
+    await expect(page.locator('.inbox-item [data-inbox-action]')).toHaveCount(0);
+    await item(page, 'Unread one').locator('.inbox-item-title').click();
+    const actions = await page.locator('[data-lvs-drawer="inbox"] .config-bm-panel-actions [data-slp-action]')
+      .evaluateAll((els) => els.map((e) => e.dataset.slpAction));
     expect(actions.filter((a) => a !== 'keep')).toEqual(['open', 'promote']);
-    await expect(page.locator('.inbox-item-line2:visible')).toHaveCount(1);
   });
 
   test('hovering selects without opening', async ({ page }) => {
@@ -45,7 +43,7 @@ test.describe('inbox redesign: rows', () => {
     await page.mouse.move(400, 10, { steps: 2 });
     await item(page, 'Read one').hover();
     await expect(item(page, 'Read one')).toHaveClass(/keyboard-selected/);
-    await expect(item(page, 'Read one').locator('.inbox-item-line2')).toBeHidden();
+    await expect(page.locator('[data-lvs-drawer="inbox"] [data-lvs-drawer-panel]')).toHaveCount(0);
   });
 
   test('the checkbox rests hidden and shows on hover', async ({ page }) => {
@@ -66,7 +64,13 @@ test.describe('inbox redesign: rows', () => {
 
 test.describe('inbox redesign: side panel', () => {
   const drawer = (page) => page.locator('[data-lvs-drawer="inbox"] [data-lvs-drawer-panel]');
-  const section = (page, name) => drawer(page).locator(`[data-lvs-section="${name}"]`);
+  const section = (page, name) => drawer(page).locator(`[data-slp-acc="${name}"]`);
+  const title = (page) => drawer(page).locator('.config-bm-panel-title');
+  // Mark read, Snooze and the rest sit under the head's ⋯.
+  async function fromMore(page, action) {
+    await drawer(page).locator('[data-slp-more]').click();
+    await drawer(page).locator(`[data-slp-more-menu] [data-slp-action="${action}"]`).click();
+  }
 
   // The stubbed items do not exist on the server, so writes are answered here.
   async function answerWrites(page) {
@@ -84,40 +88,51 @@ test.describe('inbox redesign: side panel', () => {
     await openInboxWith(page);
     await page.evaluate(() => document.activeElement?.blur?.());
     await page.keyboard.press('j');
-    const title = await page.locator('.inbox-item[data-inbox-open] .inbox-item-title').textContent();
+    const name = await page.locator('.inbox-item[data-inbox-open] .inbox-item-title').textContent();
     await expect(drawer(page)).toHaveCount(0);
     await page.keyboard.press('Enter');
-    await expect(drawer(page).locator('.lvs-drawer-title')).toHaveText(title);
+    await expect(title(page)).toHaveText(name);
     await expect(drawer(page).locator('a[href^="https://example.com/"]')).toHaveCount(1);
   });
 
-  test('a click opens every section for an item with preview, note and tags', async ({ page }) => {
+  test('a click shows the summary on top and the sections under it', async ({ page }) => {
     await openInboxWith(page);
     await item(page, 'Unread one').locator('.inbox-item-title').click();
-    await expect(drawer(page).locator('.lvs-drawer-title')).toHaveText('Unread one');
-    for (const name of ['preview', 'note', 'tags', 'details']) {
+    await expect(title(page)).toHaveText('Unread one');
+    await expect(drawer(page).locator('.config-bm-details-viz')).toContainText('A page about things');
+    for (const name of ['note', 'tags', 'details', 'remove']) {
       await expect(section(page, name)).toHaveCount(1);
     }
-    await expect(section(page, 'preview')).toContainText('A page about things');
-    await expect(section(page, 'note')).toContainText('Read this first');
+    await expect(section(page, 'note').locator('[data-inbox-note]')).toHaveValue('Read this first');
     await expect(section(page, 'tags').locator('[data-inbox-tag="work"]')).toHaveCount(1);
+    await section(page, 'details').locator('summary').click();
     await expect(section(page, 'details')).toContainText('extension');
+  });
+
+  test('the note is edited in place, and kept on leaving the field', async ({ page }) => {
+    await openInboxWith(page);
+    const writes = await answerWrites(page);
+    await item(page, 'Unread one').locator('.inbox-item-title').click();
+    const note = section(page, 'note').locator('[data-inbox-note]');
+    await note.fill('Changed in the panel');
+    await note.press('Tab');
+    await expect.poll(() => writes.some((w) => w.body?.id === 'ib-unread' && w.body?.note === 'Changed in the panel')).toBe(true);
   });
 
   test('Mark read in the panel sends the read, and the panel then offers unread', async ({ page }) => {
     await openInboxWith(page);
     const writes = await answerWrites(page);
     await item(page, 'Unread one').locator('.inbox-item-title').click();
-    await drawer(page).locator('[data-inbox-drawer-action="read"]').click();
+    await fromMore(page, 'read');
     await expect.poll(() => writes.some((w) => w.body?.id === 'ib-unread' && w.body?.readAt)).toBe(true);
-    await expect(drawer(page).locator('[data-inbox-drawer-action="unread"]')).toBeVisible();
+    await expect(drawer(page).locator('[data-slp-more-menu] [data-slp-action="unread"]')).toHaveCount(1);
     await expect(item(page, 'Unread one')).not.toHaveAttribute('data-lvs-status', /.+/);
   });
 
   test('Snooze in the panel opens the snooze menu', async ({ page }) => {
     await openInboxWith(page);
     await item(page, 'Read one').locator('.inbox-item-title').click();
-    await drawer(page).locator('[data-inbox-drawer-action="snooze"]').click();
+    await fromMore(page, 'snooze');
     await expect(page.locator('.inbox-snooze-menu')).toBeVisible();
   });
 
@@ -143,11 +158,11 @@ test.describe('inbox redesign: side panel', () => {
     await page.evaluate(() => document.activeElement?.blur?.());
     await page.keyboard.press('j');
     await page.keyboard.press('Enter');
-    const first = await drawer(page).locator('.lvs-drawer-title').textContent();
+    const first = await title(page).textContent();
     await page.keyboard.press('j');
     const next = await page.locator('.inbox-item[data-inbox-open] .inbox-item-title').textContent();
     expect(next).not.toBe(first);
-    await expect(drawer(page).locator('.lvs-drawer-title')).toHaveText(next);
+    await expect(title(page)).toHaveText(next);
   });
 
   test('ticking two rows closes the panel', async ({ page }) => {

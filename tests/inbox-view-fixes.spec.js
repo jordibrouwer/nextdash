@@ -55,7 +55,8 @@ async function snoozeFirstRow(page) {
     const before = await page.locator('.inbox-item').count();
     const card = page.locator('.inbox-item').first();
     await card.locator('.inbox-item-title').click();
-    await page.locator('[data-lvs-drawer="inbox"] [data-inbox-drawer-action="snooze"]').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-more]').click();
+    await page.locator('[data-lvs-drawer="inbox"] [data-slp-action="snooze"]').click();
     await expect(page.locator('.inbox-snooze-menu')).toBeVisible();
     await page.locator('.inbox-snooze-option').first().click();
     await expect(page.locator('.inbox-item')).toHaveCount(before - 1);
