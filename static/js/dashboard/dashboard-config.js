@@ -2726,6 +2726,8 @@ class DashboardConfig {
             host.addEventListener('click', (e) => {
                 const row = e.target.closest('.config-bm-row');
                 if (!row || !host.contains(row)) return;
+                // A click is the Bookmarks view's way into the side panel.
+                if (this.standalone) this._libDrawerWanted = true;
                 this._bmKeyboardKey = this.bookmarkRowKey(row);
                 this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
             });

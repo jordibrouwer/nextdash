@@ -79,3 +79,80 @@ test.describe('bookmarks view', () => {
     expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('config');
   });
 });
+
+test.describe('bookmarks view: the side panel', () => {
+  const drawer = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+  const row = (page, i) => page.locator('#config-bm-list .config-bm-row').nth(i);
+
+  test('no panel column, and no side panel before a row is picked', async ({ page }) => {
+    await coldLoad(page, '#bookmarks');
+    await expect(row(page, 0)).toBeVisible();
+    await expect(page.locator('#config-bm-workbench #config-bm-panel')).toHaveCount(0);
+    await expect(drawer(page)).toHaveCount(0);
+  });
+
+  test('clicking a row opens the side panel with that bookmark', async ({ page }) => {
+    await coldLoad(page, '#bookmarks');
+    const name = (await row(page, 1).locator('.config-bm-title').textContent()).trim();
+    await row(page, 1).locator('.config-bm-title').click();
+    await expect(drawer(page)).toBeVisible();
+    await expect(drawer(page).locator('.config-bm-panel-title')).toHaveText(name);
+  });
+
+  test('j/k leave the side panel closed, and follow in it once it is open', async ({ page }) => {
+    await coldLoad(page, '#bookmarks');
+    await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await page.keyboard.press('j');
+    await expect(drawer(page)).toHaveCount(0);
+    await row(page, 0).locator('.config-bm-title').click();
+    await expect(drawer(page)).toBeVisible();
+    const second = (await row(page, 1).locator('.config-bm-title').textContent()).trim();
+    await page.keyboard.press('j');
+    await expect(drawer(page).locator('.config-bm-panel-title')).toHaveText(second);
+  });
+
+  test('× and Escape close it', async ({ page }) => {
+    await coldLoad(page, '#bookmarks');
+    await row(page, 0).locator('.config-bm-title').click();
+    await expect(drawer(page)).toBeVisible();
+    await drawer(page).locator('.lvs-drawer-close').click();
+    await expect(drawer(page)).toHaveCount(0);
+    await row(page, 0).locator('.config-bm-title').click();
+    await expect(drawer(page)).toBeVisible();
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await page.keyboard.press('Escape');
+    await expect(drawer(page)).toHaveCount(0);
+    expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('library');
+  });
+
+  test('ticking two rows opens the bulk form in it', async ({ page }) => {
+    await coldLoad(page, '#bookmarks');
+    await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+    await page.evaluate(() => document.activeElement?.blur?.());
+    for (let i = 0; i < 2; i += 1) {
+      await page.keyboard.press('j');
+      await page.keyboard.press('x');
+    }
+    await expect(drawer(page)).toBeVisible();
+    await expect(drawer(page).locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-mode', 'bulk');
+  });
+
+  test('leaving the view takes the side panel with it', async ({ page }) => {
+    await coldLoad(page, '#bookmarks');
+    await row(page, 0).locator('.config-bm-title').click();
+    await expect(drawer(page)).toBeVisible();
+    await page.evaluate(() => { window.location.hash = '#config/appearance'; });
+    await expect(page.locator('.config-nav-column')).toBeVisible();
+    await expect(drawer(page)).toHaveCount(0);
+  });
+
+  test('on a phone it fills the screen', async ({ page }) => {
+    await coldLoad(page, '#bookmarks');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await row(page, 0).locator('.config-bm-title').click();
+    await expect(drawer(page)).toBeVisible();
+    const box = await drawer(page).boundingBox();
+    expect(box.width).toBeGreaterThan(360);
+  });
+});

@@ -1189,6 +1189,10 @@ class Dashboard {
         if (previous === 'health' && view !== 'health') {
             this.health?.instance?.onLeaveDrawer?.();
         }
+        // The Bookmarks view's side panel sits on <body> too.
+        if (previous === 'library' && view !== 'library') {
+            this.config?.instance?.closeLibraryDrawer?.();
+        }
         if (previous === 'inbox' && view !== 'inbox') {
             this.inbox?.instance?.onLeaveDrawer?.();
         }

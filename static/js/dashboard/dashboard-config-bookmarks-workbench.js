@@ -24,6 +24,9 @@
     Object.assign(global.DashboardConfig.prototype, {
 
     bmPanelCollapsed() {
+        // The Bookmarks view has no panel column: its panel is the side
+        // panel over the page, so the rows always get the full width.
+        if (this.standalone) return true;
         if (this._bmPanelTempOpen) return false;
         try {
             return global.localStorage?.getItem(PANEL_KEY) === '1';
@@ -39,7 +42,7 @@
         const countLabel = this.renderBookmarkCountLabelSafe(filtered.length, total);
         const collapsed = this.bmPanelCollapsed();
         return `
-            <div class="config-bm-workbench${collapsed ? ' is-panel-collapsed' : ''}" id="config-bm-workbench">
+            <div class="config-bm-workbench${collapsed ? ' is-panel-collapsed' : ''}${this.standalone ? ' is-library' : ''}" id="config-bm-workbench">
                 <aside class="config-bm-rail" id="config-bm-rail"
                        aria-label="${esc(this.t('config.bmFilters', 'Filters'))}">${this.renderWorkbenchRail()}</aside>
                 <section class="config-bm-main" aria-label="${esc(this.t('config.sectionBookmarks', 'Bookmarks'))}">
@@ -516,7 +519,9 @@
     },
 
     repaintWorkbenchPanel() {
-        const panel = document.getElementById('config-bm-panel');
+        // In the Bookmarks view the panel lives in the side panel, which is
+        // out of the document while closed; it is still the one to draw.
+        const panel = (this.standalone && this._libPanel) || document.getElementById('config-bm-panel');
         if (!panel) return;
         // A save in flight owns the panel until it lands: repainting now would
         // take the field (and what was typed into it) away mid-write.
@@ -529,7 +534,10 @@
         const sig = this.workbenchPanelSig(mode, key);
         // Typing in the panel while the list repaints around it must not lose
         // the field; the same bookmark in the same mode is left alone.
-        if (panel.dataset.bmPanelSig === sig && panel.contains(document.activeElement)) return;
+        if (panel.dataset.bmPanelSig === sig && panel.contains(document.activeElement)) {
+            this.syncLibraryDrawer();
+            return;
+        }
         this.detachWorkbenchTagAutocomplete(panel);
         panel.innerHTML = this.renderWorkbenchPanel();
         this.attachWorkbenchTagAutocomplete(panel);
@@ -540,8 +548,84 @@
         this.bindBmHealthPanel?.(panel);
         void this.fillWorkbenchSuggestions(panel);
         if (mode === 'bulk') void this.fillWorkbenchBulkSuggestions(panel);
-        if (mode === 'bulk' && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });
+        // (The Bookmarks view opens its side panel for a selection itself.)
+        if (mode === 'bulk' && !this.standalone && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });
         this.syncWorkbenchToolbar();
+        this.syncLibraryDrawer();
+    },
+
+    /* ── The Bookmarks view's panel ─────────────────────────────────────── */
+
+    /*
+     * In the Bookmarks view the panel works the way Containers' does: the
+     * shared side panel (ListViewDrawer) over the right of the page, closed
+     * until a row is clicked, with × and Escape to close it, fullscreen on a
+     * phone. Moving the cursor with j/k leaves it as it is; a selection of
+     * several rows always opens it, since that is where their form is.
+     *
+     * The panel element itself is the workbench's own #config-bm-panel,
+     * moved into the side panel rather than rebuilt there, so everything
+     * bound to it and every lookup by its id keep working.
+     */
+    libraryDrawer() {
+        if (!this._libDrawer && typeof global.ListViewDrawer === 'function') {
+            this._libDrawer = new global.ListViewDrawer({
+                id: 'library',
+                storageKey: 'nextdash.library.drawer',
+                closeLabel: this.t('config.bmCloseDetails', 'Close'),
+                onClose: () => this.onLibraryDrawerClosed(),
+            });
+        }
+        return this._libDrawer || null;
+    },
+
+    /** Take the freshly drawn panel out of the layout; the side panel shows it. */
+    adoptLibraryPanel(panel) {
+        if (!panel) return;
+        this._libPanel = panel;
+        panel.remove();
+    },
+
+    /** Open or close the side panel to match the cursor, the selection and the reader's wish. */
+    syncLibraryDrawer() {
+        if (!this.standalone || !this.isActiveView()) return;
+        const drawer = this.libraryDrawer();
+        const panel = this._libPanel;
+        if (!drawer || !panel) return;
+        const mode = this.workbenchPanelMode();
+        const want = mode === 'bulk' || (mode === 'single' && this._libDrawerWanted);
+        if (want) {
+            if (!drawer.isOpen() || !drawer.panel?.contains(panel)) {
+                drawer.open('library', {
+                    build: (slab, ctx) => {
+                        slab.classList.add('config-bm-drawer');
+                        // The panel carries its own title; the side panel's
+                        // heading would say it twice.
+                        ctx.heading.hidden = true;
+                        slab.appendChild(panel);
+                    },
+                });
+            }
+        } else if (drawer.isOpen()) {
+            drawer.close({ silent: true });
+        }
+    },
+
+    /** × on the side panel: closed until the next click; a selection is dropped with it. */
+    onLibraryDrawerClosed() {
+        this._libDrawerWanted = false;
+        if (this.bmSelected.size > 1) {
+            this.bmSelected.clear();
+            this.afterSelectionChange();
+        }
+    },
+
+    /** The first Escape in the view: close the side panel, if it is open. */
+    closeLibraryDrawer() {
+        const drawer = this._libDrawer;
+        if (!drawer?.isOpen()) return false;
+        drawer.close();
+        return true;
     },
 
     /**
@@ -694,6 +778,13 @@
      * overwriting that choice.
      */
     toggleWorkbenchPanel(force, { remember = true } = {}) {
+        if (this.standalone) {
+            // `i` in the Bookmarks view: the side panel, for the row under the cursor.
+            this._libDrawerWanted = typeof force === 'boolean' ? !force : !this._libDrawer?.isOpen();
+            if (!this._libDrawerWanted) this.closeLibraryDrawer();
+            else this.repaintWorkbenchPanel();
+            return;
+        }
         const collapsed = typeof force === 'boolean' ? force : !this.bmPanelCollapsed();
         if (remember) {
             this._bmPanelTempOpen = false;
@@ -714,7 +805,8 @@
 
     focusWorkbenchPanel(key) {
         if (key) this._bmKeyboardKey = key;
-        if (this.workbenchNarrow()) this.openWorkbenchOverlay('drawer');
+        if (this.standalone) this._libDrawerWanted = true;
+        else if (this.workbenchNarrow()) this.openWorkbenchOverlay('drawer');
         else this.toggleWorkbenchPanel(false, { remember: false });
         this.repaintWorkbenchPanel();
         const field = document.querySelector('#config-bm-panel [data-bm-field="name"], #config-bm-panel [data-bm-field]');
@@ -1258,6 +1350,7 @@
     },
 
     closeWorkbenchOverlays() {
+        if (this.closeLibraryDrawer()) return true;
         const root = document.getElementById('config-bm-workbench');
         const wasOpen = Boolean(root?.classList.contains('is-drawer-open') || root?.classList.contains('is-sheet-open'));
         root?.classList.remove('is-drawer-open', 'is-sheet-open');
@@ -1321,6 +1414,7 @@
         this.startBmHealth?.();
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
         const panel = container.querySelector('#config-bm-panel');
+        if (this.standalone) this.adoptLibraryPanel(panel);
         this.bindWorkbenchPanel(panel);
         this.bindWorkbenchBulk(panel);
         if (panel) {
@@ -1334,7 +1428,8 @@
                 if (e.target.closest('[data-bm-scrim]')) this.closeWorkbenchOverlays();
                 else if (e.target.closest('[data-bm-open-sheet]')) this.openWorkbenchOverlay('sheet');
                 else if (e.target.closest('[data-bm-open-drawer]')) {
-                    this.openWorkbenchOverlay('drawer');
+                    if (this.standalone) this._libDrawerWanted = true;
+                    else this.openWorkbenchOverlay('drawer');
                     this.repaintWorkbenchPanel();
                 }
             });

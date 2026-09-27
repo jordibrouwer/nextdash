@@ -3980,6 +3980,7 @@
     "bookmarkSaveError": "Could not save the bookmark.",
     "bookmarksIntro": "Every bookmark across your pages. Search, edit, or remove them here.",
     "bmLibraryTitle": "Bookmarks",
+    "bmCloseDetails": "Close",
     "bookmarksTileTaggedPct": "{pct}% of total",
     "browserImportDone": "Imported {i}, skipped {s} duplicates. Reloading…",
     "bulkRefreshFaviconsBtn": "Refresh all favicons",

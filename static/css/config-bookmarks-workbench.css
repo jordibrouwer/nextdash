@@ -1116,3 +1116,37 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
 .config-bm-panel .health-expect-input {
     min-width: 0;
 }
+
+/* ── The Bookmarks view ───────────────────────────────────────────────── */
+
+/* No panel column: the panel is the side panel over the page (see
+   syncLibraryDrawer), so the list has the width the column had. */
+@media (min-width: 800px) {
+    .config-bm-workbench.is-library,
+    .config-bm-workbench.is-library.is-panel-collapsed {
+        grid-template-columns: var(--bm-rail-w) minmax(0, 1fr);
+    }
+}
+
+.config-bm-workbench.is-library [data-bm-open-drawer] {
+    display: none;
+}
+
+/* The workbench panel inside the side panel: the slab is the side panel's,
+   so the panel's own slab, stickiness and fold button go. */
+html body .config-bm-drawer .config-bm-panel,
+html[data-theme] body:not([data-depth="flat"]) .config-bm-drawer .config-bm-panel {
+    position: static;
+    width: auto;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+}
+
+.config-bm-drawer .config-bm-panel-toggle {
+    display: none;
+}
