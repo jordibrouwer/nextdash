@@ -613,3 +613,18 @@ test('turning keeping off takes the Kept tab away without a reload', async ({ pa
     });
     await expect(page.locator('[data-inbox-tab="kept"]')).toBeVisible();
 });
+
+/*
+ * The places, in the order they are used: home, then the Bookmarks view,
+ * the Inbox and Containers, and Config last.
+ */
+test('the destinations run Bookmarks, Inbox, Containers', async ({ page }) => {
+    await openDashboard(page);
+    const order = await page.evaluate(() => [...document.querySelectorAll('.header-destinations > *')]
+        .map((el) => el.className.split(' ')[0]));
+    const at = (name) => order.indexOf(name);
+    expect(at('dashboard-link')).toBe(0);
+    expect(at('library-link')).toBeLessThan(at('page-nav-inbox-host'));
+    expect(at('page-nav-inbox-host')).toBeLessThan(at('page-nav-docker-host'));
+    expect(at('page-nav-docker-host')).toBeLessThan(at('config-link'));
+});
