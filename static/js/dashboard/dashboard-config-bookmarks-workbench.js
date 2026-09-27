@@ -297,6 +297,11 @@
         if (!rail || rail.dataset.bmRailWired === '1') return;
         rail.dataset.bmRailWired = '1';
         rail.addEventListener('click', (e) => {
+            const summary = e.target.closest('[data-bm-health-summary]');
+            if (summary) {
+                this.openBmHealthModal?.();
+                return;
+            }
             const more = e.target.closest('[data-bm-rail-more]');
             if (more) {
                 const which = more.getAttribute('data-bm-rail-more');
@@ -312,6 +317,15 @@
             }
             const item = e.target.closest('[data-bm-rail]');
             if (item) this.toggleRailFilter(item.getAttribute('data-bm-rail'), item.getAttribute('data-value') || '');
+        });
+        // The summary block is a plain div (it holds several rows, not one
+        // control), so role="button" alone does not make Enter/Space act on
+        // it the way a real <button> would -- that has to be wired by hand.
+        rail.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            if (!e.target.closest('[data-bm-health-summary]')) return;
+            e.preventDefault();
+            this.openBmHealthModal?.();
         });
     },
 

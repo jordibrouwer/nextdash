@@ -1150,3 +1150,337 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-drawer .config-bm-pane
 .config-bm-drawer .config-bm-panel-toggle {
     display: none;
 }
+/* ── Collection health modal ──────────────────────────────────────────────
+   Opened from the rail's summary block or the bookmark list's `h` key
+   (dashboard-bookmarks-health-modal.js): one page reading of how the whole
+   collection is doing, every figure a click away from the list filtered to
+   it. Reuses .view-explain-modal for the scrolling shell (view-explainers.css)
+   and .config-btn for the footer's buttons. */
+.bm-health-modal-subtitle {
+    margin: 0 0 var(--space-3, 0.75rem);
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.82rem);
+}
+
+.bm-health-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--space-3, 0.75rem);
+    align-items: start;
+}
+
+.bm-health-modal-card {
+    background: var(--surface-3, var(--background-secondary));
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    padding: var(--space-3, 0.75rem);
+}
+
+.bm-health-modal-card-title {
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.72rem);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* 1. Score over time */
+.bm-health-modal-score-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3, 0.75rem);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-score-big {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    line-height: 1;
+}
+
+.bm-health-modal-score-deltas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-score-deltas b.is-up { color: var(--accent-success); }
+.bm-health-modal-score-deltas b.is-down { color: var(--accent-error); }
+
+.bm-health-modal-score-chart {
+    width: 100%;
+    height: auto;
+    color: var(--accent-primary);
+}
+
+/* 2. Where the bookmarks stand */
+.bm-health-modal-stack {
+    display: flex;
+    height: 20px;
+    border-radius: var(--radius-3, 4px);
+    overflow: hidden;
+    margin-bottom: var(--space-2, 0.5rem);
+    background: var(--border-primary);
+}
+
+.bm-health-modal-stack-seg {
+    display: block;
+    height: 100%;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    background: var(--text-tertiary);
+}
+
+.bm-health-modal-stack-seg[data-tone="good"] { background: var(--accent-success); }
+.bm-health-modal-stack-seg[data-tone="bad"] { background: var(--accent-error); }
+.bm-health-modal-stack-seg[data-tone="warn"] { background: var(--accent-warning); }
+.bm-health-modal-stack-seg.is-static { cursor: default; }
+
+.bm-health-modal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-xs, 0.75rem);
+}
+
+.bm-health-modal-legend-item { display: contents; }
+
+.bm-health-modal-legend-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
+    border: 0;
+    background: none;
+    padding: 0;
+    font: inherit;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.bm-health-modal-legend-btn.is-static { cursor: default; }
+
+.bm-health-modal-legend-btn:hover:not(.is-static),
+.bm-health-modal-legend-btn:focus-visible:not(.is-static) {
+    color: var(--text-primary);
+}
+
+.bm-health-modal-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--text-tertiary);
+}
+
+.bm-health-modal-legend-dot[data-tone="good"] { background: var(--accent-success); }
+.bm-health-modal-legend-dot[data-tone="bad"] { background: var(--accent-error); }
+.bm-health-modal-legend-dot[data-tone="warn"] { background: var(--accent-warning); }
+
+.bm-health-modal-legend-count { color: var(--text-primary); font-weight: 600; }
+
+/* 3. What is wrong, by kind / 5. By page share the same bar-row shape */
+.bm-health-modal-bars,
+.bm-health-modal-pages {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.3rem);
+}
+
+.bm-health-modal-bar-row,
+.bm-health-modal-page-row {
+    display: grid;
+    grid-template-columns: 9rem 1fr 2.5rem;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    border: 0;
+    background: none;
+    padding: var(--space-hairline, 0.1rem) 0;
+    font: inherit;
+    font-size: var(--text-xs, 0.78rem);
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+}
+
+.bm-health-modal-page-row {
+    grid-template-columns: 7rem 1fr 3rem 2.5rem;
+}
+
+.bm-health-modal-page-row.is-static {
+    cursor: default;
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-bar-row:hover .bm-health-modal-bar-label {
+    text-decoration: underline;
+}
+
+.bm-health-modal-page-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bm-health-modal-bar-track,
+.bm-health-modal-page-track {
+    height: 8px;
+    border-radius: var(--radius-2, 3px);
+    background: var(--border-primary);
+    overflow: hidden;
+}
+
+.bm-health-modal-bar-track i {
+    display: block;
+    height: 100%;
+    background: var(--accent-warning);
+    border-radius: inherit;
+}
+
+.bm-health-modal-page-track i {
+    display: block;
+    height: 100%;
+    background: var(--accent-success);
+    border-radius: inherit;
+}
+
+.bm-health-modal-bar-count,
+.bm-health-modal-page-pct {
+    text-align: right;
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-page-broken {
+    text-align: right;
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-page-broken.is-bad {
+    color: var(--accent-error);
+}
+
+/* 4. Score distribution */
+.bm-health-modal-hist {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2, 0.5rem);
+    height: 90px;
+}
+
+.bm-health-modal-hist-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    font-size: var(--text-xs, 0.7rem);
+    color: var(--text-secondary);
+    gap: 2px;
+}
+
+.bm-health-modal-hist-bar {
+    display: block;
+    width: 100%;
+    min-height: 2px;
+    border-radius: var(--radius-2, 3px) var(--radius-2, 3px) 0 0;
+    background: var(--accent-primary);
+}
+
+/* 6. Checking coverage / 7. Monitors share the same tile and kv shape */
+.bm-health-modal-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-tile {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 4px);
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-tile b {
+    display: block;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.bm-health-modal-kv {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.78rem);
+    color: var(--text-secondary);
+    padding: 2px 0;
+}
+
+.bm-health-modal-kv span:last-child { color: var(--text-primary); }
+.bm-health-modal-kv .is-warn { color: var(--accent-warning); }
+.bm-health-modal-kv .is-bad { color: var(--accent-error); }
+
+.bm-health-modal-subhead {
+    margin: var(--space-2, 0.5rem) 0 var(--space-1, 0.25rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-monitor-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: var(--text-xs, 0.78rem);
+}
+
+.bm-health-modal-monitor-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    padding: 1px 0;
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-outage {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary);
+}
+
+/* 9. Footer */
+.bm-health-modal-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-3, 0.75rem);
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid var(--border-primary);
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .bm-health-modal-grid {
+        grid-template-columns: 1fr;
+    }
+}

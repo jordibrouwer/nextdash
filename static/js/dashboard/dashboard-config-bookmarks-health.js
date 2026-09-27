@@ -120,7 +120,11 @@
                     <span class="config-bm-health-summary-value">${esc(row.value ?? '')}</span>
                     ${row.extraNode?.outerHTML || ''}
                 </div>`).join('');
-            return body ? `<div class="config-bm-health-summary" data-bm-health-summary>${body}</div>` : '';
+            // No aria-label: the rows already read as text (score, trend,
+            // updated), which says more than a fixed label would, and
+            // role="button" is enough to announce that Enter/Space act on it.
+            return body ? `<div class="config-bm-health-summary" data-bm-health-summary
+                role="button" tabindex="0">${body}</div>` : '';
         },
 
         /* ── The panel's Health, Monitor and Actions parts ──────────────── */

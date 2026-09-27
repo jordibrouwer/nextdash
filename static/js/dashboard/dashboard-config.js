@@ -2966,6 +2966,15 @@ class DashboardConfig {
             void this.refreshBmHealth({ refresh: true });
             return true;
         }
+        // h opens the collection health modal -- how the whole library is
+        // doing, not one row -- so like R it needs the module loaded and
+        // nothing selected.
+        if (e.key === 'h' && this._bmHealthModule) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.openBmHealthModal?.();
+            return true;
+        }
         if (e.key === '/' && !isBmSearch) {
             const search = document.getElementById('config-bm-search');
             if (search) {
@@ -22648,6 +22657,7 @@ class DashboardConfig {
         const ready = () => window.DashboardConfigBookmarksReady === true
             && window.DashboardConfigWorkbenchReady === true
             && window.DashboardConfigBookmarksHealthReady === true
+            && window.DashboardBookmarksHealthModalReady === true
             && Boolean(window.BookmarkWorkbenchModel);
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
@@ -22662,6 +22672,9 @@ class DashboardConfig {
             // Health's part of the list, on top of the workbench.
             .then(() => load('js/dashboard/dashboard-config-bookmarks-health.js',
                 'dashboardConfigBookmarksHealth', () => window.DashboardConfigBookmarksHealthReady === true))
+            // The collection health modal, on top of Health's join.
+            .then(() => load('js/dashboard/dashboard-bookmarks-health-modal.js',
+                'dashboardBookmarksHealthModal', () => window.DashboardBookmarksHealthModalReady === true))
             .then(() => {
                 const waiting = this._bookmarksAwaitingRenderers === true;
                 this._bookmarksAwaitingRenderers = false;
@@ -23846,6 +23859,7 @@ class DashboardConfig {
                 ['Shift R', this.t('config.bmKeyRefreshReport', 'refresh report')],
                 ['m', this.t('config.bmKeyMenu', 'menu')],
                 ['n / z', this.t('config.bmKeyIgnoreSnooze', 'ignore / snooze')],
+                ['h', this.t('config.bmKeyHealthModal', 'collection health')],
             ] : []),
         ];
         return this.renderKeyboardLegendPairs(keys);
