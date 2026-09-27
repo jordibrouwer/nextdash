@@ -133,6 +133,51 @@ class DashboardConfigContextMenu {
             ];
         }
 
+        const healthItems = c.bmHealthIssue?.(bookmark)
+            ? [
+                { id: 'recheck', label: this.t('dashboard.healthRecheck', 'Re-check'), icon: '↻' },
+                { id: 'health-details', label: this.t('config.contextHealthDetails', 'Health details'), icon: '♥' },
+            ]
+            : [];
+        // Where Config differs from the grid: this list is the one you filter,
+        // so narrowing it to what the row belongs to is the action the view is
+        // for. Offered only where there is something to filter by -- a bookmark
+        // with no tags has no tag to narrow to.
+        const filterItems = [
+            ...(category
+                ? [{ id: 'filter-category', label: this.t('config.contextFilterCategory', 'Show only this category'), icon: '⛃' }]
+                : []),
+            { id: 'filter-page', label: this.t('config.contextFilterPage', 'Show only this page'), icon: '⌗' },
+            ...(tags.length
+                ? [{ id: 'filter-tag', label: this.t('config.contextFilterTag', 'Show only tag “{tag}”', { tag: tags[0] }), icon: '#' }]
+                : []),
+        ];
+
+        // The Bookmarks view: fewer entries, in groups. Pin, the dashboard,
+        // the title and favicon refreshes and Select are left to the panel,
+        // the grid and the tick box, and Re-check to the Health tab; a local
+        // copy is saved from here.
+        if (c.standalone) {
+            const group = (items) => items.map((item, i) => (i === 0 ? { ...item, divider: true } : item));
+            return [
+                { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
+                { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
+                { id: 'share', label: c.shareBookmarkActionLabel(), icon: '↪' },
+                ...group([
+                    { id: 'edit', label: this.t('config.edit', 'Edit'), icon: '✎' },
+                    { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
+                    // Re-checking is the Health tab's, one click from here.
+                    ...healthItems.filter((item) => item.id !== 'recheck'),
+                ]),
+                ...group([
+                    { id: 'save-copy', label: this.t('config.contextSaveCopy', 'Save a local copy'), icon: '⤓' },
+                    { id: 'archive', label: this.t('dashboard.healthArchive', 'Find in Web Archive'), icon: '🏛' },
+                ]),
+                ...group(filterItems),
+                { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true },
+            ];
+        }
+
         return [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
@@ -148,23 +193,8 @@ class DashboardConfigContextMenu {
             { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
             // Health lives in this list's panel now, so the menu offers its
             // two most used parts rather than a trip to a view of its own.
-            ...(c.bmHealthIssue?.(bookmark)
-                ? [
-                    { id: 'recheck', label: this.t('dashboard.healthRecheck', 'Re-check'), icon: '↻' },
-                    { id: 'health-details', label: this.t('config.contextHealthDetails', 'Health details'), icon: '♥' },
-                ]
-                : []),
-            // Where Config differs from the grid: this list is the one you
-            // filter, so narrowing it to what the row belongs to is the action
-            // the view is for. Offered only where there is something to filter
-            // by — a bookmark with no tags has no tag to narrow to.
-            ...(category
-                ? [{ id: 'filter-category', label: this.t('config.contextFilterCategory', 'Show only this category'), icon: '⛃' }]
-                : []),
-            { id: 'filter-page', label: this.t('config.contextFilterPage', 'Show only this page'), icon: '⌗' },
-            ...(tags.length
-                ? [{ id: 'filter-tag', label: this.t('config.contextFilterTag', 'Show only tag “{tag}”', { tag: tags[0] }), icon: '#' }]
-                : []),
+            ...healthItems,
+            ...filterItems,
             { id: 'dashboard', label: this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'), icon: '⊕' },
             { id: 'title', label: this.t('dashboard.healthRefreshTitle', 'Refresh title'), icon: '↻' },
             { id: 'favicon', label: this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'), icon: '◫' },
@@ -204,7 +234,7 @@ class DashboardConfigContextMenu {
 
         const items = [];
         this.actionsFor(bookmark).forEach((action) => {
-            if (action.danger) {
+            if (action.danger || action.divider) {
                 const divider = document.createElement('div');
                 divider.className = 'move-popover-divider';
                 pop.appendChild(divider);
@@ -549,6 +579,9 @@ class DashboardConfigContextMenu {
                 break;
             case 'edit':
                 c.focusWorkbenchPanel(key);
+                break;
+            case 'save-copy':
+                await c.saveBmLocalCopy?.(bookmark);
                 break;
             // No per-row pin writer exists — the editor and the bulk bar are the
             // only two, and bulkPin already takes a list. One bookmark is a list

@@ -3623,6 +3623,7 @@
     "contextMenuTitle": "Bookmark actions",
     "contextCheckMode": "Checking…",
     "contextFilterCategory": "Show only this category",
+    "contextSaveCopy": "Save a local copy",
     "contextFilterPage": "Show only this page",
     "contextFilterTag": "Show only tag “{tag}”",
     "contextMoveSelected": "Move {count} selected…",
