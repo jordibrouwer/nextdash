@@ -27,7 +27,7 @@ async function openSeededBookmarks(page, total = TOTAL) {
     // Seeded after the section is open: opening it loads the real bookmarks,
     // which would land on top of the seed and leave this measuring the seven
     // rows a fresh install ships with.
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await expect(page.locator('#config-bm-list')).toBeVisible();
     // Opening the section starts its own load of every bookmark, which lands a
     // second later and would replace the seed with the seven a fresh install

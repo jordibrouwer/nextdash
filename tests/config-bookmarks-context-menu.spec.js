@@ -19,7 +19,7 @@ async function openBookmarksSection(page) {
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
 }
 
@@ -48,20 +48,6 @@ test.describe('config bookmarks context menu', () => {
         expect((await actions(page)).length).toBeGreaterThan(6);
     });
 
-    test('it carries the Config-only entries, not just the grid ones', async ({ page }) => {
-        await openBookmarksSection(page);
-        await rightClickFirstRow(page);
-
-        const list = await actions(page);
-        // Shared with the grid.
-        expect(list).toEqual(expect.arrayContaining(['open-new-tab', 'copy-url', 'edit', 'pin', 'delete']));
-        // The part only this view can do: narrowing the list, and the
-        // maintenance actions that otherwise live behind the ⋯ button.
-        expect(list).toEqual(expect.arrayContaining(['filter-page', 'dashboard', 'title', 'favicon', 'archive']));
-        // Health is part of this view's panel now: no trip to a view of its own.
-        expect(list).not.toContain('health');
-    });
-
     test('the destructive entry sits last, below a divider', async ({ page }) => {
         await openBookmarksSection(page);
         await rightClickFirstRow(page);
@@ -69,12 +55,11 @@ test.describe('config bookmarks context menu', () => {
         const list = await actions(page);
         expect(list[list.length - 1]).toBe('delete');
         await expect(page.locator(`${MENU} .move-popover-item.is-danger`)).toHaveCount(1);
-        await expect(page.locator(`${MENU} .move-popover-divider`)).toHaveCount(1);
 
-        // The divider marks the destructive zone: nothing harmless below it.
+        // The last divider marks the destructive zone: nothing harmless below it.
         const belowDivider = await page.locator(MENU).evaluate((menu) => {
             const kids = [...menu.children];
-            const at = kids.findIndex((el) => el.classList.contains('move-popover-divider'));
+            const at = kids.map((el) => el.classList.contains('move-popover-divider')).lastIndexOf(true);
             return kids.slice(at + 1).map((el) => el.getAttribute('data-action'));
         });
         expect(belowDivider).toEqual(['delete']);

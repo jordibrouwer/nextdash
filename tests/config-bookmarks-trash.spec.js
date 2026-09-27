@@ -26,7 +26,7 @@ async function openBookmarks(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !window.dashboardInstance._deferredAllBookmarksLoadInFlight);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await expect(page.locator('#config-bm-list')).toBeVisible();
 }
 

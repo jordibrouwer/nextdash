@@ -20,7 +20,7 @@ test.describe('bookmarks: the health report joined in', () => {
   test('the Health view is not opened to get there', async ({ page }) => {
     await openBookmarksWithHealth(page);
     await page.evaluate(() => window.dashboardInstance.config.bmHealth());
-    expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('config');
+    expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('library');
     await expect(page.locator('#dashboard-layout')).not.toHaveClass(/health-layout/);
   });
 
@@ -153,8 +153,8 @@ test.describe('bookmarks: Health and Monitor sections in the panel', () => {
     const posts = [];
     page.on('request', (r) => { if (r.method() === 'POST' && /health\/(update-status|cache-scan)/.test(r.url())) posts.push(r.url()); });
     await pick(page, bookmarks[0].name);
-    const actions = await open(page, 'actions');
-    await actions.locator('[data-bm-health-action="recheck"]').click();
+    // Re-check is one of the head's buttons, beside Open and Edit.
+    await page.locator('#config-bm-panel .config-bm-panel-actions [data-bm-health-action="recheck"]').click();
     await expect.poll(() => posts.length).toBeGreaterThan(0);
   });
 });

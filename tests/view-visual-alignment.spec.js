@@ -58,7 +58,7 @@ const openInbox = async (page) => {
 };
 
 const openConfigBookmarks = async (page) => {
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await page.waitForSelector('#config-bm-workbench .config-bm-feed', { timeout: 15_000 });
     await page.waitForTimeout(400);
 };
@@ -152,7 +152,7 @@ test.describe('rounded is the shared shape', () => {
     });
 });
 
-test.describe('Config → Bookmarks opens like a view', () => {
+test.describe('the Bookmarks view opens like a view', () => {
     test('it has a header with a subtitle and a count, the way Health and Inbox do', async ({ page }) => {
         await openDashboard(page);
         await openConfigBookmarks(page);
@@ -175,7 +175,8 @@ test.describe('Config → Bookmarks opens like a view', () => {
 
         expect(header).not.toBeNull();
         expect(header.subtitle).toBe(true);
-        expect(header.firstBodyChild).toContain('config-subtabs');
+        // The intro went up to the band: nothing of it is left in the body.
+        expect(header.firstBodyChild).not.toContain('config-view-intro');
         // The count is the number of bookmarks, not a placeholder.
         expect(Number(header.badge)).toBe(await page.evaluate(
             () => (window.dashboardInstance.allBookmarks || []).length));

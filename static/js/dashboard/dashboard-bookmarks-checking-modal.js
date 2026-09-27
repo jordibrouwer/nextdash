@@ -51,9 +51,6 @@
         },
 
         renderEnableCheckingButton() {
-            // The Bookmarks view's: Config's toolbar shares its row with the
-            // panel column and has no room left for it.
-            if (!this.standalone) return '';
             const n = this.uncheckedBookmarks().length;
             if (!n) return '';
             const esc = (v) => this.dash.escapeHtml(v);

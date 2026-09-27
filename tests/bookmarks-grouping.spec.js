@@ -58,7 +58,7 @@ async function openWithHealthStates(page) {
     await page.evaluate((rows) => {
         window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
         window.dashboardInstance.allBookmarks = rows;
-        return window.dashboardInstance.config.openConfigView('bookmarks');
+        return window.dashboardInstance.config.openLibraryView();
     }, bookmarks);
     await expect(page.locator('#config-bm-list .config-bm-row').first()).toBeVisible({ timeout: 10_000 });
     // The join is fetched once the section binds; awaited here so the group

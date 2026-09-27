@@ -26,7 +26,7 @@ async function seedAndOpen(page, host) {
         await add({ name: 'Panel target', url: `https://${h}/target`, tags: [] });
         await d.loadAllBookmarks?.();
         window.TagSuggestLive.changed(d);
-        await d.config.openConfigView('bookmarks');
+        await d.config.openLibraryView();
     }, host);
     const row = page.locator('#config-bm-list .config-bm-row', { hasText: 'Panel target' }).first();
     await expect(row).toBeVisible({ timeout: 10_000 });

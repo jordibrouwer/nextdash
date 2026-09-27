@@ -2649,11 +2649,9 @@ class DashboardConfig {
      * so this only has to open it and, for `c`, hand focus to check mode.
      */
     openBmHealthPanelSection({ focusCheckMode = false } = {}) {
-        // In the Bookmarks view the side panel may be closed: s opens it.
-        if (this.standalone) {
-            this._libDrawerWanted = true;
-            this.repaintWorkbenchPanel?.();
-        }
+        // The side panel may be closed: s opens it.
+        this._libDrawerWanted = true;
+        this.repaintWorkbenchPanel?.();
         this.setWorkbenchPanelTab?.('health');
         // c: the Checking section of the tab's accordion, open, its choices in focus.
         if (focusCheckMode) this.openBmHealthAcc?.('checking')?.querySelector('[data-check-mode]')?.focus();
@@ -2770,8 +2768,8 @@ class DashboardConfig {
             host.addEventListener('click', (e) => {
                 const row = e.target.closest('.config-bm-row');
                 if (!row || !host.contains(row)) return;
-                // A click is the Bookmarks view's way into the side panel.
-                if (this.standalone) this._libDrawerWanted = true;
+                // A click is the way into the side panel.
+                this._libDrawerWanted = true;
                 this._bmKeyboardKey = this.bookmarkRowKey(row);
                 this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
             });
@@ -2882,7 +2880,7 @@ class DashboardConfig {
         }
 
         // f: Work through, as in Health.
-        if (!e.shiftKey && e.key === 'f' && this.standalone && typeof this.startLibraryWorkThrough === 'function') {
+        if (!e.shiftKey && e.key === 'f' && typeof this.startLibraryWorkThrough === 'function') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.startLibraryWorkThrough();
@@ -3036,7 +3034,7 @@ class DashboardConfig {
         }
         // H: the selected bookmark's health, in large -- as h is the whole
         // collection's.
-        if (e.key === 'H' && this._bmHealthModule && this.standalone) {
+        if (e.key === 'H' && this._bmHealthModule) {
             const key = this._bmKeyboardKey || (this.workbenchPanelMode?.() === 'single' ? this.workbenchPanelKey?.() : '');
             if (key && this.bmHealthIssue?.(this.findBookmarkByKey(key))) {
                 e.preventDefault();
@@ -4906,6 +4904,11 @@ class DashboardConfig {
                     return;
                 }
             }
+            // Bookmarks without a tab means the list, which is the Bookmarks view.
+            if (target.section === 'bookmarks' && !target.bmTab) {
+                void this.openLibraryView();
+                return;
+            }
             // Bookmarks has a strip too, now that its settings live on one.
             if (target.bmTab && target.section === 'bookmarks') {
                 this.bmTab = target.bmTab;
@@ -5779,7 +5782,6 @@ class DashboardConfig {
     bmTabLabel(tab) {
         const map = {
             view: ['config.bmTabView', 'View'],
-            list: ['config.bmTabList', 'List'],
             tags: ['config.bmTabTags', 'Tags'],
             'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
             'tag-rules': ['config.bmTabTagRules', 'Your rules'],
@@ -11944,22 +11946,22 @@ class DashboardConfig {
         // Config → Bookmarks → View: every default is how the view behaved
         // before it had settings (models.go, clampBookmarkViewSettings).
         bmViewGroup: { info: ['bmViewGroupInfoTitle', 'bmViewGroupInfoMessage'], def: 'last' },
-        bmViewDensity: { def: 'comfortable' },
-        bmViewAddress: { def: 'domain' },
+        bmViewDensity: { info: ['bmViewDensityInfoTitle', 'bmViewDensityInfoMessage'], def: 'comfortable' },
+        bmViewAddress: { info: ['bmViewAddressInfoTitle', 'bmViewAddressInfoMessage'], def: 'domain' },
         bmViewRowColors: { info: ['bmViewRowColorsInfoTitle', 'bmViewRowColorsInfoMessage'], def: true },
-        bmViewColumns: { def: null },
-        bmViewUsageDays: { def: 30 },
-        bmViewRail: { def: 'open' },
-        bmViewRailBlocks: { def: null },
-        bmViewPanelTab: { def: 'last' },
-        bmViewCloseOutside: { def: true },
-        bmViewPanelWidth: { def: 'normal' },
-        bmViewClick: { def: 'panel' },
-        bmViewDblClick: { def: 'open' },
+        bmViewColumns: { info: ['bmViewColumnsInfoTitle', 'bmViewColumnsInfoMessage'], def: null },
+        bmViewUsageDays: { info: ['bmViewUsageDaysInfoTitle', 'bmViewUsageDaysInfoMessage'], def: 30 },
+        bmViewRail: { info: ['bmViewRailInfoTitle', 'bmViewRailInfoMessage'], def: 'open' },
+        bmViewRailBlocks: { info: ['bmViewRailBlocksInfoTitle', 'bmViewRailBlocksInfoMessage'], def: null },
+        bmViewPanelTab: { info: ['bmViewPanelTabInfoTitle', 'bmViewPanelTabInfoMessage'], def: 'last' },
+        bmViewCloseOutside: { info: ['bmViewCloseOutsideInfoTitle', 'bmViewCloseOutsideInfoMessage'], def: true },
+        bmViewPanelWidth: { info: ['bmViewPanelWidthInfoTitle', 'bmViewPanelWidthInfoMessage'], def: 'normal' },
+        bmViewClick: { info: ['bmViewClickInfoTitle', 'bmViewClickInfoMessage'], def: 'panel' },
+        bmViewDblClick: { info: ['bmViewDblClickInfoTitle', 'bmViewDblClickInfoMessage'], def: 'open' },
         bmViewHealthRange: { info: ['bmViewHealthRangeInfoTitle', 'bmViewHealthRangeInfoMessage'], def: '30' },
-        bmViewBadge: { def: true },
-        bmViewBadgeCounts: { def: 'broken' },
-        bmViewKeyLegend: { def: 'below' },
+        bmViewBadge: { info: ['bmViewBadgeInfoTitle', 'bmViewBadgeInfoMessage'], def: true },
+        bmViewBadgeCounts: { info: ['bmViewBadgeCountsInfoTitle', 'bmViewBadgeCountsInfoMessage'], def: 'broken' },
+        bmViewKeyLegend: { info: ['bmViewKeyLegendInfoTitle', 'bmViewKeyLegendInfoMessage'], def: 'below' },
         bookmarkDeleteConfirmFrom: { info: ['bookmarkDeleteConfirmFromInfoTitle', 'bookmarkDeleteConfirmFromInfoMessage'], def: 1 },
         defaultMonitorIntervalMinutes: { info: ['defaultMonitorIntervalInfoTitle', 'defaultMonitorIntervalInfoMessage'], def: 15 },
         newBookmarkCheckMode: { info: ['newBookmarkCheckModeInfoTitle', 'newBookmarkCheckModeInfoMessage'], def: 'off' },
@@ -15513,7 +15515,8 @@ class DashboardConfig {
      * is a list of bookmarks, not a setting. Where the copies come from is
      * configuration; which pages you have kept is part of the collection.
      */
-    static BM_TABS = ['view', 'list', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
+    // The list is the Bookmarks view's (#bookmarks); Config keeps what shapes it.
+    static BM_TABS = ['view', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -22017,6 +22020,8 @@ class DashboardConfig {
 
     renderBookmarksSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        // In Config, 'list' (the Bookmarks view's own tab) reads as View.
+        if (!this.standalone && !DashboardConfig.BM_TABS.includes(this.bmTab)) this.bmTab = 'view';
         const tabs = DashboardConfig.BM_TABS.map((tab) => {
             const active = tab === this.bmTab;
             // Only this one carries a number: it is the tab whose whole point
@@ -22041,7 +22046,7 @@ class DashboardConfig {
             `;
         }
         return `
-            <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.bookmarksSettingsIntro', 'How the Bookmarks view looks, your tags and the rules around them. The list itself is the Bookmarks view.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             ${this.renderSectionTabNote('bookmarks', this.bmTab)}
             <div id="config-bm-body" role="tabpanel" tabindex="0">${this.renderBmTab()}</div>
@@ -22083,7 +22088,8 @@ class DashboardConfig {
         if (this.bmTab === 'local-copies') {
             return this.renderBookmarkCopiesTab();
         }
-        return this.renderBookmarksListTab();
+        if (this.standalone) return this.renderBookmarksListTab();
+        return this.renderBookmarksViewTab();
     }
 
     /*
@@ -24323,7 +24329,7 @@ class DashboardConfig {
             ['/', this.t('config.bookmarksKeySearch', 'search')],
             ['Esc', this.t('config.bookmarksKeyClear', 'clear')],
             ['Shift P / C', this.t('config.bmKeyStructure', 'pages / categories')],
-            ...(this.standalone ? [['f', this.t('config.bmKeyWorkThrough', 'work through')]] : []),
+            ['f', this.t('config.bmKeyWorkThrough', 'work through')],
             // Health's own keys, listed only once its report has something for
             // them to act on — an empty list has nothing to re-check or ignore.
             ...(this._bmHealthModule ? [
@@ -24379,8 +24385,6 @@ class DashboardConfig {
                 this.bindControlPanels(body, 'behavior');
             } else if (tab === 'local-copies') {
                 this.bindBookmarkCopiesTab(body);
-            } else {
-                this.bindBookmarksListTab(body);
             }
             // The strip is not repainted with the body, so the active button has
             // to be moved by hand — the same call the other strips make.
@@ -27076,7 +27080,7 @@ class DashboardConfig {
                 this.bmSelected.clear();
                 this.resetBookmarkVisibleLimit();
                 this._bmDuplicateUrls = null;
-                this.openConfigView('bookmarks');
+                void this.openLibraryView();
             });
         });
         // A statistics row that names something the bookmark list can filter by
@@ -27105,7 +27109,7 @@ class DashboardConfig {
                 this.resetBookmarkVisibleLimit();
                 this._bmDuplicateUrls = null;
                 this._trackAction('stats-goto', { kind });
-                this.openConfigView('bookmarks');
+                void this.openLibraryView();
             });
         });
 

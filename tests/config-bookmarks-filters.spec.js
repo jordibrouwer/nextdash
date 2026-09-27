@@ -21,7 +21,7 @@ async function openBookmarks(page) {
     // section is opened, so it is never scheduled rather than dismissed once it
     // has already covered the button under the pointer.
     await markConfigSettingPromosSeen(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await page.waitForSelector('#config-bm-list', { timeout: 15_000 });
 }
 

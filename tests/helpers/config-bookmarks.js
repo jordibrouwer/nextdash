@@ -5,7 +5,7 @@ async function openConfigBookmarks(page) {
   await page.goto('/');
   await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
   await prepareDashboardInteraction(page);
-  await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+  await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
   await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
 }
 

@@ -153,55 +153,22 @@ class DashboardConfigContextMenu {
                 : []),
         ];
 
-        // The Bookmarks view: fewer entries, in groups. Pin, the dashboard,
-        // the title and favicon refreshes, Select, local copies and the Web
-        // Archive are left to the panel, the grid and the tick box, and
-        // Re-check to the Health tab.
-        if (c.standalone) {
-            const group = (items) => items.map((item, i) => (i === 0 ? { ...item, divider: true } : item));
-            return [
-                { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
-                { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
-                { id: 'share', label: c.shareBookmarkActionLabel(), icon: '↪' },
-                ...group([
-                    { id: 'edit', label: this.t('config.edit', 'Edit'), icon: '✎' },
-                    { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
-                    // Re-checking is the Health tab's, one click from here.
-                    ...healthItems.filter((item) => item.id !== 'recheck'),
-                    ...(healthItems.length ? [{ id: 'health-large', label: this.t('config.contextHealthLarge', 'Health charts…'), icon: '⤢' }] : []),
-                ]),
-                ...group(filterItems),
-                { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true },
-            ];
-        }
-
+        // Fewer entries, in groups. Pin, the dashboard, the title and favicon
+        // refreshes, Select, local copies and the Web Archive are left to the
+        // side panel, the grid and the tick box, and Re-check to the Health tab.
+        const group = (items) => items.map((item, i) => (i === 0 ? { ...item, divider: true } : item));
         return [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: c.shareBookmarkActionLabel(), icon: '↪' },
-            { id: 'edit', label: this.t('config.edit', 'Edit'), icon: '✎' },
-            {
-                id: 'pin',
-                label: bookmark.pinned
-                    ? this.t('dashboard.contextMenuUnpin', 'Unpin')
-                    : this.t('dashboard.contextMenuPin', 'Pin'),
-                icon: 'pin',
-            },
-            { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
-            // Health lives in this list's panel now, so the menu offers its
-            // two most used parts rather than a trip to a view of its own.
-            ...healthItems,
-            ...filterItems,
-            { id: 'dashboard', label: this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'), icon: '⊕' },
-            { id: 'title', label: this.t('dashboard.healthRefreshTitle', 'Refresh title'), icon: '↻' },
-            { id: 'favicon', label: this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'), icon: '◫' },
-            { id: 'archive', label: this.t('dashboard.healthArchive', 'Find in Web Archive'), icon: '🏛' },
-            // With nothing ticked, the menu is where a mouse-only user finds out
-            // that selecting rows is possible: the tick box is easy to miss and
-            // the bulk toolbar only appears once one is on.
-            ...(!ticked
-                ? [{ id: 'select', label: this.t('dashboard.contextMenuSelect', 'Select'), icon: '☑' }]
-                : []),
+            ...group([
+                { id: 'edit', label: this.t('config.edit', 'Edit'), icon: '✎' },
+                { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
+                // Re-checking is the Health tab's, one click from here.
+                ...healthItems.filter((item) => item.id !== 'recheck'),
+                ...(healthItems.length ? [{ id: 'health-large', label: this.t('config.contextHealthLarge', 'Health charts…'), icon: '⤢' }] : []),
+            ]),
+            ...group(filterItems),
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true },
         ];
     }
@@ -577,13 +544,6 @@ class DashboardConfigContextMenu {
             case 'edit':
                 c.focusWorkbenchPanel(key);
                 break;
-            // No per-row pin writer exists — the editor and the bulk bar are the
-            // only two, and bulkPin already takes a list. One bookmark is a list
-            // of one, so this reuses it rather than adding a third writer.
-            case 'pin':
-                await c.bulkPin([bookmark]);
-                await c.refreshBookmarksAfterWrite();
-                break;
             case 'check-mode':
                 // Not toggleBookmarkMenu: that opens the row's own badge menu,
                 // which is anchored to the badge — so choosing Checking made the
@@ -598,12 +558,6 @@ class DashboardConfigContextMenu {
                 break;
             case 'filter-tag':
                 c.filterBookmarksByTag((bookmark.tags || []).filter(Boolean)[0]);
-                break;
-            // Ticking through the same set the checkbox writes, so the panel
-            // follows exactly as it would have.
-            case 'select':
-                c.bmSelected.add(key);
-                c.afterSelectionChange();
                 break;
             // Entries that need a value open the bulk form on that field; the
             // rest hand straight to the shared dispatcher.

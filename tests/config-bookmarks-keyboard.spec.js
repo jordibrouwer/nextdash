@@ -69,27 +69,22 @@ test.describe('config bookmarks keyboard navigation', () => {
         await page.keyboard.press('e');
         await expect(page.locator('#config-bm-panel [data-bm-field="name"]')).toBeFocused();
 
+        // Out of the field first, then the side panel closes, then the
+        // selection goes, and only then does Escape leave the view.
         await page.keyboard.press('Escape');
         await expect(page.locator('#config-bm-panel [data-bm-field="name"]')).not.toBeFocused();
         await expect(page.locator('.config-bm-row').first()).toHaveClass(/keyboard-selected/);
-        await expect(page.locator('#dashboard-layout')).toHaveClass(/config-layout/);
+
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#config-bm-panel')).toBeHidden();
+        await expect(page.locator('.config-bm-row').first()).toHaveClass(/keyboard-selected/);
 
         await page.keyboard.press('Escape');
         await expect(page.locator('.config-bm-row').first()).not.toHaveClass(/keyboard-selected/);
-        await expect(page.locator('#dashboard-layout')).toHaveClass(/config-layout/);
+        await expect(page.locator('#dashboard-layout')).toHaveClass(/library-layout/);
 
         await page.keyboard.press('Escape');
-        await expect(page.locator('#dashboard-layout')).not.toHaveClass(/config-layout/);
-    });
-
-    test('j/k in the bookmarks list do not move the section rail', async ({ page }) => {
-        await openBookmarksWithRows(page, [
-            { name: 'Alpha', url: 'https://alpha.example', pageId: 1 },
-        ]);
-
-        await page.locator('#config-bm-list').click();
-        await page.keyboard.press('j');
-        await expect(page.locator('[data-config-section="bookmarks"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('#dashboard-layout')).not.toHaveClass(/library-layout/);
     });
 
     test('x and Space tick the row under the cursor, shift+x ticks a range', async ({ page }) => {

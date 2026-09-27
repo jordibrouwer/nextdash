@@ -121,7 +121,8 @@ test.describe('groups in the bookmark list', () => {
     // And when not even one fits, the counter carries them all rather than a
     // chip being cut off at the edge of the column.
     test('when nothing fits, everything is counted', async ({ page }) => {
-        const tags = ['observability', 'homelab-services', 'documentation', 'infrastructure'];
+        // Each longer than the tags column is wide, even at its widest.
+        const tags = ['observability-and-monitoring', 'homelab-services-and-tooling', 'documentation-for-everyone', 'infrastructure-as-code'];
         await page.setViewportSize({ width: 1600, height: 800 });
         await openBookmarksWithRows(page, [
             { name: 'Tagged', url: 'https://tagged.example', pageId: 1, tags },

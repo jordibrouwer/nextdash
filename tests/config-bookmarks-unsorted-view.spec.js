@@ -40,7 +40,7 @@ async function openBookmarksSection(page, rows) {
         await window.dashboardInstance.loadAllBookmarks();
     }, rows);
 
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await expect(page.locator('#config-bm-list')).toBeVisible({ timeout: 15_000 });
 }
 

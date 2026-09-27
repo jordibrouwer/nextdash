@@ -22,6 +22,17 @@ async function openConfig(page, section) {
     await page.waitForSelector('#config-section-panel, #config-view-body', { timeout: 15_000 });
 }
 
+/** The Bookmarks view: where the list is drawn. */
+async function openLibrary(page) {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
+    await page.waitForSelector('#config-view-body, #config-bm-workbench', { timeout: 15_000 });
+}
+
 test.describe('the bookmark list loads with its section', () => {
     test('the dashboard alone never fetches it', async ({ page }) => {
         const asked = [];
@@ -36,7 +47,7 @@ test.describe('the bookmark list loads with its section', () => {
     });
 
     test('opening Bookmarks draws the list once, complete', async ({ page }) => {
-        await openConfig(page, 'bookmarks');
+        await openLibrary(page);
 
         // No placeholder left behind, and the rows are really there.
         await expect(page.locator('#config-bm-list .config-bm-row').first()).toBeVisible({ timeout: 15_000 });
@@ -47,7 +58,7 @@ test.describe('the bookmark list loads with its section', () => {
 
     test('the section still works when the file cannot be fetched', async ({ page }) => {
         await page.route('**/dashboard-config-bookmarks*', (route) => route.abort());
-        await openConfig(page, 'bookmarks');
+        await openLibrary(page);
 
         // A failure leaves the placeholder, which says the list is on its way —
         // better than an empty panel that reads as a library with nothing in it.
@@ -73,7 +84,7 @@ test('a repaint asked for before the renderers land waits for them, without an e
     await dismissBlockingOverlays(page);
     await page.evaluate(() => {
         const c = window.dashboardInstance.config;
-        void c.openConfigView('bookmarks');
+        void c.openLibraryView();
         // A list host already on screen -- from an earlier visit -- and a data
         // refresh landing now, asking for it to be drawn again.
         if (!document.getElementById('config-bm-list')) {

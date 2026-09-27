@@ -42,7 +42,7 @@ async function seedDuplicatePair(page) {
 
 async function openBookmarks(page) {
     await loadDashboard(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await expect(page.locator('#config-bm-list')).toBeVisible();
 }
 

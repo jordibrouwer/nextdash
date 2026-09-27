@@ -22,7 +22,7 @@ async function openBookmarksPanel(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !window.dashboardInstance._deferredAllBookmarksLoadInFlight);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await expect(page.locator('#config-bm-list')).toBeVisible();
     // The keyboard cursor scrolls smoothly by default; without this a scroll
     // mid-test can still be animating when the next assertion reads the DOM.

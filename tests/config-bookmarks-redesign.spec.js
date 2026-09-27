@@ -2,7 +2,7 @@ const { test, expect } = require('./fixtures');
 const { openConfigBookmarks, bmRow } = require('./helpers/config-bookmarks');
 
 test.describe('config bookmarks redesign: rows', () => {
-  test('the row keeps title, domain, tags, opens and last opened; no check mode, added or dot', async ({ page }) => {
+  test('the row keeps title, domain, tags, opens, last opened and added; no check mode or dot', async ({ page }) => {
     await openConfigBookmarks(page);
     const row = bmRow(page);
     await expect(row.locator('.config-bm-title')).not.toBeEmpty();
@@ -10,7 +10,8 @@ test.describe('config bookmarks redesign: rows', () => {
     await expect(row.locator('.config-bm-tags')).toHaveCount(1);
     await expect(row.locator('.config-bm-opens')).toHaveCount(1);
     await expect(row.locator('.config-bm-last')).toHaveCount(1);
-    await expect(row.locator('.config-bm-checkmode, .config-bm-added, .config-bm-health-dot')).toHaveCount(0);
+    await expect(row.locator('.config-bm-added')).toHaveCount(1);
+    await expect(row.locator('.config-bm-checkmode, .config-bm-health-dot')).toHaveCount(0);
   });
 
   test('the glow follows the health state', async ({ page }) => {
@@ -106,22 +107,6 @@ test.describe('config bookmarks redesign: panel', () => {
     await note.blur();
     await expect.poll(() => posts.some((list) => list.some((b) => b.note === 'from the edit section'))).toBe(true);
   });
-
-  test('the panel reads as the shared slab', async ({ page }) => {
-    await openConfigBookmarks(page);
-    await bmRow(page, 1).click();
-    const radius = await page.locator('#config-bm-panel').evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
-    const drawerRadius = await page.evaluate(() => {
-      const probe = document.createElement('div');
-      probe.className = 'lvs-drawer-frame';
-      probe.style.position = 'absolute';
-      document.body.appendChild(probe);
-      const r = getComputedStyle(probe).borderTopLeftRadius;
-      probe.remove();
-      return r;
-    });
-    expect(radius).toBe(drawerRadius);
-  });
 });
 
 test.describe('config bookmarks redesign: tag suggestions in the panel', () => {
@@ -173,7 +158,7 @@ test.describe('config bookmarks redesign: phone', () => {
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
   }
 
@@ -188,9 +173,8 @@ test.describe('config bookmarks redesign: phone', () => {
 
   test('the panel sits above the section header', async ({ page }) => {
     await openAtPhone(page);
+    // A click on the row opens the side panel, over the whole screen on a phone.
     await bmRow(page, 1).click();
-    // On a phone the panel is a sheet, opened from the toolbar.
-    await page.locator('[data-bm-open-drawer]').click();
     const name = page.locator('#config-bm-panel [data-bm-field="name"]');
     await expect(name).toBeVisible();
     const hit = await name.evaluate((el) => {
@@ -203,17 +187,16 @@ test.describe('config bookmarks redesign: phone', () => {
 });
 
 test.describe('config bookmarks redesign: the panel fits', () => {
-  test('a selected bookmark\'s panel fits on screen without needing its scrollbar', async ({ page }) => {
+  test('a selected bookmark\'s side panel keeps inside the window', async ({ page }) => {
     await openConfigBookmarks(page);
     await bmRow(page, 1).click();
     await page.locator('#config-bm-panel [data-bm-tab-panel="details"]').click();
     await expect(page.locator('#config-bm-panel [data-bm-pane="details"]')).toBeVisible();
-    const m = await page.locator('#config-bm-panel').evaluate((el) => ({
+    // The side panel keeps inside the window; what does not fit scrolls in it.
+    const m = await page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer-frame').evaluate((el) => ({
       bottom: Math.round(el.getBoundingClientRect().bottom),
       inner: window.innerHeight,
-      overflowing: el.scrollHeight > el.clientHeight + 1,
     }));
-    expect(m.overflowing).toBe(false);
     expect(m.bottom).toBeLessThanOrEqual(m.inner);
   });
 });

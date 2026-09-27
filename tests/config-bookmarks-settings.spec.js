@@ -12,24 +12,32 @@ async function openBookmarks(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 20_000 });
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await page.waitForSelector('#config-bm-list', { timeout: 15_000 });
 }
 
 test.describe('Config → Bookmarks settings', () => {
     test('every declared field renders a control', async ({ page }) => {
         await openBookmarks(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.waitForSelector('[data-bm-tab]', { timeout: 15_000 });
         // The settings moved onto their own sub-tab: behind the list they were
         // fifty rows down by default, and the infinite scroll meant the bottom
         // moved away as you scrolled toward it.
-        await page.locator('[data-bm-tab="settings"]').click();
+        // The list's own sort and page size are on View; the rest on Settings.
+        const present = async () => page.evaluate(() => [...document.querySelectorAll('[data-behavior-field]')]
+            .map((el) => el.getAttribute('data-behavior-field')));
+        await page.locator('[data-bm-tab="view"]').click();
         await page.waitForSelector('[data-behavior-field]', { timeout: 10_000 });
-        const missing = await page.evaluate(() => [
-            'configBookmarksSort', 'configBookmarksPageSize', 'bookmarkDeleteConfirmFrom',
-            'defaultMonitorIntervalMinutes', 'newBookmarkCheckMode', 'newBookmarkPinned',
+        const onView = await present();
+        await page.locator('[data-bm-tab="settings"]').click();
+        await page.waitForSelector('[data-behavior-field="bookmarkDeleteConfirmFrom"]', { timeout: 10_000 });
+        const onSettings = await present();
+        expect(onView).toEqual(expect.arrayContaining(['configBookmarksSort', 'configBookmarksPageSize']));
+        expect(onSettings).toEqual(expect.arrayContaining([
+            'bookmarkDeleteConfirmFrom', 'defaultMonitorIntervalMinutes', 'newBookmarkCheckMode', 'newBookmarkPinned',
             'bookmarkStaleDays', 'bulkFaviconConfirmFrom', 'bookmarkArchiveUrl',
-        ].filter((f) => !document.querySelector(`[data-behavior-field="${f}"]`)));
-        expect(missing).toEqual([]);
+        ]));
     });
 
     // The list reset to page order on every visit, unlike Health and the Inbox.

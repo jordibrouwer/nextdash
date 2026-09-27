@@ -59,7 +59,7 @@ test.describe('config to dashboard category sync', () => {
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
         await expect(page.locator('#config-bm-list')).toBeVisible();
 
         // Narrow the list to the seeded bookmark and open its editor.

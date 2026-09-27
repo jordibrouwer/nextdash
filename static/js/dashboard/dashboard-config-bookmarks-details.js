@@ -212,7 +212,7 @@
                     ? this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.')
                     : this.t('dashboard.healthLocalCopyError', 'Could not save a copy of that page.'), res.ok ? 'success' : 'error');
             }
-            const panel = (this.standalone && this._libPanel) || document.getElementById('config-bm-panel');
+            const panel = this._libPanel || document.getElementById('config-bm-panel');
             void this.fillBmDetailsCopies(panel, b);
         },
 

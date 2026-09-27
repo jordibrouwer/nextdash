@@ -5,10 +5,10 @@ const { prepareDashboardInteraction } = require('../e2e-helpers');
  * bookmarks, so the join has real URLs to match. The first bookmark is broken,
  * the second stale, the rest healthy; `shape` can rewrite the issues, and
  * `report` adds fields to the report itself (duplicateGroups, say); `prepare`
- * runs in the page before the bookmarks are read; `view: 'library'` opens the
- * Bookmarks view instead of Config → Bookmarks.
+ * runs in the page before the bookmarks are read. The list opens in the
+ * Bookmarks view, the only place it is drawn.
  */
-async function openBookmarksWithHealth(page, shape = (issues) => issues, { report = () => ({}), prepare = null, view = 'config' } = {}) {
+async function openBookmarksWithHealth(page, shape = (issues) => issues, { report = () => ({}), prepare = null, view = 'library' } = {}) {
   await page.setViewportSize({ width: 1500, height: 950 });
   await page.goto('/');
   await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
@@ -33,9 +33,13 @@ async function openBookmarksWithHealth(page, shape = (issues) => issues, { repor
     }),
   }));
   await prepareDashboardInteraction(page);
-  // 'library' is the Bookmarks view (#bookmarks); 'config' is Config → Bookmarks.
-  if (view === 'library') await page.evaluate(() => { window.location.hash = '#bookmarks'; });
-  else await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+  // A session tip turns up a few seconds in and covers the bottom of the
+  // screen: not what these tests are about.
+  await page.evaluate(() => { window.dashboardInstance.settings.enableSessionTips = false; });
+  // The list is the Bookmarks view (#bookmarks) alone now; Config → Bookmarks
+  // holds its settings. `view` is kept for the callers that still name it.
+  void view;
+  await page.evaluate(() => { window.location.hash = '#bookmarks'; });
   await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
   return { bookmarks, issues };
 }

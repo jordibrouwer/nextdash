@@ -14,7 +14,6 @@
 
     if (typeof global.DashboardConfig !== 'function') return;
 
-    const PANEL_KEY = 'nextdash.bmPanelCollapsed';
     const SECTIONS_KEY = 'nextdash.configBm.sections';
     // Edit only: Health carries the score, check mode and the expectations
     // form now, and open by default it ran the panel past the screen. It is
@@ -26,26 +25,16 @@
 
     Object.assign(global.DashboardConfig.prototype, {
 
-    bmPanelCollapsed() {
-        // The Bookmarks view has no panel column: its panel is the side
-        // panel over the page, so the rows always get the full width.
-        if (this.standalone) return true;
-        if (this._bmPanelTempOpen) return false;
-        try {
-            return global.localStorage?.getItem(PANEL_KEY) === '1';
-        } catch {
-            return false;
-        }
-    },
-
     renderBookmarksWorkbench() {
         const esc = (v) => this.dash.escapeHtml(v);
         const filtered = this.visibleBookmarks();
         const total = (this.dash.allBookmarks || []).length;
         const countLabel = this.renderBookmarkCountLabelSafe(filtered.length, total);
-        const collapsed = this.bmPanelCollapsed();
+        // The list is the Bookmarks view's alone: full width, its panel the
+        // side panel over the page (is-panel-collapsed and is-library say so
+        // to the stylesheet).
         return `
-            <div class="config-bm-workbench${collapsed ? ' is-panel-collapsed' : ''}${this.standalone ? ' is-library' : ''}" id="config-bm-workbench">
+            <div class="config-bm-workbench is-panel-collapsed is-library" id="config-bm-workbench">
                 <aside class="config-bm-rail" id="config-bm-rail"
                        aria-label="${esc(this.t('config.bmFilters', 'Filters'))}">${this.renderWorkbenchRail()}</aside>
                 <section class="config-bm-main" aria-label="${esc(this.t('config.sectionBookmarks', 'Bookmarks'))}">
@@ -371,16 +360,6 @@
         return key && this.findBookmarkByKey(key) ? key : null;
     },
 
-    renderWorkbenchPanelToggle() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const collapsed = this.bmPanelCollapsed();
-        const label = collapsed ? this.t('config.bmDetails', 'Details') : this.t('config.bmHideDetails', 'Hide details');
-        return `<button type="button" class="config-bm-panel-toggle" data-bm-panel-toggle
-                        aria-expanded="${collapsed ? 'false' : 'true'}" title="${esc(label)} (i)">
-                    <span class="config-bm-panel-toggle-label">${esc(label)}</span><span aria-hidden="true">${collapsed ? '‹' : '›'}</span>
-                </button>`;
-    },
-
     renderWorkbenchPanel() {
         const esc = (v) => this.dash.escapeHtml(v);
         const mode = this.workbenchPanelMode();
@@ -388,7 +367,7 @@
         if (mode === 'bulk') body = this.renderWorkbenchBulkPanel?.() || '';
         else if (mode === 'single') body = this.renderWorkbenchSinglePanel(this.workbenchPanelKey());
         else body = `<p class="config-bm-panel-empty">${esc(this.t('config.bmPanelEmpty', 'Select a bookmark to see it here.'))}</p>`;
-        return `${this.renderWorkbenchPanelToggle()}<div class="config-bm-panel-body">${body}</div>`;
+        return `<div class="config-bm-panel-body">${body}</div>`;
     },
 
     renderWorkbenchField(name, label, control) {
@@ -477,9 +456,7 @@
         const issue = this.bmHealthIssue?.(b) || null;
         const score = issue && Number.isFinite(Number(issue.score)) ? Number(issue.score) : null;
         const scoreTone = score == null ? '' : (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
-        // Config's panel is a 260px column: there the head keeps to Open,
-        // Edit and ⋯, and page › category is left to the form below it.
-        // The shortcut is not repeated here: the form and the list both show it.
+        // Where it lives, page › category. The shortcut is not repeated here: the form and the list both show it.
         const where = b.category
             ? `${this.pageLabel(b.pageId)} › ${this.railCategoryLabel(b.pageId, b.category)}`
             : this.pageLabel(b.pageId);
@@ -493,7 +470,7 @@
             const on = name === tab;
             return `<button type="button" class="config-bm-tab${on ? ' is-active' : ''}" role="tab"
                         aria-selected="${on ? 'true' : 'false'}" tabindex="${on ? 0 : -1}" data-bm-tab-panel="${name}"${
-                this.standalone ? ` title="${esc(`${label} (${n})`)}"` : ''}>${esc(label)}${
+                ` title="${esc(`${label} (${n})`)}"`}>${esc(label)}${
                 name === 'health' && troubled ? `<span class="config-bm-tab-dot" aria-label="${esc(this.t('config.bmTabProblem', 'has a problem'))}"></span>` : ''
             }</button>`;
         };
@@ -533,7 +510,7 @@
                         <button type="button" class="config-btn config-btn--small" data-bm-more-toggle aria-haspopup="menu" aria-expanded="false"
                                 aria-label="${esc(this.t('config.bmMoreActions', 'More actions'))}">⋯</button>
                         <div class="config-bm-more-menu" role="menu" data-bm-more-menu hidden>
-                            ${this.renderBmHealthActions?.(b, { skip: this.standalone ? ['recheck'] : [] }) || ''}
+                            ${this.renderBmHealthActions?.(b, { skip: ['recheck'] }) || ''}
                             <button type="button" class="config-btn config-btn--small" data-bm-panel-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>
                             <button type="button" class="config-btn config-btn--small" data-bm-panel-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>
                             <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.delete', 'Delete'))}</button>
@@ -541,12 +518,12 @@
                     </span>
                 </div>
                 ${/^https?:\/\//i.test(String(b.url || '')) ? `<a class="config-bm-panel-url" href="${esc(b.url)}" title="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(this.formatBookmarkUrlDisplay(b.url))}</a>` : ''}
-                ${where && this.standalone ? `<p class="config-bm-panel-where" title="${esc(where)}">${esc(where)}</p>` : ''}
+                ${where ? `<p class="config-bm-panel-where" title="${esc(where)}">${esc(where)}</p>` : ''}
                 <div class="config-bm-panel-actions">
                     <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
                     <button type="button" class="config-btn config-btn--small" data-bm-panel-action="edit-dialog"
                             title="${esc(this.t('config.bmEditDialogTitle', 'Open the full edit dialog (Shift+E)'))}">${esc(this.t('config.bmEditShort', 'Edit'))}</button>
-                    ${issue && this.standalone ? `<button type="button" class="config-btn config-btn--small" data-bm-health-action="recheck"
+                    ${issue ? `<button type="button" class="config-btn config-btn--small" data-bm-health-action="recheck"
                             title="${esc(this.t('config.bmRecheckTitle', 'Check this bookmark now (p)'))}">${esc(this.t('config.bmKeyRecheck', 're-check').replace(/^./, (c) => c.toUpperCase()))}</button>` : ''}
                 </div>
             </header>
@@ -555,7 +532,7 @@
                 ${tabButton('health', this.t('config.bmHealth', 'Health'), 2)}
                 ${tabButton('usage', this.t('config.bmUsage', 'Usage'), 3)}
             </div>
-            ${pane('details', !this.standalone ? editForm : `
+            ${pane('details', `
                 ${this.renderBmDetailsSummary?.(b) || ''}
                 <div class="config-bm-acc-list">
                 ${this.workbenchAcc('details', 'edit', this.t('config.bmSectionEdit', 'Edit'), this.t('config.bmDetailsSavesAsYouGo', 'saves as you go'),
@@ -620,7 +597,7 @@
         } catch {
             // Private window: the choice lasts until the panel is redrawn.
         }
-        const panel = (this.standalone && this._libPanel) || document.getElementById('config-bm-panel');
+        const panel = this._libPanel || document.getElementById('config-bm-panel');
         if (!panel) return false;
         panel.querySelectorAll('[data-bm-tab-panel]').forEach((btn) => {
             const on = btn.dataset.bmTabPanel === tab;
@@ -647,7 +624,7 @@
      * across the app -- a page of the dashboard -- and [ ] Config's sub-tabs.
      */
     handleWorkbenchPanelTabKey(e) {
-        if (!this.standalone || !this._libDrawer?.isOpen() || this.workbenchPanelMode() !== 'single') return false;
+        if (!this._libDrawer?.isOpen() || this.workbenchPanelMode() !== 'single') return false;
         if (e.ctrlKey || e.metaKey || e.altKey) return false;
         const tag = e.target?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) return false;
@@ -662,7 +639,7 @@
 
     /** Close the ⋯ menu, if it is open; true when there was one to close. */
     closeWorkbenchMoreMenu() {
-        const panel = (this.standalone && this._libPanel) || document.getElementById('config-bm-panel');
+        const panel = this._libPanel || document.getElementById('config-bm-panel');
         const menu = panel?.querySelector('[data-bm-more-menu]:not([hidden])');
         if (!menu) return false;
         menu.hidden = true;
@@ -673,7 +650,7 @@
     repaintWorkbenchPanel() {
         // In the Bookmarks view the panel lives in the side panel, which is
         // out of the document while closed; it is still the one to draw.
-        const panel = (this.standalone && this._libPanel) || document.getElementById('config-bm-panel');
+        const panel = this._libPanel || document.getElementById('config-bm-panel');
         if (!panel) return;
         // A save in flight owns the panel until it lands: repainting now would
         // take the field (and what was typed into it) away mid-write.
@@ -702,11 +679,9 @@
         if (mode === 'single') {
             const b = this.findBookmarkByKey(key);
             void this.fillBmDetailsCopies?.(panel, b);
-            if (this.standalone) void this.fillBmDetailsPreview?.(panel, b);
+            void this.fillBmDetailsPreview?.(panel, b);
         }
         if (mode === 'bulk') void this.fillWorkbenchBulkSuggestions(panel);
-        // (The Bookmarks view opens its side panel for a selection itself.)
-        if (mode === 'bulk' && !this.standalone && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });
         this.syncWorkbenchToolbar();
         this.syncLibraryDrawer();
     },
@@ -748,7 +723,7 @@
 
     /** Open or close the side panel to match the cursor, the selection and the reader's wish. */
     syncLibraryDrawer() {
-        if (!this.standalone || !this.isActiveView()) return;
+        if (!this.isActiveView()) return;
         const drawer = this.libraryDrawer();
         const panel = this._libPanel;
         if (!drawer || !panel) return;
@@ -937,37 +912,16 @@
      * is remembered; `e` and a multi-row selection open it for now without
      * overwriting that choice.
      */
-    toggleWorkbenchPanel(force, { remember = true } = {}) {
-        if (this.standalone) {
-            // `i` in the Bookmarks view: the side panel, for the row under the cursor.
-            this._libDrawerWanted = typeof force === 'boolean' ? !force : !this._libDrawer?.isOpen();
-            if (!this._libDrawerWanted) this.closeLibraryDrawer();
-            else this.repaintWorkbenchPanel();
-            return;
-        }
-        const collapsed = typeof force === 'boolean' ? force : !this.bmPanelCollapsed();
-        if (remember) {
-            this._bmPanelTempOpen = false;
-            try {
-                global.localStorage?.setItem(PANEL_KEY, collapsed ? '1' : '0');
-            } catch { /* private window: the choice lasts this visit */ }
-        } else {
-            this._bmPanelTempOpen = !collapsed;
-        }
-        const root = document.getElementById('config-bm-workbench');
-        const changed = root && root.classList.contains('is-panel-collapsed') !== collapsed;
-        root?.classList.toggle('is-panel-collapsed', collapsed);
-        // Rows change width, and the folded layout adds cells.
-        if (changed) this.fitWorkbenchTags(document.getElementById('config-bm-list'));
-        const toggle = document.querySelector('#config-bm-panel [data-bm-panel-toggle]');
-        if (toggle) toggle.outerHTML = this.renderWorkbenchPanelToggle();
+    /** `i`: the side panel, for the row under the cursor, opened or closed. */
+    toggleWorkbenchPanel(force) {
+        this._libDrawerWanted = typeof force === 'boolean' ? !force : !this._libDrawer?.isOpen();
+        if (!this._libDrawerWanted) this.closeLibraryDrawer();
+        else this.repaintWorkbenchPanel();
     },
 
     focusWorkbenchPanel(key) {
         if (key) this._bmKeyboardKey = key;
-        if (this.standalone) this._libDrawerWanted = true;
-        else if (this.workbenchNarrow()) this.openWorkbenchOverlay('drawer');
-        else this.toggleWorkbenchPanel(false, { remember: false });
+        this._libDrawerWanted = true;
         this.repaintWorkbenchPanel();
         const field = document.querySelector('#config-bm-panel [data-bm-field="name"], #config-bm-panel [data-bm-field]');
         field?.focus();
@@ -1115,10 +1069,6 @@
             }
         }, true);
         panel.addEventListener('click', (e) => {
-            if (e.target.closest('[data-bm-panel-toggle]')) {
-                this.toggleWorkbenchPanel();
-                return;
-            }
             const usageShow = e.target.closest('[data-bm-usage-show]');
             if (usageShow) {
                 // "Show the ones never opened": the rail's own view for them.
@@ -1480,9 +1430,9 @@
     },
 
     focusWorkbenchBulkField(name) {
-        if (this.workbenchNarrow()) this.openWorkbenchOverlay('drawer');
-        else this.toggleWorkbenchPanel(false, { remember: false });
+        this._libDrawerWanted = true;
         this.redrawBulkPanel();
+        this.syncLibraryDrawer();
         document.querySelector(`#config-bm-panel [data-bm-bulk-field="${name}"]`)?.focus();
     },
 
@@ -1548,31 +1498,35 @@
         });
     },
 
-    workbenchNarrow() {
-        return Boolean(global.matchMedia?.('(max-width: 1199px)').matches);
-    },
-
-    workbenchPhone() {
-        return Boolean(global.matchMedia?.('(max-width: 799px)').matches);
-    },
-
-    openWorkbenchOverlay(kind) {
+    /** The phone's filters sheet: the rail, over the list. */
+    openWorkbenchOverlay() {
         const root = document.getElementById('config-bm-workbench');
         if (!root) return;
         this.closeWorkbenchOverlays();
-        root.classList.add(kind === 'sheet' ? 'is-sheet-open' : 'is-drawer-open');
+        root.classList.add('is-sheet-open');
         const scrim = root.querySelector('[data-bm-scrim]');
         if (scrim) scrim.hidden = false;
-        this._bmOverlayLock = global.ScrollLock?.acquire?.(kind === 'sheet' ? 'bm-sheet' : 'bm-drawer') || null;
-        this._bmOverlayKind = kind;
+        this._bmOverlayLock = global.ScrollLock?.acquire?.('bm-sheet') || null;
+        this._bmOverlayKind = 'sheet';
+    },
+
+    /**
+     * Leaving the view: everything it laid over the page goes, all at once --
+     * the ⋯ menu, the side panel and the phone's filters sheet with its scroll
+     * lock. closeWorkbenchOverlays closes one per Escape; this is not a key.
+     */
+    leaveLibraryView() {
+        this.closeWorkbenchMoreMenu();
+        this.closeLibraryDrawer();
+        while (this.closeWorkbenchOverlays()) { /* until nothing is left */ }
     },
 
     closeWorkbenchOverlays() {
         if (this.closeWorkbenchMoreMenu()) return true;
         if (this.closeLibraryDrawer()) return true;
         const root = document.getElementById('config-bm-workbench');
-        const wasOpen = Boolean(root?.classList.contains('is-drawer-open') || root?.classList.contains('is-sheet-open'));
-        root?.classList.remove('is-drawer-open', 'is-sheet-open');
+        const wasOpen = Boolean(root?.classList.contains('is-sheet-open'));
+        root?.classList.remove('is-sheet-open');
         const scrim = root?.querySelector('[data-bm-scrim]');
         if (scrim) scrim.hidden = true;
         if (this._bmOverlayLock) {
@@ -1588,12 +1542,9 @@
         const esc = (v) => this.dash.escapeHtml(v);
         const active = [this.bmQuery, this.bmPageFilter, this.bmCategoryFilter, this.bmCleanupFilter, this.bmHealthFilter]
             .filter((v) => String(v || '').trim()).length + this.bookmarkTagFilters().length;
-        const n = this.bmSelected.size;
         return `
             <button type="button" class="config-btn config-btn--small config-bm-narrow-only config-bm-phone-only" data-bm-open-sheet>${esc(
-                this.t('config.bmFilters', 'Filters'))}${active ? ` (${active})` : ''}</button>
-            <button type="button" class="config-btn config-btn--small config-bm-narrow-only" data-bm-open-drawer>${esc(
-                this.t('config.bmDetails', 'Details'))}${n > 1 ? ` (${n})` : ''}</button>`;
+                this.t('config.bmFilters', 'Filters'))}${active ? ` (${active})` : ''}</button>`;
     },
 
     syncWorkbenchToolbar() {
@@ -1619,13 +1570,12 @@
 
     bindWorkbench(container) {
         // A redraw of the section (a write elsewhere, a filter from the hash)
-        // keeps an open drawer or sheet open: its scroll lock is still held, so
-        // the new markup is put back in the state the old one was in. Leaving
-        // the list is what closes them (closeWorkbenchOverlaysOffList).
-        const reopen = this._bmOverlayKind;
-        if (reopen) {
+        // keeps an open sheet open: its scroll lock is still held, so the new
+        // markup is put back in the state the old one was in. Leaving the list
+        // is what closes it (closeWorkbenchOverlaysOffList).
+        if (this._bmOverlayKind) {
             const root = container.querySelector('#config-bm-workbench');
-            root?.classList.add(reopen === 'sheet' ? 'is-sheet-open' : 'is-drawer-open');
+            root?.classList.add('is-sheet-open');
             const scrim = root?.querySelector('[data-bm-scrim]');
             if (scrim) scrim.hidden = false;
         }
@@ -1633,7 +1583,7 @@
         this.startBmHealth?.();
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
         const panel = container.querySelector('#config-bm-panel');
-        if (this.standalone) this.adoptLibraryPanel(panel);
+        this.adoptLibraryPanel(panel);
         this.bindWorkbenchPanel(panel);
         this.bindWorkbenchBulk(panel);
         if (panel) {
@@ -1646,12 +1596,7 @@
             root.addEventListener('click', (e) => {
                 if (e.target.closest('[data-bm-enable-checking]')) this.openCheckingModal?.();
                 else if (e.target.closest('[data-bm-scrim]')) this.closeWorkbenchOverlays();
-                else if (e.target.closest('[data-bm-open-sheet]')) this.openWorkbenchOverlay('sheet');
-                else if (e.target.closest('[data-bm-open-drawer]')) {
-                    if (this.standalone) this._libDrawerWanted = true;
-                    else this.openWorkbenchOverlay('drawer');
-                    this.repaintWorkbenchPanel();
-                }
+                else if (e.target.closest('[data-bm-open-sheet]')) this.openWorkbenchOverlay();
             });
         }
     },
@@ -1806,10 +1751,10 @@
                 <span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned
                     ? `<span aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}</span>
                 <span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>
-                ${this.standalone ? this.workbenchSparkCell(b) : ''}
+                ${this.workbenchSparkCell(b)}
                 <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>
                 <span class="config-bm-last" role="gridcell">${esc(last.label)}</span>
-                ${this.standalone ? this.workbenchAddedCell(b) : ''}
+                ${this.workbenchAddedCell(b)}
                 <span class="config-bm-row-score" role="gridcell">${score == null ? ''
                     : `<span class="config-bm-score" data-tone="${scoreTone(score)}">${esc(String(score))}</span>`}</span>
             </div>`;

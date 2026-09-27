@@ -39,8 +39,10 @@ test.describe('the bookmark panel', () => {
     test('follows the row under the cursor', async ({ page }) => {
         await openBookmarks(page);
         const panel = page.locator('#config-bm-panel');
-        await expect(panel).toHaveAttribute('data-bm-panel-mode', 'empty');
         const first = await focusFirstRow(page);
+        // i opens the side panel; from there it follows the cursor.
+        await page.keyboard.press('i');
+        await expect(panel).toBeVisible();
         await expect(panel).toHaveAttribute('data-bm-panel-key', first);
         await page.keyboard.press('j');
         const second = await page.locator('#config-bm-list .config-bm-row.keyboard-selected').getAttribute('data-bm-key');
@@ -94,19 +96,7 @@ test.describe('the bookmark panel', () => {
         expect(posts.length).toBe(0);
     });
 
-    test('i folds the panel away, and it stays folded after a reload', async ({ page }) => {
-        await openBookmarks(page);
-        await focusFirstRow(page);
-        await page.keyboard.press('i');
-        await expect(page.locator('#config-bm-workbench')).toHaveClass(/is-panel-collapsed/);
-        await page.reload();
-        await page.waitForSelector('#config-bm-workbench', { timeout: 15_000 });
-        await expect(page.locator('#config-bm-workbench')).toHaveClass(/is-panel-collapsed/);
-        await page.click('[data-bm-panel-toggle]');
-        await expect(page.locator('#config-bm-workbench')).not.toHaveClass(/is-panel-collapsed/);
-    });
-
-    test('a folded panel shows pins in a column of their own', async ({ page }) => {
+    test('pins and shortcuts have columns of their own', async ({ page }) => {
         await page.setViewportSize({ width: 1400, height: 800 });
         await openBookmarks(page);
         const key = await focusFirstRow(page);
@@ -115,36 +105,11 @@ test.describe('the bookmark panel', () => {
         await expect.poll(() => page.evaluate((k) =>
             window.dashboardInstance.config.findBookmarkByKey(k)?.pinned === true, key)).toBe(true);
         const row = page.locator(`#config-bm-list .config-bm-row[data-bm-key="${key}"]`);
-        // Check mode and added left the row for the panel; pinned and the
-        // shortcut are the folded panel's extra columns.
-        const extras = ['.config-bm-pinned', '.config-bm-key'];
-        // Panel open: no pin anywhere in the row, and no extra columns.
-        await expect(row.locator('.config-bm-name svg')).toHaveCount(0);
-        for (const sel of extras) await expect(row.locator(sel)).toBeHidden();
-        // Out of the field, onto plain page chrome, so i reaches the list.
-        await page.locator('#config-bm-count').click();
-        await page.keyboard.press('i');
-        await expect(page.locator('#config-bm-workbench')).toHaveClass(/is-panel-collapsed/);
-        for (const sel of extras) await expect(row.locator(sel)).toBeVisible();
+        // The list has the page's width: pinned and the shortcut are columns,
+        // and the pin is not drawn in the name as well.
+        for (const sel of ['.config-bm-pinned', '.config-bm-key']) await expect(row.locator(sel)).toBeVisible();
         await expect(row.locator('.config-bm-pinned svg')).toBeVisible();
-        await page.keyboard.press('i');
-        await expect(page.locator('#config-bm-workbench')).not.toHaveClass(/is-panel-collapsed/);
-        for (const sel of extras) await expect(row.locator(sel)).toBeHidden();
-        await expect(row.locator('.config-bm-pinned svg')).toBeHidden();
         await expect(row.locator('.config-bm-name svg')).toHaveCount(0);
-    });
-
-    test('a folded panel gives the rows more to show', async ({ page }) => {
-        await page.setViewportSize({ width: 1400, height: 800 });
-        await openBookmarks(page);
-        await focusFirstRow(page);
-        const row = page.locator('#config-bm-list .config-bm-row').first();
-        await expect(row.locator('.config-bm-key')).toBeHidden();
-        await page.keyboard.press('i');
-        await expect(page.locator('#config-bm-workbench')).toHaveClass(/is-panel-collapsed/);
-        await expect(row.locator('.config-bm-key')).toBeVisible();
-        await page.keyboard.press('i');
-        await expect(row.locator('.config-bm-key')).toBeHidden();
     });
 
     test('Edit in the right-click menu opens the panel, not a dialog', async ({ page }) => {

@@ -33,7 +33,7 @@ const activeTab = (page) => page.evaluate(
     () => document.querySelector('[data-bm-tab].is-active')?.getAttribute('data-bm-tab') || null);
 
 test.describe('Config → Bookmarks has a sub-tab strip', () => {
-    test('it opens on the list, with the settings one click away', async ({ page }) => {
+    test('it opens on View, and the list is the Bookmarks view\'s alone', async ({ page }) => {
         await openBookmarks(page);
 
         // Counted against BM_TABS: the strip gained a third tab and this failed
@@ -41,11 +41,9 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
         const tabs = await page.evaluate(() =>
             window.DashboardConfig.BM_TABS.length);
         await expect(page.locator('[data-bm-tab]')).toHaveCount(tabs);
-        expect(await activeTab(page)).toBe('list');
-        await expect(page.locator('#config-bm-list')).toBeVisible();
-        // The settings are not merely scrolled out of sight — they are not in
-        // the document at all until their tab is open.
-        await expect(page.locator('#config-bm-body .config-panel-title')).toHaveCount(0);
+        expect(await activeTab(page)).toBe('view');
+        await expect(page.locator('[data-bm-tab="list"]')).toHaveCount(0);
+        await expect(page.locator('#config-bm-list')).toHaveCount(0);
     });
 
     test('the settings tab holds the settings, and drops the list', async ({ page }) => {
@@ -54,27 +52,10 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
 
         expect(await activeTab(page)).toBe('settings');
         await expect(page.locator('#config-bm-list')).toHaveCount(0);
-        // Every setting that used to sit under the list is reachable here.
+        // New bookmarks and bulk actions; the list's own went to View.
         const controls = await page.evaluate(() => document.querySelectorAll(
             '#config-bm-body input, #config-bm-body select, #config-bm-body textarea').length);
-        expect(controls).toBeGreaterThanOrEqual(8);
-    });
-
-    test('the list still works after coming back to it', async ({ page }) => {
-        await openBookmarks(page);
-        const rowsBefore = await page.locator('.config-bm-row').count();
-        expect(rowsBefore).toBeGreaterThan(0);
-
-        await page.locator('[data-bm-tab="settings"]').click();
-        await expect(page.locator('#config-bm-list')).toHaveCount(0);
-        await page.locator('[data-bm-tab="list"]').click();
-
-        await expect(page.locator('.config-bm-row')).toHaveCount(rowsBefore);
-        // Rebound, not just redrawn: the search box drives the list.
-        await page.locator('#config-bm-search').fill('zzzz-no-such-bookmark');
-        await expect.poll(() => page.locator('.config-bm-row').count(), { timeout: 5000 }).toBe(0);
-        await page.locator('#config-bm-search').fill('');
-        await expect.poll(() => page.locator('.config-bm-row').count(), { timeout: 5000 }).toBe(rowsBefore);
+        expect(controls).toBeGreaterThanOrEqual(6);
     });
 
     test('the tab is a place you can link to', async ({ page }) => {
@@ -95,7 +76,7 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
         // without this the assertion below passes whether or not the location was
         // ever stored — the same vacuum that made four config-dashboard-view
         // tests unable to fail.
-        await page.evaluate(() => { window.dashboardInstance.config.bmTab = 'list'; });
+        await page.evaluate(() => { window.dashboardInstance.config.bmTab = 'view'; });
         await page.evaluate(() => window.dashboardInstance.config.openConfigView());
         await page.waitForSelector('[data-bm-tab]', { timeout: 15_000 });
 
@@ -108,14 +89,14 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
         await page.locator('[data-bm-tab="settings"]').focus();
         await page.keyboard.press('ArrowLeft');
 
-        // List · Tags · Tag suggestions · Your rules · Settings · Local copies.
+        // View · Tags · Tag suggestions · Your rules · Settings · Local copies.
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tag-rules');
         await page.keyboard.press('ArrowLeft');
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tag-suggestions');
         await page.keyboard.press('ArrowLeft');
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tags');
         await page.keyboard.press('ArrowLeft');
-        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('list');
+        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('view');
         await page.keyboard.press('ArrowRight');
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tags');
     });
@@ -136,7 +117,8 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
             return cfg.bmPageFilter;
         })).toBeFalsy();
 
-        await page.locator('[data-bm-tab="list"]').click();
-        await expect(page.locator('#config-bm-rail-facets')).not.toContainText('tag-suggestions', { timeout: 15_000 });
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
+        await expect(page.locator('#config-bm-list')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('#config-bm-rail-facets')).not.toContainText('tag-suggestions');
     });
 });

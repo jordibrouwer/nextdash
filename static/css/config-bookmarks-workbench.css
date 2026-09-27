@@ -1,5 +1,6 @@
 /*
- * Config → Bookmarks → List as a workbench: rail · list · panel.
+ * The Bookmarks view as a workbench: rail · list, the panel a side panel over
+ * the page (list-view-drawer.js).
  *
  * Colours come from the theme; the slabs use the surface ladder and the
  * theme's edges the way the view headers do, and stay flat on flat depth.
@@ -9,7 +10,6 @@
 
 .config-bm-workbench {
     --bm-rail-w: 176px;
-    --bm-panel-w: 260px;
     /* Health's row (health-view.css): 8px, a 29px line, 8px, a 1px rule.
        The virtual list reads this, so it must be the drawn height. */
     --bm-row-h: 46px;
@@ -17,22 +17,9 @@
     --bm-slab-bg: var(--surface-2, var(--background-secondary));
     --bm-slab-radius: var(--radius-5, 8px);
     display: grid;
-    grid-template-columns: var(--bm-rail-w) minmax(0, 1fr) var(--bm-panel-w);
+    grid-template-columns: var(--bm-rail-w) minmax(0, 1fr);
     gap: var(--space-4, 1rem);
     align-items: start;
-}
-
-.config-bm-workbench.is-panel-collapsed {
-    grid-template-columns: var(--bm-rail-w) minmax(0, 1fr) 28px;
-}
-
-/* The rail grows with the page and shows every group in full; only the
-   panel is a sticky, scrolling column. */
-.config-bm-panel {
-    position: sticky;
-    top: var(--space-4, 1rem);
-    max-height: calc(100vh - 2 * var(--space-4, 1rem));
-    overflow: auto;
 }
 
 .config-bm-main {
@@ -95,16 +82,6 @@
     gap: var(--space-2, 0.5rem);
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
-}
-
-.config-bm-panel {
-    background: var(--surface-3, var(--background-secondary));
-    border-radius: var(--bm-slab-radius);
-    padding: var(--space-4, 1rem);
-}
-
-html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
-    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
 }
 
 .config-bm-panel-empty {
@@ -626,39 +603,9 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
 /* ── Panel ────────────────────────────────────────────────────────────── */
 
 .config-bm-panel {
-    position: sticky;
     display: flex;
     flex-direction: column;
     gap: var(--space-3, 0.75rem);
-}
-
-.config-bm-panel-toggle {
-    align-self: flex-end;
-    display: inline-flex;
-    gap: var(--space-1, 0.25rem);
-    border: 0;
-    background: none;
-    color: var(--text-secondary);
-    font: inherit;
-    font-size: var(--font-size-small);
-    cursor: pointer;
-}
-
-/* Beats the themed slab shadow above, which carries html/body in its selector. */
-html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
-    padding: var(--space-2, 0.5rem) 0;
-    background: none;
-    box-shadow: none;
-}
-
-.config-bm-workbench.is-panel-collapsed .config-bm-panel-body {
-    display: none;
-}
-
-.config-bm-workbench.is-panel-collapsed .config-bm-panel-toggle {
-    writing-mode: vertical-rl;
-    align-self: center;
-    color: var(--accent-primary);
 }
 
 .config-bm-panel-head {
@@ -845,57 +792,19 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     display: none;
 }
 
-@media (max-width: 1199px) {
+@media (max-width: 799px) {
     .config-bm-workbench,
     .config-bm-workbench.is-panel-collapsed {
-        grid-template-columns: var(--bm-rail-w) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
     }
 
-    .config-bm-narrow-only:not(.config-bm-phone-only) {
-        display: inline-flex;
-    }
-
-    .config-bm-panel {
-        display: none;
-        position: fixed;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: min(420px, 100vw);
-        max-height: none;
-        border-radius: 0;
-        /* Above the section's sticky header (sticky band + 1300), where the
-           shared side panel sits too (list-view-shell.css, .lvs-drawer-host):
-           at 1200 the header drew over the name field. */
-        z-index: calc(var(--layer-sticky-band, 5) + 1400);
-        overflow: auto;
-    }
-
-    .config-bm-workbench.is-drawer-open .config-bm-panel {
-        display: flex;
-    }
-
-    .config-bm-workbench.is-panel-collapsed .config-bm-panel-body {
-        display: block;
-    }
-
-    .config-bm-panel-toggle {
-        display: none;
-    }
-
+    /* Behind the filters' sheet. */
     .config-bm-scrim:not([hidden]) {
         display: block;
         position: fixed;
         inset: 0;
         z-index: calc(var(--layer-sticky-band, 5) + 1399);
         background: color-mix(in srgb, var(--background-primary) 60%, transparent);
-    }
-}
-
-@media (max-width: 799px) {
-    .config-bm-workbench,
-    .config-bm-workbench.is-panel-collapsed {
-        grid-template-columns: minmax(0, 1fr);
     }
 
     .config-bm-narrow-only.config-bm-phone-only {
@@ -982,21 +891,12 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     gap: var(--space-2, 0.5rem);
 }
 
-/* ── The panel fits the screen ───────────────────────────────────────────
-   A label above every field made the Edit section 528px on its own and the
-   panel ran past the bottom of a 950px window, into a scrollbar of its own.
-   Labels sit beside their fields instead, so the panel is normally read
-   whole; with every section open on a short window it still scrolls rather
-   than running off the screen. The bulk form keeps its stacked fields. */
+/* ── The panel's fields ───────────────────────────────────────────────────
+   Labels sit beside their fields, so the panel reads short; the side panel
+   around it scrolls. The bulk form keeps its stacked fields. */
 @media (min-width: 1200px) {
     .config-bm-panel {
-        max-height: calc(100vh - var(--lvs-header-height, 0px) - 2 * var(--space-2, 0.5rem));
-        overflow: auto;
         gap: var(--space-2, 0.5rem);
-        /* Below the section's sticky header, as the shell's rail stops below
-           it (list-view-shell.css, --lvs-header-height): at a flat 1rem the
-           panel's own head slid under it once the page scrolled. */
-        top: calc(var(--lvs-header-height, 0px) + var(--space-2, 0.5rem));
     }
 
     .config-bm-panel-head--single + .config-bm-panel-section .config-bm-panel-fields,
@@ -1141,37 +1041,6 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
 
 /* ── The Bookmarks view ───────────────────────────────────────────────── */
 
-/* No panel column: the panel is the side panel over the page (see
-   syncLibraryDrawer), so the list has the width the column had. */
-@media (min-width: 800px) {
-    .config-bm-workbench.is-library,
-    .config-bm-workbench.is-library.is-panel-collapsed {
-        grid-template-columns: var(--bm-rail-w) minmax(0, 1fr);
-    }
-}
-
-.config-bm-workbench.is-library [data-bm-open-drawer] {
-    display: none;
-}
-
-/* The workbench panel inside the side panel: the slab is the side panel's,
-   so the panel's own slab, stickiness and fold button go. */
-html body .config-bm-drawer .config-bm-panel,
-html[data-theme] body:not([data-depth="flat"]) .config-bm-drawer .config-bm-panel {
-    position: static;
-    width: auto;
-    max-height: none;
-    overflow: visible;
-    padding: 0;
-    background: none;
-    box-shadow: none;
-    border-radius: 0;
-    display: flex;
-}
-
-.config-bm-drawer .config-bm-panel-toggle {
-    display: none;
-}
 /* ── Collection health modal ──────────────────────────────────────────────
    Opened from the rail's summary block or the bookmark list's `h` key
    (dashboard-bookmarks-health-modal.js): one page reading of how the whole
@@ -1904,10 +1773,6 @@ html body .config-bm-more-menu .config-btn {
  */
 .config-bm-row-score {
     justify-self: end;
-}
-
-.config-bm-workbench:not(.is-library) .config-bm-row-score {
-    display: none;
 }
 
 @media (min-width: 800px) {

@@ -141,7 +141,8 @@ test.describe('the bulk form', () => {
         const target = await page.evaluate(() =>
             String(window.dashboardInstance.pages[window.dashboardInstance.pages.length - 1].id));
         try {
-            await page.click('[data-config-section="bookmarks"]');
+            // The list redrawn with the new page in its pickers.
+            await page.evaluate(() => window.dashboardInstance.config.render());
             // Two categorised rows from the list on screen.
             const rows = page.locator('#config-bm-list .config-bm-row');
             await expect(rows.first()).toBeVisible();

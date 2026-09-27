@@ -42,6 +42,8 @@ test('fetching previews walks the selection behind the counting bar', async ({ p
     const asked = [];
     await page.route('**/api/bookmark-preview**', async (route) => {
         asked.push(new URL(route.request().url()).searchParams.get('url') || '');
+        // Slow enough for the bar to be seen.
+        await new Promise((resolve) => setTimeout(resolve, 400));
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -50,6 +52,9 @@ test('fetching previews walks the selection behind the counting bar', async ({ p
     });
     await openBookmarks(page);
     await tickRows(page, 2);
+    // The side panel asks for a row's preview as it shows it; the sweep's
+    // requests are the ones counted.
+    asked.length = 0;
     await page.locator('#config-bm-panel [data-bm-bulk-action="previews"]').click();
 
     const overlay = page.locator('#nextdash-progress-overlay');

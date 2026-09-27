@@ -39,20 +39,4 @@ test.describe('the pin entry is drawn, not typed', () => {
         });
         expect(colours.pin).toBe(colours.copy);
     });
-
-    test('the config list menu draws it too', async ({ page }) => {
-        await markWhatsNewSeen(page);
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
-        await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
-
-        await page.locator('#config-bm-list .config-bm-row').first().click({ button: 'right' });
-        const menu = page.locator('.move-popover[role="menu"], #config-bm-context-menu').first();
-        await expect(menu).toBeVisible({ timeout: 10_000 });
-        await expect(menu.locator('[data-action="pin"] .move-popover-check svg')).toHaveCount(1);
-        await expect(menu).not.toContainText('📌');
-    });
 });

@@ -40,9 +40,10 @@ test.describe('config: sections restored from the old config', () => {
         expect(order.slice(0, 4)).toEqual(['overview', 'appearance', 'bookmarks', 'structure']);
     });
 
-    test('the bookmarks section lists bookmarks and filters by search', async ({ page }) => {
+    test('the Bookmarks view lists bookmarks and filters by search', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'bookmarks');
+        // The list is the Bookmarks view's.
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
         await expect(page.locator('#config-bm-list')).toBeVisible();
         const rows = page.locator('#config-bm-list .config-bm-row');
         const before = await rows.count();
@@ -53,7 +54,8 @@ test.describe('config: sections restored from the old config', () => {
 
     test('editing a bookmark opens the add-bookmark modal prefilled', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'bookmarks');
+        // The list is the Bookmarks view's.
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
         await page.locator('#config-bm-list .config-bm-row').first().waitFor();
         await page.evaluate(() => document.activeElement?.blur?.());
         await page.keyboard.press('j');
@@ -66,7 +68,8 @@ test.describe('config: sections restored from the old config', () => {
 
     test('bookmark rows keep a readable width', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'bookmarks');
+        // The list is the Bookmarks view's.
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
         await expect(page.locator('#config-bm-list .config-bm-row').first()).toBeVisible();
         // Polled, and the element looked up inside the poll: the list repaints
         // on its own (repaintBookmarksList), and a handle taken before one

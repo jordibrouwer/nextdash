@@ -90,7 +90,7 @@ async function openEditor(page, { icon = '' } = {}) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await seedFirstIcon(page, icon);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await expect(page.locator('#config-bm-list')).toBeVisible();
 
     // Through the list's own Shift+E, on the row the cursor lands on first:

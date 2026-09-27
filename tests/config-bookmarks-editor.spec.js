@@ -19,7 +19,7 @@ async function loadDashboard(page) {
 
 async function openBookmarks(page) {
     await loadDashboard(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await expect(page.locator('#config-bm-list')).toBeVisible();
 }
 
@@ -448,7 +448,7 @@ test.describe('a category always exists on the page it is used on', () => {
         const target = await page.evaluate(() =>
             String(window.dashboardInstance.pages[window.dashboardInstance.pages.length - 1].id));
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
         await page.waitForSelector('[data-bm-tick]', { state: 'attached' });
         // Two ticked rows, the categorised one among them: the bulk form only
         // appears for a selection of more than one.

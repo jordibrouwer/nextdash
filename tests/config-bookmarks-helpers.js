@@ -3,10 +3,10 @@ const { expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, markConfigSettingPromosSeen } = require('./e2e-helpers');
 
 /**
- * Opens Config → Bookmarks → List through the real UI: the `<` shortcut
- * (Shift+Comma) that jumps to config, then a click on the bookmarks section
- * tab. Shared by every workbench spec so each one keeps testing behaviour,
- * not a fabricated shortcut into it.
+ * Opens the Bookmarks view through the real UI: the header's Bookmarks icon.
+ * The list lives there alone now; Config → Bookmarks holds its settings.
+ * Shared by every workbench spec so each one keeps testing behaviour, not a
+ * fabricated shortcut into it.
  */
 async function openBookmarks(page) {
     await markWhatsNewSeen(page);
@@ -15,11 +15,12 @@ async function openBookmarks(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await markConfigSettingPromosSeen(page);
-    await page.keyboard.press('Shift+Comma');
-    await page.waitForSelector('[data-config-section="bookmarks"]', { timeout: 15_000 });
-    await page.click('[data-config-section="bookmarks"]');
+    await page.locator('.library-link a').click();
     await page.waitForSelector('#config-bm-workbench #config-bm-list .config-bm-row', { timeout: 15_000 });
 }
+
+/** The side panel the list opens a bookmark in (list-view-drawer.js). */
+const sidePanel = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
 
 /** Config → Bookmarks over a fixed set of rows, served by route. */
 async function openBookmarksWithRows(page, bookmarks) {
@@ -47,7 +48,7 @@ async function openBookmarksWithRows(page, bookmarks) {
     await page.evaluate((rows) => {
         window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
         window.dashboardInstance.allBookmarks = rows;
-        return window.dashboardInstance.config.openConfigView('bookmarks');
+        return window.dashboardInstance.config.openLibraryView();
     }, bookmarks);
     await expect(page.locator('#config-bm-list .config-bm-row').first()).toBeVisible({ timeout: 10_000 });
 }
@@ -82,4 +83,4 @@ function mergedRow(writes, url) {
         .reduce((acc, row) => ({ ...acc, ...row }), null);
 }
 
-module.exports = { openBookmarks, openBookmarksWithRows, captureRowWrites, mergedRow };
+module.exports = { openBookmarks, openBookmarksWithRows, captureRowWrites, mergedRow, sidePanel };

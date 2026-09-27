@@ -229,8 +229,8 @@
                         <span class="config-bm-health-state is-${state.cls}">${esc(state.label)}</span>
                         ${chips ? `<span class="config-bm-health-chips">${chips}</span>` : ''}
                         <span class="config-bm-health-line">${line}</span>
-                        ${this.standalone ? `<button type="button" class="config-btn config-btn--small bm-health-large-open" data-bm-panel-action="health-large"
-                            title="${esc(t('bmLargeOpenTitle', 'Every chart of this bookmark, in large (Shift+H)'))}">${esc(t('bmLargeOpen', 'Open charts'))} ⤢</button>` : ''}
+                        <button type="button" class="config-btn config-btn--small bm-health-large-open" data-bm-panel-action="health-large"
+                            title="${esc(t('bmLargeOpenTitle', 'Every chart of this bookmark, in large (Shift+H)'))}">${esc(t('bmLargeOpen', 'Open charts'))} ⤢</button>
                     </div>
                     ${strip}
                 </div>
@@ -266,7 +266,7 @@
 
         /** Open one accordion section of the Health tab, as `c` and "Turn on checking" do. */
         openBmHealthAcc(name) {
-            const panel = (this.standalone && this._libPanel) || document.getElementById('config-bm-panel');
+            const panel = this._libPanel || document.getElementById('config-bm-panel');
             const details = panel?.querySelector(`[data-bm-acc="${name}"]`);
             if (details && !details.open) details.open = true;
             details?.scrollIntoView?.({ block: 'nearest' });

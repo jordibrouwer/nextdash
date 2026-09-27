@@ -106,7 +106,7 @@ test('the kept rows are held apart from the dashboard pool', async ({ page }) =>
 
 test('config lists every page but never the unsorted one', async ({ page }) => {
     await bootstrap(page, keptBookmark('config'));
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await expect(page.locator('#config-bm-list')).toBeVisible({ timeout: 15_000 });
 
     await expect(page.locator('#config-bm-list')).not.toContainText('Iso config');

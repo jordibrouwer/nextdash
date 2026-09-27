@@ -805,7 +805,7 @@ test.describe('Shift+S opens config', () => {
 
     test('does not fire while typing into a field', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
         await page.locator('#config-bm-add').click();
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
         const nameInput = page.locator('#bookmark-form-modal .bookmark-inline-form [data-field="name"]');
@@ -1120,8 +1120,7 @@ test.describe('sub-tab deep links', () => {
     test('the section, not a breadcrumb, is what says where you are', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
-        const pageId = await page.evaluate(() => String(window.dashboardInstance.pages[0]?.id || ''));
-        await page.click(`#config-bm-rail [data-bm-rail="page"][data-value="${pageId}"]`);
+        await page.locator('[data-bm-tab="tags"]').click();
 
         // No trail, anywhere.
         await expect(page.locator('.config-view-breadcrumb')).toHaveCount(0);
@@ -1135,8 +1134,5 @@ test.describe('sub-tab deep links', () => {
         // And the rail marks it as the one you are on.
         await expect(page.locator('[data-config-section="bookmarks"].is-active, [data-config-section="bookmarks"][aria-current]'))
             .toHaveCount(1);
-        // The page filter is applied, which is what the trail used to report.
-        await expect.poll(async () => page.evaluate(
-            () => String(window.dashboardInstance.config.bmPageFilter || ''))).toBe(pageId);
     });
 });
