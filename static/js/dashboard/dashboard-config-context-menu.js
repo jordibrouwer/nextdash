@@ -162,6 +162,9 @@ class DashboardConfigContextMenu {
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: c.shareBookmarkActionLabel(), icon: '↪' },
             ...group([
+                // Waiting on Unsorted: promote it onto a page, as the Inbox does.
+                ...(c.isUnsortedBookmark?.(bookmark)
+                    ? [{ id: 'promote', label: this.t('config.contextPromote', 'Promote…'), icon: '⇪' }] : []),
                 { id: 'edit', label: this.t('config.edit', 'Edit'), icon: '✎' },
                 { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
                 // Re-checking is the Health tab's, one click from here.

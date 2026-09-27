@@ -212,6 +212,7 @@ class SearchCommandNew {
                     index: options.index,
                     bookmark: options.bookmark,
                     onSaved: options.onSaved,
+                    promoteToPageId: options.promoteToPageId,
                 });
             }
             const pageId = this._contextPinned ? this.currentPageId : undefined;

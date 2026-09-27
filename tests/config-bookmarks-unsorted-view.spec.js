@@ -1,6 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { sidePanel } = require('./config-bookmarks-helpers');
 
 /**
  * The Unsorted view in Config → Bookmarks.
@@ -224,4 +225,69 @@ test('a whole selection can be filed at once, with a category', async ({ page })
 
     expect(new Set(filed).size).toBe(1);
     expect(filed[0]).toBe(categoryId);
+});
+
+/*
+ * Promote, as the Inbox does it: the same bookmark form, opened on a real page,
+ * and saving it files the bookmark there.
+ */
+test('an unsorted bookmark is promoted from its side panel, through the bookmark form', async ({ page }) => {
+    await openBookmarksSection(page, [kept('promote')]);
+    await openUnsortedView(page);
+    await clearSelection(page);
+    await page.locator('#config-bm-search').fill('Cfg promote');
+    await expect.poll(async () => (await configView(page)).visible, { timeout: 10_000 }).toEqual(['Cfg promote']);
+
+    await page.locator('#config-bm-list [data-bm-key*="cfg-promote.example"] .config-bm-title').click();
+    const panel = sidePanel(page);
+    const promote = panel.locator('[data-bm-panel-action="promote"]');
+    await expect(promote).toBeVisible();
+    await expect(promote).toHaveClass(/config-btn--primary/);
+    await promote.click();
+
+    const form = page.locator('#bookmark-form-modal');
+    await expect(form.locator('#bookmark-form-modal-title')).toHaveText('Promote bookmark');
+    // It opens on the page the Inbox would promote to, not on Unsorted.
+    const destination = await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        return String((d.config.instance || d.config).bookmarkPromoteDestination());
+    });
+    const pageValue = () => page.evaluate(() => [...document.querySelectorAll('#bookmark-form-modal .bookmark-inline-select')]
+        .filter((s) => !s.classList.contains('bookmark-inline-toggle-select'))
+        .find((s) => [...s.options].some((o) => o.value === '999999'))?.value);
+    await expect.poll(pageValue).toBe(destination);
+
+    await form.locator('.bookmark-inline-actions .bookmark-inline-save').click();
+    await expect(form).toBeHidden();
+    await expect.poll(async () => page.evaluate(async () => {
+        const res = await fetch('/api/bookmarks?all=true', { cache: 'no-store' });
+        const list = await res.json();
+        return (Array.isArray(list) ? list : []).filter((b) => b.name === 'Cfg promote').map((b) => String(b.pageId));
+    }), { timeout: 15_000 }).toEqual([destination]);
+    await expect.poll(async () => page.evaluate(async () => {
+        const res = await fetch('/api/unsorted', { cache: 'no-store' });
+        const data = await res.json();
+        return (data.bookmarks || []).filter((b) => b.name === 'Cfg promote').length;
+    }), { timeout: 15_000 }).toBe(0);
+});
+
+test('the row menu offers Promote on an unsorted bookmark only', async ({ page }) => {
+    await openBookmarksSection(page, [kept('menu')]);
+    await clearSelection(page);
+    // A filed bookmark: no Promote, in the menu or the panel.
+    const filedRow = page.locator('#config-bm-list .config-bm-row').first();
+    await filedRow.click({ button: 'right' });
+    await expect(page.locator('#config-bm-context-menu')).toBeVisible();
+    await expect(page.locator('#config-bm-context-menu [data-action="promote"]')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await filedRow.locator('.config-bm-title').click();
+    await expect(sidePanel(page)).toBeVisible();
+    await expect(sidePanel(page).locator('[data-bm-panel-action="promote"]')).toHaveCount(0);
+
+    await openUnsortedView(page);
+    await page.locator('#config-bm-search').fill('Cfg menu');
+    await expect.poll(async () => (await configView(page)).visible, { timeout: 10_000 }).toEqual(['Cfg menu']);
+    await page.locator('#config-bm-list [data-bm-key*="cfg-menu.example"]').click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="promote"]').click();
+    await expect(page.locator('#bookmark-form-modal #bookmark-form-modal-title')).toHaveText('Promote bookmark');
 });

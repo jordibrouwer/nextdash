@@ -176,9 +176,14 @@ class DashboardInlineEdit {
         const shell = this._formModalShell;
         const titleEl = shell.querySelector('#bookmark-form-modal-title');
         const cfg = (key, fb) => d.configLabel(key, fb);
-        titleEl.textContent = isEdit
-            ? cfg('editBookmark', 'Edit bookmark')
-            : cfg('addNewBookmark', 'Add bookmark');
+        // Promote: an unsorted bookmark given a page, as the Inbox promotes a
+        // captured link -- the same form, opened on a real page to file it on.
+        const promoteTo = isEdit && Number(options.promoteToPageId) > 0 ? Number(options.promoteToPageId) : null;
+        titleEl.textContent = promoteTo
+            ? cfg('promoteBookmark', 'Promote bookmark')
+            : isEdit
+                ? cfg('editBookmark', 'Edit bookmark')
+                : cfg('addNewBookmark', 'Add bookmark');
 
         /*
          * The way back in, next to the name.
@@ -195,6 +200,7 @@ class DashboardInlineEdit {
             mode: isEdit ? 'edit' : 'create',
             bookmarkRef,
             row,
+            promoteToPageId: promoteTo,
             onSaved: typeof options.onSaved === 'function' ? options.onSaved : null,
         };
 
@@ -1344,6 +1350,17 @@ class DashboardInlineEdit {
             lastSelected.page = pageSelect.value;
             void reloadCatSelectForPage(pageSelect.value);
         });
+
+        // Promoting starts on the page it is being promoted to, with that
+        // page's categories: saving is then the move, as picking the page by
+        // hand would be. Unsorted stays in the list, for changing one's mind.
+        const promoteTo = Number(this._formModalContext?.promoteToPageId);
+        if (promoteTo > 0 && promoteTo !== sourcePageId
+            && [...pageSelect.options].some((o) => Number(o.value) === promoteTo)) {
+            pageSelect.value = String(promoteTo);
+            lastSelected.page = pageSelect.value;
+            void reloadCatSelectForPage(promoteTo, '');
+        }
 
         catSelect.addEventListener('change', () => {
             if (catSelect.value === NEW_OPTION_VALUE) {

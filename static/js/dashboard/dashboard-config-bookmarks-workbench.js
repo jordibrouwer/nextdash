@@ -542,6 +542,8 @@
                     <span class="config-bm-field-status" role="status"></span>
                 </label>`}
             </div></div>`;
+        // An unsorted bookmark's first action is to be given a page.
+        const unsorted = Boolean(this.isUnsortedBookmark?.(b));
         return `
             <header class="config-bm-panel-head config-bm-panel-head--single">
                 <div class="config-bm-panel-heading">
@@ -562,7 +564,9 @@
                 ${/^https?:\/\//i.test(String(b.url || '')) ? `<a class="config-bm-panel-url" href="${esc(b.url)}" title="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(this.formatBookmarkUrlDisplay(b.url))}</a>` : ''}
                 ${where ? `<p class="config-bm-panel-where" title="${esc(where)}">${esc(where)}</p>` : ''}
                 <div class="config-bm-panel-actions">
-                    <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
+                    ${unsorted ? `<button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-panel-action="promote"
+                            title="${esc(this.t('config.bmPromoteTitle', 'Give it a page, as the Inbox promotes a link'))}">${esc(this.t('dashboard.inboxPromote', 'Promote'))}</button>` : ''}
+                    <button type="button" class="config-btn${unsorted ? '' : ' config-btn--primary'} config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
                     <button type="button" class="config-btn config-btn--small" data-bm-panel-action="edit-dialog"
                             title="${esc(this.t('config.bmEditDialogTitle', 'Open the full edit dialog (Shift+E)'))}">${esc(this.t('config.bmEditShort', 'Edit'))}</button>
                     ${issue ? `<button type="button" class="config-btn config-btn--small" data-bm-health-action="recheck"
@@ -1158,6 +1162,7 @@
             if (!action || !key) return;
             if (action === 'open') this.openBookmarkByKey(key);
             else if (action === 'edit-dialog') void this.openBookmarkEditModal(key);
+            else if (action === 'promote') void this.openBookmarkEditModal(key, { promote: true });
             else if (action === 'delete') void this.deleteBookmarkByKey(key);
             else this.handleBookmarkMenuAction(action, key);
         });

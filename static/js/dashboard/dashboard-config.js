@@ -24178,7 +24178,7 @@ class DashboardConfig {
         return b ? this.bookmarkKey(b) : null;
     }
 
-    async openBookmarkEditModal(key) {
+    async openBookmarkEditModal(key, { promote = false } = {}) {
         this.closeBookmarkMenus();
         this._bmModalRestoreKey = key;
         const record = await this.findBookmarkRecord(key);
@@ -24194,11 +24194,28 @@ class DashboardConfig {
             pageId: record.pageId,
             index: record.index,
             bookmark: record.record,
+            promoteToPageId: promote ? this.bookmarkPromoteDestination() : undefined,
             onSaved: async () => {
                 await this.refreshBookmarksAfterWrite();
             },
         });
         this.watchAddBookmarkModal();
+    }
+
+    /** Whether this bookmark waits on Unsorted, and so can be promoted. */
+    isUnsortedBookmark(b) {
+        return Boolean(window.UnsortedPage?.isUnsorted?.(b));
+    }
+
+    /**
+     * The page a promote opens on: the one the Inbox's promote would use, the
+     * dashboard page last shown -- else the first page there is.
+     */
+    bookmarkPromoteDestination() {
+        const pages = (this.dash.pages || []).filter((p) => Number(p.id) !== window.UnsortedPage?.PAGE_ID);
+        const current = Number(this.dash.currentPageId);
+        if (pages.some((p) => Number(p.id) === current)) return current;
+        return pages.length ? Number(pages[0].id) : undefined;
     }
 
     openBookmarkOnDashboard(b) {
@@ -24436,6 +24453,9 @@ class DashboardConfig {
                 break;
             case 'health-large':
                 void this.openBmHealthLarge?.(key);
+                break;
+            case 'promote':
+                void this.openBookmarkEditModal(key, { promote: true });
                 break;
             case 'rebuild-preview':
                 void this.rebuildBmPreview?.(bookmark);

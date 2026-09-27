@@ -6664,7 +6664,10 @@
     "inboxTabCollecting": "Collecting",
     "inboxTabList": "List",
     "inboxTabPanel": "Panel & clicks",
-    "inboxTabIcon": "Header icon"
+    "inboxTabIcon": "Header icon",
+    "promoteBookmark": "Promote bookmark",
+    "contextPromote": "Promote…",
+    "bmPromoteTitle": "Give it a page, as the Inbox promotes a link"
   },
   "colors": {
     "title": "theme customization",
