@@ -49,6 +49,25 @@ test.describe('bookmarks view: the band\'s actions', () => {
     expect(new Set(tops).size).toBe(1);
   });
 
+  test('under glass depth the card is glass, like every other modal', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await page.evaluate(() => { document.body.dataset.depth = 'glass'; });
+    await band(page).locator('[data-bm-work-through]').click();
+    const card = page.locator('.health-focus-overlay .health-focus-card');
+    await expect(card).toBeVisible();
+    const look = await card.evaluate((el) => {
+      const probe = document.createElement('div');
+      probe.style.background = 'var(--background-modal)';
+      document.body.appendChild(probe);
+      const modal = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      const cs = getComputedStyle(el);
+      return { bg: cs.backgroundColor, modal, filter: cs.backdropFilter || cs.webkitBackdropFilter };
+    });
+    expect(look.bg).toBe(look.modal);
+    expect(look.filter).toContain('blur');
+  });
+
   test('f starts it from the list', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
     await page.evaluate(() => document.activeElement?.blur?.());

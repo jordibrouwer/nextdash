@@ -330,7 +330,8 @@ html[data-theme] body[data-depth="glass"] :is(
 html[data-theme] body[data-depth="glass"] :is(
     .modal,
     .search-container,
-    .bookmark-form-modal-dialog
+    .bookmark-form-modal-dialog,
+    .health-focus-card
 ) {
     backdrop-filter: blur(var(--glass-blur-overlay)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
     -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
@@ -539,7 +540,8 @@ html[data-theme] body:not([data-depth="flat"]) .search-container {
     .lvs-filter,
     .health-view-item,
     .health-monitor-stat,
-    .modal
+    .modal,
+    .health-focus-card
     ) {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;

@@ -31,11 +31,13 @@
     max-height: 85vh;
     overflow-y: auto;
     padding: var(--space-5, 1.5rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-7, 0.75rem);
-    background: var(--background-secondary);
+    /* The modal's own surface (modal.css), so a theme's depth reaches it:
+       glass makes it glass, as it does every other modal. */
+    border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
+    border-radius: var(--layout-radius-md, 12px);
+    background: var(--background-modal);
     color: var(--text-primary);
-    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
     animation: health-focus-rise 0.16s ease-out;
 }
 
