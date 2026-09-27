@@ -1,7 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
 const { WRITE_TOKEN } = require('./e2e-helpers');
-const { openBookmarks } = require('./config-bookmarks-helpers');
+const { openBookmarks, sidePanel } = require('./config-bookmarks-helpers');
 
 /*
  * The bookmark list as a workbench: filters down the left, rows in the
@@ -38,16 +38,21 @@ test.describe('the bookmarks workbench', () => {
         await openBookmarks(page);
         const rail = page.locator('#config-bm-rail');
         const main = page.locator('#config-bm-workbench .config-bm-main');
-        const panel = page.locator('#config-bm-panel');
         await expect(rail).toBeVisible();
-        await expect(panel).toBeVisible();
         // The search field lives in the toolbar now, not the rail.
         await expect(main.locator('.config-bm-toolbar #config-bm-search')).toBeVisible();
+        // The panel is the side panel the view shares with the others: it
+        // opens on a row, at the right-hand edge, rather than standing as a
+        // third column.
+        await page.locator('#config-bm-list .config-bm-row .config-bm-title').first().click();
+        const panel = sidePanel(page);
+        await expect(panel).toBeVisible();
 
         const [r, m, p] = await Promise.all([rail, main, panel].map((l) => l.boundingBox()));
         expect(r && m && p, 'all three parts have a box').toBeTruthy();
         expect(r.x + r.width).toBeLessThanOrEqual(m.x + 1);
-        expect(m.x + m.width).toBeLessThanOrEqual(p.x + 1);
+        expect(p.x).toBeGreaterThan(m.x);
+        expect(p.x + p.width).toBeLessThanOrEqual(page.viewportSize().width);
 
         // Every group in full, in a narrow column: no scrollbar either way.
         const fit = await rail.evaluate((el) => ({

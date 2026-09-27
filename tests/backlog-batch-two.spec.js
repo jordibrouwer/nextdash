@@ -113,7 +113,10 @@ test.describe('the inbox can undo a read', () => {
         expect(menu.hasMethod).toBe(true);
     });
 
-    test('the fetched summary is shown on the row and carried into the export', async ({ page }) => {
+    // The summary left the row with the one-line rows (68520c39) and is shown in
+    // the side panel instead, which inbox-redesign.spec.js covers; what is left
+    // to hold here is the export.
+    test('the fetched summary is carried into the export', async ({ page }) => {
         await dashboard(page);
         // dashboard() waits for the pages to arrive, which is the dashboard
         // being ready to draw. The inbox is a separate module and lands on its
@@ -142,13 +145,13 @@ test.describe('the inbox can undo a read', () => {
             const card = await inbox.createItemElement(item);
             const payload = JSON.parse(JSON.stringify(item));
             return {
-                desc: card.querySelector('.inbox-item-desc')?.textContent || '',
+                drawn: Boolean(card?.querySelector),
                 // The export shape names it too — it carried title, note and
                 // tags and left the one line explaining the page in the file.
                 exported: Object.keys(payload).includes('previewDesc'),
             };
         });
-        expect(shown.desc).toContain('the summary the server fetched');
+        expect(shown.drawn).toBe(true);
         expect(shown.exported).toBe(true);
     });
 });
