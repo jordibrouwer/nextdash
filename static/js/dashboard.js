@@ -579,7 +579,7 @@ class Dashboard {
      * every way that led there -- Shift+U, #unsorted, the widget, the Keep
      * notice -- comes here.
      */
-    async openUnsortedBookmarks({ replace = false } = {}) {
+    async openUnsortedBookmarks({ replace = false, url = '' } = {}) {
         const target = '#bookmarks?filter=unsorted';
         if (window.location.hash !== target) {
             if (replace) {
@@ -590,9 +590,19 @@ class Dashboard {
         }
         if (this.activeView === 'library') {
             this.config?.instance?.applyLibraryHash?.(target);
-            return true;
+        } else {
+            await this.config?.openLibraryView?.();
         }
-        return this.config?.openLibraryView?.();
+        // One bookmark asked for (the Unsorted widget's rows): its side panel.
+        const wanted = String(url || '').trim();
+        const config = this.config?.instance;
+        const bookmark = wanted
+            ? (this.unsortedBookmarks || []).find((b) => String(b?.url || '').trim() === wanted)
+            : null;
+        if (bookmark && config?.focusWorkbenchPanel) {
+            config.focusWorkbenchPanel(config.bookmarkKey(bookmark));
+        }
+        return true;
     }
 
     showNotification(message, type = 'error', { undoCallback = null, duration = 5000, onAction = null, actionLabel = null, durationMs = null } = {}) {

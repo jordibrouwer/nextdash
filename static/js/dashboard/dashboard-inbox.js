@@ -306,7 +306,6 @@ class DashboardInbox {
             }
         }
         this.clearChecked();
-        d._widgetUnsorted = null;
         await d.loadAllBookmarks?.();
         this.syncBadge();
         this.bumpKeptCounters();
@@ -358,7 +357,6 @@ class DashboardInbox {
                 // Counted below; the link is still kept.
             }
         }
-        d._widgetUnsorted = null;
         await d.loadAllBookmarks?.();
         this.syncBadge();
         if (this.isActiveView()) await this.loadAndRender({ refresh: true });
@@ -5248,10 +5246,6 @@ class DashboardInbox {
             // below: on a large collection those take long enough that a
             // flight starting at the end reads as the click not having worked.
             this.startKeepFlight(flightFrom);
-            // The Unsorted widget holds what /api/unsorted last answered for
-            // the life of the tab; a link kept from here is exactly what makes
-            // that answer wrong.
-            d._widgetUnsorted = null;
             // Keep is the one action that adds to the kept page, and nothing
             // else on this path reloads the bookmarks: Bookmarks → Unsorted
             // would not have it until the next reload.
@@ -5446,8 +5440,7 @@ class DashboardInbox {
                     body: JSON.stringify({ page: pageId, bookmark: { url: item.url } }),
                 });
             }
-            d._widgetUnsorted = null;
-            await d.loadAllBookmarks?.();
+                await d.loadAllBookmarks?.();
             this.syncBadge();
             if (this.isActiveView()) await this.loadAndRender({ refresh: true });
         } catch {

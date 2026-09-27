@@ -24,6 +24,7 @@ test('Unsorted widget lists kept bookmarks, most recent first', async ({ page })
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ page: 999999, bookmark: { name: 'Newer kept', url: 'https://newer-kept.example', category: '', createdAt: 2000 } }),
         });
+        await window.dashboardInstance.loadAllBookmarks();
     });
 
     const text = await page.evaluate(async () => {
@@ -36,7 +37,6 @@ test('Unsorted widget lists kept bookmarks, most recent first', async ({ page })
         document.body.appendChild(host);
 
         const d = window.dashboardInstance;
-        d._widgetUnsorted = null;
         await window.DashboardWidgets.unsorted(body, { id: 'probe', type: 'unsorted', config: {} }, d);
         return body.textContent.replace(/\s+/g, ' ').trim();
     });
@@ -47,12 +47,11 @@ test('Unsorted widget lists kept bookmarks, most recent first', async ({ page })
 });
 
 /**
- * The widget held what /api/unsorted answered the first time it drew, for the
- * life of the tab, and nothing ever let that copy go: keep a link from the
- * inbox, come back to the dashboard, and the widget still showed the list from
- * before. Every bookmark mutation clears it now, so the next draw asks again.
+ * The tile is Bookmarks → Unsorted in small: it reads the same list, so a link
+ * promoted or deleted there is gone from it, and one kept is on it, as soon as
+ * the bookmarks are loaded again -- which every write does.
  */
-test('the widget picks up a bookmark kept after it first drew', async ({ page }) => {
+test('the widget follows the unsorted bookmarks, kept or taken away', async ({ page }) => {
     await openDashboard(page);
 
     const draw = () => page.evaluate(async () => {
@@ -63,29 +62,59 @@ test('the widget picks up a bookmark kept after it first drew', async ({ page })
         body.className = 'dashboard-widget-body';
         host.appendChild(body);
         document.body.appendChild(host);
-        await window.DashboardWidgets.unsorted(body, { id: 'probe', type: 'unsorted', config: {} },
+        await window.DashboardWidgets.unsorted(body, { id: 'probe', type: 'unsorted', config: { rows: 20 } },
             window.dashboardInstance);
         return body.textContent.replace(/\s+/g, ' ').trim();
     });
 
-    // Drawn once, so the widget is holding an answer.
     await draw();
-
     const name = `Kept after draw ${Date.now()}`;
-    await page.evaluate(async (bookmarkName) => {
+    const url = `https://kept-after-draw-${Date.now()}.example/`;
+    await page.evaluate(async ({ n, u }) => {
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         await api('/api/bookmarks/add', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                page: 999999,
-                bookmark: { name: bookmarkName, url: `https://kept-after-draw-${Date.now()}.example`, category: '' },
-            }),
+            body: JSON.stringify({ page: 999999, bookmark: { name: n, url: u, category: '' } }),
         });
-        // The repaint every add, edit, move and delete goes through.
-        window.dashboardInstance.data.repaintBookmarkMutationSurfaces();
-    }, name);
-
+        await window.dashboardInstance.loadAllBookmarks();
+    }, { n: name, u: url });
     await expect.poll(draw, { timeout: 10_000 }).toContain(name);
+
+    await page.evaluate(async (u) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/bookmarks', {
+            method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: 999999, bookmark: { url: u } }),
+        });
+        await window.dashboardInstance.loadAllBookmarks();
+    }, url);
+    await expect.poll(draw, { timeout: 10_000 }).not.toContain(name);
+});
+
+test('a row opens the Bookmarks view on Unsorted, with that bookmark in the side panel', async ({ page }) => {
+    await openDashboard(page);
+    const stamp = Date.now();
+    const name = `Widget open ${stamp}`;
+    await seedKept(page, [{ name, url: `https://widget-open-${stamp}.example/`, createdAt: Date.now() }]);
+    await page.evaluate(async () => {
+        document.querySelectorAll('.unsorted-probe').forEach((n) => n.remove());
+        const host = document.createElement('div');
+        host.className = 'dashboard-widget unsorted-probe';
+        const body = document.createElement('div');
+        body.className = 'dashboard-widget-body';
+        host.appendChild(body);
+        document.body.appendChild(host);
+        await window.DashboardWidgets.unsorted(body, { id: 'probe', type: 'unsorted', config: { rows: 20 } },
+            window.dashboardInstance);
+    });
+    await page.locator('.unsorted-probe .dashboard-widget-row', { hasText: name }).click();
+
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('library');
+    await expect(page).toHaveURL(/#bookmarks\?filter=unsorted$/);
+    const panel = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('.config-bm-panel-title')).toHaveText(name);
+    await expect(panel.locator('[data-bm-panel-action="promote"]')).toBeVisible();
 });
 
 /*
@@ -104,6 +133,7 @@ async function seedKept(page, rows) {
                 body: JSON.stringify({ page: 999999, bookmark: { category: '', ...bookmark } }),
             });
         }
+        await window.dashboardInstance.loadAllBookmarks();
     }, rows);
 }
 
@@ -118,7 +148,6 @@ function drawWidget(page, config) {
         document.body.appendChild(host);
 
         const d = window.dashboardInstance;
-        d._widgetUnsorted = null;
         await window.DashboardWidgets.unsorted(body, { id: 'probe', type: 'unsorted', config: widgetConfig }, d);
         return {
             sort: body.querySelector('.dashboard-widget-kept-sort')?.textContent?.trim() || '',
