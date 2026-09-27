@@ -1800,11 +1800,57 @@
                 <span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned
                     ? `<span aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}</span>
                 <span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>
+                ${this.standalone ? this.workbenchSparkCell(b) : ''}
                 <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>
                 <span class="config-bm-last" role="gridcell">${esc(last.label)}</span>
+                ${this.standalone ? this.workbenchAddedCell(b) : ''}
                 <span class="config-bm-row-score" role="gridcell">${score == null ? ''
                     : `<span class="config-bm-score" data-tone="${scoreTone(score)}">${esc(String(score))}</span>`}</span>
             </div>`;
+    },
+
+    /**
+     * The last 30 days of opens, two days to a bar, the newest on the right.
+     * From the open log the server keeps (Bookmark.openLog); the Usage tab
+     * draws the long view, this is the glance.
+     */
+    workbenchSparkCell(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const BARS = 15;
+        const SPAN = 2 * 86400000;
+        const now = Date.now();
+        const counts = new Array(BARS).fill(0);
+        (Array.isArray(b.openLog) ? b.openLog : []).forEach((raw) => {
+            const age = now - Number(raw);
+            if (!(age >= 0) || age >= BARS * SPAN) return;
+            counts[BARS - 1 - Math.floor(age / SPAN)] += 1;
+        });
+        const total = counts.reduce((a, n) => a + n, 0);
+        const title = total
+            ? this.t('config.bmSparkTitle', '{n} opens in the last 30 days').replace('{n}', String(total))
+            : this.t('config.bmSparkNone', 'No opens in the last 30 days');
+        const max = Math.max(1, ...counts);
+        const w = 3;
+        const gap = 1;
+        const h = 14;
+        const bars = counts.map((n, i) => {
+            const bh = n ? Math.max(2, Math.round((n / max) * h)) : 1;
+            return `<rect data-count="${n}" x="${i * (w + gap)}" y="${h - bh}" width="${w}" height="${bh}" rx="0.5"${n ? '' : ' class="is-empty"'}></rect>`;
+        }).join('');
+        return `<span class="config-bm-spark" role="gridcell" title="${esc(title)}">
+            <svg viewBox="0 0 ${BARS * (w + gap) - gap} ${h}" width="${BARS * (w + gap) - gap}" height="${h}" aria-hidden="true">${bars}</svg></span>`;
+    },
+
+    /** When it was added: day and month this year, month and year before. */
+    workbenchAddedCell(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const at = Number(b.createdAt || 0);
+        if (!(at > 0)) return '<span class="config-bm-added" role="gridcell">—</span>';
+        const date = new Date(at);
+        const thisYear = date.getFullYear() === new Date().getFullYear();
+        const label = date.toLocaleDateString(undefined, thisYear ? { month: 'short', day: 'numeric' } : { month: 'short', year: 'numeric' });
+        const full = date.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+        return `<span class="config-bm-added" role="gridcell" title="${esc(this.t('config.bmAddedTitle', 'Added {date}').replace('{date}', full))}">${esc(label)}</span>`;
     },
 
     /**
