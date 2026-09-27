@@ -127,6 +127,40 @@ test('it fits a laptop screen without scrolling, every card in view', async ({ p
   expect(m.sh).toBeLessThanOrEqual(m.ch + 1);
 });
 
+/*
+ * A smaller window: the cards step down (tighter, more columns, smaller type)
+ * until they fit, rather than the modal growing a scrollbar.
+ */
+for (const [width, height] of [[1100, 640], [1280, 640]]) {
+  test(`at ${width}x${height} it still fits without scrolling`, async ({ page }) => {
+    await openBookmarksWithHealth(
+      page,
+      (issues) => issues.map((issue, i) => (i === 0 ? { ...issue, monitor: true } : issue)),
+      {
+        view: 'library',
+        report: (issues) => ({
+          summary: fullSummary(issues),
+          fleet: {
+            monitors: 1,
+            uptime24h: { ratio: 1, samples: 10 },
+            uptime7d: { ratio: 1, samples: 50 },
+            uptime30d: { ratio: 1, samples: 200 },
+            downNow: 0,
+            avgResponseMs: 120,
+            worst: [],
+            incidents: [],
+          },
+        }),
+      },
+    );
+    await page.setViewportSize({ width, height });
+    await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
+    const body = page.locator('#app-modal.show .modal-body');
+    await expect(body.locator('[data-bm-health-modal-card="monitors"]')).toBeVisible();
+    await expect.poll(() => body.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
+  });
+}
+
 test('+N pages opens the rest of the pages in the card, and folds them again', async ({ page }) => {
   await openBookmarksWithHealth(
     page,

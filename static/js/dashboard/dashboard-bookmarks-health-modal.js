@@ -45,6 +45,36 @@
                 modalMaxWidth: 'min(82rem, calc(100vw - 2.5rem))',
             });
             this.bindBmHealthModal();
+            this.fitBmHealthModal();
+        },
+
+        /**
+         * One screen, no scrollbar: on a window too small for the cards as
+         * drawn, step down through tighter spacing, more and narrower columns
+         * and smaller type until they fit -- measured, because what fits
+         * depends on the collection as much as on the window. Kept fitted
+         * while the window is resized.
+         */
+        fitBmHealthModal() {
+            const body = document.querySelector('#app-modal.show .modal-body');
+            const grid = body?.querySelector('.bm-health-modal-grid');
+            if (!body || !grid) return;
+            const TIERS = ['is-snug', 'is-snugger', 'is-smallest'];
+            const fits = () => body.scrollHeight <= body.clientHeight + 1;
+            grid.classList.remove(...TIERS);
+            for (const tier of TIERS) {
+                if (fits()) break;
+                grid.classList.add(tier);
+            }
+            if (!this._bmHealthModalResize) {
+                let frame = 0;
+                this._bmHealthModalResize = () => {
+                    if (!document.querySelector('#app-modal.show .bm-health-modal-grid')) return;
+                    cancelAnimationFrame(frame);
+                    frame = requestAnimationFrame(() => this.fitBmHealthModal());
+                };
+                global.addEventListener('resize', this._bmHealthModalResize);
+            }
         },
 
         /* ── Assembling the body ─────────────────────────────────────────── */

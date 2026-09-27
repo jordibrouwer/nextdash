@@ -1409,6 +1409,44 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
     }
 }
 
+/* Three steps down, taken one at a time until the cards fit the window
+   without a scrollbar (fitBmHealthModal): tighter spacing, then more and
+   narrower columns, then smaller type. */
+.bm-health-modal-grid.is-snug {
+    column-gap: var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-grid.is-snug .bm-health-modal-card {
+    margin-bottom: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-grid.is-snug .bm-health-modal-card-title {
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.bm-health-modal-grid.is-snug .bm-health-modal-bars,
+.bm-health-modal-grid.is-snug .bm-health-modal-pages {
+    gap: 0;
+}
+
+.bm-health-modal-grid.is-snugger {
+    columns: 5 12rem;
+}
+
+.bm-health-modal-grid.is-snugger .bm-health-modal-score-big {
+    font-size: 1.6rem;
+}
+
+.bm-health-modal-grid.is-smallest {
+    font-size: 0.9em;
+}
+
+.bm-health-modal-grid.is-smallest .bm-health-modal-bar-row,
+.bm-health-modal-grid.is-smallest .bm-health-modal-page-row {
+    font-size: var(--text-2xs, 0.7rem);
+}
+
 /* ── The panel's tabs (Details, Health, Usage) ───────────────────────── */
 
 .config-bm-panel-where {
