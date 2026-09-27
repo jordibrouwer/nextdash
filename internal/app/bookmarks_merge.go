@@ -1,6 +1,9 @@
 package app
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 // mergeBookmarkMetadata folds duplicate bookmark rows into keeper (in place).
 // Keeper identity fields (name, URL, category) stay unless empty on keeper.
@@ -14,6 +17,9 @@ func mergeBookmarkMetadata(keeper *Bookmark, sources []Bookmark) {
 
 func mergeOneBookmarkIntoKeeper(keeper *Bookmark, src Bookmark) {
 	keeper.OpenCount += src.OpenCount
+	if len(src.OpenLog) > 0 {
+		keeper.OpenLog = pruneOpenLog(append(append([]int64{}, keeper.OpenLog...), src.OpenLog...), time.Now().UnixMilli())
+	}
 
 	if src.Pinned {
 		keeper.Pinned = true

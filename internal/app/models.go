@@ -40,11 +40,14 @@ type Bookmark struct {
 	// monitor or by opening a bookmark: LastChecked and LastOpened already carry
 	// those, and letting them bump this would leave every monitored bookmark
 	// permanently reading "changed a minute ago". See bookmarkContentFingerprint.
-	UpdatedAt    int64    `json:"updatedAt,omitempty"`
-	LastOpened   int64    `json:"lastOpened,omitempty"`
-	LastChecked  int64    `json:"lastChecked,omitempty"`
-	LastError    string   `json:"lastError,omitempty"`
-	OpenCount    int      `json:"openCount,omitempty"`    // Analytics: track opens
+	UpdatedAt   int64  `json:"updatedAt,omitempty"`
+	LastOpened  int64  `json:"lastOpened,omitempty"`
+	LastChecked int64  `json:"lastChecked,omitempty"`
+	LastError   string `json:"lastError,omitempty"`
+	OpenCount   int    `json:"openCount,omitempty"` // Analytics: track opens
+	// OpenLog holds when the recent opens happened (unix ms, oldest first),
+	// for the Usage tab; bounded by pruneOpenLog.
+	OpenLog      []int64  `json:"openLog,omitempty"`
 	PreviewTitle string   `json:"previewTitle,omitempty"` // Preview metadata
 	PreviewDesc  string   `json:"previewDesc,omitempty"`  // Preview description
 	PreviewImage string   `json:"previewImage,omitempty"` // Preview image URL
@@ -2139,8 +2142,11 @@ func (fs *FileStore) TrackBookmarkOpen(pageID int, index int) error {
 		return ErrBookmarkNotFound
 	}
 
-	pageWithBookmarks.Bookmarks[index].OpenCount++
-	pageWithBookmarks.Bookmarks[index].LastOpened = time.Now().UnixMilli()
+	now := time.Now().UnixMilli()
+	opened := &pageWithBookmarks.Bookmarks[index]
+	opened.OpenCount++
+	opened.LastOpened = now
+	opened.OpenLog = pruneOpenLog(append(opened.OpenLog, now), now)
 
 	return fs.writePageWithBookmarksLocked(pageID, pageWithBookmarks)
 }

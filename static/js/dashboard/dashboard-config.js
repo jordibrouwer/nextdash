@@ -22659,6 +22659,7 @@ class DashboardConfig {
             && window.DashboardConfigWorkbenchReady === true
             && window.DashboardConfigBookmarksHealthReady === true
             && window.DashboardBookmarksHealthModalReady === true
+            && window.DashboardConfigBookmarksUsageReady === true
             && Boolean(window.BookmarkWorkbenchModel);
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
@@ -22676,6 +22677,9 @@ class DashboardConfig {
             // The collection health modal, on top of Health's join.
             .then(() => load('js/dashboard/dashboard-bookmarks-health-modal.js',
                 'dashboardBookmarksHealthModal', () => window.DashboardBookmarksHealthModalReady === true))
+            // The panel's Usage tab.
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-usage.js',
+                'dashboardConfigBookmarksUsage', () => window.DashboardConfigBookmarksUsageReady === true))
             .then(() => {
                 const waiting = this._bookmarksAwaitingRenderers === true;
                 this._bookmarksAwaitingRenderers = false;

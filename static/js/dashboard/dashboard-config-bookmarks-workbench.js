@@ -483,7 +483,6 @@
         };
         const pane = (name, body) => `<section class="config-bm-pane" role="tabpanel" data-bm-pane="${name}"${name === tab ? '' : ' hidden'}>${body}</section>`;
         const monitor = this.renderBmMonitorSection?.(b) || '';
-        const created = Number(b.createdAt) > 0 ? new Date(Number(b.createdAt)).toLocaleDateString() : '—';
         return `
             <header class="config-bm-panel-head config-bm-panel-head--single">
                 <div class="config-bm-panel-heading">
@@ -544,12 +543,7 @@
                     ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}`}</div></div>
                 ${monitor ? `<h4 class="config-bm-pane-sub">${esc(this.t('config.bmSectionMonitor', 'Monitor & history'))}</h4>
                 <div data-bm-section="monitor"><div class="lvs-drawer-section-body">${monitor}</div></div>` : ''}`)}
-            ${pane('usage', `
-                <div class="config-bm-usage-tiles">
-                    <div><b>${esc(String(Number(b.openCount || 0)))}</b>${esc(this.t('config.bmUsageOpens', 'opens'))}</div>
-                    <div><b>${esc(fmt(b.lastOpened).label)}</b>${esc(this.t('config.bookmarkStatLastOpened', 'Last opened').toLowerCase())}</div>
-                    <div><b>${esc(created)}</b>${esc(this.t('config.bmUsageAdded', 'added'))}</div>
-                </div>
+            ${pane('usage', this.renderBmUsage?.(b) || `
                 <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>`)}`;
     },
 
@@ -1053,6 +1047,13 @@
         panel.addEventListener('click', (e) => {
             if (e.target.closest('[data-bm-panel-toggle]')) {
                 this.toggleWorkbenchPanel();
+                return;
+            }
+            const usageShow = e.target.closest('[data-bm-usage-show]');
+            if (usageShow) {
+                // "Show the ones never opened": the rail's own view for them.
+                const view = usageShow.getAttribute('data-bm-usage-show');
+                if (this.bmCleanupFilter !== view) this.toggleRailFilter('cleanup', view);
                 return;
             }
             const tabBtn = e.target.closest('[data-bm-tab-panel]');

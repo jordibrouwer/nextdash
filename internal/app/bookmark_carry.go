@@ -35,6 +35,9 @@ func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 		if next[i].LastOpened == 0 {
 			next[i].LastOpened = previous.LastOpened
 		}
+		if len(next[i].OpenLog) == 0 {
+			next[i].OpenLog = previous.OpenLog
+		}
 		if next[i].CreatedAt == 0 {
 			next[i].CreatedAt = previous.CreatedAt
 		}

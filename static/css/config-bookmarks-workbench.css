@@ -1652,3 +1652,83 @@ html body .config-bm-more-menu .config-btn {
     overflow-wrap: anywhere;
     word-break: break-all;
 }
+
+/* ── Usage tab ────────────────────────────────────────────────────────── */
+
+.config-bm-usage-kv {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-usage-kv > span:first-child {
+    color: var(--text-secondary);
+}
+
+.config-bm-usage-kv > span:last-child {
+    text-align: right;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Added, edited and opened as marks on one line from "added" to now. */
+.config-bm-usage-life {
+    position: relative;
+    height: 18px;
+}
+
+.config-bm-usage-life > span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 7px;
+    height: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+.config-bm-usage-life > i {
+    position: absolute;
+    top: 1px;
+    width: 3px;
+    height: 16px;
+    margin-left: -1px;
+    border-radius: 2px;
+}
+
+.config-bm-usage-life .is-added { background: var(--text-secondary); }
+.config-bm-usage-life .is-edited { background: var(--accent-warning); }
+.config-bm-usage-life .is-opened { background: var(--accent-primary); }
+
+/* The collection's opens, most opened first; this bookmark's slice marked. */
+.config-bm-usage-rank {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 46px;
+}
+
+.config-bm-usage-rank > b {
+    flex: 1;
+    border-radius: 1px 1px 0 0;
+    background: color-mix(in srgb, var(--text-primary) 18%, transparent);
+}
+
+.config-bm-usage-rank > b.is-me {
+    background: var(--accent-primary);
+}
+
+.config-bm-usage-weeks line {
+    stroke: color-mix(in srgb, var(--text-primary) 20%, transparent);
+}
+
+.config-bm-usage-weeks rect {
+    fill: var(--accent-primary);
+}
+
+.config-bm-usage-weeks text {
+    fill: var(--text-secondary);
+    font-size: 9.5px;
+    font-family: inherit;
+}
