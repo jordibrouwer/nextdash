@@ -30,10 +30,10 @@ async function open(page, values) {
 
 const drawer = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="inbox"] .lvs-drawer');
 
-async function openConfigInbox(page) {
+async function openConfigInbox(page, tab = '') {
     await page.setViewportSize({ width: 1400, height: 900 });
     await markWhatsNewSeen(page);
-    await page.goto('/#config/inbox');
+    await page.goto(`/#config/inbox${tab ? `/${tab}` : ''}`);
     await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
@@ -46,10 +46,54 @@ test.describe('Config → Inbox', () => {
         const order = await page.locator('.config-nav-item').evaluateAll((els) => els.map((el) => el.getAttribute('data-config-section')));
         expect(order.indexOf('inbox')).toBe(order.indexOf('bookmarks') + 1);
         expect(order.indexOf('structure')).toBe(order.indexOf('inbox') + 1);
-        for (const field of ['inboxEnabled', 'inboxShowInPageTabs', 'pasteDestination', 'inboxDeleteAfterPromote',
-            'inboxViewFilter', 'inboxViewSort', 'inboxViewAddress', 'inboxViewRail', 'inboxViewClick', 'inboxViewBadge', 'inboxViewKeyLegend']) {
-            await expect(page.locator(`#config-inbox-body [data-behavior-field="${field}"]`)).toHaveCount(1);
+        const tabs = await page.locator('[data-inbox-tab]').evaluateAll((els) => els.map((el) => el.getAttribute('data-inbox-tab')));
+        expect(tabs).toEqual(['collecting', 'list', 'panel', 'icon']);
+        const onTab = {
+            collecting: ['inboxEnabled', 'inboxShowInPageTabs', 'pasteDestination', 'inboxDeleteAfterPromote'],
+            list: ['inboxViewFilter', 'inboxViewSort', 'inboxViewAddress', 'inboxViewKeyLegend'],
+            panel: ['inboxViewRail', 'inboxViewPanelWidth', 'inboxViewClick', 'inboxViewDblClick'],
+            icon: ['inboxViewBadge', 'inboxViewBadgeCounts'],
+        };
+        for (const [tab, fields] of Object.entries(onTab)) {
+            await page.locator(`[data-inbox-tab="${tab}"]`).click();
+            await expect(page.locator(`[data-inbox-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
+            await expect(page).toHaveURL(new RegExp(`#config/inbox/${tab}$`));
+            for (const field of fields) {
+                await expect(page.locator(`#config-inbox-body [data-behavior-field="${field}"]`)).toHaveCount(1);
+            }
+            // Nothing from another tab.
+            const others = Object.entries(onTab).filter(([t]) => t !== tab).flatMap(([, f]) => f);
+            for (const field of others) {
+                await expect(page.locator(`#config-inbox-body [data-behavior-field="${field}"]`)).toHaveCount(0);
+            }
         }
+    });
+
+    test('the preview stands over the list and the panel only, and the tab is remembered', async ({ page }) => {
+        await openConfigInbox(page);
+        await expect(page.locator('[data-inbox-tab="collecting"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('[data-inbox-view-preview]')).toHaveCount(0);
+        await page.locator('[data-inbox-tab="panel"]').click();
+        await expect(page.locator('[data-inbox-view-preview]')).toHaveCount(1);
+        await page.locator('[data-inbox-tab="icon"]').click();
+        await expect(page.locator('[data-inbox-view-preview]')).toHaveCount(0);
+        // A fresh load past the five-minute config location: the tab comes
+        // from this browser's remembered tab alone.
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.goto('about:blank');
+        await page.goto('/#config/inbox');
+        await page.waitForSelector('[data-inbox-tab]', { timeout: 15_000 });
+        await expect(page.locator('[data-inbox-tab="icon"]')).toHaveAttribute('aria-selected', 'true');
+    });
+
+    test('the filter names the tab a setting is on', async ({ page }) => {
+        await openConfigInbox(page);
+        await page.locator('[data-settings-filter]').fill('double click');
+        const elsewhere = page.locator('[data-filter-elsewhere="panel"]');
+        await expect(elsewhere).toBeVisible();
+        await elsewhere.click();
+        await expect(page.locator('[data-inbox-tab="panel"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('#config-inbox-body [data-behavior-field="inboxViewDblClick"]')).toBeVisible();
     });
 
     test('Behavior keeps Fresh alone, and the old address still opens it', async ({ page }) => {
@@ -64,7 +108,7 @@ test.describe('Config → Inbox', () => {
 
     test('the preview shows two rows and follows a change', async ({ page }) => {
         await withSettings(page, {});
-        await openConfigInbox(page);
+        await openConfigInbox(page, 'list');
         const rows = page.locator('[data-inbox-view-preview] .inbox-item');
         await expect(rows).toHaveCount(2);
         await expect(rows.first().locator('.inbox-item-domain')).toHaveCount(1);

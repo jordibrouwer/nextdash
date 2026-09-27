@@ -31,25 +31,63 @@
 
     renderInboxSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const tabs = global.DashboardConfig.INBOX_TABS.map((tab) => {
+            const active = tab === this.inboxTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-inbox-body" data-inbox-tab="${esc(tab)}">${esc(this.inboxTabLabel(tab))}</button>`;
+        }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.inboxIntro',
                 'What lands in the inbox, and how the Inbox view looks. Every change applies immediately and is saved.'))}</p>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
             <div class="config-tabpage">
-                <div class="config-tabpage-main config-inbox-section" id="config-inbox-body">
-                    ${this.renderInboxBody()}
+                <div class="config-tabpage-main">
+                    <div class="config-inbox-section" id="config-inbox-body" role="tabpanel" tabindex="0">
+                        ${this.renderInboxBody()}
+                    </div>
+                    <div data-filter-elsewhere-host>${this.renderFilterElsewhere('inbox')}</div>
                 </div>
             </div>
         `;
     },
 
+    inboxTabLabel(tab) {
+        const map = {
+            collecting: ['config.inboxTabCollecting', 'Collecting'],
+            list: ['config.inboxTabList', 'List'],
+            panel: ['config.inboxTabPanel', 'Panel & clicks'],
+            icon: ['config.inboxTabIcon', 'Header icon'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    },
+
+    /**
+     * One tab's panels. The preview stands above the two tabs whose settings
+     * it shows -- the rows and the side panel -- and not above what is
+     * collected or the header icon, which it has nothing to say about.
+     */
     renderInboxBody() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const tab = this.inboxTab;
+        const withPreview = (tab === 'list' || tab === 'panel') && !this.changedOnly
+            && !String(this.settingsFilter || '').trim();
         return `
             <div class="config-bm-view-bar">
                 <a class="config-btn config-btn--small" href="#inbox" data-inbox-open-view>${esc(this.t('config.inboxOpenView', 'Open the Inbox'))} ↗</a>
             </div>
-            ${this.renderInboxViewPreview()}
-            ${this.renderControlPanels(this.panelsFor('inbox', 'general'), 'behavior')}`;
+            ${withPreview ? this.renderInboxViewPreview() : ''}
+            ${this.renderControlPanels(this.panelsFor('inbox', tab), 'behavior')}`;
+    },
+
+    /** Redraw the body for the tab now chosen, the strip left as it is. */
+    repaintInboxBody() {
+        const body = document.getElementById('config-inbox-body');
+        if (!body) return;
+        body.innerHTML = this.renderInboxBody();
+        this.bindControlPanels(body, 'behavior');
+        this.bindInboxSection(body);
+        this.labelSettingsControls?.();
+        this.repaintFilterElsewhere('inbox');
     },
 
     /**
@@ -72,6 +110,18 @@
 
     bindInboxSection(root) {
         const scope = root || document;
+        // The strip is outside the body: bound when the whole section is, not
+        // again on every repaint of the body.
+        if (scope.querySelector('[data-inbox-tab]')) {
+            this.bindSubTabStrip(scope, 'data-inbox-tab', (tab) => {
+                if (tab === this.inboxTab) return;
+                this.inboxTab = tab;
+                this.restoreConfigHash();
+                this.repaintInboxBody();
+                this.syncSubTabStrip('data-inbox-tab', this.inboxTab);
+            });
+            this.bindFilterElsewhere?.(scope);
+        }
         scope.querySelector('[data-inbox-open-view]')?.addEventListener('click', (e) => {
             if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
             e.preventDefault();

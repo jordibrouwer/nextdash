@@ -6656,7 +6656,11 @@
     "bmLargeLogMaint": "maintenance",
     "bmLargeLogMore": "The newest {shown} of {n}; the export has them all.",
     "bmLargeLogCount": "{n} checks",
-    "bmLargeLogNone": "No checks match."
+    "bmLargeLogNone": "No checks match.",
+    "inboxTabCollecting": "Collecting",
+    "inboxTabList": "List",
+    "inboxTabPanel": "Panel & clicks",
+    "inboxTabIcon": "Header icon"
   },
   "colors": {
     "title": "theme customization",

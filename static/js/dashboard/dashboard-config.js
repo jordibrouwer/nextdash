@@ -186,6 +186,8 @@ class DashboardConfig {
         this._finders = null;
         // Behavior sub-tab, remembered the same way.
         this._behaviorTab = DashboardConfig.readRememberedTab('behavior') || 'general';
+        // Inbox sub-tab, remembered the same way.
+        this._inboxTab = DashboardConfig.readRememberedTab('inbox') || 'collecting';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -485,6 +487,7 @@ class DashboardConfig {
             // here has a tab that cannot be addressed, so the strip works and
             // the address bar never follows it.
             widgets: DashboardConfig.WIDGETS_TABS,
+            inbox: DashboardConfig.INBOX_TABS,
         };
     }
 
@@ -514,7 +517,7 @@ class DashboardConfig {
         try {
             const stored = JSON.parse(localStorage.getItem(DashboardConfig.REMEMBERED_TAB_KEY) || '{}');
             const tab = stored?.[section];
-            const tabs = section === 'appearance' ? DashboardConfig.APPEARANCE_TABS : DashboardConfig.BEHAVIOR_TABS;
+            const tabs = DashboardConfig.SUB_TABS[section] || [];
             return typeof tab === 'string' && tabs.includes(tab) ? tab : null;
         } catch {
             return null;
@@ -541,6 +544,7 @@ class DashboardConfig {
         logs: 'logsTab',
         bookmarks: 'bmTab',
         widgets: 'widgetsTab',
+        inbox: 'inboxTab',
     };
 
     /**
@@ -559,6 +563,7 @@ class DashboardConfig {
         'data-logs-tab': 'logs',
         'data-bm-tab': 'bookmarks',
         'data-widgets-tab': 'widgets',
+        'data-inbox-tab': 'inbox',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -572,6 +577,7 @@ class DashboardConfig {
         logs: 'data-logs-tab',
         bookmarks: 'data-bm-tab',
         widgets: 'data-widgets-tab',
+        inbox: 'data-inbox-tab',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -700,7 +706,7 @@ class DashboardConfig {
         // Appearance and Behavior open on the tab last looked at, so a bare
         // link to them lands differently for everyone: their first tab is
         // named too, or the address bar would not be a link to what is shown.
-        const remembers = section === 'appearance' || section === 'behavior';
+        const remembers = section === 'appearance' || section === 'behavior' || section === 'inbox';
         if (tab && tabs && tabs.includes(tab) && (tab !== tabs[0] || remembers)) {
             return `config/${section}/${tab}`;
         }
@@ -1694,6 +1700,14 @@ class DashboardConfig {
                 }
                 break;
             }
+            case 'inbox': {
+                if (!document.getElementById('config-inbox-body')) {
+                    this.render();
+                    break;
+                }
+                this.repaintInboxBody?.();
+                break;
+            }
             case 'widgets':
                 this.repaintWidgetsBody();
                 break;
@@ -1980,7 +1994,7 @@ class DashboardConfig {
             return { section: 'bookmarks', tab: 'view' };
         }
         if (this.section === 'inbox') {
-            return { section: 'inbox', tab: 'general' };
+            return { section: 'inbox', tab: this.inboxTab };
         }
         return null;
     }
@@ -3146,6 +3160,7 @@ class DashboardConfig {
             case 'bookmarks': return this.bmTabLabel(tab);
             case 'help': return this.helpTabLabel(tab);
             case 'logs': return this.logsTabLabel(tab);
+            case 'inbox': return this.inboxTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -13026,7 +13041,7 @@ class DashboardConfig {
             },
             {
                 section: 'inbox',
-                tab: 'general',
+                tab: 'collecting',
                 title: t('config.inboxGroupCollecting', 'Collecting'),
                 note: t('config.generalGroupQuickAddNote', 'What happens when you paste a URL onto the dashboard — add it straight away, or collect it in the inbox to sort later.'),
                 controls: [
@@ -13052,7 +13067,7 @@ class DashboardConfig {
             // Bookmarks → View does it for the Bookmarks view.
             {
                 section: 'inbox',
-                tab: 'general',
+                tab: 'list',
                 title: t('config.bmViewGroupList', 'The list'),
                 controls: [
                     { field: 'inboxViewFilter', type: 'select', label: t('config.inboxViewFilterLabel', 'Opens on'), options: [
@@ -13079,7 +13094,7 @@ class DashboardConfig {
             },
             {
                 section: 'inbox',
-                tab: 'general',
+                tab: 'panel',
                 title: t('config.inboxGroupRailPanel', 'Rail and side panel'),
                 controls: [
                     { field: 'inboxViewRail', type: 'select', label: t('config.bmViewRailLabel', 'The rail on the left'), options: [
@@ -13095,7 +13110,7 @@ class DashboardConfig {
             },
             {
                 section: 'inbox',
-                tab: 'general',
+                tab: 'panel',
                 title: t('config.bmViewGroupClicks', 'Clicking'),
                 controls: [
                     { field: 'inboxViewClick', type: 'select', label: t('config.bmViewClickLabel', 'A click on a row'), options: [
@@ -13110,7 +13125,7 @@ class DashboardConfig {
             },
             {
                 section: 'inbox',
-                tab: 'general',
+                tab: 'icon',
                 title: t('config.inboxGroupBadge', 'Header icon'),
                 controls: [
                     { field: 'inboxViewBadge', type: 'checkbox', special: 'inboxBadge', label: t('config.inboxViewBadgeLabel', 'A count on the Inbox icon') },
@@ -13122,7 +13137,7 @@ class DashboardConfig {
             },
             {
                 section: 'inbox',
-                tab: 'general',
+                tab: 'list',
                 title: t('config.bmViewGroupKeys', 'Keys'),
                 controls: [
                     { field: 'inboxViewKeyLegend', type: 'select', label: t('config.bmViewKeyLegendLabel', 'The key legend'), options: [
@@ -15133,6 +15148,13 @@ class DashboardConfig {
 
     get behaviorTab() { return this._behaviorTab; }
 
+    get inboxTab() { return this._inboxTab; }
+
+    set inboxTab(tab) {
+        this._inboxTab = tab;
+        DashboardConfig.rememberTab('inbox', tab);
+    }
+
     set behaviorTab(tab) {
         this._behaviorTab = tab;
         DashboardConfig.rememberTab('behavior', tab);
@@ -15247,13 +15269,13 @@ class DashboardConfig {
         if (!query && !this.changedOnly) return '';
         const esc = (v) => this.dash.escapeHtml(v);
         const isAppearance = section === 'appearance';
-        const current = isAppearance ? this.appearanceTab : this.behaviorTab;
-        const tabs = (isAppearance ? DashboardConfig.APPEARANCE_TABS : DashboardConfig.BEHAVIOR_TABS)
+        const current = this[DashboardConfig.SUB_TAB_STATE[section]];
+        const tabs = (DashboardConfig.SUB_TABS[section] || [])
             .filter((tab) => tab !== current && !(isAppearance && DashboardConfig.APPEARANCE_SUBPAGES[tab]));
         const hits = tabs.map((tab) => {
             const n = this.countTabMatches(section, tab, query);
             if (!n) return '';
-            const label = isAppearance ? this.appearanceTabLabel(tab) : this.behaviorTabLabel(tab);
+            const label = this.subTabLabel(section, tab);
             return `<button type="button" class="config-btn config-btn--small config-filter-elsewhere-tab" data-filter-elsewhere="${esc(tab)}">${esc(label)} <span class="config-filter-elsewhere-count">${n}</span></button>`;
         }).join('');
         if (!hits) return '';
@@ -15304,6 +15326,10 @@ class DashboardConfig {
                 const tab = btn.dataset.filterElsewhere;
                 if (this.section === 'appearance') {
                     void this.switchAppearanceTab(tab);
+                } else if (this.section === 'inbox') {
+                    this.inboxTab = tab;
+                    this.restoreConfigHash();
+                    this.render();
                 } else {
                     this.behaviorTab = tab;
                     this.restoreConfigHash();
@@ -15509,7 +15535,7 @@ class DashboardConfig {
         // panels never got it.
         const restoreFocus = this.captureControlPanelFocus();
         if (this.section === 'appearance') this.repaintAppearancePreview();
-        if (this.section === 'appearance' || this.section === 'behavior') {
+        if (this.section === 'appearance' || this.section === 'behavior' || this.section === 'inbox') {
             this.repaintFilterElsewhere(this.section);
         }
         if (this.section === 'behavior') {
@@ -18005,6 +18031,9 @@ class DashboardConfig {
 
     /** The two halves of the Widgets section: the ones you have, and the kinds. */
     static WIDGETS_TABS = ['widgets', 'types'];
+
+    /** Config → Inbox: what is collected, the list, the side panel and clicks, the header icon. */
+    static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];
 
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.
