@@ -41,7 +41,8 @@
                 showCancel: false,
                 confirmText: this.t('dashboard.close', 'Close'),
                 modalClass: 'view-explain-modal bm-health-modal',
-                modalMaxWidth: 'min(58rem, calc(100vw - 2.5rem))',
+                // Wide enough for four columns: the collection read at one glance.
+                modalMaxWidth: 'min(82rem, calc(100vw - 2.5rem))',
             });
             this.bindBmHealthModal();
         },

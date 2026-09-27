@@ -1163,18 +1163,26 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-drawer .config-bm-pane
     font-size: var(--text-sm, 0.82rem);
 }
 
+/* All of it on one screen: taller than the explainer shell allows, and the
+   cards stacked in columns rather than a grid, so a short card does not leave
+   a gap the height of its tall neighbour. */
+.modal.view-explain-modal.bm-health-modal,
+body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-health-modal {
+    max-height: calc(100vh - 3rem);
+}
+
 .bm-health-modal-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    gap: var(--space-3, 0.75rem);
-    align-items: start;
+    columns: 4 15rem;
+    column-gap: var(--space-3, 0.75rem);
 }
 
 .bm-health-modal-card {
+    break-inside: avoid;
+    margin: 0 0 var(--space-3, 0.75rem);
     background: var(--surface-3, var(--background-secondary));
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-5, 8px);
-    padding: var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
 }
 
 .bm-health-modal-card-title {

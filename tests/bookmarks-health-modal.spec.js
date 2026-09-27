@@ -97,3 +97,32 @@ test('Collection health in the view header\'s menu opens it', async ({ page }) =
   await button.click();
   await expect(page.locator('#app-modal.show')).toContainText('Collection health');
 });
+
+test('it fits a laptop screen without scrolling, every card in view', async ({ page }) => {
+  await openBookmarksWithHealth(
+    page,
+    (issues) => issues.map((issue, i) => (i === 0 ? { ...issue, monitor: true } : issue)),
+    {
+      view: 'library',
+      report: (issues) => ({
+        summary: fullSummary(issues),
+        fleet: {
+          monitors: 1,
+          uptime24h: { ratio: 1, samples: 10 },
+          uptime7d: { ratio: 1, samples: 50 },
+          uptime30d: { ratio: 1, samples: 200 },
+          downNow: 0,
+          avgResponseMs: 120,
+          worst: [],
+          incidents: [],
+        },
+      }),
+    },
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
+  const body = page.locator('#app-modal.show .modal-body');
+  await expect(body.locator('[data-bm-health-modal-card="monitors"]')).toBeVisible();
+  const m = await body.evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight }));
+  expect(m.sh).toBeLessThanOrEqual(m.ch + 1);
+});
