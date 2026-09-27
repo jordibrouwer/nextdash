@@ -252,6 +252,18 @@ class DashboardHealthFocus {
         const preview = this._previews.get(key);
         const d = this.health.dash;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        /*
+         * Which copy of this URL the row is, on its page. The PATCH names rows by
+         * URL, so a page still holding the same link twice would otherwise have
+         * the preview written onto the first copy. Counted the way the server
+         * counts: canonical URL, in the page's stored order.
+         */
+        const pageId = Number(issue.pageId);
+        const url = this.health.canonicalUrl(issue.url);
+        const occurrence = [...(d.allBookmarks || []), ...(d.unsortedBookmarks || [])]
+            .filter((b) => Number(b.pageId) === pageId)
+            .slice(0, Number(issue.index))
+            .filter((b) => this.health.canonicalUrl(b.url) === url).length;
         this._previewSaving.add(key);
         this.render();
         let saved = false;
@@ -260,9 +272,10 @@ class DashboardHealthFocus {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    page: Number(issue.pageId),
+                    page: pageId,
                     updates: [{
                         url: issue.url,
+                        ...(occurrence > 0 ? { occurrence } : {}),
                         previewTitle: preview.title || '',
                         previewDesc: preview.description || '',
                         previewImage: preview.image || '',

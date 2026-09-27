@@ -331,6 +331,53 @@ test.describe('putting one aside for a month', () => {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config._bmHealthModule.report.issues[1].reasons.length)).toBe(0);
     });
 
+    /*
+     * A page can still hold the same link twice from before duplicates were
+     * refused. The PATCH names rows by URL, so without the occurrence the
+     * preview landed on the first copy, the server said "updated", and the card
+     * went on offering to save onto the second. Seeded in the browser, the way
+     * the duplicates spec does it: the server refuses to create such a pair.
+     */
+    test('saving the preview of the second copy of a URL names that copy', async ({ page }) => {
+        await page.route('**/api/bookmark-preview**', (route) => route.fulfill({
+            status: 200, contentType: 'application/json',
+            body: JSON.stringify({ title: 'A fetched preview title', description: '', image: '' }),
+        }));
+        const { issues } = await openBookmarksWithHealth(page, (rows) => {
+            // The original is now row 2; its page-local index is what the
+            // server's report would carry.
+            const second = rows[2];
+            const pageIndex = rows.slice(0, 2).filter((b) => b.pageId === second.pageId).length;
+            return [
+                { ...rows[0], ...WITH_PREVIEW },
+                { ...second, index: pageIndex, ...MISSING_PREVIEW },
+            ];
+        }, {
+            prepare: () => {
+                const d = window.dashboardInstance;
+                const copy = { ...d.allBookmarks[1], name: 'First copy' };
+                d.allBookmarks = [d.allBookmarks[0], copy, ...d.allBookmarks.slice(1)];
+            },
+        });
+        await openCard(page);
+        await page.locator('.health-focus-card [data-focus="next"]').click();
+        const card = page.locator('.health-focus-card');
+        await expect(card.locator('.health-focus-title')).toHaveText('Bare one');
+        await expect(card.locator('[data-focus="save-preview"]')).toBeVisible();
+
+        const patches = [];
+        await page.route('**/api/bookmarks', (route) => {
+            if (route.request().method() !== 'PATCH') return route.fallback();
+            patches.push(JSON.parse(route.request().postData() || '{}'));
+            return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ updated: 1 }) });
+        });
+        await page.keyboard.press('s');
+        await expect.poll(() => patches.length).toBe(1);
+        expect(patches[0].updates).toHaveLength(1);
+        expect(patches[0].updates[0].url).toBe(issues[1].url);
+        expect(patches[0].updates[0].occurrence).toBe(1);
+    });
+
     test('with the preview already stored there is nothing to save, and s does nothing', async ({ page }) => {
         await openHealthView(page);
         await openCard(page);
