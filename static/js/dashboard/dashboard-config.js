@@ -2651,8 +2651,8 @@ class DashboardConfig {
             this.repaintWorkbenchPanel?.();
         }
         this.setWorkbenchPanelTab?.('health');
-        const section = document.querySelector('#config-bm-panel [data-bm-section="health"]');
-        if (focusCheckMode) section?.querySelector('[data-check-mode]')?.focus();
+        // c: the Checking section of the tab's accordion, open, its choices in focus.
+        if (focusCheckMode) this.openBmHealthAcc?.('checking')?.querySelector('[data-check-mode]')?.focus();
     }
 
     /** `m`: the row's own right-click menu, opened at the row rather than the pointer. */

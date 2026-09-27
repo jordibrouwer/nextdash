@@ -160,6 +160,115 @@
                 <div class="health-view-expect-panel">${health.renderExpectPanel(issue)}</div>`;
         },
 
+        /**
+         * The Health tab: a summary to take in at a glance -- the score as a
+         * ring, the state in words, the reasons as chips, and for a monitored
+         * bookmark its heartbeat -- and the details under it as an accordion
+         * whose every head already says its answer, so a closed section still
+         * informs. The parts are the Health module's own, as renderBmHealthSection
+         * draws them; only the arrangement is this tab's.
+         */
+        renderBmHealthPane(b) {
+            const health = this._bmHealthModule;
+            const issue = this.bmHealthIssue(b);
+            if (!health || !issue) return '';
+            const esc = (v) => this.dash.escapeHtml(v);
+            const t = (key, fallback) => this.t(`config.${key}`, fallback);
+            const now = Date.now();
+            const mode = global.CheckMode?.of?.(b) || 'off';
+            const score = Number(issue.score);
+            const tone = score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad';
+            const entries = health.reasonEntries(issue) || [];
+            const problems = entries.filter((e) => Number(e.penalty) > 0);
+            const down = Number(issue.monitorStats?.downSince) > 0;
+            const broken = issue.status === 'broken';
+            const since = Number(issue.brokenSince) > 0 ? ` · ${health.formatDuration(now - Number(issue.brokenSince))}` : '';
+            const state = broken ? { cls: 'bad', label: `${t('bmHealthStateBroken', 'Broken')}${since}` }
+                : down ? { cls: 'bad', label: t('bmHealthStateDown', 'Monitor down') }
+                    : mode === 'off' ? { cls: 'off', label: t('cleanupFilterNoCheck', 'Not checked') }
+                        : problems.length ? { cls: 'warn', label: t('bmHealthStateLook', 'Needs a look') }
+                            : { cls: 'good', label: t('bmHealthStateHealthy', 'Healthy') };
+            const circ = 2 * Math.PI * 26;
+            const dash = Math.max(0, Math.min(100, score || 0)) / 100 * circ;
+            const ring = `<svg class="config-bm-health-ring" data-tone="${tone}" viewBox="0 0 64 64" role="img"
+                    aria-label="${esc(t('bmHealthScoreAria', 'Score {n} of 100').replace('{n}', String(score)))}">
+                    <circle cx="32" cy="32" r="26" class="is-track"></circle>
+                    <circle cx="32" cy="32" r="26" class="is-value" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 32 32)"></circle>
+                    <text x="32" y="37" text-anchor="middle">${esc(String(score))}</text>
+                </svg>`;
+            const chips = entries.map((e) => {
+                const pen = Number(e.penalty) > 0;
+                return `<span class="config-bm-health-chip${pen ? ' is-bad' : ''}">${esc(e.label)}${pen ? ` −${esc(String(e.penalty))}` : ''}</span>`;
+            }).join('');
+            const modeLabel = global.CheckMode?.meta?.(mode)?.label || mode;
+            const interval = mode === 'monitor' ? ` · ${global.CheckMode?.intervalLabel?.(global.CheckMode?.intervalOf?.(b)) || ''}` : '';
+            const checked = Number(issue.lastChecked) > 0
+                ? t('bmHealthChecked', 'Checked {d} ago').replace('{d}', health.formatDuration(now - Number(issue.lastChecked)))
+                : '';
+            const line = mode === 'off'
+                ? `${esc(t('bmHealthNothingChecks', 'Nothing checks this bookmark.'))}
+                    <button type="button" class="config-bm-rail-more" data-bm-health-enable>${esc(t('bmHealthTurnOn', 'Turn on checking'))}</button>`
+                : esc([checked, `${modeLabel}${interval}`].filter(Boolean).join(' · '));
+            const strip = issue.monitor ? `<div class="config-bm-health-strip">${health.renderMonitorStrip(issue)}</div>` : '';
+
+            const item = (name, label, answer, body) => `<details class="config-bm-acc" data-bm-acc="${name}"${this.bmHealthAccOpen(name, problems.length > 0 || broken || down) ? ' open' : ''}>
+                    <summary><span>${esc(label)}</span><span class="config-bm-acc-answer">${esc(answer)}</span></summary>
+                    <div class="lvs-drawer-section-body">${body}</div>
+                </details>`;
+            const reasons = entries.map((e) => `<li class="health-drawer-reason">${esc(e.label)}</li>`).join('');
+            const sinceLine = health.renderBrokenSince(issue);
+            const monitored = issue.monitor;
+            const uptime = issue.monitorStats?.uptime24h?.ratio;
+            const expectSet = String(issue.checkUrl || issue.expectText || '').trim();
+            return `
+                <div class="config-bm-health-viz">
+                    ${ring}
+                    <div class="config-bm-health-facts">
+                        <span class="config-bm-health-state is-${state.cls}">${esc(state.label)}</span>
+                        ${chips ? `<span class="config-bm-health-chips">${chips}</span>` : ''}
+                        <span class="config-bm-health-line">${line}</span>
+                    </div>
+                    ${strip}
+                </div>
+                <div class="config-bm-acc-list">
+                    ${item('why', t('bmHealthWhy', 'Why'), problems.length
+                        ? t('bmHealthProblems', '{n} to look at').replace('{n}', String(problems.length))
+                        : t('bmHealthNothingWrong', 'nothing wrong'), `
+                        ${reasons ? `<ul class="health-drawer-reasons">${reasons}</ul>` : `<p class="config-bm-panel-muted">${esc(t('bmHealthNothingWrong', 'nothing wrong'))}</p>`}
+                        ${sinceLine ? `<p class="health-drawer-since">${sinceLine}</p>` : ''}`)}
+                    ${item('score', t('bmHealthScoreBreakdown', 'Score breakdown'), String(score),
+                        `<div class="health-view-score-panel">${health.renderScorePanel(issue)}</div>`)}
+                    ${item('checking', t('bmFieldChecking', 'Checking'), `${modeLabel}${interval}`,
+                        `<div class="config-bm-health-check" role="radiogroup" aria-label="${esc(health.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${health.renderCheckModeChoices(issue)}</div>`)}
+                    ${monitored ? `<div data-bm-section="monitor">${item('monitor', t('bmSectionMonitor', 'Monitor & history'),
+                        uptime != null ? t('bmHealthUptime24h', '{p}% last 24 h').replace('{p}', String(Math.round(uptime * 1000) / 10)) : '',
+                        health.hasMonitorStats(issue) ? health.buildMonitorStatsHtml(issue) : '')}</div>` : ''}
+                    ${item('expectations', t('bmHealthExpectations', 'Expectations'), expectSet ? t('bmHealthExpectSet', 'set') : t('bmHealthExpectNone', 'none'),
+                        `<div class="health-view-expect-panel">${health.renderExpectPanel(issue)}</div>`)}
+                </div>`;
+        },
+
+        /** Whether an accordion section is open: the reader's last choice, else open for Why when something is wrong. */
+        bmHealthAccOpen(name, troubled) {
+            let stored = null;
+            try {
+                stored = JSON.parse(global.localStorage?.getItem('nextdash.bm.healthAcc') || 'null');
+            } catch {
+                stored = null;
+            }
+            if (Array.isArray(stored)) return stored.includes(name);
+            return name === 'why' && troubled;
+        },
+
+        /** Open one accordion section of the Health tab, as `c` and "Turn on checking" do. */
+        openBmHealthAcc(name) {
+            const panel = (this.standalone && this._libPanel) || document.getElementById('config-bm-panel');
+            const details = panel?.querySelector(`[data-bm-acc="${name}"]`);
+            if (details && !details.open) details.open = true;
+            details?.scrollIntoView?.({ block: 'nearest' });
+            return details || null;
+        },
+
         /** The Monitor section's body: the strip and the statistics; '' unless monitored. */
         renderBmMonitorSection(b) {
             const health = this._bmHealthModule;
@@ -274,17 +383,33 @@
             const b = key ? this.findBookmarkByKey(key) : null;
             const issue = b ? this.bmHealthIssue(b) : null;
             if (!health || !issue) return;
-            const healthBody = panel.querySelector('[data-bm-section="health"] .lvs-drawer-section-body');
-            if (healthBody?.querySelector('.health-view-expect-panel')) {
-                health.bindExpectPanel(healthBody, issue, health.issueKey(issue));
-            }
+            const expect = panel.querySelector('[data-bm-section="health"] .health-view-expect-panel');
+            const healthBody = expect?.closest('.lvs-drawer-section-body');
+            if (healthBody) health.bindExpectPanel(healthBody, issue, health.issueKey(issue));
+            // The accordion remembers what the reader opens, across bookmarks.
+            panel.querySelectorAll('[data-bm-acc]').forEach((details) => {
+                details.addEventListener('toggle', () => {
+                    const open = [...panel.querySelectorAll('[data-bm-acc][open]')].map((d) => d.getAttribute('data-bm-acc'));
+                    try {
+                        global.localStorage?.setItem('nextdash.bm.healthAcc', JSON.stringify(open));
+                    } catch {
+                        // Private window: the choice lasts until the next bookmark.
+                    }
+                });
+            });
+            panel.querySelector('[data-bm-health-enable]')?.addEventListener('click', () => {
+                this.openBmHealthAcc('checking')?.querySelector('[data-check-mode]')?.focus();
+            });
             panel.querySelectorAll('[data-bm-section="health"] [data-check-mode]').forEach((el) => {
                 el.addEventListener('click', () => void health.setCheckMode(issue, el.getAttribute('data-check-mode')));
             });
             panel.querySelectorAll('[data-bm-section="health"] [data-check-interval]').forEach((el) => {
                 el.addEventListener('click', () => void health.setMonitorInterval(issue, Number(el.getAttribute('data-check-interval'))));
             });
-            const monitorBody = panel.querySelector('[data-bm-section="monitor"] .lvs-drawer-section-body');
+            // The strip sits in the summary on top, the statistics in their
+            // section: the chart binds across both.
+            const monitorBody = panel.querySelector('[data-bm-section="monitor"] .lvs-drawer-section-body')
+                && panel.querySelector('[data-bm-section="health"]');
             if (monitorBody) {
                 health.bindMonitorChart(issue, monitorBody);
                 monitorBody.querySelector('[data-monitor-export]')

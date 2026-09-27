@@ -1997,3 +1997,129 @@ html body .config-bm-more-menu .config-btn {
     justify-content: flex-end;
     gap: var(--space-2, 0.5rem);
 }
+
+/* ── Health tab: summary on top, accordion below ──────────────────────── */
+
+.config-bm-health-viz {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-3, 0.75rem);
+    align-items: center;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--background-primary) 70%, transparent);
+}
+
+.config-bm-health-ring {
+    width: 64px;
+    height: 64px;
+    --ring: var(--accent-success);
+}
+
+.config-bm-health-ring[data-tone="warn"] { --ring: var(--accent-warning); }
+.config-bm-health-ring[data-tone="bad"] { --ring: var(--accent-error); }
+
+.config-bm-health-ring circle {
+    fill: none;
+    stroke-width: 7;
+}
+
+.config-bm-health-ring .is-track {
+    stroke: color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+.config-bm-health-ring .is-value {
+    stroke: var(--ring);
+    stroke-linecap: round;
+}
+
+.config-bm-health-ring text {
+    fill: var(--ring);
+    font-weight: 700;
+    font-size: 16px;
+    font-family: inherit;
+}
+
+.config-bm-health-facts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    min-width: 0;
+    font-size: var(--font-size-small);
+}
+
+.config-bm-health-state {
+    font-weight: 700;
+}
+
+.config-bm-health-state.is-bad { color: var(--accent-error); }
+.config-bm-health-state.is-warn { color: var(--accent-warning); }
+.config-bm-health-state.is-good { color: var(--accent-success); }
+.config-bm-health-state.is-off { color: var(--text-secondary); }
+
+.config-bm-health-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+}
+
+.config-bm-health-chip {
+    padding: 0 var(--space-1-5, 0.4rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 80%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    color: var(--text-secondary);
+    font-size: 0.92em;
+}
+
+.config-bm-health-chip.is-bad {
+    color: var(--accent-error);
+    border-color: color-mix(in srgb, var(--accent-error) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
+}
+
+.config-bm-health-line {
+    color: var(--text-secondary);
+}
+
+.config-bm-health-strip {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
+.config-bm-acc-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.config-bm-acc {
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+}
+
+.config-bm-acc > summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) 0;
+    cursor: pointer;
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-bm-acc > summary > span:first-child {
+    flex: 1;
+}
+
+.config-bm-acc-answer {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    color: var(--text-primary);
+}
+
+.config-bm-acc > .lvs-drawer-section-body {
+    padding-bottom: var(--space-3, 0.75rem);
+}

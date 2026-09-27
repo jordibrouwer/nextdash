@@ -498,7 +498,6 @@
             }</button>`;
         };
         const pane = (name, body) => `<section class="config-bm-pane" role="tabpanel" data-bm-pane="${name}"${name === tab ? '' : ' hidden'}>${body}</section>`;
-        const monitor = this.renderBmMonitorSection?.(b) || '';
         return `
             <header class="config-bm-panel-head config-bm-panel-head--single">
                 <div class="config-bm-panel-heading">
@@ -553,13 +552,13 @@
                     <span class="config-bm-field-status" role="status"></span>
                 </label>
             </div></div>`)}
-            ${pane('health', `
-                <div data-bm-section="health"><div class="lvs-drawer-section-body">${this.renderBmHealthSection?.(b) || `
+            ${pane('health', this.renderBmHealthPane?.(b)
+                ? `<div data-bm-section="health">${this.renderBmHealthPane(b)}</div>`
+                : `
+                <div data-bm-section="health"><div class="lvs-drawer-section-body">
                     <p class="config-bm-panel-fact"><span class="config-bm-health-dot is-${esc(state)}"></span> ${esc(this.railHealthLabel(state))}</p>
                     ${facts?.lastError ? `<p class="config-bm-panel-muted">${esc(facts.lastError)}</p>` : ''}
-                    ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}`}</div></div>
-                ${monitor ? `<h4 class="config-bm-pane-sub">${esc(this.t('config.bmSectionMonitor', 'Monitor & history'))}</h4>
-                <div data-bm-section="monitor"><div class="lvs-drawer-section-body">${monitor}</div></div>` : ''}`)}
+                    ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}</div></div>`)}
             ${pane('usage', this.renderBmUsage?.(b) || `
                 <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>`)}`;
     },

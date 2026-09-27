@@ -82,6 +82,10 @@ test.describe('bookmarks: Health and Monitor sections in the panel', () => {
     const tab = { edit: 'details', health: 'health', monitor: 'health' }[name];
     if (tab) {
       await page.locator(`#config-bm-panel [data-bm-tab-panel="${tab}"]`).click();
+      // The Health tab folds its details: open every section of it.
+      if (tab === 'health') {
+        await page.locator('#config-bm-panel [data-bm-acc]').evaluateAll((all) => all.forEach((d) => { d.open = true; }));
+      }
       return section(page, name);
     }
     await page.locator('#config-bm-panel [data-bm-more-toggle]').click();
