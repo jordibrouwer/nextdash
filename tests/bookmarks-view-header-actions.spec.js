@@ -124,4 +124,10 @@ test('the Bookmarks icon in the header carries the count of problems', async ({ 
   const library = page.locator('.library-link a .health-badge');
   await expect(library).toHaveText('1');
   await expect(library).toHaveText(await page.locator('.health-link a .health-badge').textContent());
+  // On the icon's own corner, as Health's is on its.
+  const [badge, anchor] = [await library.boundingBox(), await page.locator('.library-link a').boundingBox()];
+  const cx = badge.x + badge.width / 2;
+  const cy = badge.y + badge.height / 2;
+  expect(Math.abs(cx - (anchor.x + anchor.width))).toBeLessThanOrEqual(badge.width);
+  expect(Math.abs(cy - anchor.y)).toBeLessThanOrEqual(badge.height);
 });

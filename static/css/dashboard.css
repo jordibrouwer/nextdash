@@ -8206,6 +8206,7 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .docker-link-anchor,
+.dashboard-section.section-controls .header-actions .library-link-anchor,
 .dashboard-section.section-controls .header-actions .health-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -8226,6 +8227,7 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .docker-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .library-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .health-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
