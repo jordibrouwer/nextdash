@@ -1758,3 +1758,47 @@ html body .config-bm-more-menu .config-btn {
 .config-bm-panel-head .config-bm-panel-actions .config-btn {
     white-space: nowrap;
 }
+
+/* ── Pages and categories modal ───────────────────────────────────────── */
+
+/* Under the confirmations it opens (2000), which must land on top of it. */
+.config-structure-overlay {
+    z-index: 1990;
+}
+
+.config-structure-overlay .config-structure-modal {
+    max-width: min(52rem, calc(100vw - 2rem));
+    width: 100%;
+    max-height: calc(100vh - 4rem);
+    overflow: auto;
+    scrollbar-gutter: stable;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-structure-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.config-structure-close {
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.config-structure-close:hover {
+    color: var(--text-primary);
+}
+
+.config-structure-broken {
+    align-self: center;
+    color: var(--accent-error);
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+}

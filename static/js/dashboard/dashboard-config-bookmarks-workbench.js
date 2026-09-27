@@ -158,6 +158,10 @@
                 ${extra}<span class="config-bm-rail-label">${esc(label)}</span>
                 <span class="config-bm-rail-count">${n}</span>
             </button>`;
+        // Pages and categories are managed in a modal over the list.
+        const manage = (tab) => (typeof this.openStructureModal === 'function'
+            ? `<button type="button" class="config-bm-rail-more" data-bm-manage="${tab}">${esc(this.t('config.bmManage', 'Manage'))}</button>`
+            : '');
         const group = (title, body, more = '') => (body ? `
             <section class="config-bm-rail-group">
                 <h3 class="config-bm-rail-title"><span>${esc(title)}</span>${more}</h3>
@@ -258,8 +262,8 @@
             ${tokenRow}
             ${group(this.t('config.bmViews', 'Views'), views, viewsMore)}
             ${group(this.t('config.bmHealth', 'Health'), health)}
-            ${group(this.t('config.bmPages', 'Pages'), pages)}
-            ${group(this.t('config.bmCategories', 'Categories'), categories)}
+            ${group(this.t('config.bmPages', 'Pages'), pages, manage('pages'))}
+            ${group(this.t('config.bmCategories', 'Categories'), categories, manage('categories'))}
             ${group(this.t('config.bmTags', 'Tags'), tagList, tagsMore)}`;
     },
 
@@ -315,6 +319,11 @@
                 if (which === 'tags') this._bmRailTagsOpen = !this._bmRailTagsOpen;
                 if (which === 'views') this._bmRailViewsOpen = !this._bmRailViewsOpen;
                 this.repaintWorkbenchRail();
+                return;
+            }
+            const manage = e.target.closest('[data-bm-manage]');
+            if (manage) {
+                this.openStructureModal(manage.getAttribute('data-bm-manage'));
                 return;
             }
             const clear = e.target.closest('[data-bm-rail-clear]');

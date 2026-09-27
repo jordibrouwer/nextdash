@@ -2855,6 +2855,14 @@ class DashboardConfig {
             return false;
         }
 
+        // Shift+P and Shift+C: pages and categories, in the modal over the list.
+        if (e.shiftKey && (e.key === 'P' || e.key === 'C') && typeof this.openStructureModal === 'function') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.openStructureModal(e.key === 'P' ? 'pages' : 'categories');
+            return true;
+        }
+
         const onRowControl = Boolean(
             target?.closest?.('.config-bm-row')
             && target?.matches?.('button, a, input, select, textarea')
@@ -15600,7 +15608,9 @@ class DashboardConfig {
         if (!body) { this.render(); return; }
         body.innerHTML = this.renderPtTab();
         this.syncSubTabStrip('data-pt-tab', this.ptTab);
-        const container = document.getElementById('dashboard-layout');
+        // The Bookmarks view's pages-and-categories modal holds these editors
+        // too; they bind inside whichever host they are drawn in.
+        const container = body.closest('[data-pt-host]') || document.getElementById('dashboard-layout');
         if (container) this.bindPtTabControls(container);
     }
 
@@ -16800,6 +16810,7 @@ class DashboardConfig {
                     ${locked ? '' : `
                     <button type="button" class="config-btn config-btn--small" data-page-move="up" data-id="${esc(p.id)}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
                     <button type="button" class="config-btn config-btn--small" data-page-move="down" data-id="${esc(p.id)}" ${i === pages.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
+                    ${this.renderStructureRowExtras?.({ pageId: p.id }) || ''}
                     <button type="button" class="config-btn config-btn--small" data-page-duplicate="${esc(p.id)}" title="${esc(this.t('config.pageDuplicateHint', 'Copy this page — with or without its bookmarks'))}">${esc(this.t('config.pageDuplicate', 'Duplicate'))}</button>
                     <button type="button" class="config-btn config-btn--small config-btn--danger" data-page-delete="${esc(p.id)}" ${isFirst ? 'disabled title="' + esc(this.t('config.pageDeleteFirstBlocked', 'The first page cannot be deleted')) + '"' : ''}>${esc(this.t('config.backupDelete', 'Delete'))}</button>
                 </div>
@@ -21166,6 +21177,7 @@ class DashboardConfig {
                         ${locked ? '' : `
                         <button type="button" class="config-btn config-btn--small" data-cat-move="up" data-index="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
                         <button type="button" class="config-btn config-btn--small" data-cat-move="down" data-index="${i}" ${i === last ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
+                        ${this.renderStructureRowExtras?.({ pageId, categoryId: c.id }) || ''}
                         <button type="button" class="config-btn config-btn--small" data-cat-duplicate="${i}" title="${esc(this.t('config.categoryDuplicateHint', 'Copy this category — with or without its bookmarks'))}">${esc(this.t('config.pageDuplicate', 'Duplicate'))}</button>
                         <button type="button" class="config-btn config-btn--small config-btn--danger" data-cat-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
                     </div>
@@ -22677,6 +22689,7 @@ class DashboardConfig {
             && window.DashboardConfigBookmarksHealthReady === true
             && window.DashboardBookmarksHealthModalReady === true
             && window.DashboardConfigBookmarksUsageReady === true
+            && window.DashboardBookmarksStructureModalReady === true
             && Boolean(window.BookmarkWorkbenchModel);
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
@@ -22697,6 +22710,9 @@ class DashboardConfig {
             // The panel's Usage tab.
             .then(() => load('js/dashboard/dashboard-config-bookmarks-usage.js',
                 'dashboardConfigBookmarksUsage', () => window.DashboardConfigBookmarksUsageReady === true))
+            // Pages and categories, managed from the list.
+            .then(() => load('js/dashboard/dashboard-bookmarks-structure-modal.js',
+                'dashboardBookmarksStructureModal', () => window.DashboardBookmarksStructureModalReady === true))
             .then(() => {
                 const waiting = this._bookmarksAwaitingRenderers === true;
                 this._bookmarksAwaitingRenderers = false;
