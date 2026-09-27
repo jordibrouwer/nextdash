@@ -20,6 +20,55 @@
 
     Object.assign(global.DashboardConfig.prototype, {
 
+    /** A Config → Bookmarks → View setting, or its default (the view as it was). */
+    bmViewSetting(name, fallback) {
+        const value = this.dash.settings?.[name];
+        return value === undefined || value === null || value === '' ? fallback : value;
+    },
+
+    /** A column View leaves in the list; all of them when nothing is set. */
+    bmViewColumn(name) {
+        const cols = this.dash.settings?.bmViewColumns;
+        return !Array.isArray(cols) || cols.includes(name);
+    },
+
+    /** A block View leaves in the rail; all of them when nothing is set. */
+    bmViewRailBlock(name) {
+        const blocks = this.dash.settings?.bmViewRailBlocks;
+        return !Array.isArray(blocks) || blocks.includes(name);
+    },
+
+    /**
+     * The row's grid, one template per width, from the columns View leaves.
+     * Each width lists only the cells it draws: a track with no cell in it
+     * would pull every cell after it one place to the left.
+     */
+    workbenchColumnStyle() {
+        const track = {
+            tick: '1.1rem', icon: '1.4rem', pinned: '1.5rem', shortcut: '3.5rem', usage: '4.5rem',
+            opens: '3rem', last: '5rem', added: '5.5rem', score: '2.6rem',
+        };
+        const build = (cells, name, tags) => cells
+            .filter((c) => ['tick', 'icon', 'name'].includes(c) || this.bmViewColumn(c))
+            .map((c) => (c === 'name' ? name : c === 'tags' ? tags : track[c]))
+            .join(' ');
+        const wide = build(['tick', 'icon', 'name', 'tags', 'pinned', 'shortcut', 'usage', 'opens', 'last', 'added', 'score'],
+            'minmax(10rem, 1fr)', 'minmax(5rem, 9rem)');
+        const large = build(['tick', 'icon', 'name', 'tags', 'usage', 'opens', 'last', 'added', 'score'],
+            'minmax(10rem, 1fr)', 'minmax(5rem, 9rem)');
+        const mid = build(['tick', 'icon', 'name', 'tags', 'opens', 'last', 'score'], 'minmax(8rem, 1fr)', 'minmax(5rem, 6rem)');
+        const narrow = build(['tick', 'icon', 'name', 'score'], 'minmax(0, 1fr)', '');
+        return `--bm-cols-wide: ${wide}; --bm-cols-large: ${large}; --bm-cols-mid: ${mid}; --bm-cols-narrow: ${narrow};`;
+    },
+
+    /** The workbench's classes: what View sets on the list as a whole. */
+    workbenchViewClasses() {
+        const classes = ['config-bm-workbench', 'is-panel-collapsed', 'is-library'];
+        if (this.bmViewSetting('bmViewDensity', 'comfortable') === 'compact') classes.push('is-compact');
+        if (this.bmViewSetting('bmViewRail', 'open') === 'folded') classes.push('is-rail-folded');
+        return classes.join(' ');
+    },
+
     renderBookmarksWorkbench() {
         const esc = (v) => this.dash.escapeHtml(v);
         const filtered = this.visibleBookmarks();
@@ -29,7 +78,7 @@
         // side panel over the page (is-panel-collapsed and is-library say so
         // to the stylesheet).
         return `
-            <div class="config-bm-workbench is-panel-collapsed is-library" id="config-bm-workbench">
+            <div class="${this.workbenchViewClasses()}" id="config-bm-workbench" style="${esc(this.workbenchColumnStyle())}">
                 <aside class="config-bm-rail" id="config-bm-rail"
                        aria-label="${esc(this.t('config.bmFilters', 'Filters'))}">${this.renderWorkbenchRail()}</aside>
                 <section class="config-bm-main" aria-label="${esc(this.t('config.sectionBookmarks', 'Bookmarks'))}">
@@ -242,14 +291,16 @@
                 .join('')
             : '';
 
+        // View can leave blocks out; Pages takes its categories with it.
+        const show = (name) => this.bmViewRailBlock(name);
         return `
-            ${this.renderBmHealthSummary?.() || ''}
+            ${show('health') ? this.renderBmHealthSummary?.() || '' : ''}
             ${tokenRow}
-            ${group(this.t('config.bmViews', 'Views'), views, viewsMore)}
-            ${group(this.t('config.bmHealth', 'Health'), health)}
-            ${group(this.t('config.bmPages', 'Pages'), pages, manage('pages'))}
-            ${group(this.t('config.bmCategories', 'Categories'), categories, manage('categories'))}
-            ${group(this.t('config.bmTags', 'Tags'), tagList, tagsMore)}`;
+            ${show('views') ? group(this.t('config.bmViews', 'Views'), views, viewsMore) : ''}
+            ${show('health') ? group(this.t('config.bmHealth', 'Health'), health) : ''}
+            ${show('pages') ? group(this.t('config.bmPages', 'Pages'), pages, manage('pages')) : ''}
+            ${show('pages') ? group(this.t('config.bmCategories', 'Categories'), categories, manage('categories')) : ''}
+            ${show('tags') ? group(this.t('config.bmTags', 'Tags'), tagList, tagsMore) : ''}`;
     },
 
     railHealthLabel(key) {
@@ -552,6 +603,10 @@
 
     /** Which tab the panel shows; the reader's last choice, kept across rows. */
     workbenchPanelTab() {
+        // View can fix the tab the panel opens on; once open, the reader's
+        // clicks decide.
+        const fixed = this.bmViewSetting('bmViewPanelTab', 'last');
+        if (fixed !== 'last' && PANEL_TABS.includes(fixed) && !this._libDrawer?.isOpen()) return fixed;
         try {
             const tab = global.localStorage?.getItem(PANEL_TAB_KEY);
             return PANEL_TABS.includes(tab) ? tab : PANEL_TABS[0];
@@ -679,7 +734,9 @@
                 onClose: () => this.onLibraryDrawerClosed(),
                 // A press beside the panel closes it; one on a row, or on a
                 // row's tick box, moves it there instead.
-                closeOnOutside: (target) => !target.closest('#config-bm-list .config-bm-row'),
+                // Unless View says the panel stays until it is closed.
+                closeOnOutside: (target) => this.bmViewSetting('bmViewCloseOutside', true) !== false
+                    && !target.closest('#config-bm-list .config-bm-row'),
             });
         }
         return this._libDrawer || null;
@@ -709,6 +766,8 @@
                         // heading would say it twice.
                         ctx.heading.hidden = true;
                         slab.appendChild(panel);
+                        // View's width: the frame around the scrolling panel.
+                        slab.parentElement?.classList.toggle('is-wide', this.bmViewSetting('bmViewPanelWidth', 'normal') === 'wide');
                     },
                 });
             }
@@ -1635,6 +1694,8 @@
      * green, and nothing for a bookmark that is never checked.
      */
     workbenchRowStatus(b) {
+        // View can have the rows plain: no colour from anything.
+        if (this.bmViewSetting('bmViewRowColors', true) === false) return '';
         // Every row says where it stands. Health's own colour once its report
         // knows the bookmark (healthRowStatus: red, amber, the monitor's blue,
         // green); and a bookmark nothing checks is "off", its own grey, so
@@ -1665,7 +1726,10 @@
         const key = this.bookmarkKey(b);
         const ticked = this.bmSelected.has(key);
         const title = b.name || this.formatBookmarkUrlDisplay(b.url) || b.url;
-        const domain = this.formatBookmarkUrlDisplay(b.url);
+        // View: the whole address (without its scheme), only the site, or none.
+        const address = this.bmViewSetting('bmViewAddress', 'full');
+        const domain = address === 'hidden' ? ''
+            : (address === 'domain' ? (this.bmGroupSiteKey?.(b) || this.formatBookmarkUrlDisplay(b.url)) : this.formatBookmarkUrlDisplay(b.url));
         // The glow (list-view-shell.css) says what the dot before the title
         // used to, in the same colours Health's rows use.
         const status = this.workbenchRowStatus(b);
@@ -1691,6 +1755,7 @@
         if (item.groupStart) classes.push('is-group-start');
         if (item.groupEnd) classes.push('is-group-end');
         const feed = global.BookmarkFeedRow;
+        const col = (name) => this.bmViewColumn(name);
         return `
             <div class="${classes.join(' ')}" data-bm-key="${esc(key)}"${status ? ` data-lvs-status="${status}"` : ''} role="row" tabindex="-1"
                  aria-selected="${ticked ? 'true' : 'false'}" aria-posinset="${item.index + 1}" aria-setsize="${ctx.setSize}">
@@ -1701,21 +1766,21 @@
                 <span class="config-bm-icon-cell" role="gridcell">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
                 <span class="config-bm-name" role="gridcell">
                     <span class="config-bm-title">${esc(title)}</span>
-                    <span class="config-bm-domain">${esc(domain)}</span>
+                    ${domain ? `<span class="config-bm-domain">${esc(domain)}</span>` : ''}
                     ${ctx.isDuplicate(b) ? `<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>` : ''}
                     ${crumb}
                 </span>
-                <span class="config-bm-tags" role="gridcell">${healthIssue
-                    ? `<span class="config-bm-reason">${esc(healthReason)}</span>` : tagChips}</span>
-                <span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned
-                    ? `<span aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}</span>
-                <span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>
-                ${this.workbenchSparkCell(b)}
-                <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>
-                <span class="config-bm-last" role="gridcell">${esc(last.label)}</span>
-                ${this.workbenchAddedCell(b)}
-                <span class="config-bm-row-score" role="gridcell">${score == null ? ''
-                    : `<span class="config-bm-score" data-tone="${scoreTone(score)}">${esc(String(score))}</span>`}</span>
+                ${col('tags') ? `<span class="config-bm-tags" role="gridcell">${healthIssue
+                    ? `<span class="config-bm-reason">${esc(healthReason)}</span>` : tagChips}</span>` : ''}
+                ${col('pinned') ? `<span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned
+                    ? `<span aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}</span>` : ''}
+                ${col('shortcut') ? `<span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>` : ''}
+                ${col('usage') ? this.workbenchSparkCell(b) : ''}
+                ${col('opens') ? `<span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>` : ''}
+                ${col('last') ? `<span class="config-bm-last" role="gridcell">${esc(last.label)}</span>` : ''}
+                ${col('added') ? this.workbenchAddedCell(b) : ''}
+                ${col('score') ? `<span class="config-bm-row-score" role="gridcell">${score == null ? ''
+                    : `<span class="config-bm-score" data-tone="${scoreTone(score)}">${esc(String(score))}</span>`}</span>` : ''}
             </div>`;
     },
 
@@ -1726,8 +1791,10 @@
      */
     workbenchSparkCell(b) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const BARS = 15;
-        const SPAN = 2 * 86400000;
+        // View sets how far back: 7 and 14 days a bar a day, 30 days two.
+        const days = [7, 14, 30].includes(Number(this.bmViewSetting('bmViewUsageDays', 30))) ? Number(this.bmViewSetting('bmViewUsageDays', 30)) : 30;
+        const BARS = days === 30 ? 15 : days;
+        const SPAN = (days / BARS) * 86400000;
         const now = Date.now();
         const counts = new Array(BARS).fill(0);
         const log = (Array.isArray(b.openLog) ? b.openLog : []).map(Number);
@@ -1742,11 +1809,12 @@
         });
         const total = counts.reduce((a, n) => a + n, 0);
         const title = total
-            ? this.t('config.bmSparkTitle', '{n} opens in the last 30 days').replace('{n}', String(total))
-            : this.t('config.bmSparkNone', 'No opens in the last 30 days');
+            ? this.t('config.bmSparkTitleDays', '{n} opens in the last {d} days').replace('{n}', String(total)).replace('{d}', String(days))
+            : this.t('config.bmSparkNoneDays', 'No opens in the last {d} days').replace('{d}', String(days));
         const max = Math.max(1, ...counts);
-        const w = 3;
         const gap = 1;
+        // The same width whatever the number of bars.
+        const w = Math.max(2, Math.floor(60 / BARS) - gap);
         const h = 14;
         const bars = counts.map((n, i) => {
             const bh = n ? Math.max(2, Math.round((n / max) * h)) : 1;

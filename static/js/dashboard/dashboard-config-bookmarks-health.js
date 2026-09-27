@@ -476,6 +476,7 @@
                 if (!b) return;
                 const status = this.workbenchRowStatus?.(b);
                 if (status) row.setAttribute('data-lvs-status', status);
+                else row.removeAttribute('data-lvs-status');
                 const cell = row.querySelector('.config-bm-row-score');
                 const issue = this.bmHealthIssue(b);
                 const score = issue && Number.isFinite(Number(issue.score)) ? Number(issue.score) : null;

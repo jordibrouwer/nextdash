@@ -892,7 +892,7 @@ type Settings struct {
 	// that never opens the tab sees no change. A list left empty means all.
 	BmViewGroup        string   `json:"bmViewGroup"`        // Group the list opens on: last (as last left)/none/page/category/site/status/tag
 	BmViewDensity      string   `json:"bmViewDensity"`      // Row height: comfortable/compact
-	BmViewAddress      string   `json:"bmViewAddress"`      // Address in the row: domain/full/hidden
+	BmViewAddress      string   `json:"bmViewAddress"`      // Address in the row: full/domain/hidden
 	BmViewRowColors    bool     `json:"bmViewRowColors"`    // Rows coloured by their health (default on)
 	BmViewColumns      []string `json:"bmViewColumns"`      // Columns shown (null = all, [] = none)
 	BmViewUsageDays    int      `json:"bmViewUsageDays"`    // Days the Usage column covers: 7/14/30
@@ -3174,7 +3174,7 @@ var categorySpreadResetScopes = map[string]bool{"page": true, "all": true}
 var bmViewChoices = map[string][]string{
 	"group":       {"last", "none", "page", "category", "site", "status", "tag"},
 	"density":     {"comfortable", "compact"},
-	"address":     {"domain", "full", "hidden"},
+	"address":     {"full", "domain", "hidden"},
 	"rail":        {"open", "folded"},
 	"panelTab":    {"last", "details", "health", "usage"},
 	"panelWidth":  {"normal", "wide"},

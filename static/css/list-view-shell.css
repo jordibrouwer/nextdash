@@ -632,6 +632,12 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
     pointer-events: auto;
 }
 
+/* A consumer's wider panel (the Bookmarks view's View setting). The phone
+   rule below still takes the whole screen: :where keeps this one weaker. */
+.lvs-drawer-frame:where(.is-wide) {
+    width: 32rem;
+}
+
 .lvs-drawer {
     position: relative;
     box-sizing: border-box;

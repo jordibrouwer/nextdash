@@ -1780,7 +1780,9 @@ html body .config-bm-more-menu .config-btn {
        the chip that fitWorkbenchTags left showing was cut in half. The name
        gives way first. */
     .config-bm-workbench.is-library .config-bm-row {
-        grid-template-columns: 1.1rem 1.4rem minmax(8rem, 1fr) minmax(5rem, 6rem) 1.5rem 3.5rem 3rem 5rem 2.6rem;
+        /* One template per width, built from the columns View leaves
+           (workbenchColumnStyle): only the cells this width draws. */
+        grid-template-columns: var(--bm-cols-mid, 1.1rem 1.4rem minmax(8rem, 1fr) minmax(5rem, 6rem) 3rem 5rem 2.6rem);
     }
 }
 
@@ -1793,7 +1795,7 @@ html body .config-bm-more-menu .config-btn {
 
 @media (min-width: 1100px) {
     .config-bm-workbench.is-library .config-bm-row {
-        grid-template-columns: 1.1rem 1.4rem minmax(10rem, 1fr) minmax(5rem, 9rem) 1.5rem 3.5rem 4.5rem 3rem 5rem 5.5rem 2.6rem;
+        grid-template-columns: var(--bm-cols-large, 1.1rem 1.4rem minmax(10rem, 1fr) minmax(5rem, 9rem) 4.5rem 3rem 5rem 5.5rem 2.6rem);
     }
 
     .config-bm-workbench.is-library .config-bm-spark {
@@ -1820,9 +1822,59 @@ html body .config-bm-more-menu .config-btn {
     fill: color-mix(in srgb, var(--text-tertiary) 40%, transparent);
 }
 
+@media (min-width: 1200px) {
+    .config-bm-workbench.is-library .config-bm-row {
+        grid-template-columns: var(--bm-cols-wide, 1.1rem 1.4rem minmax(10rem, 1fr) minmax(5rem, 9rem) 1.5rem 3.5rem 4.5rem 3rem 5rem 5.5rem 2.6rem);
+    }
+}
+
 @media (max-width: 799px) {
     .config-bm-workbench.is-library .config-bm-row {
-        grid-template-columns: 1.1rem 1.4rem minmax(0, 1fr) 2.6rem;
+        grid-template-columns: var(--bm-cols-narrow, 1.1rem 1.4rem minmax(0, 1fr) 2.6rem);
+    }
+}
+
+/* View: compact rows. The virtual list reads --bm-row-h, so this is the
+   drawn height too. */
+.config-bm-workbench.is-compact {
+    --bm-row-h: 36px;
+}
+
+/* View: the rail folded away at every width, behind the Filters button --
+   the phone's sheet, on a wide screen. */
+@media (min-width: 800px) {
+    .config-bm-workbench.is-rail-folded {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .config-bm-workbench.is-rail-folded .config-bm-narrow-only.config-bm-phone-only {
+        display: inline-flex;
+    }
+
+    .config-bm-workbench.is-rail-folded .config-bm-rail {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(320px, 100vw);
+        max-height: none;
+        padding: var(--space-3, 0.75rem);
+        background: var(--surface-3, var(--background-secondary));
+        z-index: calc(var(--layer-sticky-band, 5) + 1400);
+        overflow: auto;
+    }
+
+    .config-bm-workbench.is-rail-folded.is-sheet-open .config-bm-rail {
+        display: flex;
+    }
+
+    .config-bm-workbench.is-rail-folded .config-bm-scrim:not([hidden]) {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: calc(var(--layer-sticky-band, 5) + 1399);
+        background: color-mix(in srgb, var(--background-primary) 60%, transparent);
     }
 }
 

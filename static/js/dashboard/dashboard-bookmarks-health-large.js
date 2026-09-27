@@ -29,7 +29,11 @@
             const issue = b ? this.bmHealthIssue?.(b) : null;
             if (!b || !issue || typeof global.AppModal?.show !== 'function') return;
             const open = Boolean(document.querySelector('#app-modal.show #modal-text [data-bm-health-large]'));
-            if (!keepRange || !open || !BM_LARGE_RANGES.includes(this._bmLargeRange)) this._bmLargeRange = '30';
+            // Opens on the period View sets (30 days unless changed).
+            if (!keepRange || !open || !BM_LARGE_RANGES.includes(this._bmLargeRange)) {
+                const start = String(this.dash.settings?.bmViewHealthRange || '30');
+                this._bmLargeRange = BM_LARGE_RANGES.includes(start) ? start : '30';
+            }
             this._bmLargeKey = key;
             const show = (hist) => {
                 this._bmLargeHist = hist;

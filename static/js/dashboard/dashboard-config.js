@@ -2755,7 +2755,15 @@ class DashboardConfig {
         legend.className = 'config-bm-keyboard-legend';
         legend.setAttribute('aria-hidden', 'true');
         legend.innerHTML = this.renderBookmarkKeyboardLegend();
-        feed.after(legend);
+        // View: under the list (as it was), above it, or not at all.
+        const where = this.dash.settings?.bmViewKeyLegend || 'below';
+        if (where === 'off') return;
+        if (where === 'above') {
+            legend.classList.add('is-above');
+            feed.before(legend);
+        } else {
+            feed.after(legend);
+        }
     }
 
     bindBookmarkKeyboard(container) {
@@ -2768,8 +2776,11 @@ class DashboardConfig {
             host.addEventListener('click', (e) => {
                 const row = e.target.closest('.config-bm-row');
                 if (!row || !host.contains(row)) return;
-                // A click is the way into the side panel.
-                this._libDrawerWanted = true;
+                // A click is the way into the side panel -- unless View has a
+                // click only select the row; an open panel follows it either way.
+                if ((this.dash.settings?.bmViewClick || 'panel') !== 'select' || this._libDrawer?.isOpen()) {
+                    this._libDrawerWanted = true;
+                }
                 this._bmKeyboardKey = this.bookmarkRowKey(row);
                 this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
             });
@@ -11900,7 +11911,7 @@ class DashboardConfig {
         // before it had settings (models.go, clampBookmarkViewSettings).
         bmViewGroup: { info: ['bmViewGroupInfoTitle', 'bmViewGroupInfoMessage'], def: 'last' },
         bmViewDensity: { info: ['bmViewDensityInfoTitle', 'bmViewDensityInfoMessage'], def: 'comfortable' },
-        bmViewAddress: { info: ['bmViewAddressInfoTitle', 'bmViewAddressInfoMessage'], def: 'domain' },
+        bmViewAddress: { info: ['bmViewAddressInfoTitle', 'bmViewAddressInfoMessage'], def: 'full' },
         bmViewRowColors: { info: ['bmViewRowColorsInfoTitle', 'bmViewRowColorsInfoMessage'], def: true },
         bmViewColumns: { info: ['bmViewColumnsInfoTitle', 'bmViewColumnsInfoMessage'], def: null },
         bmViewUsageDays: { info: ['bmViewUsageDaysInfoTitle', 'bmViewUsageDaysInfoMessage'], def: 30 },
@@ -12290,8 +12301,8 @@ class DashboardConfig {
                         opt('compact', t('config.bmViewDensityCompact', 'Compact')),
                     ] },
                     { field: 'bmViewAddress', type: 'select', label: t('config.bmViewAddressLabel', 'Address in the row'), options: [
-                        opt('domain', t('config.bmViewAddressDomain', 'Domain')),
                         opt('full', t('config.bmViewAddressFull', 'Full address')),
+                        opt('domain', t('config.bmViewAddressDomain', 'Domain')),
                         opt('hidden', t('config.bmViewAddressHidden', 'Hidden')),
                     ] },
                     { field: 'bmViewRowColors', type: 'checkbox', label: t('config.bmViewRowColorsLabel', 'Colour rows by their health') },
@@ -23271,6 +23282,9 @@ class DashboardConfig {
      * already chosen a Group -- even "No groups" -- gets exactly that.
      */
     defaultBookmarksGroup() {
+        // View can fix the group the list opens on; 'last' keeps the old rule.
+        const fixed = this.dash.settings?.bmViewGroup;
+        if (fixed && fixed !== 'last') return fixed === 'none' ? '' : fixed;
         let stored = null;
         try {
             stored = window.localStorage?.getItem(DashboardConfig.BM_GROUP_KEY);
@@ -24535,7 +24549,10 @@ class DashboardConfig {
         listRoot.addEventListener('dblclick', (e) => {
             if (e.target.closest('button, label, input, select, a')) return;
             const key = e.target.closest('.config-bm-row')?.getAttribute('data-bm-key');
-            if (key) this.openBookmarkByKey(key);
+            if (!key) return;
+            // View: open the bookmark, or open it for editing.
+            if ((this.dash.settings?.bmViewDblClick || 'open') === 'edit') this.focusWorkbenchPanel?.(key);
+            else this.openBookmarkByKey(key);
         });
     }
 
