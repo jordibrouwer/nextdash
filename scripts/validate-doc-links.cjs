@@ -28,16 +28,20 @@ const root = path.join(__dirname, '..');
 const FILES = ['README.md', 'MANUAL.md'];
 
 /*
- * GitHub's rule, which is not the obvious one.
+ * GitHub's rule (github-slugger), checked against every heading GitHub
+ * renders for MANUAL.md.
  *
- * Non-word characters are *removed*, not replaced: "Config — complete
- * walkthrough" becomes `config-complete-walkthrough`, with one hyphen where the
- * dash was and not the two a replace-with-hyphen rule produces. Every broken
- * link this script was written for came from getting that backwards.
+ * Everything but letters, marks, numbers, connector punctuation, spaces and
+ * hyphens is removed, and then *each* space becomes a hyphen -- no collapsing.
+ * So "## 3. 🧩 Core concepts" is `3--core-concepts` (the emoji goes, its two
+ * spaces stay), "Checks & health" is `checks--health`, and the invisible
+ * variation selector after some emoji (⚙️) is a mark and stays in the slug.
+ * The earlier version collapsed runs of spaces, which agreed with itself and
+ * with no page GitHub ever drew: every emoji heading's link was broken there.
  */
 function slug(heading) {
     const text = heading.replace(/^#+/, '').trim().toLowerCase();
-    return text.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '');
+    return text.replace(/[^\p{L}\p{M}\p{N}\p{Pc} -]/gu, '').replace(/ /g, '-');
 }
 
 /* The anchors a file offers, and the line each heading sits on. */
