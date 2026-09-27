@@ -1016,6 +1016,7 @@ html[data-theme="bone-china-light"] body {
 body:not([data-depth="flat"]) :is(
     .config-panel,
     .lvs-summary,
+    .lvs-drawer-frame,
     .search-container
 ) {
     background-image: var(--surface-grain), var(--surface-gloss);

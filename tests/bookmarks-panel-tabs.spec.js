@@ -275,3 +275,21 @@ test.describe('bookmark panel: scrolling stays in it', () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(before);
   });
 });
+
+test('the side panel wears the theme like the summary tile: edges, cast and gloss', async ({ page }) => {
+  const { bookmarks } = await open(page);
+  await page.evaluate(() => { document.body.dataset.depth = 'rich'; });
+  await pick(page, bookmarks[1].name);
+  const look = await page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer-frame').evaluate((el) => {
+    const probe = document.createElement('div');
+    probe.className = 'lvs-summary';
+    document.body.appendChild(probe);
+    const tile = getComputedStyle(probe).backgroundImage;
+    probe.remove();
+    const cs = getComputedStyle(el);
+    return { image: cs.backgroundImage, tile, shadow: cs.boxShadow };
+  });
+  expect(look.image).toBe(look.tile);
+  expect(look.image).not.toBe('none');
+  expect(look.shadow).toContain('inset');
+});

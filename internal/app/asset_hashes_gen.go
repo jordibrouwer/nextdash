@@ -53,7 +53,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/theme-backdrop.css":                                 "2e94ae5bf5c1",
 	"css/theme-browser.css":                                  "89158111480d",
 	"css/theme-character.css":                                "3926603d8040",
-	"css/theme-depth.css":                                    "a7af0926349d",
+	"css/theme-depth.css":                                    "46545edb1ee9",
 	"css/theme-ink.css":                                      "510f764a1cbb",
 	"css/theme.css":                                          "bdd019a746c2",
 	"css/typography-tokens.css":                              "363997a581d7",
