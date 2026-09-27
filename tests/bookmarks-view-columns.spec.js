@@ -48,6 +48,28 @@ test.describe('bookmarks view: added and usage columns', () => {
     await expect(row(page, bookmarks[1].name).locator('.config-bm-spark')).toHaveAttribute('title', /no opens/i);
   });
 
+  test('opening a bookmark shows in its bars at once', async ({ page }) => {
+    const { bookmarks } = await open(page);
+    await page.evaluate(() => { window.open = () => null; });
+    const target = row(page, bookmarks[1].name);
+    await expect(target.locator('.config-bm-spark')).toHaveAttribute('title', /no opens/i);
+    await target.click();
+    await page.locator('.lvs-drawer-host[data-lvs-drawer="library"] [data-bm-panel-action="open"]').first().click();
+    await expect(target.locator('.config-bm-spark')).toHaveAttribute('title', /1 opens/);
+  });
+
+  test('a bookmark opened before the log was kept still shows that last open', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page, undefined, {
+      view: 'library',
+      prepare: () => {
+        const b = window.dashboardInstance.allBookmarks[2];
+        b.openLog = [];
+        b.lastOpened = Date.now() - 3 * 86400000;
+      },
+    });
+    await expect(row(page, bookmarks[2].name).locator('.config-bm-spark')).toHaveAttribute('title', /1 opens/);
+  });
+
   test('a narrower window keeps to the columns it had', async ({ page }) => {
     const { bookmarks } = await open(page);
     await page.setViewportSize({ width: 1000, height: 800 });

@@ -1820,7 +1820,12 @@
         const SPAN = 2 * 86400000;
         const now = Date.now();
         const counts = new Array(BARS).fill(0);
-        (Array.isArray(b.openLog) ? b.openLog : []).forEach((raw) => {
+        const log = (Array.isArray(b.openLog) ? b.openLog : []).map(Number);
+        // Opens are logged one by one only since the log existed; a bookmark
+        // last opened before that still has that one open, and it is real.
+        const lastOpened = Number(b.lastOpened || 0);
+        if (lastOpened > 0 && !log.includes(lastOpened)) log.push(lastOpened);
+        log.forEach((raw) => {
             const age = now - Number(raw);
             if (!(age >= 0) || age >= BARS * SPAN) return;
             counts[BARS - 1 - Math.floor(age / SPAN)] += 1;

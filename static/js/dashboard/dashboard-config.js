@@ -2732,6 +2732,8 @@ class DashboardConfig {
                 || { label: '—', never: true };
             last.textContent = formatted.label;
         }
+        const spark = row.querySelector('.config-bm-spark');
+        if (spark && typeof this.workbenchSparkCell === 'function') spark.outerHTML = this.workbenchSparkCell(bookmark);
     }
 
     appendBookmarkKeyboardLegend(host) {

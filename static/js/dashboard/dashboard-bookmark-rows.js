@@ -1170,12 +1170,14 @@ class DashboardBookmarkRows {
 
         const count = updatedBookmark.openCount;
         const opened = updatedBookmark.lastOpened;
+        const log = Array.isArray(updatedBookmark.openLog) ? updatedBookmark.openLog : null;
 
         if (pid === Number(d.currentPageId) && Array.isArray(d.bookmarks)) {
             d.bookmarks.forEach((bm) => {
                 if (this.canonicalBookmarkURLKey(bm.url) === key) {
                     bm.openCount = count;
                     bm.lastOpened = opened;
+                    if (log) bm.openLog = log.slice();
                 }
             });
         }
@@ -1191,6 +1193,7 @@ class DashboardBookmarkRows {
                 }
                 bm.openCount = count;
                 bm.lastOpened = opened;
+                if (log) bm.openLog = log.slice();
             });
         }
     }
