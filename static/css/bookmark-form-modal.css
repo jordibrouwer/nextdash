@@ -79,8 +79,8 @@
     flex-direction: column;
     margin: auto;
     flex-shrink: 0;
-    border-radius: var(--surface-float-radius);
-    border: 1px solid var(--surface-float-border);
+    border-radius: var(--radius-5, 8px);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
     /*
      * The colour every other modal in the app is painted in.
      *
@@ -89,10 +89,19 @@
      * it was a sheet at all was the shadow under it -- so on a flat theme,
      * where there is no shadow, it had no edge of its own.
      */
-    background: var(--surface-float-bg);
-    backdrop-filter: var(--surface-float-blur);
-    -webkit-backdrop-filter: var(--surface-float-blur);
-    box-shadow: var(--surface-modal-shadow);
+    background: var(--bookmark-sheet-ground);
+    box-shadow: 0 24px 64px color-mix(in srgb, black 60%, transparent);
+}
+
+/*
+ * The edges and the drop, written where the depth ladder can reach them: one
+ * declaration, because box-shadow does not stack across rules.
+ */
+html[data-theme] body:not([data-depth="flat"]) .bookmark-form-modal-dialog {
+    box-shadow:
+        var(--edge-light),
+        var(--edge-dark),
+        0 24px 64px color-mix(in srgb, black calc(60% * var(--theme-depth)), transparent);
 }
 
 .bookmark-form-modal-header {

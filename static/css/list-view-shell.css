@@ -631,13 +631,14 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
     display: flex;
     flex-direction: column;
     gap: var(--space-3, 0.75rem);
-    background: var(--surface-float-bg);
-    backdrop-filter: var(--surface-float-blur);
-    -webkit-backdrop-filter: var(--surface-float-blur);
-    border-radius: var(--surface-float-radius);
-    box-shadow: var(--surface-panel-shadow);
+    background: var(--surface-3, var(--background-secondary));
+    border-radius: var(--radius-5, 8px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
     pointer-events: auto;
-    border: 1px solid var(--surface-float-border);
+}
+
+html[data-theme] body:not([data-depth="flat"]) .lvs-drawer {
+    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast), 0 8px 28px rgba(0, 0, 0, 0.3);
 }
 
 .lvs-drawer-head {

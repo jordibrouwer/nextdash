@@ -105,10 +105,6 @@ html[data-theme] body[data-depth="glass"] {
        theme: hij draagt tekst waar de lezer op handelt. */
     --background-modal: var(--surface-glass-overlay);
     --layout-modal-bg: var(--background-modal);
-    /* The floating surfaces (theme-depth.css): see-through, with the blur
-       that separates their edge from what is behind. Menus do not read it. */
-    --surface-float-bg: var(--surface-glass-overlay);
-    --surface-float-blur: blur(var(--glass-blur-overlay)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
 
     /*
      * Drie tredes, geordend naar hoeveel er op een vlak gelezen wordt.
@@ -330,6 +326,17 @@ html[data-theme] body[data-depth="glass"] :is(
     -webkit-backdrop-filter: blur(var(--glass-blur-slab)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
 }
 
+/* Overlays: bijna dekkend, en de blur alleen nog voor de randscheiding. */
+html[data-theme] body[data-depth="glass"] :is(
+    .modal,
+    .search-container,
+    .bookmark-form-modal-dialog,
+    .health-focus-card
+) {
+    backdrop-filter: blur(var(--glass-blur-overlay)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+}
+
 /*
  * En de klassieke layout, waar de meeste mensen zitten.
  *
@@ -491,14 +498,27 @@ html[data-theme] body:not([data-depth="flat"]) :is(
     box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
 }
 
+/*
+ * Het commandovenster krijgt dezelfde twee randen, maar zijn eigen val.
+ *
+ * Het stond in de lijst hierboven en kreeg daarmee de cast van een plaat: 3px
+ * omlaag, 15px zacht. Dat is de schaduw van iets dat op de pagina ligt, en dit
+ * ligt erboven -- de overlay-spec tekent 0 24px 64px. De randen blijven, want
+ * die zijn de taal van de app; alleen de diepte hoort bij wat het ding is.
+ */
+html[data-theme] body:not([data-depth="flat"]) .search-container {
+    box-shadow:
+        var(--edge-light),
+        var(--edge-dark),
+        0 24px 64px color-mix(in srgb, black calc(60% * var(--theme-depth)), transparent);
+}
+
 /* Doorzichtigheid is een van de dingen waar een lezer expliciet nee tegen kan
    zeggen. Dan valt glas terug op rich: de diepte blijft, de doorkijk gaat weg. */
 @media (prefers-reduced-transparency: reduce) {
     html[data-theme] body[data-depth="glass"] {
         --layout-surface: var(--background-secondary);
         --background-modal: var(--background-primary);
-        --surface-float-bg: var(--background-primary);
-        --surface-float-blur: none;
     }
     html[data-theme] body[data-depth="glass"] :is(
         .config-tile,
@@ -519,7 +539,9 @@ html[data-theme] body:not([data-depth="flat"]) :is(
     .lvs-summary,
     .lvs-filter,
     .health-view-item,
-    .health-monitor-stat
+    .health-monitor-stat,
+    .modal,
+    .health-focus-card
     ) {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;

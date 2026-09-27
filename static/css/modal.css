@@ -37,12 +37,10 @@
     padding: var(--space-5, 1.5rem) var(--space-6, 2rem);
     max-width: 400px;
     width: 90%;
-    border: 1px solid var(--surface-float-border);
-    border-radius: var(--surface-float-radius);
-    background: var(--surface-float-bg);
-    backdrop-filter: var(--surface-float-blur);
-    -webkit-backdrop-filter: var(--surface-float-blur);
-    box-shadow: var(--surface-modal-shadow);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
+    border-radius: var(--layout-radius-md, 12px);
+    background: var(--background-modal);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
     overflow: hidden;
     transform: scale(0.98) translateY(8px);
     opacity: 0;

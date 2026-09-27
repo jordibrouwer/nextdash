@@ -181,14 +181,14 @@ body[data-side-margin="airy"] {
 .date-popover {
     position: fixed;
     z-index: 9000;
-    background: var(--surface-float-bg);
-    border: 1px solid var(--surface-float-border);
-    border-radius: var(--surface-menu-radius);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-7, 12px);
     padding: var(--space-3, 0.85rem) var(--space-4, 1rem) var(--space-3, 0.7rem);
     min-width: 210px;
     color: var(--text-primary);
     font-family: var(--font-family-main);
-    box-shadow: var(--surface-menu-shadow);
+    box-shadow: 0 4px 18px color-mix(in srgb, var(--text-primary) 14%, transparent);
     animation: datePopoverIn 0.15s ease forwards;
 }
 
@@ -266,14 +266,14 @@ body[data-side-margin="airy"] {
     z-index: 10160;
     max-width: min(19rem, calc(100vw - 1rem));
     padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
-    border-radius: var(--surface-menu-radius);
-    border: 1px solid var(--surface-float-border);
-    background: var(--surface-float-bg);
+    border-radius: var(--radius-5, 0.5rem);
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
     color: var(--text-primary);
     font-family: var(--font-family-main);
     font-size: calc(var(--font-size-controls) * 0.85);
     line-height: 1.4;
-    box-shadow: var(--surface-menu-shadow);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--text-primary) 16%, transparent);
     pointer-events: none;
 }
 
@@ -291,9 +291,9 @@ body[data-side-margin="airy"] {
 .move-popover {
     position: fixed;
     z-index: 9000;
-    background: var(--surface-float-bg);
-    border: 1px solid var(--surface-float-border);
-    border-radius: var(--surface-menu-radius);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
     padding: var(--space-1-5, 0.35rem) 0 var(--space-2, 0.45rem);
     min-width: 12rem;
     max-width: min(16rem, calc(100vw - 1rem));
@@ -311,8 +311,29 @@ body[data-side-margin="airy"] {
      * modal's 24/64: a menu is a hand's breadth off the page, not a sheet over
      * it.
      */
-    box-shadow: var(--surface-menu-shadow);
+    box-shadow: 0 12px 32px color-mix(in srgb, black 45%, transparent);
     animation: datePopoverIn 0.13s ease forwards;
+}
+
+/*
+ * The menus join the depth ladder.
+ *
+ * .move-popover is the one surface every menu in the app wears -- the bookmark
+ * and category menus, config's own, the check-mode menu, and the move, tag and
+ * delete pickers -- and it was drawing the same flat box at rich, glass and
+ * flat alike. The edges and the cast come from the theme now, so the menus are
+ * lit by whatever the reader chose, like the panels and the cards.
+ *
+ * No backdrop-filter, at any depth. Blur on a menu is what gave Safari a
+ * composited layer that hit-tested in front of what it covered and swallowed
+ * the clicks aimed at it; .health-view-menu lost its blur for exactly that and
+ * these must not gain one. Edges and a drop cost no layer.
+ */
+html[data-theme] body:not([data-depth="flat"]) .move-popover {
+    box-shadow:
+        var(--edge-light),
+        var(--edge-dark),
+        0 12px 32px color-mix(in srgb, black calc(45% * var(--theme-depth)), transparent);
 }
 
 /* The category menu sizes to what it holds.
@@ -1517,11 +1538,11 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 .page-tab-popover {
     position: fixed;
     z-index: 1100;
-    background: var(--surface-float-bg);
-    border: 1px solid var(--surface-float-border);
-    border-radius: var(--surface-menu-radius);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-6, 0.65rem);
     padding: var(--space-2, 0.6rem) var(--space-3, 0.7rem);
-    box-shadow: var(--surface-menu-shadow);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.22);
     display: flex;
     flex-direction: column;
     gap: var(--space-2, 0.5rem);
@@ -2303,12 +2324,11 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
     margin: 0;
     padding: 0;
     list-style: none;
-    background: var(--surface-float-bg);
-    border: 1px solid var(--surface-float-border);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
     max-height: 14rem;
     overflow-y: auto;
-    box-shadow: var(--surface-menu-shadow);
-    border-radius: var(--surface-menu-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .tag-ac-item {
@@ -2999,10 +3019,10 @@ body.layout-locked .category-reorder-handle {
     flex-direction: column;
     min-width: 7em;
     padding: 0.2em;
-    border: 1px solid var(--surface-float-border);
-    border-radius: var(--surface-menu-radius);
-    background: var(--surface-float-bg);
-    box-shadow: var(--surface-menu-shadow);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: var(--background-primary);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--text-primary) 14%, transparent);
 }
 
 .category-sort-menu-item {
@@ -4526,12 +4546,10 @@ body.no-animations .bookmarks-list.reorder-container::after {
     z-index: 2000;
     display: none;
     width: min(360px, calc(100vw - 24px));
-    border-radius: var(--surface-float-radius);
-    border: 1px solid var(--surface-float-border);
-    background: var(--surface-float-bg);
-    backdrop-filter: var(--surface-float-blur);
-    -webkit-backdrop-filter: var(--surface-float-blur);
-    box-shadow: var(--surface-panel-shadow);
+    border-radius: var(--radius-7, 12px);
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
     /* Peek is something to read, not something to reach: it takes no pointer
        events, so it never has to move out of the way of its own cursor. */
     pointer-events: none;
@@ -5753,12 +5771,12 @@ body.no-animations .bookmark-move-out {
     max-width: 100%;
     box-sizing: border-box;
     padding: var(--space-3, 0.75rem) 1.25rem;
-    border: 1px solid var(--surface-float-border);
-    border-radius: var(--surface-float-radius);
-    background: var(--surface-float-bg);
-    backdrop-filter: var(--surface-float-blur);
-    -webkit-backdrop-filter: var(--surface-float-blur);
-    box-shadow: var(--surface-modal-shadow);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
+    border-radius: var(--layout-radius-md, 12px);
+    background: color-mix(in srgb, var(--background-modal) 90%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
     /* exit: slide down toward toolbar */
     transform: translateY(10px) scale(0.98);
     opacity: 0;
@@ -5981,10 +5999,10 @@ body[data-grid-keys="shown"] .dashboard-legend {
     align-items: center;
     gap: var(--space-1-5, 0.35rem);
     padding: var(--space-1-5, 0.35rem) var(--space-2, 0.45rem);
-    border: 1px solid var(--surface-float-border);
-    border-radius: var(--surface-menu-radius);
-    background: var(--surface-float-bg);
-    box-shadow: var(--surface-menu-shadow);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 0.4rem);
+    background: var(--background-secondary);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 
 .category-icon-input {
