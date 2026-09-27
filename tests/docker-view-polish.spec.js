@@ -109,8 +109,7 @@ test.describe('docker view follows Config -> Containers', () => {
     await expect(page.locator('[data-docker-row]')).toHaveCount(4);
     await page.evaluate(() => { window.dashboardInstance.settings.dockerLogLines = 500; });
     await page.locator('[data-docker-row="sonarr"]').click();
-    const logs = page.locator('[data-docker-section="logs"]');
-    if (!(await logs.evaluate((d) => d.open))) await logs.locator('summary').click();
+    await page.locator('[data-docker-drawer] [data-slp-tab="logs"]').click();
     await expect.poll(() => tails).toContain('500');
   });
 });

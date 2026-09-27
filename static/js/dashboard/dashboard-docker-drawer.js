@@ -132,9 +132,21 @@ class DockerDrawer {
         void this._loadDetail(name);
     }
 
-    /** Opens one section on arrival, as :docker <name> logs asks. */
+    /** Opens one section on arrival, as :docker <name> logs asks: a tab, or a part of Overview. */
     openSection(key) {
-        this.base.openSection(key);
+        const panel = this.base.panel;
+        if (!panel) return;
+        const tab = panel.querySelector(`[data-slp-tab="${CSS.escape(key)}"]`);
+        if (tab) {
+            tab.click();
+            return;
+        }
+        panel.querySelector('[data-slp-tab="overview"]')?.click();
+        const acc = panel.querySelector(`[data-slp-acc="${CSS.escape(key)}"]`);
+        if (acc) {
+            acc.open = true;
+            acc.scrollIntoView?.({ block: 'nearest' });
+        }
     }
 
     close() {
@@ -164,20 +176,24 @@ class DockerDrawer {
 
     _buildSkeleton(summary) {
         const els = { sections: {} };
+        this._summary = summary;
         this.base.open(summary.name, {
             title: summary.name,
-            onSectionToggle: (key, open) => this._onSectionToggle(key, open),
             build: (panel, ctx) => {
                 // The Containers specs and styles still address these.
                 panel.setAttribute('data-docker-drawer', '');
-                panel.classList.add('docker-drawer');
-                this._fillHeader(ctx, summary);
-                DOCKER_SECTION_KEYS.forEach((key) => {
-                    const titleKey = `dockerSection${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-                    const body = ctx.section(key, this.t(titleKey, key));
-                    body.parentElement.setAttribute('data-docker-section', key);
-                    body.classList.add('docker-section-body');
-                    els.sections[key] = body;
+                panel.classList.add('docker-drawer', 'config-bm-drawer');
+                // The layout carries its own name, as in the Bookmarks view.
+                ctx.heading.hidden = true;
+                panel.insertAdjacentHTML('beforeend', this._layout(summary));
+                this._fillActions(panel, summary);
+                panel.querySelectorAll('[data-docker-body]').forEach((body) => {
+                    els.sections[body.getAttribute('data-docker-body')] = body;
+                });
+                window.SidePanelLayout.bind(panel, {
+                    group: 'docker',
+                    onAction: (action) => this._act(action),
+                    onTab: (name) => this._onTab(name),
                 });
             },
         });
@@ -186,33 +202,111 @@ class DockerDrawer {
         this._wireResources(els);
         this._wireLogs(els);
         this._wireChanges(els);
-        // Sections restored open fire their toggle before _els exists; run
-        // their loads now that it does.
-        DOCKER_SECTION_KEYS.forEach((key) => {
-            if (els.sections[key]?.parentElement?.open) this._onSectionToggle(key, true);
-        });
+        // The tab on show loads what it needs now, as a click on it would.
+        this._onTab(window.SidePanelLayout.activeTab('docker', this._tabs()));
     }
 
-    _fillHeader(ctx, summary) {
-        const pill = document.createElement('span');
-        pill.className = 'docker-drawer-pill';
-        pill.setAttribute('data-docker-state', '');
-        pill.textContent = summary.status || summary.state || '';
-        ctx.heading.appendChild(pill);
+    _tabs() {
+        return [
+            { name: 'overview', label: this.t('dockerSectionOverview', 'Overview') },
+            { name: 'resources', label: this.t('dockerSectionResources', 'Resources') },
+            { name: 'logs', label: this.t('dockerSectionLogs', 'Logs') },
+            { name: 'changes', label: this.t('dockerSectionChanges', 'Changes') },
+        ];
+    }
 
-        if (summary.health) {
-            const health = document.createElement('span');
-            health.className = 'docker-drawer-health';
-            health.setAttribute('data-docker-health', '');
-            health.textContent = summary.health;
-            ctx.heading.appendChild(health);
+    /** The Bookmarks side panel's layout (shared/side-panel-layout.js). */
+    _layout(summary) {
+        const L = window.SidePanelLayout;
+        const esc = (v) => this.view.escape ? this.view.escape(v) : String(v ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+        const state = String(summary.state || '');
+        const tone = state === 'running' ? 'good' : (state === 'paused' || state === 'restarting' ? 'warn' : (state ? 'bad' : 'muted'));
+        const ports = (summary.ports || []).filter((p) => p && p.public)
+            .map((p) => `${p.public} → ${p.private}`).slice(0, 2).join(', ');
+        const where = [summary.status, ports, summary.health].filter(Boolean).join(' · ');
+        const webui = String(summary.webui || '').replace('[IP]', location.hostname);
+        L.moreLabel = this.t('dockerMoreActions', 'More actions');
+        const head = L.head(esc, {
+            icon: `<span class="docker-drawer-icon" aria-hidden="true">${esc(String(summary.name || '?').charAt(0).toUpperCase())}</span>`,
+            title: summary.name,
+            badge: { text: summary.state || '', tone },
+            more: [{ action: 'copy-name', label: this.t('dockerCopyName', 'Copy name') }],
+            where,
+            actions: webui ? [{ action: 'webui', label: this.t('dockerLinkWebUI', 'Open web UI'), primary: true }] : [],
+        });
+        const image = [summary.image, summary.tag].filter(Boolean).join(':');
+        const chips = [
+            image ? L.chip(esc, image) : '',
+            summary.update?.status === 'available' ? L.chip(esc, this.t('dockerUpdateAvailable', 'update available'), 'is-tag') : '',
+            summary.composeProject ? L.chip(esc, summary.composeProject) : '',
+        ].join('');
+        const summaryBlock = L.viz(`<div class="config-bm-details-chips">${chips}</div>`);
+        const body = (key) => `<div class="docker-section-body" data-docker-body="${key}"></div>`;
+        const acc = (key, label, open = false) => L.acc(esc, 'docker', key, label, '', body(key), open)
+            .replace('<details ', `<details data-docker-section="${key}" `);
+        const tabs = this._tabs();
+        const pane = (name, html) => L.pane(esc, 'docker', tabs, name, html)
+            .replace('<section ', `<section data-docker-section="${name}" `);
+        return `${head}${L.tabs(esc, 'docker', tabs)}
+            ${pane('overview', `${summaryBlock}${L.accList([
+                acc('overview', this.t('dockerSectionDetails', 'Details'), true),
+                acc('network', this.t('dockerSectionNetwork', 'Network')),
+                acc('volumes', this.t('dockerSectionVolumes', 'Volumes')),
+                acc('env', this.t('dockerSectionEnv', 'Environment')),
+            ])}`)}
+            ${pane('resources', body('resources'))}
+            ${pane('logs', body('logs'))}
+            ${pane('changes', body('changes'))}`;
+    }
+
+    /**
+     * The container's actions, DockerActions' own buttons: Restart and Update
+     * beside Open web UI, the rest under ⋯. Moved, not copied, so each keeps
+     * the handler DockerActions gave it.
+     */
+    _fillActions(panel, summary) {
+        const head = panel.querySelector('.config-bm-panel-head');
+        let row = head?.querySelector('.config-bm-panel-actions');
+        if (head && !row) {
+            row = document.createElement('div');
+            row.className = 'config-bm-panel-actions';
+            head.appendChild(row);
         }
+        const menu = head?.querySelector('[data-slp-more-menu]');
+        if (!row || !menu) return;
+        row.setAttribute('data-docker-drawer-actions', '');
+        row.classList.add('docker-drawer-actions');
+        const scratch = document.createElement('div');
+        this.view.actions?.renderButtons(scratch, summary);
+        [...scratch.children].forEach((el) => {
+            const action = el.getAttribute('data-docker-action');
+            if (el.tagName === 'BUTTON') {
+                el.classList.add('config-btn', 'config-btn--small');
+                if (el.classList.contains('docker-action-btn--primary')) el.classList.add('config-btn--primary');
+                if (el.classList.contains('docker-action-btn--danger')) el.classList.add('config-btn--danger');
+            }
+            if (!action || action === 'restart' || action === 'update') row.appendChild(el);
+            else menu.insertBefore(el, menu.firstChild);
+        });
+        menu.setAttribute('data-docker-drawer-more', '');
+        panel.querySelector('.slp-badge')?.setAttribute('data-docker-state', '');
+    }
 
-        // The actions the container's current state allows; DockerActions
-        // decides which, so the drawer and the row keys never disagree.
-        ctx.actions.setAttribute('data-docker-drawer-actions', '');
-        ctx.actions.classList.add('docker-drawer-actions');
-        this.view.actions?.renderButtons(ctx.actions, summary);
+    _act(action) {
+        const summary = this._summary || {};
+        if (action === 'webui') {
+            const href = String(summary.webui || '').replace('[IP]', location.hostname);
+            if (href) window.open(href, '_blank', 'noopener,noreferrer');
+        } else if (action === 'copy-name') {
+            void navigator.clipboard?.writeText?.(String(summary.name || ''));
+            this.view.dash?.showNotification?.(this.t('dockerNameCopied', 'Name copied'), 'success', { duration: 2000 });
+        }
+    }
+
+    /** A tab shown: what it holds loads now; Resources polls only while on show. */
+    _onTab(name) {
+        this._onSectionToggle('resources', name === 'resources');
+        if (name === 'logs' || name === 'changes') this._onSectionToggle(name, true);
     }
 
     _onSectionToggle(key, open) {
@@ -254,9 +348,8 @@ class DockerDrawer {
         this._renderEnv(els.sections.env, detail);
 
         const pill = this.base.panel?.querySelector('[data-docker-state]');
-        if (pill && detail) pill.textContent = detail.status || detail.state || '';
-        const health = this.base.panel?.querySelector('[data-docker-health]');
-        if (health && detail?.health) health.textContent = detail.health;
+        if (pill && detail?.state) pill.textContent = detail.state;
+
     }
 
     _fieldRow(body, labelKey, labelFallback, value) {

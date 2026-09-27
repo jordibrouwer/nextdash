@@ -50,12 +50,15 @@ test.describe('docker view actions', () => {
   test('drawer buttons follow the state', async ({ page }) => {
     const state = await openView(page);
     await page.locator('[data-docker-row="jellyfin"]').click();
-    const actions = page.locator('[data-docker-drawer-actions]');
-    await expect(actions.locator('[data-docker-action="stop"]')).toBeVisible();
-    await expect(actions.locator('[data-docker-action="start"]')).toHaveCount(0);
-    await actions.locator('[data-docker-action="stop"]').click();
+    // Restart and Update sit beside Open web UI; the rest under ⋯.
+    const drawer = page.locator('[data-docker-drawer]');
+    await expect(drawer.locator('[data-docker-drawer-actions] [data-docker-action="restart"]')).toBeVisible();
+    await drawer.locator('[data-slp-more]').click();
+    await expect(drawer.locator('[data-docker-drawer-more] [data-docker-action="stop"]')).toBeVisible();
+    await expect(drawer.locator('[data-docker-action="start"]')).toHaveCount(0);
+    await drawer.locator('[data-docker-drawer-more] [data-docker-action="stop"]').click();
     await expect.poll(() => state.calls).toContain('POST /containers/jellyfin/stop');
-    await expect(actions.locator('[data-docker-action="start"]')).toBeVisible();
+    await expect(drawer.locator('[data-docker-action="start"]')).toHaveCount(1);
   });
 
   test('own container offers no actions', async ({ page }) => {
@@ -93,7 +96,8 @@ test.describe('docker view actions', () => {
     const state = await openView(page);
     state.control = false; // the setting changed under the open page
     await page.locator('[data-docker-row="jellyfin"]').click();
-    await page.locator('[data-docker-drawer-actions] [data-docker-action="stop"]').click();
+    await page.locator('[data-docker-drawer] [data-slp-more]').click();
+    await page.locator('[data-docker-drawer-more] [data-docker-action="stop"]').click();
     await expect(page.locator('[data-docker-readonly]')).toBeVisible();
   });
 

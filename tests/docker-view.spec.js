@@ -89,6 +89,22 @@ test.describe('docker view', () => {
     await expect(page.locator('[data-docker-readonly]')).toContainText('NEXTDASH_DOCKER_CONTROL=1');
   });
 
+  test('the drawer takes the Bookmarks side panel\'s layout: a head, four tabs, Overview as an accordion', async ({ page }) => {
+    await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    const drawer = page.locator('[data-docker-drawer]');
+    await expect(drawer.locator('.config-bm-panel-head .config-bm-panel-title')).toHaveText('sonarr');
+    await expect(drawer.locator('.config-bm-panel-head [data-docker-state]')).not.toBeEmpty();
+    const tabs = await drawer.locator('[data-slp-tab]').evaluateAll((els) => els.map((e) => e.dataset.slpTab));
+    expect(tabs).toEqual(['overview', 'resources', 'logs', 'changes']);
+    for (const key of ['overview', 'network', 'volumes', 'env']) {
+      await expect(drawer.locator(`[data-slp-pane="overview"] [data-slp-acc="${key}"]`)).toHaveCount(1);
+    }
+    await drawer.locator('[data-slp-tab="logs"]').click();
+    await expect(drawer.locator('[data-slp-pane="overview"]')).toBeHidden();
+    await expect(drawer.locator('[data-docker-logs]')).toBeVisible();
+  });
+
   test('Enter opens the drawer with details and hidden env', async ({ page }) => {
     await mockDocker(page);
     await page.goto('/#docker');
@@ -109,7 +125,7 @@ test.describe('docker view', () => {
     const state = await mockDocker(page);
     await page.goto('/#docker/sonarr');
     const drawer = page.locator('[data-docker-drawer]');
-    await drawer.locator('[data-docker-section="logs"] summary').click();
+    await drawer.locator('[data-slp-tab="logs"]').click();
     await expect(drawer.locator('[data-docker-logs]')).toContainText('line two');
     const before = state.calls.filter((c) => c.endsWith('/logs')).length;
     await drawer.locator('[data-docker-logs-refresh]').click();
@@ -120,20 +136,20 @@ test.describe('docker view', () => {
     await mockDocker(page);
     await page.goto('/#docker/sonarr');
     const changes = page.locator('[data-docker-section="changes"]');
-    await changes.locator('summary').click();
+    await page.locator('[data-docker-drawer] [data-slp-tab="changes"]').click();
     await expect(changes).toContainText('4.0.10');
     await expect(changes).toContainText('## Fixes');
     await expect(changes.locator('a[href="https://example.com/x"]')).toHaveAttribute('rel', /noopener/);
     await expect(changes.locator('a[data-docker-link="source"]')).toHaveAttribute('href', 'https://github.com/linuxserver/docker-sonarr');
   });
 
-  test('resources poll only while open', async ({ page }) => {
+  test('resources poll only while their tab is on show', async ({ page }) => {
     const state = await mockDocker(page);
     await page.goto('/#docker/sonarr');
-    const res = page.locator('[data-docker-section="resources"]');
-    await res.locator('summary').click();
+    // Resources is a tab: it polls while on show, and stops when another is.
+    await page.locator('[data-docker-drawer] [data-slp-tab="resources"]').click();
     await expect(page.locator('[data-docker-cpu]')).toContainText('3.2');
-    await res.locator('summary').click();
+    await page.locator('[data-docker-drawer] [data-slp-tab="overview"]').click();
     const n = state.calls.filter((c) => c.endsWith('/stats')).length;
     await page.waitForTimeout(2500);
     expect(state.calls.filter((c) => c.endsWith('/stats')).length).toBe(n);
@@ -153,7 +169,7 @@ test.describe('docker view', () => {
     await mockDocker(page);
     await page.goto('/#docker/sonarr');
     const changes = page.locator('[data-docker-section="changes"]');
-    await changes.locator('summary').click();
+    await page.locator('[data-docker-drawer] [data-slp-tab="changes"]').click();
     const link = changes.locator('a[data-docker-link="source"]');
     await expect(link).toBeVisible();
     const [linkColor, portColor, underline] = await page.evaluate(() => {
