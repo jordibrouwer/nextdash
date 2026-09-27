@@ -246,7 +246,8 @@ class DashboardConfig {
         this.settingsFilter = '';
         // Data & backups sub-tab.
         this.dbTab = 'backups';
-        this.bmTab = 'list';
+        // Config opens Bookmarks on View; the Bookmarks view sets 'list' for itself.
+        this.bmTab = 'view';
         // Logs section sub-tab — one tab today, kept a real sub-tab so a link
         // to it follows the same shape as every other section.
         this.logsTab = 'server';
@@ -1960,6 +1961,10 @@ class DashboardConfig {
         }
         if (this.section === 'behavior') {
             return { section: 'behavior', tab: this.behaviorTab };
+        }
+        // Bookmarks → View is a tab of settings like Behavior's.
+        if (this.section === 'bookmarks' && !this.standalone && this.bmTab === 'view') {
+            return { section: 'bookmarks', tab: 'view' };
         }
         return null;
     }
@@ -5773,6 +5778,7 @@ class DashboardConfig {
 
     bmTabLabel(tab) {
         const map = {
+            view: ['config.bmTabView', 'View'],
             list: ['config.bmTabList', 'List'],
             tags: ['config.bmTabTags', 'Tags'],
             'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
@@ -11935,6 +11941,25 @@ class DashboardConfig {
         // the server about what "unchanged" means.
         configBookmarksSort: { info: ['configBookmarksSortInfoTitle', 'configBookmarksSortInfoMessage'], def: 'page' },
         configBookmarksPageSize: { info: ['configBookmarksPageSizeInfoTitle', 'configBookmarksPageSizeInfoMessage'], def: 50 },
+        // Config → Bookmarks → View: every default is how the view behaved
+        // before it had settings (models.go, clampBookmarkViewSettings).
+        bmViewGroup: { info: ['bmViewGroupInfoTitle', 'bmViewGroupInfoMessage'], def: 'last' },
+        bmViewDensity: { def: 'comfortable' },
+        bmViewAddress: { def: 'domain' },
+        bmViewRowColors: { info: ['bmViewRowColorsInfoTitle', 'bmViewRowColorsInfoMessage'], def: true },
+        bmViewColumns: { def: null },
+        bmViewUsageDays: { def: 30 },
+        bmViewRail: { def: 'open' },
+        bmViewRailBlocks: { def: null },
+        bmViewPanelTab: { def: 'last' },
+        bmViewCloseOutside: { def: true },
+        bmViewPanelWidth: { def: 'normal' },
+        bmViewClick: { def: 'panel' },
+        bmViewDblClick: { def: 'open' },
+        bmViewHealthRange: { info: ['bmViewHealthRangeInfoTitle', 'bmViewHealthRangeInfoMessage'], def: '30' },
+        bmViewBadge: { def: true },
+        bmViewBadgeCounts: { def: 'broken' },
+        bmViewKeyLegend: { def: 'below' },
         bookmarkDeleteConfirmFrom: { info: ['bookmarkDeleteConfirmFromInfoTitle', 'bookmarkDeleteConfirmFromInfoMessage'], def: 1 },
         defaultMonitorIntervalMinutes: { info: ['defaultMonitorIntervalInfoTitle', 'defaultMonitorIntervalInfoMessage'], def: 15 },
         newBookmarkCheckMode: { info: ['newBookmarkCheckModeInfoTitle', 'newBookmarkCheckModeInfoMessage'], def: 'off' },
@@ -12277,12 +12302,22 @@ class DashboardConfig {
             },
             // Config → Bookmarks had no settings at all; the list made these
             // choices on the user's behalf and forgot them between visits.
+            // Config → Bookmarks → View: how the Bookmarks view looks and
+            // behaves. The list's sort and page size moved here from Settings.
             {
                 section: 'bookmarks',
-                tab: null,
-                title: t('config.bookmarksGroupList', 'The list'),
-                note: t('config.bookmarksGroupListNote', 'How this list opens and how much of it loads at a time.'),
+                tab: 'view',
+                title: t('config.bmViewGroupList', 'The list'),
                 controls: [
+                    { field: 'bmViewGroup', type: 'select', label: t('config.bmViewGroupLabel', 'Group by'), options: [
+                        opt('last', t('config.bmViewGroupLast', 'As last chosen')),
+                        opt('none', t('config.bmGroupNone', 'No groups')),
+                        opt('page', t('config.bmGroupByPage', 'Page')),
+                        opt('category', t('config.bmGroupByCategory', 'Category')),
+                        opt('site', t('config.bmGroupBySite', 'Site')),
+                        opt('status', t('config.bmGroupByStatus', 'Status')),
+                        opt('tag', t('config.bmGroupByTag', 'Tag')),
+                    ] },
                     { field: 'configBookmarksSort', type: 'select', label: t('config.configBookmarksSortLabel', 'Open sorted by'), options: [
                         opt('page', t('config.sortByPage', 'Page order')),
                         opt('name', t('config.sortByName', 'Name (A–Z)')),
@@ -12295,6 +12330,119 @@ class DashboardConfig {
                     ] },
                     { field: 'configBookmarksPageSize', type: 'number', min: 10, max: 500, step: 10,
                         label: t('config.configBookmarksPageSizeLabel', 'Rows per load') },
+                    { field: 'bmViewDensity', type: 'select', label: t('config.bmViewDensityLabel', 'Row height'), options: [
+                        opt('comfortable', t('config.bmViewDensityComfortable', 'Comfortable')),
+                        opt('compact', t('config.bmViewDensityCompact', 'Compact')),
+                    ] },
+                    { field: 'bmViewAddress', type: 'select', label: t('config.bmViewAddressLabel', 'Address in the row'), options: [
+                        opt('domain', t('config.bmViewAddressDomain', 'Domain')),
+                        opt('full', t('config.bmViewAddressFull', 'Full address')),
+                        opt('hidden', t('config.bmViewAddressHidden', 'Hidden')),
+                    ] },
+                    { field: 'bmViewRowColors', type: 'checkbox', label: t('config.bmViewRowColorsLabel', 'Colour rows by their health') },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupColumns', 'Columns'),
+                controls: [
+                    { field: 'bmViewColumns', type: 'checkset', label: t('config.bmViewColumnsLabel', 'Columns shown'), options: [
+                        opt('tags', t('config.bmViewColTags', 'Tags')),
+                        opt('shortcut', t('config.bmViewColShortcut', 'Shortcut')),
+                        opt('pinned', t('config.bmViewColPinned', 'Pinned')),
+                        opt('opens', t('config.bmViewColOpens', 'Opens')),
+                        opt('last', t('config.bmViewColLast', 'Last opened')),
+                        opt('added', t('config.bmViewColAdded', 'Added')),
+                        opt('usage', t('config.bmViewColUsage', 'Usage')),
+                        opt('score', t('config.bmViewColScore', 'Score')),
+                    ] },
+                    { field: 'bmViewUsageDays', type: 'select', label: t('config.bmViewUsageDaysLabel', 'Usage covers'), options: [
+                        opt(7, t('config.bmViewDays7', '7 days')),
+                        opt(14, t('config.bmViewDays14', '14 days')),
+                        opt(30, t('config.bmViewDays30', '30 days')),
+                    ] },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupRail', 'Rail'),
+                controls: [
+                    { field: 'bmViewRail', type: 'select', label: t('config.bmViewRailLabel', 'The rail on the left'), options: [
+                        opt('open', t('config.bmViewRailOpen', 'Open')),
+                        opt('folded', t('config.bmViewRailFolded', 'Folded')),
+                    ] },
+                    { field: 'bmViewRailBlocks', type: 'checkset', label: t('config.bmViewRailBlocksLabel', 'Blocks shown'), options: [
+                        opt('views', t('config.bmViewRailViews', 'Views')),
+                        opt('health', t('config.bmViewRailHealth', 'Health')),
+                        opt('pages', t('config.bmViewRailPages', 'Pages')),
+                        opt('tags', t('config.bmViewRailTags', 'Tags')),
+                    ] },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupPanel', 'Side panel'),
+                controls: [
+                    { field: 'bmViewPanelTab', type: 'select', label: t('config.bmViewPanelTabLabel', 'Opens on'), options: [
+                        opt('last', t('config.bmViewPanelTabLast', 'The tab used last')),
+                        opt('details', t('config.bmTabDetails', 'Details')),
+                        opt('health', t('config.bmHealth', 'Health')),
+                        opt('usage', t('config.bmUsage', 'Usage')),
+                    ] },
+                    { field: 'bmViewCloseOutside', type: 'checkbox', label: t('config.bmViewCloseOutsideLabel', 'Close on a click beside it') },
+                    { field: 'bmViewPanelWidth', type: 'select', label: t('config.bmViewPanelWidthLabel', 'Width'), options: [
+                        opt('normal', t('config.bmViewWidthNormal', 'Normal')),
+                        opt('wide', t('config.bmViewWidthWide', 'Wide')),
+                    ] },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupClicks', 'Clicking'),
+                controls: [
+                    { field: 'bmViewClick', type: 'select', label: t('config.bmViewClickLabel', 'A click on a row'), options: [
+                        opt('panel', t('config.bmViewClickPanel', 'Opens the side panel')),
+                        opt('select', t('config.bmViewClickSelect', 'Only selects it')),
+                    ] },
+                    { field: 'bmViewDblClick', type: 'select', label: t('config.bmViewDblClickLabel', 'A double click'), options: [
+                        opt('open', t('config.bmViewDblOpen', 'Opens the bookmark')),
+                        opt('edit', t('config.bmViewDblEdit', 'Edits it')),
+                    ] },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupHealth', 'Health'),
+                controls: [
+                    { field: 'bmViewHealthRange', type: 'select', label: t('config.bmViewHealthRangeLabel', 'Health in large opens on'), options: [
+                        opt('today', t('config.bmLargeRangeToday', 'Today')),
+                        opt('7', t('config.bmViewDays7', '7 days')),
+                        opt('14', t('config.bmViewDays14', '14 days')),
+                        opt('30', t('config.bmViewDays30', '30 days')),
+                        opt('90', t('config.bmViewDays90', '90 days')),
+                    ] },
+                    { field: 'bmViewBadge', type: 'checkbox', special: 'healthBadge', label: t('config.bmViewBadgeLabel', 'A count on the Bookmarks icon') },
+                    { field: 'bmViewBadgeCounts', type: 'select', special: 'healthBadge', label: t('config.bmViewBadgeCountsLabel', 'The count shows'), options: [
+                        opt('broken', t('config.bmViewBadgeUrgent', 'The most urgent kind')),
+                        opt('all', t('config.bmViewBadgeAll', 'Every problem, added up')),
+                    ] },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupKeys', 'Keys'),
+                controls: [
+                    { field: 'bmViewKeyLegend', type: 'select', label: t('config.bmViewKeyLegendLabel', 'The key legend'), options: [
+                        opt('below', t('config.bmViewLegendBelow', 'Below the list')),
+                        opt('above', t('config.bmViewLegendAbove', 'Above the list')),
+                        opt('off', t('config.bmViewLegendOff', 'Hidden')),
+                    ] },
                 ],
             },
             {
@@ -14795,6 +14943,10 @@ class DashboardConfig {
             case 'chrome':
                 this.applyChromeSettings();
                 break;
+            case 'healthBadge':
+                // The count on the Bookmarks icon is drawn by the badge refresh.
+                void d.updateHealthBadge?.();
+                break;
             case 'shortcutTooltips':
                 // The popovers are listeners bound to the toolbar buttons, not
                 // markup read at render time — so re-run the setup, which adds
@@ -15298,6 +15450,19 @@ class DashboardConfig {
             }
             return;
         }
+        // Bookmarks → View and Settings: the panels redrawn, so ↺, the count
+        // and "Only changed" follow the change just made.
+        if (this.section === 'bookmarks' && !this.standalone && (this.bmTab === 'view' || this.bmTab === 'settings')) {
+            const body = document.getElementById('config-bm-body');
+            if (body) {
+                body.innerHTML = this.renderBmTab();
+                this.bindControlPanels(body, 'behavior');
+                this._fillShellHeadFromSection(container);
+                this.labelSettingsControls();
+                restoreFocus();
+            }
+            return;
+        }
         if (this.section === 'structure' && this.ptTab === 'collections') {
             const body = document.getElementById('config-pt-body');
             if (body) { body.innerHTML = this.renderCollections(); this.bindCollections(container); }
@@ -15348,7 +15513,7 @@ class DashboardConfig {
      * is a list of bookmarks, not a setting. Where the copies come from is
      * configuration; which pages you have kept is part of the collection.
      */
-    static BM_TABS = ['list', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
+    static BM_TABS = ['view', 'list', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -21883,6 +22048,21 @@ class DashboardConfig {
         `;
     }
 
+    /**
+     * Bookmarks → View: how the Bookmarks view looks and behaves, as panels of
+     * settings the way Behavior draws them, with the way to the view itself.
+     */
+    renderBookmarksViewTab() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <div class="config-bm-view-tab">
+                <div class="config-bm-view-bar">
+                    <a class="config-btn config-btn--small" href="#bookmarks" data-bm-open-view>${esc(this.t('config.bmViewOpen', 'Open the Bookmarks view'))} ↗</a>
+                </div>
+                ${this.renderControlPanels(this.panelsFor('bookmarks', 'view'), 'behavior')}
+            </div>`;
+    }
+
     /** Which sub-tab of Bookmarks is showing. */
     renderBmTab() {
         if (this.bmTab === 'tags') {
@@ -21896,6 +22076,9 @@ class DashboardConfig {
         }
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
+        }
+        if (this.bmTab === 'view') {
+            return this.renderBookmarksViewTab();
         }
         if (this.bmTab === 'local-copies') {
             return this.renderBookmarkCopiesTab();
@@ -24192,7 +24375,7 @@ class DashboardConfig {
                 this.bindTagSuggestionsTab(body);
             } else if (tab === 'tag-rules') {
                 this.bindTagRulesTab(body);
-            } else if (tab === 'settings') {
+            } else if (tab === 'settings' || tab === 'view') {
                 this.bindControlPanels(body, 'behavior');
             } else if (tab === 'local-copies') {
                 this.bindBookmarkCopiesTab(body);
@@ -24202,6 +24385,8 @@ class DashboardConfig {
             // The strip is not repainted with the body, so the active button has
             // to be moved by hand — the same call the other strips make.
             this.syncSubTabStrip('data-bm-tab', tab);
+            // The band carries View's changed-settings bar, and the count elsewhere.
+            this.updateConfigShellHead();
         });
         if (this.bmTab === 'tags') {
             this.bindBookmarkTagsTab(container);
@@ -24216,6 +24401,9 @@ class DashboardConfig {
             return;
         }
         if (this.bmTab === 'settings') {
+            return;
+        }
+        if (this.bmTab === 'view') {
             return;
         }
         if (this.bmTab === 'local-copies') {

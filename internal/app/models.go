@@ -886,6 +886,27 @@ type Settings struct {
 	BookmarkStaleDays         int    `json:"bookmarkStaleDays"`             // "Not opened in N days" in the cleanup score and stats
 	BulkFaviconConfirmFrom    int    `json:"bulkFaviconConfirmFrom"`        // Ask before refreshing icons for this many rows (0 = never)
 	BookmarkArchiveUrl        string `json:"bookmarkArchiveUrl"`            // Archive service, {url} replaced with the bookmark's address
+
+	// Config → Bookmarks → View: how the Bookmarks view looks and behaves.
+	// Every default is what the view did before it had settings, so an install
+	// that never opens the tab sees no change. A list left empty means all.
+	BmViewGroup        string   `json:"bmViewGroup"`        // Group the list opens on: last (as last left)/none/page/category/site/status/tag
+	BmViewDensity      string   `json:"bmViewDensity"`      // Row height: comfortable/compact
+	BmViewAddress      string   `json:"bmViewAddress"`      // Address in the row: domain/full/hidden
+	BmViewRowColors    bool     `json:"bmViewRowColors"`    // Rows coloured by their health (default on)
+	BmViewColumns      []string `json:"bmViewColumns"`      // Columns shown (null = all, [] = none)
+	BmViewUsageDays    int      `json:"bmViewUsageDays"`    // Days the Usage column covers: 7/14/30
+	BmViewRail         string   `json:"bmViewRail"`         // The rail on the left: open/folded
+	BmViewRailBlocks   []string `json:"bmViewRailBlocks"`   // Rail blocks shown (null = all, [] = none)
+	BmViewPanelTab     string   `json:"bmViewPanelTab"`     // Side panel opens on: last/details/health/usage
+	BmViewCloseOutside bool     `json:"bmViewCloseOutside"` // A click beside the side panel closes it (default on)
+	BmViewPanelWidth   string   `json:"bmViewPanelWidth"`   // Side panel width: normal/wide
+	BmViewClick        string   `json:"bmViewClick"`        // A click on a row: panel/select
+	BmViewDblClick     string   `json:"bmViewDblClick"`     // A double click on a row: open/edit
+	BmViewHealthRange  string   `json:"bmViewHealthRange"`  // Health in large opens on: today/7/14/30/90
+	BmViewBadge        bool     `json:"bmViewBadge"`        // A count on the header's Bookmarks icon (default on)
+	BmViewBadgeCounts  string   `json:"bmViewBadgeCounts"`  // What that count counts: broken/all
+	BmViewKeyLegend    string   `json:"bmViewKeyLegend"`    // The key legend: below/above the list, or off
 }
 
 // SavedSearch is a query the user named and kept from the search bar.
@@ -1600,6 +1621,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 			OnboardingCompleted:             false,
 			ConfigBookmarksSort:             defaultConfigBookmarksSort,
 			ConfigBookmarksPageSize:         defaultConfigBookmarksPageSize,
+			BmViewRowColors:                 true,
+			BmViewCloseOutside:              true,
+			BmViewBadge:                     true,
 			BookmarkDeleteConfirmFrom:       defaultBookmarkDeleteConfirmFrom,
 			DefaultMonitorIntervalMin:       defaultMonitorIntervalMinutes,
 			NewBookmarkCheckMode:            defaultNewBookmarkCheckMode,
@@ -3145,6 +3169,76 @@ const (
 var categorySpreadResetScopes = map[string]bool{"page": true, "all": true}
 
 // configBookmarksSortModes are the orders the Config bookmark list can open on.
+// bmViewChoices lists what each Bookmarks view setting accepts; the first is
+// its default, the view as it was before it had settings.
+var bmViewChoices = map[string][]string{
+	"group":       {"last", "none", "page", "category", "site", "status", "tag"},
+	"density":     {"comfortable", "compact"},
+	"address":     {"domain", "full", "hidden"},
+	"rail":        {"open", "folded"},
+	"panelTab":    {"last", "details", "health", "usage"},
+	"panelWidth":  {"normal", "wide"},
+	"click":       {"panel", "select"},
+	"dblClick":    {"open", "edit"},
+	"healthRange": {"30", "today", "7", "14", "90"},
+	"badgeCounts": {"broken", "all"},
+	"keyLegend":   {"below", "above", "off"},
+}
+
+var bmViewColumns = []string{"tags", "shortcut", "pinned", "opens", "last", "added", "usage", "score"}
+var bmViewRailBlocks = []string{"views", "health", "pages", "tags"}
+
+// bmViewChoice keeps a value the view knows, or its default.
+func bmViewChoice(kind, value string) string {
+	choices := bmViewChoices[kind]
+	for _, c := range choices {
+		if c == value {
+			return value
+		}
+	}
+	return choices[0]
+}
+
+// bmViewKnown keeps the names the view knows, in its own order, once each.
+// Nil stays nil: all of them.
+func bmViewKnown(values, known []string) []string {
+	if values == nil {
+		return nil
+	}
+	want := make(map[string]bool, len(values))
+	for _, v := range values {
+		want[v] = true
+	}
+	out := []string{}
+	for _, k := range known {
+		if want[k] {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
+func clampBookmarkViewSettings(s *Settings) {
+	s.BmViewGroup = bmViewChoice("group", s.BmViewGroup)
+	s.BmViewDensity = bmViewChoice("density", s.BmViewDensity)
+	s.BmViewAddress = bmViewChoice("address", s.BmViewAddress)
+	s.BmViewRail = bmViewChoice("rail", s.BmViewRail)
+	s.BmViewPanelTab = bmViewChoice("panelTab", s.BmViewPanelTab)
+	s.BmViewPanelWidth = bmViewChoice("panelWidth", s.BmViewPanelWidth)
+	s.BmViewClick = bmViewChoice("click", s.BmViewClick)
+	s.BmViewDblClick = bmViewChoice("dblClick", s.BmViewDblClick)
+	s.BmViewHealthRange = bmViewChoice("healthRange", s.BmViewHealthRange)
+	s.BmViewBadgeCounts = bmViewChoice("badgeCounts", s.BmViewBadgeCounts)
+	s.BmViewKeyLegend = bmViewChoice("keyLegend", s.BmViewKeyLegend)
+	switch s.BmViewUsageDays {
+	case 7, 14, 30:
+	default:
+		s.BmViewUsageDays = 30
+	}
+	s.BmViewColumns = bmViewKnown(s.BmViewColumns, bmViewColumns)
+	s.BmViewRailBlocks = bmViewKnown(s.BmViewRailBlocks, bmViewRailBlocks)
+}
+
 var configBookmarksSortModes = map[string]bool{
 	"page": true, "name": true, "url": true, "category": true,
 	"recent": true, "lastOpened": true, "opens": true, "pinned": true,
@@ -3216,6 +3310,7 @@ func clampBookmarkSettings(s *Settings) {
 	if s.BookmarkStaleDays > 365 {
 		s.BookmarkStaleDays = 365
 	}
+	clampBookmarkViewSettings(s)
 	// 0 stays 0: it means "the built-in default", which is what an install that
 	// never chose an interval has. Anything else is held between daily and
 	// monthly — a backup less often than that is not a safety net, and more
@@ -3799,6 +3894,9 @@ func (fs *FileStore) GetSettings() Settings {
 			FaviconRefreshPolicy:            "on-save",
 			ConfigBookmarksSort:             defaultConfigBookmarksSort,
 			ConfigBookmarksPageSize:         defaultConfigBookmarksPageSize,
+			BmViewRowColors:                 true,
+			BmViewCloseOutside:              true,
+			BmViewBadge:                     true,
 			BookmarkDeleteConfirmFrom:       defaultBookmarkDeleteConfirmFrom,
 			DefaultMonitorIntervalMin:       defaultMonitorIntervalMinutes,
 			NewBookmarkCheckMode:            defaultNewBookmarkCheckMode,
@@ -3857,6 +3955,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ServerLogMaxEntries:    serverLogDefaultMaxEntries,
 			UpdateCheckEnabled:     true,
 		}
+		clampBookmarkViewSettings(&settings)
 		fs.readCache.settings = settings
 		fs.readCache.settingsOK = true
 		return settings
@@ -3869,6 +3968,17 @@ func (fs *FileStore) GetSettings() Settings {
 	if err := json.Unmarshal(data, &rawSettings); err == nil {
 		if _, ok := rawSettings["showCheatSheetButton"]; !ok {
 			settings.ShowCheatSheetButton = true
+		}
+		// The Bookmarks view's switches that are on unless turned off: a file
+		// written before they existed never answered.
+		for key, field := range map[string]*bool{
+			"bmViewRowColors":    &settings.BmViewRowColors,
+			"bmViewCloseOutside": &settings.BmViewCloseOutside,
+			"bmViewBadge":        &settings.BmViewBadge,
+		} {
+			if _, ok := rawSettings[key]; !ok {
+				*field = true
+			}
 		}
 		// Zero is a choice for this one, so an absent key is how an older
 		// file says it never answered.
@@ -4597,6 +4707,8 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ArchiveSaveSecret = normalizeMonitorNotifyCredential(settings.ArchiveSaveSecret)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
+	// Read as the view reads it: a setting the file never had is its default.
+	clampBookmarkViewSettings(&settings)
 
 	fs.readCache.settings = settings
 	fs.readCache.settingsOK = true

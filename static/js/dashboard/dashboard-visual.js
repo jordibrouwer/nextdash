@@ -586,13 +586,37 @@ class DashboardVisual {
                     onApplied: (counts) => this.maybePulseHealthAlert(counts?.monitorDown || 0),
                 });
             }
-            if (library) utils.applyHealthBadgeToAnchor(library, summary, d.language, { keepHref: true });
+            if (library) this.applyLibraryBadge(library, summary, utils);
             d.updateMiniStatusLine();
             return true;
         } catch (e) {
             // Silently skip — badge is non-critical
             return false;
         }
+    }
+
+    /**
+     * The Bookmarks icon's count, as Config → Bookmarks → View sets it: off,
+     * the most urgent kind (what the Health icon shows), or every problem
+     * added up, in the colour of the worst of them.
+     */
+    applyLibraryBadge(anchor, summary, utils) {
+        const d = this.dash;
+        const s = d.settings || {};
+        if (s.bmViewBadge === false) {
+            anchor.querySelector('.health-badge')?.remove();
+            return;
+        }
+        if (s.bmViewBadgeCounts !== 'all') {
+            utils.applyHealthBadgeToAnchor(anchor, summary, d.language, { keepHref: true });
+            return;
+        }
+        anchor.querySelector('.health-badge')?.remove();
+        const { monitorDown, broken, warn } = utils.summarizeHealthCounts(summary);
+        const total = monitorDown + broken + warn;
+        if (!total) return;
+        const kind = monitorDown ? 'down' : (broken ? 'broken' : 'warn');
+        anchor.appendChild(utils.createHealthCountBadge(total, kind, d.language));
     }
 
     /**
