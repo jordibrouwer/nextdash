@@ -170,13 +170,16 @@ test.describe('local copies', () => {
  * produce them -- which is why it is here and not only in Data & backups.
  */
 test.describe('the local copies tab', () => {
+    // Pinned to today's local noon: an hour back from 00:30 is yesterday, and
+    // the "today HH:MM" assertion below would fail on the wall clock alone.
+    const NOON = (() => { const d = new Date(); d.setHours(12, 0, 0, 0); return d.getTime(); })();
     const CAPTURES = {
         available: true,
         totalBytes: 2_500_000,
         captures: [
             {
                 url: '/api/archives/https---example-com-20260825-120000.html', bytes: 1_000_000,
-                at: Date.now() - 3600_000, bookmarkName: 'Example site', bookmarkUrl: 'https://example.com/',
+                at: NOON - 3600_000, bookmarkName: 'Example site', bookmarkUrl: 'https://example.com/',
             },
             {
                 url: '/api/archives/https---example-com-20260301-120000.html', bytes: 900_000,
@@ -188,6 +191,7 @@ test.describe('the local copies tab', () => {
     };
 
     test.beforeEach(async ({ page }) => {
+        await page.clock.setFixedTime(NOON);
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });

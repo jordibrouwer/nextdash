@@ -7,8 +7,14 @@ const { prepareDashboardInteraction } = require('./e2e-helpers');
  *
  * The report is mocked so the timestamps are exact rather than whatever the
  * seeded bookmarks happen to carry.
+ *
+ * "Now" is pinned to today's local noon, in the page and in the report alike.
+ * The label is calendar-day aware, so "4 hours ago" run between midnight and
+ * 04:00 is yesterday, not "4h ago".
  */
-function report(now = Date.now()) {
+const NOON = (() => { const d = new Date(); d.setHours(12, 0, 0, 0); return d.getTime(); })();
+
+function report(now = NOON) {
     const mk = (i, name, lastOpened) => ({
         pageId: 1, index: i, pageName: 'dev', name, url: `https://example.com/${i}`,
         category: 'tools', status: 'broken', score: 40, duplicateCount: 0,
@@ -32,6 +38,7 @@ function report(now = Date.now()) {
 async function openHealth(page) {
     // window.open is stubbed before load: a real popup is blocked in the harness
     // and the Open click would hang waiting for a tab that never appears.
+    await page.clock.setFixedTime(NOON);
     await page.addInitScript(() => {
         window.__opened = [];
         window.open = (url) => { window.__opened.push(url); return null; };
