@@ -1836,13 +1836,12 @@ html body .config-bm-more-menu .config-btn {
     border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
 }
 
-/* In the side panel the line runs past the padding, to the margin the panel
-   scrolls inside (list-view-shell.css): any further and it would be cut. */
+/* In the side panel the line runs to the slab's edges, past its padding. */
 .config-bm-drawer .config-bm-panel-head--single {
-    margin-left: calc(-1 * var(--space-2, 0.5rem));
-    margin-right: calc(-1 * var(--space-2, 0.5rem));
-    padding-left: var(--space-2, 0.5rem);
-    padding-right: var(--space-2, 0.5rem);
+    margin-left: calc(-1 * var(--space-4, 1rem));
+    margin-right: calc(-1 * var(--space-4, 1rem));
+    padding-left: var(--space-4, 1rem);
+    padding-right: var(--space-4, 1rem);
 }
 
 .config-bm-panel-head--single + .config-bm-tabs {
