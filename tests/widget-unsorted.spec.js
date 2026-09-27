@@ -205,3 +205,43 @@ test('a tag shows only that tag, and no tag groups every tag under a heading', a
     expect(byTag.groups).toContain('widgetred');
     expect(byTag.groups).toContain('widgetblue');
 });
+
+/*
+ * The tile reads dash.unsortedBookmarks, which only loadAllBookmarks fills --
+ * and at startup that runs only when a setting needs other pages' bookmarks
+ * (global shortcuts, tag collections, the Recent/Stale/Today collections).
+ * With those off the list stayed at its empty default and the tile said
+ * "Nothing kept yet" over a pile of kept links. No manual loadAllBookmarks
+ * here: the reload is the whole point.
+ */
+test('the tile lists kept links when nothing else loads every page\'s bookmarks', async ({ page }) => {
+    await openDashboard(page);
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/bookmarks/add', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: 999999, bookmark: { name: 'Kept before reload', url: 'https://kept-before-reload.example', category: '' } }),
+        });
+        Object.assign(d.settings, {
+            showSmartRecentCollection: false, showSmartStaleCollection: false,
+            showSmartTodayCollection: false, showSmartMostUsedCollection: false,
+            globalShortcuts: false, showTagCollections: false, showTagCloudButton: false,
+        });
+        await d.saveSettings();
+    });
+    await page.reload();
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+
+    const text = await page.evaluate(async () => {
+        const host = document.createElement('div');
+        host.className = 'dashboard-widget unsorted-probe';
+        const body = document.createElement('div');
+        body.className = 'dashboard-widget-body';
+        host.appendChild(body);
+        document.body.appendChild(host);
+        await window.DashboardWidgets.unsorted(body, { id: 'probe', type: 'unsorted', config: {} }, window.dashboardInstance);
+        return body.textContent.replace(/\s+/g, ' ').trim();
+    });
+    expect(text).toContain('Kept before reload');
+});

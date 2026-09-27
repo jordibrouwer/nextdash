@@ -252,6 +252,12 @@
     }
 
     async function renderUnsorted(body, widget, dash) {
+        // Startup may never have loaded every page's bookmarks, and the kept
+        // ones come with them: until then the empty list only means "not asked".
+        // The deferred load shares one request between tiles drawn together.
+        if (dash?._bookmarksReady && !dash._unsortedLoaded) {
+            await (dash.deferredLoadAllBookmarks?.() ?? dash.loadAllBookmarks?.());
+        }
         const bookmarks = load(dash);
         if (!bookmarks) {
             body.replaceChildren();
