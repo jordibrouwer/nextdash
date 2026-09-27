@@ -177,3 +177,40 @@ test('the head is set off from the tabs by room and a line', async ({ page }) =>
   const tabs = await slab.locator('.config-bm-tabs').boundingBox();
   expect(tabs.y - (buttons.y + buttons.height)).toBeGreaterThanOrEqual(12);
 });
+
+test.describe('bookmark panel: scrolling stays in it', () => {
+  const drawer = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+
+  async function wheelOverDrawer(page) {
+    const box = await drawer(page).boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    for (let i = 0; i < 6; i += 1) await page.mouse.wheel(0, 600);
+    // Wheel scrolling settles over a few frames.
+    await page.waitForTimeout(300);
+  }
+
+  test('scrolling past the end of the panel leaves the list where it is', async ({ page }) => {
+    const { bookmarks } = await open(page);
+    // Short enough that the panel scrolls (the fixture sets its own size on load).
+    await page.setViewportSize({ width: 1280, height: 520 });
+    // Room for the page to scroll, whatever the shared data dir holds.
+    await page.evaluate(() => { document.body.style.minHeight = '6000px'; });
+    await pick(page, bookmarks[1].name);
+    const before = await page.evaluate(() => window.scrollY);
+    await wheelOverDrawer(page);
+    expect(await drawer(page).evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    expect(await page.evaluate(() => window.scrollY)).toBe(before);
+  });
+
+  test('a panel too short to scroll does not pass the wheel on either', async ({ page }) => {
+    const { bookmarks } = await open(page);
+    await page.evaluate(() => { document.body.style.minHeight = '6000px'; });
+    await pick(page, bookmarks[1].name);
+    // Only the head left: the panel has nothing to scroll.
+    await drawer(page).evaluate((el) => el.querySelectorAll('[data-bm-pane], .config-bm-panel-tabs').forEach((n) => { n.style.display = 'none'; }));
+    expect(await drawer(page).evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
+    const before = await page.evaluate(() => window.scrollY);
+    await wheelOverDrawer(page);
+    expect(await page.evaluate(() => window.scrollY)).toBe(before);
+  });
+});

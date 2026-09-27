@@ -128,6 +128,17 @@
             panel.setAttribute('data-lvs-drawer-panel', '');
             panel.setAttribute('role', 'dialog');
             panel.setAttribute('aria-label', this.ariaLabel ? this.ariaLabel(key) : String(title || key));
+            // The page under the panel stays put while the panel is scrolled:
+            // CSS contains the overscroll of a panel that scrolls, and this
+            // covers one too short to, which the browser would pass straight
+            // on to the page.
+            panel.addEventListener('wheel', (e) => {
+                if (panel.scrollHeight > panel.clientHeight) return;
+                for (let el = e.target; el && el !== panel; el = el.parentElement) {
+                    if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY)) return;
+                }
+                e.preventDefault();
+            }, { passive: false });
 
             const head = document.createElement('div');
             head.className = 'lvs-drawer-head';
