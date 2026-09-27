@@ -45,6 +45,14 @@ const WITHOUT_PREVIEW = {
     reasonDetails: [{ code: 'never_opened', penalty: 10 }],
 };
 
+/** The second again, scored down for having no preview stored. */
+const MISSING_PREVIEW = {
+    ...WITHOUT_PREVIEW,
+    status: 'content', flags: ['content'],
+    reasons: ['No preview metadata yet'],
+    reasonDetails: [{ code: 'no_preview', penalty: 5 }],
+};
+
 /**
  * The Bookmarks view over a report that knows only the first two bookmarks,
  * as the two above, with the preview fold reset.
@@ -52,7 +60,7 @@ const WITHOUT_PREVIEW = {
  * The fold is remembered in localStorage across sessions, so a test that did not
  * clear it would pass or fail depending on what the previous one chose.
  */
-async function openHealthView(page, { previewBody } = {}) {
+async function openHealthView(page, { previewBody, noPreviewReason = false } = {}) {
     await page.route('**/api/bookmark-preview**', async (route) => {
         await route.fulfill({
             status: 200,
@@ -67,9 +75,9 @@ async function openHealthView(page, { previewBody } = {}) {
     await page.addInitScript(() => {
         try { localStorage.removeItem('nextdashHealthFocusPreviewCollapsed'); } catch { /* ignore */ }
     });
-    await openBookmarksWithHealth(page, (issues) => [
+    return openBookmarksWithHealth(page, (issues) => [
         { ...issues[0], ...WITH_PREVIEW },
-        { ...issues[1], ...WITHOUT_PREVIEW },
+        { ...issues[1], ...(noPreviewReason ? MISSING_PREVIEW : WITHOUT_PREVIEW) },
     ]);
 }
 
@@ -281,5 +289,52 @@ test.describe('putting one aside for a month', () => {
         });
         // Whatever this fixture's first row is, the two answers agree.
         expect(offered.button).toBe(offered.hasFlag);
+    });
+
+    test('a fetched preview can be saved onto the bookmark, and the reason goes', async ({ page }) => {
+        const { issues } = await openHealthView(page, { noPreviewReason: true });
+        await openCard(page);
+        await page.locator('.health-focus-card [data-focus="next"]').click();
+        const card = page.locator('.health-focus-card');
+        await expect(card.locator('.health-focus-title')).toHaveText('Bare one');
+        await expect(card.locator('.health-focus-preview-title')).toHaveText('A fetched preview title');
+        // The card has a preview; the bookmark does not, and the reason says so.
+        await expect(card.locator('.health-focus-reasons')).toContainText('Preview fetched, not saved yet');
+        await expect(card.locator('[data-focus="save-preview"]')).toBeVisible();
+
+        const patches = [];
+        await page.route('**/api/bookmarks', (route) => {
+            if (route.request().method() !== 'PATCH') return route.fallback();
+            patches.push(JSON.parse(route.request().postData() || '{}'));
+            return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ updated: 1 }) });
+        });
+        // The report as the server builds it once the preview is stored.
+        const saved = { ...issues[1], previewTitle: 'A fetched preview title', previewDesc: 'A description that had to be asked for.', reasons: [], reasonDetails: [], status: 'healthy', flags: ['healthy'] };
+        await page.route('**/api/bookmark-health**', (route) => route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ generatedAt: Date.now(), summary: { totalBookmarks: 2, brokenCount: 0 }, issues: [issues[0], saved] }),
+        }));
+
+        await page.keyboard.press('s');
+        await expect.poll(() => patches.length).toBe(1);
+        expect(patches[0].page).toBe(Number(issues[1].pageId));
+        expect(patches[0].updates).toEqual([{
+            url: issues[1].url,
+            previewTitle: 'A fetched preview title',
+            previewDesc: 'A description that had to be asked for.',
+            previewImage: '',
+        }]);
+        await expect(card.locator('[data-focus="save-preview"]')).toHaveCount(0);
+        await expect(card.locator('.health-focus-reasons')).toHaveCount(0);
+        // The list behind the card has the new report too.
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config._bmHealthModule.report.issues[1].reasons.length)).toBe(0);
+    });
+
+    test('with the preview already stored there is nothing to save, and s does nothing', async ({ page }) => {
+        await openHealthView(page);
+        await openCard(page);
+        await expect(page.locator('.health-focus-preview-title')).toHaveText('A stored preview title');
+        await expect(page.locator('[data-focus="save-preview"]')).toHaveCount(0);
     });
 });

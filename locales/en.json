@@ -2467,7 +2467,11 @@
     "widgetsLayoutNoticeAppliedTitle": "This is the Widgets layout",
     "widgetsLayoutNoticeAppliedBody": "Categories are cards now, so the widgets between them sit on the same footing. It lives under Config → Appearance → Grid, where you can change it again whenever you like.",
     "widgetsLayoutNoticeUndo": "Put back {preset}",
-    "widgetsLayoutNoticeKeep": "Keep it"
+    "widgetsLayoutNoticeKeep": "Keep it",
+    "healthFocusSavePreview": "Save preview",
+    "healthFocusPreviewNotSaved": "Preview fetched, not saved yet",
+    "healthFocusPreviewSaved": "Preview saved",
+    "healthFocusPreviewSaveFailed": "Could not save the preview"
   },
   "health": {
     "reloadPage": "Reload page",

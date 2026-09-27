@@ -366,3 +366,12 @@
     border-color: var(--accent-primary);
     color: var(--accent-primary);
 }
+
+/* Keep the preview the card fetched: only offered while the bookmark has none. */
+.health-focus-preview-save {
+    margin: var(--space-2, 0.5rem) 0 0;
+}
+
+.health-focus-preview-save kbd {
+    margin-left: var(--space-1, 0.25rem);
+}

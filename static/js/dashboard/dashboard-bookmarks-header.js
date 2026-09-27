@@ -195,6 +195,13 @@
             const Focus = global.DashboardHealthFocus;
             if (!health || typeof Focus !== 'function') return null;
             const view = Object.create(health);
+            // One report, the real module's: a refresh from the walk (after a
+            // saved preview, say) must reach the list behind it, not settle
+            // on the stand-in.
+            Object.defineProperty(view, 'report', {
+                get: () => health.report,
+                set: (value) => { health.report = value; },
+            });
             view.getFilteredIssues = issues;
             view.syncUrlState = () => {};
             view.render = () => {};

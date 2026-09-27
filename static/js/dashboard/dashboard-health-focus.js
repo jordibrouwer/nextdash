@@ -60,6 +60,8 @@ class DashboardHealthFocus {
         this._previewPending = new Set();
         /** Keys whose fetch failed, so the card stops retrying on every render. */
         this._previewFailed = new Set();
+        /** Keys whose fetched preview is being written onto the bookmark. */
+        this._previewSaving = new Set();
         /**
          * Keys opened from inside this session.
          *
@@ -216,6 +218,71 @@ class DashboardHealthFocus {
         if (stored.title || stored.description || stored.image) return stored;
         const key = this.health.issueKey(issue);
         return this._previews.get(key) || null;
+    }
+
+    /**
+     * Whether the card holds a preview the bookmark itself does not.
+     *
+     * The card fetches a preview only to show it, so a bookmark scored down for
+     * having none can sit under a card that plainly has one. That is the one
+     * case where saving it is on offer: the bookmark stores nothing, the fetch
+     * found something, and the report still counts it missing.
+     */
+    canSavePreview(issue) {
+        if (!issue) return false;
+        const key = this.health.issueKey(issue);
+        const stored = String(issue.previewTitle || '').trim() || String(issue.previewDesc || '').trim()
+            || String(issue.previewImage || '').trim();
+        if (stored || !this._previews.get(key) || this._previewSaving.has(key)) return false;
+        return (this.health.reasonEntries(issue) || []).some((r) => r.code === 'no_preview');
+    }
+
+    /**
+     * Write the fetched preview onto the bookmark, then let the report catch up.
+     *
+     * Only on the reader's say-so -- the button or `s` -- so a review session
+     * still edits nothing by itself. The report is fetched again afterwards,
+     * which is what takes "no preview" off the card and its points off the
+     * score, the same way a re-check settles a dead link.
+     */
+    async savePreview() {
+        const issue = this.currentIssue();
+        if (!this.canSavePreview(issue)) return;
+        const key = this.health.issueKey(issue);
+        const preview = this._previews.get(key);
+        const d = this.health.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        this._previewSaving.add(key);
+        this.render();
+        let saved = false;
+        try {
+            const res = await fetcher('/api/bookmarks', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: Number(issue.pageId),
+                    updates: [{
+                        url: issue.url,
+                        previewTitle: preview.title || '',
+                        previewDesc: preview.description || '',
+                        previewImage: preview.image || '',
+                    }],
+                }),
+            });
+            saved = res.ok && Number((await res.json().catch(() => ({}))).updated) > 0;
+        } catch {
+            saved = false;
+        }
+        if (saved) {
+            window.nextdashTrack?.('health:focus-save-preview');
+            await d.loadAllBookmarks?.();
+            await this.health.loadAndRender({ refresh: true });
+            d.showNotification?.(this.t('dashboard.healthFocusPreviewSaved', 'Preview saved'), 'success', { duration: 2500 });
+        } else {
+            d.showNotification?.(this.t('dashboard.healthFocusPreviewSaveFailed', 'Could not save the preview'), 'error');
+        }
+        this._previewSaving.delete(key);
+        if (this.active) this.render();
     }
 
     /**
@@ -602,6 +669,8 @@ class DashboardHealthFocus {
                 // The same key the row menu uses, so the gesture is one thing
                 // wherever you meet it.
                 z: () => void this.snooze(),
+                // Only while there is a fetched preview to keep.
+                s: this.canSavePreview(this.currentIssue()) ? () => void this.savePreview() : null,
                 Enter: () => this.open_(),
                 ' ': () => this.move(1),
             };
@@ -790,7 +859,10 @@ class DashboardHealthFocus {
             body = `
                 ${image ? `<div class="health-focus-preview-image"><img src="${this.esc(image)}" alt="" loading="lazy"></div>` : ''}
                 ${preview.title ? `<p class="health-focus-preview-title">${this.esc(preview.title)}</p>` : ''}
-                ${preview.description ? `<p class="health-focus-preview-desc">${this.esc(preview.description)}</p>` : ''}`;
+                ${preview.description ? `<p class="health-focus-preview-desc">${this.esc(preview.description)}</p>` : ''}
+                ${this.canSavePreview(issue) ? `<p class="health-focus-preview-save">
+                    <button type="button" class="config-btn config-btn--small" data-focus="save-preview">${this.esc(
+                        this.t('dashboard.healthFocusSavePreview', 'Save preview'))}<kbd>s</kbd></button></p>` : ''}`;
         } else if (pending || !asked) {
             // Not-yet-asked renders as the skeleton too: the fetch is started by
             // this very render, so anything else would flash "nothing here"
@@ -820,6 +892,7 @@ class DashboardHealthFocus {
         const title = issue.name || issue.previewTitle || this.health.formatUrlDisplay(issue.url);
         const reasons = this.health.reasonEntries(issue) || [];
         const resolved = this.resolvedReasonCodes(issue);
+        const canSave = this.canSavePreview(issue);
         /*
          * A reason the card has just disproved is struck through rather than
          * removed. Removing it would make the card disagree with the score and
@@ -832,7 +905,12 @@ class DashboardHealthFocus {
             ? `<ul class="health-focus-reasons">${reasons
                 .map((r) => {
                     const done = r.code && resolved.has(r.code);
-                    return `<li${done ? ' class="is-resolved"' : ''}>${this.esc(r.label)}${
+                    // A preview the card fetched is not one the bookmark has:
+                    // the reason stands, and says which half is missing.
+                    const label = r.code === 'no_preview' && canSave
+                        ? this.t('dashboard.healthFocusPreviewNotSaved', 'Preview fetched, not saved yet')
+                        : r.label;
+                    return `<li${done ? ' class="is-resolved"' : ''}>${this.esc(label)}${
                         done ? ` <span class="health-focus-reason-done">${this.esc(
                             this.t('dashboard.healthFocusReasonResolved', 'just now'))}</span>` : ''}</li>`;
                 }).join('')}</ul>`
@@ -898,6 +976,7 @@ class DashboardHealthFocus {
             delete: () => void this.remove(),
             next: () => this.move(1),
             'preview-toggle': () => this.togglePreview(),
+            'save-preview': () => void this.savePreview(),
         };
         host.querySelectorAll('[data-focus]').forEach((btn) => {
             btn.addEventListener('click', (e) => {
