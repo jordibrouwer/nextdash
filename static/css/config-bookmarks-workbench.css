@@ -2159,3 +2159,67 @@ html body .config-bm-more-menu .config-btn {
     padding: var(--space-3, 0.75rem);
     border-top: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
 }
+
+/* ── Pages and categories modal: grips, row menu, foot ────────────────── */
+
+.config-structure-grip {
+    cursor: grab;
+    color: var(--text-secondary);
+    padding: 0 var(--space-1, 0.25rem);
+    user-select: none;
+    letter-spacing: -2px;
+}
+
+.config-structure-overlay .config-crud-row.is-dragging {
+    opacity: 0.45;
+}
+
+.config-structure-overlay .config-crud-row-actions {
+    position: relative;
+}
+
+.config-structure-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    min-width: 14rem;
+    padding: var(--space-1, 0.25rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-modal, var(--background-primary));
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.config-structure-menu > button[role="menuitem"] {
+    text-align: left;
+    border: 0;
+    background: none;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-radius: calc(var(--radius-5, 8px) - 2px);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.config-structure-menu > button[role="menuitem"]:hover,
+.config-structure-menu > button[role="menuitem"]:focus-visible {
+    background: var(--background-secondary);
+}
+
+.config-structure-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.config-structure-foot:empty {
+    display: none;
+}

@@ -80,3 +80,110 @@ test.describe('pages and categories modal', () => {
     expect(hit).toBe(true);
   });
 });
+
+test.describe('pages and categories modal: the rest of its actions', () => {
+  const rowMenu = (row) => row.locator('[data-structure-more]');
+
+  async function openWithSecondPage(page) {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await page.locator('.config-view--library .lvs-header-actions [data-bm-open-structure]').click();
+    await expect(modal(page)).toBeVisible();
+    // One page more than there was: the data dir is shared, so "two" is not
+    // something this test can count on.
+    const before = await modal(page).locator('[data-page-row]').count();
+    await modal(page).locator('[data-page-add]').click();
+    await expect(modal(page).locator('[data-page-row]')).toHaveCount(before + 1);
+  }
+
+  test('a button in the view\'s header opens it', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    const button = page.locator('.config-view--library .lvs-header-actions [data-bm-open-structure]');
+    await expect(button).toHaveText('Pages & categories');
+    await button.click();
+    await expect(modal(page)).toBeVisible();
+  });
+
+  test('pages can be dragged into a new order', async ({ page }) => {
+    await openWithSecondPage(page);
+    const posted = [];
+    page.on('request', (r) => { if (r.method() === 'POST' && /\/api\/pages$/.test(r.url())) posted.push(r.postDataJSON()); });
+    const rows = modal(page).locator('[data-page-row]');
+    const firstId = await rows.nth(0).getAttribute('data-page-row');
+    const secondId = await rows.nth(1).getAttribute('data-page-row');
+    await rows.nth(1).locator('[data-structure-grip]').dragTo(rows.nth(0), { targetPosition: { x: 20, y: 4 } });
+    await expect.poll(() => posted.length).toBeGreaterThan(0);
+    // Only the two dragged past each other: the data dir is shared, and
+    // another test may have added a page of its own meanwhile.
+    const order = posted[posted.length - 1].map((p) => String(p.id));
+    expect(order.indexOf(secondId)).toBeLessThan(order.indexOf(firstId));
+  });
+
+  test('Move all bookmarks to… moves a page\'s bookmarks to another page', async ({ page }) => {
+    await openWithSecondPage(page);
+    const moves = [];
+    await page.route('**/api/bookmarks/move', async (route) => {
+      moves.push(route.request().postDataJSON());
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ moved: 1, skipped: [] }) });
+    });
+    // From the page the fixture's bookmarks are on, to the page just added.
+    const from = await page.evaluate(() => String(window.dashboardInstance.allBookmarks[0].pageId));
+    const target = await modal(page).locator('[data-page-row]').last().getAttribute('data-page-row');
+    await rowMenu(modal(page).locator(`[data-page-row="${from}"]`)).click();
+    const menu = modal(page).locator('[data-structure-menu]');
+    await menu.locator('[data-structure-action="move-all"]').click();
+    await menu.locator('[data-structure-target]').selectOption(target);
+    await menu.locator('[data-structure-confirm]').click();
+    await expect.poll(() => moves.length).toBe(1);
+    expect(moves[0].toPage).toBe(Number(target));
+    expect(moves[0].items.length).toBeGreaterThan(0);
+  });
+
+  test('Remove all empty pages deletes the ones without bookmarks, after asking', async ({ page }) => {
+    await openWithSecondPage(page);
+    const emptyId = await modal(page).locator('[data-page-row]').last().getAttribute('data-page-row');
+    const deleted = [];
+    page.on('request', (r) => { if (r.method() === 'DELETE' && /\/api\/pages\//.test(r.url())) deleted.push(r.url()); });
+    await modal(page).locator('[data-structure-remove-empty]').click();
+    await page.locator('#config-confirm-modal button, #app-modal.show button').filter({ hasText: /remove|delete|confirm/i }).last().click();
+    await expect.poll(() => deleted.some((url) => url.includes(`/api/pages/${emptyId}`))).toBe(true);
+  });
+
+  test('Open on the dashboard goes to that page', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await page.locator('.config-view--library .lvs-header-actions [data-bm-open-structure]').click();
+    const row = modal(page).locator('[data-page-row]').first();
+    await rowMenu(row).click();
+    await modal(page).locator('[data-structure-menu] [data-structure-action="open-dashboard"]').click();
+    await expect(modal(page)).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('bookmarks');
+  });
+
+  test('a category can be merged into another', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    const cats = await page.evaluate(() => {
+      const d = window.dashboardInstance;
+      const withCat = d.allBookmarks.filter((b) => b.category);
+      return [...new Set(withCat.map((b) => b.category))];
+    });
+    test.skip(cats.length < 2, 'the fixture needs two categories with bookmarks');
+    const patches = [];
+    await page.route(/\/api\/bookmarks(\?.*)?$/, async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      patches.push(JSON.parse(route.request().postData() || '{}'));
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'success', updated: 1, missing: [] }) });
+    });
+    await page.locator('.config-view--library .lvs-header-actions [data-bm-open-structure]').click();
+    await modal(page).locator('[data-pt-tab="categories"]').click();
+    const row = modal(page).locator('[data-cat-row]').first();
+    await expect(row).toBeVisible();
+    await rowMenu(row).click();
+    const menu = modal(page).locator('[data-structure-menu]');
+    await menu.locator('[data-structure-action="merge"]').click();
+    const options = await menu.locator('[data-structure-target] option').evaluateAll((os) => os.map((o) => o.value).filter(Boolean));
+    await menu.locator('[data-structure-target]').selectOption(options[0]);
+    await menu.locator('[data-structure-confirm]').click();
+    await page.locator('#config-confirm-modal button, #app-modal.show button').filter({ hasText: /merge|confirm/i }).last().click();
+    await expect.poll(() => patches.length).toBeGreaterThan(0);
+    expect(patches[0].updates.every((u) => u.fields?.category === options[0])).toBe(true);
+  });
+});

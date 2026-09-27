@@ -1904,10 +1904,13 @@ class DashboardConfig {
         // the section holds, the way Health and Inbox do on the same band.
         // The Bookmarks view's band carries the way to Collection health too,
         // the way Health's band carries Work through and Rot report.
-        const healthButton = this.standalone && this.dash.settings?.healthViewEnabled !== false
+        const healthButton = (this.standalone
+            ? `<button type="button" class="lvs-action" data-bm-open-structure>${this.dash.escapeHtml(
+                this.t('config.bmStructureButton', 'Pages & categories'))}</button>`
+            : '') + (this.standalone && this.dash.settings?.healthViewEnabled !== false
             ? `<button type="button" class="lvs-action" data-bm-open-health-modal>${this.dash.escapeHtml(
                 this.t('config.bmHealthModalTitle', 'Collection health'))}</button>`
-            : '';
+            : '');
         const markup = context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
@@ -1931,6 +1934,7 @@ class DashboardConfig {
             actions.dataset.bmHealthWired = '1';
             actions.addEventListener('click', (e) => {
                 if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
+                else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
             });
         }
         const bar = null;
@@ -15623,6 +15627,7 @@ class DashboardConfig {
         // The Bookmarks view's pages-and-categories modal holds these editors
         // too; they bind inside whichever host they are drawn in.
         const container = body.closest('[data-pt-host]') || document.getElementById('dashboard-layout');
+        if (this._structureModal) this.repaintStructureFoot?.();
         if (container) this.bindPtTabControls(container);
     }
 
@@ -16813,6 +16818,7 @@ class DashboardConfig {
             return `
             <li class="config-crud-row" data-page-row="${esc(p.id)}">
                 <div class="config-crud-fields">
+                    ${locked ? '' : (this.renderStructureGrip?.() || '')}
                     <input type="text" class="config-text" style="min-width:56px;max-width:64px" data-page="icon" data-id="${esc(p.id)}" placeholder="📄" value="${esc(p.icon || '')}">
                     <input type="text" class="config-text" maxlength="60" data-page="name" data-id="${esc(p.id)}" placeholder="${esc(this.t('config.pageNamePlaceholder', 'Page name'))}" value="${esc(p.name || '')}">
                     <input type="color" class="config-color" data-page="color" data-id="${esc(p.id)}" value="${esc(p.color || '#888888')}" title="${esc(this.t('config.pageColorLabel', 'Tab colour'))}">
@@ -21176,8 +21182,9 @@ class DashboardConfig {
             // already has a place where its controls live.
             const spreadLabel = this.t('config.categorySpreadLabel', 'Spread across columns');
             const rows = visible.map(({ item: c, index: i }) => `
-                <li class="config-crud-row" data-cat-row="${i}">
+                <li class="config-crud-row" data-cat-row="${i}" data-cat-id="${esc(c.id)}">
                     <div class="config-crud-fields">
+                        ${locked ? '' : (this.renderStructureGrip?.() || '')}
                         <input type="text" class="config-text" data-cat="name" data-index="${i}" value="${esc(c.name || '')}">
 
                         ${this.renderStatMeta(catCounts[i], scales[i], 'config.categoryBookmarkCount', '{count} bookmarks')}
@@ -21279,6 +21286,7 @@ class DashboardConfig {
         return `
                 <li class="config-crud-row config-crud-row--widget" data-block-row="${esc(widget.id)}">
                     <div class="config-crud-fields">
+                        ${this.renderStructureGrip?.() || ''}
                         <span class="config-widget-category-name">${esc(label)}</span>
                         <span class="config-widget-kind">${esc(this.t('config.categoriesRowWidget', 'widget'))}</span>
                     </div>
