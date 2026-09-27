@@ -136,3 +136,33 @@ test('switching tabs keeps the head where it is', async ({ page }) => {
   await slab.locator('[data-bm-tab-panel="health"]').click();
   expect(await width()).toBe(before);
 });
+
+test('the tabs are equal and stay put while switching', async ({ page }) => {
+  const { bookmarks } = await openBookmarksWithHealth(page, undefined, { view: 'library' });
+  await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[0].name }) }).first().click();
+  const slab = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+  const boxes = () => slab.locator('[data-bm-tab-panel]').evaluateAll((els) => els.map((el) => {
+    const r = el.getBoundingClientRect();
+    return [Math.round(r.left), Math.round(r.width)];
+  }));
+  await slab.locator('[data-bm-tab-panel="details"]').click();
+  const first = await boxes();
+  expect(new Set(first.map(([, w]) => w)).size).toBe(1);
+  for (const name of ['health', 'usage', 'details']) {
+    await slab.locator(`[data-bm-tab-panel="${name}"]`).click();
+    expect(await boxes()).toEqual(first);
+  }
+});
+
+test('Open, Edit and Re-check sit on one row, without keycaps', async ({ page }) => {
+  const { bookmarks } = await openBookmarksWithHealth(page, undefined, { view: 'library' });
+  await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[0].name }) }).first().click();
+  const actions = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .config-bm-panel-actions');
+  const buttons = actions.locator(':scope > .config-btn');
+  await expect(buttons).toHaveCount(3);
+  await expect(buttons.nth(1)).toHaveText('Edit');
+  const tops = await buttons.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+  expect(new Set(tops).size).toBe(1);
+  await expect(actions.locator('kbd')).toHaveCount(0);
+  await expect(page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .config-bm-tabs kbd')).toHaveCount(0);
+});

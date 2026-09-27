@@ -146,6 +146,14 @@ class DashboardConfigContextMenu {
                 icon: 'pin',
             },
             { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
+            // Health lives in this list's panel now, so the menu offers its
+            // two most used parts rather than a trip to a view of its own.
+            ...(c.bmHealthIssue?.(bookmark)
+                ? [
+                    { id: 'recheck', label: this.t('dashboard.healthRecheck', 'Re-check'), icon: '↻' },
+                    { id: 'health-details', label: this.t('config.contextHealthDetails', 'Health details'), icon: '♥' },
+                ]
+                : []),
             // Where Config differs from the grid: this list is the one you
             // filter, so narrowing it to what the row belongs to is the action
             // the view is for. Offered only where there is something to filter
@@ -158,7 +166,6 @@ class DashboardConfigContextMenu {
                 ? [{ id: 'filter-tag', label: this.t('config.contextFilterTag', 'Show only tag “{tag}”', { tag: tags[0] }), icon: '#' }]
                 : []),
             { id: 'dashboard', label: this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'), icon: '⊕' },
-            { id: 'health', label: this.t('dashboard.healthOpenInHealth', 'Show in Health'), icon: '♥' },
             { id: 'title', label: this.t('dashboard.healthRefreshTitle', 'Refresh title'), icon: '↻' },
             { id: 'favicon', label: this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'), icon: '◫' },
             { id: 'archive', label: this.t('dashboard.healthArchive', 'Find in Web Archive'), icon: '🏛' },

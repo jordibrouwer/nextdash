@@ -41,7 +41,8 @@
             const ago = (ts) => {
                 const d = days(now - ts);
                 const [key, fallback, n] = d < 1 ? ['bmUsageToday', 'today', 0]
-                    : d < 14 ? ['bmUsageDaysAgo', '{n} days ago', d]
+                    : d < 2 ? ['bmUsageDayAgo', '1 day ago', 1]
+                        : d < 14 ? ['bmUsageDaysAgo', '{n} days ago', d]
                         : d < 61 ? ['bmUsageWeeksAgoN', '{n} weeks ago', Math.round(d / 7)]
                             : d < 730 ? ['bmUsageMonthsAgo', '{n} months ago', Math.round(d / 30.4)]
                                 : ['bmUsageYearsAgo', '{n} years ago', Math.round(d / 365)];

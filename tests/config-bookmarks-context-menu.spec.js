@@ -57,7 +57,9 @@ test.describe('config bookmarks context menu', () => {
         expect(list).toEqual(expect.arrayContaining(['open-new-tab', 'copy-url', 'edit', 'pin', 'delete']));
         // The part only this view can do: narrowing the list, and the
         // maintenance actions that otherwise live behind the ⋯ button.
-        expect(list).toEqual(expect.arrayContaining(['filter-page', 'dashboard', 'health', 'title', 'favicon', 'archive']));
+        expect(list).toEqual(expect.arrayContaining(['filter-page', 'dashboard', 'title', 'favicon', 'archive']));
+        // Health is part of this view's panel now: no trip to a view of its own.
+        expect(list).not.toContain('health');
     });
 
     test('the destructive entry sits last, below a divider', async ({ page }) => {

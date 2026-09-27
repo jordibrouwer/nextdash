@@ -1536,9 +1536,14 @@ html body .config-bm-more-menu .config-btn {
     background: var(--background-secondary);
 }
 
-/* A segmented bar: plain words next to each other read as text, not tabs. */
+/* A segmented bar: plain words next to each other read as text, not tabs.
+   Three equal columns rather than flex items sized by their content: the
+   active tab's weight and shadow, the Health dot and Safari's own button
+   metrics all changed that content, and the tabs shifted against each
+   other on every switch. */
 .config-bm-tabs {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 3px;
     padding: 3px;
     border-radius: var(--radius-5, 8px);
@@ -1546,7 +1551,10 @@ html body .config-bm-more-menu .config-btn {
 }
 
 .config-bm-tab {
-    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1732,4 +1740,21 @@ html body .config-bm-more-menu .config-btn {
     fill: var(--text-secondary);
     font-size: 9.5px;
     font-family: inherit;
+}
+
+/*
+ * The head's buttons: one row of the theme's own small buttons. They wrapped
+ * onto three lines with keycaps inside them, which read as clutter rather
+ * than as the panel's three actions; the keys live in their titles and in
+ * the list's legend.
+ */
+.config-bm-panel-head .config-bm-panel-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.config-bm-panel-head .config-bm-panel-actions .config-btn {
+    white-space: nowrap;
 }

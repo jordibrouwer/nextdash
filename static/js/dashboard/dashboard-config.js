@@ -23808,27 +23808,6 @@ class DashboardConfig {
         void this.dash.pageNav?.requestPageNavigation?.(pageId);
     }
 
-    /**
-     * The mirror of openBookmarkOnDashboard: open the Health view with this
-     * bookmark's row selected.
-     *
-     * The index comes from findBookmarkRecord rather than from the in-memory
-     * list, because the health key is `pageId:index` against the page's stored
-     * order — and that helper already resolves the right one of two identical
-     * URLs. An index taken from the filtered config list would point at a
-     * different bookmark whenever a filter or sort is active.
-     */
-    async revealBookmarkInHealth(key) {
-        this.closeBookmarkMenus();
-        const record = await this.findBookmarkRecord(key);
-        if (!record) {
-            this.notify(this.t('config.bookmarkNotFound', 'Could not find this bookmark.'), 'error');
-            return;
-        }
-        this._trackAction('reveal-in-health');
-        await this.openViewFromTile('health', null, `${record.pageId}:${record.index}`);
-    }
-
     copyBookmarkUrl(b) {
         this.closeBookmarkMenus();
         const url = String(b?.url || '').trim();
@@ -24018,8 +23997,16 @@ class DashboardConfig {
             case 'dashboard':
                 this.openBookmarkOnDashboard(bookmark);
                 break;
-            case 'health':
-                void this.revealBookmarkInHealth(key);
+            case 'recheck': {
+                const issue = this.bmHealthIssue?.(bookmark);
+                if (issue) void this._bmHealthModule?.recheckIssue(issue);
+                break;
+            }
+            case 'health-details':
+                // The row's panel, on its Health tab: what `s` does.
+                this._bmKeyboardKey = key;
+                this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
+                this.openBmHealthPanelSection();
                 break;
             case 'redirect':
                 void this.detectBookmarkRedirect(key);

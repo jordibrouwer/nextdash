@@ -419,21 +419,21 @@ test.describe('reaching the Health view from a bookmark', () => {
         }), { timeout: 10_000 }).toBe(url);
     });
 
-    test('the config bookmark list opens the row in Health', async ({ page }) => {
+    test('the bookmark list opens the row\'s Health in its panel', async ({ page }) => {
         await load(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.evaluate(() => { window.location.hash = '#bookmarks'; });
         await page.locator('#config-bm-list .config-bm-row').first().waitFor();
+        // The report has to be joined in before the menu can offer Health.
+        await page.waitForFunction(() => Boolean(window.dashboardInstance.config?.instance?._bmHealthByUrl?.size));
 
         const row = page.locator('#config-bm-list .config-bm-row').first();
-        const key = await row.getAttribute('data-bm-key');
-        expect(key).toBeTruthy();
-        // The row's right-click menu carries the Health entry.
         await row.click({ button: 'right' });
-        const item = page.locator('.config-bm-context-menu [data-action="health"]');
+        await expect(page.locator('.config-bm-context-menu [data-action="health"]')).toHaveCount(0);
+        const item = page.locator('.config-bm-context-menu [data-action="health-details"]');
         await expect(item).toBeVisible();
         await item.click();
 
-        await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.health?.instance?.selectedKey), { timeout: 10_000 }).toBeTruthy();
+        const drawer = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+        await expect(drawer.locator('[data-bm-pane="health"]')).toBeVisible();
     });
 });

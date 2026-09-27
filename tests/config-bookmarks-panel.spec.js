@@ -317,8 +317,7 @@ test.describe('the bookmark panel', () => {
         expect(await title.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
         expect(await title.textContent()).not.toContain('…');
         const edit = panel.locator('[data-bm-panel-action="edit-dialog"]');
-        await expect(edit).toContainText('Shift');
-        await expect(edit.locator('kbd')).toHaveText(['Shift', 'E']);
+        await expect(edit).toHaveText('Edit');
         await expect(edit).toHaveAttribute('title', /Shift\+E/);
         // Both actions stay inside the panel.
         const box = await panel.boundingBox();

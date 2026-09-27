@@ -477,13 +477,15 @@
         const troubled = state === 'broken' || state === 'down' || (issue && issue.status === 'broken');
         const tab = this.workbenchPanelTab();
         // The digits reach the tabs only in the Bookmarks view (see
-        // handleWorkbenchPanelTabKey), so only there do the tabs name them.
+        // handleWorkbenchPanelTabKey), so only there do the tabs name them,
+        // in their titles: chips inside the bar made it read as a keyboard.
         const tabButton = (name, label, n) => {
             const on = name === tab;
             return `<button type="button" class="config-bm-tab${on ? ' is-active' : ''}" role="tab"
-                        aria-selected="${on ? 'true' : 'false'}" tabindex="${on ? 0 : -1}" data-bm-tab-panel="${name}">${esc(label)}${
+                        aria-selected="${on ? 'true' : 'false'}" tabindex="${on ? 0 : -1}" data-bm-tab-panel="${name}"${
+                this.standalone ? ` title="${esc(`${label} (${n})`)}"` : ''}>${esc(label)}${
                 name === 'health' && troubled ? `<span class="config-bm-tab-dot" aria-label="${esc(this.t('config.bmTabProblem', 'has a problem'))}"></span>` : ''
-            }${this.standalone ? `<kbd aria-hidden="true">${n}</kbd>` : ''}</button>`;
+            }</button>`;
         };
         const pane = (name, body) => `<section class="config-bm-pane" role="tabpanel" data-bm-pane="${name}"${name === tab ? '' : ' hidden'}>${body}</section>`;
         const monitor = this.renderBmMonitorSection?.(b) || '';
@@ -509,8 +511,9 @@
                 <div class="config-bm-panel-actions">
                     <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
                     <button type="button" class="config-btn config-btn--small" data-bm-panel-action="edit-dialog"
-                            title="${esc(this.t('config.bmEditDialogTitle', 'Open the full edit dialog (Shift+E)'))}">${esc(this.t('config.bmEditDialog', 'Edit in dialog'))} <kbd>Shift</kbd><kbd>E</kbd></button>
-                    ${issue && this.standalone ? `<button type="button" class="config-btn config-btn--small" data-bm-health-action="recheck">${esc(this.t('config.bmKeyRecheck', 're-check').replace(/^./, (c) => c.toUpperCase()))}${this.standalone ? ' <kbd>p</kbd>' : ''}</button>` : ''}
+                            title="${esc(this.t('config.bmEditDialogTitle', 'Open the full edit dialog (Shift+E)'))}">${esc(this.t('config.bmEditShort', 'Edit'))}</button>
+                    ${issue && this.standalone ? `<button type="button" class="config-btn config-btn--small" data-bm-health-action="recheck"
+                            title="${esc(this.t('config.bmRecheckTitle', 'Check this bookmark now (p)'))}">${esc(this.t('config.bmKeyRecheck', 're-check').replace(/^./, (c) => c.toUpperCase()))}</button>` : ''}
                 </div>
             </header>
             <div class="config-bm-tabs" role="tablist" aria-label="${esc(this.t('config.bmDetails', 'Details'))}">
