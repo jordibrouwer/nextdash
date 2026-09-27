@@ -571,7 +571,7 @@ class DashboardConfigContextMenu {
         const c = this.config;
         switch (action) {
             case 'open-new-tab':
-                c.openBookmarkByKey(key);
+                c.openBookmarkByKey(key, { newTab: true });
                 break;
             case 'edit':
                 c.focusWorkbenchPanel(key);

@@ -98,7 +98,9 @@ test.describe('bookmark panel: Details', () => {
     await pick(page, bookmarks[1].name);
     await acc(details(page), 'address').locator('summary').click();
     await acc(details(page), 'address').locator('[data-bm-panel-action="open-new-tab"]').click();
-    expect(await page.evaluate(() => window.__opened)).toEqual([bookmarks[1].url]);
+    // Through the same safe-href step every open takes, which may add a slash.
+    const opened = await page.evaluate(() => window.__opened);
+    expect(opened.map((u) => u.replace(/\/$/, ''))).toEqual([bookmarks[1].url.replace(/\/$/, '')]);
   });
 
   test('Local copies lists the stored ones to read, and saves a new one', async ({ page }) => {

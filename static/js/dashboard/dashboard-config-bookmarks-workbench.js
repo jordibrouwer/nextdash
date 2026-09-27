@@ -1159,6 +1159,12 @@
             // An item in the menu does its work (bound below or per button)
             // and takes the menu down with it; a press elsewhere does too.
             this.closeWorkbenchMoreMenu();
+            // The address in the head is a real link and opens itself; the
+            // open is counted like any other.
+            if (e.target.closest('a.config-bm-panel-url') && panel.dataset.bmPanelKey) {
+                this.recordBookmarkOpenByKey(panel.dataset.bmPanelKey);
+                return;
+            }
             const action = e.target.closest('[data-bm-panel-action]')?.getAttribute('data-bm-panel-action');
             const key = panel.dataset.bmPanelKey;
             if (!action || !key) return;

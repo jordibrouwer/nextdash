@@ -2688,18 +2688,26 @@ class DashboardConfig {
      * copy of the bookmark the other views hold. Only the repaint is ours,
      * because only this list paints the usage line.
      */
-    openBookmarkByKey(key) {
+    openBookmarkByKey(key, { newTab = false } = {}) {
         const bookmark = this.findBookmarkByKey(key);
         if (!bookmark?.url) return;
         const href = this.dash.safeBookmarkOpenHref?.(bookmark.url) || bookmark.url;
+        // Counted before it opens: in the same tab, nothing after the
+        // navigation runs, and the open went uncounted.
+        this.recordBookmarkOpenByKey(key, bookmark);
         // Honour the openInNewTab preference, which the dashboard grid already
         // respects: opening from Config used to force a new tab whatever it
-        // said, so the setting only half applied.
-        if (this.dash?.settings?.openInNewTab === false) {
+        // said, so the setting only half applied. "Open in new tab" says so.
+        if (!newTab && this.dash?.settings?.openInNewTab === false) {
             window.location.href = href;
             return;
         }
         window.open(href, '_blank', 'noopener,noreferrer');
+    }
+
+    /** One open, counted as the dashboard counts it, and shown on the row. */
+    recordBookmarkOpenByKey(key, bookmark = this.findBookmarkByKey(key)) {
+        if (!bookmark) return;
         this.dash.recordBookmarkOpened?.(bookmark, undefined, 'config');
         this.refreshBookmarkUsageLine(key, bookmark);
     }
@@ -24079,7 +24087,7 @@ class DashboardConfig {
                 this.copyBookmarkUrl(bookmark);
                 break;
             case 'open-new-tab':
-                window.open(bookmark.url, '_blank', 'noopener,noreferrer');
+                this.openBookmarkByKey(key, { newTab: true });
                 break;
             case 'rebuild-preview':
                 void this.rebuildBmPreview?.(bookmark);
