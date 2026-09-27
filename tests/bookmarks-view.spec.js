@@ -156,3 +156,33 @@ test.describe('bookmarks view: the side panel', () => {
     expect(box.width).toBeGreaterThan(360);
   });
 });
+
+test.describe('bookmarks view: the side panel closes from outside', () => {
+  const drawer = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
+  const row = (page, i) => page.locator('#config-bm-list .config-bm-row').nth(i);
+
+  test('a click beside it closes it', async ({ page }) => {
+    await coldLoad(page, '#bookmarks');
+    await row(page, 0).locator('.config-bm-title').click();
+    await expect(drawer(page)).toBeVisible();
+    await page.locator('#config-bm-rail').click({ position: { x: 20, y: 5 } });
+    await expect(drawer(page)).toHaveCount(0);
+  });
+
+  test('a click on another row moves it to that row instead', async ({ page }) => {
+    await coldLoad(page, '#bookmarks');
+    await row(page, 0).locator('.config-bm-title').click();
+    await expect(drawer(page)).toBeVisible();
+    const name = (await row(page, 2).locator('.config-bm-title').textContent()).trim();
+    await row(page, 2).locator('.config-bm-title').click();
+    await expect(drawer(page).locator('.config-bm-panel-title')).toHaveText(name);
+  });
+
+  test('a click inside it leaves it open', async ({ page }) => {
+    await coldLoad(page, '#bookmarks');
+    await row(page, 0).locator('.config-bm-title').click();
+    await expect(drawer(page)).toBeVisible();
+    await drawer(page).locator('[data-bm-field="name"]').click();
+    await expect(drawer(page)).toBeVisible();
+  });
+});

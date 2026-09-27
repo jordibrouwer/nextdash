@@ -38,13 +38,22 @@
     }
 
     class ListViewDrawer {
-        constructor({ id, storageKey, defaultSections = [], ariaLabel = null, onClose = null, closeLabel = 'Close' }) {
+        /*
+         * closeOnOutside(target): opt-in. A press anywhere else on the page
+         * closes the panel, unless this answers false for what was pressed --
+         * a view keeps it open for a press that moves it to another row.
+         * Presses in dialogs, menus and listboxes (a confirmation the panel
+         * asked for, an autocomplete under one of its fields) never close it.
+         */
+        constructor({ id, storageKey, defaultSections = [], ariaLabel = null, onClose = null, closeLabel = 'Close', closeOnOutside = null }) {
             this.id = String(id);
             this.storageKey = storageKey;
             this.defaultSections = defaultSections;
             this.ariaLabel = ariaLabel;
             this.onClose = onClose;
             this.closeLabel = closeLabel;
+            this.closeOnOutside = closeOnOutside;
+            this._outside = (e) => this._onOutsidePress(e);
             this._host = null;
             this._panel = null;
             this._key = null;
@@ -109,6 +118,7 @@
             this._key = key;
             this._onSectionToggle = onSectionToggle;
             this._acquireLock();
+            if (this.closeOnOutside) document.addEventListener('pointerdown', this._outside, true);
             this.place();
             host.hidden = false;
             host.replaceChildren();
@@ -180,8 +190,18 @@
             details?.scrollIntoView?.({ block: 'nearest' });
         }
 
+        _onOutsidePress(e) {
+            const target = e.target;
+            if (!this._panel || !(target instanceof Element)) return;
+            if (this._host?.contains(target)) return;
+            if (target.closest('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], .modal-overlay')) return;
+            if (this.closeOnOutside(target) === false) return;
+            this.close();
+        }
+
         close({ silent = false } = {}) {
             const wasOpen = this.isOpen();
+            document.removeEventListener('pointerdown', this._outside, true);
             this._releaseLock();
             this._panel = null;
             this._key = null;

@@ -574,6 +574,9 @@
                 storageKey: 'nextdash.library.drawer',
                 closeLabel: this.t('config.bmCloseDetails', 'Close'),
                 onClose: () => this.onLibraryDrawerClosed(),
+                // A press beside the panel closes it; one on a row, or on a
+                // row's tick box, moves it there instead.
+                closeOnOutside: (target) => !target.closest('#config-bm-list .config-bm-row'),
             });
         }
         return this._libDrawer || null;
