@@ -225,6 +225,39 @@ class DashboardDockerLoader {
         });
 
         host.appendChild(anchor);
+        void this.updateNavBadge();
+    }
+
+    /**
+     * The count of containers with an update waiting, on the icon's corner --
+     * the way the Bookmarks icon carries its problems and the Inbox its unread.
+     * `count` when the caller already knows it (the view, after a check);
+     * otherwise read from the container list the search index keeps.
+     */
+    async updateNavBadge(count) {
+        let n = Number(count);
+        if (!Number.isFinite(n)) {
+            const list = await window.DockerSearchIndex?.refresh?.().catch?.(() => null);
+            if (!Array.isArray(list)) return;
+            n = list.filter((c) => c?.update?.status === 'available').length;
+        }
+        const anchor = document.querySelector('#page-nav-docker-host .docker-link-anchor');
+        if (!anchor) return;
+        let badge = anchor.querySelector('.docker-update-badge');
+        if (!(n > 0)) {
+            badge?.remove();
+            return;
+        }
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'docker-update-badge';
+            anchor.appendChild(badge);
+        }
+        badge.textContent = String(n);
+        const raw = this.dash?.language?.t?.('dashboard.dockerCheckFound');
+        const label = raw && raw !== 'dashboard.dockerCheckFound' ? raw : '{count} updates available';
+        badge.setAttribute('aria-label', label.replace('{count}', String(n)));
+        badge.title = badge.getAttribute('aria-label');
     }
 }
 

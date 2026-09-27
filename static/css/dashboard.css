@@ -8196,7 +8196,8 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
  * their own square: 14px, filled, white on the colour that says what it is.
  */
 .dashboard-section.section-controls .header-actions .page-inbox-badge,
-.dashboard-section.section-controls .header-actions .library-link--icon .health-badge {
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge,
+.dashboard-section.section-controls .header-actions .docker-update-badge {
     position: absolute;
     top: -6px;
     right: -6px;
@@ -8228,6 +8229,13 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 .dashboard-section.section-controls .header-actions .page-inbox-badge {
     background: var(--accent-primary);
     color: var(--background-primary);
+}
+
+/* Containers with an update waiting: news, not a fault -- the info colour. */
+.dashboard-section.section-controls .header-actions .docker-update-badge {
+    background: var(--accent-info, var(--accent-primary));
+    color: var(--background-primary);
+    pointer-events: none;
 }
 
 .dashboard-section.section-controls .header-actions .library-link--icon .health-badge {

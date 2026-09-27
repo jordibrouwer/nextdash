@@ -172,6 +172,7 @@ class Dashboard {
             }
             this.renderDateWeatherLine();
             this.updateHealthBadge();
+            void this.docker?.updateNavBadge?.();
             this.inbox?.restoreViewIfNeeded?.();
             this.maybeRefreshAfterConfigReturn();
         });

@@ -279,6 +279,7 @@ class DashboardDocker {
         }
         this.mountShell();
         this.render();
+        this.syncNavBadge();
     }
 
     /** Re-reads the container list only, for polling and the post-check refresh. */
@@ -287,6 +288,12 @@ class DashboardDocker {
         const body = await dockerFetchJSON('/api/docker/containers');
         this.containers = Array.isArray(body?.containers) ? body.containers : [];
         this.render();
+        this.syncNavBadge();
+    }
+
+    /** The header icon's count, from the list this view has just read. */
+    syncNavBadge() {
+        void this.dash.docker?.updateNavBadge?.(this.filterCount('updates'));
     }
 
     startPolling() {
