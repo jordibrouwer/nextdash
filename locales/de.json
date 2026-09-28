@@ -6465,7 +6465,7 @@
     "overviewNewFeatureVideoCardHow": "Eine Zeile, deren Link ein Video ist, trägt ein kleines Abspielzeichen. Ihre Vorschaukarte öffnet mit dem Vorschaubild und einer Abspieltaste, und zu YouTube oder Vimeo geht nichts, bis du sie drückst. Shift+V und dann Enter spielt über die Tastatur ab; Esc, das Kreuz über dem Player oder ein Klick daneben stoppt es.",
     "overviewNewFeatureVideoCardEnable": "Fahre über ein Video-Lesezeichen oder drücke Shift+V darauf. Der Player ist die Zeile Videoplayer unter Config → Erscheinungsbild → Zeilen → Link-Vorschaukarten.",
     "overviewNewFeatureVideoCardCta": "Erscheinungsbild öffnen →",
-    "behaviorTabFresh": "Fresh",
+    "behaviorTabFresh": "Neu",
     "bmAddedTitle": "Hinzugefügt {date}",
     "bmCheckingAll": "Alle {n} ungeprüften",
     "bmCheckingApply": "Prüfung für {n} einschalten",

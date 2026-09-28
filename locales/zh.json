@@ -6465,7 +6465,7 @@
     "overviewNewFeatureVideoCardHow": "链接指向视频的行会带一个小小的播放标记。它的预览卡片以缩略图和播放按钮打开，在你按下之前不会有任何请求发往 YouTube 或 Vimeo。Shift+V 再按 Enter 就能用键盘播放；Esc、播放器上的叉号或点击旁边都会停止。",
     "overviewNewFeatureVideoCardEnable": "把鼠标移到视频书签上，或在它上面按 Shift+V。播放器是配置 → 外观 → 行 → 链接预览卡片里的“视频播放器”那一行。",
     "overviewNewFeatureVideoCardCta": "打开外观 →",
-    "behaviorTabFresh": "Fresh",
+    "behaviorTabFresh": "新动态",
     "bmAddedTitle": "添加于 {date}",
     "bmCheckingAll": "全部 {n} 个未检查的",
     "bmCheckingApply": "为 {n} 个开启检查",

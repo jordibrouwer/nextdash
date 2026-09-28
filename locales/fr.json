@@ -6465,7 +6465,7 @@
     "overviewNewFeatureVideoCardHow": "Une ligne dont le lien est une vidéo porte une petite marque de lecture. Sa carte d’aperçu s’ouvre sur la vignette avec un bouton de lecture, et rien ne part vers YouTube ou Vimeo avant que vous ne l’appuyiez. Shift+V puis Enter lance la lecture au clavier ; Esc, la croix sur le lecteur ou un clic à côté l’arrête.",
     "overviewNewFeatureVideoCardEnable": "Survolez un favori vidéo, ou appuyez sur Shift+V dessus. Le lecteur est la ligne Lecteur vidéo sous Config → Apparence → Lignes → Cartes d’aperçu.",
     "overviewNewFeatureVideoCardCta": "Ouvrir Apparence →",
-    "behaviorTabFresh": "Fresh",
+    "behaviorTabFresh": "Nouveau",
     "bmAddedTitle": "Ajouté le {date}",
     "bmCheckingAll": "Les {n} non vérifiés",
     "bmCheckingApply": "Activer la vérification pour {n}",

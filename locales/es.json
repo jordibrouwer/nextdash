@@ -6465,7 +6465,7 @@
     "overviewNewFeatureVideoCardHow": "Una fila cuyo enlace es un vídeo lleva una pequeña marca de reproducción. Su tarjeta de vista previa se abre con la miniatura y un botón de reproducción, y no se envía nada a YouTube o Vimeo hasta que lo pulsas. Shift+V y luego Enter reproduce desde el teclado; Esc, la cruz sobre el reproductor o un clic fuera lo detiene.",
     "overviewNewFeatureVideoCardEnable": "Pasa el ratón por un marcador de vídeo, o pulsa Shift+V sobre él. El reproductor es la fila Reproductor de vídeo en Configuración → Apariencia → Filas → Tarjetas de vista previa.",
     "overviewNewFeatureVideoCardCta": "Abrir Apariencia →",
-    "behaviorTabFresh": "Fresh",
+    "behaviorTabFresh": "Novedades",
     "bmAddedTitle": "Añadido el {date}",
     "bmCheckingAll": "Los {n} sin comprobar",
     "bmCheckingApply": "Activar la comprobación para {n}",
