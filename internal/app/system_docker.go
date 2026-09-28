@@ -73,6 +73,11 @@ process was configured with, not anything a request can name.
 */
 var dockerClients sync.Map
 
+// dockerClientTimeout bounds a whole read -- request and body -- so a daemon
+// that stops answering cannot hold a metrics poll or a list open. A variable so
+// a test can shorten it rather than wait it out.
+var dockerClientTimeout = 5 * time.Second
+
 func dockerClientFor(socket string) *http.Client {
 	if cached, ok := dockerClients.Load(socket); ok {
 		return cached.(*http.Client)
@@ -84,9 +89,23 @@ func dockerClientFor(socket string) *http.Client {
 			},
 			IdleConnTimeout: 30 * time.Second,
 		},
-		Timeout: 5 * time.Second,
+		Timeout: dockerClientTimeout,
 	}
 	actual, _ := dockerClients.LoadOrStore(socket, client)
+	return actual.(*http.Client)
+}
+
+// dockerActionClients are the same per-socket clients with no overall
+// timeout, for start, stop, update and remove: dockerActionTimeout on the
+// request's context is what ends one that hangs.
+var dockerActionClients sync.Map
+
+func dockerActionClientFor(socket string) *http.Client {
+	if cached, ok := dockerActionClients.Load(socket); ok {
+		return cached.(*http.Client)
+	}
+	client := &http.Client{Transport: dockerClientFor(socket).Transport}
+	actual, _ := dockerActionClients.LoadOrStore(socket, client)
 	return actual.(*http.Client)
 }
 

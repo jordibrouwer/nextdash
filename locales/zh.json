@@ -7424,6 +7424,8 @@
     "configCategories": "分类",
     "configTags": "标签",
     "configBookmarks": "书签",
+    "configInbox": "收件箱",
+    "configContainers": "容器",
     "configFinders": "查找器",
     "configBackups": "备份",
     "configStats": "统计",

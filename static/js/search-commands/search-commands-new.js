@@ -326,7 +326,7 @@ class SearchCommandNew {
         this.formPreview?.updateAll(bookmark);
     }
 
-    /** The ticked availability mode, defaulting to off. */
+    /** The ticked availability mode; off when none is ticked. */
     getSelectedCheckMode() {
         const checked = document.querySelector('input[name="new-bookmark-check-mode"]:checked');
         return checked?.value || window.CheckMode?.OFF || 'off';
@@ -538,11 +538,14 @@ class SearchCommandNew {
 
         // Built from CheckMode.options() rather than written out here, so the three
         // modes, their order and their labels come from the same place the health
-        // view and the context menu read them from. Off is preselected: a new
-        // bookmark is not checked until asked, which is what the server assumes too.
+        // view and the context menu read them from. The mode Config → Bookmarks
+        // → Settings names for a new bookmark is preselected -- Periodic unless
+        // the reader chose otherwise -- as the dashboard's own form does.
+        const setting = window.dashboardInstance?.settings?.newBookmarkCheckMode;
+        const startMode = ['off', 'periodic', 'monitor'].includes(setting) ? setting : 'periodic';
         const checkModeOptionsHtml = (window.CheckMode?.options?.() || []).map((opt) => {
             const id = `new-bookmark-check-mode-${opt.mode}`;
-            const checked = opt.mode === window.CheckMode.OFF ? ' checked' : '';
+            const checked = opt.mode === startMode ? ' checked' : '';
             return `<input type="radio" name="new-bookmark-check-mode" id="${id}" value="${opt.mode}" class="bookmark-detail-checkmode-input"${checked}>`
                 + `<label for="${id}" class="bookmark-detail-checkmode-option">${escapeNewCommandHtml(opt.label)}</label>`;
         }).join('');

@@ -7424,6 +7424,8 @@
     "configCategories": "Categorías",
     "configTags": "Etiquetas",
     "configBookmarks": "Marcadores",
+    "configInbox": "Bandeja de entrada",
+    "configContainers": "Contenedores",
     "configFinders": "Buscadores",
     "configBackups": "Copias de seguridad",
     "configStats": "Estadísticas",

@@ -7424,6 +7424,8 @@
     "configCategories": "Catégories",
     "configTags": "Étiquettes",
     "configBookmarks": "Favoris",
+    "configInbox": "Inbox",
+    "configContainers": "Conteneurs",
     "configFinders": "Moteurs de recherche",
     "configBackups": "Sauvegardes",
     "configStats": "Statistiques",

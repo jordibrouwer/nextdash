@@ -4918,9 +4918,8 @@ class DashboardInbox {
     createItemElement(item) {
         const d = this.dash;
         const card = document.createElement('article');
-        // feed-row is the shared card, feed-row--grid the shared column
-        // anatomy (and with it the shared density setting); the unread edge is
-        // the shared modifier.
+        // feed-row is the shared card; the unread edge is the shared modifier.
+        // One line since the side panel came, so not the feed-row--grid columns.
         card.className = 'feed-row inbox-item' + (item.readAt ? ' is-read' : ' is-unread');
         card.dataset.inboxId = item.id;
         card.dataset.bookmarkUrl = item.url || '';

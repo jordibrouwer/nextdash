@@ -882,16 +882,17 @@ type Settings struct {
 
 	// Config → Bookmarks. The list view had no settings of its own; these are
 	// the choices it used to make on the user's behalf.
-	ConfigBookmarksSort       string `json:"configBookmarksSort"`           // Sort the list opens on: page/name/recent/lastOpened/opens/pinned
-	ConfigBookmarksPageSize   int    `json:"configBookmarksPageSize"`       // Rows added per "load more" step
-	BookmarkDeleteConfirmFrom int    `json:"bookmarkDeleteConfirmFrom"`     // Ask before deleting this many rows or more (1 = always)
-	DefaultMonitorIntervalMin int    `json:"defaultMonitorIntervalMinutes"` // Interval a bookmark gets when switched to Monitor
-	NewBookmarkCheckMode      string `json:"newBookmarkCheckMode"`          // Availability a quick-added bookmark starts on: off/periodic/monitor
-	NewBookmarkPinned         bool   `json:"newBookmarkPinned"`             // Quick-add pins by default
-	NewBookmarkCategory       string `json:"newBookmarkCategory"`           // Category id a quick-added bookmark lands in ("" = none)
-	BookmarkStaleDays         int    `json:"bookmarkStaleDays"`             // "Not opened in N days" in the cleanup score and stats
-	BulkFaviconConfirmFrom    int    `json:"bulkFaviconConfirmFrom"`        // Ask before refreshing icons for this many rows (0 = never)
-	BookmarkArchiveUrl        string `json:"bookmarkArchiveUrl"`            // Archive service, {url} replaced with the bookmark's address
+	ConfigBookmarksSort         string `json:"configBookmarksSort"`                   // Sort the list opens on: page/name/recent/lastOpened/opens/pinned
+	ConfigBookmarksPageSize     int    `json:"configBookmarksPageSize"`               // Rows added per "load more" step
+	BookmarkDeleteConfirmFrom   int    `json:"bookmarkDeleteConfirmFrom"`             // Ask before deleting this many rows or more (1 = always)
+	DefaultMonitorIntervalMin   int    `json:"defaultMonitorIntervalMinutes"`         // Interval a bookmark gets when switched to Monitor
+	NewBookmarkCheckMode        string `json:"newBookmarkCheckMode"`                  // Availability a quick-added bookmark starts on: off/periodic/monitor
+	NewBookmarkPeriodicMigrated bool   `json:"newBookmarkPeriodicMigrated,omitempty"` // one-time: a stored Off (the old default) moves to Periodic
+	NewBookmarkPinned           bool   `json:"newBookmarkPinned"`                     // Quick-add pins by default
+	NewBookmarkCategory         string `json:"newBookmarkCategory"`                   // Category id a quick-added bookmark lands in ("" = none)
+	BookmarkStaleDays           int    `json:"bookmarkStaleDays"`                     // "Not opened in N days" in the cleanup score and stats
+	BulkFaviconConfirmFrom      int    `json:"bulkFaviconConfirmFrom"`                // Ask before refreshing icons for this many rows (0 = never)
+	BookmarkArchiveUrl          string `json:"bookmarkArchiveUrl"`                    // Archive service, {url} replaced with the bookmark's address
 
 	// Config → Bookmarks → View: how the Bookmarks view looks and behaves.
 	// Every default is what the view did before it had settings, so an install
@@ -1609,6 +1610,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
 			PageSwitcherClassicMigrated:     true,
+			NewBookmarkPeriodicMigrated:     true,
 			TagCloudDefaultMigrated:         true,
 			RowHighlight:                    "subtle",
 			InkGap:                          defaultInkGap,
@@ -3984,6 +3986,7 @@ func (fs *FileStore) GetSettings() Settings {
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
 			PageSwitcherClassicMigrated:     true,
+			NewBookmarkPeriodicMigrated:     true,
 			TagCloudDefaultMigrated:         true,
 			RowHighlight:                    "subtle",
 			InkGap:                          defaultInkGap,
@@ -4587,6 +4590,15 @@ func (fs *FileStore) GetSettings() Settings {
 			}
 			settings.PageSwitcherClassicMigrated = true
 		}
+		// A new bookmark starts on Periodic now. Off was the default until
+		// then and was written into every saved settings file, so a stored Off
+		// moves once; Monitor was never a default and stays.
+		if !settings.NewBookmarkPeriodicMigrated {
+			if settings.NewBookmarkCheckMode == "off" || settings.NewBookmarkCheckMode == "" {
+				settings.NewBookmarkCheckMode = defaultNewBookmarkCheckMode
+			}
+			settings.NewBookmarkPeriodicMigrated = true
+		}
 		switch settings.RowHighlight {
 		case "subtle", "strong":
 		default:
@@ -4824,6 +4836,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.HeaderActionsDefaultTwoMigrated = settings.HeaderActionsDefaultTwoMigrated || stored.HeaderActionsDefaultTwoMigrated
 			settings.PageSwitcherTextMigrated = settings.PageSwitcherTextMigrated || stored.PageSwitcherTextMigrated
 			settings.PageSwitcherClassicMigrated = settings.PageSwitcherClassicMigrated || stored.PageSwitcherClassicMigrated
+			settings.NewBookmarkPeriodicMigrated = settings.NewBookmarkPeriodicMigrated || stored.NewBookmarkPeriodicMigrated
 			settings.IncludeFindersInSearchMigrated = settings.IncludeFindersInSearchMigrated || stored.IncludeFindersInSearchMigrated
 			settings.BraveFinderSeededMigrated = settings.BraveFinderSeededMigrated || stored.BraveFinderSeededMigrated
 		}

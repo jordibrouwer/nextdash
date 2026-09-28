@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.15.1 — 29 September 2026](#v1151--29-september-2026)
 - [v1.15.0 — 28 September 2026](#v1150--28-september-2026)
 - [v1.13.7 — 25 September 2026](#v1137--25-september-2026)
 - [v1.13.6 — 25 September 2026](#v1136--25-september-2026)
@@ -223,6 +224,34 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.15.1 — 29 September 2026
+
+Updating or stopping a container from the Containers view failed on a real host, and said the socket was missing when it was not; an existing install still started new bookmarks on Off; and `:config` missed two sections. Recorded but not announced: the What's new window still leads with v1.15.0.
+
+### Containers
+
+- **fix — update and stop were cut off after five seconds.** Every call to the Docker socket went through one client with a five-second `Timeout`, and Go's `http.Client` counts reading the body in that. An update's pull streams progress for as long as the layers take, and a stop waits out the container's own stop timeout (ten seconds by default), so both were cut off mid-way. Start, stop, pause, restart, update and remove now use a client without that deadline; `dockerActionTimeout` (ten minutes) on the action's context ends one that hangs. Reads keep the five seconds. `TestDockerUpdateOutlastsTheReadTimeout` holds the fake daemon's pull and stop open longer than the read deadline and fails without the change.
+- **fix — a failure no longer claims the socket is missing.** `writeDockerError` answered every error that was not the daemon's own reply with `503 {"reason":"no-docker-socket"}`, and the browser, not knowing that reason, fell back to *Docker did not do that*. Only a failure to reach the socket is reported that way now; anything after the connection is `502 {"reason":"docker-error","message":…}`, and a failed update adds `failedStep` (pull, stop, rename, create, connect or start) to the message. Every failed action is logged with its error. `TestDockerUpdateSaysWhatBroke` cuts the pull stream off halfway.
+
+### Bookmarks
+
+- **fix — an existing install still started a new bookmark on Off.** v1.15.0 moved `defaultNewBookmarkCheckMode` to Periodic, but Off had been the default before and every install that ever saved its settings had written it into `settings.json`, so the change reached fresh installs only. A stored Off now moves to Periodic once, marked by `newBookmarkPeriodicMigrated`; Monitor was never a default and stays, and Off chosen afterwards sticks. The fallback form in `search-commands-new.js`, used when the dashboard's own form is not loaded, preselected Off whatever the setting said and now follows it too. `TestStoredOffCheckModeMovesToPeriodicOnce` seeds a stored Off.
+
+### Everywhere
+
+- **fix — `:config` did not offer the Inbox and Containers sections.** Both were added to the Config rail in v1.15.0 but not to `_CONFIG_SECTIONS` in `search-commands.js`, so the palette's list of sections stopped short of the rail. They are there now, in rail order, with `commands.configInbox` and `commands.configContainers` in all six locales. `dashboard-command-palette-config.spec.js` compares the palette with the rail.
+- **fix — the page could stay locked after a modal closed.** The watcher that holds the scroll lock while any modal is open re-checked on a mutation or a `transitionend`; a close whose transition was cancelled, or never ran, fired neither once the overlay was finally hidden, and the page stayed unscrollable with nothing on screen. Seen in CI only. It now also listens for `transitioncancel` and looks again every 300 ms while it holds the lock. `scroll-lock-refcount.spec.js` polls for the release and, when it fails, names who still holds the lock.
+
+### Tests
+
+- **Specs follow v1.15.0:** the glass and depth specs pick a glass theme first, since Matrix Bluepill, the new default, draws no blur; the Behavior and Statistics tab ids, the removed Health view and header button, the triage pile chooser, the inbox's one-line rows and Periodic as the new-bookmark default are what the specs expect now. Two density specs that measured the old inbox row were replaced by one on the shared list shell. The six Docker settings join the fields whose group note explains them instead of an ℹ.
+
+### Docs
+
+- **What's new:** `static/data/whats-new/v1.15.1.json` and its index entry, both with `hideFromModal`; `NEXTDASH_WHATS_NEW_DATA_VERSION` moves to `whats-new-v305`, `DASHBOARD_RELEASE` stays on v1.15.0.
 
 ---
 
