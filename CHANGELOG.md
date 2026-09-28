@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.15.0 — 28 September 2026](#v1150--28-september-2026)
 - [v1.13.7 — 25 September 2026](#v1137--25-september-2026)
 - [v1.13.6 — 25 September 2026](#v1136--25-september-2026)
 - [v1.13.5 — 24 September 2026](#v1135--24-september-2026)
@@ -222,6 +223,99 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.15.0 — 28 September 2026
+
+Three views take over from the old ones: a **Bookmarks view** at `#bookmarks` that holds the whole collection and everything Health used to do, a **Containers view** for the Docker host nextDash runs on, and an **Inbox** rebuilt on the same side panel. Work through and triage both start from a pile and say why each item is there. 34 new theme families, a Container list widget, Statistics rebuilt in two columns, and new screenshots.
+
+### Bookmarks view
+
+- **new — a view of its own at `#bookmarks`,** with its icon in the header (Bookmarks, then Inbox, then Containers). A rail of views, health filters, pages, categories and tags on the left; one-line rows with tags, shortcut, a score, 30 days of opens as bars, when it was added and last opened; a side panel on the right.
+- **new — the side panel in three tabs: Details, Health and Usage** (`1` `2` `3`, `[` `]`). Details edits the bookmark and saves as you type, and fills in the preview the server already has. Health is a summary with an accordion of why, score breakdown, checking, monitor history and expectations. Usage draws opens over time. Every way of opening a bookmark counts, and an open shows in the bars at once.
+- **new — group by page, category, site, status or tag.** Every row is coloured by its health and scored; checking can be turned on for everything still Off in one go.
+- **new — pages and categories in a modal over the list** (`Shift + P` / `Shift + C`): drag, move, merge and tidy on one screen.
+- **new — Collection health** (`h`) on one screen, in two tabs: Overview (score over time, what is wrong by kind, by page, checking coverage, monitors, certificates) and Monitors & trend. `+N pages` unfolds the rest in its card.
+- **new — one bookmark's health in large** (`Shift + H` on a row, the row menu, or ⤢ on the Health tab): Overview and Checks, a period from today to 90 days, every value under the pointer, and every check of the period with CSV export. The server serves one bookmark's checks and 90 days of daily summaries as JSON.
+- **new — a Collection ▾ menu** in the view's band for the whole-collection tools: Collection health, Rot report, Pages & categories, merge duplicates, checking, retest, open broken, fetch previews, export and refresh. An ⓘ explains the view.
+- **new — promote an Unsorted bookmark** from its side panel or row menu, as the inbox does.
+- **new — Config → Bookmarks → View:** the view's own settings, with a live preview on a fixed example. The old List tab is gone; the list is the Bookmarks view's alone.
+- **new — `#health` and the Health icon lead to the Bookmarks view.** The standalone Health view is gone; its filters, summary, keys, bulk actions, duplicates and form live in the Bookmarks view.
+- **fix — the panel's address stays on one line,** so the tabs do not move; preview text in Details no longer shows HTML entities.
+
+### Work through
+
+- **new — choose a pile first:** Broken links, Changed or wrong content, Stale, Never opened, and This list as it is filtered now, each with its count and the one that needs you most on top.
+- **new — each card says why the bookmark is here** and offers one main step: *Re-check now* for what fails, *Open it and decide* for what is stale or never opened. Beside it: Fix the address (`e`) and Delete (`d`). Not now: Keep (`y`, the reason will not come up again), Ignore 30 days (`z`), Skip (`j`).
+- **new — the end of a pile counts** what was fixed, deleted, kept and snoozed, and offers the next pile.
+- **new — Save preview (`s`)** writes a preview the card fetched onto the bookmark, onto the right copy when the URL is duplicated.
+
+### Inbox
+
+- **new — one-line rows and the Bookmarks view's side panel,** with Open, Promote and Keep in it and a legend for its keys. Rows are plain list rows at the height of the Containers view's, and the row under the cursor has no glow.
+- **new — Triage starts from a pile:** Waiting longest, New this week, With a note, This list as filtered now. Each card says where the link came from, how long ago, whether it was opened, and its note. **Promote to a page** is the main step, and after the save triage carries on with the next link; Keep in Unsorted, Note and Delete beside it; Snooze, Mark read and Skip under *Not now*. The end of a pile counts what was promoted, kept, deleted, snoozed and read.
+- **new — the Kept tab is gone:** kept links wait in Bookmarks → Unsorted, and the Unsorted widget reads from there, a row opening its side panel.
+- **new — the tags dialog** completes existing tags and shows suggestions.
+- **new — Config → Inbox** as its own section, in four tabs: Collecting, List, Panel & clicks and Header icon, with previews on fixed examples.
+- **fix — triage:** `Enter` on a focused button presses that button, a pile that emptied while the chooser was up recounts instead of freezing, and a promote resumes past the links already skipped.
+
+### Containers
+
+- **new — a Containers view at `#docker`** for the Docker host nextDash runs on: filters for All, Running, Stopped and Updates, group by status, a status glow per row, ports and a web UI column. The header icon counts containers with an update waiting.
+- **new — the side panel in four tabs:** Overview (Details, Network, Custom, Volumes, Environment), Resources, Logs and What's new — the release notes between the running version and the newest.
+- **new — CPU and memory over the last hour** as two charts under Resources. The server samples running containers every 30 seconds, in memory; **Config → Containers → Keep the last hour of CPU and memory** switches it off.
+- **new — a web UI address of your own** under Overview → Custom (`http`/`https`, `[IP]` for this server), used by the list, the Container list widget and `:docker <name> open`.
+- **new — start, stop, pause, restart, update and remove** behind `NEXTDASH_DOCKER_CONTROL=1`; update and remove always ask, Config can add stop and restart. The container nextDash runs in refuses to stop, pause, restart, remove or update itself. A long action outlives the server's write timeout.
+- **new — image update checks** on request and every 6, 12 or 24 hours, asking the registry which digest a tag points at; an optional GitHub token raises the rate limit for release notes.
+- **new — search finds containers,** and `:docker <name>` offers what can be done to one.
+- **new — Config → Containers:** the connection as the server sees it, View, Updates, Safety, hidden containers and the GitHub token. It says why the view is empty without a socket and links the setup help.
+- **new — the container joins the socket's group** at startup and says so when access is denied; `NEXTDASH_RUN_AS_ROOT=1` for a socket owned by gid 0.
+- **new — an eight-step tour** on the first visit.
+
+### Widgets
+
+- **new — Container list:** the containers themselves, one per row; one column on a narrow tile, two on a wide one. Running only or all, problems first or by name or uptime, uptime, image tag or nothing beside the name, and a click that opens the container in the view or its web UI.
+- **new — the Containers tile** opens the view, and its update figure links to `#docker?filter=updates`.
+
+### Themes
+
+- **new — 34 families, each light and dark:** six glass, four lacquer, four carbon, four matrix (terminal), four aurora, four frost, four brushed and four ink — 155 families, 310 themes.
+- **new — a *new* badge** on them in the theme browser, and searching `new` finds them.
+- **new — Matrix Bluepill** is the theme a fresh install starts on.
+- **new — `--accent-vivid`:** a colour even where a theme's accent is grey.
+
+### Statistics
+
+- **new — tabs renamed and rebuilt:** Overview, Usage, Collection, Inbox and Health. Each opens with six figures and lays its panels out in two columns.
+- **new — Needs attention** on Overview lists only what is above zero, each with a button: links not answering, a certificate close to expiry, unread inbox items older than 30 days, bookmarks never opened.
+- **fix — the charts' axes and figures are corrected,** Stale follows *Count as neglected after* like the rest of the app, and the health trend counts skip Unsorted. The CSV export fetches the inbox and health figures itself.
+
+### Everywhere
+
+- **new — search keys `>` `:` `?` `*` open from every view.**
+- **new — slow actions show a wait,** and the bookmark being checked again is marked.
+- **new — modals hold the page still:** any open modal takes the scroll lock, and they share one scrim.
+- **new — What's new:** lit rows, filters and a support card.
+- **new — tours:** a thirteen-step dashboard tour once quick-start is done, ten steps for the Bookmarks view, six for the inbox, eight for Containers.
+- **new — new bookmarks start on Periodic checking,** and the + form follows the setting.
+- **new — callouts take the theme's accent** instead of a warning yellow.
+- **new — the cheat sheet** covers the Bookmarks and Containers views and prints black on white; its link is hashed so a new PDF is never hidden by the cache.
+- **new — startup warns when a write or capture token is weak.**
+- **fix — `:health page`** lists the pages again, and `:health` reaches every filter.
+- **fix — stored preview text** with HTML entities reads back as characters in the inbox and Unsorted.
+
+### Setup
+
+- **new — `docker-compose.yml` and the Unraid template** ship with Docker actions and root off (`NEXTDASH_DOCKER_CONTROL=0`, `NEXTDASH_RUN_AS_ROOT=0`) and the socket commented out; local settings go in `docker-compose.override.yml`.
+- **new — README and MANUAL** describe setting up the Containers view — socket, actions, write token, and when root is needed — and that the write token keeps other sites out but is not a login.
+
+### Docs
+
+- **MANUAL** renumbered for the new views, with sections for the Bookmarks view, Inbox triage, Containers, Statistics and Work through, and plain anchors on the emoji headings so its links work in any viewer.
+- **README:** fourteen new screenshots from demo data, four shown and ten folded; features and env vars up to date.
+- **Help and tips** for the Bookmarks view, Containers, Statistics, Work through and triage, with new tips for triage, the Container list and a container's own web UI.
+- **Translations:** the new views, Statistics, triage, the Container list, Config → Containers and the wait messages in Dutch, German, French, Spanish and Chinese.
 
 ---
 
