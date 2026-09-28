@@ -48,6 +48,10 @@ function slug(heading) {
 function headingsOf(source) {
     const anchors = new Map();
     source.split('\n').forEach((line, index) => {
+        // An explicit anchor: an ASCII id beside an emoji heading, so the
+        // table of contents works in viewers whose slug rule is not GitHub's.
+        const explicit = line.match(/^<a id="([^"]+)"><\/a>$/);
+        if (explicit && !anchors.has(explicit[1])) anchors.set(explicit[1], index + 1);
         if (!line.startsWith('#')) return;
         const anchor = slug(line);
         // First heading wins, which is what GitHub does before it starts
