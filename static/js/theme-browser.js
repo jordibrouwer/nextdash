@@ -208,6 +208,7 @@
         const variant = variantOf(id) || 'dark';
         const character = characterOf(id);
         const description = metaFor(id).description || '';
+        const isNew = metaFor(id).new === true;
 
         return `
             <div class="theme-browser-card${isCurrent ? ' is-current' : ''}${character ? ` is-${character}` : ''}"
@@ -219,6 +220,7 @@
                 <div class="theme-browser-card-head">
                     <span class="theme-browser-card-name">${escapeHtml(family.label || id)}</span>
                     ${character ? `<span class="theme-browser-badge" data-theme-badge="${escapeHtml(character)}">${escapeHtml(archetypeLabel(character, t))}</span>` : ''}
+                    ${isNew ? `<span class="theme-browser-badge theme-browser-badge--new" data-theme-new>${escapeHtml(t('config.themeNew', 'new'))}</span>` : ''}
                     <button type="button" class="theme-browser-star${isFavorite ? ' is-on' : ''}"
                             data-theme-favorite="${escapeHtml(id)}"
                             aria-pressed="${isFavorite}"
@@ -259,10 +261,14 @@
         // label, so `velvet` and `fluweel` both narrow the grid. The written
         // line goes in whole: it is the only place a theme says "harbour" or
         // "phosphor", which is what people actually type.
+        // The latest collection answers to `new`, in English and in the
+        // reader's language, like the archetype does.
         const character = characterOf(shown.id);
+        const isNew = metaFor(shown.id).new === true;
         const haystack = [family.label, family.key, deriveTraits(shown.palette, t).join(' '),
             character, character ? archetypeLabel(character, t) : '',
-            metaFor(shown.id).description || '']
+            metaFor(shown.id).description || '',
+            isNew ? `new ${t('config.themeNew', 'new')}` : '']
             .join(' ')
             .toLowerCase();
         return query.split(/\s+/).every((word) => haystack.includes(word));

@@ -278,6 +278,14 @@
     text-transform: uppercase;
 }
 
+/* The latest collection: filled rather than outlined, so it reads apart from
+   the archetype badge beside it. */
+.theme-browser-badge--new {
+    border-color: var(--accent-primary);
+    background: var(--accent-primary);
+    color: var(--background-primary);
+}
+
 .theme-browser-card-name {
     margin-right: auto;
 }

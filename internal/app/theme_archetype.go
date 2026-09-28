@@ -421,6 +421,8 @@ type themeMeta struct {
 	Depth       string `json:"depth"`
 	Glow        string `json:"glow"`
 	Effects     string `json:"effects"`
+	// New marks the latest collection, for the browser's badge and search.
+	New bool `json:"new,omitempty"`
 }
 
 // themeMetaFor answers for one theme.
@@ -435,5 +437,6 @@ func themeMetaFor(themeID string, tc ThemeColors) themeMeta {
 		Depth:       themeIdealDepth(tc),
 		Glow:        themeIdealGlow(tc),
 		Effects:     themeIdealEffects(tc),
+		New:         themeIsNew(themeID),
 	}
 }
