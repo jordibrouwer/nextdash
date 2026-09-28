@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"html"
 	"os"
 	"sort"
 	"strings"
@@ -22,6 +23,8 @@ func normalizePreviewCacheFile(cache PreviewCacheFile) PreviewCacheFile {
 		return strings.HasPrefix(v, "http://") || strings.HasPrefix(v, "https://")
 	}
 	for key, entry := range cache.Cache {
+		entry.Title = decodePreviewText(entry.Title)
+		entry.Description = decodePreviewText(entry.Description)
 		if isRemote(entry.Image) {
 			entry.ImageSource = entry.Image
 			entry.Image = ""
@@ -304,4 +307,21 @@ func (h *Handlers) mergeHealthCacheUpdates(updates map[string]HealthScanCache) e
 	}
 	cache.GeneratedAt = time.Now().UnixMilli()
 	return writeHealthCacheFile(cache)
+}
+
+// decodePreviewText turns HTML entities in a page's title or description into
+// the characters they stand for. The fetch has decoded them for a while now;
+// what an older version stored -- "I&#039;m", "&#8211;" -- was kept as it came,
+// and every screen that shows a preview printed the entity. Decoded where the
+// data is read, not in each of the dozen renderers that show it.
+func decodePreviewText(s string) string {
+	if !strings.Contains(s, "&") {
+		return s
+	}
+	return html.UnescapeString(s)
+}
+
+func decodeBookmarkPreviewText(b *Bookmark) {
+	b.PreviewTitle = decodePreviewText(b.PreviewTitle)
+	b.PreviewDesc = decodePreviewText(b.PreviewDesc)
 }

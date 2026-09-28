@@ -119,6 +119,12 @@ func (fs *FileStore) readInboxDataLocked() InboxData {
 	if inbox.Version == 0 {
 		inbox.Version = inboxDataVersion
 	}
+	// Titles taken from the page, as the bookmark files keep them.
+	for i := range inbox.Items {
+		inbox.Items[i].Title = decodePreviewText(inbox.Items[i].Title)
+		inbox.Items[i].PreviewTitle = decodePreviewText(inbox.Items[i].PreviewTitle)
+		inbox.Items[i].PreviewDesc = decodePreviewText(inbox.Items[i].PreviewDesc)
+	}
 	return inbox
 }
 

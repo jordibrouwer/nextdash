@@ -2143,6 +2143,7 @@ func (fs *FileStore) GetBookmarksByPage(pageID int) []Bookmark {
 	}
 	for i := range pageWithBookmarks.Bookmarks {
 		pageWithBookmarks.Bookmarks[i].PageID = pageID
+		decodeBookmarkPreviewText(&pageWithBookmarks.Bookmarks[i])
 	}
 
 	fs.readCache.bookmarks[pageID] = cloneBookmarks(pageWithBookmarks.Bookmarks)
@@ -2164,6 +2165,10 @@ func (fs *FileStore) readPageWithBookmarksLocked(pageID int) (PageWithBookmarks,
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
 		return PageWithBookmarks{}, fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
+	}
+	// Decoded here too, so the next write stores the characters.
+	for i := range pageWithBookmarks.Bookmarks {
+		decodeBookmarkPreviewText(&pageWithBookmarks.Bookmarks[i])
 	}
 	return pageWithBookmarks, nil
 }
