@@ -470,6 +470,25 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 	return report
 }
 
+// staleOpenThreshold is how long a bookmark may go unopened before the report
+// calls it stale: the reader's "count as neglected after" setting, clamped the
+// way settings normalisation clamps it, and the default when it was never set.
+// It used to be a fixed 30 days while Statistics used the setting, so the
+// same tab showed two different "stale" counts.
+func staleOpenThreshold(s Settings) time.Duration {
+	days := s.BookmarkStaleDays
+	if days <= 0 {
+		days = defaultBookmarkStaleDays
+	}
+	if days < 7 {
+		days = 7
+	}
+	if days > 365 {
+		days = 365
+	}
+	return time.Duration(days) * 24 * time.Hour
+}
+
 func (h *Handlers) invalidateHealthReportCache() {
 	h.healthReportMu.Lock()
 	h.healthReportOK = false
@@ -500,6 +519,11 @@ func healthReasonLegacyLabel(r HealthReason) string {
 	case "status_stale":
 		return "Status check is stale"
 	case "not_opened_30_days":
+		// The code keeps its old name for stored and cached reports; the
+		// threshold itself now follows the setting and travels as a param.
+		if d := r.Params["days"]; d != "" {
+			return fmt.Sprintf("Not opened in over %s days", d)
+		}
 		return "Not opened in over 30 days"
 	case "never_opened":
 		return "Never opened"
@@ -659,6 +683,11 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 		}
 	}
 
+	// One threshold for the whole report, read once: the reader's own
+	// "count as neglected after", so this and Statistics agree.
+	staleAfterOpen := staleOpenThreshold(h.store.GetSettings())
+	staleDaysParam := strconv.Itoa(int(staleAfterOpen / (24 * time.Hour)))
+
 	missingPreview := func(bm Bookmark) bool {
 		return strings.TrimSpace(bm.PreviewTitle) == "" && strings.TrimSpace(bm.PreviewDesc) == "" && strings.TrimSpace(bm.PreviewImage) == ""
 	}
@@ -691,7 +720,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 			isStaleCheck := isChecked && bm.LastChecked > 0 && time.Since(time.UnixMilli(bm.LastChecked)) > staleAfter
 			isUnused := bm.OpenCount == 0 && bm.LastOpened == 0
-			isStale := bm.OpenCount > 0 && bm.LastOpened > 0 && time.Since(time.UnixMilli(bm.LastOpened)) > 30*24*time.Hour
+			isStale := bm.OpenCount > 0 && bm.LastOpened > 0 && time.Since(time.UnixMilli(bm.LastOpened)) > staleAfterOpen
 			isMissingPreview := missingPreview(bm)
 			shortcutKey := normalizeShortcut(bm.Shortcut)
 			isShortcutConflict := shortcutKey != "" && shortcutCounts[shortcutKey] > 1
@@ -848,7 +877,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 					status = "stale"
 				}
 				flags = append(flags, "stale")
-				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "not_opened_30_days", Penalty: healthPenaltyNotOpened30Days})
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "not_opened_30_days", Params: map[string]string{"days": staleDaysParam}, Penalty: healthPenaltyNotOpened30Days})
 			}
 			if isUnused {
 				if status == "healthy" {

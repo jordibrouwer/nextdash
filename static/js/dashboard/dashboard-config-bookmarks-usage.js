@@ -18,8 +18,6 @@
 
     const DAY = 24 * 3600 * 1000;
     const WEEK = 7 * DAY;
-    // Health's own line (handlers.go): opened before, not in the last 30 days.
-    const STALE_DAYS = 30;
     const CHART_WEEKS = 12;
     const RANK_BARS = 24;
 
@@ -177,9 +175,11 @@
             if (!last) return '';
             const esc = (v) => this.dash.escapeHtml(v);
             const idle = Math.floor((Date.now() - last) / DAY);
-            const text = idle >= STALE_DAYS
+            // Health's own line: the reader's "count as neglected after".
+            const staleDays = this.bookmarkStaleDays();
+            const text = idle >= staleDays
                 ? this.t('config.bmUsageStale', 'Stale: not opened for {n} days.').replace('{n}', String(idle))
-                : this.t('config.bmUsageStaleIn', 'Counts as stale in {n} days without an open.').replace('{n}', String(STALE_DAYS - idle));
+                : this.t('config.bmUsageStaleIn', 'Counts as stale in {n} days without an open.').replace('{n}', String(staleDays - idle));
             return `<p class="config-bm-panel-muted">${esc(text)}</p>`;
         },
 

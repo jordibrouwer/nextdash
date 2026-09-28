@@ -92,8 +92,12 @@
                 return t(language, 'health.reasonStatusNeverRun', 'Status check has never run');
             case 'status_stale':
                 return t(language, 'health.reasonStatusStale', 'Status check is stale');
+            // The code kept its name when the threshold started following the
+            // reader's setting; the number itself arrives as a param.
             case 'not_opened_30_days':
-                return t(language, 'health.reasonNotOpened30Days', 'Not opened in over 30 days');
+                return params.days && String(params.days) !== '30'
+                    ? t(language, 'health.reasonNotOpenedDays', 'Not opened in over {days} days', { days: String(params.days) })
+                    : t(language, 'health.reasonNotOpened30Days', 'Not opened in over 30 days');
             case 'never_opened':
                 return t(language, 'health.reasonNeverOpened', 'Never opened');
             case 'no_preview':

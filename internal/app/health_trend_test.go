@@ -156,3 +156,17 @@ func TestTrendPointCarriesUntaggedAndOpens(t *testing.T) {
 		t.Fatalf("total = %d, want 3 — the summary still drives the rest", point.Total)
 	}
 }
+
+// The Unsorted page is not part of the report's total, so it must not be part
+// of the untagged and opens counts recorded beside that total: with it, a day
+// recorded 227 untagged bookmarks out of 115.
+func TestTrendPointSkipsUnsortedPage(t *testing.T) {
+	bookmarks := []Bookmark{
+		{URL: "https://a.example", PageID: 1, OpenCount: 2},
+		{URL: "https://b.example", PageID: unsortedPageID, OpenCount: 5},
+	}
+	point := trendPointFromSummary(HealthSummary{TotalBookmarks: 1}, 90, time.Now(), trendBookmarks(bookmarks))
+	if point.Untagged != 1 || point.Opens != 2 {
+		t.Fatalf("untagged=%d opens=%d, want 1 and 2", point.Untagged, point.Opens)
+	}
+}

@@ -73,6 +73,20 @@ func trimTrendPoints(points []HealthTrendPoint, cutoff int64) []HealthTrendPoint
 	return out
 }
 
+// trendBookmarks is the set the report's total is counted over: every page
+// except Unsorted, which the report skips. Counting the untagged and the opens
+// over a wider set than the total recorded more untagged bookmarks than there
+// were bookmarks.
+func trendBookmarks(all []Bookmark) []Bookmark {
+	out := make([]Bookmark, 0, len(all))
+	for _, b := range all {
+		if b.PageID != unsortedPageID {
+			out = append(out, b)
+		}
+	}
+	return out
+}
+
 // trendPointFromSummary turns a report summary into the day's point.
 func trendPointFromSummary(s HealthSummary, averageScore int, at time.Time, bookmarks []Bookmark) HealthTrendPoint {
 	untagged, opens := 0, 0
@@ -145,7 +159,7 @@ func (h *Handlers) recordHealthTrend(report BookmarkHealthReport) {
 	// the two collection counts are worth having only when it is there.
 	var bookmarks []Bookmark
 	if h.store != nil {
-		bookmarks = h.store.GetAllBookmarks()
+		bookmarks = trendBookmarks(h.store.GetAllBookmarks())
 	}
 	point := trendPointFromSummary(report.Summary, averageHealthScore(report.Issues), now, bookmarks)
 	trend.Points = upsertTrendPoint(trend.Points, point)
