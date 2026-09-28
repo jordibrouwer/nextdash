@@ -156,6 +156,8 @@ class DashboardConfig {
      * a view preference, not data worth a write to the server on every click.
      */
     static STATS_RANGE_KEY = 'nextdash:config-stats-range-v1';
+    // Which of the two usage charts the reader picked, when they picked one.
+    static STATS_OPENS_MODE_KEY = 'nextdash:config-stats-opens-mode-v1';
 
     constructor(dashboard) {
         this.dash = dashboard;
@@ -231,6 +233,10 @@ class DashboardConfig {
         // How far back the activity chart looks, in days. Restored from the last
         // visit, falling back to 30.
         this.statsRange = DashboardConfig.readStoredStatsRange();
+        this.statsOpensMode = (() => {
+            try { return localStorage.getItem(DashboardConfig.STATS_OPENS_MODE_KEY) || ''; } catch { return ''; }
+        })();
+        this.statsInboxRange = 30;
         // Statistics sub-tab.
         this.statsTab = 'overview';
         this.widgetsTab = 'widgets';
@@ -419,7 +425,8 @@ class DashboardConfig {
         }
         const tabs = DashboardConfig.SUB_TABS[match[1]];
         const aliases = match[1] === 'appearance' ? DashboardConfig.APPEARANCE_TAB_ALIASES
-            : match[1] === 'behavior' ? DashboardConfig.BEHAVIOR_TAB_ALIASES : {};
+            : match[1] === 'behavior' ? DashboardConfig.BEHAVIOR_TAB_ALIASES
+                : match[1] === 'stats' ? DashboardConfig.STATS_TAB_ALIASES : {};
         const tab = aliases[match[2]] || match[2];
         return tabs && tabs.includes(tab) ? tab : null;
     }
@@ -861,10 +868,19 @@ class DashboardConfig {
             Promise.resolve(load()).finally(() => this._statsInFlight.delete(key));
         };
         if (this._statsTrend === undefined) once('trend', () => this.loadStatsTrend());
-        if ((all || tab === 'inbox') && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
-        if ((all || tab === 'activity') && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
-        if ((all || tab === 'health') && this._statsHealth === undefined) once('health', () => this.loadStatsHealth());
-        if ((all || tab === 'content') && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
+        // Overview reads the inbox and the health report too: its tiles and its
+        // attention list are built from both. Collection reads the report for
+        // the newest local copy.
+        const wants = {
+            inbox: all || tab === 'inbox' || tab === 'overview',
+            finders: all || tab === 'usage',
+            health: all || tab === 'health' || tab === 'overview' || tab === 'collection',
+            library: all || tab === 'collection',
+        };
+        if (wants.inbox && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
+        if (wants.finders && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
+        if (wants.health && this._statsHealth === undefined) once('health', () => this.loadStatsHealth());
+        if (wants.library && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
     }
 
     /**
@@ -14567,6 +14583,7 @@ class DashboardConfig {
                 notify(err.message || String(err));
             } finally {
                 test.disabled = false;
+                test.textContent = label;
             }
         });
 
@@ -15221,11 +15238,11 @@ class DashboardConfig {
             'local-copies': ['config.bmNoteLocalCopies', 'Pages saved whole on this disk, grouped by the bookmark they belong to.'],
         },
         stats: {
-            'overview': ['config.statsNoteOverview', 'The size and shape of your collection, and what the figures add up to.'],
-            'activity': ['config.statsNoteActivity', 'What you opened and added over time, and which bookmarks have gone quiet.'],
-            'content': ['config.statsNoteContent', 'How the collection is divided: pages, categories, tags, and what carries a shortcut.'],
+            'overview': ['config.statsNoteOverview', 'How things stand, and what needs doing.'],
+            'usage': ['config.statsNoteUsage', 'What you open, when you open it, and how much of the collection you actually use.'],
+            'collection': ['config.statsNoteCollection', 'What the collection holds and how it is built up: categories, domains, tags and age.'],
             'inbox': ['config.statsNoteInbox', 'What arrived, what you filed, and how long things wait before you get to them.'],
-            'health': ['config.statsNoteHealth', 'How many links still answer, how many do not, and when that was last checked.'],
+            'health': ['config.statsNoteHealth', 'Whether everything still answers, how reliably, and what is wearing out.'],
         },
         'data-backups': {
             'backups': ['config.dbNoteBackups', 'Snapshots of everything, made on a schedule or by hand. Restore one, or download it.'],
@@ -15735,7 +15752,10 @@ class DashboardConfig {
         custom: 'custom-themes',
     };
 
-    static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
+    static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health'];
+
+    // The tabs' names until September 2026, kept so an old link still lands.
+    static STATS_TAB_ALIASES = { activity: 'usage', content: 'collection' };
 
     ptTabLabel(tab) {
         const map = {
@@ -26246,7 +26266,7 @@ class DashboardConfig {
     static STATS_RANGES = [7, 30, 90, 365];
 
     /** How many rows the ranked Statistics lists show before cutting off. */
-    static STATS_LIST_LIMIT = 20;
+    static STATS_LIST_LIMIT = 8;
 
     /**
      * A read-only report on what is actually in the dashboard: a cleanup score,
@@ -26260,8 +26280,8 @@ class DashboardConfig {
     statsTabLabel(tab) {
         const map = {
             overview: ['config.statsTabOverview', 'Overview'],
-            activity: ['config.statsTabActivity', 'Activity'],
-            content: ['config.statsTabContent', 'Content'],
+            usage: ['config.statsTabUsage', 'Usage'],
+            collection: ['config.statsTabCollection', 'Collection'],
             inbox: ['config.statsTabInbox', 'Inbox'],
             health: ['config.statsTabHealth', 'Health'],
         };
@@ -26306,10 +26326,10 @@ class DashboardConfig {
                 <div class="config-subtabs" role="tablist">${tabs}</div>
                 ${typeof this.statsPanelLink === 'function' ? this.statsPanelLink(this.statsTab) : ''}
                 ${scope}
+                ${this.renderStatsTimestampSafe()}
             </div>
             ${this.renderSectionTabNote('stats', this.statsTab)}
             <div id="config-stats-body" role="tabpanel" tabindex="0">${this.renderStatsBodySafe()}</div>
-            ${this.renderStatsTimestampSafe()}
         `;
     }
 
@@ -26404,13 +26424,15 @@ class DashboardConfig {
     }
 
     ensureStatsRenderers() {
-        if (window.DashboardConfigStatsReady) return Promise.resolve(true);
+        if (window.DashboardConfigStatsReady && window.DashboardConfigStatsFiguresReady) return Promise.resolve(true);
         if (this._statsRenderersPromise) return this._statsRenderersPromise;
-        this._statsRenderersPromise = window.LazyScript.loadScriptOnce(
-            'js/dashboard/dashboard-config-stats.js',
-            'dashboardConfigStats',
-            () => window.DashboardConfigStatsReady === true
-        ).then(() => {
+        const load = window.LazyScript.loadScriptOnce;
+        // The figures first: the renderers draw what they return.
+        this._statsRenderersPromise = load('js/dashboard/dashboard-config-stats-figures.js',
+            'dashboardConfigStatsFigures', () => window.DashboardConfigStatsFiguresReady === true)
+            .then(() => load('js/dashboard/dashboard-config-stats.js',
+                'dashboardConfigStats', () => window.DashboardConfigStatsReady === true))
+            .then(() => {
             if (this.isActiveView() && this.section === 'stats') this.repaintStatsBody();
             return true;
         }).catch(() => false);
@@ -26422,6 +26444,11 @@ class DashboardConfig {
         const host = document.getElementById('config-stats-body');
         if (!host) { this.render(); return; }
         host.innerHTML = this.renderStatsBodySafe();
+        // The line under the tabs describes the open tab, so it follows it;
+        // left alone it kept describing whichever tab the section opened on.
+        const note = host.parentElement?.querySelector(':scope > .config-tab-note');
+        const nextNote = this.renderSectionTabNote('stats', this.statsTab);
+        if (note && nextNote) note.outerHTML = nextNote;
         // The stamp lives outside the body, so it would otherwise keep claiming
         // the time of the first render while the numbers under it were fresh.
         // The whole foot is replaced, not the line inside it: swapping the line
@@ -26451,7 +26478,7 @@ class DashboardConfig {
         } catch {
             this._statsFinders = [];
         }
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'activity') {
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'usage') {
             const host = document.getElementById('config-stats-finders');
             if (host) host.innerHTML = this.renderStatsFinders();
         }
@@ -26515,7 +26542,7 @@ class DashboardConfig {
                 ? backups.backups[0]?.createdAt || null
                 : null,
         };
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'content') {
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'collection') {
             const host = document.getElementById('config-stats-library');
             if (host) host.innerHTML = this.renderStatsLibraryBody();
         }
@@ -26801,6 +26828,12 @@ class DashboardConfig {
         const perCategory = [...perCategoryCount.entries()]
             .map(([id, n]) => [catLabel(id), n])
             .sort((a, b) => b[1] - a[1]);
+        // The bookmarks without a category belong in the list too, or its
+        // rows add up to less than the total printed above them.
+        const uncategorised = all.filter((b) => !b.category).length;
+        if (uncategorised) {
+            perCategory.push([this.t('config.statsUncategorised', 'Uncategorised'), uncategorised]);
+        }
 
         // Opens per bookmark, per category. The raw open total just restates
         // which categories are biggest; dividing by size is what exposes a
@@ -26814,10 +26847,14 @@ class DashboardConfig {
             }))
             .sort((a, b) => b.perBookmark - a.perBookmark);
 
-        const perPage = pages.map((p) => [
+        // Pages without bookmarks are folded into one count rather than listed
+        // as a row of zeroes each.
+        const perPageAll = pages.map((p) => [
             p.name || String(p.id),
             all.filter((b) => String(b.pageId) === String(p.id)).length,
         ]);
+        const perPage = perPageAll.filter(([, n]) => n > 0);
+        const emptyPages = perPageAll.length - perPage.length;
 
         // The ranked panels show a leaderboard, not the whole collection, so
         // they cut off — but the count behind each cut is carried alongside, or
@@ -26890,6 +26927,7 @@ class DashboardConfig {
             duplicateUrlList,
             shortcutConflictList,
             perPage,
+            emptyPages,
             perCategory,
             categoryEffectiveness,
             concentration,
@@ -26994,8 +27032,7 @@ class DashboardConfig {
      * chart now measures what the data can actually answer: how many bookmarks
      * were last reached for in each period. Every label says so.
      */
-    computeActivity(all) {
-        const days = this.statsRange || 30;
+    computeActivity(all, days = this.statsRange || 30) {
         const now = Date.now();
         const DAY = 86400000;
         const bucketDays = days <= 30 ? 1 : (days <= 90 ? 7 : 30);
@@ -27054,18 +27091,11 @@ class DashboardConfig {
             inWindow(b) ? sum + Math.max(1, Number(b.openCount || 1)) : sum
         ), 0);
 
-        // Compare the latter half of the range with the former, which is what the
-        // old tab's week-over-week figure did for a 7-day window.
-        const half = Math.floor(bucketCount / 2);
-        let wow = null;
-        if (half > 0) {
-            const prev = buckets.slice(0, half).reduce((a, b) => a + b, 0);
-            const recent = buckets.slice(bucketCount - half).reduce((a, b) => a + b, 0);
-            if (prev > 0) wow = Math.round(((recent - prev) / prev) * 100);
-            else if (recent > 0) wow = 100;
-        }
-
-        return { buckets, labels, dateLabels, activeCount, totalOpens, wow, bucketDays };
+        // No "vs previous period" here. Each bookmark counts only on the day
+        // it was last opened, so a bookmark used in both halves of the range
+        // lands in the later one and this series always rises to the right.
+        // The real comparison lives on the opens chart, from openLog.
+        return { buckets, labels, dateLabels, activeCount, totalOpens, bucketDays };
     }
 
     /**
@@ -27100,9 +27130,10 @@ class DashboardConfig {
         } catch {
             this._statsInboxAgg = null;
         }
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'inbox') {
-            const host = document.getElementById('config-stats-inbox');
-            if (host) host.innerHTML = this.renderStatsInboxBody();
+        // The inbox tab and the overview both draw from it; the whole body is
+        // repainted so the tiles and the attention list pick it up together.
+        if (this.isActiveView() && this.section === 'stats' && (this.statsTab === 'inbox' || this.statsTab === 'overview')) {
+            this.repaintStatsBody();
         }
     }
 
@@ -27115,6 +27146,46 @@ class DashboardConfig {
         const hours = n / 3600000;
         if (hours >= 1) return this.t('config.statsInboxHoursUnit', '{n}h').replace('{n}', String(Math.round(hours)));
         return this.t('config.statsInboxMinutesUnit', '{n}m').replace('{n}', String(Math.max(1, Math.round(n / 60000))));
+    }
+
+    /**
+     * What else the health report already carries, read once.
+     *
+     * Flags per type, the average score, the newest local copy and how many
+     * broken links have none: all in the issue rows, none of it read here
+     * before. The newest copy replaces archiveCheckedAt, which is when the
+     * archive.org index was last asked, not when a copy was kept.
+     */
+    static statsHealthExtras(data) {
+        const issues = Array.isArray(data?.issues) ? data.issues : [];
+        const flags = {};
+        let scoreSum = 0;
+        let newestCopyAt = 0;
+        let newestCopyName = '';
+        let brokenWithoutCopy = 0;
+        issues.forEach((issue) => {
+            (Array.isArray(issue?.flags) ? issue.flags : []).forEach((f) => {
+                flags[f] = (flags[f] || 0) + 1;
+            });
+            scoreSum += Number(issue?.score) || 0;
+            const copyAt = Number(issue?.localCopyAt) || 0;
+            if (copyAt > newestCopyAt) {
+                newestCopyAt = copyAt;
+                newestCopyName = String(issue?.name || issue?.url || '');
+            }
+            const broken = String(issue?.lastError || '').trim() !== '';
+            if (broken && !(Number(issue?.localCopies) > 0)) brokenWithoutCopy += 1;
+        });
+        return {
+            flags,
+            avgScore: issues.length ? Math.round((scoreSum / issues.length) * 10) / 10 : null,
+            newestCopyAt,
+            newestCopyName,
+            brokenWithoutCopy,
+            missingPreview: Number(data?.summary?.missingPreviewCount) || 0,
+            worst: Array.isArray(data?.fleet?.worst) ? data.fleet.worst : [],
+            incidents: Array.isArray(data?.fleet?.incidents) ? data.fleet.incidents : [],
+        };
     }
 
     async loadStatsHealth() {
@@ -27159,6 +27230,7 @@ class DashboardConfig {
                 // simply never read it, so every figure here was "now" with
                 // nothing to compare it against.
                 trend: Array.isArray(data?.trend) ? data.trend : [],
+                ...DashboardConfig.statsHealthExtras(data),
             };
         } catch {
             this._statsHealth = null;
@@ -27171,7 +27243,8 @@ class DashboardConfig {
          * panels, which sit beside it — and those render to nothing while the
          * fetch is in flight, so a partial repaint left them absent for good.
          */
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'health') {
+        if (this.isActiveView() && this.section === 'stats'
+            && ['health', 'overview', 'collection'].includes(this.statsTab)) {
             this.repaintStatsBody();
         }
     }
@@ -27215,16 +27288,19 @@ class DashboardConfig {
             tip.replaceChildren();
             // Value leads, label follows: the reader already knows which bar
             // they are pointing at and wants the number.
+            // Each chart names its own series on the bar; the defaults are
+            // what the two charts said before they carried a label.
+            const label1 = bar.getAttribute('data-bar-label') || openLabel;
             if (value2 === null) {
                 const strong = document.createElement('strong');
-                strong.textContent = `${value} ${openLabel}`;
+                strong.textContent = `${value} ${label1}`;
                 tip.append(strong);
             } else {
                 // Two series: both are listed, each keyed by its own colour, so
                 // the pointer never has to land on the right one of the pair.
                 const rows = [
-                    [value, this.t('config.statsInboxTrendAdded', 'Added'), 'a'],
-                    [value2, this.t('config.statsInboxTrendTriaged', 'Dealt with'), 'b'],
+                    [value, bar.getAttribute('data-bar-label') || this.t('config.statsInboxTrendAdded', 'Added'), 'a'],
+                    [value2, bar.getAttribute('data-bar-label2') || this.t('config.statsInboxTrendTriaged', 'Dealt with'), 'b'],
                 ];
                 rows.forEach(([n, label, key]) => {
                     const row = document.createElement('strong');
@@ -27335,7 +27411,7 @@ class DashboardConfig {
                 // The summary's own way through: the shortcut panel it names
                 // lives on Activity, a tab away from where the line is read.
                 if (action === 'shortcuts') {
-                    this.statsTab = 'activity';
+                    this.statsTab = 'usage';
                     this.restoreConfigHash();
                     this.render();
                     setTimeout(() => document.getElementById('config-stats-shortcuts')
@@ -27411,14 +27487,35 @@ class DashboardConfig {
                 this.repaintStatsBody();
             });
         }
-        container.querySelectorAll('[data-stats-goto]').forEach((btn) => {
+        // A panel's way to another tab. Its own attribute: it shared
+        // data-stats-goto with the bookmark rows, so clicking the tag "dev"
+        // also set the open tab to "tag:dev".
+        container.querySelectorAll('[data-stats-tab-goto]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-stats-goto');
-                if (!tab || tab === this.statsTab) return;
+                const tab = btn.getAttribute('data-stats-tab-goto');
+                if (!DashboardConfig.STATS_TABS.includes(tab) || tab === this.statsTab) return;
                 this.statsTab = tab;
+                this.restoreConfigHash();
                 this.loadStatsTabData(tab);
                 this.repaintStatsBody();
                 this.syncSubTabStrip('data-stats-tab', this.statsTab);
+            });
+        });
+        container.querySelectorAll('[data-stats-opens-mode]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const mode = btn.getAttribute('data-stats-opens-mode');
+                if (mode !== 'opens' && mode !== 'lastUsed') return;
+                this.statsOpensMode = mode;
+                try { localStorage.setItem(DashboardConfig.STATS_OPENS_MODE_KEY, mode); } catch { /* per session then */ }
+                this.repaintStatsBody();
+            });
+        });
+        container.querySelectorAll('[data-stats-inbox-range]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const next = Number(btn.getAttribute('data-stats-inbox-range'));
+                if (![7, 30, 90].includes(next) || next === this.statsInboxRange) return;
+                this.statsInboxRange = next;
+                this.repaintStatsBody();
             });
         });
         this.bindFormKeyboard(container);
@@ -27483,6 +27580,18 @@ class DashboardConfig {
             ['top10_share_of_opens_pct', s.concentration.share],
         ];
         s.perPage.forEach(([name, n]) => rows.push([`page:${name}`, n]));
+        rows.push(['empty_pages', s.emptyPages || 0]);
+        const scoped = this.statsScopedBookmarks();
+        if (typeof this.statsRecency === 'function') {
+            this.statsRecency(scoped).forEach(([k, n]) => rows.push([`last_opened_${k}`, n]));
+            this.statsOpenCountBands(scoped).forEach(([k, n]) => rows.push([`opened_times_${k}`, n]));
+            this.statsTagsPerBookmark(scoped).forEach(([k, n]) => rows.push([`tags_per_bookmark_${k}`, n]));
+            this.statsAge(scoped).forEach(([k, n]) => rows.push([`saved_${k}`, n]));
+            const d = this.statsDomains(scoped);
+            rows.push(['unique_hosts', d.unique]);
+            rows.push(['self_hosted', d.selfHosted]);
+            d.hosts.forEach(([host, n]) => rows.push([`host:${host}`, n]));
+        }
         s.perCategory.forEach(([name, n]) => rows.push([`category:${name}`, n]));
         // The untruncated lists: the rows are labelled `tag:` and `bookmark:`,
         // so stopping at the twenty the panel happens to show would be a
@@ -27516,6 +27625,11 @@ class DashboardConfig {
             rows.push(['health_broken', Number(health.broken || 0)]);
             rows.push(['health_monitors_down', Number(health.monitorDown || 0)]);
             rows.push(['health_unchecked', Number(health.unchecked || 0)]);
+            if (health.avgScore !== null && health.avgScore !== undefined) rows.push(['health_score_avg', health.avgScore]);
+            Object.entries(health.flags || {}).forEach(([flag, n]) => rows.push([`flag:${flag}`, n]));
+            const incidents = health.incidents || [];
+            rows.push(['outages_on_record', Math.max(Number(health.fleet?.totalIncidents) || 0, incidents.length)]);
+            rows.push(['downtime_minutes', Math.round(incidents.reduce((n, i) => n + (Number(i.durationMs) || 0), 0) / 60000)]);
         }
 
         const esc = (v) => {

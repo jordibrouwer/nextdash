@@ -56,15 +56,14 @@ test.describe('config stats inbox block', () => {
         await expect.poll(() => tileValue(/inbox items|postvak|eingang|boîte/i), { timeout: 10_000 })
             .toBeGreaterThanOrEqual(2);
 
-        // Lifetime "added" counter incremented from the seeds.
-        await expect.poll(() => tileValue(/^(added|toegevoegd|hinzugefügt|ajouté)/i), { timeout: 10_000 })
-            .toBeGreaterThanOrEqual(2);
+        // The per-source rows list the seeded sources, by name, with their
+        // lifetime count beside the current one.
+        const sources = inbox.locator('.config-stats-pair').filter({ hasText: /Source/i });
+        await expect(sources).toContainText(/Pasted/);
+        await expect(sources).toContainText(/Browser extension/);
 
-        // The per-source table lists the seeded sources.
-        await expect(inbox.locator('.config-stats-table')).toContainText(/paste|plakken|collage|einfügen/i);
-
-        // The conversion ratio bar was drawn.
-        await expect(inbox.locator('.config-bar-fill')).toHaveCount(1);
+        // The conversion figure is a tile of its own.
+        await expect(inbox.locator('.config-tile').filter({ hasText: /Converted/ })).toHaveCount(1);
 
         // Drain the seeded items again: a non-empty inbox is itself an
         // "attention" row on the overview, so leaving them behind would fail
@@ -110,8 +109,9 @@ test.describe('config stats inbox block', () => {
         await expect(inbox.locator('.config-tile').first()).toBeVisible({ timeout: 15_000 });
 
         // 10 of 15, not 10 of 50: the 35 kept never left the inbox.
-        await expect(inbox.locator('.config-ratio')).toContainText('67%');
-        await expect(inbox.locator('.config-ratio')).not.toContainText('20%');
+        const converted = inbox.locator('.config-tile').filter({ hasText: /Converted/ });
+        await expect(converted).toContainText('67%');
+        await expect(converted).toContainText('10 of 15');
     });
 
     test('promote is attributed as a conversion in lifetime stats', async ({ page }) => {

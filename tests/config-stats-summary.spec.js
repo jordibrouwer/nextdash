@@ -30,10 +30,20 @@ async function openStats(page) {
 test.describe('Statistics says what its numbers mean', () => {
     test('with nothing to report, it says nothing', async ({ page }) => {
         await openStats(page);
-        // The seeded library has nothing neglected, no opens and no health
-        // loaded, so there is no sentence to write. A panel that says "all
-        // clear" in a section about what needs doing is noise.
-        await expect(page.locator('.config-stats-summary')).toHaveCount(0);
+        // Nothing broken, nothing expiring, no inbox backlog and nothing
+        // unopened: the list has no line to show, and says so once.
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            const stats = c.computeStats();
+            const patched = { ...stats, neverOpened: 0, openedOnce: 0 };
+            c.computeStats = () => patched;
+            c._statsHealth = null;
+            c._statsInboxItems = [];
+            c.repaintStatsBody();
+            await new Promise((r) => setTimeout(r, 200));
+        });
+        await expect(page.locator('.config-stats-attention-row')).toHaveCount(0);
+        await expect(page.locator('.config-stats-summary')).toContainText(/Nothing needs attention/);
     });
 
     test('a broken link is stated, with the way through to it', async ({ page }) => {
@@ -60,8 +70,8 @@ test.describe('Statistics says what its numbers mean', () => {
         await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
             const stats = c.computeStats();
-            // A library with neglected bookmarks, which the seeded one is not.
-            const patched = { ...stats, stale90: 12 };
+            // A library with bookmarks nobody has opened.
+            const patched = { ...stats, neverOpened: 12 };
             c.computeStats = () => patched;
             c.repaintStatsBody();
             await new Promise((r) => setTimeout(r, 200));

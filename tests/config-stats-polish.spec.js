@@ -50,7 +50,7 @@ test.describe('statistics: an empty dashboard explains itself', () => {
     test('it holds on every tab that measures the collection', async ({ page }) => {
         await loadDashboard(page);
         await openStats(page);
-        for (const tab of ['overview', 'activity', 'content', 'health']) {
+        for (const tab of ['overview', 'usage', 'collection', 'health']) {
             await emptyCollection(page, tab);
             await expect(page.locator('.config-panel--empty-state'), `tab ${tab}`).toBeVisible();
         }
@@ -78,7 +78,7 @@ test.describe('statistics: an empty dashboard explains itself', () => {
     test('the panels return once a bookmark exists', async ({ page }) => {
         await loadDashboard(page);
         await openStats(page);
-        await emptyCollection(page, 'content');
+        await emptyCollection(page, 'collection');
         await expect(page.locator('.config-panel--empty-state')).toBeVisible();
 
         await page.evaluate(() => {
@@ -90,7 +90,7 @@ test.describe('statistics: an empty dashboard explains itself', () => {
             d.config.repaintStatsBody();
         });
         await expect(page.locator('.config-panel--empty-state')).toHaveCount(0);
-        await expect(page.locator('.config-ratio').first()).toBeVisible();
+        await expect(page.locator('#config-stats-body .config-dist-row').first()).toBeVisible();
     });
 });
 
@@ -106,12 +106,12 @@ test.describe('statistics: no panel disappears without saying why', () => {
                 name: 'Unused', url: 'https://unused.example.com/', pageId: d.pages[0].id,
                 category: 'c', tags: [], openCount: 0, lastOpened: 0,
             }];
-            d.config.statsTab = 'content';
+            d.config.statsTab = 'usage';
             d.config.repaintStatsBody();
         });
 
         const panel = page.locator('.config-panel')
-            .filter({ has: page.locator('.config-panel-title', { hasText: 'Where your usage sits' }) });
+            .filter({ has: page.locator('.config-panel-title', { hasText: 'How concentrated your use is' }) });
         await expect(panel).toHaveCount(1);
         await expect(panel.locator('.config-panel-empty')).toBeVisible();
     });
@@ -131,6 +131,7 @@ test.describe('statistics: the figures are dated', () => {
         await openStats(page);
         // The stamp sits outside #config-stats-body, so a repaint that skipped
         // it would leave it claiming the time of the first render.
+        await expect(page.locator('.config-stats-updated')).toBeVisible();
         const before = await page.evaluate(() => {
             const el = document.querySelector('.config-stats-updated');
             el.dataset.probe = 'first-render';
@@ -138,7 +139,7 @@ test.describe('statistics: the figures are dated', () => {
         });
         expect(before).toBe('first-render');
 
-        await page.locator('[data-stats-tab="content"]').click();
+        await page.locator('[data-stats-tab="collection"]').click();
         const marker = await page.evaluate(() =>
             document.querySelector('.config-stats-updated')?.dataset.probe ?? null);
         expect(marker).toBeNull();
@@ -152,7 +153,7 @@ test.describe('statistics: tiles read as one thing', () => {
         await openStats(page);
 
         const tiles = page.locator('.config-tiles--overview .config-tile');
-        expect(await tiles.count()).toBeGreaterThan(0);
+        await expect(tiles.first()).toBeVisible();
         const label = await tiles.first().getAttribute('aria-label');
         // "Bookmarks: 102" — the pair, not two adjacent strings.
         expect(label).toMatch(/.+:\s*\d+/);

@@ -174,7 +174,7 @@ test.describe('statistics: a future lastOpened cannot corrupt the chart', () => 
         await seedFuture(page);
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.statsTab = 'activity';
+            c.statsTab = 'usage';
             c.repaintStatsBody();
         });
         // 31 bars on a 30-day range was the visible symptom.

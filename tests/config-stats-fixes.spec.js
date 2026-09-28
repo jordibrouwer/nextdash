@@ -106,7 +106,7 @@ test.describe('statistics counts the same things as the rest of the app', () => 
 });
 
 test.describe('the controls belong to the section, not to one tab', () => {
-    for (const tab of ['overview', 'activity', 'content', 'inbox', 'health']) {
+    for (const tab of ['overview', 'usage', 'collection', 'inbox', 'health']) {
         test(`export and refresh are on ${tab}`, async ({ page }) => {
             await openStats(page, tab);
             const foot = page.locator('.config-stats-foot');
@@ -150,7 +150,7 @@ test.describe('reading the numbers', () => {
     });
 
     test('an unused library says so instead of drawing an empty chart', async ({ page }) => {
-        await openStats(page, 'activity');
+        await openStats(page, 'usage');
         const state = await page.evaluate(() => {
             const c = window.dashboardInstance.config;
             const s = c.computeStats();

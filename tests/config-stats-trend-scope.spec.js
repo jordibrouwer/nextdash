@@ -41,11 +41,12 @@ async function routeHealthWithTrend(page, percents) {
                 healthyCount: 8, brokenCount: 1, uncheckedCount: 1,
                 monitorDownCount: 0, duplicateCount: 0, staleCount: 0, shortcutConflictCount: 0,
             },
-            // n is the collection size that day and h the healthy count; the
-            // panel works the percentage out itself, the way the health view does.
+            // n is the collection size that day and b how many were broken;
+            // the panel works the healthy share out from those, because h
+            // changed meaning in August 2026 and b did not.
             trend: percents.map((p, i) => (p === null
                 ? { t: base + i * day, n: 0, h: 0 }
-                : { t: base + i * day, n: 100, h: p })),
+                : { t: base + i * day, n: 100, h: p, b: 100 - p })),
         }),
     }));
 }
@@ -63,7 +64,7 @@ test.describe('the health tab shows where the numbers came from', () => {
         const summary = page.locator('.config-stats-trend-summary');
         await expect(summary).toContainText('72%');
         await expect(summary).toContainText(/up 12 points over 4 recorded days/i);
-        await expect(page.locator('.config-stats-trend')).toHaveClass(/config-stats-trend--good/);
+        await expect(summary).toHaveClass(/config-stats-trend-summary--good/);
     });
 
     test('a fall reads as a fall', async ({ page }) => {
@@ -71,7 +72,7 @@ test.describe('the health tab shows where the numbers came from', () => {
         await openStats(page, 'health');
         await expect(page.locator('.config-stats-trend-summary'))
             .toContainText(/down 20 points over 3 recorded days/i, { timeout: 15_000 });
-        await expect(page.locator('.config-stats-trend')).toHaveClass(/config-stats-trend--bad/);
+        await expect(page.locator('.config-stats-trend-summary')).toHaveClass(/config-stats-trend-summary--bad/);
     });
 
     test('days with nothing recorded break the line instead of reading as zero',

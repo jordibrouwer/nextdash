@@ -36,6 +36,7 @@ async function openStats(page, tab) {
         await page.locator(`[data-stats-tab="${tab}"]`).click();
     }
     await expect(page.locator('#config-stats-body')).toBeVisible();
+    await page.waitForFunction(() => window.DashboardConfigStatsReady === true, null, { timeout: 15_000 });
 }
 
 /** The rendered text of the section body. */
@@ -59,10 +60,8 @@ test.describe('the healthy share counts every state', () => {
             c.repaintStatsBody();
             const body = document.getElementById('config-stats-body');
             return {
-                // The Link health panel's own figure. Scoped to #config-stats-health
-                // because the archive panel above it carries a ratio too, and
-                // every panel with a bar captions its axis "0% to 100%".
-                share: body.querySelector('#config-stats-health .config-ratio-value')?.textContent?.trim(),
+                // The Healthy tile, first of the tab's six.
+                share: body.querySelector('.config-stats-kpis .config-tile-value')?.textContent?.trim(),
                 text: body.innerText,
             };
         });
@@ -99,7 +98,7 @@ test.describe('the cleanup score names the reader\'s own threshold', () => {
 
 test.describe('category panels label by name', () => {
     test('without having to visit Bookmarks first', async ({ page }) => {
-        await openStats(page, 'content');
+        await openStats(page, 'collection');
         // The names arrive with their own fetch, so the panel fills in.
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config._bmCategoriesCache.size), { timeout: 15_000 })
@@ -176,7 +175,7 @@ test.describe('what the section reports beyond bookmarks', () => {
             c.repaintStatsBody();
             return document.getElementById('config-stats-body').innerText;
         });
-        expect(withoutCerts).not.toMatch(/Already expired|Al verlopen/);
+        expect(withoutCerts).not.toContain('gone.example');
 
         const withCerts = await page.evaluate(() => {
             const c = window.dashboardInstance.config;
@@ -192,14 +191,13 @@ test.describe('what the section reports beyond bookmarks', () => {
             c.repaintStatsBody();
             return document.getElementById('config-stats-body').innerText;
         });
-        expect(withCerts).toMatch(/Already expired|Al verlopen/);
         // The one that already went, named, with the right number of days.
         expect(withCerts).toContain('gone.example');
         expect(withCerts).toMatch(/3 days ago|3 dagen geleden/);
     });
 
     test('the things that are not bookmarks are counted', async ({ page }) => {
-        await openStats(page, 'content');
+        await openStats(page, 'collection');
         await expect.poll(() => bodyText(page), { timeout: 15_000 })
             .toMatch(/Beyond bookmarks|Naast bladwijzers/);
 
@@ -207,9 +205,11 @@ test.describe('what the section reports beyond bookmarks', () => {
             window.dashboardInstance.config._statsLibrary !== undefined), { timeout: 15_000 }).toBe(true);
 
         const text = await bodyText(page);
-        // Trash and automatic backups are always answerable; feeds and sources
-        // may be switched off, which is a figure of its own.
         expect(text).toMatch(/Waiting in the trash|In de prullenbak/);
-        expect(text).toMatch(/Automatic backups kept|Bewaarde automatische/);
+        // A figure that could not be fetched is left out rather than shown
+        // as an empty row: no label may stand without its number.
+        const empty = await page.evaluate(() => [...document.querySelectorAll('#config-stats-library .config-stat-penalty')]
+            .filter((el) => !el.textContent.trim()).length);
+        expect(empty).toBe(0);
     });
 });

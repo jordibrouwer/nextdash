@@ -172,8 +172,9 @@ test.describe('statistics: the inbox trend chart', () => {
     test('two series means a legend, not colour alone', async ({ page }) => {
         await openStats(page);
         await seedTrend(page);
+        // Two bar series and the running backlog line, each named.
         const legend = trendPanel(page).locator('.config-chart-legend-item');
-        await expect(legend).toHaveCount(2);
+        await expect(legend).toHaveCount(3);
     });
 
     test('the two series are actually distinguishable', async ({ page }) => {
@@ -253,7 +254,7 @@ test.describe('statistics: the inbox trend chart', () => {
         });
         await settleOverlays(page);
         // Both tabs own a chart; binding only the first would leave one inert.
-        await page.locator('[data-stats-tab="activity"]').click();
+        await page.locator('[data-stats-tab="usage"]').click();
         const activity = page.locator('.config-panel')
             .filter({ has: page.locator('.config-panel-title', { hasText: 'Bookmarks used over time' }) }).first();
         // hover(), not a measured point: same reason as the trend chart above.

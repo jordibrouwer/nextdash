@@ -8,22 +8,25 @@ async function openStatsContent(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
-    await page.locator('[data-stats-tab="content"]').click();
+    await page.locator('[data-stats-tab="collection"]').click();
 }
 
 test.describe('category effectiveness and concentration', () => {
-    test('shows opens per bookmark per category, sorted by the ratio', async ({ page }) => {
+    test('shows size and opens per bookmark side by side, largest first', async ({ page }) => {
         await openStatsContent(page);
-        const panel = page.locator('.config-panel', { hasText: /Opens per bookmark/i }).first();
+        const panel = page.locator('.config-panel').filter({
+            has: page.locator('.config-panel-title', { hasText: /Categories: size and use/i }),
+        });
         await expect(panel).toBeVisible();
-
-        // The ratio is what the panel is for; a raw count would just restate size.
-        const values = await panel.locator('.config-dist-count').allTextContents();
-        expect(values.length).toBeGreaterThan(0);
-        const nums = values.map((v) => Number(v));
-        expect(nums.every((n) => Number.isFinite(n))).toBe(true);
-        const sorted = [...nums].sort((a, b) => b - a);
-        expect(nums).toEqual(sorted);
+        const rows = panel.locator('.config-stats-pair-row:not(.config-stats-pair-head)');
+        const sizes = (await rows.evaluateAll((els) => els.map((el) =>
+            el.querySelectorAll('.config-dist-count')[0]?.textContent || ''))).map(Number);
+        expect(sizes.length).toBeGreaterThan(0);
+        expect(sizes).toEqual([...sizes].sort((a, b) => b - a));
+        // The use column is the ratio, a decimal per row.
+        const ratios = await rows.evaluateAll((els) => els.map((el) =>
+            el.querySelectorAll('.config-dist-count')[1]?.textContent || ''));
+        expect(ratios.every((r) => r === '—' || /^\d+\.\d$/.test(r))).toBe(true);
     });
 
     test('the ratio divides opens by category size', async ({ page }) => {
@@ -54,7 +57,10 @@ test.describe('category effectiveness and concentration', () => {
         expect(c.share).toBeLessThanOrEqual(100);
         expect(c.topOpens).toBeLessThanOrEqual(c.totalOpens);
 
-        const panel = page.locator('.config-panel', { hasText: /Where your usage sits/i }).first();
+        await page.locator('[data-stats-tab="usage"]').click();
+        const panel = page.locator('.config-panel').filter({
+            has: page.locator('.config-panel-title', { hasText: /How concentrated your use is/i }),
+        });
         await expect(panel).toBeVisible();
         await expect(panel).toContainText(`${c.share}%`);
         // Every placeholder substituted.

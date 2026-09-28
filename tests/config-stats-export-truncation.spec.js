@@ -12,7 +12,8 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-h
  * list already capped at ten: a partial export dressed as a complete one.
  */
 
-const LIMIT = 20;
+// Eight rows per ranked list since the panels went two to a row.
+const LIMIT = 8;
 
 /** Seeds enough bookmarks to overflow the cap on every ranked list. */
 async function seedAndOpenStats(page, { opened = 40, never = 20, tags = 25 } = {}) {
@@ -75,7 +76,7 @@ test.describe('statistics: lists say when they cut off', () => {
         await seedAndOpenStats(page);
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.statsTab = 'activity';
+            c.statsTab = 'usage';
             c.repaintStatsBody();
         });
         const note = page.locator('.config-list-truncated').first();
@@ -89,7 +90,7 @@ test.describe('statistics: lists say when they cut off', () => {
         await seedAndOpenStats(page, { opened: 5, never: 2, tags: 3 });
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.statsTab = 'activity';
+            c.statsTab = 'usage';
             c.repaintStatsBody();
         });
         const panel = page.locator('.config-panel')
@@ -97,16 +98,16 @@ test.describe('statistics: lists say when they cut off', () => {
         await expect(panel.locator('.config-list-truncated')).toHaveCount(0);
     });
 
-    test('Never opened hands off the rows it could not show', async ({ page }) => {
+    test('never-opened bookmarks hand off to the filtered list', async ({ page }) => {
         await seedAndOpenStats(page, { opened: 5, never: 40, tags: 5 });
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.statsTab = 'activity';
+            c.statsTab = 'overview';
             c.repaintStatsBody();
         });
-        const panel = page.locator('.config-panel')
-            .filter({ has: page.locator('.config-panel-title', { hasText: 'Never opened' }) }).first();
-        const button = panel.locator('[data-cleanup-goto="never"]');
+        // The list of never-opened names left Usage; the attention line is
+        // the way to all of them now.
+        const button = page.locator('[data-attention="unused"] [data-cleanup-goto="never"]');
         await expect(button).toBeVisible();
 
         // It must actually land on the filtered bookmarks list, or the note

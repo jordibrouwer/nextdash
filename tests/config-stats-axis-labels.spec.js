@@ -129,18 +129,19 @@ test.describe('statistics: what the activity chart counts', () => {
         // panel draws its empty state instead, and has no note to read. It
         // passed only while another spec had left opens behind in the shared
         // data directory — which is not a thing to depend on.
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
 
-        const panel = page.locator('.config-panel').first();
-        // The old title promised a series the data cannot support.
-        await expect(panel.locator('.config-panel-title')).not.toHaveText(/opens over time/i);
-        await expect(panel.locator('.config-panel-note')).toContainText(/last use/i);
+        // Until openLog reaches back two weeks, the chart is the last-used
+        // one, and its (i) says what a bar counts.
+        const panel = page.locator('#config-stats-opens');
+        await expect(panel.locator('.config-panel-title')).toHaveText(/used over time/i);
+        await expect(panel.locator('.config-stats-info')).toHaveAttribute('aria-label', /last use/i);
     });
 });
 
 test.describe('statistics: chart axis labels', () => {
     test('the activity chart names both axes', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
         const panel = panelByTitle(page, 'Bookmarks used over time');
 
         // y: what the bars count, plus a real top tick rather than an unlabelled
@@ -156,7 +157,7 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('the x-axis label follows the selected range', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
         const panel = panelByTitle(page, 'Bookmarks used over time');
         const axis = panel.locator('.config-chart-axis-x');
 
@@ -173,7 +174,7 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('the ranked lists name their own measure, not a shared one', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
 
         // Both come from one helper; the measure differs and must not be shared.
         const opened = panelByTitle(page, 'Most opened').locator('.config-dist-axis');
@@ -187,18 +188,19 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('the distribution panels label their columns', async ({ page }) => {
-        await openStatsTab(page, 'content');
+        await openStatsTab(page, 'collection');
 
         const perPage = panelByTitle(page, 'Bookmarks per page').locator('.config-dist-axis');
         await expect(perPage.locator('.config-dist-axis-label')).toHaveText(/page/i);
         await expect(perPage.locator('.config-dist-axis-value')).toHaveText(/bookmarks/i);
 
-        const perCat = panelByTitle(page, 'Bookmarks per category').locator('.config-dist-axis');
-        await expect(perCat.locator('.config-dist-axis-label')).toHaveText(/category/i);
+        const perCat = panelByTitle(page, 'Categories: size and use').locator('.config-stats-pair-head');
+        await expect(perCat).toContainText(/category/i);
+        await expect(perCat).toContainText(/opens per bookmark/i);
     });
 
     test('the coverage bars state the scale they share', async ({ page }) => {
-        await openStatsTab(page, 'content');
+        await openStatsTab(page, 'collection');
         const caption = panelByTitle(page, 'Coverage').locator('.config-chart-scale');
         await expect(caption).toBeVisible();
         // Names the denominator and the range, so a bar is not just "some width".
@@ -206,7 +208,7 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('every axis caption is hidden from screen readers', async ({ page }) => {
-        await openStatsTab(page, 'content');
+        await openStatsTab(page, 'collection');
         // The panels already carry aria-labels and an sr-only table; the visual
         // captions would only duplicate that.
         const captions = page.locator('.config-chart-scale, .config-dist-axis, .config-chart-axis-x, .config-chart-axis-y');
@@ -218,7 +220,7 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('the plot is tall enough to compare neighbouring bars', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
         const svg = panelByTitle(page, 'Bookmarks used over time').locator('svg');
         const box = await svg.boundingBox();
         // 72px was too short for a day-to-day comparison; 108 is that plus half.
@@ -230,7 +232,7 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('the x-axis carries dated ticks, not just its two ends', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
         const ticks = panelByTitle(page, 'Bookmarks used over time').locator('.config-chart-tick');
         const n = await ticks.count();
         expect(n).toBeGreaterThan(2);
@@ -242,7 +244,7 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('no tick escapes the plot or collides, at any range', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
 
         // The wide weekly labels ("Jul 29 – Aug 4") overflowed the panel and ran
         // into each other: the end ticks were centred on their bar, so half the
@@ -276,7 +278,7 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('hovering a bar shows its value and its date', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
         const panel = panelByTitle(page, 'Bookmarks used over time');
         const bars = panel.locator('.config-chart-bar');
         expect(await bars.count()).toBeGreaterThan(0);
@@ -306,7 +308,7 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('the same values are reachable by keyboard, not hover only', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
         const panel = panelByTitle(page, 'Bookmarks used over time');
         const bar = panel.locator('.config-chart-bar').first();
 
@@ -317,7 +319,7 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('the bar hit target is bigger than the painted bar', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
         const panel = panelByTitle(page, 'Bookmarks used over time');
         // A one-open day paints a 2px sliver; hovering that would be a pinpoint,
         // so the hit rect spans the full plot height and half the gap each side.
@@ -331,8 +333,8 @@ test.describe('statistics: chart axis labels', () => {
     });
 
     test('the axis header lines up with the rows it labels', async ({ page }) => {
-        await openStatsTab(page, 'content');
-        const panel = panelByTitle(page, 'Bookmarks per category');
+        await openStatsTab(page, 'collection');
+        const panel = panelByTitle(page, 'Bookmarks per page');
 
         // A header on its own grid would drift out of alignment with the rows.
         const cols = await panel.evaluate((el) => {

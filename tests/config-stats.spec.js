@@ -34,9 +34,9 @@ test.describe('config statistics visualisations', () => {
     test('the overview tab shows its headline tiles in an even grid', async ({ page }) => {
         await openStats(page);
         const tiles = page.locator('#config-stats-body .config-tiles--overview .config-tile');
-        // Eight since Pinned and Last edited joined them. The count is pinned
-        // so that adding a ninth is a decision rather than an accident.
-        await expect(tiles).toHaveCount(8);
+        // Six on every tab since the redesign. The count is pinned so that
+        // adding a seventh is a decision rather than an accident.
+        await expect(tiles).toHaveCount(6);
         const grid = await page.evaluate(() => {
             const els = [...document.querySelectorAll('#config-stats-body .config-tiles--overview .config-tile')];
             const perRow = {};
@@ -47,8 +47,8 @@ test.describe('config statistics visualisations', () => {
             const widths = els.map((el) => Math.round(el.getBoundingClientRect().width));
             return { rows: Object.values(perRow), narrowest: Math.min(...widths) };
         });
-        // Four to a row rather than a squeezed single line or a lopsided wrap.
-        expect(grid.rows).toEqual([4, 4]);
+        // One even row of six on a wide window, or two even rows of three.
+        expect([[6], [3, 3]]).toContainEqual(grid.rows);
         expect(grid.narrowest).toBeGreaterThan(110);
     });
 
@@ -68,7 +68,7 @@ test.describe('config statistics visualisations', () => {
     });
 
     test('the activity chart draws one bar per bucket, with a text fallback', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
         const chart = page.locator('.config-chart svg');
         await expect(chart).toBeVisible();
         expect(await chart.locator('rect').count()).toBeGreaterThan(1);
@@ -78,7 +78,7 @@ test.describe('config statistics visualisations', () => {
     });
 
     test('changing the range redraws the chart', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
         const bars = () => page.locator('.config-chart svg rect').count();
         const before = await bars();
         await page.locator('[data-stats-range="7"]').click();
@@ -86,39 +86,36 @@ test.describe('config statistics visualisations', () => {
         expect(await bars()).not.toBe(before);
     });
 
-    test('coverage bars report a count out of the total', async ({ page }) => {
-        await openStatsTab(page, 'content');
-        const ratios = page.locator('.config-ratio');
-        expect(await ratios.count()).toBeGreaterThanOrEqual(5);
-        await expect(ratios.first().locator('.config-ratio-value')).toContainText('%');
-        await expect(ratios.first().locator('.config-bar-fill')).toBeVisible();
+    test('coverage bars report a count and a share of the total', async ({ page }) => {
+        await openStatsTab(page, 'collection');
+        const coverage = page.locator('.config-panel').filter({
+            has: page.locator('.config-panel-title', { hasText: /^Coverage$/ }),
+        });
+        const rows = coverage.locator('.config-dist-row');
+        await expect(rows).toHaveCount(5);
+        await expect(rows.first().locator('.config-dist-count')).toContainText('%');
+        await expect(rows.first().locator('.config-bar-fill')).toBeVisible();
     });
 
     test('top lists and distributions render bars per row', async ({ page }) => {
-        await openStatsTab(page, 'activity');
+        await openStatsTab(page, 'usage');
         const rows = page.locator('.config-dist-row');
         expect(await rows.count()).toBeGreaterThan(3);
         await expect(rows.first().locator('.config-bar-fill')).toBeVisible();
         await expect(rows.first().locator('.config-dist-count')).toBeVisible();
     });
 
-    test('rot & cleanup counts every problem category', async ({ page }) => {
+    test('issues by type counts every problem category', async ({ page }) => {
         await openStatsTab(page, 'health');
-        // Located by its own heading: hasText also matches ancestor panels.
+        // Rot, duplicates and shortcut clashes folded into one panel, a row
+        // per issue type, zeroes included so a clean install says so.
         const panel = page.locator('.config-panel').filter({
-            has: page.locator('.config-panel-title', { hasText: /rot/i }),
+            has: page.locator('.config-panel-title', { hasText: /Issues by type/i }),
         });
         await expect(panel).toHaveCount(1);
-        // Never opened, stale 90 days, untagged. Duplicate URLs and shortcut
-        // conflicts moved to their own "Conflicts & duplicates" panel, which the
-        // old stats page also kept separate.
-        expect(await panel.locator('.config-stat-detail').count()).toBe(3);
-
-        const conflicts = page.locator('.config-panel').filter({
-            has: page.locator('.config-panel-title', { hasText: /conflicts/i }),
-        });
-        await expect(conflicts).toHaveCount(1);
-        expect(await conflicts.locator('.config-stat-detail').count()).toBe(2);
+        await expect(panel.locator('.config-dist-row')).toHaveCount(8);
+        await expect(panel).toContainText(/Duplicate URLs/);
+        await expect(panel).toContainText(/Shortcut conflicts/);
     });
 
     test('the CSV export downloads a stats report', async ({ page }) => {
@@ -137,12 +134,12 @@ test.describe('config statistics visualisations', () => {
         }));
         await openStatsTab(page, 'health');
         const health = page.locator('#config-stats-health');
-        await expect(health.locator('.config-stat-detail').first()).toContainText('6');
-        await expect(health).toContainText('2');
+        await expect(health.locator('.config-stats-legend')).toContainText('Healthy 6');
+        await expect(health.locator('.config-stats-legend')).toContainText('Broken 2');
         // 6 healthy of 10 counted → 60%. The denominator is every state a
         // bookmark can be in, monitorDown and content included: the server
         // splits those out precisely so the three add up, and leaving them out
         // let a collection with monitors down report "Healthy 100%".
-        await expect(health.locator('.config-ratio-value')).toContainText('60%');
+        await expect(page.locator('.config-stats-kpis .config-tile-value').first()).toContainText('60%');
     });
 });

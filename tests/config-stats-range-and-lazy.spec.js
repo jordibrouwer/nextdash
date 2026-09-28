@@ -29,7 +29,7 @@ test.describe('statistics: the activity range is remembered', () => {
     test('a chosen range survives a reload', async ({ page }) => {
         await loadDashboard(page);
         await openStats(page);
-        await page.locator('[data-stats-tab="activity"]').click();
+        await page.locator('[data-stats-tab="usage"]').click();
         await page.locator('[data-stats-range="365"]').click();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.statsRange)).toBe(365);
 
@@ -55,7 +55,7 @@ test.describe('statistics: the activity range is remembered', () => {
         await page.reload();
         await loadDashboard(page);
         await openStats(page);
-        await page.locator('[data-stats-tab="activity"]').click();
+        await page.locator('[data-stats-tab="usage"]').click();
 
         // The button reflects it, and so does the axis the range decides.
         await expect(page.locator('[data-stats-range="7"]')).toHaveAttribute('aria-pressed', 'true');
@@ -91,7 +91,7 @@ test.describe('statistics: the activity range is remembered', () => {
         }, RANGE_KEY);
         await loadDashboard(page);
         await openStats(page);
-        await page.locator('[data-stats-tab="activity"]').click();
+        await page.locator('[data-stats-tab="usage"]').click();
         // Falls back to the default and the range still applies for this visit.
         expect(await page.evaluate(() => window.dashboardInstance.config.statsRange)).toBe(30);
         await page.locator('[data-stats-range="90"]').click();
@@ -109,14 +109,19 @@ test.describe('statistics: health loads only when its tab is opened', () => {
         return hits;
     };
 
-    test('opening Statistics does not fetch the health summary', async ({ page }) => {
+    test('opening Statistics fetches the health summary once, for the overview', async ({ page }) => {
+        // Overview's healthy tile and its attention list read the report, so
+        // it is asked for on the way in now -- once, and not again per tab.
         const hits = trackHealth(page);
         await loadDashboard(page);
         const before = hits.length;
 
         await openStats(page);
+        await expect.poll(() => hits.length - before, { timeout: 10_000 }).toBe(1);
+        await page.locator('[data-stats-tab="collection"]').click();
+        await page.locator('[data-stats-tab="health"]').click();
         await page.waitForTimeout(600);
-        expect(hits.length - before).toBe(0);
+        expect(hits.length - before).toBe(1);
     });
 
     test('opening the Health tab fetches it, once', async ({ page }) => {
@@ -180,7 +185,7 @@ test.describe('statistics: health loads only when its tab is opened', () => {
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config._statsInboxItems !== undefined), { timeout: 10_000 }).toBe(true);
 
-        await page.locator('[data-stats-tab="activity"]').click();
+        await page.locator('[data-stats-tab="usage"]').click();
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config._statsFinders !== undefined), { timeout: 10_000 }).toBe(true);
     });

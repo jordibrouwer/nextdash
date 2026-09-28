@@ -42,7 +42,7 @@ test.describe('the statistics renderers arrive with the section', () => {
             '#config-stats-body .config-panel, #config-stats-body .config-tiles').length),
         { timeout: 10_000 }).toBeGreaterThan(0);
 
-        for (const tab of ['overview', 'activity', 'content', 'inbox', 'health']) {
+        for (const tab of ['overview', 'usage', 'collection', 'inbox', 'health']) {
             await page.evaluate((t) => {
                 const c = window.dashboardInstance.config._module || window.dashboardInstance.config;
                 c.statsTab = t;

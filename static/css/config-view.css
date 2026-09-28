@@ -992,6 +992,282 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* ── Statistics: grid, figures, panels ───────────────────────────────────
+ *
+ * The panels sit in a twelve-column grid, most of them half wide, so a list
+ * of eight short names no longer spans the whole window. Below 900px every
+ * panel takes the full row, which is where the config rail collapses too.
+ */
+.config-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 14px;
+    align-items: start;
+}
+
+.config-stats-grid > .config-stats-panel {
+    margin-top: 0;
+    grid-column: span 12;
+    min-width: 0;
+}
+
+@media (min-width: 900px) {
+    .config-stats-grid > [data-span="4"] { grid-column: span 4; }
+    .config-stats-grid > [data-span="6"] { grid-column: span 6; }
+    .config-stats-grid > [data-span="8"] { grid-column: span 8; }
+}
+
+/* The six figures a tab opens with. */
+.config-stats-kpis {
+    display: grid;
+    /* Six across on a wide window, then as many as keep a figure like
+       "166 ms" whole: three, two. */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.config-stats-kpis .stat-tile { min-width: 0; }
+
+.config-stats-kpis .stat-tile-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-stats-trend-summary--good { color: var(--accent-success, #2fa968); }
+.config-stats-trend-summary--bad { color: var(--accent-error, #d1493f); }
+
+.config-stats-spark {
+    display: block;
+    width: 100%;
+    height: 22px;
+    margin-top: 4px;
+    overflow: visible;
+}
+
+.config-stats-spark-area { fill: var(--accent-primary, #4a90d9); fill-opacity: 0.12; stroke: none; }
+.config-stats-spark-line { fill: none; stroke: var(--accent-primary, #4a90d9); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.config-stats-spark-dot { fill: var(--accent-primary, #4a90d9); }
+
+/* Title, the (i) that holds the standing explanation, and the panel's own
+   controls on one line. The controls wrap under the title when they do not
+   fit beside it. */
+.config-stats-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.config-stats-panel-head .config-panel-title { margin: 0; }
+
+.config-stats-panel-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.config-choices--compact { padding: 2px; }
+.config-choices--compact .config-choice { padding: 3px 8px; font-size: calc(var(--font-size-text) * 0.8); }
+
+.config-stats-info {
+    display: inline-grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted, #888);
+    cursor: help;
+    flex: 0 0 auto;
+}
+
+.config-stats-info:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+}
+
+/* The tab row carries the stamp and the two controls now, not the foot. */
+.config-stats-head .config-stats-foot {
+    margin: 0;
+    gap: 8px;
+}
+
+.config-stats-head .config-stats-scope { margin-left: auto; }
+.config-stats-head .config-stats-scope + .config-stats-foot { margin-left: 0; }
+
+/* Parts of one whole: one bar, one legend. */
+.config-stats-stack {
+    display: flex;
+    gap: 2px;
+    height: 12px;
+    margin: 4px 0 8px;
+    border-radius: var(--radius-2, 4px);
+    overflow: hidden;
+}
+
+.config-stats-stack-seg { display: block; min-width: 3px; }
+
+.config-stats-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 0 0 8px;
+    padding: 0;
+    list-style: none;
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+}
+
+.config-stats-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.config-stats-legend strong { color: var(--text-color, inherit); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.config-stats-swatch {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+}
+
+.config-stats-stack-seg--a { background: var(--accent-primary, #4a90d9); }
+.config-stats-stack-seg--b { background: color-mix(in srgb, var(--accent-primary, #4a90d9) 42%, var(--background-primary, #fff)); }
+.config-stats-stack-seg--c { background: color-mix(in srgb, var(--accent-primary, #4a90d9) 22%, var(--background-primary, #fff)); }
+.config-stats-stack-seg--good { background: var(--accent-success, #2fa968); }
+.config-stats-stack-seg--warn { background: var(--accent-warning, #cf9014); }
+.config-stats-stack-seg--crit { background: var(--accent-error, #d1493f); }
+.config-stats-stack-seg--muted { background: color-mix(in srgb, var(--text-muted, #888) 55%, transparent); }
+
+.config-bar-fill--b { background: color-mix(in srgb, var(--accent-primary, #4a90d9) 55%, var(--background-primary, #fff)); }
+.config-bar-fill--muted { background: color-mix(in srgb, var(--text-muted, #888) 55%, transparent); }
+
+/* Two measures per row: categories (size, use) and inbox sources (now, ever). */
+.config-stats-pair {
+    display: grid;
+    gap: 6px;
+}
+
+.config-stats-pair-row {
+    display: grid;
+    grid-template-columns: minmax(5rem, 9rem) minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+}
+
+.config-stats-pair-head {
+    font-size: calc(var(--font-size-text) * 0.72);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted, #888);
+}
+
+.config-stats-pair-cell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.config-stats-pair .config-dist-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Needs attention: one line per thing to do, its button at the end. */
+.config-stats-attention {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-stats-attention-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: var(--radius-5, 9px);
+}
+
+.config-stats-attention-text { flex: 1; min-width: 0; }
+
+.config-stats-attention-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    background: var(--text-muted, #888);
+}
+
+.config-stats-attention-row--bad .config-stats-attention-dot { background: var(--accent-error, #d1493f); }
+.config-stats-attention-row--warn .config-stats-attention-dot { background: var(--accent-warning, #cf9014); }
+
+/* Lines and curves: grid, axis text and the marks, all from theme colours. */
+.config-stats-healthline svg { display: block; width: 100%; overflow: visible; }
+
+.config-stats-curve svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.config-stats-curve text {
+    font-size: 10px;
+    fill: var(--text-muted, #888);
+}
+
+.config-stats-grid-line { stroke: var(--border-color, rgba(128, 128, 128, 0.25)); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.config-stats-line { stroke: var(--accent-primary, #4a90d9); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.config-stats-line-dot,
+.config-stats-line-end { fill: var(--accent-primary, #4a90d9); }
+.config-stats-line--overlay { stroke: var(--accent-warning, #cf9014); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.config-chart-swatch--line { background: var(--accent-warning, #cf9014); }
+
+.config-stats-trend-chart {
+    width: 100%;
+    height: auto;
+    flex: none;
+}
+
+.config-stats-curve-even { stroke: var(--text-muted, #888); stroke-dasharray: 3 3; fill: none; opacity: 0.6; }
+.config-stats-curve-area { fill: var(--accent-primary, #4a90d9); fill-opacity: 0.12; stroke: none; }
+.config-stats-curve-line { stroke: var(--accent-primary, #4a90d9); stroke-width: 2; fill: none; }
+.config-stats-curve-dot { fill: var(--accent-primary, #4a90d9); }
+
+/* Weekday by hour. The cell's --heat is its share of the busiest hour. */
+.config-stats-heat {
+    display: grid;
+    grid-template-columns: 2.4rem repeat(24, minmax(0, 1fr));
+    gap: 2px;
+    align-items: center;
+    font-size: 10px;
+    color: var(--text-muted, #888);
+}
+
+.config-stats-heat-hour { text-align: left; line-height: 1.2; }
+
+.config-stats-heat-cell {
+    display: block;
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--accent-primary, #4a90d9) calc(var(--heat, 0) * 100%), transparent);
+    outline: 1px solid color-mix(in srgb, var(--border-color, rgba(128, 128, 128, 0.25)) 60%, transparent);
+    outline-offset: -1px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .config-stats-stack-seg { transition: flex-grow 0.2s ease; }
+}
+
 /* Nothing to measure yet: one explanation where a page of zeroes used to be. */
 .config-panel--empty-state {
     text-align: center;
@@ -7298,3 +7574,6 @@ body.no-animations .config-new-features-panel-star {
 body.no-animations .config-crud-list--table .config-crud-row-actions {
     transition: none;
 }
+
+/* The habit sentence opens the attention list it sits in. */
+.config-stats-summary .config-stats-headline { margin: 0 0 10px; }
