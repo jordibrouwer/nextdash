@@ -185,6 +185,8 @@ class ConfigFaviconPrefetch {
             overlay.id = 'favicon-prefetch-overlay';
             overlay.className = 'favicon-prefetch-overlay';
             overlay.setAttribute('role', 'status');
+            // Covers the page while the sweep runs; the page under it holds still.
+            overlay.setAttribute('data-scroll-lock', '');
             overlay.setAttribute('aria-live', 'polite');
             overlay.innerHTML = `
                 <div class="favicon-prefetch-panel">

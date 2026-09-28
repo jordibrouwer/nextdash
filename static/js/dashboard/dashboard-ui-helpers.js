@@ -1089,6 +1089,8 @@ class DashboardUiHelpers {
         const overlay = document.createElement('div');
         overlay.id = 'omnibox-overlay';
         overlay.className = 'omnibox-overlay';
+        // A full-window layer: the page behind it holds still.
+        overlay.setAttribute('data-scroll-lock', '');
 
         const box = document.createElement('div');
         box.className = 'omnibox-box';

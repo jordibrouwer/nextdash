@@ -24,6 +24,8 @@
         overlay.className = 'progress-overlay';
         overlay.setAttribute('role', 'status');
         overlay.setAttribute('aria-live', 'polite');
+        // It covers the page while work runs; the page under it holds still.
+        overlay.setAttribute('data-scroll-lock', '');
         overlay.innerHTML = `
             <div class="progress-overlay-panel">
                 <p class="progress-overlay-title" data-progress-title></p>
