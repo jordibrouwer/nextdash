@@ -1002,7 +1002,12 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
     background-color: var(--background-secondary);
 }
 
-.inbox-item.feed-row.keyboard-selected {
+/* The row under the cursor, marked the way the Bookmarks view marks it: an
+   edge and a thin ring inside the row, no glow. colors.css gives every
+   .feed-row.keyboard-selected the --bloom halo under a depth theme, from a
+   selector heavier than this one, so the id anchors it (as the glass rule
+   above does). */
+#dashboard-layout .inbox-item.feed-row.keyboard-selected {
     background-color: var(--background-secondary);
     box-shadow:
         inset 3px 0 0 var(--accent-primary),

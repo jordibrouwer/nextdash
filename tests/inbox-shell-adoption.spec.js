@@ -338,3 +338,21 @@ test('below 720px the secondary actions fold into the overflow menu', async ({ p
     await help.click();
     await expect(page.locator('.inbox-explain-modal')).toBeVisible();
 });
+
+test('the row under the cursor is marked inside the row, without a glow', async ({ page }) => {
+    await openInbox(page);
+    // Reached the way a reader reaches it: j moves the cursor onto a row.
+    await page.evaluate(() => {
+        document.documentElement.setAttribute('data-depth', 'glass');
+        document.body.setAttribute('data-depth', 'glass');
+    });
+    await page.keyboard.press('j');
+    const row = page.locator('.inbox-item.keyboard-selected').first();
+    await expect(row).toBeVisible();
+    await page.waitForTimeout(300);
+    const shadow = await row.evaluate((el) => getComputedStyle(el).boxShadow);
+    // The Bookmarks view's marking: every layer inset, none spreading outside.
+    const layers = shadow.split(/,(?![^(]*\))/).map((s) => s.trim());
+    expect(layers.length).toBeGreaterThan(0);
+    for (const layer of layers) expect(layer, shadow).toContain('inset');
+});
