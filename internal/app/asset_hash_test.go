@@ -241,3 +241,18 @@ func TestLazyAssetMapJSONIsHashedJSON(t *testing.T) {
 		}
 	}
 }
+
+// The cheat sheet is linked from JS, so it has to be in the lazy map with a
+// content hash, or a regenerated sheet hides behind the browser's cached copy.
+func TestLazyAssetMapCarriesHashedCheatSheet(t *testing.T) {
+	withDiskAssets(t, map[string]string{"nextDash-cheatsheet.pdf": "%PDF-1.4"})
+
+	var m map[string]string
+	if err := json.Unmarshal([]byte(lazyAssetMapJSON()), &m); err != nil {
+		t.Fatalf("lazyAssetMapJSON: %v", err)
+	}
+	got := m["nextDash-cheatsheet.pdf"]
+	if !strings.HasPrefix(got, "/static/nextDash-cheatsheet.pdf?v=") {
+		t.Fatalf("cheat sheet URL = %q; want a hashed /static/nextDash-cheatsheet.pdf?v=…", got)
+	}
+}

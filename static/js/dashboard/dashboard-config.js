@@ -4687,8 +4687,11 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const label = this.t('config.cheatsheetPdfLink', 'Shortcuts PDF');
         const hint = this.t('config.cheatsheetPdfHint', 'One-page keyboard reference (opens in a new tab)');
+        // The hashed URL, so a regenerated sheet is not hidden behind the copy
+        // the browser cached last time.
+        const href = window.NEXTDASH_ASSETS?.['nextDash-cheatsheet.pdf'] || '/static/nextDash-cheatsheet.pdf';
         return `<a class="config-btn config-btn--small config-cheatsheet-pdf"
-                   href="/static/nextDash-cheatsheet.pdf" target="_blank" rel="noopener noreferrer"
+                   href="${esc(href)}" target="_blank" rel="noopener noreferrer"
                    title="${esc(hint)}">
                     <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 1.5H4.5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5z"/><path d="M9 1.5V5h3.5"/><path d="M6.5 8.5h3M6.5 11h3"/></svg>
                     <span>${esc(label)}</span>

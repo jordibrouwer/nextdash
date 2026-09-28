@@ -195,6 +195,10 @@ var lazyLoadedAssets = []string{
 	"js/widgets-tutorial.js",
 	"js/dashboard/dashboard-inline-edit.js",
 	"js/dashboard/dashboard-context-menu.js",
+	// Not a script, but linked from Config → Help by JS all the same. Under its
+	// bare path a browser kept the sheet it had cached and showed the old
+	// design after the PDF was regenerated.
+	"nextDash-cheatsheet.pdf",
 }
 
 // lazyAssetMapJSON renders lazyLoadedAssets as a JSON object of path -> hashed
