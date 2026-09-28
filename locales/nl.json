@@ -7424,6 +7424,8 @@
     "configCategories": "Categorieën",
     "configTags": "Tags",
     "configBookmarks": "Bladwijzers",
+    "configInbox": "Inbox",
+    "configContainers": "Containers",
     "configFinders": "Zoekmachines",
     "configBackups": "Back-ups",
     "configStats": "Statistieken",

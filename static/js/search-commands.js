@@ -313,11 +313,13 @@ class SearchCommandsComponent {
     _CONFIG_SECTIONS = [
         { id: 'overview', labelKey: 'commands.configOverview', fallback: 'Overview' },
         { id: 'bookmarks', labelKey: 'commands.configBookmarks', fallback: 'Bookmarks' },
+        { id: 'inbox', labelKey: 'commands.configInbox', fallback: 'Inbox' },
         { id: 'appearance', labelKey: 'commands.configAppearance', fallback: 'Appearance' },
         { id: 'structure', labelKey: 'commands.configStructure', fallback: 'Structure' },
         { id: 'behavior', labelKey: 'commands.configBehavior', fallback: 'Behavior' },
         { id: 'data-backups', labelKey: 'commands.configDataBackups', fallback: 'Data & backups' },
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
+        { id: 'containers', labelKey: 'commands.configContainers', fallback: 'Containers' },
         { id: 'stats', labelKey: 'commands.configStats', fallback: 'Statistics' },
         { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help' },
         { id: 'logs', labelKey: 'commands.configLogs', fallback: 'Logs' },
@@ -2644,8 +2646,8 @@ class SearchCommandsComponent {
     /*
      * Appearance → Header and buttons, from the palette.
      *
-     * The panel's own controls are a select and seven toggles; these are the
-     * same seven, named by what they show rather than by their setting key.
+     * The panel's own controls are a select and six toggles; these are the
+     * same six, named by what they show rather than by their setting key.
      * The three selects beside them have commands of their own -- :buttonstyle,
      * :switcher and :maxtabs -- because a value is not an on and an off.
      */

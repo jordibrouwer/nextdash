@@ -7424,6 +7424,8 @@
     "configCategories": "Kategorien",
     "configTags": "Tags",
     "configBookmarks": "Lesezeichen",
+    "configInbox": "Posteingang",
+    "configContainers": "Container",
     "configFinders": "Suchmaschinen",
     "configBackups": "Backups",
     "configStats": "Statistiken",
