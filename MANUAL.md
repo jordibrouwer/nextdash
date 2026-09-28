@@ -1095,7 +1095,7 @@ Image update checks run on request and on an interval (Config → Containers →
 > |---|---|---|
 > | Mount `/var/run/docker.sock` and set `NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock` | Seeing anything at all | nextDash talks to Docker through its socket. Without it the view shows a setup card and the Containers widget is hidden. `:ro` is enough to look. |
 > | `NEXTDASH_DOCKER_CONTROL=1` | Start, stop, pause, restart, update, remove | Off by default, so a mounted socket only reads. |
-> | `NEXTDASH_WRITE_TOKEN` | Keeping those actions yours | Access to the socket is root on the host: `:ro` on the mount does not stop the Docker API from accepting writes. With actions on and no token, anyone who can reach nextDash can stop, update or remove your containers. |
+> | `NEXTDASH_WRITE_TOKEN` | Keeping other sites and scripts out | Access to the socket is root on the host: `:ro` on the mount does not stop the Docker API from accepting writes. The token refuses requests that do not carry it — another website, a script that only knows the address. It is not a login: the dashboard gives it to every browser that opens the page. Keeping the actions yours also needs a gate in front — Tailscale, or a reverse proxy with authentication ([§23](#23--security-and-self-hosting)). |
 > | `NEXTDASH_RUN_AS_ROOT=1` | Only when the socket belongs to gid 0 | See below. |
 
 **Why root is sometimes needed.** The container starts as root, fixes the ownership of `/app/data`, then drops to its own `nextdash` user. Before it does, it looks at the group that owns the socket and adds `nextdash` to it — the `docker` group, gid 281 on Unraid — so the unprivileged user can read the socket. When the socket is owned by root's own group (gid 0), as on Docker Desktop and some NAS systems, joining that group would amount to root anyway, so the entrypoint does not; the log then says `nextdash: /var/run/docker.sock is owned by gid 0; set NEXTDASH_RUN_AS_ROOT=1 to use it`, and Config → Containers shows **No access to the socket**. `NEXTDASH_RUN_AS_ROOT=1` keeps the whole app running as root. Set it only in that case.
@@ -1904,6 +1904,10 @@ Before it listens, the server checks that `PORT` is valid and that the data dire
 ### 23.2 The write token
 
 Set `NEXTDASH_WRITE_TOKEN` and every write or destructive API call — saves, imports, deletes, uploads, resets, backups, retests, preview fetches, container actions — needs the header `X-NextDash-Token`. The dashboard supplies it automatically for pages served by the same install. Unset, nothing needs a token.
+
+**What it stops, and what it does not.** The dashboard gets the token from the page it loads, so every browser that opens nextDash has it. The token keeps out requests that do not come from that page: another website firing requests at your network from a tab you have open, and scripts or scanners that only know the address. It does not keep out a person who can open the dashboard — that is what Tailscale or a reverse proxy with authentication is for. With container actions on, put one in front.
+
+**Choosing one.** Use a long random string, such as the output of `openssl rand -hex 32`. At startup the server logs a warning when `NEXTDASH_WRITE_TOKEN` or `NEXTDASH_CAPTURE_TOKEN` is shorter than 16 characters or still one of the example values from these docs. It still starts.
 
 Read-only routes (bookmarks, settings, the health list, ping) stay open. The extension stores the token under **Settings → Write token**. `GET /api/backup` and the automatic-backup routes need the token, because a backup is the whole library.
 

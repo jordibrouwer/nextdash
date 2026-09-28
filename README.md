@@ -146,7 +146,7 @@ The **Processor**, **Memory**, **Disks** and **Containers** widgets report on th
 >
 > 1. **The Docker socket.** Mount `/var/run/docker.sock` and set `NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock`. Without both, the view shows a setup card and the Containers widget stays hidden. Read-only (`:ro`) is enough to look.
 > 2. **Actions: `NEXTDASH_DOCKER_CONTROL=1`.** Start, stop, pause, restart, update and remove need it. Without it the view only reads.
-> 3. **A write token: `NEXTDASH_WRITE_TOKEN`.** Access to the socket is root on the host — `:ro` on the mount does not stop the Docker API from accepting writes. Once actions are on, anyone who can reach nextDash can stop, update or remove your containers unless a write token is set. Set one.
+> 3. **A write token, and a gate in front: `NEXTDASH_WRITE_TOKEN`.** Access to the socket is root on the host — `:ro` on the mount does not stop the Docker API from accepting writes. The token stops other websites and scripts that do not know it. It is not a login: the dashboard hands it to every browser that opens the page. Set one, and keep nextDash behind Tailscale or a reverse proxy with authentication — with actions on, anyone who can open the dashboard can stop, update or remove your containers.
 > 4. **Sometimes: `NEXTDASH_RUN_AS_ROOT=1`.** The container starts as root, then drops to its own `nextdash` user, which joins the group the socket belongs to (`docker`, gid 281 on Unraid). When the socket belongs to root's group (gid 0) — Docker Desktop, some NAS systems — that user cannot read it: the log says `is owned by gid 0` and Config → Containers shows **No access to the socket**. `NEXTDASH_RUN_AS_ROOT=1` keeps the app running as root so it can. Only set it then.
 
 **Docker Compose** — add to the nextDash service:
@@ -183,7 +183,7 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 
 The short version is below; [MANUAL § 21](MANUAL.md#23--security-and-self-hosting) has the details.
 
-- **Write token.** Set `NEXTDASH_WRITE_TOKEN` and every write or destructive API call needs the header `X-NextDash-Token`. The dashboard supplies it for you. The capture routes (`/add` and the share target) cannot send a header; give them `NEXTDASH_CAPTURE_TOKEN`, which opens capture and nothing else.
+- **Write token.** Set `NEXTDASH_WRITE_TOKEN` and every write or destructive API call needs the header `X-NextDash-Token`. The dashboard supplies it for you, which means the page hands it to every browser that opens it. So the token keeps out other websites (a page that fires requests at your network) and scripts that only know the address — not someone who can open the dashboard. Keeping those out is the job of the network or proxy above. Use a long random string, such as `openssl rand -hex 32`; the server warns at startup when a token is short or still the example value. The capture routes (`/add` and the share target) cannot send a header; give them `NEXTDASH_CAPTURE_TOKEN`, which opens capture and nothing else.
 - **CORS.** Only browser extensions receive CORS headers. `NEXTDASH_CORS_ORIGINS` allows pages of your own; `*` allows every origin.
 - **Outgoing requests.** With local bookmarks disallowed, the server only reaches public hosts, re-checks addresses when it connects, and is rate-limited per client.
 - **The data directory is not served.** Only icons and an uploaded favicon or font are public.
