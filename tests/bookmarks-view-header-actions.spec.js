@@ -22,7 +22,8 @@ test.describe('bookmarks view: the band\'s actions', () => {
     await expect(band(page).locator('[data-bm-work-through]')).toContainText('Work through');
     await expect(band(page).locator('[data-bm-header-more]')).toContainText('Collection');
     await expect(band(page).locator('[data-bm-help]')).toBeVisible();
-    await expect(band(page).locator('button:visible')).toHaveCount(3);
+    await expect(band(page).locator('[data-bm-tour]')).toBeVisible();
+    await expect(band(page).locator('button:visible')).toHaveCount(4);
     await band(page).locator('[data-bm-header-more]').click();
     for (const sel of ['[data-bm-open-health-modal]', '[data-bm-rot-report]', '[data-bm-open-structure]',
       '[data-bm-export]', '[data-bm-header-action="refresh"]', '[data-bm-header-action="settings"]']) {
