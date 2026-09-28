@@ -133,4 +133,26 @@ test.describe('triage can be finished', () => {
             () => !!window.dashboardInstance.inbox.triage?.isOpen?.()
         ), { timeout: 15_000 }).toBe(true);
     });
+
+    test('a link passed before the promote does not come back after it', async ({ page }) => {
+        await seedInbox(page, ['Fin pass A', 'Fin pass B', 'Fin pass C']);
+        await page.keyboard.press('t');
+        await page.locator('[data-triage-pile="list"]').click();
+        const before = await page.evaluate(() => window.dashboardInstance.inbox.triage.queue.map((i) => i.id));
+        expect(before.length).toBeGreaterThan(2);
+
+        // Past the first without deciding, then promote the second.
+        await page.keyboard.press('j');
+        await page.keyboard.press('p');
+        const save = page.locator('#bookmark-form-modal .bookmark-inline-actions .bookmark-inline-save');
+        await expect(save).toBeVisible({ timeout: 10_000 });
+        await save.click();
+        await answerNoCategory(page);
+
+        await expect.poll(() => page.evaluate(
+            () => !!window.dashboardInstance.inbox.triage?.isOpen?.()
+        ), { timeout: 15_000 }).toBe(true);
+        const after = await page.evaluate(() => window.dashboardInstance.inbox.triage.queue.map((i) => i.id));
+        expect(after).toEqual(before.slice(2));
+    });
 });

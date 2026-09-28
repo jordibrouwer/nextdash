@@ -101,8 +101,25 @@ class DashboardInboxTriage {
     }
 
     startPile(id, { tally = null } = {}) {
+        const items = this.pileItems(id);
+        if (!items.length) {
+            // The pile emptied after the chooser counted it. Starting it would
+            // clear the chooser and leave its stale screen up with every key
+            // but Escape dead; recount instead, or close when nothing is left.
+            const piles = this.pileCounts();
+            if (!piles.length) {
+                this.close();
+                this.dash.showNotification(this.t('dashboard.inboxTriageEmpty', 'Nothing to triage'), 'info');
+                return false;
+            }
+            this.finished = false;
+            this.chooser = { piles, index: 0 };
+            if (!this.isOpen()) this.mount();
+            this.renderChooser();
+            return false;
+        }
         this.chooser = null;
-        return this.start(this.pileItems(id), { pile: id, tally });
+        return this.start(items, { pile: id, tally });
     }
 
     /** After a promote: the same pile, the run's tally, one more promoted. */
@@ -115,7 +132,11 @@ class DashboardInboxTriage {
         this._resume = null;
         if (!state) return false;
         const tally = { ...state.tally, promoted: state.tally.promoted + 1 };
-        const items = this.pileItems(state.pile);
+        // Only what the run had not reached yet. The pile rebuilt from scratch
+        // still holds every link skipped before the promote, which put the run
+        // back on its first card.
+        const ahead = new Set(state.ids || []);
+        const items = this.pileItems(state.pile).filter((item) => ahead.has(item.id));
         if (!items.length) {
             // The promote was the last one: say so rather than opening nothing.
             this.pile = state.pile;
@@ -399,6 +420,15 @@ class DashboardInboxTriage {
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) {
             return;
         }
+        // Enter and Space on a focused button press that button. Taking them
+        // for the selected pile or for Open meant Tab to × and Enter started a
+        // run, and Enter on Delete opened the link. Pile options stay with the
+        // chooser below, which starts the selected one.
+        if ((e.key === 'Enter' || e.key === ' ')
+            && e.target?.closest?.('button:not([data-triage-pile])')
+            && this.overlay?.contains(e.target)) {
+            return;
+        }
 
         if (this.chooser) {
             const piles = this.chooser.piles;
@@ -410,7 +440,12 @@ class DashboardInboxTriage {
             if (k === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); this.close(); return; }
             if (k === 'ArrowDown' || k === 'j') { e.preventDefault(); move(1); return; }
             if (k === 'ArrowUp' || k === 'k') { e.preventDefault(); move(-1); return; }
-            if (k === 'Enter') { e.preventDefault(); this.startPile(piles[this.chooser.index].id); }
+            if (k === 'Enter' || k === ' ') {
+                e.preventDefault();
+                // A pile reached by Tab is the one meant, not the highlighted one.
+                const focused = e.target?.closest?.('[data-triage-pile]')?.getAttribute('data-triage-pile');
+                this.startPile(focused || piles[this.chooser.index].id);
+            }
             return;
         }
         if (this.finished) {
@@ -495,13 +530,13 @@ class DashboardInboxTriage {
             window.open(url, '_blank', 'noopener,noreferrer');
         }
         if (!item.readAt) {
-            this.tally.read += 1;
             // Only record it locally once the write landed. Opening is the
             // point of this action and the tab is already open, so a failed
             // read mark advances anyway rather than trapping the user on a row
             // they have dealt with — it reports and moves on.
             if (await this.inbox.markReadReporting(item.id)) {
                 item.readAt = Date.now();
+                this.tally.read += 1;
             }
         }
         await this.afterAction(false, { readId: item.id });
@@ -514,9 +549,9 @@ class DashboardInboxTriage {
             return;
         }
         if (!item.readAt) {
-            this.tally.read += 1;
             if (await this.inbox.markReadReporting(item.id)) {
                 item.readAt = Date.now();
+                this.tally.read += 1;
             }
         }
         await this.afterAction(false, { readId: item.id });
@@ -536,7 +571,12 @@ class DashboardInboxTriage {
         const d = this.dash;
         d._pendingInboxPromoteId = item.id;
         d._pendingInboxTriageAdvance = true;
-        this._resume = { pile: this.pile || 'list', tally: { ...this.tally }, startedWith: this.startedWith };
+        this._resume = {
+            pile: this.pile || 'list',
+            tally: { ...this.tally },
+            startedWith: this.startedWith,
+            ids: this.queue.slice(this.index + 1).map((entry) => entry.id),
+        };
         this.inbox.promoteItem(item);
         this.close();
     }

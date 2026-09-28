@@ -106,6 +106,43 @@ test.describe('triage, pile first', () => {
         await expect(done.locator('[data-triage="next-pile"]')).toContainText('Waiting longest');
     });
 
+    test('Enter on a focused button presses that button', async ({ page }) => {
+        await openInbox(page);
+        await page.keyboard.press('t');
+        // A pile reached by Tab starts, not the highlighted one.
+        await chooser(page).locator('[data-triage-pile="noted"]').focus();
+        await page.keyboard.press('Enter');
+        await expect(card(page).locator('.health-focus-progress')).toHaveText(/^With a note · 1 of 1$/);
+
+        // Enter on Mark read marks it read; it used to open the link.
+        await page.evaluate(() => { window.__opened = 0; window.open = () => { window.__opened += 1; return null; }; });
+        await card(page).locator('[data-triage="read"]').focus();
+        await page.keyboard.press('Enter');
+        await expect(page.locator('#inbox-triage-overlay .health-focus-card--done')).toBeVisible();
+        expect(await page.evaluate(() => window.__opened)).toBe(0);
+
+        // And × closes.
+        await page.locator('#inbox-triage-overlay .inbox-triage-close').focus();
+        await page.keyboard.press('Enter');
+        await expect(page.locator('#inbox-triage-overlay')).toHaveCount(0);
+    });
+
+    test('a pile that emptied after it was counted leaves the chooser working', async ({ page }) => {
+        await openInbox(page);
+        await page.keyboard.press('t');
+        await expect(chooser(page).locator('[data-triage-pile="noted"]')).toBeVisible();
+        // Read elsewhere while the chooser was up.
+        await page.evaluate(() => {
+            const hit = window.dashboardInstance.inbox.items.find((i) => i.id === 'old1');
+            hit.readAt = Date.now();
+        });
+        await chooser(page).locator('[data-triage-pile="noted"]').click();
+        await expect(chooser(page)).toBeVisible();
+        await expect(chooser(page).locator('[data-triage-pile="noted"]')).toHaveCount(0);
+        await page.keyboard.press('Enter');
+        await expect(card(page).locator('.health-focus-progress')).toHaveText(/^Waiting longest · 1 of 2$/);
+    });
+
     test('Escape at the pile leaves without a run', async ({ page }) => {
         await openInbox(page);
         await page.keyboard.press('t');
