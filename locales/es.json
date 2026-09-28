@@ -1363,8 +1363,6 @@
     "changesTourActionsHeader": "En el encabezado",
     "changesTourConfigTitle": "La configuración se abre en pestañas",
     "changesTourConfigBody": "Apariencia y Comportamiento muestran sus ajustes enseguida, en pestañas, con una vista previa en vivo junto a Apariencia. Fecha y tiempo está en Apariencia, y hay una sección Registros.",
-    "changesTourWorkbenchTitle": "Marcadores → Lista es un banco de trabajo",
-    "changesTourWorkbenchBody": "Los filtros a la izquierda, la lista en el centro, un panel de edición a la derecha: para varios marcadores a la vez tanto como para uno.",
     "changesTourWidgetsTitle": "Widgets tuyos",
     "changesTourWidgetsBody": "Un widget personalizado lee tu propia dirección JSON y pone los números en el panel como cifras, filas o una barra. Tú dices qué campo va dónde y cada cuánto se actualiza.",
     "changesTourTagsTitle": "Etiquetas, sugeridas",

@@ -151,7 +151,7 @@
     background: color-mix(in srgb, var(--text-primary) 22%, transparent);
 }
 
-/* Config's tiles, the workbench's three columns, a widget's figures. */
+/* Config's tiles, a widget's figures. */
 .changes-tour-tiles {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -188,48 +188,12 @@
     text-overflow: ellipsis;
 }
 
-.changes-tour-bench {
-    display: flex;
-    gap: 0.4rem;
-    width: 100%;
-    height: 3.6rem;
-}
 
-.changes-tour-bench i {
-    display: flex;
-    flex-direction: column;
-    gap: 0.22rem;
-    min-width: 0;
-    padding: 0.3rem 0.35rem;
-    border: 1px solid var(--hairline, var(--border-primary));
-    border-radius: var(--radius-4, 6px);
-    font-style: normal;
-}
 
 /* The column's own name, then what stands in it: a tick, or a row. */
-.changes-tour-bench b {
-    font-weight: normal;
-    font-size: 0.85em;
-    color: var(--text-tertiary);
-    white-space: nowrap;
-    overflow: hidden;
-}
 
-.changes-tour-bench s,
-.changes-tour-bench u {
-    height: 0.3rem;
-    border-radius: 2px;
-    text-decoration: none;
-    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
-}
 
-.changes-tour-bench u.is-picked {
-    background: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-}
 
-.changes-tour-bench-filters { flex: 0 0 20%; }
-.changes-tour-bench-list { flex: 1; background: color-mix(in srgb, var(--text-primary) 5%, transparent); }
-.changes-tour-bench-edit { flex: 0 0 28%; }
 
 .changes-tour-widget {
     display: grid;

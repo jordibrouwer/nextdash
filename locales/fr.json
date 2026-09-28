@@ -1363,8 +1363,6 @@
     "changesTourActionsHeader": "Dans l’en-tête",
     "changesTourConfigTitle": "La config s’ouvre sur des onglets",
     "changesTourConfigBody": "Apparence et Comportement montrent leurs réglages tout de suite, en onglets, avec un aperçu en direct à côté d’Apparence. Date & météo est sous Apparence, et il y a une section Journaux.",
-    "changesTourWorkbenchTitle": "Favoris → Liste est un établi",
-    "changesTourWorkbenchBody": "Les filtres à gauche, la liste au milieu, un panneau d’édition à droite — pour plusieurs favoris à la fois comme pour un seul.",
     "changesTourWidgetsTitle": "Vos propres widgets",
     "changesTourWidgetsBody": "Un widget Personnalisé lit votre propre adresse JSON et pose les nombres sur le tableau de bord sous forme de chiffres, de lignes ou d’une barre. Vous dites quel champ va où et à quelle fréquence il se rafraîchit.",
     "changesTourTagsTitle": "Des tags, suggérés",

@@ -115,14 +115,6 @@
             <i><b>Header</b><em>plain</em></i>
             <i><b>Custom themes</b><em>2</em></i>
         </span>`,
-        // The three columns with what stands in them: filters that are ticked,
-        // rows that are picked, and the panel that edits what is picked. Empty
-        // boxes drew the layout and said nothing about the work.
-        workbench: `<span class="changes-tour-bench">
-            <i class="changes-tour-bench-filters"><b>filters</b><s></s><s></s><s></s></i>
-            <i class="changes-tour-bench-list"><b>list</b><u class="is-picked"></u><u class="is-picked"></u><u></u><u></u></i>
-            <i class="changes-tour-bench-edit"><b>2 picked</b><s></s><s></s></i>
-        </span>`,
         widgets: `<span class="changes-tour-widget"><b>12</b><span class="changes-tour-dim">queue</span>
             <b>340</b><span class="changes-tour-dim">done</span></span>`,
         tags: `<span class="changes-tour-tags"><i>selfhosted</i><i>tools</i><i>docs</i><i class="is-own">+</i></span>`,
@@ -183,12 +175,6 @@
                 title: t('changesTourConfigTitle', 'Config opens on tabs'),
                 body: t('changesTourConfigBody', 'Appearance and Behavior show their settings straight away, in tabs, with a live preview beside Appearance. Date & weather sits under Appearance, and there is a Logs section.'),
                 art: 'config',
-            },
-            {
-                key: 'workbench',
-                title: t('changesTourWorkbenchTitle', 'Bookmarks → List is a workbench'),
-                body: t('changesTourWorkbenchBody', 'Filters on the left, the list in the middle, an edit panel on the right — for several bookmarks at once as well as one.'),
-                art: 'workbench',
             },
             {
                 key: 'widgets',

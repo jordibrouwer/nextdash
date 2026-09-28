@@ -3,7 +3,7 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * The tour of a release that moved things: eight steps in a window, opened on
+ * The tour of a release that moved things: seven steps in a window, opened on
  * request (it no longer offers itself in a card), and the steps where a default
  * moved carry the choice itself. It shows rather than goes -- no step takes
  * the reader somewhere.
@@ -42,14 +42,14 @@ test('the tour walks its steps, forward and back', async ({ page }) => {
     await page.evaluate(() => window.ChangesTour.open());
 
     await expect(shownTour(page)).toHaveCount(1);
-    await expect(page.locator('.changes-tour-dot')).toHaveCount(8);
-    await expect(page.locator('.changes-tour-progress')).toHaveText(/1.*8/);
+    await expect(page.locator('.changes-tour-dot')).toHaveCount(7);
+    await expect(page.locator('.changes-tour-progress')).toHaveText(/1.*7/);
 
     // Forward to the last step, then back one: the window keeps its place.
-    for (let i = 0; i < 7; i += 1) await page.locator('#modal-actions button').first().click();
-    await expect(page.locator('.changes-tour-progress')).toHaveText(/8.*8/);
+    for (let i = 0; i < 6; i += 1) await page.locator('#modal-actions button').first().click();
+    await expect(page.locator('.changes-tour-progress')).toHaveText(/7.*7/);
     await page.locator('#modal-actions button').nth(1).click();
-    await expect(page.locator('.changes-tour-progress')).toHaveText(/7.*8/);
+    await expect(page.locator('.changes-tour-progress')).toHaveText(/6.*7/);
 });
 
 test('a step where a default moved puts the old arrangement back', async ({ page }) => {
@@ -108,25 +108,20 @@ test('only the first step points at the real screen', async ({ page }) => {
     // neither is there to be pointed at.
     for (const n of [2, 3]) {
         await page.locator('#modal-actions button').first().click();
-        await expect(page.locator('.changes-tour-progress')).toHaveText(new RegExp(`${n}.*8`));
+        await expect(page.locator('.changes-tour-progress')).toHaveText(new RegExp(`${n}.*7`));
         await expect(page.locator('[data-tour-lit]')).toHaveCount(0);
     }
     // And the config step draws the tiles it is about, with their names.
     await expect(page.locator('.changes-tour-tiles b').first()).toBeVisible();
     await expect(page.locator('.changes-tour-tiles i')).toHaveCount(6);
 
-    // The workbench step draws its three columns, with rows picked in the list.
-    await page.locator('#modal-actions button').first().click();
-    await expect(page.locator('.changes-tour-progress')).toHaveText(/4.*8/);
-    await expect(page.locator('.changes-tour-bench i')).toHaveCount(3);
-    await expect(page.locator('.changes-tour-bench u.is-picked')).toHaveCount(2);
 });
 
 test('a key a step names is drawn as a key', async ({ page }) => {
     await loadWithTourPending(page);
     await page.evaluate(() => window.ChangesTour.open());
-    for (let i = 0; i < 6; i += 1) await page.locator('#modal-actions button').first().click();
-    await expect(page.locator('.changes-tour-progress')).toHaveText(/7.*8/);
+    for (let i = 0; i < 5; i += 1) await page.locator('#modal-actions button').first().click();
+    await expect(page.locator('.changes-tour-progress')).toHaveText(/6.*7/);
 
     await expect(page.locator('.changes-tour-step-body kbd')).toHaveText('Shift + A');
 
@@ -147,7 +142,7 @@ test('a key a step names is drawn as a key', async ({ page }) => {
 test('no step walks off to another view', async ({ page }) => {
     await loadWithTourPending(page);
     await page.evaluate(() => window.ChangesTour.open());
-    for (let i = 0; i < 7; i += 1) {
+    for (let i = 0; i < 6; i += 1) {
         await expect(page.locator('[data-tour-go]')).toHaveCount(0);
         await page.locator('#modal-actions button').first().click();
     }

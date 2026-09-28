@@ -1404,8 +1404,6 @@
     "changesTourActionsHeader": "In the header",
     "changesTourConfigTitle": "Config opens on tabs",
     "changesTourConfigBody": "Appearance and Behavior show their settings straight away, in tabs, with a live preview beside Appearance. Date & weather sits under Appearance, and there is a Logs section.",
-    "changesTourWorkbenchTitle": "Bookmarks → List is a workbench",
-    "changesTourWorkbenchBody": "Filters on the left, the list in the middle, an edit panel on the right — for several bookmarks at once as well as one.",
     "changesTourWidgetsTitle": "Widgets of your own",
     "changesTourWidgetsBody": "A Custom widget reads your own JSON address and puts the numbers on the dashboard as figures, rows or a bar. You say which field goes where and how often it refreshes.",
     "changesTourTagsTitle": "Tags, suggested",

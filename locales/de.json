@@ -1363,8 +1363,6 @@
     "changesTourActionsHeader": "In der Kopfzeile",
     "changesTourConfigTitle": "Config öffnet mit Tabs",
     "changesTourConfigBody": "Erscheinungsbild und Verhalten zeigen ihre Einstellungen sofort, in Tabs, mit einer Live-Vorschau neben Erscheinungsbild. Datum & Wetter steht unter Erscheinungsbild, und es gibt einen Bereich Logs.",
-    "changesTourWorkbenchTitle": "Lesezeichen → Liste ist eine Werkbank",
-    "changesTourWorkbenchBody": "Filter links, die Liste in der Mitte, ein Bearbeitungsbereich rechts — für mehrere Lesezeichen auf einmal ebenso wie für eines.",
     "changesTourWidgetsTitle": "Eigene Widgets",
     "changesTourWidgetsBody": "Ein Custom-Widget liest Ihre eigene JSON-Adresse und stellt die Zahlen als Kennzahlen, Zeilen oder Balken aufs Dashboard. Sie sagen, welches Feld wohin gehört und wie oft es sich aktualisiert.",
     "changesTourTagsTitle": "Tags, vorgeschlagen",

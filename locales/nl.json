@@ -1363,8 +1363,6 @@
     "changesTourActionsHeader": "In de header",
     "changesTourConfigTitle": "Config opent op tabbladen",
     "changesTourConfigBody": "Uiterlijk en Gedrag tonen hun instellingen meteen, in tabbladen, met een live voorbeeld naast Uiterlijk. Datum & weer staat onder Uiterlijk, en er is een onderdeel Logs.",
-    "changesTourWorkbenchTitle": "Bladwijzers → Lijst is een werkbank",
-    "changesTourWorkbenchBody": "Filters links, de lijst in het midden, een bewerkpaneel rechts — voor meerdere bladwijzers tegelijk net zo goed als voor één.",
     "changesTourWidgetsTitle": "Widgets van jezelf",
     "changesTourWidgetsBody": "Een Custom-widget leest je eigen JSON-adres en zet de getallen als cijfers, rijen of een balk op het dashboard. Jij zegt welk veld waar komt en hoe vaak hij ververst.",
     "changesTourTagsTitle": "Tags, voorgesteld",

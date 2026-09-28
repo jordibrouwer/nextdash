@@ -1363,8 +1363,6 @@
     "changesTourActionsHeader": "在标题栏里",
     "changesTourConfigTitle": "配置以标签页打开",
     "changesTourConfigBody": "外观和行为直接显示设置，按标签页分开，外观旁边还有实时预览。日期与天气在外观下，另外还有一个日志分区。",
-    "changesTourWorkbenchTitle": "书签 → 列表是一张工作台",
-    "changesTourWorkbenchBody": "左边是筛选，中间是列表，右边是编辑面板——一次改一个书签可以，一次改一批也可以。",
     "changesTourWidgetsTitle": "属于你自己的小组件",
     "changesTourWidgetsBody": "自定义小组件会读取你自己的 JSON 地址，把里面的数字以数值、行或者一条柱状条的形式放到仪表板上。哪个字段放在哪、多久刷新一次，都由你说了算。",
     "changesTourTagsTitle": "标签，会主动推荐",
