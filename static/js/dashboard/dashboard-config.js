@@ -3117,6 +3117,7 @@ class DashboardConfig {
         { tab: 'bookmarks', titleKey: 'config.helpLibraryTitle', fallback: 'The Bookmarks view' },
         { tab: 'bookmarks', titleKey: 'config.helpCollectionHealthTitle', fallback: 'Collection health' },
         { tab: 'bookmarks', titleKey: 'config.helpBmKeysTitle', fallback: 'Keys' },
+        { tab: 'containers', titleKey: 'config.helpContainersSetupTitle', fallback: 'Before it works: Docker, a write token and sometimes root' },
         { tab: 'containers', titleKey: 'config.helpContainersTitle', fallback: 'The Containers view' },
         { tab: 'containers', titleKey: 'config.helpContainersConfigTitle', fallback: 'Setting it up' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
@@ -28706,7 +28707,11 @@ class DashboardConfig {
 
     /** Containers: a view of its own, for a Docker host rather than a bookmark. */
     renderHelpContainers() {
-        return this.helpPanel('config.helpContainersTitle', 'The Containers view',
+        // First: nothing else on this tab applies until the container can reach
+        // Docker, and two of the settings are security decisions.
+        return this.helpPanel('config.helpContainersSetupTitle', 'Before it works: Docker, a write token and sometimes root',
+            'config.helpContainersSetupBody', '')
+            + this.helpPanel('config.helpContainersTitle', 'The Containers view',
             'config.helpContainersBody', '')
             + this.helpPanel('config.helpContainersConfigTitle', 'Setting it up',
                 'config.helpContainersConfigBody', '');

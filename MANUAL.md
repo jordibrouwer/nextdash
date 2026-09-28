@@ -1039,6 +1039,9 @@ The first visit plays a five-step tour: the waiting room the inbox is, the three
 
 The **Containers view** shows the Docker containers on the machine nextDash runs on — the same connection the Containers widget and system widgets use. It needs the Docker socket ([§14.6](#146-what-it-needs)).
 
+> [!IMPORTANT]
+> It needs setting up first: the Docker socket, `NEXTDASH_DOCKER_CONTROL=1` for actions, a write token, and on some hosts `NEXTDASH_RUN_AS_ROOT=1`. See [§14.6](#146-what-it-needs).
+
 ### 14.1 Opening it
 
 Open it with the Containers icon in the header, `:docker`, or `/#docker`. It has no key of its own. Search also finds containers by name, and the **Containers** widget's tile opens the view.
@@ -1085,7 +1088,47 @@ Image update checks run on request and on an interval (Config → Containers →
 
 ### 14.6 What it needs
 
-See [§15.4](#154-system-widgets-and-what-they-need) for the socket mount nextDash needs, which the Containers view shares with the Containers widget and the system widgets. In short: mount `/var/run/docker.sock` and set `NEXTDASH_DOCKER_SOCKET`; add `NEXTDASH_DOCKER_CONTROL=1` and a write token for the view to do more than look. On Docker Desktop the socket is `root:root`, so the container may also need `NEXTDASH_RUN_AS_ROOT=1` to reach it.
+> [!IMPORTANT]
+> **Nothing in this chapter works until the container can reach Docker.** Four settings decide what the view can do:
+>
+> | Setting | Needed for | Why |
+> |---|---|---|
+> | Mount `/var/run/docker.sock` and set `NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock` | Seeing anything at all | nextDash talks to Docker through its socket. Without it the view shows a setup card and the Containers widget is hidden. `:ro` is enough to look. |
+> | `NEXTDASH_DOCKER_CONTROL=1` | Start, stop, pause, restart, update, remove | Off by default, so a mounted socket only reads. |
+> | `NEXTDASH_WRITE_TOKEN` | Keeping those actions yours | Access to the socket is root on the host: `:ro` on the mount does not stop the Docker API from accepting writes. With actions on and no token, anyone who can reach nextDash can stop, update or remove your containers. |
+> | `NEXTDASH_RUN_AS_ROOT=1` | Only when the socket belongs to gid 0 | See below. |
+
+**Why root is sometimes needed.** The container starts as root, fixes the ownership of `/app/data`, then drops to its own `nextdash` user. Before it does, it looks at the group that owns the socket and adds `nextdash` to it — the `docker` group, gid 281 on Unraid — so the unprivileged user can read the socket. When the socket is owned by root's own group (gid 0), as on Docker Desktop and some NAS systems, joining that group would amount to root anyway, so the entrypoint does not; the log then says `nextdash: /var/run/docker.sock is owned by gid 0; set NEXTDASH_RUN_AS_ROOT=1 to use it`, and Config → Containers shows **No access to the socket**. `NEXTDASH_RUN_AS_ROOT=1` keeps the whole app running as root. Set it only in that case.
+
+**Docker Compose:**
+
+```yaml
+services:
+  nextdash:
+    volumes:
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+      - NEXTDASH_DOCKER_CONTROL=1
+      - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string
+      # - NEXTDASH_RUN_AS_ROOT=1        # only if the log says "owned by gid 0"
+```
+
+**Unraid** (Docker → nextDash → Edit):
+
+| Config Type | Name | Container Path / Key | Host Path / Value |
+|---|---|---|---|
+| Path | Docker socket | `/var/run/docker.sock` | `/var/run/docker.sock` |
+| Variable | Docker socket variable | `NEXTDASH_DOCKER_SOCKET` | `/var/run/docker.sock` |
+| Variable | Write token | `NEXTDASH_WRITE_TOKEN` | a long random string |
+| Variable (add it) | Docker control | `NEXTDASH_DOCKER_CONTROL` | `1` |
+
+The first three rows are in the template; add the last with **Add another Path, Port, Variable, Label or Device** → *Variable*. Unraid's socket belongs to the `docker` group, so `NEXTDASH_RUN_AS_ROOT` is not needed there.
+
+**Synology and QNAP** use the same `/var/run/docker.sock` path. If the log names gid 0, add `NEXTDASH_RUN_AS_ROOT=1`.
+
+**Checking it.** Config → Containers shows the connection as the server sees it: whether the socket answers, whether actions are on, whether a write token is set, and whether nextDash recognises the container it runs in. [§15.4](#154-system-widgets-and-what-they-need) covers the same socket for the Containers widget and the other system widgets.
 
 ---
 

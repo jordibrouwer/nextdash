@@ -139,9 +139,35 @@ The **Processor**, **Memory**, **Disks** and **Containers** widgets report on th
       # - NEXTDASH_DOCKER_CONTROL=1                       # Containers: start/stop/update/remove
 ```
 
-Read-only access to the Docker socket still exposes every container, image, environment and mount. **A writable socket is root on the host** — `:ro` on the mount does not stop API writes — so if you set `NEXTDASH_DOCKER_CONTROL=1`, set `NEXTDASH_WRITE_TOKEN` as well (see [Security](#security)). Without it, the **Containers** view only reads.
+### Containers view
 
-**Containers view.** The same socket mount opens the `#docker` view (list, side panel with logs/stats/env, status glow, badge for waiting updates) as well as the widget. `NEXTDASH_DOCKER_CONTROL=1` adds start, stop, pause, restart, update and remove, each still behind the write token. Update checks ask the image registries on request and on an interval, and optionally GitHub with a token — set both under **Config → Containers**. On Docker Desktop the socket is `root:root`, so the container may also need `NEXTDASH_RUN_AS_ROOT=1` to reach it. The [manual](MANUAL.md#154-system-widgets-and-what-they-need) explains each mount, Synology and QNAP paths, and the Unraid template rows.
+> [!IMPORTANT]
+> **The Containers view needs three settings before it does anything — and one more on some hosts.**
+>
+> 1. **The Docker socket.** Mount `/var/run/docker.sock` and set `NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock`. Without both, the view shows a setup card and the Containers widget stays hidden. Read-only (`:ro`) is enough to look.
+> 2. **Actions: `NEXTDASH_DOCKER_CONTROL=1`.** Start, stop, pause, restart, update and remove need it. Without it the view only reads.
+> 3. **A write token: `NEXTDASH_WRITE_TOKEN`.** Access to the socket is root on the host — `:ro` on the mount does not stop the Docker API from accepting writes. Once actions are on, anyone who can reach nextDash can stop, update or remove your containers unless a write token is set. Set one.
+> 4. **Sometimes: `NEXTDASH_RUN_AS_ROOT=1`.** The container starts as root, then drops to its own `nextdash` user, which joins the group the socket belongs to (`docker`, gid 281 on Unraid). When the socket belongs to root's group (gid 0) — Docker Desktop, some NAS systems — that user cannot read it: the log says `is owned by gid 0` and Config → Containers shows **No access to the socket**. `NEXTDASH_RUN_AS_ROOT=1` keeps the app running as root so it can. Only set it then.
+
+**Docker Compose** — add to the nextDash service:
+
+```yaml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+      - NEXTDASH_DOCKER_CONTROL=1                        # start/stop/restart/update/remove
+      - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string
+      # - NEXTDASH_RUN_AS_ROOT=1                         # only if the log says "owned by gid 0"
+```
+
+**Unraid** — Docker → nextDash → Edit:
+
+- Fill in the template's **Docker socket** path (`/var/run/docker.sock`), **Docker socket variable** (`/var/run/docker.sock`) and **Write token**.
+- For actions: **Add another Path, Port, Variable…** → *Variable*, key `NEXTDASH_DOCKER_CONTROL`, value `1`.
+- Unraid's socket belongs to the `docker` group, so `NEXTDASH_RUN_AS_ROOT` is not needed there.
+
+Once it runs, the `#docker` view lists every container with a status glow, a side panel with logs, resources and release notes, and a badge for images with an update waiting. **Config → Containers** shows the connection as the server sees it — socket, actions, write token, its own container — and holds the update checks and an optional GitHub token. The [manual](MANUAL.md#146-what-it-needs) has the details, including Synology and QNAP.
 
 ---
 

@@ -6829,7 +6829,7 @@
     "helpBmViewSettingsTitle": "此视图的设置",
     "helpBmWorkThroughTitle": "逐个处理列表",
     "helpCollectionHealthTitle": "收藏健康",
-    "helpContainersConfigTitle": "设置",
+    "helpContainersConfigTitle": "Config → 容器",
     "helpContainersTitle": "容器视图",
     "helpInboxUnsortedTitle": "保留的链接：书签 → 未分类",
     "helpLibraryTitle": "书签视图",
@@ -6926,7 +6926,9 @@
     "tourContainers": "容器",
     "tourWhereContainers": "下次打开容器视图时",
     "tourWhereNow": "立即",
-    "tourDashboard": "仪表板"
+    "tourDashboard": "仪表板",
+    "helpContainersSetupTitle": "使用前：Docker、写入令牌，有时还需 root",
+    "helpContainersSetupBody": "<p class=\"config-help-callout\"><strong>容器视图需要先在 compose 文件或 Unraid 模板中设置。</strong>其中两项设置与安全有关——开启操作前请先阅读。</p><ol><li><strong>Docker 套接字。</strong>把 <code>/var/run/docker.sock</code> 挂载到容器中，并设置 <code>NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock</code>。两者缺一，视图会显示设置卡片，容器小组件也会隐藏。只读（<code>:ro</code>）即可查看。</li><li><strong>操作：<code>NEXTDASH_DOCKER_CONTROL=1</code>。</strong>启动、停止、暂停、重启、更新和删除都需要它。没有它，视图只能读取。</li><li><strong>写入令牌：<code>NEXTDASH_WRITE_TOKEN</code>。</strong>能访问套接字就等于拥有主机的 root 权限——挂载时的 <code>:ro</code> 并不能阻止 Docker API 接受写入。开启操作却没有令牌时，任何能访问 nextDash 的人都能停止、更新或删除你的容器。请务必设置。</li><li><strong>有时需要 root：<code>NEXTDASH_RUN_AS_ROOT=1</code>。</strong>容器会切换到自己的 <code>nextdash</code> 用户，并加入套接字所属的组（Unraid 上是 <code>docker</code>，gid 281）。当套接字属于 root 组（gid 0）时——例如 Docker Desktop 和某些 NAS 系统——该用户无法读取它，日志会显示 <em>owned by gid 0</em>。只有在这种情况下，才用此设置让应用以 root 运行。</li></ol><p><strong>Docker Compose</strong>——添加到 nextDash 服务中：</p><pre><code>volumes:\n  - /var/run/docker.sock:/var/run/docker.sock:ro\nenvironment:\n  - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock\n  - NEXTDASH_DOCKER_CONTROL=1\n  - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string\n  # - NEXTDASH_RUN_AS_ROOT=1</code></pre><p><strong>Unraid</strong>——Docker → nextDash → Edit：在模板中填写 <em>Docker socket</em> 路径、<em>Docker socket variable</em> 和 <em>Write token</em>；如需操作，点击 <em>Add another Path, Port, Variable</em> → Variable，键 <code>NEXTDASH_DOCKER_CONTROL</code>，值 <code>1</code>。Unraid 的套接字属于 docker 组，因此不需要 root。</p><p>之后 Config → 容器 会显示服务器所见的连接：套接字、操作是否开启、写入令牌，以及 nextDash 自身的容器。</p>"
   },
   "colors": {
     "title": "主题自定义",

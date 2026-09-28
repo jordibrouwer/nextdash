@@ -4247,6 +4247,37 @@ body.no-animations .config-new-features-panel-star {
     font-weight: 600;
 }
 
+/* A setting that has to be made before a feature works at all, and one that
+   is a security decision: the one kind of help text that should stand out
+   from the prose around it. */
+.config-help-prose .config-help-callout {
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--accent-warning, var(--accent-primary));
+    border-left-width: 4px;
+    border-radius: var(--radius-4, 6px);
+    background: color-mix(in srgb, var(--accent-warning, var(--accent-primary)) 9%, transparent);
+}
+
+.config-help-prose ol {
+    margin: 0 0 10px;
+    padding-left: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.config-help-prose pre {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-secondary);
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
 .config-help-prose code {
     padding: 1px 5px;
     border-radius: var(--radius-3, 4px);

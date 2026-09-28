@@ -6829,7 +6829,7 @@
     "helpBmViewSettingsTitle": "Einstellungen für diese Ansicht",
     "helpBmWorkThroughTitle": "Die Liste abarbeiten",
     "helpCollectionHealthTitle": "Zustand der Sammlung",
-    "helpContainersConfigTitle": "Einrichten",
+    "helpContainersConfigTitle": "Config → Container",
     "helpContainersTitle": "Die Container-Ansicht",
     "helpInboxUnsortedTitle": "Behaltene Links: Lesezeichen → Unsortiert",
     "helpLibraryTitle": "Die Lesezeichen-Ansicht",
@@ -6926,7 +6926,9 @@
     "tourContainers": "Container",
     "tourWhereContainers": "beim nächsten Öffnen der Container-Ansicht",
     "tourWhereNow": "sofort",
-    "tourDashboard": "Das Dashboard"
+    "tourDashboard": "Das Dashboard",
+    "helpContainersSetupTitle": "Bevor es läuft: Docker, ein Schreibtoken und manchmal root",
+    "helpContainersSetupBody": "<p class=\"config-help-callout\"><strong>Die Container-Ansicht muss zuerst in deiner Compose-Datei oder dem Unraid-Template eingerichtet werden.</strong> Zwei dieser Einstellungen betreffen die Sicherheit — lies sie, bevor du Aktionen einschaltest.</p><ol><li><strong>Der Docker-Socket.</strong> Binde <code>/var/run/docker.sock</code> in den Container ein und setze <code>NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock</code>. Ohne beides zeigt die Ansicht eine Einrichtungskarte, und das Container-Widget bleibt verborgen. Nur lesend (<code>:ro</code>) reicht zum Ansehen.</li><li><strong>Aktionen: <code>NEXTDASH_DOCKER_CONTROL=1</code>.</strong> Starten, Stoppen, Pausieren, Neustarten, Aktualisieren und Entfernen brauchen es. Ohne liest die Ansicht nur.</li><li><strong>Ein Schreibtoken: <code>NEXTDASH_WRITE_TOKEN</code>.</strong> Zugriff auf den Socket ist root auf dem Host — <code>:ro</code> am Mount hindert die Docker-API nicht daran, Schreibzugriffe anzunehmen. Mit Aktionen und ohne Token kann jeder, der nextDash erreicht, deine Container stoppen, aktualisieren oder entfernen. Setze eines.</li><li><strong>Manchmal root: <code>NEXTDASH_RUN_AS_ROOT=1</code>.</strong> Der Container wechselt zu seinem eigenen Benutzer <code>nextdash</code>, der der Gruppe des Sockets beitritt (<code>docker</code>, gid 281 auf Unraid). Gehört der Socket zur Gruppe von root (gid 0) — Docker Desktop, manche NAS-Systeme —, kann dieser Benutzer ihn nicht lesen, und das Log meldet <em>owned by gid 0</em>. Nur dann lässt du die App mit dieser Einstellung als root laufen.</li></ol><p><strong>Docker Compose</strong> — im nextDash-Service ergänzen:</p><pre><code>volumes:\n  - /var/run/docker.sock:/var/run/docker.sock:ro\nenvironment:\n  - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock\n  - NEXTDASH_DOCKER_CONTROL=1\n  - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string\n  # - NEXTDASH_RUN_AS_ROOT=1</code></pre><p><strong>Unraid</strong> — Docker → nextDash → Edit: Fülle im Template den Pfad <em>Docker socket</em>, die <em>Docker socket variable</em> und <em>Write token</em> aus; für Aktionen <em>Add another Path, Port, Variable</em> → Variable <code>NEXTDASH_DOCKER_CONTROL</code> = <code>1</code>. Der Socket von Unraid gehört zur docker-Gruppe, root ist dort also nicht nötig.</p><p>Config → Container zeigt danach die Verbindung, wie der Server sie sieht: den Socket, ob Aktionen an sind, das Schreibtoken und nextDashs eigenen Container.</p>"
   },
   "colors": {
     "title": "themenanpassung",
