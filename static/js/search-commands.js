@@ -3995,7 +3995,7 @@ class SearchCommandsComponent {
 
         if (sub === 'page' || 'page'.startsWith(sub) && sub !== 'page' && sub.length > 0) {
             if (sub === 'page') {
-                return this._handleHealthPageCommand(dashboard, args.slice(1));
+                return this._handleHealthPageCommand(window.dashboardInstance, args.slice(1));
             }
             return [{
                 name: '',
