@@ -153,6 +153,14 @@ KEEP_FILES=(
   .github/workflows/docker-publish.yml
 )
 
+# Files main takes from dev whole, every release. main's copy is never edited
+# on purpose, but a line added there by hand once (a "latest release" blurb)
+# survived every merge since: dev never touched that line, so git kept it.
+# Taking dev's copy outright means what main shows is what dev has.
+MIRROR_FILES=(
+  README.md
+)
+
 is_kept() {
   local candidate="$1"
   local k
@@ -166,6 +174,13 @@ git config merge.ours.driver true
 
 git checkout main
 if ! git merge dev --no-edit; then
+  # A content conflict in a mirrored file is settled by dev's copy.
+  for f in "${MIRROR_FILES[@]}"; do
+    if git diff --name-only --diff-filter=U | grep -qx -- "$f"; then
+      git checkout --theirs -- "$f" 2>/dev/null || true
+      git add -- "$f" 2>/dev/null || true
+    fi
+  done
   echo "Resolving modify/delete conflicts for dev-only paths on main..."
   while IFS= read -r path; do
     [[ -n "$path" ]] || continue
@@ -228,6 +243,17 @@ for f in "${KEEP_FILES[@]}"; do
     git add -- "$f" 2>/dev/null || true
   fi
 done
+
+# And outside a conflict: a merge that went clean still keeps main-only lines.
+for f in "${MIRROR_FILES[@]}"; do
+  if git cat-file -e "dev:${f}" 2>/dev/null; then
+    git checkout dev -- "$f" 2>/dev/null || true
+    git add -- "$f" 2>/dev/null || true
+  fi
+done
+if ! git diff --cached --quiet -- "${MIRROR_FILES[@]}"; then
+  git commit -m "Take ${MIRROR_FILES[*]} from dev." -- "${MIRROR_FILES[@]}"
+fi
 
 PRUNE_DIRS=(
   tests
