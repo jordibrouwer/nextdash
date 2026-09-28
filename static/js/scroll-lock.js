@@ -146,6 +146,11 @@ window.ScrollLock = new ScrollLock();
             window.ScrollLock.release(TOKEN);
             held = false;
         }
+        // While a modal holds the page, look again shortly. A close that ends
+        // in a transition which is cancelled, or never runs, fires neither a
+        // mutation nor a transitionend once the overlay is finally hidden, and
+        // the page stayed locked with nothing on screen. Only while held.
+        if (held) setTimeout(schedule, 300);
     };
 
     // Once per batch of mutations: a render can touch hundreds of nodes, and
@@ -167,6 +172,7 @@ window.ScrollLock = new ScrollLock();
         });
         // Transitions change visibility without a mutation at their end.
         document.addEventListener('transitionend', schedule, true);
+        document.addEventListener('transitioncancel', schedule, true);
         schedule();
     };
 

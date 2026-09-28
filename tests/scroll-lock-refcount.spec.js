@@ -11,6 +11,14 @@ async function loadDashboard(page) {
 
 const bodyOverflow = () => document.body.style.overflow;
 
+/** Who still holds the page, for the failure message: holders and open modals. */
+const lockHolders = () => JSON.stringify({
+    holders: [...window.ScrollLock.holders].map(String),
+    open: [...document.querySelectorAll('[aria-modal="true"], dialog[open], [data-scroll-lock]')]
+        .filter((e) => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden')
+        .map((e) => `${e.id}.${e.className}`),
+});
+
 /**
  * The page is scrollable when the viewport actually moves under a wheel — the
  * user-visible property, rather than a style string that only implies it.
@@ -42,7 +50,8 @@ test.describe('scroll lock is refcounted', () => {
         await page.waitForTimeout(400);
 
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
-        expect(await page.evaluate(bodyOverflow)).toBe('');
+        await expect.poll(() => page.evaluate(bodyOverflow), { message: 'still locked', timeout: 2000 }).toBe('')
+            .catch(async (e) => { throw new Error(`${e.message}\n${await page.evaluate(lockHolders)}`); });
         expect(await page.evaluate(() => window.ScrollLock.isLocked())).toBe(false);
         expect(await wheelScrolls(page)).toBe(true);
     });
@@ -64,7 +73,8 @@ test.describe('scroll lock is refcounted', () => {
 
             await page.locator('#modal-actions button').first().click();
             await page.waitForTimeout(400);
-            expect(await page.evaluate(bodyOverflow), `${section}: freed after close`).toBe('');
+            await expect.poll(() => page.evaluate(bodyOverflow), { message: `${section}: freed after close`, timeout: 2000 }).toBe('')
+                .catch(async (e) => { throw new Error(`${e.message}\n${await page.evaluate(lockHolders)}`); });
             expect(await wheelScrolls(page), `${section}: wheel works after close`).toBe(true);
         }
     });
