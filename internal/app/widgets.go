@@ -107,6 +107,9 @@ const (
 	// WidgetTypeDocker counts containers: how many run, how many do not, and
 	// which have a healthcheck that is failing.
 	WidgetTypeDocker WidgetType = "docker"
+	// WidgetTypeContainers lists the containers themselves, one row each with
+	// its state and how long it has run -- the names the docker widget counts.
+	WidgetTypeContainers WidgetType = "containers"
 	// WidgetTypeWeather reports current conditions beside a forecast, for the
 	// location already set for the header's own weather line.
 	WidgetTypeWeather WidgetType = "weather"
@@ -146,6 +149,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeDisks:      {},
 	WidgetTypeMemory:     {},
 	WidgetTypeDocker:     {},
+	WidgetTypeContainers: {},
 	WidgetTypeWeather:    {},
 	WidgetTypeCalendar:   {},
 	WidgetTypeRSS:        {},

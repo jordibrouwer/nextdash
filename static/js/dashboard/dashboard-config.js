@@ -15799,7 +15799,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'memory', 'disks', 'docker']],
+        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['ambient', ['weather', 'calendar', 'rss']],
     ];
 
@@ -18112,7 +18112,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'weather', 'calendar', 'rss', 'custom'];
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'custom'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -18150,6 +18150,44 @@ class DashboardConfig {
               label: ['config.widgetDockerRestarted', 'Name what just restarted'],
               hint: ['config.widgetDockerRestartedHint',
                      'Up for minutes while the rest have run for days — the shape of a crashloop.'] },
+        ],
+        containers: [
+            { key: 'show', kind: 'choice',
+              label: ['config.widgetContainersShow', 'Show'],
+              options: [
+                  ['running', ['config.widgetContainersShowRunning', 'Running containers']],
+                  ['all', ['config.widgetContainersShowAll', 'All containers']],
+              ] },
+            { key: 'sort', kind: 'choice',
+              label: ['config.widgetContainersSort', 'Order'],
+              options: [
+                  ['problems', ['config.widgetContainersSortProblems', 'What needs you first, then by name']],
+                  ['name', ['config.widgetContainersSortName', 'Name']],
+                  ['uptime-long', ['config.widgetContainersSortUptimeLong', 'Uptime, longest first']],
+                  ['uptime-short', ['config.widgetContainersSortUptimeShort', 'Uptime, shortest first']],
+              ] },
+            { key: 'detail', kind: 'choice',
+              label: ['config.widgetContainersDetail', 'Beside the name'],
+              hint: ['config.widgetContainersDetailHint',
+                     'Unhealthy, stopped or an update always shows instead.'],
+              options: [
+                  ['uptime', ['config.widgetContainersDetailUptime', 'Uptime']],
+                  ['tag', ['config.widgetContainersDetailTag', 'Image tag']],
+                  ['none', ['config.widgetContainersDetailNone', 'Nothing']],
+              ] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetContainersClick', 'A click opens'],
+              hint: ['config.widgetContainersClickHint',
+                     'The other one stays in the row’s menu. Without a WebUI, a click opens the Containers view.'],
+              options: [
+                  ['view', ['config.widgetContainersClickView', 'The Containers view']],
+                  ['webui', ['config.widgetContainersClickWebUI', 'Its WebUI']],
+              ] },
+            { key: 'rows', kind: 'int', min: 1, max: 20,
+              label: ['config.widgetContainersRows', 'Rows per column'],
+              hint: ['config.widgetContainersRowsHint', 'Two wide, the tile shows two columns of this many.'] },
+            { key: 'refreshSeconds', kind: 'int', min: 5, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
         ],
         memory: [
             { key: 'refreshSeconds', kind: 'int', min: 2, max: 3600,
@@ -20026,6 +20064,7 @@ class DashboardConfig {
                     + 'binary directly needs nothing at all.'],
             },
         };
+        notes.containers = notes.docker;
         const note = notes[type];
         if (!note) return '';
         return `
@@ -20167,6 +20206,7 @@ class DashboardConfig {
         const key = `config.widgetAbout.${type}`;
         const fallbacks = {
             docker: 'How many containers run, how many do not, and which have a failing healthcheck.',
+            containers: 'Your containers by name — what needs you first, and how long each has run.',
             memory: 'How much memory is really in use, with the file cache counted as the spare room it is.',
             disks: 'How full each disk is, and how much room is actually left on it.',
             cpu: 'How hard the processor is working, and whether work is queueing up behind it.',
@@ -20196,7 +20236,9 @@ class DashboardConfig {
     widgetTypeName(type) {
         const key = `dashboard.widgetType.${type}`;
         const label = this.dash.language?.t?.(key);
-        return label && label !== key ? label : String(type || 'widget');
+        if (label && label !== key) return label;
+        // Until a type's name is translated, it still has one in English.
+        return this.dash.renderCore?.widgetTypeLabel?.(type) || String(type || 'widget');
     }
 
     /*

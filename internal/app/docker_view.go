@@ -48,6 +48,7 @@ type dockerViewContainer struct {
 	Status         string             `json:"status"`
 	Health         string             `json:"health"`
 	Created        int64              `json:"created"`
+	StartedAt      int64              `json:"startedAt,omitempty"`
 	Ports          []dockerViewPort   `json:"ports"`
 	ComposeProject string             `json:"composeProject,omitempty"`
 	WebUI          string             `json:"webui,omitempty"`
@@ -68,6 +69,47 @@ func dockerHealthFromStatus(status string) string {
 		return "starting"
 	}
 	return ""
+}
+
+// dockerStartedFromStatus reads a start time back out of Docker's "Up 3 days".
+// The list call has no StartedAt, and an inspect per container to get one
+// would multiply every refresh by the container count. The answer is as coarse
+// as the words -- "3 days" is any time on the third day -- which is enough to
+// order containers by how long they have run. Anything not running is 0.
+func dockerStartedFromStatus(status string, now time.Time) int64 {
+	rest, ok := strings.CutPrefix(status, "Up ")
+	if !ok {
+		return 0
+	}
+	if i := strings.Index(rest, " ("); i >= 0 {
+		rest = rest[:i]
+	}
+	var ago time.Duration
+	switch rest {
+	case "Less than a second":
+		ago = 0
+	case "About a minute":
+		ago = time.Minute
+	case "About an hour":
+		ago = time.Hour
+	default:
+		count, unit, found := strings.Cut(rest, " ")
+		n, err := strconv.Atoi(count)
+		if !found || err != nil {
+			return 0
+		}
+		units := map[string]time.Duration{
+			"second": time.Second, "minute": time.Minute, "hour": time.Hour,
+			"day": 24 * time.Hour, "week": 7 * 24 * time.Hour,
+			"month": 30 * 24 * time.Hour, "year": 365 * 24 * time.Hour,
+		}
+		size, known := units[strings.TrimSuffix(unit, "s")]
+		if !known {
+			return 0
+		}
+		ago = time.Duration(n) * size
+	}
+	return now.Add(-ago).Unix()
 }
 
 // dockerSelfIDFrom is split from dockerSelfID so tests can hand it inputs
@@ -147,6 +189,7 @@ func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 	v := dockerViewContainer{
 		ID: c.ID, Name: c.name(), Image: c.Image, Tag: tag, State: c.State,
 		Status: c.Status, Health: dockerHealthFromStatus(c.Status), Created: c.Created,
+		StartedAt:      dockerStartedFromStatus(c.Status, time.Now()),
 		ComposeProject: c.Labels["com.docker.compose.project"], WebUI: dockerWebUI(c),
 		Self: isDockerSelf(c.ID, self), Ports: []dockerViewPort{},
 	}

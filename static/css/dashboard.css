@@ -7070,6 +7070,11 @@ button.dashboard-widget-stat.keyboard-selected {
 .dashboard-widget-footnote--warn { color: var(--accent-warning); }
 .dashboard-widget-footnote--good { color: var(--accent-success); }
 
+/* The container list's count sits above its rows rather than closing them. */
+.dashboard-widget-footnote.dashboard-widget-containers-count {
+    margin: 0 0 4px;
+}
+
 .dashboard-widget-panel .dashboard-widget-headline {
     margin-bottom: 0;
 }
