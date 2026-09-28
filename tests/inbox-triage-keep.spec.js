@@ -33,6 +33,10 @@ test('Keep promotes an inbox item to Unsorted without opening a modal', async ({
     await page.keyboard.press('t');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
+    // Triage asks for a pile first; links added just now are new this week,
+    // newest first, the order these assertions were written against.
+    await page.locator('[data-triage-pile="new"]').click();
+    await expect(page.locator('[data-triage-chooser]')).toHaveCount(0);
 
     await page.keyboard.press('Shift+K');
 
@@ -145,6 +149,10 @@ test('on the triage card r marks read and moves on, without keeping', async ({ p
     await page.keyboard.press('t');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
+    // Triage asks for a pile first; links added just now are new this week,
+    // newest first, the order these assertions were written against.
+    await page.locator('[data-triage-pile="new"]').click();
+    await expect(page.locator('[data-triage-chooser]')).toHaveCount(0);
     const first = await page.evaluate(() => window.dashboardInstance.inbox.triage.currentItem().url);
     const index = await page.evaluate(() => window.dashboardInstance.inbox.triage.index);
 

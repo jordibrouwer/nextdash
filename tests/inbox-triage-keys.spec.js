@@ -35,6 +35,10 @@ async function openTriage(page) {
     await page.keyboard.press('t');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
+    // Triage asks for a pile first; links added just now are new this week,
+    // newest first, the order these assertions were written against.
+    await page.locator('[data-triage-pile="new"]').click();
+    await expect(page.locator('[data-triage-chooser]')).toHaveCount(0);
 }
 
 const index = (page) => page.evaluate(() => window.dashboardInstance.inbox.triage.index);
