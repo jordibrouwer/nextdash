@@ -208,7 +208,9 @@
                 this.notify(this.t('config.bmWorkThroughEmpty', 'Nothing in this list to work through.'), 'info');
                 return;
             }
-            this.libraryFocus(issues)?.open();
+            // First the pile, then the cards: a walk that opened straight onto
+            // a bookmark never said what it was for.
+            this.libraryFocus(issues)?.openChooser();
         },
 
         /**

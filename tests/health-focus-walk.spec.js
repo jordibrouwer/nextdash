@@ -36,6 +36,7 @@ const SIX = [
 async function openWalk(page) {
     await openBookmarksWithHealth(page, (issues) => SIX.map((fields, i) => ({ ...issues[i], ...fields })));
     await page.locator('[data-bm-work-through]').click();
+    await page.locator('[data-focus-pile="list"]').click();
     await expect(page.locator('.health-focus-card')).toBeVisible();
 }
 
@@ -54,7 +55,7 @@ async function walkTo(page, name) {
 test.describe('Work through', () => {
     test('shows one bookmark at a time, out of the ones the list has', async ({ page }) => {
         await openWalk(page);
-        await expect(progress(page)).toHaveText('1 of 6');
+        await expect(progress(page)).toHaveText(/1 of 6$/);
         expect(SIX.map((b) => b.name)).toContain((await title(page).textContent())?.trim());
     });
 
@@ -62,21 +63,21 @@ test.describe('Work through', () => {
         await openWalk(page);
         const first = (await title(page).textContent())?.trim();
         await page.keyboard.press('j');
-        await expect(progress(page)).toHaveText('2 of 6');
+        await expect(progress(page)).toHaveText(/2 of 6$/);
         await expect(title(page)).not.toHaveText(first || '');
         await page.keyboard.press('k');
-        await expect(progress(page)).toHaveText('1 of 6');
+        await expect(progress(page)).toHaveText(/1 of 6$/);
         await expect(title(page)).toHaveText(first || '');
         await page.keyboard.press('Escape');
         await expect(page.locator('.health-focus-overlay')).toHaveCount(0);
     });
 
-    test('stops at the end of the queue rather than wrapping', async ({ page }) => {
+    test('ends on a summary at the end of the queue rather than wrapping', async ({ page }) => {
         await openWalk(page);
         for (let i = 1; i < SIX.length; i += 1) await page.keyboard.press('j');
-        await expect(progress(page)).toHaveText('6 of 6');
+        await expect(progress(page)).toHaveText(/6 of 6$/);
         await page.keyboard.press('j');
-        await expect(progress(page)).toHaveText('6 of 6');
+        await expect(page.locator('.health-focus-card--done')).toBeVisible();
     });
 
     test('the list behind the overlay does not also act on the keys', async ({ page }) => {
@@ -109,13 +110,10 @@ test.describe('the card\'s badges', () => {
 
     test('a muted bookmark says so, and an unmuted one does not', async ({ page }) => {
         await openWalk(page);
+        // A comes before C in the walk, and walking past the end ends it.
+        await walkTo(page, 'Drift A');
+        await expect(page.locator('.health-focus-card .health-muted-badge')).toHaveCount(0);
         await walkTo(page, 'Drift C');
         await expect(page.locator('.health-focus-card .health-muted-badge')).toBeVisible();
-        await walkTo(page, 'Drift A').catch(async () => {
-            // Drift A came before C: back to the start and forward again.
-            for (let i = 0; i < SIX.length; i += 1) await page.keyboard.press('k');
-            await walkTo(page, 'Drift A');
-        });
-        await expect(page.locator('.health-focus-card .health-muted-badge')).toHaveCount(0);
     });
 });

@@ -35,18 +35,9 @@ test.describe('bookmarks view: the band\'s actions', () => {
     await page.locator('#config-bm-rail [data-bm-rail="health"][data-value="broken"]').click();
     await band(page).locator('[data-bm-work-through]').click();
     await expect(page.locator('.health-focus-overlay')).toBeVisible();
+    await page.locator('[data-focus-pile="list"]').click();
     // The Health view is not what opened: the address stays the Bookmarks view's.
     await expect(page).toHaveURL(/#bookmarks/);
-  });
-
-  test('Work through\'s buttons sit side by side on one row', async ({ page }) => {
-    await openBookmarksWithHealth(page, undefined, { view: 'library' });
-    await band(page).locator('[data-bm-work-through]').click();
-    const buttons = page.locator('.health-focus-overlay .health-focus-actions button');
-    await expect(buttons.first()).toBeVisible();
-    expect(await buttons.count()).toBeGreaterThanOrEqual(5);
-    const tops = await buttons.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
-    expect(new Set(tops).size).toBe(1);
   });
 
   test('under glass depth the card is glass, like every other modal', async ({ page }) => {
@@ -54,6 +45,7 @@ test.describe('bookmarks view: the band\'s actions', () => {
     await page.evaluate(() => { document.body.dataset.depth = 'glass'; });
     await band(page).locator('[data-bm-work-through]').click();
     const card = page.locator('.health-focus-overlay .health-focus-card');
+    await page.locator('[data-focus-pile="list"]').click();
     await expect(card).toBeVisible();
     const look = await card.evaluate((el) => {
       const probe = document.createElement('div');

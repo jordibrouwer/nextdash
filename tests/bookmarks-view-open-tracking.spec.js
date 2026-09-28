@@ -62,7 +62,8 @@ test.describe('bookmarks view: opens count', () => {
   test('Open in Work through', async ({ page }) => {
     const { opens } = await setup(page);
     await page.locator('.config-view--library .lvs-header-actions [data-bm-work-through]').click();
-    await page.locator('.health-focus-overlay [data-focus="open"]').click();
+    await page.locator('[data-focus-pile="list"]').click();
+    await page.locator('.health-focus-overlay .health-focus-open').click();
     await expect.poll(() => opens.length).toBe(1);
   });
 

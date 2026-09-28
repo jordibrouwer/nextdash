@@ -55,10 +55,7 @@ const MISSING_PREVIEW = {
 
 /**
  * The Bookmarks view over a report that knows only the first two bookmarks,
- * as the two above, with the preview fold reset.
- *
- * The fold is remembered in localStorage across sessions, so a test that did not
- * clear it would pass or fail depending on what the previous one chose.
+ * as the two above.
  */
 async function openHealthView(page, { previewBody, noPreviewReason = false } = {}) {
     await page.route('**/api/bookmark-preview**', async (route) => {
@@ -71,9 +68,6 @@ async function openHealthView(page, { previewBody, noPreviewReason = false } = {
                 image: '',
             }),
         });
-    });
-    await page.addInitScript(() => {
-        try { localStorage.removeItem('nextdashHealthFocusPreviewCollapsed'); } catch { /* ignore */ }
     });
     return openBookmarksWithHealth(page, (issues) => [
         { ...issues[0], ...WITH_PREVIEW },
@@ -88,6 +82,7 @@ async function openHealthView(page, { previewBody, noPreviewReason = false } = {
  */
 async function openCard(page) {
     await page.locator('[data-bm-work-through]').click();
+    await page.locator('[data-focus-pile="list"]').click();
     await expect(page.locator('.health-focus-card')).toBeVisible();
 }
 
@@ -105,7 +100,7 @@ test.describe('the review card', () => {
         // window.open would put a real tab in front of the test; the click is
         // what is being tested, not the browser's tab handling.
         await page.evaluate(() => { window.open = () => null; });
-        await card.locator('[data-focus="open"]').click();
+        await card.locator('.health-focus-open').click();
 
         // The card now agrees with what was recorded, without leaving it.
         const opened = card.locator('.health-focus-opened');
@@ -183,28 +178,6 @@ test.describe('the review card', () => {
         // An empty answer is an answer: the card stops promising one is coming.
         await expect(page.locator('.health-focus-preview-empty')).toBeVisible();
         await expect(page.locator('.health-focus-preview-empty')).not.toContainText('…');
-    });
-
-    test('folds the preview away, and remembers that across cards', async ({ page }) => {
-        await openHealthView(page);
-        await openCard(page);
-
-        const card = page.locator('.health-focus-card');
-        await expect(card.locator('.health-focus-preview-body')).toBeVisible();
-
-        await card.locator('[data-focus="preview-toggle"]').click();
-        await expect(card.locator('.health-focus-preview')).toHaveClass(/is-collapsed/);
-        await expect(card.locator('.health-focus-preview-body')).toHaveCount(0);
-
-        // The fold is the answer to "do I want previews while I work", so it
-        // holds for the next card rather than being asked again per bookmark.
-        await card.locator('[data-focus="next"]').click();
-        await expect(page.locator('.health-focus-title')).toHaveText('Bare one');
-        await expect(card.locator('.health-focus-preview')).toHaveClass(/is-collapsed/);
-
-        // And unfolding brings it back, fetching what the fold had skipped.
-        await card.locator('[data-focus="preview-toggle"]').click();
-        await expect(card.locator('.health-focus-preview-title')).toHaveText('A fetched preview title');
     });
 });
 

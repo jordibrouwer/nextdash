@@ -158,7 +158,7 @@ test.describe('a review session, from the offer to the end', () => {
 
         // ── Open it, and watch the card change its mind ─────────────────────
         await expect(card(page).locator('.health-focus-opened')).toHaveClass(/is-never/);
-        await card(page).locator('[data-focus="open"]').click();
+        await card(page).locator('.health-focus-open').click();
 
         await expect(card(page).locator('.health-focus-opened')).not.toHaveClass(/is-never/);
         await expect(card(page).locator('.health-focus-reasons li.is-resolved')).toContainText('Never opened');
@@ -314,10 +314,11 @@ test.describe('an open, after a reload', () => {
         const workThrough = page.locator('[data-bm-work-through]');
         test.skip(!(await workThrough.count()), 'health is off on this install');
         await workThrough.click();
+        await page.locator('[data-focus-pile="list"]').click();
         test.skip(!(await card(page).count()), 'the seeded bookmark is not a health issue on this install');
         await expect(card(page)).toBeVisible({ timeout: 15_000 });
         await expect(card(page).locator('.health-focus-title')).toContainText(bookmarks[0].name);
-        await card(page).locator('[data-focus="open"]').click();
+        await card(page).locator('.health-focus-open').click();
         await expect(card(page).locator('.health-focus-opened')).not.toHaveClass(/is-never/);
 
         // The real assertion: ask the server, not the page.
