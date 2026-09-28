@@ -113,36 +113,18 @@ function renderSection({ title, items }) {
 
 const sections = registry.buildPrintSections(cheatLabel).map(renderSection);
 
-const logoSource = path.join(root, 'logo-ascii-on-black-large.png');
-const logoTransparent = path.join(root, 'logo-ascii-transparent.png');
+/*
+ * The wordmark as text rather than the PNG. The PNG is neon green on black —
+ * right for the app, wrong on paper, where it printed as a pale smudge. As text
+ * it is vector-sharp at any size and takes whatever ink the sheet uses.
+ * String.raw keeps the backslashes; the one backtick is spliced in.
+ */
+const logoAscii = String.raw`                 _   ____            _
+ _ __   _____  _| |_|  _ \  __ _ ___| |__
+| '_ \ / _ \ \/ / __| | | |/ _${'`'} / __| '_ \
+| | | |  __/>  <| |_| |_| | (_| \__ \ | | |
+|_| |_|\___/_/\_\\__|____/ \__,_|___/_| |_|`;
 
-function ensureTransparentLogo() {
-    try {
-        const needsRefresh = !fs.existsSync(logoTransparent)
-            || fs.statSync(logoSource).mtimeMs > fs.statSync(logoTransparent).mtimeMs;
-        if (!needsRefresh) return logoTransparent;
-        const { spawnSync } = require('child_process');
-        const py = spawnSync('python3', ['-c', `
-from PIL import Image
-img = Image.open(${JSON.stringify(logoSource)}).convert('RGBA')
-px = img.load()
-for y in range(img.size[1]):
-    for x in range(img.size[0]):
-        r, g, b, a = px[x, y]
-        if r < 40 and g < 40 and b < 40:
-            px[x, y] = (0, 0, 0, 0)
-img.save(${JSON.stringify(logoTransparent)})
-`], { encoding: 'utf8' });
-        if (py.status === 0 && fs.existsSync(logoTransparent)) {
-            return logoTransparent;
-        }
-    } catch {
-        // fall back to opaque logo
-    }
-    return logoSource;
-}
-
-const logoPath = ensureTransparentLogo().replace(/\\/g, '/');
 const fontLatin = path.join(root, 'static/fonts/source-code-pro-latin.woff2').replace(/\\/g, '/');
 const generated = new Date().toISOString().slice(0, 10);
 
@@ -159,111 +141,85 @@ const html = `<!DOCTYPE html>
     src: url('file://${fontLatin}') format('woff2');
   }
 
+  /* Made to be printed. White paper, black ink, and only two fills — the
+     light grey of a section band and of every other row — both pale enough to
+     cost a printer next to nothing and still read on a black-and-white one.
+     print-color-adjust keeps those fills: without it Chrome drops backgrounds
+     and the zebra that guides the eye across a row goes with them. */
   *, *::before, *::after { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
+  @page { size: A4; margin: 11mm 12mm 12mm; }
+
   :root {
-    --bg: #0a0a0a;
-    --bg-card: #141414;
-    --bg-dots: #1c2418;
-    --text: #e4e8e0;
-    --text-muted: #8a9688;
-    --text-section: #6b8060;
-    --accent: #39ff14;
-    --accent-soft: rgba(57, 255, 20, 0.14);
-    --border: #2a3528;
-    --radius: 10px;
+    --ink: #111;
+    --ink-soft: #222;
+    --ink-muted: #555;
+    --ink-faint: #888;
+    --band: #e6e6e6;
+    --zebra: #f4f4f4;
+    --rule: #999;
+    --mono: "Source Code Pro", ui-monospace, monospace;
+    --sans: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
 
   html, body {
     margin: 0;
     padding: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Source Code Pro", ui-monospace, monospace;
-    font-size: 8pt;
+    background: #fff;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 7.6pt;
     line-height: 1.3;
-  }
-
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image: radial-gradient(var(--bg-dots) 0.65px, transparent 0.65px);
-    background-size: 14px 14px;
-    opacity: 0.55;
-  }
-
-  .page {
-    max-width: 48rem;
-    margin: 0 auto;
-    padding: 1.1cm 1.25cm 1.4cm;
   }
 
   .brand {
     text-align: center;
-    margin: 0 0 0.8rem;
-    padding-bottom: 0.6rem;
-    border-bottom: 1px solid var(--border);
+    margin: 0 0 3mm;
   }
 
-  .brand img {
-    display: block;
-    width: min(17rem, 70vw);
-    height: auto;
-    margin: 0 auto 0.55rem;
-    filter: drop-shadow(0 0 22px rgba(57, 255, 20, 0.28));
+  .logo {
+    display: inline-block;
+    margin: 0;
+    text-align: left;
+    font: 700 7.4pt/1.12 var(--mono);
+    white-space: pre;
+    color: var(--ink);
   }
 
   .brand-tag {
-    margin: 0;
-    font-size: 0.62rem;
+    margin: 1.5mm 0 0;
+    font-size: 7pt;
     font-weight: 700;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
-    color: var(--accent);
-    opacity: 0.92;
-  }
-
-  .sheet {
-    background: color-mix(in srgb, var(--bg-card) 92%, #000 8%);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.85rem 0.95rem 0.6rem;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(57, 255, 20, 0.06);
-    /* Two columns: half the line length, twice the rows per page, and a
-       shortcut line is short enough that nothing has to wrap for it. */
-    column-count: 2;
-    column-gap: 1.1rem;
-    column-rule: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    color: var(--ink-muted);
   }
 
   .lead {
-    margin: 0 0 0.7rem;
-    color: var(--text-muted);
-    font-size: 0.86rem;
+    margin: 0 0 3.5mm;
+    padding: 2mm 3mm;
+    border: 0.6pt solid var(--rule);
+    border-radius: 1.5mm;
+    color: var(--ink-soft);
+    font-size: 7.2pt;
     line-height: 1.45;
-    /* Across both columns: it is one sentence about the sheet, not a section. */
-    column-span: all;
   }
 
   .lead strong, .lead code {
-    color: var(--text);
+    color: var(--ink);
+    font-family: var(--mono);
     font-weight: 700;
   }
 
-  .lead code {
-    padding: 0.05em 0.3em;
-    border-radius: 0.25em;
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-size: 0.95em;
+  /* Two columns: half the line length, twice the rows per page, and a
+     shortcut line is short enough that nothing has to wrap for it. */
+  .sheet {
+    column-count: 2;
+    column-gap: 6mm;
   }
 
   .cheat-group {
-    margin: 0;
-    padding: 0.5rem 0 0.3rem;
-    border-top: 1px solid var(--border);
+    margin: 0 0 3mm;
     /* A section may flow across a column or a page — with 32 rows under
        Bookmarks it has to — but never so that its heading is stranded at the
        foot of one, and never with a row split down the middle. */
@@ -271,26 +227,16 @@ const html = `<!DOCTYPE html>
   }
 
   h2 {
-    break-after: avoid;
-  }
-
-  tr {
-    break-inside: avoid;
-  }
-
-  .cheat-group:first-of-type {
-    border-top: none;
-    padding-top: 0;
-  }
-
-  h2 {
-    margin: 0 0 0.35rem;
-    font-size: 1.05rem;
+    margin: 0 0 1mm;
+    padding: 1mm 2mm;
+    background: var(--band);
+    border-left: 2.5pt solid var(--ink);
+    font-size: 8pt;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: lowercase;
-    color: var(--accent);
     line-height: 1.2;
+    break-after: avoid;
   }
 
   table {
@@ -300,89 +246,73 @@ const html = `<!DOCTYPE html>
     margin: 0;
   }
 
+  tr { break-inside: avoid; }
+
+  tr:nth-child(even) td { background: var(--zebra); }
+
   td {
     vertical-align: top;
-    padding: 0.1rem 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-    line-height: 1.28;
+    padding: 0.6mm 1.5mm;
+    line-height: 1.3;
   }
-
-  tr:last-child td { border-bottom: none; }
 
   td.keys {
-    width: 36%;
-    padding-right: 0.45rem;
-    white-space: normal;
+    width: 38%;
     overflow-wrap: anywhere;
   }
 
+  /* The description in a sans: next to a column of monospace keys it tells
+     key from meaning at a glance, and it sets tighter, so fewer rows wrap. */
   td.desc {
-    width: 64%;
-    color: var(--text-muted);
-    font-size: 0.9rem;
+    width: 62%;
+    color: var(--ink-soft);
+    font-family: var(--sans);
+    font-size: 7.6pt;
   }
 
-  /* Chips wrap rather than overflow.
-     Not every "key" here is a chord: the sheet also carries Right-click
-     bookmark, Long-press category (~500 ms), Drag // in category title and the
-     palette's :buttonbar bottom. With nowrap those ran straight out of the key
-     column and printed on top of the description beside them. A chord is
-     unaffected — Ctrl + C is two chips of one token each, and neither has
-     anywhere to break. (No backticks in this comment: the stylesheet lives
-     inside a template literal.) */
+  /* Keys bold, without a chip. A chip is a box of ink around every key, and on
+     paper the weight alone reads as a key. overflow-wrap still lets the long
+     ones — Right-click bookmark, Long-press category (~500 ms), Drag // in
+     category title — wrap inside their column instead of running into the
+     description. (No backticks in this comment: the stylesheet lives inside a
+     template literal.) */
   kbd {
-    display: inline-block;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    padding: 0.03em 0.28em;
-    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
-    border-radius: 0.28em;
-    background: color-mix(in srgb, var(--accent-soft) 80%, #111 20%);
-    color: var(--accent);
-    font-family: inherit;
-    font-size: 0.78rem;
+    font-family: var(--mono);
+    font-size: 7.2pt;
     font-weight: 700;
-    line-height: 1.25;
+    color: var(--ink);
+    overflow-wrap: anywhere;
   }
+
+  .keys-command kbd { font-weight: 600; }
 
   .kbd-sep, .kbd-plus {
-    margin: 0 0.18em;
-    color: var(--text-section);
-    font-size: 0.72rem;
+    margin: 0 0.8mm;
+    color: var(--ink-faint);
     font-weight: 400;
   }
 
   .footer {
-    margin: 0.85rem 0 0;
+    margin: 3mm 0 0;
+    padding-top: 1.5mm;
+    border-top: 0.6pt solid var(--rule);
     text-align: center;
-    font-size: 0.68rem;
-    color: var(--text-section);
+    font-size: 6.6pt;
+    color: var(--ink-muted);
     letter-spacing: 0.04em;
-  }
-
-  .footer a {
-    color: var(--accent);
-    text-decoration: none;
-  }
-
-  @media print {
-    .page { padding: 0.75cm 1cm 1cm; }
-    .sheet { box-shadow: none; }
   }
 </style>
 </head>
 <body>
-<div class="page">
   <header class="brand">
-    <img src="file://${logoPath}" alt="nextDash">
+    <pre class="logo" aria-label="nextDash">${esc(logoAscii)}</pre>
     <p class="brand-tag">keyboard shortcuts</p>
   </header>
-  <div class="sheet">
-    <p class="lead">Press <strong>!</strong> or <strong>F1</strong> on the dashboard for the searchable live list (also <strong>Config → Help → Keyboard</strong>). <code>:cheat</code> and <code>:help</code> open the same modal. This printable sheet is generated from the same source.</p>
+  <p class="lead">Press <strong>!</strong> or <strong>F1</strong> on the dashboard for the searchable live list (also <strong>Config → Help → Keyboard</strong>). <code>:cheat</code> and <code>:help</code> open the same modal. This printable sheet is generated from the same source.</p>
+  <main class="sheet">
 ${sections.join('\n')}
-  </div>
+  </main>
   <p class="footer">nextdash.cc · generated ${generated} · <code>npm run generate:cheatsheet</code></p>
-</div>
 </body>
 </html>`;
 
@@ -462,7 +392,7 @@ function copyPdfToStatic() {
         path: pdfPath,
         format: 'A4',
         printBackground: true,
-        margin: { top: '12mm', bottom: '12mm', left: '12mm', right: '12mm' },
+        preferCSSPageSize: true,
     });
     await browser.close();
     console.log('Wrote', pdfPath);
