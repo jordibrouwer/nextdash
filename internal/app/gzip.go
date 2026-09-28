@@ -67,6 +67,10 @@ type gzipResponseWriter struct {
 	compress    bool // decided at first WriteHeader/Write
 }
 
+// Unwrap hands http.ResponseController the writer underneath, as
+// responseRecorder does.
+func (w *gzipResponseWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+
 func (w *gzipResponseWriter) WriteHeader(status int) {
 	if w.wroteHeader {
 		return

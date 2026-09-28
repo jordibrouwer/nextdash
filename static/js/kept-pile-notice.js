@@ -1,5 +1,5 @@
 /**
- * The kept list, when it has stopped being a waiting room.
+ * Bookmarks → Unsorted, when it has stopped being a waiting room.
  *
  * Keeping is the cheap half of a decision: the link leaves the queue, nothing
  * has to be chosen, and the list grows. The queue has a badge and a ceiling to
@@ -64,7 +64,7 @@
         global.nextdashTrack?.('kept-pile-notice:opened');
         markAnswered();
         card.close();
-        void dash()?.inbox?.openInboxView?.({ tab: 'kept' });
+        void dash()?.openUnsortedBookmarks?.();
     }
 
     const card = global.NoticeCard.define({
@@ -72,7 +72,7 @@
         showDelayMs: SHOW_DELAY_MS,
         title: () => t('keptPileNoticeTitle', 'Kept links are piling up'),
         body: () => t('keptPileNoticeBody',
-            `${staleCount()} of the links you kept have been waiting over a month for a page. The kept list can file a batch at once — group them by site or by suggested tag, tick a group, and move it.`,
+            `${staleCount()} of the links you kept have been waiting over a month for a page. Bookmarks → Unsorted files them: tick a few and move them, or promote one at a time.`,
             { count: staleCount(), days: STALE_AFTER_DAYS }),
         dismissLabel: () => t('keptPileNoticeDismiss', 'Dismiss'),
         dismissName: 'dismiss',
@@ -89,7 +89,7 @@
         actions: [
             {
                 name: 'open',
-                label: () => t('keptPileNoticeOpen', 'Open the kept list'),
+                label: () => t('keptPileNoticeOpen', 'Open Unsorted'),
                 primary: true,
                 onClick: openKept,
             },

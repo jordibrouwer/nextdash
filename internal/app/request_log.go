@@ -16,6 +16,10 @@ type responseRecorder struct {
 	bytes  int
 }
 
+// Unwrap hands http.ResponseController the writer underneath, so a handler can
+// still reach the connection -- to extend its write deadline, say.
+func (r *responseRecorder) Unwrap() http.ResponseWriter { return r.ResponseWriter }
+
 func (r *responseRecorder) WriteHeader(code int) {
 	if r.status == 0 {
 		r.status = code

@@ -221,8 +221,6 @@ class DashboardData {
             if (d.settings.inboxEnabled === false && String(d.settings.pasteDestination || '').toLowerCase() === 'inbox') {
                 d.settings.pasteDestination = 'ask';
             }
-            // Health can no longer be disabled — always force it on.
-            d.settings.showHealthDashboard = true;
             if (typeof d.settings.showAddBookmarkButton === 'undefined') {
                 d.settings.showAddBookmarkButton = true;
             }
@@ -395,7 +393,8 @@ class DashboardData {
                 const initialHash = window.location.hash.substring(1);
                 if (initialHash === 'inbox' && d.inbox?.isEnabled?.()) {
                     await d.inbox.openInboxView();
-                } else if (initialHash === 'health' && d.health?.isEnabled?.()) {
+                } else if (initialHash === 'health' || initialHash.startsWith('health/')) {
+                    // The Health view's old address: the Bookmarks view, on its filter.
                     await d.health.openHealthView();
                 } else if ((initialHash === 'config' || initialHash.startsWith('config/')) && d.config?.isEnabled?.()) {
                     // Bare #config means “open config”, not “open Overview”; a
@@ -622,10 +621,6 @@ class DashboardData {
             await d.inbox.loadAndRender();
             return true;
         }
-        if (d.activeView === 'health' && d.health?.isEnabled?.()) {
-            await d.health.loadAndRender({ refresh: true });
-            return true;
-        }
         if (d.needsCrossPageBookmarks?.()) {
             await this.loadAllBookmarks();
         }
@@ -791,18 +786,8 @@ class DashboardData {
         {
             view: 'inbox',
             layoutClass: 'inbox-layout',
-            // Both of the inbox's tabs: the kept list is a tab of this view
-            // and keeps the address it always had.
-            matchesHash: (hash) => hash === '#inbox' || hash === '#unsorted',
+            matchesHash: (hash) => hash === '#inbox',
             isEnabled: (d) => Boolean(d.inbox?.isEnabled?.()),
-        },
-        {
-            view: 'health',
-            layoutClass: 'health-layout',
-            // The Monitors section carries a hash path (#health/monitors), so
-            // match the prefix the way config's own deep links do.
-            matchesHash: (hash) => hash === '#health' || hash.startsWith('#health/'),
-            isEnabled: (d) => Boolean(d.health?.isEnabled?.()),
         },
         {
             view: 'config',
@@ -811,6 +796,30 @@ class DashboardData {
             // the prefix rather than the bare hash the other two views use.
             matchesHash: (hash) => hash === '#config' || hash.startsWith('#config/'),
             isEnabled: (d) => Boolean(d.config?.isEnabled?.()),
+        },
+        {
+            // Bookmarks, full size (#bookmarks). 'library' because 'bookmarks'
+            // is the grid's own view id; drawn by the config module.
+            view: 'library',
+            layoutClass: 'library-layout',
+            // #health and #unsorted too: the old addresses of the Health view
+            // and the Inbox's Kept tab, which lead here -- a load finishing
+            // before that redirect must not rewrite it to the page number.
+            matchesHash: (hash) => hash === '#bookmarks' || hash.startsWith('#bookmarks/') || hash.startsWith('#bookmarks?')
+                || hash === '#health' || hash.startsWith('#health/') || hash === '#unsorted',
+            isEnabled: (d) => Boolean(d.config?.isEnabled?.()),
+        },
+        {
+            view: 'docker',
+            layoutClass: 'docker-layout',
+            // #docker/<name> selects and opens a container, same shape as
+            // health's own sub-hash.
+            matchesHash: (hash) => hash === '#docker' || hash.startsWith('#docker/'),
+            // No settings gate of its own yet — reachability is the socket and
+            // control env vars the view itself checks, not something this
+            // table can see — so always true, same as health's would be with
+            // no setting behind it.
+            isEnabled: () => true,
         },
     ];
 
@@ -895,7 +904,7 @@ class DashboardData {
         //  - activeView, for the ordinary case;
         //  - the layout class, because this runs several awaits deep: a load that
         //    started while the grid was up can land after the user has opened a view,
-        //    and would then rewrite the hash from #health back to #1.
+        //    and would then rewrite the hash from #inbox back to #1.
         const layoutEl = document.getElementById('dashboard-layout');
         const hash = window.location.hash;
         const preserveView = DashboardData.FULL_CONTAINER_VIEWS.some(({ view, layoutClass, matchesHash, isEnabled }) => (
@@ -1190,6 +1199,10 @@ class DashboardData {
             const isUnsorted = (bookmark) => window.UnsortedPage?.isUnsorted?.(bookmark) === true;
             d.allBookmarks = rows.filter((bookmark) => !isUnsorted(bookmark));
             d.unsortedBookmarks = rows.filter(isUnsorted);
+            // Startup skips this whole load when no setting needs other pages'
+            // bookmarks; readers of unsortedBookmarks (the Unsorted widget) ask
+            // this flag before trusting an empty list.
+            d._unsortedLoaded = true;
             this.invalidateStalePageCaches();
 
             const currentPageId = Number(d.currentPageId);
@@ -1222,14 +1235,13 @@ class DashboardData {
 
     /**
      * Reload bookmark data and repaint every surface that reads it — grid, config
-     * bookmarks list, health, inbox, search — after add/edit/delete.
+     * bookmarks list, inbox, search — after add/edit/delete.
      */
     async refreshAfterBookmarkMutation(options = {}) {
         const d = this.dash;
         const pageIds = this._bookmarkMutationPageIds(options);
         const {
             animate = false,
-            refreshHealthReport = true,
             repaintActiveView = true,
             despiteModal = false,
         } = options;
@@ -1253,7 +1265,7 @@ class DashboardData {
         d.updateSearchComponent?.();
 
         if (repaintActiveView) {
-            this.repaintBookmarkMutationSurfaces({ animate, refreshHealthReport, despiteModal });
+            this.repaintBookmarkMutationSurfaces({ animate, despiteModal });
         } else {
             d.config?.repaintBookmarksList?.();
         }
@@ -1275,14 +1287,8 @@ class DashboardData {
         return Number.isFinite(single) && single > 0 ? [single] : [];
     }
 
-    repaintBookmarkMutationSurfaces({ animate = false, refreshHealthReport = true, despiteModal = false } = {}) {
+    repaintBookmarkMutationSurfaces({ animate = false, despiteModal = false } = {}) {
         const d = this.dash;
-
-        // The Unsorted widget keeps what /api/unsorted answered the first time
-        // it drew, for the life of the tab. Every add, edit, delete, move and
-        // tag change comes through here, and any of them can change that
-        // answer -- so the held copy goes, and the next draw asks again.
-        d._widgetUnsorted = null;
 
         d.config?.repaintBookmarksList?.();
 
@@ -1295,17 +1301,6 @@ class DashboardData {
         // removed or reordered, both falling through to the full render below.
         const renderOpts = { animate, despiteModal };
 
-        if (d.activeView === 'health' && d.health?.isEnabled?.()) {
-            if (d.isInlineEditActive() && !despiteModal) {
-                return;
-            }
-            if (refreshHealthReport && typeof d.health.loadAndRender === 'function') {
-                void d.health.loadAndRender({ refresh: true });
-            } else {
-                d.health.render?.();
-            }
-            return;
-        }
         if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
             if (d.isInlineEditActive() && !despiteModal) {
                 return;
@@ -1313,7 +1308,8 @@ class DashboardData {
             d.inbox.render?.();
             return;
         }
-        if (d.activeView === 'config' && d.config?.isEnabled?.()) {
+        // The Bookmarks view ('library') is the config module's too.
+        if ((d.activeView === 'config' || d.activeView === 'library') && d.config?.isEnabled?.()) {
             if (d.isInlineEditActive() && !despiteModal) {
                 return;
             }

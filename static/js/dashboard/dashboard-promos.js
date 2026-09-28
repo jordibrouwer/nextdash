@@ -2,6 +2,13 @@
  * First-run quick start and the post-onboarding what's-new prompt.
  */
 class DashboardPromos {
+    /*
+     * The one-time dashboard tour's tip id, repeated from dashboard-tutorial.js
+     * so the script is only fetched while the tour is still to come. Both must
+     * agree.
+     */
+    static DASHBOARD_TOUR_TIP_ID = 'dashboardTutorialV1';
+
     constructor(dashboard) {
         this.dash = dashboard;
     }
@@ -111,6 +118,71 @@ class DashboardPromos {
 
         this.maybeShowWhatsNew();
         this.maybeAnnounceSearchModeKey();
+        // After What's new, never on top of it: the tour waits its turn.
+        this.scheduleDashboardTour({ delay: 1500 });
+    }
+
+    /**
+     * The one-time dashboard tour, once the dashboard is quiet.
+     *
+     * A first run opens on the quick-start checklist, and two introductions at
+     * once is one too many: the tour waits until the checklist is finished or
+     * dismissed (QuickStart calls this with afterQuickStart), until What's new
+     * has been read, and until no modal, inline edit or other view is in the
+     * way. It asks again every 1.5 s for a while, then gives up until the next
+     * load. The tip is checked before the tour's script is fetched at all.
+     */
+    scheduleDashboardTour(options = {}) {
+        const d = this.dash;
+        clearTimeout(d._dashboardTourTimer);
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardPromos.DASHBOARD_TOUR_TIP_ID)) return;
+        if (d.settings?.enableSessionTips === false) return;
+        if (options.afterQuickStart) d._dashboardTourAfterQuickStart = true;
+        const attempt = Number(options.attempt || 0);
+        d._dashboardTourTimer = setTimeout(async () => {
+            if (window.DiscoverabilityState?.hasSeenTip?.(DashboardPromos.DASHBOARD_TOUR_TIP_ID)) return;
+            if (!this.dashboardTourCanShow()) {
+                if (attempt < 40) this.scheduleDashboardTour({ delay: 1500, attempt: attempt + 1 });
+                return;
+            }
+            if (!(await this.loadDashboardTour())) return;
+            if (!this.dashboardTourCanShow()) return;
+            window.DashboardTutorial?.maybeShow?.();
+        }, Number.isFinite(options.delay) ? options.delay : 1500);
+    }
+
+    /** The dashboard itself on screen, and nothing unprompted in the way. */
+    dashboardTourCanShow() {
+        const d = this.dash;
+        if (d.activeView !== 'bookmarks') return false;
+        // A quick-start finished in this session clears the one flag that
+        // otherwise holds back every unprompted card until the next load.
+        if (d.onboardingStartedInSession && !d._dashboardTourAfterQuickStart) return false;
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
+        if (!d.settings?.onboardingCompleted) return false;
+        if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
+        if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
+        if (document.querySelector('.quickstart-card')) return false;
+        if (d.searchComponent?.isActive?.()) return false;
+        return true;
+    }
+
+    async loadDashboardTour() {
+        if (typeof window.DashboardTutorial !== 'undefined') return true;
+        try {
+            await window.LazyScript.loadScriptOnce('js/dashboard-tutorial.js', 'dashboardTutorialModule',
+                () => typeof window.DashboardTutorial !== 'undefined');
+            return true;
+        } catch {
+            // A tour that cannot be fetched is not worth an error toast.
+            return false;
+        }
+    }
+
+    /** Config → Onboarding and the command palette: the tour, seen or not. */
+    async openDashboardTour() {
+        if (!(await this.loadDashboardTour())) return false;
+        return window.DashboardTutorial?.open?.() === true;
     }
 
 

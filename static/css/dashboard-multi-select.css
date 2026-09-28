@@ -80,8 +80,7 @@
  * radius setting (theme-character.css), so a square theme stays square.
  */
 .bookmark-link.is-multi-selected,
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link.is-multi-selected,
-.unsorted-view .tag-filter-chunk .bookmark-link.is-multi-selected {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link.is-multi-selected {
     border-radius: var(--radius-5, 8px);
 }
 

@@ -68,6 +68,14 @@ services:
       # - NEXTDASH_HOST_ROOT=/host/root
       # Containers widget: where the socket above landed. Unset hides the widget.
       # - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+      # Docker view actions: start, stop, update and remove. A writable socket
+      # is root on the host -- :ro on the mount does not stop API writes -- so
+      # set NEXTDASH_WRITE_TOKEN as well. 0 keeps the view read-only.
+      - NEXTDASH_DOCKER_CONTROL=0
+      # Run as root instead of the nextdash user: only when the socket belongs
+      # to root's group (gid 0), as on Docker Desktop. Unraid (gid 281) and most
+      # Linux hosts do not need it. 1 turns it on.
+      - NEXTDASH_RUN_AS_ROOT=0
       # Turn the daily GitHub release check or the nextdash.cc news feed off for everyone.
       # - DISABLE_UPDATE_CHECK=true
       # - DISABLE_NEWS_FEED=true

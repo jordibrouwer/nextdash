@@ -91,6 +91,9 @@ class DashboardUiHelpers {
         // with stopImmediatePropagation() and closed config, leaving the dialog
         // stranded on the dashboard underneath.
         if (document.getElementById('config-confirm-modal')) return true;
+        // Pages and categories, over the Bookmarks view.
+        if (document.querySelector('[data-structure-modal]')) return true;
+        if (document.querySelector('[data-checking-modal]')) return true;
         if (document.getElementById('paste-choice-modal')?.classList.contains('show')) return true;
         if (this.dash.inbox?.triage?.isOpen?.()) return true;
         if (document.getElementById('new-bookmark-modal')?.classList.contains('show')) return true;
@@ -1086,6 +1089,8 @@ class DashboardUiHelpers {
         const overlay = document.createElement('div');
         overlay.id = 'omnibox-overlay';
         overlay.className = 'omnibox-overlay';
+        // A full-window layer: the page behind it holds still.
+        overlay.setAttribute('data-scroll-lock', '');
 
         const box = document.createElement('div');
         box.className = 'omnibox-box';

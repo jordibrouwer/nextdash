@@ -31,12 +31,10 @@
     // that pass a single count still work.
     function buildHealthPageHref(counts) {
         const c = typeof counts === 'number' ? { broken: counts } : (counts || {});
-        if (Number(c.monitorDown) > 0) return '/?hv_filter=monitored#health';
-        if (Number(c.broken) > 0) return '/?hv_filter=broken#health';
-        // Drift is the one warning class with a filter of its own worth landing
-        // on, and the one that needs a human decision.
-        if (Number(c.drift) > 0) return '/?hv_filter=drift#health';
-        return '/#health';
+        // The Bookmarks view, on the list the most urgent count is about.
+        if (Number(c.monitorDown) > 0) return '/#bookmarks?health=monitored';
+        if (Number(c.broken) > 0) return '/#bookmarks?health=broken';
+        return '/#bookmarks';
     }
 
     // The three badge kinds in descending severity. Down shares broken's red —
@@ -270,6 +268,8 @@
      *  wants what health knows without asking the server for it again. */
     window.HealthFacts = {
         get: getHealthFacts,
+        /** The key facts are filed under, for anything joining them to bookmarks. */
+        keyFor: factsKey,
         remember: rememberHealthFacts,
         /** Certificates by host, as the last report described them. */
         get certificates() { return healthCertificates; },

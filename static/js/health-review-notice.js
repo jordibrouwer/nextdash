@@ -144,23 +144,19 @@
     }
 
     /**
-     * Open the health view and start the session there.
-     *
-     * Deliberately through the health view rather than over the dashboard: the
-     * session is health's own mechanic, Escape has to land somewhere that makes
-     * sense, and the rows behind the card are the ones being worked through.
+     * Open the Bookmarks view and start the session there: Escape lands on
+     * the list the card was taken from, and the rows behind the card are the
+     * ones being worked through.
      */
     async function start({ limit = SESSION_SIZE } = {}) {
         const d = dash();
-        if (!d?.health) return false;
-        await d.health.openHealthView();
-        const module = d.health._module || d.health;
-        // The report is what the queue is built from, so a view opened before
-        // its first load has nothing to offer yet.
-        if (!module?.report) {
-            await module?.loadAndRender?.({ refresh: false });
-        }
-        return Boolean(module?.focus?.openSession({ limit }));
+        if (!d?.config) return false;
+        history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}#bookmarks`);
+        await d.config.openLibraryView();
+        const config = d.config.instance || d.config;
+        // The queue is built from the report, which the view fetches as it opens.
+        await config.refreshBmHealth?.();
+        return Boolean(config.startLibraryReviewSession?.({ limit }));
     }
 
     const card = global.NoticeCard.define({

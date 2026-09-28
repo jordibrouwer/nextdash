@@ -92,6 +92,18 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "showUnhealthyNames", Kind: "bool"},
 		{Key: "showRestarted", Kind: "bool"},
 	},
+	WidgetTypeContainers: {
+		{Key: "refreshSeconds", Kind: "int", Min: 5, Max: 3600},
+		// Running only, or every container including the stopped ones.
+		{Key: "show", Kind: "string", Allowed: []string{"running", "all"}},
+		{Key: "sort", Kind: "string", Allowed: []string{"problems", "name", "uptime-long", "uptime-short"}},
+		// What stands at the right of a row.
+		{Key: "detail", Kind: "string", Allowed: []string{"uptime", "tag", "none"}},
+		// Where a click on a row goes; the other one stays in the row's menu.
+		{Key: "click", Kind: "string", Allowed: []string{"view", "webui"}},
+		// Rows per column: a tile drawn two wide shows twice as many.
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
 	WidgetTypeMemory: {
 		{Key: "refreshSeconds", Kind: "int", Min: 2, Max: 3600},
 		{Key: "showSwap", Kind: "bool"},
@@ -515,7 +527,7 @@ func widgetTypeNames() []string {
 		WidgetTypeInbox, WidgetTypeUnsorted, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
-		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker,
+		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker, WidgetTypeContainers,
 		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone

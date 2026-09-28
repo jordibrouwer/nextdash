@@ -121,6 +121,10 @@ func hashAssetFile(rel string) (string, error) {
 	)
 	if assetHashSources.useDisk {
 		f, err = os.Open(filepath.Join("static", filepath.FromSlash(rel)))
+	} else if assetHashSources.embedded == nil {
+		// Hashing was never initialised (a bare test handler): treat the file as
+		// unreadable so the page renders it unversioned instead of panicking.
+		return "", fs.ErrNotExist
 	} else {
 		f, err = assetHashSources.embedded.Open("static/" + rel)
 	}
@@ -159,29 +163,46 @@ var lazyLoadedAssets = []string{
 	// Missing here, one loaded under its bare path, so a browser kept the copy
 	// it had from before a deploy and ran old code against new markup.
 	"js/dashboard/dashboard-config-logs.js",
+	"js/dashboard/dashboard-config-containers.js",
+	"js/dashboard/dashboard-config-inbox.js",
 	"js/dashboard/dashboard-config-context-menu.js",
 	"js/dashboard/dashboard-config-stats.js",
 	"js/dashboard/dashboard-config-bookmarks.js",
 	"js/dashboard/dashboard-config-bookmarks-workbench.js",
+	"js/dashboard/dashboard-config-bookmarks-health.js",
+	"js/dashboard/dashboard-bookmarks-health-modal.js",
+	"js/dashboard/dashboard-config-bookmarks-usage.js",
+	"js/dashboard/dashboard-bookmarks-structure-modal.js",
+	"js/dashboard/dashboard-bookmarks-checking-modal.js",
+	"js/dashboard/dashboard-config-bookmarks-details.js",
+	"js/dashboard/dashboard-bookmarks-header.js",
+	"js/dashboard/dashboard-bookmarks-health-large.js",
 	"js/shared/bookmark-workbench-model.js",
 	"js/dashboard/dashboard-news-stream.js",
 	"js/health-reason-utils.js",
 	"js/shared/last-opened-format.js",
-	"js/health-tutorial.js",
 	"js/dashboard/dashboard-health.js",
 	"js/dashboard/dashboard-health-multi-select.js",
 	"js/dashboard/dashboard-health-focus.js",
+	"js/dashboard/dashboard-docker.js",
+	"js/dashboard/dashboard-docker-drawer.js",
+	"js/dashboard/dashboard-docker-actions.js",
 	"js/dashboard/dashboard-inbox-triage.js",
+	"js/dashboard/dashboard-inbox-drawer.js",
 	"js/dashboard/dashboard-inbox.js",
 	// The kept tab of the inbox: its view and its selection layer, loaded
 	// with the inbox rather than on every dashboard visit.
-	"js/dashboard/dashboard-unsorted.js",
-	"js/dashboard/dashboard-unsorted-review.js",
-	"js/dashboard/dashboard-unsorted-select.js",
 	"js/inbox-tutorial.js",
+	"js/bookmarks-tutorial.js",
+	"js/containers-tutorial.js",
+	"js/dashboard-tutorial.js",
 	"js/widgets-tutorial.js",
 	"js/dashboard/dashboard-inline-edit.js",
 	"js/dashboard/dashboard-context-menu.js",
+	// Not a script, but linked from Config → Help by JS all the same. Under its
+	// bare path a browser kept the sheet it had cached and showed the old
+	// design after the PDF was regenerated.
+	"nextDash-cheatsheet.pdf",
 }
 
 // lazyAssetMapJSON renders lazyLoadedAssets as a JSON object of path -> hashed

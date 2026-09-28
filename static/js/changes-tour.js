@@ -6,9 +6,10 @@
  * somewhere else. Release notes answer that badly: they are a list, read once,
  * by whoever opens them.
  *
- * So it is offered the way every other one-time invitation is -- a card in the
- * corner, with Show me, Later and No thanks -- and the tour itself is a window
- * in the middle with one picture per step. Two things make it more than a
+ * The tour is a window in the middle with one picture per step, opened on
+ * request -- from `:changes`, Config → Help or Config → Onboarding. It used to
+ * be offered by a card in the corner as well; that card is gone, so nothing
+ * interrupts a first visit on its behalf. Two things make it more than a
  * slideshow: where a default changed, the step carries the choice itself, so a
  * reader who preferred the old arrangement can have it back without going to
  * look for the setting; and "Show me" dims the window and lights up the real
@@ -29,13 +30,8 @@
     'use strict';
 
     const TIP_ID = 'changesTourV1';
-    // Behind the announcements that are one sentence long, and behind the
-    // clock-and-weather card, which asks for one thing rather than six.
-    const SHOW_DELAY_MS = 9000;
     /** How long the reader has the real element to themselves. */
     const SPOTLIGHT_MS = 1800;
-    /** "Later" is one more ask, tomorrow. */
-    const LATER_MS = 24 * 60 * 60 * 1000;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -76,26 +72,7 @@
     /** An install the server wrote fresh has nothing to be told it lost. */
     const isNewcomer = () => dash()?.settings?.firstRunInstall === true;
 
-    const seen = () => global.DiscoverabilityState?.hasSeenTip?.(TIP_ID) === true;
     const markSeen = () => global.DiscoverabilityState?.markTipSeen?.(TIP_ID);
-
-    /** "Later": nothing is recorded as answered, only postponed. */
-    function askAgainTomorrow() {
-        try {
-            global.localStorage?.setItem('nextdash.changesTour.later', String(Date.now() + LATER_MS));
-        } catch {
-            // A browser that refuses storage simply gets asked again next load.
-        }
-    }
-
-    function postponed() {
-        try {
-            const until = Number(global.localStorage?.getItem('nextdash.changesTour.later') || 0);
-            return Number.isFinite(until) && until > Date.now();
-        } catch {
-            return false;
-        }
-    }
 
     // ---- the steps --------------------------------------------------------
 
@@ -137,14 +114,6 @@
             <i><b>Date &amp; weather</b><em>Leiden</em></i>
             <i><b>Header</b><em>plain</em></i>
             <i><b>Custom themes</b><em>2</em></i>
-        </span>`,
-        // The three columns with what stands in them: filters that are ticked,
-        // rows that are picked, and the panel that edits what is picked. Empty
-        // boxes drew the layout and said nothing about the work.
-        workbench: `<span class="changes-tour-bench">
-            <i class="changes-tour-bench-filters"><b>filters</b><s></s><s></s><s></s></i>
-            <i class="changes-tour-bench-list"><b>list</b><u class="is-picked"></u><u class="is-picked"></u><u></u><u></u></i>
-            <i class="changes-tour-bench-edit"><b>2 picked</b><s></s><s></s></i>
         </span>`,
         widgets: `<span class="changes-tour-widget"><b>12</b><span class="changes-tour-dim">queue</span>
             <b>340</b><span class="changes-tour-dim">done</span></span>`,
@@ -206,12 +175,6 @@
                 title: t('changesTourConfigTitle', 'Config opens on tabs'),
                 body: t('changesTourConfigBody', 'Appearance and Behavior show their settings straight away, in tabs, with a live preview beside Appearance. Date & weather sits under Appearance, and there is a Logs section.'),
                 art: 'config',
-            },
-            {
-                key: 'workbench',
-                title: t('changesTourWorkbenchTitle', 'Bookmarks → List is a workbench'),
-                body: t('changesTourWorkbenchBody', 'Filters on the left, the list in the middle, an edit panel on the right — for several bookmarks at once as well as one.'),
-                art: 'workbench',
             },
             {
                 key: 'widgets',
@@ -426,7 +389,7 @@
         global.nextdashTrack?.('changes-tour:finished', { outcome, step: index + 1 });
     }
 
-    /** Opened by the card, by Config → Help, and by `:changes`. Never by itself. */
+    /** Opened by `:changes`, Config → Help and Config → Onboarding. Never by itself. */
     function open() {
         if (!global.AppModal?.show) return false;
         index = 0;
@@ -436,48 +399,5 @@
         return true;
     }
 
-    // ---- the invitation ---------------------------------------------------
-
-    const card = global.NoticeCard.define({
-        id: 'changes-tour-notice',
-        showDelayMs: SHOW_DELAY_MS,
-        title: () => (isNewcomer()
-            ? t('changesTourCardTitleNew', 'A minute on where things are')
-            : t('changesTourCardTitle', 'nextDash has changed')),
-        body: () => (isNewcomer()
-            ? t('changesTourCardBodyNew', 'A short tour of the header, the buttons and config — about a minute.')
-            : t('changesTourCardBody', 'A short tour of what stands somewhere else now — about a minute, and you can put the old arrangement back as you go.')),
-        dismissLabel: () => t('changesTourCardDismiss', 'Dismiss'),
-        dismissName: 'no',
-        canShow: () => !seen() && !postponed(),
-        onDismiss: markSeen,
-        actionAttr: 'data-changes-tour-action',
-        actions: [
-            {
-                name: 'show',
-                label: () => t('changesTourCardShow', 'Show me'),
-                primary: true,
-                onClick: (c) => { c.close(); open(); },
-            },
-            {
-                name: 'later',
-                label: () => t('changesTourCardLater', 'Later'),
-                quiet: true,
-                onClick: (c) => { askAgainTomorrow(); c.close(); },
-            },
-            {
-                name: 'no',
-                label: () => t('changesTourCardNo', 'No thanks'),
-                onClick: (c) => { markSeen(); c.close(); },
-            },
-        ],
-    });
-
-    global.ChangesTour = { TIP_ID, open, card, isNewcomer };
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', card.autoStart, { once: true });
-    } else {
-        card.autoStart();
-    }
+    global.ChangesTour = { TIP_ID, open, isNewcomer };
 }(typeof window !== 'undefined' ? window : globalThis));

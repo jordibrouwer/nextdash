@@ -10,8 +10,10 @@ class SearchCommandsComponent {
     static GUIDED_TOURS = [
         { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps' },
-        { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health' },
-        { id: 'inboxTutorialV2', labelKey: 'config.tourInbox', label: 'Inbox' },
+        { id: 'dashboardTutorialV1', labelKey: 'config.tourDashboard', label: 'The dashboard' },
+        { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox' },
+        { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view' },
+        { id: 'containersTutorialV1', labelKey: 'config.tourContainers', label: 'Containers' },
         { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
         { id: 'spreadTutorialV1', labelKey: 'config.tourSpread', label: 'Spreading a category' },
@@ -79,7 +81,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'trash', 'export', 'import', 'tour', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
+                commands: ['config', 'backup', 'trash', 'export', 'import', 'tour', 'metadata', 'health', 'docker', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
             },
         ];
         // Which groups are open. None is, until the reader opens one: the
@@ -161,6 +163,7 @@ class SearchCommandsComponent {
             'open': this.handleOpenCommand.bind(this),
             'find': this.handleFindCommand.bind(this),
             'health': this.handleHealthCommand.bind(this),
+            'docker': this.handleDockerCommand.bind(this),
             'dark': this.handleDarkCommand.bind(this),
             'title': this.handleTitleCommand.bind(this),
             'lang': this.handleLangCommand.bind(this),
@@ -554,6 +557,7 @@ class SearchCommandsComponent {
 
     async _downloadBackup() {
         const dashboard = window.dashboardInstance;
+        const endWait = (window.ProgressOverlay?.begin || (() => () => {}))(this._t('config.waitBackupDownloadTitle', 'Making a backup…'), this._t('config.waitBackupDownloadStatus', 'Packing up your data for download'));
         try {
             const response = await fetch('/api/backup', {
                 method: 'GET',
@@ -590,6 +594,8 @@ class SearchCommandsComponent {
                 'error'
             );
             return false;
+        } finally {
+            endWait();
         }
     }
 
@@ -2653,7 +2659,6 @@ class SearchCommandsComponent {
             title: 'showTitle',
             dashboard: 'showDashboardButton',
             inbox: 'showInboxButton',
-            health: 'showHealthDashboard',
             config: 'showConfigButton',
         };
         const aliases = { pagetabs: 'tabs', pagenames: 'names', home: 'dashboard' };
@@ -3184,6 +3189,10 @@ class SearchCommandsComponent {
                     window.ChangesTour.open();
                     return;
                 }
+                if (id === 'dashboardTutorialV1' && dashboard.promos?.openDashboardTour) {
+                    void dashboard.promos.openDashboardTour();
+                    return;
+                }
                 void dashboard.config.replayTour(id);
             }),
         }));
@@ -3585,9 +3594,13 @@ class SearchCommandsComponent {
             }];
         }
 
+        if (scope === 'docker') {
+            return [this._dockerOpenRow()];
+        }
+
         if (scope === 'health') {
             return [{
-                name: this._t('commands.gotoHealth', 'Open health view'),
+                name: this._t('commands.gotoHealth', 'Open the Bookmarks view on the broken ones'),
                 shortcut: ':GOTO',
                 type: 'command',
                 action: () => {
@@ -3687,6 +3700,7 @@ class SearchCommandsComponent {
                 { name: '', shortcut: ':GOTO', completion: ':goto config ', type: 'command-completion' },
                 { name: '', shortcut: ':GOTO', completion: ':goto stats ', type: 'command-completion' },
                 { name: '', shortcut: ':GOTO', completion: ':goto health ', type: 'command-completion' },
+                { name: '', shortcut: ':GOTO', completion: ':goto docker ', type: 'command-completion' },
             );
             return rows;
         }
@@ -3698,6 +3712,9 @@ class SearchCommandsComponent {
         }
         if ('health'.startsWith(scope) && scope !== 'health') {
             return [{ name: '', shortcut: ':GOTO', completion: ':goto health ', type: 'command-completion' }];
+        }
+        if ('docker'.startsWith(scope) && scope !== 'docker') {
+            return [{ name: '', shortcut: ':GOTO', completion: ':goto docker ', type: 'command-completion' }];
         }
         if ('all'.startsWith(scope)) {
             return [{
@@ -3734,7 +3751,7 @@ class SearchCommandsComponent {
         }));
         if (stale.length > cap) {
             rows.push({
-                name: `Showing ${cap} of ${stale.length} — open health view for full list`,
+                name: `Showing ${cap} of ${stale.length} — open the Bookmarks view for the full list`,
                 shortcut: '→',
                 type: 'command',
                 action: () => {
@@ -3802,27 +3819,27 @@ class SearchCommandsComponent {
         ];
     }
 
+    /**
+     * Where a :health command lands: the Bookmarks view, which is where the
+     * Health view's filters live now. Written as that view's own address
+     * rather than the old #health one, so nothing is lost in a redirect -- a
+     * page, a search and every health kind the list can be narrowed by.
+     * `refresh` stays #health's: its redirect is what runs the scan on arrival.
+     */
     buildHealthViewUrl(options = {}) {
-        const filters = ['all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked', 'stale', 'unused', 'missing-preview', 'healthy'];
-        const params = new URLSearchParams();
         const filter = (options.filter || 'all').toLowerCase();
-        if (filter && filter !== 'all' && filters.includes(filter)) {
-            params.set('hv_filter', filter);
-        }
-        if (options.page != null && String(options.page).trim() !== '' && String(options.page) !== 'all') {
-            params.set('page', String(options.page));
-        }
-        if (options.sort) {
-            params.set('hv_sort', options.sort);
-        }
-        if (options.query) {
-            params.set('hv_q', options.query);
-        }
         if (options.refresh) {
-            params.set('hv_refresh', '1');
+            const params = new URLSearchParams({ hv_refresh: '1' });
+            if (filter !== 'all') params.set('hv_filter', filter);
+            return `/?${params.toString()}#health`;
         }
+        const params = new URLSearchParams();
+        if (filter !== 'all') params.set('health', filter);
+        if (options.query) params.set('q', options.query);
+        const page = options.page != null && String(options.page).trim() !== '' && String(options.page) !== 'all'
+            ? `/${encodeURIComponent(String(options.page))}` : '';
         const qs = params.toString();
-        return qs ? `/?${qs}#health` : '/#health';
+        return `/#bookmarks${page}${qs ? `?${qs}` : ''}`;
     }
 
     _handleHealthPageCommand(dashboard, pageArgs) {
@@ -3878,6 +3895,90 @@ class SearchCommandsComponent {
         }));
     }
 
+    _dockerOpenRow() {
+        return {
+            name: this._t('commands.gotoDocker', 'Open containers view'),
+            shortcut: ':DOCKER',
+            type: 'command',
+            action: () => {
+                this._closeCommandPalette();
+                void window.dashboardInstance?.docker?.openDockerView?.();
+                return { navigate: true };
+            },
+        };
+    }
+
+    /**
+     * :docker, :docker <name>, :docker <name> <action>.
+     *
+     * The names come from DockerSearchIndex's cache, filled when the panel
+     * opened, and the actions from the same allowedActions() the view uses --
+     * so the palette never offers what the view would refuse. Update and remove
+     * open the view's own confirmation, over whatever page is showing.
+     */
+    handleDockerCommand(args) {
+        const index = window.DockerSearchIndex;
+        if (!index || index.enabled?.() === false) return [];
+        const control = index.statusNow?.()?.control === true;
+        const list = index.containers?.() || [];
+        const nameArg = String(args[0] || '').trim();
+        const complete = (c) => ({
+            name: `${c.name} — ${c.state || ''}`,
+            shortcut: ':DOCKER',
+            completion: `:docker ${c.name} `,
+            type: 'command-completion',
+        });
+
+        if (!nameArg) {
+            return [this._dockerOpenRow(), ...list.slice(0, 8).map(complete)];
+        }
+        const exact = list.find((c) => c.name === nameArg);
+        if (!exact || args.length < 2) {
+            const hits = typeof index.match === 'function' ? index.match(nameArg, 8) : [];
+            return hits.map(complete);
+        }
+
+        const partial = String(args[1] || '').toLowerCase();
+        const labels = {
+            start: this._t('dashboard.dockerActionStart', 'Start'),
+            stop: this._t('dashboard.dockerActionStop', 'Stop'),
+            restart: this._t('dashboard.dockerActionRestart', 'Restart'),
+            pause: this._t('dashboard.dockerActionPause', 'Pause'),
+            unpause: this._t('dashboard.dockerActionUnpause', 'Resume'),
+            update: this._t('dashboard.dockerActionUpdate', 'Update'),
+            remove: this._t('dashboard.dockerActionRemove', 'Remove'),
+            open: this._t('commands.dockerOpenOne', 'Open'),
+            logs: this._t('commands.dockerLogs', 'Logs of'),
+        };
+        const actions = [...(index.allowedActions?.(exact, control) || []), 'open', 'logs'];
+        return actions
+            .filter((action) => action.startsWith(partial) || labels[action].toLowerCase().startsWith(partial))
+            .map((action) => ({
+                name: `${labels[action]} ${exact.name}`,
+                shortcut: ':DOCKER',
+                type: 'command',
+                action: () => {
+                    this._closeCommandPalette();
+                    const docker = window.dashboardInstance?.docker;
+                    // Open is the container's web UI when it has one -- the
+                    // address set in its drawer, else its template's -- and
+                    // the Containers view when it has none.
+                    const webui = String(exact.webui || '').replace('[IP]', window.location.hostname);
+                    if (action === 'open' && webui) {
+                        window.open(webui, '_blank', 'noopener');
+                    } else if (action === 'open' || action === 'logs') {
+                        void docker?.openDockerView?.({
+                            select: exact.name,
+                            section: action === 'logs' ? 'logs' : null,
+                        });
+                    } else {
+                        void docker?.runAction?.(action, exact.name);
+                    }
+                    return { navigate: true };
+                },
+            }));
+    }
+
     handleHealthCommand(args, fullQuery) {
         const filters = [
             { id: 'broken', label: 'broken bookmarks' },
@@ -3894,7 +3995,7 @@ class SearchCommandsComponent {
 
         if (sub === 'page' || 'page'.startsWith(sub) && sub !== 'page' && sub.length > 0) {
             if (sub === 'page') {
-                return this._handleHealthPageCommand(dashboard, args.slice(1));
+                return this._handleHealthPageCommand(window.dashboardInstance, args.slice(1));
             }
             return [{
                 name: '',
@@ -3918,11 +4019,11 @@ class SearchCommandsComponent {
 
         if (!sub) {
             const rows = [{
-                name: 'Open health view',
+                name: 'Open the Bookmarks view on the broken ones',
                 shortcut: ':HEALTH',
                 type: 'command',
                 action: () => {
-                    window.location.href = this.buildHealthViewUrl();
+                    window.location.href = this.buildHealthViewUrl({ filter: 'broken' });
                     return { navigate: true };
                 }
             }];
@@ -4320,7 +4421,7 @@ class SearchCommandsComponent {
             const unchecked = issues.filter((i) => !i?.lastChecked).length;
             rows.push({
                 name: unchecked > 0
-                    ? t('monitorCmdOn', 'on — review the {count} never-checked bookmarks in the health view', { count: unchecked })
+                    ? t('monitorCmdOn', 'on — review the {count} never-checked bookmarks in the Bookmarks view', { count: unchecked })
                     : t('monitorCmdOnNone', 'on — every bookmark has been checked at least once'),
                 shortcut: ':MONITOR',
                 stateId: 'monitor:on',
@@ -4337,30 +4438,18 @@ class SearchCommandsComponent {
     }
 
     /**
-     * Opens the health view filtered to bookmarks with no checking, which is where
-     * the bulk "Monitor these N" button lives. The command stops there on purpose:
-     * the button confirms first and names its blast radius, and a command line is
+     * Opens the Bookmarks view on the bookmarks nothing checks, where Turn on
+     * checking… offers the modes. The command stops there on purpose: the
+     * modal confirms first and names its blast radius, and a command line is
      * the wrong place to skip that.
      */
     async _openUncheckedInHealth(dashboard) {
-        const health = dashboard.health;
-        if (!health) return;
-        if (!health.isActiveView?.()) {
-            await health.openHealthView?.();
-        }
-        health.filter = 'unchecked';
-        health.visibleLimit = 50;
-        health.render?.();
+        await dashboard.config?.openViewFromTile?.('health', 'unchecked');
     }
 
-    /** Opens the health view if needed, then runs its bulk disable (with confirm). */
+    /** Health's own bulk disable (it confirms first). */
     async _disableAllChecking(dashboard) {
-        const health = dashboard.health;
-        if (!health) return;
-        if (!health.isActiveView?.()) {
-            await health.openHealthView?.();
-        }
-        await health.disableAllChecking?.(document.querySelector('.health-view-checkoff-btn'));
+        await dashboard.health?.disableAllChecking?.();
     }
 
     /** :telemetry on|off — privacy-friendly usage analytics (same setting as Config → General → Advanced → Privacy). */

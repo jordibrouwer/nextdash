@@ -60,6 +60,8 @@ class DashboardHealthFocus {
         this._previewPending = new Set();
         /** Keys whose fetch failed, so the card stops retrying on every render. */
         this._previewFailed = new Set();
+        /** Keys whose fetched preview is being written onto the bookmark. */
+        this._previewSaving = new Set();
         /**
          * Keys opened from inside this session.
          *
@@ -71,13 +73,184 @@ class DashboardHealthFocus {
          */
         this._openedKeys = new Set();
         /**
-         * Whether the preview panel is folded away, for the whole session.
-         *
-         * One setting rather than one per card: the choice being made is "do I
-         * want to see previews while I work through this", and answering it
-         * again on every card would be its own chore.
+         * The pile this walk works through (DashboardHealthFocus.PILES), or
+         * null for a review session or an unnamed run. Named so the card can
+         * say what it is for: a bookmark shown one at a time with no reason
+         * given is a chore nobody understands.
          */
-        this.previewCollapsed = DashboardHealthFocus.readPreviewCollapsed();
+        this.pile = null;
+        /** What happened on this walk, for the count at its end. */
+        this.tally = DashboardHealthFocus.emptyTally();
+        /** The chooser, while it is on screen: its piles and the one selected. */
+        this.chooser = null;
+    }
+
+    static emptyTally() {
+        return { fixed: 0, deleted: 0, kept: 0, snoozed: 0 };
+    }
+
+    /**
+     * Pull HTML entities out of a preview line.
+     *
+     * Page titles and descriptions arrive as the page wrote them, and many
+     * pages write "I&#039;m" or "&#8211;". Escaped again for the card, that
+     * showed the entity itself. Decoded through a textarea, which turns
+     * entities into characters and runs no markup.
+     */
+    static decodeEntities(text) {
+        const value = String(text || '');
+        if (!value.includes('&')) return value;
+        const area = document.createElement('textarea');
+        area.innerHTML = value;
+        return area.value;
+    }
+
+    /** The piles a walk can take, each with the count this list gives it. */
+    pileCounts() {
+        const issues = this.health.getFilteredIssues() || [];
+        const flagsOf = (issue) => (Array.isArray(issue.flags) ? issue.flags : [issue.status]);
+        const piles = DashboardHealthFocus.PILES.map((pile) => ({
+            ...pile,
+            count: issues.filter((issue) => pile.flags.some((f) => flagsOf(issue).includes(f))).length,
+        })).filter((pile) => pile.count > 0);
+        piles.push({ id: 'list', flags: null, count: issues.length });
+        return piles;
+    }
+
+    pileLabel(pile) {
+        const labels = {
+            broken: ['dashboard.healthPileBroken', 'Broken links'],
+            content: ['dashboard.healthPileContent', 'Changed or wrong content'],
+            stale: ['dashboard.healthPileStale', 'Stale'],
+            unused: ['dashboard.healthPileUnused', 'Never opened'],
+            list: ['dashboard.healthPileList', 'This list, as it is filtered now'],
+        };
+        const [key, fallback] = labels[pile?.id] || labels.list;
+        return this.t(key, fallback);
+    }
+
+    pileNote(pile) {
+        const notes = {
+            broken: ['dashboard.healthPileBrokenNote', 'Down, refused or not found — fix the address or let them go'],
+            content: ['dashboard.healthPileContentNote', 'Moved, retitled, or no longer the page you saved'],
+            stale: ['dashboard.healthPileStaleNote', 'Not opened in a long time — still worth keeping?'],
+            unused: ['dashboard.healthPileUnusedNote', 'Saved and never used — open it and decide'],
+            list: ['dashboard.healthPileListNote', 'Every bookmark the list shows, in its order'],
+        };
+        const [key, fallback] = notes[pile?.id] || notes.list;
+        return this.t(key, fallback);
+    }
+
+    /**
+     * Work through: first, what for.
+     *
+     * The walk used to open straight onto a card, and a card with no reason on
+     * it read as "here is a bookmark" -- nobody knew why. So the way in names
+     * the piles worth working, each with its count and what it is for, and
+     * starts on the one that needs you most.
+     */
+    openChooser() {
+        const piles = this.pileCounts();
+        if (!piles.some((pile) => pile.count > 0)) {
+            this.dash.showNotification?.(
+                this.t('dashboard.healthFocusEmpty', 'Nothing to work through in this filter.'), 'info');
+            return false;
+        }
+        this.health.closeDrawer?.();
+        this.chooser = { piles, index: 0 };
+        this.scrollLockToken = window.ScrollLock?.acquire('health-focus');
+        this.bindChooserKeys();
+        this.renderChooser();
+        window.nextdashTrack?.('health:focus-chooser', { piles: piles.length });
+        return true;
+    }
+
+    closeChooser() {
+        if (!this.chooser) return;
+        this.chooser = null;
+        this.unbindKeys();
+        window.ScrollLock?.release(this.scrollLockToken);
+        this.scrollLockToken = null;
+        this.host?.remove();
+        this.host = null;
+    }
+
+    startPile(id) {
+        const pile = this.chooser?.piles.find((p) => p.id === id) || null;
+        // The chooser's lock and keys are handed over, not stacked.
+        this.chooser = null;
+        this.unbindKeys();
+        window.ScrollLock?.release(this.scrollLockToken);
+        this.scrollLockToken = null;
+        this.open({ pile });
+    }
+
+    bindChooserKeys() {
+        this._onKeydown = (e) => {
+            if (!this.chooser) return;
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+            const piles = this.chooser.piles;
+            const handlers = {
+                Escape: () => this.closeChooser(),
+                ArrowDown: () => { this.chooser.index = (this.chooser.index + 1) % piles.length; this.renderChooser(); },
+                j: () => { this.chooser.index = (this.chooser.index + 1) % piles.length; this.renderChooser(); },
+                ArrowUp: () => { this.chooser.index = (this.chooser.index - 1 + piles.length) % piles.length; this.renderChooser(); },
+                k: () => { this.chooser.index = (this.chooser.index - 1 + piles.length) % piles.length; this.renderChooser(); },
+                Enter: () => this.startPile(piles[this.chooser.index].id),
+            };
+            const handler = handlers[e.key];
+            if (!handler) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            handler();
+        };
+        window.addEventListener('keydown', this._onKeydown, true);
+    }
+
+    renderChooser() {
+        const chooser = this.chooser;
+        if (!chooser) return;
+        const host = this.ensureHost();
+        const selected = chooser.piles[chooser.index];
+        host.innerHTML = `
+            <div class="health-focus-card health-focus-chooser" data-focus-chooser>
+                <div class="health-focus-head">
+                    <h2 class="health-focus-title">${this.esc(this.t('dashboard.healthFocusChooserTitle', 'Work through your bookmarks'))}</h2>
+                    <button type="button" class="health-focus-close" data-focus="close"
+                        aria-label="${this.esc(this.t('dashboard.healthFocusClose', 'Close'))}">×</button>
+                </div>
+                <p class="health-focus-chooser-lead">${this.esc(this.t('dashboard.healthFocusChooserLead',
+                    'One bookmark at a time, each with the reason it is here and what you can do about it. Pick a pile — the one that needs you most is first.'))}</p>
+                <div class="health-focus-piles" role="listbox" aria-label="${this.esc(this.t('dashboard.healthFocusChooserTitle', 'Work through your bookmarks'))}">
+                    ${chooser.piles.map((pile, i) => `
+                        <button type="button" role="option" class="health-focus-pile${i === chooser.index ? ' is-selected' : ''}"
+                                data-focus-pile="${this.esc(pile.id)}" aria-selected="${i === chooser.index ? 'true' : 'false'}">
+                            <span class="health-focus-pile-name">${this.esc(this.pileLabel(pile))}</span>
+                            <span class="health-focus-pile-note">${this.esc(this.pileNote(pile))}</span>
+                            <span class="health-focus-pile-count">${pile.count}</span>
+                        </button>`).join('')}
+                </div>
+                <div class="health-focus-chooser-foot">
+                    <span class="health-focus-legend">${this.esc(this.t('dashboard.healthFocusChooserLegend', '↑ ↓ to choose, Escape to leave'))}</span>
+                    <button type="button" class="config-btn health-focus-primary" data-focus="start">${this.esc(
+                        this.t('dashboard.healthFocusChooserStart', 'Start: {pile}', { pile: this.pileLabel(selected) }))}<kbd>↵</kbd></button>
+                </div>
+            </div>`;
+        host.querySelectorAll('[data-focus-pile]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.startPile(btn.getAttribute('data-focus-pile'));
+            });
+        });
+        host.querySelector('[data-focus="start"]')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.startPile(selected.id);
+        });
+        host.querySelector('[data-focus="close"]')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.closeChooser();
+        });
+        host.onmousedown = (e) => { if (e.target === host) this.closeChooser(); };
     }
 
     get dash() {
@@ -102,8 +275,14 @@ class DashboardHealthFocus {
      * Starting from the cursor matters: the way in is "I am looking at this
      * one, let me work from here", not "start over from the top".
      */
-    open() {
-        const filtered = this.health.getFilteredIssues();
+    open({ pile = null } = {}) {
+        const flagsOf = (issue) => (Array.isArray(issue.flags) ? issue.flags : [issue.status]);
+        const all = this.health.getFilteredIssues() || [];
+        const filtered = pile?.flags
+            ? all.filter((issue) => pile.flags.some((f) => flagsOf(issue).includes(f)))
+            : all;
+        this.pile = pile;
+        this.tally = DashboardHealthFocus.emptyTally();
         if (!filtered.length) {
             this.dash.showNotification?.(
                 this.t('dashboard.healthFocusEmpty', 'Nothing to work through in this filter.'),
@@ -112,6 +291,8 @@ class DashboardHealthFocus {
             return false;
         }
 
+        // One bookmark at a time replaces the side panel's one bookmark.
+        this.health.closeDrawer?.();
         this.queue = filtered.map((issue) => this.health.issueKey(issue));
         const from = this.health.selectedKey ? this.queue.indexOf(this.health.selectedKey) : -1;
         this.position = from >= 0 ? from : 0;
@@ -150,6 +331,8 @@ class DashboardHealthFocus {
         this.queue = queue.map((issue) => this.health.issueKey(issue));
         this.position = 0;
         this.active = true;
+        this.pile = null;
+        this.tally = DashboardHealthFocus.emptyTally();
         this.session = { started: this.queue.length, handled: 0, remaining: candidates.length, limit };
 
         window.nextdashTrack?.('health:review-session', { count: this.queue.length });
@@ -179,25 +362,6 @@ class DashboardHealthFocus {
 
     // ─── Preview ────────────────────────────────────────────────────────────
 
-    /** Remembered across sessions: the fold is a preference, not a mode. */
-    static readPreviewCollapsed() {
-        try {
-            return window.localStorage?.getItem(DashboardHealthFocus.PREVIEW_FOLD_KEY) === '1';
-        } catch {
-            // Storage refused (private browsing): showing the preview is the
-            // better default to fall back to, since it is what the card is for.
-            return false;
-        }
-    }
-
-    static writePreviewCollapsed(collapsed) {
-        try {
-            window.localStorage?.setItem(DashboardHealthFocus.PREVIEW_FOLD_KEY, collapsed ? '1' : '0');
-        } catch {
-            /* nothing to fall back to, and nothing worth breaking over */
-        }
-    }
-
     /**
      * The preview for one issue: what the report already knew, else what was
      * fetched for it.
@@ -206,14 +370,93 @@ class DashboardHealthFocus {
      * draws immediately, with no request and no skeleton.
      */
     previewFor(issue) {
+        const decode = DashboardHealthFocus.decodeEntities;
         const stored = {
-            title: String(issue?.previewTitle || '').trim(),
-            description: String(issue?.previewDesc || '').trim(),
+            title: decode(issue?.previewTitle).trim(),
+            description: decode(issue?.previewDesc).trim(),
             image: String(issue?.previewImage || '').trim(),
         };
         if (stored.title || stored.description || stored.image) return stored;
         const key = this.health.issueKey(issue);
         return this._previews.get(key) || null;
+    }
+
+    /**
+     * Whether the card holds a preview the bookmark itself does not.
+     *
+     * The card fetches a preview only to show it, so a bookmark scored down for
+     * having none can sit under a card that plainly has one. That is the one
+     * case where saving it is on offer: the bookmark stores nothing, the fetch
+     * found something, and the report still counts it missing.
+     */
+    canSavePreview(issue) {
+        if (!issue) return false;
+        const key = this.health.issueKey(issue);
+        const stored = String(issue.previewTitle || '').trim() || String(issue.previewDesc || '').trim()
+            || String(issue.previewImage || '').trim();
+        if (stored || !this._previews.get(key) || this._previewSaving.has(key)) return false;
+        return (this.health.reasonEntries(issue) || []).some((r) => r.code === 'no_preview');
+    }
+
+    /**
+     * Write the fetched preview onto the bookmark, then let the report catch up.
+     *
+     * Only on the reader's say-so -- the button or `s` -- so a review session
+     * still edits nothing by itself. The report is fetched again afterwards,
+     * which is what takes "no preview" off the card and its points off the
+     * score, the same way a re-check settles a dead link.
+     */
+    async savePreview() {
+        const issue = this.currentIssue();
+        if (!this.canSavePreview(issue)) return;
+        const key = this.health.issueKey(issue);
+        const preview = this._previews.get(key);
+        const d = this.health.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        /*
+         * Which copy of this URL the row is, on its page. The PATCH names rows by
+         * URL, so a page still holding the same link twice would otherwise have
+         * the preview written onto the first copy. Counted the way the server
+         * counts: canonical URL, in the page's stored order.
+         */
+        const pageId = Number(issue.pageId);
+        const url = this.health.canonicalUrl(issue.url);
+        const occurrence = [...(d.allBookmarks || []), ...(d.unsortedBookmarks || [])]
+            .filter((b) => Number(b.pageId) === pageId)
+            .slice(0, Number(issue.index))
+            .filter((b) => this.health.canonicalUrl(b.url) === url).length;
+        this._previewSaving.add(key);
+        this.render();
+        let saved = false;
+        try {
+            const res = await fetcher('/api/bookmarks', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: pageId,
+                    updates: [{
+                        url: issue.url,
+                        ...(occurrence > 0 ? { occurrence } : {}),
+                        previewTitle: preview.title || '',
+                        previewDesc: preview.description || '',
+                        previewImage: preview.image || '',
+                    }],
+                }),
+            });
+            saved = res.ok && Number((await res.json().catch(() => ({}))).updated) > 0;
+        } catch {
+            saved = false;
+        }
+        if (saved) {
+            window.nextdashTrack?.('health:focus-save-preview');
+            await d.loadAllBookmarks?.();
+            await this.health.loadAndRender({ refresh: true });
+            d.showNotification?.(this.t('dashboard.healthFocusPreviewSaved', 'Preview saved'), 'success', { duration: 2500 });
+        } else {
+            d.showNotification?.(this.t('dashboard.healthFocusPreviewSaveFailed', 'Could not save the preview'), 'error');
+        }
+        this._previewSaving.delete(key);
+        if (this.active) this.render();
     }
 
     /**
@@ -253,9 +496,10 @@ class DashboardHealthFocus {
             const res = await fetcher(`/api/bookmark-preview?url=${encodeURIComponent(url)}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
+            const decode = DashboardHealthFocus.decodeEntities;
             const preview = {
-                title: String(data?.title || '').trim(),
-                description: String(data?.description || '').trim(),
+                title: decode(data?.title).trim(),
+                description: decode(data?.description).trim(),
                 image: String(data?.image || '').trim(),
             };
             // Stored even when empty: "asked, and there is nothing" is an answer,
@@ -318,6 +562,7 @@ class DashboardHealthFocus {
         if (!this.active) return;
         this.active = false;
         this.session = null;
+        this.pile = null;
         // Forgotten on the way out, which is what the comment beside
         // _previewFailed.add() has always promised: a failure there means "this
         // request did not answer", not "this page has no preview". Kept for the
@@ -391,6 +636,10 @@ class DashboardHealthFocus {
                     this.renderSessionDone();
                     return;
                 }
+                if (this.pile && delta > 0) {
+                    this.renderRunDone();
+                    return;
+                }
                 this.dash.showNotification?.(
                     delta > 0
                         ? this.t('dashboard.healthFocusAtEnd', 'That was the last one.')
@@ -434,8 +683,14 @@ class DashboardHealthFocus {
 
     async recheck() {
         await this.run(async (issue) => {
+            const key = this.health.issueKey(issue);
+            const flag = this.snoozeFlagFor(issue);
             await this.health.recheckIssue(issue, { silent: true });
             await this.health.loadAndRender({ refresh: true });
+            // Fixed: the condition it was here for is gone from the fresh report.
+            const now = (this.health.report?.issues || []).find((row) => this.health.issueKey(row) === key);
+            const nowFlags = now ? (Array.isArray(now.flags) ? now.flags : [now.status]) : [];
+            if (flag && !nowFlags.includes(flag)) this.tally.fixed += 1;
             // The overlay survives the list re-rendering underneath it, so the
             // card is redrawn from the refreshed report rather than closing.
             this.render();
@@ -497,6 +752,7 @@ class DashboardHealthFocus {
                 this.t('dashboard.healthIgnoreSnoozed', '“{flag}” hidden for {days} days.',
                     { flag: this.health.flagLabel(flag), days }),
                 'success');
+            this.tally.snoozed += 1;
             this.dropCurrentFromQueue();
         });
     }
@@ -515,8 +771,77 @@ class DashboardHealthFocus {
             if (stillListed) {
                 this.render();
             } else {
+                this.tally.deleted += 1;
                 this.dropCurrentFromQueue();
             }
+        });
+    }
+
+    /**
+     * Keep as is: this bookmark is fine the way it is, stop asking.
+     *
+     * The same ignore the row menu writes, without an end date, for the one
+     * condition this card is about -- a host that is down on purpose, a link
+     * kept for reference and rarely opened. It can be undone from the side
+     * panel's Health tab like any other ignore.
+     */
+    async keep() {
+        await this.run(async (issue) => {
+            const flag = this.snoozeFlagFor(issue);
+            if (!flag) return;
+            const stored = await this.health.writeIgnores(issue, { add: [flag], untilMs: 0 });
+            if (!stored) {
+                this.render();
+                return;
+            }
+            this.dash.showNotification?.(
+                this.t('dashboard.healthFocusKept', 'Kept — “{flag}” will not come up again for this bookmark.',
+                    { flag: this.health.flagLabel(flag) }),
+                'success');
+            this.tally.kept += 1;
+            this.dropCurrentFromQueue();
+        });
+    }
+
+    /**
+     * Fix the address: the bookmark form, over the card.
+     *
+     * The card stays underneath and its keys stand still while the form is up
+     * (bindKeys checks for it). A save refreshes the report, so a link that
+     * answers at its new address leaves the pile the way a re-check does.
+     */
+    edit() {
+        const issue = this.currentIssue();
+        if (!issue || typeof this.dash.openBookmarkFormModal !== 'function') return;
+        const d = this.dash;
+        const pageId = Number(issue.pageId);
+        const url = this.health.canonicalUrl(issue.url);
+        const onPage = [...(d.allBookmarks || []), ...(d.unsortedBookmarks || [])]
+            .filter((b) => Number(b.pageId) === pageId);
+        const bookmark = onPage[Number(issue.index)] && this.health.canonicalUrl(onPage[Number(issue.index)].url) === url
+            ? onPage[Number(issue.index)]
+            : onPage.find((b) => this.health.canonicalUrl(b.url) === url);
+        if (!bookmark) return;
+        const key = this.health.issueKey(issue);
+        const flag = this.snoozeFlagFor(issue);
+        d.openBookmarkFormModal({
+            mode: 'edit',
+            pageId,
+            index: Number(issue.index),
+            bookmark,
+            onSaved: async () => {
+                await d.loadAllBookmarks?.();
+                await this.health.loadAndRender({ refresh: true });
+                if (!this.active) return;
+                const now = (this.health.report?.issues || []).find((row) => this.health.issueKey(row) === key);
+                const nowFlags = now ? (Array.isArray(now.flags) ? now.flags : [now.status]) : [];
+                if (!now || (flag && !nowFlags.includes(flag))) {
+                    this.tally.fixed += 1;
+                    this.dropCurrentFromQueue();
+                } else {
+                    this.render();
+                }
+            },
         });
     }
 
@@ -560,11 +885,7 @@ class DashboardHealthFocus {
                 this.renderSessionDone();
                 return;
             }
-            this.close();
-            this.dash.showNotification?.(
-                this.t('dashboard.healthFocusDone', 'Nothing left in this list.'),
-                'success'
-            );
+            this.renderRunDone();
             return;
         }
         if (this.position >= this.queue.length) {
@@ -588,13 +909,20 @@ class DashboardHealthFocus {
             const tag = e.target?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return;
             if (e.ctrlKey || e.altKey || e.metaKey) return;
+            // The bookmark form (Fix address) is on top: its keys, not ours.
+            if (document.getElementById('bookmark-form-modal')?.classList.contains('show')) return;
+            // The end-of-walk count takes only Escape and Enter.
+            if (this.host?.querySelector('.health-focus-card--done')) {
+                if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); this.close(); }
+                if (e.key === 'Enter') {
+                    const primary = this.host.querySelector('.health-focus-done-primary');
+                    if (primary) { e.preventDefault(); e.stopImmediatePropagation(); primary.click(); }
+                }
+                return;
+            }
 
             const handlers = {
-                // Escape is deliberately absent: the health view installs its
-                // own capture-phase Escape handler when it loads, which runs
-                // ahead of this one and closes focus mode from there. Binding
-                // it here as well would leave two paths for one key, only one
-                // of which is ever reached.
+                Escape: () => this.close(),
                 ArrowDown: () => this.move(1),
                 j: () => this.move(1),
                 ArrowUp: () => this.move(-1),
@@ -604,6 +932,11 @@ class DashboardHealthFocus {
                 // The same key the row menu uses, so the gesture is one thing
                 // wherever you meet it.
                 z: () => void this.snooze(),
+                y: this.snoozeFlagFor(this.currentIssue()) ? () => void this.keep() : null,
+                e: () => this.edit(),
+                o: () => this.open_(),
+                // Only while there is a fetched preview to keep.
+                s: this.canSavePreview(this.currentIssue()) ? () => void this.savePreview() : null,
                 Enter: () => this.open_(),
                 ' ': () => this.move(1),
             };
@@ -613,12 +946,15 @@ class DashboardHealthFocus {
             e.stopImmediatePropagation();
             handler();
         };
-        document.addEventListener('keydown', this._onKeydown, true);
+        // On window, capturing: ahead of every document listener, the
+        // dashboard's own keyboard handling among them, which is registered
+        // at start-up and would otherwise take Escape and leave the view.
+        window.addEventListener('keydown', this._onKeydown, true);
     }
 
     unbindKeys() {
         if (this._onKeydown) {
-            document.removeEventListener('keydown', this._onKeydown, true);
+            window.removeEventListener('keydown', this._onKeydown, true);
             this._onKeydown = null;
         }
     }
@@ -756,54 +1092,80 @@ class DashboardHealthFocus {
     }
 
     /**
-     * What the page says about itself: image, title line and description.
+     * Why this bookmark is on the card, as a heading and a line.
      *
-     * Folded away by choice, and the fold is remembered — someone clearing
-     * eighty dead links wants the decision and nothing else, and someone
-     * deciding whether a link is still worth keeping wants exactly this. The
-     * panel keeps its place in the layout either way so the buttons do not walk
-     * up and down the screen between cards.
+     * The heading names the condition in plain words; the line is the report's
+     * own reasons, so it says exactly what the list and the score say.
      */
-    renderPreview(issue) {
-        const collapsed = this.previewCollapsed;
+    whyFor(issue, reasons, resolved, canSave) {
+        const status = String(issue?.status || '');
+        const flags = Array.isArray(issue?.flags) ? issue.flags : [status];
+        const heads = [
+            ['broken', 'dashboard.healthWhyBroken', 'It does not answer'],
+            ['content', 'dashboard.healthWhyContent', 'The page is not what it should be'],
+            ['drift', 'dashboard.healthWhyDrift', 'The page changed'],
+            ['stale', 'dashboard.healthWhyStale', 'Not opened in a long time'],
+            ['unused', 'dashboard.healthWhyUnused', 'Saved, and never opened'],
+        ];
+        const hit = heads.find(([flag]) => flags.includes(flag) || status === flag);
+        const heading = hit ? this.t(hit[1], hit[2]) : this.t('dashboard.healthWhyOther', 'Worth a look');
+        const lines = reasons.map((r) => {
+            const done = r.code && resolved.has(r.code);
+            const text = r.code === 'no_preview' && canSave
+                ? this.t('dashboard.healthFocusPreviewNotSaved', 'Preview fetched, not saved yet')
+                : r.label;
+            return `<li${done ? ' class="is-resolved"' : ''}>${this.esc(text)}${
+                done ? ` <span class="health-focus-reason-done">${this.esc(
+                    this.t('dashboard.healthFocusReasonResolved', 'just now'))}</span>` : ''}</li>`;
+        }).join('');
+        return `<div class="health-focus-why">
+            <p class="health-focus-why-title">${this.esc(this.t('dashboard.healthWhyLabel', 'Why it is here'))}: ${this.esc(heading)}</p>
+            ${lines ? `<ul class="health-focus-reasons">${lines}</ul>` : ''}
+        </div>`;
+    }
+
+    /** The one next step the reason suggests: re-check what is failing, open what is unused. */
+    primaryFor(issue) {
+        const status = String(issue?.status || '');
+        const flags = Array.isArray(issue?.flags) ? issue.flags : [status];
+        const openFirst = ['stale', 'unused'].some((f) => flags.includes(f))
+            && !['broken', 'content', 'drift'].some((f) => flags.includes(f));
+        return openFirst
+            ? { action: 'open', key: 'o', label: this.t('dashboard.healthFocusOpenLook', 'Open it and decide') }
+            : { action: 'recheck', key: 'p', label: this.t('dashboard.healthFocusRecheckNow', 'Re-check now') };
+    }
+
+    /** Where the bookmark lives: page › category. */
+    placeFor(issue) {
+        const d = this.dash;
+        const page = (d.pages || []).find((p) => Number(p.id) === Number(issue?.pageId));
+        const cat = (d.categories || []).find((c) => String(c.id) === String(issue?.category)
+            && (c.pageId == null || Number(c.pageId) === Number(issue?.pageId)));
+        return [page?.name, cat?.name].filter(Boolean).join(' › ');
+    }
+
+    /** The page's own line and picture, compact; a fetch or a save when there is none. */
+    renderPreviewCompact(issue) {
         const preview = this.previewFor(issue);
         const pending = this._previewPending.has(this.health.issueKey(issue));
         const asked = this.previewResolved(issue);
-
-        const toggle = `<button type="button" class="health-focus-preview-toggle" data-focus="preview-toggle"
-            aria-expanded="${collapsed ? 'false' : 'true'}">
-            <span class="health-focus-preview-caret" aria-hidden="true">${collapsed ? '▸' : '▾'}</span>
-            ${this.esc(this.t('dashboard.healthFocusPreview', 'Preview'))}
-        </button>`;
-
-        if (collapsed) {
-            return `<div class="health-focus-preview is-collapsed">${toggle}</div>`;
-        }
-
-        let body;
         if (preview) {
             const image = window.BookmarkUrlUtils?.safeHttpResourceUrl?.(preview.image) || '';
-            // The description is the useful half and the image is the fast half,
-            // so a preview with only one of them still draws rather than being
-            // treated as no preview at all.
-            body = `
+            return `<div class="health-focus-preview">
                 ${image ? `<div class="health-focus-preview-image"><img src="${this.esc(image)}" alt="" loading="lazy"></div>` : ''}
-                ${preview.title ? `<p class="health-focus-preview-title">${this.esc(preview.title)}</p>` : ''}
-                ${preview.description ? `<p class="health-focus-preview-desc">${this.esc(preview.description)}</p>` : ''}`;
-        } else if (pending || !asked) {
-            // Not-yet-asked renders as the skeleton too: the fetch is started by
-            // this very render, so anything else would flash "nothing here"
-            // for one frame before the request even leaves.
-            body = `<p class="health-focus-preview-empty">${this.esc(
-                this.t('dashboard.healthFocusPreviewLoading', 'Fetching the preview…'))}</p>`;
-        } else {
-            body = `<p class="health-focus-preview-empty">${this.esc(
-                this.t('dashboard.healthFocusPreviewNone', 'This page offers no preview.'))}</p>`;
+                <div class="health-focus-preview-text">
+                    ${preview.title ? `<p class="health-focus-preview-title">${this.esc(preview.title)}</p>` : ''}
+                    ${preview.description ? `<p class="health-focus-preview-desc">${this.esc(preview.description)}</p>` : ''}
+                    ${this.canSavePreview(issue) ? `<button type="button" class="health-focus-link" data-focus="save-preview">${this.esc(
+                        this.t('dashboard.healthFocusSavePreview', 'Save preview'))}<kbd>s</kbd></button>` : ''}
+                </div>
+            </div>`;
         }
-
-        return `<div class="health-focus-preview${pending ? ' is-loading' : ''}">
-            ${toggle}
-            <div class="health-focus-preview-body">${body}</div>
+        const text = pending || !asked
+            ? this.t('dashboard.healthFocusPreviewLoading', 'Fetching the preview…')
+            : this.t('dashboard.healthFocusPreviewNone', 'This page offers no preview.');
+        return `<div class="health-focus-preview is-empty${pending ? ' is-loading' : ''}">
+            <p class="health-focus-preview-empty">${this.esc(text)}</p>
         </div>`;
     }
 
@@ -816,48 +1178,43 @@ class DashboardHealthFocus {
         }
 
         const host = this.ensureHost();
-        const title = issue.name || issue.previewTitle || this.health.formatUrlDisplay(issue.url);
+        const title = issue.name || DashboardHealthFocus.decodeEntities(issue.previewTitle)
+            || this.health.formatUrlDisplay(issue.url);
         const reasons = this.health.reasonEntries(issue) || [];
         const resolved = this.resolvedReasonCodes(issue);
-        /*
-         * A reason the card has just disproved is struck through rather than
-         * removed. Removing it would make the card disagree with the score and
-         * the list behind it, which both still count it until the next report;
-         * striking it says "this one is dealt with" without pretending the
-         * report has caught up. The score is deliberately left alone for the
-         * same reason opening does not re-sort the list.
-         */
-        const reasonList = reasons.length
-            ? `<ul class="health-focus-reasons">${reasons
-                .map((r) => {
-                    const done = r.code && resolved.has(r.code);
-                    return `<li${done ? ' class="is-resolved"' : ''}>${this.esc(r.label)}${
-                        done ? ` <span class="health-focus-reason-done">${this.esc(
-                            this.t('dashboard.healthFocusReasonResolved', 'just now'))}</span>` : ''}</li>`;
-                }).join('')}</ul>`
-            : '';
+        const canSave = this.canSavePreview(issue);
+        const primary = this.primaryFor(issue);
+        const canKeep = Boolean(this.snoozeFlagFor(issue));
+        const total = this.queue.length;
+        const position = this.position + 1;
+        const where = this.session
+            ? this.t('dashboard.healthReviewPileLabel', 'Review')
+            : this.pileLabel(this.pile);
+        const place = this.placeFor(issue);
+        const meta = [this.health.formatUrlDisplay(issue.url), place].filter(Boolean).join(' · ');
+        const key = (k) => `<kbd>${this.esc(k)}</kbd>`;
 
         host.innerHTML = `
             <div class="health-focus-card">
                 <div class="health-focus-head">
-                    <span class="health-focus-progress">${this.esc(this.session
-                        ? this.t('dashboard.healthReviewProgress', 'Review · {position} of {total}',
-                            { position: this.position + 1, total: this.queue.length })
-                        : this.t('dashboard.healthFocusProgress', '{position} of {total}',
-                            { position: this.position + 1, total: this.queue.length }))}</span>
+                    <span class="health-focus-progress">${this.esc(where)} · ${this.esc(this.t(
+                        'dashboard.healthFocusProgress', '{position} of {total}', { position, total }))}</span>
                     <button type="button" class="health-focus-close" data-focus="close"
                         aria-label="${this.esc(this.t('dashboard.healthFocusClose', 'Close'))}">×</button>
                 </div>
+                <div class="health-focus-bar" aria-hidden="true"><span style="width:${Math.round((position / Math.max(1, total)) * 100)}%"></span></div>
 
                 <div class="health-focus-identity">
                     ${this.renderIcon(issue)}
                     <div class="health-focus-identity-text">
-                        <h2 class="health-focus-title">${this.esc(title)}</h2>
-                        <p class="health-focus-url">${this.esc(this.health.formatUrlDisplay(issue.url))}</p>
+                        <h2 class="health-focus-title"><button type="button" class="health-focus-title-link" data-focus="open"
+                            title="${this.esc(this.t('dashboard.healthFocusOpenTitle', 'Open in a new tab'))}">${this.esc(title)}</button></h2>
+                        <p class="health-focus-url">${this.esc(meta)}</p>
+                        ${this.renderOpened(issue)}
                     </div>
+                    <button type="button" class="config-btn health-focus-open" data-focus="open">${this.esc(
+                        this.t('dashboard.healthOpen', 'Open'))}${key('o')}</button>
                 </div>
-
-                ${this.renderOpened(issue)}
 
                 <div class="health-focus-badges">
                     ${this.health.renderCertBadge(issue)}
@@ -865,22 +1222,33 @@ class DashboardHealthFocus {
                     ${this.health.renderMutedBadge(issue)}
                 </div>
 
-                ${this.renderPreview(issue)}
+                ${this.renderPreviewCompact(issue)}
 
-                ${reasonList}
+                ${this.whyFor(issue, reasons, resolved, canSave)}
 
-                <div class="health-focus-actions">
-                    <button type="button" class="config-btn" data-focus="recheck">${this.esc(
-                        this.t('dashboard.healthRecheck', 'Re-check'))}<kbd>p</kbd></button>
-                    <button type="button" class="config-btn" data-focus="open">${this.esc(
-                        this.t('dashboard.healthOpen', 'Open'))}<kbd>↵</kbd></button>
-                    ${this.snoozeFlagFor(issue) ? `<button type="button" class="config-btn" data-focus="snooze">${this.esc(
-                        this.t('dashboard.healthFocusSnooze', 'Ignore {days}d',
-                            { days: this.health.constructor.SNOOZE_DAYS }))}<kbd>z</kbd></button>` : ''}
-                    <button type="button" class="config-btn config-btn--danger" data-focus="delete">${this.esc(
-                        this.t('dashboard.healthFocusDelete', 'Delete'))}<kbd>d</kbd></button>
-                    <button type="button" class="config-btn" data-focus="next">${this.esc(
-                        this.t('dashboard.healthFocusSkip', 'Skip'))}<kbd>j</kbd></button>
+                <button type="button" class="config-btn health-focus-primary" data-focus="${primary.action}">
+                    <span>${this.esc(primary.label)}</span>${key(primary.key)}</button>
+                <div class="health-focus-alts">
+                    ${primary.action !== 'recheck' ? `<button type="button" class="health-focus-link" data-focus="recheck">${this.esc(
+                        this.t('dashboard.healthRecheck', 'Re-check'))}${key('p')}</button>` : ''}
+                    <button type="button" class="health-focus-link" data-focus="edit">${this.esc(
+                        this.t('dashboard.healthFocusFixAddress', 'Fix the address'))}${key('e')}</button>
+                    <button type="button" class="health-focus-link is-danger" data-focus="delete">${this.esc(
+                        this.t('dashboard.healthFocusDelete', 'Delete'))}${key('d')}</button>
+                </div>
+
+                <div class="health-focus-foot">
+                    <span class="health-focus-foot-label">${this.esc(this.t('dashboard.healthFocusNotNow', 'Not now:'))}</span>
+                    <div class="health-focus-foot-actions">
+                        ${canKeep ? `<button type="button" class="health-focus-link" data-focus="keep"
+                            title="${this.esc(this.t('dashboard.healthFocusKeepHint', 'Fine as it is — do not ask about this again'))}">${this.esc(
+                            this.t('dashboard.healthFocusKeep', 'Keep'))}${key('y')}</button>` : ''}
+                        ${canKeep ? `<button type="button" class="health-focus-link" data-focus="snooze">${this.esc(
+                            this.t('dashboard.healthFocusSnooze', 'Ignore {days}d',
+                                { days: this.health.constructor.SNOOZE_DAYS }))}${key('z')}</button>` : ''}
+                        <button type="button" class="health-focus-link" data-focus="next">${this.esc(
+                            this.t('dashboard.healthFocusSkip', 'Skip'))}${key('j')}</button>
+                    </div>
                 </div>
 
                 <p class="health-focus-legend">${this.esc(this.t(
@@ -894,9 +1262,11 @@ class DashboardHealthFocus {
             recheck: () => void this.recheck(),
             open: () => this.open_(),
             snooze: () => void this.snooze(),
+            keep: () => void this.keep(),
+            edit: () => this.edit(),
             delete: () => void this.remove(),
             next: () => this.move(1),
-            'preview-toggle': () => this.togglePreview(),
+            'save-preview': () => void this.savePreview(),
         };
         host.querySelectorAll('[data-focus]').forEach((btn) => {
             btn.addEventListener('click', (e) => {
@@ -912,36 +1282,56 @@ class DashboardHealthFocus {
             previewImg.closest('.health-focus-preview-image')?.remove();
         }, { once: true });
         // Clicking the backdrop leaves, matching every other overlay in the app.
-        host.addEventListener('mousedown', (e) => {
-            if (e.target === host) this.close();
-        });
+        host.onmousedown = (e) => { if (e.target === host) this.close(); };
 
         // Asked for after painting, so the card is on screen while the request
         // is in flight rather than the overlay waiting on the network to appear.
-        // Both are no-ops for anything already known or already asked.
-        if (!this.previewCollapsed) {
-            void this.fetchPreview(issue);
-        }
+        void this.fetchPreview(issue);
         this.prefetchNext();
     }
 
     /**
-     * Fold the preview away, or back. Remembered for next time.
+     * The end of a pile: what was done, and what is next.
      *
-     * Unfolding fetches what the fold had been skipping — the panel was not
-     * merely hidden, it was not asked for, which is the point of a fold on a
-     * card that costs a request.
+     * A walk used to end on a toast and vanish. The count says the work is
+     * finished, and the next pile with something in it is offered right there.
      */
-    togglePreview() {
-        this.previewCollapsed = !this.previewCollapsed;
-        DashboardHealthFocus.writePreviewCollapsed(this.previewCollapsed);
-        window.nextdashTrack?.('health:focus-preview', { shown: !this.previewCollapsed });
-        this.render();
+    renderRunDone() {
+        const host = this.ensureHost();
+        const tally = this.tally;
+        const nextPile = this.pileCounts().find((p) => p.id !== 'list' && p.id !== this.pile?.id && p.count > 0) || null;
+        const stat = (n, key, fallback) => `<div class="health-focus-stat"><b>${n}</b><span>${this.esc(this.t(key, fallback))}</span></div>`;
+        host.innerHTML = `
+            <div class="health-focus-card health-focus-card--done">
+                <h2 class="health-focus-title">${this.esc(this.t('dashboard.healthFocusRunDone', '{pile}: done',
+                    { pile: this.pileLabel(this.pile) }))}</h2>
+                <div class="health-focus-stats">
+                    ${stat(tally.fixed, 'dashboard.healthFocusTallyFixed', 'fixed')}
+                    ${stat(tally.deleted, 'dashboard.healthFocusTallyDeleted', 'deleted')}
+                    ${stat(tally.kept, 'dashboard.healthFocusTallyKept', 'kept')}
+                    ${stat(tally.snoozed, 'dashboard.healthFocusTallySnoozed', 'snoozed')}
+                </div>
+                <div class="health-focus-done-foot">
+                    <span class="health-focus-done-rest">${this.esc(nextPile
+                        ? this.t('dashboard.healthFocusNextPile', 'Next: {pile} · {count} waiting', { pile: this.pileLabel(nextPile), count: nextPile.count })
+                        : this.t('dashboard.healthReviewDoneClear', 'Nothing else is waiting.'))}</span>
+                    <div class="health-focus-actions">
+                        <button type="button" class="config-btn" data-focus="back">${this.esc(
+                            this.t('dashboard.healthFocusBackToList', 'Back to the list'))}</button>
+                        ${nextPile ? `<button type="button" class="config-btn health-focus-done-primary" data-focus="next-pile">${this.esc(
+                            this.t('dashboard.healthFocusStartPile', 'Start: {pile}', { pile: this.pileLabel(nextPile) }))}</button>` : ''}
+                    </div>
+                </div>
+            </div>`;
+        host.querySelector('[data-focus="back"]')?.addEventListener('click', (e) => { e.preventDefault(); this.close(); });
+        host.querySelector('[data-focus="next-pile"]')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.close();
+            this.open({ pile: nextPile });
+        });
+        host.onmousedown = (e) => { if (e.target === host) this.close(); };
     }
 }
-
-/** Where the fold is remembered. */
-DashboardHealthFocus.PREVIEW_FOLD_KEY = 'nextdashHealthFocusPreviewCollapsed';
 
 /**
  * What a review session is allowed to contain. Flags rather than status, for the
@@ -950,5 +1340,16 @@ DashboardHealthFocus.PREVIEW_FOLD_KEY = 'nextdashHealthFocusPreviewCollapsed';
  * either name.
  */
 DashboardHealthFocus.REVIEW_FLAGS = ['broken', 'content', 'unused', 'stale'];
+
+/**
+ * The piles Work through offers, most urgent first. Flags, as the filters read
+ * them. "This list" is added after these, from whatever the list shows.
+ */
+DashboardHealthFocus.PILES = [
+    { id: 'broken', flags: ['broken'] },
+    { id: 'content', flags: ['content', 'drift'] },
+    { id: 'stale', flags: ['stale'] },
+    { id: 'unused', flags: ['unused'] },
+];
 
 window.DashboardHealthFocus = DashboardHealthFocus;

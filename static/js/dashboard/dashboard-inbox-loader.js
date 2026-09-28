@@ -43,25 +43,15 @@ class DashboardInboxLoader {
             await load('js/dashboard/dashboard-inbox-triage.js', 'dashboardInboxTriage',
                 () => typeof DashboardInboxTriage === 'function');
         }
+        // What the inbox puts in the side panel. The panel itself
+        // (list-view-drawer.js) is on every page already.
+        if (typeof window.InboxDrawer !== 'function') {
+            await load('js/dashboard/dashboard-inbox-drawer.js', 'dashboardInboxDrawer',
+                () => typeof window.InboxDrawer === 'function');
+        }
         if (typeof DashboardInbox === 'undefined') {
             await load('js/dashboard/dashboard-inbox.js', 'dashboardInboxModule',
                 () => typeof DashboardInbox === 'function');
-        }
-        // The kept tab's list and its selection layer. They belong to this
-        // view, so they arrive with it rather than on every dashboard visit;
-        // what the rest of the app needs to know about kept bookmarks is in
-        // js/shared/unsorted-page.js, which does ride along with the page.
-        if (typeof DashboardUnsortedSelect === 'undefined') {
-            await load('js/dashboard/dashboard-unsorted-select.js', 'dashboardUnsortedSelect',
-                () => typeof DashboardUnsortedSelect === 'function');
-        }
-        if (typeof DashboardUnsorted === 'undefined') {
-            await load('js/dashboard/dashboard-unsorted.js', 'dashboardUnsortedModule',
-                () => typeof DashboardUnsorted === 'function');
-        }
-        if (typeof DashboardUnsortedReview === 'undefined') {
-            await load('js/dashboard/dashboard-unsorted-review.js', 'dashboardUnsortedReview',
-                () => typeof DashboardUnsortedReview === 'function');
         }
     }
 
@@ -77,9 +67,6 @@ class DashboardInboxLoader {
                 throw new Error('inbox module loaded without defining DashboardInbox');
             }
             this._module = new DashboardInbox(this.dash);
-            if (!this.dash.unsorted && typeof DashboardUnsorted === 'function') {
-                this.dash.unsorted = new DashboardUnsorted(this.dash);
-            }
             this._teardownEscapeShortcut();
             this._module.setupEscapeShortcut?.();
             return this._module;

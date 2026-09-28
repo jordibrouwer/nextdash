@@ -14,12 +14,27 @@ class DashboardConfig {
     static VIEW = 'config';
 
     /**
+     * The Bookmarks view: the bookmark list full size at #bookmarks, drawn by
+     * this same instance with none of Config's navigation around it. Its own
+     * view id because 'bookmarks' is already the grid's.
+     */
+    static LIBRARY_VIEW = 'library';
+
+    /** `#bookmarks…` read as the `#config/bookmarks…` every hash reader here knows. */
+    static libraryHashAsConfig(hash) {
+        const raw = String(hash || '').replace(/^#/, '');
+        if (raw === 'bookmarks' || raw.startsWith('bookmarks/') || raw.startsWith('bookmarks?')) {
+            return `#config/${raw}`;
+        }
+        return hash;
+    }
+
+    /**
      * The gap between rows of a selection sweep.
      *
      * The icon and preview endpoints allow sixty a minute per client, shared
      * with the hover previews and the link checks, so a sweep that goes flat
-     * out spends most of its time being refused. Same value as the kept
-     * list's sweep (dashboard-unsorted-select.js SWEEP_INTERVAL_MS).
+     * out spends most of its time being refused.
      */
     static SELECTION_SWEEP_INTERVAL_MS = 1200;
 
@@ -41,10 +56,12 @@ class DashboardConfig {
         'overview',
         'appearance',
         'bookmarks',
+        'inbox',
         'structure',
         'behavior',
         'data-backups',
         'widgets',
+        'containers',
         'stats',
         'help',
         'logs',
@@ -61,6 +78,16 @@ class DashboardConfig {
      * this list grows one section at a time.
      */
     static SECTION_MODULES = {
+        inbox: {
+            file: 'js/dashboard/dashboard-config-inbox.js',
+            datasetKey: 'dashboardConfigInbox',
+            ready: () => window.DashboardConfigInboxReady === true,
+        },
+        containers: {
+            file: 'js/dashboard/dashboard-config-containers.js',
+            datasetKey: 'dashboardConfigContainers',
+            ready: () => window.DashboardConfigContainersReady === true,
+        },
         logs: {
             file: 'js/dashboard/dashboard-config-logs.js',
             datasetKey: 'dashboardConfigLogs',
@@ -129,10 +156,14 @@ class DashboardConfig {
      * a view preference, not data worth a write to the server on every click.
      */
     static STATS_RANGE_KEY = 'nextdash:config-stats-range-v1';
+    // Which of the two usage charts the reader picked, when they picked one.
+    static STATS_OPENS_MODE_KEY = 'nextdash:config-stats-opens-mode-v1';
 
     constructor(dashboard) {
         this.dash = dashboard;
         this.section = 'overview';
+        // True while this instance is drawing the Bookmarks view rather than Config.
+        this.standalone = false;
         this.aboutTab = 'colophon';
         this.loading = false;
         this._loadPromise = null;
@@ -156,6 +187,8 @@ class DashboardConfig {
         this._finders = null;
         // Behavior sub-tab, remembered the same way.
         this._behaviorTab = DashboardConfig.readRememberedTab('behavior') || 'general';
+        // Inbox sub-tab, remembered the same way.
+        this._inboxTab = DashboardConfig.readRememberedTab('inbox') || 'collecting';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -181,6 +214,10 @@ class DashboardConfig {
         // preference. Health and Inbox both remember their sort; this list was
         // the only one that reset to page order on every visit.
         this.bmSort = null;
+        // null until first rendered, same as bmSort -- see defaultBookmarksGroup
+        // for the rule that picks what an instance with no group of its own yet
+        // opens on.
+        this.bmGroup = null;
         this.bmVisibleLimit = this.bmPageSize();
         this.bmSelected = new Set();
         this.bmSelectAnchor = null;
@@ -196,6 +233,10 @@ class DashboardConfig {
         // How far back the activity chart looks, in days. Restored from the last
         // visit, falling back to 30.
         this.statsRange = DashboardConfig.readStoredStatsRange();
+        this.statsOpensMode = (() => {
+            try { return localStorage.getItem(DashboardConfig.STATS_OPENS_MODE_KEY) || ''; } catch { return ''; }
+        })();
+        this.statsInboxRange = 30;
         // Statistics sub-tab.
         this.statsTab = 'overview';
         this.widgetsTab = 'widgets';
@@ -218,7 +259,8 @@ class DashboardConfig {
         this.settingsFilter = '';
         // Data & backups sub-tab.
         this.dbTab = 'backups';
-        this.bmTab = 'list';
+        // Config opens Bookmarks on View; the Bookmarks view sets 'list' for itself.
+        this.bmTab = 'view';
         // Logs section sub-tab — one tab today, kept a real sub-tab so a link
         // to it follows the same shape as every other section.
         this.logsTab = 'server';
@@ -269,7 +311,8 @@ class DashboardConfig {
     }
 
     isActiveView() {
-        return this.dash.activeView === DashboardConfig.VIEW;
+        const view = this.dash.activeView;
+        return view === DashboardConfig.VIEW || view === DashboardConfig.LIBRARY_VIEW;
     }
 
     /**
@@ -382,7 +425,8 @@ class DashboardConfig {
         }
         const tabs = DashboardConfig.SUB_TABS[match[1]];
         const aliases = match[1] === 'appearance' ? DashboardConfig.APPEARANCE_TAB_ALIASES
-            : match[1] === 'behavior' ? DashboardConfig.BEHAVIOR_TAB_ALIASES : {};
+            : match[1] === 'behavior' ? DashboardConfig.BEHAVIOR_TAB_ALIASES
+                : match[1] === 'stats' ? DashboardConfig.STATS_TAB_ALIASES : {};
         const tab = aliases[match[2]] || match[2];
         return tabs && tabs.includes(tab) ? tab : null;
     }
@@ -449,6 +493,7 @@ class DashboardConfig {
             // here has a tab that cannot be addressed, so the strip works and
             // the address bar never follows it.
             widgets: DashboardConfig.WIDGETS_TABS,
+            inbox: DashboardConfig.INBOX_TABS,
         };
     }
 
@@ -478,7 +523,7 @@ class DashboardConfig {
         try {
             const stored = JSON.parse(localStorage.getItem(DashboardConfig.REMEMBERED_TAB_KEY) || '{}');
             const tab = stored?.[section];
-            const tabs = section === 'appearance' ? DashboardConfig.APPEARANCE_TABS : DashboardConfig.BEHAVIOR_TABS;
+            const tabs = DashboardConfig.SUB_TABS[section] || [];
             return typeof tab === 'string' && tabs.includes(tab) ? tab : null;
         } catch {
             return null;
@@ -505,6 +550,7 @@ class DashboardConfig {
         logs: 'logsTab',
         bookmarks: 'bmTab',
         widgets: 'widgetsTab',
+        inbox: 'inboxTab',
     };
 
     /**
@@ -523,6 +569,7 @@ class DashboardConfig {
         'data-logs-tab': 'logs',
         'data-bm-tab': 'bookmarks',
         'data-widgets-tab': 'widgets',
+        'data-inbox-tab': 'inbox',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -536,6 +583,7 @@ class DashboardConfig {
         logs: 'data-logs-tab',
         bookmarks: 'data-bm-tab',
         widgets: 'data-widgets-tab',
+        inbox: 'data-inbox-tab',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -592,6 +640,14 @@ class DashboardConfig {
         if (tags.length) add('tag', tags.join(','));
         const sort = this.bmSort ?? this.defaultBookmarksSort();
         if (sort && sort !== this.defaultBookmarksSort()) add('sort', sort);
+        // '' ("no groups") is a real, chooseable value, not "unset" -- add()
+        // drops empty strings, so it rides as the word 'none' instead.
+        const group = this.bmGroup ?? this.defaultBookmarksGroup();
+        // Compared against the snapshot this instance opened on, not a fresh
+        // defaultBookmarksGroup() -- see the comment where that snapshot is
+        // taken (renderBookmarksListTab) for why a live read would not work.
+        const openedOnGroup = this._bmGroupDefaultAtLoad ?? this.defaultBookmarksGroup();
+        if (group !== openedOnGroup) add('group', group || 'none');
         return params.length ? `?${params.join('&')}` : '';
     }
 
@@ -609,7 +665,7 @@ class DashboardConfig {
         const at = raw.indexOf('?');
         const params = new URLSearchParams(at < 0 ? '' : raw.slice(at + 1));
         const before = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup]);
 
         this.bmQuery = params.get('q') || '';
         this.bmCategoryFilter = params.get('cat') || '';
@@ -617,14 +673,19 @@ class DashboardConfig {
         this.bmCleanupFilter = (DashboardConfig.CLEANUP_FILTERS[filter]
             || filter === DashboardConfig.UNSORTED_VIEW) ? filter : '';
         const health = params.get('health') || '';
-        this.bmHealthFilter = DashboardConfig.HEALTH_FILTERS.includes(health) ? health : '';
+        this.bmHealthFilter = DashboardConfig.isHealthFilterKey(health) ? health : '';
         const tags = (params.get('tag') || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
         this.bmTagFilter = tags;
         const sort = params.get('sort') || '';
         if (sort) this.bmSort = sort;
+        const groupParam = params.get('group');
+        if (groupParam != null) {
+            const group = groupParam === 'none' ? '' : groupParam;
+            if (DashboardConfig.BM_GROUPS.includes(group)) this.bmGroup = group;
+        }
 
         const after = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup]);
         if (before === after) return false;
         this._bmDuplicateUrls = null;
         this.resetBookmarkVisibleLimit();
@@ -633,6 +694,10 @@ class DashboardConfig {
     }
 
     hashForSection(section) {
+        if (this.standalone) {
+            const page = this.bmPageFilter ? `/${encodeURIComponent(this.bmPageFilter)}` : '';
+            return `bookmarks${page}${this.bookmarksFilterQuery()}`;
+        }
         if (!section || section === 'overview') return 'config';
         if (section === 'bookmarks') {
             const page = this.bmPageFilter ? `/${encodeURIComponent(this.bmPageFilter)}` : '';
@@ -647,7 +712,7 @@ class DashboardConfig {
         // Appearance and Behavior open on the tab last looked at, so a bare
         // link to them lands differently for everyone: their first tab is
         // named too, or the address bar would not be a link to what is shown.
-        const remembers = section === 'appearance' || section === 'behavior';
+        const remembers = section === 'appearance' || section === 'behavior' || section === 'inbox';
         if (tab && tabs && tabs.includes(tab) && (tab !== tabs[0] || remembers)) {
             return `config/${section}/${tab}`;
         }
@@ -670,7 +735,7 @@ class DashboardConfig {
              * an entry per section would turn one Back into six -- so Back
              * leaves config entirely, the way Escape does.
              */
-            const wasOnConfig = String(window.location.hash || '').startsWith('#config');
+            const wasOnConfig = String(window.location.hash || '').startsWith(this.standalone ? '#bookmarks' : '#config');
             if (wasOnConfig || !window.DashboardHistory?.pushLocation?.(next)) {
                 history.replaceState(history.state, '', next);
             }
@@ -683,7 +748,10 @@ class DashboardConfig {
         // inbox and page buttons in the header. Those changed what was on
         // screen without config ever hearing about it, so the memory kept an
         // older tab.
-        this.saveLastConfigLocation();
+        //
+        // Not from the Bookmarks view: that is not a place in Config to come
+        // back to, and a bare #config would have opened on it.
+        if (!this.standalone) this.saveLastConfigLocation();
     }
 
     /**
@@ -800,10 +868,19 @@ class DashboardConfig {
             Promise.resolve(load()).finally(() => this._statsInFlight.delete(key));
         };
         if (this._statsTrend === undefined) once('trend', () => this.loadStatsTrend());
-        if ((all || tab === 'inbox') && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
-        if ((all || tab === 'activity') && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
-        if ((all || tab === 'health') && this._statsHealth === undefined) once('health', () => this.loadStatsHealth());
-        if ((all || tab === 'content') && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
+        // Overview reads the inbox and the health report too: its tiles and its
+        // attention list are built from both. Collection reads the report for
+        // the newest local copy.
+        const wants = {
+            inbox: all || tab === 'inbox' || tab === 'overview',
+            finders: all || tab === 'usage',
+            health: all || tab === 'health' || tab === 'overview' || tab === 'collection',
+            library: all || tab === 'collection',
+        };
+        if (wants.inbox && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
+        if (wants.finders && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
+        if (wants.health && this._statsHealth === undefined) once('health', () => this.loadStatsHealth());
+        if (wants.library && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
     }
 
     /**
@@ -942,6 +1019,8 @@ class DashboardConfig {
             return false;
         }
         const targetSection = this.resolveConfigOpenTarget(section);
+        // From the Bookmarks view: the same instance, but Config's own shell.
+        this.standalone = false;
         if (d.activeView === DashboardConfig.VIEW) {
             if (targetSection !== this.section) {
                 this.section = targetSection;
@@ -956,7 +1035,6 @@ class DashboardConfig {
         d._abortInlineEditForRender?.();
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         d.inbox?.clearKeyboardSelection?.();
-        d.health?.clearKeyboardSelection?.();
         this.clearListKeyboardSelection();
         this.clearBookmarkKeyboardSelection();
         this.section = targetSection;
@@ -980,16 +1058,73 @@ class DashboardConfig {
         return true;
     }
 
+    /**
+     * Open the Bookmarks view: the list, full size, at #bookmarks.
+     *
+     * The same workbench Config → Bookmarks draws, in the same instance --
+     * only the shell around it differs, and the address it writes.
+     */
+    async openLibraryView() {
+        const d = this.dash;
+        const hash = DashboardConfig.libraryHashAsConfig(window.location.hash);
+        if (d.activeView === DashboardConfig.LIBRARY_VIEW) {
+            this.applyLibraryHash(window.location.hash);
+            return true;
+        }
+        if (d.isInlineEditActive() && !(await d.confirmInlineEditBeforeNavigation())) {
+            return false;
+        }
+        d._abortInlineEditForRender?.();
+        d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+        d.inbox?.clearKeyboardSelection?.();
+        this.clearListKeyboardSelection();
+        this.clearBookmarkKeyboardSelection();
+        this.standalone = true;
+        this.section = 'bookmarks';
+        this.bmTab = 'list';
+        void this.ensureBookmarkRenderers();
+        void this.ensureSection('bookmarks');
+        // The Health module and its report, started with the view's own
+        // scripts rather than after its first paint: the join landing late
+        // redrew the side panel under whatever was being typed in it.
+        if (d.health?.isEnabled?.()) void d.health.load?.()?.catch?.(() => {});
+        if (String(hash).startsWith('#config/bookmarks')) {
+            this.applyBookmarksPageFromHash(hash);
+            this.applyBookmarksFiltersFromHash(hash);
+        }
+        d.setActiveView(DashboardConfig.LIBRARY_VIEW);
+        window.nextdashTrack?.('view:library');
+        d.pageNav?.setActiveConfigTab?.();
+        await this.loadAndRender();
+        this.restoreConfigHash();
+        // Not awaited: the view is already usable, and a slow script fetch
+        // must not hold up the navigation that asked for it.
+        void this.maybeShowLibraryTour?.();
+        return true;
+    }
+
+    /** A #bookmarks… hash changed while the view is open: follow its page and filters. */
+    applyLibraryHash(hash) {
+        const asConfig = DashboardConfig.libraryHashAsConfig(hash);
+        const page = this.applyBookmarksPageFromHash(asConfig);
+        const filters = this.applyBookmarksFiltersFromHash(asConfig);
+        if (page || filters) {
+            this.invalidateVisibleBookmarks();
+            this.render();
+        }
+    }
+
     closeConfigView() {
         this.closeWorkbenchOverlays?.();
         const d = this.dash;
-        if (d.activeView !== DashboardConfig.VIEW) {
+        if (!this.isActiveView()) {
             return false;
         }
         // Every way out remembers where you were, not just Shift+H and Shift+I.
         // The five-minute expiry in loadLastConfigLocation is what keeps that
-        // from turning into a tab that greets you forever.
-        this.saveLastConfigLocation();
+        // from turning into a tab that greets you forever. The Bookmarks view
+        // is not a place in Config, so leaving it remembers nothing.
+        if (!this.standalone) this.saveLastConfigLocation();
         // The save indicator lives on <body>, so leaving the view has to take it
         // down; otherwise a "Saved" would linger over the dashboard.
         clearTimeout(this._saveStateTimer);
@@ -1368,6 +1503,10 @@ class DashboardConfig {
         // letter accelerators -- o, m -- went the same way. The Escape branch
         // below has always asked this question; the rest of the keys had not.
         if (this._bmContextMenu?.isOpen?.() && e.key !== 'Escape') return false;
+        // Work through (Health's walk) is the same: its card binds its keys
+        // on document too, and the list took them first -- the walk never
+        // moved.
+        if (this._libFocus?.active) return false;
         if (d.isModalOpen?.()) return false;
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
@@ -1399,6 +1538,9 @@ class DashboardConfig {
                 return false;
             }
         }
+
+        // The side panel's tabs, before [ ] step Config's sub-tabs.
+        if (this.handleWorkbenchPanelTabKey?.(e)) return true;
 
         if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
             let subTabDelta = 0;
@@ -1576,6 +1718,14 @@ class DashboardConfig {
                 }
                 break;
             }
+            case 'inbox': {
+                if (!document.getElementById('config-inbox-body')) {
+                    this.render();
+                    break;
+                }
+                this.repaintInboxBody?.();
+                break;
+            }
             case 'widgets':
                 this.repaintWidgetsBody();
                 break;
@@ -1696,10 +1846,12 @@ class DashboardConfig {
             overview: ['config.sectionOverview', 'Overview'],
             'structure': ['config.sectionStructure', 'Structure'],
             bookmarks: ['config.sectionBookmarks', 'Bookmarks'],
+            inbox: ['config.sectionInbox', 'Inbox'],
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
             widgets: ['config.sectionWidgets', 'Widgets'],
+            containers: ['config.sectionContainers', 'Containers'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],
@@ -1796,10 +1948,13 @@ class DashboardConfig {
         const context = this._changedFilterContext();
         // Bookmarks has no changed-settings filter; it carries a count of what
         // the section holds, the way Health and Inbox do on the same band.
+        // The Bookmarks view's band carries the way to Collection health too,
+        // the way Health's band carries Work through and Rot report.
+        const healthButton = this.standalone ? (this.renderLibraryHeaderActions?.() || '') : '';
         const markup = context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
-                ? `<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
+                ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
                 : '');
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
@@ -1815,6 +1970,14 @@ class DashboardConfig {
          * one order that had no binder at all.
          */
         if (actions) this.bindChangedFilter(head);
+        if (actions && actions.dataset.bmHealthWired !== '1') {
+            actions.dataset.bmHealthWired = '1';
+            actions.addEventListener('click', (e) => {
+                if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
+                else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
+                else this.handleLibraryHeaderClick?.(e);
+            });
+        }
         const bar = null;
         // Only swapped when the body actually rendered one: this runs again on
         // every repaint, and clearing the band unconditionally threw away the
@@ -1844,6 +2007,13 @@ class DashboardConfig {
         if (this.section === 'behavior') {
             return { section: 'behavior', tab: this.behaviorTab };
         }
+        // Bookmarks → View is a tab of settings like Behavior's.
+        if (this.section === 'bookmarks' && !this.standalone && this.bmTab === 'view') {
+            return { section: 'bookmarks', tab: 'view' };
+        }
+        if (this.section === 'inbox') {
+            return { section: 'inbox', tab: this.inboxTab };
+        }
         return null;
     }
 
@@ -1868,8 +2038,9 @@ class DashboardConfig {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
         this.closeWorkbenchOverlaysOffList();
-        container.classList.remove('inbox-layout', 'health-layout', 'tag-filter-layout');
+        container.classList.remove('inbox-layout', 'tag-filter-layout');
         container.classList.add('config-layout', 'page-transition');
+        container.classList.toggle('library-layout', this.standalone);
         // Only the parts that changed. The rail, the search button and the panel
         // frame are the same markup on every render — rebuilding them threw away
         // the scroll position and cost a layout pass per section switch, on a
@@ -1901,10 +2072,13 @@ class DashboardConfig {
         const panel = container.querySelector('#config-view-body');
         const title = container.querySelector('.config-view-section-title');
         if (!panel || !title) return false;
+        // Between Config and the Bookmarks view the shell itself differs.
+        const shellIsLibrary = Boolean(container.querySelector('.config-view--library'));
+        if (shellIsLibrary !== this.standalone) return false;
         const esc = (v) => this.dash.escapeHtml(v);
-        title.textContent = this.sectionLabel(this.section);
+        if (!this.standalone) title.textContent = this.sectionLabel(this.section);
         const main = container.querySelector('.config-view-main');
-        if (main) main.setAttribute('aria-labelledby', `config-section-${esc(this.section)}`);
+        if (main && !this.standalone) main.setAttribute('aria-labelledby', `config-section-${esc(this.section)}`);
         panel.innerHTML = this.renderSection();
         return true;
     }
@@ -1929,6 +2103,12 @@ class DashboardConfig {
             void this.loadBackupData();
         } else if (this.section === 'logs') {
             this.bindLogsActions(container);
+        } else if (this.section === 'containers') {
+            this.bindControlPanels(container, 'behavior');
+            this.bindContainersSection(container);
+        } else if (this.section === 'inbox') {
+            this.bindControlPanels(container, 'behavior');
+            this.bindInboxSection?.(container);
         } else if (this.section === 'widgets') {
             this.bindWidgetsTabs(container);
             this.bindWidgetsEditor(container);
@@ -2514,6 +2694,31 @@ class DashboardConfig {
         this.focusWorkbenchPanel(key);
     }
 
+    /**
+     * `s` and `c`: jump to the panel's Health section, already rendered for
+     * the selected row (repaintWorkbenchPanel runs on every selection move),
+     * so this only has to open it and, for `c`, hand focus to check mode.
+     */
+    openBmHealthPanelSection({ focusCheckMode = false } = {}) {
+        // The side panel may be closed: s opens it.
+        this._libDrawerWanted = true;
+        this.repaintWorkbenchPanel?.();
+        this.setWorkbenchPanelTab?.('health');
+        // c: the Checking section of the tab's accordion, open, its choices in focus.
+        if (focusCheckMode) this.openBmHealthAcc?.('checking')?.querySelector('[data-check-mode]')?.focus();
+    }
+
+    /** `m`: the row's own right-click menu, opened at the row rather than the pointer. */
+    openBookmarkRowContextMenu(key) {
+        const menu = this.bookmarkContextMenu?.();
+        const bookmark = key ? this.findBookmarkByKey(key) : null;
+        if (!menu || !bookmark) return;
+        const row = document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(key)}"]`);
+        const rect = row?.getBoundingClientRect();
+        const point = rect ? { x: rect.left + 24, y: rect.top + rect.height / 2 } : { x: 0, y: 0 };
+        menu.show(key, bookmark, point);
+    }
+
     findBookmarkByKey(key) {
         // Both pools: a row acted on from the unsorted view is not in
         // allBookmarks, and a key resolved from the other side must still find
@@ -2537,18 +2742,26 @@ class DashboardConfig {
      * copy of the bookmark the other views hold. Only the repaint is ours,
      * because only this list paints the usage line.
      */
-    openBookmarkByKey(key) {
+    openBookmarkByKey(key, { newTab = false } = {}) {
         const bookmark = this.findBookmarkByKey(key);
         if (!bookmark?.url) return;
         const href = this.dash.safeBookmarkOpenHref?.(bookmark.url) || bookmark.url;
+        // Counted before it opens: in the same tab, nothing after the
+        // navigation runs, and the open went uncounted.
+        this.recordBookmarkOpenByKey(key, bookmark);
         // Honour the openInNewTab preference, which the dashboard grid already
         // respects: opening from Config used to force a new tab whatever it
-        // said, so the setting only half applied.
-        if (this.dash?.settings?.openInNewTab === false) {
+        // said, so the setting only half applied. "Open in new tab" says so.
+        if (!newTab && this.dash?.settings?.openInNewTab === false) {
             window.location.href = href;
             return;
         }
         window.open(href, '_blank', 'noopener,noreferrer');
+    }
+
+    /** One open, counted as the dashboard counts it, and shown on the row. */
+    recordBookmarkOpenByKey(key, bookmark = this.findBookmarkByKey(key)) {
+        if (!bookmark) return;
         this.dash.recordBookmarkOpened?.(bookmark, undefined, 'config');
         this.refreshBookmarkUsageLine(key, bookmark);
     }
@@ -2581,6 +2794,8 @@ class DashboardConfig {
                 || { label: '—', never: true };
             last.textContent = formatted.label;
         }
+        const spark = row.querySelector('.config-bm-spark');
+        if (spark && typeof this.workbenchSparkCell === 'function') spark.outerHTML = this.workbenchSparkCell(bookmark);
     }
 
     appendBookmarkKeyboardLegend(host) {
@@ -2591,7 +2806,15 @@ class DashboardConfig {
         legend.className = 'config-bm-keyboard-legend';
         legend.setAttribute('aria-hidden', 'true');
         legend.innerHTML = this.renderBookmarkKeyboardLegend();
-        feed.after(legend);
+        // View: under the list (as it was), above it, or not at all.
+        const where = this.dash.settings?.bmViewKeyLegend || 'below';
+        if (where === 'off') return;
+        if (where === 'above') {
+            legend.classList.add('is-above');
+            feed.before(legend);
+        } else {
+            feed.after(legend);
+        }
     }
 
     bindBookmarkKeyboard(container) {
@@ -2604,6 +2827,11 @@ class DashboardConfig {
             host.addEventListener('click', (e) => {
                 const row = e.target.closest('.config-bm-row');
                 if (!row || !host.contains(row)) return;
+                // A click is the way into the side panel -- unless View has a
+                // click only select the row; an open panel follows it either way.
+                if ((this.dash.settings?.bmViewClick || 'panel') !== 'select' || this._libDrawer?.isOpen()) {
+                    this._libDrawerWanted = true;
+                }
                 this._bmKeyboardKey = this.bookmarkRowKey(row);
                 this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
             });
@@ -2713,6 +2941,21 @@ class DashboardConfig {
             return false;
         }
 
+        // f: Work through, as in Health.
+        if (!e.shiftKey && e.key === 'f' && typeof this.startLibraryWorkThrough === 'function') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.startLibraryWorkThrough();
+            return true;
+        }
+        // Shift+P and Shift+C: pages and categories, in the modal over the list.
+        if (e.shiftKey && (e.key === 'P' || e.key === 'C') && typeof this.openStructureModal === 'function') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.openStructureModal(e.key === 'P' ? 'pages' : 'categories');
+            return true;
+        }
+
         const onRowControl = Boolean(
             target?.closest?.('.config-bm-row')
             && target?.matches?.('button, a, input, select, textarea')
@@ -2803,6 +3046,29 @@ class DashboardConfig {
                 this.openBookmarkByKey(this._bmKeyboardKey);
                 return true;
             }
+            /*
+             * Health's own keys, brought in with its report (spec: "Keys").
+             * Gated on the row actually carrying a report issue rather than
+             * only on the module being loaded — pressed on a bookmark the
+             * report has not reached yet, none of these have anything to
+             * act on.
+             */
+            if (['p', 's', 'c', 'm', 'n', 'z'].includes(e.key)) {
+                const health = this._bmHealthModule;
+                const bookmark = this.findBookmarkByKey(this._bmKeyboardKey);
+                const issue = health && bookmark ? this.bmHealthIssue(bookmark) : null;
+                if (issue) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    if (e.key === 'p') void health.recheckIssue(issue);
+                    else if (e.key === 's') this.openBmHealthPanelSection();
+                    else if (e.key === 'c') this.openBmHealthPanelSection({ focusCheckMode: true });
+                    else if (e.key === 'm') this.openBookmarkRowContextMenu(this._bmKeyboardKey);
+                    else if (e.key === 'n') void health.toggleIgnore(issue);
+                    else if (e.key === 'z') void health.toggleIgnore(issue, { snooze: true });
+                    return true;
+                }
+            }
         }
         // With or without a row in focus: the panel is folded for the list.
         if (e.key === 'i') {
@@ -2810,6 +3076,34 @@ class DashboardConfig {
             e.stopImmediatePropagation();
             this.toggleWorkbenchPanel();
             return true;
+        }
+        // R refreshes the report itself, not one row — needs the module, not a
+        // selected bookmark, so it works even before anything is picked.
+        if (e.key === 'R' && this._bmHealthModule) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.refreshBmHealth({ refresh: true });
+            return true;
+        }
+        // h opens the collection health modal -- how the whole library is
+        // doing, not one row -- so like R it needs the module loaded and
+        // nothing selected.
+        if (e.key === 'h' && this._bmHealthModule) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.openBmHealthModal?.();
+            return true;
+        }
+        // H: the selected bookmark's health, in large -- as h is the whole
+        // collection's.
+        if (e.key === 'H' && this._bmHealthModule) {
+            const key = this._bmKeyboardKey || (this.workbenchPanelMode?.() === 'single' ? this.workbenchPanelKey?.() : '');
+            if (key && this.bmHealthIssue?.(this.findBookmarkByKey(key))) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.openBmHealthLarge?.(key);
+                return true;
+            }
         }
         if (e.key === '/' && !isBmSearch) {
             const search = document.getElementById('config-bm-search');
@@ -2836,6 +3130,12 @@ class DashboardConfig {
         { tab: 'organizing', titleKey: 'config.helpWorkspaceTitle', fallback: 'Structure' },
         { tab: 'organizing', titleKey: 'config.helpBookmarksTitle', fallback: 'Bookmarks' },
         { tab: 'organizing', titleKey: 'config.helpTagsTitle', fallback: 'Tags & collections' },
+        { tab: 'bookmarks', titleKey: 'config.helpLibraryTitle', fallback: 'The Bookmarks view' },
+        { tab: 'bookmarks', titleKey: 'config.helpCollectionHealthTitle', fallback: 'Collection health' },
+        { tab: 'bookmarks', titleKey: 'config.helpBmKeysTitle', fallback: 'Keys' },
+        { tab: 'containers', titleKey: 'config.helpContainersSetupTitle', fallback: 'Before it works: Docker, a write token and sometimes root' },
+        { tab: 'containers', titleKey: 'config.helpContainersTitle', fallback: 'The Containers view' },
+        { tab: 'containers', titleKey: 'config.helpContainersConfigTitle', fallback: 'Setting it up' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
         { tab: 'search', titleKey: 'config.helpFindersTitle', fallback: 'Finders' },
         { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
@@ -2847,6 +3147,7 @@ class DashboardConfig {
         // used to land a tab away from the thing it named.
         { tab: 'inbox', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
         { tab: 'inbox', titleKey: 'config.helpInboxWorkTitle', fallback: 'Working through the inbox' },
+        { tab: 'inbox', titleKey: 'config.helpInboxUnsortedTitle', fallback: 'Kept links: Bookmarks → Unsorted' },
         { tab: 'inbox', titleKey: 'config.helpInboxTourTitle', fallback: 'The one-time tour' },
         { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
         { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
@@ -2884,6 +3185,7 @@ class DashboardConfig {
             case 'bookmarks': return this.bmTabLabel(tab);
             case 'help': return this.helpTabLabel(tab);
             case 'logs': return this.logsTabLabel(tab);
+            case 'inbox': return this.inboxTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -2953,6 +3255,26 @@ class DashboardConfig {
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
         feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
+        inboxViewFilter: ['inbox', 'filter', 'unread', 'opens'],
+        inboxViewSort: ['inbox', 'sort', 'order', 'newest', 'oldest'],
+        inboxViewAddress: ['inbox', 'address', 'url', 'domain', 'site'],
+        inboxViewUnreadMark: ['inbox', 'unread', 'mark', 'edge'],
+        inboxViewRail: ['inbox', 'rail', 'filters', 'fold'],
+        inboxViewPanelWidth: ['inbox', 'panel', 'drawer', 'width', 'wide'],
+        inboxViewCloseOutside: ['inbox', 'panel', 'drawer', 'close'],
+        inboxViewClick: ['inbox', 'click', 'select', 'panel'],
+        inboxViewDblClick: ['inbox', 'double click', 'note', 'open'],
+        inboxViewBadge: ['inbox', 'badge', 'count', 'header', 'icon'],
+        inboxViewBadgeCounts: ['inbox', 'badge', 'count', 'unread'],
+        inboxViewKeyLegend: ['inbox', 'keys', 'legend', 'keyboard'],
+        inboxShowInPageTabs: ['inbox', 'header', 'icon', 'tab'],
+        inboxDeleteAfterPromote: ['inbox', 'promote', 'remove', 'bookmark'],
+        dockerViewEnabled: ['docker', 'containers', 'view'],
+        dockerRefreshSeconds: ['docker', 'containers', 'refresh', 'poll'],
+        dockerLogLines: ['docker', 'containers', 'logs'],
+        dockerUpdateInterval: ['docker', 'containers', 'updates', 'registry', 'image'],
+        dockerConfirmStopRestart: ['docker', 'containers', 'confirm', 'stop', 'restart'],
+        dockerStatsHistory: ['docker', 'containers', 'cpu', 'memory', 'chart', 'history', 'resources'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
         statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
         statusOfflineRetryDelayMs: ['offline', 'retry', 'delay', 'status'],
@@ -3510,6 +3832,7 @@ class DashboardConfig {
     }
 
     renderShell() {
+        if (this.standalone) return this.renderLibraryShell();
         const esc = (v) => this.dash.escapeHtml(v);
         const panelId = 'config-section-panel';
         const activeNavId = `config-section-${this.section}`;
@@ -3602,6 +3925,32 @@ class DashboardConfig {
         `;
     }
 
+    /**
+     * The Bookmarks view's shell: Config's band and body, without its section
+     * rail -- the list brings a rail of its own -- so the list runs the width
+     * of the page the way Health's does.
+     */
+    renderLibraryShell() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.bmLibraryTitle', 'Bookmarks');
+        return `
+            <div class="config-view config-view--library">
+                <div class="config-view-head lvs-header">
+                    <div class="lvs-header-text">
+                        <h2 class="config-view-section-title lvs-title">${esc(label)}</h2>
+                        <p class="config-view-head-breadcrumb lvs-description" hidden></p>
+                    </div>
+                    <div class="lvs-header-actions"></div>
+                </div>
+                <div class="config-view-main" id="config-section-panel" role="region" aria-label="${esc(label)}" tabindex="0">
+                    <div class="config-view-body" id="config-view-body">
+                        ${this.renderSection()}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     renderSection() {
         if (this.section === 'overview') {
             return this.renderOverview();
@@ -3624,6 +3973,12 @@ class DashboardConfig {
         if (this.section === 'bookmarks') {
             return this.renderBookmarksSection();
         }
+        if (this.section === 'containers') {
+            return this.renderContainersSection();
+        }
+        if (this.section === 'inbox') {
+            return this.renderInboxSection();
+        }
         if (this.section === 'stats') {
             return this.renderStats();
         }
@@ -3641,53 +3996,6 @@ class DashboardConfig {
         return `<p class="config-view-placeholder">${this.dash.escapeHtml(
             this.t('config.sectionComingSoon', 'This section is being rebuilt.')
         )}</p>`;
-    }
-
-    /** Headline counts — pass a subset stats object when filters are active. */
-    bookmarksSummaryTiles(stats) {
-        // The whole library when no filter is on, counted here rather than
-        // through computeStats(): that one is narrowed by statsPageFilter, the
-        // Statistics scope selector, which lives on the instance for the whole
-        // session. Setting it there and coming back to Bookmarks left these
-        // tiles counting one page while the list and the count label beneath
-        // them counted everything, with nothing on screen to explain it.
-        const s = stats || this.computeBookmarkSubsetStats(this.dash.allBookmarks || []);
-        const pct = s.total ? Math.round((s.tagged / s.total) * 100) : 0;
-        return [
-            {
-                key: 'total',
-                tone: 'accent',
-                label: this.t('config.statsBookmarks', 'Bookmarks'),
-                value: s.total,
-            },
-            {
-                key: 'tagged',
-                tone: 'neutral',
-                label: this.t('config.statsTaggedBookmarks', 'Tagged'),
-                value: s.tagged,
-                detail: s.total
-                    ? this.t('config.bookmarksTileTaggedPct', '{pct}% of total').replace('{pct}', String(pct))
-                    : undefined,
-            },
-            {
-                key: 'categories',
-                tone: 'neutral',
-                label: this.t('config.statsCategoryCount', 'Categories'),
-                value: s.categories,
-            },
-            {
-                key: 'shortcut',
-                tone: 'neutral',
-                label: this.t('config.statsWithShortcut', 'With a shortcut'),
-                value: s.withShortcut,
-            },
-            {
-                key: 'monitored',
-                tone: s.monitored > 0 ? 'accent' : 'neutral',
-                label: this.t('config.statsMonitored', 'Monitored'),
-                value: s.monitored,
-            },
-        ];
     }
 
     renderTile(tile) {
@@ -4396,8 +4704,11 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const label = this.t('config.cheatsheetPdfLink', 'Shortcuts PDF');
         const hint = this.t('config.cheatsheetPdfHint', 'One-page keyboard reference (opens in a new tab)');
+        // The hashed URL, so a regenerated sheet is not hidden behind the copy
+        // the browser cached last time.
+        const href = window.NEXTDASH_ASSETS?.['nextDash-cheatsheet.pdf'] || '/static/nextDash-cheatsheet.pdf';
         return `<a class="config-btn config-btn--small config-cheatsheet-pdf"
-                   href="/static/nextDash-cheatsheet.pdf" target="_blank" rel="noopener noreferrer"
+                   href="${esc(href)}" target="_blank" rel="noopener noreferrer"
                    title="${esc(hint)}">
                     <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 1.5H4.5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5z"/><path d="M9 1.5V5h3.5"/><path d="M6.5 8.5h3M6.5 11h3"/></svg>
                     <span>${esc(label)}</span>
@@ -4637,6 +4948,11 @@ class DashboardConfig {
                     return;
                 }
             }
+            // Bookmarks without a tab means the list, which is the Bookmarks view.
+            if (target.section === 'bookmarks' && !target.bmTab) {
+                void this.openLibraryView();
+                return;
+            }
             // Bookmarks has a strip too, now that its settings live on one.
             if (target.bmTab && target.section === 'bookmarks') {
                 this.bmTab = target.bmTab;
@@ -4784,38 +5100,43 @@ class DashboardConfig {
     }
 
     /**
-     * A tile hands off to the view that acts on it (health with a filter, inbox).
-     *
-     * `focusKey` is a health issue key (`pageId:index`) to select on arrival —
-     * used by "Show in Health" on a single bookmark. focusIssue widens the
-     * filter by itself when the row would otherwise be hidden, so it is passed
-     * instead of a filter rather than alongside one.
+     * A tile hands off to the view that acts on it: health problems to the
+     * Bookmarks view on that health filter, the inbox to the inbox.
      */
-    openViewFromTile(view, filter, focusKey = null) {
+    openViewFromTile(view, filter) {
         const d = this.dash;
         // The overview's "something needs attention" rows. Worth separating from
-        // an ordinary view:health, because it says the summary is what sent
+        // an ordinary view:library, because it says the summary is what sent
         // people there — and which problem type did it.
         this._trackAction('tile-open', { view, ...(filter ? { filter } : {}) });
-        if (view === 'health' && d.health?.openHealthView) {
-            return (async () => {
-                await d.health.openHealthView();
-                const mod = d.health.instance;
-                if (filter && mod) {
-                    mod.filter = filter;
-                    if (mod.isActiveView?.()) {
-                        mod.render();
-                    }
-                }
-                if (focusKey && mod?.focusIssue) {
-                    mod.focusIssue(focusKey);
-                }
-            })();
+        if (view === 'health') {
+            const health = DashboardConfig.isHealthFilterKey(filter) ? filter : '';
+            history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}#bookmarks${health ? `?health=${health}` : ''}`);
+            return this.openLibraryView();
         }
         if (view === 'inbox' && d.inbox?.openInboxView) {
             return d.inbox.openInboxView();
         }
         return Promise.resolve();
+    }
+
+    /**
+     * One bookmark's health, from outside the Bookmarks view (the grid's "Show
+     * in Health"): the view with nothing filtered away, the row under the
+     * cursor and its panel open on Health.
+     */
+    async openLibraryOnBookmark(pageId, url) {
+        history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}#bookmarks`);
+        await this.openLibraryView();
+        const wanted = String(url || '').trim();
+        const b = (this.dash.allBookmarks || []).find((x) => Number(x.pageId) === Number(pageId)
+            && String(x.url || '').trim() === wanted);
+        if (!b) return false;
+        if (this.bookmarksFiltersActive()) this.clearBookmarkFilters();
+        this._bmKeyboardKey = this.bookmarkKey(b);
+        this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
+        this.openBmHealthPanelSection();
+        return true;
     }
 
     /* ── Data & backups ────────────────────────────────────────────────────── */
@@ -5509,7 +5830,7 @@ class DashboardConfig {
 
     bmTabLabel(tab) {
         const map = {
-            list: ['config.bmTabList', 'List'],
+            view: ['config.bmTabView', 'View'],
             tags: ['config.bmTabTags', 'Tags'],
             'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
             'tag-rules': ['config.bmTabTagRules', 'Your rules'],
@@ -6975,13 +7296,22 @@ class DashboardConfig {
         const backups = Array.isArray(this._backupData?.backups) ? this._backupData.backups : [];
         if (!backups.length) return;
         let saved = 0;
-        for (const backup of backups) {
-            try {
-                await this.downloadStoredBackup(backup.name);
-                saved += 1;
-            } catch {
-                // Reported in the total below rather than one toast per file.
+        // One file after another, so the count is the honest progress.
+        const counted = (n) => this.t('config.bulkSweepProgress', '{done} of {total}')
+            .replace('{done}', String(n)).replace('{total}', String(backups.length));
+        this.showProgressOverlay(this.t('config.waitBackupsAllTitle', 'Downloading backups…'), counted(0));
+        try {
+            for (const [i, backup] of backups.entries()) {
+                try {
+                    await this.downloadStoredBackup(backup.name, { quiet: true });
+                    saved += 1;
+                } catch {
+                    // Reported in the total below rather than one toast per file.
+                }
+                window.ProgressOverlay?.update(i + 1, backups.length, counted(i + 1));
             }
+        } finally {
+            this.hideProgressOverlay();
         }
         this.notify(saved === backups.length
             ? this.t('config.backupDownloadAllDone', 'Saved {n} backups.').replace('{n}', String(saved))
@@ -7209,6 +7539,7 @@ class DashboardConfig {
         if (!await this.confirmAction(
             this.t('config.clearPreviewImagesConfirm', 'Remove every cached preview image? They are fetched again when next needed.'),
             { confirmLabel: this.t('config.confirmClear', 'Clear') })) return;
+        const endWait = this.beginWait(this.t('config.waitClearImagesTitle', 'Removing cached images…'), this.t('config.waitClearImagesStatus', 'Deleting the files from disk'));
         try {
             const res = await this.writeFetch('/api/previews/images/clear', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7216,6 +7547,8 @@ class DashboardConfig {
             await this.refreshPreviewImageStats();
         } catch {
             this.notify(this.t('config.clearPreviewImagesError', 'Could not remove the cached images.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
@@ -7257,6 +7590,7 @@ class DashboardConfig {
                 'Forget the keywords read from your pages? Tag suggestions from your own tags, your rules and the catalogue are unaffected.'),
             { confirmLabel: this.t('config.confirmClear', 'Clear') },
         )) return;
+        const endWait = this.beginWait(this.t('config.waitClearKeywordsTitle', 'Forgetting keywords…'), this.t('config.waitClearKeywordsStatus', 'Clearing what the scan read'));
         try {
             const res = await this.writeFetch('/api/tags/keywords/clear', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7270,11 +7604,14 @@ class DashboardConfig {
                 .replace('{n}', String(Number(body.cleared) || 0)), 'success');
         } catch {
             this.notify(this.t('config.clearTagKeywordsError', 'Could not forget the keywords.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
     async clearAllPreviews() {
         if (!await this.confirmAction(this.t('config.clearAllPreviewsConfirm', 'Remove every cached preview card? They are fetched again when next needed.'), { confirmLabel: this.t('config.confirmClear', 'Clear') })) return;
+        const endWait = this.beginWait(this.t('config.waitClearPreviewsTitle', 'Clearing link previews…'), this.t('config.waitClearPreviewsStatus', 'Removing every cached card'));
         try {
             const res = await this.writeFetch('/api/previews/clear', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7282,12 +7619,15 @@ class DashboardConfig {
             this.dash.renderDashboard?.({ animate: false });
         } catch {
             this.notify(this.t('config.clearAllPreviewsError', 'Could not clear the link previews.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
     /** Remove every bookmark but keep pages, categories and settings. */
     async deleteAllBookmarks() {
         if (!await this.confirmAction(this.t('config.deleteAllBookmarksConfirm', 'Delete every bookmark? Your pages, categories and settings are kept. This cannot be undone.'))) return;
+        const endWait = this.beginWait(this.t('config.waitDeleteBookmarksTitle', 'Deleting bookmarks…'), this.t('config.waitDeleteBookmarksStatus', 'Removing them from every page'));
         try {
             // Same explicit confirmation flag the reset endpoint requires.
             const res = await this.writeFetch('/api/bookmarks/delete-all', {
@@ -7302,6 +7642,8 @@ class DashboardConfig {
             this.dash.renderDashboard?.({ animate: false });
         } catch {
             this.notify(this.t('config.deleteAllBookmarksError', 'Could not delete the bookmarks.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
@@ -7349,17 +7691,32 @@ class DashboardConfig {
 
     async downloadFullBackup() {
         const stamp = new Date().toISOString().replace('T', '_').replace(/\..+/, '').replace(/:/g, '-');
-        const ok = await this.downloadViaBlob('/api/backup', `nextDash-backup-${stamp}.zip`,
-            'config.backupError', 'Could not create the backup.');
+        // The server zips everything first, local copies included -- tens of
+        // megabytes before the first byte arrives.
+        const endWait = this.beginWait(this.t('config.waitBackupDownloadTitle', 'Making a backup…'),
+            this.t('config.waitBackupDownloadStatus', 'Packing up your data for download'));
+        let ok;
+        try {
+            ok = await this.downloadViaBlob('/api/backup', `nextDash-backup-${stamp}.zip`,
+                'config.backupError', 'Could not create the backup.');
+        } finally {
+            endWait();
+        }
         if (ok) this.notify(this.t('config.backupCreated', 'Backup downloaded.'), 'success');
     }
 
-    downloadStoredBackup(name) {
+    async downloadStoredBackup(name, { quiet = false } = {}) {
         // This endpoint needs no write token, but routing it through the same
         // helper means one download path to keep working rather than two.
-        return this.downloadViaBlob(
-            `/api/auto-backups/download?name=${encodeURIComponent(name)}`, name,
-            'config.autoBackupDownloadError', 'Could not download the backup.');
+        const endWait = quiet ? () => {} : this.beginWait(
+            this.t('config.waitBackupFetchTitle', 'Downloading the backup…'), name);
+        try {
+            return await this.downloadViaBlob(
+                `/api/auto-backups/download?name=${encodeURIComponent(name)}`, name,
+                'config.autoBackupDownloadError', 'Could not download the backup.');
+        } finally {
+            endWait();
+        }
     }
 
     async runBackupNow() {
@@ -7387,6 +7744,7 @@ class DashboardConfig {
     async restoreBackup(name) {
         const ok = await this.confirmAction(this.t('config.backupRestoreConfirm', 'Restore this backup? Current data will be replaced.'), { confirmLabel: this.t('config.autoBackupRestore', 'Restore') });
         if (!ok) return;
+        const endWait = this.beginWait(this.t('config.waitRestoreTitle', 'Restoring the backup…'), this.t('config.waitRestoreStatus', 'Replacing your data with the backup'));
         try {
             const res = await this.writeFetch(`/api/auto-backups/restore?name=${encodeURIComponent(name)}`, { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7394,6 +7752,8 @@ class DashboardConfig {
             setTimeout(() => window.location.reload(), 800);
         } catch {
             this.notify(this.t('config.autoBackupRestoreError', 'Failed to restore backup.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
@@ -7480,6 +7840,7 @@ class DashboardConfig {
      * one set, a link would download a 401 page named like a bookmark file.
      */
     async exportBookmarksHTML() {
+        const endWait = this.beginWait(this.t('config.waitExportTitle', 'Preparing the export…'), this.t('config.waitExportStatus', 'Collecting your bookmarks'));
         try {
             const res = await this.writeFetch('/api/bookmarks/export-html');
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7488,10 +7849,13 @@ class DashboardConfig {
             this.notify(this.t('config.htmlExportSuccess', 'Bookmarks exported.'), 'success');
         } catch {
             this.notify(this.t('config.htmlExportError', 'Could not export the bookmarks.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
     async exportBookmarksCSV() {
+        const endWait = this.beginWait(this.t('config.waitExportTitle', 'Preparing the export…'), this.t('config.waitExportStatus', 'Collecting your bookmarks'));
         try {
             const [bookmarksRes, pagesRes] = await Promise.all([
                 fetch('/api/bookmarks?all=true'),
@@ -7519,6 +7883,8 @@ class DashboardConfig {
             this.notify(this.t('config.csvExportSuccess', 'Bookmarks exported.'), 'success');
         } catch {
             this.notify(this.t('config.csvExportError', 'Could not export bookmarks.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
@@ -8143,6 +8509,18 @@ class DashboardConfig {
      * are almost the same is how two surfaces drift apart. These three stay as
      * the names the rest of this file already calls.
      */
+    /**
+     * Start showing that something is being waited on; returns what ends it.
+     *
+     * For the actions that are one request of unknown length -- a backup, a
+     * restore, a page asked for its preview. The overlay only appears once the
+     * wait is noticeable (see ProgressOverlay.begin), so a quick answer does
+     * not flash it. Call the returned function in a finally.
+     */
+    beginWait(title, status) {
+        return window.ProgressOverlay?.begin?.(title, status) || (() => {});
+    }
+
     showProgressOverlay(title, status, options) {
         return window.ProgressOverlay?.show(title, status, options);
     }
@@ -8287,6 +8665,10 @@ class DashboardConfig {
         const url = `/api/bookmarks/import-html?page=${encodeURIComponent(pageId)}`;
 
         let preview;
+        // A browser export can hold thousands of links; reading it through
+        // takes a moment before there is anything to confirm.
+        const endRead = this.beginWait(this.t('config.waitImportReadTitle', 'Reading the bookmarks file…'),
+            this.t('config.waitImportReadStatus', 'Counting what is new'));
         try {
             const res = await this.writeFetch(`${url}&dryRun=1`, { method: 'POST', body: file });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -8294,6 +8676,8 @@ class DashboardConfig {
         } catch {
             this.notify(this.t('config.browserImportError', 'Could not read that bookmarks file.'), 'error');
             return;
+        } finally {
+            endRead();
         }
         if (!Number(preview.total)) {
             this.notify(this.t('config.browserImportEmpty', 'No bookmarks found in that file.'), 'error');
@@ -8310,12 +8694,16 @@ class DashboardConfig {
             { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false });
         if (!ok) return;
 
+        // Shown for as long as the import runs and the page reloads after it.
+        this.showProgressOverlay(this.t('config.csvImportTitle', 'Importing bookmarks…'),
+            this.t('config.waitImportStatus', '{n} bookmarks').replace('{n}', String(preview.new)));
         try {
             const res = await this.writeFetch(url, { method: 'POST', body: file });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json().catch(() => ({}));
             const imported = Number(result.imported) || 0;
             const skipped = Number(result.skipped) || 0;
+            this.finishProgressOverlay(this.t('config.sourceImported', 'Imported {n} bookmarks.').replace('{n}', String(imported)));
             this.notify(
                 this.t('config.browserImportDone', 'Imported {i}, skipped {s} duplicates. Reloading…')
                     .replace('{i}', String(imported)).replace('{s}', String(skipped)),
@@ -8323,6 +8711,7 @@ class DashboardConfig {
             );
             setTimeout(() => window.location.reload(), 1000);
         } catch {
+            this.hideProgressOverlay();
             this.notify(this.t('config.browserImportError', 'Could not import the bookmarks.'), 'error');
         }
     }
@@ -8451,6 +8840,7 @@ class DashboardConfig {
     }
 
     async exportSettings() {
+        const endWait = this.beginWait(this.t('config.waitExportSettingsTitle', 'Preparing the export…'), this.t('config.waitExportSettingsStatus', 'Collecting your settings'));
         try {
             const res = await fetch('/api/settings');
             if (!res.ok) throw new Error(res.statusText);
@@ -8463,6 +8853,8 @@ class DashboardConfig {
             this.notify(this.t('config.settingsExportSuccess', 'Settings exported.'), 'success');
         } catch {
             this.notify(this.t('config.settingsExportError', 'Could not export settings.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
@@ -11644,12 +12036,34 @@ class DashboardConfig {
         inboxEnabled: { info: ['inboxEnabledInfoTitle', 'inboxEnabledInfoMessage'], def: true },
         unsortedEnabled: { hint: 'unsortedEnabledHint', def: true },
         keepAutoFile: { hint: 'keepAutoFileHint', def: false },
+        inboxShowInPageTabs: { info: ['inboxShowInPageTabsInfoTitle', 'inboxShowInPageTabsInfoMessage'], def: true },
+        inboxDeleteAfterPromote: { info: ['inboxDeleteAfterPromoteInfoTitle', 'inboxDeleteAfterPromoteInfoMessage'], def: true },
+        // Config → Inbox: the Inbox view
+        inboxViewFilter: { info: ['inboxViewFilterInfoTitle', 'inboxViewFilterInfoMessage'], def: 'last' },
+        inboxViewSort: { info: ['inboxViewSortInfoTitle', 'inboxViewSortInfoMessage'], def: 'last' },
+        inboxViewAddress: { info: ['inboxViewAddressInfoTitle', 'inboxViewAddressInfoMessage'], def: 'domain' },
+        inboxViewUnreadMark: { info: ['inboxViewUnreadMarkInfoTitle', 'inboxViewUnreadMarkInfoMessage'], def: true },
+        inboxViewRail: { info: ['inboxViewRailInfoTitle', 'inboxViewRailInfoMessage'], def: 'open' },
+        inboxViewPanelWidth: { info: ['inboxViewPanelWidthInfoTitle', 'inboxViewPanelWidthInfoMessage'], def: 'normal' },
+        inboxViewCloseOutside: { info: ['inboxViewCloseOutsideInfoTitle', 'inboxViewCloseOutsideInfoMessage'], def: true },
+        inboxViewClick: { info: ['inboxViewClickInfoTitle', 'inboxViewClickInfoMessage'], def: 'panel' },
+        inboxViewDblClick: { info: ['inboxViewDblClickInfoTitle', 'inboxViewDblClickInfoMessage'], def: 'open' },
+        inboxViewBadge: { info: ['inboxViewBadgeInfoTitle', 'inboxViewBadgeInfoMessage'], def: true },
+        inboxViewBadgeCounts: { info: ['inboxViewBadgeCountsInfoTitle', 'inboxViewBadgeCountsInfoMessage'], def: 'unread' },
+        inboxViewKeyLegend: { info: ['inboxViewKeyLegendInfoTitle', 'inboxViewKeyLegendInfoMessage'], def: 'below' },
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
         feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
         feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
+        // Containers
+        dockerViewEnabled: { def: true },
+        dockerRefreshSeconds: { def: 5 },
+        dockerLogLines: { def: 200 },
+        dockerUpdateInterval: { def: 'off' },
+        dockerConfirmStopRestart: { def: false },
+        dockerStatsHistory: { def: true },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
         statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 450 },
@@ -11665,9 +12079,27 @@ class DashboardConfig {
         // the server about what "unchanged" means.
         configBookmarksSort: { info: ['configBookmarksSortInfoTitle', 'configBookmarksSortInfoMessage'], def: 'page' },
         configBookmarksPageSize: { info: ['configBookmarksPageSizeInfoTitle', 'configBookmarksPageSizeInfoMessage'], def: 50 },
+        // Config → Bookmarks → View: every default is how the view behaved
+        // before it had settings (models.go, clampBookmarkViewSettings).
+        bmViewGroup: { info: ['bmViewGroupInfoTitle', 'bmViewGroupInfoMessage'], def: 'last' },
+        bmViewAddress: { info: ['bmViewAddressInfoTitle', 'bmViewAddressInfoMessage'], def: 'full' },
+        bmViewRowColors: { info: ['bmViewRowColorsInfoTitle', 'bmViewRowColorsInfoMessage'], def: true },
+        bmViewColumns: { info: ['bmViewColumnsInfoTitle', 'bmViewColumnsInfoMessage'], def: null },
+        bmViewUsageDays: { info: ['bmViewUsageDaysInfoTitle', 'bmViewUsageDaysInfoMessage'], def: 30 },
+        bmViewRail: { info: ['bmViewRailInfoTitle', 'bmViewRailInfoMessage'], def: 'open' },
+        bmViewRailBlocks: { info: ['bmViewRailBlocksInfoTitle', 'bmViewRailBlocksInfoMessage'], def: null },
+        bmViewPanelTab: { info: ['bmViewPanelTabInfoTitle', 'bmViewPanelTabInfoMessage'], def: 'last' },
+        bmViewCloseOutside: { info: ['bmViewCloseOutsideInfoTitle', 'bmViewCloseOutsideInfoMessage'], def: true },
+        bmViewPanelWidth: { info: ['bmViewPanelWidthInfoTitle', 'bmViewPanelWidthInfoMessage'], def: 'normal' },
+        bmViewClick: { info: ['bmViewClickInfoTitle', 'bmViewClickInfoMessage'], def: 'panel' },
+        bmViewDblClick: { info: ['bmViewDblClickInfoTitle', 'bmViewDblClickInfoMessage'], def: 'open' },
+        bmViewHealthRange: { info: ['bmViewHealthRangeInfoTitle', 'bmViewHealthRangeInfoMessage'], def: '30' },
+        bmViewBadge: { info: ['bmViewBadgeInfoTitle', 'bmViewBadgeInfoMessage'], def: true },
+        bmViewBadgeCounts: { info: ['bmViewBadgeCountsInfoTitle', 'bmViewBadgeCountsInfoMessage'], def: 'broken' },
+        bmViewKeyLegend: { info: ['bmViewKeyLegendInfoTitle', 'bmViewKeyLegendInfoMessage'], def: 'below' },
         bookmarkDeleteConfirmFrom: { info: ['bookmarkDeleteConfirmFromInfoTitle', 'bookmarkDeleteConfirmFromInfoMessage'], def: 1 },
         defaultMonitorIntervalMinutes: { info: ['defaultMonitorIntervalInfoTitle', 'defaultMonitorIntervalInfoMessage'], def: 15 },
-        newBookmarkCheckMode: { info: ['newBookmarkCheckModeInfoTitle', 'newBookmarkCheckModeInfoMessage'], def: 'off' },
+        newBookmarkCheckMode: { info: ['newBookmarkCheckModeInfoTitle', 'newBookmarkCheckModeInfoMessage'], def: 'periodic' },
         newBookmarkPinned: { info: ['newBookmarkPinnedInfoTitle', 'newBookmarkPinnedInfoMessage'], def: false },
         newBookmarkCategory: { def: '' },
         bookmarkStaleDays: { info: ['bookmarkStaleDaysInfoTitle', 'bookmarkStaleDaysInfoMessage'], def: 90 },
@@ -11675,7 +12107,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'tarnished-brass-dark' },
+        theme: { def: 'matrix-bluepill-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -11710,7 +12142,6 @@ class DashboardConfig {
         showCheatSheetButton: { info: ['showCheatSheetButtonInfoTitle', 'showCheatSheetButtonInfoMessage'], def: true },
         showCollapseAllButton: { info: ['showCollapseAllButtonInfoTitle', 'showCollapseAllButtonInfoMessage'], def: true },
         showConfigButton: { info: ['showConfigButtonInfoTitle', 'showConfigButtonInfoMessage'], def: true },
-        showHealthDashboard: { info: ['showHealthDashboardInfoTitle', 'showHealthDashboardInfoMessage'], def: true },
         showAddBookmarkButton: { info: ['showAddBookmarkButtonInfoTitle', 'showAddBookmarkButtonInfoMessage'], def: true },
         showSearchButton: { info: ['showSearchButtonInfoTitle', 'showSearchButtonInfoMessage'], def: true },
         showFindersButton: { info: ['showFindersButtonInfoTitle', 'showFindersButtonInfoMessage'], def: true },
@@ -11961,14 +12392,69 @@ class DashboardConfig {
         const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()
             || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
         return [
+            // Config -> Containers: the Docker view's own settings, drawn and
+            // saved like Behavior's. The connection status, the hidden list and
+            // the GitHub token are hand-built beside these (config-containers).
+            {
+                section: 'containers',
+                tab: null,
+                title: t('config.containersGroupView', 'View'),
+                note: t('config.containersGroupViewNote', 'The Containers view, its button in the header and its rows in search.'),
+                controls: [
+                    bool('dockerViewEnabled', 'config.dockerViewEnabledLabel', 'Show the Containers view'),
+                    { field: 'dockerRefreshSeconds', type: 'select', label: t('config.dockerRefreshLabel', 'Refresh the list every'), options: [
+                        opt(2, t('config.dockerRefresh2', '2 seconds')),
+                        opt(5, t('config.dockerRefresh5', '5 seconds')),
+                        opt(10, t('config.dockerRefresh10', '10 seconds')),
+                        opt(30, t('config.dockerRefresh30', '30 seconds')),
+                    ] },
+                    { field: 'dockerLogLines', type: 'select', label: t('config.dockerLogLinesLabel', 'Log lines to show'), options: [
+                        opt(100, '100'), opt(200, '200'), opt(500, '500'), opt(1000, '1000'),
+                    ] },
+                    bool('dockerStatsHistory', 'config.dockerStatsHistoryLabel', 'Keep the last hour of CPU and memory'),
+                ],
+            },
+            {
+                section: 'containers',
+                tab: null,
+                title: t('config.containersGroupUpdates', 'Updates'),
+                note: t('config.containersGroupUpdatesNote', 'Asks the registries whether a newer image is waiting. Off by default because it makes outbound requests.'),
+                controls: [
+                    { field: 'dockerUpdateInterval', type: 'select', label: t('config.dockerUpdateIntervalLabel', 'Check for image updates'), options: [
+                        opt('off', t('dashboard.dockerIntervalOff', 'Off')),
+                        opt('6h', t('dashboard.dockerInterval6h', 'Every 6 hours')),
+                        opt('12h', t('dashboard.dockerInterval12h', 'Every 12 hours')),
+                        opt('24h', t('dashboard.dockerInterval24h', 'Every 24 hours')),
+                    ] },
+                ],
+            },
+            {
+                section: 'containers',
+                tab: null,
+                title: t('config.containersGroupSafety', 'Safety'),
+                note: t('config.containersGroupSafetyNote', 'Update and remove always ask first. This adds stop and restart.'),
+                controls: [
+                    bool('dockerConfirmStopRestart', 'config.dockerConfirmStopRestartLabel', 'Also confirm stop and restart'),
+                ],
+            },
             // Config → Bookmarks had no settings at all; the list made these
             // choices on the user's behalf and forgot them between visits.
+            // Config → Bookmarks → View: how the Bookmarks view looks and
+            // behaves. The list's sort and page size moved here from Settings.
             {
                 section: 'bookmarks',
-                tab: null,
-                title: t('config.bookmarksGroupList', 'The list'),
-                note: t('config.bookmarksGroupListNote', 'How this list opens and how much of it loads at a time.'),
+                tab: 'view',
+                title: t('config.bmViewGroupList', 'The list'),
                 controls: [
+                    { field: 'bmViewGroup', type: 'select', label: t('config.bmViewGroupLabel', 'Group by'), options: [
+                        opt('last', t('config.bmViewGroupLast', 'As last chosen')),
+                        opt('none', t('config.bmGroupNone', 'No groups')),
+                        opt('page', t('config.bmGroupByPage', 'Page')),
+                        opt('category', t('config.bmGroupByCategory', 'Category')),
+                        opt('site', t('config.bmGroupBySite', 'Site')),
+                        opt('status', t('config.bmGroupByStatus', 'Status')),
+                        opt('tag', t('config.bmGroupByTag', 'Tag')),
+                    ] },
                     { field: 'configBookmarksSort', type: 'select', label: t('config.configBookmarksSortLabel', 'Open sorted by'), options: [
                         opt('page', t('config.sortByPage', 'Page order')),
                         opt('name', t('config.sortByName', 'Name (A–Z)')),
@@ -11981,6 +12467,115 @@ class DashboardConfig {
                     ] },
                     { field: 'configBookmarksPageSize', type: 'number', min: 10, max: 500, step: 10,
                         label: t('config.configBookmarksPageSizeLabel', 'Rows per load') },
+                    { field: 'bmViewAddress', type: 'select', label: t('config.bmViewAddressLabel', 'Address in the row'), options: [
+                        opt('full', t('config.bmViewAddressFull', 'Full address')),
+                        opt('domain', t('config.bmViewAddressDomain', 'Domain')),
+                        opt('hidden', t('config.bmViewAddressHidden', 'Hidden')),
+                    ] },
+                    { field: 'bmViewRowColors', type: 'checkbox', label: t('config.bmViewRowColorsLabel', 'Colour rows by their health') },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupColumns', 'Columns'),
+                controls: [
+                    { field: 'bmViewColumns', type: 'checkset', label: t('config.bmViewColumnsLabel', 'Columns shown'), options: [
+                        opt('tags', t('config.bmViewColTags', 'Tags')),
+                        opt('shortcut', t('config.bmViewColShortcut', 'Shortcut')),
+                        opt('pinned', t('config.bmViewColPinned', 'Pinned')),
+                        opt('opens', t('config.bmViewColOpens', 'Opens')),
+                        opt('last', t('config.bmViewColLast', 'Last opened')),
+                        opt('added', t('config.bmViewColAdded', 'Added')),
+                        opt('usage', t('config.bmViewColUsage', 'Usage')),
+                        opt('score', t('config.bmViewColScore', 'Score')),
+                    ] },
+                    { field: 'bmViewUsageDays', type: 'select', label: t('config.bmViewUsageDaysLabel', 'Usage covers'), options: [
+                        opt(7, t('config.bmViewDays7', '7 days')),
+                        opt(14, t('config.bmViewDays14', '14 days')),
+                        opt(30, t('config.bmViewDays30', '30 days')),
+                    ] },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupRail', 'Rail'),
+                controls: [
+                    { field: 'bmViewRail', type: 'select', label: t('config.bmViewRailLabel', 'The rail on the left'), options: [
+                        opt('open', t('config.bmViewRailOpen', 'Open')),
+                        opt('folded', t('config.bmViewRailFolded', 'Folded')),
+                    ] },
+                    { field: 'bmViewRailBlocks', type: 'checkset', label: t('config.bmViewRailBlocksLabel', 'Blocks shown'), options: [
+                        opt('views', t('config.bmViewRailViews', 'Views')),
+                        opt('health', t('config.bmViewRailHealth', 'Health')),
+                        opt('pages', t('config.bmViewRailPages', 'Pages')),
+                        opt('tags', t('config.bmViewRailTags', 'Tags')),
+                    ] },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupPanel', 'Side panel'),
+                controls: [
+                    { field: 'bmViewPanelTab', type: 'select', label: t('config.bmViewPanelTabLabel', 'Opens on'), options: [
+                        opt('last', t('config.bmViewPanelTabLast', 'The tab used last')),
+                        opt('details', t('config.bmTabDetails', 'Details')),
+                        opt('health', t('config.bmHealth', 'Health')),
+                        opt('usage', t('config.bmUsage', 'Usage')),
+                    ] },
+                    { field: 'bmViewCloseOutside', type: 'checkbox', label: t('config.bmViewCloseOutsideLabel', 'Close on a click beside it') },
+                    { field: 'bmViewPanelWidth', type: 'select', label: t('config.bmViewPanelWidthLabel', 'Width'), options: [
+                        opt('normal', t('config.bmViewWidthNormal', 'Normal')),
+                        opt('wide', t('config.bmViewWidthWide', 'Wide')),
+                    ] },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupClicks', 'Clicking'),
+                controls: [
+                    { field: 'bmViewClick', type: 'select', label: t('config.bmViewClickLabel', 'A click on a row'), options: [
+                        opt('panel', t('config.bmViewClickPanel', 'Opens the side panel')),
+                        opt('select', t('config.bmViewClickSelect', 'Only selects it')),
+                    ] },
+                    { field: 'bmViewDblClick', type: 'select', label: t('config.bmViewDblClickLabel', 'A double click'), options: [
+                        opt('open', t('config.bmViewDblOpen', 'Opens the bookmark')),
+                        opt('edit', t('config.bmViewDblEdit', 'Edits it')),
+                    ] },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupHealth', 'Health'),
+                controls: [
+                    { field: 'bmViewHealthRange', type: 'select', label: t('config.bmViewHealthRangeLabel', 'Health in large opens on'), options: [
+                        opt('today', t('config.bmLargeRangeToday', 'Today')),
+                        opt('7', t('config.bmViewDays7', '7 days')),
+                        opt('14', t('config.bmViewDays14', '14 days')),
+                        opt('30', t('config.bmViewDays30', '30 days')),
+                        opt('90', t('config.bmViewDays90', '90 days')),
+                    ] },
+                    { field: 'bmViewBadge', type: 'checkbox', special: 'healthBadge', label: t('config.bmViewBadgeLabel', 'A count on the Bookmarks icon') },
+                    { field: 'bmViewBadgeCounts', type: 'select', special: 'healthBadge', label: t('config.bmViewBadgeCountsLabel', 'The count shows'), options: [
+                        opt('broken', t('config.bmViewBadgeUrgent', 'The most urgent kind')),
+                        opt('all', t('config.bmViewBadgeAll', 'Every problem, added up')),
+                    ] },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'view',
+                title: t('config.bmViewGroupKeys', 'Keys'),
+                controls: [
+                    { field: 'bmViewKeyLegend', type: 'select', label: t('config.bmViewKeyLegendLabel', 'The key legend'), options: [
+                        opt('below', t('config.bmViewLegendBelow', 'Below the list')),
+                        opt('above', t('config.bmViewLegendAbove', 'Above the list')),
+                        opt('off', t('config.bmViewLegendOff', 'Hidden')),
+                    ] },
                 ],
             },
             {
@@ -12430,7 +13025,6 @@ class DashboardConfig {
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
                     chrome('showDashboardButton', 'config.showDashboardButtonLabel', 'Show the dashboard button'),
                     chrome('showInboxButton', 'config.showInboxButtonLabel', 'Show the inbox button'),
-                    chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
                     chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
                 ],
             },
@@ -12548,13 +13142,14 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
-                tab: 'inbox',
-                title: t('config.generalGroupQuickAdd', 'Quick add & inbox'),
+                section: 'inbox',
+                tab: 'collecting',
+                title: t('config.inboxGroupCollecting', 'Collecting'),
                 note: t('config.generalGroupQuickAddNote', 'What happens when you paste a URL onto the dashboard — add it straight away, or collect it in the inbox to sort later.'),
                 controls: [
-                    bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
                     bool('inboxEnabled', 'config.inboxEnabledLabel', 'Enable the inbox'),
+                    bool('inboxShowInPageTabs', 'config.inboxShowInPageTabsLabel', 'Show the inbox in the header'),
+                    bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
                     // Keeping is a step in the inbox's own flow, so its switch
                     // stands with the inbox rather than among the header's
                     // icons, where it used to read as "show an icon" while it
@@ -12566,6 +13161,91 @@ class DashboardConfig {
                     { field: 'pasteDestination', type: 'select', label: t('config.pasteDestinationLabel', 'Paste destination'), art: 'flow', options: [
                         opt('ask', t('config.pasteDestinationAsk', 'Ask each time')), opt('bookmark', t('config.pasteDestinationBookmark', 'New bookmark')),
                         opt('inbox', t('config.pasteDestinationInbox', 'Inbox')),
+                    ] },
+                    bool('inboxDeleteAfterPromote', 'config.inboxDeleteAfterPromoteLabel', 'Remove from the inbox once promoted'),
+                ],
+            },
+            // Config → Inbox: how the Inbox view looks and behaves, the way
+            // Bookmarks → View does it for the Bookmarks view.
+            {
+                section: 'inbox',
+                tab: 'list',
+                title: t('config.bmViewGroupList', 'The list'),
+                controls: [
+                    { field: 'inboxViewFilter', type: 'select', label: t('config.inboxViewFilterLabel', 'Opens on'), options: [
+                        opt('last', t('config.inboxViewFilterLast', 'The filter used last')),
+                        opt('all', t('dashboard.inboxFilterAll', 'All')),
+                        opt('unread', t('dashboard.inboxFilterUnread', 'Unread')),
+                        opt('snoozed', t('dashboard.inboxFilterSnoozed', 'Snoozed')),
+                        opt('noted', t('dashboard.inboxFilterNoted', 'With note')),
+                    ] },
+                    { field: 'inboxViewSort', type: 'select', label: t('config.inboxViewSortLabel', 'Sorted by'), options: [
+                        opt('last', t('config.inboxViewSortLast', 'The order used last')),
+                        opt('newest', t('config.inboxViewSortNewest', 'Newest first')),
+                        opt('oldest', t('config.inboxViewSortOldest', 'Oldest first')),
+                        opt('title', t('config.inboxViewSortTitle', 'Title')),
+                        opt('domain', t('config.inboxViewSortDomain', 'Site')),
+                    ] },
+                    { field: 'inboxViewAddress', type: 'select', label: t('config.bmViewAddressLabel', 'Address in the row'), options: [
+                        opt('domain', t('config.bmViewAddressDomain', 'Domain')),
+                        opt('full', t('config.bmViewAddressFull', 'Full address')),
+                        opt('hidden', t('config.bmViewAddressHidden', 'Hidden')),
+                    ] },
+                    bool('inboxViewUnreadMark', 'config.inboxViewUnreadMarkLabel', 'Mark unread rows'),
+                ],
+            },
+            {
+                section: 'inbox',
+                tab: 'panel',
+                title: t('config.inboxGroupRailPanel', 'Rail and side panel'),
+                controls: [
+                    { field: 'inboxViewRail', type: 'select', label: t('config.bmViewRailLabel', 'The rail on the left'), options: [
+                        opt('open', t('config.bmViewRailOpen', 'Open')),
+                        opt('folded', t('config.bmViewRailFolded', 'Folded')),
+                    ] },
+                    { field: 'inboxViewPanelWidth', type: 'select', label: t('config.bmViewPanelWidthLabel', 'Width'), options: [
+                        opt('normal', t('config.bmViewWidthNormal', 'Normal')),
+                        opt('wide', t('config.bmViewWidthWide', 'Wide')),
+                    ] },
+                    bool('inboxViewCloseOutside', 'config.bmViewCloseOutsideLabel', 'Close on a click beside it'),
+                ],
+            },
+            {
+                section: 'inbox',
+                tab: 'panel',
+                title: t('config.bmViewGroupClicks', 'Clicking'),
+                controls: [
+                    { field: 'inboxViewClick', type: 'select', label: t('config.bmViewClickLabel', 'A click on a row'), options: [
+                        opt('panel', t('config.bmViewClickPanel', 'Opens the side panel')),
+                        opt('select', t('config.bmViewClickSelect', 'Only selects it')),
+                    ] },
+                    { field: 'inboxViewDblClick', type: 'select', label: t('config.bmViewDblClickLabel', 'A double click'), options: [
+                        opt('open', t('config.inboxViewDblOpen', 'Opens the link')),
+                        opt('note', t('config.inboxViewDblNote', 'Edits the note')),
+                    ] },
+                ],
+            },
+            {
+                section: 'inbox',
+                tab: 'icon',
+                title: t('config.inboxGroupBadge', 'Header icon'),
+                controls: [
+                    { field: 'inboxViewBadge', type: 'checkbox', special: 'inboxBadge', label: t('config.inboxViewBadgeLabel', 'A count on the Inbox icon') },
+                    { field: 'inboxViewBadgeCounts', type: 'select', special: 'inboxBadge', label: t('config.bmViewBadgeCountsLabel', 'The count shows'), options: [
+                        opt('unread', t('config.inboxViewBadgeUnread', 'What is unread')),
+                        opt('all', t('config.inboxViewBadgeAll', 'Everything awake')),
+                    ] },
+                ],
+            },
+            {
+                section: 'inbox',
+                tab: 'list',
+                title: t('config.bmViewGroupKeys', 'Keys'),
+                controls: [
+                    { field: 'inboxViewKeyLegend', type: 'select', label: t('config.bmViewKeyLegendLabel', 'The key legend'), options: [
+                        opt('below', t('config.bmViewLegendBelow', 'Below the list')),
+                        opt('above', t('config.bmViewLegendAbove', 'Above the list')),
+                        opt('off', t('config.bmViewLegendOff', 'Hidden')),
                     ] },
                 ],
             },
@@ -12679,9 +13359,8 @@ class DashboardConfig {
                 ],
             },
             {
-                // Shares a tab with the inbox: both are about what arrives.
                 section: 'behavior',
-                tab: 'inbox',
+                tab: 'fresh',
                 title: t('config.feedsTitle', 'Fresh'),
                 note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
                 controls: [
@@ -13970,7 +14649,11 @@ class DashboardConfig {
         });
 
         test?.addEventListener('click', async () => {
+            // Said on the button, like the monitor test beside it: the push
+            // service can take a few seconds to take the message.
+            const label = test.textContent;
             test.disabled = true;
+            test.textContent = this.t('config.monitorNotifyTestSending', 'Sending…');
             try {
                 await push.sendTest();
                 notify(this.t('config.pushNotifyTestSent', 'Test notification sent.'));
@@ -13978,6 +14661,7 @@ class DashboardConfig {
                 notify(err.message || String(err));
             } finally {
                 test.disabled = false;
+                test.textContent = label;
             }
         });
 
@@ -14023,10 +14707,11 @@ class DashboardConfig {
     // search (the keys are how search is reached), and onboarding and the
     // device-only switch joined privacy, which is where "what does this app do
     // on its own" is already answered.
-    static BEHAVIOR_TABS = ['general', 'search', 'inbox', 'status', 'privacy'];
+    // The inbox's own settings moved to Config → Inbox; Fresh kept the tab.
+    static BEHAVIOR_TABS = ['general', 'search', 'fresh', 'status', 'privacy'];
 
     /** Behavior tabs that were folded into another one still open it. */
-    static BEHAVIOR_TAB_ALIASES = { fresh: 'inbox' };
+    static BEHAVIOR_TAB_ALIASES = { inbox: 'fresh' };
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -14040,7 +14725,7 @@ class DashboardConfig {
             general: ['config.behaviorTabGeneral', 'General'],
             datetime: ['config.behaviorTabDateTime', 'Date & weather'],
             search: ['config.behaviorTabKeyboardSearch', 'Keyboard & search'],
-            inbox: ['config.behaviorTabInboxFresh', 'Inbox & Fresh'],
+            fresh: ['config.behaviorTabFresh', 'Fresh'],
             status: ['config.behaviorTabStatusAlerts', 'Status & alerts'],
             privacy: ['config.behaviorTabPrivacySync', 'Privacy & sync'],
         };
@@ -14367,6 +15052,21 @@ class DashboardConfig {
             this.notify(this.t('config.tourReplayError', 'Could not bring that tour back.'), 'error');
             return;
         }
+        // What has changed belongs to no view and no longer waits in a card
+        // on the dashboard, so there is nowhere for it to turn up later:
+        // it opens here, now.
+        if (tour.id === 'changesTourV1' && window.ChangesTour?.open) {
+            this.render();
+            window.ChangesTour.open();
+            return;
+        }
+        // The dashboard tour is about the whole dashboard, not a view that
+        // could be opened later: like What has changed, it plays now.
+        if (tour.id === 'dashboardTutorialV1') {
+            this.render();
+            await this.dash.promos?.openDashboardTour?.();
+            return;
+        }
         this.notify(
             this.t('config.tourReplayDone', 'The {tour} tour will appear {where}.')
                 .replace('{tour}', this.t(tour.labelKey, tour.label))
@@ -14441,6 +15141,11 @@ class DashboardConfig {
         if (field === 'linkPreviewMode') {
             d.settings.showLinkPreviewCards = value !== 'off';
         }
+        // The header button and the search rows follow the switch at once.
+        if (field === 'dockerViewEnabled') {
+            window.DockerSearchIndex?.invalidate?.();
+            void d.docker?.renderNavButton?.();
+        }
         if (special === 'previewCard') {
             const panels = document.getElementById('config-appearance-body');
             if (panels) this.paintPreviewSample(panels);
@@ -14476,6 +15181,13 @@ class DashboardConfig {
             case 'chrome':
                 this.applyChromeSettings();
                 break;
+            case 'healthBadge':
+                // The count on the Bookmarks icon is drawn by the badge refresh.
+                void d.updateHealthBadge?.();
+                break;
+            case 'inboxBadge':
+                d.pageNav?.updateInboxTabBadge?.();
+                break;
             case 'shortcutTooltips':
                 // The popovers are listeners bound to the toolbar buttons, not
                 // markup read at render time — so re-run the setup, which adds
@@ -14503,6 +15215,10 @@ class DashboardConfig {
                 // wake — turning a feature on and seeing nothing happen reads
                 // as broken. Off just drops what is painted.
                 if (value) {
+                    // The same line "Find feeds now" writes while it looks, so
+                    // switching on does not sit silent for the length of a round.
+                    const feedStatus = document.querySelector('[data-config-action-status="findFeeds"]');
+                    if (feedStatus) feedStatus.textContent = this.t('config.feedsFindingNow', 'Looking…');
                     void d.feeds?.pollNow().then((round) => {
                         this.paintFeedCoverage(round);
                         d.renderDashboard?.({ animate: false });
@@ -14558,6 +15274,13 @@ class DashboardConfig {
 
     get behaviorTab() { return this._behaviorTab; }
 
+    get inboxTab() { return this._inboxTab; }
+
+    set inboxTab(tab) {
+        this._inboxTab = tab;
+        DashboardConfig.rememberTab('inbox', tab);
+    }
+
     set behaviorTab(tab) {
         this._behaviorTab = tab;
         DashboardConfig.rememberTab('behavior', tab);
@@ -14585,7 +15308,11 @@ class DashboardConfig {
      */
     static SECTION_TAB_NOTES = {
         bookmarks: {
-            'list': ['config.bmNoteList', 'Every bookmark you have, from every page. Filter on the left, edit on the right.'],
+            /*
+             * No note for the List tab, as Health's All has none: it cost a
+             * line above the rail and the list to describe the library the
+             * reader is already looking at.
+             */
             'tags': ['config.bmNoteTags', 'Rename a tag everywhere it is used, merge two that mean the same, or remove one.'],
             'tag-suggestions': ['config.bmNoteTagSuggestions', 'Tags nextDash would add, grouped so you can accept or refuse a whole group at once.'],
             'tag-rules': ['config.bmNoteTagRules', 'Your own rules: match part of an address or a title, and tag what it catches.'],
@@ -14593,11 +15320,11 @@ class DashboardConfig {
             'local-copies': ['config.bmNoteLocalCopies', 'Pages saved whole on this disk, grouped by the bookmark they belong to.'],
         },
         stats: {
-            'overview': ['config.statsNoteOverview', 'The size and shape of your collection, and what the figures add up to.'],
-            'activity': ['config.statsNoteActivity', 'What you opened and added over time, and which bookmarks have gone quiet.'],
-            'content': ['config.statsNoteContent', 'How the collection is divided: pages, categories, tags, and what carries a shortcut.'],
+            'overview': ['config.statsNoteOverview', 'How things stand, and what needs doing.'],
+            'usage': ['config.statsNoteUsage', 'What you open, when you open it, and how much of the collection you actually use.'],
+            'collection': ['config.statsNoteCollection', 'What the collection holds and how it is built up: categories, domains, tags and age.'],
             'inbox': ['config.statsNoteInbox', 'What arrived, what you filed, and how long things wait before you get to them.'],
-            'health': ['config.statsNoteHealth', 'How many links still answer, how many do not, and when that was last checked.'],
+            'health': ['config.statsNoteHealth', 'Whether everything still answers, how reliably, and what is wearing out.'],
         },
         'data-backups': {
             'backups': ['config.dbNoteBackups', 'Snapshots of everything, made on a schedule or by hand. Restore one, or download it.'],
@@ -14613,7 +15340,9 @@ class DashboardConfig {
             'config': ['config.helpNoteConfig', 'How this config view is laid out, and where to look for a setting.'],
             'appearance': ['config.helpNoteAppearance', 'Themes, type, and the choices that change how the dashboard looks.'],
             'organizing': ['config.helpNoteOrganizing', 'Pages, categories, tags — how a bookmark finds its place.'],
+            'bookmarks': ['config.helpNoteBookmarks', 'The Bookmarks view: the rail, the list, the side panel, and Collection health.'],
             'widgets': ['config.helpNoteWidgets', 'The blocks that hold something other than bookmarks, and what each one shows.'],
+            'containers': ['config.helpNoteContainers', 'The Containers view: its connection, how often it refreshes, and what it leaves out.'],
             'search': ['config.helpNoteSearch', 'Reaching anything from the keyboard: search, shortcuts, and the command line.'],
             'health': ['config.helpNoteHealth', 'How nextDash checks that your links still answer, and what to do with the ones that do not.'],
             'monitoring': ['config.helpNoteMonitoring', 'Watching a service rather than a link, and being told when it stops responding.'],
@@ -14667,13 +15396,13 @@ class DashboardConfig {
         if (!query && !this.changedOnly) return '';
         const esc = (v) => this.dash.escapeHtml(v);
         const isAppearance = section === 'appearance';
-        const current = isAppearance ? this.appearanceTab : this.behaviorTab;
-        const tabs = (isAppearance ? DashboardConfig.APPEARANCE_TABS : DashboardConfig.BEHAVIOR_TABS)
+        const current = this[DashboardConfig.SUB_TAB_STATE[section]];
+        const tabs = (DashboardConfig.SUB_TABS[section] || [])
             .filter((tab) => tab !== current && !(isAppearance && DashboardConfig.APPEARANCE_SUBPAGES[tab]));
         const hits = tabs.map((tab) => {
             const n = this.countTabMatches(section, tab, query);
             if (!n) return '';
-            const label = isAppearance ? this.appearanceTabLabel(tab) : this.behaviorTabLabel(tab);
+            const label = this.subTabLabel(section, tab);
             return `<button type="button" class="config-btn config-btn--small config-filter-elsewhere-tab" data-filter-elsewhere="${esc(tab)}">${esc(label)} <span class="config-filter-elsewhere-count">${n}</span></button>`;
         }).join('');
         if (!hits) return '';
@@ -14724,6 +15453,10 @@ class DashboardConfig {
                 const tab = btn.dataset.filterElsewhere;
                 if (this.section === 'appearance') {
                     void this.switchAppearanceTab(tab);
+                } else if (this.section === 'inbox') {
+                    this.inboxTab = tab;
+                    this.restoreConfigHash();
+                    this.render();
                 } else {
                     this.behaviorTab = tab;
                     this.restoreConfigHash();
@@ -14929,7 +15662,7 @@ class DashboardConfig {
         // panels never got it.
         const restoreFocus = this.captureControlPanelFocus();
         if (this.section === 'appearance') this.repaintAppearancePreview();
-        if (this.section === 'appearance' || this.section === 'behavior') {
+        if (this.section === 'appearance' || this.section === 'behavior' || this.section === 'inbox') {
             this.repaintFilterElsewhere(this.section);
         }
         if (this.section === 'behavior') {
@@ -14969,6 +15702,32 @@ class DashboardConfig {
                 // two handlers flip the flag twice per click, so the button
                 // did nothing at all.
                 this.bindAppearanceControls(body);
+                this.labelSettingsControls();
+                restoreFocus();
+            }
+            return;
+        }
+        // Bookmarks → View and Settings: the panels redrawn, so ↺, the count
+        // and "Only changed" follow the change just made.
+        if (this.section === 'bookmarks' && !this.standalone && (this.bmTab === 'view' || this.bmTab === 'settings')) {
+            const body = document.getElementById('config-bm-body');
+            if (body) {
+                body.innerHTML = this.renderBmTab();
+                this.bindControlPanels(body, 'behavior');
+                this._fillShellHeadFromSection(container);
+                this.labelSettingsControls();
+                restoreFocus();
+            }
+            return;
+        }
+        // Config → Inbox: the panels and the preview above them, redrawn.
+        if (this.section === 'inbox') {
+            const body = document.getElementById('config-inbox-body');
+            if (body && typeof this.renderInboxBody === 'function') {
+                body.innerHTML = this.renderInboxBody();
+                this.bindControlPanels(body, 'behavior');
+                this.bindInboxSection?.(body);
+                this._fillShellHeadFromSection(container);
                 this.labelSettingsControls();
                 restoreFocus();
             }
@@ -15024,7 +15783,15 @@ class DashboardConfig {
      * is a list of bookmarks, not a setting. Where the copies come from is
      * configuration; which pages you have kept is part of the collection.
      */
-    static BM_TABS = ['list', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
+    // The list is the Bookmarks view's (#bookmarks); Config keeps what shapes it.
+    /*
+     * The one-time Bookmarks view tour's tip id, repeated from
+     * bookmarks-tutorial.js so the view can skip fetching the tour once it has
+     * been seen. Both must agree.
+     */
+    static LIBRARY_TOUR_TIP_ID = 'bookmarksTutorialV1';
+
+    static BM_TABS = ['view', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -15067,7 +15834,10 @@ class DashboardConfig {
         custom: 'custom-themes',
     };
 
-    static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
+    static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health'];
+
+    // The tabs' names until September 2026, kept so an old link still lands.
+    static STATS_TAB_ALIASES = { activity: 'usage', content: 'collection' };
 
     ptTabLabel(tab) {
         const map = {
@@ -15134,7 +15904,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'memory', 'disks', 'docker']],
+        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['ambient', ['weather', 'calendar', 'rss']],
     ];
 
@@ -15323,7 +16093,10 @@ class DashboardConfig {
         if (!body) { this.render(); return; }
         body.innerHTML = this.renderPtTab();
         this.syncSubTabStrip('data-pt-tab', this.ptTab);
-        const container = document.getElementById('dashboard-layout');
+        // The Bookmarks view's pages-and-categories modal holds these editors
+        // too; they bind inside whichever host they are drawn in.
+        const container = body.closest('[data-pt-host]') || document.getElementById('dashboard-layout');
+        if (this._structureModal) this.repaintStructureFoot?.();
         if (container) this.bindPtTabControls(container);
     }
 
@@ -15508,7 +16281,9 @@ class DashboardConfig {
                     <input type="text" class="config-text config-finder-shortcut" data-finder="shortcut" data-index="${i}" placeholder="${esc(this.t('config.finderShortcutPlaceholder', 'key'))}" value="${esc(f.shortcut || '')}">
                     ${warning}
                 </div>
-                <button type="button" class="config-btn config-btn--small config-btn--danger" data-finder-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                <div class="config-crud-row-actions">
+                    <button type="button" class="config-btn config-btn--small config-btn--danger" data-finder-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                </div>
             </li>
         `;
         }).join('');
@@ -15527,7 +16302,7 @@ class DashboardConfig {
                 addLabel: this.t('config.finderAdd', 'Add finder'),
             })}
             ${this.renderPtCountLabel('finders', visible.length, this._finders.length)}
-            <ul class="config-crud-list">${rows || `<li class="config-panel-empty">${esc(empty)}</li>`}</ul>
+            <ul class="config-crud-list config-crud-list--table">${rows || `<li class="config-panel-empty">${esc(empty)}</li>`}</ul>
         `;
     }
 
@@ -15846,7 +16621,9 @@ class DashboardConfig {
                     <input type="text" class="config-text" data-tag-rename="${esc(tag)}" value="${esc(tag)}">
                     ${this.renderStatMeta(count, scales[i], 'config.tagBookmarkCount', '{count} bookmarks')}
                 </div>
-                <button type="button" class="config-btn config-btn--small config-btn--danger" data-tag-delete="${esc(tag)}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                <div class="config-crud-row-actions">
+                    <button type="button" class="config-btn config-btn--small config-btn--danger" data-tag-delete="${esc(tag)}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                </div>
             </li>
         `).join('');
         return `
@@ -15874,7 +16651,8 @@ class DashboardConfig {
             </div>
             ${this.renderPtCountLabel('tags', visible.length, this._tagList.length)}
             ${rows
-                ? `<ul class="config-crud-list">${rows}</ul>`
+                // --table: rows read like Health's / Structure's (config-view.css).
+                ? `<ul class="config-crud-list config-crud-list--table">${rows}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.tagsNoMatch', 'No tags match your filter.'))}</p>`}
         `;
     }
@@ -16512,6 +17290,7 @@ class DashboardConfig {
             return `
             <li class="config-crud-row" data-page-row="${esc(p.id)}">
                 <div class="config-crud-fields">
+                    ${locked ? '' : (this.renderStructureGrip?.() || '')}
                     <input type="text" class="config-text" style="min-width:56px;max-width:64px" data-page="icon" data-id="${esc(p.id)}" placeholder="📄" value="${esc(p.icon || '')}">
                     <input type="text" class="config-text" maxlength="60" data-page="name" data-id="${esc(p.id)}" placeholder="${esc(this.t('config.pageNamePlaceholder', 'Page name'))}" value="${esc(p.name || '')}">
                     <input type="color" class="config-color" data-page="color" data-id="${esc(p.id)}" value="${esc(p.color || '#888888')}" title="${esc(this.t('config.pageColorLabel', 'Tab colour'))}">
@@ -16521,6 +17300,7 @@ class DashboardConfig {
                     ${locked ? '' : `
                     <button type="button" class="config-btn config-btn--small" data-page-move="up" data-id="${esc(p.id)}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
                     <button type="button" class="config-btn config-btn--small" data-page-move="down" data-id="${esc(p.id)}" ${i === pages.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
+                    ${this.renderStructureRowExtras?.({ pageId: p.id }) || ''}
                     <button type="button" class="config-btn config-btn--small" data-page-duplicate="${esc(p.id)}" title="${esc(this.t('config.pageDuplicateHint', 'Copy this page — with or without its bookmarks'))}">${esc(this.t('config.pageDuplicate', 'Duplicate'))}</button>
                     <button type="button" class="config-btn config-btn--small config-btn--danger" data-page-delete="${esc(p.id)}" ${isFirst ? 'disabled title="' + esc(this.t('config.pageDeleteFirstBlocked', 'The first page cannot be deleted')) + '"' : ''}>${esc(this.t('config.backupDelete', 'Delete'))}</button>
                 </div>
@@ -16542,7 +17322,7 @@ class DashboardConfig {
             ])}
             ${this.renderPtCountLabel('pages', visible.length, pages.length)}
             ${rows
-                ? `<ul class="config-crud-list">${rows}</ul>`
+                ? `<ul class="config-crud-list config-crud-list--table">${rows}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.pagesNoMatch', 'No pages match your search.'))}</p>`}
         `;
     }
@@ -17392,6 +18172,9 @@ class DashboardConfig {
     /** The two halves of the Widgets section: the ones you have, and the kinds. */
     static WIDGETS_TABS = ['widgets', 'types'];
 
+    /** Config → Inbox: what is collected, the list, the side panel and clicks, the header icon. */
+    static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];
+
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.
     static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
@@ -17412,13 +18195,17 @@ class DashboardConfig {
      */
     static GUIDED_TOURS = [
         { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed',
-          whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
+          whereKey: 'config.tourWhereNow', where: 'right away' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
-        { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health',
-          whereKey: 'config.tourWhereHealth', where: 'the next time you open Health' },
-        { id: 'inboxTutorialV2', labelKey: 'config.tourInbox', label: 'Inbox',
+        { id: 'dashboardTutorialV1', labelKey: 'config.tourDashboard', label: 'The dashboard',
+          whereKey: 'config.tourWhereNow', where: 'right away' },
+        { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },
+        { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view',
+          whereKey: 'config.tourWhereBookmarks', where: 'the next time you open the Bookmarks view' },
+        { id: 'containersTutorialV1', labelKey: 'config.tourContainers', label: 'Containers',
+          whereKey: 'config.tourWhereContainers', where: 'the next time you open the Containers view' },
         { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh',
           whereKey: 'config.tourWhereFresh', where: 'the next time you open Fresh' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',
@@ -17430,7 +18217,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'weather', 'calendar', 'rss', 'custom'];
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'custom'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -17468,6 +18255,44 @@ class DashboardConfig {
               label: ['config.widgetDockerRestarted', 'Name what just restarted'],
               hint: ['config.widgetDockerRestartedHint',
                      'Up for minutes while the rest have run for days — the shape of a crashloop.'] },
+        ],
+        containers: [
+            { key: 'show', kind: 'choice',
+              label: ['config.widgetContainersShow', 'Show'],
+              options: [
+                  ['running', ['config.widgetContainersShowRunning', 'Running containers']],
+                  ['all', ['config.widgetContainersShowAll', 'All containers']],
+              ] },
+            { key: 'sort', kind: 'choice',
+              label: ['config.widgetContainersSort', 'Order'],
+              options: [
+                  ['problems', ['config.widgetContainersSortProblems', 'What needs you first, then by name']],
+                  ['name', ['config.widgetContainersSortName', 'Name']],
+                  ['uptime-long', ['config.widgetContainersSortUptimeLong', 'Uptime, longest first']],
+                  ['uptime-short', ['config.widgetContainersSortUptimeShort', 'Uptime, shortest first']],
+              ] },
+            { key: 'detail', kind: 'choice',
+              label: ['config.widgetContainersDetail', 'Beside the name'],
+              hint: ['config.widgetContainersDetailHint',
+                     'Unhealthy, stopped or an update always shows instead.'],
+              options: [
+                  ['uptime', ['config.widgetContainersDetailUptime', 'Uptime']],
+                  ['tag', ['config.widgetContainersDetailTag', 'Image tag']],
+                  ['none', ['config.widgetContainersDetailNone', 'Nothing']],
+              ] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetContainersClick', 'A click opens'],
+              hint: ['config.widgetContainersClickHint',
+                     'The other one stays in the row’s menu. Without a WebUI, a click opens the Containers view.'],
+              options: [
+                  ['view', ['config.widgetContainersClickView', 'The Containers view']],
+                  ['webui', ['config.widgetContainersClickWebUI', 'Its WebUI']],
+              ] },
+            { key: 'rows', kind: 'int', min: 1, max: 20,
+              label: ['config.widgetContainersRows', 'Rows per column'],
+              hint: ['config.widgetContainersRowsHint', 'Two wide, the tile shows two columns of this many.'] },
+            { key: 'refreshSeconds', kind: 'int', min: 5, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
         ],
         memory: [
             { key: 'refreshSeconds', kind: 'int', min: 2, max: 3600,
@@ -19344,6 +20169,7 @@ class DashboardConfig {
                     + 'binary directly needs nothing at all.'],
             },
         };
+        notes.containers = notes.docker;
         const note = notes[type];
         if (!note) return '';
         return `
@@ -19485,6 +20311,7 @@ class DashboardConfig {
         const key = `config.widgetAbout.${type}`;
         const fallbacks = {
             docker: 'How many containers run, how many do not, and which have a failing healthcheck.',
+            containers: 'Your containers by name — what needs you first, and how long each has run.',
             memory: 'How much memory is really in use, with the file cache counted as the spare room it is.',
             disks: 'How full each disk is, and how much room is actually left on it.',
             cpu: 'How hard the processor is working, and whether work is queueing up behind it.',
@@ -19514,7 +20341,9 @@ class DashboardConfig {
     widgetTypeName(type) {
         const key = `dashboard.widgetType.${type}`;
         const label = this.dash.language?.t?.(key);
-        return label && label !== key ? label : String(type || 'widget');
+        if (label && label !== key) return label;
+        // Until a type's name is translated, it still has one in English.
+        return this.dash.renderCore?.widgetTypeLabel?.(type) || String(type || 'widget');
     }
 
     /*
@@ -20874,8 +21703,9 @@ class DashboardConfig {
             // already has a place where its controls live.
             const spreadLabel = this.t('config.categorySpreadLabel', 'Spread across columns');
             const rows = visible.map(({ item: c, index: i }) => `
-                <li class="config-crud-row" data-cat-row="${i}">
+                <li class="config-crud-row" data-cat-row="${i}" data-cat-id="${esc(c.id)}">
                     <div class="config-crud-fields">
+                        ${locked ? '' : (this.renderStructureGrip?.() || '')}
                         <input type="text" class="config-text" data-cat="name" data-index="${i}" value="${esc(c.name || '')}">
 
                         ${this.renderStatMeta(catCounts[i], scales[i], 'config.categoryBookmarkCount', '{count} bookmarks')}
@@ -20887,6 +21717,7 @@ class DashboardConfig {
                         ${locked ? '' : `
                         <button type="button" class="config-btn config-btn--small" data-cat-move="up" data-index="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
                         <button type="button" class="config-btn config-btn--small" data-cat-move="down" data-index="${i}" ${i === last ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
+                        ${this.renderStructureRowExtras?.({ pageId, categoryId: c.id }) || ''}
                         <button type="button" class="config-btn config-btn--small" data-cat-duplicate="${i}" title="${esc(this.t('config.categoryDuplicateHint', 'Copy this category — with or without its bookmarks'))}">${esc(this.t('config.pageDuplicate', 'Duplicate'))}</button>
                         <button type="button" class="config-btn config-btn--small config-btn--danger" data-cat-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
                     </div>
@@ -20909,7 +21740,8 @@ class DashboardConfig {
                 ? rows
                 : this.interleaveWidgetRows(rows);
             body = `${summary}${this.renderPtCountLabel('categories', visible.length, this._categories.length)}${rows
-                ? `<ul class="config-crud-list">${withWidgets}</ul>`
+                // --table: rows read like Health's (config-view.css).
+                ? `<ul class="config-crud-list config-crud-list--table">${withWidgets}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.categoriesNoMatch', 'No categories match your search.'))}</p>`}`;
         }
         const pagePicker = `
@@ -20975,6 +21807,7 @@ class DashboardConfig {
         return `
                 <li class="config-crud-row config-crud-row--widget" data-block-row="${esc(widget.id)}">
                     <div class="config-crud-fields">
+                        ${this.renderStructureGrip?.() || ''}
                         <span class="config-widget-category-name">${esc(label)}</span>
                         <span class="config-widget-kind">${esc(this.t('config.categoriesRowWidget', 'widget'))}</span>
                     </div>
@@ -21497,17 +22330,6 @@ class DashboardConfig {
         this.updateBookmarkListChrome();
     }
 
-    /** Add or remove one tag, leaving the rest of the selection alone. */
-    toggleBookmarkTagFilter(tag) {
-        const wanted = String(tag || '').trim().toLowerCase();
-        if (!wanted) return;
-        const current = this.bookmarkTagFilters();
-        const next = current.includes(wanted)
-            ? current.filter((t) => t !== wanted)
-            : current.concat(wanted);
-        this.setBookmarkTagFilters(next);
-    }
-
     filterBookmarksByTag(tag) {
         if (!tag) return;
         // Clicking a tag chip on a row means "show me this tag", replacing any
@@ -21517,6 +22339,8 @@ class DashboardConfig {
 
     renderBookmarksSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        // In Config, 'list' (the Bookmarks view's own tab) reads as View.
+        if (!this.standalone && !DashboardConfig.BM_TABS.includes(this.bmTab)) this.bmTab = 'view';
         const tabs = DashboardConfig.BM_TABS.map((tab) => {
             const active = tab === this.bmTab;
             // Only this one carries a number: it is the tab whose whole point
@@ -21533,12 +22357,104 @@ class DashboardConfig {
         // behind once it left, standing the tab strip a row lower than the
         // strip on every other section. The count goes to the band too, in
         // the header actions, where Health and Inbox carry theirs.
+        // The Bookmarks view is the list alone: the other tabs stay in Config.
+        if (this.standalone) {
+            return `
+                <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
+                <div id="config-bm-body" role="region" tabindex="0">${this.renderBookmarksListTab()}</div>
+            `;
+        }
         return `
-            <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.bookmarksSettingsIntro', 'How the Bookmarks view looks, your tags and the rules around them. The list itself is the Bookmarks view.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             ${this.renderSectionTabNote('bookmarks', this.bmTab)}
             <div id="config-bm-body" role="tabpanel" tabindex="0">${this.renderBmTab()}</div>
         `;
+    }
+
+    /**
+     * Bookmarks → View: how the Bookmarks view looks and behaves, as panels of
+     * settings the way Behavior draws them, with the way to the view itself.
+     */
+    renderBookmarksViewTab() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <div class="config-bm-view-tab">
+                <div class="config-bm-view-bar">
+                    <a class="config-btn config-btn--small" href="#bookmarks" data-bm-open-view>${esc(this.t('config.bmViewOpen', 'Open the Bookmarks view'))} ↗</a>
+                </div>
+                ${this.renderBookmarksViewPreview()}
+                ${this.renderControlPanels(this.panelsFor('bookmarks', 'view'), 'behavior')}
+            </div>`;
+    }
+
+    /**
+     * What the settings below make of the view: two of the reader's own rows
+     * and the head of the side panel, drawn by the view's own renderers from
+     * the settings as they stand. The whole tab is redrawn on each change
+     * (repaintActiveControlPanels), so this follows every one. Only a
+     * picture: inert, and hidden from assistive technology.
+     */
+    renderBookmarksViewPreview() {
+        if (typeof this.renderWorkbenchRow !== 'function') {
+            // The rows are the Bookmarks view's own and its renderers load on
+            // demand: draw the tab again once they are here.
+            void this.ensureBookmarkRenderers?.().then(() => {
+                if (typeof this.renderWorkbenchRow === 'function' && this.section === 'bookmarks' && this.bmTab === 'view') {
+                    this.repaintActiveControlPanels();
+                }
+            });
+            return '';
+        }
+        const esc = (v) => this.dash.escapeHtml(v);
+        const now = Date.now();
+        const day = 86400000;
+        // A fixed pair rather than the reader's own most used: the preview
+        // shows the settings, and a neutral example says that better than a
+        // site of their own that happens to top the list.
+        const rows = [
+            { name: 'GitHub', url: 'https://github.com', tags: ['code', 'daily'], openCount: 14,
+                lastOpened: now - 2 * 3600000, createdAt: now - 40 * day, openLog: [1, 3, 4, 8, 9, 12].map((d) => now - d * day) },
+            { name: 'Weather', url: 'https://weather.example/forecast', tags: ['daily'], openCount: 3,
+                lastOpened: now - 5 * day, createdAt: now - 200 * day, openLog: [5, 11].map((d) => now - d * day) },
+        ];
+        const ctx = { esc, grouped: false, showCrumb: false, setSize: 2, isDuplicate: () => false };
+        const rowHtml = rows.map((b, index) => this.renderWorkbenchRow({ type: 'row', bookmark: b, index }, ctx)).join('');
+        const legendAt = this.dash.settings?.bmViewKeyLegend || 'below';
+        const legend = legendAt === 'off' || typeof this.renderBookmarkKeyboardLegend !== 'function' ? ''
+            : `<p class="config-bm-keyboard-legend">${this.renderBookmarkKeyboardLegend()}</p>`;
+        // The panel's head: the tab it opens on, at the width it opens at.
+        const first = rows[0];
+        const fixedTab = this.dash.settings?.bmViewPanelTab;
+        const tab = fixedTab && fixedTab !== 'last' ? fixedTab : 'details';
+        const tabs = [['details', this.t('config.bmTabDetails', 'Details')], ['health', this.t('config.bmHealth', 'Health')], ['usage', this.t('config.bmUsage', 'Usage')]]
+            .map(([name, label]) => `<span class="config-bm-tab${name === tab ? ' is-active' : ''}">${esc(label)}</span>`).join('');
+        const wide = this.dash.settings?.bmViewPanelWidth === 'wide';
+        const workbenchClass = typeof this.workbenchViewClasses === 'function' ? this.workbenchViewClasses() : 'config-bm-workbench is-library';
+        const columnStyle = typeof this.workbenchColumnStyle === 'function' ? this.workbenchColumnStyle() : '';
+        return `
+            <section class="config-panel config-bm-view-preview" aria-hidden="true" inert data-bm-view-preview>
+                <h3 class="config-panel-title">${esc(this.t('config.bmViewPreview', 'Preview'))}</h3>
+                <div class="config-bm-view-preview-body">
+                    <div class="${esc(workbenchClass)} config-bm-view-preview-list" style="${esc(columnStyle)}">
+                        <div class="config-bm-feed">
+                            ${legendAt === 'above' ? legend : ''}
+                            ${rowHtml}
+                            ${legendAt === 'below' ? legend : ''}
+                        </div>
+                    </div>
+                    <div class="config-bm-view-preview-panel${wide ? ' is-wide' : ''}">
+                        <header class="config-bm-panel-head config-bm-panel-head--single">
+                            <div class="config-bm-panel-heading">
+                                <span class="config-bm-panel-icon">${this.renderBookmarkIcon(first)}</span>
+                                <span class="config-bm-panel-title">${esc(first.name || '')}</span>
+                            </div>
+                            <span class="config-bm-panel-url">${esc(this.formatBookmarkUrlDisplay(first.url))}</span>
+                        </header>
+                        <div class="config-bm-tabs">${tabs}</div>
+                    </div>
+                </div>
+            </section>`;
     }
 
     /** Which sub-tab of Bookmarks is showing. */
@@ -21555,10 +22471,14 @@ class DashboardConfig {
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
         }
+        if (this.bmTab === 'view') {
+            return this.renderBookmarksViewTab();
+        }
         if (this.bmTab === 'local-copies') {
             return this.renderBookmarkCopiesTab();
         }
-        return this.renderBookmarksListTab();
+        if (this.standalone) return this.renderBookmarksListTab();
+        return this.renderBookmarksViewTab();
     }
 
     /*
@@ -22387,6 +23307,13 @@ class DashboardConfig {
     ensureBookmarkRenderers() {
         const ready = () => window.DashboardConfigBookmarksReady === true
             && window.DashboardConfigWorkbenchReady === true
+            && window.DashboardConfigBookmarksHealthReady === true
+            && window.DashboardBookmarksHealthModalReady === true
+            && window.DashboardConfigBookmarksUsageReady === true
+            && window.DashboardBookmarksStructureModalReady === true
+            && window.DashboardBookmarksCheckingModalReady === true
+            && window.DashboardConfigBookmarksDetailsReady === true
+            && window.DashboardBookmarksHeaderReady === true
             && Boolean(window.BookmarkWorkbenchModel);
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
@@ -22398,6 +23325,30 @@ class DashboardConfig {
                 'dashboardConfigBookmarks', () => window.DashboardConfigBookmarksReady === true))
             .then(() => load('js/dashboard/dashboard-config-bookmarks-workbench.js',
                 'dashboardConfigWorkbench', () => window.DashboardConfigWorkbenchReady === true))
+            // Health's part of the list, on top of the workbench.
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-health.js',
+                'dashboardConfigBookmarksHealth', () => window.DashboardConfigBookmarksHealthReady === true))
+            // The collection health modal, on top of Health's join.
+            .then(() => load('js/dashboard/dashboard-bookmarks-health-modal.js',
+                'dashboardBookmarksHealthModal', () => window.DashboardBookmarksHealthModalReady === true))
+            // The panel's Usage tab.
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-usage.js',
+                'dashboardConfigBookmarksUsage', () => window.DashboardConfigBookmarksUsageReady === true))
+            // Pages and categories, managed from the list.
+            .then(() => load('js/dashboard/dashboard-bookmarks-structure-modal.js',
+                'dashboardBookmarksStructureModal', () => window.DashboardBookmarksStructureModalReady === true))
+            // Turning checking on for the bookmarks nothing checks.
+            .then(() => load('js/dashboard/dashboard-bookmarks-checking-modal.js',
+                'dashboardBookmarksCheckingModal', () => window.DashboardBookmarksCheckingModalReady === true))
+            // The panel's Details tab.
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-details.js',
+                'dashboardConfigBookmarksDetails', () => window.DashboardConfigBookmarksDetailsReady === true))
+            // The view's band: Work through, Rot report, Export, ⋯ and ⓘ.
+            .then(() => load('js/dashboard/dashboard-bookmarks-header.js',
+                'dashboardBookmarksHeader', () => window.DashboardBookmarksHeaderReady === true))
+            // One bookmark's health, in large.
+            .then(() => load('js/dashboard/dashboard-bookmarks-health-large.js',
+                'dashboardBookmarksHealthLarge', () => window.DashboardBookmarksHealthLargeReady === true))
             .then(() => {
                 const waiting = this._bookmarksAwaitingRenderers === true;
                 this._bookmarksAwaitingRenderers = false;
@@ -22409,7 +23360,7 @@ class DashboardConfig {
 
     bookmarkSortOptionsHtml() {
         const esc = (v) => this.dash.escapeHtml(v);
-        return [
+        const options = [
             ['page', this.t('config.sortByPage', 'Page order')],
             ['name', this.t('config.sortByName', 'Name (A–Z)')],
             ['url', this.t('config.sortByUrl', 'URL')],
@@ -22418,8 +23369,29 @@ class DashboardConfig {
             ['lastOpened', this.t('config.sortByLastOpened', 'Last opened')],
             ['opens', this.t('config.sortByOpens', 'Most opened')],
             ['pinned', this.t('config.sortByPinned', 'Pinned first')],
-        ].map(([v, label]) =>
+        ];
+        // Only means anything once a Health filter has picked out issues to
+        // score, so it is not offered the rest of the time -- an option that
+        // sorts nothing differently would just be a dead choice in the list.
+        if (this.bmHealthFilter) options.push(['score', this.t('config.sortByScore', 'Health score')]);
+        return options.map(([v, label]) =>
             `<option value="${esc(v)}" ${this.bmSort === v ? 'selected' : ''}>${esc(label)}</option>`
+        ).join('');
+    }
+
+    /** Group options for the toolbar's Group select, next to Sort. */
+    bookmarkGroupOptionsHtml() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = this.bmGroup ?? this.defaultBookmarksGroup();
+        return [
+            ['', this.t('config.bmGroupNone', 'No groups')],
+            ['page', this.t('config.bmGroupByPage', 'Page')],
+            ['category', this.t('config.bmGroupByCategory', 'Category')],
+            ['site', this.t('config.bmGroupBySite', 'Site')],
+            ['status', this.t('config.bmGroupByStatus', 'Status')],
+            ['tag', this.t('config.bmGroupByTag', 'Tag')],
+        ].map(([v, label]) =>
+            `<option value="${esc(v)}" ${current === v ? 'selected' : ''}>${esc(label)}</option>`
         ).join('');
     }
 
@@ -22428,6 +23400,16 @@ class DashboardConfig {
         // moves the array identity the memo keys on, so a paint starts fresh.
         this.invalidateVisibleBookmarks();
         if (this.bmSort == null) this.bmSort = this.defaultBookmarksSort();
+        if (this.bmGroup == null) {
+            this.bmGroup = this.defaultBookmarksGroup();
+            // Frozen at the moment this instance opens, before any explicit
+            // pick: bookmarksFilterQuery() compares against this rather than
+            // a fresh defaultBookmarksGroup(), because picking a group writes
+            // it to the very same localStorage that function reads -- without
+            // the freeze, the pick would become "the default" the instant it
+            // was made, and never make it into the hash at all.
+            this._bmGroupDefaultAtLoad = this.bmGroup;
+        }
         void this.ensureBookmarkRenderers();
         if (typeof this.renderBookmarksWorkbench !== 'function') {
             // The rail (and its search box) only exists once the workbench
@@ -22439,9 +23421,11 @@ class DashboardConfig {
             return `
                 <div class="config-panel">
                     <div class="config-crud-toolbar config-crud-toolbar--view">
-                        <input type="search" class="config-text" id="config-bm-search"
-                               placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}"
-                               value="${esc(this.bmQuery || '')}">
+                        <label class="config-bm-search">
+                            <input type="search" class="config-text" id="config-bm-search"
+                                   placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}"
+                                   value="${esc(this.bmQuery || '')}">
+                        </label>
                     </div>
                     <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
                 </div>`;
@@ -22453,6 +23437,7 @@ class DashboardConfig {
     cleanupFilterLabel(key) {
         const map = {
             never: ['config.cleanupFilterNever', 'Never opened'],
+            nocheck: ['config.cleanupFilterNoCheck', 'Not checked'],
             once: ['config.cleanupFilterOnce', 'Opened once and never again'],
             untagged: ['config.cleanupFilterUntagged', 'Without tags'],
             insecure: ['config.cleanupFilterInsecure', 'Not using HTTPS'],
@@ -22703,6 +23688,158 @@ class DashboardConfig {
         return allowed.includes(stored) ? stored : 'page';
     }
 
+    /** '' groups nothing; every other value names a workbenchGroupKey shape. */
+    static BM_GROUPS = ['', 'page', 'category', 'site', 'status', 'tag'];
+
+    /**
+     * Group order for the "status" group: worst first, so what needs looking
+     * at is on top. Deliberately not HEALTH_STATES, which lists healthy first
+     * for the bulk-selection summary line -- a different question ("what does
+     * this selection contain, roughly in order of how alarming it is to read")
+     * than this one ("what should the reader see first").
+     */
+    static BM_STATUS_GROUP_ORDER = ['broken', 'down', 'healthy', 'unchecked'];
+
+    /** Where the toolbar's Group choice lives between reloads. */
+    static BM_GROUP_KEY = 'nextdash.bmGroup';
+
+    /**
+     * The group this list opens on.
+     *
+     * A plain client preference, in localStorage rather than a server setting
+     * like configBookmarksSort: Group is new, and giving it a field on the
+     * server model is out of scope for adding it. Nobody has chosen a group
+     * yet the very first time this runs after the update lands, and for them
+     * the list must not silently change shape: whoever had Sort on "Page
+     * order" already saw it grouped by page › category, as a side effect of
+     * that sort being the one case workbenchGrouped() special-cased. That
+     * shape carries over as an explicit Group of its own so their list looks
+     * the same as it always did. Anyone who sorts any other way, or who has
+     * already chosen a Group -- even "No groups" -- gets exactly that.
+     */
+    defaultBookmarksGroup() {
+        // View can fix the group the list opens on; 'last' keeps the old rule.
+        const fixed = this.dash.settings?.bmViewGroup;
+        if (fixed && fixed !== 'last') return fixed === 'none' ? '' : fixed;
+        let stored = null;
+        try {
+            stored = window.localStorage?.getItem(DashboardConfig.BM_GROUP_KEY);
+        } catch { /* private window: fall through to the rule below */ }
+        if (stored != null && DashboardConfig.BM_GROUPS.includes(stored)) return stored;
+        return (this.bmSort ?? this.defaultBookmarksSort()) === 'page' ? 'category' : '';
+    }
+
+    /** The group actually in effect: Duplicates always groups by URL, whatever Group says. */
+    bmActiveGroup() {
+        if (this.bmHealthFilter === 'duplicate') return 'url';
+        return this.bmGroup ?? this.defaultBookmarksGroup();
+    }
+
+    /**
+     * Category order within one page: the order the page's own category list
+     * puts them in (drag-reordered in Structure, fetched by
+     * loadBookmarkCategoriesForPage). Alphabetical -- knownCategories()'s own
+     * fallback -- until that fetch has landed for this page, correcting
+     * itself once prefetchAllBookmarkCategories() repaints. "No category"
+     * sorts first, matching how the Category *sort* already puts '' before
+     * any name.
+     */
+    bmCategoryOrderIndex(pageId) {
+        const key = String(pageId ?? '');
+        if (!this._bmCatOrderCache || this._bmCatOrderCacheRev !== this._bmCategoryRevision) {
+            this._bmCatOrderCache = new Map();
+            this._bmCatOrderCacheRev = this._bmCategoryRevision;
+        }
+        if (this._bmCatOrderCache.has(key)) return this._bmCatOrderCache.get(key);
+        const raw = this._bmCategoriesCache.get(key);
+        const ids = Array.isArray(raw) && raw.length
+            ? raw.map((c) => String(c?.id ?? c?.name ?? ''))
+            : this.knownCategories(key).map((c) => c.id);
+        const index = new Map();
+        ids.forEach((id, i) => { if (id && !index.has(id)) index.set(id, i); });
+        this._bmCatOrderCache.set(key, index);
+        return index;
+    }
+
+    /** A bookmark's place in its page's category order; "no category" sorts first. */
+    bmCategoryOrderValue(b) {
+        const cat = b.category || '';
+        if (!cat) return -1;
+        const index = this.bmCategoryOrderIndex(b.pageId);
+        return index.has(cat) ? index.get(cat) : index.size;
+    }
+
+    /**
+     * The domain for the "site" group. Not HealthFacts.keyFor: that key keeps
+     * the path (it is built to tell two pages on one host apart for the
+     * health join and duplicate detection), and grouping "by site" means the
+     * opposite -- every path on a host in one group. Plain hostname, a
+     * leading www. dropped, same as the grid's own display host.
+     */
+    bmGroupSiteKey(b) {
+        const utils = window.BookmarkUrlUtils;
+        const host = utils?.bookmarkDisplayHostnameFromUrl?.(b?.url);
+        if (host) return host.toLowerCase();
+        try {
+            return new URL(String(b?.url || '')).hostname.replace(/^www\./i, '').toLowerCase();
+        } catch {
+            return '';
+        }
+    }
+
+    /**
+     * The tag a bookmark groups under: the alphabetically-first one.
+     *
+     * A bookmark can carry several tags, and the spec this followed asked for
+     * it to appear under each -- but every row here is one entry in a flat
+     * array that workbenchItems() slices for the virtual-list window and that
+     * bookmarkKey() derives its identity from by position among same-URL
+     * duplicates; putting the same bookmark in the array twice would give two
+     * rows the same key (breaking selection and the row-count in "n shown of
+     * total"), and the window math would no longer agree with aria-setsize.
+     * First tag alphabetically is the fallback that keeps one row per
+     * bookmark; noted in the task report rather than silently done.
+     */
+    bmGroupFirstTag(b) {
+        const tags = (Array.isArray(b?.tags) ? b.tags : [])
+            .map((t) => String(t).trim().toLowerCase()).filter(Boolean);
+        tags.sort((a, c) => a.localeCompare(c));
+        return tags[0] || '';
+    }
+
+    /** A comparator that gathers rows into one group's worth of consecutive entries, in group order. */
+    bmGroupComparator(mode) {
+        const pages = this.pageOrderIndex();
+        const pageIdx = (id) => (pages.has(String(id)) ? pages.get(String(id)) : -1);
+        if (mode === 'url') {
+            const keyFor = (b) => window.HealthFacts?.keyFor?.(b.url) || String(b.url || '');
+            return (a, b) => keyFor(a).localeCompare(keyFor(b));
+        }
+        if (mode === 'page') {
+            return (a, b) => pageIdx(a.pageId) - pageIdx(b.pageId);
+        }
+        if (mode === 'category') {
+            return (a, b) => (pageIdx(a.pageId) - pageIdx(b.pageId)) || (this.bmCategoryOrderValue(a) - this.bmCategoryOrderValue(b));
+        }
+        if (mode === 'site') {
+            return (a, b) => this.bmGroupSiteKey(a).localeCompare(this.bmGroupSiteKey(b));
+        }
+        if (mode === 'status') {
+            const order = DashboardConfig.BM_STATUS_GROUP_ORDER;
+            const idx = (b) => {
+                const i = order.indexOf(this.bookmarkHealthState(b));
+                return i < 0 ? order.length : i;
+            };
+            return (a, b) => idx(a) - idx(b);
+        }
+        if (mode === 'tag') {
+            // Untagged sorts last: an empty key would otherwise read as "before A".
+            const tagFor = (b) => this.bmGroupFirstTag(b) || '￿';
+            return (a, b) => tagFor(a).localeCompare(tagFor(b));
+        }
+        return null;
+    }
+
     /** Rows per load step, from settings; the constant is the fallback. */
     bmPageSize() {
         const n = Number(this.dash?.settings?.configBookmarksPageSize);
@@ -22719,6 +23856,8 @@ class DashboardConfig {
      */
     static CLEANUP_FILTERS = {
         never: (b) => window.BookmarkPredicates.match('never', b),
+        // Nothing checks it: a broken one only shows up when it is clicked.
+        nocheck: (b) => (window.CheckMode?.of?.(b) || 'off') === 'off',
         once: (b) => window.BookmarkPredicates.match('once', b),
         untagged: (b) => window.BookmarkPredicates.match('untagged', b),
         insecure: (b) => window.BookmarkPredicates.match('insecure', b),
@@ -22749,7 +23888,25 @@ class DashboardConfig {
      */
     static UNSORTED_VIEW = 'unsorted';
 
-    static HEALTH_FILTERS = ['healthy', 'broken', 'down', 'unchecked'];
+    /** A bookmark's state as its health facts give it: the row's glow and the bulk summary. */
+    static HEALTH_STATES = ['healthy', 'broken', 'down', 'unchecked'];
+
+    /** The Health filters, with the Health module's meaning (matchesFilter). */
+    static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'healthy'];
+
+    /**
+     * Every health filter the list can be narrowed by: the rail's nine, and the
+     * kinds only Collection health, the overview and :health name (drift, a
+     * missing preview, a shortcut conflict...). The rail draws the first set;
+     * an address, a tile or a command may carry any of these, and one left
+     * out here was dropped on the way in -- the list then opened unfiltered.
+     */
+    static HEALTH_FILTER_KEYS = [...DashboardConfig.HEALTH_FILTERS,
+        'drift', 'missing-preview', 'shortcut-conflict', 'orphaned-category', 'ignored'];
+
+    static isHealthFilterKey(key) {
+        return DashboardConfig.HEALTH_FILTER_KEYS.includes(String(key || ''));
+    }
 
     /** True while the bookmark list is showing the kept bookmarks. */
     isUnsortedBookmarkView() {
@@ -22786,8 +23943,19 @@ class DashboardConfig {
             .filter((b) => String(b?.pageId) === wanted);
     }
 
-    /** Where this bookmark stands with the checker, from what the dashboard already knows. */
+    /**
+     * Where this bookmark stands with the checker. The Health report decides
+     * once it has landed -- a bookmark it calls broken is broken here too,
+     * whether or not the scheduler checks it -- and what the dashboard
+     * already knows stands in until then.
+     */
     bookmarkHealthState(b) {
+        const issue = this.bmHealthIssue?.(b);
+        if (issue) {
+            if (Number(issue.monitorStats?.downSince) > 0) return 'down';
+            if (issue.status === 'broken') return 'broken';
+            return issue.lastChecked ? 'healthy' : 'unchecked';
+        }
         const model = window.BookmarkWorkbenchModel;
         if (!model) return b?.checkStatus === true ? 'healthy' : 'unchecked';
         return model.healthState(b, window.HealthFacts?.get?.(b?.url) || null);
@@ -22827,7 +23995,7 @@ class DashboardConfig {
                     ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
                     : cleanup(b);
             },
-            health: (b) => !health || this.bookmarkHealthState(b) === health,
+            health: (b) => !health || Boolean(this.bmHealthMatches?.(b, health)),
         };
     }
 
@@ -22867,7 +24035,7 @@ class DashboardConfig {
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
             this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmHealthFilter,
-            this.bmSort ?? this.defaultBookmarksSort(),
+            this.bmSort ?? this.defaultBookmarksSort(), this.bmActiveGroup(),
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -22908,8 +24076,22 @@ class DashboardConfig {
                 if (dp !== 0) return dp;
                 return pageIndex(a.pageId) - pageIndex(b.pageId);
             },
+            // Worst first: only offered (bookmarkSortOptionsHtml) while a
+            // Health filter is active, so there is always an issue to score.
+            score: (a, b) => Number(this.bmHealthIssue?.(a)?.score ?? 100) - Number(this.bmHealthIssue?.(b)?.score ?? 100),
         }[this.bmSort ?? this.defaultBookmarksSort()] || null;
-        return cmp ? [...rows].sort(cmp) : rows;
+        const sorted = cmp ? [...rows].sort(cmp) : rows;
+        // Group is independent of Sort: Sort orders every row, then a stable
+        // second pass gathers them into their groups (in group order) without
+        // disturbing the sort's order *within* each group -- the same trick
+        // Duplicates already used to put copies of one URL side by side, now
+        // generalised to whichever group (or none) is in effect. workbenchItems()
+        // groups strictly consecutive rows, so this order is what makes that
+        // grouping actually work rather than splitting one group in two.
+        const groupMode = this.bmActiveGroup();
+        if (!groupMode) return sorted;
+        const groupCmp = this.bmGroupComparator(groupMode);
+        return groupCmp ? [...sorted].sort(groupCmp) : sorted;
     }
 
     /**
@@ -23198,7 +24380,7 @@ class DashboardConfig {
         return b ? this.bookmarkKey(b) : null;
     }
 
-    async openBookmarkEditModal(key) {
+    async openBookmarkEditModal(key, { promote = false } = {}) {
         this.closeBookmarkMenus();
         this._bmModalRestoreKey = key;
         const record = await this.findBookmarkRecord(key);
@@ -23214,6 +24396,7 @@ class DashboardConfig {
             pageId: record.pageId,
             index: record.index,
             bookmark: record.record,
+            promoteToPageId: promote ? this.bookmarkPromoteDestination() : undefined,
             onSaved: async () => {
                 await this.refreshBookmarksAfterWrite();
             },
@@ -23221,66 +24404,20 @@ class DashboardConfig {
         this.watchAddBookmarkModal();
     }
 
-    async recheckBookmarkByKey(key) {
-        if (this._bmBusyKeys.has(key)) return;
-        const bookmark = this.findBookmarkByKey(key);
-        const url = String(bookmark?.url || '').trim();
-        if (!url) return;
-        const record = await this.findBookmarkRecord(key);
-        this._bmBusyKeys.add(key);
-        this.syncBookmarkRowBusy(key, true);
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const persist = async (status, errorDetail, pingMs, httpStatus) => {
-            const cacheURL = url.replace(/\/+$/, '').toLowerCase();
-            if (cacheURL) {
-                await fetcher('/api/health/cache-scan', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        url: cacheURL,
-                        status,
-                        pingMs: pingMs || 0,
-                        error: errorDetail,
-                        code: Number(httpStatus) || 0,
-                    }),
-                }).catch(() => {});
-            }
-            if (record) {
-                await fetcher('/api/health/update-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        pageId: record.pageId,
-                        index: record.index,
-                        url: record.record?.url,
-                        status,
-                        error: status === 'online' ? '' : errorDetail,
-                    }),
-                });
-            }
-        };
-        try {
-            const res = await fetcher(`/api/ping?url=${encodeURIComponent(url)}`);
-            if (!res.ok) throw new Error(`ping HTTP ${res.status}`);
-            const result = await res.json();
-            const status = result.status === 'online' ? 'online' : 'offline';
-            const errorDetail = String(result.errorDetail || '').trim()
-                || (status === 'online' ? '' : this.t('dashboard.healthPingFailed', 'ping failed'));
-            await persist(status, errorDetail, result.ping, result.httpStatus);
-            this.dash.updateHealthBadge?.();
-            this.notify(
-                status === 'online'
-                    ? this.t('dashboard.healthRecheckOnline', 'Reachable')
-                    : this.t('dashboard.healthRecheckOffline', 'Unreachable: {error}', { error: errorDetail || 'offline' }),
-                status === 'online' ? 'success' : 'error',
-                { duration: 3500 }
-            );
-        } catch {
-            this.notify(this.t('dashboard.healthRecheckFailed', 'Could not re-check this bookmark'), 'error');
-        } finally {
-            this._bmBusyKeys.delete(key);
-            this.syncBookmarkRowBusy(key, false);
-        }
+    /** Whether this bookmark waits on Unsorted, and so can be promoted. */
+    isUnsortedBookmark(b) {
+        return Boolean(window.UnsortedPage?.isUnsorted?.(b));
+    }
+
+    /**
+     * The page a promote opens on: the one the Inbox's promote would use, the
+     * dashboard page last shown -- else the first page there is.
+     */
+    bookmarkPromoteDestination() {
+        const pages = (this.dash.pages || []).filter((p) => Number(p.id) !== window.UnsortedPage?.PAGE_ID);
+        const current = Number(this.dash.currentPageId);
+        if (pages.some((p) => Number(p.id) === current)) return current;
+        return pages.length ? Number(pages[0].id) : undefined;
     }
 
     openBookmarkOnDashboard(b) {
@@ -23296,27 +24433,6 @@ class DashboardConfig {
             return;
         }
         void this.dash.pageNav?.requestPageNavigation?.(pageId);
-    }
-
-    /**
-     * The mirror of openBookmarkOnDashboard: open the Health view with this
-     * bookmark's row selected.
-     *
-     * The index comes from findBookmarkRecord rather than from the in-memory
-     * list, because the health key is `pageId:index` against the page's stored
-     * order — and that helper already resolves the right one of two identical
-     * URLs. An index taken from the filtered config list would point at a
-     * different bookmark whenever a filter or sort is active.
-     */
-    async revealBookmarkInHealth(key) {
-        this.closeBookmarkMenus();
-        const record = await this.findBookmarkRecord(key);
-        if (!record) {
-            this.notify(this.t('config.bookmarkNotFound', 'Could not find this bookmark.'), 'error');
-            return;
-        }
-        this._trackAction('reveal-in-health');
-        await this.openViewFromTile('health', null, `${record.pageId}:${record.index}`);
     }
 
     copyBookmarkUrl(b) {
@@ -23508,8 +24624,16 @@ class DashboardConfig {
             case 'dashboard':
                 this.openBookmarkOnDashboard(bookmark);
                 break;
-            case 'health':
-                void this.revealBookmarkInHealth(key);
+            case 'recheck': {
+                const issue = this.bmHealthIssue?.(bookmark);
+                if (issue) void this._bmHealthModule?.recheckIssue(issue);
+                break;
+            }
+            case 'health-details':
+                // The row's panel, on its Health tab: what `s` does.
+                this._bmKeyboardKey = key;
+                this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
+                this.openBmHealthPanelSection();
                 break;
             case 'redirect':
                 void this.detectBookmarkRedirect(key);
@@ -23526,6 +24650,23 @@ class DashboardConfig {
             case 'copy-url':
                 this.copyBookmarkUrl(bookmark);
                 break;
+            case 'open-new-tab':
+                this.openBookmarkByKey(key, { newTab: true });
+                break;
+            case 'health-large':
+                void this.openBmHealthLarge?.(key);
+                break;
+            case 'promote':
+                void this.openBookmarkEditModal(key, { promote: true });
+                break;
+            case 'rebuild-preview':
+                void this.rebuildBmPreview?.(bookmark);
+                break;
+            case 'recover': {
+                const issue = this.bmHealthIssue?.(bookmark);
+                if (issue) void this._bmHealthModule?.recoverFromArchive(issue);
+                break;
+            }
             case 'share':
                 void this.shareBookmark(bookmark);
                 break;
@@ -23551,6 +24692,19 @@ class DashboardConfig {
             ['g / G', this.t('config.bookmarksKeyFirstLast', 'first / last')],
             ['/', this.t('config.bookmarksKeySearch', 'search')],
             ['Esc', this.t('config.bookmarksKeyClear', 'clear')],
+            ['Shift P / C', this.t('config.bmKeyStructure', 'pages / categories')],
+            ['f', this.t('config.bmKeyWorkThrough', 'work through')],
+            // Health's own keys, listed only once its report has something for
+            // them to act on — an empty list has nothing to re-check or ignore.
+            ...(this._bmHealthModule ? [
+                ['p', this.t('config.bmKeyRecheck', 're-check')],
+                ['s', this.t('config.bmKeyScore', 'score')],
+                ['c', this.t('config.bmKeyChecking', 'checking')],
+                ['Shift R', this.t('config.bmKeyRefreshReport', 'refresh report')],
+                ['m', this.t('config.bmKeyMenu', 'menu')],
+                ['n / z', this.t('config.bmKeyIgnoreSnooze', 'ignore / snooze')],
+                ['h', this.t('config.bmKeyHealthModal', 'collection health')],
+            ] : []),
         ];
         return this.renderKeyboardLegendPairs(keys);
     }
@@ -23591,16 +24745,16 @@ class DashboardConfig {
                 this.bindTagSuggestionsTab(body);
             } else if (tab === 'tag-rules') {
                 this.bindTagRulesTab(body);
-            } else if (tab === 'settings') {
+            } else if (tab === 'settings' || tab === 'view') {
                 this.bindControlPanels(body, 'behavior');
             } else if (tab === 'local-copies') {
                 this.bindBookmarkCopiesTab(body);
-            } else {
-                this.bindBookmarksListTab(body);
             }
             // The strip is not repainted with the body, so the active button has
             // to be moved by hand — the same call the other strips make.
             this.syncSubTabStrip('data-bm-tab', tab);
+            // The band carries View's changed-settings bar, and the count elsewhere.
+            this.updateConfigShellHead();
         });
         if (this.bmTab === 'tags') {
             this.bindBookmarkTagsTab(container);
@@ -23615,6 +24769,9 @@ class DashboardConfig {
             return;
         }
         if (this.bmTab === 'settings') {
+            return;
+        }
+        if (this.bmTab === 'view') {
             return;
         }
         if (this.bmTab === 'local-copies') {
@@ -23675,11 +24832,45 @@ class DashboardConfig {
             });
         };
         wire('#config-bm-sort', 'bmSort');
+        const groupSelect = container.querySelector('#config-bm-group');
+        if (groupSelect) {
+            groupSelect.addEventListener('change', () => {
+                this.bmGroup = groupSelect.value;
+                // A deliberate pick, so it survives past this address bar --
+                // localStorage, not a server setting; see defaultBookmarksGroup.
+                try {
+                    window.localStorage?.setItem(DashboardConfig.BM_GROUP_KEY, groupSelect.value);
+                } catch { /* private window: this visit still gets the choice */ }
+                this.resetBookmarkVisibleLimit();
+                this._bmDuplicateUrls = null;
+                this.repaintBookmarksList();
+                this.updateBookmarkListChrome();
+                // Group rides in the address the way every other bookmark
+                // filter does, so a link to "grouped by site" is one to hand
+                // someone rather than a state only this tab remembers.
+                this.restoreConfigHash();
+            });
+        }
         void this.ensureBookmarkCategoriesForFilter().then(() => {
             this.repaintBookmarksList();
         });
         container.querySelector('#config-bm-add')
             ?.addEventListener('click', () => this.openAddBookmarkModal());
+        // Row height is the app's one density setting; the rows are redrawn at
+        // their new height, which the windowed list reads back from the CSS.
+        container.querySelector('.config-bm-density')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-lvs-density]');
+            if (!btn) return;
+            window.ListDensity?.set?.(btn.getAttribute('data-lvs-density'));
+        });
+        if (!this._bmDensityListener) {
+            this._bmDensityListener = () => {
+                document.querySelectorAll('.config-bm-density [data-lvs-density]').forEach((b) => b.setAttribute(
+                    'aria-pressed', String(b.getAttribute('data-lvs-density') === window.ListDensity?.get?.())));
+                if (this.isActiveView() && this.section === 'bookmarks') this.repaintBookmarksList();
+            };
+            window.addEventListener('nextdash:list-density', this._bmDensityListener);
+        }
         container.querySelector('#config-bm-list')?.addEventListener('click', (e) => {
             if (e.target.closest('[data-bm-empty-add]')) {
                 this.openAddBookmarkModal();
@@ -23843,7 +25034,10 @@ class DashboardConfig {
         listRoot.addEventListener('dblclick', (e) => {
             if (e.target.closest('button, label, input, select, a')) return;
             const key = e.target.closest('.config-bm-row')?.getAttribute('data-bm-key');
-            if (key) this.openBookmarkByKey(key);
+            if (!key) return;
+            // View: open the bookmark, or open it for editing.
+            if ((this.dash.settings?.bmViewDblClick || 'open') === 'edit') this.focusWorkbenchPanel?.(key);
+            else this.openBookmarkByKey(key);
         });
     }
 
@@ -24206,6 +25400,30 @@ class DashboardConfig {
             this.repaintBookmarksList();
         }, { root: root || null, rootMargin: '160px' });
         this._bmLoadMoreObserver.observe(sentinel);
+        this.fillBookmarkListToScreen(sentinel, root);
+    }
+
+    /**
+     * Load the next page while the sentinel is already on screen.
+     *
+     * The observer only reports a crossing, and a page that fits on screen
+     * (a page size of 10 on a tall window) draws its sentinel inside the
+     * viewport: it never crosses in, so the list sat at one page however far
+     * the reader scrolled, and every sort put it back there. Filling the screen
+     * first leaves the sentinel below the fold, where the next scroll brings it
+     * in the way the observer expects. A list longer than the screen is left
+     * alone, so an idle list still does not page on its own.
+     */
+    fillBookmarkListToScreen(sentinel, root) {
+        requestAnimationFrame(() => {
+            if (!sentinel.isConnected || this.section !== 'bookmarks') return;
+            const bottom = root ? root.getBoundingClientRect().bottom : window.innerHeight;
+            if (sentinel.getBoundingClientRect().top > bottom + 160) return;
+            const total = this.visibleBookmarks().length;
+            if (this.bmVisibleLimit >= total) return;
+            this.bmVisibleLimit += this.bmPageSize();
+            this.repaintBookmarksList();
+        });
     }
 
     repaintBookmarksList() {
@@ -24885,16 +26103,15 @@ class DashboardConfig {
     /* ── Fetching icons and previews for a selection ─────────────────────── */
 
     /**
-     * The fields a preview answer leaves on a bookmark. The kept list writes
-     * the same set (dashboard-unsorted.js PREVIEW_FIELDS); a preview fetched
-     * here has to end up on the record for the same reason it does there --
-     * the server caches its own answer, but that cache is not the bookmark.
+     * The fields a preview answer leaves on a bookmark. A preview fetched here
+     * has to end up on the record: the server caches its own answer, but that
+     * cache is not the bookmark.
      */
     static PREVIEW_FIELDS = ['previewTitle', 'previewDesc', 'previewImage',
         'previewImageSource', 'previewSiteName', 'previewAuthor', 'previewPublishedAt',
         'previewEmbedHtml', 'previewContentLength', 'previewEnriched'];
 
-    /** Already answered for: the same test the kept list's button counts by. */
+    /** Already answered for. */
     bookmarkHasPreview(bookmark) {
         return bookmark?.previewEnriched === true
             || !!String(bookmark?.previewTitle || '').trim()
@@ -24915,8 +26132,7 @@ class DashboardConfig {
      * server through an endpoint that allows sixty a minute per client --
      * shared with the hover previews, the link checks and the icon prefetch.
      * A refusal is not a failure: the server says how long to wait, and the
-     * row is asked for again. The same shape as the kept list's sweep
-     * (dashboard-unsorted-select.js), so the two behave alike.
+     * row is asked for again.
      */
     async runSelectionSweep(targets, { title, run, done }) {
         let ok = 0;
@@ -25132,7 +26348,7 @@ class DashboardConfig {
     static STATS_RANGES = [7, 30, 90, 365];
 
     /** How many rows the ranked Statistics lists show before cutting off. */
-    static STATS_LIST_LIMIT = 20;
+    static STATS_LIST_LIMIT = 8;
 
     /**
      * A read-only report on what is actually in the dashboard: a cleanup score,
@@ -25146,8 +26362,8 @@ class DashboardConfig {
     statsTabLabel(tab) {
         const map = {
             overview: ['config.statsTabOverview', 'Overview'],
-            activity: ['config.statsTabActivity', 'Activity'],
-            content: ['config.statsTabContent', 'Content'],
+            usage: ['config.statsTabUsage', 'Usage'],
+            collection: ['config.statsTabCollection', 'Collection'],
             inbox: ['config.statsTabInbox', 'Inbox'],
             health: ['config.statsTabHealth', 'Health'],
         };
@@ -25192,10 +26408,10 @@ class DashboardConfig {
                 <div class="config-subtabs" role="tablist">${tabs}</div>
                 ${typeof this.statsPanelLink === 'function' ? this.statsPanelLink(this.statsTab) : ''}
                 ${scope}
+                ${this.renderStatsTimestampSafe()}
             </div>
             ${this.renderSectionTabNote('stats', this.statsTab)}
             <div id="config-stats-body" role="tabpanel" tabindex="0">${this.renderStatsBodySafe()}</div>
-            ${this.renderStatsTimestampSafe()}
         `;
     }
 
@@ -25290,13 +26506,15 @@ class DashboardConfig {
     }
 
     ensureStatsRenderers() {
-        if (window.DashboardConfigStatsReady) return Promise.resolve(true);
+        if (window.DashboardConfigStatsReady && window.DashboardConfigStatsFiguresReady) return Promise.resolve(true);
         if (this._statsRenderersPromise) return this._statsRenderersPromise;
-        this._statsRenderersPromise = window.LazyScript.loadScriptOnce(
-            'js/dashboard/dashboard-config-stats.js',
-            'dashboardConfigStats',
-            () => window.DashboardConfigStatsReady === true
-        ).then(() => {
+        const load = window.LazyScript.loadScriptOnce;
+        // The figures first: the renderers draw what they return.
+        this._statsRenderersPromise = load('js/dashboard/dashboard-config-stats-figures.js',
+            'dashboardConfigStatsFigures', () => window.DashboardConfigStatsFiguresReady === true)
+            .then(() => load('js/dashboard/dashboard-config-stats.js',
+                'dashboardConfigStats', () => window.DashboardConfigStatsReady === true))
+            .then(() => {
             if (this.isActiveView() && this.section === 'stats') this.repaintStatsBody();
             return true;
         }).catch(() => false);
@@ -25308,6 +26526,11 @@ class DashboardConfig {
         const host = document.getElementById('config-stats-body');
         if (!host) { this.render(); return; }
         host.innerHTML = this.renderStatsBodySafe();
+        // The line under the tabs describes the open tab, so it follows it;
+        // left alone it kept describing whichever tab the section opened on.
+        const note = host.parentElement?.querySelector(':scope > .config-tab-note');
+        const nextNote = this.renderSectionTabNote('stats', this.statsTab);
+        if (note && nextNote) note.outerHTML = nextNote;
         // The stamp lives outside the body, so it would otherwise keep claiming
         // the time of the first render while the numbers under it were fresh.
         // The whole foot is replaced, not the line inside it: swapping the line
@@ -25337,7 +26560,7 @@ class DashboardConfig {
         } catch {
             this._statsFinders = [];
         }
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'activity') {
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'usage') {
             const host = document.getElementById('config-stats-finders');
             if (host) host.innerHTML = this.renderStatsFinders();
         }
@@ -25401,7 +26624,7 @@ class DashboardConfig {
                 ? backups.backups[0]?.createdAt || null
                 : null,
         };
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'content') {
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'collection') {
             const host = document.getElementById('config-stats-library');
             if (host) host.innerHTML = this.renderStatsLibraryBody();
         }
@@ -25687,6 +26910,12 @@ class DashboardConfig {
         const perCategory = [...perCategoryCount.entries()]
             .map(([id, n]) => [catLabel(id), n])
             .sort((a, b) => b[1] - a[1]);
+        // The bookmarks without a category belong in the list too, or its
+        // rows add up to less than the total printed above them.
+        const uncategorised = all.filter((b) => !b.category).length;
+        if (uncategorised) {
+            perCategory.push([this.t('config.statsUncategorised', 'Uncategorised'), uncategorised]);
+        }
 
         // Opens per bookmark, per category. The raw open total just restates
         // which categories are biggest; dividing by size is what exposes a
@@ -25700,10 +26929,14 @@ class DashboardConfig {
             }))
             .sort((a, b) => b.perBookmark - a.perBookmark);
 
-        const perPage = pages.map((p) => [
+        // Pages without bookmarks are folded into one count rather than listed
+        // as a row of zeroes each.
+        const perPageAll = pages.map((p) => [
             p.name || String(p.id),
             all.filter((b) => String(b.pageId) === String(p.id)).length,
         ]);
+        const perPage = perPageAll.filter(([, n]) => n > 0);
+        const emptyPages = perPageAll.length - perPage.length;
 
         // The ranked panels show a leaderboard, not the whole collection, so
         // they cut off — but the count behind each cut is carried alongside, or
@@ -25776,6 +27009,7 @@ class DashboardConfig {
             duplicateUrlList,
             shortcutConflictList,
             perPage,
+            emptyPages,
             perCategory,
             categoryEffectiveness,
             concentration,
@@ -25880,8 +27114,7 @@ class DashboardConfig {
      * chart now measures what the data can actually answer: how many bookmarks
      * were last reached for in each period. Every label says so.
      */
-    computeActivity(all) {
-        const days = this.statsRange || 30;
+    computeActivity(all, days = this.statsRange || 30) {
         const now = Date.now();
         const DAY = 86400000;
         const bucketDays = days <= 30 ? 1 : (days <= 90 ? 7 : 30);
@@ -25940,18 +27173,11 @@ class DashboardConfig {
             inWindow(b) ? sum + Math.max(1, Number(b.openCount || 1)) : sum
         ), 0);
 
-        // Compare the latter half of the range with the former, which is what the
-        // old tab's week-over-week figure did for a 7-day window.
-        const half = Math.floor(bucketCount / 2);
-        let wow = null;
-        if (half > 0) {
-            const prev = buckets.slice(0, half).reduce((a, b) => a + b, 0);
-            const recent = buckets.slice(bucketCount - half).reduce((a, b) => a + b, 0);
-            if (prev > 0) wow = Math.round(((recent - prev) / prev) * 100);
-            else if (recent > 0) wow = 100;
-        }
-
-        return { buckets, labels, dateLabels, activeCount, totalOpens, wow, bucketDays };
+        // No "vs previous period" here. Each bookmark counts only on the day
+        // it was last opened, so a bookmark used in both halves of the range
+        // lands in the later one and this series always rises to the right.
+        // The real comparison lives on the opens chart, from openLog.
+        return { buckets, labels, dateLabels, activeCount, totalOpens, bucketDays };
     }
 
     /**
@@ -25986,9 +27212,10 @@ class DashboardConfig {
         } catch {
             this._statsInboxAgg = null;
         }
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'inbox') {
-            const host = document.getElementById('config-stats-inbox');
-            if (host) host.innerHTML = this.renderStatsInboxBody();
+        // The inbox tab and the overview both draw from it; the whole body is
+        // repainted so the tiles and the attention list pick it up together.
+        if (this.isActiveView() && this.section === 'stats' && (this.statsTab === 'inbox' || this.statsTab === 'overview')) {
+            this.repaintStatsBody();
         }
     }
 
@@ -26001,6 +27228,46 @@ class DashboardConfig {
         const hours = n / 3600000;
         if (hours >= 1) return this.t('config.statsInboxHoursUnit', '{n}h').replace('{n}', String(Math.round(hours)));
         return this.t('config.statsInboxMinutesUnit', '{n}m').replace('{n}', String(Math.max(1, Math.round(n / 60000))));
+    }
+
+    /**
+     * What else the health report already carries, read once.
+     *
+     * Flags per type, the average score, the newest local copy and how many
+     * broken links have none: all in the issue rows, none of it read here
+     * before. The newest copy replaces archiveCheckedAt, which is when the
+     * archive.org index was last asked, not when a copy was kept.
+     */
+    static statsHealthExtras(data) {
+        const issues = Array.isArray(data?.issues) ? data.issues : [];
+        const flags = {};
+        let scoreSum = 0;
+        let newestCopyAt = 0;
+        let newestCopyName = '';
+        let brokenWithoutCopy = 0;
+        issues.forEach((issue) => {
+            (Array.isArray(issue?.flags) ? issue.flags : []).forEach((f) => {
+                flags[f] = (flags[f] || 0) + 1;
+            });
+            scoreSum += Number(issue?.score) || 0;
+            const copyAt = Number(issue?.localCopyAt) || 0;
+            if (copyAt > newestCopyAt) {
+                newestCopyAt = copyAt;
+                newestCopyName = String(issue?.name || issue?.url || '');
+            }
+            const broken = String(issue?.lastError || '').trim() !== '';
+            if (broken && !(Number(issue?.localCopies) > 0)) brokenWithoutCopy += 1;
+        });
+        return {
+            flags,
+            avgScore: issues.length ? Math.round((scoreSum / issues.length) * 10) / 10 : null,
+            newestCopyAt,
+            newestCopyName,
+            brokenWithoutCopy,
+            missingPreview: Number(data?.summary?.missingPreviewCount) || 0,
+            worst: Array.isArray(data?.fleet?.worst) ? data.fleet.worst : [],
+            incidents: Array.isArray(data?.fleet?.incidents) ? data.fleet.incidents : [],
+        };
     }
 
     async loadStatsHealth() {
@@ -26045,6 +27312,7 @@ class DashboardConfig {
                 // simply never read it, so every figure here was "now" with
                 // nothing to compare it against.
                 trend: Array.isArray(data?.trend) ? data.trend : [],
+                ...DashboardConfig.statsHealthExtras(data),
             };
         } catch {
             this._statsHealth = null;
@@ -26057,7 +27325,8 @@ class DashboardConfig {
          * panels, which sit beside it — and those render to nothing while the
          * fetch is in flight, so a partial repaint left them absent for good.
          */
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'health') {
+        if (this.isActiveView() && this.section === 'stats'
+            && ['health', 'overview', 'collection'].includes(this.statsTab)) {
             this.repaintStatsBody();
         }
     }
@@ -26101,16 +27370,19 @@ class DashboardConfig {
             tip.replaceChildren();
             // Value leads, label follows: the reader already knows which bar
             // they are pointing at and wants the number.
+            // Each chart names its own series on the bar; the defaults are
+            // what the two charts said before they carried a label.
+            const label1 = bar.getAttribute('data-bar-label') || openLabel;
             if (value2 === null) {
                 const strong = document.createElement('strong');
-                strong.textContent = `${value} ${openLabel}`;
+                strong.textContent = `${value} ${label1}`;
                 tip.append(strong);
             } else {
                 // Two series: both are listed, each keyed by its own colour, so
                 // the pointer never has to land on the right one of the pair.
                 const rows = [
-                    [value, this.t('config.statsInboxTrendAdded', 'Added'), 'a'],
-                    [value2, this.t('config.statsInboxTrendTriaged', 'Dealt with'), 'b'],
+                    [value, bar.getAttribute('data-bar-label') || this.t('config.statsInboxTrendAdded', 'Added'), 'a'],
+                    [value2, bar.getAttribute('data-bar-label2') || this.t('config.statsInboxTrendTriaged', 'Dealt with'), 'b'],
                 ];
                 rows.forEach(([n, label, key]) => {
                     const row = document.createElement('strong');
@@ -26221,7 +27493,7 @@ class DashboardConfig {
                 // The summary's own way through: the shortcut panel it names
                 // lives on Activity, a tab away from where the line is read.
                 if (action === 'shortcuts') {
-                    this.statsTab = 'activity';
+                    this.statsTab = 'usage';
                     this.restoreConfigHash();
                     this.render();
                     setTimeout(() => document.getElementById('config-stats-shortcuts')
@@ -26244,7 +27516,7 @@ class DashboardConfig {
                 this.bmSelected.clear();
                 this.resetBookmarkVisibleLimit();
                 this._bmDuplicateUrls = null;
-                this.openConfigView('bookmarks');
+                void this.openLibraryView();
             });
         });
         // A statistics row that names something the bookmark list can filter by
@@ -26273,7 +27545,7 @@ class DashboardConfig {
                 this.resetBookmarkVisibleLimit();
                 this._bmDuplicateUrls = null;
                 this._trackAction('stats-goto', { kind });
-                this.openConfigView('bookmarks');
+                void this.openLibraryView();
             });
         });
 
@@ -26297,14 +27569,35 @@ class DashboardConfig {
                 this.repaintStatsBody();
             });
         }
-        container.querySelectorAll('[data-stats-goto]').forEach((btn) => {
+        // A panel's way to another tab. Its own attribute: it shared
+        // data-stats-goto with the bookmark rows, so clicking the tag "dev"
+        // also set the open tab to "tag:dev".
+        container.querySelectorAll('[data-stats-tab-goto]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-stats-goto');
-                if (!tab || tab === this.statsTab) return;
+                const tab = btn.getAttribute('data-stats-tab-goto');
+                if (!DashboardConfig.STATS_TABS.includes(tab) || tab === this.statsTab) return;
                 this.statsTab = tab;
+                this.restoreConfigHash();
                 this.loadStatsTabData(tab);
                 this.repaintStatsBody();
                 this.syncSubTabStrip('data-stats-tab', this.statsTab);
+            });
+        });
+        container.querySelectorAll('[data-stats-opens-mode]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const mode = btn.getAttribute('data-stats-opens-mode');
+                if (mode !== 'opens' && mode !== 'lastUsed') return;
+                this.statsOpensMode = mode;
+                try { localStorage.setItem(DashboardConfig.STATS_OPENS_MODE_KEY, mode); } catch { /* per session then */ }
+                this.repaintStatsBody();
+            });
+        });
+        container.querySelectorAll('[data-stats-inbox-range]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const next = Number(btn.getAttribute('data-stats-inbox-range'));
+                if (![7, 30, 90].includes(next) || next === this.statsInboxRange) return;
+                this.statsInboxRange = next;
+                this.repaintStatsBody();
             });
         });
         this.bindFormKeyboard(container);
@@ -26369,6 +27662,18 @@ class DashboardConfig {
             ['top10_share_of_opens_pct', s.concentration.share],
         ];
         s.perPage.forEach(([name, n]) => rows.push([`page:${name}`, n]));
+        rows.push(['empty_pages', s.emptyPages || 0]);
+        const scoped = this.statsScopedBookmarks();
+        if (typeof this.statsRecency === 'function') {
+            this.statsRecency(scoped).forEach(([k, n]) => rows.push([`last_opened_${k}`, n]));
+            this.statsOpenCountBands(scoped).forEach(([k, n]) => rows.push([`opened_times_${k}`, n]));
+            this.statsTagsPerBookmark(scoped).forEach(([k, n]) => rows.push([`tags_per_bookmark_${k}`, n]));
+            this.statsAge(scoped).forEach(([k, n]) => rows.push([`saved_${k}`, n]));
+            const d = this.statsDomains(scoped);
+            rows.push(['unique_hosts', d.unique]);
+            rows.push(['self_hosted', d.selfHosted]);
+            d.hosts.forEach(([host, n]) => rows.push([`host:${host}`, n]));
+        }
         s.perCategory.forEach(([name, n]) => rows.push([`category:${name}`, n]));
         // The untruncated lists: the rows are labelled `tag:` and `bookmark:`,
         // so stopping at the twenty the panel happens to show would be a
@@ -26402,6 +27707,11 @@ class DashboardConfig {
             rows.push(['health_broken', Number(health.broken || 0)]);
             rows.push(['health_monitors_down', Number(health.monitorDown || 0)]);
             rows.push(['health_unchecked', Number(health.unchecked || 0)]);
+            if (health.avgScore !== null && health.avgScore !== undefined) rows.push(['health_score_avg', health.avgScore]);
+            Object.entries(health.flags || {}).forEach(([flag, n]) => rows.push([`flag:${flag}`, n]));
+            const incidents = health.incidents || [];
+            rows.push(['outages_on_record', Math.max(Number(health.fleet?.totalIncidents) || 0, incidents.length)]);
+            rows.push(['downtime_minutes', Math.round(incidents.reduce((n, i) => n + (Number(i.durationMs) || 0), 0) / 60000)]);
         }
 
         const esc = (v) => {
@@ -26425,7 +27735,7 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'appearance', 'organizing', 'widgets', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+    static HELP_TABS = ['start', 'tips', 'config', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
 
     helpTabLabel(tab) {
         const map = {
@@ -26433,10 +27743,15 @@ class DashboardConfig {
             config: ['config.helpTabConfig', 'Configuring'],
             appearance: ['config.helpTabAppearance', 'Appearance'],
             organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
+            bookmarks: ['config.helpTabBookmarks', 'Bookmarks view'],
             widgets: ['config.helpTabWidgets', 'Widgets'],
+            containers: ['config.helpTabContainers', 'Containers'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
             tips: ['config.helpTabTips', 'Tips'],
-            health: ['config.helpTabHealth', 'Health'],
+            // Health kept its checks and its walkthrough; the list it used to
+            // hold moved to the Bookmarks view, so "Health" on its own
+            // overpromised what is still on this tab.
+            health: ['config.helpTabHealth', 'Checks & health'],
             monitoring: ['config.helpTabMonitoring', 'Monitoring'],
             inbox: ['config.helpTabInbox', 'Inbox'],
             stats: ['config.helpTabStats', 'Statistics'],
@@ -26621,7 +27936,9 @@ class DashboardConfig {
             case 'config': return this.renderHelpConfig();
             case 'appearance': return this.renderHelpAppearance();
             case 'organizing': return this.renderHelpOrganizing();
+            case 'bookmarks': return this.renderHelpBookmarks();
             case 'widgets': return this.renderHelpWidgets();
+            case 'containers': return this.renderHelpContainers();
             case 'search': return this.renderHelpSearch();
             case 'tips': return this.renderHelpTipsTab();
             case 'health': return this.renderHelpHealth();
@@ -26701,6 +28018,11 @@ class DashboardConfig {
         themes: { from: 'config', to: 'appearance' },
         appearance: { from: 'config', to: 'appearance' },
         'server-log': { from: 'data', to: 'logs' },
+        // The health view is the Bookmarks view now; a link copied before this
+        // release named the panel that used to describe it.
+        'health-view': { from: 'health', to: 'bookmarks' },
+        // The Kept tab is gone — its replacement, config.helpInboxUnsortedTitle,
+        // stays on the same tab, so no redirect is needed for it.
     };
 
     /**
@@ -26713,8 +28035,13 @@ class DashboardConfig {
         'config.helpHealthTitle': [
             { tab: 'monitoring', panel: 'health-stats', labelKey: 'config.helpHealthStatsTitle', label: 'Uptime, trends & statistics' },
             { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
+            { tab: 'bookmarks', panel: 'bm-panel', labelKey: 'config.helpBmPanelTitle', label: 'The side panel' },
         ],
-        'config.helpHealthViewTitle': [
+        // The panel that used to carry this content, config.helpHealthViewTitle,
+        // is gone from the health tab; config.helpLibraryTitle covers the same
+        // ground on the bookmarks tab now.
+        'config.helpLibraryTitle': [
+            { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
             { tab: 'monitoring', panel: 'health-drift', labelKey: 'config.helpHealthDriftTitle', label: 'Redirect, title & content drift' },
         ],
         'config.helpHealthWalkthroughTitle': [
@@ -26722,7 +28049,7 @@ class DashboardConfig {
             { tab: 'monitoring', panel: 'health-maintenance', labelKey: 'config.helpHealthMaintenanceTitle', label: 'Maintenance windows' },
         ],
         'config.helpHealthStatsTitle': [
-            { tab: 'health', panel: 'health-view', labelKey: 'config.helpHealthViewTitle', label: 'Working through the list' },
+            { tab: 'bookmarks', panel: 'library', labelKey: 'config.helpLibraryTitle', label: 'The Bookmarks view' },
         ],
         'config.helpHealthCertTitle': [
             { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
@@ -26731,6 +28058,9 @@ class DashboardConfig {
             { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
         ],
         'config.helpNotificationsTitle': [
+            { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
+        ],
+        'config.helpBmPanelTitle': [
             { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
         ],
     };
@@ -27082,6 +28412,51 @@ class DashboardConfig {
             { kind: 'keys', value: ['/'], captionKey: 'config.helpArtTagCloud', caption: 'The tag cloud' },
         ],
 
+        // ── Bookmarks view ─────────────────────────────────────────────────
+        // Carried over from the old health view's art: the tiles are a rail
+        // of filters now, not a row of tiles, so the caption moved with it.
+        'config.helpLibraryTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['bad', { k: 'config.statsBroken', d: 'Broken' }],
+                    ['warn', { k: 'config.statsDuplicates', d: 'Duplicates' }],
+                    ['idle', { k: 'config.statsStale', d: 'Stale' }],
+                    ['off', { k: 'config.statsUnchecked', d: 'Unchecked' }],
+                ],
+                captionKey: 'config.helpArtHealthTiles', caption: 'The filters, in the rail',
+            },
+            { kind: 'keys', value: ['Shift + H'] },
+        ],
+        'config.helpBmPanelTitle': [
+            {
+                kind: 'steps',
+                value: [
+                    { k: 'config.bmTabDetails', d: 'Details' },
+                    { k: 'config.bmHealth', d: 'Health' },
+                    { k: 'config.bmUsage', d: 'Usage' },
+                ],
+                captionKey: 'config.helpArtBmPanelTabs', caption: 'Three tabs, or 1 / 2 / 3',
+            },
+        ],
+        'config.helpBmWorkThroughTitle': [
+            { kind: 'keys', value: ['f', 'p', 'd', 'z'], captionKey: 'config.helpArtBmWorkKeys', caption: 'One bookmark at a time' },
+        ],
+
+        // ── Containers ─────────────────────────────────────────────────────
+        'config.helpContainersTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['ok', { k: 'dashboard.dockerFilterRunning', d: 'Running' }],
+                    ['off', { k: 'dashboard.dockerFilterStopped', d: 'Stopped' }],
+                    ['warn', { k: 'dashboard.dockerFilterUpdates', d: 'Updates' }],
+                ],
+                captionKey: 'config.helpArtContainerFilters', caption: 'What the filters ask',
+            },
+            { kind: 'keys', value: ['s', 'r', 'p', 'u'], captionKey: 'config.helpArtContainerKeys', caption: 'Start/stop, restart, pause, update' },
+        ],
+
         // ── Search & keyboard ──────────────────────────────────────────────
         'config.helpSearchTitle': [
             { kind: 'keys', value: ['>', ':', '?'], captionKey: 'config.helpArtThreeModes', caption: 'Three modes, one overlay' },
@@ -27108,7 +28483,7 @@ class DashboardConfig {
                 captionKey: 'config.helpArtOverlayKeys', caption: 'The overlays',
             },
             {
-                kind: 'keys', value: ['Shift + H', 'Shift + I', 'Shift + S'],
+                kind: 'keys', value: ['Shift + H', 'Shift + U', 'Shift + I', 'Shift + S'],
                 captionKey: 'config.helpArtViewKeys', caption: 'The views',
             },
             {
@@ -27132,19 +28507,6 @@ class DashboardConfig {
                 ],
                 captionKey: 'config.helpArtCheckModes', caption: 'Three availability modes',
             },
-        ],
-        'config.helpHealthViewTitle': [
-            {
-                kind: 'states',
-                value: [
-                    ['bad', { k: 'config.statsBroken', d: 'Broken' }],
-                    ['warn', { k: 'config.statsDuplicates', d: 'Duplicates' }],
-                    ['idle', { k: 'config.statsStale', d: 'Stale' }],
-                    ['off', { k: 'config.statsUnchecked', d: 'Unchecked' }],
-                ],
-                captionKey: 'config.helpArtHealthTiles', caption: 'The tiles that filter the list',
-            },
-            { kind: 'keys', value: ['Shift + H'] },
         ],
         'config.helpHealthWalkthroughTitle': [
             {
@@ -27244,7 +28606,7 @@ class DashboardConfig {
                 ],
                 captionKey: 'config.helpArtInboxRoute', caption: 'Where a pasted link goes',
             },
-            { kind: 'keys', value: ['Shift + I', '0'] },
+            { kind: 'keys', value: ['Shift + I'] },
         ],
         'config.helpInboxWorkTitle': [
             {
@@ -27272,11 +28634,13 @@ class DashboardConfig {
             },
         ],
         /*
-         * The Kept tab is a branch in the queue, not a step after it: a link
-         * either goes on a page or waits here, and it waits without staying in
-         * the queue. Drawn as the branch it is, with the key that takes it.
+         * Keeping a link is a branch in the queue, not a step after it: a link
+         * either goes on a page or waits in Bookmarks › Unsorted, and it waits
+         * without staying in the queue. Drawn as the branch it is, with the
+         * key that takes it. The Kept tab this used to describe is gone; the
+         * branch itself is the same shape, so only its second leaf changed.
          */
-        'config.helpInboxKeptTitle': [
+        'config.helpInboxUnsortedTitle': [
             {
                 kind: 'keys', value: ['Shift', 'K'],
                 captionKey: 'config.helpArtKeptKey', caption: 'Out of the queue, not off the list',
@@ -27287,7 +28651,7 @@ class DashboardConfig {
                     { k: 'config.helpArtKeptQueue', d: 'In the queue' },
                     [
                         { k: 'config.helpArtKeptFiled', d: 'Filed on a page' },
-                        { k: 'config.helpArtKeptWaiting', d: 'Kept, waiting' },
+                        { k: 'config.helpArtKeptUnsorted', d: 'Bookmarks › Unsorted' },
                     ],
                 ],
             },
@@ -27300,8 +28664,8 @@ class DashboardConfig {
         ],
         'config.helpInboxTourTitle': [
             {
-                kind: 'steps', value: ['', '', '', '', '', '', ''],
-                captionKey: 'config.helpArtTourSteps', caption: 'Seven steps, shown once',
+                kind: 'steps', value: ['', '', '', '', ''],
+                captionKey: 'config.helpArtTourSteps', caption: 'Five steps, shown once',
             },
         ],
         'config.helpCaptureTitle': [
@@ -27368,7 +28732,7 @@ class DashboardConfig {
     static HELP_PANEL_FEATURES = {
         'config.helpInboxTitle': {
             isOn: (s) => s.inboxEnabled !== false,
-            go: { section: 'behavior', behaviorTab: 'inbox' },
+            go: { section: 'inbox' },
         },
         'config.helpHealthTitle': {
             isOn: (s) => s.showStatus === true || s.healthAutoRecheckEnabled === true,
@@ -27391,6 +28755,10 @@ class DashboardConfig {
         'config.helpFreshTitle': {
             isOn: (s) => s.feedsEnabled === true,
             go: { section: 'behavior', behaviorTab: 'fresh' },
+        },
+        'config.helpContainersTitle': {
+            isOn: (s) => s.dockerViewEnabled !== false,
+            go: { section: 'containers' },
         },
     };
 
@@ -27521,6 +28889,33 @@ class DashboardConfig {
                 'config.helpTagsBody', '');
     }
 
+    /**
+     * The Bookmarks view: the library the health view used to be a corner of.
+     *
+     * Health's own list, filters and working-through were folded into this
+     * view when the standalone Health view was removed — a bookmark's
+     * availability is one more thing to filter the library by, not a reason
+     * for a second screen. This tab documents the view itself; Availability &
+     * health (the "health" tab) still covers what a check means and how to
+     * set one up.
+     */
+    renderHelpBookmarks() {
+        return this.helpPanel('config.helpLibraryTitle', 'The Bookmarks view',
+            'config.helpLibraryBody', '')
+            + this.helpPanel('config.helpCollectionHealthTitle', 'Collection health',
+                'config.helpCollectionHealthBody', '')
+            + this.helpPanel('config.helpBmPanelTitle', 'The side panel',
+                'config.helpBmPanelBody', '')
+            + this.helpPanel('config.helpBmWorkThroughTitle', 'Working through the list',
+                'config.helpBmWorkThroughBody', '')
+            + this.helpPanel('config.helpBmKeysTitle', 'Keys',
+                'config.helpBmKeysBody', '')
+            + this.helpPanel('config.helpBmStructureTitle', 'Pages & categories, from the view',
+                'config.helpBmStructureBody', '')
+            + this.helpPanel('config.helpBmViewSettingsTitle', 'Settings for this view',
+                'config.helpBmViewSettingsBody', '');
+    }
+
     /*
      * Widgets, as a tab of its own.
      *
@@ -27551,6 +28946,18 @@ class DashboardConfig {
                 'config.helpWidgetServicesBody', '');
     }
 
+    /** Containers: a view of its own, for a Docker host rather than a bookmark. */
+    renderHelpContainers() {
+        // First: nothing else on this tab applies until the container can reach
+        // Docker, and two of the settings are security decisions.
+        return this.helpPanel('config.helpContainersSetupTitle', 'Before it works: Docker, a write token and sometimes root',
+            'config.helpContainersSetupBody', '')
+            + this.helpPanel('config.helpContainersTitle', 'The Containers view',
+            'config.helpContainersBody', '')
+            + this.helpPanel('config.helpContainersConfigTitle', 'Setting it up',
+                'config.helpContainersConfigBody', '');
+    }
+
     renderHelpSearch() {
         const esc = (v) => this.dash.escapeHtml(v);
         // Finders and commands get their own panels rather than a paragraph
@@ -27579,10 +28986,12 @@ class DashboardConfig {
      * without scrolling past the other three.
      */
     renderHelpHealth() {
+        // "Working through the list" used to be a panel here — it described
+        // the health view, which is now the Bookmarks view. That content
+        // lives on the bookmarks tab now; HELP_PANEL_MOVED sends an old link
+        // to config.helpHealthViewTitle there.
         return this.helpPanel('config.helpHealthTitle', 'Availability & health',
             'config.helpHealthBody', '')
-            + this.helpPanel('config.helpHealthViewTitle', 'Working through the list',
-                'config.helpHealthViewBody', '')
             + this.helpPanel('config.helpHealthWalkthroughTitle', 'Setting up one monitored bookmark, start to finish',
                 'config.helpHealthWalkthroughBody', '');
     }
@@ -27681,8 +29090,11 @@ class DashboardConfig {
                 'config.helpInboxWorkBody', '')
             + this.helpPanel('config.helpInboxTriageTitle', 'Triage mode',
                 'config.helpInboxTriageBody', '')
-            + this.helpPanel('config.helpInboxKeptTitle', 'The Kept tab',
-                'config.helpInboxKeptBody', '')
+            // The Kept tab is gone: keeping a link now sends it to Bookmarks →
+            // Unsorted instead of a second inbox tab. HELP_PANEL_MOVED sends an
+            // old link to config.helpInboxKeptTitle here.
+            + this.helpPanel('config.helpInboxUnsortedTitle', 'Kept links: Bookmarks → Unsorted',
+                'config.helpInboxUnsortedBody', '')
             + this.helpPanel('config.helpInboxSettingsTitle', 'Settings behind the scenes',
                 'config.helpInboxSettingsBody', '')
             // Last, not first: someone reading this page has already found the
@@ -28047,7 +29459,8 @@ class DashboardConfig {
             kbd('Shift + B', this.t('config.tipAddBookmarkShift', 'Open the new-bookmark form')),
             kbd('.', this.t('config.tipCollapseAll', 'Collapse or expand every category')),
             kbd('Shift + W', this.t('config.tipCategoryWidth', 'Set how many columns the focused category covers')),
-            kbd('Shift + H', this.t('config.tipHealth', 'Open the health view')),
+            kbd('Shift + H', this.t('config.tipHealth', 'Open the Bookmarks view, on Broken')),
+            kbd('Shift + U', this.t('config.helpTipUnsorted', 'Open Bookmarks → Unsorted')),
             kbd('Shift + I', this.t('config.tipInbox', 'Open the inbox')),
             kbd('Shift + S', this.t('config.tipConfig', 'Open config')),
         ];

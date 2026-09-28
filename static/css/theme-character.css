@@ -259,7 +259,7 @@ html[data-theme] body[data-depth="glass"] :is(
     .header-track .page-nav-btn,
     .header-track .page-nav-overflow,
     .header-shortcuts,
-    .header-destinations .health-link-anchor,
+    .header-destinations .library-link-anchor,
     .header-destinations .config-link-anchor,
     .button-container,
     .search-button,
@@ -280,7 +280,7 @@ html[data-theme] body[data-depth="glass"][data-header-buttons="plain"] .header-t
     .page-nav-overflow,
     .header-shortcuts,
     .dashboard-link-anchor,
-    .health-link-anchor,
+    .library-link-anchor,
     .config-link-anchor,
     .search-button,
     .btn-group
@@ -319,7 +319,6 @@ html[data-theme] body[data-depth="glass"] :is(
        eigen actieve staat. Config's rail draagt dezelfde klassen, dus beide
        zien er hetzelfde uit. */
     .lvs-filter,
-    .health-view-item,
     .health-monitor-stat
 ) {
     backdrop-filter: blur(var(--glass-blur-slab)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
@@ -330,7 +329,8 @@ html[data-theme] body[data-depth="glass"] :is(
 html[data-theme] body[data-depth="glass"] :is(
     .modal,
     .search-container,
-    .bookmark-form-modal-dialog
+    .bookmark-form-modal-dialog,
+    .health-focus-card
 ) {
     backdrop-filter: blur(var(--glass-blur-overlay)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
     -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
@@ -477,7 +477,7 @@ html[data-theme] body:not([data-depth="flat"]) {
    helemaal geen box-shadow hadden -- en dat is waarom de config view daar tot
    nu toe vlak bleef, welk theme je ook koos.
 
-   De repeterende rijen (.feed-row, .inbox-item, .health-view-item,
+   De repeterende rijen (.feed-row, .inbox-item,
    .config-crud-row) staan er bewust niet bij. Vijftig gloeiende rijen onder
    elkaar is ruis en geen diepte, en in classic hebben die rijen geen vlak om
    op te tillen. In modern gloeien ze mee via --layout-shadow-*, zoals nu. */
@@ -537,9 +537,9 @@ html[data-theme] body:not([data-depth="flat"]) .search-container {
     .inbox-item,
     .lvs-summary,
     .lvs-filter,
-    .health-view-item,
     .health-monitor-stat,
-    .modal
+    .modal,
+    .health-focus-card
     ) {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;

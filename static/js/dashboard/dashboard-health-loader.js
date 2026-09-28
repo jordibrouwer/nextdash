@@ -1,27 +1,21 @@
 /**
- * Lazy loader for the health view.
+ * Lazy loader for the health module.
  *
- * dashboard-health.js is one of the largest scripts on the dashboard and most
- * sessions never open the health view — parsing it on every load costs every
- * bookmark page for nothing. This stub owns the small surface the shell touches
- * before health is ever opened and fetches the real module on first use.
+ * dashboard-health.js is one of the largest scripts on the dashboard, and only
+ * the Bookmarks view and a few actions need it -- parsing it on every load
+ * costs every bookmark page for nothing. This stub stands in for it (d.health)
+ * and fetches the real module on first use. The Health view it once opened is
+ * gone; its addresses lead to the Bookmarks view (openHealthView).
  */
 class DashboardHealthLoader {
-    static VIEW = 'health';
-
     constructor(dashboard) {
         this.dash = dashboard;
         this._module = null;
         this._loadPromise = null;
-        this._escapeHandler = null;
     }
 
     isEnabled() {
         return this.dash.settings?.healthViewEnabled !== false;
-    }
-
-    isActiveView() {
-        return this.dash.activeView === DashboardHealthLoader.VIEW;
     }
 
     get instance() {
@@ -64,12 +58,6 @@ class DashboardHealthLoader {
             await load('js/dashboard/dashboard-health-focus.js', 'dashboardHealthFocus',
                 () => typeof window.DashboardHealthFocus === 'function');
         }
-        // The one-time tutorial is only ever read from openHealthView(), so it
-        // has no reason to cost anything on a session that never opens Health.
-        if (typeof window.HealthTutorial === 'undefined') {
-            await load('js/health-tutorial.js', 'healthTutorialModule',
-                () => typeof window.HealthTutorial !== 'undefined');
-        }
     }
 
     load() {
@@ -81,8 +69,6 @@ class DashboardHealthLoader {
                 throw new Error('health module loaded without defining DashboardHealth');
             }
             this._module = new window.DashboardHealth(this.dash);
-            this._teardownEscapeShortcut();
-            this._module.setupEscapeShortcut?.();
             return this._module;
         }).catch((err) => {
             this._loadPromise = null;
@@ -92,76 +78,47 @@ class DashboardHealthLoader {
         return this._loadPromise;
     }
 
-    async openHealthView(...args) {
-        // The view stylesheets ride in one bundle nothing requests until a view
-        // is actually opened — the module itself may load earlier, for a badge
-        // that paints nothing. Awaited, so the view does not paint unstyled.
-        await window.ViewStyles?.ensureViewStyles?.();
-        if (!this.isEnabled()) {
-            return false;
-        }
-        let mod;
-        try {
-            mod = await this.load();
-        } catch (err) {
-            const msg = this.dash?.language?.t?.('dashboard.healthLoadFailed');
-            const text = (typeof msg === 'string' && msg !== 'dashboard.healthLoadFailed')
-                ? msg
-                : 'Could not open health view. Check your connection and try again.';
-            if (window.AppNotification?.showError) {
-                window.AppNotification.showError(text);
-            } else {
-                this.dash?.showErrorNotification?.(text);
-            }
-            throw err;
-        }
-        return mod.openHealthView(...args);
+    /**
+     * The Health view is gone; its addresses and its key land in the Bookmarks
+     * view, on the filter they asked for. #health alone was Health's Broken
+     * list, so it stays that; #health/monitors is the monitored ones, and a
+     * search (hv_q) comes along. Every way in -- the router, Shift+H, the
+     * badge's links, the review notice -- came through here, so this is the
+     * one place that needs to know.
+     */
+    static bookmarksHashFor(search, hash) {
+        const params = new URLSearchParams(search || '');
+        const path = String(hash || '').replace(/^#/, '');
+        const known = window.DashboardConfig?.HEALTH_FILTER_KEYS
+            || ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'healthy',
+                'drift', 'missing-preview', 'shortcut-conflict', 'orphaned-category', 'ignored'];
+        const filter = path === 'health/monitors' ? 'monitored' : ((params.get('hv_filter') || 'broken').toLowerCase());
+        const out = new URLSearchParams();
+        if (known.includes(filter)) out.set('health', filter);
+        const query = (params.get('hv_q') || '').trim();
+        if (query) out.set('q', query);
+        const qs = out.toString();
+        return `#bookmarks${qs ? `?${qs}` : ''}`;
     }
 
-    closeHealthView(...args) {
-        return this._module?.closeHealthView?.(...args) ?? this.closeHealthViewWhileLoading();
+    async openHealthView() {
+        const here = window.location;
+        const target = this.isEnabled()
+            ? DashboardHealthLoader.bookmarksHashFor(here.search, here.hash)
+            : '#bookmarks';
+        // The hv_* parameters were the Health view's. hv_refresh asked for a
+        // fresh scan on arrival, and a saved link that says so still gets one;
+        // the rest are carried over above or have no meaning left.
+        const params = new URLSearchParams(here.search);
+        const refresh = ['1', 'true'].includes(String(params.get('hv_refresh') || '').toLowerCase());
+        [...params.keys()].filter((k) => k.startsWith('hv_')).forEach((k) => params.delete(k));
+        const qs = params.toString();
+        history.replaceState(history.state, '', `${here.pathname}${qs ? `?${qs}` : ''}${target}`);
+        const opened = await this.dash?.config?.openLibraryView?.();
+        if (refresh && this.isEnabled()) await this.load().then((health) => health?.loadAndRender?.({ refresh: true }));
+        return opened;
     }
 
-    closeHealthViewWhileLoading() {
-        const d = this.dash;
-        if (!this.isActiveView()) {
-            return false;
-        }
-        this._teardownEscapeShortcut();
-        const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
-        if (restored) {
-            d.keyboardNavigation?.scheduleUpdate?.();
-        }
-        return restored;
-    }
-
-    restoreViewIfNeeded(...args) {
-        if (!this.isActiveView() || !this.isEnabled()) {
-            return;
-        }
-        if (this._module) {
-            return this._module.restoreViewIfNeeded(...args);
-        }
-        void this.load().then((mod) => mod.restoreViewIfNeeded(...args));
-    }
-
-    restoreHealthHash(...args) {
-        return this._module?.restoreHealthHash?.(...args);
-    }
-
-    setupEscapeShortcut() {
-        // Unlike the other two stubs, Escape during loading closes the half-open
-        // view rather than falling through — the view is already on screen.
-        window.LazyScript.bindStubEscape(this, (e) => {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            this.closeHealthViewWhileLoading();
-        });
-    }
-
-    _teardownEscapeShortcut() {
-        window.LazyScript.unbindStubEscape(this);
-    }
 }
 
 function createHealthLoader(dashboard) {

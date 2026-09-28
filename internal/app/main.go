@@ -69,6 +69,7 @@ func Run(files assetFS) {
 	if strings.TrimSpace(os.Getenv("NEXTDASH_DATA_DIR")) != "" {
 		logInfo(logComponentServer, "data directory: %s", ResolveDataDir())
 	}
+	warnAboutWeakTokens()
 
 	// Expire trashed bookmarks past their 30 days. Retention otherwise rides
 	// along with writes, so an instance that was off for a month would keep
@@ -209,6 +210,19 @@ func Run(files assetFS) {
 	// Which disks this machine has, so the settings can offer them rather
 	// than asking somebody to type a mountpoint from memory.
 	r.HandleFunc("/api/system/mounts", handlers.SystemMountsHandler).Methods("GET")
+	// The Docker view. Reading needs NEXTDASH_DOCKER_SOCKET; every POST below
+	// also needs NEXTDASH_DOCKER_CONTROL=1 and passes the write token.
+	r.HandleFunc("/api/docker/status", handlers.DockerStatusHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers", handlers.DockerContainersHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}", handlers.DockerContainerDetailHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/env/{name}", handlers.DockerContainerEnvHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/stats", handlers.DockerContainerStatsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/logs", handlers.DockerContainerLogsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/changelog", handlers.DockerChangelogHandler).Methods("GET")
+	r.HandleFunc("/api/docker/updates", handlers.DockerUpdatesHandler).Methods("GET")
+	r.HandleFunc("/api/docker/github-token", handlers.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")
+	r.HandleFunc("/api/docker/updates/check", handlers.DockerUpdatesCheckHandler).Methods("POST")
+	r.HandleFunc("/api/docker/containers/{id}/{action}", handlers.DockerActionHandler).Methods("POST")
 	// The one widget that reads from outside, by widget id rather than by URL.
 	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")
 	// The same fetch, made once on demand and answered in full: what the
@@ -240,6 +254,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/health/delete-bookmark", handlers.DeleteHealthBookmark).Methods("POST")
 	r.HandleFunc("/api/health/delete-bookmarks", handlers.DeleteHealthBookmarksBulk).Methods("POST")
 	r.HandleFunc("/api/health/history-export", handlers.ExportHealthHistory).Methods("GET")
+	r.HandleFunc("/api/health/history", handlers.HealthHistoryView).Methods("GET")
 	r.HandleFunc("/api/health/archive-snapshot", handlers.ArchiveSnapshot).Methods("GET")
 	// Asking the archive to keep a copy, rather than hoping someone already
 	// did. Behind the write token: it spends a shared daily budget.
@@ -344,6 +359,10 @@ func Run(files assetFS) {
 	handlers.StartAutoBackupScheduler(schedulerStop)
 	// Periodic background health rechecks (opt-in, respects the setting + interval).
 	handlers.StartHealthRecheckScheduler(schedulerStop)
+	// Container image update checks, when an interval is set in Config.
+	handlers.StartDockerUpdateScheduler(schedulerStop)
+	// The last hour of CPU and memory per container, for the drawer's charts.
+	handlers.StartDockerStatsSampler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence

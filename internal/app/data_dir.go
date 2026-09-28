@@ -19,6 +19,10 @@ func previewCacheFilePath() string {
 	return filepath.Join(ResolveDataDir(), "preview-cache.json")
 }
 
+func dockerUpdatesFilePath() string {
+	return filepath.Join(ResolveDataDir(), "docker-updates.json")
+}
+
 func healthCacheFilePath() string {
 	return filepath.Join(ResolveDataDir(), "health-cache.json")
 }

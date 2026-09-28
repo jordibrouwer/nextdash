@@ -104,10 +104,12 @@
     <link rel="stylesheet" href="{{asset "css/spread-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/fresh-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/changes-tour.css"}}">
+    <!-- The dashboard tour opens over the dashboard itself, before any view has
+         loaded the views bundle, so its sheet travels with the dashboard. -->
+    <link rel="stylesheet" href="{{asset "css/dashboard-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/setting-art.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-multi-select.css"}}">
     <link rel="stylesheet" href="{{asset "css/view-explainers.css"}}">
-    <link rel="stylesheet" href="{{asset "css/health-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-focus.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-setting-promo.css"}}">
     <link rel="stylesheet" href="{{asset "css/colors.css"}}">
@@ -121,8 +123,11 @@
     <!-- bundle:css-views -->
     <link rel="stylesheet" href="{{asset "css/dashboard-inbox.css"}}">
     <link rel="stylesheet" href="{{asset "css/inbox-tutorial.css"}}">
+    <link rel="stylesheet" href="{{asset "css/bookmarks-tutorial.css"}}">
+    <link rel="stylesheet" href="{{asset "css/containers-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/widgets-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
+    <link rel="stylesheet" href="{{asset "css/docker-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-bookmarks-workbench.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-tabs.css"}}">
@@ -320,14 +325,13 @@
                             </svg>
                         </a>
                     </div>
-                    <div id="page-nav-inbox-host" class="page-nav-inbox-host"></div>
-                    {{if .ShowHealthDashboard}}<div class="health-link health-link--icon">
-                        <a href="/#health" class="health-link-anchor" data-i18n-aria="dashboard.health" data-i18n-tooltip="dashboard.health" aria-label="health" title="health">
-                            <svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                                <path d="M3 12h4l2 6 4-14 2 8h6"/>
-                            </svg>
+                    <div class="library-link library-link--icon">
+                        <a href="/#bookmarks" class="library-link-anchor" data-i18n-aria="dashboard.libraryView" data-i18n-tooltip="dashboard.libraryView" aria-label="Bookmarks" title="Bookmarks">
+                            <svg class="library-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                         </a>
-                    </div>{{end}}
+                    </div>
+                    <div id="page-nav-inbox-host" class="page-nav-inbox-host"></div>
+                    <div id="page-nav-docker-host" class="page-nav-docker-host"></div>
                     {{if .ShowConfigButton}}<div class="config-link config-link--icon">
                         <a href="/#config" class="config-link-anchor" data-i18n-aria="dashboard.config" data-i18n-tooltip="dashboard.config" aria-label="config" title="config">
                             <svg class="config-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -577,6 +581,8 @@
          which reads window.ListDensity when it renders the toggle. -->
     <script src="{{asset "js/shared/list-density.js"}}" defer></script>
     <script src="{{asset "js/shared/list-view-shell.js"}}" defer></script>
+    <script src="{{asset "js/shared/list-view-drawer.js"}}" defer></script>
+    <script src="{{asset "js/shared/side-panel-layout.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-utils.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-health.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-sources.js"}}" defer></script>
@@ -599,6 +605,7 @@
     <script src="{{asset "js/dashboard/dashboard-widget-disks.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-memory.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-docker.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-containers.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-weather.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-calendar.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-rss.js"}}" defer></script>
@@ -621,6 +628,8 @@
     <script src="{{asset "js/dashboard/dashboard-inbox-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-health-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-config-loader.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/docker-search-index.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-docker-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-paste-choice.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-page-nav.js"}}" defer></script>
     <script src="{{asset "js/dashboard-trash.js"}}" defer></script>

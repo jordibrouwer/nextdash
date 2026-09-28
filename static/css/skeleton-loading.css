@@ -15,7 +15,6 @@ body.loading .skeleton-root {
 }
 
 body.loading .skeleton-dashboard.skeleton-root,
-body.loading .skeleton-health-summary.skeleton-root,
 body.loading .skeleton-colors-grid.skeleton-root {
     display: grid;
 }
@@ -117,31 +116,6 @@ body.loading .colors-main > :not([data-skeleton-root]) {
     border: 1px solid color-mix(in srgb, var(--text-secondary, #888) 25%, transparent);
     padding: var(--space-4, 1rem);
     min-height: 5rem;
-}
-
-/* Health */
-.skeleton-health-summary {
-    display: grid;
-    grid-template-columns: repeat(9, minmax(0, 1fr));
-    gap: 6px;
-    margin-bottom: var(--space-3, 0.75rem);
-}
-
-.skeleton-health-card {
-    min-height: 2.35rem;
-    border: 1px solid color-mix(in srgb, var(--text-secondary, #888) 25%, transparent);
-    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.45rem);
-}
-
-.skeleton-health-issues {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.5rem);
-}
-
-.skeleton-health-row {
-    height: 2.75rem;
-    width: 100%;
 }
 
 /* Colors */

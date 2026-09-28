@@ -681,6 +681,42 @@ html[data-theme="rose-pine-light"] body,
 html[data-theme="sea-glass-dark"] body,
 html[data-theme="sea-glass-light"] body,
 html[data-theme="storm-petrel-dark"] body,
+html[data-theme="tidepool-lens-dark"] body,
+html[data-theme="tidepool-lens-light"] body,
+html[data-theme="champagne-flute-dark"] body,
+html[data-theme="champagne-flute-light"] body,
+html[data-theme="prism-veil-dark"] body,
+html[data-theme="prism-veil-light"] body,
+html[data-theme="rain-window-dark"] body,
+html[data-theme="rain-window-light"] body,
+html[data-theme="lime-soda-dark"] body,
+html[data-theme="lime-soda-light"] body,
+html[data-theme="rosewater-pane-dark"] body,
+html[data-theme="rosewater-pane-light"] body,
+html[data-theme="gloss-cinnabar-dark"] body,
+html[data-theme="gloss-cinnabar-light"] body,
+html[data-theme="gloss-jade-dark"] body,
+html[data-theme="gloss-jade-light"] body,
+html[data-theme="gloss-aubergine-dark"] body,
+html[data-theme="gloss-aubergine-light"] body,
+html[data-theme="gloss-butterscotch-dark"] body,
+html[data-theme="gloss-butterscotch-light"] body,
+html[data-theme="borealis-veil-dark"] body,
+html[data-theme="borealis-veil-light"] body,
+html[data-theme="solar-wind-dark"] body,
+html[data-theme="solar-wind-light"] body,
+html[data-theme="nebula-nursery-dark"] body,
+html[data-theme="nebula-nursery-light"] body,
+html[data-theme="polar-dawn-dark"] body,
+html[data-theme="polar-dawn-light"] body,
+html[data-theme="hoarfrost-dark"] body,
+html[data-theme="hoarfrost-light"] body,
+html[data-theme="frozen-lavender-dark"] body,
+html[data-theme="frozen-lavender-light"] body,
+html[data-theme="frost-fern-dark"] body,
+html[data-theme="frost-fern-light"] body,
+html[data-theme="winter-ember-dark"] body,
+html[data-theme="winter-ember-light"] body,
 html[data-theme="storm-petrel-light"] body {
     --theme-pattern-image: radial-gradient(var(--background-dots) 1px, transparent 1px);
     --theme-pattern-size: 15px 15px;
@@ -736,6 +772,22 @@ html[data-theme="vampire-castle-light"] body,
 html[data-theme="velocity-ink-dark"] body,
 html[data-theme="velocity-ink-light"] body,
 html[data-theme="volcanic-ash-dark"] body,
+html[data-theme="kevlar-weave-dark"] body,
+html[data-theme="kevlar-weave-light"] body,
+html[data-theme="graphite-twill-dark"] body,
+html[data-theme="graphite-twill-light"] body,
+html[data-theme="race-livery-dark"] body,
+html[data-theme="race-livery-light"] body,
+html[data-theme="forged-titanium-dark"] body,
+html[data-theme="forged-titanium-light"] body,
+html[data-theme="aluminium-deck-dark"] body,
+html[data-theme="aluminium-deck-light"] body,
+html[data-theme="gunmetal-bronze-dark"] body,
+html[data-theme="gunmetal-bronze-light"] body,
+html[data-theme="rose-titanium-dark"] body,
+html[data-theme="rose-titanium-light"] body,
+html[data-theme="satin-nickel-dark"] body,
+html[data-theme="satin-nickel-light"] body,
 html[data-theme="volcanic-ash-light"] body {
     --theme-pattern-image:
         linear-gradient(var(--theme-pattern-line) 1px, transparent 1px),
@@ -789,6 +841,14 @@ html[data-theme="ultraviolet-light"] body,
 html[data-theme="violet-shades-dark"] body,
 html[data-theme="violet-shades-light"] body,
 html[data-theme="vivid-hyper-dark"] body,
+html[data-theme="matrix-rain-dark"] body,
+html[data-theme="matrix-rain-light"] body,
+html[data-theme="matrix-redpill-dark"] body,
+html[data-theme="matrix-redpill-light"] body,
+html[data-theme="matrix-bluepill-dark"] body,
+html[data-theme="matrix-bluepill-light"] body,
+html[data-theme="matrix-construct-dark"] body,
+html[data-theme="matrix-construct-light"] body,
 html[data-theme="vivid-hyper-light"] body {
     --theme-pattern-image: linear-gradient(var(--theme-pattern-line) 1px, transparent 1px);
     --theme-pattern-size: 100% 8px;
@@ -844,6 +904,14 @@ html[data-theme="terracotta-studio-light"] body,
 html[data-theme="wheat-field-dark"] body,
 html[data-theme="wheat-field-light"] body,
 html[data-theme="zen-ember-dark"] body,
+html[data-theme="indigo-letterpress-dark"] body,
+html[data-theme="indigo-letterpress-light"] body,
+html[data-theme="iron-gall-dark"] body,
+html[data-theme="iron-gall-light"] body,
+html[data-theme="squid-ink-dark"] body,
+html[data-theme="squid-ink-light"] body,
+html[data-theme="vermilion-seal-dark"] body,
+html[data-theme="vermilion-seal-light"] body,
 html[data-theme="zen-ember-light"] body {
     --theme-pattern-image: repeating-linear-gradient(
         45deg,
@@ -1005,8 +1073,6 @@ html[data-theme="bone-china-light"] body {
     --theme-title-spacing: 0.02em;
 }
 
-
-
 /*
  * Gloss on the surfaces that are not cards.
  *
@@ -1016,6 +1082,7 @@ html[data-theme="bone-china-light"] body {
 body:not([data-depth="flat"]) :is(
     .config-panel,
     .lvs-summary,
+    .lvs-drawer-frame,
     .search-container
 ) {
     background-image: var(--surface-grain), var(--surface-gloss);
@@ -1026,7 +1093,7 @@ body:not([data-depth="flat"]):is([data-action-bar="bottom"], [data-action-bar="l
     .dashboard-section.section-controls .header-shortcuts,
 body:not([data-depth="flat"]):not([data-header-buttons="plain"]) .dashboard-section.section-controls .header-destinations :is(
     .dashboard-link-anchor,
-    .health-link-anchor,
+    .library-link-anchor,
     .config-link-anchor,
     .page-nav-btn--inbox
 ) {

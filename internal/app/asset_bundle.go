@@ -57,15 +57,35 @@ const (
 var (
 	bundleAssetRe = regexp.MustCompile(`\{\{asset "([^"]+)"\}\}`)
 
-	bundleOnce  sync.Once
-	bundleState struct {
-		js       assetBundle
-		css      assetBundle
-		viewCSS  assetBundle
-		searchJS assetBundle
-		open     bool // false when bundling is switched off
-	}
+	bundleMu    sync.Mutex
+	bundleState bundleSet
 )
+
+/*
+One build of all four bundles.
+
+Handed out by value, so a request reads a set that cannot change under it.
+generation counts the builds: the page template embeds the bundle addresses,
+and is cached per generation, so a rebuilt bundle also means a rebuilt page.
+*/
+type bundleSet struct {
+	js          assetBundle
+	css         assetBundle
+	viewCSS     assetBundle
+	searchJS    assetBundle
+	open        bool // false when bundling is switched off
+	built       bool
+	generation  uint64
+	fingerprint string
+}
+
+// resetAssetBundles forgets every build. For tests, which lay out their own
+// template and files.
+func resetAssetBundles() {
+	bundleMu.Lock()
+	defer bundleMu.Unlock()
+	bundleState = bundleSet{}
+}
 
 type assetBundle struct {
 	files   []string // static-relative paths, in template order
@@ -84,30 +104,77 @@ func bundlingEnabled() bool {
 	return !strings.EqualFold(strings.TrimSpace(os.Getenv("NEXTDASH_BUNDLE")), "off")
 }
 
-// buildAssetBundles reads the marked blocks out of the dashboard template and
-// concatenates what they name. Called once, lazily, because the file list can
-// only be known after the template is readable.
-func buildAssetBundles(files fs.FS) {
-	bundleOnce.Do(func() {
-		bundleState.open = bundlingEnabled()
-		if !bundleState.open {
-			return
+/*
+buildAssetBundles reads the marked blocks out of the dashboard template and
+concatenates what they name, and hands back the current set.
+
+Built once, lazily, because the file list can only be known after the template
+is readable. With NEXTDASH_STATIC_MUTABLE=1 -- ./static bind-mounted for live
+edits -- once was wrong: every single file followed its edits and the bundles
+did not, so a stylesheet changed on disk stayed missing from the page until the
+process restarted. In that mode the set is rebuilt whenever the template or a
+file it names has changed, judged by size and modification time.
+*/
+func buildAssetBundles(files fs.FS) bundleSet {
+	bundleMu.Lock()
+	defer bundleMu.Unlock()
+	if bundleState.built && !staticAssetsMutable() {
+		return bundleState
+	}
+	source := ""
+	if bundlingEnabled() {
+		source = readDashboardTemplateSource(files)
+	}
+	lists := [4][]string{
+		bundleBlockAssets(source, bundleJSMarkerStart, bundleJSMarkerEnd),
+		bundleBlockAssets(source, bundleCSSMarkerStart, bundleCSSMarkerEnd),
+		bundleBlockAssets(source, bundleViewCSSMarkerStart, bundleViewCSSMarkerEnd),
+		bundleBlockAssets(source, bundleSearchJSMarkerStart, bundleSearchJSMarkerEnd),
+	}
+	fingerprint := ""
+	if staticAssetsMutable() {
+		fingerprint = bundleSourceFingerprint(source, lists)
+		if bundleState.built && fingerprint == bundleState.fingerprint {
+			return bundleState
 		}
-		source := readDashboardTemplateSource(files)
-		if source == "" {
-			bundleState.open = false
-			return
-		}
-		bundleState.js = buildBundle(files, bundleBlockAssets(source, bundleJSMarkerStart, bundleJSMarkerEnd))
-		bundleState.css = buildBundle(files, bundleBlockAssets(source, bundleCSSMarkerStart, bundleCSSMarkerEnd))
-		bundleState.viewCSS = buildBundle(files, bundleBlockAssets(source, bundleViewCSSMarkerStart, bundleViewCSSMarkerEnd))
-		bundleState.searchJS = buildBundle(files, bundleBlockAssets(source, bundleSearchJSMarkerStart, bundleSearchJSMarkerEnd))
-		if len(bundleState.js.files) == 0 && len(bundleState.css.files) == 0 {
+	}
+
+	next := bundleSet{
+		built:       true,
+		generation:  bundleState.generation + 1,
+		fingerprint: fingerprint,
+		open:        bundlingEnabled() && source != "",
+	}
+	if next.open {
+		next.js = buildBundle(files, lists[0])
+		next.css = buildBundle(files, lists[1])
+		next.viewCSS = buildBundle(files, lists[2])
+		next.searchJS = buildBundle(files, lists[3])
+		if len(next.js.files) == 0 && len(next.css.files) == 0 {
 			// No markers in the template: nothing to bundle, and the individual
 			// tags are still there, so this is a no-op rather than an error.
-			bundleState.open = false
+			next.open = false
 		}
-	})
+	}
+	bundleState = next
+	return bundleState
+}
+
+// bundleSourceFingerprint is the template itself plus the size and time of
+// every file the bundles name: enough to see an edit without reading them all.
+func bundleSourceFingerprint(source string, lists [4][]string) string {
+	h := sha256.New()
+	h.Write([]byte(source))
+	for _, list := range lists {
+		for _, rel := range list {
+			if info, err := os.Stat(filepath.Join("static", filepath.FromSlash(rel))); err == nil {
+				fmt.Fprintf(h, "%s:%d:%d;", rel, info.Size(), info.ModTime().UnixNano())
+			} else {
+				fmt.Fprintf(h, "%s:-;", rel)
+			}
+		}
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func readDashboardTemplateSource(files fs.FS) string {
@@ -199,7 +266,7 @@ func bundleURL(base string, b assetBundle) string {
 // ServeAssetBundle serves either bundle, with the same immutable caching a
 // hashed static file gets: the URL changes whenever any file in it does.
 func (h *Handlers) ServeAssetBundle(w http.ResponseWriter, r *http.Request) {
-	buildAssetBundles(h.files)
+	bundleState := buildAssetBundles(h.files)
 	var b assetBundle
 	contentType := "application/javascript; charset=utf-8"
 	base := strings.TrimSuffix(r.URL.Path, ".map")
@@ -261,7 +328,7 @@ func readTemplateSource(files fs.FS, name string) string {
 // it. With bundling off — or with no markers — the source is returned as it was,
 // so the individual tags render exactly as before.
 func applyAssetBundles(files fs.FS, source string) string {
-	buildAssetBundles(files)
+	bundleState := buildAssetBundles(files)
 	if !bundleState.open {
 		return source
 	}

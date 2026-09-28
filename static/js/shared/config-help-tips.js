@@ -59,13 +59,17 @@
                 'tipEditMoveCategory',
                 'tipEditSelectionActions',
                 'tipEditKeep',
-                'tipEditKeptPile',
+                'tipEditTriage',
                 'tipEditWorkbench',
                 'tipEditTagSuggestions',
                 'tipEditRenamePage',
                 'tipEditPageTabDot',
                 'tipEditCopyUrl',
                 'tipEditCategorySpread',
+                'tipEditPromote',
+                'tipEditPanel',
+                'tipEditGroup',
+                'tipEditStructure',
             ],
         },
         {
@@ -103,6 +107,9 @@
                 'tipMaintSignIn',
                 'tipMaintArchive',
                 'tipMaintNote',
+                'tipMaintWorkThrough',
+                'tipMaintCollectionHealth',
+                'tipMaintBulkMute',
             ],
         },
         {
@@ -122,11 +129,13 @@
                 'tipTuneFresh',
                 'tipTuneReviewOffers',
                 'tipTuneWidgets',
+                'tipTuneContainerList',
                 'tipTuneWidgetFold',
                 'tipTuneCustomWidget',
                 'tipTuneAmbientWidgets',
                 'tipTuneRssWidget',
                 'tipTuneCommands',
+                'tipTuneInboxConfig',
             ],
         },
         {
@@ -139,7 +148,7 @@
             // what the server says about it.
             titleKey: 'tipsGroupData',
             titleFallback: 'Data in and out',
-            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs'],
+            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs', 'tipDataContainers', 'tipDataContainerWebUI'],
         },
     ];
 

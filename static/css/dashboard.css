@@ -903,8 +903,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 /* Tag filter view — same dashboard-grid / packed-columns as normal categories */
-#dashboard-layout.dashboard-grid.tag-filter-view,
-.inbox-body-kept.unsorted-view:not([hidden]) {
+#dashboard-layout.dashboard-grid.tag-filter-view {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -932,15 +931,13 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     width: 100%;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar,
-.unsorted-view .tag-filter-bulk-toolbar {
+#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar {
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: none;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar .recent-bookmarks-open-btn.modal-button,
-.unsorted-view .tag-filter-bulk-toolbar .recent-bookmarks-open-btn.modal-button {
+#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar .recent-bookmarks-open-btn.modal-button {
     flex: 0 1 auto;
     min-width: min(100%, 10rem);
 }
@@ -1108,14 +1105,12 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     outline: none;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid,
-.unsorted-view .tag-filter-view-body.dashboard-grid {
+#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid {
     width: 100%;
     max-width: 100%;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid:not(.packed-columns),
-.unsorted-view .tag-filter-view-body.dashboard-grid:not(.packed-columns) {
+#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid:not(.packed-columns) {
     width: fit-content;
     max-width: min(100%, var(--dashboard-grid-max-width, 100%));
     margin-inline: auto;
@@ -1129,18 +1124,12 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     box-sizing: border-box;
 }
 
-/*
- * Equal-width columns. The tag filter puts one chunk per column; the
- * unsorted view stacks several per column so the chunks read left to
- * right and wrap onto a band underneath (dashboard-unsorted.js).
- */
-#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns,
-.unsorted-view .tag-filter-view-body.packed-columns {
+/* Equal-width columns: the tag filter puts one chunk per column. */
+#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns {
     column-gap: var(--gap, 1.5rem);
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns .dashboard-column,
-.unsorted-view .tag-filter-view-body.packed-columns .dashboard-column {
+#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns .dashboard-column {
     flex: 1 1 0;
     flex-basis: min(
         var(--dashboard-column-max, 300px),
@@ -1157,21 +1146,18 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     min-width: 0;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-view-body:not(.packed-columns) .category.tag-filter-chunk,
-.unsorted-view .tag-filter-view-body:not(.packed-columns) .category.tag-filter-chunk {
+#dashboard-layout.tag-filter-view .tag-filter-view-body:not(.packed-columns) .category.tag-filter-chunk {
     width: 100%;
     max-width: 100%;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list,
-.unsorted-view .tag-filter-chunk .bookmarks-list {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list {
     width: 100%;
     max-width: 100%;
 }
 
 /* Tag filter always uses vertical bookmark rows (overrides launcher tiles on parent grid) */
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list,
-.unsorted-view .tag-filter-chunk .bookmarks-list {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list {
     display: grid;
     grid-template-columns: var(--bookmark-lead-col, minmax(1.25rem, max-content)) minmax(0, 1fr) max-content;
     row-gap: var(--space-2, 0.5rem);
@@ -1179,13 +1165,11 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     flex-wrap: unset;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list > *,
-.unsorted-view .tag-filter-chunk .bookmarks-list > * {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list > * {
     grid-column: 1 / -1;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link,
-.unsorted-view .tag-filter-chunk .bookmark-link {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link {
     display: grid;
     grid-template-columns: subgrid;
     grid-column: 1 / -1;
@@ -1200,23 +1184,19 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     flex-direction: unset;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link:hover,
-.unsorted-view .tag-filter-chunk .bookmark-link:hover {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link:hover {
     transform: none;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open::before,
-.unsorted-view .tag-filter-chunk .bookmark-open::before {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open::before {
     content: none;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-reorder-handle,
-.unsorted-view .tag-filter-chunk .bookmark-reorder-handle {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-reorder-handle {
     display: block !important;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-shortcut,
-.unsorted-view .tag-filter-chunk .bookmark-shortcut {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-shortcut {
     display: block !important;
     grid-column: 3;
     grid-row: 1;
@@ -1224,8 +1204,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     justify-self: end;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"],
-.unsorted-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] {
     grid-template-columns:
         var(--bookmark-lead-col, minmax(1.25rem, max-content))
         minmax(0, 1fr)
@@ -1233,33 +1212,27 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
         max-content;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .status-text,
-.unsorted-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .status-text {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .status-text {
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
     align-self: center;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .bookmark-shortcut,
-.unsorted-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .bookmark-shortcut {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .bookmark-shortcut {
     grid-column: 4;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open-count,
-.unsorted-view .tag-filter-chunk .bookmark-open-count {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open-count {
     display: none !important;
 }
 
 #dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-pin-badge:not(.is-empty),
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-note-badge:not(.is-empty),
-.unsorted-view .tag-filter-chunk .bookmark-pin-badge:not(.is-empty),
-.unsorted-view .tag-filter-chunk .bookmark-note-badge:not(.is-empty) {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-note-badge:not(.is-empty) {
     display: inline-flex !important;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-lead,
-.unsorted-view .tag-filter-chunk .bookmark-lead {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-lead {
     display: inline-flex;
     justify-content: flex-start;
     align-items: center;
@@ -1270,20 +1243,17 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     min-width: 1.15em;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon-slot,
-.unsorted-view .tag-filter-chunk .bookmark-icon-slot {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon-slot {
     width: auto;
     height: auto;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon,
-.unsorted-view .tag-filter-chunk .bookmark-icon {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon {
     width: 1.15em;
     height: 1.15em;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk a.bookmark-open,
-.unsorted-view .tag-filter-chunk a.bookmark-open {
+#dashboard-layout.tag-filter-view .tag-filter-chunk a.bookmark-open {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -1295,8 +1265,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     overflow: hidden;
 }
 
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-text,
-.unsorted-view .tag-filter-chunk .bookmark-text {
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-text {
     font-size: var(--bookmark-font-size, 1rem);
     text-align: left;
     white-space: nowrap;
@@ -1430,6 +1399,28 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 
 .page-nav-inbox-host:empty {
     display: none;
+}
+
+/*
+ * Docker's nav icon renders into this host from JS (renderNavButton in
+ * dashboard-docker-loader.js) only once a socket is known, so its styling
+ * lives here in the base bundle rather than in docker-view.css — that sheet
+ * only loads once the view itself is opened, which is too late for a button
+ * that has to look right before anyone has clicked it.
+ */
+.page-nav-docker-host {
+    display: flex;
+    align-items: center;
+}
+
+.page-nav-docker-host:empty {
+    display: none;
+}
+
+.page-nav-docker-host .docker-link-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
 }
 
 /* On a touch device wide enough to keep the desktop layout — a tablet, or a
@@ -1611,31 +1602,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     outline: none;
 }
 
-/*
- * The health link breathes in the theme's own accent.
- *
- * It asked for --accent-primary-rgb, which nothing has ever defined: the theme
- * block writes colours, not channel triplets. So all 222 themes fell through
- * to the literal rgba(66, 135, 245) behind it -- a blue from nowhere, pulsing
- * on a green terminal and on a paper theme alike.
- *
- * color-mix rather than a new triplet token: the accent is already there as a
- * colour, and mixing it with transparent is how every other fade in this
- * stylesheet is written.
- */
-@keyframes healthLinkShimmer {
-    0% {
-        text-shadow: 0 0 0 transparent;
-    }
-    50% {
-        text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 60%, transparent);
-    }
-    100% {
-        text-shadow: 0 0 0 transparent;
-    }
-}
-
-.health-link a,
+.library-link a,
 .config-link a {
     text-decoration: none;
     font-size: var(--font-size-controls);
@@ -1645,23 +1612,9 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     color: var(--text-secondary);
 }
 
-.health-link a {
-    animation: healthLinkShimmer 3s ease-in-out infinite;
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.35em;
-}
-
-.health-link a:hover,
+.library-link a:hover,
 .config-link a:hover {
     color: var(--text-primary);
-}
-
-.health-link a:hover {
-    animation: none;
-    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 80%, transparent);
 }
 
 .health-badge {
@@ -1694,13 +1647,13 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 /* Icon variant: pages, health, config, and inbox (in the destination cluster)
    share one chrome; spacing is .header-actions / .header-destinations gap. */
 .dashboard-link--icon,
-.health-link--icon,
+.library-link--icon,
 .config-link--icon {
     margin-left: 0;
 }
 
 .dashboard-link--icon a,
-.health-link--icon a,
+.library-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
     animation: none;
@@ -1713,7 +1666,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 .dashboard-link--icon a:hover,
-.health-link--icon a:hover,
+.library-link--icon a:hover,
 .config-link--icon a:hover,
 .header-destinations .page-nav-btn--inbox:hover {
     color: var(--text-primary);
@@ -1723,14 +1676,14 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 /* Active state matched to .page-nav-btn.active: header destinations are the
    same kind of tab as page tabs, so "you are here" must look the same. */
 .dashboard-link--icon a,
-.health-link--icon a,
+.library-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
     border-bottom: 2px solid transparent;
 }
 
 .dashboard-link--icon a.active,
-.health-link--icon a.active,
+.library-link--icon a.active,
 .config-link--icon a.active,
 .header-destinations .page-nav-btn--inbox.active {
     background: var(--background-secondary);
@@ -1741,7 +1694,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 .dashboard-link--icon .dashboard-link-icon,
-.health-link--icon .health-link-icon,
+.library-link--icon .library-link-icon,
 .config-link--icon .config-link-icon,
 .header-destinations .page-nav-btn--inbox .page-tab-icon--svg {
     width: 1.15rem;
@@ -1757,7 +1710,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 /* Inline pill counter after the icon (overrides the absolute superscript dot). */
-.health-link--icon .health-badge {
+.library-link--icon .health-badge {
     position: static;
     top: auto;
     right: auto;
@@ -1772,7 +1725,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     color: var(--accent-error);
 }
 
-.health-link--icon .health-badge.health-badge-warn {
+.library-link--icon .health-badge.health-badge-warn {
     border-color: color-mix(in srgb, var(--accent-warning) 45%, transparent);
     background: color-mix(in srgb, var(--accent-warning) 20%, transparent);
     color: var(--accent-warning);
@@ -1780,9 +1733,9 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 
 /* The down badge shares broken's red — an outage is not a milder thing than a
    dead link. The two are told apart by movement, not hue: only the down state
-   pulses the link (see .health-link.is-health-alert). Explicit here so the
+   pulses the link (see .library-link.is-health-alert). Explicit here so the
    base .health-badge red still applies even beside the warn override above. */
-.health-link--icon .health-badge.health-badge-down {
+.library-link--icon .health-badge.health-badge-down {
     border-color: color-mix(in srgb, var(--accent-error) 55%, transparent);
     background: color-mix(in srgb, var(--accent-error) 22%, transparent);
     color: var(--accent-error);
@@ -1799,23 +1752,23 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     100% { transform: scale(1); }
 }
 
-.health-link.is-health-alert .health-link-anchor {
+.library-link.is-health-alert .library-link-anchor {
     animation: health-alert-pulse 0.5s cubic-bezier(0.22, 1, 0.36, 1) 3;
     transform-origin: center;
 }
 
 /* A quiet ring under the pulse, so a colour-blind or briefly-glanced view still
    catches it. Also removed with the class when the animation ends. */
-.health-link.is-health-alert .health-badge {
+.library-link.is-health-alert .health-badge {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-error) 30%, transparent);
 }
 
-body.no-animations .health-link.is-health-alert .health-link-anchor {
+body.no-animations .library-link.is-health-alert .library-link-anchor {
     animation: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .health-link.is-health-alert .health-link-anchor {
+    .library-link.is-health-alert .library-link-anchor {
         animation: none !important;
     }
 }
@@ -2786,7 +2739,6 @@ body[data-category-spacing="airy"] {
     --category-row-gap: var(--space-7, 3rem);
 }
 
-
 /* Keep terminal rows single-line in dense layouts (e.g. 6 columns). */
 .dashboard-grid.layout-terminal .status-text {
     display: none !important;
@@ -3590,7 +3542,6 @@ a.bookmark-open:hover {
     display: none;
 }
 
-
 .bookmark-icon-slot {
     width: 1.15em;
     height: 1.15em;
@@ -3945,7 +3896,6 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     gap: var(--space-hairline, 0.15rem);
     min-width: 0;
 }
-
 
 /* ─── Flag toggles (pinned / status check / monitor) ─────────────────────────
    One horizontal row of pills instead of three stacked checkbox rows: the flags
@@ -4476,7 +4426,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     vertical-align: -0.05em;
 }
 
-
 @keyframes smartRecentPromote {
     0% {
         transform: translateY(10px);
@@ -4967,7 +4916,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     position: relative;
 }
 
-
 /* Copy-URL row flash */
 @keyframes bookmarkCopyFlash {
     0%   { opacity: 0.45; }
@@ -4988,7 +4936,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     body.no-animations .bookmark-link.bookmark-copy-flash::after {
     animation: none;
 }
-
 
 /* Launcher scale-pulse on open */
 @keyframes bookmarkPulse {
@@ -5116,7 +5063,6 @@ body[data-show-recent-button="false"][data-show-cheatsheet-button="false"][data-
    not opacity, so Tab cannot land in it either. What's New (outside
    .button-container) is untouched. */
 body:has(#dashboard-layout.config-layout) .button-container,
-body:has(#dashboard-layout.health-layout) .button-container,
 body:has(#dashboard-layout.inbox-layout) .button-container,
 /* The actions moved into the header; the scoping had to move with them, or
    Health and Inbox draw a fold-all and an add-bookmark for a grid that is not
@@ -5395,7 +5341,6 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     padding: 0.1rem 0.35rem;
 }
 
-
 .recent-bookmarks-empty {
     padding: var(--space-5, 1.5rem) var(--space-2, 0.5rem);
     color: var(--text-tertiary);
@@ -5411,8 +5356,8 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
     align-items: center;
     padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
 /* Not a sheet: one that hangs from the header sizes itself against the header
@@ -5469,9 +5414,6 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-ne
 }
 
 /* Inbox intro modal — centered above the inbox feed */
-
-
-
 
 /* Page overview modal — centered compact shell */
 /*
@@ -5553,8 +5495,8 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) {
     align-items: center;
     padding: max(1.25rem, 2vw);
     box-sizing: border-box;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
 /* Not the sheet: it sizes itself against the header row it hangs from, and a
@@ -5719,9 +5661,9 @@ body.no-animations .bookmark-move-out {
     box-sizing: border-box;
     pointer-events: none;
     opacity: 0;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    background: var(--modal-scrim);
+    backdrop-filter: blur(var(--modal-scrim-blur));
+    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
     transition: opacity 0.2s ease-out;
 }
 
@@ -5842,13 +5784,9 @@ body.no-animations .bookmark-move-out {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
     }
-    /* Decorative looping, nothing waits on it */
-    .health-link a { animation: none !important; }
     /* Date popover entrance */
     .date-popover { animation: none !important; }
 }
-
-
 
 /* ─── Row tag chips ──────────────────────────────────────────────────────── */
 
@@ -6198,9 +6136,6 @@ body[data-grid-keys="shown"] .dashboard-legend {
     }
 }
 
-
-
-
 /*
  * A widget's body: a card inside an otherwise frameless grid.
  *
@@ -6457,8 +6392,6 @@ button.dashboard-widget-row.keyboard-selected {
 .dashboard-widget-row--warn .dashboard-widget-row-detail {
     color: var(--accent-warning);
 }
-
-
 
 /* A figure with its qualifier beside it — the inbox count and how old the
    oldest is, the neglected count and the threshold that produced it. The
@@ -7137,6 +7070,11 @@ button.dashboard-widget-stat.keyboard-selected {
 .dashboard-widget-footnote--warn { color: var(--accent-warning); }
 .dashboard-widget-footnote--good { color: var(--accent-success); }
 
+/* The container list's count sits above its rows rather than closing them. */
+.dashboard-widget-footnote.dashboard-widget-containers-count {
+    margin: 0 0 4px;
+}
+
 .dashboard-widget-panel .dashboard-widget-headline {
     margin-bottom: 0;
 }
@@ -7713,7 +7651,6 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     cursor: default;
 }
 
-
 /*
  * The track fills the middle zone rather than sizing to its tabs.
  *
@@ -8190,7 +8127,8 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
  * 28 + 2x5 of padding + 2x1 of border.
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
-.dashboard-section.section-controls .header-actions .health-link-anchor,
+.dashboard-section.section-controls .header-actions .docker-link-anchor,
+.dashboard-section.section-controls .header-actions .library-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
     position: relative;
@@ -8209,7 +8147,8 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 }
 
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
-.dashboard-section.section-controls .header-actions .health-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .docker-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .library-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
     color: var(--text-primary);
@@ -8217,7 +8156,6 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
-.dashboard-section.section-controls .header-actions .health-link-icon,
 .dashboard-section.section-controls .header-actions .config-link-icon {
     width: 18px;
     height: 18px;
@@ -8232,7 +8170,8 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
  * their own square: 14px, filled, white on the colour that says what it is.
  */
 .dashboard-section.section-controls .header-actions .page-inbox-badge,
-.dashboard-section.section-controls .header-actions .health-link--icon .health-badge {
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge,
+.dashboard-section.section-controls .header-actions .docker-update-badge {
     position: absolute;
     top: -6px;
     right: -6px;
@@ -8266,16 +8205,23 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     color: var(--background-primary);
 }
 
-.dashboard-section.section-controls .header-actions .health-link--icon .health-badge {
+/* Containers with an update waiting: news, not a fault -- the info colour. */
+.dashboard-section.section-controls .header-actions .docker-update-badge {
+    background: var(--accent-info, var(--accent-primary));
+    color: var(--background-primary);
+    pointer-events: none;
+}
+
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge {
     background: var(--accent-error);
 }
 
-.dashboard-section.section-controls .header-actions .health-link--icon .health-badge.health-badge-warn {
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge.health-badge-warn {
     background: var(--accent-warning);
     color: var(--text-on-warning, #000);
 }
 
-.dashboard-section.section-controls .header-actions .health-link--icon .health-badge.health-badge-down {
+.dashboard-section.section-controls .header-actions .library-link--icon .health-badge.health-badge-down {
     background: var(--accent-error);
     color: #fff;
 }
@@ -8317,7 +8263,8 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 .header-track .page-nav-btn,
 .header-track .page-nav-overflow,
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
-.dashboard-section.section-controls .header-actions .health-link-anchor,
+.dashboard-section.section-controls .header-actions .docker-link-anchor,
+.dashboard-section.section-controls .header-actions .library-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
     box-shadow: var(--header-plate-shadow);
@@ -8341,13 +8288,13 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 .header-track .page-nav-btn:active,
 .header-track .page-nav-overflow:active,
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active,
-.dashboard-section.section-controls .header-actions .health-link-anchor:active,
+.dashboard-section.section-controls .header-actions .docker-link-anchor:active,
+.dashboard-section.section-controls .header-actions .library-link-anchor:active,
 .dashboard-section.section-controls .header-actions .config-link-anchor:active {
     box-shadow:
         inset 0 1px 3px color-mix(in srgb, #000 calc(45% * var(--theme-depth, 1)), transparent);
     transform: translateY(calc(0.5px * var(--theme-depth, 1)));
 }
-
 
 /* ── The band as the window narrows ───────────────────────────────────────────
    One line, and a fixed order of what it gives up when the zones no longer add
@@ -8468,7 +8415,6 @@ body[data-header-fit="3"] .dashboard-section.section-controls .header-top {
     }
 }
 
-
 /*
  * The tag cloud is an action like the others.
  *
@@ -8510,7 +8456,8 @@ body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:
  * takes, because it says the same thing.
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
-.dashboard-section.section-controls .header-actions .health-link-anchor.active,
+.dashboard-section.section-controls .header-actions .docker-link-anchor.active,
+.dashboard-section.section-controls .header-actions .library-link-anchor.active,
 .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
     background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
@@ -8520,7 +8467,6 @@ body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:
         var(--header-plate-shadow),
         0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
 }
-
 
 /* ── The line under the band ─────────────────────────────────────────────────
    The second half of "waiting on a bookmark": a 2px rule under the header,
@@ -8613,7 +8559,8 @@ body[data-header-buttons="plain"] .header-track .page-nav-btn,
 body[data-header-buttons="plain"] .header-track .page-nav-overflow,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
-body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
     border: none;
@@ -8630,7 +8577,8 @@ body[data-header-buttons="plain"] .header-track .page-nav-btn:hover,
 body[data-header-buttons="plain"] .header-track .page-nav-overflow:hover,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
-body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
     border-color: transparent;
@@ -8642,7 +8590,8 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
 /* The page you are on, the view you are in: one rule, in the theme's accent. */
 body[data-header-buttons="plain"] .header-track .page-nav-btn.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
-body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
     border-bottom-color: var(--accent-primary);
@@ -8654,7 +8603,8 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
 /* Pressed still says pressed, without a plate to sink into. */
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:active,
 body[data-header-buttons="plain"] .header-track .page-nav-btn:active,
-body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active {
     box-shadow: none;
@@ -9218,357 +9168,12 @@ body[data-action-bar="bottom"] #dashboard-layout {
 }
 
 /*
- * The kept list inside the inbox's shell: the toolbar sits in the shell's own
- * toolbar row, and only the grid below it carries the packed-column machinery.
- */
-.inbox-toolbar-kept .unsorted-view-toolbar {
-    width: 100%;
-    flex-shrink: 0;
-    padding: 0;
-    border: 0;
-    background: none;
-}
-
-.unsorted-view .empty-state--unsorted {
-    padding: var(--space-6, 2rem) 0;
-    text-align: center;
-    color: var(--text-secondary);
-}
-
-/*
- * A group heading reuses .category-title's type so a grouped Unsorted reads as
- * the same kind of page as a dashboard full of categories. It is not a real
- * category title, though: no collapse caret, no rename, no reorder handle, so
- * none of that column's interactive spacing applies either.
- */
-.unsorted-view .unsorted-group-title {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-1, 0.28rem);
-    cursor: default;
-}
-
-.unsorted-view .unsorted-group-count {
-    margin-left: auto;
-    font-size: calc(var(--font-size-text) * 0.857);
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-}
-
-.unsorted-view .unsorted-view-actions,
-.inbox-actions-kept .unsorted-view-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.55rem);
-}
-
-/*
- * Neutral chrome, the way the inbox's bulk buttons are: these sit beside a
- * count, not at the end of a flow, so none of them is the thing to press. The
- * Select toggle takes the accent only while it is on, which is the one state
- * worth calling out.
- */
-.unsorted-view .unsorted-view-btn,
-.inbox-actions-kept .unsorted-view-btn {
-    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.7rem);
-    border-radius: var(--radius-4, 0.4rem);
-    border: 1px solid var(--border-primary);
-    background: var(--background-primary);
-    color: var(--text-secondary);
-    font-family: var(--font-family-main);
-    font-size: var(--text-sm, 0.8rem);
-    line-height: 1.2;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
-}
-
-.unsorted-view .unsorted-view-btn:hover,
-.unsorted-view .unsorted-view-btn:focus-visible,
-.inbox-actions-kept .unsorted-view-btn:hover,
-.inbox-actions-kept .unsorted-view-btn:focus-visible {
-    border-color: var(--accent-primary);
-    color: var(--text-primary);
-    outline: none;
-}
-
-.unsorted-view .unsorted-view-btn:disabled,
-.inbox-actions-kept .unsorted-view-btn:disabled {
-    opacity: 0.55;
-    cursor: default;
-}
-
-.unsorted-view .unsorted-view-btn.is-active,
-.inbox-actions-kept .unsorted-view-btn.is-active {
-    border-color: color-mix(in srgb, var(--accent-primary) 40%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
-    color: var(--accent-primary);
-}
-
-/*
- * The row's tick box, over the lead icon.
- *
- * Absolute, because the row is a grid whose columns are already spoken for; the
- * same reason and the same placement the inbox uses (.inbox-item-check). Quiet
- * until the row is hovered, focused or ticked, so an untouched list stays calm.
- */
-.unsorted-view .unsorted-row-check {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.unsorted-view .unsorted-row-check-input {
-    width: 0.85rem;
-    height: 0.85rem;
-    margin: 0;
-    accent-color: var(--accent-primary);
-    cursor: pointer;
-    border-radius: var(--radius-2, 0.2rem);
-    /* A backing, so the box stays legible over the favicon underneath. */
-    box-shadow: 0 0 0 2px var(--background-secondary);
-    background: var(--background-secondary);
-}
-
-.unsorted-view .unsorted-row-check-input:not(:checked) {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-
-.unsorted-view .bookmark-link:hover .unsorted-row-check-input,
-.unsorted-view .bookmark-link:focus-within .unsorted-row-check-input,
-.unsorted-view .unsorted-row-check-input:focus-visible {
-    opacity: 1;
-}
-
-@media (hover: none) {
-    .unsorted-view .unsorted-row-check-input:not(:checked) {
-        opacity: 1;
-    }
-}
-
-/* The bar sits in the column above the grid, the way health's and the inbox's
-   do, rather than floating over the page. */
-.unsorted-view .unsorted-select-toolbar {
-    position: static;
-    width: 100%;
-    margin-bottom: var(--space-2, 0.5rem);
-}
-
-/* Bulk tag popover. The rows are .move-popover-item, so they take the popover's
-   own styling; only the count on the right is new -- it says how much of the
-   selection already carries the tag, which is what makes the row a decision. */
-#unsorted-tags-popover .unsorted-tags-popover-list {
-    display: flex;
-    flex-direction: column;
-    max-height: min(60vh, 22rem);
-    overflow-y: auto;
-}
-
-#unsorted-tags-popover .unsorted-tags-popover-count {
-    margin-left: auto;
-    padding-left: var(--space-3, 0.7rem);
-    font-size: calc(var(--font-size-text) * 0.857);
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-}
-
-.unsorted-view .unsorted-view-count,
-.inbox-actions-kept .unsorted-view-count {
-    font-size: calc(var(--font-size-text) * 0.914);
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-}
-
-/* ── The inbox's two tabs ─────────────────────────────────────────────────── */
-
-/*
- * The queue and the pile kept out of it, above the shell.
- *
- * Kept used to be a fourth destination in the header; it is a step in this
- * view's own flow, so it lives here. The strip is the only chrome the two
- * tabs share -- each owns its toolbar, its header buttons and its body, and
- * switching only flips which of them is shown.
- */
-/*
- * The strip gets a row of its own in the shell's grid. Without an area it
- * landed in an implicit row after the body -- the tabs read as a footer under
- * the list they switch.
- */
-.lvs:has(.inbox-tabs) {
-    grid-template-areas:
-        'tabs   tabs'
-        'header header'
-        'rail   main';
-}
-
-.lvs.inbox-kept-tab:has(.inbox-tabs) {
-    grid-template-areas:
-        'tabs'
-        'header'
-        'main';
-}
-
-.inbox-tabs:not([hidden]) {
-    grid-area: tabs;
-    display: flex;
-    gap: var(--space-1, 0.25rem);
-    padding: 0 0 var(--space-2, 0.5rem);
-    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
-    margin-bottom: var(--space-2, 0.5rem);
-}
-
-.inbox-tab {
-    display: inline-flex;
-    align-items: baseline;
-    gap: var(--space-1, 0.3rem);
-    padding: var(--space-1, 0.3rem) var(--space-2, 0.6rem);
-    border: 0;
-    border-radius: var(--radius-5, 8px);
-    background: none;
-    color: var(--text-muted, #888);
-    font: inherit;
-    cursor: pointer;
-}
-
-.inbox-tab:hover {
-    color: var(--text-primary);
-    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
-}
-
-.inbox-tab.is-active {
-    color: var(--text-primary);
-    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
-}
-
-.inbox-tab:focus-visible {
-    outline: 2px solid var(--accent-primary);
-    outline-offset: 2px;
-}
-
-.inbox-tab-count {
-    font-size: 0.85em;
-    opacity: 0.75;
-}
-
-.inbox-tab-count:empty {
-    display: none;
-}
-
-/*
- * On the kept tab the rail goes: its filters belong to the queue, and the
- * kept list filters itself from its own toolbar. An empty 200px column beside
- * the grid would be chrome that says nothing -- and the column it stood in
- * goes with it, or the list would start 200px in from the left.
- */
-.lvs.inbox-kept-tab {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-        'header'
-        'main';
-}
-
-/* The header actions stay one line: two buttons and the count beside them. */
-.inbox-actions-kept:not([hidden]) {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2, 0.5rem);
-    flex-wrap: wrap;
-    justify-content: flex-end;
-}
-
-.lvs.inbox-kept-tab .lvs-rail {
-    display: none;
-}
-
-
-
-/* The kept list's three controls, in the shell's toolbar row. */
-.inbox-toolbar-kept:not([hidden]) .unsorted-view-toolbar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.5rem);
-    width: 100%;
-    flex-wrap: wrap;
-}
-
-.inbox-toolbar-kept .unsorted-view-toolbar-slot {
-    flex: 1 1 12rem;
-    min-width: 0;
-}
-
-.inbox-toolbar-kept .unsorted-view-search-input {
-    width: 100%;
-}
-
-/*
- * What Health does not say about kept links: how many of them stopped
- * answering, with a way to see just those. It sits above the grid rather than
- * in the toolbar -- it is news, not a control, and it is absent whenever there
- * is nothing wrong.
- */
-.unsorted-broken-note {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2, 0.5rem);
-    margin-bottom: var(--space-2, 0.5rem);
-    color: var(--status-offline, #d1493f);
-}
-
-.unsorted-broken-btn {
-    border: 0;
-    background: none;
-    padding: 0;
-    color: inherit;
-    font: inherit;
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-.unsorted-broken-btn:focus-visible {
-    outline: 2px solid var(--accent-primary);
-    outline-offset: 2px;
-}
-
-/* Second copies are not broken, only spare: same line, quieter colour. */
-.unsorted-dupes-note {
-    color: var(--text-secondary);
-}
-
-/* The bulk "Move to…" picker: pages, then that page's categories. */
-.unsorted-move-popover-list {
-    display: flex;
-    flex-direction: column;
-    max-height: min(50vh, 18rem);
-    overflow-y: auto;
-}
-
-.unsorted-move-item {
-    text-align: left;
-    border: 0;
-    background: none;
-    font: inherit;
-    color: inherit;
-    cursor: pointer;
-}
-
-.unsorted-move-back {
-    color: var(--text-muted, #888);
-}
-
-/*
  * Suggested tags, on the row that has none.
  *
  * Two halves of one chip: the tag, which takes it, and a × that turns it down
  * for good. Drawn quietly -- an offer is not a fact about the link, and a row
  * of loud chips over an untagged list reads as tags that are already there.
- * Shared by the inbox queue and the kept list, which draw the same offer.
+ * Shared by the inbox queue and the Bookmarks view.
  */
 .tag-suggest-chips {
     display: flex;
@@ -9579,12 +9184,6 @@ body[data-action-bar="bottom"] #dashboard-layout {
 
 .inbox-item .tag-suggest-chips {
     margin-top: var(--space-1, 0.25rem);
-}
-
-.unsorted-view .tag-suggest-chips {
-    grid-column: 1 / -1;
-    margin: 0 0 var(--space-1, 0.25rem) var(--bookmark-row-start-pad, 6px);
-    padding-left: 1.5rem;
 }
 
 .tag-suggest-chip {
@@ -9664,133 +9263,8 @@ body[data-action-bar="bottom"] #dashboard-layout {
 }
 
 /*
- * What a kept row says about itself: how long it has waited, and whether the
- * collection already holds the address. Beside the row for the reason the
- * suggestion chips are -- the row is a subgrid with no cell to spare -- and
- * quiet, because both are footnotes to the link rather than facts about it.
- */
-.unsorted-view .unsorted-row-hints {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1, 0.25rem);
-    margin: 0 0 0.1rem var(--bookmark-row-start-pad, 6px);
-    padding-left: 1.5rem;
-    font-size: var(--font-size-small, 0.75rem);
-    color: var(--text-secondary);
-}
-
-.unsorted-view .unsorted-row-age {
-    opacity: 0.75;
-}
-
-/* The tags a kept row already carries: solid, where a suggestion is dashed,
-   so the two cannot be mistaken for one another on the same row. */
-.unsorted-view .unsorted-row-tag,
-.unsorted-view .unsorted-row-tag-more {
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-pill, 999px);
-    padding: 0.05rem 0.4rem;
-    color: var(--text-secondary);
-}
-
-.unsorted-view .unsorted-row-tag-more {
-    cursor: help;
-}
-
-/* A button too: the second copy is cleared from its own hint. */
-.unsorted-view .unsorted-row-filed {
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-pill, 999px);
-    background: transparent;
-    color: inherit;
-    font-family: inherit;
-    font-size: inherit;
-    padding: 0.05rem 0.4rem;
-    cursor: pointer;
-}
-
-.unsorted-view .unsorted-row-filed:hover,
-.unsorted-view .unsorted-row-filed:focus-visible {
-    color: var(--status-offline, #d1493f);
-    border-color: var(--status-offline, #d1493f);
-}
-
-/* The destination a kept row's neighbours agree on: a button, because taking
-   it is one click, unlike the two facts beside it. */
-.unsorted-view .unsorted-row-destination {
-    border: 1px dashed var(--border-primary);
-    border-radius: var(--radius-pill, 999px);
-    background: transparent;
-    color: var(--text-secondary);
-    font-family: inherit;
-    font-size: inherit;
-    padding: 0.05rem 0.45rem;
-    cursor: pointer;
-}
-
-.unsorted-view .unsorted-row-destination:hover,
-.unsorted-view .unsorted-row-destination:focus-visible {
-    color: var(--accent-primary);
-    border-color: var(--accent-primary);
-}
-
-/* The run over the kept list borrows the triage card; only the tag row and the
-   wider action strip are its own. */
-.unsorted-review-tags {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1, 0.25rem);
-    padding: 0 var(--space-4, 1rem) var(--space-2, 0.5rem);
-}
-
-/* Said, not implied: a proposed tag beside the ones a link already carries
-   reads as a fourth tag it has. */
-.unsorted-review-tags-lead {
-    font-size: var(--font-size-small, 0.75rem);
-    color: var(--text-secondary);
-    margin-right: var(--space-1, 0.25rem);
-}
-
-.unsorted-review-actions {
-    flex-wrap: wrap;
-}
-
-/* A card with no picture gives its whole width to the text: the queue's body is
-   a two-column grid whose first track is the thumbnail, and a lone text block
-   landed in it. */
-.unsorted-review-card .inbox-triage-body.unsorted-review-body--bare {
-    grid-template-columns: 1fr;
-}
-
-.unsorted-review-card .inbox-triage-title {
-    overflow-wrap: anywhere;
-}
-
-.unsorted-review-own-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1, 0.25rem);
-    margin: var(--space-1, 0.25rem) 0 0;
-}
-
-.unsorted-review-own-tag {
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-pill, 999px);
-    padding: 0.05rem 0.4rem;
-    font-size: var(--font-size-small, 0.75rem);
-    color: var(--text-secondary);
-}
-
-.unsorted-review-age {
-    opacity: 0.8;
-}
-
-/*
- * Keep, as it happens: a copy of the row flying to the Kept tab, and the count
- * there stepping up when it lands. Fixed and above every overlay, because the
+ * Keep, as it happens: a copy of the row flying to the Bookmarks icon, where
+ * Unsorted is. Fixed and above every overlay, because the
  * flight starts on the triage card as often as on a row.
  */
 .keep-flight {
@@ -9819,8 +9293,6 @@ body[data-action-bar="bottom"] #dashboard-layout {
     100% { transform: scale(1); }
 }
 
-.inbox-tab-count.is-bumped,
-.inbox-tab-label.is-bumped,
 .inbox-triage-kept-count.is-bumped {
     display: inline-block;
     animation: keep-count-bump 0.7s ease-out;
@@ -9838,54 +9310,3 @@ body[data-action-bar="bottom"] #dashboard-layout {
     color: var(--text-secondary);
 }
 
-/*
- * A group heading in the kept list: a box that ticks the whole group, and a
- * name that does the same. The box stays quiet until the heading is hovered
- * or the group has ticks in it, the way the row boxes do.
- */
-.unsorted-view .unsorted-group-title {
-    align-items: center;
-    gap: var(--space-1, 0.3rem);
-}
-
-.unsorted-view .unsorted-group-check {
-    display: inline-flex;
-    align-items: center;
-    cursor: pointer;
-}
-
-.unsorted-view .unsorted-group-check-input {
-    width: 0.85rem;
-    height: 0.85rem;
-    margin: 0;
-    accent-color: var(--accent-primary);
-    cursor: pointer;
-    opacity: 0.35;
-    transition: opacity 0.15s ease;
-}
-
-.unsorted-view .unsorted-group-title:hover .unsorted-group-check-input,
-.unsorted-view .unsorted-group-check-input:checked,
-.unsorted-view .unsorted-group-check-input:indeterminate,
-.unsorted-view .unsorted-group-check-input:focus-visible {
-    opacity: 1;
-}
-
-.unsorted-view .unsorted-group-title .category-title-name {
-    cursor: pointer;
-}
-
-.unsorted-view .unsorted-group-title .category-title-name:hover,
-.unsorted-view .unsorted-group-title .category-title-name:focus-visible {
-    color: var(--accent-primary);
-}
-
-@media (hover: none) {
-    .unsorted-view .unsorted-group-check-input {
-        opacity: 1;
-    }
-}
-
-.unsorted-group-menu .is-danger {
-    color: var(--accent-error, var(--danger, #d24545));
-}

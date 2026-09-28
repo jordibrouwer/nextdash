@@ -1,0 +1,597 @@
+/* ─── Docker view (dashboard) ────────────────────────────────────────────
+   Sibling of health-view.css and dashboard-inbox.css: mounts on the same
+   shared shell (list-view-shell.css), so only what genuinely differs for
+   Docker lives here — the table, the badges, the setup card and the drawer.
+   ------------------------------------------------------------------------- */
+
+.docker-layout {
+    outline: none;
+}
+
+.docker-view-group-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.docker-checked-at {
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    white-space: nowrap;
+}
+
+.docker-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.docker-row {
+    border-bottom: 1px solid var(--border-primary);
+    cursor: pointer;
+}
+
+.docker-row:hover {
+    background: var(--background-secondary);
+}
+
+.docker-row[aria-selected="true"] {
+    background: var(--background-secondary);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+/* The status glow, the own-container halo and the busy pulse are shared:
+   list-view-shell.css, keyed on data-lvs-status / -self / -busy. Only the
+   label is the Containers view's own. */
+.docker-row[data-lvs-self] .docker-name::after {
+    content: "nextDash";
+    margin-left: var(--space-2, 0.5rem);
+    padding: 0 var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--accent-vivid, var(--accent-primary));
+    border: 1px solid color-mix(in srgb, var(--accent-vivid, var(--accent-primary)) 55%, transparent);
+}
+
+.docker-group-row[data-docker-group-status="running"] td { color: var(--accent-success, #3c6); }
+.docker-group-row[data-docker-group-status="paused"] td { color: var(--accent-warning, #cb4); }
+.docker-group-row[data-docker-group-status="stopped"] td { color: var(--accent-error, #c55); }
+.docker-group-row[data-docker-group-status="updates"] td { color: var(--accent-vivid, var(--accent-primary)); }
+
+.docker-cell {
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    font-size: var(--font-size-controls);
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.docker-cell--image {
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+.docker-cell--state {
+    color: var(--text-secondary);
+}
+
+.docker-name {
+    font-weight: var(--font-weight-semibold);
+}
+
+.docker-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: var(--space-2, 0.5rem);
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-on-warning, #000);
+    background: var(--accent-warning);
+    border-radius: var(--radius-pill, 999px);
+}
+
+.docker-cell--ports {
+    white-space: nowrap;
+}
+
+.docker-cell--ports .docker-port + .docker-port {
+    margin-left: var(--space-2, 0.5rem);
+}
+
+/* A column of its own, and a narrow one: a long host is cut, not wrapped,
+   so the ports beside it stay in line; the title carries the whole address. */
+.docker-cell--webui {
+    width: 1%; /* as wide as its link, no wider */
+    white-space: nowrap;
+}
+
+.docker-webui {
+    display: block;
+    max-width: clamp(6rem, 16vw, 14rem);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Second phone line (name/state stay in the normal cells); hidden until
+   the mobile media query below turns it on. */
+.docker-row-line2 {
+    display: none;
+}
+
+/* --accent-vivid: the accent, or a colour on the few themes whose accent is
+   grey on purpose -- links and the marks below have to point. */
+.docker-port {
+    color: var(--accent-vivid, var(--accent-primary));
+    text-decoration: none;
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-port:hover {
+    text-decoration: underline;
+}
+
+.docker-group-row td {
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    background: var(--background-secondary);
+}
+
+.docker-setup {
+    max-width: 40rem;
+    padding: var(--space-4, 1rem);
+    background: var(--background-secondary);
+    border-radius: var(--layout-radius-md);
+}
+
+.docker-setup-title {
+    margin: 0 0 var(--space-2, 0.5rem);
+}
+
+.docker-setup pre {
+    overflow-x: auto;
+    padding: var(--space-3, 0.75rem);
+    background: var(--background-tertiary, var(--background-primary));
+    border-radius: var(--radius-4, 6px);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-readonly {
+    margin: 0 0 var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    color: var(--text-secondary);
+    background: var(--background-secondary);
+    border-radius: var(--radius-4, 6px);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+/*
+ * The drawer frame -- host, slab, head, close, sections -- is the shared one
+ * (list-view-shell.css, .lvs-drawer*). What follows is what a container's
+ * panel adds inside it.
+ */
+.docker-drawer-pill {
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+    background: var(--background-secondary);
+    border-radius: var(--radius-pill, 999px);
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+}
+
+.docker-drawer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-field-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+}
+
+.docker-field-label {
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.docker-field-value {
+    text-align: right;
+    word-break: break-all;
+}
+
+.docker-overview-link {
+    align-self: flex-start;
+    color: var(--accent-primary);
+}
+
+.docker-network-row,
+.docker-volume-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    word-break: break-all;
+}
+
+.docker-volume-readonly {
+    color: var(--text-tertiary, var(--text-secondary));
+    white-space: nowrap;
+}
+
+.docker-resource-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.docker-charts {
+    display: grid;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-3, 0.75rem);
+}
+
+.docker-chart {
+    margin: 0;
+}
+
+.docker-chart-head,
+.docker-chart-axis {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.8rem);
+}
+
+.docker-chart-peak {
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-chart-svg {
+    display: block;
+    width: 100%;
+    height: 56px;
+    margin: 4px 0 2px;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.docker-chart-area {
+    fill: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+
+.docker-chart-line {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+}
+
+.docker-chart-axis {
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.docker-chart-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.8rem);
+}
+
+.docker-webui-input {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.docker-webui-hint,
+.docker-webui-error {
+    margin: 4px 0 0;
+    font-size: var(--font-size-small, 0.8rem);
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+.docker-webui-error {
+    color: var(--accent-error);
+}
+
+.docker-webui-actions {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.docker-env-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-env-value {
+    word-break: break-all;
+}
+
+.docker-logs {
+    max-height: 20rem;
+    overflow: auto;
+    padding: var(--space-2, 0.5rem);
+    background: var(--background-tertiary, var(--background-primary));
+    border-radius: var(--radius-4, 6px);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-sm, 0.85rem);
+    white-space: pre-wrap;
+}
+
+.docker-release {
+    padding: var(--space-2, 0.5rem) 0;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.docker-release-heading {
+    font-weight: var(--font-weight-semibold);
+}
+
+.docker-release-meta {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-release-body {
+    margin-top: var(--space-1, 0.3rem);
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+    white-space: pre-wrap;
+}
+
+.docker-changes-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+@media (max-width: 767px) {
+    .docker-legend {
+        display: none;
+    }
+
+    /* Rows collapse to two lines: name+state stay in their cells, image and
+       first port move into .docker-row-line2 (built in dashboard-docker.js). */
+    .docker-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
+        padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    }
+
+    .docker-row .docker-cell {
+        display: block;
+        padding: 0;
+    }
+
+    .docker-cell--name {
+        flex: 1 1 auto;
+    }
+
+    .docker-cell--state {
+        flex: 0 0 auto;
+        text-align: right;
+    }
+
+    .docker-cell--image,
+    .docker-cell--webui,
+    .docker-cell--ports {
+        display: none;
+    }
+
+    .docker-row-line2 {
+        display: block;
+        flex: 0 0 100%;
+        color: var(--text-secondary);
+        font-size: var(--text-xs, 0.72rem);
+    }
+
+}
+
+/* ── Actions ─────────────────────────────────────────────────────────── */
+
+.docker-action-btn {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    cursor: pointer;
+}
+
+.docker-action-btn:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}
+
+.docker-action-btn--primary {
+    border-color: color-mix(in srgb, var(--accent-primary) 60%, transparent);
+    color: var(--accent-primary);
+}
+
+.docker-action-btn--danger:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
+    color: var(--accent-error);
+}
+
+/* Above the log, at its right: a control, not the log's first line. */
+.docker-logs-refresh {
+    display: block;
+    margin: 0 0 var(--space-2, 0.5rem) auto;
+}
+
+.docker-env-reveal {
+    flex: none;
+}
+
+.docker-action-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.docker-self-note {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.docker-row[data-docker-busy] .docker-cell--state {
+    color: var(--accent-primary);
+}
+
+.docker-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.3rem) var(--space-3, 0.75rem);
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.docker-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.docker-bulk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin: 0 0 var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: var(--background-secondary);
+}
+
+.docker-bulk-count {
+    margin-right: auto;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+/* ── Links in the drawer ─────────────────────────────────────────────────
+   Source, registry and web UI, and the links inside release notes: the same
+   accent as the port links in the table, not the browser's own blue. */
+
+.docker-changes-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.docker-changes-link::after,
+.docker-overview-link::after {
+    content: " ↗";
+    font-size: 0.85em;
+}
+
+/* ── Config -> Containers ────────────────────────────────────────────────
+   The panels are Behavior's own (config-panel, config-field); these are the
+   few things a schema panel has no class for. */
+
+.config-docker-state {
+    font-size: var(--font-size-controls);
+    text-align: right;
+}
+
+.config-docker-state[data-tone="good"] { color: var(--accent-success, #3c6); }
+.config-docker-state[data-tone="warn"] { color: var(--accent-warning, #cb4); }
+.config-docker-state[data-tone="bad"] { color: var(--accent-error, #c55); }
+.config-docker-state[data-tone="muted"] { color: var(--text-secondary); }
+
+.config-docker-snippet {
+    margin: var(--space-2, 0.5rem) 0 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-secondary);
+    font-size: var(--font-size-small);
+    white-space: pre;
+    overflow-x: auto;
+}
+
+/* Under "Show the Containers view" while the socket does not answer: the
+   switch still works, and this says why it seems not to. */
+.config-docker-view-note {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    margin: var(--space-1, 0.3rem) 0 var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    /* The theme's own accent, not a warning yellow: yellow reads poorly on
+       the light themes, and every theme is built to make its accent stand
+       out from its background. */
+    border-left: 3px solid var(--accent-primary);
+    border-radius: 0;
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+.config-docker-view-note .config-field-hint {
+    flex: 1 1 18rem;
+    margin: 0;
+}
+
+[data-docker-status-help] [data-docker-setup-help] {
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.config-docker-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-docker-chips:empty {
+    display: none;
+}
+
+.config-docker-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
+    padding: 0.1rem 0.25rem 0.1rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--font-size-controls);
+}
+
+.config-docker-chip-remove {
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    line-height: 1;
+    padding: 0 0.3rem;
+    cursor: pointer;
+}
+
+.config-docker-chip-remove:hover,
+.config-docker-chip-remove:focus-visible {
+    color: var(--accent-error, #c55);
+}
+
+/* Input and its button share the control column, as one row. */
+.config-docker-hide-row {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}

@@ -163,12 +163,15 @@ const StatTile = {
         // caller needs to find it again on click. Passed through verbatim: the
         // caller has already escaped what it built.
         const tag = spec.tag === 'button' ? 'button' : 'div';
+        // extraHtml is trusted markup the caller built (a sparkline), placed
+        // after the detail line.
         const attrs = spec.attrs ? String(spec.attrs) : '';
         return `
                 <${tag} class="${tileClasses(spec).join(' ')}"${role}${label}${attrs}>
                     <span class="stat-tile-label${parts.label ? ` ${esc(parts.label)}` : ''}"${hidden}>${esc(spec.label || '')}</span>
                     <span class="stat-tile-figure"${hidden}><span class="stat-tile-value${parts.value ? ` ${esc(parts.value)}` : ''}">${esc(spec.value ?? '—')}</span>${delta}</span>
                     ${detail}
+                    ${spec.extraHtml ? String(spec.extraHtml) : ''}
                 </${tag}>`;
     },
 };

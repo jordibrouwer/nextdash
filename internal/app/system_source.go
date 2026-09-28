@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 )
 
 /*
@@ -35,6 +36,9 @@ const (
 	reasonNoDockerSocket      = "no-docker-socket"
 	reasonNoMountsConfigured  = "no-mounts-configured"
 	reasonReadFailed          = "read-failed"
+	reasonDockerSocketDenied  = "docker-socket-denied"
+	reasonDockerControlOff    = "docker-control-off"
+	reasonDockerSelf          = "docker-self"
 )
 
 var errPathEscapesPrefix = errors.New("path escapes the host prefix")
@@ -67,6 +71,23 @@ func hostRootDir() string {
 // /var/run/docker.sock.
 func dockerSocketPath() string {
 	return envPath("NEXTDASH_DOCKER_SOCKET")
+}
+
+// dockerControlEnabled is the second, separate opt-in. The socket alone lets
+// nextDash read; changing anything needs this as well, because a writable
+// Docker socket is root on the host.
+func dockerControlEnabled() bool {
+	return envPath("NEXTDASH_DOCKER_CONTROL") == "1"
+}
+
+// dockerDialReason tells "you have no access" apart from "there is nothing
+// there", which are different steps for the reader: on Unraid the socket is
+// root:281 and a mount that is already in place was being reported as missing.
+func dockerDialReason(err error) string {
+	if errors.Is(err, os.ErrPermission) || errors.Is(err, syscall.EACCES) {
+		return reasonDockerSocketDenied
+	}
+	return reasonNoDockerSocket
 }
 
 // procIsSupported reports whether this platform has /proc at all. Development

@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -37,9 +38,14 @@ type Handlers struct {
 	healthHistoryMu   sync.Mutex
 	healthTrendMu     sync.Mutex
 	healthReportMu    sync.RWMutex
-	healthReport      BookmarkHealthReport
-	healthReportAt    time.Time
-	healthReportOK    bool
+	// One Docker action per container at a time, keyed by container id.
+	dockerBusy sync.Map
+	// The update store is one file; the check and the scheduler share it.
+	dockerUpdatesMu    sync.Mutex
+	dockerCheckRunning atomic.Bool
+	healthReport       BookmarkHealthReport
+	healthReportAt     time.Time
+	healthReportOK     bool
 	// healthReportGen is the store's write count when this report was built.
 	// A cached report whose generation no longer matches describes bookmarks
 	// that have since changed, however recently it was built.
@@ -234,6 +240,12 @@ func (h *Handlers) pageTemplateFuncsFor() template.FuncMap {
 
 func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Template, error) {
 	key := strings.Join(templateFiles, "|")
+	// The page embeds the bundle addresses. When live static edits rebuild a
+	// bundle its address changes, and a page cached from before would keep
+	// sending browsers to the old one; the generation makes it a new page.
+	if staticAssetsMutable() {
+		key += fmt.Sprintf("|bundles-%d", buildAssetBundles(h.files).generation)
+	}
 
 	h.pageTemplatesMu.RLock()
 	if h.pageTemplates != nil {
@@ -299,6 +311,7 @@ func NewHandlers(store Store, files assetFS) *Handlers {
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
 	}
+	h.wireDockerSettings()
 	h.ensureHealthReportCond()
 	if store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
@@ -457,6 +470,25 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 	return report
 }
 
+// staleOpenThreshold is how long a bookmark may go unopened before the report
+// calls it stale: the reader's "count as neglected after" setting, clamped the
+// way settings normalisation clamps it, and the default when it was never set.
+// It used to be a fixed 30 days while Statistics used the setting, so the
+// same tab showed two different "stale" counts.
+func staleOpenThreshold(s Settings) time.Duration {
+	days := s.BookmarkStaleDays
+	if days <= 0 {
+		days = defaultBookmarkStaleDays
+	}
+	if days < 7 {
+		days = 7
+	}
+	if days > 365 {
+		days = 365
+	}
+	return time.Duration(days) * 24 * time.Hour
+}
+
 func (h *Handlers) invalidateHealthReportCache() {
 	h.healthReportMu.Lock()
 	h.healthReportOK = false
@@ -487,6 +519,11 @@ func healthReasonLegacyLabel(r HealthReason) string {
 	case "status_stale":
 		return "Status check is stale"
 	case "not_opened_30_days":
+		// The code keeps its old name for stored and cached reports; the
+		// threshold itself now follows the setting and travels as a param.
+		if d := r.Params["days"]; d != "" {
+			return fmt.Sprintf("Not opened in over %s days", d)
+		}
 		return "Not opened in over 30 days"
 	case "never_opened":
 		return "Never opened"
@@ -646,6 +683,11 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 		}
 	}
 
+	// One threshold for the whole report, read once: the reader's own
+	// "count as neglected after", so this and Statistics agree.
+	staleAfterOpen := staleOpenThreshold(h.store.GetSettings())
+	staleDaysParam := strconv.Itoa(int(staleAfterOpen / (24 * time.Hour)))
+
 	missingPreview := func(bm Bookmark) bool {
 		return strings.TrimSpace(bm.PreviewTitle) == "" && strings.TrimSpace(bm.PreviewDesc) == "" && strings.TrimSpace(bm.PreviewImage) == ""
 	}
@@ -678,7 +720,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 			isStaleCheck := isChecked && bm.LastChecked > 0 && time.Since(time.UnixMilli(bm.LastChecked)) > staleAfter
 			isUnused := bm.OpenCount == 0 && bm.LastOpened == 0
-			isStale := bm.OpenCount > 0 && bm.LastOpened > 0 && time.Since(time.UnixMilli(bm.LastOpened)) > 30*24*time.Hour
+			isStale := bm.OpenCount > 0 && bm.LastOpened > 0 && time.Since(time.UnixMilli(bm.LastOpened)) > staleAfterOpen
 			isMissingPreview := missingPreview(bm)
 			shortcutKey := normalizeShortcut(bm.Shortcut)
 			isShortcutConflict := shortcutKey != "" && shortcutCounts[shortcutKey] > 1
@@ -835,7 +877,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 					status = "stale"
 				}
 				flags = append(flags, "stale")
-				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "not_opened_30_days", Penalty: healthPenaltyNotOpened30Days})
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "not_opened_30_days", Params: map[string]string{"days": staleDaysParam}, Penalty: healthPenaltyNotOpened30Days})
 			}
 			if isUnused {
 				if status == "healthy" {
@@ -2656,6 +2698,21 @@ func themeAccentInfo(tc ThemeColors) string {
 		return "var(--accent-primary)"
 	}
 
+	hue := 0.0
+	if h, good := hexOklchHue(primary); good {
+		hue = h
+	}
+	hue = themeFreeHue(tc, hue)
+
+	return "oklch(" + formatFloat(math.Round(lightness*1000)/1000) +
+		" " + formatFloat(math.Round(chroma*1000)/1000) +
+		" " + formatFloat(math.Round(hue*10)/10) + ")"
+}
+
+// themeFreeHue is the hue furthest from the three colours that already mean
+// something -- success, warning and error -- or fallback when a theme gives
+// none of them a colour.
+func themeFreeHue(tc ThemeColors, fallback float64) float64 {
 	taken := []float64{}
 	for _, c := range []string{tc.AccentSuccess, tc.AccentWarning, tc.AccentError} {
 		if _, chr, good := hexOklch(c); !good || chr < 0.02 {
@@ -2665,34 +2722,64 @@ func themeAccentInfo(tc ThemeColors) string {
 			taken = append(taken, hue)
 		}
 	}
-
-	hue := 0.0
-	if h, good := hexOklchHue(primary); good {
-		hue = h
+	if len(taken) == 0 {
+		return fallback
 	}
-	if len(taken) > 0 {
-		best, bestGap := hue, -1.0
-		for candidate := 0.0; candidate < 360; candidate += 5 {
-			gap := 360.0
-			for _, other := range taken {
-				d := math.Abs(candidate - other)
-				if d > 180 {
-					d = 360 - d
-				}
-				if d < gap {
-					gap = d
-				}
+	best, bestGap := fallback, -1.0
+	for candidate := 0.0; candidate < 360; candidate += 5 {
+		gap := 360.0
+		for _, other := range taken {
+			d := math.Abs(candidate - other)
+			if d > 180 {
+				d = 360 - d
 			}
-			if gap > bestGap {
-				best, bestGap = candidate, gap
+			if d < gap {
+				gap = d
 			}
 		}
-		hue = best
+		if gap > bestGap {
+			best, bestGap = candidate, gap
+		}
 	}
+	return best
+}
 
+/*
+accentVividMinChroma is where an accent stops reading as grey, in OKLCH chroma.
+
+Measured over the built-ins: Monochrome Mist and Static Noise at 0, Paper Ink
+at 0.01, Gloss Chrome and Storm Petrel at 0.024-0.034 -- then a gap, and the
+first accent past it, Harbour Fog at 0.040, is a blue-grey that still reads as
+blue. Muted themes (Moss Stone, Salt Flat, Sumi Ink) keep their own colour.
+*/
+const accentVividMinChroma = 0.036
+
+/*
+themeAccentVivid is the accent when it has colour, and a colour when it has
+none.
+
+A handful of themes are grey on purpose -- chrome, ink on paper, static -- and
+--accent-info follows them into grey by design (see themeAccentInfo). A few
+marks exist to point rather than decorate: the container nextDash runs in, a
+row with an update waiting. On a grey theme those vanished. This keeps the
+theme's own lightness, so it sits in the palette, and takes the free hue at a
+chroma a reader sees as colour.
+*/
+func themeAccentVivid(tc ThemeColors) string {
+	primary := tc.AccentPrimary
+	if primary == "" {
+		primary = tc.AccentSuccess
+	}
+	lightness, chroma, ok := hexOklch(primary)
+	if !ok || chroma >= accentVividMinChroma {
+		return "var(--accent-primary)"
+	}
+	// Kept where a colour at this chroma still reads as one: near white or
+	// near black it would wash back out to grey.
+	lightness = math.Max(0.45, math.Min(0.8, lightness))
+	hue := themeFreeHue(tc, 250)
 	return "oklch(" + formatFloat(math.Round(lightness*1000)/1000) +
-		" " + formatFloat(math.Round(chroma*1000)/1000) +
-		" " + formatFloat(math.Round(hue*10)/10) + ")"
+		" 0.13 " + formatFloat(math.Round(hue*10)/10) + ")"
 }
 
 /*
@@ -3317,6 +3404,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --accent-warning: ` + s.AccentWarning + `;
     --accent-error: ` + s.AccentError + `;
     --accent-info: ` + themeAccentInfo(tc) + `;
+    --accent-vivid: ` + themeAccentVivid(tc) + `;
     --ink-dir: ` + themeInkDirection(s.BackgroundPrimary) + `;
     --theme-backdrop: ` + themeBackdropImage(selector, s) + `;
     --theme-surface-alpha: ` + themeSurfaceAlpha(tc) + `;

@@ -212,6 +212,7 @@ class SearchCommandNew {
                     index: options.index,
                     bookmark: options.bookmark,
                     onSaved: options.onSaved,
+                    promoteToPageId: options.promoteToPageId,
                 });
             }
             const pageId = this._contextPinned ? this.currentPageId : undefined;
@@ -1823,7 +1824,11 @@ class SearchCommandNew {
         }
         if (iconUrl) {
             if (iconUrl.startsWith('/data/icons/')) return iconUrl.replace('/data/icons/', '').trim();
-            const remoteIcon = await window.BookmarkPreviewService.uploadIconFromUrl(iconUrl);
+            // The server downloads the icon first, which a slow site stretches.
+            const fetchIcon = () => window.BookmarkPreviewService.uploadIconFromUrl(iconUrl);
+            const remoteIcon = window.ProgressOverlay?.run
+                ? await window.ProgressOverlay.run(this.t('config.waitIconTitle', 'Fetching the icon…'), iconUrl, fetchIcon)
+                : await fetchIcon();
             if (!remoteIcon) {
                 this.notify(this.t('config.iconUrlInvalid', 'Icon URL invalid.'), 'error');
                 return null;

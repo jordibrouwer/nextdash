@@ -1,8 +1,8 @@
 /**
- * The Unsorted widget: bookmarks kept from the inbox without a dashboard
- * category. Reads the same /api/unsorted endpoint the full view and the
- * Move to... popover use, so there is exactly one source of truth for "what
- * is in Unsorted" on the client.
+ * The Unsorted widget: bookmarks kept from the inbox without a page yet.
+ * Reads dash.unsortedBookmarks -- the list Bookmarks → Unsorted shows, kept in
+ * step with every write -- so a link promoted or deleted there is gone from
+ * the tile too. A row opens that list with the bookmark's side panel.
  *
  * The order is a setting, because a pile of kept links is read three ways: the
  * newest first when you are catching up, one tag at a time when you are
@@ -21,18 +21,10 @@
         return value && value !== key ? value : fallback;
     }
 
-    async function load(dash) {
-        if (dash._widgetUnsorted) return dash._widgetUnsorted;
-        try {
-            const res = await fetch('/api/unsorted');
-            if (!res.ok) return null;
-            const data = await res.json();
-            dash._widgetUnsorted = Array.isArray(data?.bookmarks) ? data.bookmarks : [];
-            dash._unsortedPageId = data?.page?.id;
-            return dash._widgetUnsorted;
-        } catch (_error) {
-            return null;
-        }
+    /** The kept bookmarks, once the dashboard has loaded its bookmarks. */
+    function load(dash) {
+        if (!dash?._bookmarksReady) return null;
+        return Array.isArray(dash.unsortedBookmarks) ? dash.unsortedBookmarks : [];
     }
 
     function settings(widget) {
@@ -126,7 +118,7 @@
         return line;
     }
 
-    /** One row: the name, the address under it, and Kept behind the click. */
+    /** One row: the name, the address under it, and its side panel behind the click. */
     function keptRow(dash, bookmark) {
         const row = document.createElement('button');
         row.type = 'button';
@@ -153,8 +145,8 @@
 
         window.DashboardWidgetUtils?.bindRowAction(row, dash, {
             labelKey: 'widgetActionOpenUnsorted',
-            labelFallback: 'Open Kept',
-            run: () => { void dash.inbox?.openInboxView?.({ tab: 'kept' }); },
+            labelFallback: 'Open Unsorted',
+            run: () => { void dash.openUnsortedBookmarks?.({ url: bookmark?.url }); },
         });
         return row;
     }
@@ -192,7 +184,7 @@
     }
 
     function render(body, widget, dash) {
-        const bookmarks = dash._widgetUnsorted || [];
+        const bookmarks = load(dash) || [];
         const options = settings(widget);
         const utils = window.DashboardWidgetUtils;
         const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
@@ -215,7 +207,7 @@
             return;
         }
 
-        const openKept = () => { void dash.inbox?.openInboxView?.({ tab: 'kept' }); };
+        const openKept = () => { void dash.openUnsortedBookmarks?.(); };
         const list = utils?.rowList ? utils.rowList() : document.createElement('div');
         if (!utils?.rowList) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
         list.classList.add('dashboard-widget-rows--kept');
@@ -260,7 +252,13 @@
     }
 
     async function renderUnsorted(body, widget, dash) {
-        const bookmarks = await load(dash);
+        // Startup may never have loaded every page's bookmarks, and the kept
+        // ones come with them: until then the empty list only means "not asked".
+        // The deferred load shares one request between tiles drawn together.
+        if (dash?._bookmarksReady && !dash._unsortedLoaded) {
+            await (dash.deferredLoadAllBookmarks?.() ?? dash.loadAllBookmarks?.());
+        }
+        const bookmarks = load(dash);
         if (!bookmarks) {
             body.replaceChildren();
             const waiting = document.createElement('p');

@@ -40,11 +40,14 @@ type Bookmark struct {
 	// monitor or by opening a bookmark: LastChecked and LastOpened already carry
 	// those, and letting them bump this would leave every monitored bookmark
 	// permanently reading "changed a minute ago". See bookmarkContentFingerprint.
-	UpdatedAt    int64    `json:"updatedAt,omitempty"`
-	LastOpened   int64    `json:"lastOpened,omitempty"`
-	LastChecked  int64    `json:"lastChecked,omitempty"`
-	LastError    string   `json:"lastError,omitempty"`
-	OpenCount    int      `json:"openCount,omitempty"`    // Analytics: track opens
+	UpdatedAt   int64  `json:"updatedAt,omitempty"`
+	LastOpened  int64  `json:"lastOpened,omitempty"`
+	LastChecked int64  `json:"lastChecked,omitempty"`
+	LastError   string `json:"lastError,omitempty"`
+	OpenCount   int    `json:"openCount,omitempty"` // Analytics: track opens
+	// OpenLog holds when the recent opens happened (unix ms, oldest first),
+	// for the Usage tab; bounded by pruneOpenLog.
+	OpenLog      []int64  `json:"openLog,omitempty"`
 	PreviewTitle string   `json:"previewTitle,omitempty"` // Preview metadata
 	PreviewDesc  string   `json:"previewDesc,omitempty"`  // Preview description
 	PreviewImage string   `json:"previewImage,omitempty"` // Preview image URL
@@ -410,7 +413,6 @@ type Settings struct {
 	WeatherUnit                     string `json:"weatherUnit"`         // celsius or fahrenheit
 	WeatherRefreshMinutes           int    `json:"weatherRefreshMinutes"`
 	ShowConfigButton                bool   `json:"showConfigButton"`
-	ShowHealthDashboard             bool   `json:"showHealthDashboard"`
 	ShowPagesButton                 bool   `json:"showPagesButton"`
 	ShowInboxButton                 bool   `json:"showInboxButton"`
 	ShowDashboardButton             bool   `json:"showDashboardButton"`
@@ -770,6 +772,24 @@ type Settings struct {
 	BackupExcludeSecrets           bool `json:"backupExcludeSecrets,omitempty"`
 	HealthAutoRecheckEnabled       bool `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int  `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
+	// DockerUpdateInterval is how often the Docker view asks the registries for
+	// newer images: "off", "6h", "12h" or "24h". Off by default -- like feeds,
+	// it reaches out to other hosts, so it waits to be asked.
+	DockerUpdateInterval string `json:"dockerUpdateInterval"`
+	// The Containers view, its header button and its rows in search. On by
+	// default; a settings file from before this setting reads as on.
+	DockerViewEnabled        bool     `json:"dockerViewEnabled"`
+	DockerRefreshSeconds     int      `json:"dockerRefreshSeconds"`     // 2, 5, 10 or 30; list polling while the view is open
+	DockerLogLines           int      `json:"dockerLogLines"`           // 100, 200, 500 or 1000
+	DockerConfirmStopRestart bool     `json:"dockerConfirmStopRestart"` // ask before stop and restart as well
+	DockerHiddenContainers   []string `json:"dockerHiddenContainers"`   // names kept out of the view, search and widget
+	// DockerStatsHistory keeps the last hour of CPU and memory per running
+	// container for the drawer's charts. On by default; off reads nothing.
+	DockerStatsHistory bool `json:"dockerStatsHistory"`
+	// DockerWebUIs is a web address per container name that replaces the one
+	// its template gives -- or gives one to a container without. By name,
+	// because an update recreates the container under a new id.
+	DockerWebUIs map[string]string `json:"dockerWebUIs,omitempty"`
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
 	// feed can then say when it has published something since you last opened
 	// it. Off by default because it is the only thing here that reaches out to
@@ -872,6 +892,40 @@ type Settings struct {
 	BookmarkStaleDays         int    `json:"bookmarkStaleDays"`             // "Not opened in N days" in the cleanup score and stats
 	BulkFaviconConfirmFrom    int    `json:"bulkFaviconConfirmFrom"`        // Ask before refreshing icons for this many rows (0 = never)
 	BookmarkArchiveUrl        string `json:"bookmarkArchiveUrl"`            // Archive service, {url} replaced with the bookmark's address
+
+	// Config → Bookmarks → View: how the Bookmarks view looks and behaves.
+	// Every default is what the view did before it had settings, so an install
+	// that never opens the tab sees no change. A list left empty means all.
+	BmViewGroup        string   `json:"bmViewGroup"`        // Group the list opens on: last (as last left)/none/page/category/site/status/tag
+	BmViewAddress      string   `json:"bmViewAddress"`      // Address in the row: full/domain/hidden
+	BmViewRowColors    bool     `json:"bmViewRowColors"`    // Rows coloured by their health (default on)
+	BmViewColumns      []string `json:"bmViewColumns"`      // Columns shown (null = all, [] = none)
+	BmViewUsageDays    int      `json:"bmViewUsageDays"`    // Days the Usage column covers: 7/14/30
+	BmViewRail         string   `json:"bmViewRail"`         // The rail on the left: open/folded
+	BmViewRailBlocks   []string `json:"bmViewRailBlocks"`   // Rail blocks shown (null = all, [] = none)
+	BmViewPanelTab     string   `json:"bmViewPanelTab"`     // Side panel opens on: last/details/health/usage
+	BmViewCloseOutside bool     `json:"bmViewCloseOutside"` // A click beside the side panel closes it (default on)
+	BmViewPanelWidth   string   `json:"bmViewPanelWidth"`   // Side panel width: normal/wide
+	BmViewClick        string   `json:"bmViewClick"`        // A click on a row: panel/select
+	BmViewDblClick     string   `json:"bmViewDblClick"`     // A double click on a row: open/edit
+	BmViewHealthRange  string   `json:"bmViewHealthRange"`  // Health in large opens on: today/7/14/30/90
+	BmViewBadge        bool     `json:"bmViewBadge"`        // A count on the header's Bookmarks icon (default on)
+	BmViewBadgeCounts  string   `json:"bmViewBadgeCounts"`  // What that count counts: broken/all
+	BmViewKeyLegend    string   `json:"bmViewKeyLegend"`    // The key legend: below/above the list, or off
+
+	// Config → Inbox: how the Inbox view looks and behaves.
+	InboxViewFilter       string `json:"inboxViewFilter"`       // Opens on: last/all/unread/snoozed/noted
+	InboxViewSort         string `json:"inboxViewSort"`         // Sorted by: last/newest/oldest/title/domain
+	InboxViewAddress      string `json:"inboxViewAddress"`      // The row's address: domain/full/hidden
+	InboxViewUnreadMark   bool   `json:"inboxViewUnreadMark"`   // Unread rows stand out (default on)
+	InboxViewRail         string `json:"inboxViewRail"`         // The rail: open/folded
+	InboxViewPanelWidth   string `json:"inboxViewPanelWidth"`   // Side panel width: normal/wide
+	InboxViewCloseOutside bool   `json:"inboxViewCloseOutside"` // A click beside the side panel closes it (default on)
+	InboxViewClick        string `json:"inboxViewClick"`        // A click on a row: panel/select
+	InboxViewDblClick     string `json:"inboxViewDblClick"`     // A double click on a row: open/note
+	InboxViewBadge        bool   `json:"inboxViewBadge"`        // A count on the header's Inbox icon (default on)
+	InboxViewBadgeCounts  string `json:"inboxViewBadgeCounts"`  // What that count counts: unread/all
+	InboxViewKeyLegend    string `json:"inboxViewKeyLegend"`    // The key legend: below/above the list, or off
 }
 
 // SavedSearch is a query the user named and kept from the search bar.
@@ -923,16 +977,18 @@ const defaultHealthWidgetID = "w_000000000001"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "tarnished-brass-dark"
+const defaultThemeID = "matrix-bluepill-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "tarnished-brass-light"
+const defaultThemeLightID = "matrix-bluepill-light"
 
 /*
-The look a fresh install opens on, beside its theme.
+The fallback depth and glow.
 
-Glass and a soft glow because Tarnished Brass is built for them -- its surfaces
-are meant to be seen through and its accent to carry a little light. Contrast
+Glass and a soft glow: the answer for a theme with no archetype of its own
+(themeIdealDepth, themeIdealGlow), and what an incomplete settings file gets.
+A fresh install itself is on "follow", so its theme answers -- Matrix
+Bluepill, a terminal theme, draws at soft with no glow. Contrast
 stays at defaultInkGap, which reads as Normal in Appearance, and the backdrop
 is the theme's own.
 */
@@ -1472,7 +1528,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			WeatherUnit:               "celsius",
 			WeatherRefreshMinutes:     30,
 			ShowConfigButton:          true,
-			ShowHealthDashboard:       true,
 			ShowPagesButton:           true,
 			ShowInboxButton:           true,
 			ShowDashboardButton:       true,
@@ -1586,6 +1641,12 @@ func (fs *FileStore) initializeDefaultFiles() {
 			OnboardingCompleted:             false,
 			ConfigBookmarksSort:             defaultConfigBookmarksSort,
 			ConfigBookmarksPageSize:         defaultConfigBookmarksPageSize,
+			BmViewRowColors:                 true,
+			BmViewCloseOutside:              true,
+			BmViewBadge:                     true,
+			InboxViewUnreadMark:             true,
+			InboxViewCloseOutside:           true,
+			InboxViewBadge:                  true,
 			BookmarkDeleteConfirmFrom:       defaultBookmarkDeleteConfirmFrom,
 			DefaultMonitorIntervalMin:       defaultMonitorIntervalMinutes,
 			NewBookmarkCheckMode:            defaultNewBookmarkCheckMode,
@@ -1616,6 +1677,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 			AutoBackupEnabled:              true,
 			HealthAutoRecheckEnabled:       false,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
+			DockerUpdateInterval:           "off",
+			DockerViewEnabled:              true,
+			DockerStatsHistory:             true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -2081,6 +2145,7 @@ func (fs *FileStore) GetBookmarksByPage(pageID int) []Bookmark {
 	}
 	for i := range pageWithBookmarks.Bookmarks {
 		pageWithBookmarks.Bookmarks[i].PageID = pageID
+		decodeBookmarkPreviewText(&pageWithBookmarks.Bookmarks[i])
 	}
 
 	fs.readCache.bookmarks[pageID] = cloneBookmarks(pageWithBookmarks.Bookmarks)
@@ -2102,6 +2167,10 @@ func (fs *FileStore) readPageWithBookmarksLocked(pageID int) (PageWithBookmarks,
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
 		return PageWithBookmarks{}, fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
+	}
+	// Decoded here too, so the next write stores the characters.
+	for i := range pageWithBookmarks.Bookmarks {
+		decodeBookmarkPreviewText(&pageWithBookmarks.Bookmarks[i])
 	}
 	return pageWithBookmarks, nil
 }
@@ -2126,8 +2195,11 @@ func (fs *FileStore) TrackBookmarkOpen(pageID int, index int) error {
 		return ErrBookmarkNotFound
 	}
 
-	pageWithBookmarks.Bookmarks[index].OpenCount++
-	pageWithBookmarks.Bookmarks[index].LastOpened = time.Now().UnixMilli()
+	now := time.Now().UnixMilli()
+	opened := &pageWithBookmarks.Bookmarks[index]
+	opened.OpenCount++
+	opened.LastOpened = now
+	opened.OpenLog = pruneOpenLog(append(opened.OpenLog, now), now)
 
 	return fs.writePageWithBookmarksLocked(pageID, pageWithBookmarks)
 }
@@ -3010,7 +3082,7 @@ const (
 	defaultConfigBookmarksSort       = "page"
 	defaultConfigBookmarksPageSize   = 50
 	defaultBookmarkDeleteConfirmFrom = 1
-	defaultNewBookmarkCheckMode      = "off"
+	defaultNewBookmarkCheckMode      = "periodic"
 	defaultBookmarkStaleDays         = 90
 	defaultBookmarkArchiveUrl        = "https://web.archive.org/web/*/{url}"
 	defaultCategorySpreadResetScope  = "page"
@@ -3126,6 +3198,110 @@ const (
 var categorySpreadResetScopes = map[string]bool{"page": true, "all": true}
 
 // configBookmarksSortModes are the orders the Config bookmark list can open on.
+// bmViewChoices lists what each Bookmarks view setting accepts; the first is
+// its default, the view as it was before it had settings.
+var bmViewChoices = map[string][]string{
+	"group":       {"last", "none", "page", "category", "site", "status", "tag"},
+	"address":     {"full", "domain", "hidden"},
+	"rail":        {"open", "folded"},
+	"panelTab":    {"last", "details", "health", "usage"},
+	"panelWidth":  {"normal", "wide"},
+	"click":       {"panel", "select"},
+	"dblClick":    {"open", "edit"},
+	"healthRange": {"30", "today", "7", "14", "90"},
+	"badgeCounts": {"broken", "all"},
+	"keyLegend":   {"below", "above", "off"},
+}
+
+var bmViewColumns = []string{"tags", "shortcut", "pinned", "opens", "last", "added", "usage", "score"}
+var bmViewRailBlocks = []string{"views", "health", "pages", "tags"}
+
+// bmViewChoice keeps a value the view knows, or its default.
+func bmViewChoice(kind, value string) string {
+	choices := bmViewChoices[kind]
+	for _, c := range choices {
+		if c == value {
+			return value
+		}
+	}
+	return choices[0]
+}
+
+// bmViewKnown keeps the names the view knows, in its own order, once each.
+// Nil stays nil: all of them.
+func bmViewKnown(values, known []string) []string {
+	if values == nil {
+		return nil
+	}
+	want := make(map[string]bool, len(values))
+	for _, v := range values {
+		want[v] = true
+	}
+	out := []string{}
+	for _, k := range known {
+		if want[k] {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
+func clampBookmarkViewSettings(s *Settings) {
+	s.BmViewGroup = bmViewChoice("group", s.BmViewGroup)
+	s.BmViewAddress = bmViewChoice("address", s.BmViewAddress)
+	s.BmViewRail = bmViewChoice("rail", s.BmViewRail)
+	s.BmViewPanelTab = bmViewChoice("panelTab", s.BmViewPanelTab)
+	s.BmViewPanelWidth = bmViewChoice("panelWidth", s.BmViewPanelWidth)
+	s.BmViewClick = bmViewChoice("click", s.BmViewClick)
+	s.BmViewDblClick = bmViewChoice("dblClick", s.BmViewDblClick)
+	s.BmViewHealthRange = bmViewChoice("healthRange", s.BmViewHealthRange)
+	s.BmViewBadgeCounts = bmViewChoice("badgeCounts", s.BmViewBadgeCounts)
+	s.BmViewKeyLegend = bmViewChoice("keyLegend", s.BmViewKeyLegend)
+	switch s.BmViewUsageDays {
+	case 7, 14, 30:
+	default:
+		s.BmViewUsageDays = 30
+	}
+	s.BmViewColumns = bmViewKnown(s.BmViewColumns, bmViewColumns)
+	s.BmViewRailBlocks = bmViewKnown(s.BmViewRailBlocks, bmViewRailBlocks)
+}
+
+// inboxViewChoices lists what each Inbox view setting accepts; the first is
+// its default, the view as it was before it had settings.
+var inboxViewChoices = map[string][]string{
+	"filter":      {"last", "all", "unread", "snoozed", "noted"},
+	"sort":        {"last", "newest", "oldest", "title", "domain"},
+	"address":     {"domain", "full", "hidden"},
+	"rail":        {"open", "folded"},
+	"panelWidth":  {"normal", "wide"},
+	"click":       {"panel", "select"},
+	"dblClick":    {"open", "note"},
+	"badgeCounts": {"unread", "all"},
+	"keyLegend":   {"below", "above", "off"},
+}
+
+func inboxViewChoice(kind, value string) string {
+	choices := inboxViewChoices[kind]
+	for _, c := range choices {
+		if c == value {
+			return value
+		}
+	}
+	return choices[0]
+}
+
+func clampInboxViewSettings(s *Settings) {
+	s.InboxViewFilter = inboxViewChoice("filter", s.InboxViewFilter)
+	s.InboxViewSort = inboxViewChoice("sort", s.InboxViewSort)
+	s.InboxViewAddress = inboxViewChoice("address", s.InboxViewAddress)
+	s.InboxViewRail = inboxViewChoice("rail", s.InboxViewRail)
+	s.InboxViewPanelWidth = inboxViewChoice("panelWidth", s.InboxViewPanelWidth)
+	s.InboxViewClick = inboxViewChoice("click", s.InboxViewClick)
+	s.InboxViewDblClick = inboxViewChoice("dblClick", s.InboxViewDblClick)
+	s.InboxViewBadgeCounts = inboxViewChoice("badgeCounts", s.InboxViewBadgeCounts)
+	s.InboxViewKeyLegend = inboxViewChoice("keyLegend", s.InboxViewKeyLegend)
+}
+
 var configBookmarksSortModes = map[string]bool{
 	"page": true, "name": true, "url": true, "category": true,
 	"recent": true, "lastOpened": true, "opens": true, "pinned": true,
@@ -3197,6 +3373,8 @@ func clampBookmarkSettings(s *Settings) {
 	if s.BookmarkStaleDays > 365 {
 		s.BookmarkStaleDays = 365
 	}
+	clampBookmarkViewSettings(s)
+	clampInboxViewSettings(s)
 	// 0 stays 0: it means "the built-in default", which is what an install that
 	// never chose an interval has. Anything else is held between daily and
 	// monthly — a backup less often than that is not a safety net, and more
@@ -3693,7 +3871,6 @@ func (fs *FileStore) GetSettings() Settings {
 			WeatherUnit:                     "celsius",
 			WeatherRefreshMinutes:           30,
 			ShowConfigButton:                true,
-			ShowHealthDashboard:             true,
 			ShowPagesButton:                 true,
 			ShowInboxButton:                 true,
 			ShowDashboardButton:             true,
@@ -3780,6 +3957,12 @@ func (fs *FileStore) GetSettings() Settings {
 			FaviconRefreshPolicy:            "on-save",
 			ConfigBookmarksSort:             defaultConfigBookmarksSort,
 			ConfigBookmarksPageSize:         defaultConfigBookmarksPageSize,
+			BmViewRowColors:                 true,
+			BmViewCloseOutside:              true,
+			BmViewBadge:                     true,
+			InboxViewUnreadMark:             true,
+			InboxViewCloseOutside:           true,
+			InboxViewBadge:                  true,
 			BookmarkDeleteConfirmFrom:       defaultBookmarkDeleteConfirmFrom,
 			DefaultMonitorIntervalMin:       defaultMonitorIntervalMinutes,
 			NewBookmarkCheckMode:            defaultNewBookmarkCheckMode,
@@ -3829,6 +4012,9 @@ func (fs *FileStore) GetSettings() Settings {
 			AutoBackupEnabled:               true,
 			HealthAutoRecheckEnabled:        false,
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
+			DockerUpdateInterval:            "off",
+			DockerViewEnabled:               true,
+			DockerStatsHistory:              true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -3836,6 +4022,8 @@ func (fs *FileStore) GetSettings() Settings {
 			ServerLogMaxEntries:    serverLogDefaultMaxEntries,
 			UpdateCheckEnabled:     true,
 		}
+		clampBookmarkViewSettings(&settings)
+		clampInboxViewSettings(&settings)
 		fs.readCache.settings = settings
 		fs.readCache.settingsOK = true
 		return settings
@@ -3848,6 +4036,21 @@ func (fs *FileStore) GetSettings() Settings {
 	if err := json.Unmarshal(data, &rawSettings); err == nil {
 		if _, ok := rawSettings["showCheatSheetButton"]; !ok {
 			settings.ShowCheatSheetButton = true
+		}
+		// The Bookmarks view's switches that are on unless turned off: a file
+		// written before they existed never answered.
+		for key, field := range map[string]*bool{
+			"bmViewRowColors":    &settings.BmViewRowColors,
+			"bmViewCloseOutside": &settings.BmViewCloseOutside,
+			"bmViewBadge":        &settings.BmViewBadge,
+			// And the Inbox view's.
+			"inboxViewUnreadMark":   &settings.InboxViewUnreadMark,
+			"inboxViewCloseOutside": &settings.InboxViewCloseOutside,
+			"inboxViewBadge":        &settings.InboxViewBadge,
+		} {
+			if _, ok := rawSettings[key]; !ok {
+				*field = true
+			}
 		}
 		// Zero is a choice for this one, so an absent key is how an older
 		// file says it never answered.
@@ -4011,10 +4214,6 @@ func (fs *FileStore) GetSettings() Settings {
 		 * is, and the client's own FIELD_META agreed with this one. Both are
 		 * one toggle away in Config for anyone who wants them back.
 		 */
-		// Health is always available and can no longer be disabled. Force it on
-		// regardless of any legacy stored value so users who previously turned it
-		// off get it back.
-		settings.ShowHealthDashboard = true
 		if _, ok := rawSettings["showConfigButton"]; !ok {
 			settings.ShowConfigButton = true
 		}
@@ -4473,6 +4672,12 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["inboxEnabled"]; !ok {
 			settings.InboxEnabled = true
 		}
+		if _, ok := rawSettings["dockerViewEnabled"]; !ok {
+			settings.DockerViewEnabled = true
+		}
+		if _, ok := rawSettings["dockerStatsHistory"]; !ok {
+			settings.DockerStatsHistory = true
+		}
 		if _, ok := rawSettings["unsortedEnabled"]; !ok {
 			settings.UnsortedEnabled = true
 		}
@@ -4535,6 +4740,10 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.FontSize = normalizeFontSize(settings.FontSize)
 	settings.ShortcutDisplay = normalizeShortcutDisplay(settings.ShortcutDisplay)
 	settings.HealthAutoRecheckIntervalHours = clampHealthAutoRecheckIntervalHours(settings.HealthAutoRecheckIntervalHours)
+	if dockerUpdateIntervalDuration(settings.DockerUpdateInterval) == 0 {
+		settings.DockerUpdateInterval = "off"
+	}
+	normalizeDockerSettings(&settings)
 	// 0 stays 0 — it means "the built-in default" — and anything else is held
 	// inside the range a bounded sweep can afford.
 	if settings.HealthCheckTimeoutSeconds != 0 {
@@ -4569,6 +4778,9 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ArchiveSaveSecret = normalizeMonitorNotifyCredential(settings.ArchiveSaveSecret)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
+	// Read as the view reads it: a setting the file never had is its default.
+	clampBookmarkViewSettings(&settings)
+	clampInboxViewSettings(&settings)
 
 	fs.readCache.settings = settings
 	fs.readCache.settingsOK = true
@@ -5132,6 +5344,132 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		// ── Storm Petrel: seabird white and slate over deep ocean grey ─────────
 		"storm-petrel-dark":  {Name: "Storm Petrel [dark]", TextPrimary: "#EAEEF0", TextSecondary: "#AEBAC0", TextTertiary: "#7A868C", BackgroundPrimary: "#0B0E10", BackgroundSecondary: "#141A1E", BackgroundDots: "#1E262C", BackgroundModal: "rgba(11, 14, 16, 0.9)", BorderPrimary: "#42525A", BorderSecondary: "#2A363C", AccentPrimary: "#8AA4B0", AccentSuccess: "#64C4B4", AccentWarning: "#D8A44C", AccentError: "#DC6C7C", Character: "frost"},
 		"storm-petrel-light": {Name: "Storm Petrel [light]", TextPrimary: "#181E22", TextSecondary: "#42525A", TextTertiary: "#6A7A82", BackgroundPrimary: "#F7F9FA", BackgroundSecondary: "#EBEFF2", BackgroundDots: "#D8E0E4", BackgroundModal: "rgba(247, 249, 250, 0.93)", BorderPrimary: "#BECAD0", BorderSecondary: "#9AAAB2", AccentPrimary: "#42525A", AccentSuccess: "#0F766E", AccentWarning: "#A16207", AccentError: "#BE123C", Character: "frost"},
+
+		/*
+		 * The 2026-09 collection: thirty-four families across eight kinds of
+		 * surface -- six glass, and four each of lacquer, carbon, matrix
+		 * (terminal), aurora, frost, brushed and ink. Every one states its
+		 * info colour and the character fields its kind is about, rather than
+		 * leaving them all to the archetype.
+		 */
+
+		// Glass ───────────────────────────────────────────────────────
+		// Tidepool Lens: the pool under the glass: teal water, a sunlit rim
+		"tidepool-lens-dark":  {Name: "Tidepool Lens [dark]", TextPrimary: "#E4FAF8", TextSecondary: "#A6D8D4", TextTertiary: "#7FB4B0", BackgroundPrimary: "#04161A", BackgroundSecondary: "#0A2228", BackgroundDots: "#12323A", BackgroundModal: "rgba(4, 22, 26, 0.9)", BorderPrimary: "#1F4A52", BorderSecondary: "#15363D", AccentPrimary: "#43D9D0", AccentSuccess: "#5FE3A1", AccentWarning: "#F4C45A", AccentError: "#FF7A85", AccentInfo: "#7FB6FF", SurfaceAlpha: 0.55, SurfaceBlur: 22, SurfaceGlow: 0.8, RadiusScale: 1.45, Sheen: 0.3, Backdrop: "blooms", Character: "glass"},
+		"tidepool-lens-light": {Name: "Tidepool Lens [light]", TextPrimary: "#0B2A2E", TextSecondary: "#2B5559", TextTertiary: "#4A6E71", BackgroundPrimary: "#F2FBFA", BackgroundSecondary: "#E3F4F2", BackgroundDots: "#CFE8E5", BackgroundModal: "rgba(242, 251, 250, 0.92)", BorderPrimary: "#B4D8D4", BorderSecondary: "#D6ECE9", AccentPrimary: "#067A74", AccentSuccess: "#12784A", AccentWarning: "#8A5B00", AccentError: "#B3263A", AccentInfo: "#2159B8", SurfaceAlpha: 0.55, SurfaceBlur: 22, SurfaceGlow: 0.8, RadiusScale: 1.45, Sheen: 0.3, Backdrop: "blooms", Character: "glass"},
+		// Champagne Flute: gold wine in crystal, a string of bubbles
+		"champagne-flute-dark":  {Name: "Champagne Flute [dark]", TextPrimary: "#FBF3E2", TextSecondary: "#D8C8A6", TextTertiary: "#B09E7C", BackgroundPrimary: "#14100A", BackgroundSecondary: "#1E1810", BackgroundDots: "#2C2418", BackgroundModal: "rgba(20, 16, 10, 0.9)", BorderPrimary: "#44382A", BorderSecondary: "#30271C", AccentPrimary: "#E8C27A", AccentSuccess: "#9AD3A4", AccentWarning: "#F2A65A", AccentError: "#F2837A", AccentInfo: "#9BB8F0", SurfaceAlpha: 0.6, SurfaceBlur: 20, SurfaceGlow: 0.7, RadiusScale: 1.5, Sheen: 0.45, Backdrop: "rings", Character: "glass"},
+		"champagne-flute-light": {Name: "Champagne Flute [light]", TextPrimary: "#2A2012", TextSecondary: "#5C4A2E", TextTertiary: "#76644A", BackgroundPrimary: "#FCF8EF", BackgroundSecondary: "#F5EEDD", BackgroundDots: "#E8DDC6", BackgroundModal: "rgba(252, 248, 239, 0.92)", BorderPrimary: "#DCCBAA", BorderSecondary: "#EDE3CF", AccentPrimary: "#8C6414", AccentSuccess: "#2E7045", AccentWarning: "#9A4F00", AccentError: "#B03A30", AccentInfo: "#3159A8", SurfaceAlpha: 0.6, SurfaceBlur: 20, SurfaceGlow: 0.7, RadiusScale: 1.5, Sheen: 0.45, Backdrop: "rings", Character: "glass"},
+		// Prism Veil: violet and cyan split off one edge
+		"prism-veil-dark":  {Name: "Prism Veil [dark]", TextPrimary: "#F2EEFF", TextSecondary: "#C3B8E6", TextTertiary: "#9A90BE", BackgroundPrimary: "#0C0A16", BackgroundSecondary: "#151222", BackgroundDots: "#211C33", BackgroundModal: "rgba(12, 10, 22, 0.9)", BorderPrimary: "#342C4E", BorderSecondary: "#241F38", AccentPrimary: "#B69CFF", AccentSuccess: "#6FE3C0", AccentWarning: "#FFD166", AccentError: "#FF7AA2", AccentInfo: "#5ED3F3", SurfaceAlpha: 0.5, SurfaceBlur: 24, SurfaceGlow: 0.9, RadiusScale: 1.35, Sheen: 0.4, Backdrop: "sweep", Character: "glass"},
+		"prism-veil-light": {Name: "Prism Veil [light]", TextPrimary: "#1B1530", TextSecondary: "#463C68", TextTertiary: "#625886", BackgroundPrimary: "#F8F6FF", BackgroundSecondary: "#EFEBFB", BackgroundDots: "#E0DAF4", BackgroundModal: "rgba(248, 246, 255, 0.92)", BorderPrimary: "#CCC2EC", BorderSecondary: "#E6E0F6", AccentPrimary: "#5B3FD1", AccentSuccess: "#157A5C", AccentWarning: "#8A5A00", AccentError: "#B42A5A", AccentInfo: "#0A6E8C", SurfaceAlpha: 0.5, SurfaceBlur: 24, SurfaceGlow: 0.9, RadiusScale: 1.35, Sheen: 0.4, Backdrop: "sweep", Character: "glass"},
+		// Rain Window: slate evening behind wet glass
+		"rain-window-dark":  {Name: "Rain Window [dark]", TextPrimary: "#E6EEF6", TextSecondary: "#AEBDCC", TextTertiary: "#8898AA", BackgroundPrimary: "#0B1016", BackgroundSecondary: "#121A22", BackgroundDots: "#1B2632", BackgroundModal: "rgba(11, 16, 22, 0.9)", BorderPrimary: "#2A3A4A", BorderSecondary: "#1E2A36", AccentPrimary: "#7CB8F0", AccentSuccess: "#7FD6B0", AccentWarning: "#F0C06A", AccentError: "#F08A8A", AccentInfo: "#B4A6F6", SurfaceAlpha: 0.62, SurfaceBlur: 28, SurfaceGlow: 0.5, RadiusScale: 1.3, Sheen: 0.2, Backdrop: "scanlines", Character: "glass"},
+		"rain-window-light": {Name: "Rain Window [light]", TextPrimary: "#131C26", TextSecondary: "#3A4A5C", TextTertiary: "#566678", BackgroundPrimary: "#F4F7FA", BackgroundSecondary: "#E9EEF3", BackgroundDots: "#D8E0E8", BackgroundModal: "rgba(244, 247, 250, 0.92)", BorderPrimary: "#C2CEDA", BorderSecondary: "#DFE6EE", AccentPrimary: "#1F63A8", AccentSuccess: "#1F7050", AccentWarning: "#8A5A00", AccentError: "#B03838", AccentInfo: "#5A45B8", SurfaceAlpha: 0.62, SurfaceBlur: 28, SurfaceGlow: 0.5, RadiusScale: 1.3, Sheen: 0.2, Backdrop: "scanlines", Character: "glass"},
+		// Lime Soda: lime and bubbles, iced
+		"lime-soda-dark":  {Name: "Lime Soda [dark]", TextPrimary: "#F0FAE6", TextSecondary: "#BCD8A8", TextTertiary: "#94B480", BackgroundPrimary: "#0A120A", BackgroundSecondary: "#111C10", BackgroundDots: "#1B2A18", BackgroundModal: "rgba(10, 18, 10, 0.9)", BorderPrimary: "#2C4228", BorderSecondary: "#1F301C", AccentPrimary: "#B8F060", AccentSuccess: "#5EE0A8", AccentWarning: "#FFC857", AccentError: "#FF7F7F", AccentInfo: "#7FC8FF", SurfaceAlpha: 0.55, SurfaceBlur: 20, SurfaceGlow: 1, RadiusScale: 1.55, Sheen: 0.5, Backdrop: "blooms", Character: "glass"},
+		"lime-soda-light": {Name: "Lime Soda [light]", TextPrimary: "#16240E", TextSecondary: "#3E5230", TextTertiary: "#58704A", BackgroundPrimary: "#F6FBEF", BackgroundSecondary: "#ECF5E0", BackgroundDots: "#DCEACB", BackgroundModal: "rgba(246, 251, 239, 0.92)", BorderPrimary: "#C6DCAE", BorderSecondary: "#E2EED4", AccentPrimary: "#3F7A00", AccentSuccess: "#137045", AccentWarning: "#8A5500", AccentError: "#B3302F", AccentInfo: "#1F5FA8", SurfaceAlpha: 0.55, SurfaceBlur: 20, SurfaceGlow: 1, RadiusScale: 1.55, Sheen: 0.5, Backdrop: "blooms", Character: "glass"},
+		// Rosewater Pane: rose glass, soft afternoon
+		"rosewater-pane-dark":  {Name: "Rosewater Pane [dark]", TextPrimary: "#FBEDF2", TextSecondary: "#DDB9C6", TextTertiary: "#B8929F", BackgroundPrimary: "#150D11", BackgroundSecondary: "#1F1419", BackgroundDots: "#2D1E25", BackgroundModal: "rgba(21, 13, 17, 0.9)", BorderPrimary: "#46303A", BorderSecondary: "#33222A", AccentPrimary: "#F29BB5", AccentSuccess: "#8AD8B0", AccentWarning: "#F4BE70", AccentError: "#FF7B7B", AccentInfo: "#A8B4FF", SurfaceAlpha: 0.58, SurfaceBlur: 22, SurfaceGlow: 0.6, RadiusScale: 1.5, Sheen: 0.3, Backdrop: "horizon", Character: "glass"},
+		"rosewater-pane-light": {Name: "Rosewater Pane [light]", TextPrimary: "#2C1520", TextSecondary: "#5E3A48", TextTertiary: "#7A5664", BackgroundPrimary: "#FCF5F7", BackgroundSecondary: "#F6EAEE", BackgroundDots: "#EDD9E0", BackgroundModal: "rgba(252, 245, 247, 0.92)", BorderPrimary: "#E0C2CD", BorderSecondary: "#F0E0E6", AccentPrimary: "#A63562", AccentSuccess: "#2A7050", AccentWarning: "#8A5500", AccentError: "#B3262E", AccentInfo: "#4150B8", SurfaceAlpha: 0.58, SurfaceBlur: 22, SurfaceGlow: 0.6, RadiusScale: 1.5, Sheen: 0.3, Backdrop: "horizon", Character: "glass"},
+
+		// Lacquer ─────────────────────────────────────────────────────
+		// Gloss Cinnabar: vermilion lacquer, black ground, gold line
+		"gloss-cinnabar-dark":  {Name: "Gloss Cinnabar [dark]", TextPrimary: "#FBEDE8", TextSecondary: "#D9B4A8", TextTertiary: "#B48C80", BackgroundPrimary: "#0D0706", BackgroundSecondary: "#170C0A", BackgroundDots: "#231310", BackgroundModal: "rgba(13, 7, 6, 0.9)", BorderPrimary: "#3C1C17", BorderSecondary: "#2A1410", AccentPrimary: "#F0503A", AccentSuccess: "#6FD8A0", AccentWarning: "#E8B64C", AccentError: "#FF8A9A", AccentInfo: "#8FB4F4", SurfaceAlpha: 0.72, SurfaceBlur: 14, SurfaceGlow: 0.8, RadiusScale: 1.15, LabelWeight: 700, Sheen: 0.95, Character: "lacquer"},
+		"gloss-cinnabar-light": {Name: "Gloss Cinnabar [light]", TextPrimary: "#2A0F0A", TextSecondary: "#5E2E24", TextTertiary: "#7A4A40", BackgroundPrimary: "#FCF5F2", BackgroundSecondary: "#F6E8E3", BackgroundDots: "#ECD5CD", BackgroundModal: "rgba(252, 245, 242, 0.92)", BorderPrimary: "#E0BDB2", BorderSecondary: "#F0DDD6", AccentPrimary: "#B8260F", AccentSuccess: "#1F7048", AccentWarning: "#8A5A00", AccentError: "#9C1B3A", AccentInfo: "#2E57B0", SurfaceAlpha: 0.72, SurfaceBlur: 14, SurfaceGlow: 0.8, RadiusScale: 1.15, LabelWeight: 700, Sheen: 0.95, Character: "lacquer"},
+		// Gloss Jade: jade green, stone-cool, polished
+		"gloss-jade-dark":  {Name: "Gloss Jade [dark]", TextPrimary: "#E6FAF1", TextSecondary: "#A8D6C2", TextTertiary: "#80B09C", BackgroundPrimary: "#06110D", BackgroundSecondary: "#0B1A14", BackgroundDots: "#12271E", BackgroundModal: "rgba(6, 17, 13, 0.9)", BorderPrimary: "#1E4032", BorderSecondary: "#152E24", AccentPrimary: "#3FC49A", AccentSuccess: "#9BE36B", AccentWarning: "#F2C45A", AccentError: "#FF7F86", AccentInfo: "#7FB8FF", SurfaceAlpha: 0.7, SurfaceBlur: 16, SurfaceGlow: 0.7, RadiusScale: 1.3, LabelWeight: 600, Sheen: 0.85, Character: "lacquer"},
+		"gloss-jade-light": {Name: "Gloss Jade [light]", TextPrimary: "#0A2419", TextSecondary: "#2B5040", TextTertiary: "#476B5B", BackgroundPrimary: "#F1FAF6", BackgroundSecondary: "#E3F3EC", BackgroundDots: "#CDE7DB", BackgroundModal: "rgba(241, 250, 246, 0.92)", BorderPrimary: "#B0D6C4", BorderSecondary: "#D6ECE2", AccentPrimary: "#0B7A57", AccentSuccess: "#3A7A10", AccentWarning: "#8A5700", AccentError: "#B02C3A", AccentInfo: "#2458B0", SurfaceAlpha: 0.7, SurfaceBlur: 16, SurfaceGlow: 0.7, RadiusScale: 1.3, LabelWeight: 600, Sheen: 0.85, Character: "lacquer"},
+		// Gloss Aubergine: plum lacquer, a glint of magenta
+		"gloss-aubergine-dark":  {Name: "Gloss Aubergine [dark]", TextPrimary: "#F8EDFA", TextSecondary: "#D6B8DC", TextTertiary: "#B090B8", BackgroundPrimary: "#100912", BackgroundSecondary: "#190F1C", BackgroundDots: "#26172A", BackgroundModal: "rgba(16, 9, 18, 0.9)", BorderPrimary: "#3E2644", BorderSecondary: "#2C1B31", AccentPrimary: "#D96BD0", AccentSuccess: "#6FDDB0", AccentWarning: "#F4C064", AccentError: "#FF7B8C", AccentInfo: "#8FB0FF", SurfaceAlpha: 0.68, SurfaceBlur: 18, SurfaceGlow: 0.9, RadiusScale: 1.35, LabelWeight: 600, Sheen: 0.9, Character: "lacquer"},
+		"gloss-aubergine-light": {Name: "Gloss Aubergine [light]", TextPrimary: "#26102A", TextSecondary: "#553A5C", TextTertiary: "#715676", BackgroundPrimary: "#FBF5FC", BackgroundSecondary: "#F3E8F5", BackgroundDots: "#E6D4EA", BackgroundModal: "rgba(251, 245, 252, 0.92)", BorderPrimary: "#D6BCDC", BorderSecondary: "#EADCEE", AccentPrimary: "#9A2894", AccentSuccess: "#1F7050", AccentWarning: "#8A5500", AccentError: "#B02840", AccentInfo: "#3A52B8", SurfaceAlpha: 0.68, SurfaceBlur: 18, SurfaceGlow: 0.9, RadiusScale: 1.35, LabelWeight: 600, Sheen: 0.9, Character: "lacquer"},
+		// Gloss Butterscotch: caramel coat, warm and sticky-bright
+		"gloss-butterscotch-dark":  {Name: "Gloss Butterscotch [dark]", TextPrimary: "#FCF1DE", TextSecondary: "#DCC49C", TextTertiary: "#B69E78", BackgroundPrimary: "#120C05", BackgroundSecondary: "#1C1409", BackgroundDots: "#2A1E0F", BackgroundModal: "rgba(18, 12, 5, 0.9)", BorderPrimary: "#44321A", BorderSecondary: "#302312", AccentPrimary: "#F2A93B", AccentSuccess: "#8FD89A", AccentWarning: "#FFD27A", AccentError: "#FF8577", AccentInfo: "#8FB6F6", SurfaceAlpha: 0.74, SurfaceBlur: 12, SurfaceGlow: 0.8, RadiusScale: 1.5, LabelWeight: 700, Sheen: 1, Character: "lacquer"},
+		"gloss-butterscotch-light": {Name: "Gloss Butterscotch [light]", TextPrimary: "#2A1B06", TextSecondary: "#5C4422", TextTertiary: "#78603E", BackgroundPrimary: "#FDF8EE", BackgroundSecondary: "#F7EEDA", BackgroundDots: "#EDDFC0", BackgroundModal: "rgba(253, 248, 238, 0.92)", BorderPrimary: "#E0CBA0", BorderSecondary: "#F0E4CA", AccentPrimary: "#9A5A00", AccentSuccess: "#2E6E30", AccentWarning: "#8A4A00", AccentError: "#B0302A", AccentInfo: "#2F58B0", SurfaceAlpha: 0.74, SurfaceBlur: 12, SurfaceGlow: 0.8, RadiusScale: 1.5, LabelWeight: 700, Sheen: 1, Character: "lacquer"},
+
+		// Carbon ──────────────────────────────────────────────────────
+		// Kevlar Weave: yellow aramid on black weave
+		"kevlar-weave-dark":  {Name: "Kevlar Weave [dark]", TextPrimary: "#F6F0D8", TextSecondary: "#CFC49A", TextTertiary: "#A89E78", BackgroundPrimary: "#0B0A06", BackgroundSecondary: "#14120B", BackgroundDots: "#201D12", BackgroundModal: "rgba(11, 10, 6, 0.9)", BorderPrimary: "#35301E", BorderSecondary: "#262214", AccentPrimary: "#E8C547", AccentSuccess: "#7FD48A", AccentWarning: "#F29B4C", AccentError: "#FF6B6B", AccentInfo: "#7FB0F0", RadiusScale: 0.5, LabelTransform: "uppercase", LabelSpacing: "0.08em", LabelWeight: 700, Sheen: 0.25, Character: "carbon", GrainAngle: 45, GrainScale: 0.9},
+		"kevlar-weave-light": {Name: "Kevlar Weave [light]", TextPrimary: "#1F1C0C", TextSecondary: "#4E4828", TextTertiary: "#6A6444", BackgroundPrimary: "#FAF8EF", BackgroundSecondary: "#F1EEDC", BackgroundDots: "#E3DEC2", BackgroundModal: "rgba(250, 248, 239, 0.92)", BorderPrimary: "#D2CAA2", BorderSecondary: "#E8E3CC", AccentPrimary: "#7A6400", AccentSuccess: "#2A6A30", AccentWarning: "#9A4A00", AccentError: "#B0282A", AccentInfo: "#2C56A8", RadiusScale: 0.5, LabelTransform: "uppercase", LabelSpacing: "0.08em", LabelWeight: 700, Sheen: 0.25, Character: "carbon", GrainAngle: 45, GrainScale: 0.9},
+		// Graphite Twill: graphite twill, one blue thread
+		"graphite-twill-dark":  {Name: "Graphite Twill [dark]", TextPrimary: "#EBEEF2", TextSecondary: "#B2B9C2", TextTertiary: "#8B939D", BackgroundPrimary: "#0A0C0F", BackgroundSecondary: "#121519", BackgroundDots: "#1C2026", BackgroundModal: "rgba(10, 12, 15, 0.9)", BorderPrimary: "#2C323A", BorderSecondary: "#1F242B", AccentPrimary: "#5AA9E6", AccentSuccess: "#6FD1A8", AccentWarning: "#F0BE5E", AccentError: "#F07C7C", AccentInfo: "#B49CF2", RadiusScale: 0.6, Sheen: 0.2, Character: "carbon", GrainAngle: 30, GrainScale: 0.75},
+		"graphite-twill-light": {Name: "Graphite Twill [light]", TextPrimary: "#14181D", TextSecondary: "#3E454E", TextTertiary: "#5A626B", BackgroundPrimary: "#F5F6F8", BackgroundSecondary: "#EBEDF0", BackgroundDots: "#DCDFE4", BackgroundModal: "rgba(245, 246, 248, 0.92)", BorderPrimary: "#C7CCD3", BorderSecondary: "#E2E5E9", AccentPrimary: "#17629E", AccentSuccess: "#1C6E4C", AccentWarning: "#855400", AccentError: "#A83232", AccentInfo: "#5C44B0", RadiusScale: 0.6, Sheen: 0.2, Character: "carbon", GrainAngle: 30, GrainScale: 0.75},
+		// Race Livery: carbon body, team red, a white number
+		"race-livery-dark":  {Name: "Race Livery [dark]", TextPrimary: "#F4F4F6", TextSecondary: "#BDBDC4", TextTertiary: "#94949C", BackgroundPrimary: "#09090B", BackgroundSecondary: "#111114", BackgroundDots: "#1B1B20", BackgroundModal: "rgba(9, 9, 11, 0.9)", BorderPrimary: "#2C2C33", BorderSecondary: "#202026", AccentPrimary: "#E63946", AccentSuccess: "#4CD98A", AccentWarning: "#F7B538", AccentError: "#FF7A59", AccentInfo: "#6FA8FF", RadiusScale: 0.4, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Sheen: 0.35, Character: "carbon", GrainAngle: 60, GrainScale: 1},
+		"race-livery-light": {Name: "Race Livery [light]", TextPrimary: "#141417", TextSecondary: "#404047", TextTertiary: "#5C5C64", BackgroundPrimary: "#F6F6F7", BackgroundSecondary: "#ECECEE", BackgroundDots: "#DDDDE0", BackgroundModal: "rgba(246, 246, 247, 0.92)", BorderPrimary: "#C9C9CE", BorderSecondary: "#E4E4E7", AccentPrimary: "#C1121F", AccentSuccess: "#17753F", AccentWarning: "#8A5500", AccentError: "#A3361C", AccentInfo: "#2553B0", RadiusScale: 0.4, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Sheen: 0.35, Character: "carbon", GrainAngle: 60, GrainScale: 1},
+		// Forged Titanium: forged weave, titanium blue-violet
+		"forged-titanium-dark":  {Name: "Forged Titanium [dark]", TextPrimary: "#EFEDF6", TextSecondary: "#BAB6CC", TextTertiary: "#938FA8", BackgroundPrimary: "#0B0A10", BackgroundSecondary: "#131219", BackgroundDots: "#1E1C26", BackgroundModal: "rgba(11, 10, 16, 0.9)", BorderPrimary: "#302D3E", BorderSecondary: "#23212D", AccentPrimary: "#8C7CF0", AccentSuccess: "#63D6B8", AccentWarning: "#F2C063", AccentError: "#F57A93", AccentInfo: "#5EC7E8", RadiusScale: 0.7, Sheen: 0.3, Character: "carbon", GrainAngle: 15, GrainScale: 0.85},
+		"forged-titanium-light": {Name: "Forged Titanium [light]", TextPrimary: "#17151F", TextSecondary: "#433F54", TextTertiary: "#5F5B70", BackgroundPrimary: "#F6F5F9", BackgroundSecondary: "#ECEAF2", BackgroundDots: "#DEDBE8", BackgroundModal: "rgba(246, 245, 249, 0.92)", BorderPrimary: "#CAC6D9", BorderSecondary: "#E4E1EC", AccentPrimary: "#4E3CC0", AccentSuccess: "#157060", AccentWarning: "#8A5500", AccentError: "#AE2A4A", AccentInfo: "#086C88", RadiusScale: 0.7, Sheen: 0.3, Character: "carbon", GrainAngle: 15, GrainScale: 0.85},
+
+		// Matrix ──────────────────────────────────────────────────────
+		// Matrix Rain: phosphor green on black, falling
+		"matrix-rain-dark":  {Name: "Matrix Rain [dark]", TextPrimary: "#C8FFD8", TextSecondary: "#6FE89A", TextTertiary: "#3FBF6C", BackgroundPrimary: "#000A03", BackgroundSecondary: "#021206", BackgroundDots: "#062010", BackgroundModal: "rgba(0, 10, 3, 0.9)", BorderPrimary: "#0E3A1C", BorderSecondary: "#082814", AccentPrimary: "#00FF66", AccentSuccess: "#00FF66", AccentWarning: "#E6FF4D", AccentError: "#FF4D4D", AccentInfo: "#4DFFE1", Backdrop: "scanlines", Character: "terminal"},
+		"matrix-rain-light": {Name: "Matrix Rain [light]", TextPrimary: "#022A10", TextSecondary: "#0E5A2A", TextTertiary: "#1E6E3A", BackgroundPrimary: "#F3FCF5", BackgroundSecondary: "#E6F7EA", BackgroundDots: "#D0EED8", BackgroundModal: "rgba(243, 252, 245, 0.92)", BorderPrimary: "#A8DCB6", BorderSecondary: "#DDF2E3", AccentPrimary: "#007A30", AccentSuccess: "#007A30", AccentWarning: "#6A6A00", AccentError: "#B01E1E", AccentInfo: "#006E66", Backdrop: "scanlines", Character: "terminal"},
+		// Matrix Redpill: red phosphor, no way back
+		"matrix-redpill-dark":  {Name: "Matrix Redpill [dark]", TextPrimary: "#FFD8D2", TextSecondary: "#FF8A7A", TextTertiary: "#E0584A", BackgroundPrimary: "#0A0000", BackgroundSecondary: "#140202", BackgroundDots: "#240606", BackgroundModal: "rgba(10, 0, 0, 0.9)", BorderPrimary: "#420E0E", BorderSecondary: "#2E0808", AccentPrimary: "#FF3B30", AccentSuccess: "#FF9F43", AccentWarning: "#FFD166", AccentError: "#FFFFFF", AccentInfo: "#FF7AC8", Backdrop: "scanlines", Character: "terminal"},
+		"matrix-redpill-light": {Name: "Matrix Redpill [light]", TextPrimary: "#2E0400", TextSecondary: "#6A1208", TextTertiary: "#8A2A1C", BackgroundPrimary: "#FDF4F3", BackgroundSecondary: "#F8E6E4", BackgroundDots: "#F0D0CC", BackgroundModal: "rgba(253, 244, 243, 0.92)", BorderPrimary: "#E4AEA8", BorderSecondary: "#F2DCD9", AccentPrimary: "#C0180A", AccentSuccess: "#9A4A00", AccentWarning: "#8A5500", AccentError: "#7A0A0A", AccentInfo: "#A01A72", Backdrop: "scanlines", Character: "terminal"},
+		// Matrix Bluepill: blue phosphor, comfortable and false
+		"matrix-bluepill-dark":  {Name: "Matrix Bluepill [dark]", TextPrimary: "#D2F0FF", TextSecondary: "#78C8FF", TextTertiary: "#4EA0DC", BackgroundPrimary: "#00060C", BackgroundSecondary: "#021020", BackgroundDots: "#061C34", BackgroundModal: "rgba(0, 6, 12, 0.9)", BorderPrimary: "#0E3258", BorderSecondary: "#08223E", AccentPrimary: "#3DB8FF", AccentSuccess: "#3DFFB0", AccentWarning: "#FFD84D", AccentError: "#FF6B6B", AccentInfo: "#A89CFF", Backdrop: "scanlines", Character: "terminal"},
+		"matrix-bluepill-light": {Name: "Matrix Bluepill [light]", TextPrimary: "#021B30", TextSecondary: "#0C4470", TextTertiary: "#1E5A88", BackgroundPrimary: "#F3F9FD", BackgroundSecondary: "#E4F1FA", BackgroundDots: "#CCE3F4", BackgroundModal: "rgba(243, 249, 253, 0.92)", BorderPrimary: "#A6CCEA", BorderSecondary: "#DAEAF7", AccentPrimary: "#005F99", AccentSuccess: "#007A52", AccentWarning: "#7A5A00", AccentError: "#B02020", AccentInfo: "#4A34B0", Backdrop: "scanlines", Character: "terminal"},
+		// Matrix Construct: white void, green code, no walls
+		"matrix-construct-dark":  {Name: "Matrix Construct [dark]", TextPrimary: "#F2F7F4", TextSecondary: "#B8C4BD", TextTertiary: "#8E9C94", BackgroundPrimary: "#0C0E0D", BackgroundSecondary: "#141816", BackgroundDots: "#1E2420", BackgroundModal: "rgba(12, 14, 13, 0.9)", BorderPrimary: "#2E3832", BorderSecondary: "#222A25", AccentPrimary: "#3DFF8C", AccentSuccess: "#3DFF8C", AccentWarning: "#F4E04D", AccentError: "#FF6B6B", AccentInfo: "#8CD8FF", LabelSpacing: "0.22em", Backdrop: "wireframe", Character: "terminal"},
+		"matrix-construct-light": {Name: "Matrix Construct [light]", TextPrimary: "#0E1411", TextSecondary: "#34403A", TextTertiary: "#4E5A54", BackgroundPrimary: "#FFFFFF", BackgroundSecondary: "#F4F6F5", BackgroundDots: "#E6EBE8", BackgroundModal: "rgba(255, 255, 255, 0.92)", BorderPrimary: "#CFD8D3", BorderSecondary: "#EBEFED", AccentPrimary: "#0A7A3C", AccentSuccess: "#0A7A3C", AccentWarning: "#7A6600", AccentError: "#B02424", AccentInfo: "#1E5CA8", LabelSpacing: "0.22em", Backdrop: "wireframe", Character: "terminal"},
+
+		// Aurora ──────────────────────────────────────────────────────
+		// Borealis Veil: green and violet over a dark north
+		"borealis-veil-dark":  {Name: "Borealis Veil [dark]", TextPrimary: "#E6F6F2", TextSecondary: "#A8CEC6", TextTertiary: "#80A89E", BackgroundPrimary: "#050B10", BackgroundSecondary: "#0B141C", BackgroundDots: "#12202C", BackgroundModal: "rgba(5, 11, 16, 0.9)", BorderPrimary: "#1E3444", BorderSecondary: "#152634", AccentPrimary: "#4FE3A6", AccentSuccess: "#9BE36B", AccentWarning: "#F4C45A", AccentError: "#FF7F9A", AccentInfo: "#B08CFF", SurfaceAlpha: 0.6, SurfaceGlow: 0.9, Backdrop: "blooms", Character: "aurora"},
+		"borealis-veil-light": {Name: "Borealis Veil [light]", TextPrimary: "#0A1C22", TextSecondary: "#2E4A52", TextTertiary: "#4A666E", BackgroundPrimary: "#F3F8F9", BackgroundSecondary: "#E6F0F1", BackgroundDots: "#D2E2E4", BackgroundModal: "rgba(243, 248, 249, 0.92)", BorderPrimary: "#B8D0D4", BorderSecondary: "#DAE8EA", AccentPrimary: "#0A7A54", AccentSuccess: "#3A7212", AccentWarning: "#8A5600", AccentError: "#B02850", AccentInfo: "#5A3CC0", SurfaceAlpha: 0.6, SurfaceGlow: 0.9, Backdrop: "blooms", Character: "aurora"},
+		// Solar Wind: magenta and orange streaming past
+		"solar-wind-dark":  {Name: "Solar Wind [dark]", TextPrimary: "#FCEAF4", TextSecondary: "#DDB0C8", TextTertiary: "#B888A2", BackgroundPrimary: "#10060E", BackgroundSecondary: "#1A0C18", BackgroundDots: "#281424", BackgroundModal: "rgba(16, 6, 14, 0.9)", BorderPrimary: "#42203A", BorderSecondary: "#301829", AccentPrimary: "#FF5CA8", AccentSuccess: "#5FE0B0", AccentWarning: "#FFA94D", AccentError: "#FF6B5C", AccentInfo: "#7FB4FF", SurfaceAlpha: 0.62, SurfaceGlow: 1, Backdrop: "sweep", Character: "aurora"},
+		"solar-wind-light": {Name: "Solar Wind [light]", TextPrimary: "#2C0A20", TextSecondary: "#5E2C4A", TextTertiary: "#7A4866", BackgroundPrimary: "#FDF4F8", BackgroundSecondary: "#F8E6EF", BackgroundDots: "#F0D2E1", BackgroundModal: "rgba(253, 244, 248, 0.92)", BorderPrimary: "#E4B8CE", BorderSecondary: "#F2DDE8", AccentPrimary: "#B0156A", AccentSuccess: "#127050", AccentWarning: "#9A4A00", AccentError: "#A8261A", AccentInfo: "#2E54B0", SurfaceAlpha: 0.62, SurfaceGlow: 1, Backdrop: "sweep", Character: "aurora"},
+		// Nebula Nursery: pink and teal gas, star-dust dots
+		"nebula-nursery-dark":  {Name: "Nebula Nursery [dark]", TextPrimary: "#F2ECFF", TextSecondary: "#C4B4E8", TextTertiary: "#9C8CC2", BackgroundPrimary: "#0A0714", BackgroundSecondary: "#120D20", BackgroundDots: "#1E1632", BackgroundModal: "rgba(10, 7, 20, 0.9)", BorderPrimary: "#30244E", BorderSecondary: "#241B3C", AccentPrimary: "#FF7EC8", AccentSuccess: "#58E0D0", AccentWarning: "#FFD27A", AccentError: "#FF6F7F", AccentInfo: "#7DA8FF", SurfaceAlpha: 0.58, SurfaceGlow: 1, Backdrop: "rings", Character: "aurora"},
+		"nebula-nursery-light": {Name: "Nebula Nursery [light]", TextPrimary: "#1A1030", TextSecondary: "#48386A", TextTertiary: "#645486", BackgroundPrimary: "#F8F5FE", BackgroundSecondary: "#EFE9FB", BackgroundDots: "#E0D6F5", BackgroundModal: "rgba(248, 245, 254, 0.92)", BorderPrimary: "#CCBCEE", BorderSecondary: "#E6DCF8", AccentPrimary: "#AE1F78", AccentSuccess: "#0E6E66", AccentWarning: "#8A5500", AccentError: "#B0243C", AccentInfo: "#3048B8", SurfaceAlpha: 0.58, SurfaceGlow: 1, Backdrop: "rings", Character: "aurora"},
+		// Polar Dawn: blush dawn low over pale ice
+		"polar-dawn-dark":  {Name: "Polar Dawn [dark]", TextPrimary: "#F0F0FA", TextSecondary: "#BCBED6", TextTertiary: "#9496B0", BackgroundPrimary: "#0B0C14", BackgroundSecondary: "#13151F", BackgroundDots: "#1D2030", BackgroundModal: "rgba(11, 12, 20, 0.9)", BorderPrimary: "#2E3248", BorderSecondary: "#222536", AccentPrimary: "#FFB4C8", AccentSuccess: "#8CE0C0", AccentWarning: "#FFD08A", AccentError: "#FF8A8A", AccentInfo: "#8CC4FF", SurfaceAlpha: 0.68, SurfaceGlow: 0.7, Backdrop: "horizon", Character: "aurora"},
+		"polar-dawn-light": {Name: "Polar Dawn [light]", TextPrimary: "#171828", TextSecondary: "#43465E", TextTertiary: "#5E6178", BackgroundPrimary: "#FBFAFE", BackgroundSecondary: "#F2F1F9", BackgroundDots: "#E3E2F0", BackgroundModal: "rgba(251, 250, 254, 0.92)", BorderPrimary: "#CFCDE4", BorderSecondary: "#E8E7F3", AccentPrimary: "#A83A5E", AccentSuccess: "#1E6E54", AccentWarning: "#8A5500", AccentError: "#B02C2C", AccentInfo: "#2458A8", SurfaceAlpha: 0.68, SurfaceGlow: 0.7, Backdrop: "horizon", Character: "aurora"},
+
+		// Frost ───────────────────────────────────────────────────────
+		// Hoarfrost: white fur of ice on every edge
+		"hoarfrost-dark":  {Name: "Hoarfrost [dark]", TextPrimary: "#EEF5FB", TextSecondary: "#B6C6D6", TextTertiary: "#8C9EB0", BackgroundPrimary: "#0A0F14", BackgroundSecondary: "#111820", BackgroundDots: "#1A242E", BackgroundModal: "rgba(10, 15, 20, 0.9)", BorderPrimary: "#2A3846", BorderSecondary: "#1E2A36", AccentPrimary: "#8FD3FF", AccentSuccess: "#8FE3C4", AccentWarning: "#F0CC80", AccentError: "#F29A9A", AccentInfo: "#B8A8FF", SurfaceAlpha: 0.78, SurfaceBlur: 30, RadiusScale: 1.25, Character: "frost"},
+		"hoarfrost-light": {Name: "Hoarfrost [light]", TextPrimary: "#101A24", TextSecondary: "#3A4A5A", TextTertiary: "#566676", BackgroundPrimary: "#F7FAFD", BackgroundSecondary: "#EDF3F9", BackgroundDots: "#DDE7F1", BackgroundModal: "rgba(247, 250, 253, 0.92)", BorderPrimary: "#C8D6E4", BorderSecondary: "#E3EBF4", AccentPrimary: "#1C6AA4", AccentSuccess: "#1E6E54", AccentWarning: "#855800", AccentError: "#A83838", AccentInfo: "#5040B0", SurfaceAlpha: 0.78, SurfaceBlur: 30, RadiusScale: 1.25, Character: "frost"},
+		// Frozen Lavender: lilac under a skin of frost
+		"frozen-lavender-dark":  {Name: "Frozen Lavender [dark]", TextPrimary: "#F2EEFA", TextSecondary: "#C2B8D8", TextTertiary: "#9A90B2", BackgroundPrimary: "#0E0C14", BackgroundSecondary: "#16131E", BackgroundDots: "#221D2C", BackgroundModal: "rgba(14, 12, 20, 0.9)", BorderPrimary: "#342D44", BorderSecondary: "#272134", AccentPrimary: "#B7A6FF", AccentSuccess: "#8FDCC0", AccentWarning: "#F2CA7E", AccentError: "#F496A8", AccentInfo: "#8FC4F4", SurfaceAlpha: 0.8, SurfaceBlur: 28, RadiusScale: 1.3, Character: "frost"},
+		"frozen-lavender-light": {Name: "Frozen Lavender [light]", TextPrimary: "#1A1626", TextSecondary: "#473E5E", TextTertiary: "#62597A", BackgroundPrimary: "#F9F7FD", BackgroundSecondary: "#F0EDF8", BackgroundDots: "#E2DDF0", BackgroundModal: "rgba(249, 247, 253, 0.92)", BorderPrimary: "#CEC6E4", BorderSecondary: "#E8E3F3", AccentPrimary: "#5C44B8", AccentSuccess: "#1F6E56", AccentWarning: "#855800", AccentError: "#A83450", AccentInfo: "#1F60A0", SurfaceAlpha: 0.8, SurfaceBlur: 28, RadiusScale: 1.3, Character: "frost"},
+		// Frost Fern: green-white ferns of ice
+		"frost-fern-dark":  {Name: "Frost Fern [dark]", TextPrimary: "#EAF8F2", TextSecondary: "#AED0C2", TextTertiary: "#86AA9C", BackgroundPrimary: "#08110E", BackgroundSecondary: "#0F1A16", BackgroundDots: "#172620", BackgroundModal: "rgba(8, 17, 14, 0.9)", BorderPrimary: "#243A32", BorderSecondary: "#1A2C25", AccentPrimary: "#7FE0B0", AccentSuccess: "#B4E07A", AccentWarning: "#F2C878", AccentError: "#F49494", AccentInfo: "#8CC0F8", SurfaceAlpha: 0.76, SurfaceBlur: 30, RadiusScale: 1.15, Character: "frost"},
+		"frost-fern-light": {Name: "Frost Fern [light]", TextPrimary: "#0E2018", TextSecondary: "#344E42", TextTertiary: "#50685C", BackgroundPrimary: "#F5FBF8", BackgroundSecondary: "#EAF4EF", BackgroundDots: "#D8EAE1", BackgroundModal: "rgba(245, 251, 248, 0.92)", BorderPrimary: "#C0DACD", BorderSecondary: "#E0EFE8", AccentPrimary: "#11704A", AccentSuccess: "#4A6E14", AccentWarning: "#855800", AccentError: "#A83838", AccentInfo: "#2A5AA8", SurfaceAlpha: 0.76, SurfaceBlur: 30, RadiusScale: 1.15, Character: "frost"},
+		// Winter Ember: cold pane, warm glow behind
+		"winter-ember-dark":  {Name: "Winter Ember [dark]", TextPrimary: "#F4F1F4", TextSecondary: "#C4BEC6", TextTertiary: "#9C969E", BackgroundPrimary: "#0E0D10", BackgroundSecondary: "#171519", BackgroundDots: "#221F25", BackgroundModal: "rgba(14, 13, 16, 0.9)", BorderPrimary: "#35313A", BorderSecondary: "#28252C", AccentPrimary: "#F5A962", AccentSuccess: "#8CD9A8", AccentWarning: "#FFD27A", AccentError: "#FF7F7F", AccentInfo: "#8EC0F4", SurfaceAlpha: 0.82, SurfaceBlur: 26, SurfaceGlow: 0.8, RadiusScale: 1.2, Character: "frost"},
+		"winter-ember-light": {Name: "Winter Ember [light]", TextPrimary: "#1A171C", TextSecondary: "#474249", TextTertiary: "#625D65", BackgroundPrimary: "#FAF9FA", BackgroundSecondary: "#F1EFF1", BackgroundDots: "#E3E0E4", BackgroundModal: "rgba(250, 249, 250, 0.92)", BorderPrimary: "#D0CCD2", BorderSecondary: "#E8E5E9", AccentPrimary: "#A0540A", AccentSuccess: "#1F6E48", AccentWarning: "#855000", AccentError: "#A83232", AccentInfo: "#2A5AA8", SurfaceAlpha: 0.82, SurfaceBlur: 26, SurfaceGlow: 0.8, RadiusScale: 1.2, Character: "frost"},
+
+		// Brushed ─────────────────────────────────────────────────────
+		// Aluminium Deck: silver deck, blue LED
+		"aluminium-deck-dark":  {Name: "Aluminium Deck [dark]", TextPrimary: "#EEF1F4", TextSecondary: "#B8BFC7", TextTertiary: "#9098A2", BackgroundPrimary: "#0E1013", BackgroundSecondary: "#171A1E", BackgroundDots: "#22262B", BackgroundModal: "rgba(14, 16, 19, 0.9)", BorderPrimary: "#343A42", BorderSecondary: "#272C32", AccentPrimary: "#6FA8DC", AccentSuccess: "#6FD1A0", AccentWarning: "#F0C05A", AccentError: "#F07C7C", AccentInfo: "#B0A0F0", RadiusScale: 0.65, Sheen: 0.4, Character: "brushed", GrainAngle: 90, GrainScale: 0.7},
+		"aluminium-deck-light": {Name: "Aluminium Deck [light]", TextPrimary: "#15181C", TextSecondary: "#40464E", TextTertiary: "#5B626B", BackgroundPrimary: "#F4F5F7", BackgroundSecondary: "#E8EAED", BackgroundDots: "#D8DBE0", BackgroundModal: "rgba(244, 245, 247, 0.92)", BorderPrimary: "#C2C7CE", BorderSecondary: "#DFE2E6", AccentPrimary: "#1F5F9A", AccentSuccess: "#1C6A48", AccentWarning: "#855400", AccentError: "#A83030", AccentInfo: "#5440A8", RadiusScale: 0.65, Sheen: 0.4, Character: "brushed", GrainAngle: 90, GrainScale: 0.7},
+		// Gunmetal Bronze: gunmetal plate, bronze trim
+		"gunmetal-bronze-dark":  {Name: "Gunmetal Bronze [dark]", TextPrimary: "#EFEDEA", TextSecondary: "#C0BAB2", TextTertiary: "#99928A", BackgroundPrimary: "#0C0D0E", BackgroundSecondary: "#151618", BackgroundDots: "#202224", BackgroundModal: "rgba(12, 13, 14, 0.9)", BorderPrimary: "#33363A", BorderSecondary: "#26282B", AccentPrimary: "#CD8B4E", AccentSuccess: "#7FC8A0", AccentWarning: "#E8C06A", AccentError: "#E87A6E", AccentInfo: "#8EB0E6", RadiusScale: 0.55, LabelWeight: 700, Sheen: 0.3, Character: "brushed", GrainAngle: 110, GrainScale: 0.6},
+		"gunmetal-bronze-light": {Name: "Gunmetal Bronze [light]", TextPrimary: "#1A1917", TextSecondary: "#48443F", TextTertiary: "#625D57", BackgroundPrimary: "#F6F5F3", BackgroundSecondary: "#ECEAE7", BackgroundDots: "#DDDAD5", BackgroundModal: "rgba(246, 245, 243, 0.92)", BorderPrimary: "#C9C4BD", BorderSecondary: "#E3E0DB", AccentPrimary: "#8A4A10", AccentSuccess: "#246A48", AccentWarning: "#7A5200", AccentError: "#A83A2E", AccentInfo: "#2E56A0", RadiusScale: 0.55, LabelWeight: 700, Sheen: 0.3, Character: "brushed", GrainAngle: 110, GrainScale: 0.6},
+		// Rose Titanium: rose gold, brushed soft
+		"rose-titanium-dark":  {Name: "Rose Titanium [dark]", TextPrimary: "#F8EFEE", TextSecondary: "#D2BEBC", TextTertiary: "#AA9694", BackgroundPrimary: "#110D0D", BackgroundSecondary: "#1A1515", BackgroundDots: "#261F1F", BackgroundModal: "rgba(17, 13, 13, 0.9)", BorderPrimary: "#3A3030", BorderSecondary: "#2C2424", AccentPrimary: "#E8A0A0", AccentSuccess: "#8CD4B0", AccentWarning: "#F0C47A", AccentError: "#FF7F8A", AccentInfo: "#A0B4F0", RadiusScale: 0.9, Sheen: 0.45, Character: "brushed", GrainAngle: 80, GrainScale: 0.5},
+		"rose-titanium-light": {Name: "Rose Titanium [light]", TextPrimary: "#261C1B", TextSecondary: "#574846", TextTertiary: "#726260", BackgroundPrimary: "#FBF7F6", BackgroundSecondary: "#F3EDEC", BackgroundDots: "#E7DDDB", BackgroundModal: "rgba(251, 247, 246, 0.92)", BorderPrimary: "#D6C8C5", BorderSecondary: "#EDE4E2", AccentPrimary: "#9E3E44", AccentSuccess: "#1F6E4C", AccentWarning: "#855400", AccentError: "#A8283A", AccentInfo: "#3A52A8", RadiusScale: 0.9, Sheen: 0.45, Character: "brushed", GrainAngle: 80, GrainScale: 0.5},
+		// Satin Nickel: satin nickel, teal badge
+		"satin-nickel-dark":  {Name: "Satin Nickel [dark]", TextPrimary: "#F1F0EC", TextSecondary: "#C2C0B8", TextTertiary: "#9A9890", BackgroundPrimary: "#0F0F0E", BackgroundSecondary: "#181817", BackgroundDots: "#232321", BackgroundModal: "rgba(15, 15, 14, 0.9)", BorderPrimary: "#373734", BorderSecondary: "#2A2A28", AccentPrimary: "#4FB3A9", AccentSuccess: "#8CD48A", AccentWarning: "#F0C266", AccentError: "#F07F74", AccentInfo: "#A2A8F0", RadiusScale: 0.75, Sheen: 0.3, Character: "brushed", GrainAngle: 100, GrainScale: 0.4},
+		"satin-nickel-light": {Name: "Satin Nickel [light]", TextPrimary: "#191916", TextSecondary: "#484842", TextTertiary: "#62625B", BackgroundPrimary: "#F6F6F3", BackgroundSecondary: "#ECECE7", BackgroundDots: "#DEDED7", BackgroundModal: "rgba(246, 246, 243, 0.92)", BorderPrimary: "#CACAC1", BorderSecondary: "#E4E4DE", AccentPrimary: "#0E6A62", AccentSuccess: "#2E6A28", AccentWarning: "#805400", AccentError: "#A83426", AccentInfo: "#4448A8", RadiusScale: 0.75, Sheen: 0.3, Character: "brushed", GrainAngle: 100, GrainScale: 0.4},
+
+		// Ink ─────────────────────────────────────────────────────────
+		// Indigo Letterpress: indigo on cotton stock
+		"indigo-letterpress-dark":  {Name: "Indigo Letterpress [dark]", TextPrimary: "#EEF1FA", TextSecondary: "#B4BEDC", TextTertiary: "#8C98BA", BackgroundPrimary: "#070A14", BackgroundSecondary: "#0D1220", BackgroundDots: "#151C30", BackgroundModal: "rgba(7, 10, 20, 0.9)", BorderPrimary: "#23304E", BorderSecondary: "#18223A", AccentPrimary: "#8FA6FF", AccentSuccess: "#88D6A8", AccentWarning: "#F0C878", AccentError: "#F48C8C", AccentInfo: "#6FD0E0", RadiusScale: 0.3, LabelTransform: "uppercase", LabelSpacing: "0.14em", LabelWeight: 700, Character: "ink"},
+		"indigo-letterpress-light": {Name: "Indigo Letterpress [light]", TextPrimary: "#0E1638", TextSecondary: "#33406A", TextTertiary: "#4F5A82", BackgroundPrimary: "#FBFAF6", BackgroundSecondary: "#F2F0E8", BackgroundDots: "#E4E1D5", BackgroundModal: "rgba(251, 250, 246, 0.92)", BorderPrimary: "#D0CCBE", BorderSecondary: "#EAE7DD", AccentPrimary: "#2A3FB0", AccentSuccess: "#1F6A44", AccentWarning: "#825400", AccentError: "#A8302E", AccentInfo: "#0A6A7A", RadiusScale: 0.3, LabelTransform: "uppercase", LabelSpacing: "0.14em", LabelWeight: 700, Character: "ink"},
+		// Iron Gall: sepia letters on laid paper
+		"iron-gall-dark":  {Name: "Iron Gall [dark]", TextPrimary: "#F3ECE0", TextSecondary: "#C8B9A2", TextTertiary: "#A0907A", BackgroundPrimary: "#0E0B08", BackgroundSecondary: "#17130E", BackgroundDots: "#221C15", BackgroundModal: "rgba(14, 11, 8, 0.9)", BorderPrimary: "#362C21", BorderSecondary: "#282017", AccentPrimary: "#C89A5C", AccentSuccess: "#9CC88A", AccentWarning: "#E8C070", AccentError: "#E88070", AccentInfo: "#98B0D8", RadiusScale: 0.4, LabelSpacing: "0.04em", LabelWeight: 600, Character: "ink"},
+		"iron-gall-light": {Name: "Iron Gall [light]", TextPrimary: "#2A1E12", TextSecondary: "#5A4834", TextTertiary: "#75624C", BackgroundPrimary: "#FAF6EE", BackgroundSecondary: "#F1EBDE", BackgroundDots: "#E4DBC8", BackgroundModal: "rgba(250, 246, 238, 0.92)", BorderPrimary: "#D1C4AA", BorderSecondary: "#EAE1CF", AccentPrimary: "#8A5520", AccentSuccess: "#3A6428", AccentWarning: "#7A5000", AccentError: "#A8362A", AccentInfo: "#3A5890", RadiusScale: 0.4, LabelSpacing: "0.04em", LabelWeight: 600, Character: "ink"},
+		// Squid Ink: black with a blue-green sheen
+		"squid-ink-dark":  {Name: "Squid Ink [dark]", TextPrimary: "#EAF0F4", TextSecondary: "#AEBCC6", TextTertiary: "#86969F", BackgroundPrimary: "#050709", BackgroundSecondary: "#0A0E12", BackgroundDots: "#11181E", BackgroundModal: "rgba(5, 7, 9, 0.9)", BorderPrimary: "#1C2832", BorderSecondary: "#141D25", AccentPrimary: "#4AA3B8", AccentSuccess: "#7FCFA4", AccentWarning: "#E8C272", AccentError: "#F08484", AccentInfo: "#A89CF0", RadiusScale: 0.2, LabelSpacing: "0.08em", LabelWeight: 800, Character: "ink"},
+		"squid-ink-light": {Name: "Squid Ink [light]", TextPrimary: "#0A1216", TextSecondary: "#34444C", TextTertiary: "#4F5F68", BackgroundPrimary: "#F6F8F9", BackgroundSecondary: "#ECF0F2", BackgroundDots: "#DCE3E7", BackgroundModal: "rgba(246, 248, 249, 0.92)", BorderPrimary: "#C6D1D7", BorderSecondary: "#E2E8EB", AccentPrimary: "#0F6278", AccentSuccess: "#1E6A48", AccentWarning: "#7E5400", AccentError: "#A83232", AccentInfo: "#4A40A8", RadiusScale: 0.2, LabelSpacing: "0.08em", LabelWeight: 800, Character: "ink"},
+		// Vermilion Seal: sumi black, one hanko red
+		"vermilion-seal-dark":  {Name: "Vermilion Seal [dark]", TextPrimary: "#F4F1EC", TextSecondary: "#C4BDB2", TextTertiary: "#9C958A", BackgroundPrimary: "#0B0A09", BackgroundSecondary: "#141210", BackgroundDots: "#1E1B18", BackgroundModal: "rgba(11, 10, 9, 0.9)", BorderPrimary: "#302C27", BorderSecondary: "#23201C", AccentPrimary: "#E8503A", AccentSuccess: "#8FCB9A", AccentWarning: "#E6C06E", AccentError: "#FF8FA0", AccentInfo: "#9AB4E6", RadiusScale: 0.1, LabelTransform: "none", LabelSpacing: "0.02em", LabelWeight: 700, Character: "ink"},
+		"vermilion-seal-light": {Name: "Vermilion Seal [light]", TextPrimary: "#171411", TextSecondary: "#46403A", TextTertiary: "#615A52", BackgroundPrimary: "#FBFAF7", BackgroundSecondary: "#F2F0EB", BackgroundDots: "#E5E1D8", BackgroundModal: "rgba(251, 250, 247, 0.92)", BorderPrimary: "#D2CCC0", BorderSecondary: "#EAE6DE", AccentPrimary: "#B8260F", AccentSuccess: "#2A6A3C", AccentWarning: "#7E5200", AccentError: "#9A1E48", AccentInfo: "#34549E", RadiusScale: 0.1, LabelTransform: "none", LabelSpacing: "0.02em", LabelWeight: 700, Character: "ink"},
 	}
 }
 

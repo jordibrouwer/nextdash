@@ -25,7 +25,6 @@ class DashboardPageNav {
             d._pageNavIncludesViewChange = true;
             d.setActiveView('bookmarks');
             d.inbox?.clearKeyboardSelection?.();
-            d.health?.clearKeyboardSelection?.();
         }
 
         if (targetPageId === Number(d.currentPageId)) {
@@ -95,7 +94,6 @@ class DashboardPageNav {
         d.keyboardNavigation?.clearSelection?.();
         d.keyboardNavigation?.scheduleUpdate?.();
         d.inbox?.clearKeyboardSelection?.();
-        d.health?.clearKeyboardSelection?.();
         return true;
     }
 
@@ -121,15 +119,6 @@ class DashboardPageNav {
         if (bc) return this.capitalizeTrail(bc);
         const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
         return inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
-    }
-
-
-    healthPageLabel() {
-        const d = this.dash;
-        const bc = d.health?.headerBreadcrumb?.();
-        if (bc) return this.capitalizeTrail(bc);
-        const healthLabel = d.language?.t?.('dashboard.healthPageTitle');
-        return healthLabel && healthLabel !== 'dashboard.healthPageTitle' ? healthLabel : 'Health';
     }
 
 
@@ -161,15 +150,13 @@ class DashboardPageNav {
         if (titleElement) {
             let displayName;
             if (d.activeView === 'inbox') {
-                // The kept tab names itself, so the title says which of the
-                // view's two lists is on screen.
-                displayName = (d.inbox?.activeTab?.() === 'kept'
-                    ? this.unsortedPageLabel()
-                    : this.t('dashboard.inboxPageTitle', 'Inbox')).toLowerCase();
-            } else if (d.activeView === 'health') {
-                displayName = this.t('dashboard.health', 'health');
+                displayName = this.t('dashboard.inboxPageTitle', 'Inbox').toLowerCase();
+            } else if (d.activeView === 'docker') {
+                displayName = this.t('dashboard.dockerView', 'Containers').toLowerCase();
             } else if (d.activeView === 'config') {
                 displayName = this.t('config.viewBreadcrumbRoot', 'Config').toLowerCase();
+            } else if (d.activeView === 'library') {
+                displayName = this.t('dashboard.libraryView', 'Bookmarks').toLowerCase();
             } else {
                 const defaultTitle = d.language.t('dashboard.defaultPageTitle');
                 displayName = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
@@ -207,10 +194,10 @@ class DashboardPageNav {
     updateDocumentTitle() {
         const d = this.dash;
         const viewName = d.activeView === 'inbox'
-            ? (d.inbox?.activeTab?.() === 'kept' ? this.unsortedPageLabel() : this.inboxPageLabel())
-            : (d.activeView === 'health'
-                ? this.healthPageLabel()
-                : (d.activeView === 'config' ? this.configPageLabel() : ''));
+            ? this.inboxPageLabel()
+            : (d.activeView === 'config' ? this.configPageLabel()
+                : (d.activeView === 'docker' ? this.t('dashboard.dockerView', 'Containers')
+                    : (d.activeView === 'library' ? this.t('dashboard.libraryView', 'Bookmarks') : '')));
         if (viewName) {
             if (d.settings?.enableCustomTitle) {
                 const base = (d.settings.customTitle || '').trim();
@@ -285,7 +272,8 @@ class DashboardPageNav {
         // The health and config icons live in the header, outside this container,
         // but are the same kind of destination — keep their active state in step
         // with the tabs.
-        d.visual?.syncHealthLinkActiveState?.();
+        d.visual?.syncLibraryLinkActiveState?.();
+        d.docker?.syncNavActiveState?.();
         d.visual?.syncConfigLinkActiveState?.();
         d.visual?.syncDashboardLinkActiveState?.();
         // The inbox tab is built here, so this is where the destination cluster
@@ -303,13 +291,12 @@ class DashboardPageNav {
 
 
     /** Health has no tab of its own: it opens from the header icon. */
-    setActiveHealthTab() {
+    /** Containers open from their header icon, like health. */
+    setActiveDockerTab() {
         this.setActivePageNavButton(this.dash.currentPageId);
         this.updatePageTitle();
         this.updateDocumentTitle();
     }
-
-
 
     /** Config has no tab of its own either: it opens from the header link. */
     setActiveConfigTab() {
@@ -326,12 +313,12 @@ class DashboardPageNav {
         if (!badge) {
             return;
         }
-        const unread = d.inbox?.unreadCount?.() || 0;
-        // The To triage tab shows this same number; moved together here, so
-        // no path that updates the badge can leave the tab behind. Through
-        // the loaded module only -- asking the loader would fetch the inbox
-        // just to count it.
-        d.inbox?.instance?.syncTabStrip?.({ fromBadge: true });
+        // Config → Inbox: no count, what is unread (as it was), or everything awake.
+        const s = d.settings || {};
+        const unread = s.inboxViewBadge === false ? 0
+            : (s.inboxViewBadgeCounts === 'all'
+                ? (d.inbox?.instance?.activeItems?.().length || 0)
+                : (d.inbox?.unreadCount?.() || 0));
         const previous = Number(this._lastInboxBadgeCount) || 0;
         if (unread > 0) {
             badge.textContent = String(unread);

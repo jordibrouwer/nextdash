@@ -48,6 +48,9 @@ type DockerMetrics struct {
 	Total     int `json:"total"`
 	Images    int `json:"images"`
 	Unhealthy int `json:"unhealthy"`
+	// Updates is how many images the last update check found newer versions
+	// of; the check itself belongs to the Docker view.
+	Updates int `json:"updates"`
 
 	// Named, because "one unhealthy" sends you looking and "one unhealthy:
 	// jellyfin" does not.
@@ -116,9 +119,13 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 	out := DockerMetrics{MetricStatus: MetricStatus{Available: true}}
 	cutoff := time.Now().Add(-dockerRestartWindow).Unix()
 
+	hidden := dockerHiddenSet()
 	for _, item := range list {
-		out.Total++
 		name := containerName(item.Names)
+		if hidden[name] {
+			continue
+		}
+		out.Total++
 
 		switch item.State {
 		case "running":
@@ -154,7 +161,7 @@ func readDocker() DockerMetrics {
 
 	resp, err := client.Get("http://docker/" + dockerAPIVersion + "/containers/json?all=1")
 	if err != nil {
-		return DockerMetrics{MetricStatus: MetricStatus{Reason: reasonNoDockerSocket}}
+		return DockerMetrics{MetricStatus: MetricStatus{Reason: dockerDialReason(err)}}
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -182,6 +189,11 @@ func readDocker() DockerMetrics {
 		}
 		if json.NewDecoder(info.Body).Decode(&payload) == nil {
 			out.Images = payload.Images
+		}
+	}
+	for _, update := range readDockerUpdateStore().Images {
+		if update.Status == "available" {
+			out.Updates++
 		}
 	}
 	return out

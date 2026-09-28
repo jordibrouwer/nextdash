@@ -36,51 +36,96 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard.jpg" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> — Categories in columns with a live response time on every monitored link, and widgets for health and uptime between them. The header is one row — clock and weather, page tabs, destinations — and the action buttons stand in a column on the right edge.</sub>
+      <sub><b>Dashboard</b> <i>(Gloss Chrome)</i> — Categories in columns with a live response time on every monitored link, and widgets between them: health, uptime with a heartbeat per site and the weather across two columns, the inbox and an RSS feed. The header is one row — clock and weather, page tabs, destinations with their badges.</sub>
     </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-bookmarks-view.jpg" alt="Bookmarks view" width="100%" />
+      <br />
+      <sub><b>Bookmarks view</b> <i>(Cosmic Editor)</i> — The whole collection in one place: a rail of views, health filters, pages, categories and tags; one-line rows with tags, shortcut, opens and when each was last used; a side panel with Details, Health and Usage that saves as you type.</sub>
+    </td>
+  </tr>
+  <tr>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-search.jpg" alt="Search" width="100%" />
       <br />
-      <sub><b>Search</b> — One panel for bookmarks, commands and finders. Type a letter and it answers from all three at once; the modes on the left narrow it down, and <kbd>Tab</kbd> switches between them.</sub>
+      <sub><b>Search</b> <i>(Frosted Juniper, light)</i> — One panel for bookmarks, commands and finders. Type a word and <kbd>/</kbd> turns it into a name search: best matches first, a tag to filter on, and the commands that fit. <kbd>Tab</kbd> switches between the modes on the left.</sub>
     </td>
-  </tr>
-  <tr>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-inbox.jpg" alt="Inbox view" width="100%" />
       <br />
-      <sub><b>Inbox</b> — Links you saved before you knew where they belong, grouped by when they arrived. Filter by site or unread, search, and clear the lot one link at a time with Triage.</sub>
+      <sub><b>Inbox</b> <i>(Desert Sand, light)</i> — Links saved before you knew where they belong, grouped by when they arrived. The side panel holds the note and tags; open, promote or keep a link without leaving the list.</sub>
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary><b>More screenshots</b> — ten more views, in other themes</summary>
+<br />
+
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-dashboard-homelab.jpg" alt="Homelab dashboard" width="100%" />
+      <br />
+      <sub><b>A second page</b> <i>(Matrix Rain)</i> — A homelab page: the container count and the Container list widget two columns wide, uptime for this page, certificates close to expiry and the health trend over 30 days, beside self-hosted services with their own icons.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-health.jpg" alt="Health view" width="100%" />
+      <img src="screenshots/nextdash-triage.jpg" alt="Inbox triage" width="100%" />
       <br />
-      <sub><b>Health</b> — Everything that needs attention, across all pages: a link whose domain no longer exists, a monitored service that is down right now. Each row says why, and can be re-checked, opened or edited where it stands.</sub>
+      <sub><b>Triage</b> <i>(Matrix Rain)</i> — <kbd>t</kbd> in the inbox takes the links pile by pile — waiting longest, new this week, with a note — one at a time, each saying where it came from, with Promote as the one clear next step.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-health-monitors.jpg" alt="Health monitoring" width="100%" />
+      <img src="screenshots/nextdash-bookmarks-health.jpg" alt="Broken bookmarks" width="100%" />
       <br />
-      <sub><b>Monitoring</b> — The services you watch, checked by the server on their own interval. Every row carries its uptime, a response-time sparkline and a warning when its certificate is about to expire.</sub>
+      <sub><b>Broken links</b> <i>(Gloss Amber)</i> — The Bookmarks view on its Broken filter: what does not answer and why, a score per bookmark, and Work through to clear them one at a time.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-bookmarks.jpg" alt="Bookmark workbench" width="100%" />
+      <img src="screenshots/nextdash-collection-health.jpg" alt="Collection health" width="100%" />
       <br />
-      <sub><b>Bookmarks</b> — Every bookmark in one list, as a workbench: filters on the left, rows in the middle, and an edit panel on the right. Tick three rows and the same panel edits all three — page, category, tags, pinning and checking.</sub>
+      <sub><b>Collection health</b> <i>(Desert Sand, light)</i> — Score over time, what is wrong and by what kind, health per page, checking coverage, monitor uptime and certificates on one screen; every number opens its filter.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-config.jpg" alt="Config hub" width="100%" />
+      <img src="screenshots/nextdash-search-tags.jpg" alt="Tag search" width="100%" />
       <br />
-      <sub><b>Config</b> — Appearance and Behavior open on tiles, one subject each, and every tile shows what it is set to before you open it. A tile opens its group; <kbd>Esc</kbd> goes back.</sub>
+      <sub><b>Search by tag</b> <i>(ThinkDashboard)</i> — <code>tag:self-hosted</code> narrows search to one tag across every page, each result with its shortcut.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-commands.jpg" alt="Command palette" width="100%" />
+      <br />
+      <sub><b>Command palette</b> <i>(Gloss Chrome)</i> — <code>:docker jellyfin</code> offers what can be done to that container — stop, restart, pause, update, open its web UI or read its logs.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-containers.jpg" alt="Containers view" width="100%" />
+      <br />
+      <sub><b>Containers</b> <i>(ThinkDashboard)</i> — Every container on the host with a status glow, its ports and a web UI column. The side panel shows CPU and memory over the last hour. Start, stop and update are one key away when you turn control on.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-themes.jpg" alt="Theme browser" width="100%" />
       <br />
-      <sub><b>Themes</b> — 121 theme families, each with a light and a dark half, searchable and filtered by character: lacquer, glass, velvet, terminal and eight more. Press <kbd>Shift</kbd>+<kbd>A</kbd> to open the browser from anywhere.</sub>
+      <sub><b>Themes</b> <i>(Frosted Juniper, light)</i> — 155 theme families, each with a light and a dark half, searchable and filtered by character: lacquer, glass, velvet, terminal and eight more; the newest wear a <i>new</i> badge. <kbd>Shift</kbd>+<kbd>A</kbd> opens the browser from anywhere.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-config-appearance.jpg" alt="Config: Appearance" width="100%" />
+      <br />
+      <sub><b>Config → Appearance</b> <i>(Gloss Amber)</i> — Appearance in tabs — Look, Grid, Rows, Header, Action bar, Date &amp; weather — with a small live preview of your dashboard beside it. Every change applies and saves at once.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-config-statistics.jpg" alt="Config: Statistics" width="100%" />
+      <br />
+      <sub><b>Config → Statistics</b> <i>(Cosmic Editor)</i> — Six figures per tab, what needs attention with a button for each, the cleanup score and the charts behind them — across Overview, Usage, Collection, Inbox and Health.</sub>
     </td>
   </tr>
 </table>
+
+</details>
 
 ---
 
@@ -110,7 +155,7 @@ docker compose up -d
 
 Open `http://localhost:8080`.
 
-**From a git checkout:** `docker-compose.prod.yml` is for production (only `./data` is mounted; CSS and JavaScript are built into the image). `docker-compose.yml` is for development (it mounts `./static` and `./templates`).
+**From a git checkout:** `docker-compose.prod.yml` is for production (only `./data` is mounted; CSS and JavaScript are built into the image). `docker-compose.yml` is for development (it mounts `./static`, `./locales` and `./templates`, with Docker actions and root off and the socket commented out). Put your own mounts and variables in `docker-compose.override.yml`; Compose reads it automatically.
 
 ```sh
 docker compose -f docker-compose.prod.yml up -d --build
@@ -126,7 +171,7 @@ Data is stored in `./data`. `NEXTDASH_DATA_DIR` moves it.
 
 ### System widgets
 
-The **Processor**, **Memory**, **Disks** and **Containers** widgets report on the machine nextDash runs on. The binary needs no setup; a container needs read-only mounts:
+The **Processor**, **Memory**, **Disks**, **Containers** and **Container list** widgets report on the machine nextDash runs on. The binary needs no setup; a container needs read-only mounts:
 
 ```yaml
     volumes:
@@ -138,9 +183,38 @@ The **Processor**, **Memory**, **Disks** and **Containers** widgets report on th
       - NEXTDASH_HOST_ROOT=/host/root
       # - NEXTDASH_HOST_PROC=/host/proc
       # - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+      # - NEXTDASH_DOCKER_CONTROL=1                       # Containers: start/stop/update/remove
 ```
 
-Read-only access to the Docker socket still exposes every container, image, environment and mount. The [manual](MANUAL.md#114-system-widgets-and-what-they-need) explains each mount, Synology and QNAP paths, and the Unraid template rows.
+### Containers view
+
+> [!IMPORTANT]
+> **The Containers view needs three settings before it does anything — and one more on some hosts.**
+>
+> 1. **The Docker socket.** Mount `/var/run/docker.sock` and set `NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock`. Without both, the view shows a setup card and the Containers widget stays hidden. Read-only (`:ro`) is enough to look.
+> 2. **Actions: `NEXTDASH_DOCKER_CONTROL=1`.** Start, stop, pause, restart, update and remove need it. Without it the view only reads.
+> 3. **A write token, and a gate in front: `NEXTDASH_WRITE_TOKEN`.** Access to the socket is root on the host — `:ro` on the mount does not stop the Docker API from accepting writes. The token stops other websites and scripts that do not know it. It is not a login: the dashboard hands it to every browser that opens the page. Set one, and keep nextDash behind Tailscale or a reverse proxy with authentication — with actions on, anyone who can open the dashboard can stop, update or remove your containers.
+> 4. **Sometimes: `NEXTDASH_RUN_AS_ROOT=1`.** The container starts as root, then drops to its own `nextdash` user, which joins the group the socket belongs to (`docker`, gid 281 on Unraid). When the socket belongs to root's group (gid 0) — Docker Desktop, some NAS systems — that user cannot read it: the log says `is owned by gid 0` and Config → Containers shows **No access to the socket**. `NEXTDASH_RUN_AS_ROOT=1` keeps the app running as root so it can. Only set it then.
+
+**Docker Compose** — add to the nextDash service:
+
+```yaml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+      - NEXTDASH_DOCKER_CONTROL=1                        # start/stop/restart/update/remove
+      - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string
+      # - NEXTDASH_RUN_AS_ROOT=1                         # only if the log says "owned by gid 0"
+```
+
+**Unraid** — Docker → nextDash → Edit:
+
+- Fill in the template's **Docker socket** path (`/var/run/docker.sock`), **Docker socket variable** (`/var/run/docker.sock`) and **Write token**.
+- For actions: set the template's **Docker actions** to `1` (it starts at `0`).
+- Unraid's socket belongs to the `docker` group, so leave **Run as root** at `0`.
+
+Once it runs, the `#docker` view lists every container with a status glow and a link to its web UI, a side panel with logs, an hour of CPU and memory charts and release notes, and a badge for images with an update waiting. **Config → Containers** shows the connection as the server sees it — socket, actions, write token, its own container — and holds the update checks and an optional GitHub token. The [manual](MANUAL.md#146-what-it-needs) has the details, including Synology and QNAP.
 
 ---
 
@@ -154,13 +228,14 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - **A reverse proxy with authentication** — Traefik, Caddy or nginx with basic auth, OAuth2 Proxy or SSO.
 - **Local only** — bind to `127.0.0.1` and use an SSH tunnel.
 
-The short version is below; [MANUAL § 21](MANUAL.md#21-security-and-self-hosting) has the details.
+The short version is below; [MANUAL § 21](MANUAL.md#23-security-and-self-hosting) has the details.
 
-- **Write token.** Set `NEXTDASH_WRITE_TOKEN` and every write or destructive API call needs the header `X-NextDash-Token`. The dashboard supplies it for you. The capture routes (`/add` and the share target) cannot send a header; give them `NEXTDASH_CAPTURE_TOKEN`, which opens capture and nothing else.
+- **Write token.** Set `NEXTDASH_WRITE_TOKEN` and every write or destructive API call needs the header `X-NextDash-Token`. The dashboard supplies it for you, which means the page hands it to every browser that opens it. So the token keeps out other websites (a page that fires requests at your network) and scripts that only know the address — not someone who can open the dashboard. Keeping those out is the job of the network or proxy above. Use a long random string, such as `openssl rand -hex 32`; the server warns at startup when a token is short or still the example value. The capture routes (`/add` and the share target) cannot send a header; give them `NEXTDASH_CAPTURE_TOKEN`, which opens capture and nothing else.
 - **CORS.** Only browser extensions receive CORS headers. `NEXTDASH_CORS_ORIGINS` allows pages of your own; `*` allows every origin.
 - **Outgoing requests.** With local bookmarks disallowed, the server only reaches public hosts, re-checks addresses when it connects, and is rate-limited per client.
 - **The data directory is not served.** Only icons and an uploaded favicon or font are public.
 - **Activity trail.** A machine-readable JSON record, with seventeen channels. Changes and check results are on by default; choose the rest under **Config → Logs → Activity trail** or with `NEXTDASH_ACTIVITY_LOG`. URLs and searches can appear in it, so treat the files as private.
+- **Docker actions.** Starting, stopping or updating a container needs `NEXTDASH_DOCKER_CONTROL=1` plus the write token when one is set; reading the container list and running an update check need only the socket.
 
 ### Production Docker
 
@@ -188,6 +263,7 @@ environment:
   # System widgets (see Quick Start):
   # - NEXTDASH_HOST_ROOT=/host/root
   # - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+  # - NEXTDASH_DOCKER_CONTROL=1
   # Rate limits and headers:
   # - NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120
   # - NEXTDASH_SSRF_API_RATE_PER_MIN=60
@@ -231,7 +307,8 @@ Every variable is listed in the reference table below.
 | `NEXTDASH_ACTIVITY_OPEN_DETAIL` | `basic` | `off`, `basic` or `full` — what a bookmark-open record holds. **Open detail** in the app wins. |
 | `NEXTDASH_HOST_ROOT` | *(unset)* | Prefix the host's disks are mounted under, for the **Disks** widget |
 | `NEXTDASH_HOST_PROC` | `/proc` | The host's `/proc`, for **Processor** and **Memory** |
-| `NEXTDASH_DOCKER_SOCKET` | *(unset)* | The Docker socket, for **Containers**; unset hides the widget |
+| `NEXTDASH_DOCKER_SOCKET` | *(unset)* | The Docker socket, for the **Containers** widget and view; unset hides the widget |
+| `NEXTDASH_DOCKER_CONTROL` | off | `1` allows start, stop, pause, restart, update and remove in the **Containers** view |
 | `NEXTDASH_DISABLE_PREFETCH` | off | `1` skips the icon prefetch at start-up |
 | `NEXTDASH_RUN_AS_ROOT` | off | `1` keeps the container running as root |
 | `NEXTDASH_BUNDLE` | on | `off` serves scripts and stylesheets one by one, for debugging |
@@ -252,8 +329,9 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Add a link with one key, the full form, a paste, the extension, the share sheet or a bookmarklet. *[Manual §5](MANUAL.md#5-adding-bookmarks)*
 - Tags, notes, shortcuts and pins, and a preview card that says what a page is without opening it. *[Manual §6](MANUAL.md#6-opening-and-editing-bookmarks), [§10](MANUAL.md#10-tags)*
 - **Tag suggestions** tag whole groups at once — from your own tags, a shipped list of 463 subjects, and rules you write. Nothing is tagged until you accept. *[Manual §10.4](MANUAL.md#104-tag-suggestions)*
-- A **bookmarks workbench** in config: filter in a rail, edit one bookmark or a whole selection in a side panel. *[Manual §15.4](MANUAL.md#154-bookmarks)*
-- An **inbox** for links you have not filed yet — snooze, triage, promote, or keep them on a **Kept** tab until they have a place, then file a whole pile at once. *[Manual §14](MANUAL.md#14-inbox)*
+- A **Bookmarks view** for the whole collection: a rail of pages, categories and health filters, one-line rows with a score and open counts, and a side panel with Details, Health and Usage. Group, sort, work through what needs attention, export to CSV. *[Bookmarks view](MANUAL.md#11-the-bookmarks-view)*
+- An **inbox** for links you have not filed yet — snooze, promote, or triage it pile by pile: waiting longest, new this week, with a note. Keep puts a link in **Bookmarks → Unsorted** without filing it; promote it from there once it has a place. *[Manual §14](MANUAL.md#13-inbox)*
+- **Config → Inbox** sets how it collects, lists, and opens: Collecting, List, Panel & clicks and Header icon, each with a live preview. *[Config → Inbox](MANUAL.md#176-config-inbox)*
 - **Smart collections** fill themselves; custom collections follow your rules. *[Manual §9.6](MANUAL.md#96-smart-collections)*
 
 **Search and keyboard**
@@ -264,48 +342,54 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Health and monitoring**
 
-- A **health view** that finds what is broken, stale, duplicated, unchecked or changed, and helps you work through it. *[Manual §13](MANUAL.md#13-health-and-monitoring)*
-- **Uptime monitoring** with 30 days of history, response times, outages, certificate expiry, expected-response checks and drift detection. *[Manual §13.4](MANUAL.md#134-monitoring-over-time)*
-- Alerts to Slack, Discord, Telegram, Gotify, ntfy, Pushover, a JSON receiver or your browser, with maintenance windows and per-bookmark muting. *[Manual §13.7](MANUAL.md#137-alerts)*
-- **Fresh** shows which bookmarked sites published something new. *[Manual §13.9](MANUAL.md#139-fresh)*
-- Keep a copy of a page on your own disk or in the Web Archive. *[Manual §13.10](MANUAL.md#1310-keeping-a-copy-of-a-page)*
+- Health lives in the **Bookmarks view**: filters for broken, stale, duplicated, unchecked and changed, a Health tab in the side panel, and Work through to clear a pile — broken, changed, stale, never opened — one bookmark at a time, each with the reason it is there. **Collection health** (Overview, Monitors & trend) covers the whole collection; open one bookmark's own **Health in Large** for its uptime, response time, status codes and every check, with CSV export. *[Health and monitoring](MANUAL.md#11-the-bookmarks-view)*
+- **Uptime monitoring** with 30 days of history, response times, outages, certificate expiry, expected-response checks and drift detection. *[Manual §13.4](MANUAL.md#118-collection-health)*
+- Alerts to Slack, Discord, Telegram, Gotify, ntfy, Pushover, a JSON receiver or your browser, with maintenance windows and per-bookmark muting. *[Manual §13.7](MANUAL.md#124-alerts)*
+- **Fresh** shows which bookmarked sites published something new. *[Manual §13.9](MANUAL.md#126-fresh)*
+- Keep a copy of a page on your own disk or in the Web Archive. *[Manual §13.10](MANUAL.md#127-keeping-a-copy-of-a-page)*
 
 **Widgets**
 
-- Twenty-one kinds: health, uptime, certificates, trend, inbox, kept, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, weather, calendar and RSS. *[Manual §11](MANUAL.md#11-widgets)*
-- A widget set to two columns says more rather than the same thing larger: the load behind the processor's percentage, the container failing by name, the expiry date of a certificate, what the weather feels like. One column keeps the important half. *[Manual §11.2](MANUAL.md#112-adding-and-arranging)*
-- A **Custom widget** reads any service that answers with JSON, with 28 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and more. *[Manual §11.5](MANUAL.md#115-the-custom-widget)*
+- Twenty-two kinds: health, uptime, certificates, trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, container list, weather, calendar and RSS. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §11](MANUAL.md#15-widgets)*
+- A widget set to two columns says more rather than the same thing larger: the load behind the processor's percentage, the container failing by name, the expiry date of a certificate, what the weather feels like. One column keeps the important half. *[Manual §11.2](MANUAL.md#152-adding-and-arranging)*
+- A **Custom widget** reads any service that answers with JSON, with 28 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and more. *[Manual §11.5](MANUAL.md#155-the-custom-widget)*
+
+**Containers**
+
+- A **Containers view** (`#docker`) for everything on the host: status glow, group by status, a web UI column, a side panel with logs, stats, an hour of CPU and memory charts and environment. Give any container a web UI address of your own; the list, the widget and `:docker <name> open` all use it. Search finds a container by name, and `:docker` opens the view. *[Containers view](MANUAL.md#14-containers)*
+- Image update checks, on request and on an interval, show what changed; the header icon carries a badge for how many are waiting. *[Containers view](MANUAL.md#145-actions-and-updates)*
+- Start, stop, pause, restart, update and remove, behind `NEXTDASH_DOCKER_CONTROL` and the write token; set it all under **Config → Containers**. *[Containers view](MANUAL.md#145-actions-and-updates)*
 
 **Appearance**
 
-- 121 theme families in light and dark, each with a character that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — in a browser with live preview, plus an editor for your own. *[Manual §12](MANUAL.md#12-appearance)*
-- Character, depth, glow, effects and contrast for any theme; layout presets, columns, density, fonts and backdrops. *[Manual §12.3](MANUAL.md#123-surfaces)*
+- 155 theme families in light and dark, each with a character that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — in a browser with live preview — the newest wear a **new** badge — plus an editor for your own. *[Manual §12](MANUAL.md#16-appearance)*
+- Character, depth, glow, effects and contrast for any theme; layout presets, columns, density, fonts and backdrops. *[Manual §12.3](MANUAL.md#163-surfaces)*
 - A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu. *[Manual §4](MANUAL.md#4-the-dashboard)*
-- Six languages: English, Dutch, German, French, Spanish and Chinese. *[Manual §15](MANUAL.md#15-config)*
+- Six languages: English, Dutch, German, French, Spanish and Chinese. *[Manual §15](MANUAL.md#17-config)*
 
 **Data**
 
-- Import the bookmark file every browser exports — and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep — plus CSV. Export to HTML and CSV. *[Manual §17.1](MANUAL.md#171-backups-data)*
-- **Sources** keep bookmarks arriving from GitHub stars, Raindrop.io, Hacker News, YouTube and Mastodon. *[Manual §17.2](MANUAL.md#172-sources)*
-- Automatic backups of the whole data directory, and a 30-day trash. *[Manual §17](MANUAL.md#17-data-backups-and-import)*
-- A server log and an activity trail in the app. *[Manual §18](MANUAL.md#18-logs)*
+- Import the bookmark file every browser exports — and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep — plus CSV. Export to HTML and CSV. *[Manual §17.1](MANUAL.md#191-backups-data)*
+- **Sources** keep bookmarks arriving from GitHub stars, Raindrop.io, Hacker News, YouTube and Mastodon. *[Manual §17.2](MANUAL.md#192-sources)*
+- Automatic backups of the whole data directory, and a 30-day trash. *[Manual §17](MANUAL.md#19-data-backups-and-import)*
+- A server log and an activity trail in the app. *[Manual §18](MANUAL.md#20-logs)*
 
 **Self-hosting**
 
-- One Go binary and a directory of plain JSON. No database, no accounts, and analytics only if you switch them on. *[Manual §21](MANUAL.md#21-security-and-self-hosting)*
+- One Go binary and a directory of plain JSON. No database, no accounts, and analytics only if you switch them on. *[Manual §21](MANUAL.md#23-security-and-self-hosting)*
 - A write token, a CORS allowlist, rate limits, SSRF protection and an activity trail for when it faces a network. *[Security](#security)*
 
 ---
 
 ## What nextDash talks to
 
-- **Browser extension** (`extension/`) — saves the current tab to a page or to the inbox. Open `chrome://extensions/`, switch on **Developer mode**, click **Load unpacked** and choose the `extension/` folder. *[Manual §19](MANUAL.md#19-browser-extension-and-capture)*
-- **A capture route** — `GET /add?url=…&title=…` saves to the inbox and answers with a readable page, so anything that can open a URL or run `curl` can save to nextDash. *[Manual §19.2](MANUAL.md#192-capture-without-the-extension)*
+- **Browser extension** (`extension/`) — saves the current tab to a page or to the inbox. Open `chrome://extensions/`, switch on **Developer mode**, click **Load unpacked** and choose the `extension/` folder. *[Manual §19](MANUAL.md#21-browser-extension-and-capture)*
+- **A capture route** — `GET /add?url=…&title=…` saves to the inbox and answers with a readable page, so anything that can open a URL or run `curl` can save to nextDash. *[Manual §19.2](MANUAL.md#212-capture-without-the-extension)*
 - **[`integrations/`](integrations/)** — a shell one-liner, two Raycast commands, a **Dropzone 5** action, a Ulauncher extension, and recipes for Alfred and Apple Shortcuts, all built on that route. The [Dropzone 5 action](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos) also has its own repository. *[`integrations/README.md`](integrations/README.md)*
-- **A bookmarklet and the phone share sheet** — **Config → Help → Inbox** builds a bookmarklet for your install; installed as an app, nextDash joins the share sheet. *[Manual §20](MANUAL.md#20-phones-tablets-and-the-installed-app)*
-- **Outgoing webhooks** — five events, signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme. *[Manual §17.3](MANUAL.md#173-webhooks)*
-- **An MCP endpoint** — four tools for MCP clients to search and add bookmarks, off until you switch it on. *[Manual §21.6](MANUAL.md#216-the-mcp-endpoint)*
-- **The machine it runs on** — the system widgets read `/proc`, the disks you name and optionally the Docker socket, all read-only. *[Manual §11.4](MANUAL.md#114-system-widgets-and-what-they-need)*
+- **A bookmarklet and the phone share sheet** — **Config → Help → Inbox** builds a bookmarklet for your install; installed as an app, nextDash joins the share sheet. *[Manual §20](MANUAL.md#22-phones-tablets-and-the-installed-app)*
+- **Outgoing webhooks** — six events, signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme. *[Manual §17.3](MANUAL.md#193-webhooks)*
+- **An MCP endpoint** — four tools for MCP clients to search and add bookmarks, off until you switch it on. *[Manual §21.6](MANUAL.md#236-the-mcp-endpoint)*
+- **The machine it runs on** — the system widgets read `/proc`, the disks you name and optionally the Docker socket, read-only unless you set `NEXTDASH_DOCKER_CONTROL=1`, which also uses the socket to write. Update checks reach the image registries, and optionally GitHub. *[Manual §11.4](MANUAL.md#154-system-widgets-and-what-they-need)*
 
 ---
 

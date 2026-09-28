@@ -51,7 +51,6 @@ class DashboardSetup {
             d.settings.rowHighlight === 'strong' ? 'strong' : 'subtle');
         document.body.setAttribute('data-show-date', d.settings.showDate);
         document.body.setAttribute('data-show-config-button', d.settings.showConfigButton !== false);
-        document.body.setAttribute('data-show-health-dashboard', d.settings.showHealthDashboard === true);
         document.body.setAttribute('data-show-pages-button', d.settings.showPagesButton !== false);
         document.body.setAttribute('data-show-inbox-button', d.settings.showInboxButton !== false);
         document.body.setAttribute('data-show-dashboard-button', d.settings.showDashboardButton !== false);
@@ -530,27 +529,18 @@ class DashboardSetup {
                     e.preventDefault();
                     e.stopPropagation();
                     window.nextdashRecordKey?.('Shift + I');
-                    /*
-                     * The first tab, named rather than left to whatever the tab
-                     * was last time.
-                     *
-                     * Without it the key opened the view on this.tab, which
-                     * holds Kept for the rest of the session once Kept has been
-                     * visited -- so Shift+I landed on Kept, and pressed while
-                     * already on Kept it did nothing at all. Shift+U is the key
-                     * that means Kept; this one means the inbox.
-                     */
-                    void d.inbox.openInboxView({ tab: 'triage' });
+                    void d.inbox.openInboxView();
                 }
                 return;
             }
 
+            // Bookmarks, on what was kept and waits for a page.
             if (e.shiftKey && e.code === 'KeyU') {
-                if (d.settings?.unsortedEnabled !== false && d.inbox?.isEnabled?.()) {
+                if (d.config?.isEnabled?.()) {
                     e.preventDefault();
                     e.stopPropagation();
                     window.nextdashRecordKey?.('Shift + U');
-                    void d.inbox.openInboxView({ tab: 'kept' });
+                    void d.openUnsortedBookmarks();
                 }
                 return;
             }

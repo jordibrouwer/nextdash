@@ -21,6 +21,7 @@ class DashboardRenderCore {
         cpu: { configKey: 'refreshSeconds', floor: 1, fallback: 5 },
         memory: { configKey: 'refreshSeconds', floor: 2, fallback: 10 },
         docker: { configKey: 'refreshSeconds', floor: 2, fallback: 30 },
+        containers: { configKey: 'refreshSeconds', floor: 5, fallback: 30 },
         disks: { configKey: 'refreshSeconds', floor: 5, fallback: 60 },
         // No config key of its own: the cadence is the same 30 minutes the
         // header's weather line already beats at, not a second setting.
@@ -887,8 +888,13 @@ class DashboardRenderCore {
         const d = this.dash;
         const key = `dashboard.widgetType.${type}`;
         const label = d.language?.t?.(key);
-        return label && label !== key ? label : String(type || 'widget');
+        return label && label !== key
+            ? label
+            : (DashboardRenderCore.WIDGET_TYPE_NAMES[type] || String(type || 'widget'));
     }
+
+    /** Names in English for the types whose name is not translated yet. */
+    static WIDGET_TYPE_NAMES = { containers: 'Container list' };
 
     /*
      * Put the blocks in the order the reader arranged them.
@@ -941,15 +947,8 @@ class DashboardRenderCore {
             d.inbox.render();
             return;
         }
-        if (d.activeView === 'health' && d.health?.isEnabled?.()) {
-            d.data?.schedulePageBookmarksHealIfNeeded?.();
-            if (blockForInlineEdit) {
-                return;
-            }
-            d.health.render();
-            return;
-        }
-        if (d.activeView === 'config' && d.config?.isEnabled?.()) {
+        // The Bookmarks view ('library') is the config module's too.
+        if ((d.activeView === 'config' || d.activeView === 'library') && d.config?.isEnabled?.()) {
             if (blockForInlineEdit) {
                 return;
             }
@@ -991,7 +990,7 @@ class DashboardRenderCore {
         d._bookmarkGridRenderedAt = Date.now();
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
-        container.classList.remove('inbox-layout', 'health-layout', 'config-layout');
+        container.classList.remove('inbox-layout', 'config-layout');
 
         d._abortInlineEditForRender();
         window.DashboardSmartWhyPopover?.hide?.();

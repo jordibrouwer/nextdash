@@ -49,10 +49,38 @@
         return undefined;
     }
 
+    /**
+     * The whole tile is a link to the Docker view.
+     *
+     * A native <a> cannot host the updates line's own link (no nested anchors),
+     * so this is role="link" + tabindex rather than a real anchor -- Enter and
+     * a click both open the view, and either backs off when the click landed
+     * on an inner control so that link can navigate itself.
+     */
+    function bindTileOpen(panel, dash) {
+        panel.setAttribute('data-docker-open', '');
+        panel.setAttribute('role', 'link');
+        panel.setAttribute('tabindex', '0');
+        const open = () => {
+            const opened = dash?.docker?.openDockerView?.();
+            if (opened && typeof opened.catch === 'function') opened.catch(() => {});
+        };
+        panel.addEventListener('click', (e) => {
+            if (e.target.closest('a, button')) return;
+            open();
+        });
+        panel.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' || e.target.closest('a, button')) return;
+            e.preventDefault();
+            open();
+        });
+    }
+
     function draw(body, widget, dash, data) {
         const u = U();
         const s = S();
         const panel = u.panel(body);
+        bindTileOpen(panel, dash);
         const docker = data?.docker;
 
         if (!docker || !docker.available) {
@@ -129,6 +157,21 @@
                 list.appendChild(item);
             });
             panel.appendChild(list);
+        }
+
+        // An image with a newer tag out there is the one figure worth a link
+        // of its own: it leads straight to the filtered list rather than
+        // making the reader open the view and pick the filter themselves.
+        const updates = Number(docker.updates) || 0;
+        if (updates > 0) {
+            const link = document.createElement('a');
+            link.className = 'dashboard-widget-footnote dashboard-widget-footnote--warn';
+            link.href = '#docker?filter=updates';
+            link.setAttribute('data-docker-updates-link', '');
+            link.textContent = updates === 1
+                ? label(dash, 'dashboard.dockerUpdatesCountOne', '1 update')
+                : label(dash, 'dashboard.dockerUpdatesCount', '{count} updates').replace('{count}', String(updates));
+            panel.appendChild(link);
         }
 
         /*

@@ -1,5 +1,6 @@
 /*
- * Config → Bookmarks → List as a workbench: rail · list · panel.
+ * The Bookmarks view as a workbench: rail · list, the panel a side panel over
+ * the page (list-view-drawer.js).
  *
  * Colours come from the theme; the slabs use the surface ladder and the
  * theme's edges the way the view headers do, and stay flat on flat depth.
@@ -9,46 +10,53 @@
 
 .config-bm-workbench {
     --bm-rail-w: 176px;
-    --bm-panel-w: 260px;
-    --bm-row-h: 44px;
+    /* Health's row (health-view.css): 8px, a 29px line, 8px, a 1px rule.
+       The virtual list reads this, so it must be the drawn height. */
+    --bm-row-h: 46px;
     --bm-head-h: 32px;
     --bm-slab-bg: var(--surface-2, var(--background-secondary));
     --bm-slab-radius: var(--radius-5, 8px);
     display: grid;
-    grid-template-columns: var(--bm-rail-w) minmax(0, 1fr) var(--bm-panel-w);
+    grid-template-columns: var(--bm-rail-w) minmax(0, 1fr);
     gap: var(--space-4, 1rem);
     align-items: start;
-}
-
-.config-bm-workbench.is-panel-collapsed {
-    grid-template-columns: var(--bm-rail-w) minmax(0, 1fr) 28px;
-}
-
-/* The rail grows with the page and shows every group in full; only the
-   panel is a sticky, scrolling column. */
-.config-bm-panel {
-    position: sticky;
-    top: var(--space-4, 1rem);
-    max-height: calc(100vh - 2 * var(--space-4, 1rem));
-    overflow: auto;
 }
 
 .config-bm-main {
     min-width: 0;
 }
 
-.config-bm-rail-search {
+/* In the toolbar now, ahead of the count — Health's rail carries no search
+   box, so this one moved off it. */
+.config-bm-search {
     position: relative;
+    /* Same growth rule list-view-shell.css gives the views' own toolbar
+       search boxes: it takes the room the sort/count beside it do not
+       claim, rather than an <input>'s intrinsic width. */
+    flex: 1 1 14rem;
+    min-width: 0;
 }
 
-.config-bm-rail-search input {
+/* Copies .health-view-search-input (health-view.css:462) so the two views'
+   search boxes read as the same control; the growth rule stays the one on
+   the label above, not this one's own flex: 1 1 12rem. Radius is
+   --layout-radius-sm, not health's own declared --radius-4: inside Health's
+   toolbar `.lvs-toolbar input` (list-view-shell.css) wins that property and
+   is what the reader actually sees, so that is the value to match. */
+.config-bm-search input {
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
-    padding-right: 2rem;
+    padding: var(--space-1-5, 0.35rem) 2rem var(--space-1-5, 0.35rem) var(--space-2, 0.55rem);
+    border-radius: var(--layout-radius-sm);
+    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-text) * 0.914);
 }
 
-.config-bm-rail-search kbd {
+.config-bm-search kbd {
     position: absolute;
     right: var(--space-2, 0.5rem);
     top: 50%;
@@ -67,22 +75,13 @@
     flex: 1;
 }
 
+.config-bm-group,
 .config-bm-sort {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2, 0.5rem);
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
-}
-
-.config-bm-panel {
-    background: var(--surface-3, var(--background-secondary));
-    border-radius: var(--bm-slab-radius);
-    padding: var(--space-4, 1rem);
-}
-
-html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
-    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
 }
 
 .config-bm-panel-empty {
@@ -115,23 +114,30 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
     margin-top: var(--space-2, 0.5rem);
 }
 
+/* Plain text, not a filled pill: the rail around it carries no boxes any
+   more, and a coloured chip was the one shape left that did. */
 .config-bm-rail-token {
     display: inline-flex;
     gap: 0.3em;
     align-items: flex-start;
     white-space: normal;
     border: 0;
-    border-radius: var(--radius-3, 4px);
+    border-radius: var(--layout-radius-sm);
     padding: 1px 6px;
     font: inherit;
     font-size: var(--font-size-small);
     font-family: var(--font-family-mono, ui-monospace, monospace);
     color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    background: none;
     cursor: pointer;
     max-width: 100%;
     overflow-wrap: anywhere;
     text-align: left;
+}
+
+.config-bm-rail-token:hover,
+.config-bm-rail-token:focus-visible {
+    background: var(--background-secondary);
 }
 
 .config-bm-rail-clear-all,
@@ -145,53 +151,58 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
     cursor: pointer;
 }
 
+/* No box: a group here is a heading and its rows, the way .lvs-group in
+   list-view-shell.css is — the rail's own surface used to double as a card
+   round each one, which Health's rail does not have. */
 .config-bm-rail-group {
-    background: var(--bm-slab-bg);
-    border-radius: var(--bm-slab-radius);
-    padding: var(--space-1, 0.25rem) 6px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
 }
 
-html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
-    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
-}
-
+/* Values copied from .lvs-group-title (list-view-shell.css). */
 .config-bm-rail-title {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin: var(--space-1, 0.25rem) 0;
-    font-size: var(--font-size-small);
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: calc(var(--font-size-text) * 0.86);
+    letter-spacing: 0.05em;
     color: var(--text-secondary);
+    padding: 0 var(--space-2) var(--space-1);
 }
 
+/* Values copied from .lvs-filter (list-view-shell.css); the count and the
+   health dot are this rail's own, not part of that shared row. */
 .config-bm-rail-item {
     display: flex;
     /* A label that wraps keeps its count on the first line. */
     align-items: flex-start;
-    gap: 6px;
+    gap: var(--space-2);
     width: 100%;
+    padding: var(--space-1) var(--space-2);
     border: 0;
-    border-radius: var(--radius-3, 4px);
-    padding: 2px var(--space-1, 0.25rem);
-    background: none;
-    color: var(--text-primary);
+    background: transparent;
+    color: var(--text-secondary);
     font: inherit;
-    font-size: var(--font-size-controls);
+    font-size: var(--font-size-text);
     text-align: left;
+    border-radius: var(--layout-radius-sm);
     cursor: pointer;
 }
 
-.config-bm-rail-item:hover,
+.config-bm-rail-item:hover {
+    background: var(--background-secondary);
+}
+
 .config-bm-rail-item:focus-visible {
-    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
 }
 
 .config-bm-rail-item.is-on {
+    background: var(--background-secondary);
     color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    font-weight: 500;
 }
 
 .config-bm-rail-item.is-empty:not(.is-on) {
@@ -262,10 +273,6 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
 }
 
 .config-bm-row {
-    background: var(--bm-slab-bg);
-}
-
-.config-bm-row {
     display: grid;
     /* The name column carries a floor: CSS Grid hands a fixed-max track
        (tags) its full share before a bare `1fr` ever sees a pixel, so
@@ -275,13 +282,20 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
 
        The floor is what a title needs to be read: the columns to its right
        are capped rather than wide, so the name keeps the slack. */
-    grid-template-columns: 16px 20px minmax(10rem, 1fr) minmax(0, 6rem) 3.5rem 5.5rem;
+    grid-template-columns: 1.1rem 1.4rem minmax(10rem, 1fr) minmax(0, 6rem) 3.5rem 5.5rem;
     align-items: center;
-    gap: var(--space-2, 0.5rem);
+    gap: var(--space-3, 0.75rem);
     height: var(--bm-row-h);
     box-sizing: border-box;
     overflow: hidden;
     cursor: default;
+    /* Health's row: rows touch, a rule between them, no slab of their own.
+       background-color only, never the shorthand: the glow is a
+       background-image (list-view-shell.css, [data-lvs-status]). */
+    padding-inline: var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--border-primary);
+    background-color: transparent;
+    font-size: var(--font-size-controls);
 }
 
 .config-bm-group-head {
@@ -298,26 +312,13 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
     background: none;
     box-shadow: none;
     border-radius: 0;
-    font-size: var(--font-size-small);
-    letter-spacing: 0.08em;
+    /* The inbox's date heads (.inbox-date-group-title): a caption over rows
+       that read as one table. */
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--text-secondary);
-}
-
-.config-bm-row.is-group-start {
-    border-radius: var(--bm-slab-radius) var(--bm-slab-radius) 0 0;
-}
-
-.config-bm-row.is-group-end {
-    border-radius: 0 0 var(--bm-slab-radius) var(--bm-slab-radius);
-}
-
-.config-bm-row.is-group-start.is-group-end {
-    border-radius: var(--bm-slab-radius);
-}
-
-html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
-    box-shadow: 0 6px 14px -10px var(--shadow-color, rgba(0, 0, 0, 0.5));
+    color: var(--text-tertiary);
 }
 
 .config-bm-group-select {
@@ -354,16 +355,38 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
 }
 
 .config-bm-row:hover {
-    background: color-mix(in srgb, var(--accent-primary) 6%, var(--bm-slab-bg));
+    background-color: var(--background-secondary);
 }
 
 .config-bm-row.is-checked {
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--bm-slab-bg));
+    background-color: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
 }
 
 .config-bm-row.keyboard-selected {
-    background: color-mix(in srgb, var(--accent-primary) 18%, var(--bm-slab-bg));
-    box-shadow: inset 2px 0 0 var(--accent-primary);
+    background-color: var(--background-secondary);
+    box-shadow:
+        inset 3px 0 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+/* The checkbox rests out of sight until the pointer, the focus or a live
+   selection asks for it, as on Health's and the inbox's rows. */
+.config-bm-tick-cell {
+    visibility: hidden;
+}
+
+.config-bm-row:hover .config-bm-tick-cell,
+.config-bm-row:focus-within .config-bm-tick-cell,
+.config-bm-row.keyboard-selected .config-bm-tick-cell,
+.config-bm-row.is-checked .config-bm-tick-cell,
+#config-bm-list:has(.config-bm-tick:checked) .config-bm-tick-cell {
+    visibility: visible;
+}
+
+@media (hover: none) {
+    .config-bm-tick-cell {
+        visibility: visible;
+    }
 }
 
 .config-bm-tick-cell,
@@ -380,13 +403,13 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
  */
 .config-bm-row .health-view-item-icon,
 .config-bm-row .config-bm-icon {
-    width: 20px;
-    height: 20px;
+    width: 1.4rem;
+    height: 1.4rem;
     border: 0;
     background: none;
     border-radius: 4px;
     flex: none;
-    font-size: 14px;
+    font-size: 0.9rem;
     line-height: 1;
 }
 
@@ -423,22 +446,21 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     overflow: hidden;
 }
 
-.config-bm-name .config-bm-health-dot {
-    align-self: center;
-}
-
 .config-bm-title {
     flex: 0 1 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: var(--font-size-controls);
+    font-weight: 600;
+    line-height: 1.35;
     color: var(--text-primary);
 }
 
 .config-bm-domain,
 .config-bm-crumb {
-    font-family: var(--font-family-mono, ui-monospace, monospace);
-    font-size: var(--font-size-small);
+    font-size: var(--font-size-controls);
+    font-weight: 400;
     color: var(--text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -483,6 +505,16 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     display: none;
 }
 
+/* Under a Health filter the tags cell carries the primary reason instead —
+   one line, clipped rather than wrapped, so the row keeps --bm-row-h. */
+.config-bm-reason {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
 .config-bm-opens,
 .config-bm-last {
     font-family: var(--font-family-mono, ui-monospace, monospace);
@@ -490,6 +522,49 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     color: var(--text-secondary);
     text-align: right;
     white-space: nowrap;
+}
+
+/* The opens column's stand-in under a Health filter: Health's own score
+   badge (.health-view-item-score, health-view.css), self-toned rather than
+   reading --health-view-band, since this row is not one of Health's own. */
+.config-bm-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.2rem;
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid color-mix(in srgb, var(--config-bm-score-tone) 35%, transparent);
+    background: color-mix(in srgb, var(--config-bm-score-tone) 14%, transparent);
+    color: var(--config-bm-score-tone);
+    font-weight: var(--font-weight-semibold);
+}
+
+.config-bm-score[data-tone="good"] { --config-bm-score-tone: var(--accent-success); }
+.config-bm-score[data-tone="warn"] { --config-bm-score-tone: var(--accent-warning); }
+.config-bm-score[data-tone="bad"] { --config-bm-score-tone: var(--accent-error); }
+.config-bm-score[data-tone="info"] { --config-bm-score-tone: var(--accent-primary); }
+.config-bm-score[data-tone="muted"] { --config-bm-score-tone: var(--text-tertiary); }
+
+/* The same badge in the other views' side panels (side-panel-layout.js):
+   a word -- unread, running -- rather than a number. */
+.config-bm-score.slp-badge {
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+}
+
+/* Inbox's note, edited in place. */
+.inbox-drawer-note-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.inbox-drawer-note-input {
+    width: 100%;
+    min-height: 4.5rem;
+    resize: vertical;
+    box-sizing: border-box;
 }
 
 /* ── Folded panel: more per row ───────────────────────────────────────── */
@@ -502,7 +577,7 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     .config-bm-workbench.is-panel-collapsed .config-bm-row {
         /* Every column here is a fact about the bookmark; the name is the
            bookmark. Caps trimmed all round so the title reads in full. */
-        grid-template-columns: 16px 20px minmax(14rem, 1fr) minmax(0, 6rem) 1.5rem 3.5rem 7rem 5rem 3rem 5rem;
+        grid-template-columns: 1.1rem 1.4rem minmax(14rem, 1fr) minmax(0, 6rem) 1.5rem 3.5rem 3rem 5rem;
     }
 
 
@@ -528,39 +603,9 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
 /* ── Panel ────────────────────────────────────────────────────────────── */
 
 .config-bm-panel {
-    position: sticky;
     display: flex;
     flex-direction: column;
     gap: var(--space-3, 0.75rem);
-}
-
-.config-bm-panel-toggle {
-    align-self: flex-end;
-    display: inline-flex;
-    gap: var(--space-1, 0.25rem);
-    border: 0;
-    background: none;
-    color: var(--text-secondary);
-    font: inherit;
-    font-size: var(--font-size-small);
-    cursor: pointer;
-}
-
-/* Beats the themed slab shadow above, which carries html/body in its selector. */
-html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
-    padding: var(--space-2, 0.5rem) 0;
-    background: none;
-    box-shadow: none;
-}
-
-.config-bm-workbench.is-panel-collapsed .config-bm-panel-body {
-    display: none;
-}
-
-.config-bm-workbench.is-panel-collapsed .config-bm-panel-toggle {
-    writing-mode: vertical-rl;
-    align-self: center;
-    color: var(--accent-primary);
 }
 
 .config-bm-panel-head {
@@ -671,6 +716,14 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     margin: 2px 0;
 }
 
+/* Health's bulk actions under the selection's health line. */
+.config-bm-health-bulk {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
 .config-bm-panel-muted {
     color: var(--text-secondary);
     font-size: var(--font-size-small);
@@ -739,54 +792,19 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     display: none;
 }
 
-@media (max-width: 1199px) {
-    .config-bm-workbench,
-    .config-bm-workbench.is-panel-collapsed {
-        grid-template-columns: var(--bm-rail-w) minmax(0, 1fr);
-    }
-
-    .config-bm-narrow-only:not(.config-bm-phone-only) {
-        display: inline-flex;
-    }
-
-    .config-bm-panel {
-        display: none;
-        position: fixed;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: min(420px, 100vw);
-        max-height: none;
-        border-radius: 0;
-        z-index: 1200;
-        overflow: auto;
-    }
-
-    .config-bm-workbench.is-drawer-open .config-bm-panel {
-        display: flex;
-    }
-
-    .config-bm-workbench.is-panel-collapsed .config-bm-panel-body {
-        display: block;
-    }
-
-    .config-bm-panel-toggle {
-        display: none;
-    }
-
-    .config-bm-scrim:not([hidden]) {
-        display: block;
-        position: fixed;
-        inset: 0;
-        z-index: 1100;
-        background: color-mix(in srgb, var(--background-primary) 60%, transparent);
-    }
-}
-
 @media (max-width: 799px) {
     .config-bm-workbench,
     .config-bm-workbench.is-panel-collapsed {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* Behind the filters' sheet. */
+    .config-bm-scrim:not([hidden]) {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: calc(var(--layer-sticky-band, 5) + 1399);
+        background: color-mix(in srgb, var(--background-primary) 60%, transparent);
     }
 
     .config-bm-narrow-only.config-bm-phone-only {
@@ -803,7 +821,7 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
         max-height: none;
         padding: var(--space-3, 0.75rem);
         background: var(--surface-3, var(--background-secondary));
-        z-index: 1200;
+        z-index: calc(var(--layer-sticky-band, 5) + 1400);
         overflow: auto;
     }
 
@@ -812,7 +830,18 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     }
 
     .config-bm-row {
-        grid-template-columns: 16px 20px minmax(0, 1fr);
+        grid-template-columns: 1.1rem 1.4rem minmax(0, 1fr);
+    }
+
+    /* The search box takes a line of its own; the count and the Filters,
+       Details and Sort buttons share the next. On one line they ran off both
+       edges of a phone. */
+    .config-bm-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .config-bm-search {
+        flex: 1 1 100%;
     }
 
     .config-bm-tags,
@@ -835,4 +864,2390 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     font-size: calc(var(--font-size-controls) * 0.72);
     font-weight: var(--font-weight-medium);
     color: var(--text-secondary);
+}
+
+/* The panel's parts fold like the shared side panel's sections
+   (.lvs-drawer-section, list-view-shell.css); these are Config's own bits. */
+.config-bm-panel-url {
+    font-size: var(--font-size-small);
+    color: var(--accent-vivid, var(--accent-primary));
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.config-bm-panel-url:hover,
+.config-bm-panel-url:focus-visible {
+    text-decoration: underline;
+}
+
+.config-bm-panel-section .config-bm-panel-fact,
+.config-bm-panel-section .config-bm-panel-muted {
+    margin: 0;
+}
+
+.config-bm-panel-section .config-bm-panel-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* ── The panel's fields ───────────────────────────────────────────────────
+   Labels sit beside their fields, so the panel reads short; the side panel
+   around it scrolls. The bulk form keeps its stacked fields. */
+@media (min-width: 1200px) {
+    .config-bm-panel {
+        gap: var(--space-2, 0.5rem);
+    }
+
+    .config-bm-panel-head--single + .config-bm-panel-section .config-bm-panel-fields,
+    .config-bm-panel .config-bm-panel-section .config-bm-panel-fields {
+        gap: var(--space-1-5, 0.35rem);
+    }
+
+    .config-bm-panel-section .config-bm-field {
+        display: grid;
+        grid-template-columns: 4.5rem minmax(0, 1fr);
+        align-items: center;
+        column-gap: var(--space-2, 0.5rem);
+    }
+
+    .config-bm-panel-section .config-bm-field--inline {
+        display: flex;
+    }
+
+    /* The grid above outranks .config-bm-field[hidden]; the interval field
+       hides until Monitor is picked. */
+    .config-bm-panel-section .config-bm-field[hidden] {
+        display: none;
+    }
+
+    .config-bm-panel-section .config-bm-field .config-bm-field-status {
+        grid-column: 2;
+    }
+
+    .config-bm-panel-section .config-bm-field .config-text,
+    .config-bm-panel-section .config-bm-field .config-select {
+        padding-block: var(--space-1, 0.25rem);
+        /* .config-text carries an 8rem floor (config-view.css), which pushed
+           the text fields past the panel's edge in the narrower column. */
+        min-width: 0;
+    }
+
+    .config-bm-panel-section .config-bm-field textarea.config-text {
+        min-height: 2.6rem;
+    }
+
+    .config-bm-panel-section .config-bm-tags-suggest {
+        margin-top: 0;
+        margin-left: calc(4.5rem + var(--space-2, 0.5rem));
+    }
+
+    /* Title and its buttons on as few lines as the names allow. */
+    .config-bm-panel-head--single {
+        gap: var(--space-1-5, 0.35rem);
+    }
+}
+
+/* ── Health's summary at the top of the rail ─────────────────────────────
+   The rows Health's own summary shows (dashboard-config-bookmarks-health.js
+   renderBmHealthSummary), in the slab the shell's summary uses. */
+/* Ground, corner and padding are .lvs-summary's (list-view-shell.css), the
+   tile Health's rail carries; the theme's edges come with that class. */
+.config-bm-health-summary {
+    gap: 2px;
+    margin-bottom: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.config-bm-health-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+}
+
+.config-bm-health-summary-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.config-bm-health-summary-row[data-tone="good"] .config-bm-health-summary-value { color: var(--accent-success); }
+.config-bm-health-summary-row[data-tone="warn"] .config-bm-health-summary-value { color: var(--accent-warning); }
+.config-bm-health-summary-row[data-tone="bad"] .config-bm-health-summary-value { color: var(--accent-error); }
+
+.config-bm-health-summary-row svg {
+    flex-basis: 100%;
+    width: 100%;
+    height: auto;
+}
+
+/* The Health filters' dots, beside the four the rail had. */
+.config-bm-health-dot.is-content,
+.config-bm-health-dot.is-stale,
+.config-bm-health-dot.is-certificates { background: var(--accent-warning); }
+.config-bm-health-dot.is-monitored { background: var(--accent-vivid, var(--accent-primary)); }
+.config-bm-health-dot.is-duplicate,
+.config-bm-health-dot.is-unused { background: var(--text-tertiary); }
+
+/* The Health section's check mode as a row of three buttons, as in the
+   mockup, rather than the menu with a sentence under each option that the
+   badge popover draws: the sentences are the button's title here. */
+.config-bm-health-check {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+}
+
+.config-bm-health-check .health-check-option {
+    width: auto;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 4px);
+}
+
+.config-bm-health-check .health-check-option.is-active {
+    border-color: var(--accent-primary);
+}
+
+.config-bm-health-check .health-check-option-body {
+    display: none;
+}
+
+.config-bm-health-check .health-check-interval {
+    flex-basis: 100%;
+}
+
+.config-bm-panel .health-view-score-panel,
+.config-bm-panel .health-view-expect-panel,
+.config-bm-panel .health-expect-form {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+/* Health's form lays its fields out at 17rem minimum, wider than this
+   panel: one column that shrinks, or the fields run past the edge. */
+.config-bm-panel .health-expect-form {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.config-bm-panel .health-expect-field,
+.config-bm-panel .health-expect-input {
+    min-width: 0;
+}
+
+/* ── The Bookmarks view ───────────────────────────────────────────────── */
+
+/* ── Collection health modal ──────────────────────────────────────────────
+   Opened from the rail's summary block or the bookmark list's `h` key
+   (dashboard-bookmarks-health-modal.js): one page reading of how the whole
+   collection is doing, every figure a click away from the list filtered to
+   it. Reuses .view-explain-modal for the scrolling shell (view-explainers.css)
+   and .config-btn for the footer's buttons. */
+.bm-health-modal-subtitle {
+    margin: 0 0 var(--space-3, 0.75rem);
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.82rem);
+}
+
+/* All of it on one screen: taller than the explainer shell allows, and the
+   cards stacked in columns rather than a grid, so a short card does not leave
+   a gap the height of its tall neighbour. */
+.modal.view-explain-modal.bm-health-modal,
+body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-health-modal {
+    max-height: calc(100vh - 3rem);
+}
+
+.bm-health-modal-grid {
+    columns: 4 15rem;
+    column-gap: var(--space-3, 0.75rem);
+}
+
+.bm-health-modal-card {
+    break-inside: avoid;
+    margin: 0 0 var(--space-3, 0.75rem);
+    background: var(--surface-3, var(--background-secondary));
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+.bm-health-modal-card-title {
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.72rem);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* 1. Score over time */
+.bm-health-modal-score-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3, 0.75rem);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-score-big {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    line-height: 1;
+}
+
+.bm-health-modal-score-deltas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-score-deltas b.is-up { color: var(--accent-success); }
+.bm-health-modal-score-deltas b.is-down { color: var(--accent-error); }
+
+.bm-health-modal-score-chart {
+    width: 100%;
+    height: auto;
+    color: var(--accent-primary);
+}
+
+/* 2. Where the bookmarks stand */
+.bm-health-modal-stack {
+    display: flex;
+    height: 20px;
+    border-radius: var(--radius-3, 4px);
+    overflow: hidden;
+    margin-bottom: var(--space-2, 0.5rem);
+    background: var(--border-primary);
+}
+
+.bm-health-modal-stack-seg {
+    display: block;
+    height: 100%;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    background: var(--text-tertiary);
+}
+
+.bm-health-modal-stack-seg[data-tone="good"] { background: var(--accent-success); }
+.bm-health-modal-stack-seg[data-tone="bad"] { background: var(--accent-error); }
+.bm-health-modal-stack-seg[data-tone="warn"] { background: var(--accent-warning); }
+.bm-health-modal-stack-seg.is-static { cursor: default; }
+
+.bm-health-modal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-xs, 0.75rem);
+}
+
+.bm-health-modal-legend-item { display: contents; }
+
+.bm-health-modal-legend-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
+    border: 0;
+    background: none;
+    padding: 0;
+    font: inherit;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.bm-health-modal-legend-btn.is-static { cursor: default; }
+
+.bm-health-modal-legend-btn:hover:not(.is-static),
+.bm-health-modal-legend-btn:focus-visible:not(.is-static) {
+    color: var(--text-primary);
+}
+
+.bm-health-modal-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--text-tertiary);
+}
+
+.bm-health-modal-legend-dot[data-tone="good"] { background: var(--accent-success); }
+.bm-health-modal-legend-dot[data-tone="bad"] { background: var(--accent-error); }
+.bm-health-modal-legend-dot[data-tone="warn"] { background: var(--accent-warning); }
+
+.bm-health-modal-legend-count { color: var(--text-primary); font-weight: 600; }
+
+/* 3. What is wrong, by kind / 5. By page share the same bar-row shape */
+.bm-health-modal-bars,
+.bm-health-modal-pages {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.3rem);
+}
+
+.bm-health-modal-bar-row,
+.bm-health-modal-page-row {
+    display: grid;
+    /* Every column may give: in a narrow card the label shortens with "…"
+       rather than pushing the count out past the card's edge. */
+    grid-template-columns: minmax(0, 9rem) minmax(1rem, 1fr) minmax(1.5rem, auto);
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    border: 0;
+    background: none;
+    padding: var(--space-hairline, 0.1rem) 0;
+    font: inherit;
+    font-size: var(--text-xs, 0.78rem);
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+}
+
+.bm-health-modal-page-row {
+    grid-template-columns: minmax(0, 7rem) minmax(1rem, 1fr) minmax(2rem, auto) minmax(1.5rem, auto);
+}
+
+.bm-health-modal-page-row.is-static {
+    cursor: default;
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-page-row.is-toggle {
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-page-row.is-toggle .bm-health-modal-page-name {
+    color: var(--accent-primary);
+}
+
+.bm-health-modal-page-row[hidden] {
+    display: none;
+}
+
+/* Every page on show: the card scrolls on its own, the modal stays put. */
+.bm-health-modal-pages.is-expanded {
+    max-height: 14rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.bm-health-modal-pages.is-expanded .is-toggle {
+    position: sticky;
+    bottom: 0;
+    background: var(--surface-3, var(--background-secondary));
+}
+
+.bm-health-modal-bar-row:hover .bm-health-modal-bar-label {
+    text-decoration: underline;
+}
+
+.bm-health-modal-bar-count {
+    text-align: right;
+}
+
+.bm-health-modal-bar-label,
+.bm-health-modal-page-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bm-health-modal-bar-track,
+.bm-health-modal-page-track {
+    height: 8px;
+    border-radius: var(--radius-2, 3px);
+    background: var(--border-primary);
+    overflow: hidden;
+}
+
+.bm-health-modal-bar-track i {
+    display: block;
+    height: 100%;
+    background: var(--accent-warning);
+    border-radius: inherit;
+}
+
+.bm-health-modal-page-track i {
+    display: block;
+    height: 100%;
+    background: var(--accent-success);
+    border-radius: inherit;
+}
+
+.bm-health-modal-bar-count,
+.bm-health-modal-page-pct {
+    text-align: right;
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-page-broken {
+    text-align: right;
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-page-broken.is-bad {
+    color: var(--accent-error);
+}
+
+/* 4. Score distribution */
+.bm-health-modal-hist {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2, 0.5rem);
+    height: 90px;
+}
+
+.bm-health-modal-hist-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    font-size: var(--text-xs, 0.7rem);
+    color: var(--text-secondary);
+    gap: 2px;
+}
+
+.bm-health-modal-hist-bar {
+    display: block;
+    width: 100%;
+    min-height: 2px;
+    border-radius: var(--radius-2, 3px) var(--radius-2, 3px) 0 0;
+    background: var(--accent-primary);
+}
+
+/* 6. Checking coverage / 7. Monitors share the same tile and kv shape */
+.bm-health-modal-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-tile {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 4px);
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-tile b {
+    display: block;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.bm-health-modal-kv {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.78rem);
+    color: var(--text-secondary);
+    padding: 2px 0;
+}
+
+.bm-health-modal-kv span:last-child { color: var(--text-primary); }
+.bm-health-modal-kv .is-warn { color: var(--accent-warning); }
+.bm-health-modal-kv .is-bad { color: var(--accent-error); }
+
+.bm-health-modal-subhead {
+    margin: var(--space-2, 0.5rem) 0 var(--space-1, 0.25rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-monitor-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: var(--text-xs, 0.78rem);
+}
+
+.bm-health-modal-monitor-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    padding: 1px 0;
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-outage {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary);
+}
+
+/* 9. Footer */
+.bm-health-modal-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-3, 0.75rem);
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid var(--border-primary);
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .bm-health-modal-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Four steps down, taken one at a time until the cards fit the window
+   without a scrollbar (fitBmHealthModal): tighter spacing, then more and
+   narrower columns, then smaller type, then no Monitors card. */
+.bm-health-modal-grid.is-snug {
+    column-gap: var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-grid.is-snug .bm-health-modal-card {
+    margin-bottom: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-grid.is-snug .bm-health-modal-card-title {
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.bm-health-modal-grid.is-snug .bm-health-modal-bars,
+.bm-health-modal-grid.is-snug .bm-health-modal-pages {
+    gap: 0;
+}
+
+.bm-health-modal-grid.is-snugger {
+    columns: 5 12rem;
+}
+
+.bm-health-modal-grid.is-snugger .bm-health-modal-score-big {
+    font-size: 1.6rem;
+}
+
+.bm-health-modal-grid.is-smallest {
+    font-size: 0.9em;
+}
+
+.bm-health-modal-grid.is-smallest .bm-health-modal-bar-row,
+.bm-health-modal-grid.is-smallest .bm-health-modal-page-row {
+    font-size: var(--text-2xs, 0.7rem);
+}
+
+/* The fourth step: the Monitors card goes, being whole on its own tab.
+   Narrower columns than the third step's would fit more, but the counts and
+   the coverage tiles no longer fit inside their cards; below this, the modal
+   scrolls. */
+.bm-health-modal-grid.is-without-monitors [data-bm-health-modal-card="monitors"] {
+    display: none;
+}
+
+/* ── The panel's tabs (Details, Health, Usage) ───────────────────────── */
+
+.config-bm-panel-where {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-panel-heading .config-bm-score {
+    flex: none;
+}
+
+/* The rest of the actions, under ⋯ in the head. */
+.config-bm-more {
+    position: relative;
+}
+
+.config-bm-more-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    min-width: 14rem;
+    padding: var(--space-1, 0.25rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-modal, var(--background-primary));
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.config-bm-more-menu[hidden] {
+    display: none;
+}
+
+html body .config-bm-more-menu .config-btn {
+    justify-content: flex-start;
+    text-align: left;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+}
+
+.config-bm-more-menu .config-btn:hover,
+.config-bm-more-menu .config-btn:focus-visible {
+    background: var(--background-secondary);
+}
+
+/* A segmented bar: plain words next to each other read as text, not tabs.
+   Three equal columns rather than flex items sized by their content: the
+   active tab's weight and shadow, the Health dot and Safari's own button
+   metrics all changed that content, and the tabs shifted against each
+   other on every switch. */
+.config-bm-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3px;
+    padding: 3px;
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.config-bm-tab {
+    min-width: 0;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1, 0.25rem);
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    border: 0;
+    border-radius: calc(var(--radius-5, 8px) - 2px);
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+}
+
+.config-bm-tab:hover {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--background-primary) 50%, transparent);
+}
+
+.config-bm-tab.is-active {
+    color: var(--accent-primary);
+    background: var(--background-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+}
+
+.config-bm-tab kbd {
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
+.config-bm-tab-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-error);
+}
+
+.config-bm-pane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-bm-pane[hidden] {
+    display: none;
+}
+
+.config-bm-pane-sub {
+    margin: var(--space-2, 0.5rem) 0 0;
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-bm-usage-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.config-bm-usage-tiles > div {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-4, 6px);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-usage-tiles b {
+    display: block;
+    color: var(--text-primary);
+    font-size: 1.05em;
+}
+
+/*
+ * The head's first line is a grid, so the score and ⋯ keep their place at
+ * the right edge whatever the name or the address below it does. In Safari
+ * a long address with nowhere to break widened the head past the panel and
+ * carried the score out with it: every part of the head may shrink, and the
+ * address breaks anywhere.
+ */
+.config-bm-panel,
+.config-bm-panel-head,
+.config-bm-panel-body {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.config-bm-panel-head--single .config-bm-panel-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    min-width: 0;
+}
+
+/* In the Bookmarks view's side panel the name keeps to one line too, for the
+   same reason; Config's narrow column still gives it two. */
+.config-bm-drawer .config-bm-panel-head--single .config-bm-panel-title {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* One line each, cut short with an ellipsis: an address or a place that
+   wrapped made the head taller for one bookmark than the next, and the tabs
+   under it jumped on every switch. The whole address is its title. */
+.config-bm-panel-url,
+.config-bm-panel-where {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* ── Usage tab ────────────────────────────────────────────────────────── */
+
+.config-bm-usage-kv {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-usage-kv > span:first-child {
+    color: var(--text-secondary);
+}
+
+.config-bm-usage-kv > span:last-child {
+    text-align: right;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Added, edited and opened as marks on one line from "added" to now. */
+.config-bm-usage-life {
+    position: relative;
+    height: 18px;
+}
+
+.config-bm-usage-life > span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 7px;
+    height: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+.config-bm-usage-life > i {
+    position: absolute;
+    top: 1px;
+    width: 3px;
+    height: 16px;
+    margin-left: -1px;
+    border-radius: 2px;
+}
+
+.config-bm-usage-life .is-added { background: var(--text-secondary); }
+.config-bm-usage-life .is-edited { background: var(--accent-warning); }
+.config-bm-usage-life .is-opened { background: var(--accent-primary); }
+
+/* The collection's opens, most opened first; this bookmark's slice marked. */
+.config-bm-usage-rank {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 46px;
+}
+
+.config-bm-usage-rank > b {
+    flex: 1;
+    border-radius: 1px 1px 0 0;
+    background: color-mix(in srgb, var(--text-primary) 18%, transparent);
+}
+
+.config-bm-usage-rank > b.is-me {
+    background: var(--accent-primary);
+}
+
+.config-bm-usage-weeks line {
+    stroke: color-mix(in srgb, var(--text-primary) 20%, transparent);
+}
+
+.config-bm-usage-weeks rect {
+    fill: var(--accent-primary);
+}
+
+.config-bm-usage-weeks text {
+    fill: var(--text-secondary);
+    font-size: 9.5px;
+    font-family: inherit;
+}
+
+/*
+ * The head's buttons: one row of the theme's own small buttons. They wrapped
+ * onto three lines with keycaps inside them, which read as clutter rather
+ * than as the panel's three actions; the keys live in their titles and in
+ * the list's legend.
+ */
+.config-bm-panel-head .config-bm-panel-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.config-bm-panel-head .config-bm-panel-actions .config-btn {
+    white-space: nowrap;
+}
+
+/* ── Pages and categories modal ───────────────────────────────────────── */
+
+/* Under the confirmations it opens (2000), which must land on top of it. */
+.config-structure-overlay {
+    z-index: 1990;
+}
+
+.config-structure-overlay .config-structure-modal {
+    max-width: min(52rem, calc(100vw - 2rem));
+    width: 100%;
+    max-height: calc(100vh - 4rem);
+    overflow: auto;
+    scrollbar-gutter: stable;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-structure-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.config-structure-close {
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.config-structure-close:hover {
+    color: var(--text-primary);
+}
+
+.config-structure-broken {
+    align-self: center;
+    color: var(--accent-error);
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+}
+
+/*
+ * The head ends where the tabs begin: room under its buttons and a hairline
+ * across the whole panel. Without them the buttons stood right on the tab
+ * bar and the two read as one block.
+ */
+.config-bm-panel-head--single {
+    padding-bottom: var(--space-3, 0.75rem);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+}
+
+/* In the side panel the line runs past the padding, to the margin the panel
+   scrolls inside (list-view-shell.css): any further and it would be cut. */
+.config-bm-drawer .config-bm-panel-head--single {
+    margin-left: calc(-1 * var(--space-2, 0.5rem));
+    margin-right: calc(-1 * var(--space-2, 0.5rem));
+    padding-left: var(--space-2, 0.5rem);
+    padding-right: var(--space-2, 0.5rem);
+}
+
+.config-bm-panel-head--single + .config-bm-tabs {
+    margin-top: var(--space-1, 0.25rem);
+}
+
+/* ── Row status and score ─────────────────────────────────────────────── */
+
+/*
+ * The score closes the row, as in Health -- in the Bookmarks view, where the
+ * list has the page's width. Config's list shares its width with the panel
+ * column and goes without; its rows keep the columns they had.
+ */
+.config-bm-row-score {
+    justify-self: end;
+}
+
+@media (min-width: 800px) {
+    /* The tags keep room for one chip and its count: squeezed to nothing,
+       the chip that fitWorkbenchTags left showing was cut in half. The name
+       gives way first. */
+    .config-bm-workbench.is-library .config-bm-row {
+        /* One template per width, built from the columns View leaves
+           (workbenchColumnStyle): only the cells this width draws. */
+        grid-template-columns: var(--bm-cols-mid, 1.1rem 1.4rem minmax(8rem, 1fr) minmax(5rem, 6rem) 3rem 5rem 2.6rem);
+    }
+}
+
+/* Added and the last 30 days of opens: where the Bookmarks view has the
+   width for them. Narrower, the row keeps the columns it had. */
+.config-bm-spark,
+.config-bm-added {
+    display: none;
+}
+
+@media (min-width: 1100px) {
+    .config-bm-workbench.is-library .config-bm-row {
+        grid-template-columns: var(--bm-cols-large, 1.1rem 1.4rem minmax(10rem, 1fr) minmax(5rem, 9rem) 4.5rem 3rem 5rem 5.5rem 2.6rem);
+    }
+
+    .config-bm-workbench.is-library .config-bm-spark {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .config-bm-workbench.is-library .config-bm-added {
+        display: block;
+        text-align: right;
+        white-space: nowrap;
+        font-size: var(--font-size-small);
+        color: var(--text-secondary);
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.config-bm-spark rect {
+    fill: var(--accent-primary);
+}
+
+.config-bm-spark rect.is-empty {
+    fill: color-mix(in srgb, var(--text-tertiary) 40%, transparent);
+}
+
+@media (min-width: 1200px) {
+    .config-bm-workbench.is-library .config-bm-row {
+        grid-template-columns: var(--bm-cols-wide, 1.1rem 1.4rem minmax(10rem, 1fr) minmax(5rem, 9rem) 1.5rem 3.5rem 4.5rem 3rem 5rem 5.5rem 2.6rem);
+    }
+}
+
+@media (max-width: 799px) {
+    .config-bm-workbench.is-library .config-bm-row {
+        grid-template-columns: var(--bm-cols-narrow, 1.1rem 1.4rem minmax(0, 1fr) 2.6rem);
+    }
+}
+
+/* Row height follows the app's one density setting (densityMode), as the
+   other list views' rows do; compact and auto are the 46px it always was.
+   The virtual list reads --bm-row-h, so this is the drawn height too. */
+body[data-density-mode="comfortable"] .config-bm-workbench {
+    --bm-row-h: 56px;
+}
+
+body[data-density-mode="dense"] .config-bm-workbench {
+    --bm-row-h: 40px;
+}
+
+/* The pair sits with the toolbar's other controls, not pushed to its end. */
+.config-bm-toolbar .config-bm-density {
+    margin-left: 0;
+}
+
+/* View: the rail folded away at every width, behind the Filters button --
+   the phone's sheet, on a wide screen. */
+@media (min-width: 800px) {
+    .config-bm-workbench.is-rail-folded {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .config-bm-workbench.is-rail-folded .config-bm-narrow-only.config-bm-phone-only {
+        display: inline-flex;
+    }
+
+    .config-bm-workbench.is-rail-folded .config-bm-rail {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(320px, 100vw);
+        max-height: none;
+        padding: var(--space-3, 0.75rem);
+        background: var(--surface-3, var(--background-secondary));
+        z-index: calc(var(--layer-sticky-band, 5) + 1400);
+        overflow: auto;
+    }
+
+    .config-bm-workbench.is-rail-folded.is-sheet-open .config-bm-rail {
+        display: flex;
+    }
+
+    .config-bm-workbench.is-rail-folded .config-bm-scrim:not([hidden]) {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: calc(var(--layer-sticky-band, 5) + 1399);
+        background: color-mix(in srgb, var(--background-primary) 60%, transparent);
+    }
+}
+
+/*
+ * Not checked at all: grey like Health's muted rows, with the edge dashed, so
+ * a row nothing checks does not pass for a quiet healthy one.
+ */
+.config-bm-row[data-lvs-status="off"] {
+    --lvs-glow: var(--text-tertiary, var(--text-secondary));
+    box-shadow: none;
+    background-image:
+        repeating-linear-gradient(180deg,
+            color-mix(in srgb, var(--lvs-glow) 75%, transparent) 0 5px,
+            transparent 5px 9px),
+        linear-gradient(90deg,
+            color-mix(in srgb, var(--lvs-glow) 14%, transparent) 0,
+            color-mix(in srgb, var(--lvs-glow) 4%, transparent) 40%,
+            transparent 75%);
+    background-size: 3px 100%, 100% 100%;
+    background-repeat: no-repeat;
+}
+
+.config-bm-row[data-lvs-status="off"][aria-selected="true"] {
+    box-shadow:
+        inset 3px 0 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+/* The toolbar's way into turning checking on for the rest. */
+.config-bm-enable-checking {
+    border-style: dashed;
+}
+
+/* ── Turning checking on ──────────────────────────────────────────────── */
+
+.config-checking-overlay {
+    z-index: 1990;
+}
+
+.config-checking-overlay .config-checking-modal {
+    max-width: min(40rem, calc(100vw - 2rem));
+    width: 100%;
+    max-height: calc(100vh - 4rem);
+    overflow: auto;
+    scrollbar-gutter: stable;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-checking-modal section {
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    padding-top: var(--space-2, 0.5rem);
+}
+
+.config-checking-modal h3 {
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-checking-lead,
+.config-checking-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.config-checking-modes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-checking-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.config-checking-mode span {
+    color: var(--text-secondary);
+}
+
+.config-checking-mode.is-on {
+    border-color: var(--accent-primary);
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+.config-checking-opt {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    align-items: flex-start;
+    margin: var(--space-1, 0.25rem) 0;
+    font-size: var(--font-size-small);
+}
+
+.config-checking-opt small {
+    display: block;
+    color: var(--text-secondary);
+}
+
+.config-checking-pages {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 2px var(--space-3, 0.75rem);
+    margin: 0 0 var(--space-2, 0.5rem) 1.6rem;
+    font-size: var(--font-size-small);
+}
+
+.config-checking-page span {
+    color: var(--text-secondary);
+}
+
+.config-checking-interval {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    align-items: center;
+    margin-top: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+}
+
+.config-checking-summary {
+    margin: 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--radius-5, 8px);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    font-size: var(--font-size-small);
+}
+
+.config-checking-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* ── Health tab: summary on top, accordion below ──────────────────────── */
+
+.config-bm-health-viz {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-3, 0.75rem);
+    align-items: center;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--background-primary) 70%, transparent);
+}
+
+.config-bm-health-ring {
+    width: 64px;
+    height: 64px;
+    --ring: var(--accent-success);
+}
+
+.config-bm-health-ring[data-tone="warn"] { --ring: var(--accent-warning); }
+.config-bm-health-ring[data-tone="bad"] { --ring: var(--accent-error); }
+
+.config-bm-health-ring circle {
+    fill: none;
+    stroke-width: 7;
+}
+
+.config-bm-health-ring .is-track {
+    stroke: color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+.config-bm-health-ring .is-value {
+    stroke: var(--ring);
+    stroke-linecap: round;
+}
+
+.config-bm-health-ring text {
+    fill: var(--ring);
+    font-weight: 700;
+    font-size: 16px;
+    font-family: inherit;
+}
+
+.config-bm-health-facts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    min-width: 0;
+    font-size: var(--font-size-small);
+}
+
+.config-bm-health-state {
+    font-weight: 700;
+}
+
+.config-bm-health-state.is-bad { color: var(--accent-error); }
+.config-bm-health-state.is-warn { color: var(--accent-warning); }
+.config-bm-health-state.is-good { color: var(--accent-success); }
+.config-bm-health-state.is-off { color: var(--text-secondary); }
+
+.config-bm-health-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+}
+
+.config-bm-health-chip {
+    padding: 0 var(--space-1-5, 0.4rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 80%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    color: var(--text-secondary);
+    font-size: 0.92em;
+}
+
+.config-bm-health-chip.is-bad {
+    color: var(--accent-error);
+    border-color: color-mix(in srgb, var(--accent-error) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
+}
+
+.config-bm-health-line {
+    color: var(--text-secondary);
+}
+
+.config-bm-health-strip {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
+/*
+ * Each section a card of its own: the head tinted with the theme's accent,
+ * the body on the page's own background. Separated by tone rather than by
+ * a hairline, which in several themes was too faint to tell a head from
+ * the text under it. Tokens only, so every theme, light or dark, carries it.
+ */
+.config-bm-acc-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.config-bm-acc {
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
+    border-radius: var(--radius-5, 8px);
+    overflow: hidden;
+    background: var(--background-primary);
+}
+
+.config-bm-acc > summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    cursor: pointer;
+    list-style: none;
+    background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-bm-acc > summary::-webkit-details-marker {
+    display: none;
+}
+
+.config-bm-acc > summary::before {
+    content: '▸';
+    color: var(--accent-primary);
+}
+
+.config-bm-acc[open] > summary::before {
+    content: '▾';
+}
+
+.config-bm-acc > summary:hover {
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
+}
+
+.config-bm-acc[open] > summary {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.config-bm-acc > summary > span:first-child {
+    flex: 1;
+}
+
+.config-bm-acc-answer {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    color: var(--text-primary);
+}
+
+.config-bm-acc > .lvs-drawer-section-body {
+    padding: var(--space-3, 0.75rem);
+    border-top: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
+}
+
+/* ── Pages and categories modal: grips, row menu, foot ────────────────── */
+
+.config-structure-grip {
+    cursor: grab;
+    color: var(--text-secondary);
+    padding: 0 var(--space-1, 0.25rem);
+    user-select: none;
+    letter-spacing: -2px;
+}
+
+.config-structure-overlay .config-crud-row.is-dragging {
+    opacity: 0.45;
+}
+
+.config-structure-overlay .config-crud-row-actions {
+    position: relative;
+}
+
+.config-structure-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    min-width: 14rem;
+    padding: var(--space-1, 0.25rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-modal, var(--background-primary));
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.config-structure-menu > button[role="menuitem"] {
+    text-align: left;
+    border: 0;
+    background: none;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-radius: calc(var(--radius-5, 8px) - 2px);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.config-structure-menu > button[role="menuitem"]:hover,
+.config-structure-menu > button[role="menuitem"]:focus-visible {
+    background: var(--background-secondary);
+}
+
+.config-structure-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.config-structure-foot:empty {
+    display: none;
+}
+
+/*
+ * ── Pages and categories on one screen ─────────────────────────────────
+ * The modal is never taller than the window: title and tabs share a line,
+ * the list is one tinted card whose head is the summary, in two columns of
+ * 32px rows, and only the list itself scrolls when a page has more than
+ * the screen holds. The editors' explanations and bars stay in Structure;
+ * the row's buttons wait under ⋯.
+ */
+.config-structure-overlay .config-structure-modal {
+    max-height: calc(100vh - 3rem);
+    overflow: hidden;
+}
+
+.config-structure-head {
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-structure-head .modal-title {
+    flex: 1;
+}
+
+.config-structure-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(8rem, auto));
+    gap: 3px;
+    padding: 3px;
+    margin: 0;
+    border: 0;
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.config-structure-tabs .config-subtab {
+    margin: 0;
+    border: 0;
+    border-radius: calc(var(--radius-5, 8px) - 2px);
+    text-align: center;
+}
+
+.config-structure-tabs .config-subtab.is-active {
+    color: var(--accent-primary);
+    background: var(--background-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+}
+
+.config-structure-overlay .config-structure-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+}
+
+.config-structure-overlay #config-pt-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    min-height: 0;
+    flex: 1;
+}
+
+.config-structure-overlay #config-pt-body > .config-panel-note,
+.config-structure-overlay .config-pt-count,
+.config-structure-overlay .config-stat-bar,
+.config-structure-overlay [data-page-move],
+.config-structure-overlay [data-cat-move],
+.config-structure-overlay [data-block-move],
+.config-structure-overlay [data-page-duplicate],
+.config-structure-overlay [data-cat-duplicate],
+.config-structure-overlay [data-page-delete],
+.config-structure-overlay [data-cat-delete],
+.config-structure-overlay [data-cat-spread],
+.config-structure-overlay [data-structure-show] {
+    display: none;
+}
+
+/* The summary is the card's tinted head, the list its body. */
+.config-structure-overlay .config-stat-summary {
+    margin: 0;
+    padding: var(--space-1-5, 0.4rem) var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
+    border-bottom: 0;
+    border-radius: var(--radius-5, 8px) var(--radius-5, 8px) 0 0;
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+}
+
+.config-structure-overlay .config-crud-list--table {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-4, 1rem);
+    align-content: start;
+    margin: 0;
+    padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
+    border-radius: 0 0 var(--radius-5, 8px) var(--radius-5, 8px);
+    background: var(--background-primary);
+    overflow: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+@media (max-width: 720px) {
+    .config-structure-overlay .config-crud-list--table {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.config-structure-overlay .config-crud-list--table .config-crud-row {
+    min-height: 32px;
+    height: 32px;
+    padding: 0 var(--space-1, 0.25rem);
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-structure-overlay .config-crud-fields .config-text {
+    padding-block: 2px;
+}
+
+.config-structure-overlay .config-stat-meta {
+    min-width: 0;
+}
+
+.config-structure-overlay .config-crud-row-actions {
+    gap: var(--space-1, 0.25rem);
+}
+
+.config-structure-menu > button[role="menuitem"].is-danger {
+    color: var(--accent-error);
+}
+
+/* ── Details and Usage in the Health tab's layout ─────────────────────── */
+
+.config-bm-details-viz,
+.config-bm-usage-viz {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--background-primary) 70%, transparent);
+}
+
+.config-bm-details-card {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: var(--space-3, 0.75rem);
+    align-items: start;
+}
+
+.config-bm-details-card.is-text {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.config-bm-details-image {
+    width: 84px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: var(--radius-4, 6px);
+}
+
+.config-bm-details-title {
+    font-weight: 700;
+}
+
+.config-bm-details-desc {
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.config-bm-details-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+}
+
+.config-bm-details-chip {
+    padding: 0 var(--space-1-5, 0.4rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 80%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--background-secondary) 60%, transparent);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.92em;
+}
+
+.config-bm-details-chip[hidden] {
+    display: none;
+}
+
+.config-bm-details-chip.is-tag {
+    color: var(--accent-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+.config-bm-details-chip.is-warn,
+.config-bm-usage-kv .is-warn {
+    color: var(--accent-warning);
+}
+
+.config-bm-details-chip.is-link {
+    cursor: pointer;
+    color: var(--accent-primary);
+}
+
+.config-bm-details-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.config-bm-details-copy {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2, 0.5rem);
+    align-items: center;
+    padding: var(--space-1, 0.25rem) 0;
+    border-top: 1px dashed color-mix(in srgb, var(--border-primary) 70%, transparent);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-details-copy:first-child {
+    border-top: 0;
+}
+
+.config-bm-usage-caption {
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+/* The form keeps its own fields' layout inside its section. */
+.config-bm-acc .config-bm-panel-section {
+    border: 0;
+    padding: 0;
+}
+
+/* The band's ⋯: anchored to its button, above the list. */
+.config-bm-header-more {
+    position: relative;
+}
+
+.config-bm-header-menu {
+    right: 0;
+    left: auto;
+    z-index: calc(var(--layer-sticky-band, 5) + 20);
+}
+
+.config-bm-header-menu[hidden] {
+    display: none;
+}
+
+.config-bm-header-menu > button[role="menuitem"] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-bm-header-menu kbd {
+    font: inherit;
+    font-size: var(--font-size-xs, 0.75rem);
+    color: var(--text-secondary);
+    background: none;
+    border: 0;
+    padding: 0;
+}
+
+.config-bm-header-menu-h {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem) 0;
+    font-size: var(--font-size-xs, 0.75rem);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-bm-header-menu hr {
+    width: 100%;
+    margin: var(--space-1, 0.25rem) 0;
+    border: 0;
+    border-top: 1px solid var(--border-primary);
+}
+
+/* ── One bookmark's health, in large ──────────────────────────────────────
+   dashboard-bookmarks-health-large.js. Collection health's shell and cards
+   (.bm-health-modal), laid out on a grid so the wide charts span two
+   columns; one screen, no scrolling at a laptop's size. */
+.bm-health-large {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.bm-health-large-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+}
+
+.bm-health-large-icon {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.bm-health-large-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: var(--radius-4, 6px);
+}
+
+.bm-health-large-name {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.bm-health-large-name > * {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.bm-health-large-ring {
+    width: 3.5rem;
+    height: 3.5rem;
+}
+
+.bm-health-large-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    justify-content: flex-end;
+}
+
+.bm-health-large-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* Placed rather than flowed. Overview: the score's reasons are the
+       tallest card and take the right-hand column down two rows. Checks: the
+       hours and the last day on top, every check of the period beneath. */
+    grid-template-areas:
+        "uptime response response codes"
+        "days days incidents score";
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    align-items: start;
+}
+
+.bm-health-large-grid[data-bm-large-pane="checks"] {
+    grid-template-areas:
+        "hours hours cert kept"
+        "checks checks cert kept"
+        "log log log log";
+}
+
+.bm-health-large-grid[hidden] { display: none; }
+
+.bm-health-large-card {
+    margin: 0;
+    min-width: 0;
+}
+
+.bm-health-large-card[data-bm-large-card="uptime"] { grid-area: uptime; }
+.bm-health-large-card[data-bm-large-card="response"] { grid-area: response; }
+.bm-health-large-card[data-bm-large-card="codes"] { grid-area: codes; }
+.bm-health-large-card[data-bm-large-card="days"] { grid-area: days; }
+.bm-health-large-card[data-bm-large-card="incidents"] { grid-area: incidents; }
+.bm-health-large-card[data-bm-large-card="score"] { grid-area: score; }
+.bm-health-large-card[data-bm-large-card="hours"] { grid-area: hours; }
+.bm-health-large-card[data-bm-large-card="cert"] { grid-area: cert; }
+.bm-health-large-card[data-bm-large-card="kept"] { grid-area: kept; }
+.bm-health-large-card[data-bm-large-card="checks"] { grid-area: checks; }
+.bm-health-large-card[data-bm-large-card="log"] { grid-area: log; }
+
+@media (max-width: 900px) {
+    .bm-health-large-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "uptime codes"
+            "response response"
+            "days days"
+            "incidents score";
+    }
+
+    .bm-health-large-grid[data-bm-large-pane="checks"] {
+        grid-template-areas:
+            "hours hours"
+            "cert kept"
+            "checks checks"
+            "log log";
+    }
+}
+
+.bm-health-large-card .bm-health-modal-card-title {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.bm-health-large-answer {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    color: var(--text-primary);
+}
+
+.bm-health-large-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-1, 0.25rem);
+    margin-bottom: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.bm-health-large-tiles > div {
+    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.375rem);
+    font-size: 0.85em;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-4, 6px);
+}
+
+.bm-health-large-tiles b {
+    display: block;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.bm-health-large [data-tone="good"] { --tone: var(--accent-success); }
+.bm-health-large [data-tone="warn"] { --tone: var(--accent-warning); }
+.bm-health-large [data-tone="bad"] { --tone: var(--accent-error); }
+.bm-health-large [data-tone="info"] { --tone: var(--accent-primary); }
+.bm-health-large [data-tone="muted"] { --tone: color-mix(in srgb, var(--text-tertiary) 45%, transparent); }
+
+.bm-health-large-line .is-line {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 1.6;
+    vector-effect: non-scaling-stroke;
+}
+
+.bm-health-large-line .is-axis {
+    stroke: var(--border-primary);
+    vector-effect: non-scaling-stroke;
+}
+
+.bm-health-large-line .is-p95 {
+    stroke: var(--accent-warning);
+    stroke-dasharray: 3 3;
+    vector-effect: non-scaling-stroke;
+}
+
+.bm-health-large-line .is-label {
+    /* Real pixels now: the chart is drawn at its own width. */
+    font-size: 10px;
+    fill: var(--text-secondary);
+}
+
+.bm-health-large-days rect,
+.bm-health-large-heat rect {
+    fill: var(--tone);
+}
+
+.bm-health-large-codes > div {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr) 3.5rem;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+    padding: 1px 0;
+}
+
+.bm-health-large-codes i {
+    display: block;
+    height: 0.5rem;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--tone);
+}
+
+.bm-health-large-codes > div > span:last-child {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.bm-health-large-incidents > div {
+    display: grid;
+    grid-template-columns: 7rem 4.5rem minmax(0, 1fr);
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+    padding: 2px 0;
+    border-top: 1px dashed color-mix(in srgb, var(--border-primary) 70%, transparent);
+}
+
+.bm-health-large-incidents > div:first-child {
+    border-top: 0;
+}
+
+.bm-health-large-ticks {
+    display: flex;
+    height: 1.25rem;
+    gap: 1px;
+    margin-bottom: var(--space-2, 0.5rem);
+    border-radius: var(--radius-3, 4px);
+    overflow: hidden;
+}
+
+.bm-health-large-ticks i {
+    flex: 1 1 0;
+    min-width: 1px;
+    background: var(--tone);
+}
+
+.bm-health-large-foot {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.bm-health-large-open {
+    align-self: flex-start;
+    margin-top: var(--space-1, 0.25rem);
+}
+
+/* The values under the pointer. */
+#modal-text:has([data-bm-health-large]) {
+    position: relative;
+}
+
+.bm-large-tip {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.bm-large-tip[hidden] {
+    display: none;
+}
+
+.bm-health-large [data-tip] {
+    cursor: crosshair;
+}
+
+.bm-health-large .is-hit {
+    fill: transparent;
+}
+
+.bm-health-large .is-hit.is-tipped {
+    fill: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.bm-health-large-line .is-point {
+    fill: var(--accent-primary);
+    opacity: 0;
+}
+
+.bm-health-large-line .is-point.is-tipped {
+    opacity: 1;
+}
+
+.bm-health-large-heat rect.is-tipped,
+.bm-health-large-ticks i.is-tipped {
+    outline: 1px solid var(--text-primary);
+}
+
+.bm-health-large-codes > div.is-tipped {
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+.bm-health-large-big {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.bm-health-large-big b {
+    font-size: 1.6rem;
+    color: var(--text-primary);
+}
+
+/* The period list, level with the small buttons beside it: the label is a
+   box of its own rather than a line of text, and the list takes their height. */
+.bm-health-large-range {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+}
+
+.bm-health-large-buttons > * {
+    box-sizing: border-box;
+    height: 1.75rem;
+    margin: 0;
+}
+
+.bm-health-large-range .config-select {
+    box-sizing: border-box;
+    height: 100%;
+    margin: 0;
+    padding-block: 0;
+    font-size: var(--font-size-small);
+}
+
+.bm-health-large-buttons > a.config-btn {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ── Config → Bookmarks → View: the preview ───────────────────────────── */
+
+/* Two rows and the side panel's head, as the settings below make them. A
+   picture, not a control: nothing in it takes a pointer. */
+.config-bm-view-preview-body {
+    /* The rows take the panel's full width, as they take the page's in the
+       view; the side panel's head sits under them. */
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    align-items: flex-start;
+    pointer-events: none;
+}
+
+.config-bm-view-preview-list {
+    display: block;
+    align-self: stretch;
+    min-width: 0;
+}
+
+/* The ticks rest hidden in the list until a hover; here they stay hidden. */
+.config-bm-view-preview-list .config-bm-row {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.config-bm-view-preview-panel {
+    flex: 0 0 auto;
+    width: 18rem;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--surface-2, var(--background-secondary));
+    transition: width 0.2s ease;
+}
+
+/* Wide is to Normal as 32rem to 24rem. */
+.config-bm-view-preview-panel.is-wide {
+    width: 24rem;
+}
+
+.config-bm-view-preview-panel .config-bm-panel-url {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+@media (max-width: 799px) {
+    .config-bm-view-preview-panel,
+    .config-bm-view-preview-panel.is-wide {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+/* ── Config → Inbox: the preview ──────────────────────────────────────── */
+
+/* The Inbox's own rows (dashboard-inbox.css), as the settings make them. */
+.config-inbox-view-preview-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    align-self: stretch;
+    min-width: 0;
+}
+
+.config-inbox-view-preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.35rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+/* The charts are drawn at their card's measured width (fitBmLargeCharts): a
+   scrollbar that came and went would change that width after the fact. */
+.modal.bm-health-large .modal-body {
+    scrollbar-gutter: stable;
+}
+
+/* ── Collection health: its two tabs ──────────────────────────────────── */
+
+/* The subtitle on the left, the tabs on the right, one line between them. */
+.bm-health-modal-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.bm-health-modal-head .bm-health-modal-subtitle {
+    margin: 0;
+}
+
+.bm-health-modal-tabs {
+    grid-template-columns: repeat(2, auto);
+    justify-content: start;
+    width: max-content;
+}
+
+.bm-health-modal-tabs .config-bm-tab {
+    padding-inline: var(--space-3, 0.75rem);
+}
+
+.bm-health-modal-head .bm-health-modal-tabs {
+    margin: 0;
+}
+
+.bm-health-large .bm-health-modal-tabs {
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+/* Monitors & trend: the course across the top, the monitors in a row under it. */
+.bm-health-modal-wide-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--space-3, 0.75rem);
+}
+
+.bm-health-modal-wide-grid .bm-health-modal-card {
+    margin: 0;
+}
+
+.bm-health-modal-wide-grid .bm-health-modal-card.is-wide {
+    grid-column: 1 / -1;
+}
+
+.bm-health-modal-series-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-series {
+    padding: 1px var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-xs, 0.75rem);
+    cursor: pointer;
+}
+
+.bm-health-modal-series.is-on {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--text-primary);
+}
+
+/* Scaled whole, never stretched: no preserveAspectRatio="none". */
+.bm-health-modal-trend-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 13rem;
+}
+
+.bm-health-modal-trend-chart .is-line {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.bm-health-modal-trend-chart .is-axis {
+    stroke: var(--border-primary);
+}
+
+.bm-health-modal-trend-chart .is-label {
+    font-size: 11px;
+    fill: var(--text-secondary);
+}
+
+/* The day under the pointer: an invisible target that shows itself on hover. */
+.bm-health-modal-trend-hit {
+    fill: var(--accent-primary);
+    opacity: 0;
+    cursor: default;
+}
+
+.bm-health-modal-trend-hit:hover {
+    opacity: 1;
+}
+
+.bm-health-modal-bar-track i[data-tone="good"] { background: var(--accent-success); }
+.bm-health-modal-bar-track i[data-tone="warn"] { background: var(--accent-warning); }
+.bm-health-modal-bar-track i[data-tone="bad"] { background: var(--accent-error); }
+
+.bm-health-modal-monitor-list.is-three li b {
+    font-weight: 600;
+}
+
+.bm-health-modal-empty {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.78rem);
+}
+
+.bm-health-modal-monitor-list b.is-down {
+    color: var(--accent-error);
+}
+
+/* Every check of the period: its own scroll, so the modal keeps its size. */
+.bm-health-large-log-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.375rem);
+    align-items: center;
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.bm-health-large-log-tools input[type="search"] {
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+
+.bm-health-large-log-tools [aria-pressed="true"] {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.bm-health-large-log-scroll {
+    max-height: 16rem;
+    overflow-y: auto;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-4, 6px);
+}
+
+.bm-health-large-log {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+}
+
+.bm-health-large-log th {
+    position: sticky;
+    top: 0;
+    background: var(--background-modal, var(--background-primary));
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.bm-health-large-log th,
+.bm-health-large-log td {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 50%, transparent);
+    white-space: nowrap;
+}
+
+.bm-health-large-log tr.is-down td { color: var(--accent-error); }
+
+.bm-health-large-log-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-right: var(--space-1, 0.25rem);
+    border-radius: 50%;
+    background: var(--text-tertiary, var(--text-secondary));
+}
+
+.bm-health-large-log-dot[data-tone="good"] { background: var(--accent-success); }
+.bm-health-large-log-dot[data-tone="bad"] { background: var(--accent-error); }
+
+.bm-health-large-log-note { margin: var(--space-1, 0.25rem) 0 0; }
+
+/*
+ * A bookmark being checked, looked up or recovered: a sweeping strip along the
+ * top of its row and of its panel, the same sweep the progress overlay uses.
+ * Drawn as a background layer rather than a pseudo-element, so neither the
+ * sticky panel nor the row's menus need a position or an overflow changed.
+ */
+.config-bm-panel.is-health-busy,
+.config-bm-row.is-health-busy {
+    background-image: linear-gradient(var(--accent-primary, #4a90d9), var(--accent-primary, #4a90d9));
+    background-repeat: no-repeat;
+    background-size: 40% 2px;
+    background-position: -40% 0;
+    animation: config-bm-busy-sweep 1.1s ease-in-out infinite;
+}
+
+@keyframes config-bm-busy-sweep {
+    from { background-position: -40% 0; }
+    to { background-position: 140% 0; }
+}
+
+.config-bm-panel.is-health-busy [data-bm-health-action]:disabled {
+    cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-bm-panel.is-health-busy,
+    .config-bm-row.is-health-busy {
+        animation: none;
+        background-size: 100% 2px;
+        background-position: 0 0;
+    }
 }

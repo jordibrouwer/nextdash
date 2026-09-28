@@ -70,7 +70,7 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'tarnished-brass-dark',
+            theme: 'matrix-bluepill-dark',
             openInNewTab: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,
@@ -80,7 +80,6 @@ class Dashboard {
             showTime: true,
             timeFormat: '24h',
             showConfigButton: true,
-            showHealthDashboard: true,
             showRecentButton: false,
 
             showCheatSheetButton: false,
@@ -173,8 +172,8 @@ class Dashboard {
             }
             this.renderDateWeatherLine();
             this.updateHealthBadge();
+            void this.docker?.updateNavBadge?.();
             this.inbox?.restoreViewIfNeeded?.();
-            this.health?.restoreViewIfNeeded?.();
             this.maybeRefreshAfterConfigReturn();
         });
         this.searchComponent = null;
@@ -219,8 +218,6 @@ class Dashboard {
         this.configSync = new DashboardConfigSync(this);
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
-        // Built by the inbox loader, with the view it belongs to.
-        this.unsorted = null;
         this.multiSelect = new DashboardMultiSelect(this);
         // Narrowing the page you are on, as opposed to searching everything.
         this.gridFilter = typeof DashboardGridFilter === 'function'
@@ -256,6 +253,9 @@ class Dashboard {
         this.health = typeof window.createDashboardHealthLoader === 'function'
             ? window.createDashboardHealthLoader(this)
             : (typeof DashboardHealth === 'function' ? new DashboardHealth(this) : null);
+        this.docker = typeof window.createDashboardDockerLoader === 'function'
+            ? window.createDashboardDockerLoader(this)
+            : null;
         // Config is loaded on first open (dashboard-config-loader.js); the stub
         // answers the shell's pre-open calls so this stays a plain assignment.
         this.config = typeof window.createDashboardConfigLoader === 'function'
@@ -340,8 +340,9 @@ class Dashboard {
             this.setupReorderUndoShortcut();
             this.setupPasteToQuickAdd();
             this.inbox.setupEscapeShortcut();
-            this.health?.setupEscapeShortcut();
+            this.docker?.setupEscapeShortcut();
             this.config?.setupEscapeShortcut();
+            void this.docker?.renderNavButton?.();
             if (typeof QuickAddWidget === 'function') {
                 this.quickAddWidget = new QuickAddWidget(this);
             }
@@ -471,13 +472,24 @@ class Dashboard {
              */
             if (bootHash === 'inbox' && this.activeView !== 'inbox' && this.inbox?.isEnabled?.()) {
                 await this.inbox.openInboxView();
-            } else if ((bootHash === 'health' || bootHash.startsWith('health/'))
-                && this.activeView !== 'health' && this.health?.isEnabled?.()) {
+            } else if (bootHash === 'health' || bootHash.startsWith('health/')) {
+                // The Health view's old address: the Bookmarks view, on its filter.
                 await this.health.openHealthView();
-            } else if (bootHash === 'unsorted' && this.settings?.unsortedEnabled !== false) {
-                // The setting rather than the module: the kept list loads with
-                // the inbox, and this runs before either of them is there.
-                await this.inbox?.openInboxView?.({ tab: 'kept' });
+            } else if ((bootHash === 'docker' || bootHash.startsWith('docker/') || bootHash.startsWith('docker?'))
+                && this.activeView !== 'docker') {
+                const select = bootHash.startsWith('docker/')
+                    ? decodeURIComponent(bootHash.slice('docker/'.length))
+                    : null;
+                const filter = bootHash.startsWith('docker?')
+                    ? new URLSearchParams(bootHash.slice('docker?'.length)).get('filter')
+                    : null;
+                await this.docker?.openDockerView?.({ select, filter });
+            } else if ((bootHash === 'bookmarks' || bootHash.startsWith('bookmarks/') || bootHash.startsWith('bookmarks?'))
+                && this.activeView !== 'library' && this.config?.isEnabled?.()) {
+                await this.config.openLibraryView();
+            } else if (bootHash === 'unsorted') {
+                // The Inbox's Kept tab's old address: Bookmarks → Unsorted now.
+                await this.openUnsortedBookmarks({ replace: true });
             }
 
             if (this.config?.isEnabled?.()
@@ -560,6 +572,38 @@ class Dashboard {
     }
 
 
+
+    /**
+     * Bookmarks → Unsorted: where a kept link waits for a page, and where it
+     * is promoted from. The Inbox's Kept tab was this list a second time;
+     * every way that led there -- Shift+U, #unsorted, the widget, the Keep
+     * notice -- comes here.
+     */
+    async openUnsortedBookmarks({ replace = false, url = '' } = {}) {
+        const target = '#bookmarks?filter=unsorted';
+        if (window.location.hash !== target) {
+            if (replace) {
+                history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}${target}`);
+            } else {
+                history.pushState(history.state, '', `${window.location.pathname}${window.location.search}${target}`);
+            }
+        }
+        if (this.activeView === 'library') {
+            this.config?.instance?.applyLibraryHash?.(target);
+        } else {
+            await this.config?.openLibraryView?.();
+        }
+        // One bookmark asked for (the Unsorted widget's rows): its side panel.
+        const wanted = String(url || '').trim();
+        const config = this.config?.instance;
+        const bookmark = wanted
+            ? (this.unsortedBookmarks || []).find((b) => String(b?.url || '').trim() === wanted)
+            : null;
+        if (bookmark && config?.focusWorkbenchPanel) {
+            config.focusWorkbenchPanel(config.bookmarkKey(bookmark));
+        }
+        return true;
+    }
 
     showNotification(message, type = 'error', { undoCallback = null, duration = 5000, onAction = null, actionLabel = null, durationMs = null } = {}) {
         return this.notifications.showNotification(...arguments);
@@ -1022,16 +1066,34 @@ class Dashboard {
                 }
                 return;
             }
+            // The Health view's old address: the Bookmarks view, on its filter.
             if (hash === 'health' || hash.startsWith('health/')) {
-                if (this.activeView !== 'health') {
-                    return this.health?.openHealthView?.();
+                return this.health?.openHealthView?.();
+            }
+            if (hash === 'docker' || hash.startsWith('docker/') || hash.startsWith('docker?')) {
+                const select = hash.startsWith('docker/') ? decodeURIComponent(hash.slice('docker/'.length)) : null;
+                const filter = hash.startsWith('docker?')
+                    ? new URLSearchParams(hash.slice('docker?'.length)).get('filter')
+                    : null;
+                if (this.activeView !== 'docker') {
+                    return this.docker?.openDockerView?.({ select, filter });
                 }
+                if (select) this.docker?.selectContainer?.(select, { openDrawer: true });
+                if (filter) this.docker?.applyFilter?.(filter);
                 return;
             }
-            // Kept is a tab of the inbox now; the address it always had still
-            // opens it, so every saved link keeps working.
+            // The Bookmarks view: its filters ride in the query, so a change
+            // while it is open is a change of filters, not a new view.
+            if (hash === 'bookmarks' || hash.startsWith('bookmarks/') || hash.startsWith('bookmarks?')) {
+                if (this.activeView !== 'library') {
+                    return this.config?.openLibraryView?.();
+                }
+                this.config?.instance?.applyLibraryHash?.(`#${hash}`);
+                return;
+            }
+            // The Kept tab's old address, so every saved link keeps working.
             if (hash === 'unsorted') {
-                return this.inbox?.openInboxView?.({ tab: 'kept' });
+                return this.openUnsortedBookmarks({ replace: true });
             }
             if (hash === 'config' || hash.startsWith('config/')) {
                 const genericConfig = hash === 'config';
@@ -1062,8 +1124,12 @@ class Dashboard {
                     this.inbox?.restoreInboxHash?.();
                     return;
                 }
-                if (!restoring && this.activeView === 'health') {
-                    this.health?.restoreHealthHash?.();
+                if (!restoring && this.activeView === 'docker') {
+                    this.docker?.restoreDockerHash?.();
+                    return;
+                }
+                if (!restoring && this.activeView === 'library') {
+                    this.config?.instance?.restoreConfigHash?.();
                     return;
                 }
                 const pageIndex = parseInt(hash, 10) - 1;
@@ -1092,15 +1158,6 @@ class Dashboard {
         // A popover the selection opened is the top layer: Escape closes that
         // first and leaves the ticks alone, the way the row menus behave. Only
         // the next press drops the selection.
-        if (typeof this._unsortedMovePopoverClose === 'function') {
-            this._unsortedMovePopoverClose();
-            return true;
-        }
-        const unsortedSelect = this.unsorted?.isActiveView?.() ? this.unsorted.select : null;
-        if (unsortedSelect?.isActive?.()) {
-            unsortedSelect.clear();
-            return true;
-        }
         if (this.multiSelect?.isActive?.()) {
             this.multiSelect.clear();
             return true;
@@ -1129,11 +1186,21 @@ class Dashboard {
         if (previous === 'bookmarks' && view !== 'bookmarks') {
             this.data?.rememberScrollForPage?.(Number(this.currentPageId));
         }
-        // Ticks are a state of that view, not of the app. Left standing, the
-        // bulk bar would come back with the view holding rows the reader
-        // stopped thinking about several screens ago.
+        // The containers drawer sits on <body>, outside the layout the next
+        // view repaints, so leaving has to take it down explicitly.
+        if (previous === 'docker' && view !== 'docker') {
+            this.docker?.instance?.onLeave?.();
+        }
+        // The preview card belongs to the grid row under the pointer. A view
+        // that replaces the grid takes that row away without a mouseleave, and
+        // the card stayed over the new view until something else closed it.
+        this.preview?.hideBookmarkPreviewCard?.();
+        // The Bookmarks view's side panel sits on <body> too.
+        if (previous === 'library' && view !== 'library') {
+            this.config?.instance?.leaveLibraryView?.();
+        }
         if (previous === 'inbox' && view !== 'inbox') {
-            this.unsorted?.select?.clear?.();
+            this.inbox?.instance?.onLeaveDrawer?.();
         }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);

@@ -136,6 +136,12 @@ class DashboardInlineEdit {
             window.nextdashTrack?.('bookmark:edit-open', { source: options.source || 'modal' });
         } else {
             const pageId = Number(options.pageId || options.currentPageId || d.currentPageId || 1);
+            // A new bookmark starts on the availability Config → Bookmarks →
+            // Settings names for it, the way & already did. The form used to
+            // preselect Off whatever that setting said.
+            const startMode = ['off', 'periodic', 'monitor'].includes(d.settings?.newBookmarkCheckMode)
+                ? d.settings.newBookmarkCheckMode
+                : 'periodic';
             bookmarkRef = {
                 bookmark: {
                     name: String(options.name || '').trim(),
@@ -146,12 +152,14 @@ class DashboardInlineEdit {
                     tags: Array.isArray(options.tags) ? [...options.tags] : [],
                     icon: '',
                     pinned: false,
-                    checkStatus: false,
-                    monitor: false,
-                    // 15, the same figure check-mode.js and the server both
-                    // default to. The literal is only for a page where
-                    // check-mode.js has not loaded, and must not disagree with it.
-                    monitorIntervalMinutes: window.CheckMode?.DEFAULT_INTERVAL_MINUTES || 15,
+                    checkStatus: startMode !== 'off',
+                    monitor: startMode === 'monitor',
+                    // The configured default for a monitor, else 15 -- the same
+                    // figure check-mode.js and the server both default to. The
+                    // literal is only for a page where check-mode.js has not
+                    // loaded, and must not disagree with it.
+                    monitorIntervalMinutes: Number(d.settings?.defaultMonitorIntervalMinutes)
+                        || window.CheckMode?.DEFAULT_INTERVAL_MINUTES || 15,
                 },
                 pageId,
                 index: -1,
@@ -176,9 +184,14 @@ class DashboardInlineEdit {
         const shell = this._formModalShell;
         const titleEl = shell.querySelector('#bookmark-form-modal-title');
         const cfg = (key, fb) => d.configLabel(key, fb);
-        titleEl.textContent = isEdit
-            ? cfg('editBookmark', 'Edit bookmark')
-            : cfg('addNewBookmark', 'Add bookmark');
+        // Promote: an unsorted bookmark given a page, as the Inbox promotes a
+        // captured link -- the same form, opened on a real page to file it on.
+        const promoteTo = isEdit && Number(options.promoteToPageId) > 0 ? Number(options.promoteToPageId) : null;
+        titleEl.textContent = promoteTo
+            ? cfg('promoteBookmark', 'Promote bookmark')
+            : isEdit
+                ? cfg('editBookmark', 'Edit bookmark')
+                : cfg('addNewBookmark', 'Add bookmark');
 
         /*
          * The way back in, next to the name.
@@ -195,6 +208,7 @@ class DashboardInlineEdit {
             mode: isEdit ? 'edit' : 'create',
             bookmarkRef,
             row,
+            promoteToPageId: promoteTo,
             onSaved: typeof options.onSaved === 'function' ? options.onSaved : null,
         };
 
@@ -1224,6 +1238,10 @@ class DashboardInlineEdit {
 
         const reloadCatSelectForPage = async (pageId, preferredId) => {
             const cats = await loadCategoriesForPage(pageId);
+            // Loads are not awaited in order: a promote asks for the destination
+            // page's list while the remote branch asks for the source page's.
+            // Whichever lands last used to win; only the selected page's counts.
+            if (String(pageSelect.value) !== String(pageId)) return;
             const wanted = preferredId !== undefined ? preferredId : catSelect.value;
             const matched = fillCatSelect(cats, wanted);
             // No match from previous page — default to first real category so bookmark doesn't land in Others
@@ -1344,6 +1362,17 @@ class DashboardInlineEdit {
             lastSelected.page = pageSelect.value;
             void reloadCatSelectForPage(pageSelect.value);
         });
+
+        // Promoting starts on the page it is being promoted to, with that
+        // page's categories: saving is then the move, as picking the page by
+        // hand would be. Unsorted stays in the list, for changing one's mind.
+        const promoteTo = Number(this._formModalContext?.promoteToPageId);
+        if (promoteTo > 0 && promoteTo !== sourcePageId
+            && [...pageSelect.options].some((o) => Number(o.value) === promoteTo)) {
+            pageSelect.value = String(promoteTo);
+            lastSelected.page = pageSelect.value;
+            void reloadCatSelectForPage(promoteTo, '');
+        }
 
         catSelect.addEventListener('change', () => {
             if (catSelect.value === NEW_OPTION_VALUE) {
@@ -2282,7 +2311,7 @@ class DashboardInlineEdit {
                  */
                 if (d._pendingInboxTriageAdvance) {
                     d._pendingInboxTriageAdvance = false;
-                    await d.inbox.startTriage?.();
+                    await d.inbox.startTriage?.({ resume: true });
                 }
             }
 

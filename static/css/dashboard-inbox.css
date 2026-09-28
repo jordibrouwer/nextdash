@@ -159,10 +159,6 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     gap: var(--space-3, 0.65rem);
 }
 
-/* Card, hover and keyboard cursor come from feed-row.css. The unread edge is
-   applied as feed-row--edge-accent by the renderer. */
-
-
 /* 3rem square, shared with the health feed (.health-view-item-icon) so the two
    read as one system. Inbox has no stored favicon — the preview image is shown
    here on `contain`, and a link glyph fills in when there is none. */
@@ -224,49 +220,7 @@ body.no-animations .inbox-item-thumb--loading {
     line-height: 1.35;
 }
 
-.inbox-item-meta {
-    margin: var(--space-1, 0.2rem) 0 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem);
-    font-size: var(--text-sm, 0.78rem);
-    color: var(--text-secondary);
-}
-
-/* Absolute added date ("3 Jul"). Sits between the domain and the relative time:
-   the date answers "when", the time "how long ago". Tabular figures keep a
-   column of dates from jittering. */
-.inbox-item-date {
-    font-variant-numeric: tabular-nums;
-    color: var(--text-secondary);
-}
-
-.inbox-item-note {
-    margin: var(--space-1-5, 0.35rem) 0 0;
-    font-size: var(--text-sm, 0.8rem);
-    color: var(--text-secondary);
-}
-
 /* ─── Snooze ──────────────────────────────────────────────────────────────── */
-
-/* A sleeping card reads quieter than a live one, with a moon marker on the meta. */
-.inbox-item.is-snoozed {
-    opacity: 0.72;
-    border-left: 3px solid color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
-}
-
-.inbox-item-snooze {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 0.25rem);
-    color: var(--accent-primary);
-    font-weight: var(--font-weight-semibold);
-}
-
-.inbox-item-snooze::before {
-    content: "💤";
-    font-size: 0.85em;
-}
 
 /* Duration popover — a floating menu positioned in JS, so it is fixed to the
    viewport and layered above the feed. */
@@ -302,13 +256,8 @@ body.no-animations .inbox-item-thumb--loading {
     outline: none;
 }
 
-/* Actions stay collapsed until the row is hovered, focused, or keyboard-selected,
-   matching the health view. grid-template-rows 0fr → 1fr animates the row's height
-   rather than reserving an empty strip under every card; the buttons keep their box
-   (no display:none) so they remain focusable and Tab reveals them via :focus-within. */
 /* The action bar's reveal is in feed-row.css; .inbox-item-actions-inner is
    covered by its `.feed-row-actions > *` rule. */
-
 
 .inbox-action-btn {
     display: inline-flex;
@@ -320,6 +269,7 @@ body.no-animations .inbox-item-thumb--loading {
     background: var(--background-primary);
     color: var(--text-primary);
     font-size: var(--text-sm, 0.78rem);
+    font-family: inherit;
     cursor: pointer;
 }
 
@@ -572,142 +522,20 @@ body.no-animations .inbox-item-actions {
 
 /* ─── Inbox triage overlay ─────────────────────────────────────────────── */
 
+/* Triage wears Work through's card (health-focus.css); only its chips are its own. */
+.inbox-triage-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-2xs, 0.66rem);
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
 body.inbox-triage-active {
     overflow: hidden;
-}
-
-.inbox-triage-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 12100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--space-4, 1rem);
-    background: color-mix(in srgb, var(--background-primary) 35%, transparent);
-    backdrop-filter: blur(6px);
-}
-
-.inbox-triage-card {
-    width: min(100%, 40rem);
-    max-height: min(92vh, 44rem);
-    overflow: auto;
-    border-radius: var(--layout-radius-md, 12px);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
-    box-shadow: 0 18px 48px color-mix(in srgb, #000 22%, transparent);
-    padding: var(--space-4, 1rem) var(--space-4, 1.1rem) var(--space-4, 1.1rem);
-}
-
-.inbox-triage-header {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-3, 0.75rem);
-    margin-bottom: var(--space-3, 0.85rem);
-}
-
-.inbox-triage-kicker {
-    margin: 0;
-    font-size: var(--text-xs, 0.72rem);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-tertiary);
-}
-
-.inbox-triage-progress {
-    margin: var(--space-hairline, 0.15rem) 0 0;
-    font-size: var(--text-md, 1rem);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-}
-
-.inbox-triage-close {
-    margin-left: auto;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 1.35rem;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.inbox-triage-body {
-    display: grid;
-    grid-template-columns: 6.5rem 1fr;
-    gap: var(--space-4, 0.9rem);
-}
-
-.inbox-triage-thumb {
-    width: 6.5rem;
-    height: 6.5rem;
-    border-radius: calc(var(--layout-radius-sm, 8px) - 2px);
-    background: var(--background-primary) center/cover no-repeat;
-    border: 1px solid var(--border-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    overflow: hidden;
-}
-
-.inbox-triage-thumb-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.inbox-triage-title {
-    margin: 0;
-    font-size: var(--text-md, 1.05rem);
-    line-height: 1.35;
-    color: var(--text-primary);
-}
-
-.inbox-triage-meta {
-    margin: var(--space-1-5, 0.35rem) 0 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.35rem) var(--space-3, 0.65rem);
-    font-size: var(--text-sm, 0.8rem);
-    color: var(--text-secondary);
-}
-
-.inbox-triage-note {
-    margin: var(--space-2, 0.45rem) 0 0;
-    font-size: var(--text-sm, 0.85rem);
-    color: var(--text-secondary);
-}
-
-.inbox-triage-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.4rem);
-    margin-top: var(--space-4, 1rem);
-}
-
-.inbox-triage-actions kbd,
-.inbox-action-btn kbd {
-    margin-left: var(--space-1, 0.25rem);
-    font-size: var(--text-2xs, 0.68rem);
-    opacity: 0.75;
-}
-
-.inbox-triage-hint {
-    margin: var(--space-3, 0.85rem) 0 0;
-    font-size: var(--text-xs, 0.75rem);
-    color: var(--text-tertiary);
-}
-
-@media (max-width: 520px) {
-    .inbox-triage-body {
-        grid-template-columns: 1fr;
-    }
-
-    .inbox-triage-thumb {
-        width: 100%;
-        height: 8rem;
-    }
 }
 
 /* ─── Sort control ──────────────────────────────────────────────────────── */
@@ -770,54 +598,41 @@ body.inbox-triage-active {
 
 /* ─── Multi-select ──────────────────────────────────────────────────────── */
 
-/* The row stays a 2-column grid (thumb + body), identical to the health view so
-   the icon sits in the same place with the same padding. The checkbox is not a
-   leading column — it overlays the icon's top-left corner, quiet until the row is
-   hovered, focused or ticked. The row is position:relative so the absolute
-   checkbox anchors to it. */
+/* The checkbox is the first column of the row's first line
+   (.inbox-item-line1), out of sight until the pointer, the focus or a live
+   selection asks for it -- a column of empty boxes was the loudest thing in a
+   quiet list. */
 .inbox-item {
     position: relative;
 }
 
 .inbox-item-check {
-    position: absolute;
-    top: 0.55rem;
-    left: 0.55rem;
-    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    visibility: hidden;
 }
 
 .inbox-item-check-input {
     width: 0.95rem;
     height: 0.95rem;
+    margin: 0;
     accent-color: var(--accent-primary);
     cursor: pointer;
-    /* A faint backing so the box stays legible over any favicon underneath. */
-    border-radius: var(--radius-2, 0.2rem);
-    box-shadow: 0 0 0 2px var(--background-secondary);
-    background: var(--background-secondary);
 }
 
-/* Quiet until the row is hovered, focused or already ticked — the same
-   restraint the row's action buttons use, so an untouched list stays calm. */
-.inbox-item-check-input:not(:checked) {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-
-.inbox-item:hover .inbox-item-check-input,
-.inbox-item:focus-within .inbox-item-check-input,
-.inbox-item.keyboard-selected .inbox-item-check-input,
-.inbox-item-check-input:focus-visible {
-    opacity: 1;
+.inbox-item:hover .inbox-item-check,
+.inbox-item:focus-within .inbox-item-check,
+.inbox-item.keyboard-selected .inbox-item-check,
+.inbox-item.is-checked .inbox-item-check,
+.inbox-feed:has(.inbox-item-check-input:checked) .inbox-item-check {
+    visibility: visible;
 }
 
 @media (hover: none) {
-    .inbox-item-check-input:not(:checked) {
-        opacity: 1;
+    .inbox-item-check {
+        visibility: visible;
     }
 }
 
@@ -912,9 +727,6 @@ body.inbox-triage-active {
 
 /* ─── Motion preferences ────────────────────────────────────────────────── */
 
-@media (prefers-reduced-motion: reduce) {
-}
-
 /* ─── Lifetime statistics ────────────────────────────────────────────────────
    Behind the toolbar's Stats button. The figures come from /api/inbox-stats,
    which survives items being triaged away — the config view reads the same
@@ -1006,88 +818,6 @@ body.inbox-triage-active {
 .inbox-item-tag:focus-visible {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
     color: var(--accent-primary);
-}
-
-/* The summary the server fetches when a link is captured. It was stored on every
-   item and shown nowhere: the row had title, domain, date, note and tags, and
-   the one line explaining what the page is stayed in the file. Two lines at
-   most — this is a hint, not the article. */
-.inbox-item-desc {
-    margin: var(--space-1, 0.2rem) 0 0;
-    font-size: var(--text-sm, 0.78rem);
-    line-height: 1.4;
-    color: var(--text-secondary);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-/*
- * The card that ends a triage run.
- *
- * Centred and near-empty on purpose: everything else in triage is a decision to
- * make, and this is the one screen with nothing left to decide. Keeping a link
- * does not shorten the queue, so without this the last card wrapped round to
- * the first and the run could be abandoned but never finished.
- */
-.inbox-triage-done {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    min-height: 220px;
-    padding: 32px 24px;
-    text-align: center;
-}
-
-.inbox-triage-done-title {
-    margin: 0;
-    font-size: calc(var(--font-size-text) * 1.28);
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.inbox-triage-done-body {
-    margin: 0;
-    color: var(--text-secondary);
-}
-
-.inbox-triage-done-close {
-    margin-top: 6px;
-    padding: 8px 20px;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-5, 8px);
-    background: var(--background-secondary);
-    color: var(--text-primary);
-    font: inherit;
-    cursor: pointer;
-}
-
-.inbox-triage-done-close:hover {
-    border-color: var(--accent-primary);
-}
-
-.inbox-triage-done-close:focus-visible {
-    outline: 2px solid var(--accent-color, #4a90d9);
-    outline-offset: 2px;
-}
-
-/*
- * Where a link came from, beside the domain it points at.
- *
- * Quiet on purpose: it is a provenance note, not a status. Only rows that came
- * from somewhere other than a paste carry one, so it stays rare enough to mean
- * something.
- */
-.inbox-item-source {
-    padding: 1px 6px;
-    border-radius: var(--radius-3, 4px);
-    background: var(--background-secondary);
-    color: var(--text-tertiary);
-    font-size: calc(var(--font-size-text) * 0.76);
-    letter-spacing: 0.02em;
 }
 
 /* The line under the stats grid that says which way the week went. */
@@ -1234,4 +964,227 @@ body.inbox-triage-active {
     .inbox-menu > .inbox-menu-narrow-only {
         display: block;
     }
+}
+
+/* ── One-line rows ───────────────────────────────────────────────────────
+   Line one is what a reader scans: what, where, when. Line two -- Open,
+   Promote, Keep -- opens for the row that was clicked or reached by keyboard
+   (data-inbox-open, dashboard-inbox.js openItemId). The glow comes from
+   list-view-shell.css ([data-lvs-status]). The same row as Health's. */
+
+.inbox-item.feed-row {
+    display: block;
+    /* The height of a Containers or Bookmarks row (~39px): the icon line sets
+       the row, and 0.45rem either side of it made every link a step taller
+       than the rows in the views beside it. */
+    padding: 0.25rem var(--space-3, 0.75rem);
+    border: 0;
+    border-bottom: 1px solid var(--border-primary);
+    border-radius: 0;
+    background-color: transparent;
+}
+
+/* A row in a list, not a pane of glass.
+
+   Under the glass depth, theme-character.css gives .feed-row and .inbox-item
+   a backdrop blur, as it does for panels. On fifty touching rows that turned
+   the list into a stack of frosted cards, each lighter than the page, while
+   the Containers and Bookmarks rows beside it stay plain rows. The rail
+   (.lvs-group) was taken out of that rule for the same reason. Anchored on
+   #dashboard-layout because that rule carries an id inside its :is() list,
+   which gives every selector in it an id's weight. */
+html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.inbox-item.feed-row:hover {
+    background-color: var(--background-secondary);
+}
+
+/* The row under the cursor, marked the way the Bookmarks view marks it: an
+   edge and a thin ring inside the row, no glow. colors.css gives every
+   .feed-row.keyboard-selected the --bloom halo under a depth theme, from a
+   selector heavier than this one, so the id anchors it (as the glass rule
+   above does). */
+#dashboard-layout .inbox-item.feed-row.keyboard-selected {
+    background-color: var(--background-secondary);
+    box-shadow:
+        inset 3px 0 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+.inbox-item.feed-row.is-checked {
+    background-color: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
+}
+
+.inbox-item-line1 {
+    display: grid;
+    grid-template-columns: 1.1rem 1.4rem minmax(0, 1.6fr) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    min-height: 1.8rem;
+}
+
+.inbox-item-line1 .inbox-item-thumb {
+    width: 1.4rem;
+    height: 1.4rem;
+    border: 0;
+    background-color: transparent;
+    font-size: 0.9rem;
+}
+
+.inbox-item-line1 .inbox-item-thumb-img {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.inbox-item-line1 .inbox-item-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Rows touch, as in Health: the border between them is the separator. */
+.inbox-date-group-items,
+.inbox-feed:has(> .inbox-item) {
+    gap: 0;
+}
+
+/* Plain like Health's domain; the accent on hover still says it filters. */
+.inbox-item-line1 .inbox-item-domain-btn {
+    text-decoration: none;
+    justify-self: start;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.inbox-item-when {
+    justify-self: end;
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.inbox-item .inbox-item-line2 {
+    display: none;
+    padding: var(--space-2, 0.45rem) 0 var(--space-1, 0.2rem) calc(1.1rem + 1.4rem + 2 * var(--space-3, 0.75rem));
+}
+
+.inbox-item[data-inbox-open] .inbox-item-line2 {
+    display: block;
+}
+
+/* Opened means shown: the shared hover reveal (feed-row.css) is not needed
+   on a line that is only there for the opened row. */
+.inbox-item[data-inbox-open] .inbox-item-line2 .feed-row-actions {
+    grid-template-rows: 1fr;
+    margin-top: var(--space-2, 0.55rem);
+    opacity: 1;
+}
+
+@media (max-width: 767px) {
+    .inbox-item-line1 {
+        grid-template-columns: 1.1rem 1.4rem minmax(0, 1fr) auto;
+    }
+
+    /* Title and when share the first line; the domain goes under. */
+    .inbox-item-line1 .inbox-item-title {
+        grid-row: 1;
+        grid-column: 3;
+    }
+
+    .inbox-item-when {
+        grid-row: 1;
+        grid-column: 4;
+    }
+
+    .inbox-item-line1 .inbox-item-domain-btn {
+        grid-column: 3 / -1;
+    }
+
+    .inbox-item .inbox-item-line2 {
+        padding-left: 0;
+    }
+}
+
+/* ── Side panel (dashboard-inbox-drawer.js) ──────────────────────────────
+   The slab is the shared one (list-view-shell.css, .lvs-drawer*). */
+
+.inbox-drawer-url {
+    font-size: var(--font-size-controls);
+    overflow-wrap: anywhere;
+}
+
+.inbox-drawer-preview-img {
+    max-width: 100%;
+    border-radius: var(--radius-3, 6px);
+}
+
+.inbox-drawer-desc,
+.inbox-drawer-note,
+.inbox-drawer-empty {
+    margin: 0;
+}
+
+.inbox-drawer-desc,
+.inbox-drawer-empty {
+    color: var(--text-secondary);
+}
+
+.inbox-drawer-note {
+    white-space: pre-wrap;
+}
+
+.inbox-drawer-field {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.inbox-drawer-field-label {
+    color: var(--text-secondary);
+}
+
+.inbox-drawer-section-actions {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+}
+
+.inbox-drawer .inbox-item-tags {
+    margin: 0;
+}
+
+/* Line two's buttons read exactly like Health's (.health-view-action-btn):
+   a plain block button whose key chip is the page-wide kbd, not the
+   compact chip the triage card uses. */
+.inbox-item-line2 .inbox-action-btn {
+    display: inline-block;
+}
+
+.inbox-item-line2 .inbox-action-btn kbd {
+    display: inline-block;
+    padding: 4px 8px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 4px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+/* The tags dialog's suggestions, between the label and the field. */
+.inbox-tags-modal-suggest {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.35rem);
+    margin: var(--space-1, 0.25rem) 0 var(--space-2, 0.5rem);
+}
+
+.inbox-tags-modal-suggest[hidden] {
+    display: none;
 }

@@ -30,6 +30,8 @@
                 'This reading is available on Linux hosts.'],
             'no-docker-socket': ['dashboard.widgetSystemNoDocker',
                 'Not connected to Docker — mount the socket and set NEXTDASH_DOCKER_SOCKET.'],
+            'docker-socket-denied': ['dashboard.widgetSystemDockerDenied',
+                'No access to the Docker socket — see Help → System widgets.'],
             'no-mounts-configured': ['dashboard.widgetSystemNoMounts',
                 'No disks chosen yet — name them in this widget’s settings.'],
             'read-failed': ['dashboard.widgetSystemReadFailed',

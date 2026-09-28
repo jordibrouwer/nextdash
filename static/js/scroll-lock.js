@@ -105,3 +105,71 @@ class ScrollLock {
 }
 
 window.ScrollLock = new ScrollLock();
+
+/*
+ * Any open modal holds the lock, whether or not its own code asks for it.
+ *
+ * Half the modals took a lock and half did not: Pages & categories, the
+ * checking modal, the confirm dialog, triage and the rest built their own
+ * overlay and left the page under it scrollable by its scrollbar, so the list
+ * moved behind a dialog that was meant to have the reader's attention. One
+ * watcher here covers every one of them, and any modal added later, instead of
+ * a call at each open and close that the next modal would forget.
+ *
+ * What counts as open: a visible element marked aria-modal="true", a native
+ * <dialog> opened with showModal(), or a blocking overlay that marks itself
+ * data-scroll-lock. Visible means laid out and not visibility:hidden -- the
+ * shared #app-modal host stays in the DOM, hidden, between uses.
+ *
+ * It holds one token of its own, so the components that already acquire and
+ * release keep working unchanged: the page unlocks when both are done.
+ */
+(function watchOpenModals() {
+    const SELECTOR = '[aria-modal="true"], dialog[open], [data-scroll-lock]';
+    const TOKEN = 'open-modal';
+    let held = false;
+    let queued = false;
+
+    const isOpen = (el) => {
+        if (el.matches('dialog') && !el.matches(':modal')) return false;
+        if (!el.getClientRects().length) return false;
+        return getComputedStyle(el).visibility !== 'hidden';
+    };
+
+    const sync = () => {
+        queued = false;
+        const open = [...document.querySelectorAll(SELECTOR)].some(isOpen);
+        if (open && !held) {
+            window.ScrollLock.acquire(TOKEN);
+            held = true;
+        } else if (!open && held) {
+            window.ScrollLock.release(TOKEN);
+            held = false;
+        }
+    };
+
+    // Once per batch of mutations: a render can touch hundreds of nodes, and
+    // the answer only matters once they have settled. A timer rather than
+    // requestAnimationFrame, which does not run in a background tab -- a modal
+    // opened there would have left the page unlocked until it was looked at.
+    const schedule = () => {
+        if (queued) return;
+        queued = true;
+        setTimeout(sync, 0);
+    };
+
+    const start = () => {
+        new MutationObserver(schedule).observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'hidden', 'open', 'style', 'aria-hidden', 'aria-modal'],
+        });
+        // Transitions change visibility without a mutation at their end.
+        document.addEventListener('transitionend', schedule, true);
+        schedule();
+    };
+
+    if (document.body) start();
+    else document.addEventListener('DOMContentLoaded', start, { once: true });
+}());

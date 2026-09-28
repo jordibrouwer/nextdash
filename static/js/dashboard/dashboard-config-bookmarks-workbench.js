@@ -14,17 +14,78 @@
 
     if (typeof global.DashboardConfig !== 'function') return;
 
-    const PANEL_KEY = 'nextdash.bmPanelCollapsed';
+    // The panel's tabs, in bar order; the reader's choice is kept across rows.
+    const PANEL_TABS = ['details', 'health', 'usage'];
+    const PANEL_TAB_KEY = 'nextdash.bm.panelTab';
 
     Object.assign(global.DashboardConfig.prototype, {
 
-    bmPanelCollapsed() {
-        if (this._bmPanelTempOpen) return false;
-        try {
-            return global.localStorage?.getItem(PANEL_KEY) === '1';
-        } catch {
-            return false;
-        }
+    /** A Config → Bookmarks → View setting, or its default (the view as it was). */
+    bmViewSetting(name, fallback) {
+        const value = this.dash.settings?.[name];
+        return value === undefined || value === null || value === '' ? fallback : value;
+    },
+
+    /** A column View leaves in the list; all of them when nothing is set. */
+    bmViewColumn(name) {
+        const cols = this.dash.settings?.bmViewColumns;
+        return !Array.isArray(cols) || cols.includes(name);
+    },
+
+    /** A block View leaves in the rail; all of them when nothing is set. */
+    bmViewRailBlock(name) {
+        const blocks = this.dash.settings?.bmViewRailBlocks;
+        return !Array.isArray(blocks) || blocks.includes(name);
+    },
+
+    /**
+     * The row's grid, one template per width, from the columns View leaves.
+     * Each width lists only the cells it draws: a track with no cell in it
+     * would pull every cell after it one place to the left.
+     */
+    workbenchColumnStyle() {
+        const track = {
+            tick: '1.1rem', icon: '1.4rem', pinned: '1.5rem', shortcut: '3.5rem', usage: '4.5rem',
+            opens: '3rem', last: '5rem', added: '5.5rem', score: '2.6rem',
+        };
+        const build = (cells, name, tags) => cells
+            .filter((c) => ['tick', 'icon', 'name'].includes(c) || this.bmViewColumn(c))
+            .map((c) => (c === 'name' ? name : c === 'tags' ? tags : track[c]))
+            .join(' ');
+        const wide = build(['tick', 'icon', 'name', 'tags', 'pinned', 'shortcut', 'usage', 'opens', 'last', 'added', 'score'],
+            'minmax(10rem, 1fr)', 'minmax(5rem, 9rem)');
+        const large = build(['tick', 'icon', 'name', 'tags', 'usage', 'opens', 'last', 'added', 'score'],
+            'minmax(10rem, 1fr)', 'minmax(5rem, 9rem)');
+        const mid = build(['tick', 'icon', 'name', 'tags', 'opens', 'last', 'score'], 'minmax(8rem, 1fr)', 'minmax(5rem, 6rem)');
+        const narrow = build(['tick', 'icon', 'name', 'score'], 'minmax(0, 1fr)', '');
+        return `--bm-cols-wide: ${wide}; --bm-cols-large: ${large}; --bm-cols-mid: ${mid}; --bm-cols-narrow: ${narrow};`;
+    },
+
+    /**
+     * Row height: the one app-wide setting (densityMode) the other list views
+     * follow, with the same pair of buttons their toolbars carry.
+     */
+    renderWorkbenchDensityToggle() {
+        const density = global.ListDensity;
+        if (!density) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = density.get();
+        const buttons = density.TOGGLE_DENSITIES.map((value) => {
+            const label = value === 'compact'
+                ? this.t('dashboard.listDensityCompact', 'Compact rows')
+                : this.t('dashboard.listDensityComfortable', 'Comfortable rows');
+            return `<button type="button" class="lvs-density-btn" data-lvs-density="${esc(value)}"
+                        aria-pressed="${current === value ? 'true' : 'false'}" aria-label="${esc(label)}" title="${esc(label)}">${value === 'compact' ? '≡' : '☰'}</button>`;
+        }).join('');
+        return `<div class="lvs-density config-bm-density" role="group"
+                     aria-label="${esc(this.t('dashboard.listDensityGroup', 'Row density'))}">${buttons}</div>`;
+    },
+
+    /** The workbench's classes: what View sets on the list as a whole. */
+    workbenchViewClasses() {
+        const classes = ['config-bm-workbench', 'is-panel-collapsed', 'is-library'];
+        if (this.bmViewSetting('bmViewRail', 'open') === 'folded') classes.push('is-rail-folded');
+        return classes.join(' ');
     },
 
     renderBookmarksWorkbench() {
@@ -32,21 +93,35 @@
         const filtered = this.visibleBookmarks();
         const total = (this.dash.allBookmarks || []).length;
         const countLabel = this.renderBookmarkCountLabelSafe(filtered.length, total);
-        const collapsed = this.bmPanelCollapsed();
+        // The list is the Bookmarks view's alone: full width, its panel the
+        // side panel over the page (is-panel-collapsed and is-library say so
+        // to the stylesheet).
         return `
-            <div class="config-bm-workbench${collapsed ? ' is-panel-collapsed' : ''}" id="config-bm-workbench">
+            <div class="${this.workbenchViewClasses()}" id="config-bm-workbench" style="${esc(this.workbenchColumnStyle())}">
                 <aside class="config-bm-rail" id="config-bm-rail"
                        aria-label="${esc(this.t('config.bmFilters', 'Filters'))}">${this.renderWorkbenchRail()}</aside>
                 <section class="config-bm-main" aria-label="${esc(this.t('config.sectionBookmarks', 'Bookmarks'))}">
                     <div class="config-bm-toolbar">
+                        <label class="config-bm-search">
+                            <input type="search" class="config-text" id="config-bm-search"
+                                   placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}"
+                                   value="${esc(this.bmQuery || '')}">
+                            <kbd aria-hidden="true">/</kbd>
+                        </label>
                         <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
                         <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
                         <span id="config-bm-narrow-buttons" class="config-bm-narrow-buttons">${this.renderWorkbenchNarrowButtons()}</span>
                         <span class="config-bm-toolbar-spacer"></span>
+                        ${this.renderEnableCheckingButton?.() || ''}
+                        <label class="config-bm-group">
+                            <span>${esc(this.t('config.groupLabel', 'Group'))}</span>
+                            <select class="config-select" id="config-bm-group">${this.bookmarkGroupOptionsHtml()}</select>
+                        </label>
                         <label class="config-bm-sort">
                             <span>${esc(this.t('config.sortLabel', 'Sort'))}</span>
                             <select class="config-select" id="config-bm-sort">${this.bookmarkSortOptionsHtml()}</select>
                         </label>
+                        ${this.renderWorkbenchDensityToggle()}
                         <button type="button" class="config-btn config-btn--primary config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     </div>
                     <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
@@ -58,21 +133,16 @@
     },
 
     renderWorkbenchRail() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        return `
-            <div class="config-bm-rail-search">
-                <input type="search" class="config-text" id="config-bm-search"
-                       placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}"
-                       value="${esc(this.bmQuery || '')}">
-                <kbd aria-hidden="true">/</kbd>
-            </div>
-            <div id="config-bm-rail-facets">${this.renderWorkbenchFacets()}</div>`;
+        // The search field lives in the toolbar now (renderBookmarksWorkbench),
+        // above the list rather than above the filters — the rail is nothing
+        // but filters, the way Health's is.
+        return `<div id="config-bm-rail-facets">${this.renderWorkbenchFacets()}</div>`;
     },
 
     bookmarkFacetCounts() {
         const all = this.configBookmarkPool();
         const token = JSON.stringify([this._bmVisibleToken, all.length,
-            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0]);
+            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0, this._bmHealthGen || 0]);
         if (this._bmFacetSource === all && this._bmFacetToken === token && this._bmFacets) return this._bmFacets;
         const tests = this.bookmarkFilterTests();
         const cleanupKeys = Object.keys(global.DashboardConfig.CLEANUP_FILTERS);
@@ -90,7 +160,7 @@
                 test: tests.category,
             },
             tag: { keys: (b) => (b.tags || []).map((t) => String(t).trim().toLowerCase()), test: tests.tag },
-            health: { keys: (b) => [this.bookmarkHealthState(b)], test: tests.health },
+            health: { keys: (b) => this.bmHealthKeys?.(b) || [], test: tests.health },
         });
         this._bmFacetSource = all;
         this._bmFacetToken = token;
@@ -142,6 +212,10 @@
                 ${extra}<span class="config-bm-rail-label">${esc(label)}</span>
                 <span class="config-bm-rail-count">${n}</span>
             </button>`;
+        // Pages and categories are managed in a modal over the list.
+        const manage = (tab) => (typeof this.openStructureModal === 'function'
+            ? `<button type="button" class="config-bm-rail-more" data-bm-manage="${tab}">${esc(this.t('config.bmManage', 'Manage'))}</button>`
+            : '');
         const group = (title, body, more = '') => (body ? `
             <section class="config-bm-rail-group">
                 <h3 class="config-bm-rail-title"><span>${esc(title)}</span>${more}</h3>
@@ -159,7 +233,7 @@
             token('category', this.railCategoryLabel(pageId || this.bmPageFilter, categoryId));
         }
         tags.forEach((t) => token(`tag:${t}`, `#${t}`));
-        if (this.bmHealthFilter) token('health', this.railHealthLabel(this.bmHealthFilter));
+        if (this.bmHealthFilter) token('health', this.bmHealthFilterLabel?.(this.bmHealthFilter) || this.bmHealthFilter);
         const tokenRow = tokens.length ? `
             <div class="config-bm-rail-tokens">${tokens.join('')}
                 <button type="button" class="config-bm-rail-clear-all" data-bm-rail-clear="all">${esc(this.t('config.clearBookmarkFilters', 'Clear filters'))}</button>
@@ -229,21 +303,24 @@
                 : this.t('config.bmAllTags', 'all'))}</button>`
             : '';
 
-        const anyChecked = (this.dash.allBookmarks || []).some((b) => b.checkStatus === true);
-        const health = anyChecked
+        // Health's own filters, once its report has been joined in.
+        const health = this._bmHealthByUrl
             ? global.DashboardConfig.HEALTH_FILTERS
-                .map((k) => entry('health', k, this.railHealthLabel(k), counts.health.get(k) || 0,
+                .map((k) => entry('health', k, this.bmHealthFilterLabel(k), counts.health.get(k) || 0,
                     this.bmHealthFilter === k, `<span class="config-bm-health-dot is-${k}" aria-hidden="true"></span>`))
                 .join('')
             : '';
 
+        // View can leave blocks out; Pages takes its categories with it.
+        const show = (name) => this.bmViewRailBlock(name);
         return `
+            ${show('health') ? this.renderBmHealthSummary?.() || '' : ''}
             ${tokenRow}
-            ${group(this.t('config.bmViews', 'Views'), views, viewsMore)}
-            ${group(this.t('config.bmPages', 'Pages'), pages)}
-            ${group(this.t('config.bmCategories', 'Categories'), categories)}
-            ${group(this.t('config.bmTags', 'Tags'), tagList, tagsMore)}
-            ${group(this.t('config.bmHealth', 'Health'), health)}`;
+            ${show('views') ? group(this.t('config.bmViews', 'Views'), views, viewsMore) : ''}
+            ${show('health') ? group(this.t('config.bmHealth', 'Health'), health) : ''}
+            ${show('pages') ? group(this.t('config.bmPages', 'Pages'), pages, manage('pages')) : ''}
+            ${show('pages') ? group(this.t('config.bmCategories', 'Categories'), categories, manage('categories')) : ''}
+            ${show('tags') ? group(this.t('config.bmTags', 'Tags'), tagList, tagsMore) : ''}`;
     },
 
     railHealthLabel(key) {
@@ -287,12 +364,22 @@
         if (!rail || rail.dataset.bmRailWired === '1') return;
         rail.dataset.bmRailWired = '1';
         rail.addEventListener('click', (e) => {
+            const summary = e.target.closest('[data-bm-health-summary]');
+            if (summary) {
+                this.openBmHealthModal?.();
+                return;
+            }
             const more = e.target.closest('[data-bm-rail-more]');
             if (more) {
                 const which = more.getAttribute('data-bm-rail-more');
                 if (which === 'tags') this._bmRailTagsOpen = !this._bmRailTagsOpen;
                 if (which === 'views') this._bmRailViewsOpen = !this._bmRailViewsOpen;
                 this.repaintWorkbenchRail();
+                return;
+            }
+            const manage = e.target.closest('[data-bm-manage]');
+            if (manage) {
+                this.openStructureModal(manage.getAttribute('data-bm-manage'));
                 return;
             }
             const clear = e.target.closest('[data-bm-rail-clear]');
@@ -302,6 +389,15 @@
             }
             const item = e.target.closest('[data-bm-rail]');
             if (item) this.toggleRailFilter(item.getAttribute('data-bm-rail'), item.getAttribute('data-value') || '');
+        });
+        // The summary block is a plain div (it holds several rows, not one
+        // control), so role="button" alone does not make Enter/Space act on
+        // it the way a real <button> would -- that has to be wired by hand.
+        rail.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            if (!e.target.closest('[data-bm-health-summary]')) return;
+            e.preventDefault();
+            this.openBmHealthModal?.();
         });
     },
 
@@ -330,16 +426,6 @@
         return key && this.findBookmarkByKey(key) ? key : null;
     },
 
-    renderWorkbenchPanelToggle() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const collapsed = this.bmPanelCollapsed();
-        const label = collapsed ? this.t('config.bmDetails', 'Details') : this.t('config.bmHideDetails', 'Hide details');
-        return `<button type="button" class="config-bm-panel-toggle" data-bm-panel-toggle
-                        aria-expanded="${collapsed ? 'false' : 'true'}" title="${esc(label)} (i)">
-                    <span class="config-bm-panel-toggle-label">${esc(label)}</span><span aria-hidden="true">${collapsed ? '‹' : '›'}</span>
-                </button>`;
-    },
-
     renderWorkbenchPanel() {
         const esc = (v) => this.dash.escapeHtml(v);
         const mode = this.workbenchPanelMode();
@@ -347,7 +433,7 @@
         if (mode === 'bulk') body = this.renderWorkbenchBulkPanel?.() || '';
         else if (mode === 'single') body = this.renderWorkbenchSinglePanel(this.workbenchPanelKey());
         else body = `<p class="config-bm-panel-empty">${esc(this.t('config.bmPanelEmpty', 'Select a bookmark to see it here.'))}</p>`;
-        return `${this.renderWorkbenchPanelToggle()}<div class="config-bm-panel-body">${body}</div>`;
+        return `<div class="config-bm-panel-body">${body}</div>`;
     },
 
     renderWorkbenchField(name, label, control) {
@@ -409,19 +495,31 @@
         const input = (name, value, extra = '') =>
             `<input type="text" class="config-text" data-bm-field="${name}" value="${esc(value ?? '')}" data-original="${esc(value ?? '')}" ${extra}>`;
         const feed = global.BookmarkFeedRow;
-        return `
-            <header class="config-bm-panel-head config-bm-panel-head--single">
-                <div class="config-bm-panel-heading">
-                    <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
-                    <span class="config-bm-panel-title">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
-                </div>
-                <div class="config-bm-panel-actions">
-                    <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
-                    <button type="button" class="config-btn config-btn--small" data-bm-panel-action="edit-dialog"
-                            title="${esc(this.t('config.bmEditDialogTitle', 'Open the full edit dialog (Shift+E)'))}">${esc(this.t('config.bmEditDialog', 'Edit in dialog'))} <kbd>Shift</kbd><kbd>E</kbd></button>
-                </div>
-            </header>
-            <div class="config-bm-panel-fields">
+        const issue = this.bmHealthIssue?.(b) || null;
+        const score = issue && Number.isFinite(Number(issue.score)) ? Number(issue.score) : null;
+        const scoreTone = score == null ? '' : (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
+        // Where it lives, page › category. The shortcut is not repeated here: the form and the list both show it.
+        const where = b.category
+            ? `${this.pageLabel(b.pageId)} › ${this.railCategoryLabel(b.pageId, b.category)}`
+            : this.pageLabel(b.pageId);
+        // A problem worth a look: the dot on the Health tab says so without opening it.
+        const troubled = state === 'broken' || state === 'down' || (issue && issue.status === 'broken');
+        const tab = this.workbenchPanelTab();
+        // The digits reach the tabs only in the Bookmarks view (see
+        // handleWorkbenchPanelTabKey), so only there do the tabs name them,
+        // in their titles: chips inside the bar made it read as a keyboard.
+        const tabButton = (name, label, n) => {
+            const on = name === tab;
+            return `<button type="button" class="config-bm-tab${on ? ' is-active' : ''}" role="tab"
+                        aria-selected="${on ? 'true' : 'false'}" tabindex="${on ? 0 : -1}" data-bm-tab-panel="${name}"${
+                ` title="${esc(`${label} (${n})`)}"`}>${esc(label)}${
+                name === 'health' && troubled ? `<span class="config-bm-tab-dot" aria-label="${esc(this.t('config.bmTabProblem', 'has a problem'))}"></span>` : ''
+            }</button>`;
+        };
+        const pane = (name, body) => `<section class="config-bm-pane" role="tabpanel" data-bm-pane="${name}"${name === tab ? '' : ' hidden'}>${body}</section>`;
+        // The form. In the Bookmarks view it is the Details tab's first
+        // section; Config's narrow panel column shows it alone.
+        const editForm = `<div class="config-bm-panel-section" data-bm-section="edit"><div class="config-bm-panel-fields">
                 ${this.renderWorkbenchField('name', this.t('config.bookmarkNameLabel', 'Name'), input('name', b.name))}
                 ${this.renderWorkbenchField('url', this.t('config.bmFieldUrl', 'URL'), input('url', b.url, 'spellcheck="false"'))}
                 ${this.renderWorkbenchField('page', this.t('config.page', 'Page'), `<select class="config-select" data-bm-field="page">${pageOptions}</select>`)}
@@ -436,31 +534,173 @@
                     <span class="config-bm-field-label">${esc(this.t('config.pinnedShort', 'Pinned'))}</span>
                     <span class="config-bm-field-status" role="status"></span>
                 </label>
+                ${issue ? '' : `
                 ${this.renderWorkbenchField('checkMode', this.t('config.bmFieldChecking', 'Checking'), `<select class="config-select" data-bm-field="checkMode">${modeOptions}</select>`)}
                 <label class="config-bm-field" data-bm-field-wrap="monitorInterval"${mode === 'monitor' ? '' : ' hidden'}>
                     <span class="config-bm-field-label">${esc(this.t('config.bmFieldInterval', 'Interval'))}</span>
                     <select class="config-select" data-bm-field="monitorInterval">${this.workbenchIntervalOptions(global.CheckMode?.intervalOf?.(b))}</select>
                     <span class="config-bm-field-status" role="status"></span>
-                </label>
+                </label>`}
+            </div></div>`;
+        // An unsorted bookmark's first action is to be given a page.
+        const unsorted = Boolean(this.isUnsortedBookmark?.(b));
+        return `
+            <header class="config-bm-panel-head config-bm-panel-head--single">
+                <div class="config-bm-panel-heading">
+                    <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
+                    <span class="config-bm-panel-title" title="${esc(b.name || b.url || '')}">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
+                    ${score == null ? '' : `<span class="config-bm-score" data-tone="${scoreTone}">${esc(String(score))}</span>`}
+                    <span class="config-bm-more">
+                        <button type="button" class="config-btn config-btn--small" data-bm-more-toggle aria-haspopup="menu" aria-expanded="false"
+                                aria-label="${esc(this.t('config.bmMoreActions', 'More actions'))}">⋯</button>
+                        <div class="config-bm-more-menu" role="menu" data-bm-more-menu hidden>
+                            ${this.renderBmHealthActions?.(b, { skip: ['recheck'] }) || ''}
+                            <button type="button" class="config-btn config-btn--small" data-bm-panel-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>
+                            <button type="button" class="config-btn config-btn--small" data-bm-panel-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>
+                            <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.delete', 'Delete'))}</button>
+                        </div>
+                    </span>
+                </div>
+                ${/^https?:\/\//i.test(String(b.url || '')) ? `<a class="config-bm-panel-url" href="${esc(b.url)}" title="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(this.formatBookmarkUrlDisplay(b.url))}</a>` : ''}
+                ${where ? `<p class="config-bm-panel-where" title="${esc(where)}">${esc(where)}</p>` : ''}
+                <div class="config-bm-panel-actions">
+                    ${unsorted ? `<button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-panel-action="promote"
+                            title="${esc(this.t('config.bmPromoteTitle', 'Give it a page, as the Inbox promotes a link'))}">${esc(this.t('dashboard.inboxPromote', 'Promote'))}</button>` : ''}
+                    <button type="button" class="config-btn${unsorted ? '' : ' config-btn--primary'} config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
+                    <button type="button" class="config-btn config-btn--small" data-bm-panel-action="edit-dialog"
+                            title="${esc(this.t('config.bmEditDialogTitle', 'Open the full edit dialog (Shift+E)'))}">${esc(this.t('config.bmEditShort', 'Edit'))}</button>
+                    ${issue ? `<button type="button" class="config-btn config-btn--small" data-bm-health-action="recheck"
+                            title="${esc(this.t('config.bmRecheckTitle', 'Check this bookmark now (p)'))}">${esc(this.t('config.bmKeyRecheck', 're-check').replace(/^./, (c) => c.toUpperCase()))}</button>` : ''}
+                </div>
+            </header>
+            <div class="config-bm-tabs" role="tablist" aria-label="${esc(this.t('config.bmDetails', 'Details'))}">
+                ${tabButton('details', this.t('config.bmTabDetails', 'Details'), 1)}
+                ${tabButton('health', this.t('config.bmHealth', 'Health'), 2)}
+                ${tabButton('usage', this.t('config.bmUsage', 'Usage'), 3)}
             </div>
-            <section class="config-bm-panel-facts">
-                <h3>${esc(this.t('config.bmHealth', 'Health'))}</h3>
-                <p><span class="config-bm-health-dot is-${esc(state)}"></span> ${esc(this.railHealthLabel(state))}</p>
-                ${facts?.lastError ? `<p class="config-bm-panel-muted">${esc(facts.lastError)}</p>` : ''}
-                ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}
-                <h3>${esc(this.t('config.bmUsage', 'Usage'))}</h3>
-                <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>
-                <p class="config-bm-panel-muted">${esc(this.t('config.bookmarkStatLastOpened', 'Last opened'))}: ${esc(fmt(b.lastOpened).label)}</p>
-            </section>
-            <footer class="config-bm-panel-foot">
-                <button type="button" class="config-btn config-btn--small" data-bm-panel-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>
-                <button type="button" class="config-btn config-btn--small" data-bm-panel-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>
-                <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.delete', 'Delete'))}</button>
-            </footer>`;
+            ${pane('details', `
+                ${this.renderBmDetailsSummary?.(b) || ''}
+                <div class="config-bm-acc-list">
+                ${this.workbenchAcc('details', 'edit', this.t('config.bmSectionEdit', 'Edit'), this.t('config.bmDetailsSavesAsYouGo', 'saves as you go'),
+                    `${editForm}`, true)}
+                ${this.workbenchAcc('details', 'address', this.t('config.bmDetailsAddress', 'Address'),
+                    this.formatBookmarkUrlDisplay(b.url), this.renderBmDetailsAddress?.(b) || '')}
+                ${this.workbenchAcc('details', 'preview', this.t('config.bmDetailsPreviewIcon', 'Preview & icon'),
+                    String(b.previewTitle || '').trim() ? this.t('config.bmDetailsFetched', 'fetched') : this.t('config.bmDetailsNotFetched', 'not fetched'),
+                    this.renderBmDetailsPreview?.(b) || '')}
+                ${this.workbenchAcc('details', 'copies', this.t('config.bmDetailsCopies', 'Local copies'), '…', this.renderBmDetailsCopies?.(b) || '')}
+                ${this.workbenchAcc('details', 'remove', this.t('config.bmDetailsRemove', 'Remove'), '',
+                    `<div class="config-bm-details-buttons"><button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.bmDetailsDelete', 'Delete bookmark'))}</button></div>
+                     <p class="config-bm-panel-muted">${esc(this.t('config.bmDetailsDeleteHint', 'It goes to the trash; undo is offered right after.'))}</p>`)}
+                </div>`)}
+            ${pane('health', this.renderBmHealthPane?.(b)
+                ? `<div data-bm-section="health">${this.renderBmHealthPane(b)}</div>`
+                : `
+                <div data-bm-section="health"><div class="lvs-drawer-section-body">
+                    <p class="config-bm-panel-fact"><span class="config-bm-health-dot is-${esc(state)}"></span> ${esc(this.railHealthLabel(state))}</p>
+                    ${facts?.lastError ? `<p class="config-bm-panel-muted">${esc(facts.lastError)}</p>` : ''}
+                    ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}</div></div>`)}
+            ${pane('usage', this.renderBmUsagePane?.(b) || `
+                <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>`)}`;
+    },
+
+    /**
+     * One section of a tab's accordion, in the Health tab's markup: its head
+     * says its answer, and which sections are open is remembered per tab.
+     */
+    workbenchAcc(group, name, label, answer, body, openByDefault = false) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        let stored = null;
+        try {
+            stored = JSON.parse(global.localStorage?.getItem(`nextdash.bm.acc.${group}`) || 'null');
+        } catch {
+            stored = null;
+        }
+        const open = Array.isArray(stored) ? stored.includes(name) : openByDefault;
+        return `<details class="config-bm-acc" data-bm-acc="${name}" data-bm-acc-group="${group}"${open ? ' open' : ''}>
+                <summary><span>${esc(label)}</span><span class="config-bm-acc-answer">${esc(answer)}</span></summary>
+                <div class="lvs-drawer-section-body">${body}</div>
+            </details>`;
+    },
+
+    /* ── The panel's tabs ──────────────────────────────────────────────── */
+
+    /** Which tab the panel shows; the reader's last choice, kept across rows. */
+    workbenchPanelTab() {
+        // View can fix the tab the panel opens on; once open, the reader's
+        // clicks decide.
+        const fixed = this.bmViewSetting('bmViewPanelTab', 'last');
+        if (fixed !== 'last' && PANEL_TABS.includes(fixed) && !this._libDrawer?.isOpen()) return fixed;
+        try {
+            const tab = global.localStorage?.getItem(PANEL_TAB_KEY);
+            return PANEL_TABS.includes(tab) ? tab : PANEL_TABS[0];
+        } catch {
+            return PANEL_TABS[0];
+        }
+    },
+
+    /** Show one tab, in place: the panel is not redrawn, so nothing typed is lost. */
+    setWorkbenchPanelTab(tab) {
+        if (!PANEL_TABS.includes(tab)) return false;
+        try {
+            global.localStorage?.setItem(PANEL_TAB_KEY, tab);
+        } catch {
+            // Private window: the choice lasts until the panel is redrawn.
+        }
+        const panel = this._libPanel || document.getElementById('config-bm-panel');
+        if (!panel) return false;
+        panel.querySelectorAll('[data-bm-tab-panel]').forEach((btn) => {
+            const on = btn.dataset.bmTabPanel === tab;
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
+            btn.tabIndex = on ? 0 : -1;
+        });
+        panel.querySelectorAll('[data-bm-pane]').forEach((pane) => {
+            pane.hidden = pane.dataset.bmPane !== tab;
+        });
+        return true;
+    },
+
+    /** `[` / `]`: the next or previous tab. */
+    stepWorkbenchPanelTab(delta) {
+        const at = PANEL_TABS.indexOf(this.workbenchPanelTab());
+        const next = PANEL_TABS[(at + delta + PANEL_TABS.length) % PANEL_TABS.length];
+        return this.setWorkbenchPanelTab(next);
+    },
+
+    /**
+     * The panel's keys, in the Bookmarks view while its side panel shows one
+     * bookmark: 1 2 3 and [ ]. Anywhere else the digits keep their meaning
+     * across the app -- a page of the dashboard -- and [ ] Config's sub-tabs.
+     */
+    handleWorkbenchPanelTabKey(e) {
+        if (!this._libDrawer?.isOpen() || this.workbenchPanelMode() !== 'single') return false;
+        if (e.ctrlKey || e.metaKey || e.altKey) return false;
+        const tag = e.target?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) return false;
+        let done = false;
+        if (e.key >= '1' && e.key <= String(PANEL_TABS.length)) done = this.setWorkbenchPanelTab(PANEL_TABS[Number(e.key) - 1]);
+        else if (e.key === '[' || e.key === ']') done = this.stepWorkbenchPanelTab(e.key === ']' ? 1 : -1);
+        if (!done) return false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return true;
+    },
+
+    /** Close the ⋯ menu, if it is open; true when there was one to close. */
+    closeWorkbenchMoreMenu() {
+        const panel = this._libPanel || document.getElementById('config-bm-panel');
+        const menu = panel?.querySelector('[data-bm-more-menu]:not([hidden])');
+        if (!menu) return false;
+        menu.hidden = true;
+        panel.querySelector('[data-bm-more-toggle]')?.setAttribute('aria-expanded', 'false');
+        return true;
     },
 
     repaintWorkbenchPanel() {
-        const panel = document.getElementById('config-bm-panel');
+        // In the Bookmarks view the panel lives in the side panel, which is
+        // out of the document while closed; it is still the one to draw.
+        const panel = this._libPanel || document.getElementById('config-bm-panel');
         if (!panel) return;
         // A save in flight owns the panel until it lands: repainting now would
         // take the field (and what was typed into it) away mid-write.
@@ -473,16 +713,108 @@
         const sig = this.workbenchPanelSig(mode, key);
         // Typing in the panel while the list repaints around it must not lose
         // the field; the same bookmark in the same mode is left alone.
-        if (panel.dataset.bmPanelSig === sig && panel.contains(document.activeElement)) return;
+        if (panel.dataset.bmPanelSig === sig && panel.contains(document.activeElement)) {
+            this.syncLibraryDrawer();
+            return;
+        }
         this.detachWorkbenchTagAutocomplete(panel);
         panel.innerHTML = this.renderWorkbenchPanel();
         this.attachWorkbenchTagAutocomplete(panel);
         panel.dataset.bmPanelSig = sig;
         panel.dataset.bmPanelMode = mode;
         panel.dataset.bmPanelKey = key || '';
+        // After the key: the Health parts find their bookmark by it.
+        this.bindBmHealthPanel?.(panel);
         void this.fillWorkbenchSuggestions(panel);
-        if (mode === 'bulk' && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });
+        if (mode === 'single') {
+            const b = this.findBookmarkByKey(key);
+            void this.fillBmDetailsCopies?.(panel, b);
+            void this.fillBmDetailsPreview?.(panel, b);
+        }
+        if (mode === 'bulk') void this.fillWorkbenchBulkSuggestions(panel);
         this.syncWorkbenchToolbar();
+        this.syncLibraryDrawer();
+    },
+
+    /* ── The Bookmarks view's panel ─────────────────────────────────────── */
+
+    /*
+     * In the Bookmarks view the panel works the way Containers' does: the
+     * shared side panel (ListViewDrawer) over the right of the page, closed
+     * until a row is clicked, with × and Escape to close it, fullscreen on a
+     * phone. Moving the cursor with j/k leaves it as it is; a selection of
+     * several rows always opens it, since that is where their form is.
+     *
+     * The panel element itself is the workbench's own #config-bm-panel,
+     * moved into the side panel rather than rebuilt there, so everything
+     * bound to it and every lookup by its id keep working.
+     */
+    libraryDrawer() {
+        if (!this._libDrawer && typeof global.ListViewDrawer === 'function') {
+            this._libDrawer = new global.ListViewDrawer({
+                id: 'library',
+                storageKey: 'nextdash.library.drawer',
+                closeLabel: this.t('config.bmCloseDetails', 'Close'),
+                onClose: () => this.onLibraryDrawerClosed(),
+                // A press beside the panel closes it; one on a row, or on a
+                // row's tick box, moves it there instead.
+                // Unless View says the panel stays until it is closed.
+                closeOnOutside: (target) => this.bmViewSetting('bmViewCloseOutside', true) !== false
+                    && !target.closest('#config-bm-list .config-bm-row'),
+            });
+        }
+        return this._libDrawer || null;
+    },
+
+    /** Take the freshly drawn panel out of the layout; the side panel shows it. */
+    adoptLibraryPanel(panel) {
+        if (!panel) return;
+        this._libPanel = panel;
+        panel.remove();
+    },
+
+    /** Open or close the side panel to match the cursor, the selection and the reader's wish. */
+    syncLibraryDrawer() {
+        if (!this.isActiveView()) return;
+        const drawer = this.libraryDrawer();
+        const panel = this._libPanel;
+        if (!drawer || !panel) return;
+        const mode = this.workbenchPanelMode();
+        const want = mode === 'bulk' || (mode === 'single' && this._libDrawerWanted);
+        if (want) {
+            if (!drawer.isOpen() || !drawer.panel?.contains(panel)) {
+                drawer.open('library', {
+                    build: (slab, ctx) => {
+                        slab.classList.add('config-bm-drawer');
+                        // The panel carries its own title; the side panel's
+                        // heading would say it twice.
+                        ctx.heading.hidden = true;
+                        slab.appendChild(panel);
+                        // View's width: the frame around the scrolling panel.
+                        slab.parentElement?.classList.toggle('is-wide', this.bmViewSetting('bmViewPanelWidth', 'normal') === 'wide');
+                    },
+                });
+            }
+        } else if (drawer.isOpen()) {
+            drawer.close({ silent: true });
+        }
+    },
+
+    /** × on the side panel: closed until the next click; a selection is dropped with it. */
+    onLibraryDrawerClosed() {
+        this._libDrawerWanted = false;
+        if (this.bmSelected.size > 1) {
+            this.bmSelected.clear();
+            this.afterSelectionChange();
+        }
+    },
+
+    /** The first Escape in the view: close the side panel, if it is open. */
+    closeLibraryDrawer() {
+        const drawer = this._libDrawer;
+        if (!drawer?.isOpen()) return false;
+        drawer.close();
+        return true;
     },
 
     /**
@@ -528,9 +860,80 @@
         });
     },
 
+    /**
+     * The engine's offers for a selection, pooled, the tags most of the
+     * selected bookmarks share first -- the pooling the dashboard's
+     * multi-select tag popover does (dashboard-multi-select.js).
+     *
+     * One engine run over the collection with the words the scan stored, the
+     * run the Tag suggestions tab makes, rather than one per ticked bookmark:
+     * the same answers the single-bookmark panel gives, at the cost of one
+     * run whatever the size of the selection. Taking one writes it into the
+     * bulk tags field rather than saving, so Apply stays the one step that
+     * changes twenty bookmarks at once.
+     */
+    async fillWorkbenchBulkSuggestions(panel) {
+        const host = panel?.querySelector('[data-bm-bulk-suggest]');
+        const field = panel?.querySelector('[data-bm-bulk-field="tags"]');
+        const live = global.TagSuggestLive;
+        const chips = global.TagSuggestChips;
+        const engine = global.TagSuggestions?.suggest;
+        if (!host || !field || !live || !chips || !engine) return;
+        await live.ensureCatalogue();
+        const byUrl = await live.storedKeywords();
+        if (!host.isConnected || panel.dataset.bmPanelMode !== 'bulk') return;
+        const keywords = {};
+        (this.dash.allBookmarks || []).forEach((b) => {
+            const words = byUrl[String(b.url || '').trim()];
+            if (words?.length) keywords[this.bookmarkKey(b)] = words;
+        });
+        let groups = [];
+        try {
+            groups = engine(this.tagSuggestionItems(), {
+                rules: this.dash.settings?.tagRules || [],
+                catalogue: global.TagCatalogue?.now?.() || [],
+                dismissed: this.dash.settings?.dismissedTagSuggestions || [],
+                keywords,
+            });
+        } catch {
+            groups = [];
+        }
+        const typed = () => String(field.value || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+        const selected = this.bmSelected;
+        const offeredTo = new Map();
+        groups.forEach((group) => {
+            const count = (group.keys || []).filter((key) => selected.has(key)).length;
+            if (!count) return;
+            const seen = offeredTo.get(group.tag);
+            if (seen) seen.count += count;
+            else offeredTo.set(group.tag, { offer: { tag: group.tag, pattern: group.pattern, reason: group.reason }, count });
+        });
+        const already = new Set(typed());
+        const offers = [...offeredTo.entries()]
+            .filter(([tag]) => !already.has(tag))
+            .sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0]))
+            .map(([, entry]) => entry.offer);
+        chips.render(host, offers, {
+            limit: 3,
+            label: this.t('config.tagSuggestLabel', 'suggested'),
+            t: (k, fallback, params) => this.dash.formatDashboardLabel(k.replace(/^dashboard\./, ''), params || {}, fallback),
+            onAccept: (tag) => {
+                const tags = typed();
+                if (!tags.includes(tag)) tags.push(tag);
+                field.value = tags.join(', ');
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                field.focus({ preventScroll: true });
+                void this.fillWorkbenchBulkSuggestions(panel);
+            },
+            onRefuse: (offer) => {
+                void chips.refuse(this.dash, offer, { onUpdated: () => { void this.fillWorkbenchBulkSuggestions(panel); } });
+            },
+        });
+    },
+
     workbenchPanelSig(mode, key) {
         const bulk = mode === 'bulk' ? [...this.bmSelected].sort().join(',') + JSON.stringify(this._bmBulkDraft || {}) : '';
-        return `${mode}|${key}|${bulk}|${(this.dash.allBookmarks || []).length}`;
+        return `${mode}|${key}|${bulk}|${(this.dash.allBookmarks || []).length}|${this._bmHealthGen || 0}`;
     },
 
     /**
@@ -563,29 +966,16 @@
      * is remembered; `e` and a multi-row selection open it for now without
      * overwriting that choice.
      */
-    toggleWorkbenchPanel(force, { remember = true } = {}) {
-        const collapsed = typeof force === 'boolean' ? force : !this.bmPanelCollapsed();
-        if (remember) {
-            this._bmPanelTempOpen = false;
-            try {
-                global.localStorage?.setItem(PANEL_KEY, collapsed ? '1' : '0');
-            } catch { /* private window: the choice lasts this visit */ }
-        } else {
-            this._bmPanelTempOpen = !collapsed;
-        }
-        const root = document.getElementById('config-bm-workbench');
-        const changed = root && root.classList.contains('is-panel-collapsed') !== collapsed;
-        root?.classList.toggle('is-panel-collapsed', collapsed);
-        // Rows change width, and the folded layout adds cells.
-        if (changed) this.fitWorkbenchTags(document.getElementById('config-bm-list'));
-        const toggle = document.querySelector('#config-bm-panel [data-bm-panel-toggle]');
-        if (toggle) toggle.outerHTML = this.renderWorkbenchPanelToggle();
+    /** `i`: the side panel, for the row under the cursor, opened or closed. */
+    toggleWorkbenchPanel(force) {
+        this._libDrawerWanted = typeof force === 'boolean' ? !force : !this._libDrawer?.isOpen();
+        if (!this._libDrawerWanted) this.closeLibraryDrawer();
+        else this.repaintWorkbenchPanel();
     },
 
     focusWorkbenchPanel(key) {
         if (key) this._bmKeyboardKey = key;
-        if (this.workbenchNarrow()) this.openWorkbenchOverlay('drawer');
-        else this.toggleWorkbenchPanel(false, { remember: false });
+        this._libDrawerWanted = true;
         this.repaintWorkbenchPanel();
         const field = document.querySelector('#config-bm-panel [data-bm-field="name"], #config-bm-panel [data-bm-field]');
         field?.focus();
@@ -706,9 +1096,65 @@
     bindWorkbenchPanel(panel) {
         if (!panel || panel.dataset.bmPanelWired === '1') return;
         panel.dataset.bmPanelWired = '1';
+        // toggle does not bubble; captured here so every repaint's sections
+        // report without a listener each.
+        // The Details and Usage accordions remember what the reader opens.
+        panel.addEventListener('toggle', (e) => {
+            const acc = e.target.closest?.('[data-bm-acc-group]');
+            if (!acc || acc !== e.target) return;
+            const group = acc.getAttribute('data-bm-acc-group');
+            const open = [...panel.querySelectorAll(`[data-bm-acc-group="${group}"][open]`)].map((d) => d.getAttribute('data-bm-acc'));
+            try {
+                global.localStorage?.setItem(`nextdash.bm.acc.${group}`, JSON.stringify(open));
+            } catch {
+                // Private window: the choice lasts until the next bookmark.
+            }
+        }, true);
         panel.addEventListener('click', (e) => {
-            if (e.target.closest('[data-bm-panel-toggle]')) {
-                this.toggleWorkbenchPanel();
+            const usageShow = e.target.closest('[data-bm-usage-show]');
+            if (usageShow) {
+                // "Show the ones never opened": the rail's own view for them.
+                const view = usageShow.getAttribute('data-bm-usage-show');
+                if (this.bmCleanupFilter !== view) this.toggleRailFilter('cleanup', view);
+                return;
+            }
+            const read = e.target.closest('[data-bm-copy-read]');
+            if (read) {
+                global.open(read.getAttribute('data-bm-copy-read'), '_blank', 'noopener,noreferrer');
+                return;
+            }
+            if (e.target.closest('[data-bm-copy-save]')) {
+                const b = this.findBookmarkByKey(panel.dataset.bmPanelKey);
+                if (b) void this.saveBmLocalCopy?.(b);
+                return;
+            }
+            if (e.target.closest('[data-bm-details-checking]')) {
+                // Checking is set on the Health tab: take the reader there.
+                this.setWorkbenchPanelTab('health');
+                this.openBmHealthAcc?.('checking')?.querySelector('[data-check-mode]')?.focus();
+                return;
+            }
+            const tabBtn = e.target.closest('[data-bm-tab-panel]');
+            if (tabBtn) {
+                this.setWorkbenchPanelTab(tabBtn.dataset.bmTabPanel);
+                return;
+            }
+            const more = e.target.closest('[data-bm-more-toggle]');
+            if (more) {
+                const menu = panel.querySelector('[data-bm-more-menu]');
+                if (menu) {
+                    menu.hidden = !menu.hidden;
+                    more.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+                }
+                return;
+            }
+            // An item in the menu does its work (bound below or per button)
+            // and takes the menu down with it; a press elsewhere does too.
+            this.closeWorkbenchMoreMenu();
+            // The address in the head is a real link and opens itself; the
+            // open is counted like any other.
+            if (e.target.closest('a.config-bm-panel-url') && panel.dataset.bmPanelKey) {
+                this.recordBookmarkOpenByKey(panel.dataset.bmPanelKey);
                 return;
             }
             const action = e.target.closest('[data-bm-panel-action]')?.getAttribute('data-bm-panel-action');
@@ -716,6 +1162,7 @@
             if (!action || !key) return;
             if (action === 'open') this.openBookmarkByKey(key);
             else if (action === 'edit-dialog') void this.openBookmarkEditModal(key);
+            else if (action === 'promote') void this.openBookmarkEditModal(key, { promote: true });
             else if (action === 'delete') void this.deleteBookmarkByKey(key);
             else this.handleBookmarkMenuAction(action, key);
         });
@@ -864,10 +1311,11 @@
             acc[s] = (acc[s] || 0) + 1;
             return acc;
         }, {});
-        const health = global.DashboardConfig.HEALTH_FILTERS.filter((k) => states[k])
+        const health = global.DashboardConfig.HEALTH_STATES.filter((k) => states[k])
             .map((k) => `<span><span class="config-bm-health-dot is-${k}"></span> ${states[k]} ${esc(this.railHealthLabel(k).toLowerCase())}</span>`)
             .join(' · ');
         const dirty = Object.keys(draft).length > 0;
+        const healthBulk = this.renderBmHealthBulkActions?.() || '';
 
         return `
             <header class="config-bm-panel-head">
@@ -884,7 +1332,8 @@
                     <div class="config-bm-segmented" role="group">${modeButtons}</div>
                     <input type="text" class="config-text" data-bm-bulk-field="tags"
                            value="${esc((draft.tags?.list || []).join(', '))}"
-                           placeholder="${esc(this.t('config.detailTagsPlaceholder', 'work, dev, personal…'))}">`)}
+                           placeholder="${esc(this.t('config.detailTagsPlaceholder', 'work, dev, personal…'))}">
+                    <div class="tag-suggest-chips config-bm-tags-suggest" data-bm-bulk-suggest hidden></div>`)}
                 ${field(this.t('config.pinnedShort', 'Pinned'), `
                     <span class="config-bm-panel-muted">${esc(pinSummary)}</span>
                     <span class="config-bm-segmented" role="group">
@@ -894,7 +1343,7 @@
                 ${field(this.t('config.bmFieldChecking', 'Checking'), `<select class="config-select" data-bm-bulk-field="checkMode">${modeOptions}</select>`)}
                 ${intervalField}
             </div>
-            ${health ? `<section class="config-bm-panel-facts"><h3>${esc(this.t('config.bmHealth', 'Health'))}</h3><p>${health}</p></section>` : ''}
+            ${health || healthBulk ? `<section class="config-bm-panel-facts"><h3>${esc(this.t('config.bmHealth', 'Health'))}</h3>${health ? `<p>${health}</p>` : ''}${healthBulk}</section>` : ''}
             <footer class="config-bm-panel-foot">
                 <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-bulk-action="apply"${dirty ? '' : ' disabled'}>${esc(this.t('config.bmApplyTo', 'Apply to {n}').replace('{n}', String(n)))}</button>
                 <button type="button" class="config-btn config-btn--small" data-bm-bulk-action="export">${esc(this.t('config.bulkExportCsv', 'Export CSV'))}</button>
@@ -1024,9 +1473,9 @@
     },
 
     focusWorkbenchBulkField(name) {
-        if (this.workbenchNarrow()) this.openWorkbenchOverlay('drawer');
-        else this.toggleWorkbenchPanel(false, { remember: false });
+        this._libDrawerWanted = true;
         this.redrawBulkPanel();
+        this.syncLibraryDrawer();
         document.querySelector(`#config-bm-panel [data-bm-bulk-field="${name}"]`)?.focus();
     },
 
@@ -1047,6 +1496,11 @@
             if (mode) {
                 this.readBulkControl(mode);
                 this.redrawBulkPanel();
+                return;
+            }
+            const healthBulk = e.target.closest('[data-bm-health-bulk]');
+            if (healthBulk) {
+                void this.runBmHealthBulk(healthBulk.getAttribute('data-bm-health-bulk'));
                 return;
             }
             const action = e.target.closest('[data-bm-bulk-action]')?.getAttribute('data-bm-bulk-action');
@@ -1087,29 +1541,35 @@
         });
     },
 
-    workbenchNarrow() {
-        return Boolean(global.matchMedia?.('(max-width: 1199px)').matches);
-    },
-
-    workbenchPhone() {
-        return Boolean(global.matchMedia?.('(max-width: 799px)').matches);
-    },
-
-    openWorkbenchOverlay(kind) {
+    /** The phone's filters sheet: the rail, over the list. */
+    openWorkbenchOverlay() {
         const root = document.getElementById('config-bm-workbench');
         if (!root) return;
         this.closeWorkbenchOverlays();
-        root.classList.add(kind === 'sheet' ? 'is-sheet-open' : 'is-drawer-open');
+        root.classList.add('is-sheet-open');
         const scrim = root.querySelector('[data-bm-scrim]');
         if (scrim) scrim.hidden = false;
-        this._bmOverlayLock = global.ScrollLock?.acquire?.(kind === 'sheet' ? 'bm-sheet' : 'bm-drawer') || null;
-        this._bmOverlayKind = kind;
+        this._bmOverlayLock = global.ScrollLock?.acquire?.('bm-sheet') || null;
+        this._bmOverlayKind = 'sheet';
+    },
+
+    /**
+     * Leaving the view: everything it laid over the page goes, all at once --
+     * the ⋯ menu, the side panel and the phone's filters sheet with its scroll
+     * lock. closeWorkbenchOverlays closes one per Escape; this is not a key.
+     */
+    leaveLibraryView() {
+        this.closeWorkbenchMoreMenu();
+        this.closeLibraryDrawer();
+        while (this.closeWorkbenchOverlays()) { /* until nothing is left */ }
     },
 
     closeWorkbenchOverlays() {
+        if (this.closeWorkbenchMoreMenu()) return true;
+        if (this.closeLibraryDrawer()) return true;
         const root = document.getElementById('config-bm-workbench');
-        const wasOpen = Boolean(root?.classList.contains('is-drawer-open') || root?.classList.contains('is-sheet-open'));
-        root?.classList.remove('is-drawer-open', 'is-sheet-open');
+        const wasOpen = Boolean(root?.classList.contains('is-sheet-open'));
+        root?.classList.remove('is-sheet-open');
         const scrim = root?.querySelector('[data-bm-scrim]');
         if (scrim) scrim.hidden = true;
         if (this._bmOverlayLock) {
@@ -1125,12 +1585,9 @@
         const esc = (v) => this.dash.escapeHtml(v);
         const active = [this.bmQuery, this.bmPageFilter, this.bmCategoryFilter, this.bmCleanupFilter, this.bmHealthFilter]
             .filter((v) => String(v || '').trim()).length + this.bookmarkTagFilters().length;
-        const n = this.bmSelected.size;
         return `
             <button type="button" class="config-btn config-btn--small config-bm-narrow-only config-bm-phone-only" data-bm-open-sheet>${esc(
-                this.t('config.bmFilters', 'Filters'))}${active ? ` (${active})` : ''}</button>
-            <button type="button" class="config-btn config-btn--small config-bm-narrow-only" data-bm-open-drawer>${esc(
-                this.t('config.bmDetails', 'Details'))}${n > 1 ? ` (${n})` : ''}</button>`;
+                this.t('config.bmFilters', 'Filters'))}${active ? ` (${active})` : ''}</button>`;
     },
 
     syncWorkbenchToolbar() {
@@ -1138,20 +1595,38 @@
         if (host) host.innerHTML = this.renderWorkbenchNarrowButtons();
     },
 
+    /**
+     * Publish the section header's height on the workbench, under the name the
+     * list-view shell uses (--lvs-header-height), so the sticky panel stops
+     * below the sticky header instead of sliding under it. The header grows
+     * and shrinks with its breadcrumb, so it is watched rather than read once.
+     */
+    trackWorkbenchHeaderHeight(workbench) {
+        const head = document.querySelector('.config-view-head');
+        this._bmHeadObserver?.disconnect?.();
+        if (!workbench || !head || typeof ResizeObserver !== 'function') return;
+        const publish = () => workbench.style.setProperty('--lvs-header-height', `${Math.round(head.offsetHeight)}px`);
+        publish();
+        this._bmHeadObserver = new ResizeObserver(publish);
+        this._bmHeadObserver.observe(head);
+    },
+
     bindWorkbench(container) {
         // A redraw of the section (a write elsewhere, a filter from the hash)
-        // keeps an open drawer or sheet open: its scroll lock is still held, so
-        // the new markup is put back in the state the old one was in. Leaving
-        // the list is what closes them (closeWorkbenchOverlaysOffList).
-        const reopen = this._bmOverlayKind;
-        if (reopen) {
+        // keeps an open sheet open: its scroll lock is still held, so the new
+        // markup is put back in the state the old one was in. Leaving the list
+        // is what closes it (closeWorkbenchOverlaysOffList).
+        if (this._bmOverlayKind) {
             const root = container.querySelector('#config-bm-workbench');
-            root?.classList.add(reopen === 'sheet' ? 'is-sheet-open' : 'is-drawer-open');
+            root?.classList.add('is-sheet-open');
             const scrim = root?.querySelector('[data-bm-scrim]');
             if (scrim) scrim.hidden = false;
         }
+        this.trackWorkbenchHeaderHeight(container.querySelector('#config-bm-workbench'));
+        this.startBmHealth?.();
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
         const panel = container.querySelector('#config-bm-panel');
+        this.adoptLibraryPanel(panel);
         this.bindWorkbenchPanel(panel);
         this.bindWorkbenchBulk(panel);
         if (panel) {
@@ -1162,25 +1637,61 @@
         if (root && root.dataset.bmOverlayWired !== '1') {
             root.dataset.bmOverlayWired = '1';
             root.addEventListener('click', (e) => {
-                if (e.target.closest('[data-bm-scrim]')) this.closeWorkbenchOverlays();
-                else if (e.target.closest('[data-bm-open-sheet]')) this.openWorkbenchOverlay('sheet');
-                else if (e.target.closest('[data-bm-open-drawer]')) {
-                    this.openWorkbenchOverlay('drawer');
-                    this.repaintWorkbenchPanel();
-                }
+                if (e.target.closest('[data-bm-enable-checking]')) this.openCheckingModal?.();
+                else if (e.target.closest('[data-bm-scrim]')) this.closeWorkbenchOverlays();
+                else if (e.target.closest('[data-bm-open-sheet]')) this.openWorkbenchOverlay();
             });
         }
     },
 
+    /** Whether the list draws group headers at all -- bmActiveGroup() decides which shape. */
     workbenchGrouped() {
-        return (this.bmSort ?? this.defaultBookmarksSort()) === 'page';
+        return this.bmActiveGroup() !== '';
     },
 
+    /**
+     * The key workbenchItems() groups consecutive rows by.
+     *
+     * Must land on the same order computeVisibleBookmarks()'s bmGroupComparator
+     * produces, or two runs of the same group that are not adjacent in the
+     * sorted rows would draw as two separate headers.
+     */
     workbenchGroupKey(b) {
-        return `${b.pageId}::${b.category || ''}`;
+        switch (this.bmActiveGroup()) {
+            case 'url': return global.HealthFacts?.keyFor?.(b.url) || b.url;
+            case 'page': return String(b.pageId);
+            case 'category': return `${b.pageId}::${b.category || ''}`;
+            case 'site': return this.bmGroupSiteKey(b);
+            case 'status': return this.bookmarkHealthState(b);
+            case 'tag': return this.bmGroupFirstTag(b);
+            default: return '';
+        }
     },
 
+    /** The group header's own label -- what the active Group is, not where a bookmark is filed (see workbenchCrumbLabel). */
     workbenchGroupLabel(b) {
+        switch (this.bmActiveGroup()) {
+            case 'url': return b.url || '';
+            case 'page': return this.pageLabel(b.pageId);
+            case 'category': return this.workbenchCrumbLabel(b);
+            case 'site': return this.bmGroupSiteKey(b) || b.url || '';
+            case 'status': return this.railHealthLabel(this.bookmarkHealthState(b));
+            case 'tag': {
+                const tag = this.bmGroupFirstTag(b);
+                return tag ? `#${tag}` : this.t('config.bmGroupNoTags', 'No tags');
+            }
+            default: return '';
+        }
+    },
+
+    /**
+     * Where a bookmark is filed, page › category -- shown as the row's crumb
+     * (see ctx.showCrumb) whenever the group headers do not already say it:
+     * page, category and Duplicates' URL groups make it redundant, but
+     * grouping by site, status or tag still leaves "where does this actually
+     * live" worth saying on the row, same as no grouping at all.
+     */
+    workbenchCrumbLabel(b) {
         const page = this.pageLabel(b.pageId);
         if (!b.category) return page;
         return `${page} › ${this.railCategoryLabel(b.pageId, b.category)}`;
@@ -1202,14 +1713,51 @@
         return items;
     },
 
+    /**
+     * The row's glow, the same mapping as Health's rows: broken red, a monitor
+     * that is down amber, a monitored and healthy one in the accent, healthy
+     * green, and nothing for a bookmark that is never checked.
+     */
+    workbenchRowStatus(b) {
+        // View can have the rows plain: no colour from anything.
+        if (this.bmViewSetting('bmViewRowColors', true) === false) return '';
+        // Every row says where it stands. Health's own colour once its report
+        // knows the bookmark (healthRowStatus: red, amber, the monitor's blue,
+        // green); and a bookmark nothing checks is "off", its own grey, so
+        // that never being checked cannot read as being fine. A problem the
+        // report found anyway -- a broken page seen on a load -- still wins.
+        const mode = global.CheckMode?.of?.(b) || 'off';
+        const issue = this.bmHealthIssue?.(b);
+        const health = this._bmHealthModule;
+        if (issue && typeof health?.healthRowStatus === 'function') {
+            const status = health.healthRowStatus(issue);
+            if (status === 'bad' || status === 'warn' || status === 'info') return status;
+            if (mode === 'monitor') return 'info';
+            return mode === 'off' ? 'off' : status;
+        }
+        const state = this.bookmarkHealthState(b);
+        if (state === 'broken') return 'bad';
+        if (state === 'down') return 'warn';
+        if (mode === 'off') return 'off';
+        if (state === 'healthy') {
+            return mode === 'monitor' || global.HealthFacts?.get?.(b?.url)?.monitor ? 'info' : 'good';
+        }
+        return 'muted';
+    },
+
     renderWorkbenchRow(item, ctx) {
         const esc = ctx.esc;
         const b = item.bookmark;
         const key = this.bookmarkKey(b);
         const ticked = this.bmSelected.has(key);
         const title = b.name || this.formatBookmarkUrlDisplay(b.url) || b.url;
-        const domain = this.formatBookmarkUrlDisplay(b.url);
-        const state = this.bookmarkHealthState(b);
+        // View: the whole address (without its scheme), only the site, or none.
+        const address = this.bmViewSetting('bmViewAddress', 'full');
+        const domain = address === 'hidden' ? ''
+            : (address === 'domain' ? (this.bmGroupSiteKey?.(b) || this.formatBookmarkUrlDisplay(b.url)) : this.formatBookmarkUrlDisplay(b.url));
+        // The glow (list-view-shell.css) says what the dot before the title
+        // used to, in the same colours Health's rows use.
+        const status = this.workbenchRowStatus(b);
         const tags = (b.tags || []).map((t) => String(t).trim()).filter(Boolean);
         // Every tag, and a count for the ones that do not fit; fitWorkbenchTags
         // decides which, once the row has a width.
@@ -1217,24 +1765,24 @@
             + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '');
         const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '—', never: true };
-        const cm = global.CheckMode;
-        const checkMode = cm?.of?.(b) || 'off';
-        const checkMeta = cm?.meta?.(checkMode);
-        const checkLabel = checkMode === 'off' || !checkMeta
-            ? '—'
-            : checkMeta.badge + (checkMode === 'monitor' ? ` · ${cm.intervalLabel(cm.intervalOf(b))}` : '');
-        const added = b.createdAt
-            ? (global.formatLastOpened?.(b.createdAt, { t: this.lastOpenedTranslator() })?.label || '—')
-            : '—';
-        const crumbLabel = ctx.grouped ? '' : this.workbenchGroupLabel(b);
-        const crumb = ctx.grouped ? '' : `<span class="config-bm-crumb" title="${esc(crumbLabel)}">${esc(crumbLabel)}</span>`;
+        // Under a Health filter the reason earns the tags cell more than a
+        // fact this filter already narrowed on. The score closes every row,
+        // as it does in Health.
+        const issue = this.bmHealthIssue?.(b) || null;
+        const healthIssue = this.bmHealthFilter ? issue : null;
+        const healthReason = healthIssue ? (this._bmHealthModule?.reasonEntries(healthIssue)[0]?.label || '') : '';
+        const scoreTone = (score) => (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
+        const score = issue && Number.isFinite(Number(issue.score)) ? Number(issue.score) : null;
+        const crumbLabel = ctx.showCrumb ? this.workbenchCrumbLabel(b) : '';
+        const crumb = ctx.showCrumb ? `<span class="config-bm-crumb" title="${esc(crumbLabel)}">${esc(crumbLabel)}</span>` : '';
         const classes = ['config-bm-row'];
         if (ticked) classes.push('is-checked');
         if (item.groupStart) classes.push('is-group-start');
         if (item.groupEnd) classes.push('is-group-end');
         const feed = global.BookmarkFeedRow;
+        const col = (name) => this.bmViewColumn(name);
         return `
-            <div class="${classes.join(' ')}" data-bm-key="${esc(key)}" role="row" tabindex="-1"
+            <div class="${classes.join(' ')}" data-bm-key="${esc(key)}"${status ? ` data-lvs-status="${status}"` : ''} role="row" tabindex="-1"
                  aria-selected="${ticked ? 'true' : 'false'}" aria-posinset="${item.index + 1}" aria-setsize="${ctx.setSize}">
                 <label class="config-bm-tick-cell" role="gridcell">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
@@ -1242,21 +1790,75 @@
                 </label>
                 <span class="config-bm-icon-cell" role="gridcell">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
                 <span class="config-bm-name" role="gridcell">
-                    <span class="config-bm-health-dot is-${esc(state)}" title="${esc(this.railHealthLabel(state))}"></span>
                     <span class="config-bm-title">${esc(title)}</span>
-                    <span class="config-bm-domain">${esc(domain)}</span>
+                    ${domain ? `<span class="config-bm-domain">${esc(domain)}</span>` : ''}
                     ${ctx.isDuplicate(b) ? `<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>` : ''}
                     ${crumb}
                 </span>
-                <span class="config-bm-tags" role="gridcell">${tagChips}</span>
-                <span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned
-                    ? `<span aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}</span>
-                <span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>
-                <span class="config-bm-extra config-bm-checkmode" role="gridcell" title="${esc(`${this.t('config.bmFieldChecking', 'Checking')}: ${checkMeta?.hint || ''}`)}">${esc(checkLabel)}</span>
-                <span class="config-bm-extra config-bm-added" role="gridcell" title="${esc(this.t('config.bookmarkStatAdded', 'Added'))}">${esc(added)}</span>
-                <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>
-                <span class="config-bm-last" role="gridcell">${esc(last.label)}</span>
+                ${col('tags') ? `<span class="config-bm-tags" role="gridcell">${healthIssue
+                    ? `<span class="config-bm-reason">${esc(healthReason)}</span>` : tagChips}</span>` : ''}
+                ${col('pinned') ? `<span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned
+                    ? `<span aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}</span>` : ''}
+                ${col('shortcut') ? `<span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>` : ''}
+                ${col('usage') ? this.workbenchSparkCell(b) : ''}
+                ${col('opens') ? `<span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>` : ''}
+                ${col('last') ? `<span class="config-bm-last" role="gridcell">${esc(last.label)}</span>` : ''}
+                ${col('added') ? this.workbenchAddedCell(b) : ''}
+                ${col('score') ? `<span class="config-bm-row-score" role="gridcell">${score == null ? ''
+                    : `<span class="config-bm-score" data-tone="${scoreTone(score)}">${esc(String(score))}</span>`}</span>` : ''}
             </div>`;
+    },
+
+    /**
+     * The last 30 days of opens, two days to a bar, the newest on the right.
+     * From the open log the server keeps (Bookmark.openLog); the Usage tab
+     * draws the long view, this is the glance.
+     */
+    workbenchSparkCell(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        // View sets how far back: 7 and 14 days a bar a day, 30 days two.
+        const days = [7, 14, 30].includes(Number(this.bmViewSetting('bmViewUsageDays', 30))) ? Number(this.bmViewSetting('bmViewUsageDays', 30)) : 30;
+        const BARS = days === 30 ? 15 : days;
+        const SPAN = (days / BARS) * 86400000;
+        const now = Date.now();
+        const counts = new Array(BARS).fill(0);
+        const log = (Array.isArray(b.openLog) ? b.openLog : []).map(Number);
+        // Opens are logged one by one only since the log existed; a bookmark
+        // last opened before that still has that one open, and it is real.
+        const lastOpened = Number(b.lastOpened || 0);
+        if (lastOpened > 0 && !log.includes(lastOpened)) log.push(lastOpened);
+        log.forEach((raw) => {
+            const age = now - Number(raw);
+            if (!(age >= 0) || age >= BARS * SPAN) return;
+            counts[BARS - 1 - Math.floor(age / SPAN)] += 1;
+        });
+        const total = counts.reduce((a, n) => a + n, 0);
+        const title = total
+            ? this.t('config.bmSparkTitleDays', '{n} opens in the last {d} days').replace('{n}', String(total)).replace('{d}', String(days))
+            : this.t('config.bmSparkNoneDays', 'No opens in the last {d} days').replace('{d}', String(days));
+        const max = Math.max(1, ...counts);
+        const gap = 1;
+        // The same width whatever the number of bars.
+        const w = Math.max(2, Math.floor(60 / BARS) - gap);
+        const h = 14;
+        const bars = counts.map((n, i) => {
+            const bh = n ? Math.max(2, Math.round((n / max) * h)) : 1;
+            return `<rect data-count="${n}" x="${i * (w + gap)}" y="${h - bh}" width="${w}" height="${bh}" rx="0.5"${n ? '' : ' class="is-empty"'}></rect>`;
+        }).join('');
+        return `<span class="config-bm-spark" role="gridcell" title="${esc(title)}">
+            <svg viewBox="0 0 ${BARS * (w + gap) - gap} ${h}" width="${BARS * (w + gap) - gap}" height="${h}" aria-hidden="true">${bars}</svg></span>`;
+    },
+
+    /** When it was added: day and month this year, month and year before. */
+    workbenchAddedCell(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const at = Number(b.createdAt || 0);
+        if (!(at > 0)) return '<span class="config-bm-added" role="gridcell">—</span>';
+        const date = new Date(at);
+        const thisYear = date.getFullYear() === new Date().getFullYear();
+        const label = date.toLocaleDateString(undefined, thisYear ? { month: 'short', day: 'numeric' } : { month: 'short', year: 'numeric' });
+        const full = date.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+        return `<span class="config-bm-added" role="gridcell" title="${esc(this.t('config.bmAddedTitle', 'Added {date}').replace('{date}', full))}">${esc(label)}</span>`;
     },
 
     /**
@@ -1364,6 +1966,10 @@
         const ctx = {
             esc,
             grouped: this.workbenchGrouped(),
+            // The crumb repeats what a page/category/URL group header already
+            // says, so it only earns its place when the headers say something
+            // else (site, status, tag) or there are none at all.
+            showCrumb: !['page', 'category', 'url'].includes(this.bmActiveGroup()),
             setSize: all.length,
             isDuplicate: (b) => {
                 const url = this.canonicalStatsUrlKey(b.url);

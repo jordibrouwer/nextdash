@@ -50,89 +50,6 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.inbox-tu
     font-style: italic;
 }
 
-/* The "here is the actual control" strip above each step's prose. */
-.inbox-tutorial-visual {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1-5, 0.4rem);
-    padding: var(--space-2, 0.6rem) var(--space-3, 0.75rem);
-    margin: 0 0 var(--space-4, 0.9rem);
-    border: 1px dashed var(--border-secondary);
-    border-radius: var(--radius-5, 0.5rem);
-    background: var(--background-secondary);
-}
-
-.inbox-tutorial-visual-url {
-    font-family: var(--font-mono, monospace);
-    font-size: var(--text-sm, 0.78rem);
-    color: var(--text-secondary);
-    flex: 1 1 8rem;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.inbox-tutorial-visual-sources {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: var(--space-1, 0.3rem);
-    flex: 0 0 auto;
-}
-
-.inbox-tutorial-visual-hint {
-    font-size: var(--text-xs, 0.72rem);
-    color: var(--text-tertiary);
-    flex: 1 1 10rem;
-    min-width: 0;
-}
-
-/* The note preview reads as the thing someone typed, not as chrome. */
-.inbox-tutorial-visual-note {
-    flex: 1 1 10rem;
-    min-width: 0;
-    font-size: var(--text-xs, 0.76rem);
-    font-style: italic;
-    color: var(--text-secondary);
-    border-left: 2px solid var(--border-secondary);
-    padding-left: var(--space-2, 0.5rem);
-}
-
-.inbox-tutorial-chip {
-    font-size: var(--text-xs, 0.72rem);
-    padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
-    border-radius: var(--radius-pill, 999px);
-    border: 1px solid var(--border-secondary);
-    color: var(--text-secondary);
-    background: var(--background-primary);
-}
-
-/* Mirrors the kbd chips in the inbox legend, so the key someone reads here is
-   the same shape as the one under the real list. */
-.inbox-tutorial-key {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 0.3rem);
-    font-size: var(--text-xs, 0.72rem);
-    color: var(--text-tertiary);
-    white-space: nowrap;
-}
-
-.inbox-tutorial-key kbd {
-    font-family: var(--font-mono, monospace);
-    font-size: var(--text-xs, 0.7rem);
-    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.35rem);
-    border-radius: var(--radius-3, 0.3rem);
-    border: 1px solid var(--border-secondary);
-    background: var(--background-primary);
-    color: var(--text-primary);
-}
-
-.inbox-tutorial-visual--keys {
-    gap: var(--space-2, 0.55rem);
-}
-
 .inbox-tutorial-dots {
     display: flex;
     justify-content: center;
@@ -178,4 +95,37 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.inbox-tu
     display: block;
     width: 100%;
     height: auto;
+}
+
+/* Each step's scene slides in from the side the reader is heading: Next from
+   the right, Back from the left. The motion inside the scene is the SVG's own
+   (see inbox-tutorial.js); this is only the change of page. */
+.inbox-tutorial-scene.is-forward {
+    animation: inbox-tutorial-scene-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inbox-tutorial-scene.is-back {
+    animation: inbox-tutorial-scene-in-back 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes inbox-tutorial-scene-in {
+    from { opacity: 0; transform: translateX(14px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes inbox-tutorial-scene-in-back {
+    from { opacity: 0; transform: translateX(-14px); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .inbox-tutorial-scene.is-forward,
+    .inbox-tutorial-scene.is-back {
+        animation: none;
+    }
+}
+
+body.no-animations .inbox-tutorial-scene.is-forward,
+body.no-animations .inbox-tutorial-scene.is-back {
+    animation: none;
 }
