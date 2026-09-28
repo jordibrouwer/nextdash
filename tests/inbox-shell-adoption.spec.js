@@ -255,6 +255,11 @@ test('the glass depth still reaches the rail', async ({ page }) => {
             row: read('.inbox-item'),
         };
     });
+    // The rows are left out on purpose, like the rail's groups: fifty touching
+    // rows with a blur each read as a stack of frosted cards, where the
+    // Containers and Bookmarks rows beside them are plain list rows.
+    expect(filters.row, 'inbox rows are list rows, not glass panes').toBe('none');
+    delete filters.row;
 
     for (const [part, value] of Object.entries(filters)) {
         expect(value, `${part} is left out of the glass depth`).not.toBe('none');

@@ -59,6 +59,7 @@
                 'tipEditMoveCategory',
                 'tipEditSelectionActions',
                 'tipEditKeep',
+                'tipEditTriage',
                 'tipEditWorkbench',
                 'tipEditTagSuggestions',
                 'tipEditRenamePage',
@@ -128,6 +129,7 @@
                 'tipTuneFresh',
                 'tipTuneReviewOffers',
                 'tipTuneWidgets',
+                'tipTuneContainerList',
                 'tipTuneWidgetFold',
                 'tipTuneCustomWidget',
                 'tipTuneAmbientWidgets',
@@ -146,7 +148,7 @@
             // what the server says about it.
             titleKey: 'tipsGroupData',
             titleFallback: 'Data in and out',
-            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs', 'tipDataContainers'],
+            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs', 'tipDataContainers', 'tipDataContainerWebUI'],
         },
     ];
 

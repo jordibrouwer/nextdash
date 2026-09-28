@@ -974,11 +974,28 @@ body.inbox-triage-active {
 
 .inbox-item.feed-row {
     display: block;
-    padding: var(--space-2, 0.45rem) var(--space-3, 0.75rem);
+    /* The height of a Containers or Bookmarks row (~39px): the icon line sets
+       the row, and 0.45rem either side of it made every link a step taller
+       than the rows in the views beside it. */
+    padding: 0.25rem var(--space-3, 0.75rem);
     border: 0;
     border-bottom: 1px solid var(--border-primary);
     border-radius: 0;
     background-color: transparent;
+}
+
+/* A row in a list, not a pane of glass.
+
+   Under the glass depth, theme-character.css gives .feed-row and .inbox-item
+   a backdrop blur, as it does for panels. On fifty touching rows that turned
+   the list into a stack of frosted cards, each lighter than the page, while
+   the Containers and Bookmarks rows beside it stay plain rows. The rail
+   (.lvs-group) was taken out of that rule for the same reason. Anchored on
+   #dashboard-layout because that rule carries an id inside its :is() list,
+   which gives every selector in it an id's weight. */
+html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .inbox-item.feed-row:hover {
