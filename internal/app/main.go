@@ -361,6 +361,8 @@ func Run(files assetFS) {
 	handlers.StartHealthRecheckScheduler(schedulerStop)
 	// Container image update checks, when an interval is set in Config.
 	handlers.StartDockerUpdateScheduler(schedulerStop)
+	// The last hour of CPU and memory per container, for the drawer's charts.
+	handlers.StartDockerStatsSampler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence

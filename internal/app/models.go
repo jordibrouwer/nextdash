@@ -783,6 +783,9 @@ type Settings struct {
 	DockerLogLines           int      `json:"dockerLogLines"`           // 100, 200, 500 or 1000
 	DockerConfirmStopRestart bool     `json:"dockerConfirmStopRestart"` // ask before stop and restart as well
 	DockerHiddenContainers   []string `json:"dockerHiddenContainers"`   // names kept out of the view, search and widget
+	// DockerStatsHistory keeps the last hour of CPU and memory per running
+	// container for the drawer's charts. On by default; off reads nothing.
+	DockerStatsHistory bool `json:"dockerStatsHistory"`
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
 	// feed can then say when it has published something since you last opened
 	// it. Off by default because it is the only thing here that reaches out to
@@ -1670,6 +1673,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
+			DockerStatsHistory:             true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -3999,6 +4003,7 @@ func (fs *FileStore) GetSettings() Settings {
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
+			DockerStatsHistory:              true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -4658,6 +4663,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["dockerViewEnabled"]; !ok {
 			settings.DockerViewEnabled = true
+		}
+		if _, ok := rawSettings["dockerStatsHistory"]; !ok {
+			settings.DockerStatsHistory = true
 		}
 		if _, ok := rawSettings["unsortedEnabled"]; !ok {
 			settings.UnsortedEnabled = true

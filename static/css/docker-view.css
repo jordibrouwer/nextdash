@@ -213,6 +213,59 @@
     justify-content: space-between;
 }
 
+.docker-charts {
+    display: grid;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-3, 0.75rem);
+}
+
+.docker-chart {
+    margin: 0;
+}
+
+.docker-chart-head,
+.docker-chart-axis {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.8rem);
+}
+
+.docker-chart-peak {
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-chart-svg {
+    display: block;
+    width: 100%;
+    height: 56px;
+    margin: 4px 0 2px;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.docker-chart-area {
+    fill: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+
+.docker-chart-line {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+}
+
+.docker-chart-axis {
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.docker-chart-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.8rem);
+}
+
 .docker-env-row {
     display: flex;
     align-items: center;

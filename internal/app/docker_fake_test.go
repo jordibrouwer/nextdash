@@ -219,6 +219,8 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 
 	case r.Method == "GET" && strings.HasPrefix(path, "/containers/") && strings.HasSuffix(path, "/stats"):
 		id := strings.TrimSuffix(strings.TrimPrefix(path, "/containers/"), "/stats")
+		// With the query, so a test can tell a one-shot read from a full one.
+		f.record("GET", "/containers/"+id+"/stats?"+r.URL.RawQuery)
 		f.handleStats(w, id)
 		return
 

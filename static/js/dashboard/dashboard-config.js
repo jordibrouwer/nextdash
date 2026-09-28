@@ -3274,6 +3274,7 @@ class DashboardConfig {
         dockerLogLines: ['docker', 'containers', 'logs'],
         dockerUpdateInterval: ['docker', 'containers', 'updates', 'registry', 'image'],
         dockerConfirmStopRestart: ['docker', 'containers', 'confirm', 'stop', 'restart'],
+        dockerStatsHistory: ['docker', 'containers', 'cpu', 'memory', 'chart', 'history', 'resources'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
         statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
         statusOfflineRetryDelayMs: ['offline', 'retry', 'delay', 'status'],
@@ -12062,6 +12063,7 @@ class DashboardConfig {
         dockerLogLines: { def: 200 },
         dockerUpdateInterval: { def: 'off' },
         dockerConfirmStopRestart: { def: false },
+        dockerStatsHistory: { def: true },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
         statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 450 },
@@ -12409,6 +12411,7 @@ class DashboardConfig {
                     { field: 'dockerLogLines', type: 'select', label: t('config.dockerLogLinesLabel', 'Log lines to show'), options: [
                         opt(100, '100'), opt(200, '200'), opt(500, '500'), opt(1000, '1000'),
                     ] },
+                    bool('dockerStatsHistory', 'config.dockerStatsHistoryLabel', 'Keep the last hour of CPU and memory'),
                 ],
             },
             {

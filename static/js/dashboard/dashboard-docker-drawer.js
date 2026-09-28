@@ -483,13 +483,22 @@ class DockerDrawer {
         memVal.textContent = '—';
         mem.append(memLabel, memVal);
 
-        body.append(cpu, mem);
+        // The last hour, under the figures: filled by _renderCharts once the
+        // first answer with history lands.
+        const charts = document.createElement('div');
+        charts.className = 'docker-charts';
+        charts.setAttribute('data-docker-charts', '');
+
+        body.append(cpu, mem, charts);
         els.cpuEl = cpuVal;
         els.memEl = memVal;
+        els.chartsEl = charts;
     }
 
     _startResourcePolling() {
         this._stopResourcePolling();
+        this._statsBeat = 0;
+        this._history = null;
         const tick = () => void this._loadStats();
         tick();
         this._statsTimer = setInterval(tick, 2000);
@@ -505,12 +514,110 @@ class DockerDrawer {
     async _loadStats() {
         const name = this._name;
         if (!name) return;
-        const data = await dockerDrawerFetchJSON(`/api/docker/containers/${encodeURIComponent(name)}/stats`);
+        /*
+         * The hour moves once every thirty seconds on the server, so it is
+         * asked for on the first beat and every fifteenth after -- the beats
+         * between only need the figures, which also become the chart's "now".
+         */
+        this._statsBeat = (this._statsBeat || 0) + 1;
+        const withHistory = this._statsBeat % 15 === 1 || this._history?.name !== name;
+        const query = withHistory ? '?history=1' : '';
+        const data = await dockerDrawerFetchJSON(`/api/docker/containers/${encodeURIComponent(name)}/stats${query}`);
         if (name !== this._name || !this._els) return;
         if (this._els.cpuEl) this._els.cpuEl.textContent = dockerFormatCpu(data?.cpuPercent);
         if (this._els.memEl) {
             this._els.memEl.textContent = `${dockerFormatBytes(data?.memoryUsed)} / ${dockerFormatBytes(data?.memoryLimit)}`;
         }
+        if (withHistory && data) {
+            this._history = { name, enabled: data.historyEnabled !== false, points: Array.isArray(data.history) ? data.history : [] };
+        }
+        if (this._history?.name === name && data) this._renderCharts(data);
+    }
+
+    /* Two charts of the last hour: the sampler's points, then the figure now. */
+    _renderCharts(now) {
+        const host = this._els?.chartsEl;
+        if (!host) return;
+        host.replaceChildren();
+        const { enabled, points } = this._history;
+        const note = (text) => {
+            const p = document.createElement('p');
+            p.className = 'docker-chart-note';
+            p.setAttribute('data-docker-chart-note', '');
+            p.textContent = text;
+            host.appendChild(p);
+        };
+        if (!enabled) {
+            note(this.t('dockerChartsOff', 'History is off — switch it on in Config → Containers.'));
+            return;
+        }
+        const nowMs = Date.now();
+        const series = points.concat([{ t: nowMs, cpu: Number(now.cpuPercent) || 0, mem: Number(now.memoryUsed) || 0 }]);
+        if (points.length < 2) {
+            note(this.t('dockerChartsCollecting', 'Collecting — the chart fills in over the next minutes.'));
+            return;
+        }
+        host.append(
+            this._chart('cpu', this.t('dockerChartCpu', 'CPU · last hour'), series, (p) => p.cpu,
+                (v) => dockerFormatCpu(v), nowMs),
+            this._chart('mem', this.t('dockerChartMemory', 'Memory · last hour'), series, (p) => p.mem,
+                (v) => dockerFormatBytes(v), nowMs),
+        );
+    }
+
+    _chart(key, title, series, valueOf, format, nowMs) {
+        const W = 300;
+        const H = 56;
+        const start = nowMs - 3_600_000;
+        const values = series.map(valueOf);
+        const peak = Math.max(...values, 0);
+        const top = peak > 0 ? peak * 1.15 : 1;
+        const xy = series.map((p) => {
+            const x = Math.max(0, Math.min(W, ((p.t - start) / 3_600_000) * W));
+            const y = H - (valueOf(p) / top) * (H - 2);
+            return [x.toFixed(1), y.toFixed(1)];
+        });
+        const line = xy.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
+        const area = `${line} L${xy[xy.length - 1][0]} ${H} L${xy[0][0]} ${H} Z`;
+
+        const wrap = document.createElement('figure');
+        wrap.className = 'docker-chart';
+        wrap.setAttribute('data-docker-chart', key);
+        const head = document.createElement('figcaption');
+        head.className = 'docker-chart-head';
+        const name = document.createElement('span');
+        name.textContent = title;
+        const top_ = document.createElement('span');
+        top_.className = 'docker-chart-peak';
+        top_.textContent = this.t('dockerChartPeak', 'peak {value}', { value: format(peak) });
+        head.append(name, top_);
+
+        const ns = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('class', 'docker-chart-svg');
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', `${title}, ${top_.textContent}`);
+        const fill = document.createElementNS(ns, 'path');
+        fill.setAttribute('class', 'docker-chart-area');
+        fill.setAttribute('d', area);
+        const stroke = document.createElementNS(ns, 'path');
+        stroke.setAttribute('class', 'docker-chart-line');
+        stroke.setAttribute('d', line);
+        stroke.setAttribute('vector-effect', 'non-scaling-stroke');
+        svg.append(fill, stroke);
+
+        const axis = document.createElement('div');
+        axis.className = 'docker-chart-axis';
+        const from = document.createElement('span');
+        from.textContent = this.t('dockerChartFrom', '−60 min');
+        const to = document.createElement('span');
+        to.textContent = this.t('dockerChartNow', 'now');
+        axis.append(from, to);
+
+        wrap.append(head, svg, axis);
+        return wrap;
     }
 
     /* ── Logs ──────────────────────────────────────────────────────────── */

@@ -390,7 +390,21 @@ func (h *Handlers) DockerContainerStatsHandler(w http.ResponseWriter, r *http.Re
 		writeDockerError(w, err)
 		return
 	}
-	writeJSON(w, sample)
+	if r.URL.Query().Get("history") != "1" {
+		writeJSON(w, sample)
+		return
+	}
+	// With history: the sampler's last hour, and whether it is on at all, so
+	// the drawer can tell "nothing yet" from "switched off".
+	enabled := h.store.GetSettings().DockerStatsHistory
+	history := []dockerStatsPoint{}
+	if enabled {
+		history = dockerStatsStore.points(c.ID)
+	}
+	writeJSON(w, map[string]any{
+		"cpuPercent": sample.CPUPercent, "memoryUsed": sample.MemoryUsed, "memoryLimit": sample.MemoryLimit,
+		"history": history, "historyEnabled": enabled,
+	})
 }
 
 // DockerContainerLogsHandler clamps tail to 1-1000: no tail or a junk value

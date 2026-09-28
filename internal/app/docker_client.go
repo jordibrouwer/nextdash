@@ -260,35 +260,44 @@ type dockerStatsSample struct {
 	MemoryLimit uint64  `json:"memoryLimit"`
 }
 
-func (d *dockerAPI) statsOnce(ctx context.Context, id string) (dockerStatsSample, error) {
-	var raw struct {
-		CPU struct {
-			Usage struct {
-				Total uint64 `json:"total_usage"`
-			} `json:"cpu_usage"`
-			System uint64 `json:"system_cpu_usage"`
-			Online int    `json:"online_cpus"`
-		} `json:"cpu_stats"`
-		PreCPU struct {
-			Usage struct {
-				Total uint64 `json:"total_usage"`
-			} `json:"cpu_usage"`
-			System uint64 `json:"system_cpu_usage"`
-		} `json:"precpu_stats"`
-		Mem struct {
-			Usage uint64            `json:"usage"`
-			Limit uint64            `json:"limit"`
-			Stats map[string]uint64 `json:"stats"`
-		} `json:"memory_stats"`
+// dockerStatsRaw is the part of a stats reading this reads.
+type dockerStatsRaw struct {
+	CPU struct {
+		Usage struct {
+			Total uint64 `json:"total_usage"`
+		} `json:"cpu_usage"`
+		System uint64 `json:"system_cpu_usage"`
+		Online int    `json:"online_cpus"`
+	} `json:"cpu_stats"`
+	PreCPU struct {
+		Usage struct {
+			Total uint64 `json:"total_usage"`
+		} `json:"cpu_usage"`
+		System uint64 `json:"system_cpu_usage"`
+	} `json:"precpu_stats"`
+	Mem struct {
+		Usage uint64            `json:"usage"`
+		Limit uint64            `json:"limit"`
+		Stats map[string]uint64 `json:"stats"`
+	} `json:"memory_stats"`
+}
+
+// memoryUsed is what `docker stats` shows: page cache is reclaimable, so it
+// is not "used".
+func (raw dockerStatsRaw) memoryUsed() uint64 {
+	used := raw.Mem.Usage
+	if cache, ok := raw.Mem.Stats["inactive_file"]; ok && cache < used {
+		used -= cache
 	}
+	return used
+}
+
+func (d *dockerAPI) statsOnce(ctx context.Context, id string) (dockerStatsSample, error) {
+	var raw dockerStatsRaw
 	if err := d.getJSON(ctx, "/containers/"+url.PathEscape(id)+"/stats?stream=false", &raw); err != nil {
 		return dockerStatsSample{}, err
 	}
-	out := dockerStatsSample{MemoryLimit: raw.Mem.Limit, MemoryUsed: raw.Mem.Usage}
-	// What `docker stats` shows: page cache is reclaimable, so it is not "used".
-	if cache, ok := raw.Mem.Stats["inactive_file"]; ok && cache < out.MemoryUsed {
-		out.MemoryUsed -= cache
-	}
+	out := dockerStatsSample{MemoryLimit: raw.Mem.Limit, MemoryUsed: raw.memoryUsed()}
 	cpuDelta := float64(raw.CPU.Usage.Total) - float64(raw.PreCPU.Usage.Total)
 	sysDelta := float64(raw.CPU.System) - float64(raw.PreCPU.System)
 	if cpuDelta > 0 && sysDelta > 0 {
