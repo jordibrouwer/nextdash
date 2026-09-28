@@ -1,0 +1,60 @@
+{
+  "tag": "v1.15.0",
+  "date": "28 September 2026",
+  "releasedAt": "2026-09-28",
+  "modalLead": "Three views take over from the old ones. <strong>Bookmarks</strong> holds the whole collection and everything Health used to do, <strong>Containers</strong> shows the Docker host nextDash runs on, and the <strong>Inbox</strong> is rebuilt on the same side panel. Work through and triage start from a pile and tell you why each item is there. Plus 34 new theme families, a Container list widget and Statistics rebuilt in two columns.",
+  "sections": [
+    {
+      "title": "Bookmarks view",
+      "items": [
+        { "badge": "new", "text": "<strong>A view of its own, from the header icon.</strong> Views, health filters, pages, categories and tags on the left. In the middle, one row per bookmark with its tags, score and 30 days of opens. A side panel on the right." },
+        { "badge": "new", "text": "<strong>The side panel has three tabs: Details, Health and Usage.</strong> Details saves as you type. Health explains the score. Usage shows when you opened the bookmark." },
+        { "badge": "new", "text": "<strong>Group by page, category, site, status or tag.</strong> Pages and categories can be dragged, moved and merged in one modal." },
+        { "badge": "new", "text": "<strong>Collection health on one screen</strong> (<kbd>h</kbd>), and one bookmark's health in large (<kbd>Shift</kbd> <kbd>H</kbd>) with every check of up to 90 days." },
+        { "badge": "new", "text": "<strong>Health now lives here.</strong> The Health icon and its filters, bulk actions and duplicates all open in the Bookmarks view." }
+      ]
+    },
+    {
+      "title": "Work through and triage",
+      "items": [
+        { "badge": "new", "text": "<strong>Start from a pile.</strong> In Work through: broken, changed, stale or never opened. In the inbox: waiting longest, new this week, or with a note." },
+        { "badge": "new", "text": "<strong>Each card says why the item is there</strong> and puts the main step first. Keep, snooze and skip wait under <em>Not now</em>." },
+        { "badge": "new", "text": "<strong>The end of a pile shows what you did</strong> and offers the next pile." }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        { "badge": "new", "text": "<strong>One-line rows and the same side panel</strong> as the Bookmarks view, with Open, Promote and Keep." },
+        { "badge": "new", "text": "<strong>Kept links wait in Bookmarks → Unsorted,</strong> so the separate Kept tab is gone." },
+        { "badge": "new", "text": "<strong>Config → Inbox has its own section,</strong> in four tabs with previews." }
+      ]
+    },
+    {
+      "title": "Containers",
+      "items": [
+        { "badge": "new", "text": "<strong>A view for the Docker host nextDash runs on:</strong> All, Running, Stopped and Updates, each row with a status glow, ports and a link to its web UI." },
+        { "badge": "new", "text": "<strong>A side panel for each container:</strong> details, CPU and memory over the last hour, logs, and the release notes you have not installed yet." },
+        { "badge": "new", "text": "<strong>Start, stop, restart and update from the view</strong>, once you turn Docker actions on. The container nextDash runs in never stops itself." },
+        { "badge": "new", "text": "<strong>Update checks</strong> run when you ask, or every 6, 12 or 24 hours. The header icon counts the containers with an update waiting." },
+        { "badge": "new", "text": "<strong>A Container list widget</strong> lists your containers on the dashboard, one per row." }
+      ]
+    },
+    {
+      "title": "Themes and Statistics",
+      "items": [
+        { "badge": "new", "text": "<strong>34 new theme families, each light and dark</strong>, marked <em>new</em> in the theme browser. That makes 310 themes. A fresh install starts on Matrix Bluepill." },
+        { "badge": "new", "text": "<strong>Statistics has five tabs:</strong> Overview, Usage, Collection, Inbox and Health. Each opens with six figures, and <em>Needs attention</em> lists what needs you, with a button for each." },
+        { "badge": "fix", "text": "<strong>The charts' axes and figures are right again,</strong> and Stale uses your own <em>Count as neglected after</em> setting." }
+      ]
+    },
+    {
+      "title": "Everywhere",
+      "items": [
+        { "badge": "new", "text": "<strong>The search keys work in every view:</strong> <kbd>&gt;</kbd> <kbd>:</kbd> <kbd>?</kbd> <kbd>*</kbd>." },
+        { "badge": "new", "text": "<strong>New tours</strong> for the dashboard, the Bookmarks view, the inbox and Containers." },
+        { "badge": "new", "text": "<strong>Slow actions show that they are working,</strong> and an open modal keeps the page still behind it." }
+      ]
+    }
+  ]
+}

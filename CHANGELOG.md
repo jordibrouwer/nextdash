@@ -317,6 +317,8 @@ Three views take over from the old ones: a **Bookmarks view** at `#bookmarks` th
 - **Help and tips** for the Bookmarks view, Containers, Statistics, Work through and triage, with new tips for triage, the Container list and a container's own web UI.
 - **Translations:** the new views, Statistics, triage, the Container list, Config → Containers and the wait messages in Dutch, German, French, Spanish and Chinese.
 
+- **What's new:** `static/data/whats-new/v1.15.0.json` and its index entry; `whats-new-stub.js` moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v304` and `DASHBOARD_RELEASE` to v1.15.0, so the window opens once more. `go generate` refreshed `asset_hashes_gen.go`.
+
 ---
 
 ## v1.13.7 — 25 September 2026
