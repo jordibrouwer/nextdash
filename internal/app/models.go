@@ -977,16 +977,18 @@ const defaultHealthWidgetID = "w_000000000001"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "tarnished-brass-dark"
+const defaultThemeID = "matrix-bluepill-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "tarnished-brass-light"
+const defaultThemeLightID = "matrix-bluepill-light"
 
 /*
-The look a fresh install opens on, beside its theme.
+The fallback depth and glow.
 
-Glass and a soft glow because Tarnished Brass is built for them -- its surfaces
-are meant to be seen through and its accent to carry a little light. Contrast
+Glass and a soft glow: the answer for a theme with no archetype of its own
+(themeIdealDepth, themeIdealGlow), and what an incomplete settings file gets.
+A fresh install itself is on "follow", so its theme answers -- Matrix
+Bluepill, a terminal theme, draws at soft with no glow. Contrast
 stays at defaultInkGap, which reads as Normal in Appearance, and the backdrop
 is the theme's own.
 */

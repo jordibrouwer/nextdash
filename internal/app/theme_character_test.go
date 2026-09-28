@@ -294,7 +294,7 @@ func TestTheFourCharacterThemesShip(t *testing.T) {
 		t.Errorf("Retro CRT Mk II lost its shape: radius %v, transform %q", crt.RadiusScale, crt.LabelTransform)
 	}
 	// The default theme must not have moved.
-	if defaultThemeID != "tarnished-brass-dark" {
+	if defaultThemeID != "matrix-bluepill-dark" {
 		t.Errorf("a new theme changed what a fresh install starts on: %q", defaultThemeID)
 	}
 }
@@ -359,16 +359,19 @@ func TestGlassHasADefaultOnThemesThatNeverMentionedIt(t *testing.T) {
 		}
 	})
 
-	t.Run("and the default theme is one of the 218", func(t *testing.T) {
-		// Which is what makes this visible rather than theoretical: a fresh
-		// install starts on a theme that never mentions glass.
+	t.Run("and a real theme with no opinion gets glass", func(t *testing.T) {
+		// Tarnished Brass by name: it never mentions glass, and it was the
+		// theme a fresh install started on when this was written. The default
+		// is now Matrix Bluepill, a terminal theme whose archetype keeps its
+		// surfaces solid -- and which a fresh install draws at its own depth
+		// ("follow"), so glass not reaching it is the design, not the bug.
 		themes := getDefaultBuiltInThemes()
-		def := themes[defaultThemeID]
-		if def.SurfaceAlpha != 0 || def.SurfaceBlur != 0 {
-			t.Skip("the default theme now declares glass of its own")
+		brass := themes["tarnished-brass-dark"]
+		if brass.SurfaceAlpha != 0 || brass.SurfaceBlur != 0 {
+			t.Skip("Tarnished Brass now declares glass of its own")
 		}
-		if themeSurfaceAlpha(def) == "1" || themeSurfaceBlur(def) == "0" {
-			t.Errorf("glass does nothing on the theme a fresh install starts on")
+		if themeSurfaceAlpha(brass) == "1" || themeSurfaceBlur(brass) == "0" {
+			t.Errorf("glass does nothing on a theme with no opinion of its own")
 		}
 	})
 }

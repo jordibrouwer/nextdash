@@ -1451,7 +1451,7 @@ A preset fills in a sample address, the useful path, the figures with labels and
 
 ### 16.1 Themes
 
-nextDash ships **155 theme families**, each with a light and a dark half — 310 themes in all. A fresh install starts on **Tarnished Brass**, drawn at depth **Glass** with a **Soft** glow, because that is what the theme was made for.
+nextDash ships **155 theme families**, each with a light and a dark half — 310 themes in all. A fresh install starts on **Matrix Bluepill**, cyan code on deep blue, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made.
 
 **Theme** on the Look tab lists every theme by name. Beside it:
 

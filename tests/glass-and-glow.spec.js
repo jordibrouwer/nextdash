@@ -39,14 +39,16 @@ async function setDepth(page, depth) {
     await page.waitForTimeout(200);
 }
 
-test('the glow is soft out of the box, and both layers read the dial', async ({ page }) => {
+test('the glow follows the theme out of the box, and both layers read the dial', async ({ page }) => {
     await openDashboard(page);
     // The ambient ring is only defined on the depths that draw one, and rich
     // is one of them.
     await setDepth(page, 'rich');
 
-    expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('soft');
-    expect(await token(page, '--glow-strength')).toBe('0.6');
+    // Matrix Bluepill, the fresh-install theme, is a terminal theme: it asks
+    // for no glow of its own.
+    expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('off');
+    expect(await token(page, '--glow-strength')).toBe('0');
 
     await page.evaluate(() => window.ThemeLoader.applyGlowStrength('off'));
     await page.waitForTimeout(150);
@@ -78,8 +80,8 @@ test('the glow is soft out of the box, and both layers read the dial', async ({ 
  * An install used to carry one answer for all of them; each theme states the
  * surfaces it was drawn for instead, and the setting says "follow". So what a
  * fresh install stores is the word follow, and what it draws is whatever the
- * theme it opens on asks for — Tarnished Brass is brushed, which is drawn for
- * rich and a soft glow.
+ * theme it opens on asks for — Matrix Bluepill is a terminal theme, drawn
+ * for soft with no glow.
  */
 test('a fresh install follows the theme, and the theme decides the surfaces', async ({ page }) => {
     await openDashboard(page);
@@ -105,8 +107,8 @@ test('a fresh install follows the theme, and the theme decides the surfaces', as
         backdrop: document.body.getAttribute('data-theme-backdrop'),
     }));
     expect(drawn.depth, 'the page was drawn with a word the stylesheet does not define')
-        .toBe('rich');
-    expect(drawn.glow).toBe('soft');
+        .toBe('soft');
+    expect(drawn.glow).toBe('off');
     expect(drawn.effects).toBe('full');
     expect(drawn.backdrop).toBe('on');
 });
@@ -154,6 +156,9 @@ test('the choice is saved and comes back', async ({ page }) => {
 
 test('glass has more to see through than the other depths', async ({ page }) => {
     await openDashboard(page);
+    // On a theme with no opinion about glass. The fresh-install theme is a
+    // terminal theme, whose archetype keeps its surfaces solid on purpose.
+    await page.evaluate(() => window.ThemeLoader.applyTheme('tarnished-brass-dark'));
 
     await setDepth(page, 'rich');
     const rich = {

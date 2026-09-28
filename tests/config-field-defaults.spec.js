@@ -36,7 +36,7 @@ function serverDefaults() {
     }
 
     const named = {
-        defaultThemeID: 'tarnished-brass-dark',
+        defaultThemeID: 'matrix-bluepill-dark',
         defaultThemeDepth: 'glass',
         defaultGlowStrength: 'soft',
         defaultHealthAutoRecheckIntervalHours: 24,

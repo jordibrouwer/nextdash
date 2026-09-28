@@ -70,7 +70,7 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'tarnished-brass-dark',
+            theme: 'matrix-bluepill-dark',
             openInNewTab: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,
