@@ -72,6 +72,9 @@ for (const depth of ['flat', 'soft', 'rich']) {
 
 test('under glass the tile and its cells are see-through and blurred, with a lit edge', async ({ page }) => {
     await dashboard(page);
+    // On a theme with no opinion about glass. The fresh-install theme is a
+    // terminal theme, whose archetype keeps its surfaces solid on purpose.
+    await page.evaluate(() => window.ThemeLoader.applyTheme('tarnished-brass-dark'));
     const seen = await read(page, 'glass');
 
     expect(channels(seen.body).alpha, `solid under glass: ${seen.body}`).toBeLessThan(1);

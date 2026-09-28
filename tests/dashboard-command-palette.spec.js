@@ -188,19 +188,20 @@ test.describe('dashboard command palette', () => {
         await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 3000 });
     });
 
-    test(':cheat sheet lists health and inbox view sections', async ({ page }) => {
+    // The Health view is gone; its keys live in the Bookmarks view's section.
+    test(':cheat sheet lists bookmarks and inbox view sections', async ({ page }) => {
         await page.keyboard.press(':');
         await page.keyboard.type('cheat', { delay: 20 });
         await selectCommandMatch(page, { shortcut: ':cheat' });
         await page.keyboard.press('Enter');
         const sheet = page.locator('#app-modal.show .keyboard-cheat-sheet-modal');
         await expect(sheet).toBeVisible({ timeout: 3000 });
-        await expect(sheet.locator('summary', { hasText: /Health view/i })).toBeVisible();
+        await expect(sheet.locator('summary', { hasText: /Bookmarks view/i })).toBeVisible();
         await expect(sheet.locator('summary', { hasText: /Inbox view/i })).toBeVisible();
-        // Rows live inside collapsed <details>, so the health section has to be
+        // Rows live inside collapsed <details>, so the section has to be
         // opened before any of its lines can be visible.
-        await sheet.locator('summary', { hasText: /Health view/i }).click();
-        await expect(sheet.getByText(/refresh report|Refresh the cached/i).first()).toBeVisible();
+        await sheet.locator('summary', { hasText: /Bookmarks view/i }).click();
+        await expect(sheet.getByText(/Refresh the health report/i).first()).toBeVisible();
     });
 
     test(':overview closes palette and opens page overview', async ({ page }) => {

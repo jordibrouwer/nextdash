@@ -216,11 +216,12 @@ test.describe('the header and surfaces settings', () => {
             () => Number(window.dashboardInstance.settings.maxPageTabs)), { timeout: 5_000 }).toBe(7);
     });
 
-    test(':header toggles the seven controls of the panel', async ({ page }) => {
+    // Six since the health button went: #health leads to the Bookmarks view.
+    test(':header toggles the six controls of the panel', async ({ page }) => {
         await openPalette(page, ':header');
 
         const listed = await rows(page);
-        expect(listed).toHaveLength(7);
+        expect(listed).toHaveLength(6);
         expect(listed.join(' ')).toContain('inbox');
 
         await pick(page, 'inbox');

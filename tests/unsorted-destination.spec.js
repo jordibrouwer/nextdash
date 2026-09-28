@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, markInboxTutorialSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
  * Where a kept link belongs, worked out from where its neighbours already are.
@@ -42,6 +42,8 @@ async function bootstrap(page, { kept = [], settings = {} } = {}) {
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The inbox tour opens on the first visit and takes the clicks meant for the rows.
+    await markInboxTutorialSeen(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await page.evaluate(async ({ rows, patch }) => {
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
@@ -90,6 +92,8 @@ test('with auto-file on, Keep puts a link straight where its neighbours are', as
     await page.keyboard.press('t');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
+    // Triage opens on the pile chooser; the list pile is the one this link is in.
+    await page.locator('[data-triage-pile="list"]').click();
     // Shift+K, the Keep key here as in the list. `r` used to keep in triage
     // and mark read in the list — one letter with two meanings a tab apart —
     // and it marks read in both now.
@@ -124,6 +128,8 @@ test('with auto-file on, a link nothing agrees about still lands in Kept', async
     await page.keyboard.press('t');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
+    // Triage opens on the pile chooser; the list pile is the one this link is in.
+    await page.locator('[data-triage-pile="list"]').click();
     // Shift+K, the Keep key here as in the list. `r` used to keep in triage
     // and mark read in the list — one letter with two meanings a tab apart —
     // and it marks read in both now.

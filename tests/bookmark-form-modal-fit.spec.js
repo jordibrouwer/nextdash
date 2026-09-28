@@ -166,6 +166,10 @@ test.describe('bookmark form modal — fits without scrolling', () => {
         await expect(page.locator('.field-popover')).toContainText(/category/i);
 
         // The i names the choice and describes the mode that is currently set.
+        // A new bookmark starts on Periodic (200f25cb), so Off is a click away.
+        await page.locator('.bookmark-form-info[data-info-for="check"]').hover();
+        await expect(page.locator('.field-popover')).toContainText(/once a day/i);
+        await page.locator('.bookmark-inline-checkmode-option').nth(0).click();
         await page.locator('.bookmark-form-info[data-info-for="check"]').hover();
         await expect(page.locator('.field-popover')).toContainText(/no availability checking/i);
         await page.locator('.bookmark-inline-checkmode-option').nth(2).click();

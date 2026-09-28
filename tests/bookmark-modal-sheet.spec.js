@@ -80,6 +80,9 @@ test.describe('the bookmark form sheet', () => {
 
     test('the glass step reaches it, at the overlay tier', async ({ page }) => {
         await openForm(page, 'rich');
+        // On a theme with no opinion about glass. The fresh-install theme is a
+        // terminal theme, whose archetype keeps its surfaces solid on purpose.
+        await page.evaluate(() => window.ThemeLoader.applyTheme('tarnished-brass-dark'));
         expect((await dialog(page, ['backdropFilter'])).backdropFilter,
             'rich blurs what is behind a form').toBe('none');
 

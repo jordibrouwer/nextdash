@@ -46,7 +46,8 @@ test.describe('config form keyboard controls', () => {
 
     test('stats period choices respond to arrow keys', async ({ page }) => {
         await openSection(page, 'stats');
-        await page.locator('[data-stats-tab="activity"]').click();
+        // The period chips live on Usage since Statistics was rebuilt.
+        await page.locator('[data-stats-tab="usage"]').click();
         const group = page.locator('.config-choices').filter({ has: page.locator('[data-stats-range]') }).first();
         const first = group.locator('[data-stats-range]').first();
         const second = group.locator('[data-stats-range]').nth(1);

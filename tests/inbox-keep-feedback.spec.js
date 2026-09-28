@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, markInboxTutorialSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
  * What Keep looks like when it happens.
@@ -17,6 +17,8 @@ async function bootstrap(page) {
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The inbox tour opens on the first visit and takes the clicks meant for the rows.
+    await markInboxTutorialSeen(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await page.evaluate(async () => {
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
@@ -130,8 +132,10 @@ test('Shift+K keeps the row under the cursor, and the list says so', async ({ pa
     await expect(legend.locator('span', { has: page.locator('kbd', { hasText: /^K$/ }) }))
         .toContainText('Unsorted');
 
-    // The real entry point: j puts the cursor on the first row.
-    await page.keyboard.press('j');
+    // Opening the row put the cursor on it, and closing the panel leaves it
+    // there. A j now would step past it onto whatever else is queued -- the
+    // link the toast test above sent back, when this file runs in one go.
+    await expect(page.locator('.inbox-item.keyboard-selected', { hasText: 'Key me' })).toHaveCount(1);
     await page.keyboard.press('Shift+K');
 
     await expect.poll(() => keptHas(page, url), { timeout: 15_000 }).toBe(true);

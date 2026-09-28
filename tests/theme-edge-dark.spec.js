@@ -144,9 +144,16 @@ const alphaOf = (part) => {
  * the depth control did.
  */
 test.describe('the cast shadow', () => {
-    /** The black, non-inset part of a shadow: the cast and nothing else. */
+    /**
+     * The black, non-inset part of a shadow: the cast and nothing else.
+     *
+     * Not a fully transparent one: with the glow off -- the fresh-install
+     * theme asks for no glow -- the accent ring mixes to transparent, which
+     * resolves as black at zero alpha and sits ahead of the cast in the list.
+     */
     const castPart = (shadow) => parts(shadow).find((part) =>
-        !part.includes('inset') && /rgba?\(0, 0, 0|color\(srgb 0 0 0/.test(part));
+        !part.includes('inset') && /rgba?\(0, 0, 0|color\(srgb 0 0 0/.test(part)
+        && alphaOf(part) > 0);
 
     test('a raised surface drops one', async ({ page }) => {
         await openDashboard(page, 'rich');

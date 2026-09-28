@@ -64,6 +64,9 @@ test.describe('glass against rich', () => {
 
     test('and the page behind it is blurred', async ({ page }) => {
         await dashboard(page);
+        // On a theme with no opinion about glass. The fresh-install theme is a
+        // terminal theme, whose archetype keeps its surfaces solid on purpose.
+        await page.evaluate(() => window.ThemeLoader.applyTheme('tarnished-brass-dark'));
 
         const rich = await surfaceAt(page, 'rich');
         const glass = await surfaceAt(page, 'glass');

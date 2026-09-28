@@ -1,7 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
-    prepareDashboardInteraction, markInboxTutorialSeen } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
  * The density setting, checked on the rows a view actually builds.
@@ -10,8 +9,9 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
  * of its own and measure that. It passed while `.feed-row--grid` reached no
  * production row at all: the inbox built `feed-row inbox-item` and answered the
  * density setting through a private copy of the rule in dashboard-inbox.css. A
- * test that builds its own subject can only tell you the CSS parses. So the row
- * tests below open the real inbox and measure a real row.
+ * test that builds its own subject can only tell you the CSS parses. The inbox
+ * has since gone to one-line rows without the grid, so the row tests that
+ * measured it went with it; what is here now is the setting and the shell.
  */
 async function mountWithDensity(page) {
     await markWhatsNewSeen(page);
@@ -31,34 +31,6 @@ async function mountWithDensity(page) {
             activeFilter: 'all',
         });
     });
-}
-
-/** The real inbox, reached the way a reader reaches it. */
-async function openInbox(page, titles = ['Alpha', 'Beta', 'Gamma']) {
-    await markWhatsNewSeen(page);
-    await markInboxTutorialSeen(page);
-    await page.setViewportSize({ width: 1400, height: 900 });
-    await page.goto('/');
-    await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
-    await dismissOnboardingIfPresent(page);
-    await dismissBlockingOverlays(page);
-    await prepareDashboardInteraction(page);
-    await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
-    await page.evaluate(async (list) => {
-        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        for (const title of list) {
-            await api('/api/inbox', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: `https://d-${title}-${Date.now()}.example/x`, title }),
-            });
-        }
-    }, titles);
-    await page.locator('#page-nav-inbox-btn').click();
-    await expect(page.locator('.inbox-layout')).toBeVisible();
-    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
-    await expect.poll(() => page.evaluate(
-        () => document.querySelectorAll('.inbox-item').length)).toBeGreaterThan(0);
 }
 
 test('the row grid is declared in feed-row.css and nowhere else', async ({ page }) => {
@@ -112,89 +84,31 @@ test('the row grid is declared in feed-row.css and nowhere else', async ({ page 
     expect(where.health).toBe(false);
 });
 
-test('the inbox row is built on the shared grid variant', async ({ page }) => {
-    await openInbox(page);
-
-    const row = await page.evaluate(() => {
-        const el = document.querySelector('.inbox-item');
-        const cs = getComputedStyle(el);
-        const box = el.getBoundingClientRect();
-        const thumb = el.querySelector('.inbox-item-thumb').getBoundingClientRect();
-        const body = el.querySelector('.inbox-item-body').getBoundingClientRect();
-        return {
-            classes: [...el.classList],
-            cols: cs.gridTemplateColumns,
-            // The content edge the row's own padding and border leave.
-            contentRight: box.right - parseFloat(cs.paddingRight) - parseFloat(cs.borderRightWidth),
-            bodyRight: body.right,
-            thumbRight: thumb.right,
-            bodyLeft: body.left,
-        };
-    });
-
-    expect(row.classes, 'the real row must carry the shared grid variant')
-        .toContain('feed-row--grid');
-    // Icon column then body, side by side — not stacked.
-    expect(row.thumbRight).toBeLessThanOrEqual(row.bodyLeft);
-    expect(row.cols.split(' ').length, `grid resolved to "${row.cols}"`).toBe(2);
-    // And no phantom trailing track: an empty `auto` column still takes its
-    // gutter, which would leave a strip of dead space down the right of every
-    // row. `.feed-row--grid-2` is what drops it.
-    expect(Math.abs(row.contentRight - row.bodyRight),
-        'the row body stops short of its content edge — an empty grid track is taking a gutter')
-        .toBeLessThan(2);
-});
-
-test('density reaches the inbox row through feed-row.css alone', async ({ page }) => {
-    await openInbox(page);
-
-    // One mechanism, not two: the view's own copy of the density rule is gone.
-    const inboxCopy = await page.evaluate(async () => {
-        const read = async (file) => {
-            const hrefs = [...document.styleSheets].map((s) => s.href).filter(Boolean);
-            const direct = hrefs.find((h) => h.includes(file));
-            if (direct) return (await (await fetch(direct)).text());
-            for (const href of hrefs) {
-                if (!href.includes('/bundle/')) continue;
-                const text = await (await fetch(href)).text();
-                const marker = `/* ==== ${file} ==== */`;
-                const start = text.indexOf(marker);
-                if (start < 0) continue;
-                const from = start + marker.length;
-                const next = text.indexOf('/* ==== ', from);
-                return text.slice(from, next < 0 ? undefined : next);
-            }
-            return '';
-        };
-        const css = await read('css/dashboard-inbox.css');
-        return (css.match(/\[data-list-density=/g) || []).length;
-    });
-    expect(inboxCopy, 'dashboard-inbox.css declares density a second time').toBe(0);
-
-    const height = () => page.evaluate(
-        () => document.querySelector('.inbox-item').getBoundingClientRect().height);
+/*
+ * The inbox row is off this list since the inbox went to one-line rows
+ * (68520c39): it reads like the Bookmarks view's rows now, carries no
+ * .feed-row--grid and no density toggle -- the queue already hid it. What is
+ * left to guard is that the toggle a view does draw writes the one app setting.
+ */
+test('the density toggle writes the app-level setting, and it survives a reload', async ({ page }) => {
+    await mountWithDensity(page);
 
     // From comfortable, explicitly: the app-wide default is compact, so
-    // clicking compact from the default would measure the same row twice.
+    // clicking compact from the default would change nothing.
     await page.locator('[data-lvs-density="comfortable"]').click();
-    const comfortable = await height();
+    await expect.poll(() => page.evaluate(() => document.body.dataset.densityMode)).toBe('comfortable');
     await page.locator('[data-lvs-density="compact"]').click();
-    const compact = await height();
-
-    expect(compact, 'compact is not tighter than comfortable on a real inbox row')
-        .toBeLessThan(comfortable);
 
     /*
      * The setting the whole app reads, not a key of this view's own.
      * Density used to live in localStorage for the list views and on the server
      * for the dashboard, with opposite defaults; it is one server setting now.
      */
-    const stored = await page.evaluate(() => ({
+    await expect.poll(() => page.evaluate(() => ({
         setting: window.dashboardInstance.settings.densityMode,
         body: document.body.dataset.densityMode,
         legacy: localStorage.getItem('nextdash:list-density'),
-    }));
-    expect(stored).toEqual({ setting: 'compact', body: 'compact', legacy: null });
+    }))).toEqual({ setting: 'compact', body: 'compact', legacy: null });
 
     await page.reload();
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });

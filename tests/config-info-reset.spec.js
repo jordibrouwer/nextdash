@@ -137,6 +137,12 @@ test.describe('config info + reset affordances', () => {
              */
             'themeDepth', 'glowStrength', 'inkGap', 'themeBackdrop', 'backgroundPattern',
             'headerClockPlacement',
+            // Config → Containers. Three small groups, each with a note under
+            // its title saying what the controls in it do -- the view and its
+            // refresh, the outbound update check, the extra confirm -- so the
+            // explanation is on screen, as with Theme above.
+            'dockerViewEnabled', 'dockerRefreshSeconds', 'dockerLogLines', 'dockerStatsHistory',
+            'dockerUpdateInterval', 'dockerConfirmStopRestart',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });
@@ -163,7 +169,8 @@ test.describe('config info + reset affordances', () => {
     test('behavior is split into sub-tabs', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
-        for (const tab of ['general', 'search', 'inbox', 'privacy', 'status']) {
+        // The inbox's settings moved to Config → Inbox; Fresh kept the tab.
+        for (const tab of ['general', 'search', 'fresh', 'privacy', 'status']) {
             await expect(page.locator(`[data-behavior-tab="${tab}"]`)).toBeVisible();
         }
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
