@@ -21,7 +21,17 @@ widget uses. Typed only as far as the view reads: every field here is one the
 table, the drawer or recreate needs, and nothing else is decoded.
 */
 
-type dockerAPI struct{ client *http.Client }
+type dockerAPI struct {
+	client *http.Client
+	socket string
+}
+
+// forActions is the same daemon without the read client's deadline. A pull
+// streams for as long as the layers take and a stop waits out the container's
+// own timeout; the action's context bounds them instead.
+func (d *dockerAPI) forActions() *dockerAPI {
+	return &dockerAPI{client: dockerActionClientFor(d.socket), socket: d.socket}
+}
 
 type dockerAPIError struct {
 	Status  int
@@ -36,7 +46,7 @@ func newDockerAPI() (*dockerAPI, string) {
 	if socket == "" {
 		return nil, reasonNoDockerSocket
 	}
-	return &dockerAPI{client: dockerClientFor(socket)}, ""
+	return &dockerAPI{client: dockerClientFor(socket), socket: socket}, ""
 }
 
 func (d *dockerAPI) url(path string) string {

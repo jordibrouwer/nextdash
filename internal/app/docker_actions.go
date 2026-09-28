@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -68,6 +69,7 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	api = api.forActions()
 	if dockerSelfBlocked[action] && isDockerSelf(c.ID, dockerSelfID()) {
 		dockerRefuse(w, http.StatusForbidden, reasonDockerSelf)
 		return
@@ -116,6 +118,16 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 	}, "docker "+action+" "+name)
 
 	if err != nil {
+		logWarn(logComponentMutate, "docker %s %s failed: %v", action, name, err)
+		if outcome, ok := result["update"].(dockerRecreateResult); ok && outcome.FailedStep != "" {
+			var apiErr *dockerAPIError
+			if !errors.As(err, &apiErr) && !isDockerDialError(err) {
+				w.WriteHeader(http.StatusBadGateway)
+				writeJSON(w, map[string]string{"reason": "docker-error", "failedStep": outcome.FailedStep,
+					"message": "the update failed at " + outcome.FailedStep + ": " + err.Error()})
+				return
+			}
+		}
 		writeDockerError(w, err)
 		return
 	}

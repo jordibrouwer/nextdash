@@ -3,12 +3,14 @@ package app
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -230,10 +232,27 @@ func writeDockerError(w http.ResponseWriter, err error) {
 	case errors.As(err, &apiErr):
 		w.WriteHeader(http.StatusBadGateway)
 		writeJSON(w, map[string]string{"reason": "daemon", "message": apiErr.Message})
-	default:
+	case isDockerDialError(err):
 		w.WriteHeader(http.StatusServiceUnavailable)
 		writeJSON(w, map[string]string{"reason": dockerDialReason(err)})
+	default:
+		// Reached the daemon, then something else broke: a stream cut off, a
+		// deadline, an answer that did not parse. Not a missing socket -- that
+		// label sent a reader with a working socket looking in the wrong place.
+		w.WriteHeader(http.StatusBadGateway)
+		writeJSON(w, map[string]string{"reason": "docker-error", "message": err.Error()})
 	}
+}
+
+// isDockerDialError is whether the socket itself could not be reached: absent,
+// refused or not ours to open. Anything after the connection is something else.
+func isDockerDialError(err error) bool {
+	var opErr *net.OpError
+	if errors.As(err, &opErr) && opErr.Op == "dial" {
+		return true
+	}
+	return errors.Is(err, os.ErrPermission) || errors.Is(err, syscall.EACCES) ||
+		errors.Is(err, syscall.ENOENT) || errors.Is(err, syscall.ECONNREFUSED)
 }
 
 func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {

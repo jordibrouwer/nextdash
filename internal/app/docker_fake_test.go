@@ -33,6 +33,12 @@ type fakeDocker struct {
 	failCreate bool
 	failStart  map[string]bool // by container name
 	socket     string
+	// slow holds a pull stream and a stop open this long, as a real daemon
+	// does while it downloads layers or waits out a stop timeout.
+	slow time.Duration
+	// dropPull cuts the pull stream off halfway, the way a daemon that dies
+	// or a connection that breaks does: an error that is not the API's.
+	dropPull bool
 }
 
 type fakeContainer struct {
@@ -306,6 +312,9 @@ func (f *fakeDocker) handleAction(w http.ResponseWriter, path string) {
 		return
 	}
 	f.record("POST", "/containers/"+c.ID+"/"+action)
+	if action == "stop" && f.slow > 0 {
+		time.Sleep(f.slow)
+	}
 	if action == "start" && f.failStart[c.Name] && c.created {
 		writeJSONFake(w, http.StatusInternalServerError, map[string]string{"message": "boom"})
 		return
@@ -411,7 +420,20 @@ func (f *fakeDocker) handlePull(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\":\"Pulling\"}\n{\"status\":\"Done\"}\n"))
+	if f.dropPull {
+		_, _ = w.Write([]byte("{\"status\":\"Pulling\"}\n"))
+		w.(http.Flusher).Flush()
+		if conn, _, err := w.(http.Hijacker).Hijack(); err == nil {
+			conn.Close()
+		}
+		return
+	}
+	_, _ = w.Write([]byte("{\"status\":\"Pulling\"}\n"))
+	if f.slow > 0 {
+		w.(http.Flusher).Flush()
+		time.Sleep(f.slow)
+	}
+	_, _ = w.Write([]byte("{\"status\":\"Done\"}\n"))
 }
 
 func (f *fakeDocker) handleStats(w http.ResponseWriter, id string) {

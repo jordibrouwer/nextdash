@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 )
 
 func recreateFixture(t *testing.T) (*fakeDocker, *Handlers, dockerContainerSummary, *dockerAPI) {
@@ -123,5 +124,37 @@ func TestDockerUpdateRouteReportsPhase(t *testing.T) {
 	rec := dockerPost(router, "/api/docker/containers/sonarr/update")
 	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"phase":"done"`) || !strings.Contains(rec.Body.String(), `"state":"running"`) {
 		t.Fatalf("code = %d body = %s", rec.Code, rec.Body)
+	}
+}
+
+// A pull downloads layers for as long as it takes, and a stop waits out the
+// container's own timeout. The read client's deadline covers the whole body,
+// so an update that outlasted it was cut off and reported as a missing socket.
+func TestDockerUpdateOutlastsTheReadTimeout(t *testing.T) {
+	old := dockerClientTimeout
+	dockerClientTimeout = 150 * time.Millisecond
+	t.Cleanup(func() { dockerClientTimeout = old })
+	f, _, _, _ := recreateFixture(t)
+	f.slow = 400 * time.Millisecond
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	router := newDockerTestRouter(dockerTestHandlers(t))
+	rec := dockerPost(router, "/api/docker/containers/sonarr/update")
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"phase":"done"`) {
+		t.Fatalf("code = %d body = %s", rec.Code, rec.Body)
+	}
+}
+
+// An error that is not the daemon's answer -- a stream cut off halfway -- is
+// not a missing socket. The reader is told what broke and at which step.
+func TestDockerUpdateSaysWhatBroke(t *testing.T) {
+	f, _, _, _ := recreateFixture(t)
+	f.dropPull = true
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	router := newDockerTestRouter(dockerTestHandlers(t))
+	rec := dockerPost(router, "/api/docker/containers/sonarr/update")
+	body := rec.Body.String()
+	if rec.Code != 502 || !strings.Contains(body, `"reason":"docker-error"`) ||
+		!strings.Contains(body, `"failedStep":"pull"`) || !strings.Contains(body, `"message":"`) {
+		t.Fatalf("code = %d body = %s", rec.Code, body)
 	}
 }
