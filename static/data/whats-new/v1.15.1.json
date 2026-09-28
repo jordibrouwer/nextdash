@@ -3,7 +3,7 @@
   "date": "29 September 2026",
   "releasedAt": "2026-09-29",
   "hideFromModal": true,
-  "modalLead": "Updating or stopping a container from the Containers view no longer fails after five seconds, and when an action does fail, it says why.",
+  "modalLead": "Updating or stopping a container from the Containers view no longer fails after five seconds, a failed action says why, and new bookmarks start on Periodic checking on existing installs too.",
   "sections": [
     {
       "title": "Containers",
@@ -15,6 +15,15 @@
         {
           "badge": "fix",
           "text": "<strong>A failure says what broke.</strong> Instead of <em>Docker did not do that</em>, the message names the error and, for an update, the step it failed at &mdash; pull, stop, create or start."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>New bookmarks start on Periodic, on your install too.</strong> The new default only reached fresh installs, because an existing one had Off written into its settings. That Off moves to Periodic once; if you choose Off again afterwards, it stays."
         }
       ]
     }

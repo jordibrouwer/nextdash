@@ -229,12 +229,16 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## v1.15.1 — 29 September 2026
 
-Updating or stopping a container from the Containers view failed on a real host, and said the socket was missing when it was not. Recorded but not announced: the What's new window still leads with v1.15.0.
+Updating or stopping a container from the Containers view failed on a real host, and said the socket was missing when it was not; and an existing install still started new bookmarks on Off. Recorded but not announced: the What's new window still leads with v1.15.0.
 
 ### Containers
 
 - **fix — update and stop were cut off after five seconds.** Every call to the Docker socket went through one client with a five-second `Timeout`, and Go's `http.Client` counts reading the body in that. An update's pull streams progress for as long as the layers take, and a stop waits out the container's own stop timeout (ten seconds by default), so both were cut off mid-way. Start, stop, pause, restart, update and remove now use a client without that deadline; `dockerActionTimeout` (ten minutes) on the action's context ends one that hangs. Reads keep the five seconds. `TestDockerUpdateOutlastsTheReadTimeout` holds the fake daemon's pull and stop open longer than the read deadline and fails without the change.
 - **fix — a failure no longer claims the socket is missing.** `writeDockerError` answered every error that was not the daemon's own reply with `503 {"reason":"no-docker-socket"}`, and the browser, not knowing that reason, fell back to *Docker did not do that*. Only a failure to reach the socket is reported that way now; anything after the connection is `502 {"reason":"docker-error","message":…}`, and a failed update adds `failedStep` (pull, stop, rename, create, connect or start) to the message. Every failed action is logged with its error. `TestDockerUpdateSaysWhatBroke` cuts the pull stream off halfway.
+
+### Bookmarks
+
+- **fix — an existing install still started a new bookmark on Off.** v1.15.0 moved `defaultNewBookmarkCheckMode` to Periodic, but Off had been the default before and every install that ever saved its settings had written it into `settings.json`, so the change reached fresh installs only. A stored Off now moves to Periodic once, marked by `newBookmarkPeriodicMigrated`; Monitor was never a default and stays, and Off chosen afterwards sticks. The fallback form in `search-commands-new.js`, used when the dashboard's own form is not loaded, preselected Off whatever the setting said and now follows it too. `TestStoredOffCheckModeMovesToPeriodicOnce` seeds a stored Off.
 
 ### Docs
 
