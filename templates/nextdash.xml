@@ -189,6 +189,26 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
           Required="false"
           Mask="false" />
 
+  <Config Name="Docker actions"
+          Target="NEXTDASH_DOCKER_CONTROL"
+          Default="0"
+          Mode=""
+          Description="Optional. 1 lets the Containers view start, stop, update and remove containers; 0 keeps it read-only. A writable socket is root on the host, so set a write token as well."
+          Type="Variable"
+          Display="advanced"
+          Required="false"
+          Mask="false" />
+
+  <Config Name="Run as root"
+          Target="NEXTDASH_RUN_AS_ROOT"
+          Default="0"
+          Mode=""
+          Description="Optional. 1 keeps nextDash running as root, needed only when the Docker socket belongs to root's group (gid 0). Unraid's socket belongs to the docker group (gid 281), so leave this at 0 here."
+          Type="Variable"
+          Display="advanced"
+          Required="false"
+          Mask="false" />
+
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-dashboard.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-bookmarks.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-search.jpg</Screenshot>
