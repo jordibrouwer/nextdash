@@ -233,7 +233,13 @@ func (h *Handlers) DockerChangelogHandler(w http.ResponseWriter, r *http.Request
 	if reg := registryPageFor(c.Image); reg != "" {
 		cl.Links = append(cl.Links, dockerLink{Kind: "registry", URL: reg})
 	}
-	if ui := dockerWebUI(c); ui != "" {
+	// The address set by hand, when there is one: the same one every other
+	// web UI link opens.
+	ui := dockerCustomWebUI(c.name())
+	if ui == "" {
+		ui = dockerWebUI(c)
+	}
+	if ui != "" {
 		cl.Links = append(cl.Links, dockerLink{Kind: "webui", URL: ui})
 	}
 

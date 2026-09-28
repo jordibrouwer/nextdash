@@ -3960,7 +3960,13 @@ class SearchCommandsComponent {
                 action: () => {
                     this._closeCommandPalette();
                     const docker = window.dashboardInstance?.docker;
-                    if (action === 'open' || action === 'logs') {
+                    // Open is the container's web UI when it has one -- the
+                    // address set in its drawer, else its template's -- and
+                    // the Containers view when it has none.
+                    const webui = String(exact.webui || '').replace('[IP]', window.location.hostname);
+                    if (action === 'open' && webui) {
+                        window.open(webui, '_blank', 'noopener');
+                    } else if (action === 'open' || action === 'logs') {
                         void docker?.openDockerView?.({
                             select: exact.name,
                             section: action === 'logs' ? 'logs' : null,

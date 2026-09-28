@@ -786,6 +786,10 @@ type Settings struct {
 	// DockerStatsHistory keeps the last hour of CPU and memory per running
 	// container for the drawer's charts. On by default; off reads nothing.
 	DockerStatsHistory bool `json:"dockerStatsHistory"`
+	// DockerWebUIs is a web address per container name that replaces the one
+	// its template gives -- or gives one to a container without. By name,
+	// because an update recreates the container under a new id.
+	DockerWebUIs map[string]string `json:"dockerWebUIs,omitempty"`
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
 	// feed can then say when it has published something since you last opened
 	// it. Off by default because it is the only thing here that reaches out to

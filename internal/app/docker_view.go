@@ -52,6 +52,8 @@ type dockerViewContainer struct {
 	Ports          []dockerViewPort   `json:"ports"`
 	ComposeProject string             `json:"composeProject,omitempty"`
 	WebUI          string             `json:"webui,omitempty"`
+	WebUIDefault   string             `json:"webuiDefault,omitempty"`
+	WebUICustom    string             `json:"webuiCustom,omitempty"`
 	Update         *dockerImageUpdate `json:"update,omitempty"`
 	Self           bool               `json:"self,omitempty"`
 }
@@ -190,11 +192,18 @@ func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 		ID: c.ID, Name: c.name(), Image: c.Image, Tag: tag, State: c.State,
 		Status: c.Status, Health: dockerHealthFromStatus(c.Status), Created: c.Created,
 		StartedAt:      dockerStartedFromStatus(c.Status, time.Now()),
-		ComposeProject: c.Labels["com.docker.compose.project"], WebUI: dockerWebUI(c),
-		Self: isDockerSelf(c.ID, self), Ports: []dockerViewPort{},
+		ComposeProject: c.Labels["com.docker.compose.project"], WebUIDefault: dockerWebUI(c),
+		WebUICustom: dockerCustomWebUI(c.name()),
+		Self:        isDockerSelf(c.ID, self), Ports: []dockerViewPort{},
 	}
 	if len(c.ID) >= 12 {
 		v.ShortID = c.ID[:12]
+	}
+	// One address for everything that opens it: the table, the palette, the
+	// widget and the drawer read webui and never choose between the two.
+	v.WebUI = v.WebUICustom
+	if v.WebUI == "" {
+		v.WebUI = v.WebUIDefault
 	}
 	seen := map[string]bool{}
 	for _, p := range c.Ports {

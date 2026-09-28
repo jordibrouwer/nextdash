@@ -11,7 +11,7 @@
 
 const DOCKER_SECTIONS_KEY = 'nextdash.docker.sections';
 const DOCKER_SECTIONS_DEFAULT = ['overview'];
-const DOCKER_SECTION_KEYS = ['overview', 'network', 'volumes', 'resources', 'env', 'logs', 'changes'];
+const DOCKER_SECTION_KEYS = ['overview', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
 
 /** fetch() that never throws and answers null on anything but a 2xx JSON body. */
 async function dockerDrawerFetchJSON(url, init) {
@@ -251,6 +251,7 @@ class DockerDrawer {
             ${pane('overview', `${summaryBlock}${L.accList([
                 acc('overview', this.t('dockerSectionDetails', 'Details'), true),
                 acc('network', this.t('dockerSectionNetwork', 'Network')),
+                acc('custom', this.t('dockerSectionCustom', 'Custom')),
                 acc('volumes', this.t('dockerSectionVolumes', 'Volumes')),
                 acc('env', this.t('dockerSectionEnv', 'Environment')),
             ])}`)}
@@ -344,6 +345,7 @@ class DockerDrawer {
         if (!els) return;
         this._renderOverview(els.sections.overview, detail);
         this._renderNetwork(els.sections.network, detail);
+        this._renderCustom(els.sections.custom, detail);
         this._renderVolumes(els.sections.volumes, detail);
         this._renderEnv(els.sections.env, detail);
 
@@ -402,6 +404,112 @@ class DockerDrawer {
             row.textContent = `${n.name}: ${n.ip || ''}`;
             body.appendChild(row);
         });
+    }
+
+    /*
+     * Custom: a web address of the reader's own, in place of the template's.
+     *
+     * Kept in settings by container name, and applied by the server to webui,
+     * so the drawer's button, the palette's open and the widget all follow it
+     * without knowing it exists. Empty is the default.
+     */
+    _renderCustom(body, detail) {
+        if (!body || !detail) return;
+        body.replaceChildren();
+        const custom = String(detail.webuiCustom || '');
+        const fallback = String(detail.webuiDefault || '');
+
+        const label = document.createElement('label');
+        label.className = 'docker-field-label';
+        label.textContent = this.t('dockerWebUILabel', 'Web UI address');
+        const input = document.createElement('input');
+        input.type = 'url';
+        input.className = 'config-text docker-webui-input';
+        input.setAttribute('data-docker-webui-input', '');
+        input.value = custom;
+        input.placeholder = fallback || 'https://';
+        input.spellcheck = false;
+        label.appendChild(input);
+
+        const hint = document.createElement('p');
+        hint.className = 'docker-webui-hint';
+        hint.textContent = fallback
+            ? this.t('dockerWebUIHintDefault', 'Empty uses the default: {address}', { address: fallback })
+            : this.t('dockerWebUIHintNone', 'This container names no web UI of its own. [IP] stands for this server.');
+
+        const error = document.createElement('p');
+        error.className = 'docker-webui-error';
+        error.setAttribute('data-docker-webui-error', '');
+        error.hidden = true;
+        error.textContent = this.t('dockerWebUIInvalid', 'Enter a web address starting with http:// or https://.');
+        input.addEventListener('input', () => { error.hidden = true; });
+
+        const row = document.createElement('div');
+        row.className = 'docker-webui-actions';
+        const save = document.createElement('button');
+        save.type = 'button';
+        save.className = 'config-btn config-btn--small config-btn--primary';
+        save.setAttribute('data-docker-webui-save', '');
+        save.textContent = this.t('dockerWebUISave', 'Save');
+        save.addEventListener('click', () => {
+            const value = input.value.trim();
+            if (value && !DockerDrawer.isWebAddress(value)) {
+                error.hidden = false;
+                input.focus();
+                return;
+            }
+            void this._saveWebUI(value);
+        });
+        row.appendChild(save);
+        if (custom) {
+            const reset = document.createElement('button');
+            reset.type = 'button';
+            reset.className = 'config-btn config-btn--small';
+            reset.setAttribute('data-docker-webui-reset', '');
+            reset.textContent = this.t('dockerWebUIReset', 'Back to the default');
+            reset.addEventListener('click', () => void this._saveWebUI(''));
+            row.appendChild(reset);
+        }
+        body.append(label, hint, error, row);
+    }
+
+    /** The same rule the server keeps: http or https, with [IP] allowed for the host. */
+    static isWebAddress(value) {
+        try {
+            const parsed = new URL(String(value).replace('[IP]', 'host'));
+            return (parsed.protocol === 'http:' || parsed.protocol === 'https:') && Boolean(parsed.host);
+        } catch {
+            return false;
+        }
+    }
+
+    async _saveWebUI(value) {
+        const name = this._name;
+        const d = this.view.dash;
+        if (!name || !d) return;
+        const all = { ...(d.settings?.dockerWebUIs || {}) };
+        if (value) all[name] = value;
+        else delete all[name];
+        const before = d.settings.dockerWebUIs;
+        d.settings.dockerWebUIs = all;
+        try {
+            await d.saveSettings();
+        } catch {
+            d.settings.dockerWebUIs = before;
+            d.showNotification?.(this.t('dockerWebUISaveFailed', 'Could not save the address.'), 'error');
+            return;
+        }
+        d.showNotification?.(value
+            ? this.t('dockerWebUISaved', 'Web UI address saved')
+            : this.t('dockerWebUICleared', 'Back to the default address'), 'success', { duration: 2000 });
+        // The list and the drawer read webui from the server, which now
+        // answers with the new address; the drawer is rebuilt from that row
+        // so its Open web UI button appears, goes or points anew.
+        await this.view.loadAndRender?.();
+        if (name !== this._name) return;
+        const fresh = (this.view.containers || []).find((c) => c.name === name);
+        if (fresh) this.open(fresh);
+        else await this._loadDetail(name);
     }
 
     _renderVolumes(body, detail) {

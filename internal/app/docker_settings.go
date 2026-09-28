@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,6 +51,34 @@ func normalizeDockerSettings(s *Settings) {
 		}
 	}
 	s.DockerHiddenContainers = kept
+	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
+}
+
+const dockerMaxWebUILen = 2048
+
+// normalizeDockerWebUIs keeps only web addresses. [IP] is Unraid's stand-in
+// for the host the dashboard was opened on, so it is allowed where a host goes.
+func normalizeDockerWebUIs(in map[string]string) map[string]string {
+	out := map[string]string{}
+	for rawName, rawURL := range in {
+		name := strings.TrimPrefix(strings.TrimSpace(rawName), "/")
+		link := strings.TrimSpace(rawURL)
+		if name == "" || len(name) > dockerMaxHiddenNameLen || link == "" || len(link) > dockerMaxWebUILen {
+			continue
+		}
+		parsed, err := url.Parse(strings.ReplaceAll(link, "[IP]", "host"))
+		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+			continue
+		}
+		out[name] = link
+		if len(out) == dockerMaxHidden {
+			break
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 /*
@@ -65,6 +94,18 @@ var dockerHiddenNames func() []string
 func (h *Handlers) wireDockerSettings() {
 	store := h.store
 	dockerHiddenNames = func() []string { return store.GetSettings().DockerHiddenContainers }
+	dockerCustomWebUIs = func() map[string]string { return store.GetSettings().DockerWebUIs }
+}
+
+// dockerCustomWebUIs is how toDockerView learns the addresses set by hand;
+// nil in a test that never built handlers, which sets none.
+var dockerCustomWebUIs func() map[string]string
+
+func dockerCustomWebUI(name string) string {
+	if dockerCustomWebUIs == nil {
+		return ""
+	}
+	return dockerCustomWebUIs()[name]
 }
 
 func dockerHiddenSet() map[string]bool {

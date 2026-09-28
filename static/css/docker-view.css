@@ -266,6 +266,30 @@
     font-size: var(--font-size-small, 0.8rem);
 }
 
+.docker-webui-input {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.docker-webui-hint,
+.docker-webui-error {
+    margin: 4px 0 0;
+    font-size: var(--font-size-small, 0.8rem);
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+.docker-webui-error {
+    color: var(--accent-error);
+}
+
+.docker-webui-actions {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
 .docker-env-row {
     display: flex;
     align-items: center;
