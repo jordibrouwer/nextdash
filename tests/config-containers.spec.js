@@ -38,6 +38,24 @@ test.describe('Config -> Containers', () => {
     await expect(page.locator('[data-docker-status-help]')).toContainText('NEXTDASH_DOCKER_SOCKET');
   });
 
+  // The view switch works either way, but with no socket there is nothing for
+  // the view to show: the switch says so, and points at the setup help.
+  test('without a socket, the view switch explains why and links the setup help', async ({ page }) => {
+    await openSection(page, { socket: false });
+    const note = page.locator('[data-docker-view-note]');
+    await expect(note).toBeVisible();
+    await expect(note).toContainText(/not connected/i);
+    await note.locator('[data-docker-setup-help]').click();
+    await expect(page.locator('#help-panel-containers-setup')).toBeVisible();
+    await expect(page).toHaveURL(/#config\/help\/containers\/containers-setup$/);
+  });
+
+  test('with the socket connected the switch carries no such note', async ({ page }) => {
+    await openSection(page);
+    await expect(page.locator('[data-docker-state="socket"]')).toHaveAttribute('data-tone', 'good');
+    await expect(page.locator('[data-docker-view-note]')).toHaveCount(0);
+  });
+
   test('a schema setting saves', async ({ page }) => {
     await openSection(page);
     const select = page.locator('[data-behavior-field="dockerRefreshSeconds"]');

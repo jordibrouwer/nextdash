@@ -4278,6 +4278,16 @@ body.no-animations .config-new-features-panel-star {
     line-height: 1.5;
 }
 
+/* Inline code is a chip; code in a block keeps its lines and loses the chip. */
+.config-help-prose pre code {
+    display: block;
+    white-space: pre;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: inherit;
+}
+
 .config-help-prose code {
     padding: 1px 5px;
     border-radius: var(--radius-3, 4px);

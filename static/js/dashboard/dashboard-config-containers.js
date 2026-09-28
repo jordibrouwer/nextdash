@@ -132,6 +132,7 @@
         const t = (k, f) => this.t(k, f);
         const socket = status?.socket === true;
         const denied = status?.reason === 'docker-socket-denied';
+        this.markDockerViewSwitch(container, socket, denied);
         if (socket) set('socket', t('config.dockerStatusConnected', 'Connected'), 'good');
         else if (denied) set('socket', t('config.dockerStatusDenied', 'No access to the socket'), 'bad');
         else set('socket', t('config.dockerStatusMissing', 'Not connected'), 'bad');
@@ -172,6 +173,53 @@
             pre.textContent = SOCKET_SNIPPET;
             help.appendChild(pre);
         }
+        help.appendChild(this.dockerSetupHelpButton());
+    },
+
+    /**
+     * The view switch works either way, but with no socket the view has
+     * nothing to show and its header icon stays away -- a switch that is on
+     * and seems to do nothing. So, under it, say why and where the setup is
+     * explained. Gone again once the socket answers.
+     */
+    markDockerViewSwitch(container, socket, denied) {
+        container.querySelector('[data-docker-view-note]')?.remove();
+        if (socket) return;
+        const field = container.querySelector('[data-behavior-field="dockerViewEnabled"]')?.closest('.config-field-row, .config-field');
+        if (!field) return;
+        const t = (k, f) => this.t(k, f);
+        const note = document.createElement('div');
+        note.className = 'config-docker-view-note';
+        note.setAttribute('data-docker-view-note', '');
+        const text = document.createElement('p');
+        text.className = 'config-field-hint';
+        text.textContent = denied
+            ? t('config.dockerViewNoAccess',
+                'The Docker socket is mounted, but nextDash may not open it, so the Containers view has nothing to show and its header icon stays hidden. This is usually the case that needs NEXTDASH_RUN_AS_ROOT=1.')
+            : t('config.dockerViewNoSocket',
+                'The Docker socket is not connected, so the Containers view has nothing to show and its header icon stays hidden. It needs the socket mounted and NEXTDASH_DOCKER_SOCKET set in your compose file or Unraid template.');
+        note.append(text, this.dockerSetupHelpButton());
+        field.after(note);
+    },
+
+    /** Help → Containers → the setup panel, scrolled to. */
+    dockerSetupHelpButton() {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'config-btn config-btn--small';
+        button.setAttribute('data-docker-setup-help', '');
+        button.textContent = this.t('config.dockerSetupHelpButton', 'How to connect it');
+        button.addEventListener('click', () => { void this.openContainersSetupHelp(); });
+        return button;
+    },
+
+    async openContainersSetupHelp() {
+        this.helpQuery = '';
+        this.helpTab = 'containers';
+        await this.openConfigView('help');
+        window.location.hash = 'config/help/containers/containers-setup';
+        // After the body is in the DOM, or there is nothing to scroll to.
+        setTimeout(() => this.openHelpPanelFromHash(), 60);
     },
 
     bindContainersHidden(container) {
