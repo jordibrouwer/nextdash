@@ -797,6 +797,14 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     border-top: 1px solid var(--border-primary);
     background: var(--background-primary);
 }
+/* Lifted out of the scroll area (liftFooter in whats-new-modal.js): nothing
+   scrolls under it any more, so it is neither sticky nor painted. */
+.wn-foot.wn-foot--lifted {
+    position: static;
+    flex: 0 0 auto;
+    margin-top: var(--space-3, 0.75rem);
+    background: none;
+}
 .wn-foot-update { min-width: 0; flex: 1 1 12rem; }
 .wn-foot-update:empty { display: none; }
 
@@ -2140,3 +2148,293 @@ body.no-animations .modal-overlay.show .modal.header-sheet.from-origin {
     padding-left: 0;
     padding-right: 0;
 }
+
+/* ── What's new, the 2026-09 redesign ─────────────────────────────────────
+   The modal glows the way the panels and list rows do: an accent ring and a
+   soft accent bloom behind the version, and each entry the left-edge glow of
+   --lvs-glow -- the accent for something new, a steady blue for a fix. Two
+   colours are fixed rather than themed: Ko-fi's own coral, so the ask is
+   recognised for what it is, and the fix blue, which has to stay apart from
+   whatever the accent is. */
+.modal.whats-new-modal {
+    --wn-fix: #5b9cf5;
+    --wn-kofi: #ff5e5b;
+    --wn-kofi-ink: #fff;
+    background-image:
+        radial-gradient(28rem 12rem at 16% -6%, color-mix(in srgb, var(--accent-primary) 18%, transparent), transparent 62%),
+        radial-gradient(22rem 14rem at 110% 110%, color-mix(in srgb, var(--wn-fix) 8%, transparent), transparent 60%);
+    border-color: color-mix(in srgb, var(--accent-primary) 30%, var(--border-primary));
+}
+
+/* The ring, stated where the themes' own modal shadow cannot outrank it --
+   their --edge-light rule sits on html[data-theme] body, and the glow is what
+   this modal was missing beside every other panel. */
+html body #app-modal .modal.whats-new-modal {
+    box-shadow:
+        0 1px 0 color-mix(in srgb, #fff 6%, transparent) inset,
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 8%, transparent),
+        0 18px 48px -10px color-mix(in srgb, var(--accent-primary) 30%, transparent),
+        0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
+.modal.whats-new-modal .wn-hero {
+    border-bottom: 0;
+    margin-bottom: 0;
+    padding-bottom: var(--space-3, 0.8rem);
+}
+
+.wn-hero-line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.3rem) var(--space-3, 0.8rem);
+}
+
+.modal.whats-new-modal .wn-hero-version {
+    font-size: calc(var(--font-size-text) * 2.5);
+    font-weight: var(--font-weight-bold, 700);
+    letter-spacing: -0.02em;
+    background: linear-gradient(180deg, var(--text-primary), color-mix(in srgb, var(--accent-primary) 55%, var(--text-primary)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 1.75rem color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+.modal.whats-new-modal .wn-hero-meta { margin: 0; }
+.wn-hero-counts { margin: var(--space-2, 0.5rem) 0 0; font-size: var(--font-size-controls); color: var(--text-tertiary); }
+
+.wn-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+    margin-top: var(--space-3, 0.75rem);
+}
+
+.wn-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem);
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--background-primary) 40%, transparent);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: calc(var(--font-size-controls) * 0.95);
+    cursor: pointer;
+}
+.wn-filter b { color: var(--text-primary); font-weight: var(--font-weight-semibold); font-variant-numeric: tabular-nums; }
+.wn-filter.is-on {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+}
+.wn-filter.is-on b { color: var(--accent-primary); }
+.wn-filter:focus-visible, .wn-tab:focus-visible, .wn-support-btn:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+.wn-filter-dot { width: 0.45rem; height: 0.45rem; border-radius: 50%; }
+.wn-filter-dot--new { background: var(--accent-primary); }
+.wn-filter-dot--fix { background: var(--wn-fix); }
+
+.wn-tabs {
+    display: flex;
+    gap: var(--space-1, 0.3rem);
+    overflow-x: auto;
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border-primary);
+    scrollbar-width: none;
+}
+.wn-tab {
+    flex: none;
+    padding: 0.35rem 0.65rem;
+    border: 0;
+    border-radius: var(--radius-4, 0.45rem);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: calc(var(--font-size-controls) * 0.95);
+    white-space: nowrap;
+    cursor: pointer;
+}
+.wn-tab:hover { color: var(--text-primary); }
+.wn-tab.is-on {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+    box-shadow: inset 0 -2px 0 var(--accent-primary);
+}
+.wn-tab-count { margin-left: 0.35rem; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+
+/* Each entry its own lit row, like a list row with a status. */
+.modal.whats-new-modal .wn-entries { display: flex; flex-direction: column; gap: var(--space-2, 0.5rem); }
+.modal.whats-new-modal .wn-entry {
+    --wn-glow: var(--accent-primary);
+    padding: var(--space-2-5, 0.7rem) var(--space-3, 0.75rem) var(--space-2-5, 0.7rem) var(--space-3-5, 0.9rem);
+    border-radius: var(--radius-5, 0.6rem);
+    background:
+        linear-gradient(90deg,
+            color-mix(in srgb, var(--wn-glow) 17%, transparent) 0,
+            color-mix(in srgb, var(--wn-glow) 5%, transparent) 38%,
+            transparent 72%),
+        color-mix(in srgb, var(--background-primary) 55%, transparent);
+    box-shadow:
+        inset 3px 0 0 color-mix(in srgb, var(--wn-glow) 80%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+.modal.whats-new-modal .wn-entry + .wn-entry { border-top: 0; }
+.modal.whats-new-modal .wn-entry--fix { --wn-glow: var(--wn-fix); }
+.modal.whats-new-modal .wn-entry--keys { --wn-glow: var(--accent-warning); }
+.modal.whats-new-modal .wn-entry[hidden],
+.modal.whats-new-modal .wn-group[hidden] { display: none; }
+
+.modal.whats-new-modal .wn-badge {
+    justify-self: stretch;
+    text-align: center;
+    margin-top: 0.15rem;
+    font-weight: var(--font-weight-bold, 700);
+}
+.modal.whats-new-modal .wn-badge--new {
+    color: var(--background-primary);
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0.75rem color-mix(in srgb, var(--accent-primary) 45%, transparent);
+}
+.modal.whats-new-modal .wn-badge--fix {
+    color: var(--wn-fix);
+    background: color-mix(in srgb, var(--wn-fix) 13%, transparent);
+    border-color: color-mix(in srgb, var(--wn-fix) 45%, transparent);
+}
+.modal.whats-new-modal .wn-group-title { border-bottom: 0; }
+.modal.whats-new-modal .wn-group-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    align-self: center;
+    background: var(--border-primary);
+    order: 1;
+}
+.modal.whats-new-modal .wn-group-title .wn-group-count { order: 2; }
+
+/* The ask, after the notes. */
+.wn-support {
+    position: relative;
+    margin: var(--space-5, 1.5rem) 0 var(--space-2, 0.5rem);
+    padding: var(--space-4, 1rem);
+    border-radius: var(--radius-6, 0.75rem);
+    overflow: hidden;
+    background:
+        radial-gradient(22rem 10rem at 100% 0%, color-mix(in srgb, var(--wn-kofi) 24%, transparent), transparent 70%),
+        linear-gradient(90deg, color-mix(in srgb, var(--wn-kofi) 15%, transparent) 0, transparent 70%),
+        color-mix(in srgb, var(--background-primary) 55%, transparent);
+    box-shadow:
+        inset 3px 0 0 var(--wn-kofi),
+        inset 0 0 0 1px color-mix(in srgb, var(--wn-kofi) 30%, transparent),
+        0 10px 30px -12px color-mix(in srgb, var(--wn-kofi) 55%, transparent);
+}
+.wn-support-top { display: flex; gap: var(--space-3, 0.75rem); align-items: flex-start; }
+.wn-support-cup {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-5, 0.6rem);
+    font-size: 1.35rem;
+    background: color-mix(in srgb, var(--wn-kofi) 14%, transparent);
+    box-shadow: 0 0 1.1rem color-mix(in srgb, var(--wn-kofi) 40%, transparent);
+}
+.wn-support-title { margin: 0; font-size: var(--font-size-text); font-weight: var(--font-weight-semibold); color: var(--text-primary); }
+.wn-support-text { margin: var(--space-1, 0.25rem) 0 0; font-size: calc(var(--font-size-text) * 0.93); line-height: 1.55; color: var(--text-secondary); max-width: 48ch; }
+.wn-support-cta { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem); margin-top: var(--space-3-5, 0.9rem); }
+.wn-support-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem);
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius-5, 0.55rem);
+    background: var(--wn-kofi);
+    color: var(--wn-kofi-ink);
+    font-weight: var(--font-weight-bold, 700);
+    text-decoration: none;
+    box-shadow:
+        0 6px 20px -6px color-mix(in srgb, var(--wn-kofi) 80%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, #fff 18%, transparent);
+    transition: filter 0.15s ease, transform 0.15s ease;
+}
+.wn-support-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.wn-support-btn::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: calc(var(--radius-5, 0.55rem) + 3px);
+    border: 1px solid color-mix(in srgb, var(--wn-kofi) 50%, transparent);
+    animation: wn-support-halo 2.8s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes wn-support-halo {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.03); }
+}
+.wn-support-note { font-size: var(--font-size-controls); color: var(--text-tertiary); }
+
+/* The footer button, filled in Ko-fi's colour so it is there even when the
+   card has scrolled away. */
+.whats-new-modal .wn-kofi-btn--solid {
+    background: var(--wn-kofi);
+    color: var(--wn-kofi-ink);
+    border-color: transparent;
+    font-weight: var(--font-weight-bold, 700);
+    box-shadow: 0 0 1rem color-mix(in srgb, var(--wn-kofi) 45%, transparent);
+}
+.whats-new-modal .wn-kofi-btn--solid:hover { background: var(--wn-kofi); filter: brightness(1.08); }
+
+/* The update line as a chip, its dot in the status colour. */
+.wn-foot .wn-update-check-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem);
+    margin: 0;
+    padding: 0.2rem 0.65rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    font-size: calc(var(--font-size-controls) * 0.95);
+}
+.wn-foot .wn-update-check-status::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+}
+.wn-foot .wn-update-check-status--error { border-color: color-mix(in srgb, var(--accent-error, #d1493f) 40%, transparent); background: color-mix(in srgb, var(--accent-error, #d1493f) 8%, transparent); }
+.wn-foot .wn-update-check-status--warn { border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent); background: color-mix(in srgb, var(--accent-primary) 8%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+    .wn-support-btn::after { animation: none; opacity: 0.5; }
+    .wn-support-btn:hover { transform: none; }
+}
+
+/* The same Support button at the top right, beside Esc x, sized like the
+   footer's. The gap leaves room for its sparkles. */
+.wn-head-tools {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 1rem);
+    margin-left: auto;
+}
+.whats-new-modal .wn-kofi-btn--head {
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-hairline, 0.18rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-3, 0.3rem);
+    font-size: calc(var(--font-size-controls) * 0.88);
+}
+.whats-new-modal .wn-kofi-btn--head .wn-kofi-icon { width: 13px; height: 13px; }
+
+/* Mirrors the footer row: the same gap and the same margin after the button,
+   so the two Support buttons share a column (see alignHeaderToFooter). */
+.wn-head-tools .wn-kofi-btn--head { margin-right: var(--space-3, 0.75rem); }
+.wn-head-tools .wn-modal-close { justify-content: flex-start; text-align: left; padding-left: 0; box-sizing: border-box; }

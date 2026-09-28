@@ -24,6 +24,22 @@ async function openWhatsNew(page) {
 }
 
 test.describe("what's new modal", () => {
+    // The footer was sticky inside the scrolling notes and needed a black band
+    // of its own to hide them passing under it. It now sits beside the scroll
+    // area, unpainted, and leaves with the modal.
+    test('the footer sits under the notes without a background of its own', async ({ page }) => {
+        await loadDashboard(page);
+        await openWhatsNew(page);
+        const foot = page.locator('.whats-new-modal > [data-wn-foot]');
+        await expect(foot).toHaveCount(1);
+        await expect(page.locator('.whats-new-modal .modal-body [data-wn-foot]')).toHaveCount(0);
+        const bg = await foot.evaluate((el) => getComputedStyle(el).backgroundColor);
+        expect(bg).toBe('rgba(0, 0, 0, 0)');
+        await page.keyboard.press('Escape');
+        await expect(page.locator('.whats-new-modal')).toHaveCount(0);
+        await expect(page.locator('#app-modal [data-wn-foot]')).toHaveCount(0);
+    });
+
     // The modal reports what the daily check found but no longer triggers one:
     // reading release notes and polling GitHub are separate jobs, and the manual
     // trigger lives in Config → Overview.
@@ -37,9 +53,14 @@ test.describe("what's new modal", () => {
     test('the ko-fi link is safe to open externally', async ({ page }) => {
         await loadDashboard(page);
         await openWhatsNew(page);
-        const kofi = page.locator('.whats-new-modal .wn-kofi-btn');
-        await expect(kofi).toHaveAttribute('href', 'https://ko-fi.com/jordibrw');
-        await expect(kofi).toHaveAttribute('rel', /noopener/);
+        // Three ways to it now: the header, the support card and the footer.
+        const links = page.locator('.whats-new-modal .wn-kofi-btn, .whats-new-modal .wn-support-btn');
+        await expect(links).toHaveCount(3);
+        for (const link of await links.all()) {
+            await expect(link).toHaveAttribute('href', 'https://ko-fi.com/jordibrw');
+            await expect(link).toHaveAttribute('rel', /noopener/);
+            await expect(link).toHaveAttribute('target', '_blank');
+        }
     });
 
     /*
@@ -175,19 +196,46 @@ test.describe("what's new modal", () => {
     });
 
     /*
-     * The support request is at the end, where somebody who has read the notes
-     * finds it — not above the first one they came to read.
+     * The ask is made in full after the notes, where somebody who has read
+     * them finds it; the header only carries the small button beside Esc.
      */
-    test('the ko-fi link comes after the release, not before it', async ({ page }) => {
+    test('the support card comes after the release, and the header carries the button', async ({ page }) => {
         await loadDashboard(page);
         await openWhatsNew(page);
         const order = await page.evaluate(() => {
-            const hero = document.querySelector('.whats-new-modal .wn-hero');
-            const kofi = document.querySelector('.whats-new-modal .wn-kofi-btn');
-            if (!hero || !kofi) return null;
-            return hero.compareDocumentPosition(kofi) & Node.DOCUMENT_POSITION_FOLLOWING ? 'after' : 'before';
+            const groups = document.querySelector('.whats-new-modal .wn-groups');
+            const card = document.querySelector('.whats-new-modal .wn-support');
+            if (!groups || !card) return null;
+            return groups.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING ? 'after' : 'before';
         });
         expect(order).toBe('after');
+        await expect(page.locator('.whats-new-modal .modal-header .wn-kofi-btn--solid')).toBeVisible();
+        await expect(page.locator('.whats-new-modal > .wn-foot .wn-kofi-btn--solid')).toBeVisible();
+        // The card asks without counting: no tally of changes in it.
+        await expect(page.locator('.whats-new-modal .wn-support')).not.toContainText(/\d+ changes/);
+    });
+
+    test('the filter shows one kind and the tabs jump to a section', async ({ page }) => {
+        await loadDashboard(page);
+        await openWhatsNew(page);
+        const fix = page.locator('.whats-new-modal [data-wn-filter="fix"]');
+        test.skip(!(await fix.count()), 'the newest release has only one kind of change');
+        await fix.click();
+        await expect(fix).toHaveAttribute('aria-pressed', 'true');
+        const kinds = await page.$$eval('.whats-new-modal [data-wn-section] [data-wn-kind]',
+            (els) => els.filter((el) => !el.hidden).map((el) => el.getAttribute('data-wn-kind')));
+        expect(kinds.length).toBeGreaterThan(0);
+        expect(new Set(kinds)).toEqual(new Set(['fix']));
+        await page.locator('.whats-new-modal [data-wn-filter="all"]').click();
+
+        const tabs = page.locator('.whats-new-modal [data-wn-tab]');
+        if (await tabs.count() > 1) {
+            const body = page.locator('.whats-new-modal .modal-body');
+            const before = await body.evaluate((el) => el.scrollTop);
+            await tabs.last().click();
+            await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(before);
+            await expect(tabs.last()).toHaveClass(/is-on/);
+        }
     });
 
     test('the update status is announced politely', async ({ page }) => {
@@ -311,4 +359,22 @@ test('the what\'s-new button is in the bottom-right corner, the toast at the bot
     });
     // At the bottom edge, the 1rem every corner card keeps -- not a row above it.
     expect(toast.gap).toBeLessThanOrEqual(toast.edge + 1);
+});
+
+test('the header Support and Esc sit exactly above the footer ones', async ({ page }) => {
+    await loadDashboard(page);
+    await openWhatsNew(page);
+    await page.waitForTimeout(100);
+    const x = await page.evaluate(() => {
+        const m = document.querySelector('.modal.whats-new-modal');
+        const left = (sel) => Math.round(m.querySelector(sel).getBoundingClientRect().left);
+        return {
+            headSupport: left('.modal-header .wn-kofi-btn'),
+            footSupport: left(':scope > .wn-foot .wn-kofi-btn'),
+            headEsc: left('.modal-header .wn-modal-close'),
+            footEsc: left(':scope > .wn-foot .wn-foot-esc'),
+        };
+    });
+    expect(Math.abs(x.headSupport - x.footSupport)).toBeLessThanOrEqual(2);
+    expect(Math.abs(x.headEsc - x.footEsc)).toBeLessThanOrEqual(2);
 });

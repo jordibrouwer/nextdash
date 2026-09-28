@@ -155,7 +155,7 @@
                     aria-expanded="false">${wnTranslate('dashboard.whatsNewItemMore', 'more')}</button>`
             : '';
         return `
-            <li class="wn-entry">
+            <li class="wn-entry wn-entry--${isFix ? 'fix' : 'new'}" data-wn-kind="${isFix ? 'fix' : 'new'}">
                 <span class="wn-badge${isFix ? ' wn-badge--fix' : ' wn-badge--new'}">${badgeLabel}</span>
                 <div class="wn-entry-main">
                     <div class="wn-entry-title">${title}</div>
@@ -166,12 +166,13 @@
         `;
     }
 
-    function renderSections(sections) {
-        return (sections || []).map(({ title, items, kind }) => {
+    function renderSections(sections, { anchors = false } = {}) {
+        return (sections || []).map(({ title, items, kind }, index) => {
             const isKeys = kind === 'keys';
             const count = (items || []).length;
+            const anchor = anchors ? ` data-wn-section="${index}"` : '';
             return `
-            <section class="wn-group${isKeys ? ' wn-group--keys' : ''}">
+            <section class="wn-group${isKeys ? ' wn-group--keys' : ''}"${anchor}>
                 <h4 class="wn-group-title">
                     <span>${title}</span>
                     <span class="wn-group-count" aria-hidden="true">${count}</span>
@@ -219,16 +220,123 @@
                 ? wnTranslate('dashboard.whatsNewCountFixOne', '1 fix')
                 : wnTranslate('dashboard.whatsNewCountFixMany', '{count} fixes', { count: fixed }));
         }
-        const meta = [date, ...counts].filter(Boolean).join(' · ');
         const lead = String(modalLead || '').trim();
         return `
             <header class="wn-hero">
-                <h3 class="wn-hero-version">${tag}</h3>
-                <p class="wn-hero-meta">${meta}</p>
+                <div class="wn-hero-line">
+                    <h3 class="wn-hero-version">${tag}</h3>
+                    ${date ? `<p class="wn-hero-meta">${date}</p>` : ''}
+                </div>
                 ${lead ? `<p class="wn-hero-lead">${lead}</p>` : ''}
+                ${buildFilterHtml(added, fixed, counts)}
             </header>
-            <div class="wn-groups">${renderSections(sections)}</div>
+            ${buildSectionTabsHtml(sections)}
+            <div class="wn-groups">${renderSections(sections, { anchors: true })}</div>
+            ${buildSupportHtml()}
         `;
+    }
+
+    /*
+     * New, fixes, or both.
+     *
+     * Only offered when a release has both kinds: a filter with one choice
+     * that does anything is a label pretending to be a control. The counts
+     * are this release's own, which is what the reader is weighing up.
+     */
+    function buildFilterHtml(added, fixed, counts) {
+        if (!added || !fixed) {
+            return counts.length ? `<p class="wn-hero-counts">${counts.join(' · ')}</p>` : '';
+        }
+        const chip = (kind, label, n, on) => `
+            <button type="button" class="wn-filter${on ? ' is-on' : ''}" data-wn-filter="${kind}"
+                    aria-pressed="${on}">${kind === 'all' ? '' : `<span class="wn-filter-dot wn-filter-dot--${kind}" aria-hidden="true"></span>`}${label} <b>${n}</b></button>`;
+        return `
+            <div class="wn-filters" role="group" aria-label="${wnTranslate('dashboard.whatsNewFilterLabel', 'Show')}">
+                ${chip('all', wnTranslate('dashboard.whatsNewFilterAll', 'All'), added + fixed, true)}
+                ${chip('new', wnTranslate('dashboard.whatsNewFilterNew', 'New'), added, false)}
+                ${chip('fix', wnTranslate('dashboard.whatsNewFilterFix', 'Fixes'), fixed, false)}
+            </div>
+        `;
+    }
+
+    /*
+     * A tab per section, so a long release can be jumped through rather than
+     * scrolled. Left out for a release with one section, where it would only
+     * repeat the heading under it.
+     */
+    function buildSectionTabsHtml(sections) {
+        const list = sections || [];
+        if (list.length < 2) return '';
+        const tabs = list.map(({ title, items }, index) => `
+            <button type="button" class="wn-tab${index === 0 ? ' is-on' : ''}" data-wn-tab="${index}">
+                ${title}<span class="wn-tab-count" aria-hidden="true">${(items || []).length}</span>
+            </button>`).join('');
+        return `<nav class="wn-tabs" aria-label="${wnTranslate('dashboard.whatsNewSections', 'Sections')}">${tabs}</nav>`;
+    }
+
+    /*
+     * The ask, after the reading.
+     *
+     * The footer's small link was the only mention and nobody saw it. This
+     * sits after the release's last change and before the older releases:
+     * the reader has just seen what went into it, which is the moment the
+     * question makes sense. Said once, plainly, in Ko-fi's own colour so it
+     * is recognised for what it is -- and never above the notes.
+     */
+    function buildSupportHtml() {
+        return `
+            <section class="wn-support" aria-label="${wnTranslate('dashboard.whatsNewSupportLabel', 'Support nextDash')}">
+                <div class="wn-support-top">
+                    <span class="wn-support-cup" aria-hidden="true">☕</span>
+                    <div>
+                        <h4 class="wn-support-title">${wnTranslate('dashboard.whatsNewSupportTitle', 'nextDash is made by one person.')}</h4>
+                        <p class="wn-support-text">${wnTranslate('dashboard.whatsNewSupportText',
+                            'Every change above was built, tested and written up in evenings and weekends. If nextDash earns a place on your screen, a coffee keeps the next release coming.')}</p>
+                    </div>
+                </div>
+                <div class="wn-support-cta">
+                    <a class="wn-support-btn" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">☕ ${wnTranslate('dashboard.whatsNewSupportButton', 'Buy me a coffee on Ko-fi')}</a>
+                    <span class="wn-support-note">${wnTranslate('dashboard.whatsNewSupportNote', 'One-off, no account needed.')}</span>
+                </div>
+            </section>
+        `;
+    }
+
+    /*
+     * The filter and the tabs, on the headline release only. Both act on the
+     * rendered list: nothing is fetched or re-rendered for either.
+     */
+    function bindHeadlineControls(root) {
+        if (!root) return;
+        const scroller = root.closest('.modal-body');
+        const filters = [...root.querySelectorAll('[data-wn-filter]')];
+        filters.forEach((btn) => btn.addEventListener('click', () => {
+            const kind = btn.getAttribute('data-wn-filter');
+            filters.forEach((b) => {
+                const on = b === btn;
+                b.classList.toggle('is-on', on);
+                b.setAttribute('aria-pressed', String(on));
+            });
+            root.querySelectorAll('[data-wn-section] [data-wn-kind]').forEach((li) => {
+                li.hidden = kind !== 'all' && li.getAttribute('data-wn-kind') !== kind;
+            });
+            root.querySelectorAll('[data-wn-section]').forEach((section) => {
+                section.hidden = ![...section.querySelectorAll('[data-wn-kind]')].some((li) => !li.hidden);
+            });
+        }));
+        const tabs = [...root.querySelectorAll('[data-wn-tab]')];
+        tabs.forEach((tab) => tab.addEventListener('click', () => {
+            const section = root.querySelector(`[data-wn-section="${CSS.escape(tab.getAttribute('data-wn-tab'))}"]`);
+            if (!section) return;
+            tabs.forEach((t) => t.classList.toggle('is-on', t === tab));
+            const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+            if (scroller) {
+                const top = section.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+                scroller.scrollTo({ top: Math.max(0, top - 8), behavior: reduce ? 'auto' : 'smooth' });
+            } else {
+                section.scrollIntoView({ block: 'start' });
+            }
+        }));
     }
 
     /*
@@ -257,11 +365,13 @@
      * Sticky to the bottom of the scroll area so it is present without being
      * first, which is also where the update status now lives.
      */
-    function buildFooterHtml() {
+    /*
+     * The Ko-fi button, the same in the footer and the header: filled in
+     * Ko-fi's colour, so it is found at the top as well as at the end.
+     */
+    function buildKofiButtonHtml(extraClass = '') {
         return `
-            <div class="wn-foot" data-wn-foot>
-                <div class="wn-foot-update" data-wn-foot-update></div>
-                <a class="wn-kofi-btn wn-kofi-btn--animated" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">
+                <a class="wn-kofi-btn wn-kofi-btn--animated wn-kofi-btn--solid${extraClass ? ` ${extraClass}` : ''}" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">
                 <span class="wn-kofi-stars" aria-hidden="true">
                     <span class="wn-kofi-star"></span>
                     <span class="wn-kofi-star"></span>
@@ -269,8 +379,16 @@
                     <span class="wn-kofi-star"></span>
                 </span>
                 <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
-                <span class="wn-kofi-label">${wnTranslate('config.helpSupportKofi', 'Support me on Ko-fi')}</span>
+                <span class="wn-kofi-label">${wnTranslate('dashboard.whatsNewSupportShort', 'Support')}</span>
                 </a>
+        `;
+    }
+
+    function buildFooterHtml() {
+        return `
+            <div class="wn-foot" data-wn-foot>
+                <div class="wn-foot-update" data-wn-foot-update></div>
+                ${buildKofiButtonHtml()}
                 <span class="wn-foot-esc"><span class="wn-foot-key">Esc</span> ${
                     wnTranslate('dashboard.whatsNewFootClose', 'to close')}</span>
             </div>
@@ -437,6 +555,51 @@
     window.nextdashSyncWhatsNewUpdateBar = syncWhatsNewUpdateBar;
     window.nextdashTeardownWhatsNewUpdateCheck = teardownWhatsNewUpdateCheckHeader;
     window.nextdashMountWhatsNewUpdateCheck = mountWhatsNewUpdateCheckHeader;
+
+    /*
+     * The footer sits under the scrolling notes, not inside them.
+     *
+     * It was sticky inside the scroll area, which needed a background of its
+     * own to hide the notes passing under it -- a black band that matched
+     * neither the modal nor any theme's panel colour. Moved out beside the
+     * scroll area, nothing passes under it and it needs no background at all.
+     * The notes are rendered twice (skeleton, then the release), so it is
+     * lifted after each render, replacing the one lifted before.
+     */
+    function liftFooter() {
+        const modal = document.querySelector('#app-modal .whats-new-modal');
+        const body = modal?.querySelector(':scope > .modal-body');
+        const foot = body?.querySelector('[data-wn-foot]');
+        if (!modal || !body || !foot) return;
+        modal.querySelectorAll(':scope > [data-wn-foot]').forEach((el) => el.remove());
+        foot.classList.add('wn-foot--lifted');
+        body.after(foot);
+        alignHeaderToFooter();
+    }
+
+    /*
+     * The header's Support and Esc sit exactly above the footer's.
+     *
+     * The footer says "Esc to close" and the header "Esc x", so the two differ
+     * in width by however long "to close" is in the reader's language. The
+     * header's close takes the footer's measured width, right-aligned, and
+     * with the same gaps (CSS) the two Support buttons line up too.
+     */
+    function alignHeaderToFooter() {
+        const modal = document.querySelector('#app-modal .whats-new-modal');
+        const close = modal?.querySelector('.modal-header .wn-modal-close');
+        const esc = modal?.querySelector(':scope > [data-wn-foot] .wn-foot-esc');
+        if (!close || !esc) return;
+        requestAnimationFrame(() => {
+            const width = esc.getBoundingClientRect().width;
+            if (width) close.style.width = `${Math.ceil(width)}px`;
+        });
+    }
+
+    /** The shared modal shows other things too; the lifted footer is ours. */
+    function dropLiftedFooter() {
+        document.querySelectorAll('#app-modal .modal > [data-wn-foot]').forEach((el) => el.remove());
+    }
 
     function buildSkeletonHtml() {
         return `
@@ -723,6 +886,7 @@
             if (finished) return;
             finished = true;
             teardownWhatsNewUpdateCheckHeader();
+            dropLiftedFooter();
             finish();
         };
 
@@ -740,6 +904,7 @@
             onCancel: finishOnce,
             onHide: finishOnce,
         });
+        liftFooter();
 
         /*
          * A way out in the header, as the other overlays have.
@@ -753,11 +918,16 @@
             const close = document.createElement('button');
             close.type = 'button';
             close.className = 'wn-modal-close';
-            close.dataset.modalHeaderExtra = 'true';
             close.setAttribute('aria-label', wnTranslate('dashboard.whatsNewModalClose', 'close'));
             close.innerHTML = '<span aria-hidden="true">Esc</span> \u00D7';
             close.addEventListener('click', () => window.AppModal.hide());
-            wnHeader.appendChild(close);
+            const tools = document.createElement('div');
+            tools.className = 'wn-head-tools';
+            tools.dataset.modalHeaderExtra = 'true';
+            tools.innerHTML = buildKofiButtonHtml('wn-kofi-btn--head').trim();
+            tools.appendChild(close);
+            wnHeader.appendChild(tools);
+            alignHeaderToFooter();
         }
 
         mountWhatsNewUpdateCheckHeader();
@@ -789,12 +959,14 @@
                         return;
                     }
                     textEl.innerHTML = buildShellHtml(visible, renderHeadlineRelease(first));
+                    liftFooter();
                     textEl.querySelector('.wn-content')?.removeAttribute('aria-busy');
                     const contentRoot = textEl.querySelector('[data-wn-content]');
                     if (contentRoot && typeof contentRoot.focus === 'function') {
                         contentRoot.focus({ preventScroll: true });
                     }
                     bindItemFolds(contentRoot);
+                    bindHeadlineControls(contentRoot);
                     bindEarlierList(contentRoot, sessionId);
                     // The shell replaced everything the skeleton had, footer
                     // included, so the live status bar has to be put back into
