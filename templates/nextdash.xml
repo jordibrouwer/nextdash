@@ -210,11 +210,13 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
           Mask="false" />
 
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-dashboard.jpg</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-bookmarks.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-dashboard-homelab.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-bookmarks-view.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-search.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-inbox.jpg</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-health.jpg</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-health-monitors.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-triage.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-containers.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-collection-health.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-themes.jpg</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-config.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-config-statistics.jpg</Screenshot>
 </Container>
