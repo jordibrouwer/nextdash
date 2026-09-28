@@ -136,6 +136,12 @@ class DashboardInlineEdit {
             window.nextdashTrack?.('bookmark:edit-open', { source: options.source || 'modal' });
         } else {
             const pageId = Number(options.pageId || options.currentPageId || d.currentPageId || 1);
+            // A new bookmark starts on the availability Config → Bookmarks →
+            // Settings names for it, the way & already did. The form used to
+            // preselect Off whatever that setting said.
+            const startMode = ['off', 'periodic', 'monitor'].includes(d.settings?.newBookmarkCheckMode)
+                ? d.settings.newBookmarkCheckMode
+                : 'periodic';
             bookmarkRef = {
                 bookmark: {
                     name: String(options.name || '').trim(),
@@ -146,12 +152,14 @@ class DashboardInlineEdit {
                     tags: Array.isArray(options.tags) ? [...options.tags] : [],
                     icon: '',
                     pinned: false,
-                    checkStatus: false,
-                    monitor: false,
-                    // 15, the same figure check-mode.js and the server both
-                    // default to. The literal is only for a page where
-                    // check-mode.js has not loaded, and must not disagree with it.
-                    monitorIntervalMinutes: window.CheckMode?.DEFAULT_INTERVAL_MINUTES || 15,
+                    checkStatus: startMode !== 'off',
+                    monitor: startMode === 'monitor',
+                    // The configured default for a monitor, else 15 -- the same
+                    // figure check-mode.js and the server both default to. The
+                    // literal is only for a page where check-mode.js has not
+                    // loaded, and must not disagree with it.
+                    monitorIntervalMinutes: Number(d.settings?.defaultMonitorIntervalMinutes)
+                        || window.CheckMode?.DEFAULT_INTERVAL_MINUTES || 15,
                 },
                 pageId,
                 index: -1,

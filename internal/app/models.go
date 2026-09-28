@@ -3067,7 +3067,7 @@ const (
 	defaultConfigBookmarksSort       = "page"
 	defaultConfigBookmarksPageSize   = 50
 	defaultBookmarkDeleteConfirmFrom = 1
-	defaultNewBookmarkCheckMode      = "off"
+	defaultNewBookmarkCheckMode      = "periodic"
 	defaultBookmarkStaleDays         = 90
 	defaultBookmarkArchiveUrl        = "https://web.archive.org/web/*/{url}"
 	defaultCategorySpreadResetScope  = "page"

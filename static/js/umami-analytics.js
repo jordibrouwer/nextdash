@@ -202,7 +202,7 @@
         ['pasteQuickAdd', flag('pasteUrlQuickAdd')],
         ['healthView', flagOn('healthViewEnabled')],
         ['healthAutoRecheck', flag('healthAutoRecheckEnabled')],
-        ['newBookmarkCheckMode', pick('newBookmarkCheckMode', 'off')],
+        ['newBookmarkCheckMode', pick('newBookmarkCheckMode', 'periodic')],
         ['monitorInterval', bucketOf('defaultMonitorIntervalMin', [5, 15, 60, 360])],
         ['staleDays', bucketOf('bookmarkStaleDays', [30, 90, 180, 365])],
         // Smart collections

@@ -12006,7 +12006,7 @@ class DashboardConfig {
         bmViewKeyLegend: { info: ['bmViewKeyLegendInfoTitle', 'bmViewKeyLegendInfoMessage'], def: 'below' },
         bookmarkDeleteConfirmFrom: { info: ['bookmarkDeleteConfirmFromInfoTitle', 'bookmarkDeleteConfirmFromInfoMessage'], def: 1 },
         defaultMonitorIntervalMinutes: { info: ['defaultMonitorIntervalInfoTitle', 'defaultMonitorIntervalInfoMessage'], def: 15 },
-        newBookmarkCheckMode: { info: ['newBookmarkCheckModeInfoTitle', 'newBookmarkCheckModeInfoMessage'], def: 'off' },
+        newBookmarkCheckMode: { info: ['newBookmarkCheckModeInfoTitle', 'newBookmarkCheckModeInfoMessage'], def: 'periodic' },
         newBookmarkPinned: { info: ['newBookmarkPinnedInfoTitle', 'newBookmarkPinnedInfoMessage'], def: false },
         newBookmarkCategory: { def: '' },
         bookmarkStaleDays: { info: ['bookmarkStaleDaysInfoTitle', 'bookmarkStaleDaysInfoMessage'], def: 90 },
