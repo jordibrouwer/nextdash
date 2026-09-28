@@ -75,7 +75,7 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-themes.jpg" alt="Theme browser" width="100%" />
       <br />
-      <sub><b>Themes</b> — 121 theme families, each with a light and a dark half, searchable and filtered by character: lacquer, glass, velvet, terminal and eight more. Press <kbd>Shift</kbd>+<kbd>A</kbd> to open the browser from anywhere.</sub>
+      <sub><b>Themes</b> — 155 theme families, each with a light and a dark half, searchable and filtered by character: lacquer, glass, velvet, terminal and eight more. Press <kbd>Shift</kbd>+<kbd>A</kbd> to open the browser from anywhere.</sub>
     </td>
   </tr>
 </table>
@@ -108,7 +108,7 @@ docker compose up -d
 
 Open `http://localhost:8080`.
 
-**From a git checkout:** `docker-compose.prod.yml` is for production (only `./data` is mounted; CSS and JavaScript are built into the image). `docker-compose.yml` is for development (it mounts `./static` and `./templates`).
+**From a git checkout:** `docker-compose.prod.yml` is for production (only `./data` is mounted; CSS and JavaScript are built into the image). `docker-compose.yml` is for development (it mounts `./static`, `./locales` and `./templates`, with Docker actions and root off and the socket commented out). Put your own mounts and variables in `docker-compose.override.yml`; Compose reads it automatically.
 
 ```sh
 docker compose -f docker-compose.prod.yml up -d --build
@@ -124,7 +124,7 @@ Data is stored in `./data`. `NEXTDASH_DATA_DIR` moves it.
 
 ### System widgets
 
-The **Processor**, **Memory**, **Disks** and **Containers** widgets report on the machine nextDash runs on. The binary needs no setup; a container needs read-only mounts:
+The **Processor**, **Memory**, **Disks**, **Containers** and **Container list** widgets report on the machine nextDash runs on. The binary needs no setup; a container needs read-only mounts:
 
 ```yaml
     volumes:
@@ -164,10 +164,10 @@ The **Processor**, **Memory**, **Disks** and **Containers** widgets report on th
 **Unraid** — Docker → nextDash → Edit:
 
 - Fill in the template's **Docker socket** path (`/var/run/docker.sock`), **Docker socket variable** (`/var/run/docker.sock`) and **Write token**.
-- For actions: **Add another Path, Port, Variable…** → *Variable*, key `NEXTDASH_DOCKER_CONTROL`, value `1`.
-- Unraid's socket belongs to the `docker` group, so `NEXTDASH_RUN_AS_ROOT` is not needed there.
+- For actions: set the template's **Docker actions** to `1` (it starts at `0`).
+- Unraid's socket belongs to the `docker` group, so leave **Run as root** at `0`.
 
-Once it runs, the `#docker` view lists every container with a status glow, a side panel with logs, resources and release notes, and a badge for images with an update waiting. **Config → Containers** shows the connection as the server sees it — socket, actions, write token, its own container — and holds the update checks and an optional GitHub token. The [manual](MANUAL.md#146-what-it-needs) has the details, including Synology and QNAP.
+Once it runs, the `#docker` view lists every container with a status glow and a link to its web UI, a side panel with logs, an hour of CPU and memory charts and release notes, and a badge for images with an update waiting. **Config → Containers** shows the connection as the server sees it — socket, actions, write token, its own container — and holds the update checks and an optional GitHub token. The [manual](MANUAL.md#146-what-it-needs) has the details, including Synology and QNAP.
 
 ---
 
@@ -283,7 +283,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Tags, notes, shortcuts and pins, and a preview card that says what a page is without opening it. *[Manual §6](MANUAL.md#6--opening-and-editing-bookmarks), [§10](MANUAL.md#10-️-tags)*
 - **Tag suggestions** tag whole groups at once — from your own tags, a shipped list of 463 subjects, and rules you write. Nothing is tagged until you accept. *[Manual §10.4](MANUAL.md#104-tag-suggestions)*
 - A **Bookmarks view** for the whole collection: a rail of pages, categories and health filters, one-line rows with a score and open counts, and a side panel with Details, Health and Usage. Group, sort, work through what needs attention, export to CSV. *[Bookmarks view](MANUAL.md#11--the-bookmarks-view)*
-- An **inbox** for links you have not filed yet — snooze, triage or promote. Keep puts a link in **Bookmarks → Unsorted** without filing it; promote it from there once it has a place. *[Manual §14](MANUAL.md#13--inbox)*
+- An **inbox** for links you have not filed yet — snooze, promote, or triage it pile by pile: waiting longest, new this week, with a note. Keep puts a link in **Bookmarks → Unsorted** without filing it; promote it from there once it has a place. *[Manual §14](MANUAL.md#13--inbox)*
 - **Config → Inbox** sets how it collects, lists, and opens: Collecting, List, Panel & clicks and Header icon, each with a live preview. *[Config → Inbox](MANUAL.md#176-config--inbox)*
 - **Smart collections** fill themselves; custom collections follow your rules. *[Manual §9.6](MANUAL.md#96-smart-collections)*
 
@@ -295,7 +295,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Health and monitoring**
 
-- Health lives in the **Bookmarks view**: filters for broken, stale, duplicated, unchecked and changed, a Health tab in the side panel, and Work through to clear a filter one bookmark at a time. **Collection health** (Overview, Monitors & trend) covers the whole collection; open one bookmark's own **Health in Large** for its uptime, response time, status codes and every check, with CSV export. *[Health and monitoring](MANUAL.md#11--the-bookmarks-view)*
+- Health lives in the **Bookmarks view**: filters for broken, stale, duplicated, unchecked and changed, a Health tab in the side panel, and Work through to clear a pile — broken, changed, stale, never opened — one bookmark at a time, each with the reason it is there. **Collection health** (Overview, Monitors & trend) covers the whole collection; open one bookmark's own **Health in Large** for its uptime, response time, status codes and every check, with CSV export. *[Health and monitoring](MANUAL.md#11--the-bookmarks-view)*
 - **Uptime monitoring** with 30 days of history, response times, outages, certificate expiry, expected-response checks and drift detection. *[Manual §13.4](MANUAL.md#118-collection-health)*
 - Alerts to Slack, Discord, Telegram, Gotify, ntfy, Pushover, a JSON receiver or your browser, with maintenance windows and per-bookmark muting. *[Manual §13.7](MANUAL.md#124-alerts)*
 - **Fresh** shows which bookmarked sites published something new. *[Manual §13.9](MANUAL.md#126-fresh)*
@@ -303,19 +303,19 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Widgets**
 
-- Twenty-one kinds: health, uptime, certificates, trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, weather, calendar and RSS. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §11](MANUAL.md#15--widgets)*
+- Twenty-two kinds: health, uptime, certificates, trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, container list, weather, calendar and RSS. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §11](MANUAL.md#15--widgets)*
 - A widget set to two columns says more rather than the same thing larger: the load behind the processor's percentage, the container failing by name, the expiry date of a certificate, what the weather feels like. One column keeps the important half. *[Manual §11.2](MANUAL.md#152-adding-and-arranging)*
 - A **Custom widget** reads any service that answers with JSON, with 28 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and more. *[Manual §11.5](MANUAL.md#155-the-custom-widget)*
 
 **Containers**
 
-- A **Containers view** (`#docker`) for everything on the host: status glow, group by status, a side panel with logs, stats and environment. Search finds a container by name, and `:docker` opens the view. *[Containers view](MANUAL.md#14--containers)*
+- A **Containers view** (`#docker`) for everything on the host: status glow, group by status, a web UI column, a side panel with logs, stats, an hour of CPU and memory charts and environment. Give any container a web UI address of your own; the list, the widget and `:docker <name> open` all use it. Search finds a container by name, and `:docker` opens the view. *[Containers view](MANUAL.md#14--containers)*
 - Image update checks, on request and on an interval, show what changed; the header icon carries a badge for how many are waiting. *[Containers view](MANUAL.md#145-actions-and-updates)*
 - Start, stop, pause, restart, update and remove, behind `NEXTDASH_DOCKER_CONTROL` and the write token; set it all under **Config → Containers**. *[Containers view](MANUAL.md#145-actions-and-updates)*
 
 **Appearance**
 
-- 121 theme families in light and dark, each with a character that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — in a browser with live preview, plus an editor for your own. *[Manual §12](MANUAL.md#16--appearance)*
+- 155 theme families in light and dark, each with a character that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — in a browser with live preview — the newest wear a **new** badge — plus an editor for your own. *[Manual §12](MANUAL.md#16--appearance)*
 - Character, depth, glow, effects and contrast for any theme; layout presets, columns, density, fonts and backdrops. *[Manual §12.3](MANUAL.md#163-surfaces)*
 - A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu. *[Manual §4](MANUAL.md#4-️-the-dashboard)*
 - Six languages: English, Dutch, German, French, Spanish and Chinese. *[Manual §15](MANUAL.md#17-️-config)*

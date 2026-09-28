@@ -66,7 +66,7 @@ Bookmarks are grouped by **page** (Work, Home) and **category** (Dev, News). Aro
 | **Add** | One-line quick add, the full form, paste a URL, browser extension, share sheet, bookmarklet, imports |
 | **Watch** | Broken links, uptime monitoring, certificate expiry, page drift, alerts |
 | **Show** | Widgets for health, inbox, feeds, weather, calendar, your machine, your containers and your own services |
-| **Customise** | 121 theme families, surfaces, layout, header and action buttons, six languages |
+| **Customise** | 155 theme families, surfaces, layout, header and action buttons, six languages |
 | **Keep** | Automatic backups, a 30-day trash, local copies of pages, HTML and CSV export |
 
 ### 🚫 What nextDash is not
@@ -100,7 +100,7 @@ docker compose up -d
 
 Open `http://localhost:8080`.
 
-From a git checkout, `docker-compose.prod.yml` is the production file (only `./data` is mounted; the assets are built into the binary) and `docker-compose.yml` is for development (it mounts `./static` and `./templates`).
+From a git checkout, `docker-compose.prod.yml` is the production file (only `./data` is mounted; the assets are built into the binary) and `docker-compose.yml` is for development (it mounts `./static`, `./locales` and `./templates`). The development file ships with `NEXTDASH_DOCKER_CONTROL=0` and `NEXTDASH_RUN_AS_ROOT=0` and the Docker socket commented out. Put your own mounts and variables in a `docker-compose.override.yml` beside it: Compose reads that file on its own, and your changes stay out of the checkout.
 
 ### 🧱 Build from source
 
@@ -570,8 +570,10 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:stale [days]` · `:duplicates` | Cleanup lists |
 | `:goto <url>` · `:goto config\|stats\|docker` | Go somewhere |
 | `:inbox` · `:inbox triage` | The inbox |
-| `:health [broken\|duplicate\|stale\|refresh]` | Opens the Bookmarks view on that filter, and re-scans on `refresh` |
+| `:health [broken\|duplicate\|stale\|unused\|unchecked\|missing-preview\|shortcut-conflict\|healthy\|all\|refresh]` | Opens the Bookmarks view on that filter, and re-scans on `refresh` |
+| `:health page <name>` | The Bookmarks view on one page |
 | `:docker` | The Containers view |
+| `:docker <name> open` · `:docker <name> logs` · `:docker <name> start\|stop\|restart\|pause\|update\|remove` | One container: `open` goes to its web UI, or to the view when it has none; the actions need `NEXTDASH_DOCKER_CONTROL=1` |
 | `:monitor` · `:monitor off` | How many bookmarks are checked · switch checking off everywhere (asks first) |
 | `:config [section]` | A config section, for example `:config appearance` |
 | `:backup` · `:export` · `:trash` | Backups · download a backup · the trash |
@@ -786,7 +788,38 @@ The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, 
 
 ### 11.7 Work through and the header band
 
-Above the list, **Work through** (**`f`**) shows one bookmark at a time — re-check (`p`), open (`Enter`), delete (`d`), **ignore for 30 days** (`z`), skip (`j`) and back (`k`). When the row has a preview nextDash could fetch but the bookmark does not store, its reason reads *"Preview fetched, not saved yet"* and a **Save preview** button (**`s`**) writes it onto the bookmark.
+Above the list, **Work through** (**`f`**) takes you through the bookmarks that need a decision, one at a time.
+
+**1. Choose a pile.** It opens on a list of piles, each with its count and a line on what it holds. The pile that needs you most comes first:
+
+| Pile | Holds |
+|---|---|
+| **Broken links** | Down, refused or not found — fix the address or let them go |
+| **Changed or wrong content** | Moved, retitled, or no longer the page you saved |
+| **Stale** | Not opened within **count as neglected after** — still worth keeping? |
+| **Never opened** | Saved and never used |
+| **This list, as it is filtered now** | Every bookmark the list shows, in its order — always last |
+
+`↑`/`↓` choose, `Enter` starts, `Esc` leaves. Empty piles are left out.
+
+**2. One bookmark at a time.** The card shows the pile and your place in it (*Broken links · 3 of 12*), the bookmark with its page and category, when it was last opened, its preview, and **Why it is here**: the reasons from the health report. The main button follows from the reason:
+
+| Key | Action | What it does |
+|---|---|---|
+| `p` | **Re-check now** | Main button for broken and changed links. Checks it again; when the problem is gone it counts as *fixed* and leaves the pile |
+| `o` | **Open it and decide** | Main button for stale and never-opened links. Opens it in a new tab; also the **Open** button and the title |
+| `e` | **Fix the address** | Opens the bookmark form over the card. A save checks the new address, so a link that answers there leaves the pile |
+| `d` | **Delete** | Asks first, then moves it to the trash |
+| `y` | **Keep** | Fine as it is: this reason will not come up again for this bookmark. Undo it from the side panel's Health tab |
+| `z` | **Ignore 30d** | Silences the reason for 30 days, as the row menu's `z` does |
+| `j` / `k` | **Skip** / back | Next or previous card, without a decision |
+| `Esc` | | Leaves; the list stays as it was |
+
+Re-check stays in the row beside the main button when that button is Open. Keep and Ignore appear only when there is a reason to silence.
+
+**3. The end of a pile.** Work through counts what the run did — fixed, deleted, kept, snoozed — and offers the next pile that still has bookmarks (**Start: …**), or **Back to the list**.
+
+When the row has a preview nextDash could fetch but the bookmark does not store, its reason reads *"Preview fetched, not saved yet"* and a **Save preview** button (**`s`**) writes it onto the bookmark.
 
 Beside it, the **Collection ▾** menu gathers what a whole-collection toolbar used to hold, in groups:
 
@@ -1019,7 +1052,34 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`.
 
 ### 13.4 Triage
 
-**Triage** (the button, `t`, or `:inbox triage`) shows one link at a time: `j`/`k` move, `o`, `Enter` or `Space` opens, `p` promotes, `r` marks read, `Shift + K` keeps, `z` snoozes, `n` adds a note, `d` or `Delete` removes, `Esc` returns to the list. It follows the filter and sort you had.
+**Triage** (the button, `t`, or `:inbox triage`) takes you through unread links one at a time, in the same shape as Work through ([§11.7](#117-work-through-and-the-header-band)).
+
+**1. Choose a pile.** Triage counts unread links that are not snoozed. The fullest pile comes first:
+
+| Pile | Holds |
+|---|---|
+| **Waiting longest** | Unread for over a week, oldest first |
+| **New this week** | Saved in the last week, newest first |
+| **With a note** | Links you left yourself a reason on |
+| **This list, as filtered now** | Every unread link the list shows, in its order — always last |
+
+`↑`/`↓` choose, `Enter` starts, `Esc` leaves. Empty piles are left out; with nothing unread, triage says *Nothing to triage*.
+
+**2. One link at a time.** The card shows the pile and your place in it (*Waiting longest · 1 of 3*), the link, its preview, and **Where it came from**: how it arrived (the browser extension, a paste, another app, an import, or by hand), how long ago, whether it was ever opened, and your note.
+
+| Key | Action | What it does |
+|---|---|---|
+| `p` | **Promote to a page** | The main button. Opens the bookmark form to file it on a page; after the save, triage carries on at the next link |
+| `Shift + K` | **Keep in Unsorted** | Makes it a bookmark in **Bookmarks → Unsorted** without a page ([§13.5](#135-keeping-a-link-unsorted-and-promote)) |
+| `n` | **Note** | Adds or edits the note; the card stays |
+| `d` / `Delete` | **Delete** | Removes it from the inbox |
+| `z` | **Snooze** | Picks when it comes back; it leaves the pile until then |
+| `r` | **Mark read** | Marks it read and moves on |
+| `o` / `Enter` / `Space` | **Open** | Opens it in a new tab and marks it read |
+| `j` / `k` | **Skip** / back | Next or previous card |
+| `Esc` | | Back to the list |
+
+**3. The end of a pile.** Triage counts what the run did — promoted, kept, deleted, snoozed, read — and offers the next pile that still has links, or **Back to the inbox**.
 
 ### 13.5 Keeping a link: Unsorted and Promote
 
@@ -1055,14 +1115,14 @@ Open it with the Containers icon in the header, `:docker`, or `/#docker`. It has
 | **Stopped** | Containers that are down or paused |
 | **Updates** | Containers with a newer image waiting |
 
-**Group by status** folds the list under Updates, Running, Paused and Stopped. Each row shows its name, image, status glow and, where the container's own labels offer one, ports and a link to its web UI. The header badge counts containers with an update waiting.
+**Group by status** folds the list under Updates, Running, Paused and Stopped. Each row shows its name, image, status glow and ports, and in a column of its own a link to its web UI. The link is the address you set in the side panel's **Custom** section, else the one the container's own labels offer. A local address shows as its port (`:8123`), another as its host. The header badge counts containers with an update waiting.
 
 ### 14.3 The side panel
 
 Selecting a container opens its side panel, with four tabs:
 
-- **Overview** — an accordion of **Details**, **Network**, **Volumes** and **Environment**.
-- **Resources** — CPU, memory and I/O for that container.
+- **Overview** — an accordion of **Details**, **Network**, **Custom**, **Volumes** and **Environment**. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it.
+- **Resources** — CPU, memory and I/O for that container, with two charts under them: CPU and memory over the last hour. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
 - **Logs** — recent log lines, following as they arrive.
 - **What’s new** — the release notes behind an available update.
 
@@ -1122,9 +1182,10 @@ services:
 | Path | Docker socket | `/var/run/docker.sock` | `/var/run/docker.sock` |
 | Variable | Docker socket variable | `NEXTDASH_DOCKER_SOCKET` | `/var/run/docker.sock` |
 | Variable | Write token | `NEXTDASH_WRITE_TOKEN` | a long random string |
-| Variable (add it) | Docker control | `NEXTDASH_DOCKER_CONTROL` | `1` |
+| Variable | Docker actions | `NEXTDASH_DOCKER_CONTROL` | `1` (the template starts at `0`) |
+| Variable | Run as root | `NEXTDASH_RUN_AS_ROOT` | leave at `0` |
 
-The first three rows are in the template; add the last with **Add another Path, Port, Variable, Label or Device** → *Variable*. Unraid's socket belongs to the `docker` group, so `NEXTDASH_RUN_AS_ROOT` is not needed there.
+All five are in the template. **Docker actions** starts at `0`, so the view only reads until you set it to `1`. Unraid's socket belongs to the `docker` group, so **Run as root** stays at `0` there.
 
 **Synology and QNAP** use the same `/var/run/docker.sock` path. If the log names gid 0, add `NEXTDASH_RUN_AS_ROOT=1`.
 
@@ -1175,6 +1236,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | **Memory** | What is really in use; the file cache counts as free |
 | **Disks** | Used, free and reserved space on the disks you name |
 | **Containers** | Running and total containers, failing healthchecks and recent restarts; opens the Containers view, and its update figure links to `#docker?filter=updates` |
+| **Container list** | The containers themselves, one row each: one column on a narrow tile, two on a wide one. Its settings choose **running only** or **all**, the order (**problems first**, name, longest or shortest uptime), what stands on the right of a row (uptime, the image tag or nothing) and where a click goes: the container in the Containers view, or its web UI. A problem — unhealthy, stopped, an update — replaces the uptime on its row. |
 
 *What is happening around you?*
 
@@ -1211,7 +1273,7 @@ Widgets are ordered with the categories under **Structure → Categories**, or d
 
 ### 15.4 System widgets and what they need
 
-Processor, Memory, Disks and Containers report on the machine nextDash runs on. The Containers view shares the same connection. Running the binary directly needs no setup. In a container:
+Processor, Memory, Disks, Containers and Container list report on the machine nextDash runs on. The Containers view shares the same connection. Running the binary directly needs no setup. In a container:
 
 **Processor and Memory** usually work as they are — `/proc` is not namespaced. Mount it only to be explicit:
 
@@ -1307,11 +1369,11 @@ A preset fills in a sample address, the useful path, the figures with labels and
 
 ### 16.1 Themes
 
-nextDash ships **121 theme families**, each with a light and a dark half — 242 themes in all. A fresh install starts on **Tarnished Brass**, drawn at depth **Glass** with a **Soft** glow, because that is what the theme was made for.
+nextDash ships **155 theme families**, each with a light and a dark half — 310 themes in all. A fresh install starts on **Tarnished Brass**, drawn at depth **Glass** with a **Soft** glow, because that is what the theme was made for.
 
 **Theme** on the Look tab lists every theme by name. Beside it:
 
-- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. One card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, and a row of **character chips** ([§16.2](#162-character)). *Light* and *Dark* turn every card to that half, so moving through the grid previews light or dark themes only; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. A star keeps up to 24 families under *Favourites*. Moving through the grid previews each theme on the real dashboard, at the surfaces that theme was drawn for; nothing is saved until you pick one, and **Esc** puts back what you had.
+- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. One card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, and a row of **character chips** ([§16.2](#162-character)). *Light* and *Dark* turn every card to that half, so moving through the grid previews light or dark themes only; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 34 newest families wear a **new** badge, and searching `new` finds them. A star keeps up to 24 families under *Favourites*. Moving through the grid previews each theme on the real dashboard, at the surfaces that theme was drawn for; nothing is saved until you pick one, and **Esc** puts back what you had.
 - **Quick mode** — switches between the light and dark half of the family you are on.
 - **Follow system dark mode** — shows the light half by day and the dark half by night, following the operating system, also in a background tab.
 - **Random theme** — **Off**, **On page refresh**, or **On view change** (switching between the dashboard grid, config, the inbox, the Bookmarks view, Containers or pages). Your saved theme stays underneath and comes back when you turn it off. With follow-system on, only halves that match the current mode are picked.
@@ -1543,7 +1605,7 @@ No tabs — one page of panels:
 | Panel | Shows |
 |---|---|
 | **Connection** | The Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable |
-| **View** | Show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000) |
+| **View** | Show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the charts in the side panel |
 | **Updates** | Check for image updates: off, every 6, 12 or 24 hours |
 | **Safety** | Also confirm stop and restart (update and remove always ask first) |
 | **Hidden containers** | Containers kept out of the view, search and the widget count — they keep running |
@@ -1587,18 +1649,21 @@ Keys do not fire while you type in a field, except where a list says so. A legen
 
 **Config → Statistics** counts what you have and what you use. Everything is worked out from the data on your server.
 
-| Tab | Shows |
-|---|---|
-| **Overview** | Headline counts, and **What this says** — the few conclusions worth acting on, each with a button |
-| **Activity** | What you open, over 7, 30 or 90 days or all time: top bookmarks, pages, categories and shortcuts, finders, and how concentrated your opening is |
-| **Content** | How bookmarks spread over pages and categories, opens per bookmark by category, tags, **cleanup candidates** (never opened, opened once, untagged, still on http, without an icon — *Show* opens them in the Bookmarks view), duplicates and shortcut conflicts, and **Beyond bookmarks** (widgets, feeds, sources, trash, backups) |
-| **Inbox** | What is waiting, the oldest unread, and how links get handled over time (lifetime counts in `data/inbox-stats.json`) |
-| **Health** | The healthy share over time, uptime pooled over every monitor (24 h, 7 d, 30 d), certificates close to expiry, and how much of the collection has a local copy |
+Every tab opens with a line on what it is about and a row of **six figures**. Below them the panels stand in two columns, and in one on a narrow window. An **i** beside a panel title explains what it counts.
 
-- **Showing** narrows every figure to one page. The inbox and the health report cannot be narrowed, and say so. The choice is not remembered.
+| Tab | Six figures | Panels |
+|---|---|---|
+| **Overview** | Bookmarks, healthy share, used in the last 30 days, inbox unread, uptime over 30 days, cleanup score | **Needs attention** — only what is above zero, each line with its button: links not answering (the longest-broken named), a certificate close to expiry or expired, unread inbox items older than 30 days, bookmarks never opened or opened once. **Cleanup score** and what lowers it. **Bookmarks last used, 30 days** and **Healthy share**, each with a link to its own tab |
+| **Usage** | Opens all time, used in 30 days, last 48 hours, top 10 share, never opened, opened once | **Bookmarks used over time** (7 days, 30 days, 90 days or 1 year; opens or last used), **When you open bookmarks** (shows from 20 opens), **How concentrated your use is**, **Last opened**, **Times opened**, **Most opened**, **Most used tags**, **Shortcuts**, **Opens by page**, **Finders** |
+| **Collection** | Bookmarks, pages, categories, distinct tags, unique hosts (and how many are self-hosted), without a preview | **Coverage** (with a shortcut, an icon, checking, tags, a note), **Categories: size and use**, **How the collection grew**, **Age of the collection**, **Top domains**, **Tags per bookmark**, **Bookmarks per page**, **Beyond bookmarks** (widgets, feeds switched off, import sources, trash, backups), **Cleanup candidates** (untagged, opened once, without an icon, never opened, still on http — *Show* opens them in the Bookmarks view) |
+| **Inbox** | Inbox items, unread older than 30 days, oldest unread, backlog over 30 days, converted, time to triage | **Inbox flow per day** (7, 30 or 90 days: added, dealt with, the running backlog), **Where everything went**, **How long unread items have waited**, **Inbox by source**, **How complete the items are**. Lifetime counts live in `data/inbox-stats.json` |
+| **Health** | Healthy share, broken, uptime over 30 days, average response, certificates expiring within 30 days, health score | **Status now and over time** (with **Open Health**), **Certificates**, **Issues by type**, **Archive coverage** |
+
+- **Showing** narrows every figure to one page. It appears only when there is more than one page. The inbox and the health report cannot be narrowed, and say so. The choice is not remembered.
 - Tiles show the direction since last week. A tag or a table row leads to the bookmarks behind it.
+- **Stale** follows **count as neglected after** under Config → Bookmarks, the same threshold the Bookmarks view uses.
 - Each tab has a 🔗 to copy a link to it.
-- At the foot: when the figures were worked out, **Refresh**, and **Export as CSV** for every tab. Open Inbox and Health first to include their figures.
+- At the top: when the figures were worked out, **Refresh**, and **Export CSV** for every tab. The export fetches the inbox and health figures itself.
 - A category is counted per page: the same name on two pages is two categories.
 
 ---
