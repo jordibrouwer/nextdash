@@ -1335,14 +1335,6 @@
     "categoryMenuSpread": "Répartir sur plusieurs colonnes",
     "categoryMenuUnspread": "Revenir à une colonne",
     "categorySpreadBadge": "Répartie sur {n} colonnes",
-    "changesTourCardTitle": "nextDash a changé",
-    "changesTourCardTitleNew": "Une minute pour situer les choses",
-    "changesTourCardBody": "Une courte visite de ce qui se trouve ailleurs désormais — environ une minute, et vous pouvez rétablir l’ancienne disposition au passage.",
-    "changesTourCardBodyNew": "Une courte visite de l’en-tête, des boutons et de la config — environ une minute.",
-    "changesTourCardShow": "Montrez-moi",
-    "changesTourCardLater": "Plus tard",
-    "changesTourCardNo": "Non merci",
-    "changesTourCardDismiss": "Fermer",
     "changesTourTitle": "Ce qui a changé",
     "changesTourTitleNew": "Où sont les choses",
     "changesTourProgress": "Étape {n} sur {total}",
@@ -6832,7 +6824,8 @@
     "tourWhereBookmarks": "la prochaine fois que vous ouvrez la vue Favoris",
     "bmTourHint": "Une visite de la vue Favoris",
     "tourContainers": "Conteneurs",
-    "tourWhereContainers": "la prochaine fois que vous ouvrez la vue Conteneurs"
+    "tourWhereContainers": "la prochaine fois que vous ouvrez la vue Conteneurs",
+    "tourWhereNow": "tout de suite"
   },
   "colors": {
     "title": "personnalisation du thème",

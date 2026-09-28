@@ -14953,6 +14953,14 @@ class DashboardConfig {
             this.notify(this.t('config.tourReplayError', 'Could not bring that tour back.'), 'error');
             return;
         }
+        // What has changed belongs to no view and no longer waits in a card
+        // on the dashboard, so there is nowhere for it to turn up later:
+        // it opens here, now.
+        if (tour.id === 'changesTourV1' && window.ChangesTour?.open) {
+            this.render();
+            window.ChangesTour.open();
+            return;
+        }
         this.notify(
             this.t('config.tourReplayDone', 'The {tour} tour will appear {where}.')
                 .replace('{tour}', this.t(tour.labelKey, tour.label))
@@ -18074,7 +18082,7 @@ class DashboardConfig {
      */
     static GUIDED_TOURS = [
         { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed',
-          whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
+          whereKey: 'config.tourWhereNow', where: 'right away' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox',

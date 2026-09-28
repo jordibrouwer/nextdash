@@ -3,13 +3,13 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * The tour of a release that moved things: offered once in the corner, eight
- * steps in a window, and the steps where a default moved carry the choice
- * itself. It shows rather than goes -- no step takes the reader somewhere.
+ * The tour of a release that moved things: eight steps in a window, opened on
+ * request (it no longer offers itself in a card), and the steps where a default
+ * moved carry the choice itself. It shows rather than goes -- no step takes
+ * the reader somewhere.
  */
 
 const TIP_ID = 'changesTourV1';
-const card = (page) => page.locator('.changes-tour-notice-card');
 const tour = (page) => page.locator('.changes-tour');
 /** The step as the reader sees it: in the overlay, and the overlay shown. */
 const shownTour = (page) => page.locator('#app-modal.show .changes-tour');
@@ -23,43 +23,23 @@ async function loadWithTourPending(page) {
     await dismissBlockingOverlays(page);
     await page.evaluate((id) => {
         window.DiscoverabilityState?.forgetTip?.(id, { persist: false });
-        window.localStorage.removeItem('nextdash.changesTour.later');
-        document.querySelectorAll('.quickstart-card:not(.changes-tour-notice-card)').forEach((el) => el.remove());
+        document.querySelectorAll('.quickstart-card').forEach((el) => el.remove());
     }, TIP_ID);
 }
 
-test('the card offers it once, and No thanks answers it for good', async ({ page }) => {
+test('nothing offers it on its own any more', async ({ page }) => {
     await loadWithTourPending(page);
-    expect(await page.evaluate(() => window.ChangesTour.card.shouldShow())).toBe(true);
-
-    await page.evaluate(() => window.ChangesTour.card.render());
-    await expect(card(page)).toBeVisible();
-    // Copy, not locale keys.
-    await expect(card(page)).not.toContainText('dashboard.changesTour');
-
-    await card(page).locator('button[data-changes-tour-action="no"]:not([data-notice-dismiss])').click();
-    await expect(card(page)).toHaveCount(0);
-    expect(await page.evaluate(() => window.ChangesTour.card.shouldShow())).toBe(false);
+    // The corner card that used to invite it is gone: an unseen tour stays
+    // closed, and no card turns up after the delay the card used to wait.
+    await page.waitForTimeout(1500);
+    await expect(page.locator('#app-modal.show .changes-tour')).toHaveCount(0);
+    await expect(page.locator('.changes-tour-notice-card')).toHaveCount(0);
+    expect(await page.evaluate(() => 'card' in window.ChangesTour)).toBe(false);
 });
 
-test('Later keeps the answer open, and asks again tomorrow', async ({ page }) => {
+test('the tour walks its steps, forward and back', async ({ page }) => {
     await loadWithTourPending(page);
-    await page.evaluate(() => window.ChangesTour.card.render());
-    await card(page).locator('[data-changes-tour-action="later"]').click();
-
-    await expect(card(page)).toHaveCount(0);
-    // Not answered: the tip is untouched, only a postponement was written.
-    expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('changesTourV1'))).toBe(false);
-    expect(await page.evaluate(() => window.ChangesTour.card.shouldShow())).toBe(false);
-
-    await page.evaluate(() => window.localStorage.setItem('nextdash.changesTour.later', String(Date.now() - 1000)));
-    expect(await page.evaluate(() => window.ChangesTour.card.shouldShow())).toBe(true);
-});
-
-test('Show me walks the steps, forward and back', async ({ page }) => {
-    await loadWithTourPending(page);
-    await page.evaluate(() => window.ChangesTour.card.render());
-    await card(page).locator('[data-changes-tour-action="show"]').click();
+    await page.evaluate(() => window.ChangesTour.open());
 
     await expect(shownTour(page)).toHaveCount(1);
     await expect(page.locator('.changes-tour-dot')).toHaveCount(8);

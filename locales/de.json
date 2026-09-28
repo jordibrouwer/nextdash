@@ -1335,14 +1335,6 @@
     "categoryMenuSpread": "Über Spalten verteilen",
     "categoryMenuUnspread": "Zurück auf eine Spalte",
     "categorySpreadBadge": "Über {n} Spalten verteilt",
-    "changesTourCardTitle": "nextDash hat sich verändert",
-    "changesTourCardTitleNew": "Eine Minute dazu, wo was steht",
-    "changesTourCardBody": "Eine kurze Führung durch das, was jetzt woanders steht — etwa eine Minute, und Sie können die alte Anordnung unterwegs zurückholen.",
-    "changesTourCardBodyNew": "Eine kurze Führung durch die Kopfzeile, die Schaltflächen und Config — etwa eine Minute.",
-    "changesTourCardShow": "Zeig es mir",
-    "changesTourCardLater": "Später",
-    "changesTourCardNo": "Nein danke",
-    "changesTourCardDismiss": "Schließen",
     "changesTourTitle": "Was sich geändert hat",
     "changesTourTitleNew": "Wo was steht",
     "changesTourProgress": "Schritt {n} von {total}",
@@ -6832,7 +6824,8 @@
     "tourWhereBookmarks": "beim nächsten Öffnen der Lesezeichen-Ansicht",
     "bmTourHint": "Eine Tour durch die Lesezeichen-Ansicht",
     "tourContainers": "Container",
-    "tourWhereContainers": "beim nächsten Öffnen der Container-Ansicht"
+    "tourWhereContainers": "beim nächsten Öffnen der Container-Ansicht",
+    "tourWhereNow": "sofort"
   },
   "colors": {
     "title": "themenanpassung",

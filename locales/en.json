@@ -1376,14 +1376,6 @@
     "categoryMenuSpread": "Spread across columns",
     "categoryMenuUnspread": "Back to one column",
     "categorySpreadBadge": "Spread across {n} columns",
-    "changesTourCardTitle": "nextDash has changed",
-    "changesTourCardTitleNew": "A minute on where things are",
-    "changesTourCardBody": "A short tour of what stands somewhere else now — about a minute, and you can put the old arrangement back as you go.",
-    "changesTourCardBodyNew": "A short tour of the header, the buttons and config — about a minute.",
-    "changesTourCardShow": "Show me",
-    "changesTourCardLater": "Later",
-    "changesTourCardNo": "No thanks",
-    "changesTourCardDismiss": "Dismiss",
     "changesTourTitle": "What has changed",
     "changesTourTitleNew": "Where things are",
     "changesTourProgress": "Step {n} of {total}",
@@ -6832,7 +6824,8 @@
     "tourWhereBookmarks": "the next time you open the Bookmarks view",
     "bmTourHint": "A tour of the Bookmarks view",
     "tourContainers": "Containers",
-    "tourWhereContainers": "the next time you open the Containers view"
+    "tourWhereContainers": "the next time you open the Containers view",
+    "tourWhereNow": "right away"
   },
   "colors": {
     "title": "theme customization",

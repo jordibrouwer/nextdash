@@ -1335,14 +1335,6 @@
     "categoryMenuSpread": "横跨多列",
     "categoryMenuUnspread": "恢复为单列",
     "categorySpreadBadge": "横跨 {n} 列",
-    "changesTourCardTitle": "nextDash 变样了",
-    "changesTourCardTitleNew": "花一分钟看看东西都在哪",
-    "changesTourCardBody": "一段简短的导览，带你看看哪些东西挪了地方——大约一分钟，途中你随时可以把原来的摆法放回去。",
-    "changesTourCardBodyNew": "一段简短的导览，带你看看标题栏、按钮和配置——大约一分钟。",
-    "changesTourCardShow": "带我看看",
-    "changesTourCardLater": "以后再说",
-    "changesTourCardNo": "不用了",
-    "changesTourCardDismiss": "关闭",
     "changesTourTitle": "有哪些变化",
     "changesTourTitleNew": "东西都在哪",
     "changesTourProgress": "第 {n} 步，共 {total} 步",
@@ -6832,7 +6824,8 @@
     "tourWhereBookmarks": "下次打开书签视图时",
     "bmTourHint": "书签视图导览",
     "tourContainers": "容器",
-    "tourWhereContainers": "下次打开容器视图时"
+    "tourWhereContainers": "下次打开容器视图时",
+    "tourWhereNow": "立即"
   },
   "colors": {
     "title": "主题自定义",

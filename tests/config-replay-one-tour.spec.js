@@ -80,4 +80,16 @@ test.describe('a single tour can be replayed', () => {
         await expect(page.locator('[data-replay-tour="inboxTutorialV3"]')).toBeEnabled({ timeout: 10_000 });
         await expect(page.locator('[data-replay-tour="freshTutorialV1"]')).toBeDisabled();
     });
+
+    // What has changed has no view to wait in and no card to offer it any
+    // more, so replaying it opens it on the spot rather than promising a later.
+    test('What has changed opens straight away', async ({ page }) => {
+        await openBehaviorGeneral(page);
+        await page.evaluate(() => window.DiscoverabilityState.markTipSeen('changesTourV1', { persist: false }));
+        await page.evaluate(() => window.dashboardInstance.config.render());
+        const changes = page.locator('[data-replay-tour="changesTourV1"]');
+        await expect(changes).toBeEnabled({ timeout: 10_000 });
+        await changes.click();
+        await expect(page.locator('#app-modal.show .changes-tour')).toBeVisible();
+    });
 });

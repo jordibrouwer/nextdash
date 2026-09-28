@@ -1335,14 +1335,6 @@
     "categoryMenuSpread": "Over kolommen uitspreiden",
     "categoryMenuUnspread": "Terug naar één kolom",
     "categorySpreadBadge": "Over {n} kolommen uitgespreid",
-    "changesTourCardTitle": "nextDash is veranderd",
-    "changesTourCardTitleNew": "Een minuutje over waar wat staat",
-    "changesTourCardBody": "Een korte rondleiding langs wat nu ergens anders staat — ongeveer een minuut, en je kunt de oude indeling onderweg terugzetten.",
-    "changesTourCardBodyNew": "Een korte rondleiding langs de header, de knoppen en config — ongeveer een minuut.",
-    "changesTourCardShow": "Laat zien",
-    "changesTourCardLater": "Later",
-    "changesTourCardNo": "Nee, bedankt",
-    "changesTourCardDismiss": "Sluiten",
     "changesTourTitle": "Wat er is veranderd",
     "changesTourTitleNew": "Waar wat staat",
     "changesTourProgress": "Stap {n} van {total}",
@@ -6832,7 +6824,8 @@
     "tourWhereBookmarks": "de volgende keer dat je de weergave Bladwijzers opent",
     "bmTourHint": "Een rondleiding door de weergave Bladwijzers",
     "tourContainers": "Containers",
-    "tourWhereContainers": "de volgende keer dat je de weergave Containers opent"
+    "tourWhereContainers": "de volgende keer dat je de weergave Containers opent",
+    "tourWhereNow": "meteen"
   },
   "colors": {
     "title": "thema-aanpassing",

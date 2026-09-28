@@ -1335,14 +1335,6 @@
     "categoryMenuSpread": "Repartir entre columnas",
     "categoryMenuUnspread": "Volver a una columna",
     "categorySpreadBadge": "Repartida en {n} columnas",
-    "changesTourCardTitle": "nextDash ha cambiado",
-    "changesTourCardTitleNew": "Un minuto para situarte",
-    "changesTourCardBody": "Un recorrido corto por lo que ahora está en otro sitio: alrededor de un minuto, y puedes devolver la disposición anterior sobre la marcha.",
-    "changesTourCardBodyNew": "Un recorrido corto por el encabezado, los botones y la configuración: alrededor de un minuto.",
-    "changesTourCardShow": "Enséñamelo",
-    "changesTourCardLater": "Más tarde",
-    "changesTourCardNo": "No, gracias",
-    "changesTourCardDismiss": "Descartar",
     "changesTourTitle": "Qué ha cambiado",
     "changesTourTitleNew": "Dónde está cada cosa",
     "changesTourProgress": "Paso {n} de {total}",
@@ -6832,7 +6824,8 @@
     "tourWhereBookmarks": "la próxima vez que abras la vista Marcadores",
     "bmTourHint": "Un recorrido por la vista Marcadores",
     "tourContainers": "Contenedores",
-    "tourWhereContainers": "la próxima vez que abras la vista Contenedores"
+    "tourWhereContainers": "la próxima vez que abras la vista Contenedores",
+    "tourWhereNow": "ahora mismo"
   },
   "colors": {
     "title": "personalización del tema",
