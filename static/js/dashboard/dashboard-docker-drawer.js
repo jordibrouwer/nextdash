@@ -437,7 +437,7 @@ class DockerDrawer {
             const reveal = document.createElement('button');
             reveal.type = 'button';
             reveal.setAttribute('data-docker-env-reveal', name);
-            reveal.className = 'docker-env-reveal';
+            reveal.className = 'config-btn config-btn--small docker-env-reveal';
             reveal.textContent = this.t('dockerEnvReveal', 'Show value');
             reveal.addEventListener('click', () => this._revealEnv(name, row, reveal));
             row.appendChild(reveal);
@@ -522,7 +522,7 @@ class DockerDrawer {
         const refresh = document.createElement('button');
         refresh.type = 'button';
         refresh.setAttribute('data-docker-logs-refresh', '');
-        refresh.className = 'docker-logs-refresh';
+        refresh.className = 'config-btn config-btn--small docker-logs-refresh';
         refresh.textContent = this.t('dockerLogsRefresh', 'Refresh');
         refresh.addEventListener('click', () => void this._loadLogs());
         body.appendChild(refresh);

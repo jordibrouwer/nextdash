@@ -334,6 +334,16 @@
     color: var(--accent-error);
 }
 
+/* Above the log, at its right: a control, not the log's first line. */
+.docker-logs-refresh {
+    display: block;
+    margin: 0 0 var(--space-2, 0.5rem) auto;
+}
+
+.docker-env-reveal {
+    flex: none;
+}
+
 .docker-action-btn:disabled {
     opacity: 0.45;
     cursor: default;
