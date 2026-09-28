@@ -141,5 +141,47 @@
         if (overlay) overlay.hidden = true;
     }
 
-    window.ProgressOverlay = { show, update, finish, hide };
+    /*
+     * Show it for as long as `work` takes, and only if that is noticeable.
+     *
+     * Most waits in the app are a single request that is sometimes instant
+     * and sometimes ten seconds -- a backup, a restore, a page asked for its
+     * title. An overlay that flashes for a quick one reads as a glitch, and
+     * none at all for a slow one reads as a dead button. So it appears after
+     * `delay` milliseconds and goes when the work settles, whichever way.
+     * Returns what `work` returns, and rethrows what it throws.
+     */
+    async function run(title, status, work, options = {}) {
+        const end = begin(title, status, options);
+        try {
+            return await work();
+        } finally {
+            end();
+        }
+    }
+
+    /*
+     * The same, for work that is not one function: call it where the wait
+     * starts and call what it returns where the wait ends (in a finally).
+     * Ending twice is harmless, and ending before the delay means it never
+     * showed.
+     */
+    function begin(title, status, options = {}) {
+        const delay = Number.isFinite(options.delay) ? options.delay : 300;
+        let shown = false;
+        let ended = false;
+        const timer = setTimeout(() => {
+            if (ended) return;
+            shown = true;
+            show(title, status, options);
+        }, delay);
+        return () => {
+            if (ended) return;
+            ended = true;
+            clearTimeout(timer);
+            if (shown) hide();
+        };
+    }
+
+    window.ProgressOverlay = { show, update, finish, hide, run, begin };
 })();

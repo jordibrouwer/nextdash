@@ -206,8 +206,14 @@
             if (health && issue) {
                 await health.captureLocalCopy(issue);
             } else {
+                // The same wait Health's own capture shows: the page is fetched
+                // whole, images and all, which can take half a minute.
                 const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-                const res = await fetcher(`/api/archives/capture?url=${encodeURIComponent(b.url)}`, { method: 'POST' });
+                const res = await global.ProgressOverlay?.run
+                    ? global.ProgressOverlay.run(
+                        this.t('config.localArchiveCapturingTitle', 'Saving a copy…'), b.url,
+                        () => fetcher(`/api/archives/capture?url=${encodeURIComponent(b.url)}`, { method: 'POST' }))
+                    : fetcher(`/api/archives/capture?url=${encodeURIComponent(b.url)}`, { method: 'POST' });
                 this.notify(res.ok
                     ? this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.')
                     : this.t('dashboard.healthLocalCopyError', 'Could not save a copy of that page.'), res.ok ? 'success' : 'error');
@@ -219,6 +225,8 @@
         /** Ask the page for its preview again, even when it has one, and keep the answer. */
         async rebuildBmPreview(b) {
             const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            // The site is asked again and can be slow to answer.
+            const endWait = this.beginWait(this.t('config.waitPreviewTitle', 'Fetching the preview…'), b.url);
             try {
                 const res = await fetcher(`/api/bookmark-preview?refresh=1&url=${encodeURIComponent(b.url)}`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -234,6 +242,8 @@
                 this.notify(this.t('config.bmDetailsPreviewRebuilt', 'Preview fetched again.'), 'success');
             } catch {
                 this.notify(this.t('config.bmDetailsPreviewFailed', 'Could not fetch the preview.'), 'error');
+            } finally {
+                endWait();
             }
         },
     });

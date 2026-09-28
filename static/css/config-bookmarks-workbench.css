@@ -3218,3 +3218,36 @@ body[data-density-mode="dense"] .config-bm-workbench {
 .bm-health-large-log-dot[data-tone="bad"] { background: var(--accent-error); }
 
 .bm-health-large-log-note { margin: var(--space-1, 0.25rem) 0 0; }
+
+/*
+ * A bookmark being checked, looked up or recovered: a sweeping strip along the
+ * top of its row and of its panel, the same sweep the progress overlay uses.
+ * Drawn as a background layer rather than a pseudo-element, so neither the
+ * sticky panel nor the row's menus need a position or an overflow changed.
+ */
+.config-bm-panel.is-health-busy,
+.config-bm-row.is-health-busy {
+    background-image: linear-gradient(var(--accent-primary, #4a90d9), var(--accent-primary, #4a90d9));
+    background-repeat: no-repeat;
+    background-size: 40% 2px;
+    background-position: -40% 0;
+    animation: config-bm-busy-sweep 1.1s ease-in-out infinite;
+}
+
+@keyframes config-bm-busy-sweep {
+    from { background-position: -40% 0; }
+    to { background-position: 140% 0; }
+}
+
+.config-bm-panel.is-health-busy [data-bm-health-action]:disabled {
+    cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-bm-panel.is-health-busy,
+    .config-bm-row.is-health-busy {
+        animation: none;
+        background-size: 100% 2px;
+        background-position: 0 0;
+    }
+}

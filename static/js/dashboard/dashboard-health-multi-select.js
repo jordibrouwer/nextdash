@@ -299,6 +299,7 @@ class DashboardHealthMultiSelect {
         if (!targets.length) return;
 
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const endWait = this.health.beginWait(this.t('dashboard.waitBulkUpdateTitle', 'Updating the selection…'), this.t('dashboard.waitBulkUpdateStatus', 'Saving each bookmark'));
         try {
             const res = await fetcher('/api/health/expectations-bulk', {
                 method: 'POST',
@@ -335,6 +336,8 @@ class DashboardHealthMultiSelect {
             this.dash.showErrorNotification(
                 this.t('dashboard.healthBulkMuteFailed', 'Could not change alert muting')
             );
+        } finally {
+            endWait();
         }
     }
 
@@ -368,6 +371,7 @@ class DashboardHealthMultiSelect {
 
         window.nextdashTrack?.('health:bulk-accept-drift', { count });
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const endWait = this.health.beginWait(this.t('dashboard.waitBulkUpdateTitle', 'Updating the selection…'), this.t('dashboard.waitBulkUpdateStatus', 'Saving each bookmark'));
         try {
             const res = await fetcher('/api/health/accept-drift', {
                 method: 'POST',
@@ -410,6 +414,8 @@ class DashboardHealthMultiSelect {
                 this.t('dashboard.healthBulkAcceptDriftFailed', 'Could not accept the drift findings'),
                 'error'
             );
+        } finally {
+            endWait();
         }
     }
 

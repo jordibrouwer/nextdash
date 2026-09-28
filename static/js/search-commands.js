@@ -557,6 +557,7 @@ class SearchCommandsComponent {
 
     async _downloadBackup() {
         const dashboard = window.dashboardInstance;
+        const endWait = (window.ProgressOverlay?.begin || (() => () => {}))(this._t('config.waitBackupDownloadTitle', 'Making a backup…'), this._t('config.waitBackupDownloadStatus', 'Packing up your data for download'));
         try {
             const response = await fetch('/api/backup', {
                 method: 'GET',
@@ -593,6 +594,8 @@ class SearchCommandsComponent {
                 'error'
             );
             return false;
+        } finally {
+            endWait();
         }
     }
 

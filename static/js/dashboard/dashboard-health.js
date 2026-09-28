@@ -101,6 +101,11 @@ class DashboardHealth {
      * adds the 'dashboard.' prefix itself, so it gets the bare tail — passing the
      * full key there yields 'dashboard.dashboard.…' and renders the raw key.
      */
+    /** Show a wait once it is noticeable; returns what ends it (call in a finally). */
+    beginWait(title, status) {
+        return window.ProgressOverlay?.begin?.(title, status) || (() => {});
+    }
+
     t(key, fallback, params) {
         const d = this.dash;
         if (params && typeof d.formatDashboardLabel === 'function') {
@@ -1092,11 +1097,43 @@ class DashboardHealth {
         }
     }
 
+    /**
+     * Say, where the reader is looking, that a bookmark is being worked on.
+     *
+     * This used to find the row in Health's own list, which went when Health
+     * moved into the Bookmarks view -- so a re-check, a redirect lookup or an
+     * archive search ran with nothing on screen saying so, and the button
+     * could be pressed again. Now it marks the Bookmarks view's own row and,
+     * when that bookmark is the one open, its panel: a sweeping bar and the
+     * panel's health buttons held until the work is done.
+     */
     syncRowBusy(key, busy) {
-        const row = document.querySelector(`.health-view-item[data-health-key="${CSS.escape(key)}"]`);
-        row?.querySelectorAll('.health-view-action-btn, .health-view-menu-item').forEach((btn) => {
-            btn.disabled = busy;
-        });
+        const cfg = this.dash?.config;
+        const issue = (this.report?.issues || []).find((i) => this.issueKey(i) === key);
+        if (!cfg || !issue) return;
+        const urlKey = window.HealthFacts?.keyFor?.(issue.url);
+
+        const panel = document.getElementById('config-bm-panel');
+        const open = panel && cfg.findBookmarkByKey?.(panel.dataset.bmPanelKey || '');
+        const openIssue = open && cfg.bmHealthIssue?.(open);
+        if (panel && openIssue && this.issueKey(openIssue) === key) {
+            panel.classList.toggle('is-health-busy', busy);
+            if (busy) panel.setAttribute('aria-busy', 'true');
+            else panel.removeAttribute('aria-busy');
+            panel.querySelectorAll('[data-bm-health-action], [data-check-mode], [data-check-interval]')
+                .forEach((btn) => { btn.disabled = busy; });
+        }
+
+        const bookmark = (this.dash.allBookmarks || []).find((b) => Number(b.pageId) === Number(issue.pageId)
+            && window.HealthFacts?.keyFor?.(b.url) === urlKey);
+        if (bookmark && typeof cfg.bookmarkKey === 'function') {
+            const row = document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(cfg.bookmarkKey(bookmark))}"]`);
+            if (row) {
+                row.classList.toggle('is-health-busy', busy);
+                if (busy) row.setAttribute('aria-busy', 'true');
+                else row.removeAttribute('aria-busy');
+            }
+        }
     }
 
     /* ── More actions ──────────────────────────────────────────────────── */
@@ -2318,6 +2355,7 @@ class DashboardHealth {
         }
         const d = this.dash;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const endWait = this.beginWait(this.t('dashboard.waitOpenBrokenTitle', 'Finding broken links…'), this.t('dashboard.waitOpenBrokenStatus', 'Asking the report which ones fail'));
         try {
             const res = await fetcher('/api/health/open-broken', {
                 method: 'POST',
@@ -2347,6 +2385,7 @@ class DashboardHealth {
         } catch {
             d.showNotification(this.t('dashboard.openBrokenFailed', 'Failed to open broken links'), 'error');
         } finally {
+            endWait();
             this._openBrokenRunning = false;
             const live = document.querySelector('.health-view-open-broken-btn');
             if (live) {
@@ -2393,6 +2432,7 @@ class DashboardHealth {
         window.nextdashTrack?.('health:merge-duplicates');
         const d = this.dash;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const endWait = this.beginWait(this.t('dashboard.waitMergeTitle', 'Merging duplicates…'), this.t('dashboard.waitMergeStatus', 'Keeping the best one of each'));
         try {
             const sourcePageIds = [];
             const sourceIndices = [];
@@ -2432,6 +2472,7 @@ class DashboardHealth {
         } catch {
             d.showNotification(this.t('dashboard.mergeFailed', 'Failed to merge duplicates'), 'error');
         } finally {
+            endWait();
             this._mergeRunning = false;
         }
     }
@@ -2461,6 +2502,7 @@ class DashboardHealth {
         }
         const d = this.dash;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const endWait = this.beginWait(this.t('dashboard.waitCheckOffTitle', 'Turning off checking…'), this.t('dashboard.waitCheckOffStatus', 'Updating every bookmark'));
         try {
             const res = await fetcher('/api/health/check-mode-all', {
                 method: 'POST',
@@ -2489,6 +2531,7 @@ class DashboardHealth {
                 'error'
             );
         } finally {
+            endWait();
             this._checkOffRunning = false;
             // The button belongs to the pre-refresh DOM; re-query rather than
             // touching the detached node.
@@ -2512,6 +2555,7 @@ class DashboardHealth {
         }
         const d = this.dash;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const endWait = this.beginWait(this.t('dashboard.waitRetestTitle', 'Retesting every link…'), this.t('dashboard.waitRetestStatus', 'Each site is asked again'));
         try {
             const res = await fetcher('/api/health/retest-all?scope=all', { method: 'POST' });
             if (!res.ok) {
@@ -2534,6 +2578,7 @@ class DashboardHealth {
                 'error'
             );
         } finally {
+            endWait();
             this._retestRunning = false;
             // The button belongs to the pre-refresh DOM; re-query rather than
             // touching the detached node.

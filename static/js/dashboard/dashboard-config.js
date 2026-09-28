@@ -7295,13 +7295,22 @@ class DashboardConfig {
         const backups = Array.isArray(this._backupData?.backups) ? this._backupData.backups : [];
         if (!backups.length) return;
         let saved = 0;
-        for (const backup of backups) {
-            try {
-                await this.downloadStoredBackup(backup.name);
-                saved += 1;
-            } catch {
-                // Reported in the total below rather than one toast per file.
+        // One file after another, so the count is the honest progress.
+        const counted = (n) => this.t('config.bulkSweepProgress', '{done} of {total}')
+            .replace('{done}', String(n)).replace('{total}', String(backups.length));
+        this.showProgressOverlay(this.t('config.waitBackupsAllTitle', 'Downloading backups…'), counted(0));
+        try {
+            for (const [i, backup] of backups.entries()) {
+                try {
+                    await this.downloadStoredBackup(backup.name, { quiet: true });
+                    saved += 1;
+                } catch {
+                    // Reported in the total below rather than one toast per file.
+                }
+                window.ProgressOverlay?.update(i + 1, backups.length, counted(i + 1));
             }
+        } finally {
+            this.hideProgressOverlay();
         }
         this.notify(saved === backups.length
             ? this.t('config.backupDownloadAllDone', 'Saved {n} backups.').replace('{n}', String(saved))
@@ -7529,6 +7538,7 @@ class DashboardConfig {
         if (!await this.confirmAction(
             this.t('config.clearPreviewImagesConfirm', 'Remove every cached preview image? They are fetched again when next needed.'),
             { confirmLabel: this.t('config.confirmClear', 'Clear') })) return;
+        const endWait = this.beginWait(this.t('config.waitClearImagesTitle', 'Removing cached images…'), this.t('config.waitClearImagesStatus', 'Deleting the files from disk'));
         try {
             const res = await this.writeFetch('/api/previews/images/clear', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7536,6 +7546,8 @@ class DashboardConfig {
             await this.refreshPreviewImageStats();
         } catch {
             this.notify(this.t('config.clearPreviewImagesError', 'Could not remove the cached images.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
@@ -7577,6 +7589,7 @@ class DashboardConfig {
                 'Forget the keywords read from your pages? Tag suggestions from your own tags, your rules and the catalogue are unaffected.'),
             { confirmLabel: this.t('config.confirmClear', 'Clear') },
         )) return;
+        const endWait = this.beginWait(this.t('config.waitClearKeywordsTitle', 'Forgetting keywords…'), this.t('config.waitClearKeywordsStatus', 'Clearing what the scan read'));
         try {
             const res = await this.writeFetch('/api/tags/keywords/clear', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7590,11 +7603,14 @@ class DashboardConfig {
                 .replace('{n}', String(Number(body.cleared) || 0)), 'success');
         } catch {
             this.notify(this.t('config.clearTagKeywordsError', 'Could not forget the keywords.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
     async clearAllPreviews() {
         if (!await this.confirmAction(this.t('config.clearAllPreviewsConfirm', 'Remove every cached preview card? They are fetched again when next needed.'), { confirmLabel: this.t('config.confirmClear', 'Clear') })) return;
+        const endWait = this.beginWait(this.t('config.waitClearPreviewsTitle', 'Clearing link previews…'), this.t('config.waitClearPreviewsStatus', 'Removing every cached card'));
         try {
             const res = await this.writeFetch('/api/previews/clear', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7602,12 +7618,15 @@ class DashboardConfig {
             this.dash.renderDashboard?.({ animate: false });
         } catch {
             this.notify(this.t('config.clearAllPreviewsError', 'Could not clear the link previews.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
     /** Remove every bookmark but keep pages, categories and settings. */
     async deleteAllBookmarks() {
         if (!await this.confirmAction(this.t('config.deleteAllBookmarksConfirm', 'Delete every bookmark? Your pages, categories and settings are kept. This cannot be undone.'))) return;
+        const endWait = this.beginWait(this.t('config.waitDeleteBookmarksTitle', 'Deleting bookmarks…'), this.t('config.waitDeleteBookmarksStatus', 'Removing them from every page'));
         try {
             // Same explicit confirmation flag the reset endpoint requires.
             const res = await this.writeFetch('/api/bookmarks/delete-all', {
@@ -7622,6 +7641,8 @@ class DashboardConfig {
             this.dash.renderDashboard?.({ animate: false });
         } catch {
             this.notify(this.t('config.deleteAllBookmarksError', 'Could not delete the bookmarks.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
@@ -7669,17 +7690,32 @@ class DashboardConfig {
 
     async downloadFullBackup() {
         const stamp = new Date().toISOString().replace('T', '_').replace(/\..+/, '').replace(/:/g, '-');
-        const ok = await this.downloadViaBlob('/api/backup', `nextDash-backup-${stamp}.zip`,
-            'config.backupError', 'Could not create the backup.');
+        // The server zips everything first, local copies included -- tens of
+        // megabytes before the first byte arrives.
+        const endWait = this.beginWait(this.t('config.waitBackupDownloadTitle', 'Making a backup…'),
+            this.t('config.waitBackupDownloadStatus', 'Packing up your data for download'));
+        let ok;
+        try {
+            ok = await this.downloadViaBlob('/api/backup', `nextDash-backup-${stamp}.zip`,
+                'config.backupError', 'Could not create the backup.');
+        } finally {
+            endWait();
+        }
         if (ok) this.notify(this.t('config.backupCreated', 'Backup downloaded.'), 'success');
     }
 
-    downloadStoredBackup(name) {
+    async downloadStoredBackup(name, { quiet = false } = {}) {
         // This endpoint needs no write token, but routing it through the same
         // helper means one download path to keep working rather than two.
-        return this.downloadViaBlob(
-            `/api/auto-backups/download?name=${encodeURIComponent(name)}`, name,
-            'config.autoBackupDownloadError', 'Could not download the backup.');
+        const endWait = quiet ? () => {} : this.beginWait(
+            this.t('config.waitBackupFetchTitle', 'Downloading the backup…'), name);
+        try {
+            return await this.downloadViaBlob(
+                `/api/auto-backups/download?name=${encodeURIComponent(name)}`, name,
+                'config.autoBackupDownloadError', 'Could not download the backup.');
+        } finally {
+            endWait();
+        }
     }
 
     async runBackupNow() {
@@ -7707,6 +7743,7 @@ class DashboardConfig {
     async restoreBackup(name) {
         const ok = await this.confirmAction(this.t('config.backupRestoreConfirm', 'Restore this backup? Current data will be replaced.'), { confirmLabel: this.t('config.autoBackupRestore', 'Restore') });
         if (!ok) return;
+        const endWait = this.beginWait(this.t('config.waitRestoreTitle', 'Restoring the backup…'), this.t('config.waitRestoreStatus', 'Replacing your data with the backup'));
         try {
             const res = await this.writeFetch(`/api/auto-backups/restore?name=${encodeURIComponent(name)}`, { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7714,6 +7751,8 @@ class DashboardConfig {
             setTimeout(() => window.location.reload(), 800);
         } catch {
             this.notify(this.t('config.autoBackupRestoreError', 'Failed to restore backup.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
@@ -7800,6 +7839,7 @@ class DashboardConfig {
      * one set, a link would download a 401 page named like a bookmark file.
      */
     async exportBookmarksHTML() {
+        const endWait = this.beginWait(this.t('config.waitExportTitle', 'Preparing the export…'), this.t('config.waitExportStatus', 'Collecting your bookmarks'));
         try {
             const res = await this.writeFetch('/api/bookmarks/export-html');
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7808,10 +7848,13 @@ class DashboardConfig {
             this.notify(this.t('config.htmlExportSuccess', 'Bookmarks exported.'), 'success');
         } catch {
             this.notify(this.t('config.htmlExportError', 'Could not export the bookmarks.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
     async exportBookmarksCSV() {
+        const endWait = this.beginWait(this.t('config.waitExportTitle', 'Preparing the export…'), this.t('config.waitExportStatus', 'Collecting your bookmarks'));
         try {
             const [bookmarksRes, pagesRes] = await Promise.all([
                 fetch('/api/bookmarks?all=true'),
@@ -7839,6 +7882,8 @@ class DashboardConfig {
             this.notify(this.t('config.csvExportSuccess', 'Bookmarks exported.'), 'success');
         } catch {
             this.notify(this.t('config.csvExportError', 'Could not export bookmarks.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
@@ -8463,6 +8508,18 @@ class DashboardConfig {
      * are almost the same is how two surfaces drift apart. These three stay as
      * the names the rest of this file already calls.
      */
+    /**
+     * Start showing that something is being waited on; returns what ends it.
+     *
+     * For the actions that are one request of unknown length -- a backup, a
+     * restore, a page asked for its preview. The overlay only appears once the
+     * wait is noticeable (see ProgressOverlay.begin), so a quick answer does
+     * not flash it. Call the returned function in a finally.
+     */
+    beginWait(title, status) {
+        return window.ProgressOverlay?.begin?.(title, status) || (() => {});
+    }
+
     showProgressOverlay(title, status, options) {
         return window.ProgressOverlay?.show(title, status, options);
     }
@@ -8607,6 +8664,10 @@ class DashboardConfig {
         const url = `/api/bookmarks/import-html?page=${encodeURIComponent(pageId)}`;
 
         let preview;
+        // A browser export can hold thousands of links; reading it through
+        // takes a moment before there is anything to confirm.
+        const endRead = this.beginWait(this.t('config.waitImportReadTitle', 'Reading the bookmarks file…'),
+            this.t('config.waitImportReadStatus', 'Counting what is new'));
         try {
             const res = await this.writeFetch(`${url}&dryRun=1`, { method: 'POST', body: file });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -8614,6 +8675,8 @@ class DashboardConfig {
         } catch {
             this.notify(this.t('config.browserImportError', 'Could not read that bookmarks file.'), 'error');
             return;
+        } finally {
+            endRead();
         }
         if (!Number(preview.total)) {
             this.notify(this.t('config.browserImportEmpty', 'No bookmarks found in that file.'), 'error');
@@ -8630,12 +8693,16 @@ class DashboardConfig {
             { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false });
         if (!ok) return;
 
+        // Shown for as long as the import runs and the page reloads after it.
+        this.showProgressOverlay(this.t('config.csvImportTitle', 'Importing bookmarks…'),
+            this.t('config.waitImportStatus', '{n} bookmarks').replace('{n}', String(preview.new)));
         try {
             const res = await this.writeFetch(url, { method: 'POST', body: file });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json().catch(() => ({}));
             const imported = Number(result.imported) || 0;
             const skipped = Number(result.skipped) || 0;
+            this.finishProgressOverlay(this.t('config.sourceImported', 'Imported {n} bookmarks.').replace('{n}', String(imported)));
             this.notify(
                 this.t('config.browserImportDone', 'Imported {i}, skipped {s} duplicates. Reloading…')
                     .replace('{i}', String(imported)).replace('{s}', String(skipped)),
@@ -8643,6 +8710,7 @@ class DashboardConfig {
             );
             setTimeout(() => window.location.reload(), 1000);
         } catch {
+            this.hideProgressOverlay();
             this.notify(this.t('config.browserImportError', 'Could not import the bookmarks.'), 'error');
         }
     }
@@ -8771,6 +8839,7 @@ class DashboardConfig {
     }
 
     async exportSettings() {
+        const endWait = this.beginWait(this.t('config.waitExportSettingsTitle', 'Preparing the export…'), this.t('config.waitExportSettingsStatus', 'Collecting your settings'));
         try {
             const res = await fetch('/api/settings');
             if (!res.ok) throw new Error(res.statusText);
@@ -8783,6 +8852,8 @@ class DashboardConfig {
             this.notify(this.t('config.settingsExportSuccess', 'Settings exported.'), 'success');
         } catch {
             this.notify(this.t('config.settingsExportError', 'Could not export settings.'), 'error');
+        } finally {
+            endWait();
         }
     }
 
@@ -14575,7 +14646,11 @@ class DashboardConfig {
         });
 
         test?.addEventListener('click', async () => {
+            // Said on the button, like the monitor test beside it: the push
+            // service can take a few seconds to take the message.
+            const label = test.textContent;
             test.disabled = true;
+            test.textContent = this.t('config.monitorNotifyTestSending', 'Sending…');
             try {
                 await push.sendTest();
                 notify(this.t('config.pushNotifyTestSent', 'Test notification sent.'));
@@ -15137,6 +15212,10 @@ class DashboardConfig {
                 // wake — turning a feature on and seeing nothing happen reads
                 // as broken. Off just drops what is painted.
                 if (value) {
+                    // The same line "Find feeds now" writes while it looks, so
+                    // switching on does not sit silent for the length of a round.
+                    const feedStatus = document.querySelector('[data-config-action-status="findFeeds"]');
+                    if (feedStatus) feedStatus.textContent = this.t('config.feedsFindingNow', 'Looking…');
                     void d.feeds?.pollNow().then((round) => {
                         this.paintFeedCoverage(round);
                         d.renderDashboard?.({ animate: false });
