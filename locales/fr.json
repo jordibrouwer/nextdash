@@ -2734,7 +2734,9 @@
     "healthMenuRedirect": "Détecter la redirection",
     "waitBulkUpdateTitle": "Mise à jour de la sélection…",
     "waitBulkUpdateStatus": "Enregistrement de chaque signet",
-    "widgetType.containers": "Liste des conteneurs"
+    "widgetType.containers": "Liste des conteneurs",
+    "widgetActionOpenWebUI": "Ouvrir l’interface web",
+    "widgetActionOpenContainer": "Ouvrir dans Conteneurs"
   },
   "health": {
     "reloadPage": "Recharger la page",

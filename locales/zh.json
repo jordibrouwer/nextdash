@@ -2734,7 +2734,9 @@
     "healthMenuRedirect": "检测重定向",
     "waitBulkUpdateTitle": "正在更新所选项…",
     "waitBulkUpdateStatus": "正在保存每个书签",
-    "widgetType.containers": "容器列表"
+    "widgetType.containers": "容器列表",
+    "widgetActionOpenWebUI": "打开 Web UI",
+    "widgetActionOpenContainer": "在容器中打开"
   },
   "health": {
     "reloadPage": "重新加载页面",

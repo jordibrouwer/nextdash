@@ -2734,7 +2734,9 @@
     "healthMenuRedirect": "Detectar redirección",
     "waitBulkUpdateTitle": "Actualizando la selección…",
     "waitBulkUpdateStatus": "Guardando cada marcador",
-    "widgetType.containers": "Lista de contenedores"
+    "widgetType.containers": "Lista de contenedores",
+    "widgetActionOpenWebUI": "Abrir la interfaz web",
+    "widgetActionOpenContainer": "Abrir en Contenedores"
   },
   "health": {
     "reloadPage": "Recargar la página",

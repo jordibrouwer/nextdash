@@ -2734,7 +2734,9 @@
     "healthMenuRedirect": "Weiterleitung erkennen",
     "waitBulkUpdateTitle": "Auswahl wird aktualisiert…",
     "waitBulkUpdateStatus": "Jedes Lesezeichen wird gespeichert",
-    "widgetType.containers": "Containerliste"
+    "widgetType.containers": "Containerliste",
+    "widgetActionOpenWebUI": "Web-UI öffnen",
+    "widgetActionOpenContainer": "In Container öffnen"
   },
   "health": {
     "reloadPage": "Seite neu laden",

@@ -2734,7 +2734,9 @@
     "healthMenuRedirect": "Doorverwijzing detecteren",
     "waitBulkUpdateTitle": "Selectie bijwerken…",
     "waitBulkUpdateStatus": "Elke bladwijzer opslaan",
-    "widgetType.containers": "Containerlijst"
+    "widgetType.containers": "Containerlijst",
+    "widgetActionOpenWebUI": "Web-UI openen",
+    "widgetActionOpenContainer": "Openen in Containers"
   },
   "health": {
     "reloadPage": "Pagina herladen",

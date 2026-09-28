@@ -2734,7 +2734,9 @@
     "healthMenuRedirect": "Detect redirect",
     "waitBulkUpdateTitle": "Updating the selection…",
     "waitBulkUpdateStatus": "Saving each bookmark",
-    "widgetType.containers": "Container list"
+    "widgetType.containers": "Container list",
+    "widgetActionOpenWebUI": "Open WebUI",
+    "widgetActionOpenContainer": "Open in Containers"
   },
   "health": {
     "reloadPage": "Reload page",
