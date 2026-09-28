@@ -34,51 +34,96 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard.jpg" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> — Categories in columns with a live response time on every monitored link, and widgets for health and uptime between them. The header is one row — clock and weather, page tabs, destinations — and the action buttons stand in a column on the right edge.</sub>
+      <sub><b>Dashboard</b> <i>(Gloss Chrome)</i> — Categories in columns with a live response time on every monitored link, and widgets between them: health, uptime with a heartbeat per site and the weather across two columns, the inbox and an RSS feed. The header is one row — clock and weather, page tabs, destinations with their badges.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-search.jpg" alt="Search" width="100%" />
+      <img src="screenshots/nextdash-bookmarks-view.jpg" alt="Bookmarks view" width="100%" />
       <br />
-      <sub><b>Search</b> — One panel for bookmarks, commands and finders. Type a letter and it answers from all three at once; the modes on the left narrow it down, and <kbd>Tab</kbd> switches between them.</sub>
+      <sub><b>Bookmarks view</b> <i>(Cosmic Editor)</i> — The whole collection in one place: a rail of views, health filters, pages, categories and tags; one-line rows with tags, shortcut, opens and when each was last used; a side panel with Details, Health and Usage that saves as you type.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-bookmarks-view.jpg" alt="Bookmarks view" width="100%" />
+      <img src="screenshots/nextdash-search.jpg" alt="Search" width="100%" />
       <br />
-      <sub><b>Bookmarks view</b> — Every bookmark in one place: a rail of pages, categories and health filters on the left, one-line rows in the middle, and a side panel on the right with Details, Health and Usage. Tick a run of rows and edit them together.</sub>
+      <sub><b>Search</b> <i>(Frosted Juniper, light)</i> — One panel for bookmarks, commands and finders. Type a word and <kbd>/</kbd> turns it into a name search: best matches first, a tag to filter on, and the commands that fit. <kbd>Tab</kbd> switches between the modes on the left.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-inbox.jpg" alt="Inbox view" width="100%" />
+      <br />
+      <sub><b>Inbox</b> <i>(Desert Sand, light)</i> — Links saved before you knew where they belong, grouped by when they arrived. The side panel holds the note and tags; open, promote or keep a link without leaving the list.</sub>
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary><b>More screenshots</b> — ten more views, in other themes</summary>
+<br />
+
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-dashboard-homelab.jpg" alt="Homelab dashboard" width="100%" />
+      <br />
+      <sub><b>A second page</b> <i>(Matrix Rain)</i> — A homelab page: the container count and the Container list widget two columns wide, uptime for this page, certificates close to expiry and the health trend over 30 days, beside self-hosted services with their own icons.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-triage.jpg" alt="Inbox triage" width="100%" />
+      <br />
+      <sub><b>Triage</b> <i>(Matrix Rain)</i> — <kbd>t</kbd> in the inbox takes the links pile by pile — waiting longest, new this week, with a note — one at a time, each saying where it came from, with Promote as the one clear next step.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-bookmarks-health.jpg" alt="Broken bookmarks" width="100%" />
+      <br />
+      <sub><b>Broken links</b> <i>(Gloss Amber)</i> — The Bookmarks view on its Broken filter: what does not answer and why, a score per bookmark, and Work through to clear them one at a time.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-collection-health.jpg" alt="Collection health" width="100%" />
       <br />
-      <sub><b>Collection health</b> — Score over time, what is wrong and by what kind, checking coverage and certificates on one tab; a 90-day trend with monitor uptime and outages on the other. Fits one screen.</sub>
+      <sub><b>Collection health</b> <i>(Desert Sand, light)</i> — Score over time, what is wrong and by what kind, health per page, checking coverage, monitor uptime and certificates on one screen; every number opens its filter.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-inbox.jpg" alt="Inbox view" width="100%" />
+      <img src="screenshots/nextdash-search-tags.jpg" alt="Tag search" width="100%" />
       <br />
-      <sub><b>Inbox</b> — Links you saved before you knew where they belong, one-line rows with a side panel: open, promote, keep, note or tag them without leaving the list.</sub>
+      <sub><b>Search by tag</b> <i>(ThinkDashboard)</i> — <code>tag:self-hosted</code> narrows search to one tag across every page, each result with its shortcut.</sub>
     </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-commands.jpg" alt="Command palette" width="100%" />
+      <br />
+      <sub><b>Command palette</b> <i>(Gloss Chrome)</i> — <code>:docker jellyfin</code> offers what can be done to that container — stop, restart, pause, update, open its web UI or read its logs.</sub>
+    </td>
+  </tr>
+  <tr>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-containers.jpg" alt="Containers view" width="100%" />
       <br />
-      <sub><b>Containers</b> — Every container on the host, grouped by status, with a side panel for logs, stats and environment. Start, stop and update are one click away when you turn control on.</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-config.jpg" alt="Config hub" width="100%" />
-      <br />
-      <sub><b>Config</b> — Appearance and Behavior open on tiles, one subject each, and every tile shows what it is set to before you open it. A tile opens its group; <kbd>Esc</kbd> goes back.</sub>
+      <sub><b>Containers</b> <i>(ThinkDashboard)</i> — Every container on the host with a status glow, its ports and a web UI column. The side panel shows CPU and memory over the last hour. Start, stop and update are one key away when you turn control on.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-themes.jpg" alt="Theme browser" width="100%" />
       <br />
-      <sub><b>Themes</b> — 155 theme families, each with a light and a dark half, searchable and filtered by character: lacquer, glass, velvet, terminal and eight more. Press <kbd>Shift</kbd>+<kbd>A</kbd> to open the browser from anywhere.</sub>
+      <sub><b>Themes</b> <i>(Frosted Juniper, light)</i> — 155 theme families, each with a light and a dark half, searchable and filtered by character: lacquer, glass, velvet, terminal and eight more; the newest wear a <i>new</i> badge. <kbd>Shift</kbd>+<kbd>A</kbd> opens the browser from anywhere.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-config-appearance.jpg" alt="Config: Appearance" width="100%" />
+      <br />
+      <sub><b>Config → Appearance</b> <i>(Gloss Amber)</i> — Appearance in tabs — Look, Grid, Rows, Header, Action bar, Date &amp; weather — with a small live preview of your dashboard beside it. Every change applies and saves at once.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-config-statistics.jpg" alt="Config: Statistics" width="100%" />
+      <br />
+      <sub><b>Config → Statistics</b> <i>(Cosmic Editor)</i> — Six figures per tab, what needs attention with a button for each, the cleanup score and the charts behind them — across Overview, Usage, Collection, Inbox and Health.</sub>
     </td>
   </tr>
 </table>
+
+</details>
 
 ---
 
