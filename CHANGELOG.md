@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.15.1 — 29 September 2026](#v1151--29-september-2026)
 - [v1.15.0 — 28 September 2026](#v1150--28-september-2026)
 - [v1.13.7 — 25 September 2026](#v1137--25-september-2026)
 - [v1.13.6 — 25 September 2026](#v1136--25-september-2026)
@@ -223,6 +224,21 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.15.1 — 29 September 2026
+
+Updating or stopping a container from the Containers view failed on a real host, and said the socket was missing when it was not. Recorded but not announced: the What's new window still leads with v1.15.0.
+
+### Containers
+
+- **fix — update and stop were cut off after five seconds.** Every call to the Docker socket went through one client with a five-second `Timeout`, and Go's `http.Client` counts reading the body in that. An update's pull streams progress for as long as the layers take, and a stop waits out the container's own stop timeout (ten seconds by default), so both were cut off mid-way. Start, stop, pause, restart, update and remove now use a client without that deadline; `dockerActionTimeout` (ten minutes) on the action's context ends one that hangs. Reads keep the five seconds. `TestDockerUpdateOutlastsTheReadTimeout` holds the fake daemon's pull and stop open longer than the read deadline and fails without the change.
+- **fix — a failure no longer claims the socket is missing.** `writeDockerError` answered every error that was not the daemon's own reply with `503 {"reason":"no-docker-socket"}`, and the browser, not knowing that reason, fell back to *Docker did not do that*. Only a failure to reach the socket is reported that way now; anything after the connection is `502 {"reason":"docker-error","message":…}`, and a failed update adds `failedStep` (pull, stop, rename, create, connect or start) to the message. Every failed action is logged with its error. `TestDockerUpdateSaysWhatBroke` cuts the pull stream off halfway.
+
+### Docs
+
+- **What's new:** `static/data/whats-new/v1.15.1.json` and its index entry, both with `hideFromModal`; `NEXTDASH_WHATS_NEW_DATA_VERSION` moves to `whats-new-v305`, `DASHBOARD_RELEASE` stays on v1.15.0.
 
 ---
 
