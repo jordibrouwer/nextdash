@@ -121,6 +121,10 @@ func hashAssetFile(rel string) (string, error) {
 	)
 	if assetHashSources.useDisk {
 		f, err = os.Open(filepath.Join("static", filepath.FromSlash(rel)))
+	} else if assetHashSources.embedded == nil {
+		// Hashing was never initialised (a bare test handler): treat the file as
+		// unreadable so the page renders it unversioned instead of panicking.
+		return "", fs.ErrNotExist
 	} else {
 		f, err = assetHashSources.embedded.Open("static/" + rel)
 	}

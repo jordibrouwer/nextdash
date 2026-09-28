@@ -35,7 +35,9 @@ func main() {
 			return nil
 		}
 		rel = filepath.ToSlash(rel)
-		if !strings.HasSuffix(rel, ".css") && !strings.HasSuffix(rel, ".js") {
+		// The cheat sheet PDF is linked through lazyLoadedAssets, so it needs a
+		// precomputed hash like the scripts do.
+		if !strings.HasSuffix(rel, ".css") && !strings.HasSuffix(rel, ".js") && !strings.HasSuffix(rel, ".pdf") {
 			return nil
 		}
 		sum, hashErr := hashFile(path)
