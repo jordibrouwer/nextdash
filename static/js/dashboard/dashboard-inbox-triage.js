@@ -1,5 +1,10 @@
 /**
  * Inbox triage overlay — process items one-by-one with keyboard shortcuts.
+ *
+ * Drawn as Work through is in the Bookmarks view (health-focus.css): a pile
+ * first, then one link at a time with where it came from and one clear next
+ * step, then what the run did. Two tools for the same job -- one decision per
+ * link -- should not look like two different apps.
  */
 class DashboardInboxTriage {
     constructor(inbox) {
@@ -8,6 +13,120 @@ class DashboardInboxTriage {
         this.index = 0;
         this.overlay = null;
         this._keyHandler = null;
+        // The start screen, while it is up: { piles, index }.
+        this.chooser = null;
+        // The pile a run walks, and what it has done so far.
+        this.pile = null;
+        this.tally = DashboardInboxTriage.emptyTally();
+        // Promote hands the screen to the bookmark form and closes this; what
+        // the run was, so a save can pick it up where it left off.
+        this._resume = null;
+    }
+
+    static emptyTally() {
+        return { promoted: 0, kept: 0, deleted: 0, snoozed: 0, read: 0 };
+    }
+
+    /*
+     * The piles a run can take. Unread only -- a link already read has been
+     * seen -- and never what is snoozed. "This list" is what triage walked
+     * before there were piles: the unread of whatever the list shows now.
+     */
+    static WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+    pileItems(id) {
+        const now = Date.now();
+        const unread = (this.inbox.items || []).filter((item) => item && !item.readAt && !this.inbox.isSnoozed(item));
+        const age = (item) => now - (Number(item.addedAt) || now);
+        if (id === 'waiting') {
+            return unread.filter((item) => age(item) > DashboardInboxTriage.WEEK_MS)
+                .sort((a, b) => (Number(a.addedAt) || 0) - (Number(b.addedAt) || 0));
+        }
+        if (id === 'new') {
+            return unread.filter((item) => age(item) <= DashboardInboxTriage.WEEK_MS)
+                .sort((a, b) => (Number(b.addedAt) || 0) - (Number(a.addedAt) || 0));
+        }
+        if (id === 'noted') {
+            return unread.filter((item) => String(item.note || '').trim());
+        }
+        return (this.inbox.getFilteredItems?.() || []).filter((item) => item && !item.readAt);
+    }
+
+    /** The piles worth offering: the fullest first, the list as filtered last. */
+    pileCounts() {
+        const piles = ['waiting', 'new', 'noted']
+            .map((id) => ({ id, count: this.pileItems(id).length }))
+            .filter((pile) => pile.count > 0)
+            .sort((a, b) => b.count - a.count);
+        const list = this.pileItems('list').length;
+        if (list > 0) piles.push({ id: 'list', count: list });
+        return piles;
+    }
+
+    pileLabel(id) {
+        const labels = {
+            waiting: ['dashboard.inboxPileWaiting', 'Waiting longest'],
+            new: ['dashboard.inboxPileNew', 'New this week'],
+            noted: ['dashboard.inboxPileNoted', 'With a note'],
+            list: ['dashboard.inboxPileList', 'This list, as filtered now'],
+        };
+        const [key, fallback] = labels[id] || labels.list;
+        return this.t(key, fallback);
+    }
+
+    pileNote(id) {
+        const notes = {
+            waiting: ['dashboard.inboxPileWaitingNote', 'Unread for over a week — oldest first'],
+            new: ['dashboard.inboxPileNewNote', 'Saved recently, not opened yet'],
+            noted: ['dashboard.inboxPileNotedNote', 'You left yourself a reason'],
+            list: ['dashboard.inboxPileListNote', 'Every unread link the list shows'],
+        };
+        const [key, fallback] = notes[id] || notes.list;
+        return this.t(key, fallback);
+    }
+
+    /** The way in: which pile. False when there is nothing unread to walk. */
+    openChooser() {
+        const piles = this.pileCounts();
+        if (!piles.length) {
+            this.dash.showNotification(this.t('dashboard.inboxTriageEmpty', 'Nothing to triage'), 'info');
+            return false;
+        }
+        this.queue = [];
+        this.finished = false;
+        this.chooser = { piles, index: 0 };
+        this.mount();
+        this.renderChooser();
+        return this.isOpen();
+    }
+
+    startPile(id, { tally = null } = {}) {
+        this.chooser = null;
+        return this.start(this.pileItems(id), { pile: id, tally });
+    }
+
+    /** After a promote: the same pile, the run's tally, one more promoted. */
+    canResume() {
+        return Boolean(this._resume);
+    }
+
+    resume() {
+        const state = this._resume;
+        this._resume = null;
+        if (!state) return false;
+        const tally = { ...state.tally, promoted: state.tally.promoted + 1 };
+        const items = this.pileItems(state.pile);
+        if (!items.length) {
+            // The promote was the last one: say so rather than opening nothing.
+            this.pile = state.pile;
+            this.tally = tally;
+            this.startedWith = state.startedWith;
+            this.finished = true;
+            this.mount();
+            this.render();
+            return this.isOpen();
+        }
+        return this.start(items, { pile: state.pile, tally, startedWith: state.startedWith });
     }
 
     get dash() {
@@ -26,13 +145,16 @@ class DashboardInboxTriage {
         return Boolean(this.overlay?.isConnected);
     }
 
-    start(items) {
+    start(items, { pile = 'list', tally = null, startedWith = null } = {}) {
         this.queue = Array.isArray(items) ? items.slice() : [];
+        this.pile = pile;
+        this.chooser = null;
+        this.tally = tally ? { ...tally } : DashboardInboxTriage.emptyTally();
         // What the run began with. The queue itself only keeps survivors --
         // every delete, snooze and promote splices one out -- so counting it at
         // the end reported the kept links and silently dropped the decisions,
         // which are the work.
-        this.startedWith = this.queue.length;
+        this.startedWith = startedWith ?? this.queue.length;
         this.index = 0;
         // A fresh run, whatever the last one ended in.
         this.finished = false;
@@ -53,6 +175,7 @@ class DashboardInboxTriage {
         this.unmount();
         this.queue = [];
         this.index = 0;
+        this.chooser = null;
     }
 
     unmount() {
@@ -121,11 +244,11 @@ class DashboardInboxTriage {
         document.body.classList.add('inbox-triage-active');
         const overlay = document.createElement('div');
         overlay.id = 'inbox-triage-overlay';
-        overlay.className = 'inbox-triage-overlay';
+        overlay.className = 'health-focus-overlay';
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
         overlay.setAttribute('aria-label', this.t('dashboard.inboxTriage', 'Triage inbox'));
-        overlay.innerHTML = '<div class="inbox-triage-card"></div>';
+        overlay.innerHTML = '<div class="health-focus-card inbox-triage-card"></div>';
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
                 this.close();
@@ -140,12 +263,28 @@ class DashboardInboxTriage {
                 this.close();
                 return;
             }
+            const pileBtn = e.target.closest('[data-triage-pile]');
+            if (pileBtn) {
+                this.startPile(pileBtn.getAttribute('data-triage-pile'));
+                return;
+            }
             const btn = e.target.closest('[data-triage]');
             if (!btn) {
                 return;
             }
             const action = btn.getAttribute('data-triage');
-            if (action === 'open') {
+            if (action === 'start' && this.chooser) {
+                this.startPile(this.chooser.piles[this.chooser.index].id);
+            } else if (action === 'back') {
+                this.close();
+            } else if (action === 'next-pile') {
+                const next = btn.getAttribute('data-triage-next');
+                if (next) this.startPile(next);
+            } else if (action === 'next') {
+                void this.actSkip();
+            } else if (action === 'read') {
+                void this.actMarkRead();
+            } else if (action === 'open') {
                 void this.actOpen();
             } else if (action === 'promote') {
                 this.actPromote();
@@ -201,7 +340,9 @@ class DashboardInboxTriage {
         if (!card || card.contains(document.activeElement)) {
             return;
         }
-        const primary = card.querySelector('[data-triage="open"]')
+        const primary = card.querySelector('[data-triage-pile][aria-selected="true"]')
+            || card.querySelector('[data-triage="promote"]')
+            || card.querySelector('[data-triage="next-pile"], [data-triage="back"]')
             || card.querySelector('.inbox-triage-close');
         primary?.focus({ preventScroll: true });
     }
@@ -256,6 +397,24 @@ class DashboardInboxTriage {
         }
         const tag = e.target?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) {
+            return;
+        }
+
+        if (this.chooser) {
+            const piles = this.chooser.piles;
+            const move = (delta) => {
+                this.chooser.index = (this.chooser.index + delta + piles.length) % piles.length;
+                this.renderChooser();
+            };
+            const k = e.key;
+            if (k === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); this.close(); return; }
+            if (k === 'ArrowDown' || k === 'j') { e.preventDefault(); move(1); return; }
+            if (k === 'ArrowUp' || k === 'k') { e.preventDefault(); move(-1); return; }
+            if (k === 'Enter') { e.preventDefault(); this.startPile(piles[this.chooser.index].id); }
+            return;
+        }
+        if (this.finished) {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); this.close(); }
             return;
         }
 
@@ -336,6 +495,7 @@ class DashboardInboxTriage {
             window.open(url, '_blank', 'noopener,noreferrer');
         }
         if (!item.readAt) {
+            this.tally.read += 1;
             // Only record it locally once the write landed. Opening is the
             // point of this action and the tab is already open, so a failed
             // read mark advances anyway rather than trapping the user on a row
@@ -353,10 +513,19 @@ class DashboardInboxTriage {
         if (!item) {
             return;
         }
-        if (!item.readAt && await this.inbox.markReadReporting(item.id)) {
-            item.readAt = Date.now();
+        if (!item.readAt) {
+            this.tally.read += 1;
+            if (await this.inbox.markReadReporting(item.id)) {
+                item.readAt = Date.now();
+            }
         }
         await this.afterAction(false, { readId: item.id });
+    }
+
+    /** Next without deciding: the link stays where it is. */
+    async actSkip() {
+        if (!this.currentItem()) return;
+        await this.afterAction(false, {});
     }
 
     actPromote() {
@@ -367,6 +536,7 @@ class DashboardInboxTriage {
         const d = this.dash;
         d._pendingInboxPromoteId = item.id;
         d._pendingInboxTriageAdvance = true;
+        this._resume = { pile: this.pile || 'list', tally: { ...this.tally }, startedWith: this.startedWith };
         this.inbox.promoteItem(item);
         this.close();
     }
@@ -379,6 +549,7 @@ class DashboardInboxTriage {
         if (!(await this.inbox.keepItem(item))) {
             return;
         }
+        this.tally.kept += 1;
         await this.afterAction(true, { removedId: item.id });
     }
 
@@ -399,6 +570,7 @@ class DashboardInboxTriage {
             );
             return;
         }
+        this.tally.deleted += 1;
         await this.afterAction(true, { removedId: item.id });
     }
 
@@ -415,6 +587,7 @@ class DashboardInboxTriage {
         }
         this.inbox.openSnoozeMenu(item, anchor, null, {
             onApplied: async () => {
+                this.tally.snoozed += 1;
                 await this.afterAction(true, { removedId: item.id });
             },
         });
@@ -482,33 +655,123 @@ class DashboardInboxTriage {
         this.render();
     }
 
+    /** The start screen: which pile, each with its count and what it is for. */
+    renderChooser() {
+        const card = this.overlay?.querySelector('.inbox-triage-card');
+        const chooser = this.chooser;
+        if (!card || !chooser) return;
+        const esc = (v) => this.escape(v);
+        const selected = chooser.piles[chooser.index];
+        card.innerHTML = `
+            <div data-triage-chooser>
+                <div class="health-focus-head">
+                    <h2 class="health-focus-title">${esc(this.t('dashboard.inboxTriageChooserTitle', 'Triage your inbox'))}</h2>
+                    <button type="button" class="health-focus-close inbox-triage-close" aria-label="${esc(this.t('dashboard.inboxTriageClose', 'Close'))}">×</button>
+                </div>
+                <p class="health-focus-chooser-lead">${esc(this.t('dashboard.inboxTriageChooserLead',
+                    'One link at a time: where it came from, and where it should go. Pick a pile — the fullest is first.'))}</p>
+                <div class="health-focus-piles" role="listbox" aria-label="${esc(this.t('dashboard.inboxTriageChooserTitle', 'Triage your inbox'))}">
+                    ${chooser.piles.map((pile, i) => `
+                        <button type="button" role="option" class="health-focus-pile${i === chooser.index ? ' is-selected' : ''}"
+                                data-triage-pile="${esc(pile.id)}" aria-selected="${i === chooser.index ? 'true' : 'false'}">
+                            <span class="health-focus-pile-name">${esc(this.pileLabel(pile.id))}</span>
+                            <span class="health-focus-pile-note">${esc(this.pileNote(pile.id))}</span>
+                            <span class="health-focus-pile-count">${pile.count}</span>
+                        </button>`).join('')}
+                </div>
+                <div class="health-focus-chooser-foot">
+                    <span class="health-focus-legend">${esc(this.t('dashboard.inboxTriageChooserLegend', '↑ ↓ to choose, Escape to leave'))}</span>
+                    <button type="button" class="config-btn health-focus-primary" data-triage="start">${esc(
+                        this.t('dashboard.inboxTriageStartPile', 'Start: {pile}', { pile: this.pileLabel(selected.id) }))}<kbd>↵</kbd></button>
+                </div>
+            </div>`;
+        this.focusCard();
+    }
+
     /*
-     * What is left when the run is over.
+     * What is left when the run is over: what it did, and the next pile.
      *
-     * How many were walked rather than how many remain: the queue still holds
-     * everything kept, so counting it would report the work as undone. Close is
-     * the only action -- anything else would invite a second lap through links
-     * just decided on.
+     * Counted from the decisions, not from what remains: keeping a link does
+     * not shorten the list of kept links, and a run is the work, not the rest.
      */
     renderDone(card) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const total = this.startedWith || this.queue.length;
+        const esc = (v) => this.escape(v);
+        const tally = this.tally;
+        const nextPile = this.pileCounts().find((p) => p.id !== 'list' && p.id !== this.pile) || null;
+        const stat = (n, key, fallback) => `<div class="health-focus-stat"><b>${n}</b><span>${esc(this.t(key, fallback))}</span></div>`;
         card.innerHTML = `
-            <div class="inbox-triage-done">
-                <p class="inbox-triage-done-title">${esc(this.t('dashboard.inboxTriageDoneTitle', 'That is the lot.'))}</p>
-                <p class="inbox-triage-done-body">${esc(
-                    this.t('dashboard.inboxTriageDoneBody', 'You went through {n} links.')
-                        .replace('{n}', String(total)))}</p>
-                <button type="button" class="inbox-triage-done-close" data-triage-done-close>${
-                    esc(this.t('dashboard.inboxTriageDoneClose', 'Close'))}</button>
+            <div class="health-focus-card--done inbox-triage-done">
+                <div class="health-focus-head">
+                    <h2 class="health-focus-title">${esc(this.t('dashboard.inboxTriageRunDone', '{pile}: done',
+                        { pile: this.pileLabel(this.pile) }))}</h2>
+                    <button type="button" class="health-focus-close inbox-triage-close" aria-label="${esc(this.t('dashboard.inboxTriageClose', 'Close'))}">×</button>
+                </div>
+                <div class="health-focus-stats">
+                    ${stat(tally.promoted, 'dashboard.inboxTriageTallyPromoted', 'promoted')}
+                    ${stat(tally.kept, 'dashboard.inboxTriageTallyKept', 'kept')}
+                    ${stat(tally.deleted, 'dashboard.inboxTriageTallyDeleted', 'deleted')}
+                    ${stat(tally.snoozed, 'dashboard.inboxTriageTallySnoozed', 'snoozed')}
+                    ${stat(tally.read, 'dashboard.inboxTriageTallyRead', 'read')}
+                </div>
+                <div class="health-focus-done-foot">
+                    <span class="health-focus-done-rest">${esc(nextPile
+                        ? this.t('dashboard.inboxTriageNextPile', 'Next: {pile} · {count} waiting', { pile: this.pileLabel(nextPile.id), count: nextPile.count })
+                        : this.t('dashboard.inboxTriageDoneBody', 'You went through {n} links.').replace('{n}', String(this.startedWith || 0)))}</span>
+                    <div class="health-focus-actions">
+                        <button type="button" class="config-btn" data-triage="back">${esc(
+                            this.t('dashboard.inboxTriageBack', 'Back to the inbox'))}</button>
+                        ${nextPile ? `<button type="button" class="config-btn health-focus-done-primary" data-triage="next-pile"
+                            data-triage-next="${esc(nextPile.id)}">${esc(
+                            this.t('dashboard.inboxTriageStartPile', 'Start: {pile}', { pile: this.pileLabel(nextPile.id) }))}</button>` : ''}
+                    </div>
+                </div>
             </div>`;
-        const close = card.querySelector('[data-triage-done-close]');
-        close?.addEventListener('click', () => this.close());
-        close?.focus({ preventScroll: true });
+        this.focusCard();
+    }
+
+    /** Where the link came from: the source, how long ago, whether opened, the note. */
+    renderWhy(item) {
+        const esc = (v) => this.escape(v);
+        const sources = {
+            extension: ['dashboard.inboxSourceExtension', 'saved from the browser extension'],
+            paste: ['dashboard.inboxSourcePaste', 'pasted into the dashboard'],
+            share: ['dashboard.inboxSourceShare', 'shared from another app'],
+            import: ['dashboard.inboxSourceImport', 'brought in by an import'],
+        };
+        const source = String(item.source || '').trim();
+        const [skey, sfallback] = sources[source] || ['dashboard.inboxSourceOther', source ? `added via ${source}` : 'added by hand'];
+        const when = this.inbox.formatRelativeTime(item.addedAt);
+        const lines = [
+            when ? `${when}, ${item.readAt
+                ? this.t('dashboard.inboxWhyOpened', 'opened before')
+                : this.t('dashboard.inboxWhyNeverOpened', 'never opened')}` : '',
+            item.note ? this.t('dashboard.inboxWhyNote', 'Note: “{note}”', { note: item.note }) : '',
+        ].filter(Boolean);
+        return `<div class="health-focus-why">
+            <p class="health-focus-why-title">${esc(this.t('dashboard.inboxWhyLabel', 'Where it came from'))}: ${esc(this.t(skey, sfallback))}</p>
+            ${lines.length ? `<ul class="health-focus-reasons">${lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}
+        </div>`;
+    }
+
+    renderPreview(item) {
+        const esc = (v) => this.escape(v);
+        const desc = String(item.previewDesc || '').trim();
+        const image = window.BookmarkUrlUtils?.safeHttpResourceUrl?.(item.previewImage) || '';
+        if (!desc && !image) return '';
+        return `<div class="health-focus-preview">
+            ${image ? `<div class="health-focus-preview-image"><img class="inbox-triage-thumb-img" src="${esc(image)}" alt="" loading="lazy"></div>` : ''}
+            <div class="health-focus-preview-text">
+                ${desc ? `<p class="health-focus-preview-desc">${esc(desc)}</p>` : ''}
+            </div>
+        </div>`;
     }
 
     render() {
         const card = this.overlay?.querySelector('.inbox-triage-card');
+        if (card && this.chooser) {
+            this.renderChooser();
+            return;
+        }
         if (card && this.finished) {
             this.renderDone(card);
             return;
@@ -519,56 +782,84 @@ class DashboardInboxTriage {
             return;
         }
         const hadFocusInCard = card.contains(document.activeElement);
+        const esc = (v) => this.escape(v);
+        const key = (k) => `<kbd>${esc(k)}</kbd>`;
 
         const title = item.previewTitle || item.title || item.domain || item.url;
         const domain = item.domain || this.inbox.formatUrlDisplay(item.url);
-        const timeLabel = this.inbox.formatRelativeTime(item.addedAt);
         const total = this.queue.length;
         const position = this.index + 1;
-        const progress = this.t('dashboard.inboxTriageProgress', '{current} / {total}', {
-            current: position,
-            total,
-        });
-        const thumb = this.renderThumb(item);
         const snoozed = this.inbox.isSnoozed(item);
-        const snoozeLabel = snoozed
-            ? this.t('dashboard.inboxWake', 'Wake now')
-            : this.t('dashboard.inboxSnooze', 'Snooze');
-        const noteLabel = item.note
-            ? this.t('dashboard.inboxEditNote', 'Edit note')
-            : this.t('dashboard.inboxAddNote', 'Note');
+        const iconSrc = this.inbox.resolveIconSrc(item.icon);
+        const icon = iconSrc
+            ? `<img class="health-focus-icon-img inbox-triage-thumb-img" src="${esc(iconSrc)}" alt="" loading="lazy">`
+            : '🔗';
+        const kept = this.inbox.keptEnabled?.();
+        const keptCount = (this.inbox.dash.unsortedBookmarks || []).length;
+        const tags = Array.isArray(item.tags) ? item.tags : [];
+        const badges = [
+            item.readAt ? this.t('dashboard.inboxDrawerReadBadge', 'read') : this.t('dashboard.inboxDrawerUnread', 'unread'),
+            snoozed ? this.t('dashboard.inboxDrawerSleepingBadge', 'sleeping') : '',
+            ...tags.map((tag) => `#${tag}`),
+        ].filter(Boolean);
 
         card.innerHTML = `
-            <header class="inbox-triage-header">
-                <p class="inbox-triage-kicker">${this.escape(this.t('dashboard.inboxTriage', 'Triage inbox'))}</p>
-                <p class="inbox-triage-progress">${this.escape(progress)}</p>
-                ${this.inbox.keptEnabled?.() ? `<span class="inbox-triage-kept-count" title="${this.escape(
-                    this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, in Bookmarks → Unsorted, without giving it a page yet'))}">${this.escape(
-                    this.t('dashboard.inboxTriageKeptCount', `Kept ${(this.inbox.dash.unsortedBookmarks || []).length}`,
-                        { count: (this.inbox.dash.unsortedBookmarks || []).length }))}</span>` : ''}
-                <button type="button" class="inbox-triage-close" aria-label="${this.escape(this.t('dashboard.inboxTriageClose', 'Close'))}">×</button>
-            </header>
-            <div class="inbox-triage-body">
-                ${thumb}
-                <div class="inbox-triage-text">
-                    <h3 class="inbox-triage-title">${this.escape(title)}</h3>
-                    <p class="inbox-triage-meta">
-                        <span>${this.escape(domain)}</span>
-                        ${timeLabel ? `<span>${this.escape(timeLabel)}</span>` : ''}
-                    </p>
-                    ${item.note ? `<p class="inbox-triage-note">${this.escape(item.note)}</p>` : ''}
+            <div class="health-focus-head">
+                <span class="health-focus-progress">${esc(this.pileLabel(this.pile))} · ${esc(this.t(
+                    'dashboard.inboxTriagePosition', '{position} of {total}', { position, total }))}</span>
+                ${kept ? `<span class="inbox-triage-kept-count" title="${esc(
+                    this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, in Bookmarks → Unsorted, without giving it a page yet'))}">${esc(
+                    this.t('dashboard.inboxTriageKeptCount', `Kept ${keptCount}`, { count: keptCount }))}</span>` : ''}
+                <button type="button" class="health-focus-close inbox-triage-close" aria-label="${esc(this.t('dashboard.inboxTriageClose', 'Close'))}">×</button>
+            </div>
+            <div class="health-focus-bar" aria-hidden="true"><span style="width:${Math.round((position / Math.max(1, total)) * 100)}%"></span></div>
+
+            <div class="health-focus-identity">
+                <div class="health-focus-icon" aria-hidden="true">${icon}</div>
+                <div class="health-focus-identity-text">
+                    <h2 class="health-focus-title"><button type="button" class="health-focus-title-link" data-triage="open"
+                        title="${esc(this.t('dashboard.healthFocusOpenTitle', 'Open in a new tab'))}">${esc(title)}</button></h2>
+                    <p class="health-focus-url">${esc(domain)}</p>
+                </div>
+                <button type="button" class="config-btn health-focus-open" data-triage="open">${esc(
+                    this.t('dashboard.inboxOpen', 'Open'))}${key('o')}</button>
+            </div>
+
+            ${badges.length ? `<div class="health-focus-badges">${badges.map((b) => `<span class="inbox-triage-chip">${esc(b)}</span>`).join('')}</div>` : ''}
+
+            ${this.renderPreview(item)}
+
+            ${this.renderWhy(item)}
+
+            <button type="button" class="config-btn health-focus-primary" data-triage="promote">
+                <span>${esc(this.t('dashboard.inboxTriagePromote', 'Promote to a page'))}</span>${key('p')}</button>
+            <div class="health-focus-alts">
+                ${kept ? `<button type="button" class="health-focus-link" data-triage="keep">${esc(
+                    this.t('dashboard.inboxTriageKeepUnsorted', 'Keep in Unsorted'))}${key('⇧K')}</button>` : ''}
+                <button type="button" class="health-focus-link" data-triage="note">${esc(item.note
+                    ? this.t('dashboard.inboxEditNote', 'Edit note')
+                    : this.t('dashboard.inboxAddNote', 'Note'))}${key('n')}</button>
+                <button type="button" class="health-focus-link is-danger" data-triage="delete">${esc(
+                    this.t('dashboard.inboxDelete', 'Delete'))}${key('d')}</button>
+            </div>
+            ${kept ? `<p class="health-focus-legend inbox-triage-keep-hint">${esc(this.t('dashboard.inboxKeepExplains',
+                'Keeps the link for good, in Bookmarks → Unsorted, without giving it a page yet'))}</p>` : ''}
+
+            <div class="health-focus-foot">
+                <span class="health-focus-foot-label">${esc(this.t('dashboard.healthFocusNotNow', 'Not now:'))}</span>
+                <div class="health-focus-foot-actions">
+                    <button type="button" class="health-focus-link" data-triage="snooze">${esc(snoozed
+                        ? this.t('dashboard.inboxWake', 'Wake now')
+                        : this.t('dashboard.inboxSnooze', 'Snooze'))}${key('z')}</button>
+                    <button type="button" class="health-focus-link" data-triage="read">${esc(
+                        this.t('dashboard.inboxMarkRead', 'Mark read'))}${key('r')}</button>
+                    <button type="button" class="health-focus-link" data-triage="next">${esc(
+                        this.t('dashboard.healthFocusSkip', 'Skip'))}${key('j')}</button>
                 </div>
             </div>
-            <div class="inbox-triage-actions">
-                <button type="button" class="inbox-action-btn" data-triage="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))} <kbd>O</kbd></button>
-                <button type="button" class="inbox-action-btn" data-triage="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))} <kbd>P</kbd></button>
-                <button type="button" class="inbox-action-btn" data-triage="keep">${this.escape(this.t('dashboard.inboxTriageKeep', 'Keep'))} <kbd>K</kbd></button>
-                <button type="button" class="inbox-action-btn" data-triage="snooze">${this.escape(snoozeLabel)} <kbd>Z</kbd></button>
-                <button type="button" class="inbox-action-btn" data-triage="note">${this.escape(noteLabel)} <kbd>N</kbd></button>
-                <button type="button" class="inbox-action-btn inbox-action-btn--danger" data-triage="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))} <kbd>D</kbd></button>
-            </div>
-            <p class="inbox-triage-hint">${this.escape(this.t('dashboard.inboxTriageHint', 'J/K next · O open · P promote · R mark read · Shift+K keep (to Unsorted) · Z snooze · N note · D delete · Esc close'))}</p>
-            <p class="inbox-triage-hint inbox-triage-keep-hint">${this.escape(this.t('dashboard.inboxKeepExplains', 'Keeps the link for good, in Bookmarks → Unsorted, without giving it a page yet'))}</p>
+
+            <p class="health-focus-legend inbox-triage-hint">${esc(this.t('dashboard.inboxTriageLegend',
+                'j / k to move · Shift+K keeps it (to Unsorted) · Escape to leave'))}</p>
         `;
 
         // Rewriting the card destroys whatever was focused inside it, which

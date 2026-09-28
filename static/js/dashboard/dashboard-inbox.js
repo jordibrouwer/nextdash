@@ -3898,7 +3898,7 @@ class DashboardInbox {
             .filter((group) => group.items.length > 0);
     }
 
-    async startTriage() {
+    async startTriage({ resume = false } = {}) {
         if (!this.isEnabled()) {
             return false;
         }
@@ -3924,8 +3924,13 @@ class DashboardInbox {
          * quietly widening to the whole inbox, because the list in front of
          * you is what you asked to work through.
          */
-        const items = this.getFilteredItems().filter((item) => !item?.readAt);
-        return this.triage?.start(items) ?? false;
+        // The run starts on a choice of pile (see DashboardInboxTriage); the
+        // list as filtered is one of them. A save after Promote comes back to
+        // the pile it left rather than to the choice again.
+        if (resume && this.triage?.canResume?.()) {
+            return this.triage.resume();
+        }
+        return this.triage?.openChooser() ?? false;
     }
 
     formatRelativeTime(ts) {

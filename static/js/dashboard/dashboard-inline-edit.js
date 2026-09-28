@@ -2311,7 +2311,7 @@ class DashboardInlineEdit {
                  */
                 if (d._pendingInboxTriageAdvance) {
                     d._pendingInboxTriageAdvance = false;
-                    await d.inbox.startTriage?.();
+                    await d.inbox.startTriage?.({ resume: true });
                 }
             }
 

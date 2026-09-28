@@ -522,144 +522,20 @@ body.no-animations .inbox-item-actions {
 
 /* ─── Inbox triage overlay ─────────────────────────────────────────────── */
 
+/* Triage wears Work through's card (health-focus.css); only its chips are its own. */
+.inbox-triage-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-2xs, 0.66rem);
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
 body.inbox-triage-active {
     overflow: hidden;
-}
-
-.inbox-triage-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 12100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--space-4, 1rem);
-    /* The same scrim as every other modal (modal.css). */
-    background: var(--modal-scrim);
-    backdrop-filter: blur(var(--modal-scrim-blur));
-    -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
-}
-
-.inbox-triage-card {
-    width: min(100%, 40rem);
-    max-height: min(92vh, 44rem);
-    overflow: auto;
-    border-radius: var(--layout-radius-md, 12px);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
-    box-shadow: 0 18px 48px color-mix(in srgb, #000 22%, transparent);
-    padding: var(--space-4, 1rem) var(--space-4, 1.1rem) var(--space-4, 1.1rem);
-}
-
-.inbox-triage-header {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-3, 0.75rem);
-    margin-bottom: var(--space-3, 0.85rem);
-}
-
-.inbox-triage-kicker {
-    margin: 0;
-    font-size: var(--text-xs, 0.72rem);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-tertiary);
-}
-
-.inbox-triage-progress {
-    margin: var(--space-hairline, 0.15rem) 0 0;
-    font-size: var(--text-md, 1rem);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-}
-
-.inbox-triage-close {
-    margin-left: auto;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 1.35rem;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.inbox-triage-body {
-    display: grid;
-    grid-template-columns: 6.5rem 1fr;
-    gap: var(--space-4, 0.9rem);
-}
-
-.inbox-triage-thumb {
-    width: 6.5rem;
-    height: 6.5rem;
-    border-radius: calc(var(--layout-radius-sm, 8px) - 2px);
-    background: var(--background-primary) center/cover no-repeat;
-    border: 1px solid var(--border-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    overflow: hidden;
-}
-
-.inbox-triage-thumb-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.inbox-triage-title {
-    margin: 0;
-    font-size: var(--text-md, 1.05rem);
-    line-height: 1.35;
-    color: var(--text-primary);
-}
-
-.inbox-triage-meta {
-    margin: var(--space-1-5, 0.35rem) 0 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.35rem) var(--space-3, 0.65rem);
-    font-size: var(--text-sm, 0.8rem);
-    color: var(--text-secondary);
-}
-
-.inbox-triage-note {
-    margin: var(--space-2, 0.45rem) 0 0;
-    font-size: var(--text-sm, 0.85rem);
-    color: var(--text-secondary);
-}
-
-.inbox-triage-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.4rem);
-    margin-top: var(--space-4, 1rem);
-}
-
-.inbox-triage-actions kbd,
-.inbox-action-btn kbd {
-    margin-left: var(--space-1, 0.25rem);
-    font-size: var(--text-2xs, 0.68rem);
-    opacity: 0.75;
-}
-
-.inbox-triage-hint {
-    margin: var(--space-3, 0.85rem) 0 0;
-    font-size: var(--text-xs, 0.75rem);
-    color: var(--text-tertiary);
-}
-
-@media (max-width: 520px) {
-    .inbox-triage-body {
-        grid-template-columns: 1fr;
-    }
-
-    .inbox-triage-thumb {
-        width: 100%;
-        height: 8rem;
-    }
 }
 
 /* ─── Sort control ──────────────────────────────────────────────────────── */
@@ -942,57 +818,6 @@ body.inbox-triage-active {
 .inbox-item-tag:focus-visible {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
     color: var(--accent-primary);
-}
-
-/*
- * The card that ends a triage run.
- *
- * Centred and near-empty on purpose: everything else in triage is a decision to
- * make, and this is the one screen with nothing left to decide. Keeping a link
- * does not shorten the queue, so without this the last card wrapped round to
- * the first and the run could be abandoned but never finished.
- */
-.inbox-triage-done {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    min-height: 220px;
-    padding: 32px 24px;
-    text-align: center;
-}
-
-.inbox-triage-done-title {
-    margin: 0;
-    font-size: calc(var(--font-size-text) * 1.28);
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.inbox-triage-done-body {
-    margin: 0;
-    color: var(--text-secondary);
-}
-
-.inbox-triage-done-close {
-    margin-top: 6px;
-    padding: 8px 20px;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-5, 8px);
-    background: var(--background-secondary);
-    color: var(--text-primary);
-    font: inherit;
-    cursor: pointer;
-}
-
-.inbox-triage-done-close:hover {
-    border-color: var(--accent-primary);
-}
-
-.inbox-triage-done-close:focus-visible {
-    outline: 2px solid var(--accent-color, #4a90d9);
-    outline-offset: 2px;
 }
 
 /* The line under the stats grid that says which way the week went. */

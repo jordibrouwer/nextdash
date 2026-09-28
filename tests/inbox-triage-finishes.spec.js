@@ -73,6 +73,7 @@ test.describe('triage can be finished', () => {
         await expect.poll(() => page.evaluate(
             () => !!window.dashboardInstance.inbox.triage?.isOpen?.()
         ), { timeout: 10_000 }).toBe(true);
+        await page.locator('[data-triage-pile="list"]').click();
 
         const titles = await queueTitles(page);
         expect(titles, JSON.stringify(titles)).not.toContain('Fin already read');
@@ -85,6 +86,7 @@ test.describe('triage can be finished', () => {
         await expect.poll(() => page.evaluate(
             () => !!window.dashboardInstance.inbox.triage?.isOpen?.()
         ), { timeout: 10_000 }).toBe(true);
+        await page.locator('[data-triage-pile="list"]').click();
 
         const total = await page.evaluate(
             () => window.dashboardInstance.inbox.triage.queue.length
@@ -111,6 +113,7 @@ test.describe('triage can be finished', () => {
         await expect.poll(() => page.evaluate(
             () => !!window.dashboardInstance.inbox.triage?.isOpen?.()
         ), { timeout: 10_000 }).toBe(true);
+        await page.locator('[data-triage-pile="list"]').click();
 
         // Promote hands the screen to the bookmark form, which is why it is the
         // one action that closes the overlay.

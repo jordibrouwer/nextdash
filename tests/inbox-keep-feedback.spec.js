@@ -102,6 +102,7 @@ test('keeping from the triage card lands on the card own Kept counter', async ({
     await page.keyboard.press('t');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
+    await page.locator('[data-triage-pile="list"]').click();
     const counter = page.locator('.inbox-triage-kept-count');
     await expect(counter).toBeVisible();
     await expect(counter).toContainText('0');
