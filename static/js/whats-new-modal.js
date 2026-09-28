@@ -366,8 +366,8 @@
      * first, which is also where the update status now lives.
      */
     /*
-     * The Ko-fi button, the same in the footer and the header: filled in
-     * Ko-fi's colour, so it is found at the top as well as at the end.
+     * The Ko-fi button in the header, filled in Ko-fi's colour. The end of the
+     * notes has the support card; the footer no longer repeats the button.
      */
     function buildKofiButtonHtml(extraClass = '') {
         return `
@@ -388,7 +388,6 @@
         return `
             <div class="wn-foot" data-wn-foot>
                 <div class="wn-foot-update" data-wn-foot-update></div>
-                ${buildKofiButtonHtml()}
                 <span class="wn-foot-esc"><span class="wn-foot-key">Esc</span> ${
                     wnTranslate('dashboard.whatsNewFootClose', 'to close')}</span>
             </div>

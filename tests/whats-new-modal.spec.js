@@ -53,9 +53,9 @@ test.describe("what's new modal", () => {
     test('the ko-fi link is safe to open externally', async ({ page }) => {
         await loadDashboard(page);
         await openWhatsNew(page);
-        // Three ways to it now: the header, the support card and the footer.
+        // Two ways to it: the header and the support card.
         const links = page.locator('.whats-new-modal .wn-kofi-btn, .whats-new-modal .wn-support-btn');
-        await expect(links).toHaveCount(3);
+        await expect(links).toHaveCount(2);
         for (const link of await links.all()) {
             await expect(link).toHaveAttribute('href', 'https://ko-fi.com/jordibrw');
             await expect(link).toHaveAttribute('rel', /noopener/);
@@ -210,7 +210,8 @@ test.describe("what's new modal", () => {
         });
         expect(order).toBe('after');
         await expect(page.locator('.whats-new-modal .modal-header .wn-kofi-btn--solid')).toBeVisible();
-        await expect(page.locator('.whats-new-modal > .wn-foot .wn-kofi-btn--solid')).toBeVisible();
+        // The footer does not repeat it: the card above has just asked.
+        await expect(page.locator('.whats-new-modal > .wn-foot .wn-kofi-btn')).toHaveCount(0);
         // The card asks without counting: no tally of changes in it.
         await expect(page.locator('.whats-new-modal .wn-support')).not.toContainText(/\d+ changes/);
     });
@@ -361,7 +362,7 @@ test('the what\'s-new button is in the bottom-right corner, the toast at the bot
     expect(toast.gap).toBeLessThanOrEqual(toast.edge + 1);
 });
 
-test('the header Support and Esc sit exactly above the footer ones', async ({ page }) => {
+test('the header Esc sits exactly above the footer one', async ({ page }) => {
     await loadDashboard(page);
     await openWhatsNew(page);
     await page.waitForTimeout(100);
@@ -369,12 +370,9 @@ test('the header Support and Esc sit exactly above the footer ones', async ({ pa
         const m = document.querySelector('.modal.whats-new-modal');
         const left = (sel) => Math.round(m.querySelector(sel).getBoundingClientRect().left);
         return {
-            headSupport: left('.modal-header .wn-kofi-btn'),
-            footSupport: left(':scope > .wn-foot .wn-kofi-btn'),
             headEsc: left('.modal-header .wn-modal-close'),
             footEsc: left(':scope > .wn-foot .wn-foot-esc'),
         };
     });
-    expect(Math.abs(x.headSupport - x.footSupport)).toBeLessThanOrEqual(2);
     expect(Math.abs(x.headEsc - x.footEsc)).toBeLessThanOrEqual(2);
 });

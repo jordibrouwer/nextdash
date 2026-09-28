@@ -808,33 +808,6 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 .wn-foot-update { min-width: 0; flex: 1 1 12rem; }
 .wn-foot-update:empty { display: none; }
 
-/* Room for the sparkles.
-
-   The stars are drawn 0.75rem outside the button on every side, which used to
-   fall inside the padding of the panel the button sat in. Flush against the
-   right edge of the footer that overhang became eight pixels of scrollable
-   width -- a horizontal scrollbar under a modal that has nothing to scroll
-   sideways to. The gap is where the decoration lives, so it does not read as
-   a misalignment. */
-.wn-foot .wn-kofi-btn { margin-right: var(--space-3, 0.75rem); }
-
-/* Smaller here than in the Config panels that share this class.
-
-   There the button is the point of the panel it sits in. Here it is the last
-   line of a modal somebody opened to read release notes: still present, still
-   reachable, but sized like the footnote it now is rather than like the
-   heaviest thing on screen. */
-.wn-foot .wn-kofi-btn {
-    gap: var(--space-1, 0.3rem);
-    padding: var(--space-hairline, 0.18rem) var(--space-2, 0.5rem);
-    border-radius: var(--radius-3, 0.3rem);
-    font-size: calc(var(--font-size-controls) * 0.88);
-}
-.wn-foot .wn-kofi-icon {
-    width: 13px;
-    height: 13px;
-}
-
 .modal.keyboard-cheat-sheet-modal {
     max-width: min(52rem, calc(100vw - 2.5rem));
     width: min(52rem, calc(100vw - 2.5rem));
@@ -1972,6 +1945,8 @@ body:not([data-depth="flat"]) .wn-earlier {
 
 .wn-foot-esc {
     flex-shrink: 0;
+    /* At the right whether or not the update line is showing. */
+    margin-left: auto;
     color: var(--text-tertiary);
     font-size: var(--font-size-small, 0.65rem);
     opacity: 0.6;
