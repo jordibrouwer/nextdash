@@ -191,6 +191,7 @@ var lazyLoadedAssets = []string{
 	"js/inbox-tutorial.js",
 	"js/bookmarks-tutorial.js",
 	"js/containers-tutorial.js",
+	"js/dashboard-tutorial.js",
 	"js/widgets-tutorial.js",
 	"js/dashboard/dashboard-inline-edit.js",
 	"js/dashboard/dashboard-context-menu.js",

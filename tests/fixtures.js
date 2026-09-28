@@ -106,7 +106,7 @@ const test = base.test.extend({
      * opens a page does not get one just to be watched.
      */
     page: async ({ page }, use, testInfo) => {
-        // The Bookmarks and Containers tours open by themselves on a first
+        // The Bookmarks, Containers and dashboard tours open by themselves on a first
         // visit, and a spec that cold-loads #bookmarks meets it before dismissBlockingOverlays()
         // can mark it seen: the tour wins the race and eats the first click.
         // Specs also re-init the tips outright ({ seenTips: [...] }), which
@@ -122,10 +122,14 @@ const test = base.test.extend({
                     if (value && typeof value.init === 'function') {
                         const init = value.init;
                         value.init = function seededInit(saved, ...rest) {
-                            const tours = ['bookmarksTutorialV1', 'containersTutorialV1']
-                                .filter((id) => !(window.__e2eWantTours || []).includes(id));
+                            const wanted = window.__e2eWantTours || [];
+                            const tours = ['bookmarksTutorialV1', 'containersTutorialV1', 'dashboardTutorialV1']
+                                .filter((id) => !wanted.includes(id));
                             const seeded = { ...(saved || {}) };
-                            seeded.seenTips = [...new Set([...(seeded.seenTips || []), ...tours])];
+                            // A tour a spec asks for starts unseen, whatever an
+                            // earlier test in the file left in the store.
+                            seeded.seenTips = [...new Set([...(seeded.seenTips || []), ...tours])]
+                                .filter((id) => !wanted.includes(id));
                             return init.call(this, seeded, ...rest);
                         };
                     }

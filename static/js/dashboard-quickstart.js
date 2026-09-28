@@ -345,6 +345,9 @@
                 d.settings.onboardingCompleted = true;
             }
             this.persistState();
+            // The checklist is out of the way: the dashboard tour may come now,
+            // once the card has gone.
+            d?.promos?.scheduleDashboardTour?.({ afterQuickStart: true, delay: 2200 });
         }
 
         teardownChecklist() {

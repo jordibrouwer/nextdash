@@ -10,6 +10,7 @@ class SearchCommandsComponent {
     static GUIDED_TOURS = [
         { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps' },
+        { id: 'dashboardTutorialV1', labelKey: 'config.tourDashboard', label: 'The dashboard' },
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox' },
         { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view' },
         { id: 'containersTutorialV1', labelKey: 'config.tourContainers', label: 'Containers' },
@@ -3183,6 +3184,10 @@ class SearchCommandsComponent {
             action: () => this._runOverlayAction(() => {
                 if (id === 'changesTourV1' && window.ChangesTour?.open) {
                     window.ChangesTour.open();
+                    return;
+                }
+                if (id === 'dashboardTutorialV1' && dashboard.promos?.openDashboardTour) {
+                    void dashboard.promos.openDashboardTour();
                     return;
                 }
                 void dashboard.config.replayTour(id);
