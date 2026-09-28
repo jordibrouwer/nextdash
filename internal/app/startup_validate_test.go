@@ -41,3 +41,18 @@ func TestValidateDataDirAtStartup(t *testing.T) {
 		t.Fatalf("data dir was not created: %v", err)
 	}
 }
+
+func TestWeakTokenReason(t *testing.T) {
+	t.Parallel()
+
+	for _, token := range []string{"", "   ", "3f9c1e7a5b2d8046c1e9f7a3b5d20486"} {
+		if reason := weakTokenReason(token); reason != "" {
+			t.Errorf("weakTokenReason(%q) = %q; want no warning", token, reason)
+		}
+	}
+	for _, token := range []string{"change-me", "Change-Me-To-A-Long-Random-String", " a-second-long-random-string ", "hunter2"} {
+		if reason := weakTokenReason(token); reason == "" {
+			t.Errorf("weakTokenReason(%q) = no warning; want one", token)
+		}
+	}
+}

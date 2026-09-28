@@ -69,6 +69,7 @@ func Run(files assetFS) {
 	if strings.TrimSpace(os.Getenv("NEXTDASH_DATA_DIR")) != "" {
 		logInfo(logComponentServer, "data directory: %s", ResolveDataDir())
 	}
+	warnAboutWeakTokens()
 
 	// Expire trashed bookmarks past their 30 days. Retention otherwise rides
 	// along with writes, so an instance that was off for a month would keep
