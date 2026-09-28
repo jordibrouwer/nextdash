@@ -580,6 +580,26 @@ class DashboardDocker {
         return this.t('dashboard.dockerCheckedHours', '{count} h ago', { count: Math.floor(diff / 3_600_000) });
     }
 
+    /**
+     * A web UI address as the table links it: [IP] made this host, and a
+     * label -- ":port" when it is on this host, else the host without www.
+     */
+    static webuiLink(raw) {
+        const value = String(raw || '').trim();
+        if (!value) return null;
+        const href = value.replace('[IP]', window.location.hostname);
+        let url;
+        try {
+            url = new URL(href);
+        } catch {
+            return null;
+        }
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+        const local = url.hostname === window.location.hostname;
+        const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+        return { href, label: local ? `:${port}` : url.host.replace(/^www\./, '') };
+    }
+
     /* ── Filtering, sorting, grouping ──────────────────────────────────── */
 
     matchesFilter(c) {
@@ -801,7 +821,7 @@ class DashboardDocker {
             heading.className = 'docker-group-row';
             if (byStatus) heading.setAttribute('data-docker-group-status', key);
             const cell = document.createElement('td');
-            cell.colSpan = 4;
+            cell.colSpan = 5;
             cell.textContent = byStatus
                 ? statusLabels[key]
                 : (key || this.t('dashboard.dockerNoProject', 'No project'));
@@ -859,6 +879,29 @@ class DashboardDocker {
         stateCell.textContent = busy ? this.phaseText(busy) : (c.status || c.state || '');
         tr.appendChild(stateCell);
 
+        /*
+         * The web UI in a column of its own -- the address set in the drawer's
+         * Custom section, else the template's, the one the drawer's button and
+         * `:docker <name> open` go to. Its own column so a long host cannot
+         * push the ports out of line: cut to the column's width, the whole
+         * address on hover.
+         */
+        const webuiCell = document.createElement('td');
+        webuiCell.className = 'docker-cell docker-cell--webui';
+        const webui = DashboardDocker.webuiLink(c.webui);
+        if (webui) {
+            const a = document.createElement('a');
+            a.className = 'docker-port docker-webui';
+            a.setAttribute('data-docker-webui', '');
+            a.href = webui.href;
+            a.title = webui.href;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.textContent = webui.label;
+            webuiCell.appendChild(a);
+        }
+        tr.appendChild(webuiCell);
+
         const portsCell = document.createElement('td');
         portsCell.className = 'docker-cell docker-cell--ports';
         (c.ports || []).filter((p) => p && p.public).forEach((p) => {
@@ -872,12 +915,14 @@ class DashboardDocker {
         });
         tr.appendChild(portsCell);
 
-        // Phone-width second line (image + first public port); CSS hides it
-        // at desktop and shows it, in place of the image/ports cells, below 768px.
+        // Phone-width second line (image + the web UI, else the first public
+        // port); CSS hides it at desktop and shows it, in place of the
+        // image/ports cells, below 768px.
         const line2 = document.createElement('div');
         line2.className = 'docker-row-line2';
         const firstPort = (c.ports || []).find((p) => p && p.public);
-        line2.textContent = [c.image || '', firstPort ? String(firstPort.public) : ''].filter(Boolean).join(' · ');
+        line2.textContent = [c.image || '', webui ? webui.label : (firstPort ? String(firstPort.public) : '')]
+            .filter(Boolean).join(' · ');
         tr.appendChild(line2);
 
         // Right-click opens the row's menu at the cursor, the way a bookmark

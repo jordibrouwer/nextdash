@@ -93,9 +93,26 @@
 }
 
 .docker-cell--ports {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1, 0.3rem);
+    white-space: nowrap;
+}
+
+.docker-cell--ports .docker-port + .docker-port {
+    margin-left: var(--space-2, 0.5rem);
+}
+
+/* A column of its own, and a narrow one: a long host is cut, not wrapped,
+   so the ports beside it stay in line; the title carries the whole address. */
+.docker-cell--webui {
+    width: 1%; /* as wide as its link, no wider */
+    white-space: nowrap;
+}
+
+.docker-webui {
+    display: block;
+    max-width: clamp(6rem, 16vw, 14rem);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 /* Second phone line (name/state stay in the normal cells); hidden until
@@ -370,6 +387,7 @@
     }
 
     .docker-cell--image,
+    .docker-cell--webui,
     .docker-cell--ports {
         display: none;
     }
