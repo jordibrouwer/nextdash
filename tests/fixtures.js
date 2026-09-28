@@ -106,13 +106,13 @@ const test = base.test.extend({
      * opens a page does not get one just to be watched.
      */
     page: async ({ page }, use, testInfo) => {
-        // The Bookmarks view tour opens by itself on a first visit, and a spec
-        // that cold-loads #bookmarks meets it before dismissBlockingOverlays()
+        // The Bookmarks and Containers tours open by themselves on a first
+        // visit, and a spec that cold-loads #bookmarks meets it before dismissBlockingOverlays()
         // can mark it seen: the tour wins the race and eats the first click.
         // Specs also re-init the tips outright ({ seenTips: [...] }), which
-        // would bring it back. So every init() keeps the tip seen, unless the
-        // page says it wants the tour -- bookmarks-tutorial.spec.js, which is
-        // about the tour, sets window.__e2eWantBookmarksTour first.
+        // would bring it back. So every init() keeps those tips seen, unless the
+        // page asks for one -- the tour specs themselves list theirs in
+        // window.__e2eWantTours first.
         await page.addInitScript(() => {
             let state;
             Object.defineProperty(window, 'DiscoverabilityState', {
@@ -122,9 +122,10 @@ const test = base.test.extend({
                     if (value && typeof value.init === 'function') {
                         const init = value.init;
                         value.init = function seededInit(saved, ...rest) {
-                            if (window.__e2eWantBookmarksTour) return init.call(this, saved, ...rest);
+                            const tours = ['bookmarksTutorialV1', 'containersTutorialV1']
+                                .filter((id) => !(window.__e2eWantTours || []).includes(id));
                             const seeded = { ...(saved || {}) };
-                            seeded.seenTips = [...new Set([...(seeded.seenTips || []), 'bookmarksTutorialV1'])];
+                            seeded.seenTips = [...new Set([...(seeded.seenTips || []), ...tours])];
                             return init.call(this, seeded, ...rest);
                         };
                     }

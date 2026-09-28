@@ -1061,7 +1061,7 @@ Selecting a container opens its side panel, with four tabs:
 - **Overview** — an accordion of **Details**, **Network**, **Volumes** and **Environment**.
 - **Resources** — CPU, memory and I/O for that container.
 - **Logs** — recent log lines, following as they arrive.
-- **Changes** — what an available update would change.
+- **What’s new** — the release notes behind an available update.
 
 ### 14.4 Keys
 

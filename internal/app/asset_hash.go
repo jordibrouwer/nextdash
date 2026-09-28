@@ -190,6 +190,7 @@ var lazyLoadedAssets = []string{
 	// with the inbox rather than on every dashboard visit.
 	"js/inbox-tutorial.js",
 	"js/bookmarks-tutorial.js",
+	"js/containers-tutorial.js",
 	"js/widgets-tutorial.js",
 	"js/dashboard/dashboard-inline-edit.js",
 	"js/dashboard/dashboard-context-menu.js",

@@ -21,6 +21,12 @@ async function dockerFetchJSON(url, init) {
 class DashboardDocker {
     static VIEW = 'docker';
 
+    /*
+     * The one-time tour's tip id, repeated from containers-tutorial.js so the
+     * view can skip fetching the tour once it has been seen. Both must agree.
+     */
+    static TUTORIAL_TIP_ID = 'containersTutorialV1';
+
     /** Container states that count as "stopped" for the filter and the sort. */
     static STOPPED_STATES = new Set(['exited', 'created', 'dead']);
 
@@ -143,7 +149,54 @@ class DashboardDocker {
         // already open or is only just mounting.
         if (filter) this.applyFilter(filter);
         this.startPolling();
+        // Not awaited: the view is already usable, and a slow script fetch
+        // must not hold up the navigation that asked for it.
+        void this.maybeShowTutorial();
         return true;
+    }
+
+    /** The band's own button: the tour, seen or not. */
+    buildHeaderActions(host) {
+        if (!host) return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'lvs-action';
+        button.setAttribute('data-docker-tour', '');
+        button.title = this.t('dashboard.dockerTourHint', 'A tour of the Containers view');
+        button.textContent = this.t('dashboard.inboxTour', 'Tour');
+        button.addEventListener('click', () => { void this.openTour(); });
+        host.append(button);
+    }
+
+    /**
+     * The tour's script, fetched on demand: a reader who has done the tour
+     * never pays for it again.
+     */
+    async loadTutorial() {
+        if (typeof window.ContainersTutorial !== 'undefined') return true;
+        try {
+            await window.LazyScript.loadScriptOnce('js/containers-tutorial.js', 'containersTutorialModule',
+                () => typeof window.ContainersTutorial !== 'undefined');
+            return true;
+        } catch {
+            // A tour that cannot be fetched is not worth an error toast.
+            return false;
+        }
+    }
+
+    /** First visit: the tour, once. Checked before the script is fetched at all. */
+    async maybeShowTutorial() {
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardDocker.TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        if (!(await this.loadTutorial())) return;
+        // The reader may have left while the script came in.
+        if (this.dash.activeView !== DashboardDocker.VIEW) return;
+        window.ContainersTutorial?.maybeShow?.();
+    }
+
+    async openTour() {
+        if (!(await this.loadTutorial())) return;
+        window.ContainersTutorial?.open?.();
     }
 
     /**
@@ -424,6 +477,7 @@ class DashboardDocker {
         container.tabIndex = -1;
         this.shell = window.ListViewShell.mount(container, this.shellConfig());
         this.buildToolbar(this.shell.toolbar);
+        this.buildHeaderActions(this.shell.headerActions);
         // The side panel is the shared one (list-view-drawer.js): a host on
         // <body>, placed below the page header, fullscreen on a phone.
         this.drawer = new window.DockerDrawer(this);
