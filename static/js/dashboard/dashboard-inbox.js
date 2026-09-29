@@ -4229,8 +4229,15 @@ class DashboardInbox {
     }
 
     _destroyShell() {
+        this._removeRailOutside();
         this.shell?.destroy?.();
         this.shell = null;
+    }
+
+    _removeRailOutside() {
+        if (!this._railOutside) return;
+        document.removeEventListener('pointerdown', this._railOutside, true);
+        this._railOutside = null;
     }
 
     /**
@@ -4323,11 +4330,15 @@ class DashboardInbox {
             shell.rail.addEventListener('click', (e) => {
                 if (e.target.closest('button')) shell.root.classList.remove('is-rail-open');
             });
-            document.addEventListener('pointerdown', (e) => {
+            // Held on the view and dropped with the shell, or every mount
+            // would leave one behind, holding the old shell.
+            this._removeRailOutside();
+            this._railOutside = (e) => {
                 if (!shell.root.classList.contains('is-rail-open')) return;
                 if (shell.rail.contains(e.target) || toggle.contains(e.target)) return;
                 shell.root.classList.remove('is-rail-open');
-            }, true);
+            };
+            document.addEventListener('pointerdown', this._railOutside, true);
             this._ownToolbar.insertBefore(toggle, this._ownToolbar.firstChild);
         }
         if (toggle) toggle.hidden = !folded;

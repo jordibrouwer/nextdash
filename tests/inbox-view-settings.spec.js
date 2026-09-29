@@ -213,6 +213,26 @@ test.describe('the Inbox view follows Config → Inbox', () => {
         await expect(page.locator('.inbox-layout .lvs-rail')).toBeVisible();
     });
 
+    // Each mount of a folded rail listens on the document; leaving the view
+    // lets go of it, or one more is left behind on every visit.
+    test('a folded rail leaves no listener behind when the view closes', async ({ page }) => {
+        await open(page, { inboxViewRail: 'folded' });
+        await page.evaluate(() => {
+            window.__live = 0;
+            const add = document.addEventListener.bind(document);
+            const remove = document.removeEventListener.bind(document);
+            document.addEventListener = (t, fn, o) => { if (t === 'pointerdown') window.__live += 1; return add(t, fn, o); };
+            document.removeEventListener = (t, fn, o) => { if (t === 'pointerdown') window.__live -= 1; return remove(t, fn, o); };
+        });
+        for (let i = 0; i < 2; i += 1) {
+            await page.evaluate(() => window.dashboardInstance.inbox.closeInboxView());
+            await page.locator('#page-nav-inbox-btn').click();
+            await expect(page.locator('[data-inbox-rail-toggle]')).toBeVisible();
+        }
+        await page.evaluate(() => window.dashboardInstance.inbox.closeInboxView());
+        expect(await page.evaluate(() => window.__live)).toBeLessThanOrEqual(0);
+    });
+
     test('the header icon can count everything awake, or nothing', async ({ page }) => {
         await open(page, { inboxViewBadgeCounts: 'all' });
         // Two awake (unread and read), one snoozed.

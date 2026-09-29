@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — with the inbox rail folded, every visit left a document listener behind.** Its outside-click handler was added on each mount and never removed, each holding the old view. It is now removed when the view closes and before a new one is added.
+
 - **fix — every Appearance repaint left a document listener behind.** The theme picker's outside-click handler was added on each bind and never removed, so old ones held their detached lists, and one bound while the list was open could revert the theme preview on every later click. The previous handler is now removed first.
 
 - **fix — the inbox's bulk Promote menu could list one page's categories under another.** Choosing page A, going back and choosing B let A's categories, arriving late, be added under B's heading, so a click promoted to A. A late answer for a step no longer showing is now dropped.
