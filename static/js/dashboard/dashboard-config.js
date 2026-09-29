@@ -12466,10 +12466,12 @@ class DashboardConfig {
                 section: 'containers',
                 tab: null,
                 title: t('config.containersGroupLinks', 'Links'),
-                note: t('config.containersGroupLinksNote', 'Where ports and web UI links point. Empty uses the address this dashboard is open on. A container with its own LAN address (macvlan, br0) always links to that.'),
+                note: t('config.containersGroupLinksNote', 'Where ports and web UI links point. Enter the server’s LAN address or name only, without http:// or a port — for example 192.168.1.10 or tower.local; port 8080 then opens http://192.168.1.10:8080. Empty uses the address this dashboard is open on. A container with its own LAN address (macvlan, br0) always links to that.'),
                 controls: [
+                    // An example rather than the current host: an empty field
+                    // already means that, and the format is what people miss.
                     { field: 'dockerHostAddress', type: 'text', label: t('config.dockerHostAddressLabel', 'Docker host address'),
-                        placeholder: window.location.hostname },
+                        placeholder: '192.168.1.10' },
                 ],
             },
             {

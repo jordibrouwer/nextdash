@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.15.3 — 30 September 2026](#v1153--30-september-2026)
 - [v1.15.2 — 29 September 2026](#v1152--29-september-2026)
 - [v1.15.1 — 29 September 2026](#v1151--29-september-2026)
 - [v1.15.0 — 28 September 2026](#v1150--28-september-2026)
@@ -225,6 +226,29 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.15.3 — 30 September 2026
+
+A Containers follow-up: a Size column, removing several containers at once (running ones stopped first, from the bar, `⌫` or a right-click on the ticked rows), `⌫` in place of a Delete key many keyboards lack, and port links that go to the right server — a note while no Docker host address is set, and an example and a live check on that setting. Announced in the What's new window.
+
+### Containers
+
+- **new — Config → Containers → Links says how to write the host address.** The note gives the format (the server's LAN address or name, no `http://`, no port) with an example — `192.168.1.10` or `tower.local`, so port 8080 opens `http://192.168.1.10:8080` — and the field's placeholder is that example instead of the current host. A line under the field checks it as it is typed: ✓ with the address port 8080 would open, the host that will be saved when a full `http://…:8080` is pasted (it is cut to its host on save — the server keeps a bare host only and used to drop anything else without a word), or *Not an address*. New: `config-docker-host-check.spec.js`.
+- **new — a note while no Docker host address is set.** Without one, a port or `[IP]` link uses the host the page was opened on; through a reverse proxy that is the proxy's domain, and `dash.example.com:8080` goes nowhere. The page cannot tell which case it is in, so while the address is empty and the table has such a link, the view says where port links point, with **Set host address** (Config → Containers, the field focused) and **Dismiss** (remembered in this browser). New: `docker-host-hint.spec.js`.
+- **new — a Size column and the size in the side panel.** Each row shows what the container wrote (its writable layer), with the size including its image on hover — the two figures `docker ps -s` gives — and the side panel names both under Details and the written size under Resources. The daemon takes seconds to work them out on a big host, so the list never asks: `docker_sizes.go` keeps the last measurement by container id and starts a new one in the background when it is over half an hour old, and the Disk tab's `/system/df` read refreshes it too. A container not measured yet reads —. The column goes with CPU and RAM below 900 pixels. New: `docker-sizes.spec.js`, `TestDockerSizeOfMeasuresInTheBackground`.
+- **new — remove ticked containers in one go, running ones included.** The selection bar gains **Remove**: it asks once with the names, says which still run, stops those first (the daemon refuses to remove a running container) and ends with *N removed*. With containers ticked, `⌫` or `Delete` does the same, and a right-click on one of the ticked rows opens a menu with the bar's actions for all of them. A single running container's Remove (menu or `⌫`) takes the same stop-first route. New specs in `docker-bulk-select.spec.js`.
+- **fix — `⌫` removes, and the legend says so.** A Mac's delete key sends Backspace, which already removed the selected container, but the legend, the row menu and the cheat sheet named `Del`, a key many keyboards lack; they now show `⌫`. Pressing it on a running container used to do nothing at all; it now offers to stop and remove it. Help, the tour and MANUAL §14.2 and §14.4 follow, in all six languages.
+
+
+### Docs
+
+- **docs — Config → Help → Containers follows.** *The Containers view* says Remove stops running ones first and that a right-click on a ticked row and `⌫` do the same; *Setting it up* gains a Links paragraph: the host address format with an example, the live check and the note in the view. All six languages.
+
+- **docs — `static/data/whats-new/v1.15.3.json` and its index entry, and one Overview feature.** `whats-new-stub.js` moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v307` and `DASHBOARD_RELEASE` to v1.15.3. Config → Overview and About → News & features gain *What each container takes on disk* (`since: v1.15.3`, in all six languages); README's Containers line names the size. `tests/whats-new-hidden-release.spec.js` follows the new lead. `go generate` refreshed `asset_hashes_gen.go`.
+
+- **docs — the manual, Help and translations follow the Containers changes.** MANUAL §14.2 (Size, ticking and removing, the host address note) and §14.4 (`⌫` / `Delete`, removing the ticked ones); Config → Help → Containers (Size, removing several, `⌫`); the cheat sheet row and the tour step name `⌫` instead of `Delete`. The new keys (`dockerColSize`, `dockerFieldSize`, `dockerSizeTitle`, `dockerConfirmBulkRemove*`, `dockerBulkRemoved`, `dockerHostHint*`) are in all six languages.
 
 ---
 

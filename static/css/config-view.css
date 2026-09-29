@@ -7577,3 +7577,17 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 
 /* The habit sentence opens the attention list it sits in. */
 .config-stats-summary .config-stats-headline { margin: 0 0 10px; }
+
+/* A line under a text field saying what the typed value will do: quiet while
+   empty, the accent when it is fine, the warning colour when it will change
+   on save, the error colour when it will not be kept. */
+.config-field-check {
+    margin: calc(var(--space-1, 0.25rem) * -1) 0 var(--space-2, 0.5rem);
+    font-size: var(--font-size-small, 0.85rem);
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.config-field-check[data-state="ok"] { color: var(--accent-success, var(--accent-primary)); }
+.config-field-check[data-state="fixable"] { color: var(--accent-warning); }
+.config-field-check[data-state="bad"] { color: var(--accent-error); }

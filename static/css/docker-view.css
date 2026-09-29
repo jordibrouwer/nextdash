@@ -92,11 +92,12 @@
     border-radius: var(--radius-pill, 999px);
 }
 
-/* CPU and RAM: numbers, right-aligned so the digits line up, with their
+/* CPU, RAM and size: numbers, right-aligned so the digits line up, with their
    headings over them. */
 .docker-cell--num,
 .docker-head.docker-head--cpu,
-.docker-head.docker-head--mem {
+.docker-head.docker-head--mem,
+.docker-head.docker-head--size {
     text-align: right;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -217,6 +218,18 @@
     background: var(--background-secondary);
     border-radius: var(--radius-4, 6px);
     font-size: var(--text-sm, 0.85rem);
+}
+
+/* The host address note: its text, then the way to fix it. */
+.docker-host-hint {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-host-hint > span {
+    flex: 1 1 18rem;
 }
 
 /*
@@ -540,8 +553,10 @@
 @media (min-width: 768px) and (max-width: 899px) {
     .docker-head--cpu,
     .docker-head--mem,
+    .docker-head--size,
     .docker-cell--cpu,
-    .docker-cell--mem {
+    .docker-cell--mem,
+    .docker-cell--size {
         display: none;
     }
 }
@@ -578,6 +593,7 @@
     .docker-cell--image,
     .docker-cell--cpu,
     .docker-cell--mem,
+    .docker-cell--size,
     .docker-cell--webui,
     .docker-cell--ports {
         display: none;

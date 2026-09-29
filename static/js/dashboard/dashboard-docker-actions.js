@@ -27,6 +27,25 @@
             return window.DockerSearchIndex?.allowedActions?.(container, this.view.status?.control === true) || [];
         }
 
+        /** Running, paused or restarting: what a remove has to stop first. */
+        static isUp(c) {
+            return ['running', 'paused', 'restarting'].includes(c?.state);
+        }
+
+        /**
+         * Whether remove can be offered: a stopped container as it is, a
+         * running one by stopping it first (runBulk). Never nextDash's own.
+         */
+        canRemove(c) {
+            return Boolean(c) && !c.self && this.view.status?.control === true;
+        }
+
+        /** Remove one container: straight away when stopped, through runBulk when it runs. */
+        removeOne(c, via) {
+            if (this.allowed(c).includes('remove')) return this.run('remove', c, { via });
+            return this.runBulk('remove', [c], { via });
+        }
+
         label(action) {
             const labels = {
                 start: ['dockerActionStart', 'Start'],
@@ -366,20 +385,32 @@
          */
         async runBulk(action, containers, { via = 'bulk' } = {}) {
             // An update of a selection leaves out what the reader skipped or held.
-            const targets = containers.filter((c) => this.allowed(c).includes(action)
+            // A remove takes running ones too: they are stopped first, and the
+            // question says so -- the daemon refuses to remove a running one.
+            const targets = containers.filter((c) => (action === 'remove'
+                ? this.canRemove(c)
+                : this.allowed(c).includes(action))
                 && !(action === 'update' && ['skipped', 'held'].includes(c.update?.status)));
             if (!targets.length) return null;
-            if (action === 'stop' || action === 'update') {
+            if (action === 'stop' || action === 'update' || action === 'remove') {
                 const names = targets.map((c) => c.name).join(', ');
-                const message = action === 'stop'
-                    ? this.t('dockerConfirmBulkStop', 'Stop {names}?', { names })
-                    : this.t('dockerConfirmBulkUpdate', 'Update {names} to their newest images?', { names });
+                const running = action === 'remove' ? targets.filter((c) => DockerActions.isUp(c)) : [];
+                const message = {
+                    stop: () => this.t('dockerConfirmBulkStop', 'Stop {names}?', { names }),
+                    update: () => this.t('dockerConfirmBulkUpdate', 'Update {names} to their newest images?', { names }),
+                    remove: () => [
+                        this.t('dockerConfirmBulkRemove', 'Remove {names}? Their volumes and images stay.', { names }),
+                        running.length ? this.t('dockerConfirmBulkRemoveRunning', '{names} still run; they are stopped first.',
+                            { names: running.map((c) => c.name).join(', ') }) : '',
+                    ].filter(Boolean).join(' '),
+                }[action]();
                 const ok = typeof window.AppModal?.confirm === 'function'
                     ? await window.AppModal.confirm({
-                        title: this.label(action),
+                        title: action === 'remove' ? this.t('dockerConfirmBulkRemoveTitle', 'Remove containers') : this.label(action),
                         message,
                         confirmText: this.label(action),
                         cancelText: this.t('dockerCancel', 'Cancel'),
+                        ...(action === 'remove' ? { confirmClass: 'danger' } : {}),
                     })
                     : window.confirm(message);
                 if (!ok) return null;
@@ -400,7 +431,12 @@
                     overlay?.update?.(i, targets.length, progress(i));
                     let result = null;
                     try {
-                        result = await this.send(action, targets[i], { quiet: true });
+                        if (action === 'remove' && DockerActions.isUp(targets[i])) {
+                            const stopped = await this.send('stop', targets[i], { quiet: true });
+                            result = stopped?.ok ? await this.send('remove', targets[i], { quiet: true }) : stopped;
+                        } else {
+                            result = await this.send(action, targets[i], { quiet: true });
+                        }
                     } catch {
                         result = null;
                     }
@@ -425,6 +461,7 @@
                 stop: ['dockerBulkStopped', '{count} stopped'],
                 restart: ['dockerBulkRestarted', '{count} restarted'],
                 update: ['dockerBulkUpdated', '{count} updated'],
+                remove: ['dockerBulkRemoved', '{count} removed'],
             }[action] || ['dockerBulkDone', '{count} done'];
             const parts = [this.t(done[0], done[1], { count: ok })];
             if (failed) parts.push(this.t('dockerBulkFailed', '{count} failed', { count: failed }));
@@ -464,10 +501,37 @@
             if (this._cleanup) this._cleanup();
         }
 
+        /** Right-click on one of several ticked rows: the selection bar's actions. */
+        bulkEntries() {
+            const view = this.view;
+            const actions = view.actions;
+            const picked = view.checkedContainers();
+            const control = view.status?.control === true;
+            const icons = { start: '▶', stop: '■', restart: '↻', update: '⇡', remove: '✕' };
+            const list = [];
+            if (control) {
+                ['start', 'stop', 'restart', 'update'].forEach((a) => {
+                    if (picked.some((c) => actions?.allowed(c).includes(a))) list.push({ id: a, label: actions.label(a), icon: icons[a] });
+                });
+            }
+            const mutable = picked.filter((c) => !c.self);
+            if (mutable.length) {
+                const muting = mutable.some((c) => !actions?.isMuted(c));
+                list.push(muting
+                    ? { id: 'mute', label: this.t('dockerMenuMute', 'Mute notifications'), icon: '🔕', divider: list.length > 0 }
+                    : { id: 'mute', label: this.t('dockerMenuUnmute', 'Unmute notifications'), icon: '🔔', divider: list.length > 0 });
+            }
+            list.push({ id: 'clear', label: this.t('inboxSelectionClear', 'Clear selection'), icon: '✕' });
+            if (picked.some((c) => actions?.canRemove(c))) {
+                list.push({ id: 'remove', label: actions.label('remove'), icon: icons.remove, key: '⌫', danger: true });
+            }
+            return list;
+        }
+
         entries(c) {
             const actions = this.view.actions;
             const allowed = actions ? actions.allowed(c) : [];
-            const keys = { start: 's', stop: 's', restart: 'r', pause: 'p', unpause: 'p', update: 'u', remove: 'Del' };
+            const keys = { start: 's', stop: 's', restart: 'r', pause: 'p', unpause: 'p', update: 'u', remove: '⌫' };
             const icons = { start: '▶', stop: '■', restart: '↻', pause: '⏸', unpause: '▶', update: '⇡', remove: '✕' };
             const list = [{ id: 'open', label: this.t('dockerMenuDetails', 'Details'), icon: 'ⓘ', key: 'Enter' }];
             allowed.filter((a) => a !== 'remove').forEach((a) => {
@@ -483,7 +547,8 @@
             }
             list.push({ id: 'copy-name', label: this.t('dockerMenuCopyName', 'Copy name'), icon: '⧉' });
             list.push({ id: 'copy-id', label: this.t('dockerMenuCopyId', 'Copy ID'), icon: '⧉' });
-            if (allowed.includes('remove')) {
+            // A running one too: removing it stops it first, after asking.
+            if (actions?.canRemove(c)) {
                 list.push({ id: 'remove', label: actions.label('remove'), icon: icons.remove, key: keys.remove, danger: true });
             }
             return list;
@@ -508,13 +573,17 @@
             pop.setAttribute('role', 'menu');
             pop.setAttribute('aria-label', this.t('dockerMenuTitle', 'Container actions'));
 
+            // On one of several ticked rows the menu is for all of them.
+            const bulk = this.view.multi?.size > 1 && this.view.multi.has(c.name);
             const head = document.createElement('div');
             head.className = 'move-popover-current-hint';
-            head.textContent = c.name;
+            head.textContent = bulk
+                ? this.t('dockerBulkSelected', '{count} selected', { count: this.view.multi.size })
+                : c.name;
             pop.appendChild(head);
 
             const items = [];
-            this.entries(c).forEach((entry) => {
+            (bulk ? this.bulkEntries() : this.entries(c)).forEach((entry) => {
                 if (entry.divider || entry.danger) {
                     const divider = document.createElement('div');
                     divider.className = 'move-popover-divider';
@@ -571,7 +640,7 @@
             const run = (item) => {
                 const id = item.getAttribute('data-docker-menu-action');
                 close();
-                void this.run(id, c);
+                void (bulk ? this.view.runBulkAction(id) : this.run(id, c));
             };
             const onKey = (e) => {
                 if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); return; }
@@ -628,6 +697,8 @@
                 } catch {
                     window.AppNotification?.show?.(this.t('dockerMenuCopyFailed', 'Could not copy'), 'error');
                 }
+            } else if (id === 'remove') {
+                await view.actions?.removeOne(c, 'menu');
             } else {
                 await view.actions?.run(id, c, { via: 'menu' });
             }

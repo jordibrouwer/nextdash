@@ -364,11 +364,27 @@ class DashboardDocker {
 
             // Row actions, on the selected container. Never while typing or
             // with a modifier held, so Cmd+R still reloads the page.
+            // Backspace is the key a Mac calls delete, and many keyboards have
+            // no Delete at all; both remove.
             const actionKey = { s: 'toggle-run', r: 'restart', p: 'toggle-pause', u: 'update', Delete: 'remove', Backspace: 'remove' }[e.key];
-            if (actionKey && !typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey && this.selected) {
+            const plainKey = actionKey && !typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey;
+            // With containers ticked, remove means the ticked ones, as Delete
+            // does for a selection in the Bookmarks view.
+            if (plainKey && actionKey === 'remove' && this.multi.size && this.status?.control === true) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.runBulkAction('remove');
+                return;
+            }
+            if (plainKey && this.selected) {
                 const c = this.containers.find((x) => x.name === this.selected);
                 const action = this.resolveActionKey(actionKey, c);
-                if (c && action && this.actions?.allowed(c).includes(action)) {
+                if (c && action === 'remove' && this.actions?.canRemove(c)) {
+                    // A running one is stopped first, after asking.
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    void this.actions.removeOne(c, 'key');
+                } else if (c && action && this.actions?.allowed(c).includes(action)) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     void this.actions.run(action, c, { via: 'key' });
@@ -814,6 +830,19 @@ class DashboardDocker {
         return Number.isFinite(pct) ? `${pct.toFixed(1)} %` : '—';
     }
 
+    /** A container's writable layer, or — before it was first measured. */
+    static formatSize(size) {
+        return size ? window.NextDashBytes.formatBytes(size.rw) : '—';
+    }
+
+    /** "24 MiB written · 568 MiB with its image". */
+    static sizeTitle(size, t) {
+        return t('dashboard.dockerSizeTitle', '{written} written · {total} with its image', {
+            written: window.NextDashBytes.formatBytes(size.rw),
+            total: window.NextDashBytes.formatBytes(size.rootFs),
+        });
+    }
+
     static formatMem(bytes) {
         if (!Number.isFinite(bytes) || bytes < 0) return '—';
         const mib = bytes / (1024 * 1024);
@@ -903,6 +932,7 @@ class DashboardDocker {
         const legendAt = this.dash.settings?.dockerViewKeyLegend || 'above';
         const legend = legendAt === 'off' ? null : this.buildLegend({ control: this.status.control !== false });
         if (this.status.control === false) body.appendChild(this.buildReadOnlyLine());
+        if (this.showsHostHint()) body.appendChild(this.buildHostHint());
         if (legend && legendAt !== 'below') body.appendChild(legend);
         body.appendChild(this.buildTable());
         if (legend && legendAt === 'below') {
@@ -926,7 +956,7 @@ class DashboardDocker {
                 ['r', this.t('dashboard.dockerLegendRestart', 'restart')],
                 ['p', this.t('dashboard.dockerLegendPause', 'pause')],
                 ['u', this.t('dashboard.dockerLegendUpdate', 'update')],
-                ['Del', this.t('dashboard.dockerLegendRemove', 'remove')],
+                ['⌫', this.t('dashboard.dockerLegendRemove', 'remove')],
             ] : []),
             ['l', this.t('dashboard.dockerLegendLogs', 'logs')],
             ['m', this.t('dashboard.dockerLegendMute', 'mute')],
@@ -967,12 +997,12 @@ class DashboardDocker {
         count.className = 'multi-select-count';
         count.setAttribute('data-docker-bulk-count', '');
         bar.appendChild(count);
-        ['select-all', 'start', 'stop', 'restart', 'update', 'mute', 'clear'].forEach((action) => {
+        ['select-all', 'start', 'stop', 'restart', 'update', 'remove', 'mute', 'clear'].forEach((action) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'multi-select-btn';
+            btn.className = action === 'remove' ? 'multi-select-btn danger' : 'multi-select-btn';
             btn.setAttribute('data-docker-bulk-action', action);
-            if (['start', 'stop', 'restart', 'update'].includes(action)) {
+            if (['start', 'stop', 'restart', 'update', 'remove'].includes(action)) {
                 btn.textContent = this.actions?.label(action) || action;
             }
             if (action === 'clear') {
@@ -1009,15 +1039,19 @@ class DashboardDocker {
         button('select-all').textContent = visible.every((c) => this.multi.has(c.name))
             ? this.t('dashboard.inboxDeselectAll', 'Deselect all')
             : this.t('dashboard.unsortedSelectAll', 'Select all');
-        // Start, stop, restart and update are Docker's, and only there while
+        // Start, stop, restart, update and remove are Docker's, and only there while
         // control is on -- the gate the drawer's buttons and the row keys
         // answer to (allowed() is empty without it). Mute is a setting of
         // nextDash's own, so it stays in read-only.
         const control = this.status.control === true;
-        ['start', 'stop', 'restart', 'update'].forEach((action) => {
+        ['start', 'stop', 'restart', 'update', 'remove'].forEach((action) => {
             const btn = button(action);
             btn.hidden = !control;
-            btn.disabled = this.bulkRunning || !picked.some((c) => this.actions?.allowed(c).includes(action));
+            // Remove takes running ones too, stopping them first.
+            const can = action === 'remove'
+                ? (c) => this.actions?.canRemove(c)
+                : (c) => this.actions?.allowed(c).includes(action);
+            btn.disabled = this.bulkRunning || !picked.some(can);
         });
         // Mute while any of them still sends notices, else unmute; the
         // container that is nextDash has no notices to mute.
@@ -1117,6 +1151,75 @@ class DashboardDocker {
         return wrap;
     }
 
+    /*
+     * Port links go to the host this page was opened on, unless Config →
+     * Containers names the Docker host. Opened through a reverse proxy or any
+     * name other than the server's own, dash.example.com:8080 goes nowhere,
+     * and the page cannot tell which case it is in. So while the address is
+     * not set, the view says where port links point, with the way to set it,
+     * until it is set or the note is put away.
+     */
+    static HOST_HINT_KEY = 'nextdash.docker.hostHintDismissed';
+
+    static hostAddressUnset(settings) {
+        return !String(settings?.dockerHostAddress || '').trim();
+    }
+
+    showsHostHint() {
+        if (!DashboardDocker.hostAddressUnset(this.dash.settings)) return false;
+        try {
+            if (localStorage.getItem(DashboardDocker.HOST_HINT_KEY) === '1') return false;
+        } catch {
+            // No storage: the note shows, and its Dismiss hides it for this visit.
+            if (this._hostHintDismissed) return false;
+        }
+        // Only when a link in the table is built on that host.
+        return this.containers.some((c) => !c.lanIP
+            && (String(c.webui || '').includes('[IP]') || (!c.webui && DashboardDocker.portLink(c))));
+    }
+
+    buildHostHint() {
+        const p = document.createElement('p');
+        p.setAttribute('data-docker-host-hint', '');
+        p.className = 'docker-readonly docker-host-hint';
+        const text = document.createElement('span');
+        text.textContent = this.t('dashboard.dockerHostHint',
+            'Port links point at {host}. If your containers run on another address, set the Docker host address.',
+            { host: window.location.hostname });
+        const set = document.createElement('button');
+        set.type = 'button';
+        set.className = 'config-btn config-btn--small';
+        set.setAttribute('data-docker-host-hint-set', '');
+        set.textContent = this.t('dashboard.dockerHostHintSet', 'Set host address');
+        set.addEventListener('click', () => { void this.openHostAddressSetting(); });
+        const dismiss = document.createElement('button');
+        dismiss.type = 'button';
+        dismiss.className = 'config-btn config-btn--small';
+        dismiss.setAttribute('data-docker-host-hint-dismiss', '');
+        dismiss.textContent = this.t('dashboard.dockerHostHintDismiss', 'Dismiss');
+        dismiss.addEventListener('click', () => {
+            this._hostHintDismissed = true;
+            try {
+                localStorage.setItem(DashboardDocker.HOST_HINT_KEY, '1');
+            } catch {
+                // Kept for this visit only.
+            }
+            p.remove();
+        });
+        p.append(text, set, dismiss);
+        return p;
+    }
+
+    /** Config → Containers, with the host address field focused. */
+    async openHostAddressSetting() {
+        const config = this.dash.config;
+        if (!config?.openConfigView) return;
+        await config.openConfigView('containers');
+        const entry = config.filterSettingsJumpEntries?.('host address')
+            ?.find((e) => e.kind === 'field' && e.field === 'dockerHostAddress');
+        if (entry) await config.activateSettingsJumpEntry(entry);
+    }
+
     buildReadOnlyLine() {
         const p = document.createElement('p');
         p.setAttribute('data-docker-readonly', '');
@@ -1145,6 +1248,7 @@ class DashboardDocker {
                 ['cpu', this.t('dashboard.dockerColCpu', 'CPU'), 'cpu'],
                 ['mem', this.t('dashboard.dockerColMem', 'RAM'), 'mem'],
             ] : []),
+            ['size', this.t('dashboard.dockerColSize', 'Size')],
             ['webui', this.t('dashboard.dockerLinkWebUI', 'Web UI')],
             ['ports', this.t('dashboard.dockerColPorts', 'Ports')],
         ].forEach(([key, label, sortKey]) => {
@@ -1349,6 +1453,14 @@ class DashboardDocker {
             memCell.textContent = DashboardDocker.formatMem(c.usage?.mem);
             tr.append(cpuCell, memCell);
         }
+
+        // What the container wrote, measured in the background every half
+        // hour (docker_sizes.go); with its image on hover, as `docker ps -s`.
+        const sizeCell = document.createElement('td');
+        sizeCell.className = 'docker-cell docker-cell--size docker-cell--num';
+        sizeCell.textContent = DashboardDocker.formatSize(c.size);
+        if (c.size) sizeCell.title = DashboardDocker.sizeTitle(c.size, (key, fallback, params) => this.t(key, fallback, params));
+        tr.appendChild(sizeCell);
 
         /*
          * The web UI in a column of its own -- the address set in the drawer's

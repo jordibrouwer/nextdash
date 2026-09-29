@@ -51,6 +51,13 @@ type dockerDfResponse struct {
 			RefCount int64 `json:"RefCount"`
 		} `json:"UsageData"`
 	} `json:"Volumes"`
+	// Containers carries each one's writable layer and its size with the
+	// image, the figures the list shows (docker_sizes.go).
+	Containers []struct {
+		ID         string `json:"Id"`
+		SizeRw     int64  `json:"SizeRw"`
+		SizeRootFs int64  `json:"SizeRootFs"`
+	} `json:"Containers"`
 	BuildCache []struct {
 		Size   int64 `json:"Size"`
 		Shared bool  `json:"Shared"`
@@ -225,6 +232,14 @@ func measureDockerDisk(ctx context.Context, api *dockerAPI) (dockerDiskView, err
 	}
 	view := buildDockerDiskView(df, list)
 	rememberDockerDisk(view.Totals, time.Now())
+	// The same read measured every container; the list's sizes follow it.
+	if len(df.Containers) > 0 {
+		sizes := make(map[string]dockerContainerSize, len(df.Containers))
+		for _, c := range df.Containers {
+			sizes[c.ID] = dockerContainerSize{RW: c.SizeRw, RootFs: c.SizeRootFs}
+		}
+		rememberDockerSizes(sizes, time.Now())
+	}
 	return view, nil
 }
 
