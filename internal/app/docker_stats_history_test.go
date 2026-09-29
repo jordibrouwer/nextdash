@@ -155,3 +155,47 @@ func TestStatsRouteReturnsTheSampledHour(t *testing.T) {
 		t.Fatalf("switched off, body = %v", body)
 	}
 }
+
+// The list hands each running container its latest sampled CPU and memory, so
+// the table can show them without a stats call per row; a stopped container
+// has none, and with the sampler off the list says so and carries none.
+func TestContainerListCarriesLatestUsage(t *testing.T) {
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("e", 64), Name: "web", State: "running", Status: "Up 2 hours"})
+	f.add(fakeContainer{ID: strings.Repeat("f", 64), Name: "off", State: "exited", Status: "Exited (0) 1 hour ago"})
+	h := dockerTestHandlers(t)
+	dockerStatsStore.reset()
+	t.Cleanup(dockerStatsStore.reset)
+	h.sampleDockerStatsOnce()
+	h.sampleDockerStatsOnce()
+
+	list := func() (bool, map[string]dockerViewContainer) {
+		rec := httptest.NewRecorder()
+		newDockerTestRouter(h).ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/containers", nil))
+		var body struct {
+			UsageEnabled bool                  `json:"usageEnabled"`
+			Containers   []dockerViewContainer `json:"containers"`
+		}
+		_ = json.NewDecoder(rec.Body).Decode(&body)
+		byName := map[string]dockerViewContainer{}
+		for _, c := range body.Containers {
+			byName[c.Name] = c
+		}
+		return body.UsageEnabled, byName
+	}
+	enabled, got := list()
+	if !enabled || got["web"].Usage == nil || got["web"].Usage.Mem == 0 || got["off"].Usage != nil {
+		t.Fatalf("enabled = %v, web = %+v, off = %+v", enabled, got["web"].Usage, got["off"].Usage)
+	}
+
+	settings := h.store.GetSettings()
+	settings.DockerStatsHistory = false
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	h.sampleDockerStatsOnce()
+	enabled, got = list()
+	if enabled || got["web"].Usage != nil {
+		t.Fatalf("switched off: enabled = %v, web = %+v", enabled, got["web"].Usage)
+	}
+}

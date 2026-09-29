@@ -92,6 +92,16 @@
     border-radius: var(--radius-pill, 999px);
 }
 
+/* CPU and RAM: numbers, right-aligned so the digits line up, with their
+   headings over them. */
+.docker-cell--num,
+.docker-head.docker-head--cpu,
+.docker-head.docker-head--mem {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
 .docker-cell--ports {
     white-space: nowrap;
 }
@@ -500,6 +510,8 @@
     }
 
     .docker-cell--image,
+    .docker-cell--cpu,
+    .docker-cell--mem,
     .docker-cell--webui,
     .docker-cell--ports {
         display: none;

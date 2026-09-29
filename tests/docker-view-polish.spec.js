@@ -105,6 +105,33 @@ test.describe('docker view polish', () => {
     await expect(page.locator('.docker-head--name')).toHaveAttribute('aria-sort', 'ascending');
   });
 
+  test('CPU and RAM columns show the sampler\'s reading and sort highest first', async ({ page }) => {
+    await openView(page, { usage: true });
+    await page.locator('[data-docker-group]').selectOption('none');
+    const heads = page.locator('.docker-table thead th');
+    await expect(heads).toHaveText(['Name', 'Image', 'Status', 'CPU', 'RAM', 'Web UI', 'Ports']);
+    const jellyfin = page.locator('[data-docker-row="jellyfin"]');
+    await expect(jellyfin.locator('.docker-cell--cpu')).toHaveText('41.7 %');
+    await expect(jellyfin.locator('.docker-cell--mem')).toHaveText('1.3 GiB');
+    await expect(page.locator('[data-docker-row="bazarr"] .docker-cell--cpu')).toHaveText('—');
+
+    const names = () => page.locator('[data-docker-row]').evaluateAll((els) => els.map((r) => r.getAttribute('data-docker-row')));
+    await page.locator('[data-docker-sort-head="cpu"]').click();
+    await expect(page.locator('.docker-head--cpu')).toHaveAttribute('aria-sort', 'descending');
+    expect(await names()).toEqual(['jellyfin', 'sonarr', 'nextdash', 'bazarr']);
+    // Turned round, the stopped one still has no reading and stays last.
+    await page.locator('[data-docker-sort-head="cpu"]').click();
+    expect(await names()).toEqual(['nextdash', 'sonarr', 'jellyfin', 'bazarr']);
+    await page.locator('[data-docker-sort-head="mem"]').click();
+    expect(await names()).toEqual(['jellyfin', 'sonarr', 'nextdash', 'bazarr']);
+  });
+
+  test('no CPU or RAM columns while the sampler is off', async ({ page }) => {
+    await openView(page, { usage: false });
+    await expect(page.locator('.docker-table thead th')).toHaveText(['Name', 'Image', 'Status', 'Web UI', 'Ports']);
+    await expect(page.locator('.docker-cell--cpu')).toHaveCount(0);
+  });
+
   test('rail summary is filled', async ({ page }) => {
     await openView(page);
     await expect(page.locator('.lvs-summary [data-lvs-summary-key="running"]')).toContainText('3 / 4');

@@ -27,6 +27,9 @@ class DashboardDocker {
      */
     static TUTORIAL_TIP_ID = 'containersTutorialV1';
 
+    /** Sorts on the stats sampler's reading: highest first, no reading last. */
+    static USAGE_SORTS = new Set(['cpu', 'mem']);
+
     /** Container states that count as "stopped" for the filter and the sort. */
     static STOPPED_STATES = new Set(['exited', 'created', 'dead']);
 
@@ -36,6 +39,7 @@ class DashboardDocker {
         this.dash = dashboard;
         this.status = null;
         this.containers = [];
+        this.usageEnabled = false;
         this.query = '';
         this.selected = null;
         this.drawerOpen = false;
@@ -327,10 +331,17 @@ class DashboardDocker {
                 dockerFetchJSON('/api/docker/updates'),
             ]);
             this.containers = Array.isArray(containersBody?.containers) ? containersBody.containers : [];
+            this.usageEnabled = Boolean(containersBody?.usageEnabled);
             this._checkedAt = updatesBody?.checkedAt || null;
         } else {
             this.containers = [];
+            this.usageEnabled = false;
             this._checkedAt = null;
+        }
+        // A sort on CPU or RAM means nothing while the sampler is off.
+        if (!this.usageEnabled && DashboardDocker.USAGE_SORTS.has(this.sort)) {
+            this.sort = 'name';
+            this.sortDir = 'asc';
         }
         this.mountShell();
         this.render();
@@ -342,6 +353,7 @@ class DashboardDocker {
         if (!this.status?.socket) return;
         const body = await dockerFetchJSON('/api/docker/containers');
         this.containers = Array.isArray(body?.containers) ? body.containers : [];
+        this.usageEnabled = Boolean(body?.usageEnabled);
         this.render();
         this.syncNavBadge();
     }
@@ -512,6 +524,10 @@ class DashboardDocker {
             ['name', this.t('dashboard.dockerSortName', 'name')],
             ['status', this.t('dashboard.dockerSortStatus', 'status')],
             ['uptime', this.t('dashboard.dockerSortUptime', 'uptime')],
+            ...(this.usageEnabled ? [
+                ['cpu', this.t('dashboard.dockerSortCpu', 'CPU')],
+                ['mem', this.t('dashboard.dockerSortMem', 'memory')],
+            ] : []),
         ].map(([value, label]) => `<option value="${value}">${this.escape(label)}</option>`).join('');
         host.innerHTML = `
             <input type="search" data-docker-search value="${this.escape(this.query)}"
@@ -543,7 +559,7 @@ class DashboardDocker {
 
         host.querySelector('[data-docker-sort]')?.addEventListener('change', (e) => {
             this.sort = e.target.value || 'name';
-            this.sortDir = 'asc';
+            this.sortDir = DashboardDocker.defaultSortDir(this.sort);
             this.persistViewState();
             this.render();
         });
@@ -612,8 +628,35 @@ class DashboardDocker {
     }
 
     compareFn() {
+        if (DashboardDocker.USAGE_SORTS.has(this.sort)) {
+            // Turning the order round never moves a container without a
+            // reading (stopped, or not sampled yet) above one that has it.
+            const key = this.sort;
+            const sign = this.sortDir === 'desc' ? -1 : 1;
+            return (a, b) => {
+                const va = a.usage?.[key];
+                const vb = b.usage?.[key];
+                if (va == null || vb == null) return (va == null) - (vb == null) || a.name.localeCompare(b.name);
+                return sign * (va - vb) || a.name.localeCompare(b.name);
+            };
+        }
         const cmp = this.baseCompareFn();
         return this.sortDir === 'desc' ? (a, b) => cmp(b, a) : cmp;
+    }
+
+    /** The direction a sort starts in: usage highest first, the rest A to Z. */
+    static defaultSortDir(key) {
+        return DashboardDocker.USAGE_SORTS.has(key) ? 'desc' : 'asc';
+    }
+
+    static formatCpu(pct) {
+        return Number.isFinite(pct) ? `${pct.toFixed(1)} %` : '—';
+    }
+
+    static formatMem(bytes) {
+        if (!Number.isFinite(bytes) || bytes < 0) return '—';
+        const mib = bytes / (1024 * 1024);
+        return mib < 1024 ? `${Math.round(mib)} MiB` : `${(mib / 1024).toFixed(1)} GiB`;
     }
 
     /**
@@ -625,7 +668,7 @@ class DashboardDocker {
             this.sortDir = this.sortDir === 'desc' ? 'asc' : 'desc';
         } else {
             this.sort = key;
-            this.sortDir = 'asc';
+            this.sortDir = DashboardDocker.defaultSortDir(key);
         }
         this.persistViewState();
         this.syncToolbar();
@@ -811,6 +854,10 @@ class DashboardDocker {
             ['name', this.t('dashboard.dockerColName', 'Name'), 'name'],
             ['image', this.t('dashboard.dockerFieldImage', 'Image')],
             ['state', this.t('dashboard.dockerColStatus', 'Status'), 'status'],
+            ...(this.usageEnabled ? [
+                ['cpu', this.t('dashboard.dockerColCpu', 'CPU'), 'cpu'],
+                ['mem', this.t('dashboard.dockerColMem', 'RAM'), 'mem'],
+            ] : []),
             ['webui', this.t('dashboard.dockerLinkWebUI', 'Web UI')],
             ['ports', this.t('dashboard.dockerColPorts', 'Ports')],
         ].forEach(([key, label, sortKey]) => {
@@ -907,7 +954,7 @@ class DashboardDocker {
             if (byStatus) heading.setAttribute('data-docker-group-status', key);
             else if (key) heading.setAttribute('data-docker-group-project', key);
             const cell = document.createElement('td');
-            cell.colSpan = 5;
+            cell.colSpan = this.usageEnabled ? 7 : 5;
             const label = document.createElement('span');
             label.textContent = byStatus
                 ? statusLabels[key]
@@ -967,6 +1014,17 @@ class DashboardDocker {
         stateCell.className = 'docker-cell docker-cell--state';
         stateCell.textContent = busy ? this.phaseText(busy) : (c.status || c.state || '');
         tr.appendChild(stateCell);
+
+        // The stats sampler's last reading (every 30 s), when it is on.
+        if (this.usageEnabled) {
+            const cpuCell = document.createElement('td');
+            cpuCell.className = 'docker-cell docker-cell--cpu docker-cell--num';
+            cpuCell.textContent = DashboardDocker.formatCpu(c.usage?.cpu);
+            const memCell = document.createElement('td');
+            memCell.className = 'docker-cell docker-cell--mem docker-cell--num';
+            memCell.textContent = DashboardDocker.formatMem(c.usage?.mem);
+            tr.append(cpuCell, memCell);
+        }
 
         /*
          * The web UI in a column of its own -- the address set in the drawer's

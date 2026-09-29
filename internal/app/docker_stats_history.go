@@ -94,6 +94,17 @@ func (h *dockerStatsHistory) points(id string) []dockerStatsPoint {
 	return append([]dockerStatsPoint{}, h.series[id]...)
 }
 
+// latest is the newest reading for one container, if there is one yet.
+func (h *dockerStatsHistory) latest(id string) (dockerStatsPoint, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	s := h.series[id]
+	if len(s) == 0 {
+		return dockerStatsPoint{}, false
+	}
+	return s[len(s)-1], true
+}
+
 // keepOnly forgets every container not in ids: stopped, removed or recreated.
 func (h *dockerStatsHistory) keepOnly(ids map[string]bool) {
 	h.mu.Lock()

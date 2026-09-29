@@ -1,9 +1,9 @@
 // Mocks every /api/docker route with one in-memory daemon, so specs drive the
 // real UI without a Docker socket. Returns the state so a spec can assert on
 // what the UI sent.
-async function mockDocker(page, { control = true, socket = true, containers = null } = {}) {
+async function mockDocker(page, { control = true, socket = true, containers = null, usage = false } = {}) {
   const state = {
-    control, socket, calls: [],
+    control, socket, usage, calls: [],
     containers: containers || [
       { id: 'a'.repeat(64), shortId: 'a'.repeat(12), name: 'sonarr', image: 'lscr.io/linuxserver/sonarr:latest', tag: 'latest',
         state: 'running', status: 'Up 6 days (healthy)', health: 'healthy', created: 1790000000,
@@ -32,7 +32,14 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
       if (req.method() === 'DELETE') state.githubToken = false;
       return json({ set: Boolean(state.githubToken) });
     }
-    if (path === '/containers') return json({ available: state.socket, containers: state.socket ? state.containers : [] });
+    if (path === '/containers') {
+      // usage: the stats sampler's latest reading on each running container,
+      // as the real list carries it with Config -> Containers' history on.
+      const readings = { sonarr: { cpu: 3.2, mem: 262144000 }, jellyfin: { cpu: 41.7, mem: 1395864371 }, nextdash: { cpu: 0.4, mem: 39845888 } };
+      const list = state.socket ? state.containers.map((c) => (state.usage && c.state === 'running' && (c.usage || readings[c.name])
+        ? { ...c, usage: c.usage || readings[c.name] } : c)) : [];
+      return json({ available: state.socket, containers: list, usageEnabled: state.usage });
+    }
     if (path === '/updates') return json({ checkedAt: Date.now() - 3 * 3600e3, images: {} });
     if (path === '/updates/check') return json({ checkedAt: Date.now(), images: {} });
     const m = path.match(/^\/containers\/([^/]+)(?:\/(.+))?$/);
