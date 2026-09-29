@@ -238,6 +238,11 @@ For install and security, see the [README](README.md). For how to use features, 
 - **new — remove ticked containers in one go, running ones included.** The selection bar gains **Remove**: it asks once with the names, says which still run, stops those first (the daemon refuses to remove a running container) and ends with *N removed*. With containers ticked, `⌫` or `Delete` does the same, and a right-click on one of the ticked rows opens a menu with the bar's actions for all of them. A single running container's Remove (menu or `⌫`) takes the same stop-first route. New specs in `docker-bulk-select.spec.js`.
 - **fix — `⌫` removes, and the legend says so.** A Mac's delete key sends Backspace, which already removed the selected container, but the legend, the row menu and the cheat sheet named `Del`, a key many keyboards lack; they now show `⌫`. Pressing it on a running container used to do nothing at all; it now offers to stop and remove it. Help, the tour and MANUAL §14.2 and §14.4 follow, in all six languages.
 
+
+### Docs
+
+- **docs — the manual, Help and translations follow the Containers changes.** MANUAL §14.2 (Size, ticking and removing, the host address note) and §14.4 (`⌫` / `Delete`, removing the ticked ones); Config → Help → Containers (Size, removing several, `⌫`); the cheat sheet row and the tour step name `⌫` instead of `Delete`. The new keys (`dockerColSize`, `dockerFieldSize`, `dockerSizeTitle`, `dockerConfirmBulkRemove*`, `dockerBulkRemoved`, `dockerHostHint*`) are in all six languages.
+
 ---
 
 ## v1.15.2 — 29 September 2026
