@@ -794,6 +794,10 @@ type Settings struct {
 	// to, for when the dashboard is opened under a name that is not the Docker
 	// host's (a reverse proxy, a tunnel). Empty uses the browser's host.
 	DockerHostAddress string `json:"dockerHostAddress,omitempty"`
+	// DockerViewKeyLegend places the Containers view's key legend: above the
+	// list (where it always stood), below it, or off -- Bookmarks' and
+	// Inbox's choices.
+	DockerViewKeyLegend string `json:"dockerViewKeyLegend"`
 	// DockerNotify tells when a container stops unexpectedly, keeps
 	// restarting or turns unhealthy, through the Health webhook and browser
 	// push (docker_notify.go); DockerNotifyMuted names the containers left out.

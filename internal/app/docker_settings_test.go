@@ -140,3 +140,15 @@ func TestDockerViewEnabledDefaultsOn(t *testing.T) {
 		t.Fatal("the containers view must be on by default")
 	}
 }
+
+// The Containers key legend takes the Bookmarks and Inbox choices; anything
+// else, or nothing, is where it always stood: above the list.
+func TestDockerViewKeyLegendChoices(t *testing.T) {
+	for in, want := range map[string]string{"": "above", "above": "above", "below": "below", "off": "off", "sideways": "above"} {
+		s := Settings{DockerViewKeyLegend: in}
+		normalizeDockerSettings(&s)
+		if s.DockerViewKeyLegend != want {
+			t.Errorf("%q -> %q, want %q", in, s.DockerViewKeyLegend, want)
+		}
+	}
+}

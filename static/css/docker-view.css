@@ -645,6 +645,14 @@
     color: var(--text-secondary);
 }
 
+/* Below the list (Config → Containers → The key legend): a rule above it,
+   the space on the other side. */
+.docker-legend.is-below {
+    margin: var(--space-3, 0.75rem) 0 0;
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid var(--border-secondary, var(--border-primary));
+}
+
 .docker-legend-item {
     display: inline-flex;
     align-items: center;

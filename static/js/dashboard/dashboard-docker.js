@@ -837,16 +837,20 @@ class DashboardDocker {
             body.appendChild(this.disk.element());
             return;
         }
-        if (this.status.control === false) {
-            body.appendChild(this.buildReadOnlyLine());
-            body.appendChild(this.buildLegend({ control: false }));
-        } else {
-            body.appendChild(this.buildLegend());
-        }
+        // Config → Containers: the key legend above the list (where it always
+        // stood), below it, or off -- the choices Bookmarks and Inbox offer.
+        const legendAt = this.dash.settings?.dockerViewKeyLegend || 'above';
+        const legend = legendAt === 'off' ? null : this.buildLegend({ control: this.status.control !== false });
+        if (this.status.control === false) body.appendChild(this.buildReadOnlyLine());
+        if (legend && legendAt !== 'below') body.appendChild(legend);
         if (this.multi.size >= 2 && this.status.control) {
             body.appendChild(this.buildBulkBar());
         }
         body.appendChild(this.buildTable());
+        if (legend && legendAt === 'below') {
+            legend.classList.add('is-below');
+            body.appendChild(legend);
+        }
     }
 
     /** The row keys, as <kbd> chips; the keys stay untranslated, the labels do not. */

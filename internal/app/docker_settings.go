@@ -39,6 +39,11 @@ func normalizeDockerSettings(s *Settings) {
 	if !dockerLogLineChoices[s.DockerLogLines] {
 		s.DockerLogLines = 200
 	}
+	switch s.DockerViewKeyLegend {
+	case "above", "below", "off":
+	default:
+		s.DockerViewKeyLegend = "above"
+	}
 	s.DockerHiddenContainers = normalizeDockerNameList(s.DockerHiddenContainers)
 	s.DockerNotifyMuted = normalizeDockerNameList(s.DockerNotifyMuted)
 	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)

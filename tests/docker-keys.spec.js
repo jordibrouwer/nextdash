@@ -73,3 +73,24 @@ test.describe('containers keys', () => {
     await expect(page).toHaveURL(/#docker$/);
   });
 });
+
+// Config → Containers → The key legend: the same three choices as Bookmarks
+// and Inbox. Above is where the Containers legend always stood.
+test.describe('containers key legend placement', () => {
+  const order = (page) => page.evaluate(() => {
+    const body = document.querySelector('.docker-table')?.parentElement;
+    return [...(body?.children || [])].map((el) => (el.classList.contains('docker-legend') ? 'legend'
+      : el.classList.contains('docker-table') ? 'table' : null)).filter(Boolean);
+  });
+  for (const [choice, want] of [[undefined, ['legend', 'table']], ['above', ['legend', 'table']], ['below', ['table', 'legend']], ['off', ['table']]]) {
+    test(`legend ${choice || 'by default'}`, async ({ page }) => {
+      await mockDocker(page);
+      await page.goto('/#docker');
+      await expect(page.locator('[data-docker-row]')).toHaveCount(4);
+      if (choice) {
+        await page.evaluate((c) => { window.dashboardInstance.settings.dockerViewKeyLegend = c; window.dashboardInstance.docker.instance.render(); }, choice);
+      }
+      await expect.poll(() => order(page)).toEqual(want);
+    });
+  }
+});
