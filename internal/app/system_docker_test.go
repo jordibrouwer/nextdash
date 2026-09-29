@@ -253,3 +253,18 @@ func TestDockerControlEnabled(t *testing.T) {
 		t.Fatal("only the literal 1 enables control")
 	}
 }
+
+// A restart does not move Created, so "recently restarted" reads the uptime in
+// Status: an old container up four minutes is one, and Created alone -- the
+// second row's, contrived to be recent -- makes nothing one.
+func TestCountContainersReadsRestartsFromUptimeNotCreation(t *testing.T) {
+	now := time.Now().Unix()
+	payload := `[
+		{"Id":"a","Names":["/crashed"],"State":"running","Status":"Up 4 minutes","Created":` + strconv.FormatInt(now-30*86400, 10) + `},
+		{"Id":"b","Names":["/made-then-idle"],"State":"running","Status":"Up 3 hours","Created":` + strconv.FormatInt(now-120, 10) + `}
+	]`
+	got, _ := countContainers(strings.NewReader(payload))
+	if strings.Join(got.RestartedNames, ",") != "crashed" {
+		t.Fatalf("restarted = %v, want [crashed]", got.RestartedNames)
+	}
+}

@@ -115,6 +115,11 @@ type DockerMetrics struct {
 	TopCPU        []dockerTopCPU `json:"topCpu,omitempty"`
 
 	running []dockerRunningRef // for the figures above; not sent
+	// Every container shown and where its tag points, for Updates: counted
+	// per container, as the view's badge counts, so one left behind by its
+	// tag (pulled, not recreated) counts too.
+	containers []dockerContainerSummary
+	tagIDs     map[string]string
 }
 
 type dockerTopCPU struct {
@@ -131,8 +136,9 @@ const dockerTopCPUCount = 3
 // figure, the day's incidents and the busiest containers.
 func fillDockerExtras(out *DockerMetrics, running []dockerRunningRef, now time.Time) {
 	out.Updates = 0
-	for _, u := range readDockerUpdateStore().withChoices() {
-		if u.Status == "available" {
+	updates := readDockerUpdateStore().withChoices()
+	for _, c := range out.containers {
+		if u := dockerRowUpdate(updates[c.Image], c, out.tagIDs); u != nil && u.Status == "available" {
 			out.Updates++
 		}
 	}
@@ -221,6 +227,8 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 	var list []struct {
 		ID      string   `json:"Id"`
 		Names   []string `json:"Names"`
+		Image   string   `json:"Image"`
+		ImageID string   `json:"ImageID"`
 		State   string   `json:"State"`
 		Status  string   `json:"Status"`
 		Created int64    `json:"Created"`
@@ -230,7 +238,8 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 	}
 
 	out := DockerMetrics{MetricStatus: MetricStatus{Available: true}}
-	cutoff := time.Now().Add(-dockerRestartWindow).Unix()
+	now := time.Now()
+	cutoff := now.Add(-dockerRestartWindow).Unix()
 
 	hidden := dockerHiddenSet()
 	for _, item := range list {
@@ -239,6 +248,7 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 			continue
 		}
 		out.Total++
+		out.containers = append(out.containers, dockerContainerSummary{ID: item.ID, Names: item.Names, Image: item.Image, ImageID: item.ImageID})
 
 		switch item.State {
 		case "running":
@@ -252,7 +262,9 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 					out.UnhealthyNames = append(out.UnhealthyNames, name)
 				}
 			}
-			if item.Created > cutoff && name != "" && len(out.RestartedNames) < dockerMaxNames {
+			// When it last started, read from "Up 12 minutes": Created is when
+			// it was made, which a restart does not move and a recreate does.
+			if dockerStartedFromStatus(item.Status, now) > cutoff && name != "" && len(out.RestartedNames) < dockerMaxNames {
 				out.RestartedNames = append(out.RestartedNames, name)
 			}
 		case "paused":
@@ -306,6 +318,19 @@ func readDocker() DockerMetrics {
 			out.Images = payload.Images
 		}
 	}
+	// The list names a container whose tag has moved on by its image id;
+	// its own reference and the tags are what the update count needs.
+	api := &dockerAPI{client: client, socket: socket}
+	ctx, cancel := context.WithTimeout(context.Background(), dockerClientTimeout)
+	defer cancel()
+	for i, c := range out.containers {
+		if strings.HasPrefix(c.Image, "sha256:") {
+			if in, err := api.inspectContainer(ctx, c.ID); err == nil && in.Config.Image != "" {
+				out.containers[i].Image = in.Config.Image
+			}
+		}
+	}
+	out.tagIDs = api.imageTagIDs(ctx)
 	fillDockerExtras(&out, out.running, time.Now())
 	return out
 }

@@ -46,10 +46,20 @@ func TestDockerMetricsExtras(t *testing.T) {
 	t.Cleanup(resetDockerDiskCache)
 
 	running := []dockerRunningRef{{ID: "id-a", Name: "alpha"}, {ID: "id-b", Name: "bravo"}, {ID: "id-c", Name: "charlie"}, {ID: "id-d", Name: "delta"}}
+	// Counted per container, as the view counts: a:1's update counts, b:1's
+	// is skipped and c:1's held; d:1 is current as a tag, but "delta" still
+	// runs the image before it -- pulled, not recreated -- and counts.
 	var m DockerMetrics
+	m.containers = []dockerContainerSummary{
+		{ID: "id-a", Names: []string{"/alpha"}, Image: "a:1", ImageID: "sha256:a"},
+		{ID: "id-b", Names: []string{"/bravo"}, Image: "b:1", ImageID: "sha256:b"},
+		{ID: "id-c", Names: []string{"/charlie"}, Image: "c:1", ImageID: "sha256:c"},
+		{ID: "id-d", Names: []string{"/delta"}, Image: "d:1", ImageID: "sha256:d-old"},
+	}
+	m.tagIDs = map[string]string{dockerTagKey("a:1"): "sha256:a", dockerTagKey("d:1"): "sha256:d-new"}
 	fillDockerExtras(&m, running, now)
-	if m.Updates != 1 {
-		t.Fatalf("updates = %d, want 1 (skipped and held do not count)", m.Updates)
+	if m.Updates != 2 {
+		t.Fatalf("updates = %d, want 2 (alpha, and delta left behind by its tag; skipped and held do not count)", m.Updates)
 	}
 	if m.Incidents24h != 2 {
 		t.Fatalf("incidents = %d, want 2", m.Incidents24h)
