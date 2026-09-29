@@ -214,6 +214,8 @@ class DashboardConfig {
         // preference. Health and Inbox both remember their sort; this list was
         // the only one that reset to page order on every visit.
         this.bmSort = null;
+        // A second click on a sortable heading turns the sort round.
+        this.bmSortReverse = false;
         // null until first rendered, same as bmSort -- see defaultBookmarksGroup
         // for the rule that picks what an instance with no group of its own yet
         // opens on.
@@ -640,6 +642,8 @@ class DashboardConfig {
         if (tags.length) add('tag', tags.join(','));
         const sort = this.bmSort ?? this.defaultBookmarksSort();
         if (sort && sort !== this.defaultBookmarksSort()) add('sort', sort);
+        // A heading clicked twice turns its sort round.
+        if (this.bmSortReverse) add('rev', '1');
         // '' ("no groups") is a real, chooseable value, not "unset" -- add()
         // drops empty strings, so it rides as the word 'none' instead.
         const group = this.bmGroup ?? this.defaultBookmarksGroup();
@@ -665,7 +669,7 @@ class DashboardConfig {
         const at = raw.indexOf('?');
         const params = new URLSearchParams(at < 0 ? '' : raw.slice(at + 1));
         const before = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup, this.bmSortReverse]);
 
         this.bmQuery = params.get('q') || '';
         this.bmCategoryFilter = params.get('cat') || '';
@@ -678,6 +682,7 @@ class DashboardConfig {
         this.bmTagFilter = tags;
         const sort = params.get('sort') || '';
         if (sort) this.bmSort = sort;
+        this.bmSortReverse = params.get('rev') === '1';
         const groupParam = params.get('group');
         if (groupParam != null) {
             const group = groupParam === 'none' ? '' : groupParam;
@@ -685,7 +690,7 @@ class DashboardConfig {
         }
 
         const after = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup, this.bmSortReverse]);
         if (before === after) return false;
         this._bmDuplicateUrls = null;
         this.resetBookmarkVisibleLimit();
@@ -24048,7 +24053,7 @@ class DashboardConfig {
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
             this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmHealthFilter,
-            this.bmSort ?? this.defaultBookmarksSort(), this.bmActiveGroup(),
+            this.bmSort ?? this.defaultBookmarksSort(), this.bmSortReverse, this.bmActiveGroup(),
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -24093,7 +24098,8 @@ class DashboardConfig {
             // Health filter is active, so there is always an issue to score.
             score: (a, b) => Number(this.bmHealthIssue?.(a)?.score ?? 100) - Number(this.bmHealthIssue?.(b)?.score ?? 100),
         }[this.bmSort ?? this.defaultBookmarksSort()] || null;
-        const sorted = cmp ? [...rows].sort(cmp) : rows;
+        const ordered = cmp && this.bmSortReverse ? (a, b) => cmp(b, a) : cmp;
+        const sorted = ordered ? [...rows].sort(ordered) : rows;
         // Group is independent of Sort: Sort orders every row, then a stable
         // second pass gathers them into their groups (in group order) without
         // disturbing the sort's order *within* each group -- the same trick
@@ -24835,6 +24841,8 @@ class DashboardConfig {
             if (!el) return;
             el.addEventListener('change', () => {
                 this[prop] = el.value;
+                // The select picks a sort afresh, in its natural order.
+                if (prop === 'bmSort') this.bmSortReverse = false;
                 // The selection is deliberately kept: narrowing to a second
                 // filter and adding to what you already ticked is the point.
                 // The bulk bar says how many are behind the filter.

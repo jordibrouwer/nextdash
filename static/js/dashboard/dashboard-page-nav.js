@@ -53,7 +53,7 @@ class DashboardPageNav {
             const params = url.searchParams;
             [
                 'hv_filter', 'hv_sort', 'hv_q', 'hv_id', 'hv_refresh',
-                'ib_filter', 'ib_sort', 'ib_q', 'ib_domain', 'ib_id',
+                'ib_filter', 'ib_sort', 'ib_dir', 'ib_q', 'ib_domain', 'ib_id',
             ].forEach((key) => params.delete(key));
             const query = params.toString();
             const nextHash = pageIndex >= 0 ? `#${pageIndex + 1}` : '';

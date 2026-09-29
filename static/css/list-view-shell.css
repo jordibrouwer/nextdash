@@ -201,6 +201,44 @@
     }
 }
 
+/* A sortable heading: its own text, clickable, with a drawn arrow on the
+   column the list is sorted by (data-lvs-sort on the cell). */
+.lvs-colhead-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+}
+
+.lvs-colhead-sort:hover,
+[data-lvs-sort] > .lvs-colhead-sort {
+    color: var(--text-primary);
+}
+
+.lvs-colhead-sort:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
+}
+
+[data-lvs-sort] > .lvs-colhead-sort::after {
+    font-size: 0.8em;
+}
+
+[data-lvs-sort="ascending"] > .lvs-colhead-sort::after {
+    content: "\25B2";
+}
+
+[data-lvs-sort="descending"] > .lvs-colhead-sort::after {
+    content: "\25BC";
+}
+
 .lvs-body {
     min-width: 0;
 }

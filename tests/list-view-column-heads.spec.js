@@ -103,4 +103,77 @@ test.describe('column headings over the list views', () => {
         await page.setViewportSize({ width: 390, height: 800 });
         await expect(page.locator('.inbox-colhead')).toBeHidden();
     });
+
+    // Inbox: Title sorts A to Z, a second click Z to A; Added switches
+    // between newest and oldest first; the select follows; a reload keeps it.
+    test('Inbox: a heading sorts, a second click turns it round', async ({ page }) => {
+        const now = Date.now();
+        await openInboxWith(page, [
+            { id: 'b', url: 'https://b.lan/', domain: 'b.lan', title: 'Bravo', addedAt: now - 1000 },
+            { id: 'a', url: 'https://c.lan/', domain: 'c.lan', title: 'Alpha', addedAt: now - 3000 },
+            { id: 'c', url: 'https://a.lan/', domain: 'a.lan', title: 'Charlie', addedAt: now - 2000 },
+        ]);
+        const titles = () => page.locator('.inbox-item .inbox-item-title').allInnerTexts();
+        const title = page.locator('[data-inbox-sort-head="title"]');
+
+        await title.click();
+        await expect(page.locator('.inbox-sort-select')).toHaveValue('title');
+        await expect(page.locator('.inbox-colhead-title')).toHaveAttribute('data-lvs-sort', 'ascending');
+        expect(await titles()).toEqual(['Alpha', 'Bravo', 'Charlie']);
+
+        await page.locator('[data-inbox-sort-head="title"]').click();
+        await expect(page.locator('.inbox-colhead-title')).toHaveAttribute('data-lvs-sort', 'descending');
+        expect(await titles()).toEqual(['Charlie', 'Bravo', 'Alpha']);
+
+        await page.locator('[data-inbox-sort-head="domain"]').click();
+        await expect(page.locator('.inbox-colhead-title')).not.toHaveAttribute('data-lvs-sort', /./);
+        expect(await titles()).toEqual(['Charlie', 'Bravo', 'Alpha']); // a.lan, b.lan, c.lan
+
+        // Added: newest first, then oldest first.
+        await page.locator('[data-inbox-sort-head="added"]').click();
+        await expect(page.locator('.inbox-sort-select')).toHaveValue('newest');
+        await expect(page.locator('.inbox-colhead-when')).toHaveAttribute('data-lvs-sort', 'descending');
+        await page.locator('[data-inbox-sort-head="added"]').click();
+        await expect(page.locator('.inbox-sort-select')).toHaveValue('oldest');
+        expect(await titles()).toEqual(['Alpha', 'Charlie', 'Bravo']);
+
+        // From the keyboard, and it keeps the focus on the heading.
+        await page.locator('[data-inbox-sort-head="title"]').focus();
+        await page.keyboard.press('Enter');
+        await expect(page.locator('[data-inbox-sort-head="title"]')).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(page.locator('.inbox-colhead-title')).toHaveAttribute('data-lvs-sort', 'descending');
+        expect(await titles()).toEqual(['Charlie', 'Bravo', 'Alpha']);
+        await expect(page.locator('.lvs-drawer-host[data-lvs-drawer="inbox"] .lvs-drawer')).toBeHidden();
+    });
+
+    test('Bookmarks: a heading sorts, a second click turns it round', async ({ page }) => {
+        await openBookmarksWithHealth(page, undefined, { view: 'library' });
+        await page.locator('#config-bm-group').selectOption('');
+        const names = () => page.locator('#config-bm-list .config-bm-row .config-bm-title').allInnerTexts();
+        const nameHead = () => page.locator('[data-bm-sort-head="name"]');
+
+        await nameHead().click();
+        await expect(page.locator('#config-bm-sort')).toHaveValue('name');
+        await expect(page.locator('.config-bm-colhead-name')).toHaveAttribute('data-lvs-sort', 'ascending');
+        const asc = await names();
+        expect(asc).toEqual([...asc].sort((a, b) => a.localeCompare(b)));
+
+        await nameHead().click();
+        await expect(page.locator('.config-bm-colhead-name')).toHaveAttribute('data-lvs-sort', 'descending');
+        expect(await names()).toEqual([...asc].reverse());
+        await expect(page).toHaveURL(/rev=1/);
+
+        // The toolbar picks a sort afresh, in its natural order.
+        await page.locator('#config-bm-sort').selectOption('url');
+        await page.locator('#config-bm-sort').selectOption('name');
+        await expect(page.locator('.config-bm-colhead-name')).toHaveAttribute('data-lvs-sort', 'ascending');
+        expect(await names()).toEqual(asc);
+
+        // Keyboard: Enter on the heading sorts and stays on it.
+        await nameHead().focus();
+        await page.keyboard.press('Enter');
+        await expect(nameHead()).toBeFocused();
+        await expect(page.locator('.config-bm-colhead-name')).toHaveAttribute('data-lvs-sort', 'descending');
+    });
 });
