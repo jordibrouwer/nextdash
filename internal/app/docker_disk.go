@@ -239,6 +239,12 @@ func (h *Handlers) DockerPruneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer h.dockerPruneRunning.Store(false)
+	// An update or rollback has an image no container uses yet, between its
+	// pull or tag and its create; an image prune now would take it away.
+	if kind != "build-cache" && h.dockerAnyBusy() {
+		dockerRefuse(w, http.StatusConflict, "busy")
+		return
+	}
 	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(dockerActionTimeout + time.Minute))
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), dockerActionTimeout)
 	defer cancel()

@@ -133,3 +133,31 @@ func TestDockerVolumeRemove(t *testing.T) {
 		t.Fatalf("remove: %d %s calls %v", rec.Code, rec.Body, f.calls)
 	}
 }
+
+// An image prune waits for a running update or rollback, and an update waits
+// for a running prune: between pull and create the new image is unused.
+func TestDockerPruneAndUpdateExcludeEachOther(t *testing.T) {
+	f, h := diskFixture(t)
+	router := newDockerTestRouter(h)
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	h.dockerBusy.Store(strings.Repeat("a", 64), struct{}{})
+	if rec := dockerPost(router, "/api/docker/prune/images-unused"); rec.Code != 409 || !strings.Contains(rec.Body.String(), "busy") {
+		t.Fatalf("prune during an update: %d %s", rec.Code, rec.Body)
+	}
+	if f.called("POST /images/prune?filters=" + url.QueryEscape(`{"dangling":["false"]}`)) {
+		t.Fatalf("the prune reached the daemon: %v", f.calls)
+	}
+	if rec := dockerPost(router, "/api/docker/prune/build-cache"); rec.Code != 200 {
+		t.Fatalf("the build cache holds no image: %d", rec.Code)
+	}
+	h.dockerBusy.Delete(strings.Repeat("a", 64))
+
+	h.dockerPruneRunning.Store(true)
+	defer h.dockerPruneRunning.Store(false)
+	if rec := dockerPost(router, "/api/docker/containers/radarr/update"); rec.Code != 409 || !strings.Contains(rec.Body.String(), "busy") {
+		t.Fatalf("update during a prune: %d %s", rec.Code, rec.Body)
+	}
+	if rec := dockerPost(router, "/api/docker/containers/radarr/restart"); rec.Code != 200 {
+		t.Fatalf("a restart needs no image: %d %s", rec.Code, rec.Body)
+	}
+}

@@ -261,7 +261,7 @@
             }
             if (!res?.ok) {
                 this.notify(body?.reason === 'busy'
-                    ? this.t('dockerDiskBusy', 'Another clean-up is still running.')
+                    ? this.t('dockerDiskBusy', 'A clean-up or an update is still running. Try again when it is done.')
                     : (body?.message || this.t('dockerActionFailed', 'Docker did not do that.')), 'error');
                 return;
             }

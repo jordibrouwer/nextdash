@@ -46,6 +46,16 @@ func (h *Handlers) dockerLock(id string) (func(), bool) {
 	return func() { h.dockerBusy.Delete(id) }, true
 }
 
+// dockerAnyBusy says whether an action is running on any container.
+func (h *Handlers) dockerAnyBusy() bool {
+	busy := false
+	h.dockerBusy.Range(func(_, _ any) bool {
+		busy = true
+		return false
+	})
+	return busy
+}
+
 func dockerRefuse(w http.ResponseWriter, code int, reason string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -84,6 +94,12 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer release()
+	// The lock is taken before the prune flag is read, and the prune sets its
+	// flag before it reads the locks: one of the two always sees the other.
+	if (action == "update" || action == "rollback") && h.dockerPruneRunning.Load() {
+		dockerRefuse(w, http.StatusConflict, "busy")
+		return
+	}
 	// What nextDash stops or replaces itself is not a crash to tell about.
 	if action != "start" && action != "unpause" {
 		dockerNotifications.expect(c.name(), time.Now())
