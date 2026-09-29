@@ -38,6 +38,11 @@ const dockerLogLineMax = 16 << 10
 // of which close a response that says nothing for a minute.
 var dockerLogHeartbeat = 25 * time.Second
 
+// dockerLogResumeMax is how many lines a resume (?since=) may bring: every line
+// since the last one shown, up to what the logs window keeps. The ordinary
+// tail cap would leave a gap when more than that was written meanwhile.
+const dockerLogResumeMax = 5000
+
 // dockerLogSince is a unix timestamp, with the fraction Docker allows.
 var dockerLogSince = regexp.MustCompile(`^\d{1,12}(\.\d{1,9})?$`)
 
@@ -185,7 +190,11 @@ func (h *Handlers) DockerContainerLogStreamHandler(w http.ResponseWriter, r *htt
 	if !dockerLogSince.MatchString(since) {
 		since = ""
 	}
-	body, err := api.logsFollow(r.Context(), c.ID, dockerLogTail(r), since)
+	tail := dockerLogTail(r)
+	if since != "" {
+		tail = dockerLogResumeMax
+	}
+	body, err := api.logsFollow(r.Context(), c.ID, tail, since)
 	if err != nil {
 		writeDockerError(w, err)
 		return

@@ -95,7 +95,9 @@ func TestDockerLogStreamRoute(t *testing.T) {
 	if ct := rec.Header().Get("Content-Type"); ct != "application/x-ndjson" {
 		t.Fatalf("content type = %q", ct)
 	}
-	if !f.called("GET /containers/" + id + "/logs?follow=1&since=1790000000.5&stderr=1&stdout=1&tail=1000&timestamps=1") {
+	// A resume (since) brings every line since, up to what the window keeps,
+	// not the ordinary tail: more than that written meanwhile would be a gap.
+	if !f.called("GET /containers/" + id + "/logs?follow=1&since=1790000000.5&stderr=1&stdout=1&tail=5000&timestamps=1") {
 		t.Fatalf("calls = %v", f.calls)
 	}
 	got := readNDJSON(t, rec.Body.String())
