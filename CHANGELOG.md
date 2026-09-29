@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **i18n — the strings still in English are translated.** About 190 per language in Dutch, German, French, Spanish and Chinese, most of them the Containers view's newer text (Disk, logs, updates, rollback, the tour), plus three in the Dutch extension. Terms follow each language's existing file; words that read the same in that language (Docker, CPU, Tags, Health) stay as they are.
+
 - **fix — a Bookmarks view link kept the reader's last sort and group.** Absent keys in `#bookmarks?…` cleared the filters but not the sort or group, so following a link, or going Back to one, kept the order you had and then wrote it into the address. Absent now means the default, as the address is written; an unknown sort is ignored.
 
 - **fix — with the inbox rail folded, every visit left a document listener behind.** Its outside-click handler was added on each mount and never removed, each holding the old view. It is now removed when the view closes and before a new one is added.
