@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — Remember scroll position and soft 404 detection were off on installs from before 17 August.** Both default on, but a settings file written before they existed read as off; an absent key now means on, as it does for the other default-on switches.
+
 - **docs — Help and the manual describe the sortable column headings.** Config → Help (Bookmarks view → the list, Inbox → working the list, in all six languages) and MANUAL §11.2, §11.13 and §13: which headings sort and in what order, the arrow, that Sort follows, and the `rev=` and `ib_dir` address keys.
 
 - **fix — seven more places no longer report a failed settings save as done.** `saveSettings()` resolves `false` on a failed save rather than rejecting, and resetting onboarding, bringing a tour back, a choice in the changes tour, the Shift+Q search mode, the ask-again for browser notifications, the date-and-weather card and the feeds switch in the fresh tutorial each ignored that answer: they said the change was made, or kept it on screen, beside the save error. Each now checks the answer.

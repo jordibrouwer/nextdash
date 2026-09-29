@@ -4069,6 +4069,9 @@ func (fs *FileStore) GetSettings() Settings {
 			"inboxViewUnreadMark":   &settings.InboxViewUnreadMark,
 			"inboxViewCloseOutside": &settings.InboxViewCloseOutside,
 			"inboxViewBadge":        &settings.InboxViewBadge,
+			// And two from 17-08 that shipped without an entry here.
+			"rememberScrollPosition": &settings.RememberScrollPosition,
+			"detectSoftNotFound":     &settings.DetectSoftNotFound,
 		} {
 			if _, ok := rawSettings[key]; !ok {
 				*field = true
