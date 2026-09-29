@@ -1,0 +1,18 @@
+{
+  "tag": "v1.15.4",
+  "date": "30 September 2026",
+  "releasedAt": "2026-09-30",
+  "hideFromModal": true,
+  "modalLead": "A small fix for the Containers table.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Group bands reach the right edge again.</strong> Grouped by project or status, the band above each group left the corner over Ports uncovered."
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.15.4 — 30 September 2026](#v1154--30-september-2026)
 - [v1.15.3 — 30 September 2026](#v1153--30-september-2026)
 - [v1.15.2 — 29 September 2026](#v1152--29-september-2026)
 - [v1.15.1 — 29 September 2026](#v1151--29-september-2026)
@@ -227,6 +228,20 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
+---
+
+## v1.15.4 — 30 September 2026
+
+One fix for the Containers table, held back from the What's new window (`hideFromModal`) like v1.15.1, so v1.15.3 keeps leading it.
+
+### Containers
+
+- **fix — a group band in the Containers table stopped short of the Ports column.** Grouped by project or status, the band's cell spanned a fixed 7 (or 5) columns; the Size column made it 8, so the top-right corner over Ports was left empty. It now spans as many columns as the heading row has. A new test in `docker-table-headers.spec.js` fails on the old span.
+
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.15.4.json` and its index entry, held back from the modal.** `whats-new-stub.js` moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v308`; `DASHBOARD_RELEASE` stays on v1.15.3. `tests/whats-new-hidden-release.spec.js` lists v1.15.4 with v1.15.1 as held back. `go generate` refreshed `asset_hashes_gen.go`.
 ---
 
 ## v1.15.3 — 30 September 2026
