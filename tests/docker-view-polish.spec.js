@@ -49,6 +49,24 @@ test.describe('docker view polish', () => {
     await expect(page.locator('.docker-group-row')).toHaveText(['Updates', 'Running', 'Stopped']);
   });
 
+  // Uptime is how long a container has been up, not how old it is: an old
+  // container that just restarted sorts below a young one that has not.
+  test('sort by uptime follows the start time, stopped last', async ({ page }) => {
+    const row = (name, extra) => ({ id: name.padEnd(64, '0'), shortId: name.padEnd(12, '0'), name, image: `x/${name}`, tag: 'latest',
+      health: '', ports: [], ...extra });
+    await mockDocker(page, { containers: [
+      row('oldrestarted', { state: 'running', status: 'Up 5 minutes', created: 1700000000, startedAt: 1790000000 }),
+      row('youngsteady', { state: 'running', status: 'Up 3 days', created: 1780000000, startedAt: 1789000000 }),
+      row('ancientstopped', { state: 'exited', status: 'Exited (0) 1 day ago', created: 1600000000 }),
+    ] });
+    await page.goto('/#docker');
+    await page.locator('[data-docker-group]').selectOption('none');
+    await page.locator('[data-docker-sort]').selectOption('uptime');
+    await expect(page.locator('[data-docker-row]')).toHaveCount(3);
+    const names = await page.locator('[data-docker-row]').evaluateAll((rows) => rows.map((r) => r.getAttribute('data-docker-row')));
+    expect(names).toEqual(['youngsteady', 'oldrestarted', 'ancientstopped']);
+  });
+
   test('rail summary is filled', async ({ page }) => {
     await openView(page);
     await expect(page.locator('.lvs-summary [data-lvs-summary-key="running"]')).toContainText('3 / 4');

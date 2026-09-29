@@ -614,7 +614,10 @@ class DashboardDocker {
                 || a.name.localeCompare(b.name);
         }
         if (this.sort === 'uptime') {
-            return (a, b) => (a.created || 0) - (b.created || 0);
+            // Longest up first, by when it last started (not when it was
+            // created); a container that is not up has no uptime and goes last.
+            const started = (c) => c.startedAt || Infinity;
+            return (a, b) => started(a) - started(b) || a.name.localeCompare(b.name);
         }
         return (a, b) => a.name.localeCompare(b.name);
     }
