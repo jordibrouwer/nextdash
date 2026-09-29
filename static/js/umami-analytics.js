@@ -282,6 +282,7 @@
 
     function trackContentSnapshot() {
         if (!enabled) return;
+        trackFeatureSnapshots();
         if (trackContentSnapshot._sent) return;
         const raw = self && self.getAttribute('data-content');
         if (!raw) return;
@@ -296,8 +297,104 @@
         window.nextdashTrack('content-snapshot', buildPayload(CONTENT_FIELDS, counts));
     }
 
+    /**
+     * The three feature snapshots: widgets, containers and the list views.
+     *
+     * Raw values from the server (analytics_snapshots.go, on the script tag as
+     * data-snapshots), encoded here by the same rule as everything above. The
+     * server sends counts, yes/no and the settings' own enums; it never sends a
+     * name, so the only strings that reach these tables are short fixed words.
+     */
+    /** A count as a bucket, with -1 ("never", "all") kept apart. */
+    const bucketOrWord = (key, steps, word) => (s) => (Number(s[key]) < 0 ? word : bucket(s[key], steps));
+
+    /** One bucket per widget type, from the server's closed register. */
+    function widgetFields(raw) {
+        const fields = [
+            ['total', bucketOf('total', [0, 1, 3, 6, 12])],
+            ['pages', bucketOf('pages', [0, 1, 2, 5])],
+        ];
+        const byType = raw && typeof raw.byType === 'object' ? raw.byType : {};
+        Object.keys(byType).sort().forEach((type) => {
+            if (!/^[a-z]{1,20}$/.test(type)) return;
+            fields.push([type, () => bucket(byType[type], [0, 1, 2, 5])]);
+        });
+        return fields;
+    }
+
+    const CONTAINER_FIELDS = [
+        ['socketSet', flag('socketSet')],
+        ['control', flag('control')],
+        ['writeToken', flag('writeToken')],
+        ['runAsRoot', flag('runAsRoot')],
+        ['viewEnabled', flag('viewEnabled')],
+        ['updateInterval', pick('updateInterval', 'off')],
+        ['refreshSeconds', pick('refreshSeconds', '5')],
+        ['logLines', pick('logLines', '200')],
+        ['statsHistory', flag('statsHistory')],
+        ['confirmStopRestart', flag('confirmStopRestart')],
+        ['hidden', bucketOf('hidden', [0, 1, 5, 20])],
+        ['customWebUIs', bucketOf('customWebUIs', [0, 1, 5, 20])],
+        ['hostAddressSet', flag('hostAddressSet')],
+        ['githubToken', flag('githubToken')],
+        ['imagesChecked', bucketOf('imagesChecked', [0, 5, 15, 40])],
+        ['updatesWaiting', bucketOf('updatesWaiting', [0, 1, 3, 10])],
+    ];
+
+    const VIEW_FIELDS = [
+        // Health
+        ['healthChecked', bucketOf('healthChecked', [0, 10, 50, 200, 500])],
+        ['healthDown', bucketOf('healthDown', [0, 1, 3, 10])],
+        ['healthErrors', bucketOf('healthErrors', [0, 1, 3, 10])],
+        ['certsDue', bucketOf('certsDue', [0, 1, 3])],
+        ['certsExpired', bucketOf('certsExpired', [0, 1, 3])],
+        ['lastCheckHours', bucketOrWord('lastCheckHours', [1, 6, 24, 168], 'never')],
+        ['recheckHours', bucketOf('recheckHours', [1, 6, 12, 24, 72])],
+        // Inbox
+        ['inboxUnread', bucketOf('inboxUnread', [0, 5, 20, 100])],
+        ['inboxSnoozed', bucketOf('inboxSnoozed', [0, 1, 5, 20])],
+        ['inboxNoted', bucketOf('inboxNoted', [0, 1, 5, 20])],
+        ['inboxKept', bucketOf('inboxKept', [0, 10, 50])],
+        ['inboxFromExtension', flag('inboxFrom_extension')],
+        ['inboxFromPaste', flag('inboxFrom_paste')],
+        ['inboxFromShare', flag('inboxFrom_share')],
+        ['inboxFromImport', flag('inboxFrom_import')],
+        ['inboxSort', pick('inboxSort', 'last')],
+        ['inboxFilter', pick('inboxFilter', 'last')],
+        ['inboxAddress', pick('inboxAddress', 'domain')],
+        ['inboxKeyLegend', pick('inboxKeyLegend', 'below')],
+        ['inboxDeleteAfterPromote', flag('inboxDeleteAfterPromote')],
+        // The Bookmarks view
+        ['bmColumns', bucketOrWord('bmColumns', [0, 2, 4, 6, 9], 'all')],
+        ['bmGroup', pick('bmGroup', 'last')],
+        ['bmAddress', pick('bmAddress', 'full')],
+        ['bmPanelWidth', pick('bmPanelWidth', 'normal')],
+        ['bmRail', pick('bmRail', 'open')],
+        ['bmRowColors', flag('bmRowColors')],
+    ];
+
+    function trackFeatureSnapshots() {
+        if (!enabled) return;
+        if (trackFeatureSnapshots._sent) return;
+        const raw = self && self.getAttribute('data-snapshots');
+        if (!raw) return;
+        let snaps;
+        try {
+            snaps = JSON.parse(raw);
+        } catch (_) {
+            return;
+        }
+        if (!snaps || typeof snaps !== 'object') return;
+        trackFeatureSnapshots._sent = true;
+        if (snaps.widgets) window.nextdashTrack('widgets-snapshot', buildPayload(widgetFields(snaps.widgets), snaps.widgets));
+        if (snaps.containers) window.nextdashTrack('containers-snapshot', buildPayload(CONTAINER_FIELDS, snaps.containers));
+        if (snaps.views) window.nextdashTrack('views-snapshot', buildPayload(VIEW_FIELDS, snaps.views));
+    }
+
     // Exposed so the dashboard/config can report once their settings are loaded.
-    // Always defined (a no-op when off) so callers never feature-detect.
+    // Always defined (a no-op when off) so callers never feature-detect. The
+    // feature snapshots go out with the content (trackContentSnapshot): both
+    // are the server's counts.
     window.nextdashTrackSettings = trackSettingsSnapshot;
     window.nextdashTrackContent = trackContentSnapshot;
 

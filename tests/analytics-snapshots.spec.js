@@ -26,14 +26,15 @@ async function stubTracker(page) {
     }));
 }
 
-async function loadWithAnalyticsOn(page) {
+async function loadWithAnalyticsOn(page, extra = {}) {
     await stubTracker(page);
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.settings != null, null, { timeout: 15_000 });
-    await page.evaluate(async () => {
+    await page.evaluate(async (extra) => {
         const res = await fetch('/api/settings');
         const settings = await res.json();
+        Object.assign(settings, extra);
         settings.analyticsOptIn = true;
         const write = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         await write('/api/settings', {
@@ -41,7 +42,7 @@ async function loadWithAnalyticsOn(page) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settings),
         });
-    });
+    }, extra);
     // The tracker is emitted server-side, so only a fresh page carries it.
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
@@ -51,11 +52,11 @@ async function loadWithAnalyticsOn(page) {
     // Waited for, not slept through. Six hundred milliseconds was long enough
     // until it was not: on CI both snapshots arrived after it and every test
     // here read an empty array -- which fails as "the events are wrong" when
-    // what happened is that they had not happened yet. The four tests that use
-    // this loader all want both events, so the loader waits for both.
+    // what happened is that they had not happened yet. The tests that use
+    // this loader all want every snapshot, so the loader waits for all five.
     await expect.poll(async () => page.evaluate(() =>
         (window.__events || []).filter(([name]) => name.endsWith('-snapshot')).length),
-    { timeout: 20_000 }).toBe(2);
+    { timeout: 20_000 }).toBe(5);
 }
 
 const snapshots = (page) => page.evaluate(() =>
@@ -66,7 +67,8 @@ test.describe('the analytics snapshots', () => {
         await loadWithAnalyticsOn(page);
         const events = await snapshots(page);
 
-        expect(events.map(([name]) => name).sort()).toEqual(['content-snapshot', 'settings-snapshot']);
+        expect(events.map(([name]) => name).sort()).toEqual([
+            'containers-snapshot', 'content-snapshot', 'settings-snapshot', 'views-snapshot', 'widgets-snapshot']);
         for (const [name, props] of events) {
             expect(Object.keys(props).length, `${name} property count`).toBeLessThanOrEqual(50);
             // Every event carries the release, or a default that changed
@@ -171,5 +173,20 @@ test.describe('the analytics snapshots', () => {
         expect(await page.evaluate(() =>
             document.querySelector('script[data-nextdash-analytics]'))).toBeNull();
         expect(await snapshots(page)).toEqual([]);
+    });
+
+    // Widgets, containers and the list views: what is there in buckets, how it
+    // is set up in yes/no and short enums, and never a name -- a host address
+    // or a hidden container set here must not come back out.
+    test('the feature snapshots count and never name', async ({ page }) => {
+        await loadWithAnalyticsOn(page, { dockerHostAddress: 'tower.lan', dockerHiddenContainers: ['secret-box'] });
+        const byName = Object.fromEntries(await snapshots(page));
+
+        expect(Object.keys(byName['widgets-snapshot'])).toEqual(expect.arrayContaining(['total', 'pages', 'health', 'containers']));
+        expect(byName['containers-snapshot']).toMatchObject({ hostAddressSet: true, hidden: '1' });
+        expect(Object.keys(byName['views-snapshot'])).toEqual(expect.arrayContaining(['healthChecked', 'inboxUnread', 'bmColumns']));
+        const all = JSON.stringify([byName['widgets-snapshot'], byName['containers-snapshot'], byName['views-snapshot']]);
+        expect(all).not.toContain('tower.lan');
+        expect(all).not.toContain('secret-box');
     });
 });

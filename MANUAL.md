@@ -2170,8 +2170,11 @@ nextDash can send **anonymous usage statistics** to a self-hosted [Umami](https:
 | First-run help | Tours and tips shown and finished |
 | Settings | The **name** of a setting you change, and on/off for toggles; once per load, which features are on and the release you run |
 | Size | Once per load, bucketed counts (for example `500+` bookmarks) |
+| Widgets | Once per load, how many widgets of each type, bucketed |
+| Containers | Once per load, how the Containers view is set up: which options are on, whether a socket and control are configured, and bucketed counts of hidden containers, custom addresses and waiting updates. Docker itself is not asked |
+| Health, Inbox, Bookmarks view | Once per load, bucketed counts (checked, down, certificates due, unread, snoozed) and the layout options chosen in their Config tabs |
 
-Every count is rounded into a band. **Never recorded:** bookmark names, URLs, search text, page or category names, notes or tag names. No cookies, no profile, no cross-site tracking. This is separate from the open counts in [§6](#6-opening-and-editing-bookmarks), which never leave your server.
+Every count is rounded into a band. **Never recorded:** bookmark names, URLs, search text, page or category names, notes or tag names, container, image or widget names, or any address. No cookies, no profile, no cross-site tracking. This is separate from the open counts in [§6](#6-opening-and-editing-bookmarks), which never leave your server.
 
 ### 23.9 Operations
 
