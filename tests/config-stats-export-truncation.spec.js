@@ -145,6 +145,9 @@ test.describe('statistics: the CSV export is complete', () => {
     test('values with commas stay quoted', async ({ page }) => {
         await seedAndOpenStats(page, { opened: 3, never: 0, tags: 2 });
         await page.evaluate(() => {
+            // Memoise the figures first, as a paint does: the export must not
+            // hand back the name from before the rename.
+            window.dashboardInstance.config.computeStats();
             window.dashboardInstance.allBookmarks[0].name = 'Comma, in "name"';
         });
         const csv = await exportCsv(page);

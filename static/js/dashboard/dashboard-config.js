@@ -27735,6 +27735,10 @@ class DashboardConfig {
             this._statsInboxAgg === undefined ? this.loadStatsInbox() : null,
             this._statsHealth === undefined ? this.loadStatsHealth() : null,
         ].filter(Boolean)).catch(() => {});
+        // The memo lives for one paint, and an export is not one: a bookmark
+        // renamed or opened since the last paint would go out under its old
+        // name or count.
+        this.invalidateStatsCache();
         return this.buildAndDownloadStatsCSV();
     }
 
