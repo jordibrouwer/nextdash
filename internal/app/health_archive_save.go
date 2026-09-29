@@ -482,6 +482,8 @@ func (h *Handlers) ArchiveSettingsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	h.settingsMu.Lock()
+	defer h.settingsMu.Unlock()
 	settings := h.store.GetSettings()
 	if body.Forget {
 		settings.ArchiveSaveAccessKey = ""

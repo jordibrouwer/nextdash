@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — two settings saves at once could drop one of them.** A settings POST, a favicon or font upload and the archive-key save each read the settings, changed their field and wrote the whole struct back; two at once started from the same snapshot and the second erased the first's change. Each read-change-write now runs under one lock.
+
 - **fix — restoring a backup could leave torn or mixed data.** Each file was written straight over the live one, so a crash or a full disk mid-restore left half a JSON file, and a bookmark click during the restore could write its page back over the restored one. Files now go through the atomic writer (which also puts back 0600 on an existing secret file), all under the store lock.
 
 - **fix — a maintenance window whose days were all invalid silenced alerts every day.** Out-of-range days were dropped, and a window left with no days reads as every day; such a window is now dropped instead.

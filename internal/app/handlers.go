@@ -26,7 +26,11 @@ import (
 )
 
 type Handlers struct {
-	store             Store
+	store Store
+	// settingsMu makes a handler's read-merge-write of the settings one step,
+	// so two saves at once (a settings POST and an upload) cannot each start
+	// from the same snapshot and drop the other's field.
+	settingsMu        sync.Mutex
 	files             assetFS
 	pageTemplates     map[string]*template.Template
 	pageTemplatesMu   sync.RWMutex
@@ -2338,6 +2342,8 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+	h.settingsMu.Lock()
+	defer h.settingsMu.Unlock()
 	settings, err := mergeSettingsFromBody(h.store.GetSettings(), body)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
