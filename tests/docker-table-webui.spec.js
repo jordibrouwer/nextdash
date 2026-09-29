@@ -70,4 +70,46 @@ test.describe('the web UI in the table', () => {
         await open(page);
         await expect(page.locator('[data-docker-row="custom"] .docker-row-line2')).toContainText('nd.home.lan');
     });
+
+    // Unraid's br0: the container has its own address on the LAN, and [IP]
+    // in its template means that address, not the host nextDash is on.
+    test('a container with its own LAN address links there', async ({ page }) => {
+        await mockDocker(page, { containers: [
+            { ...base, id: 'e'.repeat(64), name: 'plex', ports: [], lanIP: '192.168.1.50',
+                webui: 'http://[IP]:32400/web', webuiDefault: 'http://[IP]:32400/web' },
+        ] });
+        await page.goto('/#docker');
+        await expect(webui(page, 'plex')).toHaveAttribute('href', 'http://192.168.1.50:32400/web');
+        await expect(webui(page, 'plex')).toHaveText('192.168.1.50:32400');
+    });
+});
+
+test.describe('the Docker host address', () => {
+    // Set where a user sets it, on Config -> Containers; the shared data dir
+    // gets it back empty at the end.
+    test('ports and [IP] follow the address set in Config', async ({ page }) => {
+        await mockDocker(page, { containers: [
+            { ...base, id: 'b'.repeat(64), name: 'template', ports: [{ private: 8989, public: 18989, type: 'tcp' }],
+                webui: 'http://[IP]:18989/', webuiDefault: 'http://[IP]:18989/' },
+            { ...base, id: 'e'.repeat(64), name: 'plex', ports: [], lanIP: '192.168.1.50', webui: 'http://[IP]:32400/', webuiDefault: 'x' },
+        ] });
+        await page.goto('/#config/containers');
+        const field = page.locator('[data-behavior-field="dockerHostAddress"]');
+        await field.fill('tower.lan');
+        await field.press('Tab');
+        await expect.poll(async () => (await (await page.request.get('/api/settings')).json()).dockerHostAddress).toBe('tower.lan');
+        try {
+            await page.goto('/#docker');
+            await expect(webui(page, 'template')).toHaveAttribute('href', 'http://tower.lan:18989/');
+            await expect(webui(page, 'template')).toHaveText(':18989');
+            await expect(ports(page, 'template').first()).toHaveAttribute('href', 'http://tower.lan:18989');
+            // Its own LAN address still wins over the host address.
+            await expect(webui(page, 'plex')).toHaveAttribute('href', 'http://192.168.1.50:32400/');
+        } finally {
+            await page.goto('/#config/containers');
+            await field.fill('');
+            await field.press('Tab');
+            await expect.poll(async () => (await (await page.request.get('/api/settings')).json()).dockerHostAddress ?? '').toBe('');
+        }
+    });
 });

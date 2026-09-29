@@ -281,9 +281,10 @@
         }
 
         webuiFor(c) {
-            if (c.webui) return String(c.webui).replace('[IP]', window.location.hostname);
+            const index = window.DockerSearchIndex;
+            if (c.webui) return index.webuiHref(c.webui, c);
             const port = (c.ports || []).find((p) => p && p.public && p.type !== 'udp');
-            return port ? `http://${window.location.hostname}:${port.public}` : '';
+            return port ? index.portHref(port.public) : '';
         }
 
         open(c, point) {

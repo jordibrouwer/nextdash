@@ -142,7 +142,7 @@ test.describe('config info + reset affordances', () => {
             // refresh, the outbound update check, the extra confirm -- so the
             // explanation is on screen, as with Theme above.
             'dockerViewEnabled', 'dockerRefreshSeconds', 'dockerLogLines', 'dockerStatsHistory',
-            'dockerUpdateInterval', 'dockerConfirmStopRestart',
+            'dockerUpdateInterval', 'dockerConfirmStopRestart', 'dockerHostAddress',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });

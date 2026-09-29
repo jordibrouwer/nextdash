@@ -584,10 +584,9 @@ class DashboardDocker {
      * A web UI address as the table links it: [IP] made this host, and a
      * label -- ":port" when it is on this host, else the host without www.
      */
-    static webuiLink(raw) {
-        const value = String(raw || '').trim();
-        if (!value) return null;
-        const href = value.replace('[IP]', window.location.hostname);
+    static webuiLink(raw, container) {
+        const href = window.DockerSearchIndex.webuiHref(raw, container);
+        if (!href) return null;
         let url;
         try {
             url = new URL(href);
@@ -595,7 +594,7 @@ class DashboardDocker {
             return null;
         }
         if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
-        const local = url.hostname === window.location.hostname;
+        const local = url.hostname === window.DockerSearchIndex.hostAddress();
         const port = url.port || (url.protocol === 'https:' ? '443' : '80');
         return { href, label: local ? `:${port}` : url.host.replace(/^www\./, '') };
     }
@@ -907,7 +906,7 @@ class DashboardDocker {
          */
         const webuiCell = document.createElement('td');
         webuiCell.className = 'docker-cell docker-cell--webui';
-        const webui = DashboardDocker.webuiLink(c.webui);
+        const webui = DashboardDocker.webuiLink(c.webui, c);
         if (webui) {
             const a = document.createElement('a');
             a.className = 'docker-port docker-webui';
@@ -926,7 +925,7 @@ class DashboardDocker {
         (c.ports || []).filter((p) => p && p.public).forEach((p) => {
             const a = document.createElement('a');
             a.className = 'docker-port';
-            a.href = `http://${window.location.hostname}:${p.public}`;
+            a.href = window.DockerSearchIndex.portHref(p.public);
             a.target = '_blank';
             a.rel = 'noopener';
             a.textContent = String(p.public);

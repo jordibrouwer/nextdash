@@ -121,6 +121,16 @@ type dockerContainerSummary struct {
 	Created int64             `json:"Created"`
 	Labels  map[string]string `json:"Labels"`
 	Ports   []dockerPort      `json:"Ports"`
+	// The network a container runs in, and its address on each network it
+	// joined -- how a macvlan container's own LAN address is found.
+	HostConfig struct {
+		NetworkMode string `json:"NetworkMode"`
+	} `json:"HostConfig"`
+	NetworkSettings struct {
+		Networks map[string]struct {
+			IPAddress string `json:"IPAddress"`
+		} `json:"Networks"`
+	} `json:"NetworkSettings"`
 }
 
 func (c dockerContainerSummary) name() string { return containerName(c.Names) }
@@ -128,6 +138,17 @@ func (c dockerContainerSummary) name() string { return containerName(c.Names) }
 func (d *dockerAPI) listContainers(ctx context.Context) ([]dockerContainerSummary, error) {
 	var out []dockerContainerSummary
 	err := d.getJSON(ctx, "/containers/json?all=1", &out)
+	return out, err
+}
+
+type dockerNetworkSummary struct {
+	Name   string `json:"Name"`
+	Driver string `json:"Driver"`
+}
+
+func (d *dockerAPI) listNetworks(ctx context.Context) ([]dockerNetworkSummary, error) {
+	var out []dockerNetworkSummary
+	err := d.getJSON(ctx, "/networks", &out)
 	return out, err
 }
 

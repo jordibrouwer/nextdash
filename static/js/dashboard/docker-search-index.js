@@ -86,10 +86,39 @@
         }
     }
 
+    /**
+     * The host a port or [IP] links to: Config -> Containers' host address,
+     * else the host the dashboard was opened on. The one place this is
+     * decided, so the table, drawer, row menu and palette open the same address.
+     */
+    function hostAddress() {
+        let set = String(window.dashboardInstance?.settings?.dockerHostAddress || '').trim();
+        // The server keeps a bare host only; until the page reloads the copy
+        // here is what was typed, so hold it to the same rule.
+        if (/^[0-9a-f:]+$/i.test(set) && set.includes(':')) set = `[${set}]`;
+        const bare = /^[A-Za-z0-9.-]+$/.test(set) || /^\[[0-9a-fA-F:.]+\]$/.test(set);
+        return (bare && set) || window.location.hostname;
+    }
+
+    /**
+     * A web UI address with [IP] filled in: the container's own LAN address
+     * when it has one (macvlan, Unraid's br0), else the host above.
+     */
+    function webuiHref(raw, container) {
+        const value = String(raw || '').trim();
+        return value ? value.replace('[IP]', container?.lanIP || hostAddress()) : '';
+    }
+
+    /** A published port on the Docker host. */
+    function portHref(port) {
+        return `http://${hostAddress()}:${port}`;
+    }
+
     /** The last status fetched, without waiting: for the synchronous palette. */
     function statusNow() { return statusValue; }
 
     window.DockerSearchIndex = {
         status, statusNow, refresh, containers: () => (enabled() ? list : []), match, matches, invalidate, allowedActions, enabled,
+        hostAddress, webuiHref, portHref,
     };
 })();

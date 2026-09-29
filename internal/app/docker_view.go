@@ -41,23 +41,27 @@ type dockerViewPort struct {
 }
 
 type dockerViewContainer struct {
-	ID             string             `json:"id"`
-	ShortID        string             `json:"shortId"`
-	Name           string             `json:"name"`
-	Image          string             `json:"image"`
-	Tag            string             `json:"tag"`
-	State          string             `json:"state"`
-	Status         string             `json:"status"`
-	Health         string             `json:"health"`
-	Created        int64              `json:"created"`
-	StartedAt      int64              `json:"startedAt,omitempty"`
-	Ports          []dockerViewPort   `json:"ports"`
-	ComposeProject string             `json:"composeProject,omitempty"`
-	WebUI          string             `json:"webui,omitempty"`
-	WebUIDefault   string             `json:"webuiDefault,omitempty"`
-	WebUICustom    string             `json:"webuiCustom,omitempty"`
-	Update         *dockerImageUpdate `json:"update,omitempty"`
-	Self           bool               `json:"self,omitempty"`
+	ID             string           `json:"id"`
+	ShortID        string           `json:"shortId"`
+	Name           string           `json:"name"`
+	Image          string           `json:"image"`
+	Tag            string           `json:"tag"`
+	State          string           `json:"state"`
+	Status         string           `json:"status"`
+	Health         string           `json:"health"`
+	Created        int64            `json:"created"`
+	StartedAt      int64            `json:"startedAt,omitempty"`
+	Ports          []dockerViewPort `json:"ports"`
+	ComposeProject string           `json:"composeProject,omitempty"`
+	WebUI          string           `json:"webui,omitempty"`
+	WebUIDefault   string           `json:"webuiDefault,omitempty"`
+	WebUICustom    string           `json:"webuiCustom,omitempty"`
+	// LanIP is the container's own address on the LAN, set only when it sits
+	// on a macvlan or ipvlan network (Unraid's br0): there [IP] means the
+	// container, not the host nextDash was opened on.
+	LanIP  string             `json:"lanIP,omitempty"`
+	Update *dockerImageUpdate `json:"update,omitempty"`
+	Self   bool               `json:"self,omitempty"`
 }
 
 // dockerHealthFromStatus reads the health word Docker appends to Status
@@ -186,6 +190,43 @@ func dockerWebUI(c dockerContainerSummary) string {
 		}
 		return strconv.Itoa(want)
 	})
+}
+
+// dockerLanNetworks names the networks that give a container an address of
+// its own on the LAN. A daemon that will not list them gives none: the links
+// fall back to the host, as they did before.
+func (d *dockerAPI) dockerLanNetworks(ctx context.Context) map[string]bool {
+	out := map[string]bool{}
+	nets, err := d.listNetworks(ctx)
+	if err != nil {
+		return out
+	}
+	for _, n := range nets {
+		if n.Driver == "macvlan" || n.Driver == "ipvlan" {
+			out[n.Name] = true
+		}
+	}
+	return out
+}
+
+// dockerLanIP is the container's address on one of those networks: the one
+// it runs in first, else the first other one it joined, by name.
+func dockerLanIP(c dockerContainerSummary, lan map[string]bool) string {
+	nets := c.NetworkSettings.Networks
+	if mode := c.HostConfig.NetworkMode; lan[mode] && nets[mode].IPAddress != "" {
+		return nets[mode].IPAddress
+	}
+	names := make([]string, 0, len(nets))
+	for name := range nets {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		if lan[name] && nets[name].IPAddress != "" {
+			return nets[name].IPAddress
+		}
+	}
+	return ""
 }
 
 func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
@@ -342,6 +383,7 @@ func (h *Handlers) DockerContainerDetailHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 	d := dockerViewDetail{dockerViewContainer: toDockerView(c, dockerSelfID())}
+	d.LanIP = dockerLanIP(c, api.dockerLanNetworks(r.Context()))
 	d.Update = h.dockerUpdateSnapshot()[c.Image]
 	d.StartedAt = in.State.StartedAt
 	d.RestartPolicy = in.HostConfig.RestartPolicy.Name
@@ -480,11 +522,13 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	updates := h.dockerUpdateSnapshot() // Task 8 fills this from the real store.
 	out := make([]dockerViewContainer, 0, len(list))
 	hidden := dockerHiddenSet()
+	lan := api.dockerLanNetworks(r.Context())
 	for _, c := range list {
 		if hidden[c.name()] {
 			continue
 		}
 		v := toDockerView(c, self)
+		v.LanIP = dockerLanIP(c, lan)
 		v.Update = updates[c.Image]
 		out = append(out, v)
 	}

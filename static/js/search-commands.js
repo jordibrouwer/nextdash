@@ -3965,7 +3965,7 @@ class SearchCommandsComponent {
                     // Open is the container's web UI when it has one -- the
                     // address set in its drawer, else its template's -- and
                     // the Containers view when it has none.
-                    const webui = String(exact.webui || '').replace('[IP]', window.location.hostname);
+                    const webui = index.webuiHref(exact.webui, exact);
                     if (action === 'open' && webui) {
                         window.open(webui, '_blank', 'noopener');
                     } else if (action === 'open' || action === 'logs') {

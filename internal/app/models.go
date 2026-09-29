@@ -790,6 +790,10 @@ type Settings struct {
 	// its template gives -- or gives one to a container without. By name,
 	// because an update recreates the container under a new id.
 	DockerWebUIs map[string]string `json:"dockerWebUIs,omitempty"`
+	// DockerHostAddress is the host the Containers view links ports and [IP]
+	// to, for when the dashboard is opened under a name that is not the Docker
+	// host's (a reverse proxy, a tunnel). Empty uses the browser's host.
+	DockerHostAddress string `json:"dockerHostAddress,omitempty"`
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
 	// feed can then say when it has published something since you last opened
 	// it. Off by default because it is the only thing here that reaches out to

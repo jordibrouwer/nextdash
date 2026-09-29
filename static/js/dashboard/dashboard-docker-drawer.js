@@ -224,7 +224,7 @@ class DockerDrawer {
         const ports = (summary.ports || []).filter((p) => p && p.public)
             .map((p) => `${p.public} → ${p.private}`).slice(0, 2).join(', ');
         const where = [summary.status, ports, summary.health].filter(Boolean).join(' · ');
-        const webui = String(summary.webui || '').replace('[IP]', location.hostname);
+        const webui = window.DockerSearchIndex.webuiHref(summary.webui, summary);
         L.moreLabel = this.t('dockerMoreActions', 'More actions');
         const head = L.head(esc, {
             icon: `<span class="docker-drawer-icon" aria-hidden="true">${esc(String(summary.name || '?').charAt(0).toUpperCase())}</span>`,
@@ -296,7 +296,7 @@ class DockerDrawer {
     _act(action) {
         const summary = this._summary || {};
         if (action === 'webui') {
-            const href = String(summary.webui || '').replace('[IP]', location.hostname);
+            const href = window.DockerSearchIndex.webuiHref(summary.webui, summary);
             if (href) window.open(href, '_blank', 'noopener,noreferrer');
         } else if (action === 'copy-name') {
             void navigator.clipboard?.writeText?.(String(summary.name || ''));
@@ -816,7 +816,7 @@ class DockerDrawer {
         (Array.isArray(data?.links) ? data.links : []).forEach((link) => {
             const a = document.createElement('a');
             let href = link.url || '';
-            if (link.kind === 'webui') href = href.replace('[IP]', location.hostname);
+            if (link.kind === 'webui') href = window.DockerSearchIndex.webuiHref(href, this._summary);
             a.href = href;
             a.target = '_blank';
             a.rel = 'noopener noreferrer';

@@ -2,10 +2,12 @@ package app
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -52,7 +54,30 @@ func normalizeDockerSettings(s *Settings) {
 	}
 	s.DockerHiddenContainers = kept
 	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
+	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)
 }
+
+// normalizeDockerHostAddress keeps a bare host -- a name or an IP, an IPv6
+// one in brackets -- and drops anything with a scheme, port or path: the
+// links put their own scheme and port around it.
+func normalizeDockerHostAddress(raw string) string {
+	host := strings.TrimSpace(raw)
+	if host == "" || len(host) > 253 {
+		return ""
+	}
+	if ip := net.ParseIP(strings.Trim(host, "[]")); ip != nil {
+		if ip.To4() != nil {
+			return ip.String()
+		}
+		return "[" + ip.String() + "]"
+	}
+	if !dockerHostName.MatchString(host) {
+		return ""
+	}
+	return host
+}
+
+var dockerHostName = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$`)
 
 const dockerMaxWebUILen = 2048
 

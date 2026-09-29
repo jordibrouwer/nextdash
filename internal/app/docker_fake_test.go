@@ -39,6 +39,10 @@ type fakeDocker struct {
 	// dropPull cuts the pull stream off halfway, the way a daemon that dies
 	// or a connection that breaks does: an error that is not the API's.
 	dropPull bool
+	// networks is what GET /networks lists, name -> driver; failNetworks makes
+	// that call fail the way an old or locked-down daemon might.
+	networks     map[string]string
+	failNetworks bool
 }
 
 type fakeContainer struct {
@@ -174,6 +178,18 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 		f.handleList(w)
 		return
 
+	case r.Method == "GET" && path == "/networks":
+		if f.failNetworks {
+			writeJSONFake(w, http.StatusInternalServerError, map[string]string{"message": "no"})
+			return
+		}
+		nets := make([]map[string]any, 0, len(f.networks))
+		for name, driver := range f.networks {
+			nets = append(nets, map[string]any{"Name": name, "Driver": driver})
+		}
+		writeJSONFake(w, http.StatusOK, nets)
+		return
+
 	case r.Method == "GET" && strings.HasPrefix(path, "/containers/") && strings.HasSuffix(path, "/json"):
 		id := strings.TrimSuffix(strings.TrimPrefix(path, "/containers/"), "/json")
 		f.handleInspect(w, id)
@@ -245,7 +261,8 @@ func (f *fakeDocker) handleList(w http.ResponseWriter) {
 		out = append(out, map[string]any{
 			"Id": c.ID, "Names": []string{"/" + c.Name}, "Image": c.Image, "ImageID": c.ImageID,
 			"State": c.State, "Status": c.Status, "Created": c.Created, "Labels": c.Labels,
-			"Ports": c.Ports,
+			"Ports": c.Ports, "HostConfig": map[string]any{"NetworkMode": c.NetworkMode},
+			"NetworkSettings": map[string]any{"Networks": c.Networks},
 		})
 	}
 	writeJSONFake(w, http.StatusOK, out)

@@ -3275,6 +3275,7 @@ class DashboardConfig {
         dockerUpdateInterval: ['docker', 'containers', 'updates', 'registry', 'image'],
         dockerConfirmStopRestart: ['docker', 'containers', 'confirm', 'stop', 'restart'],
         dockerStatsHistory: ['docker', 'containers', 'cpu', 'memory', 'chart', 'history', 'resources'],
+        dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
         statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
         statusOfflineRetryDelayMs: ['offline', 'retry', 'delay', 'status'],
@@ -12064,6 +12065,7 @@ class DashboardConfig {
         dockerUpdateInterval: { def: 'off' },
         dockerConfirmStopRestart: { def: false },
         dockerStatsHistory: { def: true },
+        dockerHostAddress: { def: '' },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
         statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 450 },
@@ -12412,6 +12414,16 @@ class DashboardConfig {
                         opt(100, '100'), opt(200, '200'), opt(500, '500'), opt(1000, '1000'),
                     ] },
                     bool('dockerStatsHistory', 'config.dockerStatsHistoryLabel', 'Keep the last hour of CPU and memory'),
+                ],
+            },
+            {
+                section: 'containers',
+                tab: null,
+                title: t('config.containersGroupLinks', 'Links'),
+                note: t('config.containersGroupLinksNote', 'Where ports and web UI links point. Empty uses the address this dashboard is open on. A container with its own LAN address (macvlan, br0) always links to that.'),
+                controls: [
+                    { field: 'dockerHostAddress', type: 'text', label: t('config.dockerHostAddressLabel', 'Docker host address'),
+                        placeholder: window.location.hostname },
                 ],
             },
             {
@@ -13698,7 +13710,8 @@ class DashboardConfig {
             } else if (c.type === 'number') {
                 control = `<input type="number" class="config-text" style="min-width:80px" ${dataAttrs} data-${prefix}-type="number" min="${c.min ?? ''}" max="${c.max ?? ''}" value="${esc(val ?? '')}">`;
             } else {
-                control = `<input type="text" class="config-text" ${dataAttrs} data-${prefix}-type="text" value="${esc(val ?? '')}">`;
+                const placeholder = c.placeholder ? ` placeholder="${esc(c.placeholder)}"` : '';
+                control = `<input type="text" class="config-text" ${dataAttrs} data-${prefix}-type="text" value="${esc(val ?? '')}"${placeholder}>`;
             }
             return `
                 <div class="config-field">

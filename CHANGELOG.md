@@ -233,6 +233,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ### Containers
 
 - **new — the containers table names its columns.** Name, Image, Status, Web UI and Ports sit above the rows and stay pinned under the view's header while the list scrolls; at phone width, where rows fold into two lines, the headings are hidden. The Name, Status and Ports labels are new locale keys, still English outside `en` until the next docs round.
+- **new — web UI and port links reach the container, not just the page's host.** A container on a macvlan or ipvlan network (Unraid's `br0`) has its own LAN address, and `[IP]` in its web UI now means that address; the list and detail routes hand it over as `lanIP`, read from the daemon's network list, and a daemon that will not list its networks leaves the links as they were. Config → Containers → Links adds **Docker host address** for when the dashboard is opened through a reverse proxy or tunnel: ports and `[IP]` then point there instead of at the browser's host. One helper in `docker-search-index.js` now fills `[IP]` for the table, the drawer, the row menu and `:docker <name> open`, which each did it themselves before.
 
 ---
 
