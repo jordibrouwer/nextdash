@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -52,6 +53,8 @@ type fakeDocker struct {
 	// prune endpoints report.
 	df        map[string]any
 	reclaimed int64
+	// lastCreate is the body of the last /containers/create, as sent.
+	lastCreate map[string]any
 }
 
 type fakeContainer struct {
@@ -73,13 +76,17 @@ type fakeContainer struct {
 	FollowDelay time.Duration
 	Health      map[string]any // State.Health as inspect reports it
 	Healthcheck []string       // Config.Healthcheck.Test
-	created     bool           // set once /containers/create has made it
+	// ConfigExtra joins inspect's Config: Cmd, Entrypoint and the like, as the
+	// daemon reports them after folding the image's defaults in.
+	ConfigExtra map[string]any
+	created     bool // set once /containers/create has made it
 }
 
 type fakeImage struct {
 	ID          string
 	RepoDigests []string
 	Labels      map[string]string
+	Config      map[string]any // the rest of the image's Config: Env, Cmd, ...
 }
 
 // startFakeDocker starts the daemon on a short-path unix socket -- not
@@ -341,8 +348,7 @@ func (f *fakeDocker) handleInspect(w http.ResponseWriter, id string) {
 			"Status": c.State, "Running": c.State == "running", "Paused": c.State == "paused",
 			"StartedAt": "2024-01-01T00:00:00Z", "Health": health,
 		},
-		"Config": map[string]any{"Image": c.Image, "Env": c.Env, "Labels": c.Labels, "Tty": c.Tty,
-			"Healthcheck": map[string]any{"Test": c.Healthcheck}},
+		"Config": fakeInspectConfig(c),
 		"HostConfig": map[string]any{
 			"RestartPolicy": map[string]any{"Name": c.RestartPolicy}, "Binds": []string{},
 			"NetworkMode": c.NetworkMode,
@@ -372,9 +378,20 @@ func (f *fakeDocker) handleImageInspect(w http.ResponseWriter, ref string) {
 		writeJSONFake(w, http.StatusNotFound, map[string]string{"message": "no such image"})
 		return
 	}
-	writeJSONFake(w, http.StatusOK, map[string]any{
-		"Id": img.ID, "RepoDigests": img.RepoDigests, "Config": map[string]any{"Labels": img.Labels},
-	})
+	config := map[string]any{"Labels": img.Labels}
+	for k, v := range img.Config {
+		config[k] = v
+	}
+	writeJSONFake(w, http.StatusOK, map[string]any{"Id": img.ID, "RepoDigests": img.RepoDigests, "Config": config})
+}
+
+func fakeInspectConfig(c *fakeContainer) map[string]any {
+	config := map[string]any{"Image": c.Image, "Env": c.Env, "Labels": c.Labels, "Tty": c.Tty,
+		"Healthcheck": map[string]any{"Test": c.Healthcheck}}
+	for k, v := range c.ConfigExtra {
+		config[k] = v
+	}
+	return config
 }
 
 // handleTag points repo:tag at an image named by reference or id.
@@ -485,7 +502,10 @@ func (f *fakeDocker) handleCreate(w http.ResponseWriter, r *http.Request) {
 			EndpointsConfig map[string]map[string]any `json:"EndpointsConfig"`
 		} `json:"NetworkingConfig"`
 	}
-	_ = json.NewDecoder(r.Body).Decode(&body)
+	raw, _ := io.ReadAll(r.Body)
+	_ = json.Unmarshal(raw, &body)
+	f.lastCreate = map[string]any{}
+	_ = json.Unmarshal(raw, &f.lastCreate)
 	// Unique per create: a second recreate under the same name (an update,
 	// then its rollback) must not reuse the first one's id.
 	f.seq++

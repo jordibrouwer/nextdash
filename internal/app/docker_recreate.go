@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -93,6 +94,14 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 		return h.dockerRollback(ctx, api, res, c.ID, "", "", wasRunning, err)
 	}
 
+	// Docker folds the image's defaults into a container's Config when it is
+	// created, and inspect hands them back merged. Sent back as they are, the
+	// old image's Env, Cmd, Entrypoint, healthcheck and labels would override
+	// the new image's own. What equals the old image's value is left out, so
+	// the new image fills it in; what was set for the container stays.
+	if imgConfig, err := api.inspectImageConfig(ctx, in.Image); err == nil && imgConfig != nil {
+		dropImageDefaults(config, imgConfig)
+	}
 	config["Image"] = ref
 	// Docker defaults the hostname to the short id; carried over, the new
 	// container would be named after the one it replaces.
@@ -151,6 +160,50 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 	res.Phase = "done"
 	res.ContainerID = newID
 	return res, nil
+}
+
+// dropImageDefaults removes from a container's Config what it only has
+// because its image had it. Env lines and labels go one by one; Cmd goes only
+// with the Entrypoint, since an entrypoint set for the container keeps the
+// command that came with it.
+func dropImageDefaults(config, image map[string]any) {
+	if env, ok := config["Env"].([]any); ok {
+		fromImage := map[string]bool{}
+		if imgEnv, ok := image["Env"].([]any); ok {
+			for _, e := range imgEnv {
+				if s, ok := e.(string); ok {
+					fromImage[s] = true
+				}
+			}
+		}
+		kept := []any{}
+		for _, e := range env {
+			if s, ok := e.(string); !ok || !fromImage[s] {
+				kept = append(kept, e)
+			}
+		}
+		config["Env"] = kept
+	}
+	for _, field := range []string{"Labels", "ExposedPorts", "Volumes"} {
+		own, _ := config[field].(map[string]any)
+		img, _ := image[field].(map[string]any)
+		for k, v := range img {
+			if cv, ok := own[k]; ok && reflect.DeepEqual(cv, v) {
+				delete(own, k)
+			}
+		}
+	}
+	for _, field := range []string{"WorkingDir", "User", "Healthcheck", "StopSignal", "Shell", "OnBuild"} {
+		if cv, ok := config[field]; ok && reflect.DeepEqual(cv, image[field]) {
+			delete(config, field)
+		}
+	}
+	if reflect.DeepEqual(config["Entrypoint"], image["Entrypoint"]) {
+		delete(config, "Entrypoint")
+		if reflect.DeepEqual(config["Cmd"], image["Cmd"]) {
+			delete(config, "Cmd")
+		}
+	}
 }
 
 // dockerEndpointConfig carries a network's aliases, fixed address and MAC over

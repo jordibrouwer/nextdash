@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -158,3 +159,52 @@ func TestDockerUpdateSaysWhatBroke(t *testing.T) {
 		t.Fatalf("code = %d body = %s", rec.Code, body)
 	}
 }
+
+// Inspect reports a container's Config with its image's defaults folded in.
+// Recreate leaves those out, so the new image brings its own; what was set for
+// the container itself -- an env line, Unraid's label, an entrypoint of its
+// own with the command that goes with it -- stays.
+func TestDockerRecreateLeavesImageDefaultsToTheNewImage(t *testing.T) {
+	f, h, c, api := recreateFixture(t)
+	f.images["img:latest"] = fakeImage{ID: "sha256:old",
+		Labels: map[string]string{"org.opencontainers.image.version": "4.0.9"},
+		Config: map[string]any{"Env": []string{"PATH=/old/bin", "VERSION=4.0.9"}, "Cmd": []string{"run"},
+			"Entrypoint": []string{"/init"}, "WorkingDir": "/app", "ExposedPorts": map[string]any{"8989/tcp": map[string]any{}}}}
+	cont := f.containers[c.ID]
+	cont.Env = []string{"PATH=/old/bin", "VERSION=4.0.9", "A=1"}
+	cont.Labels = map[string]string{"net.unraid.docker.managed": "dockerman", "org.opencontainers.image.version": "4.0.9"}
+	cont.ConfigExtra = map[string]any{"Cmd": []string{"run"}, "Entrypoint": []string{"/init"}, "WorkingDir": "/app",
+		"ExposedPorts": map[string]any{"8989/tcp": map[string]any{}, "9000/tcp": map[string]any{}}}
+
+	if res, err := h.dockerRecreate(context.Background(), api, c); err != nil || res.Phase != "done" {
+		t.Fatalf("res = %+v err = %v", res, err)
+	}
+	body := f.lastCreate
+	if env, _ := json.Marshal(body["Env"]); string(env) != `["A=1"]` {
+		t.Fatalf("env sent = %s, want only the container's own", env)
+	}
+	for _, field := range []string{"Cmd", "Entrypoint", "WorkingDir"} {
+		if v, ok := body[field]; ok {
+			t.Fatalf("%s = %v was the old image's and must be left to the new one", field, v)
+		}
+	}
+	if labels, _ := json.Marshal(body["Labels"]); string(labels) != `{"net.unraid.docker.managed":"dockerman"}` {
+		t.Fatalf("labels sent = %s", labels)
+	}
+	if ports, _ := json.Marshal(body["ExposedPorts"]); string(ports) != `{"9000/tcp":{}}` {
+		t.Fatalf("exposed ports sent = %s", ports)
+	}
+
+	// An entrypoint of the container's own keeps its command, even one that
+	// matches the image's.
+	f2, h2, c2, api2 := recreateFixture(t)
+	f2.images["img:latest"] = fakeImage{ID: "sha256:old", Config: map[string]any{"Cmd": []string{"run"}, "Entrypoint": []string{"/init"}}}
+	f2.containers[c2.ID].ConfigExtra = map[string]any{"Cmd": []string{"run"}, "Entrypoint": []string{"/custom"}}
+	if _, err := h2.dockerRecreate(context.Background(), api2, c2); err != nil {
+		t.Fatal(err)
+	}
+	if cmd, _ := json.Marshal(f2.lastCreate["Cmd"]); string(cmd) != `["run"]` {
+		t.Fatalf("cmd with an own entrypoint = %s", cmd)
+	}
+}
+

@@ -258,6 +258,16 @@ func (d *dockerAPI) inspectImage(ctx context.Context, ref string) (dockerImageIn
 	return out, err
 }
 
+// inspectImageConfig is an image's Config as the daemon keeps it, untyped:
+// recreate compares a container's Config against it field by field.
+func (d *dockerAPI) inspectImageConfig(ctx context.Context, ref string) (map[string]any, error) {
+	var out struct {
+		Config map[string]any `json:"Config"`
+	}
+	err := d.getJSON(ctx, "/images/"+url.PathEscape(ref)+"/json", &out)
+	return out.Config, err
+}
+
 type dockerCreateBody map[string]any
 
 func (d *dockerAPI) createContainer(ctx context.Context, name string, body dockerCreateBody) (string, error) {
