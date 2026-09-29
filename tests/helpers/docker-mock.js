@@ -101,6 +101,18 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     if (sub.startsWith('env/')) return json({ name: sub.slice(4), value: 'secret-value' });
     if (sub === 'stats') return json({ cpuPercent: 3.2, memoryUsed: 262144000, memoryLimit: 8589934592 });
     if (sub === 'logs') return json({ lines: ['line one', 'line two'] });
+    if (sub === 'timeline') {
+      if (c.name !== 'sonarr') return json({ entries: [] });
+      const t = (h) => Date.parse('2026-09-29T10:00:00Z') + h * 3600e3;
+      return json({ entries: [
+        { at: t(5), kind: 'update', detail: '4.0.9 → 4.0.10' },
+        { at: t(4), kind: 'restart-loop', detail: '5 times in 4 min, last exit code 1', count: 5 },
+        { at: t(3), kind: 'unhealthy' },
+        { at: t(2), kind: 'crash', detail: 'out of memory (exit code 137)' },
+        { at: t(1), kind: 'stop', detail: 'by nextDash' },
+        { at: t(0), kind: 'start' },
+      ] });
+    }
     if (sub === 'health') {
       if (!c.health) return json({ status: '', failingStreak: 0, command: '', checks: [] });
       return json({ status: c.health, failingStreak: c.health === 'healthy' ? 0 : 2, command: 'curl -f http://localhost:8989/ping',

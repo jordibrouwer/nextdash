@@ -408,6 +408,40 @@
     border: 1px solid var(--border-primary);
 }
 
+/* Timeline: one line per event, a dot in the state's colour, the time right. */
+.docker-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-timeline-entry {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-timeline-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--text-secondary);
+}
+
+.docker-timeline-entry[data-tone="good"] .docker-timeline-dot { background: var(--accent-success, #3c6); }
+.docker-timeline-entry[data-tone="bad"] .docker-timeline-dot { background: var(--accent-error, #c55); }
+.docker-timeline-entry[data-tone="warn"] .docker-timeline-dot { background: var(--accent-warning, #cb4); }
+.docker-timeline-entry[data-tone="accent"] .docker-timeline-dot { background: var(--accent-primary); }
+
+.docker-timeline-what {
+    overflow-wrap: anywhere;
+}
+
 /* Updates: where the image stands, the choices, then the history. */
 .docker-updates-status {
     margin: 0 0 var(--space-2, 0.5rem);

@@ -11,7 +11,7 @@
 
 const DOCKER_SECTIONS_KEY = 'nextdash.docker.sections';
 const DOCKER_SECTIONS_DEFAULT = ['overview'];
-const DOCKER_SECTION_KEYS = ['overview', 'health', 'updates', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
+const DOCKER_SECTION_KEYS = ['overview', 'health', 'updates', 'timeline', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
 
 /** fetch() that never throws and answers null on anything but a 2xx JSON body. */
 async function dockerDrawerFetchJSON(url, init) {
@@ -134,6 +134,7 @@ class DockerDrawer {
         this._logsLoaded = false;
         this._changesLoaded = false;
         this._healthLoaded = false;
+        this._timelineLoaded = false;
         this._buildSkeleton(typeof container === 'string' ? { name } : container);
         void this._loadDetail(name);
     }
@@ -209,6 +210,7 @@ class DockerDrawer {
         this._wireLogs(els);
         this._wireChanges(els);
         this._wireHealth(els, summary);
+        this._wireTimeline(els);
         // The tab on show loads what it needs now, as a click on it would.
         this._onTab(window.SidePanelLayout.activeTab('docker', this._tabs()));
     }
@@ -263,6 +265,7 @@ class DockerDrawer {
                 acc('overview', this.t('dockerSectionDetails', 'Details'), true),
                 acc('health', this.t('dockerSectionHealth', 'Health')),
                 acc('updates', this.t('dockerSectionUpdates', 'Updates')),
+                acc('timeline', this.t('dockerSectionTimeline', 'Timeline')),
                 acc('network', this.t('dockerSectionNetwork', 'Network')),
                 acc('custom', this.t('dockerSectionCustom', 'Custom')),
                 acc('volumes', this.t('dockerSectionVolumes', 'Volumes')),
@@ -898,6 +901,84 @@ class DockerDrawer {
             when.className = 'docker-health-when';
             when.textContent = dockerFormatDate(e.at / 1000);
             li.append(what, when);
+            list.appendChild(li);
+        });
+        body.appendChild(list);
+    }
+
+    /* ── Timeline ──────────────────────────────────────────────────────── */
+
+    /*
+     * What happened to the container, newest first: starts and stops,
+     * crashes with their exit code, health changes, pauses, and the updates
+     * and rollbacks. Recorded by the server from Docker's events; asked for
+     * when the part is opened.
+     */
+    _wireTimeline(els) {
+        const acc = els.sections.timeline?.closest('[data-slp-acc]');
+        if (!acc) return;
+        const load = () => {
+            if (this._timelineLoaded || !acc.open) return;
+            this._timelineLoaded = true;
+            void this._loadTimeline();
+        };
+        acc.addEventListener('toggle', load);
+        load();
+    }
+
+    async _loadTimeline() {
+        const name = this._name;
+        if (!name) return;
+        const data = await dockerDrawerFetchJSON(`/api/docker/containers/${encodeURIComponent(name)}/timeline`);
+        if (name !== this._name || !this._els?.sections.timeline) return;
+        this._renderTimeline(this._els.sections.timeline, data);
+    }
+
+    _renderTimeline(body, data) {
+        body.replaceChildren();
+        const entries = Array.isArray(data?.entries) ? data.entries : [];
+        if (!entries.length) {
+            const none = document.createElement('p');
+            none.className = 'docker-changes-empty';
+            none.textContent = data
+                ? this.t('dockerTimelineNone', 'Nothing recorded yet. nextDash writes down what happens from now on.')
+                : this.t('dockerTimelineFailed', 'The timeline could not be read.');
+            body.appendChild(none);
+            return;
+        }
+        const words = {
+            start: [this.t('dockerTimelineStart', 'Started'), 'good'],
+            stop: [this.t('dockerTimelineStop', 'Stopped'), 'muted'],
+            exit: [this.t('dockerTimelineExit', 'Exited on its own'), 'muted'],
+            crash: [this.t('dockerTimelineCrash', 'Crashed'), 'bad'],
+            'restart-loop': [this.t('dockerTimelineLoop', 'Kept restarting'), 'bad'],
+            unhealthy: [this.t('dockerTimelineUnhealthy', 'Turned unhealthy'), 'bad'],
+            healthy: [this.t('dockerTimelineHealthy', 'Healthy again'), 'good'],
+            pause: [this.t('dockerTimelinePause', 'Paused'), 'warn'],
+            unpause: [this.t('dockerTimelineUnpause', 'Resumed'), 'good'],
+            update: [this.t('dockerTimelineUpdate', 'Updated'), 'accent'],
+            rollback: [this.t('dockerTimelineRollback', 'Rolled back'), 'warn'],
+        };
+        const list = document.createElement('ol');
+        list.className = 'docker-timeline';
+        entries.forEach((e) => {
+            const [label, tone] = words[e.kind] || [e.kind, 'muted'];
+            const li = document.createElement('li');
+            li.className = 'docker-timeline-entry';
+            li.setAttribute('data-docker-timeline-entry', '');
+            li.setAttribute('data-kind', e.kind);
+            li.setAttribute('data-tone', tone);
+            const dot = document.createElement('span');
+            dot.className = 'docker-timeline-dot';
+            dot.setAttribute('aria-hidden', 'true');
+            const what = document.createElement('span');
+            what.className = 'docker-timeline-what';
+            what.textContent = e.detail ? `${label} — ${e.detail}` : label;
+            const when = document.createElement('time');
+            when.className = 'docker-health-when';
+            when.dateTime = new Date(e.at).toISOString();
+            when.textContent = dockerFormatDate(e.at / 1000);
+            li.append(dot, what, when);
             list.appendChild(li);
         });
         body.appendChild(list);

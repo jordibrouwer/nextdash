@@ -152,6 +152,29 @@ test.describe('docker view', () => {
     await expect(drawer.locator('[data-docker-section="health"]')).toBeHidden();
   });
 
+  // The timeline is its own Overview part, asked for when it is opened.
+  test('the timeline lists what happened, newest first', async ({ page }) => {
+    const state = await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    const part = page.locator('[data-docker-drawer] [data-docker-section="timeline"]');
+    await expect(part).toBeVisible();
+    expect(state.calls.some((c) => c.endsWith('/timeline'))).toBe(false);
+    await part.locator('summary').click();
+    const rows = part.locator('[data-docker-timeline-entry]');
+    await expect(rows).toHaveCount(6);
+    await expect(rows.nth(0)).toHaveAttribute('data-kind', 'update');
+    await expect(rows.nth(0)).toContainText('4.0.9 → 4.0.10');
+    await expect(rows.nth(1)).toContainText('5 times in 4 min');
+    await expect(rows.nth(3)).toHaveAttribute('data-tone', 'bad');
+    await expect(rows.nth(3)).toContainText('out of memory');
+    await expect(rows.nth(4)).toContainText('by nextDash');
+
+    await page.goto('/#docker/jellyfin');
+    await expect(page.locator('[data-docker-drawer] .config-bm-panel-title')).toHaveText('jellyfin');
+    await page.locator('[data-docker-drawer] [data-docker-section="timeline"] summary').click();
+    await expect(page.locator('[data-docker-drawer] [data-docker-section="timeline"]')).toContainText(/nothing recorded yet/i);
+  });
+
   test('logs load on open and refresh on demand', async ({ page }) => {
     const state = await mockDocker(page);
     await page.goto('/#docker/sonarr');

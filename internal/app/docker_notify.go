@@ -64,12 +64,14 @@ type containerWatch struct {
 	toldStop   bool
 	toldLoop   bool
 	toldHealth bool
+	lastHealth string // for the timeline: only a change is written down
 }
 
 type containerNotifier struct {
 	mu       sync.Mutex
 	watch    map[string]*containerWatch
 	expected map[string]time.Time // until when a die is nextDash's own doing
+	timeline *dockerTimeline      // what happened, whatever the notices say (docker_timeline.go)
 }
 
 func newContainerNotifier() *containerNotifier {
@@ -77,7 +79,11 @@ func newContainerNotifier() *containerNotifier {
 }
 
 // dockerNotifications is the one notifier the watcher and the actions share.
-var dockerNotifications = newContainerNotifier()
+var dockerNotifications = func() *containerNotifier {
+	n := newContainerNotifier()
+	n.timeline = dockerTimelines
+	return n
+}()
 
 // expect marks a container nextDash is stopping, restarting or replacing,
 // until the given time.
@@ -156,6 +162,7 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 		if until, ok := n.expected[name]; ok && !now.After(until) {
 			deliberate = true
 		}
+		n.recordDie(name, w, ev, now, deliberate)
 		if deliberate {
 			w.dieAt = time.Time{}
 			return nil
@@ -163,7 +170,10 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 		w.dieAt = now
 		w.dieCode = ev.Actor.Attributes["exitCode"]
 		w.dieOOM = !w.oomAt.IsZero() && now.Sub(w.oomAt) <= dockerNotifyExpectWindow
+	case action == "pause" || action == "unpause":
+		n.recordTimeline(name, w, action, now)
 	case action == "start":
+		n.recordTimeline(name, w, action, now)
 		// The stop is over; a die from here on is not part of it.
 		w.lastKill = time.Time{}
 		if w.toldStop {
@@ -191,6 +201,7 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 		}
 		w.dieAt = time.Time{}
 	case strings.HasPrefix(action, "health_status:"):
+		n.recordTimeline(name, w, action, now)
 		switch strings.TrimSpace(strings.TrimPrefix(action, "health_status:")) {
 		case "unhealthy":
 			if !w.toldHealth && ok {
@@ -328,6 +339,11 @@ func (h *Handlers) watchDockerEventsOnce(ctx context.Context, api *dockerAPI, n 
 				return
 			case now := <-t.C:
 				h.dispatchContainerNotices(ctx, n.tick(now, h.dockerNotifyAllowed))
+				if n.timeline != nil {
+					if err := n.timeline.flush(); err != nil {
+						logWarn(logComponentMutate, "the container timeline could not be saved: %v", err)
+					}
+				}
 			}
 		}
 	}()
