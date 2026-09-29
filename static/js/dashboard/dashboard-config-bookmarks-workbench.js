@@ -18,6 +18,14 @@
     const PANEL_TABS = ['details', 'health', 'usage'];
     const PANEL_TAB_KEY = 'nextdash.bm.panelTab';
 
+    // The way each sort runs before a second click on its heading turns it:
+    // the comparators in computeVisibleBookmarks, as a heading's arrow says them.
+    const SORT_NATURAL = {
+        name: 'ascending', tags: 'ascending', pinned: 'descending', shortcut: 'ascending',
+        usage: 'descending', opens: 'descending', lastOpened: 'descending',
+        recent: 'descending', score: 'ascending',
+    };
+
     Object.assign(global.DashboardConfig.prototype, {
 
     /** A Config → Bookmarks → View setting, or its default (the view as it was). */
@@ -124,6 +132,7 @@
                         ${this.renderWorkbenchDensityToggle()}
                         <button type="button" class="config-btn config-btn--primary config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     </div>
+                    ${this.renderWorkbenchColumnHeads()}
                     <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
                 </section>
                 <aside class="config-bm-panel" id="config-bm-panel" role="region"
@@ -1593,6 +1602,34 @@
     syncWorkbenchToolbar() {
         const host = document.getElementById('config-bm-narrow-buttons');
         if (host) host.innerHTML = this.renderWorkbenchNarrowButtons();
+        // The headings sit outside the list, so a list repaint leaves them;
+        // they follow the sort (and the Score heading the Health filter) here.
+        const heads = document.querySelector('#config-bm-workbench [data-bm-colhead]');
+        if (heads) heads.outerHTML = this.renderWorkbenchColumnHeads();
+        const select = document.getElementById('config-bm-sort');
+        const sort = this.bmSort ?? this.defaultBookmarksSort();
+        if (select && select.value !== sort) select.value = sort;
+    },
+
+    /**
+     * A click on a sortable heading sorts by its column, in the order that
+     * column reads naturally (names A to Z, the most opened first); a second
+     * click turns it round. The toolbar's Sort follows.
+     */
+    sortBookmarksByHeading(sort) {
+        const current = this.bmSort ?? this.defaultBookmarksSort();
+        if (current === sort) {
+            this.bmSortReverse = !this.bmSortReverse;
+        } else {
+            this.bmSort = sort;
+            this.bmSortReverse = false;
+        }
+        this.resetBookmarkVisibleLimit();
+        this._bmDuplicateUrls = null;
+        this.repaintBookmarksList();
+        this.updateBookmarkListChrome();
+        this.restoreConfigHash?.();
+        document.querySelector(`#config-bm-workbench [data-bm-sort-head="${sort}"]`)?.focus();
     },
 
     /**
@@ -1612,6 +1649,14 @@
     },
 
     bindWorkbench(container) {
+        // Sortable headings, delegated: syncWorkbenchToolbar redraws them.
+        if (container && !container._bmSortHeadsBound) {
+            container._bmSortHeadsBound = true;
+            container.addEventListener('click', (e) => {
+                const head = e.target.closest?.('[data-bm-sort-head]');
+                if (head) this.sortBookmarksByHeading(head.getAttribute('data-bm-sort-head'));
+            });
+        }
         // A redraw of the section (a write elsewhere, a filter from the hash)
         // keeps an open sheet open: its scroll lock is still held, so the new
         // markup is put back in the state the old one was in. Leaving the list
@@ -1816,6 +1861,31 @@
      */
     workbenchSparkCell(b) {
         const esc = (v) => this.dash.escapeHtml(v);
+        const { days, counts } = this.workbenchSparkCounts(b);
+        const BARS = counts.length;
+        const total = counts.reduce((a, n) => a + n, 0);
+        const title = total
+            ? this.t('config.bmSparkTitleDays', '{n} opens in the last {d} days').replace('{n}', String(total)).replace('{d}', String(days))
+            : this.t('config.bmSparkNoneDays', 'No opens in the last {d} days').replace('{d}', String(days));
+        const max = Math.max(1, ...counts);
+        const gap = 1;
+        // The same width whatever the number of bars.
+        const w = Math.max(2, Math.floor(60 / BARS) - gap);
+        const h = 14;
+        const bars = counts.map((n, i) => {
+            const bh = n ? Math.max(2, Math.round((n / max) * h)) : 1;
+            return `<rect data-count="${n}" x="${i * (w + gap)}" y="${h - bh}" width="${w}" height="${bh}" rx="0.5"${n ? '' : ' class="is-empty"'}></rect>`;
+        }).join('');
+        return `<span class="config-bm-spark" role="gridcell" title="${esc(title)}">
+            <svg viewBox="0 0 ${BARS * (w + gap) - gap} ${h}" width="${BARS * (w + gap) - gap}" height="${h}" aria-hidden="true">${bars}</svg></span>`;
+    },
+
+    /**
+     * The sparkline's bars: opens per bar over the window View sets, oldest
+     * first. The Usage heading sorts on their sum, so the order it gives is
+     * the one the bars show.
+     */
+    workbenchSparkCounts(b) {
         // View sets how far back: 7 and 14 days a bar a day, 30 days two.
         const days = [7, 14, 30].includes(Number(this.bmViewSetting('bmViewUsageDays', 30))) ? Number(this.bmViewSetting('bmViewUsageDays', 30)) : 30;
         const BARS = days === 30 ? 15 : days;
@@ -1832,21 +1902,7 @@
             if (!(age >= 0) || age >= BARS * SPAN) return;
             counts[BARS - 1 - Math.floor(age / SPAN)] += 1;
         });
-        const total = counts.reduce((a, n) => a + n, 0);
-        const title = total
-            ? this.t('config.bmSparkTitleDays', '{n} opens in the last {d} days').replace('{n}', String(total)).replace('{d}', String(days))
-            : this.t('config.bmSparkNoneDays', 'No opens in the last {d} days').replace('{d}', String(days));
-        const max = Math.max(1, ...counts);
-        const gap = 1;
-        // The same width whatever the number of bars.
-        const w = Math.max(2, Math.floor(60 / BARS) - gap);
-        const h = 14;
-        const bars = counts.map((n, i) => {
-            const bh = n ? Math.max(2, Math.round((n / max) * h)) : 1;
-            return `<rect data-count="${n}" x="${i * (w + gap)}" y="${h - bh}" width="${w}" height="${bh}" rx="0.5"${n ? '' : ' class="is-empty"'}></rect>`;
-        }).join('');
-        return `<span class="config-bm-spark" role="gridcell" title="${esc(title)}">
-            <svg viewBox="0 0 ${BARS * (w + gap) - gap} ${h}" width="${BARS * (w + gap) - gap}" height="${h}" aria-hidden="true">${bars}</svg></span>`;
+        return { days, counts };
     },
 
     /** When it was added: day and month this year, month and year before. */
@@ -1929,6 +1985,54 @@
             });
             this._bmTagFitObserver.observe(host);
         }
+    },
+
+    /**
+     * The column headings over the list, on the rows' own grid: the same
+     * cells in the same order, under the same col() checks and with the same
+     * cell classes that decide which columns a width shows, so a heading
+     * stands over its column at every width. Outside #config-bm-list, so the
+     * virtual window's arithmetic and the row queries never see it; hidden
+     * from screen readers, which read each cell by its own label already.
+     */
+    renderWorkbenchColumnHeads() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const col = (name) => this.bmViewColumn(name);
+        const current = this.bmSort ?? this.defaultBookmarksSort();
+        /*
+         * A heading with a sort key is a button. The arrow says which way the
+         * list runs: a column's natural order (names A to Z, dates and counts
+         * the highest first, the worst score first) or that turned round.
+         */
+        const cell = (cls, label, sort = '', inner = '') => {
+            let state = '';
+            if (sort && sort === current) {
+                const natural = SORT_NATURAL[sort] || 'ascending';
+                const flipped = natural === 'ascending' ? 'descending' : 'ascending';
+                state = this.bmSortReverse ? flipped : natural;
+            }
+            const body = inner || esc(label);
+            const content = sort
+                ? `<button type="button" class="lvs-colhead-sort" data-bm-sort-head="${esc(sort)}"${inner ? ` aria-label="${esc(label)}" title="${esc(label)}"` : ''}>${body}</button>`
+                : body;
+            return `<span class="config-bm-colhead-cell ${cls}"${state ? ` data-lvs-sort="${state}"` : ''}${
+                !sort && inner ? ` title="${esc(label)}"` : ''}>${content}</span>`;
+        };
+        const pinned = this.t('config.bmViewColPinned', 'Pinned');
+        return `
+            <div class="config-bm-colhead lvs-colhead" data-bm-colhead>
+                <span class="config-bm-colhead-cell" aria-hidden="true"></span>
+                <span class="config-bm-colhead-cell" aria-hidden="true"></span>
+                ${cell('config-bm-colhead-name', this.t('config.bookmarkName', 'Name'), 'name')}
+                ${col('tags') ? cell('config-bm-colhead-tags', this.t('config.bmViewColTags', 'Tags'), 'tags') : ''}
+                ${col('pinned') ? cell('config-bm-extra config-bm-pinned', pinned, 'pinned', global.MenuIcons?.PIN || esc(pinned)) : ''}
+                ${col('shortcut') ? cell('config-bm-extra config-bm-key', this.t('config.bmViewColShortcut', 'Shortcut'), 'shortcut') : ''}
+                ${col('usage') ? cell('config-bm-spark', this.t('config.bmViewColUsage', 'Usage'), 'usage') : ''}
+                ${col('opens') ? cell('config-bm-colhead-end', this.t('config.bmViewColOpens', 'Opens'), 'opens') : ''}
+                ${col('last') ? cell('config-bm-colhead-end', this.t('config.bmViewColLast', 'Last opened'), 'lastOpened') : ''}
+                ${col('added') ? cell('config-bm-added config-bm-colhead-end', this.t('config.bmViewColAdded', 'Added'), 'recent') : ''}
+                ${col('score') ? cell('config-bm-colhead-end', this.t('config.bmViewColScore', 'Score'), 'score') : ''}
+            </div>`;
     },
 
     renderWorkbenchGroupHead(item, esc) {

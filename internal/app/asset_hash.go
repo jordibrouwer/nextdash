@@ -186,6 +186,8 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-health-focus.js",
 	"js/dashboard/dashboard-docker.js",
 	"js/dashboard/dashboard-docker-drawer.js",
+	"js/dashboard/dashboard-docker-logs.js",
+	"js/dashboard/dashboard-docker-disk.js",
 	"js/dashboard/dashboard-docker-actions.js",
 	"js/dashboard/dashboard-inbox-triage.js",
 	"js/dashboard/dashboard-inbox-drawer.js",

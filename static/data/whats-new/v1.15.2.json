@@ -1,0 +1,79 @@
+{
+  "tag": "v1.15.2",
+  "date": "29 September 2026",
+  "releasedAt": "2026-09-29",
+  "modalLead": "The <strong>Containers</strong> view grows up: a logs window that follows a container live, a <strong>Disk</strong> tab, notices when a container goes down, a timeline per container, skip, hold and roll back updates, and ticking several containers to act on them at once. Plus sortable column headings in every list view.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A logs window that follows the log live.</strong> <kbd>l</kbd> on a container, or Show logs in its menu. Scroll up to pause, search and filter the lines, pick stdout or stderr, copy or download."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tick containers and act on them all.</strong> <kbd>x</kbd> or the box in front of the name; the bar above the list starts, stops, restarts, updates or mutes them and says how many worked."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Disk</strong> (<kbd>d</kbd>) shows what images, volumes and the build cache take up, and clears what nothing uses after asking."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Notices when a container stops, keeps restarting or turns unhealthy,</strong> and when it recovers, to your alert webhook and browser notifications. <kbd>m</kbd> mutes one container."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Updates you control.</strong> Skip a version, hold a container's updates, see what updates did, and roll the last one back."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The side panel shows Health and a Timeline</strong> of starts, stops, crashes and updates, and your own web UI address under the name, tagged <em>Custom</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>CPU and RAM columns, sortable headings, and a compose stack as one.</strong> Group by project, and its row starts, stops, restarts or updates the whole stack."
+        },
+        {
+          "badge": "new",
+          "text": "<strong><kbd>Shift</kbd> <kbd>Y</kbd> opens Containers from anywhere,</strong> and the key legend goes above the list, below it, or away."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Updates are safer.</strong> An update keeps the container's volumes and settings, refuses what it cannot swap safely, and a failed one puts the old container back."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks and Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every column heading sorts the list</strong> in the Bookmarks view and the Inbox; a second click turns it round."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A category's ⋯ menu names its sorts in full:</strong> Manual, A–Z, Last opened, Newest and Most opened."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Inbox key legend lists only keys that work,</strong> and a link into the Bookmarks view opens on its default sort."
+        }
+      ]
+    },
+    {
+      "title": "Everywhere",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Settings saved at the same moment no longer undo each other,</strong> a failed save no longer says it worked, and restoring a backup writes each file safely."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Text still in English is translated</strong> in Dutch, German, French, Spanish and Chinese."
+        }
+      ]
+    }
+  ]
+}

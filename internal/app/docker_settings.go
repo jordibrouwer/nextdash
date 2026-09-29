@@ -2,12 +2,15 @@ package app
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 /*
@@ -37,9 +40,23 @@ func normalizeDockerSettings(s *Settings) {
 	if !dockerLogLineChoices[s.DockerLogLines] {
 		s.DockerLogLines = 200
 	}
+	switch s.DockerViewKeyLegend {
+	case "above", "below", "off":
+	default:
+		s.DockerViewKeyLegend = "above"
+	}
+	s.DockerHiddenContainers = normalizeDockerNameList(s.DockerHiddenContainers)
+	s.DockerNotifyMuted = normalizeDockerNameList(s.DockerNotifyMuted)
+	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
+	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)
+}
+
+// normalizeDockerNameList trims, de-duplicates and caps a list of container
+// names, the hidden list and the muted list alike.
+func normalizeDockerNameList(names []string) []string {
 	seen := map[string]bool{}
 	kept := []string{}
-	for _, raw := range s.DockerHiddenContainers {
+	for _, raw := range names {
 		name := strings.TrimPrefix(strings.TrimSpace(raw), "/")
 		if name == "" || len(name) > dockerMaxHiddenNameLen || seen[name] {
 			continue
@@ -50,9 +67,30 @@ func normalizeDockerSettings(s *Settings) {
 			break
 		}
 	}
-	s.DockerHiddenContainers = kept
-	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
+	return kept
 }
+
+// normalizeDockerHostAddress keeps a bare host -- a name or an IP, an IPv6
+// one in brackets -- and drops anything with a scheme, port or path: the
+// links put their own scheme and port around it.
+func normalizeDockerHostAddress(raw string) string {
+	host := strings.TrimSpace(raw)
+	if host == "" || len(host) > 253 {
+		return ""
+	}
+	if ip := net.ParseIP(strings.Trim(host, "[]")); ip != nil {
+		if ip.To4() != nil {
+			return ip.String()
+		}
+		return "[" + ip.String() + "]"
+	}
+	if !dockerHostName.MatchString(host) {
+		return ""
+	}
+	return host
+}
+
+var dockerHostName = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$`)
 
 const dockerMaxWebUILen = 2048
 
@@ -82,38 +120,43 @@ func normalizeDockerWebUIs(in map[string]string) map[string]string {
 }
 
 /*
-dockerHiddenNames is how code without a store -- the widget's metrics reader --
-learns which containers to leave out. Set once when the handlers are built; nil
-in a test that never built any, which hides nothing.
+dockerSettingsFrom is how code without a store -- the widget's metrics reader,
+toDockerView -- learns which containers to leave out and the addresses set by
+hand. Set when the handlers are built; empty in a test that never built any,
+which hides nothing and sets none. An atomic pointer, as tests build handlers
+while other code reads it.
 */
-var dockerHiddenNames func() []string
+var dockerSettingsFrom atomic.Pointer[dockerSettingsSource]
 
-// wireDockerSettings points dockerHiddenNames at this store. The widget's
-// metrics reader has no store of its own; this is how it learns which
-// containers Config -> Containers keeps out of sight.
-func (h *Handlers) wireDockerSettings() {
-	store := h.store
-	dockerHiddenNames = func() []string { return store.GetSettings().DockerHiddenContainers }
-	dockerCustomWebUIs = func() map[string]string { return store.GetSettings().DockerWebUIs }
+type dockerSettingsSource struct {
+	hidden func() []string
+	webUIs func() map[string]string
 }
 
-// dockerCustomWebUIs is how toDockerView learns the addresses set by hand;
-// nil in a test that never built handlers, which sets none.
-var dockerCustomWebUIs func() map[string]string
+// wireDockerSettings points dockerSettingsFrom at this store.
+func (h *Handlers) wireDockerSettings() {
+	store := h.store
+	dockerSettingsFrom.Store(&dockerSettingsSource{
+		hidden: func() []string { return store.GetSettings().DockerHiddenContainers },
+		webUIs: func() map[string]string { return store.GetSettings().DockerWebUIs },
+	})
+}
 
 func dockerCustomWebUI(name string) string {
-	if dockerCustomWebUIs == nil {
+	src := dockerSettingsFrom.Load()
+	if src == nil {
 		return ""
 	}
-	return dockerCustomWebUIs()[name]
+	return src.webUIs()[name]
 }
 
 func dockerHiddenSet() map[string]bool {
 	out := map[string]bool{}
-	if dockerHiddenNames == nil {
+	src := dockerSettingsFrom.Load()
+	if src == nil {
 		return out
 	}
-	for _, name := range dockerHiddenNames() {
+	for _, name := range src.hidden() {
 		out[name] = true
 	}
 	return out

@@ -267,7 +267,7 @@
             try { domain = new URL(global.BookmarkUrlUtils?.ensureHttpUrl(bookmark.url) || bookmark.url || '').hostname; } catch { domain = ''; }
 
             card.innerHTML = `
-                ${image ? `<div class="config-link-preview-card-image-wrap"><img class="config-link-preview-card-image" src="${escHtml(image)}" alt=""></div>` : ''}
+                ${image ? `<div class="config-link-preview-card-image-wrap"><img class="config-link-preview-card-image" src="${escHtml(image)}" alt="" loading="lazy" decoding="async"></div>` : ''}
                 <div class="config-link-preview-card-body">
                     <div class="config-link-preview-card-title">${escHtml(title)}</div>
                     ${desc ? `<div class="config-link-preview-card-desc">${escHtml(desc)}</div>` : ''}

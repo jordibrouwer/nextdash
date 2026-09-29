@@ -88,17 +88,18 @@ var widgetFields = map[WidgetType][]widgetField{
 		// Which figures to show. Absent means all, so a figure added later is
 		// included by default rather than hidden from everyone who saved once.
 		{Key: "show", Kind: "list", Allowed: []string{
-			"running", "stopped", "paused", "total", "images", "unhealthy"}},
+			"running", "stopped", "paused", "total", "images", "unhealthy", "updates", "reclaimable", "incidents"}},
 		{Key: "showUnhealthyNames", Kind: "bool"},
 		{Key: "showRestarted", Kind: "bool"},
+		{Key: "showTopCpu", Kind: "bool"},
 	},
 	WidgetTypeContainers: {
 		{Key: "refreshSeconds", Kind: "int", Min: 5, Max: 3600},
 		// Running only, or every container including the stopped ones.
 		{Key: "show", Kind: "string", Allowed: []string{"running", "all"}},
-		{Key: "sort", Kind: "string", Allowed: []string{"problems", "name", "uptime-long", "uptime-short"}},
+		{Key: "sort", Kind: "string", Allowed: []string{"problems", "name", "uptime-long", "uptime-short", "cpu", "memory"}},
 		// What stands at the right of a row.
-		{Key: "detail", Kind: "string", Allowed: []string{"uptime", "tag", "none"}},
+		{Key: "detail", Kind: "string", Allowed: []string{"uptime", "tag", "usage", "none"}},
 		// Where a click on a row goes; the other one stays in the row's menu.
 		{Key: "click", Kind: "string", Allowed: []string{"view", "webui"}},
 		// Rows per column: a tile drawn two wide shows twice as many.

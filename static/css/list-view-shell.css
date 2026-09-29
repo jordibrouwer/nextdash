@@ -173,6 +173,72 @@
     min-width: 0;
 }
 
+/*
+ * Column headings over a list view's rows -- Containers, Bookmarks, Inbox --
+ * in one style: the quiet caption the group heads use, in the theme's own
+ * text, surface and rule colours, pinned under the view's sticky header while
+ * the list scrolls. Each view lays the cells out on its rows' own grid; at
+ * phone width, where rows fold, the headings go.
+ */
+.lvs-colhead {
+    position: sticky;
+    top: var(--lvs-header-height, 0px);
+    z-index: 1;
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: left;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    background-color: var(--background-primary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+@media (max-width: 767px) {
+    .lvs-colhead {
+        display: none;
+    }
+}
+
+/* A sortable heading: its own text, clickable, with a drawn arrow on the
+   column the list is sorted by (data-lvs-sort on the cell). */
+.lvs-colhead-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+}
+
+.lvs-colhead-sort:hover,
+[data-lvs-sort] > .lvs-colhead-sort {
+    color: var(--text-primary);
+}
+
+.lvs-colhead-sort:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
+}
+
+[data-lvs-sort] > .lvs-colhead-sort::after {
+    font-size: 0.8em;
+}
+
+[data-lvs-sort="ascending"] > .lvs-colhead-sort::after {
+    content: "\25B2";
+}
+
+[data-lvs-sort="descending"] > .lvs-colhead-sort::after {
+    content: "\25BC";
+}
+
 .lvs-body {
     min-width: 0;
 }

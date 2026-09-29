@@ -249,10 +249,13 @@ func formatNtfyJSONNotification(n monitorNotification, topic, dashboardURL strin
 		})
 	}
 	if dash := strings.TrimRight(strings.TrimSpace(dashboardURL), "/"); dash != "" {
-		health := dash + "/#health"
-		body.Click = health
+		target, label := dash+"/#health", "Health"
+		if n.Source == "container" {
+			target, label = dash+"/#docker/"+url.PathEscape(n.Name), "Containers"
+		}
+		body.Click = target
 		body.Actions = append(body.Actions, ntfyAction{
-			Action: "view", Label: "Health", URL: health,
+			Action: "view", Label: label, URL: target,
 		})
 	}
 	encoded, err := json.Marshal(body)

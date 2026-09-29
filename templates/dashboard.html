@@ -19,11 +19,12 @@
     <script src="{{asset "js/app-version-guard.js"}}"></script>
     <script src="{{asset "js/update-notice.js"}}"></script>
     <script src="{{asset "js/write-api.js"}}"></script>
-    {{if .AnalyticsEnabled}}<script src="{{asset "js/umami-analytics.js"}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}" data-content="{{.AnalyticsContentJSON}}"></script>{{end}}
+    {{if .AnalyticsEnabled}}<script src="{{asset "js/umami-analytics.js"}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}" data-content="{{.AnalyticsContentJSON}}" data-snapshots="{{.AnalyticsSnapshotsJSON}}"></script>{{end}}
     <script src="{{asset "js/font-presets.js"}}"></script>
     <script src="{{asset "js/device-settings-merge.js"}}"></script>
     <script src="{{asset "js/shared/escape-html.js"}}"></script>
     <script src="{{asset "js/shared/clock-format.js"}}"></script>
+    <script src="{{asset "js/shared/format-bytes.js"}}"></script>
     <!-- The shared figure-with-a-caption. Not deferred: config's statistics
          build their markup from it during a synchronous render. -->
     <script src="{{asset "js/shared/stat-tile.js"}}"></script>
@@ -481,7 +482,7 @@
         >
             <div class="tag-cloud-modal-header">
                 <span id="tag-cloud-modal-title" class="tag-cloud-modal-title" data-i18n="dashboard.tagCloudModalTitle">Tags</span>
-                <button type="button" id="tag-cloud-modal-close" class="tag-cloud-modal-close" data-i18n-aria="dashboard.tagCloudModalClose">×</button>
+                <button type="button" id="tag-cloud-modal-close" class="tag-cloud-modal-close" data-i18n-aria="dashboard.tagCloudModalClose" aria-label="Close">×</button>
             </div>
             <div id="tag-cloud-modal-body" class="tag-cloud-modal-body tag-cloud-wordcloud"></div>
             <div class="tag-cloud-modal-footer">

@@ -1146,7 +1146,7 @@
                         const detail = c ? this.t('config.statsCategoryEffDetail', '{opens} opens over {count} bookmarks')
                             .replace('{opens}', String(c.opens)).replace('{count}', String(c.count)) : '';
                         const name = c
-                            ? `<button type="button" class="config-dist-label config-dist-label--link" data-stats-goto="category:${esc(label)}" title="${esc(detail)}">${esc(label)}</button>`
+                            ? `<button type="button" class="config-dist-label config-dist-label--link" data-stats-goto="category:${esc(c.key)}" title="${esc(detail)}">${esc(label)}</button>`
                             : `<span class="config-dist-label">${esc(label)}</span>`;
                         const use = per === null
                             ? '<span class="config-dist-count">—</span>'

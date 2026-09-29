@@ -39,8 +39,25 @@
         return String(a.name).localeCompare(String(b.name));
     }
 
+    /** Highest first; a container with no reading (stopped, sampler off) last. */
+    function byUsage(field) {
+        return (a, b) => {
+            const va = a.usage?.[field];
+            const vb = b.usage?.[field];
+            if (va == null || vb == null) return (va == null) - (vb == null) || byName(a, b);
+            return vb - va || byName(a, b);
+        };
+    }
+
+    function formatMem(bytes) {
+        const mib = bytes / (1024 * 1024);
+        return mib < 1024 ? `${Math.round(mib)} MiB` : `${(mib / 1024).toFixed(1)} GiB`;
+    }
+
     const SORTS = {
         problems: (a, b) => problemRank(a) - problemRank(b) || byName(a, b),
+        cpu: byUsage('cpu'),
+        memory: byUsage('mem'),
         name: byName,
         // Not running has no start time and sorts after every running one.
         'uptime-long': (a, b) => (a.startedAt || Infinity) - (b.startedAt || Infinity) || byName(a, b),
@@ -75,6 +92,11 @@
         if (rank === 2) return [label(dash, 'dashboard.widgetContainersUpdate', 'update'), 'warn'];
         if (mode === 'none') return ['', ''];
         if (mode === 'tag') return [c.tag || '', ''];
+        if (mode === 'usage') {
+            // The stats sampler's last reading, as the Containers view shows it.
+            if (!c.usage) return ['', ''];
+            return [`${Number(c.usage.cpu).toFixed(1)} % · ${formatMem(c.usage.mem)}`, ''];
+        }
         return [uptime(dash, c.startedAt), ''];
     }
 
@@ -118,16 +140,18 @@
         const rows = u.rowList();
         list.slice(0, perColumn * 2).forEach((c, index) => {
             const [detail, tone] = detailFor(dash, c, config.detail);
-            const toWebUI = config.click === 'webui' && c.webui;
+            // [IP] filled in and only an http(s) page, as the table links it.
+            const webui = window.DockerSearchIndex?.webuiHref(c.webui, c) || '';
+            const toWebUI = config.click === 'webui' && webui;
             const item = u.row(c.name, detail, tone, () => {
-                if (toWebUI) window.open(c.webui, '_blank', 'noopener');
+                if (toWebUI) window.open(webui, '_blank', 'noopener');
                 else openView(dash, c.name);
             }, {
                 dash,
                 labelKey: toWebUI ? 'widgetActionOpenWebUI' : 'widgetActionOpenContainer',
                 labelFallback: toWebUI ? 'Open WebUI' : 'Open in Containers',
                 // The other destination stays in the row's menu.
-                href: c.webui || undefined,
+                href: webui || undefined,
             });
             item.dataset.containerName = c.name;
             if (index >= perColumn) item.classList.add('dashboard-widget-wide-only');

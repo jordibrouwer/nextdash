@@ -218,10 +218,17 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/containers/{id}/env/{name}", handlers.DockerContainerEnvHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/stats", handlers.DockerContainerStatsHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/logs", handlers.DockerContainerLogsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/logs/stream", handlers.DockerContainerLogStreamHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/health", handlers.DockerContainerHealthHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/timeline", handlers.DockerContainerTimelineHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/changelog", handlers.DockerChangelogHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates", handlers.DockerUpdatesHandler).Methods("GET")
 	r.HandleFunc("/api/docker/github-token", handlers.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")
 	r.HandleFunc("/api/docker/updates/check", handlers.DockerUpdatesCheckHandler).Methods("POST")
+	r.HandleFunc("/api/docker/updates/choice", handlers.DockerUpdateChoiceHandler).Methods("POST")
+	r.HandleFunc("/api/docker/disk", handlers.DockerDiskHandler).Methods("GET")
+	r.HandleFunc("/api/docker/prune/{kind}", handlers.DockerPruneHandler).Methods("POST")
+	r.HandleFunc("/api/docker/volumes/{name}", handlers.DockerVolumeRemoveHandler).Methods("DELETE")
 	r.HandleFunc("/api/docker/containers/{id}/{action}", handlers.DockerActionHandler).Methods("POST")
 	// The one widget that reads from outside, by widget id rather than by URL.
 	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")
@@ -363,6 +370,7 @@ func Run(files assetFS) {
 	handlers.StartDockerUpdateScheduler(schedulerStop)
 	// The last hour of CPU and memory per container, for the drawer's charts.
 	handlers.StartDockerStatsSampler(schedulerStop)
+	handlers.StartDockerNotifier(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence

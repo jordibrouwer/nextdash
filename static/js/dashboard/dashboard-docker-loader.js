@@ -46,6 +46,14 @@ class DashboardDockerLoader {
         }
         // The drawer's sections, loaded before the view module so mountShell()
         // never constructs a DockerDrawer before the class exists.
+        if (typeof window.DockerDisk !== 'function') {
+            await load('js/dashboard/dashboard-docker-disk.js', 'dashboardDockerDisk',
+                () => typeof window.DockerDisk === 'function');
+        }
+        if (typeof window.DockerLogsModal !== 'function') {
+            await load('js/dashboard/dashboard-docker-logs.js', 'dashboardDockerLogs',
+                () => typeof window.DockerLogsModal === 'function');
+        }
         if (typeof window.DockerDrawer !== 'function') {
             await load('js/dashboard/dashboard-docker-drawer.js', 'dashboardDockerDrawer',
                 () => typeof window.DockerDrawer === 'function');
@@ -147,7 +155,7 @@ class DashboardDockerLoader {
         if (!mod.isActiveView() && Array.isArray(fresh)) mod.containers = fresh;
         const container = mod.containers.find((c) => c.name === name);
         if (!container || !mod.actions) return false;
-        return mod.actions.run(action, container);
+        return mod.actions.run(action, container, { via: 'palette' });
     }
 
     selectContainer(...args) {

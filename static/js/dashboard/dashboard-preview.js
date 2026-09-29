@@ -703,7 +703,7 @@ class DashboardPreview {
     static cardMarkup() {
         return `
             <div class="bookmark-preview-card-head">
-                <span class="bookmark-preview-card-fav" hidden><img alt="" /></span>
+                <span class="bookmark-preview-card-fav" hidden><img alt="" loading="lazy" decoding="async" /></span>
                 <div class="bookmark-preview-card-headtext">
                     <div class="bookmark-preview-card-title"></div>
                     <div class="bookmark-preview-card-domain"></div>
@@ -1152,6 +1152,7 @@ class DashboardPreview {
             picture.src = image;
             picture.alt = '';
             picture.loading = 'lazy';
+            picture.decoding = 'async';
             poster.appendChild(picture);
         } else {
             poster.classList.add('is-bare');

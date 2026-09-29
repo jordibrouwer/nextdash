@@ -51,10 +51,11 @@ class DashboardPageNav {
         try {
             const url = new URL(window.location.href);
             const params = url.searchParams;
-            [
-                'hv_filter', 'hv_sort', 'hv_q', 'hv_id', 'hv_refresh',
-                'ib_filter', 'ib_sort', 'ib_q', 'ib_domain', 'ib_id',
-            ].forEach((key) => params.delete(key));
+            // Every Health and Inbox key, by prefix: a list of names missed
+            // ib_tag once, and a new key would be missed the same way.
+            [...params.keys()]
+                .filter((key) => key.startsWith('hv_') || key.startsWith('ib_'))
+                .forEach((key) => params.delete(key));
             const query = params.toString();
             const nextHash = pageIndex >= 0 ? `#${pageIndex + 1}` : '';
             const nextUrl = `${url.pathname}${query ? `?${query}` : ''}${nextHash}`;
@@ -452,26 +453,26 @@ class DashboardPageNav {
                      * actions on a window with room to spare.
                      */
                     if (style.gridColumn === '1 / -1') return;
-                    /*
-                     * Something that spans the row has a line to itself, so it
-                     * competes with nothing: the classic clock placement puts
-                     * the view's name on its own line under the controls, and
-                     * counted among them a 1300px name meant the row was
-                     * always too full -- the ladder then hid the clock and the
-                     * actions on a window with room to spare.
-                     */
-                    /*
-                     * Something that spans the row has a line to itself, so it
-                     * competes with nothing: the classic clock placement puts
-                     * the view's name on its own line under the controls, and
-                     * counted among them a 1300px name meant the row was
-                     * always too full -- the ladder then hid the clock and the
-                     * actions on a window with room to spare.
-                     */
                     atoms.push(child);
                 });
             };
             walk(row);
+
+            /*
+             * What a zone needs is its content, not the box it is drawn in:
+             * the clock sits in the row's 1fr track and is stretched over
+             * whatever the others leave, so its drawn width always made the
+             * sum come out at exactly the row's width, and a fraction of a
+             * pixel decided whether the destinations went (1440px hid them,
+             * 1452px did not). Drawn at max-content for the measurement only.
+             */
+            const contentWidth = (el) => {
+                const previous = el.style.width;
+                el.style.width = 'max-content';
+                const width = el.getBoundingClientRect().width;
+                el.style.width = previous;
+                return width;
+            };
 
             let needed = 0;
             let parts = 0;
@@ -480,7 +481,7 @@ class DashboardPageNav {
                 // is: what it needs is one tab and the chip, not its width.
                 const width = el.classList.contains('header-track')
                     ? this.trackMinimumWidth(el)
-                    : el.getBoundingClientRect().width;
+                    : contentWidth(el);
                 if (width <= 0) return;
                 needed += width;
                 parts += 1;
@@ -490,7 +491,8 @@ class DashboardPageNav {
 
         for (let step = 0; step <= 4; step += 1) {
             apply(step);
-            if (needs() <= available) break;
+            // A pixel of slack: widths are fractional, the row's is not.
+            if (needs() <= available + 1) break;
         }
         // The cap follows the step, so the strip is drawn once the ladder has
         // settled: stepping through 4 on the way to 2 otherwise left it folded

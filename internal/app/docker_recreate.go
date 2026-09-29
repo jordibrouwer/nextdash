@@ -3,8 +3,12 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
+	"reflect"
+	"sort"
 	"strings"
 	"time"
 )
@@ -45,6 +49,9 @@ func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerC
 	if err != nil {
 		return res, err
 	}
+	if err := dockerRecreateRefusal(ctx, api, c, in); err != nil {
+		return res, err
+	}
 	res.OldImageID = in.Image
 	ref := in.Config.Image
 	if err := api.pullImage(ctx, ref); err != nil {
@@ -61,7 +68,98 @@ func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerC
 		res.Phase = "already-current"
 		return res, nil
 	}
+	return h.dockerRecreateOn(ctx, api, c, in, ref, res)
+}
 
+// dockerRecreateRefusal is what makes a container unsafe to swap, checked
+// before anything is pulled or stopped:
+//   - made from an image id rather than a reference: there is nothing to pull;
+//   - removed by the daemon once it stops (--rm): the stop would take it away
+//     before the new one exists, and there would be nothing to go back to;
+//   - another container runs in its network namespace (network_mode:
+//     container:X, as a VPN container's clients do): they would be left
+//     pointing at a container that no longer exists.
+func dockerRecreateRefusal(ctx context.Context, api *dockerAPI, c dockerContainerSummary, in dockerInspect) error {
+	if dockerIsImageID(in.Config.Image) {
+		return &dockerRefusalError{Code: http.StatusConflict, Reason: "pinned-by-id"}
+	}
+	if in.HostConfig.AutoRemove {
+		return &dockerRefusalError{Code: http.StatusConflict, Reason: "auto-remove"}
+	}
+	list, err := api.listContainers(ctx)
+	if err != nil {
+		return err
+	}
+	if users := dockerNetworkDependents(c, list); len(users) > 0 {
+		return &dockerRefusalError{Code: http.StatusConflict, Reason: "network-shared", Containers: users}
+	}
+	return nil
+}
+
+// dockerIsImageID: "sha256:…", or the bare hex a container made from an id
+// keeps, rather than a reference a registry knows.
+func dockerIsImageID(ref string) bool {
+	ref = strings.TrimPrefix(strings.TrimSpace(ref), "sha256:")
+	return dockerHexID.MatchString(ref) && len(ref) >= 12 && !strings.Contains(ref, "/")
+}
+
+// dockerNetworkDependents names the containers that share c's network
+// namespace. Docker keeps "container:" with the name or the id as given.
+func dockerNetworkDependents(c dockerContainerSummary, list []dockerContainerSummary) []string {
+	users := []string{}
+	for _, other := range list {
+		mode, ok := strings.CutPrefix(other.HostConfig.NetworkMode, "container:")
+		if !ok || other.ID == c.ID || mode == "" {
+			continue
+		}
+		if mode == c.name() || (len(mode) >= 12 && strings.HasPrefix(c.ID, mode)) {
+			users = append(users, other.name())
+		}
+	}
+	sort.Strings(users)
+	return users
+}
+
+// dockerKeepAnonymousVolumes mounts the volumes the old container got from its
+// image's VOLUME lines -- anonymous, named by Docker, not in HostConfig -- into
+// the new one. A new container would otherwise get fresh, empty ones, and the
+// data would sit in a volume nothing uses any more.
+func dockerKeepAnonymousVolumes(in dockerInspect, hostConfig map[string]any) {
+	covered := map[string]bool{}
+	if binds, ok := hostConfig["Binds"].([]any); ok {
+		for _, b := range binds {
+			if s, ok := b.(string); ok {
+				if parts := strings.Split(s, ":"); len(parts) >= 2 {
+					covered[parts[1]] = true
+				}
+			}
+		}
+	}
+	mounts, _ := hostConfig["Mounts"].([]any)
+	for _, m := range mounts {
+		if mm, ok := m.(map[string]any); ok {
+			if target, ok := mm["Target"].(string); ok {
+				covered[target] = true
+			}
+		}
+	}
+	for _, m := range in.Mounts {
+		if m.Type != "volume" || m.Name == "" || covered[m.Destination] {
+			continue
+		}
+		mounts = append(mounts, map[string]any{"Type": "volume", "Source": m.Name, "Target": m.Destination, "ReadOnly": !m.RW})
+		covered[m.Destination] = true
+	}
+	if len(mounts) > 0 {
+		hostConfig["Mounts"] = mounts
+	}
+}
+
+// dockerRecreateOn swaps the container for a new one made from ref, which
+// already names the image to run (pulled for an update, tagged back for a
+// rollback): stop, rename out of the way, create, reconnect, start, remove.
+func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c dockerContainerSummary, in dockerInspect,
+	ref string, res dockerRecreateResult) (dockerRecreateResult, error) {
 	var config map[string]any
 	var hostConfig map[string]any
 	if err := json.Unmarshal(in.raw.Config, &config); err != nil || config == nil {
@@ -70,6 +168,8 @@ func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerC
 	if err := json.Unmarshal(in.raw.HostConfig, &hostConfig); err != nil || hostConfig == nil {
 		return res, fmt.Errorf("reading the container's host configuration: %w", err)
 	}
+
+	dockerKeepAnonymousVolumes(in, hostConfig)
 
 	name := c.name()
 	// Running covers paused as well; either way the reader expects it back up.
@@ -86,6 +186,14 @@ func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerC
 		return h.dockerRollback(ctx, api, res, c.ID, "", "", wasRunning, err)
 	}
 
+	// Docker folds the image's defaults into a container's Config when it is
+	// created, and inspect hands them back merged. Sent back as they are, the
+	// old image's Env, Cmd, Entrypoint, healthcheck and labels would override
+	// the new image's own. What equals the old image's value is left out, so
+	// the new image fills it in; what was set for the container stays.
+	if imgConfig, err := api.inspectImageConfig(ctx, in.Image); err == nil && imgConfig != nil {
+		dropImageDefaults(config, imgConfig)
+	}
 	config["Image"] = ref
 	// Docker defaults the hostname to the short id; carried over, the new
 	// container would be named after the one it replaces.
@@ -140,10 +248,54 @@ func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerC
 	if err := api.remove(ctx, c.ID); err != nil {
 		logWarn(logComponentMutate, "updated %s, but the previous container %s could not be removed: %v", name, oldName, err)
 	}
-	logInfo(logComponentMutate, "updated %s to %s", name, shortImageID(img.ID))
+	logInfo(logComponentMutate, "recreated %s on %s", name, shortImageID(res.NewImageID))
 	res.Phase = "done"
 	res.ContainerID = newID
 	return res, nil
+}
+
+// dropImageDefaults removes from a container's Config what it only has
+// because its image had it. Env lines and labels go one by one; Cmd goes only
+// with the Entrypoint, since an entrypoint set for the container keeps the
+// command that came with it.
+func dropImageDefaults(config, image map[string]any) {
+	if env, ok := config["Env"].([]any); ok {
+		fromImage := map[string]bool{}
+		if imgEnv, ok := image["Env"].([]any); ok {
+			for _, e := range imgEnv {
+				if s, ok := e.(string); ok {
+					fromImage[s] = true
+				}
+			}
+		}
+		kept := []any{}
+		for _, e := range env {
+			if s, ok := e.(string); !ok || !fromImage[s] {
+				kept = append(kept, e)
+			}
+		}
+		config["Env"] = kept
+	}
+	for _, field := range []string{"Labels", "ExposedPorts", "Volumes"} {
+		own, _ := config[field].(map[string]any)
+		img, _ := image[field].(map[string]any)
+		for k, v := range img {
+			if cv, ok := own[k]; ok && reflect.DeepEqual(cv, v) {
+				delete(own, k)
+			}
+		}
+	}
+	for _, field := range []string{"WorkingDir", "User", "Healthcheck", "StopSignal", "Shell", "OnBuild"} {
+		if cv, ok := config[field]; ok && reflect.DeepEqual(cv, image[field]) {
+			delete(config, field)
+		}
+	}
+	if reflect.DeepEqual(config["Entrypoint"], image["Entrypoint"]) {
+		delete(config, "Entrypoint")
+		if reflect.DeepEqual(config["Cmd"], image["Cmd"]) {
+			delete(config, "Cmd")
+		}
+	}
 }
 
 // dockerEndpointConfig carries a network's aliases, fixed address and MAC over
@@ -175,17 +327,38 @@ func shortImageID(id string) string {
 	return id
 }
 
+// dockerRollbackTimeout is how long putting the old container back may take:
+// a remove, a rename and a start.
+const dockerRollbackTimeout = 2 * time.Minute
+
+// isDockerNotFound reports a 404 from the daemon.
+func isDockerNotFound(err error) bool {
+	var apiErr *dockerAPIError
+	return errors.As(err, &apiErr) && apiErr.Status == http.StatusNotFound
+}
+
 // dockerRollback removes the half-made new container and puts the old one
 // back. A rollback that works is not an error: the reader's service runs as
 // before, and the result names the step that failed.
 func (h *Handlers) dockerRollback(ctx context.Context, api *dockerAPI, res dockerRecreateResult,
 	oldID, newID, name string, wasRunning bool, cause error) (dockerRecreateResult, error) {
 	logWarn(logComponentMutate, "the update of %s failed at %s (%v); restoring the previous container", name, res.FailedStep, cause)
+	// Time of its own: the update's budget may be what ran out, and a
+	// rollback that fails on it leaves the old container stopped and renamed.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), dockerRollbackTimeout)
+	defer cancel()
+	// Already gone -- removed from another tab -- is what this wanted.
+	removeNew := func() error {
+		if err := api.remove(ctx, newID); err != nil && !isDockerNotFound(err) {
+			return err
+		}
+		return nil
+	}
 	if newID != "" {
-		if err := api.remove(ctx, newID); err != nil {
+		if err := removeNew(); err != nil {
 			// Force it: the new container may be half-started.
 			_ = api.post(ctx, "/containers/"+newID+"/stop", nil)
-			if err := api.remove(ctx, newID); err != nil {
+			if err := removeNew(); err != nil {
 				return res, fmt.Errorf("the update failed at %s and the new container could not be removed: %w", res.FailedStep, err)
 			}
 		}

@@ -566,6 +566,9 @@
             this.syncActiveTagsFromDashboard();
             this.renderWordCloud();
             this.updateClearButton();
+            // The × is not a name. The template carries an English label; this
+            // keeps it in the current language when the language changed later.
+            this.closeBtn?.setAttribute('aria-label', t('dashboard.tagCloudModalClose', 'Close'));
             this.modal.hidden = false;
             this.modal.setAttribute('aria-hidden', 'false');
             this.backdrop?.removeAttribute('hidden');

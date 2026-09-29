@@ -29,12 +29,9 @@ const TONES = ['good', 'warn', 'bad'];
 /** Tones a delta can carry; neutral is the count that moved without a verdict. */
 const DELTA_TONES = ['good', 'warn', 'bad', 'neutral'];
 
+/** The shared escaper; escape-html.js loads just before this in the head. */
 function esc(value) {
-    return window.escapeHtml
-        ? window.escapeHtml(String(value ?? ''))
-        : String(value ?? '').replace(/[&<>"']/g, (ch) => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
-        ));
+    return window.NextDashHtml.escapeHtml(value);
 }
 
 /**

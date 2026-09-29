@@ -33,7 +33,21 @@
         { key: 'unhealthy', field: 'unhealthy', text: ['dashboard.widgetDockerUnhealthy', 'unhealthy'] },
         { key: 'total', field: 'total', text: ['dashboard.widgetDockerTotal', 'total'] },
         { key: 'images', field: 'images', text: ['dashboard.widgetDockerImages', 'images'] },
+        // Updates as the Containers view counts them: a skipped or held one is not.
+        { key: 'updates', field: 'updates', text: ['dashboard.widgetDockerUpdates', 'updates'] },
+        // What Disk last found reclaimable; nothing measured yet is a dash.
+        { key: 'reclaimable', field: 'reclaimable', text: ['dashboard.widgetDockerReclaimable', 'reclaimable'], bytes: true },
+        // Crashes and turns unhealthy in the last day, from the timeline.
+        { key: 'incidents', field: 'incidents24h', text: ['dashboard.widgetDockerIncidents', 'incidents (24 h)'] },
     ];
+
+    function formatBytes(n) {
+        if (!Number.isFinite(n) || n < 0) return '—';
+        if (n < 1024) return `${n} B`;
+        if (n < 1024 ** 2) return `${Math.round(n / 1024)} KiB`;
+        if (n < 1024 ** 3) return `${Math.round(n / 1024 ** 2)} MiB`;
+        return `${(n / 1024 ** 3).toFixed(1)} GiB`;
+    }
 
     /**
      * Tone by meaning, never by size.
@@ -46,6 +60,8 @@
         if (key === 'unhealthy') return value > 0 ? 'bad' : undefined;
         if (key === 'stopped') return value > 0 ? 'warn' : undefined;
         if (key === 'running') return docker.total > 0 && value === 0 ? 'bad' : undefined;
+        if (key === 'updates') return value > 0 ? 'warn' : undefined;
+        if (key === 'incidents') return value > 0 ? 'bad' : undefined;
         return undefined;
     }
 
@@ -107,9 +123,10 @@
         const stats = FIGURES
             .filter((f) => !chosen || chosen.includes(f.key))
             .map((f) => {
-                const value = Number(docker[f.field]) || 0;
+                const raw = Number(docker[f.field]);
+                const value = Number.isFinite(raw) ? raw : 0;
                 return {
-                    value: String(value),
+                    value: f.bytes ? formatBytes(Number.isFinite(raw) ? raw : -1) : String(value),
                     label: label(dash, f.text[0], f.text[1]),
                     tone: toneFor(f.key, value, docker),
                 };
@@ -145,6 +162,16 @@
                 docker.restartedNames.join(', '),
                 'warn',
                 config.showRestarted === true,
+            ]);
+        }
+        // The busiest three by CPU -- only when asked, as it is a reading that
+        // moves every half minute rather than something to act on.
+        if (config.showTopCpu === true && docker.topCpu?.length) {
+            names.push([
+                label(dash, 'dashboard.widgetDockerTopCpu', 'busiest'),
+                docker.topCpu.map((c) => `${c.name} ${Number(c.cpu).toFixed(1)} %`).join(', '),
+                undefined,
+                true,
             ]);
         }
         if (names.length) {

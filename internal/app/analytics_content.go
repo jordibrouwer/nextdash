@@ -84,8 +84,10 @@ func (h *Handlers) analyticsContentJSON(enabled bool) string {
 // rather than on every bookmark edit, which cannot move a bucket on its own.
 func invalidateAnalyticsContentCache() {
 	analyticsContentCache.Lock()
-	defer analyticsContentCache.Unlock()
 	analyticsContentCache.json = ""
+	analyticsContentCache.Unlock()
+	// The feature snapshots are cached the same way and dropped with it.
+	invalidateAnalyticsSnapshotsCache()
 }
 
 func (h *Handlers) countAnalyticsContent() analyticsContentCounts {

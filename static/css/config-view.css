@@ -611,11 +611,11 @@
 
 .config-tile--accent  { --tile-stripe: var(--accent-color, #4a90d9); }
 
-.config-tile--good    { --tile-stripe: #2fa968; }
+.config-tile--good    { --tile-stripe: var(--accent-success, #2fa968); }
 
-.config-tile--warn    { --tile-stripe: #cf9014; }
+.config-tile--warn    { --tile-stripe: var(--accent-warning, #cf9014); }
 
-.config-tile--crit    { --tile-stripe: #d1493f; }
+.config-tile--crit    { --tile-stripe: var(--accent-error, #d1493f); }
 
 .config-tile--neutral { --tile-stripe: var(--border-color, rgba(128, 128, 128, 0.5)); }
 
@@ -655,7 +655,7 @@
 }
 
 .config-panel--danger {
-    border-color: color-mix(in srgb, #d1493f 40%, transparent);
+    border-color: color-mix(in srgb, var(--accent-error, #d1493f) 40%, transparent);
 }
 
 .config-panel-title {

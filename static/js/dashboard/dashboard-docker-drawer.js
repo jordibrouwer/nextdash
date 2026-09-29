@@ -11,7 +11,7 @@
 
 const DOCKER_SECTIONS_KEY = 'nextdash.docker.sections';
 const DOCKER_SECTIONS_DEFAULT = ['overview'];
-const DOCKER_SECTION_KEYS = ['overview', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
+const DOCKER_SECTION_KEYS = ['overview', 'health', 'updates', 'timeline', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
 
 /** fetch() that never throws and answers null on anything but a 2xx JSON body. */
 async function dockerDrawerFetchJSON(url, init) {
@@ -92,6 +92,7 @@ class DockerDrawer {
         this._statsTimer = null;
         this._logsLoaded = false;
         this._changesLoaded = false;
+        this._healthLoaded = false;
         this._els = null;
         // The panel itself -- host, placement, phone fullscreen, ScrollLock and
         // remembered sections -- is the shared one (list-view-drawer.js); this
@@ -102,6 +103,10 @@ class DockerDrawer {
             defaultSections: DOCKER_SECTIONS_DEFAULT,
             closeLabel: this.t('dockerDrawerClose', 'Close'),
             onClose: () => this._onBaseClosed(),
+            // As in Bookmarks and Inbox: a press beside the panel closes it, a
+            // press on another row moves it there, unless Config keeps it open.
+            closeOnOutside: (target) => this.view.dash?.settings?.dockerViewCloseOutside !== false
+                && !target.closest('.docker-row'),
         });
     }
 
@@ -128,6 +133,8 @@ class DockerDrawer {
         this._detail = null;
         this._logsLoaded = false;
         this._changesLoaded = false;
+        this._healthLoaded = false;
+        this._timelineLoaded = false;
         this._buildSkeleton(typeof container === 'string' ? { name } : container);
         void this._loadDetail(name);
     }
@@ -202,6 +209,8 @@ class DockerDrawer {
         this._wireResources(els);
         this._wireLogs(els);
         this._wireChanges(els);
+        this._wireHealth(els, summary);
+        this._wireTimeline(els);
         // The tab on show loads what it needs now, as a click on it would.
         this._onTab(window.SidePanelLayout.activeTab('docker', this._tabs()));
     }
@@ -224,17 +233,30 @@ class DockerDrawer {
         const ports = (summary.ports || []).filter((p) => p && p.public)
             .map((p) => `${p.public} → ${p.private}`).slice(0, 2).join(', ');
         const where = [summary.status, ports, summary.health].filter(Boolean).join(' · ');
-        const webui = String(summary.webui || '').replace('[IP]', location.hostname);
+        const webui = window.DockerSearchIndex.webuiHref(summary.webui, summary);
         L.moreLabel = this.t('dockerMoreActions', 'More actions');
         const head = L.head(esc, {
             icon: `<span class="docker-drawer-icon" aria-hidden="true">${esc(String(summary.name || '?').charAt(0).toUpperCase())}</span>`,
             title: summary.name,
             badge: { text: summary.state || '', tone },
-            more: [{ action: 'copy-name', label: this.t('dockerCopyName', 'Copy name') }],
+            more: [
+                ...(summary.self ? [] : [{ action: 'mute', label: this._muteLabel(summary) }]),
+                { action: 'copy-name', label: this.t('dockerCopyName', 'Copy name') },
+            ],
+            // The address under the name, as the Bookmarks view shows a
+            // bookmark's; your own one is tagged, and the tag opens Custom.
+            url: webui,
+            urlTag: webui && summary.webuiCustom ? {
+                action: 'edit-webui',
+                attr: 'data-docker-webui-tag',
+                label: this.t('dockerSectionCustom', 'Custom'),
+                title: this.t('dockerWebUILabel', 'Web UI address'),
+            } : null,
             where,
             actions: webui ? [{ action: 'webui', label: this.t('dockerLinkWebUI', 'Open web UI'), primary: true }] : [],
         });
-        const image = [summary.image, summary.tag].filter(Boolean).join(':');
+        // The reference as the container was made from it, tag included.
+        const image = String(summary.image || '');
         const chips = [
             image ? L.chip(esc, image) : '',
             summary.update?.status === 'available' ? L.chip(esc, this.t('dockerUpdateAvailable', 'update available'), 'is-tag') : '',
@@ -250,6 +272,9 @@ class DockerDrawer {
         return `${head}${L.tabs(esc, 'docker', tabs)}
             ${pane('overview', `${summaryBlock}${L.accList([
                 acc('overview', this.t('dockerSectionDetails', 'Details'), true),
+                acc('health', this.t('dockerSectionHealth', 'Health')),
+                acc('updates', this.t('dockerSectionUpdates', 'Updates')),
+                acc('timeline', this.t('dockerSectionTimeline', 'Timeline')),
                 acc('network', this.t('dockerSectionNetwork', 'Network')),
                 acc('custom', this.t('dockerSectionCustom', 'Custom')),
                 acc('volumes', this.t('dockerSectionVolumes', 'Volumes')),
@@ -293,11 +318,31 @@ class DockerDrawer {
         panel.querySelector('.slp-badge')?.setAttribute('data-docker-state', '');
     }
 
+    _muteLabel(summary) {
+        return this.view.actions?.isMuted(summary)
+            ? this.t('dockerMenuUnmute', 'Unmute notifications')
+            : this.t('dockerMenuMute', 'Mute notifications');
+    }
+
+    async _toggleMute() {
+        const summary = this._summary || {};
+        if (!(await this.view.actions?.toggleMute(summary, { via: 'drawer' }))) return;
+        const item = this.base.panel?.querySelector('[data-slp-action="mute"]');
+        if (item) item.textContent = this._muteLabel(summary);
+        if (this._detail) this._renderOverview(this._els?.sections.overview, this._detail);
+    }
+
     _act(action) {
         const summary = this._summary || {};
+        if (action === 'mute') {
+            void this._toggleMute();
+            return;
+        }
         if (action === 'webui') {
-            const href = String(summary.webui || '').replace('[IP]', location.hostname);
+            const href = window.DockerSearchIndex.webuiHref(summary.webui, summary);
             if (href) window.open(href, '_blank', 'noopener,noreferrer');
+        } else if (action === 'edit-webui') {
+            this.openSection('custom');
         } else if (action === 'copy-name') {
             void navigator.clipboard?.writeText?.(String(summary.name || ''));
             this.view.dash?.showNotification?.(this.t('dockerNameCopied', 'Name copied'), 'success', { duration: 2000 });
@@ -348,6 +393,8 @@ class DockerDrawer {
         this._renderCustom(els.sections.custom, detail);
         this._renderVolumes(els.sections.volumes, detail);
         this._renderEnv(els.sections.env, detail);
+        this._showHealth(Boolean(detail?.health));
+        this._renderUpdates(els.sections.updates, detail);
 
         const pill = this.base.panel?.querySelector('[data-docker-state]');
         if (pill && detail?.state) pill.textContent = detail.state;
@@ -377,6 +424,14 @@ class DockerDrawer {
         this._fieldRow(body, 'dockerFieldRestart', 'Restart policy', detail.restartPolicy);
         this._fieldRow(body, 'dockerFieldProject', 'Project', detail.composeProject);
         this._fieldRow(body, 'dockerFieldHealth', 'Health', detail.health);
+        if (!detail.self) {
+            const settings = this.view.dash?.settings || {};
+            const state = settings.dockerNotify === false
+                ? this.t('dockerNotifyOff', 'off')
+                : (this.view.actions?.isMuted(detail) ? this.t('dockerNotifyMuted', 'muted') : this.t('dockerNotifyOn', 'on'));
+            this._fieldRow(body, 'dockerFieldNotifications', 'Notifications', state);
+            body.lastElementChild?.querySelector('.docker-field-value')?.setAttribute('data-docker-notify-state', '');
+        }
         if (detail.source) {
             const link = document.createElement('a');
             link.href = detail.source;
@@ -493,7 +548,8 @@ class DockerDrawer {
         const before = d.settings.dockerWebUIs;
         d.settings.dockerWebUIs = all;
         try {
-            await d.saveSettings();
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
         } catch {
             d.settings.dockerWebUIs = before;
             d.showNotification?.(this.t('dockerWebUISaveFailed', 'Could not save the address.'), 'error');
@@ -561,6 +617,14 @@ class DockerDrawer {
             `/api/docker/containers/${encodeURIComponent(containerName)}/env/${encodeURIComponent(name)}`
         );
         if (containerName !== this._name || !row.isConnected) return;
+        // A value that could not be read is not an empty one: say so, and
+        // leave the button to try again.
+        if (!data || typeof data.value !== 'string') {
+            button.disabled = false;
+            button.title = this.t('dockerEnvUnreadable', 'The value could not be read. Reading values needs the write token.');
+            this.view.dash?.showNotification?.(button.title, 'error');
+            return;
+        }
         const value = document.createElement('code');
         value.setAttribute('data-docker-env-value', '');
         value.className = 'docker-env-value';
@@ -576,7 +640,7 @@ class DockerDrawer {
         const cpu = document.createElement('div');
         cpu.className = 'docker-resource-row';
         const cpuLabel = document.createElement('span');
-        cpuLabel.textContent = 'CPU';
+        cpuLabel.textContent = this.t('dockerColCpu', 'CPU');
         const cpuVal = document.createElement('span');
         cpuVal.setAttribute('data-docker-cpu', '');
         cpuVal.textContent = '—';
@@ -585,7 +649,7 @@ class DockerDrawer {
         const mem = document.createElement('div');
         mem.className = 'docker-resource-row';
         const memLabel = document.createElement('span');
-        memLabel.textContent = 'Memory';
+        memLabel.textContent = this.t('dockerSortMem', 'Memory');
         const memVal = document.createElement('span');
         memVal.setAttribute('data-docker-mem', '');
         memVal.textContent = '—';
@@ -607,7 +671,11 @@ class DockerDrawer {
         this._stopResourcePolling();
         this._statsBeat = 0;
         this._history = null;
-        const tick = () => void this._loadStats();
+        // Each beat is a stats call to the daemon: none while the tab is hidden.
+        const tick = () => {
+            if (document.visibilityState !== 'visible') return;
+            void this._loadStats();
+        };
         tick();
         this._statsTimer = setInterval(tick, 2000);
     }
@@ -742,6 +810,16 @@ class DockerDrawer {
         refresh.addEventListener('click', () => void this._loadLogs());
         body.appendChild(refresh);
 
+        // The quick look stays here; reading, following and searching happen in
+        // the logs window.
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.setAttribute('data-docker-logs-open', '');
+        open.className = 'config-btn config-btn--small docker-logs-refresh';
+        open.textContent = this.t('dockerLogsOpen', 'Open logs window');
+        open.addEventListener('click', () => this.view.openLogs?.(this._summary || this._name));
+        body.appendChild(open);
+
         const pre = document.createElement('pre');
         pre.setAttribute('data-docker-logs', '');
         pre.className = 'docker-logs';
@@ -755,7 +833,282 @@ class DockerDrawer {
         if (!name) return;
         const data = await dockerDrawerFetchJSONAuth(`/api/docker/containers/${encodeURIComponent(name)}/logs?tail=${this.logLines()}`);
         if (name !== this._name || !this._els?.logsEl) return;
-        this._els.logsEl.textContent = Array.isArray(data?.lines) ? data.lines.join('\n') : '';
+        // A log that could not be read says so, rather than looking empty.
+        this._els.logsEl.textContent = Array.isArray(data?.lines)
+            ? data.lines.join('\n')
+            : this.t('dockerLogsUnreachable', 'The log could not be reached.');
+    }
+
+    /* ── Updates ───────────────────────────────────────────────────────── */
+
+    /*
+     * Where the container's image stands, the reader's say over it (skip the
+     * version on offer, hold updates), what updates did, and a way back from
+     * the last one while its previous image is still on the host.
+     */
+    _renderUpdates(body, detail) {
+        if (!body || !detail) return;
+        body.replaceChildren();
+        const u = detail.update || {};
+        const control = this.view.status?.control === true && !detail.self;
+        const actions = this.view.actions;
+
+        const status = document.createElement('p');
+        status.className = 'docker-updates-status';
+        status.setAttribute('data-docker-updates-status', '');
+        const texts = {
+            available: this.t('dockerUpdatesAvailable', 'A newer image is available.'),
+            skipped: this.t('dockerUpdatesSkipped', 'A newer image is available; this version is skipped.'),
+            held: this.t('dockerUpdatesHeld', 'A newer image is available; updates are held.'),
+            current: this.t('dockerUpdatesCurrent', 'Up to date.'),
+        };
+        let text = texts[u.status] || this.t('dockerUpdatesUnknown', 'Not known — no check has compared this image yet.');
+        // Pulled already, not yet recreated: there is no version on offer to
+        // skip, only a container to put on the image that is here.
+        if (u.recreate && u.status === 'available') {
+            text = this.t('dockerUpdatesRecreate', 'A newer image is already on this host; updating recreates the container on it.');
+        }
+        if (u.held && u.status !== 'held') text += ` ${this.t('dockerUpdatesHeldNote', 'Updates are held.')}`;
+        status.textContent = text;
+        body.appendChild(status);
+
+        const summary = this._summary?.name === detail.name ? { ...this._summary, ...detail } : detail;
+        const button = (choice, label, primary = false) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = `config-btn config-btn--small${primary ? ' config-btn--primary' : ''}`;
+            b.setAttribute('data-docker-update-choice', choice);
+            b.textContent = label;
+            b.addEventListener('click', () => void actions?.choose(summary, choice));
+            return b;
+        };
+        if (control) {
+            const row = document.createElement('div');
+            row.className = 'docker-updates-actions';
+            if (u.status === 'available' && !u.recreate) row.appendChild(button('skip', this.t('dockerUpdateSkip', 'Skip this version')));
+            if (u.skippedDigest) row.appendChild(button('unskip', this.t('dockerUpdateUnskip', 'Undo skip')));
+            row.appendChild(u.held
+                ? button('unhold', this.t('dockerUpdateUnhold', 'Resume updates'))
+                : button('hold', this.t('dockerUpdateHold', 'Hold updates')));
+            if (detail.rollback) {
+                const target = detail.rollback.toVersion || String(detail.rollback.toImageId || '').replace(/^sha256:/, '').slice(0, 12);
+                const back = document.createElement('button');
+                back.type = 'button';
+                back.className = 'config-btn config-btn--small';
+                back.setAttribute('data-docker-rollback', '');
+                back.textContent = this.t('dockerRollbackTo', 'Roll back to {version}', { version: target });
+                back.title = this.t('dockerRollbackHint', 'Undo the update of {date}', { date: dockerFormatDate(detail.rollback.at / 1000) });
+                back.addEventListener('click', () => void actions?.rollback(summary, detail.rollback));
+                row.appendChild(back);
+            }
+            body.appendChild(row);
+        }
+
+        const history = Array.isArray(detail.updateHistory) ? detail.updateHistory : [];
+        const heading = document.createElement('p');
+        heading.className = 'docker-field-label';
+        heading.textContent = this.t('dockerUpdateHistory', 'History');
+        body.appendChild(heading);
+        if (!history.length) {
+            const none = document.createElement('p');
+            none.className = 'docker-changes-empty';
+            none.textContent = this.t('dockerUpdateHistoryNone', 'No updates from here yet.');
+            body.appendChild(none);
+            return;
+        }
+        const short = (id) => String(id || '').replace(/^sha256:/, '').slice(0, 12);
+        const list = document.createElement('ul');
+        list.className = 'docker-update-history';
+        list.setAttribute('data-docker-update-history', '');
+        history.forEach((e) => {
+            const li = document.createElement('li');
+            li.setAttribute('data-kind', e.kind);
+            const what = document.createElement('span');
+            what.className = 'docker-update-history-what';
+            const verb = e.kind === 'rollback'
+                ? this.t('dockerUpdateHistoryRolledBack', 'Rolled back')
+                : this.t('dockerUpdateHistoryUpdated', 'Updated');
+            what.textContent = `${verb} ${e.fromVersion || short(e.fromImageId)} → ${e.toVersion || short(e.toImageId)}`;
+            const when = document.createElement('span');
+            when.className = 'docker-health-when';
+            when.textContent = dockerFormatDate(e.at / 1000);
+            li.append(what, when);
+            list.appendChild(li);
+        });
+        body.appendChild(list);
+    }
+
+    /* ── Timeline ──────────────────────────────────────────────────────── */
+
+    /*
+     * What happened to the container, newest first: starts and stops,
+     * crashes with their exit code, health changes, pauses, and the updates
+     * and rollbacks. Recorded by the server from Docker's events; asked for
+     * when the part is opened.
+     */
+    _wireTimeline(els) {
+        const acc = els.sections.timeline?.closest('[data-slp-acc]');
+        if (!acc) return;
+        const load = () => {
+            if (this._timelineLoaded || !acc.open) return;
+            this._timelineLoaded = true;
+            void this._loadTimeline();
+        };
+        acc.addEventListener('toggle', load);
+        load();
+    }
+
+    async _loadTimeline() {
+        const name = this._name;
+        if (!name) return;
+        const data = await dockerDrawerFetchJSON(`/api/docker/containers/${encodeURIComponent(name)}/timeline`);
+        if (name !== this._name || !this._els?.sections.timeline) return;
+        this._renderTimeline(this._els.sections.timeline, data);
+    }
+
+    _renderTimeline(body, data) {
+        body.replaceChildren();
+        const entries = Array.isArray(data?.entries) ? data.entries : [];
+        if (!entries.length) {
+            const none = document.createElement('p');
+            none.className = 'docker-changes-empty';
+            none.textContent = data
+                ? this.t('dockerTimelineNone', 'Nothing recorded yet. nextDash writes down what happens from now on.')
+                : this.t('dockerTimelineFailed', 'The timeline could not be read.');
+            body.appendChild(none);
+            return;
+        }
+        const words = {
+            start: [this.t('dockerTimelineStart', 'Started'), 'good'],
+            stop: [this.t('dockerTimelineStop', 'Stopped'), 'muted'],
+            exit: [this.t('dockerTimelineExit', 'Exited on its own'), 'muted'],
+            crash: [this.t('dockerTimelineCrash', 'Crashed'), 'bad'],
+            'restart-loop': [this.t('dockerTimelineLoop', 'Kept restarting'), 'bad'],
+            unhealthy: [this.t('dockerTimelineUnhealthy', 'Turned unhealthy'), 'bad'],
+            healthy: [this.t('dockerTimelineHealthy', 'Healthy again'), 'good'],
+            pause: [this.t('dockerTimelinePause', 'Paused'), 'warn'],
+            unpause: [this.t('dockerTimelineUnpause', 'Resumed'), 'good'],
+            update: [this.t('dockerTimelineUpdate', 'Updated'), 'accent'],
+            rollback: [this.t('dockerTimelineRollback', 'Rolled back'), 'warn'],
+        };
+        const list = document.createElement('ol');
+        list.className = 'docker-timeline';
+        entries.forEach((e) => {
+            const [label, tone] = words[e.kind] || [e.kind, 'muted'];
+            const li = document.createElement('li');
+            li.className = 'docker-timeline-entry';
+            li.setAttribute('data-docker-timeline-entry', '');
+            li.setAttribute('data-kind', e.kind);
+            li.setAttribute('data-tone', tone);
+            const dot = document.createElement('span');
+            dot.className = 'docker-timeline-dot';
+            dot.setAttribute('aria-hidden', 'true');
+            const what = document.createElement('span');
+            what.className = 'docker-timeline-what';
+            what.textContent = e.detail ? `${label} — ${e.detail}` : label;
+            const when = document.createElement('time');
+            when.className = 'docker-health-when';
+            when.dateTime = new Date(e.at).toISOString();
+            when.textContent = dockerFormatDate(e.at / 1000);
+            li.append(dot, what, when);
+            list.appendChild(li);
+        });
+        body.appendChild(list);
+    }
+
+    /* ── Health ────────────────────────────────────────────────────────── */
+
+    /*
+     * The healthcheck's last checks, newest first. Only a container with a
+     * healthcheck has the part at all; the checks load when it is opened
+     * (behind the write token, as logs are: a check's output is a command's).
+     */
+    _wireHealth(els, summary) {
+        const acc = els.sections.health?.closest('[data-slp-acc]');
+        if (!acc) return;
+        els.healthAcc = acc;
+        acc.addEventListener('toggle', () => {
+            if (acc.open) this._maybeLoadHealth();
+        });
+        this._showHealth(Boolean(summary?.health));
+    }
+
+    _showHealth(has) {
+        const acc = this._els?.healthAcc;
+        if (!acc) return;
+        acc.hidden = !has;
+        if (has && acc.open) this._maybeLoadHealth();
+    }
+
+    _maybeLoadHealth() {
+        if (this._healthLoaded || this._els?.healthAcc?.hidden) return;
+        this._healthLoaded = true;
+        void this._loadHealth();
+    }
+
+    async _loadHealth() {
+        const name = this._name;
+        if (!name) return;
+        const data = await dockerDrawerFetchJSONAuth(`/api/docker/containers/${encodeURIComponent(name)}/health`);
+        if (name !== this._name || !this._els?.sections.health) return;
+        this._renderHealth(this._els.sections.health, data);
+    }
+
+    _renderHealth(body, data) {
+        body.replaceChildren();
+        if (!data) {
+            const msg = document.createElement('p');
+            msg.className = 'docker-changes-empty';
+            msg.textContent = this.t('dockerHealthUnavailable', 'The checks could not be read.');
+            body.appendChild(msg);
+            return;
+        }
+        this._fieldRow(body, 'dockerFieldHealth', 'Health', data.status);
+        if (data.failingStreak > 0) {
+            this._fieldRow(body, 'dockerHealthFailingLabel', 'Failing',
+                this.t('dockerHealthFailing', '{count} in a row', { count: data.failingStreak }));
+        }
+        if (data.command) {
+            const cmd = document.createElement('code');
+            cmd.className = 'docker-health-command';
+            cmd.setAttribute('data-docker-health-command', '');
+            cmd.textContent = data.command;
+            body.appendChild(cmd);
+        }
+        const checks = Array.isArray(data.checks) ? data.checks : [];
+        if (!checks.length) {
+            const msg = document.createElement('p');
+            msg.className = 'docker-changes-empty';
+            msg.textContent = this.t('dockerHealthNoChecks', 'No checks have run yet.');
+            body.appendChild(msg);
+            return;
+        }
+        const list = document.createElement('ol');
+        list.className = 'docker-health-checks';
+        checks.forEach((check) => {
+            const ok = check.exitCode === 0;
+            const item = document.createElement('li');
+            item.className = 'docker-health-check';
+            item.setAttribute('data-docker-health-check', ok ? 'pass' : 'fail');
+            const head = document.createElement('div');
+            head.className = 'docker-health-check-head';
+            const mark = document.createElement('span');
+            mark.className = 'docker-health-mark';
+            mark.textContent = ok ? '✓' : `✗ ${this.t('dockerHealthExit', 'exit {code}', { code: check.exitCode })}`;
+            const when = document.createElement('span');
+            when.className = 'docker-health-when';
+            when.textContent = dockerFormatDate(check.start);
+            head.append(mark, when);
+            item.appendChild(head);
+            if (check.output) {
+                const out = document.createElement('pre');
+                out.className = 'docker-health-output';
+                out.textContent = check.output;
+                item.appendChild(out);
+            }
+            list.appendChild(item);
+        });
+        body.appendChild(list);
     }
 
     /* ── Changes ───────────────────────────────────────────────────────── */
@@ -785,9 +1138,12 @@ class DockerDrawer {
         if (!releases.length) {
             const msg = document.createElement('p');
             msg.className = 'docker-changes-empty';
-            msg.textContent = data?.reason === 'rate-limited'
-                ? this.t('dockerChangesRateLimited', 'GitHub is limiting requests right now; try again later.')
-                : this.t('dockerNoChanges', 'No release notes found — the links below go to the project.');
+            const reasons = {
+                'rate-limited': ['dockerChangesRateLimited', 'GitHub is limiting requests right now; try again later.'],
+                'auth-failed': ['dockerChangesAuthFailed', 'GitHub turned down the token set under Config → Containers; check or remove it there.'],
+            };
+            const [key, fallback] = reasons[data?.reason] || ['dockerNoChanges', 'No release notes found — the links below go to the project.'];
+            msg.textContent = this.t(key, fallback);
             list.appendChild(msg);
         }
 
@@ -816,7 +1172,7 @@ class DockerDrawer {
         (Array.isArray(data?.links) ? data.links : []).forEach((link) => {
             const a = document.createElement('a');
             let href = link.url || '';
-            if (link.kind === 'webui') href = href.replace('[IP]', location.hostname);
+            if (link.kind === 'webui') href = window.DockerSearchIndex.webuiHref(href, this._summary);
             a.href = href;
             a.target = '_blank';
             a.rel = 'noopener noreferrer';

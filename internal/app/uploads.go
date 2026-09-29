@@ -65,6 +65,8 @@ func (h *Handlers) UploadFavicon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.settingsMu.Lock()
+	defer h.settingsMu.Unlock()
 	settings := h.store.GetSettings()
 	settings.CustomFaviconPath = "/data/favicon" + ext
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
@@ -120,6 +122,8 @@ func (h *Handlers) UploadFont(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update settings with the new font path
+	h.settingsMu.Lock()
+	defer h.settingsMu.Unlock()
 	settings := h.store.GetSettings()
 	settings.CustomFontPath = "/data/font" + ext
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {

@@ -31,7 +31,7 @@ var dockerSimpleActions = map[string]bool{
 // What the own container refuses: each of these stops or replaces the process
 // answering the request.
 var dockerSelfBlocked = map[string]bool{
-	"stop": true, "pause": true, "restart": true, "remove": true, "update": true,
+	"stop": true, "pause": true, "restart": true, "remove": true, "update": true, "rollback": true,
 }
 
 // Long enough for a stop to wait out a container's grace period and for an
@@ -44,6 +44,36 @@ func (h *Handlers) dockerLock(id string) (func(), bool) {
 		return nil, false
 	}
 	return func() { h.dockerBusy.Delete(id) }, true
+}
+
+// dockerLockContainer holds a container by id and by name. An update gives
+// the name a new id halfway through, and actions resolve names: locked by id
+// alone, a stop or remove on the name would slip in mid-update.
+func (h *Handlers) dockerLockContainer(c dockerContainerSummary) (func(), bool) {
+	releaseID, ok := h.dockerLock(c.ID)
+	if !ok {
+		return nil, false
+	}
+	name := c.name()
+	if name == "" {
+		return releaseID, true
+	}
+	releaseName, ok := h.dockerLock("name:" + name)
+	if !ok {
+		releaseID()
+		return nil, false
+	}
+	return func() { releaseName(); releaseID() }, true
+}
+
+// dockerAnyBusy says whether an action is running on any container.
+func (h *Handlers) dockerAnyBusy() bool {
+	busy := false
+	h.dockerBusy.Range(func(_, _ any) bool {
+		busy = true
+		return false
+	})
+	return busy
 }
 
 func dockerRefuse(w http.ResponseWriter, code int, reason string) {
@@ -61,7 +91,7 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	action := mux.Vars(r)["action"]
-	if !dockerSimpleActions[action] && action != "remove" && action != "update" {
+	if !dockerSimpleActions[action] && action != "remove" && action != "update" && action != "rollback" {
 		dockerRefuse(w, http.StatusNotFound, "unknown-action")
 		return
 	}
@@ -78,12 +108,24 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		dockerRefuse(w, http.StatusConflict, "running")
 		return
 	}
-	release, ok := h.dockerLock(c.ID)
+	release, ok := h.dockerLockContainer(c)
 	if !ok {
 		dockerRefuse(w, http.StatusConflict, "busy")
 		return
 	}
 	defer release()
+	// The lock is taken before the prune flag is read, and the prune sets its
+	// flag before it reads the locks: one of the two always sees the other.
+	if (action == "update" || action == "rollback") && h.dockerPruneRunning.Load() {
+		dockerRefuse(w, http.StatusConflict, "prune-running")
+		return
+	}
+	// What nextDash stops or replaces itself is not a crash to tell about --
+	// for as long as the action runs, and a moment after for the late events.
+	if action != "start" && action != "unpause" {
+		dockerNotifications.expect(c.name(), time.Now().Add(dockerActionTimeout))
+		defer func() { dockerNotifications.expect(c.name(), time.Now().Add(dockerNotifyExpectWindow)) }()
+	}
 
 	// The server's WriteTimeout is a minute; pulling a large image is not. The
 	// answer would be cut off while the update carried on, and the reader would
@@ -110,6 +152,13 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		if err == nil && (outcome.Phase == "done" || outcome.Phase == "already-current") {
 			h.markDockerImageCurrent(c.Image)
 		}
+		if err == nil && outcome.Phase == "done" {
+			h.recordDockerUpdate(ctx, api, "update", name, c.Image, outcome.OldImageID, outcome.NewImageID)
+		}
+	case action == "rollback":
+		var outcome dockerRecreateResult
+		outcome, err = h.dockerRollbackUpdate(ctx, api, c)
+		result["update"] = outcome
 	}
 
 	logActivity(activityCategoryMutate, "docker."+action, map[string]any{
@@ -117,11 +166,23 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		"ok":        err == nil,
 	}, "docker "+action+" "+name)
 
+	var refusal *dockerRefusalError
+	if errors.As(err, &refusal) {
+		if len(refusal.Containers) > 0 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(refusal.Code)
+			writeJSON(w, map[string]any{"reason": refusal.Reason, "containers": refusal.Containers})
+			return
+		}
+		dockerRefuse(w, refusal.Code, refusal.Reason)
+		return
+	}
 	if err != nil {
 		logWarn(logComponentMutate, "docker %s %s failed: %v", action, name, err)
 		if outcome, ok := result["update"].(dockerRecreateResult); ok && outcome.FailedStep != "" {
 			var apiErr *dockerAPIError
 			if !errors.As(err, &apiErr) && !isDockerDialError(err) {
+				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadGateway)
 				writeJSON(w, map[string]string{"reason": "docker-error", "failedStep": outcome.FailedStep,
 					"message": "the update failed at " + outcome.FailedStep + ": " + err.Error()})

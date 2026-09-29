@@ -129,7 +129,8 @@
         });
         markAnswered();
         try {
-            await d.saveSettings?.();
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await d.saveSettings?.()) === false) throw new Error('not saved');
         } catch {
             card.showError(t('dashboard.clockWeatherSaveFailed', 'Could not save. The same settings are in Config → Appearance → Date & weather.'));
             return;

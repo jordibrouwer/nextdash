@@ -35,7 +35,10 @@
             add.type = 'button';
             add.className = 'tag-suggest-chip-add';
             add.textContent = `#${offer.tag}`;
+            // The title doubles as the name a screen reader announces: "#tag"
+            // alone does not say what pressing it does, and "×" says nothing.
             add.title = t('dashboard.tagSuggestAdd', `Tag this bookmark #${offer.tag}`, { tag: offer.tag });
+            add.setAttribute('aria-label', add.title);
             add.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -47,6 +50,7 @@
             off.className = 'tag-suggest-chip-dismiss';
             off.textContent = '×';
             off.title = t('dashboard.tagSuggestDismiss', `Stop proposing #${offer.tag} here`, { tag: offer.tag });
+            off.setAttribute('aria-label', off.title);
             off.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();

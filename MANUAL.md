@@ -456,6 +456,7 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + I` | Inbox |
 | `Shift + H` | The Bookmarks view, on the broken ones |
 | `Shift + U` | The Bookmarks view, on Unsorted |
+| `Shift + Y` | Containers |
 | `Shift + S` or `<` | Config (and back) |
 | `Shift + A` | The theme browser |
 | `>` `:` `?` | Search, commands, finders |
@@ -688,7 +689,7 @@ A category you just created stays visible even with *hide empty categories* on, 
 
 ### 9.3 Sorting and folding
 
-Each category header has **A–Z** and **Recent** chips; click the active one to go back to manual order. Pinned bookmarks always stay on top. A sorted category cannot be dragged — the cursor and a short note say so. Sorting is only a view; the stored order changes when you drag.
+Each category header has a **⋯** menu with **Manual**, **A–Z**, **Last opened**, **Newest** and **Most opened**. The chosen sort shows as a short chip in front of the ⋯ (*A–Z*, *Rec*, *New*, *Top*); click it to go back to manual order. **Last opened** and **Most opened** put bookmarks never opened last. Pinned bookmarks always stay on top. A sorted category cannot be dragged — the cursor and a short note say so. Sorting is only a view; the stored order changes when you drag.
 
 Click a header, or press `Enter` on it, to fold the category. **`.`** folds or unfolds everything on the page, widgets included; the state is kept per page. **Start with categories collapsed** (Appearance → Grid) starts every category folded.
 
@@ -810,9 +811,11 @@ Active filters show as removable tokens above the groups, with **Clear filters**
 
 ### 11.2 The toolbar and the list
 
-The toolbar sits above the list: a **search** field (`/`) that matches name, URL, category, note, shortcut and tags; a count of what is shown; **Group** (No groups, Page, Category, Site, Status, Tag); **Sort** (Page order, Name A–Z, URL, Category, Recently added, Last opened, Most opened, Pinned first, and Health score once a Health filter is active); the row-density toggle shared with the other list views; and **Add bookmark**, which opens the full form on the page the list is filtered to.
+The toolbar sits above the list: a **search** field (`/`) that matches name, URL, category, note, shortcut and tags; a count of what is shown; **Group** (No groups, Page, Category, Site, Status, Tag); **Sort** (Page order, Name A–Z, URL, Category, Recently added, Last opened, Most opened, Pinned first, Tags, Shortcut, Usage, Health score); the row-density toggle shared with the other list views; and **Add bookmark**, which opens the full form on the page the list is filtered to.
 
 Rows show icon, name, host, tags, open count and last opened, plus a score column and status glow once Health has joined in. Only the rows near the screen are drawn, so thousands of bookmarks stay fast.
+
+**Column headings** name the columns View shows and stay in place while the list scrolls (not at phone width). Every heading with a value under it sorts: a click sorts by that column in its natural order — Name and Tags A to Z (by the first tag, untagged last), Shortcut the keyed ones first, Usage the most opens in the sparkline's window first, Opens, Last opened and Added highest or newest first, Pinned the pinned ones first, Score the worst first — and a second click turns it round. An arrow on the heading shows which way the list runs; **Sort** follows, and picking from **Sort** starts afresh in the natural order. `Enter` or `Space` on a focused heading does the same.
 
 ### 11.3 The side panel
 
@@ -939,12 +942,12 @@ A period select (today, 7, 14, 30 or 90 days) applies across the panel.
 ### 11.13 Addresses
 
 ```
-#bookmarks[/<page>]?q=&cat=&filter=&health=&tag=&sort=&group=
+#bookmarks[/<page>]?q=&cat=&filter=&health=&tag=&sort=&rev=&group=
 #unsorted
 #health                      → redirects here, on Broken
 ```
 
-`health=` takes one of the Health filter keys (`broken`, `content`, `duplicate`, `stale`, `unused`, `unchecked`, `monitored`, `certificates`, `healthy`, and a few more reachable only from Collection health, such as `drift`); `q=` is a search term. `Shift + U` and the address `#unsorted` open the view on Unsorted directly.
+`health=` takes one of the Health filter keys (`broken`, `content`, `duplicate`, `stale`, `unused`, `unchecked`, `monitored`, `certificates`, `healthy`, and a few more reachable only from Collection health, such as `drift`); `q=` is a search term; `rev=1` turns the sort round. `Shift + U` and the address `#unsorted` open the view on Unsorted directly.
 
 ---
 
@@ -1088,10 +1091,10 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`.
 
 - **A rail of filters** on the left, each with its count: **All**, **Unread**, **Snoozed** and **With note** (the last two only when they hold something) — it can fold behind a **Filters** button (Config → Inbox → Panel & clicks). *This week* is a readout above them.
 - **Narrowing** — by site, by tag (click a tag chip) and by search. Every count follows what is shown, and *Mark all read* becomes *Mark shown read*.
-- **Sort** — newest first (default), oldest first, title or site.
+- **Sort** — newest first (default), oldest first, title or site. The column headings sort too: **Title** and **Site** A to Z, a second click Z to A; **Added** switches between newest and oldest first. Under Snoozed, which keeps its wake order, the headings do not sort.
 - **Rows** are one line each and follow the app-wide density; the header stays in place. There are no tabs — a kept link goes straight to Bookmarks → Unsorted, not to a second list here ([§13.5](#135-keeping-a-link-unsorted-and-promote)).
 - **The side panel**, in the same style as the Bookmarks view's, shows the link in focus: Open, Promote, Keep, note, tags — suggested tag chips live in its Tags section — details and delete.
-- **The address** keeps filter, sort, site, tag and search (`ib_filter`, `ib_sort`, `ib_domain`, `ib_tag`, `ib_q`); filter, sort and site also return next time.
+- **The address** keeps filter, sort, site, tag and search (`ib_filter`, `ib_sort`, `ib_dir`, `ib_domain`, `ib_tag`, `ib_q`); filter, sort and site also return next time.
 - The **ℹ** explains the inbox; a sentence under the toolbar explains the active filter.
 
 ### 13.3 Acting on links
@@ -1182,7 +1185,7 @@ The **Containers view** shows the Docker containers on the machine nextDash runs
 
 ### 14.1 Opening it
 
-Open it with the Containers icon in the header, `:docker`, or `/#docker`. It has no key of its own. Search also finds containers by name, and the **Containers** widget's tile opens the view.
+Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§14.7](#147-disk)).
 
 ### 14.2 The list
 
@@ -1193,15 +1196,21 @@ Open it with the Containers icon in the header, `:docker`, or `/#docker`. It has
 | **Stopped** | Containers that are down or paused |
 | **Updates** | Containers with a newer image waiting |
 
-**Group by status** folds the list under Updates, Running, Paused and Stopped. Each row shows its name, image, status glow and ports, and in a column of its own a link to its web UI. The link is the address you set in the side panel's **Custom** section, else the one the container's own labels offer. A local address shows as its port (`:8123`), another as its host. The header badge counts containers with an update waiting.
+**Group by status** folds the list under Updates, Running, Paused and Stopped; **group by project** folds it under each compose project, and a project's row has **Start**, **Stop** and **Restart** for the whole stack, and **Update (n)** for the *n* containers in it with an update waiting — not a skipped or held version, not an image no check has looked at. Stop and Update ask first, naming the containers, and they go one at a time.
+
+Each row shows its name, image, status, **CPU** and **RAM**, a link to its web UI and its ports. CPU and RAM are the last reading, taken every 30 seconds; they are there while **Config → Containers → Keep the last hour of CPU and memory** is on. On a narrower screen the Image column goes first (below 1100 pixels), then CPU and RAM (below 900). Click **Name** or **Status** to sort, and again to turn the order round; the sort menu also offers uptime, CPU and memory, highest first.
+
+The web UI link is the address you set in the side panel's **Custom** section, else the one the container's own labels offer (Unraid's template), else its first published TCP port. A local address shows as its port (`:8123`), another as its host; an address of your own has a dot in front of it, and a long one is cut short, with the whole address on hover.
+
+**Selecting several.** Tick containers with the box in front of the name, `x` or `Space`; `Shift`-click a box, `Shift + X` or `Shift + ↑/↓` ticks a run, and `Ctrl/Cmd + A` ticks everything the filter shows (again to clear). A bar above the list then offers **Start**, **Stop**, **Restart**, **Update** and **Mute notifications** for the lot, one container at a time with a count, and ends with one notice such as *3 restarted, 1 failed*. The container nextDash runs in is left out. Without actions switched on ([§14.6](#146-what-it-needs)) the bar offers only muting. **Clear selection** or `Esc` lets go. The header badge counts containers with an update waiting; a skipped or held update does not count.
 
 ### 14.3 The side panel
 
-Selecting a container opens its side panel, with four tabs:
+Selecting a container opens its side panel, with four tabs. Its head shows the container's web UI address under the name, tagged **Custom** when it is one you set; the tag opens the Custom section. A click beside the panel closes it, one on another row moves it there (**Config → Containers → Close on a click beside it**).
 
-- **Overview** — an accordion of **Details**, **Network**, **Custom**, **Volumes** and **Environment**. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it.
+- **Overview** — an accordion of **Details**, **Health**, **Updates**, **Timeline**, **Network**, **Custom**, **Volumes** and **Environment**. **Health**, for a container with a healthcheck, shows its status, how many checks failed in a row, the command, and the last five checks with their exit code and output. **Updates** is [§14.5](#145-actions-and-updates). **Timeline** is what happened to the container, newest first: starts and stops (by you or by nextDash), crashes with their exit code, out-of-memory kills, a run of crashes as one *Kept restarting* line, health changes, pauses, updates and rollbacks. nextDash writes these down from Docker's own events, whatever the notices are set to — a hundred per container, for thirty days, from the moment this version runs. **Details** also says whether its notices are on, muted or off. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it.
 - **Resources** — CPU, memory and I/O for that container, with two charts under them: CPU and memory over the last hour. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
-- **Logs** — recent log lines, following as they arrive.
+- **Logs** — the last lines, with **Refresh** and **Open logs window** ([§14.8](#148-the-logs-window)).
 - **What’s new** — the release notes behind an available update.
 
 ### 14.4 Keys
@@ -1209,6 +1218,9 @@ Selecting a container opens its side panel, with four tabs:
 | Key | Action |
 |---|---|
 | `↑` / `↓` | Move through the containers |
+| `x` / `Space` | Tick or untick the selected container |
+| `Shift + X` / `Shift + ↑/↓` | Tick a run of containers |
+| `Ctrl/Cmd + A` | Tick every container the filter shows; again to clear |
 | `Enter` | Open the side panel |
 | `/` | Search the containers |
 | `s` | Start or stop the selected container |
@@ -1216,13 +1228,27 @@ Selecting a container opens its side panel, with four tabs:
 | `p` | Pause it |
 | `u` | Update it |
 | `Delete` | Remove it (asks first) |
-| `Esc` | Clear the selection, close the panel, then leave the view |
+| `l` | Open its logs window |
+| `m` | Mute or unmute its notices |
+| `d` | Switch between the list and Disk |
+| `Esc` | Clear the ticks, then the selection, close the panel, then leave the view |
+
+The legend above the list names them; **Config → Containers → The key legend** puts it below the list or hides it. Without actions switched on, the legend leaves out the keys that act on Docker.
 
 ### 14.5 Actions and updates
 
 Starting, stopping, pausing, restarting, updating and removing a container are all behind **`NEXTDASH_DOCKER_CONTROL=1`**, on top of the write token if the install has one — read-only access to the socket is not enough by itself. Update and remove always ask first; **Config → Containers → Safety** can add the same confirmation to stop and restart.
 
 Image update checks run on request and on an interval (Config → Containers → Updates: off, 6, 12 or 24 hours), asking the image's registry whether a newer tag is available. An optional GitHub token (Config → Containers) raises the rate limit for images hosted there. The container nextDash itself runs in refuses stop, pause, restart, remove and update.
+
+The side panel's **Updates** part says where the image stands and keeps your say over it:
+
+- **Skip this version** — the version on offer stops counting as an update: no badge, no count, and an update of a selection leaves it out. A newer version counts again. **Undo skip** takes it back.
+- **Hold updates** — the image never counts as having one until you choose **Resume updates**; the row shows a quiet *held* label.
+- **History** — what updates did, newest first, with the versions where the image names them.
+- **Roll back to …** — while the image the last update replaced is still on the host, this puts the container back on it after asking: the old image gets its tag back and the container is recreated on it, without a download. The version it leaves is skipped, so it is not offered straight back. Pruning dangling images ([§14.7](#147-disk)) removes the images a rollback needs.
+
+Updating by hand still works on a skipped or held image.
 
 ### 14.6 What it needs
 
@@ -1268,6 +1294,37 @@ All five are in the template. **Docker actions** starts at `0`, so the view only
 **Synology and QNAP** use the same `/var/run/docker.sock` path. If the log names gid 0, add `NEXTDASH_RUN_AS_ROOT=1`.
 
 **Checking it.** Config → Containers shows the connection as the server sees it: whether the socket answers, whether actions are on, whether a write token is set, and whether nextDash recognises the container it runs in. [§15.4](#154-system-widgets-and-what-they-need) covers the same socket for the Containers widget and the other system widgets.
+
+### 14.7 Disk
+
+**Disk** (the tab beside Containers, `d`, or `/#docker/~disk`) shows what images, volumes and the build cache take up. Measuring is slow on a large host, so it happens when you open the tab and on **Refresh**; after that the rail shows **Disk used** and **Reclaimable**.
+
+| Tile | Clears |
+|---|---|
+| **Unused images** | Every image no container uses — a container that needs one later downloads it again |
+| **Dangling images** | Untagged images — among them the ones a rollback would go back to; the tile names those containers |
+| **Build cache** | What `docker build` left behind |
+| **Unused volumes** | Nothing in bulk: volumes hold data, so they go one at a time |
+
+Every clean-up asks first and says how much it frees. Below the tiles, the images and volumes are listed biggest first, with what uses them; an untagged image that is still a container's way back says *rollback for …*. An unused volume has **Remove…** on its row: type **delete** to go on. A volume a container holds — a stopped one included — cannot be removed. All of it needs `NEXTDASH_DOCKER_CONTROL=1`; without it, Disk shows the sizes only.
+
+### 14.8 The logs window
+
+**Show logs** in the row menu, `l` on the selected row, `:docker <name> logs`, or **Open logs window** in the side panel opens a window over most of the page (the whole screen on a phone) that follows the container's log as it is written.
+
+- **Following** — scroll up and it pauses, counting what arrives meanwhile; **Jump to latest** catches up. `f` does the same.
+- **Search** marks every match; `Enter` and `Shift + Enter` step through them. **Filter** keeps only the matching lines.
+- **All / stdout / stderr**, how many lines to start with (100 to 1000), timestamps and wrapping — remembered in this browser. stderr lines are red.
+- **Copy** takes the lines on screen; **Download** saves the loaded lines as a `.log` file.
+- When the container stops the stream ends; **Resume** picks up after the last line.
+
+`/` searches, `Esc` closes. Reading logs sits behind the write token, as the side panel's Logs does.
+
+### 14.9 Notices
+
+When a container **stops unexpectedly**, **keeps restarting** (three crashes in ten minutes) or **turns unhealthy**, nextDash sends a notice — and a second one when it recovers. A stop you or nextDash asked for is not a notice, and neither is a crash the restart policy fixes within 30 seconds. One notice per incident; four or more at once become one message.
+
+They go where Health's downtime alerts go: the alert webhook under **Behavior → Status & alerts → Downtime alerts** (with its presets), and browser notifications with **Notify when a container stops, keeps restarting or turns unhealthy** switched on. **Config → Containers → Notifications** switches them off. Mute a single container from its row menu, its side panel's ⋯ menu, or `m`; **Muted containers** lists them and says where notices go. Hidden containers and nextDash's own raise nothing.
 
 ---
 
@@ -1315,8 +1372,8 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | **Processor** | CPU use and the load average |
 | **Memory** | What is really in use; the file cache counts as free |
 | **Disks** | Used, free and reserved space on the disks you name |
-| **Containers** | Running and total containers, failing healthchecks and recent restarts; opens the Containers view, and its update figure links to `#docker?filter=updates` |
-| **Container list** | The containers themselves, one row each: one column on a narrow tile, two on a wide one. Its settings choose **running only** or **all**, the order (**problems first**, name, longest or shortest uptime), what stands on the right of a row (uptime, the image tag or nothing) and where a click goes: the container in the Containers view, or its web UI. A problem — unhealthy, stopped, an update — replaces the uptime on its row. |
+| **Containers** | Running and total containers, failing healthchecks and recent restarts; opens the Containers view, and its update figure links to `#docker?filter=updates`. The figures you tick can add **updates waiting** (a skipped or held one does not count), **reclaimable** disk space — what the Disk tab last measured, measured again in the background once it is six hours old, a dash before the first — and **incidents** in the last 24 hours (crashes and turns unhealthy, from the timeline). **Name the three busiest by CPU** lists them under the figures. Nothing ticked means every figure. |
+| **Container list** | The containers themselves, one row each: one column on a narrow tile, two on a wide one. Its settings choose **running only** or **all**, the order (**problems first**, name, longest or shortest uptime, CPU or memory — busiest first), what stands on the right of a row (uptime, the image tag, CPU and memory, or nothing) and where a click goes: the container in the Containers view, or its web UI. A problem — unhealthy, stopped, an update — replaces the uptime on its row. |
 
 *What is happening around you?*
 
@@ -1616,7 +1673,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Behavior** | General · Keyboard & search · Fresh · Status & alerts · Privacy & sync ([§17.5](#175-behavior)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
 | **Widgets** | Widgets · Types ([§15](#15-widgets)) |
-| **Containers** | Connection · View · Updates · Safety · Hidden containers · GitHub token ([§17.7](#177-config-containers)) |
+| **Containers** | Connection · View · Updates · Safety · Notifications · Muted containers · Hidden containers · GitHub token ([§17.7](#177-config-containers)) |
 | **Statistics** | Overview · Activity · Content · Inbox · Health ([§18](#18-statistics)) |
 | **Help** | The in-app guide |
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
@@ -1697,9 +1754,11 @@ No tabs — one page of panels:
 | Panel | Shows |
 |---|---|
 | **Connection** | The Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable |
-| **View** | Show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the charts in the side panel |
+| **View** | Show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden |
 | **Updates** | Check for image updates: off, every 6, 12 or 24 hours |
 | **Safety** | Also confirm stop and restart (update and remove always ask first) |
+| **Notifications** | Notify about containers — on by default ([§14.9](#149-notices)) |
+| **Muted containers** | Where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
 | **Hidden containers** | Containers kept out of the view, search and the widget count — they keep running |
 | **GitHub token** | Raises the rate limit for images hosted on GHCR |
 
@@ -2170,8 +2229,11 @@ nextDash can send **anonymous usage statistics** to a self-hosted [Umami](https:
 | First-run help | Tours and tips shown and finished |
 | Settings | The **name** of a setting you change, and on/off for toggles; once per load, which features are on and the release you run |
 | Size | Once per load, bucketed counts (for example `500+` bookmarks) |
+| Widgets | Once per load, how many widgets of each type, bucketed |
+| Containers | Once per load, how the Containers view is set up: which options are on, whether a socket and control are configured, and bucketed counts of hidden containers, custom addresses and waiting updates. Docker itself is not asked. Per action (start, stop, restart, update, mute and the like): which one, whether it worked, where it came from (row, side panel, menu, key, command, selection bar) and, for a selection, a bucketed count |
+| Health, Inbox, Bookmarks view | Once per load, bucketed counts (checked, down, certificates due, unread, snoozed) and the layout options chosen in their Config tabs |
 
-Every count is rounded into a band. **Never recorded:** bookmark names, URLs, search text, page or category names, notes or tag names. No cookies, no profile, no cross-site tracking. This is separate from the open counts in [§6](#6-opening-and-editing-bookmarks), which never leave your server.
+Every count is rounded into a band. **Never recorded:** bookmark names, URLs, search text, page or category names, notes or tag names, container, image or widget names, or any address. No cookies, no profile, no cross-site tracking. This is separate from the open counts in [§6](#6-opening-and-editing-bookmarks), which never leave your server.
 
 ### 23.9 Operations
 
@@ -2285,7 +2347,7 @@ type        search              Enter       open top result
 1-9  ,      pages · pages panel             *  recent   /  tags   !  cheat sheet
 arrows j k  move                Esc         back / home
 Shift+E edit   Shift+M move   Shift+T tags   Shift+D delete   Shift+C checking
-Shift+H bookmarks (broken)   Shift+U bookmarks (unsorted)   Shift+I inbox   Shift+S config   Shift+A themes
+Shift+H bookmarks (broken)   Shift+U bookmarks (unsorted)   Shift+I inbox   Shift+Y containers   Shift+S config   Shift+A themes
 ```
 
 ### Config
@@ -2305,7 +2367,7 @@ Escape              close, then leave
 | `/` | The dashboard |
 | `/#config`, `/#config/<section>/<tab>` | Config |
 | `/#config/help/<tab>/<topic>` | A help topic |
-| `/#bookmarks[/<page>]?q=&cat=&filter=&health=&tag=&sort=&group=` | The Bookmarks view |
+| `/#bookmarks[/<page>]?q=&cat=&filter=&health=&tag=&sort=&rev=&group=` | The Bookmarks view |
 | `/#unsorted` | The Bookmarks view, on Unsorted |
 | `/#health` | Redirects into the Bookmarks view, on Broken |
 | `/#inbox` | The inbox |

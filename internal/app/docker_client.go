@@ -50,7 +50,7 @@ func newDockerAPI() (*dockerAPI, string) {
 }
 
 func (d *dockerAPI) url(path string) string {
-	return "http://docker/" + dockerAPIVersion + path
+	return "http://docker/" + dockerAPIVersionFor(d.socket) + path
 }
 
 func (d *dockerAPI) do(ctx context.Context, method, path string, body any) (*http.Response, error) {
@@ -121,13 +121,82 @@ type dockerContainerSummary struct {
 	Created int64             `json:"Created"`
 	Labels  map[string]string `json:"Labels"`
 	Ports   []dockerPort      `json:"Ports"`
+	// The network a container runs in, and its address on each network it
+	// joined -- how a macvlan container's own LAN address is found.
+	HostConfig struct {
+		NetworkMode string `json:"NetworkMode"`
+	} `json:"HostConfig"`
+	NetworkSettings struct {
+		Networks map[string]struct {
+			IPAddress string `json:"IPAddress"`
+		} `json:"Networks"`
+	} `json:"NetworkSettings"`
+	// Mounts: which volumes the container holds, running or not.
+	Mounts []struct {
+		Type string `json:"Type"`
+		Name string `json:"Name"`
+	} `json:"Mounts"`
 }
 
 func (c dockerContainerSummary) name() string { return containerName(c.Names) }
 
 func (d *dockerAPI) listContainers(ctx context.Context) ([]dockerContainerSummary, error) {
 	var out []dockerContainerSummary
-	err := d.getJSON(ctx, "/containers/json?all=1", &out)
+	if err := d.getJSON(ctx, "/containers/json?all=1", &out); err != nil {
+		return out, err
+	}
+	// A container whose tag has moved on -- pulled but not recreated, or
+	// another container on the same image updated -- is listed by its image
+	// id. The reference it was made from is in its own Config, and everything
+	// keyed by image (the update state, the Image column) wants that.
+	for i := range out {
+		if strings.HasPrefix(out[i].Image, "sha256:") {
+			if in, err := d.inspectContainer(ctx, out[i].ID); err == nil && in.Config.Image != "" {
+				out[i].Image = in.Config.Image
+			}
+		}
+	}
+	return out, nil
+}
+
+// dockerTagKey names a tag the same way however it was written:
+// "nginx", "nginx:latest" and "docker.io/library/nginx:latest" are one.
+func dockerTagKey(ref string) string {
+	parsed, ok := parseImageRef(ref)
+	if !ok {
+		return ""
+	}
+	return parsed.Registry + "/" + parsed.Repo + ":" + parsed.Tag
+}
+
+// imageTagIDs maps each local tag to the image it points at, in one call.
+func (d *dockerAPI) imageTagIDs(ctx context.Context) map[string]string {
+	var images []struct {
+		ID       string   `json:"Id"`
+		RepoTags []string `json:"RepoTags"`
+	}
+	out := map[string]string{}
+	if err := d.getJSON(ctx, "/images/json", &images); err != nil {
+		return out
+	}
+	for _, im := range images {
+		for _, tag := range im.RepoTags {
+			if key := dockerTagKey(tag); key != "" {
+				out[key] = im.ID
+			}
+		}
+	}
+	return out
+}
+
+type dockerNetworkSummary struct {
+	Name   string `json:"Name"`
+	Driver string `json:"Driver"`
+}
+
+func (d *dockerAPI) listNetworks(ctx context.Context) ([]dockerNetworkSummary, error) {
+	var out []dockerNetworkSummary
+	err := d.getJSON(ctx, "/networks", &out)
 	return out, err
 }
 
@@ -143,7 +212,14 @@ type dockerInspect struct {
 		StartedAt string `json:"StartedAt"`
 		ExitCode  int    `json:"ExitCode"`
 		Health    *struct {
-			Status string `json:"Status"`
+			Status        string `json:"Status"`
+			FailingStreak int    `json:"FailingStreak"`
+			Log           []struct {
+				Start    string `json:"Start"`
+				End      string `json:"End"`
+				ExitCode int    `json:"ExitCode"`
+				Output   string `json:"Output"`
+			} `json:"Log"`
 		} `json:"Health"`
 	} `json:"State"`
 	// Config and HostConfig are kept raw as well as typed: recreate hands them
@@ -153,11 +229,20 @@ type dockerInspect struct {
 		Image  string            `json:"Image"`
 		Env    []string          `json:"Env"`
 		Labels map[string]string `json:"Labels"`
+		// Tty: the log is the raw terminal output, with no frame headers.
+		Tty bool `json:"Tty"`
+		// Healthcheck.Test is the healthcheck command as the image or the
+		// run set it: ["CMD", args...], ["CMD-SHELL", line] or ["NONE"].
+		Healthcheck *struct {
+			Test []string `json:"Test"`
+		} `json:"Healthcheck"`
 	} `json:"Config"`
 	HostConfig struct {
 		RestartPolicy struct {
 			Name string `json:"Name"`
 		} `json:"RestartPolicy"`
+		// AutoRemove: the daemon removes the container once it stops.
+		AutoRemove bool `json:"AutoRemove"`
 	} `json:"HostConfig"`
 	Mounts []struct {
 		Type        string `json:"Type"`
@@ -216,6 +301,16 @@ func (d *dockerAPI) inspectImage(ctx context.Context, ref string) (dockerImageIn
 	var out dockerImageInspect
 	err := d.getJSON(ctx, "/images/"+url.PathEscape(ref)+"/json", &out)
 	return out, err
+}
+
+// inspectImageConfig is an image's Config as the daemon keeps it, untyped:
+// recreate compares a container's Config against it field by field.
+func (d *dockerAPI) inspectImageConfig(ctx context.Context, ref string) (map[string]any, error) {
+	var out struct {
+		Config map[string]any `json:"Config"`
+	}
+	err := d.getJSON(ctx, "/images/"+url.PathEscape(ref)+"/json", &out)
+	return out.Config, err
 }
 
 type dockerCreateBody map[string]any

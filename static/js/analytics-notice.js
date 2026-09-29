@@ -58,8 +58,10 @@
         return fallback;
     }
 
+    // The shared escaper, loaded in the head. Asking the dashboard for one
+    // left a fallback that escaped nothing whenever it was not there yet.
     function escape(text) {
-        return dash()?.escapeHtml ? dash().escapeHtml(text) : String(text || '');
+        return window.NextDashHtml.escapeHtml(text);
     }
 
     function state() {
@@ -246,7 +248,7 @@
                 ${section(
                     t('dashboard.analyticsNoticeNeverTitle', 'What is never recorded'),
                     escape(t('dashboard.analyticsNoticeNeverBody',
-                        'No bookmark names, URLs, search queries, page or category names, notes, or tags. No cookies are set, no personal profile is built, and you are not tracked across other websites. Counts that could be revealing are rounded into buckets, and the instance is self-hosted, so nothing is shared with an advertising network.'))
+                        'No bookmark names, URLs, search queries, page or category names, notes, or tags, and no container, image or widget names or addresses. No cookies are set, no personal profile is built, and you are not tracked across other websites. Counts that could be revealing are rounded into buckets, and the instance is self-hosted, so nothing is shared with an advertising network.'))
                 )}
                 ${section(
                     t('dashboard.analyticsNoticeOnTitle', 'How to turn it on'),

@@ -6,6 +6,8 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -29,7 +31,53 @@ second, so twenty containers would be twenty seconds of polling per beat. That
 is a monitoring system, not a tile, and the custom widget already exists for it.
 */
 
+// dockerAPIVersion is the version nextDash speaks: old enough for any daemon
+// still in use. A daemon can refuse it -- Docker Engine 29.0 to 29.2 would take
+// nothing older than 1.44 -- and then its own minimum is used instead, which
+// dockerAPIVersionFor asks for once per socket.
 const dockerAPIVersion = "v1.41"
+
+var dockerAPIVersions sync.Map // socket -> "vX.Y"
+
+// dockerAPIVersionFor is the version to put in front of every path on this
+// socket. The unversioned /version answers on every daemon; a daemon that
+// cannot be reached is asked again next time, one that answers is not.
+func dockerAPIVersionFor(socket string) string {
+	if v, ok := dockerAPIVersions.Load(socket); ok {
+		return v.(string)
+	}
+	resp, err := dockerClientFor(socket).Get("http://docker/version")
+	if err != nil {
+		return dockerAPIVersion
+	}
+	defer resp.Body.Close()
+	version := dockerAPIVersion
+	var body struct {
+		MinAPIVersion string `json:"MinAPIVersion"`
+	}
+	if resp.StatusCode == http.StatusOK && json.NewDecoder(resp.Body).Decode(&body) == nil &&
+		dockerAPIVersionLess(strings.TrimPrefix(dockerAPIVersion, "v"), body.MinAPIVersion) {
+		version = "v" + body.MinAPIVersion
+	}
+	dockerAPIVersions.Store(socket, version)
+	return version
+}
+
+// dockerAPIVersionLess compares "1.41" and "1.44" as numbers, not text.
+func dockerAPIVersionLess(a, b string) bool {
+	parse := func(v string) (int, int, bool) {
+		major, minor, ok := strings.Cut(strings.TrimSpace(v), ".")
+		x, err1 := strconv.Atoi(major)
+		y, err2 := strconv.Atoi(minor)
+		return x, y, ok && err1 == nil && err2 == nil
+	}
+	am, an, ok1 := parse(a)
+	bm, bn, ok2 := parse(b)
+	if !ok1 || !ok2 {
+		return false
+	}
+	return am < bm || (am == bm && an < bn)
+}
 
 // How new a running container has to be to count as recently restarted.
 // Something up for minutes while everything else has run for days is the shape
@@ -56,6 +104,57 @@ type DockerMetrics struct {
 	// jellyfin" does not.
 	UnhealthyNames []string `json:"unhealthyNames,omitempty"`
 	RestartedNames []string `json:"restartedNames,omitempty"`
+
+	// What the Disk tab last found reclaimable (-1 before any measurement)
+	// and when; incidents -- crashes and turns unhealthy -- in the last day,
+	// from the timeline; and the three busiest containers by CPU, from the
+	// stats sampler.
+	Reclaimable   int64          `json:"reclaimable"`
+	ReclaimableAt int64          `json:"reclaimableAt,omitempty"`
+	Incidents24h  int            `json:"incidents24h"`
+	TopCPU        []dockerTopCPU `json:"topCpu,omitempty"`
+
+	running []dockerRunningRef // for the figures above; not sent
+	// Every container shown and where its tag points, for Updates: counted
+	// per container, as the view's badge counts, so one left behind by its
+	// tag (pulled, not recreated) counts too.
+	containers []dockerContainerSummary
+	tagIDs     map[string]string
+}
+
+type dockerTopCPU struct {
+	Name string  `json:"name"`
+	CPU  float64 `json:"cpu"`
+}
+
+type dockerRunningRef struct{ ID, Name string }
+
+const dockerTopCPUCount = 3
+
+// fillDockerExtras adds what the container list alone cannot say: updates as
+// the reader sees them (skipped and held left out), the last reclaimable
+// figure, the day's incidents and the busiest containers.
+func fillDockerExtras(out *DockerMetrics, running []dockerRunningRef, now time.Time) {
+	out.Updates = 0
+	updates := readDockerUpdateStore().withChoices()
+	for _, c := range out.containers {
+		if u := dockerRowUpdate(updates[c.Image], c, out.tagIDs); u != nil && u.Status == "available" {
+			out.Updates++
+		}
+	}
+	out.Reclaimable, out.ReclaimableAt = dockerReclaimable(now)
+	out.Incidents24h = dockerTimelines.countSince(now.Add(-24*time.Hour), "crash", "unhealthy")
+	var top []dockerTopCPU
+	for _, r := range running {
+		if p, ok := dockerStatsStore.latest(r.ID); ok {
+			top = append(top, dockerTopCPU{Name: r.Name, CPU: p.CPU})
+		}
+	}
+	sort.SliceStable(top, func(i, j int) bool { return top[i].CPU > top[j].CPU })
+	if len(top) > dockerTopCPUCount {
+		top = top[:dockerTopCPUCount]
+	}
+	out.TopCPU = top
 }
 
 /*
@@ -126,7 +225,10 @@ useless at the same time, and no count of running containers shows that.
 */
 func countContainers(body io.Reader) (DockerMetrics, error) {
 	var list []struct {
+		ID      string   `json:"Id"`
 		Names   []string `json:"Names"`
+		Image   string   `json:"Image"`
+		ImageID string   `json:"ImageID"`
 		State   string   `json:"State"`
 		Status  string   `json:"Status"`
 		Created int64    `json:"Created"`
@@ -136,7 +238,8 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 	}
 
 	out := DockerMetrics{MetricStatus: MetricStatus{Available: true}}
-	cutoff := time.Now().Add(-dockerRestartWindow).Unix()
+	now := time.Now()
+	cutoff := now.Add(-dockerRestartWindow).Unix()
 
 	hidden := dockerHiddenSet()
 	for _, item := range list {
@@ -145,10 +248,12 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 			continue
 		}
 		out.Total++
+		out.containers = append(out.containers, dockerContainerSummary{ID: item.ID, Names: item.Names, Image: item.Image, ImageID: item.ImageID})
 
 		switch item.State {
 		case "running":
 			out.Running++
+			out.running = append(out.running, dockerRunningRef{ID: item.ID, Name: name})
 			// A container with no healthcheck at all is not unhealthy, it is
 			// simply unknown -- so this looks for the word, not its absence.
 			if strings.Contains(item.Status, "(unhealthy)") {
@@ -157,7 +262,9 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 					out.UnhealthyNames = append(out.UnhealthyNames, name)
 				}
 			}
-			if item.Created > cutoff && name != "" && len(out.RestartedNames) < dockerMaxNames {
+			// When it last started, read from "Up 12 minutes": Created is when
+			// it was made, which a restart does not move and a recreate does.
+			if dockerStartedFromStatus(item.Status, now) > cutoff && name != "" && len(out.RestartedNames) < dockerMaxNames {
 				out.RestartedNames = append(out.RestartedNames, name)
 			}
 		case "paused":
@@ -178,7 +285,8 @@ func readDocker() DockerMetrics {
 	}
 	client := dockerClientFor(socket)
 
-	resp, err := client.Get("http://docker/" + dockerAPIVersion + "/containers/json?all=1")
+	version := dockerAPIVersionFor(socket)
+	resp, err := client.Get("http://docker/" + version + "/containers/json?all=1")
 	if err != nil {
 		return DockerMetrics{MetricStatus: MetricStatus{Reason: dockerDialReason(err)}}
 	}
@@ -201,7 +309,7 @@ func readDocker() DockerMetrics {
 	   rather than images: the same image under two tags is two CLI rows and one
 	   image here. The API's own number is the honest one.
 	*/
-	if info, err := client.Get("http://docker/" + dockerAPIVersion + "/info"); err == nil {
+	if info, err := client.Get("http://docker/" + version + "/info"); err == nil {
 		defer info.Body.Close()
 		var payload struct {
 			Images int `json:"Images"`
@@ -210,10 +318,19 @@ func readDocker() DockerMetrics {
 			out.Images = payload.Images
 		}
 	}
-	for _, update := range readDockerUpdateStore().Images {
-		if update.Status == "available" {
-			out.Updates++
+	// The list names a container whose tag has moved on by its image id;
+	// its own reference and the tags are what the update count needs.
+	api := &dockerAPI{client: client, socket: socket}
+	ctx, cancel := context.WithTimeout(context.Background(), dockerClientTimeout)
+	defer cancel()
+	for i, c := range out.containers {
+		if strings.HasPrefix(c.Image, "sha256:") {
+			if in, err := api.inspectContainer(ctx, c.ID); err == nil && in.Config.Image != "" {
+				out.containers[i].Image = in.Config.Image
+			}
 		}
 	}
+	out.tagIDs = api.imageTagIDs(ctx)
+	fillDockerExtras(&out, out.running, time.Now())
 	return out
 }

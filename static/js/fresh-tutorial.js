@@ -131,7 +131,12 @@
         const d = dash();
         if (!d?.settings) return;
         d.settings.feedsEnabled = true;
-        await d.saveSettings?.();
+        // saveSettings resolves false on a failed save (and says so); the
+        // switch goes back rather than claiming feeds are on.
+        if ((await d.saveSettings?.()) === false) {
+            d.settings.feedsEnabled = false;
+            return;
+        }
         global.nextdashTrack?.('fresh-tutorial:enabled');
         try {
             await d.feeds?.pollNow?.();

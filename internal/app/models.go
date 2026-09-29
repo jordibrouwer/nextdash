@@ -790,6 +790,19 @@ type Settings struct {
 	// its template gives -- or gives one to a container without. By name,
 	// because an update recreates the container under a new id.
 	DockerWebUIs map[string]string `json:"dockerWebUIs,omitempty"`
+	// DockerHostAddress is the host the Containers view links ports and [IP]
+	// to, for when the dashboard is opened under a name that is not the Docker
+	// host's (a reverse proxy, a tunnel). Empty uses the browser's host.
+	DockerHostAddress string `json:"dockerHostAddress,omitempty"`
+	// DockerViewKeyLegend places the Containers view's key legend: above the
+	// list (where it always stood), below it, or off -- Bookmarks' and
+	// Inbox's choices.
+	DockerViewKeyLegend string `json:"dockerViewKeyLegend"`
+	// DockerNotify tells when a container stops unexpectedly, keeps
+	// restarting or turns unhealthy, through the Health webhook and browser
+	// push (docker_notify.go); DockerNotifyMuted names the containers left out.
+	DockerNotify      bool     `json:"dockerNotify"`
+	DockerNotifyMuted []string `json:"dockerNotifyMuted,omitempty"`
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
 	// feed can then say when it has published something since you last opened
 	// it. Off by default because it is the only thing here that reaches out to
@@ -874,6 +887,7 @@ type Settings struct {
 	PushNotifySubject    string                `json:"pushNotifySubject,omitempty"`    // VAPID contact (mailto: or https:) sent to push services
 	PushNotifyMonitor    bool                  `json:"pushNotifyMonitor"`              // Push when a monitored bookmark goes down/recovers
 	PushNotifyBackup     bool                  `json:"pushNotifyBackup"`               // Push when an automatic backup succeeds or fails
+	PushNotifyContainers bool                  `json:"pushNotifyContainers"`           // Push when a container stops, keeps restarting or turns unhealthy
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	DiscoverabilityState *DiscoverabilityState `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
@@ -915,18 +929,19 @@ type Settings struct {
 	BmViewKeyLegend    string   `json:"bmViewKeyLegend"`    // The key legend: below/above the list, or off
 
 	// Config → Inbox: how the Inbox view looks and behaves.
-	InboxViewFilter       string `json:"inboxViewFilter"`       // Opens on: last/all/unread/snoozed/noted
-	InboxViewSort         string `json:"inboxViewSort"`         // Sorted by: last/newest/oldest/title/domain
-	InboxViewAddress      string `json:"inboxViewAddress"`      // The row's address: domain/full/hidden
-	InboxViewUnreadMark   bool   `json:"inboxViewUnreadMark"`   // Unread rows stand out (default on)
-	InboxViewRail         string `json:"inboxViewRail"`         // The rail: open/folded
-	InboxViewPanelWidth   string `json:"inboxViewPanelWidth"`   // Side panel width: normal/wide
-	InboxViewCloseOutside bool   `json:"inboxViewCloseOutside"` // A click beside the side panel closes it (default on)
-	InboxViewClick        string `json:"inboxViewClick"`        // A click on a row: panel/select
-	InboxViewDblClick     string `json:"inboxViewDblClick"`     // A double click on a row: open/note
-	InboxViewBadge        bool   `json:"inboxViewBadge"`        // A count on the header's Inbox icon (default on)
-	InboxViewBadgeCounts  string `json:"inboxViewBadgeCounts"`  // What that count counts: unread/all
-	InboxViewKeyLegend    string `json:"inboxViewKeyLegend"`    // The key legend: below/above the list, or off
+	InboxViewFilter        string `json:"inboxViewFilter"`        // Opens on: last/all/unread/snoozed/noted
+	InboxViewSort          string `json:"inboxViewSort"`          // Sorted by: last/newest/oldest/title/domain
+	InboxViewAddress       string `json:"inboxViewAddress"`       // The row's address: domain/full/hidden
+	InboxViewUnreadMark    bool   `json:"inboxViewUnreadMark"`    // Unread rows stand out (default on)
+	InboxViewRail          string `json:"inboxViewRail"`          // The rail: open/folded
+	InboxViewPanelWidth    string `json:"inboxViewPanelWidth"`    // Side panel width: normal/wide
+	InboxViewCloseOutside  bool   `json:"inboxViewCloseOutside"`  // A click beside the side panel closes it (default on)
+	DockerViewCloseOutside bool   `json:"dockerViewCloseOutside"` // The same for the Containers view's side panel (default on)
+	InboxViewClick         string `json:"inboxViewClick"`         // A click on a row: panel/select
+	InboxViewDblClick      string `json:"inboxViewDblClick"`      // A double click on a row: open/note
+	InboxViewBadge         bool   `json:"inboxViewBadge"`         // A count on the header's Inbox icon (default on)
+	InboxViewBadgeCounts   string `json:"inboxViewBadgeCounts"`   // What that count counts: unread/all
+	InboxViewKeyLegend     string `json:"inboxViewKeyLegend"`     // The key legend: below/above the list, or off
 }
 
 // SavedSearch is a query the user named and kept from the search bar.
@@ -1336,6 +1351,8 @@ type Store interface {
 	GetSettingsRevision() string
 	// InvalidateReadCache drops in-memory read caches after out-of-band disk writes (import/restore).
 	InvalidateReadCache()
+	// ReplaceDataFiles runs out-of-band disk writes (a restore) under the store lock.
+	ReplaceDataFiles(write func() error) error
 	/*
 		DataGeneration counts writes, so a cache built from this store can tell
 		whether the data moved under it.
@@ -1682,6 +1699,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
 			DockerStatsHistory:             true,
+			DockerNotify:                   true,
+			DockerViewCloseOutside:         true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -4018,6 +4037,8 @@ func (fs *FileStore) GetSettings() Settings {
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
 			DockerStatsHistory:              true,
+			DockerNotify:                    true,
+			DockerViewCloseOutside:          true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -4050,6 +4071,9 @@ func (fs *FileStore) GetSettings() Settings {
 			"inboxViewUnreadMark":   &settings.InboxViewUnreadMark,
 			"inboxViewCloseOutside": &settings.InboxViewCloseOutside,
 			"inboxViewBadge":        &settings.InboxViewBadge,
+			// And two from 17-08 that shipped without an entry here.
+			"rememberScrollPosition": &settings.RememberScrollPosition,
+			"detectSoftNotFound":     &settings.DetectSoftNotFound,
 		} {
 			if _, ok := rawSettings[key]; !ok {
 				*field = true
@@ -4690,6 +4714,12 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["dockerStatsHistory"]; !ok {
 			settings.DockerStatsHistory = true
 		}
+		if _, ok := rawSettings["dockerNotify"]; !ok {
+			settings.DockerNotify = true
+		}
+		if _, ok := rawSettings["dockerViewCloseOutside"]; !ok {
+			settings.DockerViewCloseOutside = true
+		}
 		if _, ok := rawSettings["unsortedEnabled"]; !ok {
 			settings.UnsortedEnabled = true
 		}
@@ -4827,6 +4857,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated
 			settings.SurfaceDefaultsMigrated = settings.SurfaceDefaultsMigrated || stored.SurfaceDefaultsMigrated
 			settings.DepthDefaultFlatMigrated = settings.DepthDefaultFlatMigrated || stored.DepthDefaultFlatMigrated
+			settings.SurfaceFollowMigrated = settings.SurfaceFollowMigrated || stored.SurfaceFollowMigrated
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
 			settings.ActionButtonsAllOnMigrated = settings.ActionButtonsAllOnMigrated || stored.ActionButtonsAllOnMigrated
 			settings.ActionKeysOffMigrated = settings.ActionKeysOffMigrated || stored.ActionKeysOffMigrated

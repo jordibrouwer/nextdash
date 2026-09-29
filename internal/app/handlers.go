@@ -26,7 +26,11 @@ import (
 )
 
 type Handlers struct {
-	store             Store
+	store Store
+	// settingsMu makes a handler's read-merge-write of the settings one step,
+	// so two saves at once (a settings POST and an upload) cannot each start
+	// from the same snapshot and drop the other's field.
+	settingsMu        sync.Mutex
 	files             assetFS
 	pageTemplates     map[string]*template.Template
 	pageTemplatesMu   sync.RWMutex
@@ -43,6 +47,7 @@ type Handlers struct {
 	// The update store is one file; the check and the scheduler share it.
 	dockerUpdatesMu    sync.Mutex
 	dockerCheckRunning atomic.Bool
+	dockerPruneRunning atomic.Bool // one prune at a time (docker_disk.go)
 	healthReport       BookmarkHealthReport
 	healthReportAt     time.Time
 	healthReportOK     bool
@@ -1229,6 +1234,9 @@ type htmlPageData struct {
 	// the tracker's own script tag. Empty when analytics is off, which is also
 	// when it is not counted at all.
 	AnalyticsContentJSON string
+	// AnalyticsSnapshotsJSON is the widgets, containers and views snapshots
+	// (analytics_snapshots.go), gated and cached the same way.
+	AnalyticsSnapshotsJSON string
 
 	// AnalyticsEnabled is true — that is the user's setting AND the operator
 	// not having switched telemetry off via DISABLE_TELEMETRY.
@@ -1264,20 +1272,21 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	settings.ThemeEffects = surfaces.Effects
 	settings.ThemeBackdrop = surfaces.Backdrop
 	return htmlPageData{
-		Settings:             settings,
-		ThemePoolCSV:         themePoolCSV(colors),
-		CustomThemeIDsCSV:    customThemeIDsCSV(colors),
-		ThemeColorMeta:       themeBackgroundPrimary(themeID, colors),
-		WriteToken:           writeAccessToken(),
-		AppVersion:           appVersionToken(),
-		ReleaseTag:           releaseTag(),
-		AnalyticsWebsiteID:   analyticsWebsiteID,
-		AnalyticsScriptSrc:   analyticsScriptSrc,
-		AnalyticsEnabled:     analyticsEnabled(settings),
-		AnalyticsContentJSON: h.analyticsContentJSON(analyticsEnabled(settings)),
-		TelemetryLockedOff:   telemetryDisabledByEnv(),
-		UpdateCheckLockedOff: updateCheckDisabledByEnv(),
-		LandingPageName:      h.landingPageName(),
+		Settings:               settings,
+		ThemePoolCSV:           themePoolCSV(colors),
+		CustomThemeIDsCSV:      customThemeIDsCSV(colors),
+		ThemeColorMeta:         themeBackgroundPrimary(themeID, colors),
+		WriteToken:             writeAccessToken(),
+		AppVersion:             appVersionToken(),
+		ReleaseTag:             releaseTag(),
+		AnalyticsWebsiteID:     analyticsWebsiteID,
+		AnalyticsScriptSrc:     analyticsScriptSrc,
+		AnalyticsEnabled:       analyticsEnabled(settings),
+		AnalyticsContentJSON:   h.analyticsContentJSON(analyticsEnabled(settings)),
+		AnalyticsSnapshotsJSON: h.analyticsSnapshotsJSON(analyticsEnabled(settings)),
+		TelemetryLockedOff:     telemetryDisabledByEnv(),
+		UpdateCheckLockedOff:   updateCheckDisabledByEnv(),
+		LandingPageName:        h.landingPageName(),
 	}
 }
 
@@ -2333,6 +2342,8 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+	h.settingsMu.Lock()
+	defer h.settingsMu.Unlock()
 	settings, err := mergeSettingsFromBody(h.store.GetSettings(), body)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -2406,6 +2417,9 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
 		return
 	}
+	// Half of the feature snapshots are settings; a cached copy would report
+	// the old ones for ten minutes. Settings are cheap to read, so drop it.
+	invalidateAnalyticsSnapshotsCache()
 	// Apply straight away, so starting or stopping capture and changing the cap
 	// take effect on the next poll rather than at the next restart.
 	serverLog.SetRetention(

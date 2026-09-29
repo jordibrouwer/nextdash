@@ -214,6 +214,8 @@ class DashboardConfig {
         // preference. Health and Inbox both remember their sort; this list was
         // the only one that reset to page order on every visit.
         this.bmSort = null;
+        // A second click on a sortable heading turns the sort round.
+        this.bmSortReverse = false;
         // null until first rendered, same as bmSort -- see defaultBookmarksGroup
         // for the rule that picks what an instance with no group of its own yet
         // opens on.
@@ -640,6 +642,8 @@ class DashboardConfig {
         if (tags.length) add('tag', tags.join(','));
         const sort = this.bmSort ?? this.defaultBookmarksSort();
         if (sort && sort !== this.defaultBookmarksSort()) add('sort', sort);
+        // A heading clicked twice turns its sort round.
+        if (this.bmSortReverse) add('rev', '1');
         // '' ("no groups") is a real, chooseable value, not "unset" -- add()
         // drops empty strings, so it rides as the word 'none' instead.
         const group = this.bmGroup ?? this.defaultBookmarksGroup();
@@ -665,7 +669,7 @@ class DashboardConfig {
         const at = raw.indexOf('?');
         const params = new URLSearchParams(at < 0 ? '' : raw.slice(at + 1));
         const before = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup, this.bmSortReverse]);
 
         this.bmQuery = params.get('q') || '';
         this.bmCategoryFilter = params.get('cat') || '';
@@ -676,16 +680,19 @@ class DashboardConfig {
         this.bmHealthFilter = DashboardConfig.isHealthFilterKey(health) ? health : '';
         const tags = (params.get('tag') || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
         this.bmTagFilter = tags;
+        // Absent means the default, as bookmarksFilterQuery() writes it: a
+        // link without a sort must not open in the reader's last one.
         const sort = params.get('sort') || '';
-        if (sort) this.bmSort = sort;
+        this.bmSort = DashboardConfig.BM_SORTS.includes(sort) ? sort : null;
+        this.bmSortReverse = params.get('rev') === '1';
         const groupParam = params.get('group');
-        if (groupParam != null) {
-            const group = groupParam === 'none' ? '' : groupParam;
-            if (DashboardConfig.BM_GROUPS.includes(group)) this.bmGroup = group;
-        }
+        const group = groupParam === 'none' ? '' : groupParam;
+        this.bmGroup = groupParam != null && DashboardConfig.BM_GROUPS.includes(group)
+            ? group
+            : (this._bmGroupDefaultAtLoad ?? null);
 
         const after = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup, this.bmSortReverse]);
         if (before === after) return false;
         this._bmDuplicateUrls = null;
         this.resetBookmarkVisibleLimit();
@@ -1611,6 +1618,13 @@ class DashboardConfig {
                 e.stopImmediatePropagation();
                 this.saveLastConfigLocation();
                 void d.inbox.openInboxView();
+                return true;
+            }
+            if (e.code === 'KeyY' && d.docker?.isEnabled?.()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.saveLastConfigLocation();
+                void d.docker.openDockerView();
                 return true;
             }
         }
@@ -3251,6 +3265,7 @@ class DashboardConfig {
         pushNotifyEnabled: ['push', 'notification', 'alert', 'browser'],
         pushNotifyMonitor: ['push', 'notification', 'downtime', 'uptime'],
         pushNotifyBackup: ['push', 'notification', 'backup'],
+        pushNotifyContainers: ['push', 'notification', 'docker', 'containers', 'crash', 'unhealthy'],
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
         feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
@@ -3275,6 +3290,10 @@ class DashboardConfig {
         dockerUpdateInterval: ['docker', 'containers', 'updates', 'registry', 'image'],
         dockerConfirmStopRestart: ['docker', 'containers', 'confirm', 'stop', 'restart'],
         dockerStatsHistory: ['docker', 'containers', 'cpu', 'memory', 'chart', 'history', 'resources'],
+        dockerViewCloseOutside: ['docker', 'containers', 'panel', 'drawer', 'close'],
+        dockerViewKeyLegend: ['docker', 'containers', 'keys', 'legend', 'keyboard'],
+        dockerNotify: ['docker', 'containers', 'notify', 'notification', 'alert', 'crash', 'restart', 'unhealthy', 'webhook'],
+        dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
         statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
         statusOfflineRetryDelayMs: ['offline', 'retry', 'delay', 'status'],
@@ -5117,6 +5136,12 @@ class DashboardConfig {
         if (view === 'inbox' && d.inbox?.openInboxView) {
             return d.inbox.openInboxView();
         }
+        // As Shift+Y from config does: remember where config was, so leaving
+        // the view comes back to the card that sent you.
+        if (view === 'docker' && d.docker?.openDockerView) {
+            this.saveLastConfigLocation();
+            return d.docker.openDockerView();
+        }
         return Promise.resolve();
     }
 
@@ -6215,11 +6240,18 @@ class DashboardConfig {
      * a 2s interval costs one small empty response when nothing happens.
      */
     async loadServerLog({ reset = false } = {}) {
+        // A poll while one is on its way would ask from the same position and
+        // append the same lines twice; a reset goes ahead and outranks it.
+        if (!reset && this._logLoading) return;
         if (reset) {
             this._logSince = -1;
             this._logLines = [];
         }
         this._logLoading = true;
+        // Only the newest request's answer counts: one that lands after a
+        // filter change was read under the old filter, from an old position.
+        const request = (this._logRequest = (this._logRequest || 0) + 1);
+        const stale = () => request !== this._logRequest;
 
         const params = new URLSearchParams();
         if (this._logSince >= 0) params.set('since', String(this._logSince));
@@ -6230,6 +6262,7 @@ class DashboardConfig {
             const res = await fetch(`/api/logs?${params.toString()}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
+            if (stale()) return;
 
             const incoming = Array.isArray(data.entries) ? data.entries : [];
             this._logLines = this._logLines.concat(incoming);
@@ -6253,9 +6286,10 @@ class DashboardConfig {
             this._logStats = data.stats || null;
             this._logDropped = Number(data.dropped) || 0;
         } catch (err) {
+            if (stale()) return;
             this.notify(this.t('config.logLoadFailed', 'Could not read the server log.'), 'error');
         } finally {
-            this._logLoading = false;
+            if (!stale()) this._logLoading = false;
         }
         this.repaintServerLog();
     }
@@ -8255,10 +8289,7 @@ class DashboardConfig {
     }
 
     formatBytes(bytes) {
-        const n = Number(bytes) || 0;
-        if (n < 1024) return `${n} B`;
-        if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
-        return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+        return window.NextDashBytes.formatBytes(bytes, { style: 'short' });
     }
 
     async captureLocalArchive(url) {
@@ -8911,7 +8942,8 @@ class DashboardConfig {
         // below rather than on its own timer, so one click is one write.
         window.DiscoverabilityState?.clearSeenTips?.({ persist: false });
         try {
-            await this.dash.saveSettings?.();
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await this.dash.saveSettings?.()) === false) throw new Error('not saved');
             this.notify(this.t('config.resetOnboardingSuccess', 'Onboarding will replay next time.'), 'success');
         } catch {
             this.notify(this.t('config.resetOnboardingError', 'Could not reset onboarding.'), 'error');
@@ -9677,9 +9709,14 @@ class DashboardConfig {
                 if (isOpen() && !root.contains(document.activeElement)) close({ restore: true });
             }, 0);
         });
-        document.addEventListener('pointerdown', (e) => {
+        // One outside-click listener at a time: Appearance repaints bind a new
+        // picker, and the old one's listener would hold its detached list and
+        // revert the preview on every click after.
+        if (this._themePickerOutside) document.removeEventListener('pointerdown', this._themePickerOutside);
+        this._themePickerOutside = (e) => {
             if (isOpen() && !root.contains(e.target)) close({ restore: true });
-        });
+        };
+        document.addEventListener('pointerdown', this._themePickerOutside);
     }
 
     /**
@@ -12064,6 +12101,10 @@ class DashboardConfig {
         dockerUpdateInterval: { def: 'off' },
         dockerConfirmStopRestart: { def: false },
         dockerStatsHistory: { def: true },
+        dockerNotify: { def: true },
+        dockerViewCloseOutside: { def: true },
+        dockerViewKeyLegend: { def: 'above' },
+        dockerHostAddress: { def: '' },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
         statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 450 },
@@ -12136,6 +12177,7 @@ class DashboardConfig {
         pushNotifyEnabled: { info: ['pushNotifyInfoTitle', 'pushNotifyInfoMessage'], def: false },
         pushNotifyMonitor: { hint: 'pushNotifyMonitorHint', def: false },
         pushNotifyBackup: { hint: 'pushNotifyBackupHint', def: false },
+        pushNotifyContainers: { def: false },
         pushNotifySubject: { hint: 'pushNotifySubjectHint', def: '' },
         // Toolbar & chrome
         showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
@@ -12412,6 +12454,22 @@ class DashboardConfig {
                         opt(100, '100'), opt(200, '200'), opt(500, '500'), opt(1000, '1000'),
                     ] },
                     bool('dockerStatsHistory', 'config.dockerStatsHistoryLabel', 'Keep the last hour of CPU and memory'),
+                    bool('dockerViewCloseOutside', 'config.bmViewCloseOutsideLabel', 'Close on a click beside it'),
+                    { field: 'dockerViewKeyLegend', type: 'select', label: t('config.bmViewKeyLegendLabel', 'The key legend'), options: [
+                        opt('above', t('config.bmViewLegendAbove', 'Above the list')),
+                        opt('below', t('config.bmViewLegendBelow', 'Below the list')),
+                        opt('off', t('config.bmViewLegendOff', 'Hidden')),
+                    ] },
+                ],
+            },
+            {
+                section: 'containers',
+                tab: null,
+                title: t('config.containersGroupLinks', 'Links'),
+                note: t('config.containersGroupLinksNote', 'Where ports and web UI links point. Empty uses the address this dashboard is open on. A container with its own LAN address (macvlan, br0) always links to that.'),
+                controls: [
+                    { field: 'dockerHostAddress', type: 'text', label: t('config.dockerHostAddressLabel', 'Docker host address'),
+                        placeholder: window.location.hostname },
                 ],
             },
             {
@@ -12435,6 +12493,15 @@ class DashboardConfig {
                 note: t('config.containersGroupSafetyNote', 'Update and remove always ask first. This adds stop and restart.'),
                 controls: [
                     bool('dockerConfirmStopRestart', 'config.dockerConfirmStopRestartLabel', 'Also confirm stop and restart'),
+                ],
+            },
+            {
+                section: 'containers',
+                tab: null,
+                title: t('config.containersGroupNotify', 'Notifications'),
+                note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on.'),
+                controls: [
+                    bool('dockerNotify', 'config.dockerNotifyLabel', 'Notify about containers'),
                 ],
             },
             // Config → Bookmarks had no settings at all; the list made these
@@ -13405,6 +13472,7 @@ class DashboardConfig {
                     bool('pushNotifyEnabled', 'config.pushNotifyEnabledLabel', 'Enable browser notifications'),
                     bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
                     bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
+                    bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
                     { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
                     { type: 'pushDevice' },
                 ],
@@ -13698,7 +13766,8 @@ class DashboardConfig {
             } else if (c.type === 'number') {
                 control = `<input type="number" class="config-text" style="min-width:80px" ${dataAttrs} data-${prefix}-type="number" min="${c.min ?? ''}" max="${c.max ?? ''}" value="${esc(val ?? '')}">`;
             } else {
-                control = `<input type="text" class="config-text" ${dataAttrs} data-${prefix}-type="text" value="${esc(val ?? '')}">`;
+                const placeholder = c.placeholder ? ` placeholder="${esc(c.placeholder)}"` : '';
+                control = `<input type="text" class="config-text" ${dataAttrs} data-${prefix}-type="text" value="${esc(val ?? '')}"${placeholder}>`;
             }
             return `
                 <div class="config-field">
@@ -14637,7 +14706,8 @@ class DashboardConfig {
                     qs.pushChoiceMade = false;
                     qs.pushAskAfter = 0;
                     qs.pushSnoozes = 0;
-                    await this.dash.saveSettings?.();
+                    // A failed save has said so already; no success after it.
+                    if ((await this.dash.saveSettings?.()) === false) return;
                 }
                 notify(this.t('config.pushNotifyAskAgainDone', 'The invitation will appear again on the dashboard.'));
             } catch (err) {
@@ -15047,7 +15117,8 @@ class DashboardConfig {
         }
 
         try {
-            await this.dash.saveSettings?.();
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await this.dash.saveSettings?.()) === false) throw new Error('not saved');
         } catch {
             this.notify(this.t('config.tourReplayError', 'Could not bring that tour back.'), 'error');
             return;
@@ -17440,19 +17511,25 @@ class DashboardConfig {
                 fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`),
                 fetch(`/api/categories?page=${encodeURIComponent(pageId)}`),
             ]);
-            const sourceBookmarks = bmRes.ok ? await bmRes.json() : [];
-            const sourceCategories = catRes.ok ? await catRes.json() : [];
+            // A failed read is not an empty page: copying it would announce an
+            // empty copy as a success.
+            if (!bmRes.ok || !catRes.ok) throw new Error('source not read');
+            const sourceBookmarks = await bmRes.json();
+            const sourceCategories = await catRes.json();
 
             pages.push(copy);
             if (!await this.savePages()) return;
 
             const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             if (Array.isArray(sourceCategories) && sourceCategories.length) {
-                await fetcher(`/api/categories?page=${encodeURIComponent(newId)}`, {
+                const catSaved = await fetcher(`/api/categories?page=${encodeURIComponent(newId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(sourceCategories),
                 });
+                // Without them the copied bookmarks would point at categories
+                // this page does not have.
+                if (!catSaved.ok) throw new Error('categories not saved');
             }
             if (withBookmarks && Array.isArray(sourceBookmarks) && sourceBookmarks.length) {
                 // Shortcuts are unique per page in practice but not enforced
@@ -18246,6 +18323,9 @@ class DashboardConfig {
                   ['unhealthy', ['config.widgetDockerShowUnhealthy', 'Unhealthy']],
                   ['total', ['config.widgetDockerShowTotal', 'Total']],
                   ['images', ['config.widgetDockerShowImages', 'Images']],
+                  ['updates', ['config.widgetDockerShowUpdates', 'Updates waiting']],
+                  ['reclaimable', ['config.widgetDockerShowReclaimable', 'Reclaimable disk space']],
+                  ['incidents', ['config.widgetDockerShowIncidents', 'Incidents in the last 24 hours']],
               ] },
             { key: 'showUnhealthyNames', kind: 'bool',
               label: ['config.widgetDockerNames', 'Name what is failing'],
@@ -18255,6 +18335,10 @@ class DashboardConfig {
               label: ['config.widgetDockerRestarted', 'Name what just restarted'],
               hint: ['config.widgetDockerRestartedHint',
                      'Up for minutes while the rest have run for days — the shape of a crashloop.'] },
+            { key: 'showTopCpu', kind: 'bool',
+              label: ['config.widgetDockerTopCpu', 'Name the three busiest by CPU'],
+              hint: ['config.widgetDockerTopCpuHint',
+                     'From the reading Containers takes every 30 seconds.'] },
         ],
         containers: [
             { key: 'show', kind: 'choice',
@@ -18270,6 +18354,8 @@ class DashboardConfig {
                   ['name', ['config.widgetContainersSortName', 'Name']],
                   ['uptime-long', ['config.widgetContainersSortUptimeLong', 'Uptime, longest first']],
                   ['uptime-short', ['config.widgetContainersSortUptimeShort', 'Uptime, shortest first']],
+                  ['cpu', ['config.widgetContainersSortCpu', 'CPU, busiest first']],
+                  ['memory', ['config.widgetContainersSortMemory', 'Memory, most first']],
               ] },
             { key: 'detail', kind: 'choice',
               label: ['config.widgetContainersDetail', 'Beside the name'],
@@ -18278,6 +18364,7 @@ class DashboardConfig {
               options: [
                   ['uptime', ['config.widgetContainersDetailUptime', 'Uptime']],
                   ['tag', ['config.widgetContainersDetailTag', 'Image tag']],
+                  ['usage', ['config.widgetContainersDetailUsage', 'CPU and memory']],
                   ['none', ['config.widgetContainersDetailNone', 'Nothing']],
               ] },
             { key: 'click', kind: 'choice',
@@ -20039,9 +20126,7 @@ class DashboardConfig {
         }
 
         const esc = (v) => this.dash.escapeHtml(v);
-        const bytes = (n) => (window.DashboardWidgetSystem
-            ? window.DashboardWidgetSystem.formatBytes(n)
-            : `${Math.round((Number(n) || 0) / 1e9)} GB`);
+        const bytes = (n) => window.NextDashBytes.formatBytes(n);
 
         boxes.forEach((box) => {
             if (!mounts.length) {
@@ -23369,11 +23454,11 @@ class DashboardConfig {
             ['lastOpened', this.t('config.sortByLastOpened', 'Last opened')],
             ['opens', this.t('config.sortByOpens', 'Most opened')],
             ['pinned', this.t('config.sortByPinned', 'Pinned first')],
+            ['tags', this.t('config.bmViewColTags', 'Tags')],
+            ['shortcut', this.t('config.bmViewColShortcut', 'Shortcut')],
+            ['usage', this.t('config.bmViewColUsage', 'Usage')],
+            ['score', this.t('config.sortByScore', 'Health score')],
         ];
-        // Only means anything once a Health filter has picked out issues to
-        // score, so it is not offered the rest of the time -- an option that
-        // sorts nothing differently would just be a dead choice in the list.
-        if (this.bmHealthFilter) options.push(['score', this.t('config.sortByScore', 'Health score')]);
         return options.map(([v, label]) =>
             `<option value="${esc(v)}" ${this.bmSort === v ? 'selected' : ''}>${esc(label)}</option>`
         ).join('');
@@ -23687,6 +23772,10 @@ class DashboardConfig {
         const stored = String(this.dash?.settings?.configBookmarksSort || '');
         return allowed.includes(stored) ? stored : 'page';
     }
+
+    /** Every sort the list knows: the toolbar's and the headings'. */
+    static BM_SORTS = ['page', 'name', 'url', 'category', 'recent', 'lastOpened', 'opens', 'pinned',
+        'tags', 'shortcut', 'usage', 'score'];
 
     /** '' groups nothing; every other value names a workbenchGroupKey shape. */
     static BM_GROUPS = ['', 'page', 'category', 'site', 'status', 'tag'];
@@ -24035,7 +24124,7 @@ class DashboardConfig {
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
             this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmHealthFilter,
-            this.bmSort ?? this.defaultBookmarksSort(), this.bmActiveGroup(),
+            this.bmSort ?? this.defaultBookmarksSort(), this.bmSortReverse, this.bmActiveGroup(),
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -24063,6 +24152,12 @@ class DashboardConfig {
         const rows = all.filter((b) => tests.every((test) => test(b)));
         const order = this.pageOrderIndex();
         const pageIndex = (id) => (order.has(String(id)) ? order.get(String(id)) : -1);
+        // Once per row, not per comparison: the sum walks the open log.
+        const usageSums = new Map();
+        const usageSum = (x) => {
+            if (!usageSums.has(x)) usageSums.set(x, (this.workbenchSparkCounts?.(x)?.counts || []).reduce((n, c) => n + c, 0));
+            return usageSums.get(x);
+        };
         const cmp = {
             name: (a, b) => String(a.name || '').localeCompare(String(b.name || '')),
             url: (a, b) => String(a.url || '').localeCompare(String(b.url || '')),
@@ -24076,11 +24171,28 @@ class DashboardConfig {
                 if (dp !== 0) return dp;
                 return pageIndex(a.pageId) - pageIndex(b.pageId);
             },
-            // Worst first: only offered (bookmarkSortOptionsHtml) while a
-            // Health filter is active, so there is always an issue to score.
+            // By the first tag as the row shows it; untagged rows last.
+            tags: (a, b) => {
+                const first = (x) => String((x.tags || []).map((t) => String(t).trim()).find(Boolean) || '');
+                const fa = first(a);
+                const fb = first(b);
+                if (!fa || !fb) return (fa ? 0 : 1) - (fb ? 0 : 1);
+                return fa.localeCompare(fb);
+            },
+            // The keyed ones first, by their key.
+            shortcut: (a, b) => {
+                const ka = String(a.shortcut || '');
+                const kb = String(b.shortcut || '');
+                if (!ka || !kb) return (ka ? 0 : 1) - (kb ? 0 : 1);
+                return ka.localeCompare(kb);
+            },
+            // The busiest of the sparkline's window first.
+            usage: (a, b) => usageSum(b) - usageSum(a),
+            // Worst first. Rows without an issue score as healthy.
             score: (a, b) => Number(this.bmHealthIssue?.(a)?.score ?? 100) - Number(this.bmHealthIssue?.(b)?.score ?? 100),
         }[this.bmSort ?? this.defaultBookmarksSort()] || null;
-        const sorted = cmp ? [...rows].sort(cmp) : rows;
+        const ordered = cmp && this.bmSortReverse ? (a, b) => cmp(b, a) : cmp;
+        const sorted = ordered ? [...rows].sort(ordered) : rows;
         // Group is independent of Sort: Sort orders every row, then a stable
         // second pass gathers them into their groups (in group order) without
         // disturbing the sort's order *within* each group -- the same trick
@@ -24822,6 +24934,8 @@ class DashboardConfig {
             if (!el) return;
             el.addEventListener('change', () => {
                 this[prop] = el.value;
+                // The select picks a sort afresh, in its natural order.
+                if (prop === 'bmSort') this.bmSortReverse = false;
                 // The selection is deliberately kept: narrowing to a second
                 // filter and adding to what you already ticked is the point.
                 // The bulk bar says how many are behind the filter.
@@ -26922,6 +27036,7 @@ class DashboardConfig {
         // category you built and then never used.
         const categoryEffectiveness = [...perCategoryCount.entries()]
             .map(([id, n]) => ({
+                key: id,
                 label: catLabel(id),
                 count: n,
                 opens: perCategoryOpens.get(id) || 0,
@@ -27536,10 +27651,11 @@ class DashboardConfig {
                 this.bmPageFilter = '';
                 this.bmCategoryFilter = '';
                 this.bmTagFilter = kind === 'tag' ? [String(value).toLowerCase()] : [];
-                // A bookmark or a category names a row rather than a tag, so it
-                // arrives as the list's own search — the filter that reproduces
-                // "this row, in the list where I can act on it".
-                if (kind === 'bookmark' || kind === 'category') this.bmQuery = String(value);
+                // A bookmark names a row rather than a tag, so it arrives as the
+                // list's own search — the filter that reproduces "this row, in
+                // the list where I can act on it". A category arrives as its
+                // pageId::id key, which is what bookmarks carry, not its label.
+                if (kind === 'bookmark') this.bmQuery = String(value);
                 if (kind === 'category') this.bmCategoryFilter = String(value);
                 this.bmSelected.clear();
                 this.resetBookmarkVisibleLimit();
@@ -27619,6 +27735,10 @@ class DashboardConfig {
             this._statsInboxAgg === undefined ? this.loadStatsInbox() : null,
             this._statsHealth === undefined ? this.loadStatsHealth() : null,
         ].filter(Boolean)).catch(() => {});
+        // The memo lives for one paint, and an export is not one: a bookmark
+        // renamed or opened since the last paint would go out under its old
+        // name or count.
+        this.invalidateStatsCache();
         return this.buildAndDownloadStatsCSV();
     }
 

@@ -55,7 +55,7 @@ type dockerChangelog struct {
 	Current  string                `json:"current,omitempty"`
 	Releases []dockerGithubRelease `json:"releases"`
 	Links    []dockerLink          `json:"links"`
-	Reason   string                `json:"reason,omitempty"` // "no-source" | "rate-limited" | "unreachable"
+	Reason   string                `json:"reason,omitempty"` // "no-source" | "rate-limited" | "auth-failed" | "unreachable"
 }
 
 func githubRepoFromSource(src string) (string, string, bool) {
@@ -150,11 +150,14 @@ func fetchGithubReleasesLive(ctx context.Context, owner, repo, current string) (
 		return nil, "unreachable"
 	}
 	defer resp.Body.Close()
-	switch resp.StatusCode {
-	case http.StatusForbidden, http.StatusTooManyRequests:
+	switch {
+	case resp.StatusCode == http.StatusTooManyRequests,
+		resp.StatusCode == http.StatusForbidden && resp.Header.Get("X-RateLimit-Remaining") == "0":
 		return nil, "rate-limited"
-	case http.StatusOK:
-	default:
+	case resp.StatusCode == http.StatusUnauthorized, resp.StatusCode == http.StatusForbidden:
+		// A token GitHub turns down: expired, revoked or mistyped.
+		return nil, "auth-failed"
+	case resp.StatusCode != http.StatusOK:
 		return nil, "unreachable"
 	}
 	var raw []githubReleaseRaw
@@ -184,10 +187,18 @@ func fetchGithubReleasesLive(ctx context.Context, owner, repo, current string) (
 // fetchGithubReleases serves the cache when it is younger than 24h, and falls
 // back to a stale cache entry rather than an empty list when the live fetch
 // is rate-limited or unreachable.
-func fetchGithubReleases(ctx context.Context, owner, repo, current string) ([]dockerGithubRelease, string) {
+//
+// The key carries whether prereleases were kept, which depends on the version
+// asked about: two containers of one repo, one on a prerelease, want different
+// lists. An entry older than the last update check is fetched again -- the
+// check may have found the release this list does not have yet.
+func fetchGithubReleases(ctx context.Context, owner, repo, current string, checkedAt time.Time) ([]dockerGithubRelease, string) {
 	key := owner + "/" + repo
+	if strings.Contains(normalizeVersion(current), "-") {
+		key += "#prerelease"
+	}
 	if v, ok := changelogCache.Load(key); ok {
-		if entry := v.(changelogCacheEntry); time.Since(entry.fetched) < changelogCacheTTL {
+		if entry := v.(changelogCacheEntry); time.Since(entry.fetched) < changelogCacheTTL && !entry.fetched.Before(checkedAt) {
 			return entry.releases, ""
 		}
 	}
@@ -249,7 +260,10 @@ func (h *Handlers) DockerChangelogHandler(w http.ResponseWriter, r *http.Request
 		writeJSON(w, cl)
 		return
 	}
-	all, reason := fetchGithubReleases(r.Context(), owner, repo, cl.Current)
+	h.dockerUpdatesMu.Lock()
+	checkedAt := time.UnixMilli(readDockerUpdateStore().CheckedAt)
+	h.dockerUpdatesMu.Unlock()
+	all, reason := fetchGithubReleases(r.Context(), owner, repo, cl.Current, checkedAt)
 	cl.Reason = reason
 	cl.Releases = releasesBetween(all, cl.Current)
 	if cl.Releases == nil {

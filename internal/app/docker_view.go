@@ -41,23 +41,35 @@ type dockerViewPort struct {
 }
 
 type dockerViewContainer struct {
-	ID             string             `json:"id"`
-	ShortID        string             `json:"shortId"`
-	Name           string             `json:"name"`
-	Image          string             `json:"image"`
-	Tag            string             `json:"tag"`
-	State          string             `json:"state"`
-	Status         string             `json:"status"`
-	Health         string             `json:"health"`
-	Created        int64              `json:"created"`
-	StartedAt      int64              `json:"startedAt,omitempty"`
-	Ports          []dockerViewPort   `json:"ports"`
-	ComposeProject string             `json:"composeProject,omitempty"`
-	WebUI          string             `json:"webui,omitempty"`
-	WebUIDefault   string             `json:"webuiDefault,omitempty"`
-	WebUICustom    string             `json:"webuiCustom,omitempty"`
-	Update         *dockerImageUpdate `json:"update,omitempty"`
-	Self           bool               `json:"self,omitempty"`
+	ID             string           `json:"id"`
+	ShortID        string           `json:"shortId"`
+	Name           string           `json:"name"`
+	Image          string           `json:"image"`
+	Tag            string           `json:"tag"`
+	State          string           `json:"state"`
+	Status         string           `json:"status"`
+	Health         string           `json:"health"`
+	Created        int64            `json:"created"`
+	StartedAt      int64            `json:"startedAt,omitempty"`
+	Ports          []dockerViewPort `json:"ports"`
+	ComposeProject string           `json:"composeProject,omitempty"`
+	WebUI          string           `json:"webui,omitempty"`
+	WebUIDefault   string           `json:"webuiDefault,omitempty"`
+	WebUICustom    string           `json:"webuiCustom,omitempty"`
+	// LanIP is the container's own address on the LAN, set only when it sits
+	// on a macvlan or ipvlan network (Unraid's br0): there [IP] means the
+	// container, not the host nextDash was opened on.
+	LanIP  string             `json:"lanIP,omitempty"`
+	Update *dockerImageUpdate `json:"update,omitempty"`
+	Self   bool               `json:"self,omitempty"`
+	// Usage is the stats sampler's latest reading, on the list only and only
+	// for a running container the sampler has read twice (CPU is a delta).
+	Usage *dockerViewUsage `json:"usage,omitempty"`
+}
+
+type dockerViewUsage struct {
+	CPU float64 `json:"cpu"` // percent of one core, as the Resources chart
+	Mem uint64  `json:"mem"` // bytes
 }
 
 // dockerHealthFromStatus reads the health word Docker appends to Status
@@ -188,6 +200,43 @@ func dockerWebUI(c dockerContainerSummary) string {
 	})
 }
 
+// dockerLanNetworks names the networks that give a container an address of
+// its own on the LAN. A daemon that will not list them gives none: the links
+// fall back to the host, as they did before.
+func (d *dockerAPI) dockerLanNetworks(ctx context.Context) map[string]bool {
+	out := map[string]bool{}
+	nets, err := d.listNetworks(ctx)
+	if err != nil {
+		return out
+	}
+	for _, n := range nets {
+		if n.Driver == "macvlan" || n.Driver == "ipvlan" {
+			out[n.Name] = true
+		}
+	}
+	return out
+}
+
+// dockerLanIP is the container's address on one of those networks: the one
+// it runs in first, else the first other one it joined, by name.
+func dockerLanIP(c dockerContainerSummary, lan map[string]bool) string {
+	nets := c.NetworkSettings.Networks
+	if mode := c.HostConfig.NetworkMode; lan[mode] && nets[mode].IPAddress != "" {
+		return nets[mode].IPAddress
+	}
+	names := make([]string, 0, len(nets))
+	for name := range nets {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		if lan[name] && nets[name].IPAddress != "" {
+			return nets[name].IPAddress
+		}
+	}
+	return ""
+}
+
 func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 	_, tag := splitImageTag(c.Image)
 	v := dockerViewContainer{
@@ -224,6 +273,8 @@ func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 // docker route uses: a daemon error names itself, a bad id is 404, anything
 // else (no socket, denied, unreachable) is a dial reason.
 func writeDockerError(w http.ResponseWriter, err error) {
+	// Before WriteHeader: a header set after it is not sent.
+	w.Header().Set("Content-Type", "application/json")
 	var apiErr *dockerAPIError
 	switch {
 	case errors.Is(err, errDockerNotFound):
@@ -296,8 +347,7 @@ func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) dockerTarget(w http.ResponseWriter, r *http.Request) (*dockerAPI, dockerContainerSummary, bool) {
 	api, reason := newDockerAPI()
 	if api == nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		writeJSON(w, map[string]string{"reason": reason})
+		dockerRefuse(w, http.StatusServiceUnavailable, reason)
 		return nil, dockerContainerSummary{}, false
 	}
 	c, err := h.resolveDockerID(r.Context(), api, mux.Vars(r)["id"])
@@ -329,6 +379,10 @@ type dockerViewDetail struct {
 	EnvNames      []string            `json:"envNames"`
 	Version       string              `json:"version,omitempty"`
 	Source        string              `json:"source,omitempty"`
+	// What updates did to this container, newest first, and what a rollback
+	// would go back to while the previous image is still on the host.
+	UpdateHistory []dockerUpdateHistoryEntry `json:"updateHistory"`
+	Rollback      *dockerRollbackOffer       `json:"rollback,omitempty"`
 }
 
 func (h *Handlers) DockerContainerDetailHandler(w http.ResponseWriter, r *http.Request) {
@@ -342,7 +396,8 @@ func (h *Handlers) DockerContainerDetailHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 	d := dockerViewDetail{dockerViewContainer: toDockerView(c, dockerSelfID())}
-	d.Update = h.dockerUpdateSnapshot()[c.Image]
+	d.LanIP = dockerLanIP(c, api.dockerLanNetworks(r.Context()))
+	d.Update = dockerRowUpdate(h.dockerUpdateSnapshot()[c.Image], c, api.imageTagIDs(r.Context()))
 	d.StartedAt = in.State.StartedAt
 	d.RestartPolicy = in.HostConfig.RestartPolicy.Name
 	for _, m := range in.Mounts {
@@ -369,6 +424,8 @@ func (h *Handlers) DockerContainerDetailHandler(w http.ResponseWriter, r *http.R
 		d.Version = img.Config.Labels["org.opencontainers.image.version"]
 		d.Source = img.Config.Labels["org.opencontainers.image.source"]
 	}
+	d.UpdateHistory = dockerUpdateHistoryFor(c.name())
+	d.Rollback = dockerRollbackOfferFor(r.Context(), api, d.UpdateHistory, in.Image)
 	if d.Mounts == nil {
 		d.Mounts = []dockerViewMount{}
 	}
@@ -435,6 +492,79 @@ func (h *Handlers) DockerContainerStatsHandler(w http.ResponseWriter, r *http.Re
 	})
 }
 
+// dockerHealthOutputMax caps one check's output: a failing curl can print a
+// whole error page, and the drawer shows a line or two of it.
+const dockerHealthOutputMax = 2000
+
+// dockerHealthChecksMax is how many checks the route hands over; the daemon
+// keeps five itself, so this only matters if that ever changes.
+const dockerHealthChecksMax = 5
+
+type dockerHealthCheck struct {
+	Start    string `json:"start"`
+	End      string `json:"end"`
+	ExitCode int    `json:"exitCode"`
+	Output   string `json:"output"`
+}
+
+type dockerHealthView struct {
+	Status        string              `json:"status"`
+	FailingStreak int                 `json:"failingStreak"`
+	Command       string              `json:"command"`
+	Checks        []dockerHealthCheck `json:"checks"`
+}
+
+// dockerHealthCommand turns Config.Healthcheck.Test into the line a person
+// would type: the arguments of a CMD, the shell line of a CMD-SHELL, and
+// nothing for NONE or no healthcheck at all.
+func dockerHealthCommand(test []string) string {
+	if len(test) < 2 {
+		return ""
+	}
+	switch test[0] {
+	case "CMD":
+		return strings.Join(test[1:], " ")
+	case "CMD-SHELL":
+		return test[1]
+	}
+	return ""
+}
+
+// DockerContainerHealthHandler answers the healthcheck's recent checks,
+// newest first. A container without a healthcheck answers an empty status.
+//
+// Behind the write token, like logs: a check's output is a command's output,
+// and a failing one can print a URL with its credentials in it.
+func (h *Handlers) DockerContainerHealthHandler(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	api, c, ok := h.dockerTarget(w, r)
+	if !ok {
+		return
+	}
+	in, err := api.inspectContainer(r.Context(), c.ID)
+	if err != nil {
+		writeDockerError(w, err)
+		return
+	}
+	v := dockerHealthView{Checks: []dockerHealthCheck{}}
+	if hc := in.Config.Healthcheck; hc != nil {
+		v.Command = dockerHealthCommand(hc.Test)
+	}
+	if hs := in.State.Health; hs != nil {
+		v.Status = hs.Status
+		v.FailingStreak = hs.FailingStreak
+		for i := len(hs.Log) - 1; i >= 0 && len(v.Checks) < dockerHealthChecksMax; i-- {
+			l := hs.Log[i]
+			v.Checks = append(v.Checks, dockerHealthCheck{Start: l.Start, End: l.End, ExitCode: l.ExitCode,
+				Output: capRunes(strings.TrimSpace(l.Output), dockerHealthOutputMax)})
+		}
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, v)
+}
+
 // DockerContainerLogsHandler clamps tail to 1-1000: no tail or a junk value
 // falls back to 200, and anything past 1000 is capped there before the
 // request ever reaches the daemon.
@@ -449,14 +579,7 @@ func (h *Handlers) DockerContainerLogsHandler(w http.ResponseWriter, r *http.Req
 	if !ok {
 		return
 	}
-	tail, err := strconv.Atoi(r.URL.Query().Get("tail"))
-	if err != nil || tail <= 0 {
-		tail = 200
-	}
-	if tail > 1000 {
-		tail = 1000
-	}
-	lines, err := api.logsTail(r.Context(), c.ID, tail)
+	lines, err := api.logsTail(r.Context(), c.ID, dockerLogTail(r))
 	if err != nil {
 		writeDockerError(w, err)
 		return
@@ -473,6 +596,12 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	}
 	list, err := api.listContainers(r.Context())
 	if err != nil {
+		// A daemon that answered and refused is not a missing socket.
+		var apiErr *dockerAPIError
+		if errors.As(err, &apiErr) {
+			writeJSON(w, map[string]any{"available": false, "reason": "daemon", "message": apiErr.Message, "containers": []any{}})
+			return
+		}
 		writeJSON(w, map[string]any{"available": false, "reason": dockerDialReason(err), "containers": []any{}})
 		return
 	}
@@ -480,13 +609,24 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	updates := h.dockerUpdateSnapshot() // Task 8 fills this from the real store.
 	out := make([]dockerViewContainer, 0, len(list))
 	hidden := dockerHiddenSet()
+	lan := api.dockerLanNetworks(r.Context())
+	tagIDs := api.imageTagIDs(r.Context())
+	// The sampler's last reading rides along, so the table's CPU and RAM
+	// columns cost no stats call per row. Off in Config means no columns.
+	usageEnabled := h.store.GetSettings().DockerStatsHistory
 	for _, c := range list {
 		if hidden[c.name()] {
 			continue
 		}
 		v := toDockerView(c, self)
-		v.Update = updates[c.Image]
+		v.LanIP = dockerLanIP(c, lan)
+		v.Update = dockerRowUpdate(updates[c.Image], c, tagIDs)
+		if usageEnabled && c.State == "running" {
+			if p, ok := dockerStatsStore.latest(c.ID); ok {
+				v.Usage = &dockerViewUsage{CPU: p.CPU, Mem: p.Mem}
+			}
+		}
 		out = append(out, v)
 	}
-	writeJSON(w, map[string]any{"available": true, "containers": out})
+	writeJSON(w, map[string]any{"available": true, "containers": out, "usageEnabled": usageEnabled})
 }

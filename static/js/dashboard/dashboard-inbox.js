@@ -25,6 +25,8 @@ class DashboardInbox {
         /** Active tag chip filter; cleared the same way the domain filter is. */
         this.tagFilter = '';
         this.sort = 'newest';
+        /** 'desc' turns a title or site sort round (a second click on its heading). */
+        this.sortDir = 'asc';
         this.visibleLimit = 50;
         this.selectedItemId = null;
         /**
@@ -576,7 +578,11 @@ class DashboardInbox {
         const title = (text) => `<p class="inbox-promote-menu-title">${this.escape(text)}</p>`;
         const pageLabel = (page) => d.pageNav?.pageLabel?.(page.id) || page.name || String(page.id);
 
+        // Which step is showing: a page's categories that arrive after the
+        // reader went back, or on to another page, are not for this step.
+        let step = 0;
         const showPages = () => {
+            step += 1;
             menu.innerHTML = title(this.t('dashboard.inboxPromoteToPage', 'Promote to page'))
                 + pages.map((page) => option(`data-promote-page="${this.escape(String(page.id))}"`,
                     pageLabel(page))).join('');
@@ -586,10 +592,11 @@ class DashboardInbox {
          * be sorted, only somewhere else.
          */
         const showCategories = async (page) => {
+            const turn = (step += 1);
             menu.innerHTML = title(pageLabel(page))
                 + option('data-promote-back', `← ${this.t('dashboard.inboxPromoteToPage', 'Promote to page')}`);
             const categories = await this.categoriesOnPage(page);
-            if (!menu.isConnected) return;
+            if (!menu.isConnected || turn !== step) return;
             menu.innerHTML += categories.map((category) => option(
                 `data-promote-category="${this.escape(category.id)}" data-page="${this.escape(String(page.id))}"`,
                 category.label)).join('')
@@ -1324,6 +1331,7 @@ class DashboardInbox {
             const sort = (params.get('ib_sort') || '').toLowerCase();
             if (DashboardInbox.SORTS.has(sort)) {
                 this.sort = sort;
+                this.sortDir = params.get('ib_dir') === 'desc' ? 'desc' : 'asc';
                 fromUrl = true;
             }
             const query = params.get('ib_q');
@@ -1360,7 +1368,10 @@ class DashboardInbox {
         try {
             const stored = JSON.parse(localStorage.getItem(DashboardInbox.STATE_KEY) || '{}');
             if (!fixedFilter && DashboardInbox.FILTERS.has(stored.filter)) this.filter = stored.filter;
-            if (!fixedSort && DashboardInbox.SORTS.has(stored.sort)) this.sort = stored.sort;
+            if (!fixedSort && DashboardInbox.SORTS.has(stored.sort)) {
+                this.sort = stored.sort;
+                this.sortDir = stored.sortDir === 'desc' ? 'desc' : 'asc';
+            }
             // A stored site can name a host that has since left the inbox;
             // pruneDomainFilter() drops it on the next render rather than
             // filtering the feed down to nothing.
@@ -1381,7 +1392,7 @@ class DashboardInbox {
         try {
             localStorage.setItem(
                 DashboardInbox.STATE_KEY,
-                JSON.stringify({ filter: this.filter, sort: this.sort, domain: this.domainFilter || '' })
+                JSON.stringify({ filter: this.filter, sort: this.sort, sortDir: this.sortDir, domain: this.domainFilter || '' })
             );
         } catch { /* private mode / full quota: the view still works */ }
     }
@@ -1402,6 +1413,7 @@ class DashboardInbox {
             };
             setOrDelete('ib_filter', this.filter, this.filter === 'all');
             setOrDelete('ib_sort', this.sort, this.sort === 'newest');
+            setOrDelete('ib_dir', this.sortDir, this.sortDir !== 'desc');
             setOrDelete('ib_q', String(this.searchQuery || '').trim(), !String(this.searchQuery || '').trim());
             setOrDelete('ib_domain', String(this.domainFilter || '').trim(), !String(this.domainFilter || '').trim());
             setOrDelete('ib_tag', String(this.tagFilter || '').trim(), !String(this.tagFilter || '').trim());
@@ -1428,6 +1440,9 @@ class DashboardInbox {
         }
         if (this.sort !== 'newest') {
             url.searchParams.set('ib_sort', this.sort);
+        }
+        if (this.sortDir === 'desc') {
+            url.searchParams.set('ib_dir', 'desc');
         }
         const query = String(this.searchQuery || '').trim();
         if (query) {
@@ -3779,7 +3794,9 @@ class DashboardInbox {
         if (this.filter === 'snoozed') return items;
         const sorted = [...items];
         const added = (item) => Number(item.addedAt || 0);
-        const byTitle = (a, b) => this.displayTitle(a).localeCompare(this.displayTitle(b), undefined, { sensitivity: 'base' });
+        // A second click on the Title or Site heading turns that order round.
+        const dir = this.sortDir === 'desc' ? -1 : 1;
+        const byTitle = (a, b) => dir * this.displayTitle(a).localeCompare(this.displayTitle(b), undefined, { sensitivity: 'base' });
         switch (this.sort) {
             case 'oldest':
                 return sorted.sort((a, b) => added(a) - added(b));
@@ -3788,7 +3805,7 @@ class DashboardInbox {
                 // stable order across re-renders.
                 return sorted.sort((a, b) => byTitle(a, b) || added(b) - added(a));
             case 'domain':
-                return sorted.sort((a, b) => this.itemDomain(a).localeCompare(this.itemDomain(b), undefined, { sensitivity: 'base' })
+                return sorted.sort((a, b) => dir * this.itemDomain(a).localeCompare(this.itemDomain(b), undefined, { sensitivity: 'base' })
                     || added(b) - added(a));
             case 'newest':
             default:
@@ -4030,8 +4047,18 @@ class DashboardInbox {
                 (key, fallback) => this.t(`dashboard.${key}`, fallback),
             )
             : [];
+        // Shift+K does nothing with Unsorted switched off, so the legend
+        // should not offer it either.
+        if (!this.keptEnabled()) {
+            const at = keys.findIndex(([k]) => k === 'K');
+            if (at !== -1) keys.splice(at, 1);
+        }
+        // A double click follows Config → Inbox: the link, or its note.
         if (keys.length > 2) {
-            keys.splice(3, 0, ['dblclick', this.t('dashboard.inboxKeyDblClick', 'open')]);
+            const dblNote = this.dash.settings?.inboxViewDblClick === 'note';
+            keys.splice(3, 0, ['dblclick', dblNote
+                ? this.t('dashboard.inboxKeyNote', 'note')
+                : this.t('dashboard.inboxKeyDblClick', 'open')]);
         }
         legend.innerHTML = keys
             .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
@@ -4212,8 +4239,15 @@ class DashboardInbox {
     }
 
     _destroyShell() {
+        this._removeRailOutside();
         this.shell?.destroy?.();
         this.shell = null;
+    }
+
+    _removeRailOutside() {
+        if (!this._railOutside) return;
+        document.removeEventListener('pointerdown', this._railOutside, true);
+        this._railOutside = null;
     }
 
     /**
@@ -4306,11 +4340,15 @@ class DashboardInbox {
             shell.rail.addEventListener('click', (e) => {
                 if (e.target.closest('button')) shell.root.classList.remove('is-rail-open');
             });
-            document.addEventListener('pointerdown', (e) => {
+            // Held on the view and dropped with the shell, or every mount
+            // would leave one behind, holding the old shell.
+            this._removeRailOutside();
+            this._railOutside = (e) => {
                 if (!shell.root.classList.contains('is-rail-open')) return;
                 if (shell.rail.contains(e.target) || toggle.contains(e.target)) return;
                 shell.root.classList.remove('is-rail-open');
-            }, true);
+            };
+            document.addEventListener('pointerdown', this._railOutside, true);
             this._ownToolbar.insertBefore(toggle, this._ownToolbar.firstChild);
         }
         if (toggle) toggle.hidden = !folded;
@@ -4334,7 +4372,7 @@ class DashboardInbox {
     bindToolbar(host) {
         const sortSelect = host.querySelector('.inbox-sort-select');
         sortSelect?.addEventListener('change', (e) => {
-            this.applyViewChange({ sort: e.target.value || 'newest' }, { via: 'select' });
+            this.applyViewChange({ sort: e.target.value || 'newest', sortDir: 'asc' }, { via: 'select' });
             // Same reason as the health view: a focused SELECT swallows every row
             // shortcut, so j/k/p/d would go dead until the user clicked away.
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
@@ -4798,6 +4836,7 @@ class DashboardInbox {
             section.appendChild(groupList);
             list.appendChild(section);
         });
+        body.appendChild(this.renderColumnHeads());
         body.appendChild(list);
 
         if (filtered.length > this.visibleLimit) {
@@ -4820,7 +4859,7 @@ class DashboardInbox {
         if (legendAt === 'above') {
             const legend = this.renderLegend();
             legend.classList.add('is-above');
-            body.insertBefore(legend, body.querySelector('.inbox-feed') || body.firstChild);
+            body.insertBefore(legend, body.querySelector('.inbox-colhead, .inbox-feed') || body.firstChild);
         } else if (legendAt !== 'off') {
             body.appendChild(this.renderLegend());
         }
@@ -4913,6 +4952,78 @@ class DashboardInbox {
         if (live.textContent !== message) {
             live.textContent = message;
         }
+    }
+
+    /**
+     * The column headings over the rows, on line 1's grid: the tick and icon
+     * tracks stay blank, then what, where and when. Where goes when Config ->
+     * Inbox hides the address, as the rows' cell does.
+     *
+     * Each heading sorts: Title and Site by themselves, a second click turning
+     * the order round; Added between newest and oldest first. The toolbar's
+     * select follows. Snoozed keeps its wake order, so its headings are text.
+     */
+    renderColumnHeads() {
+        const head = document.createElement('div');
+        head.className = 'inbox-colhead lvs-colhead';
+        const address = this.dash.settings?.inboxViewAddress || 'domain';
+        const cells = [
+            ['', ''],
+            ['', ''],
+            ['inbox-colhead-title', this.t('dashboard.inboxExportColTitle', 'Title'), 'title'],
+        ];
+        if (address !== 'hidden') {
+            cells.push(['inbox-colhead-site', address === 'full'
+                ? this.t('config.bmDetailsAddress', 'Address')
+                : this.t('config.bmGroupBySite', 'Site'), 'domain']);
+        }
+        cells.push(['inbox-colhead-when', this.t('dashboard.inboxExportColAdded', 'Added'), 'added']);
+        const sortable = this.filter !== 'snoozed';
+        cells.forEach(([cls, label, key]) => {
+            const span = document.createElement('span');
+            if (cls) span.className = cls;
+            if (!label) span.setAttribute('aria-hidden', 'true');
+            if (!key || !sortable) {
+                span.textContent = label;
+                head.appendChild(span);
+                return;
+            }
+            const state = this.headingSortState(key);
+            if (state) span.setAttribute('data-lvs-sort', state);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'lvs-colhead-sort';
+            btn.setAttribute('data-inbox-sort-head', key);
+            btn.textContent = label;
+            btn.addEventListener('click', () => this.sortByHeading(key));
+            span.appendChild(btn);
+            head.appendChild(span);
+        });
+        return head;
+    }
+
+    /** 'ascending', 'descending', or '' when the list is not sorted by this heading. */
+    headingSortState(key) {
+        if (key === 'added') {
+            if (this.sort === 'newest') return 'descending';
+            return this.sort === 'oldest' ? 'ascending' : '';
+        }
+        if (this.sort !== key) return '';
+        return this.sortDir === 'desc' ? 'descending' : 'ascending';
+    }
+
+    sortByHeading(key) {
+        let patch;
+        if (key === 'added') {
+            patch = { sort: this.sort === 'newest' ? 'oldest' : 'newest', sortDir: 'asc' };
+        } else if (this.sort === key) {
+            patch = { sortDir: this.sortDir === 'desc' ? 'asc' : 'desc' };
+        } else {
+            patch = { sort: key, sortDir: 'asc' };
+        }
+        this.applyViewChange(patch, { via: 'heading', action: 'sort' });
+        // The list was rebuilt; keep the keyboard on the heading it used.
+        document.querySelector(`.inbox-colhead [data-inbox-sort-head="${key}"]`)?.focus();
     }
 
     createItemElement(item) {

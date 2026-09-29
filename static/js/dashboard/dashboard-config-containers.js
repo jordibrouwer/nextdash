@@ -28,6 +28,7 @@
                 <div class="config-tabpage-main" id="config-containers-body">
                     ${this.renderContainersStatusPanel()}
                     ${this.renderControlPanels(this.panelsFor('containers', 'general'), 'behavior')}
+                    ${this.renderContainersMutedPanel()}
                     ${this.renderContainersHiddenPanel()}
                     ${this.renderContainersTokenPanel()}
                 </div>
@@ -87,6 +88,58 @@
             </div>`;
     },
 
+    /**
+     * Where notices would go, a warning when nothing would receive them, and
+     * the containers that are muted. A container is muted from its row menu
+     * or its drawer; here it is only let back in.
+     */
+    renderContainersMutedPanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const names = Array.isArray(s.dockerNotifyMuted) ? s.dockerNotifyMuted : [];
+        const webhook = Boolean(String(s.monitorNotifyUrl || '').trim())
+            || (s.monitorNotifyPreset === 'pushover' && s.monitorNotifyPushoverToken && s.monitorNotifyPushoverUserKey);
+        const push = s.pushNotifyEnabled === true && s.pushNotifyContainers === true;
+        const where = [
+            webhook ? this.t('config.dockerNotifyToWebhook', 'the alert webhook') : '',
+            push ? this.t('config.dockerNotifyToPush', 'browser notifications') : '',
+        ].filter(Boolean);
+        const receiver = where.length
+            ? `<p class="config-field-hint" data-docker-notify-receiver>${esc(this.t('config.dockerNotifyGoesTo', 'Notices go to {where}.').replace('{where}', where.join(' + ')))}</p>`
+            : `<p class="config-field-hint config-field-hint--warn" data-docker-notify-receiver data-none>${esc(this.t('config.dockerNotifyNoReceiver',
+                'Nothing receives them yet: set a webhook under Behavior → Status → Downtime alerts, or switch on browser notifications with Containers.'))}</p>`;
+        const chips = names.map((name) => `
+            <span class="config-docker-chip">
+                <span>${esc(name)}</span>
+                <button type="button" class="config-docker-chip-remove" data-docker-unmute="${esc(name)}"
+                        aria-label="${esc(this.t('config.dockerUnmuteLabel', 'Notify about {name} again').replace('{name}', name))}">×</button>
+            </span>`).join('');
+        const empty = names.length ? '' : `<p class="config-field-hint">${esc(this.t('config.dockerMutedNone', 'No container is muted. Mute one from its row menu or its drawer.'))}</p>`;
+        return `
+            <div class="config-panel" data-docker-muted-panel>
+                <h3 class="config-panel-title">${esc(this.t('config.containersGroupMuted', 'Muted containers'))}</h3>
+                ${receiver}
+                <div class="config-docker-chips">${chips}</div>
+                ${empty}
+            </div>`;
+    },
+
+    bindContainersMuted(container) {
+        const panel = container.querySelector('[data-docker-muted-panel]');
+        if (!panel) return;
+        panel.querySelectorAll('[data-docker-unmute]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const name = btn.getAttribute('data-docker-unmute');
+                const names = (this.dash.settings?.dockerNotifyMuted || []).filter((n) => n !== name);
+                await this.setBehavior('dockerNotifyMuted', names, '');
+                const fresh = document.createElement('div');
+                fresh.innerHTML = this.renderContainersMutedPanel();
+                panel.replaceWith(fresh.firstElementChild);
+                this.bindContainersMuted(container);
+            });
+        });
+    },
+
     renderContainersTokenPanel() {
         const esc = (v) => this.dash.escapeHtml(v);
         return `
@@ -110,6 +163,7 @@
     bindContainersSection(container) {
         void this.fillContainersStatus(container);
         this.bindContainersHidden(container);
+        this.bindContainersMuted(container);
         this.bindContainersToken(container);
     },
 

@@ -92,6 +92,16 @@
     border-radius: var(--radius-pill, 999px);
 }
 
+/* CPU and RAM: numbers, right-aligned so the digits line up, with their
+   headings over them. */
+.docker-cell--num,
+.docker-head.docker-head--cpu,
+.docker-head.docker-head--mem {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
 .docker-cell--ports {
     white-space: nowrap;
 }
@@ -115,6 +125,19 @@
     text-overflow: ellipsis;
 }
 
+/* A custom address: a dot in front, the row's echo of the side panel's
+   Custom tag. */
+.docker-webui.is-custom::before {
+    content: '';
+    display: inline-block;
+    width: 0.4em;
+    height: 0.4em;
+    margin-right: 0.4em;
+    border-radius: 50%;
+    background: currentColor;
+    vertical-align: middle;
+}
+
 /* Second phone line (name/state stay in the normal cells); hidden until
    the mobile media query below turns it on. */
 .docker-row-line2 {
@@ -133,6 +156,14 @@
     text-decoration: underline;
 }
 
+/* Column headings: the shared .lvs-colhead (list-view-shell.css) on each
+   cell, with the cells' own padding so the text sits over the column. A
+   sortable one is the shared .lvs-colhead-sort, its arrow drawn from the
+   cell's data-lvs-sort. */
+.docker-head {
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
 .docker-group-row td {
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     font-size: var(--text-xs, 0.72rem);
@@ -141,6 +172,22 @@
     letter-spacing: 0.04em;
     color: var(--text-secondary);
     background: var(--background-secondary);
+}
+
+/* A project's stack buttons sit at the right end of its group row, small
+   enough to keep the row its height, and not in the heading's uppercase. */
+.docker-stack-actions {
+    float: right;
+    display: inline-flex;
+    gap: var(--space-1, 0.25rem);
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: normal;
+}
+
+.docker-stack-actions .docker-action-btn {
+    padding: 0 0.45rem;
+    font-size: var(--text-xs, 0.72rem);
 }
 
 .docker-setup {
@@ -329,6 +376,130 @@
     white-space: pre-wrap;
 }
 
+/* Held: quieter than the update badge -- a choice, not news. */
+.docker-badge--held {
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border-primary);
+}
+
+/* Timeline: one line per event, a dot in the state's colour, the time right. */
+.docker-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-timeline-entry {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-timeline-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--text-secondary);
+}
+
+.docker-timeline-entry[data-tone="good"] .docker-timeline-dot { background: var(--accent-success, #3c6); }
+.docker-timeline-entry[data-tone="bad"] .docker-timeline-dot { background: var(--accent-error, #c55); }
+.docker-timeline-entry[data-tone="warn"] .docker-timeline-dot { background: var(--accent-warning, #cb4); }
+.docker-timeline-entry[data-tone="accent"] .docker-timeline-dot { background: var(--accent-primary); }
+
+.docker-timeline-what {
+    overflow-wrap: anywhere;
+}
+
+/* Updates: where the image stands, the choices, then the history. */
+.docker-updates-status {
+    margin: 0 0 var(--space-2, 0.5rem);
+}
+
+.docker-updates-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.docker-update-history {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    margin: var(--space-1, 0.25rem) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-update-history li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-update-history li[data-kind="rollback"] .docker-update-history-what {
+    color: var(--accent-warning, #cb4);
+}
+
+/* Health: the command, then the last checks, newest first; a failing
+   check's mark takes the error colour. */
+.docker-health-command {
+    display: block;
+    margin: var(--space-2, 0.5rem) 0;
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-sm, 0.85rem);
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.docker-health-checks {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.docker-health-check-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-health-check[data-docker-health-check="pass"] .docker-health-mark {
+    color: var(--accent-success, #3c6);
+}
+
+.docker-health-check[data-docker-health-check="fail"] .docker-health-mark {
+    color: var(--accent-error, #c55);
+}
+
+.docker-health-when {
+    color: var(--text-secondary);
+}
+
+.docker-health-output {
+    max-height: 6rem;
+    margin: var(--space-1, 0.25rem) 0 0;
+    overflow: auto;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    background: var(--background-tertiary, var(--background-primary));
+    border-radius: var(--radius-4, 6px);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.72rem);
+    white-space: pre-wrap;
+}
+
 .docker-release {
     padding: var(--space-2, 0.5rem) 0;
     border-bottom: 1px solid var(--border-primary);
@@ -355,6 +526,24 @@
     flex-wrap: wrap;
     gap: var(--space-3, 0.75rem);
     margin-top: var(--space-2, 0.5rem);
+}
+
+/* Between the phone layout and a wide screen the table runs out of room:
+   Image goes first (the drawer names it), then CPU and RAM. */
+@media (min-width: 768px) and (max-width: 1099px) {
+    .docker-head--image,
+    .docker-cell--image {
+        display: none;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 899px) {
+    .docker-head--cpu,
+    .docker-head--mem,
+    .docker-cell--cpu,
+    .docker-cell--mem {
+        display: none;
+    }
 }
 
 @media (max-width: 767px) {
@@ -387,6 +576,8 @@
     }
 
     .docker-cell--image,
+    .docker-cell--cpu,
+    .docker-cell--mem,
     .docker-cell--webui,
     .docker-cell--ports {
         display: none;
@@ -463,28 +654,66 @@
     color: var(--text-secondary);
 }
 
+/* Below the list (Config → Containers → The key legend): a rule above it,
+   the space on the other side. */
+.docker-legend.is-below {
+    margin: var(--space-3, 0.75rem) 0 0;
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid var(--border-secondary, var(--border-primary));
+}
+
 .docker-legend-item {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
 }
 
+/* The selection bar is the grid's and Inbox's (.multi-select-toolbar,
+   dashboard-multi-select.css). The grid pins it to the top of the page; here
+   the shell's header already holds that place, so it stays where it stands,
+   under the toolbar, as Inbox's does. */
 .docker-bulk {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2, 0.5rem);
-    margin: 0 0 var(--space-2, 0.5rem);
-    padding: var(--space-2, 0.5rem);
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    background: var(--background-secondary);
+    position: static;
 }
 
-.docker-bulk-count {
-    margin-right: auto;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
+.docker-bulk[hidden] {
+    display: none;
+}
+
+/* A row's tick, in front of its name: out of sight until the pointer, the
+   focus or a live selection asks for it, as on Inbox's and Bookmarks' rows. */
+.docker-tick {
+    display: inline-flex;
+    align-items: center;
+    margin-right: var(--space-2, 0.5rem);
+    vertical-align: middle;
+    cursor: pointer;
+    visibility: hidden;
+}
+
+.docker-tick-input {
+    width: 0.95rem;
+    height: 0.95rem;
+    margin: 0;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+}
+
+.docker-row:hover .docker-tick,
+.docker-row:focus-within .docker-tick,
+.docker-row[aria-selected="true"] .docker-tick,
+.docker-table:has(.docker-tick-input:checked) .docker-tick {
+    visibility: visible;
+}
+
+@media (hover: none) {
+    .docker-tick {
+        visibility: visible;
+    }
+}
+
+.docker-row.is-checked {
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
 }
 
 /* ── Links in the drawer ─────────────────────────────────────────────────
@@ -564,6 +793,11 @@
     display: none;
 }
 
+/* Config → Containers → Muted: said plainly when no notice would arrive. */
+.config-field-hint--warn {
+    color: var(--accent-warning, #cb4);
+}
+
 .config-docker-chip {
     display: inline-flex;
     align-items: center;
@@ -594,4 +828,458 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2, 0.5rem);
+}
+
+/* ── Logs window ─────────────────────────────────────────────────────── */
+
+/* A native dialog over most of the page: top/left with vw/vh rather than
+   inset, which the page's scrollbar gutter would narrow. */
+.docker-logs-modal {
+    position: fixed;
+    top: 4vh;
+    left: 4vw;
+    width: 92vw;
+    height: 92vh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--text-primary);
+    background: var(--background-modal, var(--background-primary));
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-md, 12px);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.docker-logs-modal:not([open]) {
+    display: none;
+}
+
+/* ::backdrop inherits no custom properties in every browser (Safari), so
+   the scrim is written out: a shade darker than the app modal's, with its
+   blur, as neither dialog has the app modal's overlay behind it. */
+.docker-logs-modal::backdrop,
+.docker-volume-confirm::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+}
+
+.docker-logs-head,
+.docker-logs-bar,
+.docker-logs-foot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+.docker-logs-head {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.docker-logs-modal-title {
+    margin: 0;
+    font-size: var(--text-lg, 1.05rem);
+    font-weight: var(--font-weight-semibold);
+}
+
+.docker-logs-badge {
+    padding: 0 var(--space-2, 0.5rem);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.docker-logs-badge[data-state="running"] { color: var(--accent-success, #3c6); }
+.docker-logs-badge[data-state="exited"],
+.docker-logs-badge[data-state="dead"] { color: var(--accent-error, #c55); }
+
+.docker-logs-spacer {
+    flex: 1;
+}
+
+.docker-logs-bar {
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+}
+
+.docker-logs-btn,
+.docker-logs-tail {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.docker-logs-btn[aria-pressed="true"],
+.docker-logs-follow[data-state="following"] {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.docker-logs-follow[data-state="paused"] {
+    border-color: var(--accent-warning, #cb4);
+    color: var(--accent-warning, #cb4);
+}
+
+.docker-logs-btn:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.docker-logs-btn:focus-visible,
+.docker-logs-tail:focus-visible,
+.docker-logs-search:focus-visible,
+.docker-logs-body:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 1px;
+}
+
+.docker-logs-search {
+    flex: 1 1 14rem;
+    min-width: 10rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--font-size-controls);
+}
+
+.docker-logs-count {
+    min-width: 4.5rem;
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-logs-seg {
+    display: inline-flex;
+}
+
+.docker-logs-seg .docker-logs-btn {
+    border-radius: 0;
+}
+
+.docker-logs-seg .docker-logs-btn + .docker-logs-btn {
+    border-left-width: 0;
+}
+
+.docker-logs-seg .docker-logs-btn:first-child { border-radius: 4px 0 0 4px; }
+.docker-logs-seg .docker-logs-btn:last-child { border-radius: 0 4px 4px 0; }
+
+.docker-logs-main {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.docker-logs-body {
+    flex: 1;
+    overflow: auto;
+    padding: var(--space-2, 0.5rem) 0;
+    background: var(--background-primary);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-sm, 0.85rem);
+    line-height: 1.45;
+}
+
+.docker-logs-line {
+    display: flex;
+    gap: var(--space-3, 0.75rem);
+    padding: 0 var(--space-3, 0.75rem);
+}
+
+.docker-logs-line[hidden] {
+    display: none;
+}
+
+.docker-logs-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    min-width: 0;
+}
+
+.docker-logs-body.is-no-wrap .docker-logs-text {
+    white-space: pre;
+    overflow-wrap: normal;
+}
+
+.docker-logs-time {
+    flex: 0 0 auto;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-logs-body.is-no-time .docker-logs-time {
+    display: none;
+}
+
+.docker-logs-line[data-stream="err"] {
+    color: var(--accent-error, #c55);
+    background: color-mix(in srgb, var(--accent-error, #c55) 7%, transparent);
+}
+
+.docker-logs-line mark {
+    border-radius: 2px;
+    color: inherit;
+    background: color-mix(in srgb, var(--accent-warning, #cb4) 40%, transparent);
+}
+
+.docker-logs-line.is-current mark {
+    outline: 1px solid var(--accent-warning, #cb4);
+}
+
+.docker-logs-jump {
+    position: absolute;
+    right: var(--space-4, 1rem);
+    bottom: var(--space-3, 0.75rem);
+    border-color: var(--accent-primary);
+    border-radius: 999px;
+    background: var(--accent-primary);
+    color: var(--background-primary);
+}
+
+.docker-logs-ended {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-logs-ended[hidden] {
+    display: none;
+}
+
+.docker-logs-foot {
+    justify-content: space-between;
+    border-top: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-logs-keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+}
+
+.docker-logs-keys kbd {
+    padding: 0 0.3rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    font-family: var(--font-family-mono, monospace);
+    color: var(--text-primary);
+}
+
+/* A phone gets the whole screen, and no key legend it cannot use. */
+@media (max-width: 767px) {
+    .docker-logs-modal {
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .docker-logs-keys {
+        display: none;
+    }
+}
+
+/* ── Tabs: Containers | Disk ─────────────────────────────────────────── */
+
+.docker-tabs {
+    display: flex;
+    gap: var(--space-1, 0.25rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.docker-tabs[hidden] {
+    display: none;
+}
+
+/* On the Disk tab the search, sort and group have nothing to act on. */
+.docker-layout .lvs-toolbar-slot[hidden] {
+    display: none;
+}
+
+.docker-tab {
+    padding: 0.25rem 0.8rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    cursor: pointer;
+}
+
+.docker-tab[aria-selected="true"] {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.docker-tab:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 1px;
+}
+
+/* ── Disk ────────────────────────────────────────────────────────────── */
+
+.docker-disk-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-disk-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-4, 1rem);
+}
+
+.docker-disk-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1, 0.25rem);
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-secondary);
+}
+
+.docker-disk-tile-label,
+.docker-disk-tile-sub {
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-disk-tile-value {
+    font-size: var(--text-lg, 1.1rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-disk-warning {
+    color: var(--accent-warning, #cb4);
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-disk-section {
+    margin-bottom: var(--space-4, 1rem);
+}
+
+.docker-disk-title {
+    margin: 0 0 var(--space-1, 0.25rem);
+    font-size: var(--text-sm, 0.85rem);
+    font-weight: var(--font-weight-semibold);
+}
+
+.docker-disk-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-controls);
+}
+
+.docker-disk-table th,
+.docker-disk-table td {
+    padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--border-primary);
+    text-align: left;
+}
+
+.docker-disk-table .docker-disk-num {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-disk-name {
+    overflow-wrap: anywhere;
+}
+
+.docker-disk-muted {
+    color: var(--text-secondary);
+}
+
+.docker-disk-action {
+    text-align: right;
+    width: 1%;
+    white-space: nowrap;
+}
+
+.docker-disk-chip {
+    padding: 0 var(--space-1-5, 0.4rem);
+    border: 1px solid var(--accent-warning, #cb4);
+    border-radius: 999px;
+    color: var(--accent-warning, #cb4);
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-volume-confirm {
+    /* Placed by hand: the page's reset (* { margin: 0 }) takes away the
+       margin: auto a browser centres a <dialog> with, which left it in the
+       top-left corner. */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    max-height: 90vh;
+    overflow: auto;
+    overflow-wrap: anywhere;
+    width: min(30rem, 92vw);
+    padding: var(--space-4, 1rem);
+    color: var(--text-primary);
+    background: var(--background-modal, var(--background-primary));
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-md, 12px);
+}
+
+.docker-volume-confirm-title {
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--text-lg, 1.05rem);
+}
+
+.docker-volume-confirm .config-text {
+    width: 100%;
+    margin: var(--space-2, 0.5rem) 0;
+}
+
+.docker-volume-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+}
+
+@media (max-width: 767px) {
+    .docker-disk-table th:nth-child(2),
+    .docker-disk-table td:nth-child(2) {
+        display: none;
+    }
 }
