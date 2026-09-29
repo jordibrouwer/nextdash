@@ -220,6 +220,18 @@
     font-size: var(--text-sm, 0.85rem);
 }
 
+/* The host address note: its text, then the way to fix it. */
+.docker-host-hint {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-host-hint > span {
+    flex: 1 1 18rem;
+}
+
 /*
  * The drawer frame -- host, slab, head, close, sections -- is the shared one
  * (list-view-shell.css, .lvs-drawer*). What follows is what a container's

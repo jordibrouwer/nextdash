@@ -933,6 +933,7 @@ class DashboardDocker {
         const legendAt = this.dash.settings?.dockerViewKeyLegend || 'above';
         const legend = legendAt === 'off' ? null : this.buildLegend({ control: this.status.control !== false });
         if (this.status.control === false) body.appendChild(this.buildReadOnlyLine());
+        if (this.showsHostHint()) body.appendChild(this.buildHostHint());
         if (legend && legendAt !== 'below') body.appendChild(legend);
         body.appendChild(this.buildTable());
         if (legend && legendAt === 'below') {
@@ -1145,6 +1146,78 @@ class DashboardDocker {
             wrap.appendChild(pre);
         }
         return wrap;
+    }
+
+    /*
+     * Port links go to the host this page was opened on, unless Config →
+     * Containers names the Docker host. Opened through a domain -- a reverse
+     * proxy, Tailscale's MagicDNS -- that is rarely where the ports are, and
+     * dash.example.com:8080 goes nowhere. Said above the list, with the way to
+     * fix it, until the address is set or the note is put away.
+     */
+    static HOST_HINT_KEY = 'nextdash.docker.hostHintDismissed';
+
+    static opensThroughADomain(settings, hostname) {
+        if (String(settings?.dockerHostAddress || '').trim()) return false;
+        const host = String(hostname || '').toLowerCase();
+        // A bare name, an IP, or a LAN suffix already is the machine.
+        if (!host.includes('.') || /^[0-9.]+$/.test(host) || host.includes(':')) return false;
+        return !/\.(local|lan|home|internal|localhost)$/.test(host);
+    }
+
+    showsHostHint() {
+        if (!DashboardDocker.opensThroughADomain(this.dash.settings, window.location.hostname)) return false;
+        try {
+            if (localStorage.getItem(DashboardDocker.HOST_HINT_KEY) === '1') return false;
+        } catch {
+            // No storage: the note shows, and its Dismiss hides it for this visit.
+            if (this._hostHintDismissed) return false;
+        }
+        // Only when a link in the table is built on that host.
+        return this.containers.some((c) => !c.lanIP
+            && (String(c.webui || '').includes('[IP]') || (!c.webui && DashboardDocker.portLink(c))));
+    }
+
+    buildHostHint() {
+        const p = document.createElement('p');
+        p.setAttribute('data-docker-host-hint', '');
+        p.className = 'docker-readonly docker-host-hint';
+        const text = document.createElement('span');
+        text.textContent = this.t('dashboard.dockerHostHint',
+            'Port links point at {host}. If your containers run on another address, set the Docker host address.',
+            { host: window.location.hostname });
+        const set = document.createElement('button');
+        set.type = 'button';
+        set.className = 'config-btn config-btn--small';
+        set.setAttribute('data-docker-host-hint-set', '');
+        set.textContent = this.t('dashboard.dockerHostHintSet', 'Set host address');
+        set.addEventListener('click', () => { void this.openHostAddressSetting(); });
+        const dismiss = document.createElement('button');
+        dismiss.type = 'button';
+        dismiss.className = 'config-btn config-btn--small';
+        dismiss.setAttribute('data-docker-host-hint-dismiss', '');
+        dismiss.textContent = this.t('dashboard.dockerHostHintDismiss', 'Dismiss');
+        dismiss.addEventListener('click', () => {
+            this._hostHintDismissed = true;
+            try {
+                localStorage.setItem(DashboardDocker.HOST_HINT_KEY, '1');
+            } catch {
+                // Kept for this visit only.
+            }
+            p.remove();
+        });
+        p.append(text, set, dismiss);
+        return p;
+    }
+
+    /** Config → Containers, with the host address field focused. */
+    async openHostAddressSetting() {
+        const config = this.dash.config;
+        if (!config?.openConfigView) return;
+        await config.openConfigView('containers');
+        const entry = config.filterSettingsJumpEntries?.('host address')
+            ?.find((e) => e.kind === 'field' && e.field === 'dockerHostAddress');
+        if (entry) await config.activateSettingsJumpEntry(entry);
     }
 
     buildReadOnlyLine() {
