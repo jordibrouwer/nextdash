@@ -66,22 +66,33 @@ func (e *dockerRefusalError) Error() string { return e.Reason }
 
 var dockerUpdateHistoryMu sync.Mutex
 
-func readDockerUpdateHistory() []dockerUpdateHistoryEntry {
+// readDockerUpdateHistory is empty with no file yet, and an error for a file
+// it cannot read: writing over that would lose every rollback in it.
+func readDockerUpdateHistory() ([]dockerUpdateHistoryEntry, error) {
 	var out struct {
 		Entries []dockerUpdateHistoryEntry `json:"entries"`
 	}
 	data, err := os.ReadFile(dockerUpdateHistoryFilePath())
-	if err != nil {
-		return nil
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
 	}
-	_ = json.Unmarshal(data, &out)
-	return out.Entries
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, err
+	}
+	return out.Entries, nil
 }
 
 func appendDockerUpdateHistory(e dockerUpdateHistoryEntry) error {
 	dockerUpdateHistoryMu.Lock()
 	defer dockerUpdateHistoryMu.Unlock()
-	all := append(readDockerUpdateHistory(), e)
+	prev, err := readDockerUpdateHistory()
+	if err != nil {
+		return err
+	}
+	all := append(prev, e)
 	// Newest last on disk; each container keeps its last twenty.
 	count := map[string]int{}
 	kept := make([]dockerUpdateHistoryEntry, 0, len(all))
@@ -98,8 +109,11 @@ func appendDockerUpdateHistory(e dockerUpdateHistoryEntry) error {
 // dockerUpdateHistoryFor is one container's history, newest first.
 func dockerUpdateHistoryFor(name string) []dockerUpdateHistoryEntry {
 	dockerUpdateHistoryMu.Lock()
-	all := readDockerUpdateHistory()
+	all, err := readDockerUpdateHistory()
 	dockerUpdateHistoryMu.Unlock()
+	if err != nil {
+		logWarn(logComponentMutate, "the update history could not be read: %v", err)
+	}
 	out := []dockerUpdateHistoryEntry{}
 	for i := len(all) - 1; i >= 0; i-- {
 		if all[i].Container == name {

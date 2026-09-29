@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
@@ -180,5 +181,23 @@ func TestDockerUpdateChoiceNeedsWriteToken(t *testing.T) {
 		strings.NewReader(`{"image":"img:latest","choice":"hold"}`)))
 	if rec.Code != 401 {
 		t.Fatalf("code = %d", rec.Code)
+	}
+}
+
+// A history file that does not parse is left alone: writing over it would lose
+// every rollback in it.
+func TestDockerUpdateHistoryKeepsAnUnreadableFile(t *testing.T) {
+	_ = dockerTestHandlers(t)
+	if err := os.WriteFile(dockerUpdateHistoryFilePath(), []byte(`{"entries":[{"at":1,`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := appendDockerUpdateHistory(dockerUpdateHistoryEntry{At: 2, Kind: "update", Container: "web"}); err == nil {
+		t.Fatalf("append over an unreadable file must fail")
+	}
+	if data, _ := os.ReadFile(dockerUpdateHistoryFilePath()); string(data) != `{"entries":[{"at":1,` {
+		t.Fatalf("file was rewritten: %s", data)
+	}
+	if got := dockerUpdateHistoryFor("web"); len(got) != 0 {
+		t.Fatalf("history = %+v", got)
 	}
 }
