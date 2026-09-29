@@ -4798,6 +4798,7 @@ class DashboardInbox {
             section.appendChild(groupList);
             list.appendChild(section);
         });
+        body.appendChild(this.renderColumnHeads());
         body.appendChild(list);
 
         if (filtered.length > this.visibleLimit) {
@@ -4820,7 +4821,7 @@ class DashboardInbox {
         if (legendAt === 'above') {
             const legend = this.renderLegend();
             legend.classList.add('is-above');
-            body.insertBefore(legend, body.querySelector('.inbox-feed') || body.firstChild);
+            body.insertBefore(legend, body.querySelector('.inbox-colhead, .inbox-feed') || body.firstChild);
         } else if (legendAt !== 'off') {
             body.appendChild(this.renderLegend());
         }
@@ -4913,6 +4914,36 @@ class DashboardInbox {
         if (live.textContent !== message) {
             live.textContent = message;
         }
+    }
+
+    /**
+     * The column headings over the rows, on line 1's grid: the tick and icon
+     * tracks stay blank, then what, where and when. Where goes when Config ->
+     * Inbox hides the address, as the rows' cell does.
+     */
+    renderColumnHeads() {
+        const head = document.createElement('div');
+        head.className = 'inbox-colhead lvs-colhead';
+        head.setAttribute('aria-hidden', 'true');
+        const address = this.dash.settings?.inboxViewAddress || 'domain';
+        const cells = [
+            ['', ''],
+            ['', ''],
+            ['inbox-colhead-title', this.t('dashboard.inboxExportColTitle', 'Title')],
+        ];
+        if (address !== 'hidden') {
+            cells.push(['inbox-colhead-site', address === 'full'
+                ? this.t('config.bmDetailsAddress', 'Address')
+                : this.t('config.bmGroupBySite', 'Site')]);
+        }
+        cells.push(['inbox-colhead-when', this.t('dashboard.inboxExportColAdded', 'Added')]);
+        cells.forEach(([cls, label]) => {
+            const span = document.createElement('span');
+            if (cls) span.className = cls;
+            span.textContent = label;
+            head.appendChild(span);
+        });
+        return head;
     }
 
     createItemElement(item) {

@@ -124,6 +124,7 @@
                         ${this.renderWorkbenchDensityToggle()}
                         <button type="button" class="config-btn config-btn--primary config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     </div>
+                    ${this.renderWorkbenchColumnHeads()}
                     <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
                 </section>
                 <aside class="config-bm-panel" id="config-bm-panel" role="region"
@@ -1929,6 +1930,35 @@
             });
             this._bmTagFitObserver.observe(host);
         }
+    },
+
+    /**
+     * The column headings over the list, on the rows' own grid: the same
+     * cells in the same order, under the same col() checks and with the same
+     * cell classes that decide which columns a width shows, so a heading
+     * stands over its column at every width. Outside #config-bm-list, so the
+     * virtual window's arithmetic and the row queries never see it; hidden
+     * from screen readers, which read each cell by its own label already.
+     */
+    renderWorkbenchColumnHeads() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const col = (name) => this.bmViewColumn(name);
+        const cell = (cls, label) => `<span class="config-bm-colhead-cell ${cls}">${esc(label)}</span>`;
+        const pinned = this.t('config.bmViewColPinned', 'Pinned');
+        return `
+            <div class="config-bm-colhead lvs-colhead" aria-hidden="true" data-bm-colhead>
+                <span class="config-bm-colhead-cell"></span>
+                <span class="config-bm-colhead-cell"></span>
+                ${cell('config-bm-colhead-name', this.t('config.bookmarkName', 'Name'))}
+                ${col('tags') ? cell('config-bm-colhead-tags', this.t('config.bmViewColTags', 'Tags')) : ''}
+                ${col('pinned') ? `<span class="config-bm-colhead-cell config-bm-extra config-bm-pinned" title="${esc(pinned)}">${global.MenuIcons?.PIN || ''}</span>` : ''}
+                ${col('shortcut') ? cell('config-bm-extra config-bm-key', this.t('config.bmViewColShortcut', 'Shortcut')) : ''}
+                ${col('usage') ? cell('config-bm-spark', this.t('config.bmViewColUsage', 'Usage')) : ''}
+                ${col('opens') ? cell('config-bm-colhead-end', this.t('config.bmViewColOpens', 'Opens')) : ''}
+                ${col('last') ? cell('config-bm-colhead-end', this.t('config.bmViewColLast', 'Last opened')) : ''}
+                ${col('added') ? cell('config-bm-added config-bm-colhead-end', this.t('config.bmViewColAdded', 'Added')) : ''}
+                ${col('score') ? cell('config-bm-colhead-end', this.t('config.bmViewColScore', 'Score')) : ''}
+            </div>`;
     },
 
     renderWorkbenchGroupHead(item, esc) {

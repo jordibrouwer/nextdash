@@ -785,7 +785,7 @@ class DashboardDocker {
         ].forEach(([key, label]) => {
             const th = document.createElement('th');
             th.scope = 'col';
-            th.className = `docker-head docker-head--${key}`;
+            th.className = `docker-head docker-head--${key} lvs-colhead`;
             th.textContent = label;
             headRow.appendChild(th);
         });

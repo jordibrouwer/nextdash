@@ -1837,7 +1837,8 @@ html body .config-bm-more-menu .config-btn {
     /* The tags keep room for one chip and its count: squeezed to nothing,
        the chip that fitWorkbenchTags left showing was cut in half. The name
        gives way first. */
-    .config-bm-workbench.is-library .config-bm-row {
+    .config-bm-workbench.is-library .config-bm-row,
+    .config-bm-workbench.is-library .config-bm-colhead {
         /* One template per width, built from the columns View leaves
            (workbenchColumnStyle): only the cells this width draws. */
         grid-template-columns: var(--bm-cols-mid, 1.1rem 1.4rem minmax(8rem, 1fr) minmax(5rem, 6rem) 3rem 5rem 2.6rem);
@@ -1852,7 +1853,8 @@ html body .config-bm-more-menu .config-btn {
 }
 
 @media (min-width: 1100px) {
-    .config-bm-workbench.is-library .config-bm-row {
+    .config-bm-workbench.is-library .config-bm-row,
+    .config-bm-workbench.is-library .config-bm-colhead {
         grid-template-columns: var(--bm-cols-large, 1.1rem 1.4rem minmax(10rem, 1fr) minmax(5rem, 9rem) 4.5rem 3rem 5rem 5.5rem 2.6rem);
     }
 
@@ -1881,7 +1883,8 @@ html body .config-bm-more-menu .config-btn {
 }
 
 @media (min-width: 1200px) {
-    .config-bm-workbench.is-library .config-bm-row {
+    .config-bm-workbench.is-library .config-bm-row,
+    .config-bm-workbench.is-library .config-bm-colhead {
         grid-template-columns: var(--bm-cols-wide, 1.1rem 1.4rem minmax(10rem, 1fr) minmax(5rem, 9rem) 1.5rem 3.5rem 4.5rem 3rem 5rem 5.5rem 2.6rem);
     }
 }
@@ -3250,4 +3253,49 @@ body[data-density-mode="dense"] .config-bm-workbench {
         background-size: 100% 2px;
         background-position: 0 0;
     }
+}
+
+/* ── Column headings ──────────────────────────────────────────────────── */
+
+/*
+ * Over the Bookmarks view's list, on the rows' grid (the templates above
+ * name both) with the rows' gap and inset, so each heading stands over its
+ * column; the look is the shared .lvs-colhead. Config's list, which shares
+ * its width with the panel, and the narrow layout, where rows keep only the
+ * name and the score, go without.
+ */
+.config-bm-colhead {
+    display: none;
+}
+
+@media (min-width: 800px) {
+    .config-bm-workbench.is-library .config-bm-colhead {
+        display: grid;
+        align-items: center;
+        gap: var(--space-3, 0.75rem);
+        min-height: 2rem;
+        padding-inline: var(--space-3, 0.75rem);
+        box-sizing: border-box;
+    }
+}
+
+/* Heavier than the cell classes the headings borrow for their visibility
+   (.config-bm-extra, .config-bm-added): those set the rows' font and colour. */
+.config-bm-workbench.is-library .config-bm-colhead > .config-bm-colhead-cell {
+    min-width: 0;
+    overflow: visible;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    text-align: left;
+}
+
+.config-bm-workbench.is-library .config-bm-colhead > .config-bm-colhead-end {
+    justify-self: end;
+    text-align: right;
+}
+
+.config-bm-colhead .config-bm-pinned svg {
+    width: 0.85rem;
+    height: 0.85rem;
 }

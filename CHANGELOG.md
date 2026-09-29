@@ -230,6 +230,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Everywhere
+
+- **new — the Bookmarks and Inbox views name their columns, as the Containers view does.** One shared style, `.lvs-colhead` in `list-view-shell.css`: the group heads' uppercase caption in the theme's own text, surface and rule colours, pinned under the view's header while the list scrolls, and gone at phone width. Bookmarks lays its headings on the rows' own grid from the same column choices (View → Columns shown) and the same cell classes, so a heading stands over its column at every width; it sits outside `#config-bm-list`, so the virtual window and the row queries never see it. Inbox shows Title, Site (Address when the whole address is shown, none when hidden) and Added. No new strings: every label already existed.
+
 ### Containers
 
 - **new — the containers table names its columns.** Name, Image, Status, Web UI and Ports sit above the rows and stay pinned under the view's header while the list scrolls; at phone width, where rows fold into two lines, the headings are hidden. The Name, Status and Ports labels are new locale keys, still English outside `en` until the next docs round.

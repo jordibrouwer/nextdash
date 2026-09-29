@@ -1062,6 +1062,22 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
     color: var(--text-secondary);
 }
 
+/* Column headings (the shared .lvs-colhead) on line 1's grid, with the row's
+   inset, so each stands over its column. */
+.inbox-colhead {
+    display: grid;
+    grid-template-columns: 1.1rem 1.4rem minmax(0, 1.6fr) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    min-height: 2rem;
+    padding: 0 var(--space-3, 0.75rem);
+    box-sizing: border-box;
+}
+
+.inbox-colhead .inbox-colhead-when {
+    justify-self: end;
+}
+
 .inbox-item-when {
     justify-self: end;
     font-size: var(--font-size-small);
