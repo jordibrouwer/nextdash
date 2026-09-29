@@ -301,3 +301,37 @@ func TestDockerRecreateRefusesWhatItCannotSwapSafely(t *testing.T) {
 		t.Fatal("an image id is no reference for the update check")
 	}
 }
+
+// The new container already gone -- removed from another tab between create
+// and start -- is what the rollback wanted anyway: the old one still comes
+// back under its name.
+func TestDockerRollbackTakesAGoneNewContainerAsRemoved(t *testing.T) {
+	f, h, c, api := recreateFixture(t)
+	f.failStart = map[string]bool{"sonarr": true}
+	f.goneOnFailedStart = true
+	res, err := h.dockerRecreate(context.Background(), api, c)
+	if err != nil || res.Phase != "rolled-back" {
+		t.Fatalf("res = %+v err = %v", res, err)
+	}
+	back, err := h.resolveDockerID(context.Background(), api, "sonarr")
+	if err != nil || back.ID != c.ID || back.State != "running" {
+		t.Fatalf("old container not restored: %+v err = %v", back, err)
+	}
+}
+
+// The rollback has time of its own: an update whose budget ran out on the way
+// still puts the old container back.
+func TestDockerRollbackOutlivesTheUpdateDeadline(t *testing.T) {
+	f, h, c, api := recreateFixture(t)
+	f.failCreate = true
+	ctx, cancel := context.WithCancel(context.Background())
+	f.onCreate = cancel // the budget runs out as the create fails
+	res, err := h.dockerRecreate(ctx, api, c)
+	if err != nil || res.Phase != "rolled-back" {
+		t.Fatalf("res = %+v err = %v", res, err)
+	}
+	back, err := h.resolveDockerID(context.Background(), api, "sonarr")
+	if err != nil || back.ID != c.ID || back.State != "running" {
+		t.Fatalf("old container not restored: %+v err = %v", back, err)
+	}
+}

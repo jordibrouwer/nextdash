@@ -34,7 +34,12 @@ type fakeDocker struct {
 	images     map[string]fakeImage      // by ref and by id
 	calls      []string                  // "POST /containers/abc/stop", in order
 	failCreate bool
+	// onCreate runs as a create arrives, before it is answered.
+	onCreate func()
 	failStart  map[string]bool // by container name
+	// goneOnFailedStart removes the new container as its start fails, the
+	// way a Remove from another tab in that moment would.
+	goneOnFailedStart bool
 	socket     string
 	// slow holds a pull stream and a stop open this long, as a real daemon
 	// does while it downloads layers or waits out a stop timeout.
@@ -474,6 +479,9 @@ func (f *fakeDocker) handleAction(w http.ResponseWriter, path string) {
 		time.Sleep(f.slow)
 	}
 	if action == "start" && f.failStart[c.Name] && c.created {
+		if f.goneOnFailedStart {
+			delete(f.containers, c.ID)
+		}
 		writeJSONFake(w, http.StatusInternalServerError, map[string]string{"message": "boom"})
 		return
 	}
@@ -522,6 +530,9 @@ func (f *fakeDocker) handleRemove(w http.ResponseWriter, r *http.Request, path s
 func (f *fakeDocker) handleCreate(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	f.record("POST", "/containers/create?name="+name)
+	if f.onCreate != nil {
+		f.onCreate()
+	}
 	if f.failCreate {
 		writeJSONFake(w, http.StatusInternalServerError, map[string]string{"message": "boom"})
 		return

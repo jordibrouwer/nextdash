@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -326,17 +327,38 @@ func shortImageID(id string) string {
 	return id
 }
 
+// dockerRollbackTimeout is how long putting the old container back may take:
+// a remove, a rename and a start.
+const dockerRollbackTimeout = 2 * time.Minute
+
+// isDockerNotFound reports a 404 from the daemon.
+func isDockerNotFound(err error) bool {
+	var apiErr *dockerAPIError
+	return errors.As(err, &apiErr) && apiErr.Status == http.StatusNotFound
+}
+
 // dockerRollback removes the half-made new container and puts the old one
 // back. A rollback that works is not an error: the reader's service runs as
 // before, and the result names the step that failed.
 func (h *Handlers) dockerRollback(ctx context.Context, api *dockerAPI, res dockerRecreateResult,
 	oldID, newID, name string, wasRunning bool, cause error) (dockerRecreateResult, error) {
 	logWarn(logComponentMutate, "the update of %s failed at %s (%v); restoring the previous container", name, res.FailedStep, cause)
+	// Time of its own: the update's budget may be what ran out, and a
+	// rollback that fails on it leaves the old container stopped and renamed.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), dockerRollbackTimeout)
+	defer cancel()
+	// Already gone -- removed from another tab -- is what this wanted.
+	removeNew := func() error {
+		if err := api.remove(ctx, newID); err != nil && !isDockerNotFound(err) {
+			return err
+		}
+		return nil
+	}
 	if newID != "" {
-		if err := api.remove(ctx, newID); err != nil {
+		if err := removeNew(); err != nil {
 			// Force it: the new container may be half-started.
 			_ = api.post(ctx, "/containers/"+newID+"/stop", nil)
-			if err := api.remove(ctx, newID); err != nil {
+			if err := removeNew(); err != nil {
 				return res, fmt.Errorf("the update failed at %s and the new container could not be removed: %w", res.FailedStep, err)
 			}
 		}

@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — a failed container update could leave the old container stopped and renamed.** The rollback ran on the update's ten-minute budget, so an update that spent it on the pull failed its rollback too; and a new container already removed (from another tab) made the rollback stop before it restored the old one. The rollback now has two minutes of its own and treats a 404 on removing the new container as done.
+
 - **fix — two settings saves at once could drop one of them.** A settings POST, a favicon or font upload and the archive-key save each read the settings, changed their field and wrote the whole struct back; two at once started from the same snapshot and the second erased the first's change. Each read-change-write now runs under one lock.
 
 - **fix — restoring a backup could leave torn or mixed data.** Each file was written straight over the live one, so a crash or a full disk mid-restore left half a JSON file, and a bookmark click during the restore could write its page back over the restored one. Files now go through the atomic writer (which also puts back 0600 on an existing secret file), all under the store lock.
