@@ -76,18 +76,9 @@
         }
     }
 
-    /** Bytes as a person reads them. */
+    /** Bytes as a person reads them; the formatter is shared, see shared/format-bytes.js. */
     function formatBytes(size) {
-        const n = Number(size) || 0;
-        if (n <= 0) return '0 B';
-        const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
-        let value = n;
-        let at = 0;
-        while (value >= 1024 && at < units.length - 1) {
-            value /= 1024;
-            at += 1;
-        }
-        return `${value >= 100 || at === 0 ? Math.round(value) : value.toFixed(1)} ${units[at]}`;
+        return window.NextDashBytes.formatBytes(size);
     }
 
     window.DashboardWidgetSystem = { fetchMetrics, unavailableText, formatBytes, label };

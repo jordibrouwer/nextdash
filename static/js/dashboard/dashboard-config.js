@@ -8283,10 +8283,7 @@ class DashboardConfig {
     }
 
     formatBytes(bytes) {
-        const n = Number(bytes) || 0;
-        if (n < 1024) return `${n} B`;
-        if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
-        return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+        return window.NextDashBytes.formatBytes(bytes, { style: 'short' });
     }
 
     async captureLocalArchive(url) {
@@ -20123,9 +20120,7 @@ class DashboardConfig {
         }
 
         const esc = (v) => this.dash.escapeHtml(v);
-        const bytes = (n) => (window.DashboardWidgetSystem
-            ? window.DashboardWidgetSystem.formatBytes(n)
-            : `${Math.round((Number(n) || 0) / 1e9)} GB`);
+        const bytes = (n) => window.NextDashBytes.formatBytes(n);
 
         boxes.forEach((box) => {
             if (!mounts.length) {
