@@ -161,3 +161,28 @@ func TestDockerPruneAndUpdateExcludeEachOther(t *testing.T) {
 		t.Fatalf("a restart needs no image: %d %s", rec.Code, rec.Body)
 	}
 }
+
+// Images share layers. Removing an unused one frees its size less what other
+// images keep, and the images together take LayersSize, not the sum of their
+// sizes -- as `docker system df` counts. A shared or in-use cache record does
+// not go with a prune either.
+func TestDockerDiskCountsSharedLayersOnce(t *testing.T) {
+	f, h := diskFixture(t)
+	f.df["LayersSize"] = 900 * mb
+	images := f.df["Images"].([]map[string]any)
+	images[1]["SharedSize"] = 300 * mb // sha256:old, dangling: 90 MB of its own
+	images[2]["SharedSize"] = 350 * mb // sha256:pg, unused: 29 MB of its own
+	f.df["BuildCache"] = []map[string]any{{"ID": "c1", "Size": 100 * mb}, {"ID": "c2", "Size": 200 * mb, "Shared": true}}
+	rec := httptest.NewRecorder()
+	newDockerTestRouter(h).ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/disk", nil))
+	var d dockerDiskView
+	_ = json.NewDecoder(rec.Body).Decode(&d)
+	tot := d.Totals
+	if tot.Images != 900*mb || tot.ImagesUnused != 119*mb || tot.Dangling != 90*mb {
+		t.Fatalf("images %d unused %d dangling %d (MB: %d %d %d)", tot.Images, tot.ImagesUnused, tot.Dangling,
+			tot.Images/mb, tot.ImagesUnused/mb, tot.Dangling/mb)
+	}
+	if tot.BuildCache != 300*mb || tot.Reclaimable != 119*mb+100*mb+171*mb {
+		t.Fatalf("build cache %d reclaimable %d MB", tot.BuildCache/mb, tot.Reclaimable/mb)
+	}
+}

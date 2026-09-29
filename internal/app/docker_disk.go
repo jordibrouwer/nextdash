@@ -32,10 +32,16 @@ by one, each named twice.
 const dockerDiskTimeout = 60 * time.Second
 
 type dockerDfResponse struct {
-	Images []struct {
+	// LayersSize is what the images take on disk, each shared layer once;
+	// the images' own sizes add those layers up again for every image.
+	LayersSize int64 `json:"LayersSize"`
+	Images     []struct {
 		ID       string   `json:"Id"`
 		RepoTags []string `json:"RepoTags"`
 		Size     int64    `json:"Size"`
+		// SharedSize is the part of Size in layers other images use too;
+		// -1 when the daemon did not work it out.
+		SharedSize int64 `json:"SharedSize"`
 	} `json:"Images"`
 	Volumes []struct {
 		Name      string `json:"Name"`
@@ -46,7 +52,9 @@ type dockerDfResponse struct {
 		} `json:"UsageData"`
 	} `json:"Volumes"`
 	BuildCache []struct {
-		Size int64 `json:"Size"`
+		Size   int64 `json:"Size"`
+		Shared bool  `json:"Shared"`
+		InUse  bool  `json:"InUse"`
 	} `json:"BuildCache"`
 }
 
@@ -132,14 +140,25 @@ func buildDockerDiskView(df dockerDfResponse, list []dockerContainerSummary) doc
 		v.Images = append(v.Images, img)
 		v.Totals.Images += im.Size
 		if len(users) == 0 {
-			v.Totals.ImagesUnused += im.Size
+			// What removing it frees: its size less the layers other images
+			// keep, as `docker system df` counts it.
+			own := im.Size
+			if im.SharedSize > 0 {
+				own -= im.SharedSize
+			}
+			v.Totals.ImagesUnused += own
 			v.Totals.ImagesUnusedCount++
 			if img.Dangling {
-				v.Totals.Dangling += im.Size
+				v.Totals.Dangling += own
 				v.Totals.DanglingCount++
 			}
 		}
 	}
+	if df.LayersSize > 0 {
+		v.Totals.Images = df.LayersSize
+	}
+	v.Totals.ImagesUnused = max(v.Totals.ImagesUnused, 0)
+	v.Totals.Dangling = max(v.Totals.Dangling, 0)
 	for _, vol := range df.Volumes {
 		users := append([]string{}, volumeUsers[vol.Name]...)
 		sort.Strings(users)
@@ -154,11 +173,16 @@ func buildDockerDiskView(df dockerDfResponse, list []dockerContainerSummary) doc
 			v.Totals.VolumesUnusedCount++
 		}
 	}
+	cacheFree := int64(0)
 	for _, bc := range df.BuildCache {
 		v.Totals.BuildCache += bc.Size
 		v.Totals.BuildCacheCount++
+		// A shared record or one a build is using does not go with a prune.
+		if !bc.Shared && !bc.InUse {
+			cacheFree += bc.Size
+		}
 	}
-	v.Totals.Reclaimable = v.Totals.ImagesUnused + v.Totals.BuildCache + v.Totals.VolumesUnused
+	v.Totals.Reclaimable = v.Totals.ImagesUnused + cacheFree + v.Totals.VolumesUnused
 	sort.SliceStable(v.Images, func(i, j int) bool { return v.Images[i].Size > v.Images[j].Size })
 	sort.SliceStable(v.Volumes, func(i, j int) bool { return v.Volumes[i].Size > v.Volumes[j].Size })
 	return v
