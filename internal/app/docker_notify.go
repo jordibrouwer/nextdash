@@ -33,7 +33,8 @@ their own category.
 */
 
 const (
-	dockerNotifyExpectWindow = 10 * time.Second // a kill/stop or own action this close before a die makes it deliberate
+	dockerNotifyExpectWindow = 10 * time.Second // an own action ending this close before a die makes it deliberate
+	dockerNotifyStopWindow   = 5 * time.Minute  // a stop's kill this close before a die makes it deliberate: grace periods run long
 	dockerNotifyRestartGrace = 30 * time.Second // a start this soon after a die makes it a restart, not a stop
 	dockerNotifyLoopWindow   = 10 * time.Minute
 	dockerNotifyLoopCount    = 3
@@ -68,7 +69,7 @@ type containerWatch struct {
 type containerNotifier struct {
 	mu       sync.Mutex
 	watch    map[string]*containerWatch
-	expected map[string]time.Time
+	expected map[string]time.Time // until when a die is nextDash's own doing
 }
 
 func newContainerNotifier() *containerNotifier {
@@ -78,11 +79,22 @@ func newContainerNotifier() *containerNotifier {
 // dockerNotifications is the one notifier the watcher and the actions share.
 var dockerNotifications = newContainerNotifier()
 
-// expect marks a container nextDash is about to stop, restart or replace.
-func (n *containerNotifier) expect(name string, now time.Time) {
+// expect marks a container nextDash is stopping, restarting or replacing,
+// until the given time.
+func (n *containerNotifier) expect(name string, until time.Time) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-	n.expected[name] = now
+	n.expected[name] = until
+}
+
+// dockerStopSignal: a kill that ends the container -- the SIGTERM of a stop,
+// the SIGKILL after its grace period -- rather than a HUP asking it to reload.
+func dockerStopSignal(sig string) bool {
+	switch strings.TrimPrefix(strings.ToUpper(sig), "SIG") {
+	case "", "15", "TERM", "9", "KILL":
+		return true
+	}
+	return false
 }
 
 func (n *containerNotifier) get(name string) *containerWatch {
@@ -135,13 +147,13 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 	var out []monitorNotification
 
 	switch action := ev.Action; {
-	case action == "kill" || action == "stop":
+	case action == "stop" || (action == "kill" && dockerStopSignal(ev.Actor.Attributes["signal"])):
 		w.lastKill = now
 	case action == "oom":
 		w.oomAt = now
 	case action == "die":
-		deliberate := now.Sub(w.lastKill) <= dockerNotifyExpectWindow
-		if at, ok := n.expected[name]; ok && now.Sub(at) <= dockerNotifyExpectWindow {
+		deliberate := now.Sub(w.lastKill) <= dockerNotifyStopWindow
+		if until, ok := n.expected[name]; ok && !now.After(until) {
 			deliberate = true
 		}
 		if deliberate {
@@ -152,6 +164,8 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 		w.dieCode = ev.Actor.Attributes["exitCode"]
 		w.dieOOM = !w.oomAt.IsZero() && now.Sub(w.oomAt) <= dockerNotifyExpectWindow
 	case action == "start":
+		// The stop is over; a die from here on is not part of it.
+		w.lastKill = time.Time{}
 		if w.toldStop {
 			w.toldStop = false
 			if ok {
@@ -206,7 +220,10 @@ func (n *containerNotifier) tick(now time.Time, allowed func(name, id string) bo
 	for name, w := range n.watch {
 		ok := allowed(name, w.id)
 		if !w.dieAt.IsZero() && now.Sub(w.dieAt) > dockerNotifyRestartGrace {
-			if ok && !w.toldStop {
+			// Exit 0 is a container that finished its work: a one-shot job,
+			// not a crash. Only a loop of them is told.
+			finished := w.dieCode == "0" && !w.dieOOM
+			if ok && !w.toldStop && !finished {
 				w.toldStop = true
 				out = append(out, containerNotice("down", name, name+" stopped unexpectedly", exitDetail(w.dieCode, w.dieOOM), now))
 			}
@@ -220,8 +237,8 @@ func (n *containerNotifier) tick(now time.Time, allowed func(name, id string) bo
 			}
 		}
 	}
-	for name, at := range n.expected {
-		if now.Sub(at) > dockerNotifyExpectWindow {
+	for name, until := range n.expected {
+		if now.After(until) {
 			delete(n.expected, name)
 		}
 	}

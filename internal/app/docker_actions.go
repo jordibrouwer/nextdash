@@ -100,9 +100,11 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		dockerRefuse(w, http.StatusConflict, "busy")
 		return
 	}
-	// What nextDash stops or replaces itself is not a crash to tell about.
+	// What nextDash stops or replaces itself is not a crash to tell about --
+	// for as long as the action runs, and a moment after for the late events.
 	if action != "start" && action != "unpause" {
-		dockerNotifications.expect(c.name(), time.Now())
+		dockerNotifications.expect(c.name(), time.Now().Add(dockerActionTimeout))
+		defer func() { dockerNotifications.expect(c.name(), time.Now().Add(dockerNotifyExpectWindow)) }()
 	}
 
 	// The server's WriteTimeout is a minute; pulling a large image is not. The

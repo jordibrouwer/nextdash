@@ -76,7 +76,7 @@ func TestContainerNotifierQuietCases(t *testing.T) {
 	r := newNotifierRun(t)
 	r.ev("kill", "web", "signal", "15").at(time.Second).ev("die", "web", "exitCode", "0").ev("stop", "web")
 	r.at(time.Minute).tick()
-	r.n.expect("api", r.now)
+	r.n.expect("api", r.now.Add(dockerNotifyExpectWindow))
 	r.at(2*time.Second).ev("die", "api", "exitCode", "0").at(time.Minute).tick()
 	r.ev("die", "db", "exitCode", "1").at(3*time.Second).ev("start", "db").at(time.Minute).tick()
 	r.want()
@@ -188,4 +188,23 @@ func TestDockerNotifyDefaultsOnForAnOlderSettingsFile(t *testing.T) {
 	if h2.store.GetSettings().DockerNotify {
 		t.Fatal("an explicit off must stay off")
 	}
+}
+
+// A stop whose grace period runs long is still a stop, and an action of
+// nextDash's own covers its whole length; a reload signal is not a stop, and a
+// container that exits 0 finished its work.
+func TestContainerNotifierLongStopsAndFinishedJobs(t *testing.T) {
+	r := newNotifierRun(t)
+	r.ev("kill", "pg", "signal", "15").at(40*time.Second).ev("die", "pg", "exitCode", "0").ev("stop", "pg")
+	r.n.expect("sonarr", r.now.Add(dockerActionTimeout))
+	r.at(3*time.Minute).ev("die", "sonarr", "exitCode", "143")
+	r.ev("die", "job", "exitCode", "0").at(time.Minute).tick()
+	r.want()
+
+	r.ev("kill", "nginx", "signal", "1").at(20*time.Second).ev("die", "nginx", "exitCode", "1").at(time.Minute).tick()
+	r.want("nginx stopped unexpectedly")
+	// A kill before the last start belonged to an earlier stop.
+	r.ev("kill", "web", "signal", "15").ev("die", "web", "exitCode", "0").at(time.Second).ev("start", "web")
+	r.at(time.Minute).ev("die", "web", "exitCode", "1").at(time.Minute).tick()
+	r.want("nginx stopped unexpectedly", "web stopped unexpectedly")
 }
