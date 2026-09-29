@@ -1106,9 +1106,12 @@ class DockerDrawer {
         if (!releases.length) {
             const msg = document.createElement('p');
             msg.className = 'docker-changes-empty';
-            msg.textContent = data?.reason === 'rate-limited'
-                ? this.t('dockerChangesRateLimited', 'GitHub is limiting requests right now; try again later.')
-                : this.t('dockerNoChanges', 'No release notes found — the links below go to the project.');
+            const reasons = {
+                'rate-limited': ['dockerChangesRateLimited', 'GitHub is limiting requests right now; try again later.'],
+                'auth-failed': ['dockerChangesAuthFailed', 'GitHub turned down the token set under Config → Containers; check or remove it there.'],
+            };
+            const [key, fallback] = reasons[data?.reason] || ['dockerNoChanges', 'No release notes found — the links below go to the project.'];
+            msg.textContent = this.t(key, fallback);
             list.appendChild(msg);
         }
 

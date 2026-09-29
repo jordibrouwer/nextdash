@@ -55,7 +55,7 @@ type dockerChangelog struct {
 	Current  string                `json:"current,omitempty"`
 	Releases []dockerGithubRelease `json:"releases"`
 	Links    []dockerLink          `json:"links"`
-	Reason   string                `json:"reason,omitempty"` // "no-source" | "rate-limited" | "unreachable"
+	Reason   string                `json:"reason,omitempty"` // "no-source" | "rate-limited" | "auth-failed" | "unreachable"
 }
 
 func githubRepoFromSource(src string) (string, string, bool) {
@@ -150,11 +150,14 @@ func fetchGithubReleasesLive(ctx context.Context, owner, repo, current string) (
 		return nil, "unreachable"
 	}
 	defer resp.Body.Close()
-	switch resp.StatusCode {
-	case http.StatusForbidden, http.StatusTooManyRequests:
+	switch {
+	case resp.StatusCode == http.StatusTooManyRequests,
+		resp.StatusCode == http.StatusForbidden && resp.Header.Get("X-RateLimit-Remaining") == "0":
 		return nil, "rate-limited"
-	case http.StatusOK:
-	default:
+	case resp.StatusCode == http.StatusUnauthorized, resp.StatusCode == http.StatusForbidden:
+		// A token GitHub turns down: expired, revoked or mistyped.
+		return nil, "auth-failed"
+	case resp.StatusCode != http.StatusOK:
 		return nil, "unreachable"
 	}
 	var raw []githubReleaseRaw

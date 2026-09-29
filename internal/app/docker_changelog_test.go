@@ -60,7 +60,10 @@ func TestReleasesBetween(t *testing.T) {
 
 func TestChangelogRouteFallsBackToLinksOnRateLimit(t *testing.T) {
 	resetChangelogCache()
-	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(403) }))
+	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-RateLimit-Remaining", "0")
+		w.WriteHeader(403)
+	}))
 	defer gh.Close()
 	old := dockerGitHubBase
 	dockerGitHubBase = gh.URL
@@ -180,6 +183,19 @@ func changelogFor(t *testing.T, router http.Handler, name string) dockerChangelo
 	var cl dockerChangelog
 	_ = json.NewDecoder(rec.Body).Decode(&cl)
 	return cl
+}
+
+// A 403 with requests left is GitHub turning the token down, not a limit.
+func TestChangelogRouteNamesARefusedToken(t *testing.T) {
+	changelogGitHub(t, 403, map[string]string{"X-RateLimit-Remaining": "4999"}, `{"message":"Bad credentials"}`)
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "sonarr", Image: "linuxserver/sonarr:latest",
+		ImageID: "sha256:running", State: "running"})
+	f.images["sha256:running"] = fakeImage{ID: "sha256:running", Labels: map[string]string{
+		"org.opencontainers.image.source": "https://github.com/linuxserver/docker-sonarr"}}
+	if cl := changelogFor(t, newChangelogTestRouter(dockerTestHandlers(t)), "sonarr"); cl.Reason != "auth-failed" {
+		t.Fatalf("reason = %q, want auth-failed", cl.Reason)
+	}
 }
 
 // One repo, two containers: the one on a prerelease sees prereleases, the one
