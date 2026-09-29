@@ -68,6 +68,19 @@ test.describe('docker updates: skip, hold, history and rollback', () => {
     await expect.poll(() => state.calls).toContain('POST /containers/sonarr/rollback');
   });
 
+  test('a rollback that had to be undone says so as a rollback', async ({ page }) => {
+    const { section } = await openUpdates(page);
+    await page.route('**/api/docker/containers/sonarr/rollback', (route) => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ ok: true, update: { phase: 'rolled-back', failedStep: 'start' } }),
+    }));
+    await section.locator('[data-docker-rollback]').click();
+    await confirmDialog(page).getByRole('button', { name: /roll back/i }).click();
+    const note = page.locator('#app-notification.show');
+    await expect(note).toContainText('The rollback of sonarr failed at "start"');
+    await expect(note).not.toContainText('The update of');
+  });
+
   test('read-only shows the history but no choices or rollback', async ({ page }) => {
     const { section } = await openUpdates(page, { control: false });
     await expect(section.locator('[data-docker-update-history] li')).toHaveCount(1);

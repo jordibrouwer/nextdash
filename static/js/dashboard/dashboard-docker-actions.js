@@ -172,9 +172,12 @@
                     : this.t('dockerUpdateDone', '{name} is up to date.', { name }));
             }
             if (phase === 'rolled-back') {
-                this.notify(this.t('dockerUpdateRolledBack',
-                    'The update of {name} failed at "{step}"; the previous container is running again.',
-                    { name, step: body.update.failedStep || '?' }), 'error');
+                const step = body.update.failedStep || '?';
+                this.notify(action === 'rollback'
+                    ? this.t('dockerRollbackRolledBack',
+                        'The rollback of {name} failed at "{step}"; the container runs as before.', { name, step })
+                    : this.t('dockerUpdateRolledBack',
+                        'The update of {name} failed at "{step}"; the previous container is running again.', { name, step }), 'error');
             }
             await this.view.refreshContainers();
             this.view.drawerRefresh?.();
