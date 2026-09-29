@@ -30,11 +30,18 @@ type dockerImageUpdate struct {
 	RemoteDigest string `json:"remoteDigest,omitempty"`
 	LocalDigest  string `json:"localDigest,omitempty"`
 	CheckedAt    int64  `json:"checkedAt"`
+	// Held and SkippedDigest are filled from the store's choices when served
+	// (withChoices), never written per image.
+	Held          bool   `json:"held,omitempty"`
+	SkippedDigest string `json:"skippedDigest,omitempty"`
 }
 
 type dockerUpdateStore struct {
 	CheckedAt int64                         `json:"checkedAt"`
 	Images    map[string]*dockerImageUpdate `json:"images"` // keyed by the container's image reference
+	// The reader's choices, by image reference too (docker_update_history.go).
+	Held    map[string]bool   `json:"held,omitempty"`
+	Skipped map[string]string `json:"skipped,omitempty"` // the digest not to offer
 }
 
 // How often the scheduler looks at the clock. The interval itself is the
@@ -73,7 +80,7 @@ func readDockerUpdateStore() dockerUpdateStore {
 func (h *Handlers) dockerUpdateSnapshot() map[string]*dockerImageUpdate {
 	h.dockerUpdatesMu.Lock()
 	defer h.dockerUpdatesMu.Unlock()
-	return readDockerUpdateStore().Images
+	return readDockerUpdateStore().withChoices()
 }
 
 // localDigestFor finds the digest this image was pulled as for the same
@@ -123,6 +130,9 @@ func (h *Handlers) runDockerUpdateCheck(ctx context.Context) (dockerUpdateStore,
 
 	h.dockerUpdatesMu.Lock()
 	defer h.dockerUpdatesMu.Unlock()
+	// Read again under the lock: a skip or hold made while the check ran
+	// must not be lost to it.
+	carryDockerUpdateChoices(readDockerUpdateStore(), &next)
 	return next, writeIndentJSONFile(dockerUpdatesFilePath(), next)
 }
 
@@ -166,6 +176,7 @@ func (h *Handlers) DockerUpdatesHandler(w http.ResponseWriter, r *http.Request) 
 	h.dockerUpdatesMu.Lock()
 	store := readDockerUpdateStore()
 	h.dockerUpdatesMu.Unlock()
+	store.Images = store.withChoices()
 	writeJSON(w, store)
 }
 
@@ -235,7 +246,7 @@ func (h *Handlers) maybeRunDockerUpdateCheck() {
 		return
 	}
 	available := 0
-	for _, update := range store.Images {
+	for _, update := range store.withChoices() {
 		if update.Status == "available" {
 			available++
 		}
@@ -256,6 +267,8 @@ func (h *Handlers) markDockerImageCurrent(image string) {
 	}
 	entry.Status = "current"
 	entry.Reason = ""
+	// Up to date: a skip of an older digest means nothing any more.
+	delete(store.Skipped, image)
 	if entry.RemoteDigest != "" {
 		entry.LocalDigest = entry.RemoteDigest
 	}

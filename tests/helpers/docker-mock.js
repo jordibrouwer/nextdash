@@ -42,6 +42,22 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     }
     if (path === '/updates') return json({ checkedAt: Date.now() - 3 * 3600e3, images: {} });
     if (path === '/updates/check') return json({ checkedAt: Date.now(), images: {} });
+    // Skip and hold, applied to every container on the image as the server does.
+    if (path === '/updates/choice' && req.method() === 'POST') {
+      const { image, choice } = JSON.parse(req.postData() || '{}');
+      state.choices = [...(state.choices || []), { image, choice }];
+      state.containers.filter((x) => x.image === image).forEach((x) => {
+        const u = { ...(x.update || { status: 'current' }) };
+        const offered = u.status === 'available' || u.status === 'skipped' || u.status === 'held';
+        if (choice === 'skip') u.skippedDigest = 'sha256:r1';
+        if (choice === 'unskip') delete u.skippedDigest;
+        if (choice === 'hold') u.held = true;
+        if (choice === 'unhold') delete u.held;
+        if (offered) u.status = u.held ? 'held' : (u.skippedDigest ? 'skipped' : 'available');
+        x.update = u;
+      });
+      return json(state.containers.find((x) => x.image === image)?.update || {});
+    }
     const m = path.match(/^\/containers\/([^/]+)(?:\/(.+))?$/);
     const c = m && find(decodeURIComponent(m[1]));
     if (!c) return json({ reason: 'not-found' }, 404);
@@ -49,7 +65,7 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     if (req.method() === 'GET' && sub === '') return json({ ...c, startedAt: '2026-09-20T10:00:00Z', restartPolicy: 'unless-stopped',
       mounts: [{ type: 'bind', source: '/mnt/user/appdata/sonarr', destination: '/config', readOnly: false }],
       networks: [{ name: 'bridge', ip: '172.17.0.5' }], envNames: ['API_KEY', 'PUID'], version: '4.0.9',
-      source: 'https://github.com/linuxserver/docker-sonarr' });
+      source: 'https://github.com/linuxserver/docker-sonarr', updateHistory: c.updateHistory || [], rollback: c.rollback || undefined });
     if (sub.startsWith('env/')) return json({ name: sub.slice(4), value: 'secret-value' });
     if (sub === 'stats') return json({ cpuPercent: 3.2, memoryUsed: 262144000, memoryLimit: 8589934592 });
     if (sub === 'logs') return json({ lines: ['line one', 'line two'] });
@@ -73,6 +89,11 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
         state.containers = state.containers.filter((x) => x !== c); return json({ ok: true });
       }
       if (sub === 'update') { c.update = { status: 'current' }; return json({ ok: true, state: 'running', update: { phase: 'done' } }); }
+      if (sub === 'rollback') {
+        if (!c.rollback) return json({ reason: 'no-rollback' }, 409);
+        c.rollback = undefined;
+        return json({ ok: true, state: 'running', update: { phase: 'done' } });
+      }
     }
     return json({ reason: 'unknown' }, 404);
   });

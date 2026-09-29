@@ -1014,6 +1014,14 @@ class DashboardDocker {
             badge.textContent = this.t('dashboard.dockerUpdateBadge', 'update');
             nameCell.appendChild(badge);
         }
+        if (c.update?.held) {
+            const held = document.createElement('span');
+            held.setAttribute('data-docker-held-badge', '');
+            held.className = 'docker-badge docker-badge--held';
+            held.textContent = this.t('dashboard.dockerHeldBadge', 'held');
+            held.title = this.t('dashboard.dockerHeldHint', 'Updates are held for this image');
+            nameCell.appendChild(held);
+        }
         tr.appendChild(nameCell);
 
         const imageCell = document.createElement('td');

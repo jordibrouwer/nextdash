@@ -44,6 +44,7 @@ type fakeDocker struct {
 	// that call fail the way an old or locked-down daemon might.
 	networks     map[string]string
 	failNetworks bool
+	seq          int // creates so far, for unique ids
 }
 
 type fakeContainer struct {
@@ -244,6 +245,10 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 
+	case r.Method == "POST" && strings.HasPrefix(path, "/images/") && strings.HasSuffix(path, "/tag"):
+		f.handleTag(w, r, strings.TrimSuffix(strings.TrimPrefix(path, "/images/"), "/tag"))
+		return
+
 	case r.Method == "POST" && path == "/images/create":
 		f.handlePull(w, r)
 		return
@@ -327,6 +332,26 @@ func (f *fakeDocker) handleImageInspect(w http.ResponseWriter, ref string) {
 	writeJSONFake(w, http.StatusOK, map[string]any{
 		"Id": img.ID, "RepoDigests": img.RepoDigests, "Config": map[string]any{"Labels": img.Labels},
 	})
+}
+
+// handleTag points repo:tag at an image named by reference or id.
+func (f *fakeDocker) handleTag(w http.ResponseWriter, r *http.Request, ref string) {
+	f.record("POST", "/images/"+ref+"/tag?"+r.URL.RawQuery)
+	img, ok := f.images[ref]
+	if !ok {
+		for _, candidate := range f.images {
+			if candidate.ID == ref {
+				img, ok = candidate, true
+				break
+			}
+		}
+	}
+	if !ok {
+		writeJSONFake(w, http.StatusNotFound, map[string]string{"message": "no such image"})
+		return
+	}
+	f.images[r.URL.Query().Get("repo")+":"+r.URL.Query().Get("tag")] = img
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (f *fakeDocker) handleAction(w http.ResponseWriter, path string) {
@@ -418,7 +443,11 @@ func (f *fakeDocker) handleCreate(w http.ResponseWriter, r *http.Request) {
 		} `json:"NetworkingConfig"`
 	}
 	_ = json.NewDecoder(r.Body).Decode(&body)
-	id := name + strings.Repeat("0", 64-len(name))
+	// Unique per create: a second recreate under the same name (an update,
+	// then its rollback) must not reuse the first one's id.
+	f.seq++
+	base := fmt.Sprintf("%s%d", name, f.seq)
+	id := base + strings.Repeat("0", max(0, 64-len(base)))
 	if len(id) > 64 {
 		id = id[:64]
 	}
@@ -443,6 +472,11 @@ func (f *fakeDocker) handlePull(w http.ResponseWriter, r *http.Request) {
 	}
 	f.record("POST", "/images/create?fromImage="+repo+"&tag="+tag)
 	if next, ok := f.images[ref+"@new"]; ok {
+		// The image the tag leaves behind stays, untagged, as a real daemon
+		// keeps it until something prunes it: findable by id only.
+		if old, had := f.images[ref]; had && old.ID != next.ID {
+			f.images["<none>@"+old.ID] = old
+		}
 		f.images[ref] = next
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -549,6 +583,7 @@ func newDockerTestRouter(h *Handlers) http.Handler {
 	r.HandleFunc("/api/docker/updates", h.DockerUpdatesHandler).Methods("GET")
 	r.HandleFunc("/api/docker/github-token", h.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")
 	r.HandleFunc("/api/docker/updates/check", h.DockerUpdatesCheckHandler).Methods("POST")
+	r.HandleFunc("/api/docker/updates/choice", h.DockerUpdateChoiceHandler).Methods("POST")
 	r.HandleFunc("/api/docker/containers/{id}/{action}", h.DockerActionHandler).Methods("POST")
 	return r
 }

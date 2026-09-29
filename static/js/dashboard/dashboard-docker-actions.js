@@ -36,6 +36,7 @@
                 unpause: ['dockerActionUnpause', 'Resume'],
                 update: ['dockerActionUpdate', 'Update'],
                 remove: ['dockerActionRemove', 'Remove'],
+                rollback: ['dockerActionRollback', 'Roll back'],
             };
             const [key, fallback] = labels[action] || [action, action];
             return this.t(key, fallback);
@@ -123,8 +124,13 @@
         async send(action, container) {
             const name = container.name;
             let phaseTimer = null;
-            const overlay = action === 'update' ? window.ProgressOverlay : null;
-            this.view.setBusy(name, action === 'update' ? 'pulling' : action);
+            const overlay = action === 'update' || action === 'rollback' ? window.ProgressOverlay : null;
+            this.view.setBusy(name, { update: 'pulling', rollback: 'recreating' }[action] || action);
+            if (action === 'rollback') {
+                overlay?.show?.(
+                    this.t('dockerRollingBackTitle', 'Rolling back {name}', { name }),
+                    this.t('dockerPhaseRecreatingLong', 'Recreating the container with the same settings…'));
+            }
             if (action === 'update') {
                 // A pull can take minutes; the row alone is easy to miss, so the
                 // overlay says what is happening, as it does for other long work.
@@ -160,6 +166,7 @@
             const phase = body?.update?.phase;
             if (overlay) {
                 if (phase === 'rolled-back') overlay.hide?.();
+                else if (action === 'rollback') overlay.finish?.(this.t('dockerRollbackDone', '{name} runs the previous image again.', { name }));
                 else overlay.finish?.(phase === 'already-current'
                     ? this.t('dockerUpdateAlreadyCurrent', '{name} already runs the newest image.', { name })
                     : this.t('dockerUpdateDone', '{name} is up to date.', { name }));
@@ -192,6 +199,10 @@
                 'docker-self': ['dockerSelfNote', 'This container runs nextDash; update it from your Docker host.'],
                 busy: ['dockerBusy', 'Another action is still running on this container.'],
                 running: ['dockerRemoveRunning', 'Stop the container before removing it.'],
+                'no-rollback': ['dockerRollbackNone', 'There is no update to roll back.'],
+                'old-image-gone': ['dockerRollbackImageGone', 'The previous image is no longer on this host, so there is nothing to go back to.'],
+                'pinned-by-digest': ['dockerRollbackPinned', 'This container is pinned to an image digest; roll it back from your Docker host.'],
+                'nothing-to-skip': ['dockerSkipNothing', 'There is no update on offer to skip.'],
             };
             const entry = messages[reason];
             const text = entry
@@ -201,9 +212,63 @@
             await this.view.refreshContainers();
         }
 
+        /**
+         * Puts a container back on the image its last update replaced, after
+         * asking. Not one of allowed(): the drawer offers it only when the
+         * server says the previous image is still there.
+         */
+        async rollback(container, offer) {
+            if (!container || this.view.status?.control !== true || container.self) return { ok: false };
+            if (this.view.busy.has(container.name)) {
+                this.notify(this.t('dockerBusy', 'Another action is still running on this container.'), 'error');
+                return { ok: false };
+            }
+            const target = offer?.toVersion || String(offer?.toImageId || '').replace(/^sha256:/, '').slice(0, 12);
+            const message = this.t('dockerConfirmRollbackBody',
+                'Put {name} back on {version}? The container is recreated with the same settings, and the version it leaves is skipped.',
+                { name: container.name, version: target });
+            const modal = window.AppModal;
+            const ok = typeof modal?.confirm === 'function'
+                ? await modal.confirm({
+                    title: this.t('dockerConfirmRollbackTitle', 'Roll back container'),
+                    message,
+                    confirmText: this.label('rollback'),
+                    cancelText: this.t('dockerCancel', 'Cancel'),
+                })
+                : window.confirm(message);
+            if (!ok) return { ok: false };
+            return this.send('rollback', container);
+        }
+
+        /** Skip the update on offer, hold updates, or undo either, for the container's image. */
+        async choose(container, choice) {
+            let res = null;
+            let body = null;
+            try {
+                res = await window.nextDashFetch('/api/docker/updates/choice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: container.image, choice }),
+                });
+                body = await res.json().catch(() => null);
+            } catch {
+                res = null;
+            }
+            if (!res || !res.ok) {
+                await this.explain(res, body);
+                return { ok: false };
+            }
+            window.DockerSearchIndex?.invalidate?.();
+            await this.view.refreshContainers();
+            this.view.drawerRefresh?.();
+            return { ok: true };
+        }
+
         /** One action over a selection: stop and update ask once, listing the names. */
         async runBulk(action, containers) {
-            const targets = containers.filter((c) => this.allowed(c).includes(action));
+            // An update of a selection leaves out what the reader skipped or held.
+            const targets = containers.filter((c) => this.allowed(c).includes(action)
+                && !(action === 'update' && ['skipped', 'held'].includes(c.update?.status)));
             if (!targets.length) return;
             if (action === 'stop' || action === 'update') {
                 const names = targets.map((c) => c.name).join(', ');

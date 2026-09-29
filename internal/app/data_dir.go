@@ -23,6 +23,10 @@ func dockerUpdatesFilePath() string {
 	return filepath.Join(ResolveDataDir(), "docker-updates.json")
 }
 
+func dockerUpdateHistoryFilePath() string {
+	return filepath.Join(ResolveDataDir(), "docker-update-history.json")
+}
+
 func healthCacheFilePath() string {
 	return filepath.Join(ResolveDataDir(), "health-cache.json")
 }

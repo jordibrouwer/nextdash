@@ -378,6 +378,10 @@ type dockerViewDetail struct {
 	EnvNames      []string            `json:"envNames"`
 	Version       string              `json:"version,omitempty"`
 	Source        string              `json:"source,omitempty"`
+	// What updates did to this container, newest first, and what a rollback
+	// would go back to while the previous image is still on the host.
+	UpdateHistory []dockerUpdateHistoryEntry `json:"updateHistory"`
+	Rollback      *dockerRollbackOffer       `json:"rollback,omitempty"`
 }
 
 func (h *Handlers) DockerContainerDetailHandler(w http.ResponseWriter, r *http.Request) {
@@ -419,6 +423,8 @@ func (h *Handlers) DockerContainerDetailHandler(w http.ResponseWriter, r *http.R
 		d.Version = img.Config.Labels["org.opencontainers.image.version"]
 		d.Source = img.Config.Labels["org.opencontainers.image.source"]
 	}
+	d.UpdateHistory = dockerUpdateHistoryFor(c.name())
+	d.Rollback = dockerRollbackOfferFor(r.Context(), api, d.UpdateHistory, in.Image)
 	if d.Mounts == nil {
 		d.Mounts = []dockerViewMount{}
 	}

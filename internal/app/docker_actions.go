@@ -31,7 +31,7 @@ var dockerSimpleActions = map[string]bool{
 // What the own container refuses: each of these stops or replaces the process
 // answering the request.
 var dockerSelfBlocked = map[string]bool{
-	"stop": true, "pause": true, "restart": true, "remove": true, "update": true,
+	"stop": true, "pause": true, "restart": true, "remove": true, "update": true, "rollback": true,
 }
 
 // Long enough for a stop to wait out a container's grace period and for an
@@ -61,7 +61,7 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	action := mux.Vars(r)["action"]
-	if !dockerSimpleActions[action] && action != "remove" && action != "update" {
+	if !dockerSimpleActions[action] && action != "remove" && action != "update" && action != "rollback" {
 		dockerRefuse(w, http.StatusNotFound, "unknown-action")
 		return
 	}
@@ -110,6 +110,13 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		if err == nil && (outcome.Phase == "done" || outcome.Phase == "already-current") {
 			h.markDockerImageCurrent(c.Image)
 		}
+		if err == nil && outcome.Phase == "done" {
+			h.recordDockerUpdate(ctx, api, "update", name, c.Image, outcome.OldImageID, outcome.NewImageID)
+		}
+	case action == "rollback":
+		var outcome dockerRecreateResult
+		outcome, err = h.dockerRollbackUpdate(ctx, api, c)
+		result["update"] = outcome
 	}
 
 	logActivity(activityCategoryMutate, "docker."+action, map[string]any{
@@ -117,6 +124,11 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		"ok":        err == nil,
 	}, "docker "+action+" "+name)
 
+	var refusal *dockerRefusalError
+	if errors.As(err, &refusal) {
+		dockerRefuse(w, refusal.Code, refusal.Reason)
+		return
+	}
 	if err != nil {
 		logWarn(logComponentMutate, "docker %s %s failed: %v", action, name, err)
 		if outcome, ok := result["update"].(dockerRecreateResult); ok && outcome.FailedStep != "" {

@@ -61,7 +61,14 @@ func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerC
 		res.Phase = "already-current"
 		return res, nil
 	}
+	return h.dockerRecreateOn(ctx, api, c, in, ref, res)
+}
 
+// dockerRecreateOn swaps the container for a new one made from ref, which
+// already names the image to run (pulled for an update, tagged back for a
+// rollback): stop, rename out of the way, create, reconnect, start, remove.
+func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c dockerContainerSummary, in dockerInspect,
+	ref string, res dockerRecreateResult) (dockerRecreateResult, error) {
 	var config map[string]any
 	var hostConfig map[string]any
 	if err := json.Unmarshal(in.raw.Config, &config); err != nil || config == nil {
@@ -140,7 +147,7 @@ func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerC
 	if err := api.remove(ctx, c.ID); err != nil {
 		logWarn(logComponentMutate, "updated %s, but the previous container %s could not be removed: %v", name, oldName, err)
 	}
-	logInfo(logComponentMutate, "updated %s to %s", name, shortImageID(img.ID))
+	logInfo(logComponentMutate, "recreated %s on %s", name, shortImageID(res.NewImageID))
 	res.Phase = "done"
 	res.ContainerID = newID
 	return res, nil

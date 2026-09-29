@@ -11,7 +11,7 @@
 
 const DOCKER_SECTIONS_KEY = 'nextdash.docker.sections';
 const DOCKER_SECTIONS_DEFAULT = ['overview'];
-const DOCKER_SECTION_KEYS = ['overview', 'health', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
+const DOCKER_SECTION_KEYS = ['overview', 'health', 'updates', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
 
 /** fetch() that never throws and answers null on anything but a 2xx JSON body. */
 async function dockerDrawerFetchJSON(url, init) {
@@ -254,6 +254,7 @@ class DockerDrawer {
             ${pane('overview', `${summaryBlock}${L.accList([
                 acc('overview', this.t('dockerSectionDetails', 'Details'), true),
                 acc('health', this.t('dockerSectionHealth', 'Health')),
+                acc('updates', this.t('dockerSectionUpdates', 'Updates')),
                 acc('network', this.t('dockerSectionNetwork', 'Network')),
                 acc('custom', this.t('dockerSectionCustom', 'Custom')),
                 acc('volumes', this.t('dockerSectionVolumes', 'Volumes')),
@@ -353,6 +354,7 @@ class DockerDrawer {
         this._renderVolumes(els.sections.volumes, detail);
         this._renderEnv(els.sections.env, detail);
         this._showHealth(Boolean(detail?.health));
+        this._renderUpdates(els.sections.updates, detail);
 
         const pill = this.base.panel?.querySelector('[data-docker-state]');
         if (pill && detail?.state) pill.textContent = detail.state;
@@ -771,6 +773,100 @@ class DockerDrawer {
         const data = await dockerDrawerFetchJSONAuth(`/api/docker/containers/${encodeURIComponent(name)}/logs?tail=${this.logLines()}`);
         if (name !== this._name || !this._els?.logsEl) return;
         this._els.logsEl.textContent = Array.isArray(data?.lines) ? data.lines.join('\n') : '';
+    }
+
+    /* ── Updates ───────────────────────────────────────────────────────── */
+
+    /*
+     * Where the container's image stands, the reader's say over it (skip the
+     * version on offer, hold updates), what updates did, and a way back from
+     * the last one while its previous image is still on the host.
+     */
+    _renderUpdates(body, detail) {
+        if (!body || !detail) return;
+        body.replaceChildren();
+        const u = detail.update || {};
+        const control = this.view.status?.control === true && !detail.self;
+        const actions = this.view.actions;
+
+        const status = document.createElement('p');
+        status.className = 'docker-updates-status';
+        status.setAttribute('data-docker-updates-status', '');
+        const texts = {
+            available: this.t('dockerUpdatesAvailable', 'A newer image is available.'),
+            skipped: this.t('dockerUpdatesSkipped', 'A newer image is available; this version is skipped.'),
+            held: this.t('dockerUpdatesHeld', 'A newer image is available; updates are held.'),
+            current: this.t('dockerUpdatesCurrent', 'Up to date.'),
+        };
+        let text = texts[u.status] || this.t('dockerUpdatesUnknown', 'Not known — no check has compared this image yet.');
+        if (u.held && u.status !== 'held') text += ` ${this.t('dockerUpdatesHeldNote', 'Updates are held.')}`;
+        status.textContent = text;
+        body.appendChild(status);
+
+        const summary = this._summary?.name === detail.name ? { ...this._summary, ...detail } : detail;
+        const button = (choice, label, primary = false) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = `config-btn config-btn--small${primary ? ' config-btn--primary' : ''}`;
+            b.setAttribute('data-docker-update-choice', choice);
+            b.textContent = label;
+            b.addEventListener('click', () => void actions?.choose(summary, choice));
+            return b;
+        };
+        if (control) {
+            const row = document.createElement('div');
+            row.className = 'docker-updates-actions';
+            if (u.status === 'available') row.appendChild(button('skip', this.t('dockerUpdateSkip', 'Skip this version')));
+            if (u.skippedDigest) row.appendChild(button('unskip', this.t('dockerUpdateUnskip', 'Undo skip')));
+            row.appendChild(u.held
+                ? button('unhold', this.t('dockerUpdateUnhold', 'Resume updates'))
+                : button('hold', this.t('dockerUpdateHold', 'Hold updates')));
+            if (detail.rollback) {
+                const target = detail.rollback.toVersion || String(detail.rollback.toImageId || '').replace(/^sha256:/, '').slice(0, 12);
+                const back = document.createElement('button');
+                back.type = 'button';
+                back.className = 'config-btn config-btn--small';
+                back.setAttribute('data-docker-rollback', '');
+                back.textContent = this.t('dockerRollbackTo', 'Roll back to {version}', { version: target });
+                back.title = this.t('dockerRollbackHint', 'Undo the update of {date}', { date: dockerFormatDate(detail.rollback.at / 1000) });
+                back.addEventListener('click', () => void actions?.rollback(summary, detail.rollback));
+                row.appendChild(back);
+            }
+            body.appendChild(row);
+        }
+
+        const history = Array.isArray(detail.updateHistory) ? detail.updateHistory : [];
+        const heading = document.createElement('p');
+        heading.className = 'docker-field-label';
+        heading.textContent = this.t('dockerUpdateHistory', 'History');
+        body.appendChild(heading);
+        if (!history.length) {
+            const none = document.createElement('p');
+            none.className = 'docker-changes-empty';
+            none.textContent = this.t('dockerUpdateHistoryNone', 'No updates from here yet.');
+            body.appendChild(none);
+            return;
+        }
+        const short = (id) => String(id || '').replace(/^sha256:/, '').slice(0, 12);
+        const list = document.createElement('ul');
+        list.className = 'docker-update-history';
+        list.setAttribute('data-docker-update-history', '');
+        history.forEach((e) => {
+            const li = document.createElement('li');
+            li.setAttribute('data-kind', e.kind);
+            const what = document.createElement('span');
+            what.className = 'docker-update-history-what';
+            const verb = e.kind === 'rollback'
+                ? this.t('dockerUpdateHistoryRolledBack', 'Rolled back')
+                : this.t('dockerUpdateHistoryUpdated', 'Updated');
+            what.textContent = `${verb} ${e.fromVersion || short(e.fromImageId)} → ${e.toVersion || short(e.toImageId)}`;
+            const when = document.createElement('span');
+            when.className = 'docker-health-when';
+            when.textContent = dockerFormatDate(e.at / 1000);
+            li.append(what, when);
+            list.appendChild(li);
+        });
+        body.appendChild(list);
     }
 
     /* ── Health ────────────────────────────────────────────────────────── */

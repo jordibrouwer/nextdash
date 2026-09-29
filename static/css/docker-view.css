@@ -401,6 +401,45 @@
     white-space: pre-wrap;
 }
 
+/* Held: quieter than the update badge -- a choice, not news. */
+.docker-badge--held {
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border-primary);
+}
+
+/* Updates: where the image stands, the choices, then the history. */
+.docker-updates-status {
+    margin: 0 0 var(--space-2, 0.5rem);
+}
+
+.docker-updates-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.docker-update-history {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    margin: var(--space-1, 0.25rem) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-update-history li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-update-history li[data-kind="rollback"] .docker-update-history-what {
+    color: var(--accent-warning, #cb4);
+}
+
 /* Health: the command, then the last checks, newest first; a failing
    check's mark takes the error colour. */
 .docker-health-command {
