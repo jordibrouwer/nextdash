@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — clicking a category in Statistics → Collection opened an empty Bookmarks list.** The row passed the category's name as the filter, but bookmarks carry the category's id; it now passes the page-and-id key, and no longer also types the name into the search.
+
 - **fix — three things in the Containers side panel.** After a refused or failed action the list was re-read but the side panel kept the old state; it now refreshes too. The CPU and memory figures polled the daemon every two seconds even with the tab hidden; they now wait until it is visible. And their labels, CPU and Memory, now go through the translations.
 
 - **fix — the Container list widget opened `http://[IP]:…`, and a non-web address from a label reached the browser.** The widget used the raw web UI address; it now fills `[IP]` as the table does. And `webuiHref()`, which every web UI link goes through (table, side panel, row menu, search, widget), now returns nothing for an address that is not `http(s)://`, so a `javascript:` label set by an image is never opened.

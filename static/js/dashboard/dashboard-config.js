@@ -27009,6 +27009,7 @@ class DashboardConfig {
         // category you built and then never used.
         const categoryEffectiveness = [...perCategoryCount.entries()]
             .map(([id, n]) => ({
+                key: id,
                 label: catLabel(id),
                 count: n,
                 opens: perCategoryOpens.get(id) || 0,
@@ -27623,10 +27624,11 @@ class DashboardConfig {
                 this.bmPageFilter = '';
                 this.bmCategoryFilter = '';
                 this.bmTagFilter = kind === 'tag' ? [String(value).toLowerCase()] : [];
-                // A bookmark or a category names a row rather than a tag, so it
-                // arrives as the list's own search — the filter that reproduces
-                // "this row, in the list where I can act on it".
-                if (kind === 'bookmark' || kind === 'category') this.bmQuery = String(value);
+                // A bookmark names a row rather than a tag, so it arrives as the
+                // list's own search — the filter that reproduces "this row, in
+                // the list where I can act on it". A category arrives as its
+                // pageId::id key, which is what bookmarks carry, not its label.
+                if (kind === 'bookmark') this.bmQuery = String(value);
                 if (kind === 'category') this.bmCategoryFilter = String(value);
                 this.bmSelected.clear();
                 this.resetBookmarkVisibleLimit();

@@ -70,6 +70,24 @@ test.describe('statistics layout', () => {
         expect(await page.evaluate(() => window.dashboardInstance.config.statsTab)).toBe('usage');
     });
 
+    // A category's bookmarks carry its id, not its name: the row opens the
+    // list filtered to that category and shows what is in it.
+    test('a category row opens Bookmarks on that category', async ({ page }) => {
+        await openHash(page, '#config/stats/collection');
+        const cat = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const pageId = d.pages?.[0]?.id ?? 1;
+            const c = d.config.knownCategories(pageId)[0];
+            d.allBookmarks = d.allBookmarks.map((b, i) => (i < 2 ? { ...b, category: c.id } : b));
+            d.config.repaintStatsBody();
+            return c;
+        });
+        await page.locator('[data-stats-goto^="category:"]').first().click();
+        await expect(page.locator('#config-bm-list .config-bm-row')).toHaveCount(2);
+        expect(await page.evaluate(() => window.dashboardInstance.config.bmQuery)).toBe('');
+        expect(cat.id).toBeTruthy();
+    });
+
     test('the line under the tabs follows the open tab', async ({ page }) => {
         await openHash(page, '#config/stats');
         const note = () => page.locator('.config-tab-note').first().textContent();
