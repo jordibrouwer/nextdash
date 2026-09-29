@@ -221,21 +221,27 @@
         controls.setAttribute('role', 'group');
         controls.setAttribute('aria-label', sortGroupAriaLabel(dash, category));
 
+        // `short` is for the chip in front of the ⋯, where width is scarce;
+        // `full` is for the menu, which has room, and where "Rec" or "Top"
+        // left the reader guessing what they would get.
         const modes = [
-            { mode: 'az', short: 'A–Z', aria: 'dashboard.categorySortAZAria' },
+            { mode: 'az', short: 'A–Z', full: 'A–Z', aria: 'dashboard.categorySortAZAria' },
             {
                 mode: 'opened',
                 short: label(dash, 'dashboard.categorySortRecentShort', 'Rec'),
+                full: label(dash, 'dashboard.sortModeOpened', 'Last opened'),
                 aria: 'dashboard.categorySortRecentAria',
             },
             {
                 mode: 'added',
                 short: label(dash, 'dashboard.categorySortAddedShort', 'New'),
+                full: label(dash, 'dashboard.sortModeAdded', 'Newest'),
                 aria: 'dashboard.categorySortAddedAria',
             },
             {
                 mode: 'opens',
                 short: label(dash, 'dashboard.categorySortOpensShort', 'Top'),
+                full: label(dash, 'dashboard.sortModeOpens', 'Most opened'),
                 aria: 'dashboard.categorySortOpensAria',
             },
         ];
@@ -327,11 +333,11 @@
             menu.setAttribute('role', 'menu');
 
             const entries = [
-                { mode: 'order', short: label(dash, 'dashboard.categorySortManualShort', 'Manual'),
+                { mode: 'order', full: label(dash, 'dashboard.categorySortManualShort', 'Manual'),
                   aria: 'dashboard.categorySortManualAria' },
                 ...modes,
             ];
-            entries.forEach(({ mode, short, aria }) => {
+            entries.forEach(({ mode, full, aria }) => {
                 const item = document.createElement('button');
                 item.type = 'button';
                 item.className = 'category-sort-menu-item';
@@ -340,7 +346,7 @@
                 const on = sortMode === mode || (mode === 'order' && !active);
                 item.setAttribute('aria-checked', on ? 'true' : 'false');
                 if (on) item.classList.add('is-active');
-                item.textContent = short;
+                item.textContent = full;
                 const itemLabel = label(dash, aria, mode);
                 item.setAttribute('aria-label',
                     categoryName ? `${itemLabel} (${categoryName})` : itemLabel);

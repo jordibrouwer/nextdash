@@ -1674,6 +1674,7 @@
     "categorySortOpensAria": "Sort this category by how often bookmarks are opened",
     "sortModeAdded": "Newest",
     "sortModeOpens": "Most opened",
+    "sortModeOpened": "Last opened",
     "filterByOpened": "Filter by when it was last opened (never/today/week/month/year)",
     "filterByAdded": "Filter by when it was added (today/week/month/year)",
     "reorderNeedsManualOrder": "Switch this category to manual order to move bookmarks.",

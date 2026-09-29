@@ -1633,6 +1633,7 @@
     "categorySortOpensAria": "按书签的打开次数排序这个分类",
     "sortModeAdded": "最新",
     "sortModeOpens": "打开最多",
+    "sortModeOpened": "Last opened",
     "filterByOpened": "按最后打开时间过滤（never/today/week/month/year）",
     "filterByAdded": "按添加时间过滤（today/week/month/year）",
     "reorderNeedsManualOrder": "把这个分类切换为手动排序才能移动书签。",

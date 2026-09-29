@@ -37,7 +37,7 @@ test.describe('category sort menu', () => {
         await page.locator('.category-sort-menu-btn').first().click();
         const menu = page.locator('.category-sort-menu');
         await expect(menu).toBeVisible();
-        await expect(menu.locator('.category-sort-menu-item')).toHaveText(['Manual', 'A–Z', 'Rec', 'New', 'Top']);
+        await expect(menu.locator('.category-sort-menu-item')).toHaveText(['Manual', 'A–Z', 'Last opened', 'Newest', 'Most opened']);
         await expect(menu.locator('.category-sort-menu-item.is-active')).toHaveText('Manual');
     });
 

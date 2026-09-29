@@ -1633,6 +1633,7 @@
     "categorySortOpensAria": "Ordenar esta categoría por cuántas veces se abren los marcadores",
     "sortModeAdded": "Los más nuevos",
     "sortModeOpens": "Más abiertos",
+    "sortModeOpened": "Last opened",
     "filterByOpened": "Filtrar por cuándo se abrió por última vez (never/today/week/month/year)",
     "filterByAdded": "Filtrar por cuándo se añadió (today/week/month/year)",
     "reorderNeedsManualOrder": "Pon esta categoría en orden manual para mover marcadores.",

@@ -1633,6 +1633,7 @@
     "categorySortOpensAria": "Sorteer deze categorie op hoe vaak bladwijzers worden geopend",
     "sortModeAdded": "Nieuwste",
     "sortModeOpens": "Meest geopend",
+    "sortModeOpened": "Last opened",
     "filterByOpened": "Filter op wanneer laatst geopend (never/today/week/month/year)",
     "filterByAdded": "Filter op wanneer toegevoegd (today/week/month/year)",
     "reorderNeedsManualOrder": "Zet deze categorie op handmatige volgorde om bladwijzers te verplaatsen.",

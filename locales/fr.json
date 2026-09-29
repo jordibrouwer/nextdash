@@ -1633,6 +1633,7 @@
     "categorySortOpensAria": "Trier cette catégorie par fréquence d’ouverture",
     "sortModeAdded": "Plus récents",
     "sortModeOpens": "Plus ouverts",
+    "sortModeOpened": "Last opened",
     "filterByOpened": "Filtrer par dernière ouverture (never/today/week/month/year)",
     "filterByAdded": "Filtrer par date d'ajout (today/week/month/year)",
     "reorderNeedsManualOrder": "Passez cette catégorie en ordre manuel pour déplacer les favoris.",

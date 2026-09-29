@@ -1633,6 +1633,7 @@
     "categorySortOpensAria": "Diese Kategorie danach sortieren, wie oft Lesezeichen geöffnet werden",
     "sortModeAdded": "Neueste",
     "sortModeOpens": "Am häufigsten geöffnet",
+    "sortModeOpened": "Last opened",
     "filterByOpened": "Nach letztem Öffnen filtern (never/today/week/month/year)",
     "filterByAdded": "Nach Hinzufügedatum filtern (today/week/month/year)",
     "reorderNeedsManualOrder": "Stelle diese Kategorie auf manuelle Reihenfolge, um Lesezeichen zu verschieben.",
