@@ -294,6 +294,35 @@ test.describe('Logs → Server logs', () => {
         await expect(page.locator('[data-log-select="maxEntries"]')).toBeDisabled();
     });
 
+    // A slow poll that lands after a filter change is dropped, not appended:
+    // its lines were read under the old filter and from an older position.
+    test('a late answer from before a filter change is dropped', async ({ page }) => {
+        await openLogs(page, { capture: false });
+        const kept = await page.evaluate(async () => {
+            const cfg = window.dashboardInstance.config;
+            cfg.stopServerLogTimer();
+            const real = window.fetch;
+            const answer = (msg, nextSeq) => new Response(JSON.stringify({
+                entries: [{ seq: nextSeq - 1, level: 'info', msg, time: new Date().toISOString() }],
+                nextSeq, capacity: 2000, stats: null,
+            }), { headers: { 'Content-Type': 'application/json' } });
+            window.fetch = async (url, opts) => {
+                const u = String(url);
+                if (!u.startsWith('/api/logs')) return real(url, opts);
+                if (u.includes('q=err')) return answer('fresh', 50);
+                await new Promise((r) => setTimeout(r, 300));
+                return answer('stale', 40);
+            };
+            const slow = cfg.loadServerLog();
+            cfg.logQuery = 'err';
+            await cfg.loadServerLog({ reset: true });
+            await slow;
+            window.fetch = real;
+            return cfg._logLines.map((l) => l.msg);
+        });
+        expect(kept).toEqual(['fresh']);
+    });
+
     test('the refresh timer stops when the tab is left', async ({ page }) => {
         await openLogs(page);
         const hasTimer = () => page.evaluate(() => !!window.dashboardInstance.config._logTimer);

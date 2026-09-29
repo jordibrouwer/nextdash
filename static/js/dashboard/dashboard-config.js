@@ -6232,11 +6232,18 @@ class DashboardConfig {
      * a 2s interval costs one small empty response when nothing happens.
      */
     async loadServerLog({ reset = false } = {}) {
+        // A poll while one is on its way would ask from the same position and
+        // append the same lines twice; a reset goes ahead and outranks it.
+        if (!reset && this._logLoading) return;
         if (reset) {
             this._logSince = -1;
             this._logLines = [];
         }
         this._logLoading = true;
+        // Only the newest request's answer counts: one that lands after a
+        // filter change was read under the old filter, from an old position.
+        const request = (this._logRequest = (this._logRequest || 0) + 1);
+        const stale = () => request !== this._logRequest;
 
         const params = new URLSearchParams();
         if (this._logSince >= 0) params.set('since', String(this._logSince));
@@ -6247,6 +6254,7 @@ class DashboardConfig {
             const res = await fetch(`/api/logs?${params.toString()}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
+            if (stale()) return;
 
             const incoming = Array.isArray(data.entries) ? data.entries : [];
             this._logLines = this._logLines.concat(incoming);
@@ -6270,9 +6278,10 @@ class DashboardConfig {
             this._logStats = data.stats || null;
             this._logDropped = Number(data.dropped) || 0;
         } catch (err) {
+            if (stale()) return;
             this.notify(this.t('config.logLoadFailed', 'Could not read the server log.'), 'error');
         } finally {
-            this._logLoading = false;
+            if (!stale()) this._logLoading = false;
         }
         this.repaintServerLog();
     }
