@@ -140,16 +140,18 @@
         const rows = u.rowList();
         list.slice(0, perColumn * 2).forEach((c, index) => {
             const [detail, tone] = detailFor(dash, c, config.detail);
-            const toWebUI = config.click === 'webui' && c.webui;
+            // [IP] filled in and only an http(s) page, as the table links it.
+            const webui = window.DockerSearchIndex?.webuiHref(c.webui, c) || '';
+            const toWebUI = config.click === 'webui' && webui;
             const item = u.row(c.name, detail, tone, () => {
-                if (toWebUI) window.open(c.webui, '_blank', 'noopener');
+                if (toWebUI) window.open(webui, '_blank', 'noopener');
                 else openView(dash, c.name);
             }, {
                 dash,
                 labelKey: toWebUI ? 'widgetActionOpenWebUI' : 'widgetActionOpenContainer',
                 labelFallback: toWebUI ? 'Open WebUI' : 'Open in Containers',
                 // The other destination stays in the row's menu.
-                href: c.webui || undefined,
+                href: webui || undefined,
             });
             item.dataset.containerName = c.name;
             if (index >= perColumn) item.classList.add('dashboard-widget-wide-only');

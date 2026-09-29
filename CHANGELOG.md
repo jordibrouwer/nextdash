@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — the Container list widget opened `http://[IP]:…`, and a non-web address from a label reached the browser.** The widget used the raw web UI address; it now fills `[IP]` as the table does. And `webuiHref()`, which every web UI link goes through (table, side panel, row menu, search, widget), now returns nothing for an address that is not `http(s)://`, so a `javascript:` label set by an image is never opened.
+
 - **fix — the update badge could come back right after an update.** An update check reads the image states, asks the registries, then writes them all back; an update or rollback that finished in between was overwritten by the older reading, and the badge stayed until the next check. An entry newer than the check's start is now kept.
 
 - **fix — a stop, restart or remove could slip into a running container update.** Actions were locked by container id, but they resolve the container by name, and an update moves the name to a new id halfway; a second tab could then act on the half-made new container. The lock now holds the name as well.

@@ -106,7 +106,10 @@
      */
     function webuiHref(raw, container) {
         const value = String(raw || '').trim();
-        return value ? value.replace('[IP]', container?.lanIP || hostAddress()) : '';
+        const href = value ? value.replace('[IP]', container?.lanIP || hostAddress()) : '';
+        // A web UI is a web page. The address comes from a label an image can
+        // set, so anything else (javascript:, data:) is no link at all.
+        return /^https?:\/\//i.test(href) ? href : '';
     }
 
     /** A published port on the Docker host. */

@@ -225,6 +225,31 @@ test.describe('the container list widget', () => {
         expect(await page.evaluate(() => window.__opened)).toEqual([{ select: 'bazarr' }]);
     });
 
+    // A template address fills [IP] as the table does, and anything that is
+    // not an http(s) page is no web UI: the click goes to the view instead.
+    test('set to WebUI, [IP] is this host and a non-web address is not opened', async ({ page }) => {
+        await openDashboard(page);
+        await page.evaluate(() => {
+            window.__opened = [];
+            window.__tabs = [];
+            window.open = (url) => { window.__tabs.push(String(url)); return null; };
+            window.dashboardInstance.docker = {
+                ...window.dashboardInstance.docker,
+                openDockerView: (args) => { window.__opened.push(args); return Promise.resolve(true); },
+            };
+        });
+        const body = { available: true, containers: [
+            container('sonarr', { webui: 'http://[IP]:8989/' }),
+            container('trap', { webui: 'javascript:alert(1)' }),
+        ] };
+        await renderContainers(page, body, { sort: 'name', click: 'webui', rows: 20 });
+        const host = await page.evaluate(() => window.location.hostname);
+        await page.locator('.ct-probe .dashboard-widget-row', { hasText: 'sonarr' }).click();
+        await page.locator('.ct-probe .dashboard-widget-row', { hasText: 'trap' }).click();
+        expect(await page.evaluate(() => window.__tabs)).toEqual([`http://${host}:8989/`]);
+        expect(await page.evaluate(() => window.__opened)).toEqual([{ select: 'trap' }]);
+    });
+
     test('without a socket it says why, like the containers widget', async ({ page }) => {
         await openDashboard(page);
         const out = await renderContainers(page, { available: false, reason: 'no-docker-socket', containers: [] });
