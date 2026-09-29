@@ -158,7 +158,10 @@ test.describe('activating an entry reaches the control', () => {
 
         const landed = await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
-            const hit = c.filterSettingsJumpEntries('webhook').find((e) => e.kind === 'field');
+            // "webhook" also finds Containers' notices now; the uptime webhook
+            // is the Behavior field this test is about.
+            const hit = c.filterSettingsJumpEntries('webhook')
+                .find((e) => e.kind === 'field' && e.field === 'monitorNotifyUrl');
             await c.activateSettingsJumpEntry(hit);
             await new Promise((r) => setTimeout(r, 400));
             return {

@@ -362,6 +362,8 @@ The Containers view's big round: a live logs window, a Disk tab, notices when a 
 
 ### Docs
 
+- **fix — the settings-jump spec looks for the uptime webhook by field.** Searching "webhook" now also finds Containers' notices first, so the test landed in Config → Containers; it picks `monitorNotifyUrl` itself.
+
 - **fix — the wide Containers tile spec counts nine figures.** Updates, reclaimable space and incidents joined the tile's figures, and an unset list shows them all; `widget-wide-columns.spec.js` still expected six and failed CI's last e2e shard.
 
 - **fix — CI's gofmt check passes again.** Two Containers test files, `docker_fake_test.go` and `docker_recreate_test.go`, were committed unformatted, so the `go-test` job stopped at `make fmt-check` before `go vet` and the tests ran.
