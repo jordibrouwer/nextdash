@@ -362,6 +362,8 @@ The Containers view's big round: a live logs window, a Disk tab, notices when a 
 
 ### Docs
 
+- **fix — the wide Containers tile spec counts nine figures.** Updates, reclaimable space and incidents joined the tile's figures, and an unset list shows them all; `widget-wide-columns.spec.js` still expected six and failed CI's last e2e shard.
+
 - **fix — CI's gofmt check passes again.** Two Containers test files, `docker_fake_test.go` and `docker_recreate_test.go`, were committed unformatted, so the `go-test` job stopped at `make fmt-check` before `go vet` and the tests ran.
 
 - **docs — `static/data/whats-new/v1.15.2.json` and its index entry, and four Overview features.** `whats-new-stub.js` moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v306` and `DASHBOARD_RELEASE` to v1.15.2, so the window opens once for this release. Config → Overview and About → News & features gain *Several containers at once*, *A container's log, live*, *What the Docker disk holds* and *Told when a container goes down* (`since: v1.15.2`, in all six languages); their buttons open the Containers view or Config → Containers, which `openViewFromTile()` now reaches. `go generate` refreshed `asset_hashes_gen.go`.

@@ -178,7 +178,9 @@ test.describe('the system tiles drawn wide', () => {
     });
 
     /* Running and stopped are the pair; the rest of the figures, and the name
-       of what is failing, arrive with the width. */
+       of what is failing, arrive with the width -- all nine, updates,
+       reclaimable space and incidents included, since an unset figure list
+       means every figure. */
     test('containers show every figure, and what is failing, when wide', async ({ page }) => {
         await openDashboard(page);
         const narrow = await drawAt(page, 'docker', 300, DOCKER);
@@ -186,7 +188,7 @@ test.describe('the system tiles drawn wide', () => {
         expect(narrow.text).not.toContain('jellyfin');
 
         const wide = await drawAt(page, 'docker', 700, DOCKER);
-        expect(wide.stats).toBe(6);
+        expect(wide.stats).toBe(9);
         expect(wide.text).toContain('jellyfin');
     });
 
