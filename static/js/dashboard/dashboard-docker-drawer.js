@@ -233,7 +233,10 @@ class DockerDrawer {
             icon: `<span class="docker-drawer-icon" aria-hidden="true">${esc(String(summary.name || '?').charAt(0).toUpperCase())}</span>`,
             title: summary.name,
             badge: { text: summary.state || '', tone },
-            more: [{ action: 'copy-name', label: this.t('dockerCopyName', 'Copy name') }],
+            more: [
+                ...(summary.self ? [] : [{ action: 'mute', label: this._muteLabel(summary) }]),
+                { action: 'copy-name', label: this.t('dockerCopyName', 'Copy name') },
+            ],
             where,
             actions: webui ? [{ action: 'webui', label: this.t('dockerLinkWebUI', 'Open web UI'), primary: true }] : [],
         });
@@ -299,8 +302,26 @@ class DockerDrawer {
         panel.querySelector('.slp-badge')?.setAttribute('data-docker-state', '');
     }
 
+    _muteLabel(summary) {
+        return this.view.actions?.isMuted(summary)
+            ? this.t('dockerMenuUnmute', 'Unmute notifications')
+            : this.t('dockerMenuMute', 'Mute notifications');
+    }
+
+    async _toggleMute() {
+        const summary = this._summary || {};
+        if (!(await this.view.actions?.toggleMute(summary))) return;
+        const item = this.base.panel?.querySelector('[data-slp-action="mute"]');
+        if (item) item.textContent = this._muteLabel(summary);
+        if (this._detail) this._renderOverview(this._els?.sections.overview, this._detail);
+    }
+
     _act(action) {
         const summary = this._summary || {};
+        if (action === 'mute') {
+            void this._toggleMute();
+            return;
+        }
         if (action === 'webui') {
             const href = window.DockerSearchIndex.webuiHref(summary.webui, summary);
             if (href) window.open(href, '_blank', 'noopener,noreferrer');
@@ -385,6 +406,14 @@ class DockerDrawer {
         this._fieldRow(body, 'dockerFieldRestart', 'Restart policy', detail.restartPolicy);
         this._fieldRow(body, 'dockerFieldProject', 'Project', detail.composeProject);
         this._fieldRow(body, 'dockerFieldHealth', 'Health', detail.health);
+        if (!detail.self) {
+            const settings = this.view.dash?.settings || {};
+            const state = settings.dockerNotify === false
+                ? this.t('dockerNotifyOff', 'off')
+                : (this.view.actions?.isMuted(detail) ? this.t('dockerNotifyMuted', 'muted') : this.t('dockerNotifyOn', 'on'));
+            this._fieldRow(body, 'dockerFieldNotifications', 'Notifications', state);
+            body.lastElementChild?.querySelector('.docker-field-value')?.setAttribute('data-docker-notify-state', '');
+        }
         if (detail.source) {
             const link = document.createElement('a');
             link.href = detail.source;

@@ -39,9 +39,18 @@ func normalizeDockerSettings(s *Settings) {
 	if !dockerLogLineChoices[s.DockerLogLines] {
 		s.DockerLogLines = 200
 	}
+	s.DockerHiddenContainers = normalizeDockerNameList(s.DockerHiddenContainers)
+	s.DockerNotifyMuted = normalizeDockerNameList(s.DockerNotifyMuted)
+	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
+	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)
+}
+
+// normalizeDockerNameList trims, de-duplicates and caps a list of container
+// names, the hidden list and the muted list alike.
+func normalizeDockerNameList(names []string) []string {
 	seen := map[string]bool{}
 	kept := []string{}
-	for _, raw := range s.DockerHiddenContainers {
+	for _, raw := range names {
 		name := strings.TrimPrefix(strings.TrimSpace(raw), "/")
 		if name == "" || len(name) > dockerMaxHiddenNameLen || seen[name] {
 			continue
@@ -52,9 +61,7 @@ func normalizeDockerSettings(s *Settings) {
 			break
 		}
 	}
-	s.DockerHiddenContainers = kept
-	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
-	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)
+	return kept
 }
 
 // normalizeDockerHostAddress keeps a bare host -- a name or an IP, an IPv6

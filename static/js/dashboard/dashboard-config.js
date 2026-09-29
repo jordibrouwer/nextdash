@@ -3256,6 +3256,7 @@ class DashboardConfig {
         pushNotifyEnabled: ['push', 'notification', 'alert', 'browser'],
         pushNotifyMonitor: ['push', 'notification', 'downtime', 'uptime'],
         pushNotifyBackup: ['push', 'notification', 'backup'],
+        pushNotifyContainers: ['push', 'notification', 'docker', 'containers', 'crash', 'unhealthy'],
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
         feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
@@ -3280,6 +3281,7 @@ class DashboardConfig {
         dockerUpdateInterval: ['docker', 'containers', 'updates', 'registry', 'image'],
         dockerConfirmStopRestart: ['docker', 'containers', 'confirm', 'stop', 'restart'],
         dockerStatsHistory: ['docker', 'containers', 'cpu', 'memory', 'chart', 'history', 'resources'],
+        dockerNotify: ['docker', 'containers', 'notify', 'notification', 'alert', 'crash', 'restart', 'unhealthy', 'webhook'],
         dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
         statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
@@ -12070,6 +12072,7 @@ class DashboardConfig {
         dockerUpdateInterval: { def: 'off' },
         dockerConfirmStopRestart: { def: false },
         dockerStatsHistory: { def: true },
+        dockerNotify: { def: true },
         dockerHostAddress: { def: '' },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
@@ -12143,6 +12146,7 @@ class DashboardConfig {
         pushNotifyEnabled: { info: ['pushNotifyInfoTitle', 'pushNotifyInfoMessage'], def: false },
         pushNotifyMonitor: { hint: 'pushNotifyMonitorHint', def: false },
         pushNotifyBackup: { hint: 'pushNotifyBackupHint', def: false },
+        pushNotifyContainers: { def: false },
         pushNotifySubject: { hint: 'pushNotifySubjectHint', def: '' },
         // Toolbar & chrome
         showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
@@ -12452,6 +12456,15 @@ class DashboardConfig {
                 note: t('config.containersGroupSafetyNote', 'Update and remove always ask first. This adds stop and restart.'),
                 controls: [
                     bool('dockerConfirmStopRestart', 'config.dockerConfirmStopRestartLabel', 'Also confirm stop and restart'),
+                ],
+            },
+            {
+                section: 'containers',
+                tab: null,
+                title: t('config.containersGroupNotify', 'Notifications'),
+                note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on.'),
+                controls: [
+                    bool('dockerNotify', 'config.dockerNotifyLabel', 'Notify about containers'),
                 ],
             },
             // Config → Bookmarks had no settings at all; the list made these
@@ -13422,6 +13435,7 @@ class DashboardConfig {
                     bool('pushNotifyEnabled', 'config.pushNotifyEnabledLabel', 'Enable browser notifications'),
                     bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
                     bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
+                    bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
                     { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
                     { type: 'pushDevice' },
                 ],

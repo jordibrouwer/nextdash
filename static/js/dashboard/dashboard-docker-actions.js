@@ -240,6 +240,34 @@
             return this.send('rollback', container);
         }
 
+        /** Whether this container's notices are muted (Config → Containers → Notifications). */
+        isMuted(container) {
+            const muted = this.view.dash?.settings?.dockerNotifyMuted;
+            return Array.isArray(muted) && muted.includes(container?.name);
+        }
+
+        /** Mute or unmute a container's notices; a setting, so no control is needed. */
+        async toggleMute(container) {
+            const d = this.view.dash;
+            if (!d?.settings || !container?.name) return false;
+            const before = Array.isArray(d.settings.dockerNotifyMuted) ? d.settings.dockerNotifyMuted : [];
+            const muting = !before.includes(container.name);
+            d.settings.dockerNotifyMuted = muting
+                ? [...before, container.name]
+                : before.filter((n) => n !== container.name);
+            try {
+                await d.saveSettings();
+            } catch {
+                d.settings.dockerNotifyMuted = before;
+                this.notify(this.t('dockerMuteFailed', 'The change could not be saved.'), 'error');
+                return false;
+            }
+            this.notify(muting
+                ? this.t('dockerMuted', 'No more notices about {name}.', { name: container.name })
+                : this.t('dockerUnmuted', 'Notices about {name} are back on.', { name: container.name }), 'success');
+            return true;
+        }
+
         /** Skip the update on offer, hold updates, or undo either, for the container's image. */
         async choose(container, choice) {
             let res = null;
@@ -337,6 +365,11 @@
             list.push({ id: 'logs', label: this.t('dockerMenuLogs', 'Show logs'), icon: '≡', divider: true });
             const webui = this.webuiFor(c);
             if (webui) list.push({ id: 'webui', label: this.t('dockerLinkWebUI', 'Web UI'), icon: '↗' });
+            if (!c.self) {
+                list.push(actions?.isMuted(c)
+                    ? { id: 'mute', label: this.t('dockerMenuUnmute', 'Unmute notifications'), icon: '🔔' }
+                    : { id: 'mute', label: this.t('dockerMenuMute', 'Mute notifications'), icon: '🔕' });
+            }
             list.push({ id: 'copy-name', label: this.t('dockerMenuCopyName', 'Copy name'), icon: '⧉' });
             list.push({ id: 'copy-id', label: this.t('dockerMenuCopyId', 'Copy ID'), icon: '⧉' });
             if (allowed.includes('remove')) {
@@ -473,6 +506,9 @@
                 view.selectContainer(c.name, { openDrawer: true, section: 'logs' });
             } else if (id === 'webui') {
                 window.open(this.webuiFor(c), '_blank', 'noopener');
+            } else if (id === 'mute') {
+                await view.actions?.toggleMute(c);
+                view.drawerRefresh?.();
             } else if (id === 'copy-name' || id === 'copy-id') {
                 const text = id === 'copy-name' ? c.name : c.id;
                 try {

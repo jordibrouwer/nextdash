@@ -728,6 +728,11 @@
     display: none;
 }
 
+/* Config → Containers → Muted: said plainly when no notice would arrive. */
+.config-field-hint--warn {
+    color: var(--accent-warning, #cb4);
+}
+
 .config-docker-chip {
     display: inline-flex;
     align-items: center;

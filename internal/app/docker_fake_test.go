@@ -45,6 +45,9 @@ type fakeDocker struct {
 	networks     map[string]string
 	failNetworks bool
 	seq          int // creates so far, for unique ids
+	// events is what GET /events streams, one JSON object per line, before
+	// the stream is held open until the client lets go.
+	events []map[string]any
 }
 
 type fakeContainer struct {
@@ -243,6 +246,23 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 			c.Networks[strings.TrimSuffix(strings.TrimPrefix(path, "/networks/"), "/connect")] = body.EndpointConfig
 		}
 		w.WriteHeader(http.StatusOK)
+		return
+
+	case r.Method == "GET" && path == "/events":
+		f.record("GET", "/events")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		for _, ev := range f.events {
+			_ = json.NewEncoder(w).Encode(ev)
+		}
+		if fl, ok := w.(http.Flusher); ok {
+			fl.Flush()
+		}
+		// Held open like the daemon's stream, without holding every other
+		// request up behind it.
+		f.mu.Unlock()
+		<-r.Context().Done()
+		f.mu.Lock()
 		return
 
 	case r.Method == "POST" && strings.HasPrefix(path, "/images/") && strings.HasSuffix(path, "/tag"):

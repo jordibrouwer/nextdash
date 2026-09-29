@@ -71,6 +71,11 @@ type monitorNotification struct {
 	DownSince  int64 `json:"downSince,omitempty"`
 	DurationMs int64 `json:"durationMs,omitempty"`
 	DownChecks int   `json:"downChecks,omitempty"`
+	// Title and Source are set by notices that are not about a monitor (a
+	// container, docker_notify.go): the title is the sentence as written, and
+	// Source says where it came from for a receiver reading the raw JSON.
+	Title  string `json:"title,omitempty"`
+	Source string `json:"source,omitempty"`
 }
 
 // certExpiryNotifications turns crossed thresholds into notifications, reusing
@@ -327,7 +332,13 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 	// either can be configured without the other, so this runs before the webhook
 	// target check rather than inside it.
 	h.pushMonitorNotifications(ctx, notifications)
+	h.postMonitorTarget(ctx, notifications)
+}
 
+// postMonitorTarget sends notifications to the configured alert webhook, if
+// there is one. Shared by monitors and containers, so both honour the same
+// preset, the same address rules and the same timeout.
+func (h *Handlers) postMonitorTarget(ctx context.Context, notifications []monitorNotification) {
 	settings := h.store.GetSettings()
 	target, configured := monitorNotifyTarget(settings)
 	if !configured {
@@ -529,6 +540,9 @@ func formatOutageDuration(ms int64) string {
 }
 
 func monitorNotificationTitle(n monitorNotification) string {
+	if n.Title != "" {
+		return n.Title
+	}
 	name := strings.TrimSpace(n.Name)
 	if name == "" {
 		name = n.URL

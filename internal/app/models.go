@@ -794,6 +794,11 @@ type Settings struct {
 	// to, for when the dashboard is opened under a name that is not the Docker
 	// host's (a reverse proxy, a tunnel). Empty uses the browser's host.
 	DockerHostAddress string `json:"dockerHostAddress,omitempty"`
+	// DockerNotify tells when a container stops unexpectedly, keeps
+	// restarting or turns unhealthy, through the Health webhook and browser
+	// push (docker_notify.go); DockerNotifyMuted names the containers left out.
+	DockerNotify      bool     `json:"dockerNotify"`
+	DockerNotifyMuted []string `json:"dockerNotifyMuted,omitempty"`
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
 	// feed can then say when it has published something since you last opened
 	// it. Off by default because it is the only thing here that reaches out to
@@ -878,6 +883,7 @@ type Settings struct {
 	PushNotifySubject    string                `json:"pushNotifySubject,omitempty"`    // VAPID contact (mailto: or https:) sent to push services
 	PushNotifyMonitor    bool                  `json:"pushNotifyMonitor"`              // Push when a monitored bookmark goes down/recovers
 	PushNotifyBackup     bool                  `json:"pushNotifyBackup"`               // Push when an automatic backup succeeds or fails
+	PushNotifyContainers bool                  `json:"pushNotifyContainers"`           // Push when a container stops, keeps restarting or turns unhealthy
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	DiscoverabilityState *DiscoverabilityState `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
@@ -1686,6 +1692,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
 			DockerStatsHistory:             true,
+			DockerNotify:                   true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -4022,6 +4029,7 @@ func (fs *FileStore) GetSettings() Settings {
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
 			DockerStatsHistory:              true,
+			DockerNotify:                    true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -4693,6 +4701,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["dockerStatsHistory"]; !ok {
 			settings.DockerStatsHistory = true
+		}
+		if _, ok := rawSettings["dockerNotify"]; !ok {
+			settings.DockerNotify = true
 		}
 		if _, ok := rawSettings["unsortedEnabled"]; !ok {
 			settings.UnsortedEnabled = true

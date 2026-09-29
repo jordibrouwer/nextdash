@@ -84,6 +84,10 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer release()
+	// What nextDash stops or replaces itself is not a crash to tell about.
+	if action != "start" && action != "unpause" {
+		dockerNotifications.expect(c.name(), time.Now())
+	}
 
 	// The server's WriteTimeout is a minute; pulling a large image is not. The
 	// answer would be cut off while the update carried on, and the reader would
