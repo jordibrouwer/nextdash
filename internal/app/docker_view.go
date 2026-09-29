@@ -477,6 +477,79 @@ func (h *Handlers) DockerContainerStatsHandler(w http.ResponseWriter, r *http.Re
 	})
 }
 
+// dockerHealthOutputMax caps one check's output: a failing curl can print a
+// whole error page, and the drawer shows a line or two of it.
+const dockerHealthOutputMax = 2000
+
+// dockerHealthChecksMax is how many checks the route hands over; the daemon
+// keeps five itself, so this only matters if that ever changes.
+const dockerHealthChecksMax = 5
+
+type dockerHealthCheck struct {
+	Start    string `json:"start"`
+	End      string `json:"end"`
+	ExitCode int    `json:"exitCode"`
+	Output   string `json:"output"`
+}
+
+type dockerHealthView struct {
+	Status        string              `json:"status"`
+	FailingStreak int                 `json:"failingStreak"`
+	Command       string              `json:"command"`
+	Checks        []dockerHealthCheck `json:"checks"`
+}
+
+// dockerHealthCommand turns Config.Healthcheck.Test into the line a person
+// would type: the arguments of a CMD, the shell line of a CMD-SHELL, and
+// nothing for NONE or no healthcheck at all.
+func dockerHealthCommand(test []string) string {
+	if len(test) < 2 {
+		return ""
+	}
+	switch test[0] {
+	case "CMD":
+		return strings.Join(test[1:], " ")
+	case "CMD-SHELL":
+		return test[1]
+	}
+	return ""
+}
+
+// DockerContainerHealthHandler answers the healthcheck's recent checks,
+// newest first. A container without a healthcheck answers an empty status.
+//
+// Behind the write token, like logs: a check's output is a command's output,
+// and a failing one can print a URL with its credentials in it.
+func (h *Handlers) DockerContainerHealthHandler(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	api, c, ok := h.dockerTarget(w, r)
+	if !ok {
+		return
+	}
+	in, err := api.inspectContainer(r.Context(), c.ID)
+	if err != nil {
+		writeDockerError(w, err)
+		return
+	}
+	v := dockerHealthView{Checks: []dockerHealthCheck{}}
+	if hc := in.Config.Healthcheck; hc != nil {
+		v.Command = dockerHealthCommand(hc.Test)
+	}
+	if hs := in.State.Health; hs != nil {
+		v.Status = hs.Status
+		v.FailingStreak = hs.FailingStreak
+		for i := len(hs.Log) - 1; i >= 0 && len(v.Checks) < dockerHealthChecksMax; i-- {
+			l := hs.Log[i]
+			v.Checks = append(v.Checks, dockerHealthCheck{Start: l.Start, End: l.End, ExitCode: l.ExitCode,
+				Output: capRunes(strings.TrimSpace(l.Output), dockerHealthOutputMax)})
+		}
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, v)
+}
+
 // DockerContainerLogsHandler clamps tail to 1-1000: no tail or a junk value
 // falls back to 200, and anything past 1000 is capped there before the
 // request ever reaches the daemon.

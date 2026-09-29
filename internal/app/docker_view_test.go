@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http/httptest"
 	"os"
 	"strings"
@@ -174,6 +175,63 @@ func TestDockerLogsClampTail(t *testing.T) {
 	}
 }
 
+// The health route hands the drawer what the daemon keeps of the healthcheck:
+// newest check first, five at most, each output capped, and the command as a
+// person would type it.
+func TestDockerHealthChecks(t *testing.T) {
+	f := startFakeDocker(t)
+	log := []map[string]any{}
+	for i := 0; i < 6; i++ {
+		out := fmt.Sprintf("check %d", i)
+		if i == 5 {
+			out = strings.Repeat("x", 5000)
+		}
+		log = append(log, map[string]any{"Start": fmt.Sprintf("2026-09-29T10:0%d:00Z", i), "End": fmt.Sprintf("2026-09-29T10:0%d:01Z", i),
+			"ExitCode": i % 2, "Output": out})
+	}
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", State: "running",
+		Healthcheck: []string{"CMD-SHELL", "curl -f http://localhost/ || exit 1"},
+		Health:      map[string]any{"Status": "unhealthy", "FailingStreak": 3, "Log": log}})
+	f.add(fakeContainer{ID: strings.Repeat("b", 64), Name: "plain", State: "running"})
+	router := newDockerTestRouter(dockerTestHandlers(t))
+
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/containers/web/health", nil))
+	var got dockerHealthView
+	json.NewDecoder(rec.Body).Decode(&got)
+	if rec.Code != 200 || got.Status != "unhealthy" || got.FailingStreak != 3 || got.Command != "curl -f http://localhost/ || exit 1" {
+		t.Fatalf("health = %d %+v", rec.Code, got)
+	}
+	if len(got.Checks) != 5 || got.Checks[0].Start != "2026-09-29T10:05:00Z" || got.Checks[4].Output != "check 1" ||
+		got.Checks[0].ExitCode != 1 || len([]rune(got.Checks[0].Output)) != dockerHealthOutputMax {
+		t.Fatalf("checks = %+v", got.Checks)
+	}
+
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/containers/plain/health", nil))
+	got = dockerHealthView{}
+	json.NewDecoder(rec.Body).Decode(&got)
+	if rec.Code != 200 || got.Status != "" || got.Checks == nil || len(got.Checks) != 0 {
+		t.Fatalf("no healthcheck = %d %s", rec.Code, rec.Body)
+	}
+}
+
+func TestDockerHealthCommand(t *testing.T) {
+	for _, tc := range []struct {
+		test []string
+		want string
+	}{
+		{[]string{"CMD", "curl", "-f", "http://localhost/"}, "curl -f http://localhost/"},
+		{[]string{"CMD-SHELL", "pg_isready"}, "pg_isready"},
+		{[]string{"NONE"}, ""},
+		{nil, ""},
+	} {
+		if got := dockerHealthCommand(tc.test); got != tc.want {
+			t.Errorf("%v = %q, want %q", tc.test, got, tc.want)
+		}
+	}
+}
+
 // Env values and logs carry secrets: with a write token set, reading them needs
 // it, the same as revealing a health credential does.
 func TestDockerSecretsNeedWriteToken(t *testing.T) {
@@ -182,7 +240,7 @@ func TestDockerSecretsNeedWriteToken(t *testing.T) {
 		Env: []string{"API_KEY=secret"}, Logs: []string{"token=abc"}})
 	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
 	router := newDockerTestRouter(dockerTestHandlers(t))
-	for _, path := range []string{"/api/docker/containers/web/env/API_KEY", "/api/docker/containers/web/logs"} {
+	for _, path := range []string{"/api/docker/containers/web/env/API_KEY", "/api/docker/containers/web/logs", "/api/docker/containers/web/health"} {
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
 		if rec.Code != 401 || strings.Contains(rec.Body.String(), "secret") || strings.Contains(rec.Body.String(), "abc") {

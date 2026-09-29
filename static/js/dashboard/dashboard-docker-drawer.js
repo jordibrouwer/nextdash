@@ -11,7 +11,7 @@
 
 const DOCKER_SECTIONS_KEY = 'nextdash.docker.sections';
 const DOCKER_SECTIONS_DEFAULT = ['overview'];
-const DOCKER_SECTION_KEYS = ['overview', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
+const DOCKER_SECTION_KEYS = ['overview', 'health', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
 
 /** fetch() that never throws and answers null on anything but a 2xx JSON body. */
 async function dockerDrawerFetchJSON(url, init) {
@@ -92,6 +92,7 @@ class DockerDrawer {
         this._statsTimer = null;
         this._logsLoaded = false;
         this._changesLoaded = false;
+        this._healthLoaded = false;
         this._els = null;
         // The panel itself -- host, placement, phone fullscreen, ScrollLock and
         // remembered sections -- is the shared one (list-view-drawer.js); this
@@ -128,6 +129,7 @@ class DockerDrawer {
         this._detail = null;
         this._logsLoaded = false;
         this._changesLoaded = false;
+        this._healthLoaded = false;
         this._buildSkeleton(typeof container === 'string' ? { name } : container);
         void this._loadDetail(name);
     }
@@ -202,6 +204,7 @@ class DockerDrawer {
         this._wireResources(els);
         this._wireLogs(els);
         this._wireChanges(els);
+        this._wireHealth(els, summary);
         // The tab on show loads what it needs now, as a click on it would.
         this._onTab(window.SidePanelLayout.activeTab('docker', this._tabs()));
     }
@@ -250,6 +253,7 @@ class DockerDrawer {
         return `${head}${L.tabs(esc, 'docker', tabs)}
             ${pane('overview', `${summaryBlock}${L.accList([
                 acc('overview', this.t('dockerSectionDetails', 'Details'), true),
+                acc('health', this.t('dockerSectionHealth', 'Health')),
                 acc('network', this.t('dockerSectionNetwork', 'Network')),
                 acc('custom', this.t('dockerSectionCustom', 'Custom')),
                 acc('volumes', this.t('dockerSectionVolumes', 'Volumes')),
@@ -348,6 +352,7 @@ class DockerDrawer {
         this._renderCustom(els.sections.custom, detail);
         this._renderVolumes(els.sections.volumes, detail);
         this._renderEnv(els.sections.env, detail);
+        this._showHealth(Boolean(detail?.health));
 
         const pill = this.base.panel?.querySelector('[data-docker-state]');
         if (pill && detail?.state) pill.textContent = detail.state;
@@ -756,6 +761,101 @@ class DockerDrawer {
         const data = await dockerDrawerFetchJSONAuth(`/api/docker/containers/${encodeURIComponent(name)}/logs?tail=${this.logLines()}`);
         if (name !== this._name || !this._els?.logsEl) return;
         this._els.logsEl.textContent = Array.isArray(data?.lines) ? data.lines.join('\n') : '';
+    }
+
+    /* ── Health ────────────────────────────────────────────────────────── */
+
+    /*
+     * The healthcheck's last checks, newest first. Only a container with a
+     * healthcheck has the part at all; the checks load when it is opened
+     * (behind the write token, as logs are: a check's output is a command's).
+     */
+    _wireHealth(els, summary) {
+        const acc = els.sections.health?.closest('[data-slp-acc]');
+        if (!acc) return;
+        els.healthAcc = acc;
+        acc.addEventListener('toggle', () => {
+            if (acc.open) this._maybeLoadHealth();
+        });
+        this._showHealth(Boolean(summary?.health));
+    }
+
+    _showHealth(has) {
+        const acc = this._els?.healthAcc;
+        if (!acc) return;
+        acc.hidden = !has;
+        if (has && acc.open) this._maybeLoadHealth();
+    }
+
+    _maybeLoadHealth() {
+        if (this._healthLoaded || this._els?.healthAcc?.hidden) return;
+        this._healthLoaded = true;
+        void this._loadHealth();
+    }
+
+    async _loadHealth() {
+        const name = this._name;
+        if (!name) return;
+        const data = await dockerDrawerFetchJSONAuth(`/api/docker/containers/${encodeURIComponent(name)}/health`);
+        if (name !== this._name || !this._els?.sections.health) return;
+        this._renderHealth(this._els.sections.health, data);
+    }
+
+    _renderHealth(body, data) {
+        body.replaceChildren();
+        if (!data) {
+            const msg = document.createElement('p');
+            msg.className = 'docker-changes-empty';
+            msg.textContent = this.t('dockerHealthUnavailable', 'The checks could not be read.');
+            body.appendChild(msg);
+            return;
+        }
+        this._fieldRow(body, 'dockerFieldHealth', 'Health', data.status);
+        if (data.failingStreak > 0) {
+            this._fieldRow(body, 'dockerHealthFailingLabel', 'Failing',
+                this.t('dockerHealthFailing', '{count} in a row', { count: data.failingStreak }));
+        }
+        if (data.command) {
+            const cmd = document.createElement('code');
+            cmd.className = 'docker-health-command';
+            cmd.setAttribute('data-docker-health-command', '');
+            cmd.textContent = data.command;
+            body.appendChild(cmd);
+        }
+        const checks = Array.isArray(data.checks) ? data.checks : [];
+        if (!checks.length) {
+            const msg = document.createElement('p');
+            msg.className = 'docker-changes-empty';
+            msg.textContent = this.t('dockerHealthNoChecks', 'No checks have run yet.');
+            body.appendChild(msg);
+            return;
+        }
+        const list = document.createElement('ol');
+        list.className = 'docker-health-checks';
+        checks.forEach((check) => {
+            const ok = check.exitCode === 0;
+            const item = document.createElement('li');
+            item.className = 'docker-health-check';
+            item.setAttribute('data-docker-health-check', ok ? 'pass' : 'fail');
+            const head = document.createElement('div');
+            head.className = 'docker-health-check-head';
+            const mark = document.createElement('span');
+            mark.className = 'docker-health-mark';
+            mark.textContent = ok ? '✓' : `✗ ${this.t('dockerHealthExit', 'exit {code}', { code: check.exitCode })}`;
+            const when = document.createElement('span');
+            when.className = 'docker-health-when';
+            when.textContent = dockerFormatDate(check.start);
+            head.append(mark, when);
+            item.appendChild(head);
+            if (check.output) {
+                const out = document.createElement('pre');
+                out.className = 'docker-health-output';
+                out.textContent = check.output;
+                item.appendChild(out);
+            }
+            list.appendChild(item);
+        });
+        body.appendChild(list);
     }
 
     /* ── Changes ───────────────────────────────────────────────────────── */

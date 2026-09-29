@@ -56,7 +56,9 @@ type fakeContainer struct {
 	RestartPolicy                           string
 	NetworkMode                             string
 	Logs                                    []string
-	created                                 bool // set once /containers/create has made it
+	Health                                  map[string]any // State.Health as inspect reports it
+	Healthcheck                             []string       // Config.Healthcheck.Test
+	created                                 bool           // set once /containers/create has made it
 }
 
 type fakeImage struct {
@@ -274,7 +276,7 @@ func (f *fakeDocker) handleInspect(w http.ResponseWriter, id string) {
 		writeJSONFake(w, http.StatusNotFound, map[string]string{"message": "no such container"})
 		return
 	}
-	health := map[string]any(nil)
+	health := c.Health
 	// Unlike the list endpoint, the real Engine API's container inspect
 	// reports Created as an RFC3339 string rather than a unix timestamp.
 	created := time.Unix(c.Created, 0).UTC().Format(time.RFC3339Nano)
@@ -284,7 +286,8 @@ func (f *fakeDocker) handleInspect(w http.ResponseWriter, id string) {
 			"Status": c.State, "Running": c.State == "running", "Paused": c.State == "paused",
 			"StartedAt": "2024-01-01T00:00:00Z", "Health": health,
 		},
-		"Config": map[string]any{"Image": c.Image, "Env": c.Env, "Labels": c.Labels},
+		"Config": map[string]any{"Image": c.Image, "Env": c.Env, "Labels": c.Labels,
+			"Healthcheck": map[string]any{"Test": c.Healthcheck}},
 		"HostConfig": map[string]any{
 			"RestartPolicy": map[string]any{"Name": c.RestartPolicy}, "Binds": []string{},
 			"NetworkMode": c.NetworkMode,
@@ -509,6 +512,7 @@ func newDockerTestRouter(h *Handlers) http.Handler {
 	r.HandleFunc("/api/docker/containers/{id}/env/{name}", h.DockerContainerEnvHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/stats", h.DockerContainerStatsHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/logs", h.DockerContainerLogsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/health", h.DockerContainerHealthHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/changelog", h.DockerChangelogHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates", h.DockerUpdatesHandler).Methods("GET")
 	r.HandleFunc("/api/docker/github-token", h.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")

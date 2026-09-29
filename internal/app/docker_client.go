@@ -164,7 +164,14 @@ type dockerInspect struct {
 		StartedAt string `json:"StartedAt"`
 		ExitCode  int    `json:"ExitCode"`
 		Health    *struct {
-			Status string `json:"Status"`
+			Status        string `json:"Status"`
+			FailingStreak int    `json:"FailingStreak"`
+			Log           []struct {
+				Start    string `json:"Start"`
+				End      string `json:"End"`
+				ExitCode int    `json:"ExitCode"`
+				Output   string `json:"Output"`
+			} `json:"Log"`
 		} `json:"Health"`
 	} `json:"State"`
 	// Config and HostConfig are kept raw as well as typed: recreate hands them
@@ -174,6 +181,11 @@ type dockerInspect struct {
 		Image  string            `json:"Image"`
 		Env    []string          `json:"Env"`
 		Labels map[string]string `json:"Labels"`
+		// Healthcheck.Test is the healthcheck command as the image or the
+		// run set it: ["CMD", args...], ["CMD-SHELL", line] or ["NONE"].
+		Healthcheck *struct {
+			Test []string `json:"Test"`
+		} `json:"Healthcheck"`
 	} `json:"Config"`
 	HostConfig struct {
 		RestartPolicy struct {

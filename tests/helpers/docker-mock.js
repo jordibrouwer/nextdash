@@ -46,6 +46,14 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     if (sub.startsWith('env/')) return json({ name: sub.slice(4), value: 'secret-value' });
     if (sub === 'stats') return json({ cpuPercent: 3.2, memoryUsed: 262144000, memoryLimit: 8589934592 });
     if (sub === 'logs') return json({ lines: ['line one', 'line two'] });
+    if (sub === 'health') {
+      if (!c.health) return json({ status: '', failingStreak: 0, command: '', checks: [] });
+      return json({ status: c.health, failingStreak: c.health === 'healthy' ? 0 : 2, command: 'curl -f http://localhost:8989/ping',
+        checks: [
+          { start: '2026-09-29T10:01:00Z', end: '2026-09-29T10:01:01Z', exitCode: 1, output: 'curl: (7) Failed to connect' },
+          { start: '2026-09-29T10:00:00Z', end: '2026-09-29T10:00:01Z', exitCode: 0, output: 'pong' },
+        ] });
+    }
     if (sub === 'changelog') return json({ current: '4.0.9', releases: [{ tag: 'v4.0.10', name: '4.0.10', body: '## Fixes\n- one fix\nhttps://example.com/x', url: 'https://github.com/x/y/releases/v4.0.10', published: '2026-09-24T00:00:00Z' }],
       links: [{ kind: 'source', url: 'https://github.com/linuxserver/docker-sonarr' }, { kind: 'registry', url: 'https://docs.linuxserver.io/images/docker-sonarr' }] });
     if (req.method() === 'POST') {

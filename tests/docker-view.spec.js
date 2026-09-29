@@ -121,6 +121,30 @@ test.describe('docker view', () => {
     await expect(page).toHaveURL(/#docker\/sonarr$/);
   });
 
+  // Health is its own accordion part, there only for a container with a
+  // healthcheck, and it asks for the checks when it is opened.
+  test('health shows the recent checks, and only where there is a healthcheck', async ({ page }) => {
+    const state = await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    const drawer = page.locator('[data-docker-drawer]');
+    const health = drawer.locator('[data-docker-section="health"]');
+    await expect(health).toBeVisible();
+    expect(state.calls.some((c) => c.endsWith('/health'))).toBe(false);
+    await health.locator('summary').click();
+    await expect(health.locator('[data-docker-health-command]')).toHaveText('curl -f http://localhost:8989/ping');
+    const checks = health.locator('[data-docker-health-check]');
+    await expect(checks).toHaveCount(2);
+    await expect(checks.first()).toHaveAttribute('data-docker-health-check', 'fail');
+    await expect(checks.first()).toContainText('exit 1');
+    await expect(checks.first()).toContainText('Failed to connect');
+    await expect(checks.nth(1)).toHaveAttribute('data-docker-health-check', 'pass');
+
+    // jellyfin has no healthcheck: no Health part at all.
+    await page.goto('/#docker/jellyfin');
+    await expect(drawer.locator('.config-bm-panel-title')).toHaveText('jellyfin');
+    await expect(drawer.locator('[data-docker-section="health"]')).toBeHidden();
+  });
+
   test('logs load on open and refresh on demand', async ({ page }) => {
     const state = await mockDocker(page);
     await page.goto('/#docker/sonarr');

@@ -391,6 +391,57 @@
     white-space: pre-wrap;
 }
 
+/* Health: the command, then the last checks, newest first; a failing
+   check's mark takes the error colour. */
+.docker-health-command {
+    display: block;
+    margin: var(--space-2, 0.5rem) 0;
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-sm, 0.85rem);
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.docker-health-checks {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.docker-health-check-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-health-check[data-docker-health-check="pass"] .docker-health-mark {
+    color: var(--accent-success, #3c6);
+}
+
+.docker-health-check[data-docker-health-check="fail"] .docker-health-mark {
+    color: var(--accent-error, #c55);
+}
+
+.docker-health-when {
+    color: var(--text-secondary);
+}
+
+.docker-health-output {
+    max-height: 6rem;
+    margin: var(--space-1, 0.25rem) 0 0;
+    overflow: auto;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    background: var(--background-tertiary, var(--background-primary));
+    border-radius: var(--radius-4, 6px);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.72rem);
+    white-space: pre-wrap;
+}
+
 .docker-release {
     padding: var(--space-2, 0.5rem) 0;
     border-bottom: 1px solid var(--border-primary);
