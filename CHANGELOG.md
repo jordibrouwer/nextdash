@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — posting a settings file from another instance reset depth, glow and effects to follow.** `SaveSettings` kept every one-time migration marker a save left out except `surfaceFollowMigrated`, so the next read ran that pass again over the forced look.
+
 - **fix — the activity log kept one backup fewer than set.** Rotation moved `.1` onto `.2` before `.2` had moved on, so `.3` never existed and a rotation's worth of history was lost each time; the shift now runs oldest first.
 
 - **fix — Remember scroll position and soft 404 detection were off on installs from before 17 August.** Both default on, but a settings file written before they existed read as off; an absent key now means on, as it does for the other default-on switches.

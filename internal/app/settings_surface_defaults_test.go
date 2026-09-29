@@ -317,3 +317,24 @@ func TestAClockPlacementChosenAfterTheMoveIsKept(t *testing.T) {
 		t.Fatalf("headerClockPlacement = %q, want the stored own-zone", got)
 	}
 }
+
+// A save without the marker -- a settings file from another instance, posted
+// whole -- keeps the stored one, or the next read runs the follow pass again
+// and takes the forced look away.
+func TestASaveWithoutTheFollowMarkerKeepsIt(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	store := NewStore()
+	settings := store.GetSettings()
+	if !settings.SurfaceFollowMigrated {
+		t.Fatal("a fresh install should carry the marker")
+	}
+	settings.SurfaceFollowMigrated = false
+	settings.ThemeDepth = "flat"
+	if err := store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	if got := NewStore().GetSettings().ThemeDepth; got != "flat" {
+		t.Fatalf("the forced depth became %q", got)
+	}
+}
