@@ -217,9 +217,15 @@ func (h *Handlers) DockerContainerLogStreamHandler(w http.ResponseWriter, r *htt
 	}
 	flushLocked()
 
+	// The heartbeat must be gone before the handler returns: the writer is
+	// not ours after that. Defers run last-first, so done closes, then Wait.
+	var wg sync.WaitGroup
+	defer wg.Wait()
 	done := make(chan struct{})
 	defer close(done)
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		tick := time.NewTicker(dockerLogHeartbeat)
 		defer tick.Stop()
 		for {

@@ -139,3 +139,28 @@ func TestDockerLogStreamOutlivesServerTimeouts(t *testing.T) {
 		t.Fatalf("got %+v -- the stream was cut before the late line", got)
 	}
 }
+
+// The heartbeat never outlives the handler: the writer belongs to the server
+// again once it returns. Run with -race; a beat every microsecond makes the
+// moment the stream ends one where a beat is due.
+func TestDockerLogStreamHeartbeatEndsWithTheHandler(t *testing.T) {
+	prev := dockerLogHeartbeat
+	dockerLogHeartbeat = time.Microsecond
+	defer func() { dockerLogHeartbeat = prev }()
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("e", 64), Name: "web", State: "exited", Logs: []string{"hello"}})
+	srv := httptest.NewServer(newDockerTestRouter(dockerTestHandlers(t)))
+	defer srv.Close()
+	for i := 0; i < 50; i++ {
+		resp, err := http.Get(srv.URL + "/api/docker/containers/web/logs/stream")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var body bytes.Buffer
+		_, _ = body.ReadFrom(resp.Body)
+		resp.Body.Close()
+		if got := readNDJSON(t, body.String()); len(got) != 1 || got[0].M != "hello" {
+			t.Fatalf("got %+v", got)
+		}
+	}
+}
