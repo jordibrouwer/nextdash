@@ -2763,7 +2763,20 @@
     "dockerTimelinePause": "Paused",
     "dockerTimelineUnpause": "Resumed",
     "dockerTimelineUpdate": "Updated",
-    "dockerTimelineRollback": "Rolled back"
+    "dockerTimelineRollback": "Rolled back",
+    "dockerTourS9Title": "Logs, live",
+    "dockerTourFollowing": "● following",
+    "dockerTourDownload": "download",
+    "dockerTourS9Alt": "The logs window: following live, a search, the stream choice and download",
+    "dockerTourS9Body1": "Show logs in the row menu, l on the selected row, or Open logs window in the side panel opens a window that follows the log as it is written. Scroll up to pause it; Jump to latest catches up.",
+    "dockerTourS9Body2": "Search marks every match and Enter steps through them; Filter keeps only the matching lines. Pick stdout or stderr — stderr is red — and copy or download what is loaded.",
+    "dockerTourS10Title": "What the disk holds",
+    "dockerTourS10Warn": "⚠ ends rollback for sonarr",
+    "dockerTourS10Type": "type delete",
+    "dockerTourS10Alt": "The Disk tab: what images, build cache and volumes take up",
+    "dockerTourS10Body1": "Disk, beside Containers (or d), shows what images, volumes and the build cache take up, and what nothing uses. Each tile clears its kind after asking; clearing dangling images says which rollbacks it ends.",
+    "dockerTourS10Body2": "Volumes hold data, so they go one at a time, from their row, and only after you type delete.",
+    "dockerTourOpenView": "open Containers"
   },
   "health": {
     "reloadPage": "Recargar la página",

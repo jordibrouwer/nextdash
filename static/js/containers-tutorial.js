@@ -351,14 +351,15 @@
                 body: `<p>${esc(f('dockerTourS2Body1',
                     'Each row glows with its state: running, stopped, paused, unhealthy, or waiting for an update. The filters on the left — All, Running, Stopped, Updates — carry a count each.'))}</p>
                     <p>${esc(f('dockerTourS2Body2',
-                    'Sort by name, status or uptime, group by project or status, and / searches by name. :docker opens the view from the command palette.'))}</p>`,
+                    'Click Name or Status to sort — again to turn the order round — or pick uptime, CPU or memory; group by project or status, and / searches by name. CPU and RAM come from a reading every 30 seconds. :docker opens the view from the command palette, Shift+Y from anywhere.'))}</p>`,
             },
             // 3 — actions
             {
                 title: f('dockerTourS3Title', 'Start, stop, restart, update'),
                 visual: (() => {
                     const keys = [['s', f('dockerLegendRun', 'start / stop')], ['r', f('dockerLegendRestart', 'restart')],
-                        ['p', f('dockerLegendPause', 'pause')], ['u', f('dockerLegendUpdate', 'update')], ['Del', f('dockerLegendRemove', 'remove')]];
+                        ['p', f('dockerLegendPause', 'pause')], ['u', f('dockerLegendUpdate', 'update')], ['Del', f('dockerLegendRemove', 'remove')],
+                        ['m', f('dockerLegendMute', 'mute')]];
                     return svg(`
                         ${crow(14, 12, 230, 'radarr', { image: 'radarr:latest', kind: 'accent' })}
                         ${keys.map(([k, l], i) => {
@@ -380,7 +381,7 @@
                     `, f('dockerTourS3Alt', 'The action keys, a restart in progress, and a confirmation'));
                 })(),
                 body: `<p>${esc(f('dockerTourS3Body1',
-                    'Use the row menu, or a key on the selected row: s starts or stops, r restarts, p pauses, u updates, Delete removes. The row shows the change while it happens.'))}</p>
+                    'Use the row menu, or a key on the selected row: s starts or stops, r restarts, p pauses, u updates, Delete removes, m mutes its notices. The row shows the change while it happens. Grouped by project, a project’s row starts, stops or restarts the whole stack.'))}</p>
                     <p>${esc(f('dockerTourS3Body2',
                     'Update and remove always ask first. Also confirm stop and restart, under Config → Containers, adds those two.'))}</p>`,
             },
@@ -430,9 +431,9 @@
                     `, f('dockerTourS5Alt', 'The side panel’s tabs, live resource meters and scrolling logs'));
                 })(),
                 body: `<p>${esc(f('dockerTourS5Body1',
-                    'The side panel shows the container you pick. Overview has the image, ports, health and project; Resources shows CPU, memory and network as they move.'))}</p>
+                    'The side panel shows the container you pick. Overview has the image, ports and project, and three parts to open: Health with its last checks, Updates, and Timeline — what happened to it, from starts and crashes to updates. Resources shows CPU, memory and network as they move.'))}</p>
                     <p>${esc(f('dockerTourS5Body2',
-                    'Logs shows the last lines as they come in, and What’s new the release notes behind an available update.'))}</p>`,
+                    'Logs shows the last lines, and What’s new the release notes behind an available update. A click beside the panel closes it.'))}</p>`,
             },
             // 6 — updates
             {
@@ -452,7 +453,56 @@
                 body: `<p>${esc(f('dockerTourS6Body1',
                     'Update checks compare the image a container runs with what its registry offers — on request with Check for updates, or every 6, 12 or 24 hours. Rows that wait for one get an update badge, and so does the header icon.'))}</p>
                     <p>${esc(f('dockerTourS6Body2',
-                    'What’s new reads the release notes from the image’s GitHub repository when it names one. If an update fails, the previous container is started again.'))}</p>`,
+                    'Updates, in the side panel, skips a version you do not want or holds a container’s updates, lists what updates did, and rolls the last one back while its old image is still here. If an update fails, the previous container is started again.'))}</p>`,
+            },
+            // 7 — the logs window
+            {
+                title: f('dockerTourS9Title', 'Logs, live'),
+                visual: (() => {
+                    const lines = ['[info] started', '[info] listening :8989', '[warn] indexer slow', '[error] 503 from skyhook',
+                        '[info] rss sync done', '[info] 42 releases', '[info] idle', '[info] started'];
+                    return svg(`
+                        <rect x="12" y="8" width="458" height="134" rx="10" class="ctv-panel"/>
+                        ${label(26, 30, 'sonarr', 'ctv-heading')}
+                        ${pill(380, 16, f('dockerTourFollowing', '● following'), { kind: 'active', w: 82, motion: anim('bump', 0.2) })}
+                        <rect x="26" y="40" width="160" height="20" rx="4" class="ctv-select"/>
+                        ${label(34, 54, 'error', 'ctv-mono')}
+                        ${pillFlow(196, 40, 260, [[f('dockerLogsStreamAll', 'All'), 'active'], ['stdout', 'plain'], ['stderr', 'plain'], [f('dockerTourDownload', 'download'), 'plain']])}
+                        <clipPath id="ctv-livelogs"><rect x="26" y="68" width="430" height="68"/></clipPath>
+                        <g clip-path="url(#ctv-livelogs)">
+                            <g class="ctv-anim ctv-a-scroll">
+                                ${lines.map((l, i) => label(30, 82 + i * 16, l, l.includes('error') ? 'ctv-mono' : 'ctv-log')).join('')}
+                            </g>
+                        </g>
+                    `, f('dockerTourS9Alt', 'The logs window: following live, a search, the stream choice and download'));
+                })(),
+                body: `<p>${esc(f('dockerTourS9Body1',
+                    'Show logs in the row menu, l on the selected row, or Open logs window in the side panel opens a window that follows the log as it is written. Scroll up to pause it; Jump to latest catches up.'))}</p>
+                    <p>${esc(f('dockerTourS9Body2',
+                    'Search marks every match and Enter steps through them; Filter keeps only the matching lines. Pick stdout or stderr — stderr is red — and copy or download what is loaded.'))}</p>`,
+            },
+            // 8 — disk
+            {
+                title: f('dockerTourS10Title', 'What the disk holds'),
+                visual: (() => {
+                    const tiles = [[f('dockerDiskUnusedImages', 'Unused images'), '4.1 GiB'], [f('dockerDiskDangling', 'Dangling images'), '1.9 GiB'],
+                        [f('dockerDiskBuildCache', 'Build cache'), '640 MiB'], [f('dockerDiskUnusedVolumes', 'Unused volumes'), '180 MiB']];
+                    return svg(`
+                        ${pillFlow(14, 8, 200, [[f('dockerTabContainers', 'Containers'), 'plain'], [f('dockerTabDisk', 'Disk'), 'active']])}
+                        ${tiles.map(([l, v], i) => `
+                            <g class="ctv-anim ctv-a-drop" style="animation-delay:${(i * 0.12).toFixed(2)}s">
+                                <rect x="${14 + i * 116}" y="44" width="108" height="64" rx="8" class="ctv-panel"/>
+                                ${label(24 + i * 116, 62, l)}
+                                ${label(24 + i * 116, 84, v, 'ctv-title')}
+                            </g>`).join('')}
+                        ${label(14, 130, f('dockerTourS10Warn', '⚠ ends rollback for sonarr'), 'ctv-caption')}
+                        ${pill(470 - pillWidth(f('dockerTourS10Type', 'type delete')), 118, f('dockerTourS10Type', 'type delete'), { kind: 'warn' })}
+                    `, f('dockerTourS10Alt', 'The Disk tab: what images, build cache and volumes take up'));
+                })(),
+                body: `<p>${esc(f('dockerTourS10Body1',
+                    'Disk, beside Containers (or d), shows what images, volumes and the build cache take up, and what nothing uses. Each tile clears its kind after asking; clearing dangling images says which rollbacks it ends.'))}</p>
+                    <p>${esc(f('dockerTourS10Body2',
+                    'Volumes hold data, so they go one at a time, from their row, and only after you type delete.'))}</p>`,
             },
             // 7 — config
             {
@@ -480,14 +530,14 @@
                 body: `<p>${esc(f('dockerTourS7Body1',
                     'Config → Containers shows the connection as the server sees it — the socket, whether actions are on, the write token, and whether nextDash recognises its own container. Those are set by environment variables, not here.'))}</p>
                     <p>${esc(f('dockerTourS7Body2',
-                    'Below: the view and its header icon, how often the list refreshes (2 to 30 seconds), how many log lines to show, update checks, confirmations, containers you hide, and an optional GitHub token for release notes — 60 requests an hour without one, 5000 with.'))}</p>`,
+                    'Below: the view and its header icon, how often the list refreshes (2 to 30 seconds), how many log lines to show, update checks, confirmations, notices when a container stops, keeps restarting or turns unhealthy — sent to your alert webhook and browser notifications, with the containers you mute — the containers you hide, and an optional GitHub token for release notes.'))}</p>`,
             },
             // 8 — dashboard and keys
             {
                 title: f('dockerTourS8Title', 'On the dashboard, and where this tour lives'),
                 visual: (() => {
-                    const keys = [['s', f('dockerLegendRun', 'start / stop')], ['r', f('dockerLegendRestart', 'restart')],
-                        ['p', f('dockerLegendPause', 'pause')], ['u', f('dockerLegendUpdate', 'update')]];
+                    const keys = [['Shift+Y', f('dockerTourOpenView', 'open Containers')], ['l', f('dockerLegendLogs', 'logs')],
+                        ['d', f('dockerLegendDisk', 'disk')], ['m', f('dockerLegendMute', 'mute')]];
                     return svg(`
                         <rect x="14" y="14" width="164" height="100" rx="10" class="ctv-panel"/>
                         ${label(26, 36, f('dockerTourTile', 'Containers'), 'ctv-heading')}
@@ -503,7 +553,7 @@
                 body: `<p>${esc(f('dockerTourS8Body1',
                     'The Containers tile and widget show how many run and which fail their healthcheck, and open this view with one click.'))}</p>
                     <p class="containers-tutorial-closing">${esc(f('dockerTourS8Closing',
-                    'The legend under the list has every key, and Tour, above the list, brings this back whenever you want it.'))}</p>`,
+                    'Shift+Y opens this view from anywhere. The legend under the list has every key, and Tour, above the list, brings this back whenever you want it.'))}</p>`,
             },
         ];
     }

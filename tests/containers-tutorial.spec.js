@@ -12,7 +12,7 @@ const { mockDocker } = require('./helpers/docker-mock');
  * list they want to click; this file is the one place that asks for it.
  */
 
-const STEPS = 8;
+const STEPS = 10;
 const TIP = 'containersTutorialV1';
 
 async function openViewWithTourUnseen(page) {
@@ -38,7 +38,7 @@ const modal = (page) => page.locator('#app-modal.show .containers-tutorial-modal
 const next = (page) => page.locator('.modal-actions .modal-button').first();
 
 test.describe('containers view tutorial', () => {
-    test('shows on the first visit, with eight steps', async ({ page }) => {
+    test('shows on the first visit, with ten steps', async ({ page }) => {
         await openViewWithTourUnseen(page);
         await expect(modal(page)).toBeVisible();
         await expect(page.locator('.containers-tutorial-progress')).toHaveText(`Step 1 of ${STEPS}`);
@@ -64,6 +64,8 @@ test.describe('containers view tutorial', () => {
             'Actions are yours to switch on',
             'One container, four tabs',
             'Know when an image is out of date',
+            'Logs, live',
+            'What the disk holds',
             'Config → Containers',
             'On the dashboard, and where this tour lives',
         ]);
