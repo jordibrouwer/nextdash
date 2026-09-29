@@ -221,3 +221,42 @@ func TestDeleteTrashItemAllEmptiesTrash(t *testing.T) {
 		t.Fatal("expected an empty trash")
 	}
 }
+
+// A page holds each address once. One added again since the delete refuses
+// the restore and keeps the item in the trash; a shortcut taken since is let
+// go, and the bookmark comes back without it.
+func TestRestoreTrashItemKeepsThePageFreeOfDuplicates(t *testing.T) {
+	h := newTrashHandlerFixture(t, `{"page":{"id":1,"name":"Page 1"},"bookmarks":[
+		{"name":"A again","url":"https://a.example/"},
+		{"name":"S","url":"https://s.example","shortcut":"x"}
+	]}`)
+	if err := h.store.AddTrashedBookmarks([]TrashedBookmark{
+		{PageID: 1, Index: 0, Bookmark: Bookmark{Name: "A", URL: "https://a.example"}},
+		{PageID: 1, Index: 0, Bookmark: Bookmark{Name: "B", URL: "https://b.example", Shortcut: "X"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	ids := map[string]string{}
+	for _, it := range h.store.GetTrashItems() {
+		ids[it.Bookmark.Name] = it.ID
+	}
+	restore := func(id string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		h.RestoreTrashItem(rec, httptest.NewRequest(http.MethodPost, "/api/trash/restore", strings.NewReader(`{"id":"`+id+`"}`)))
+		return rec
+	}
+	if rec := restore(ids["A"]); rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate restore: %d %s", rec.Code, rec.Body)
+	}
+	if len(h.store.GetTrashItems()) != 2 {
+		t.Fatal("a refused restore must leave the item in the trash")
+	}
+	if rec := restore(ids["B"]); rec.Code != http.StatusOK {
+		t.Fatalf("restore with a taken shortcut: %d %s", rec.Code, rec.Body)
+	}
+	for _, b := range h.store.GetBookmarksByPage(1) {
+		if b.Name == "B" && b.Shortcut != "" {
+			t.Fatalf("B came back with shortcut %q, which S has", b.Shortcut)
+		}
+	}
+}

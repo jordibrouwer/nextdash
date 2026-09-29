@@ -107,6 +107,9 @@ func (h *Handlers) AddTrashItems(w http.ResponseWriter, r *http.Request) {
 // The item is taken out of the trash first, then written back to the page. If
 // the page write fails the item is returned to the trash, so a failure never
 // destroys the only copy.
+// errTrashRestoreDuplicate: the page has the address again since the delete.
+var errTrashRestoreDuplicate = errors.New("address already on the page")
+
 func (h *Handlers) RestoreTrashItem(w http.ResponseWriter, r *http.Request) {
 	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
@@ -153,6 +156,21 @@ func (h *Handlers) RestoreTrashItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	restoreErr := h.store.MutateBookmarksOnPage(item.PageID, func(bookmarks []Bookmark) ([]Bookmark, error) {
+		// A page holds each address once, as a save insists; the address may
+		// have been added again since the delete. A shortcut taken since is
+		// let go rather than failing the restore over it.
+		key := canonicalBookmarkURLKey(item.Bookmark.URL)
+		for _, b := range bookmarks {
+			if key != "" && canonicalBookmarkURLKey(b.URL) == key {
+				return nil, errTrashRestoreDuplicate
+			}
+		}
+		restoredBookmark := item.Bookmark
+		for _, b := range bookmarks {
+			if restoredBookmark.Shortcut != "" && strings.EqualFold(b.Shortcut, restoredBookmark.Shortcut) {
+				restoredBookmark.Shortcut = ""
+			}
+		}
 		// The stored index is a hint from delete time; clamp it rather than
 		// trusting it, since the page has been writable in between.
 		at := item.Index
@@ -161,7 +179,7 @@ func (h *Handlers) RestoreTrashItem(w http.ResponseWriter, r *http.Request) {
 		}
 		restored := make([]Bookmark, 0, len(bookmarks)+1)
 		restored = append(restored, bookmarks[:at]...)
-		restored = append(restored, item.Bookmark)
+		restored = append(restored, restoredBookmark)
 		restored = append(restored, bookmarks[at:]...)
 		return restored, nil
 	})
@@ -171,6 +189,10 @@ func (h *Handlers) RestoreTrashItem(w http.ResponseWriter, r *http.Request) {
 		_ = h.store.AddTrashedBookmarks([]TrashedBookmark{item})
 		if errors.Is(restoreErr, ErrBookmarkNotFound) {
 			http.Error(w, "Original page no longer exists", http.StatusConflict)
+			return
+		}
+		if errors.Is(restoreErr, errTrashRestoreDuplicate) {
+			http.Error(w, "A bookmark with this address is already on that page", http.StatusConflict)
 			return
 		}
 		if !respondStorePersistError(w, restoreErr) {
