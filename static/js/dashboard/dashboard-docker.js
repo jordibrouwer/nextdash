@@ -1153,23 +1153,20 @@ class DashboardDocker {
 
     /*
      * Port links go to the host this page was opened on, unless Config →
-     * Containers names the Docker host. Opened through a domain -- a reverse
-     * proxy, Tailscale's MagicDNS -- that is rarely where the ports are, and
-     * dash.example.com:8080 goes nowhere. Said above the list, with the way to
-     * fix it, until the address is set or the note is put away.
+     * Containers names the Docker host. Opened through a reverse proxy or any
+     * name other than the server's own, dash.example.com:8080 goes nowhere,
+     * and the page cannot tell which case it is in. So while the address is
+     * not set, the view says where port links point, with the way to set it,
+     * until it is set or the note is put away.
      */
     static HOST_HINT_KEY = 'nextdash.docker.hostHintDismissed';
 
-    static opensThroughADomain(settings, hostname) {
-        if (String(settings?.dockerHostAddress || '').trim()) return false;
-        const host = String(hostname || '').toLowerCase();
-        // A bare name, an IP, or a LAN suffix already is the machine.
-        if (!host.includes('.') || /^[0-9.]+$/.test(host) || host.includes(':')) return false;
-        return !/\.(local|lan|home|internal|localhost)$/.test(host);
+    static hostAddressUnset(settings) {
+        return !String(settings?.dockerHostAddress || '').trim();
     }
 
     showsHostHint() {
-        if (!DashboardDocker.opensThroughADomain(this.dash.settings, window.location.hostname)) return false;
+        if (!DashboardDocker.hostAddressUnset(this.dash.settings)) return false;
         try {
             if (localStorage.getItem(DashboardDocker.HOST_HINT_KEY) === '1') return false;
         } catch {
