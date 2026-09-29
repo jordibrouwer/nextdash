@@ -24,8 +24,8 @@ test.describe('the containers table headings', () => {
     test('every column has a heading over it', async ({ page }) => {
         await open(page);
         const heads = page.locator('.docker-table thead th');
-        await expect(heads).toHaveText(['Name', 'Image', 'Status', 'Web UI', 'Ports']);
-        const cells = ['name', 'image', 'state', 'webui', 'ports'];
+        await expect(heads).toHaveText(['Name', 'Image', 'Status', 'Size', 'Web UI', 'Ports']);
+        const cells = ['name', 'image', 'state', 'size', 'webui', 'ports'];
         for (let i = 0; i < cells.length; i++) {
             const head = await heads.nth(i).boundingBox();
             const cell = await page.locator(`[data-docker-row="web"] .docker-cell--${cells[i]}`).boundingBox();
@@ -37,7 +37,7 @@ test.describe('the containers table headings', () => {
         await open(page);
         await page.locator('[data-docker-group]').selectOption('status');
         await expect(page.locator('.docker-group-row')).toHaveCount(2);
-        await expect(page.locator('.docker-table thead th')).toHaveCount(5);
+        await expect(page.locator('.docker-table thead th')).toHaveCount(6);
         await expect(page.locator('.docker-table thead + tbody .docker-group-row').first()).toBeVisible();
     });
 

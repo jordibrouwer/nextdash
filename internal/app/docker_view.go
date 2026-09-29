@@ -62,6 +62,9 @@ type dockerViewContainer struct {
 	LanIP  string             `json:"lanIP,omitempty"`
 	Update *dockerImageUpdate `json:"update,omitempty"`
 	Self   bool               `json:"self,omitempty"`
+	// Size is the last background measurement (docker_sizes.go), absent
+	// before the first.
+	Size *dockerContainerSize `json:"size,omitempty"`
 	// Usage is the stats sampler's latest reading, on the list only and only
 	// for a running container the sampler has read twice (CPU is a delta).
 	Usage *dockerViewUsage `json:"usage,omitempty"`
@@ -398,6 +401,7 @@ func (h *Handlers) DockerContainerDetailHandler(w http.ResponseWriter, r *http.R
 	d := dockerViewDetail{dockerViewContainer: toDockerView(c, dockerSelfID())}
 	d.LanIP = dockerLanIP(c, api.dockerLanNetworks(r.Context()))
 	d.Update = dockerRowUpdate(h.dockerUpdateSnapshot()[c.Image], c, api.imageTagIDs(r.Context()))
+	d.Size = dockerSizeOf(c.ID, time.Now())
 	d.StartedAt = in.State.StartedAt
 	d.RestartPolicy = in.HostConfig.RestartPolicy.Name
 	for _, m := range in.Mounts {
@@ -614,6 +618,7 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	// The sampler's last reading rides along, so the table's CPU and RAM
 	// columns cost no stats call per row. Off in Config means no columns.
 	usageEnabled := h.store.GetSettings().DockerStatsHistory
+	now := time.Now()
 	for _, c := range list {
 		if hidden[c.name()] {
 			continue
@@ -621,6 +626,7 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 		v := toDockerView(c, self)
 		v.LanIP = dockerLanIP(c, lan)
 		v.Update = dockerRowUpdate(updates[c.Image], c, tagIDs)
+		v.Size = dockerSizeOf(c.ID, now)
 		if usageEnabled && c.State == "running" {
 			if p, ok := dockerStatsStore.latest(c.ID); ok {
 				v.Usage = &dockerViewUsage{CPU: p.CPU, Mem: p.Mem}

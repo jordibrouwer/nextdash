@@ -421,6 +421,12 @@ class DockerDrawer {
         this._fieldRow(body, 'dockerFieldImage', 'Image', detail.image);
         this._fieldRow(body, 'dockerFieldVersion', 'Version', detail.version);
         this._fieldRow(body, 'dockerFieldCreated', 'Created', dockerFormatDate(detail.created));
+        // Measured in the background (docker_sizes.go): none before the first.
+        if (detail.size) {
+            this._fieldRow(body, 'dockerFieldSize', 'Size',
+                window.DashboardDocker.sizeTitle(detail.size, (key, fallback, params) => this.view.t(key, fallback, params)));
+        }
+        if (this._els?.sizeEl) this._els.sizeEl.textContent = window.DashboardDocker.formatSize(detail.size);
         this._fieldRow(body, 'dockerFieldRestart', 'Restart policy', detail.restartPolicy);
         this._fieldRow(body, 'dockerFieldProject', 'Project', detail.composeProject);
         this._fieldRow(body, 'dockerFieldHealth', 'Health', detail.health);
@@ -655,15 +661,26 @@ class DockerDrawer {
         memVal.textContent = '—';
         mem.append(memLabel, memVal);
 
+        // What the container wrote, from the last background measurement.
+        const size = document.createElement('div');
+        size.className = 'docker-resource-row';
+        const sizeLabel = document.createElement('span');
+        sizeLabel.textContent = this.t('dockerFieldSize', 'Size');
+        const sizeVal = document.createElement('span');
+        sizeVal.setAttribute('data-docker-size', '');
+        sizeVal.textContent = window.DashboardDocker.formatSize(this._summary?.size);
+        size.append(sizeLabel, sizeVal);
+
         // The last hour, under the figures: filled by _renderCharts once the
         // first answer with history lands.
         const charts = document.createElement('div');
         charts.className = 'docker-charts';
         charts.setAttribute('data-docker-charts', '');
 
-        body.append(cpu, mem, charts);
+        body.append(cpu, mem, size, charts);
         els.cpuEl = cpuVal;
         els.memEl = memVal;
+        els.sizeEl = sizeVal;
         els.chartsEl = charts;
     }
 

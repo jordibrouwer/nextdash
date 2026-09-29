@@ -109,7 +109,7 @@ test.describe('docker view polish', () => {
     await openView(page, { usage: true });
     await page.locator('[data-docker-group]').selectOption('none');
     const heads = page.locator('.docker-table thead th');
-    await expect(heads).toHaveText(['Name', 'Image', 'Status', 'CPU', 'RAM', 'Web UI', 'Ports']);
+    await expect(heads).toHaveText(['Name', 'Image', 'Status', 'CPU', 'RAM', 'Size', 'Web UI', 'Ports']);
     const jellyfin = page.locator('[data-docker-row="jellyfin"]');
     await expect(jellyfin.locator('.docker-cell--cpu')).toHaveText('41.7 %');
     await expect(jellyfin.locator('.docker-cell--mem')).toHaveText('1.3 GiB');
@@ -128,7 +128,7 @@ test.describe('docker view polish', () => {
 
   test('no CPU or RAM columns while the sampler is off', async ({ page }) => {
     await openView(page, { usage: false });
-    await expect(page.locator('.docker-table thead th')).toHaveText(['Name', 'Image', 'Status', 'Web UI', 'Ports']);
+    await expect(page.locator('.docker-table thead th')).toHaveText(['Name', 'Image', 'Status', 'Size', 'Web UI', 'Ports']);
     await expect(page.locator('.docker-cell--cpu')).toHaveCount(0);
   });
 

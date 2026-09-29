@@ -831,6 +831,19 @@ class DashboardDocker {
         return Number.isFinite(pct) ? `${pct.toFixed(1)} %` : '—';
     }
 
+    /** A container's writable layer, or — before it was first measured. */
+    static formatSize(size) {
+        return size ? window.NextDashBytes.formatBytes(size.rw) : '—';
+    }
+
+    /** "24 MiB written · 568 MiB with its image". */
+    static sizeTitle(size, t) {
+        return t('dashboard.dockerSizeTitle', '{written} written · {total} with its image', {
+            written: window.NextDashBytes.formatBytes(size.rw),
+            total: window.NextDashBytes.formatBytes(size.rootFs),
+        });
+    }
+
     static formatMem(bytes) {
         if (!Number.isFinite(bytes) || bytes < 0) return '—';
         const mib = bytes / (1024 * 1024);
@@ -1162,6 +1175,7 @@ class DashboardDocker {
                 ['cpu', this.t('dashboard.dockerColCpu', 'CPU'), 'cpu'],
                 ['mem', this.t('dashboard.dockerColMem', 'RAM'), 'mem'],
             ] : []),
+            ['size', this.t('dashboard.dockerColSize', 'Size')],
             ['webui', this.t('dashboard.dockerLinkWebUI', 'Web UI')],
             ['ports', this.t('dashboard.dockerColPorts', 'Ports')],
         ].forEach(([key, label, sortKey]) => {
@@ -1366,6 +1380,14 @@ class DashboardDocker {
             memCell.textContent = DashboardDocker.formatMem(c.usage?.mem);
             tr.append(cpuCell, memCell);
         }
+
+        // What the container wrote, measured in the background every half
+        // hour (docker_sizes.go); with its image on hover, as `docker ps -s`.
+        const sizeCell = document.createElement('td');
+        sizeCell.className = 'docker-cell docker-cell--size docker-cell--num';
+        sizeCell.textContent = DashboardDocker.formatSize(c.size);
+        if (c.size) sizeCell.title = DashboardDocker.sizeTitle(c.size, (key, fallback, params) => this.t(key, fallback, params));
+        tr.appendChild(sizeCell);
 
         /*
          * The web UI in a column of its own -- the address set in the drawer's
