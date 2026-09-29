@@ -629,7 +629,7 @@ class DockerDrawer {
         const cpu = document.createElement('div');
         cpu.className = 'docker-resource-row';
         const cpuLabel = document.createElement('span');
-        cpuLabel.textContent = 'CPU';
+        cpuLabel.textContent = this.t('dockerColCpu', 'CPU');
         const cpuVal = document.createElement('span');
         cpuVal.setAttribute('data-docker-cpu', '');
         cpuVal.textContent = '—';
@@ -638,7 +638,7 @@ class DockerDrawer {
         const mem = document.createElement('div');
         mem.className = 'docker-resource-row';
         const memLabel = document.createElement('span');
-        memLabel.textContent = 'Memory';
+        memLabel.textContent = this.t('dockerSortMem', 'Memory');
         const memVal = document.createElement('span');
         memVal.setAttribute('data-docker-mem', '');
         memVal.textContent = '—';
@@ -660,7 +660,11 @@ class DockerDrawer {
         this._stopResourcePolling();
         this._statsBeat = 0;
         this._history = null;
-        const tick = () => void this._loadStats();
+        // Each beat is a stats call to the daemon: none while the tab is hidden.
+        const tick = () => {
+            if (document.visibilityState !== 'visible') return;
+            void this._loadStats();
+        };
         tick();
         this._statsTimer = setInterval(tick, 2000);
     }

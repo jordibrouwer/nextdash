@@ -77,3 +77,16 @@ test.describe('resource charts', () => {
         await expect(page.getByLabel('Keep the last hour of CPU and memory')).toBeChecked();
     });
 });
+
+// Each beat is a stats call to the daemon, so a hidden tab makes none.
+test('the figures are not polled while the tab is hidden', async ({ page }) => {
+    let calls = 0;
+    page.on('request', (req) => { if (/\/api\/docker\/containers\/[^/]+\/stats/.test(req.url())) calls += 1; });
+    await openResources(page, NOW);
+    await page.evaluate(() => {
+        Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    });
+    const before = calls;
+    await page.waitForTimeout(4500);
+    expect(calls - before).toBe(0);
+});

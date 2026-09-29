@@ -217,6 +217,9 @@
                 : (body?.message || this.t('dockerActionFailed', 'Docker did not do that.'));
             this.notify(text, 'error');
             await this.view.refreshContainers();
+            // A failed update may have left a container under another id or
+            // none; the side panel shows what is there now.
+            this.view.drawerRefresh?.();
         }
 
         /**
