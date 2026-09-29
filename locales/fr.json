@@ -2904,7 +2904,8 @@
     "dockerRollbackNone": "There is no update to roll back.",
     "dockerRollbackImageGone": "The previous image is no longer on this host, so there is nothing to go back to.",
     "dockerRollbackPinned": "This container is pinned to an image digest; roll it back from your Docker host.",
-    "dockerSkipNothing": "There is no update on offer to skip."
+    "dockerSkipNothing": "There is no update on offer to skip.",
+    "dockerStackUpdateHint": "Update the containers in this stack that have an update waiting"
   },
   "health": {
     "reloadPage": "Recharger la page",

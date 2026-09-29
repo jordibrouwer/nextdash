@@ -1071,6 +1071,22 @@ class DashboardDocker {
             });
             wrap.appendChild(btn);
         });
+        // Update takes only what has an update waiting: not a skipped or held
+        // version, not an image no check has looked at. runBulk asks once,
+        // naming them, and updates them one at a time.
+        const waiting = stack.filter((c) => c.update?.status === 'available'
+            && this.actions?.allowed(c).includes('update'));
+        const update = document.createElement('button');
+        update.type = 'button';
+        update.className = 'docker-action-btn';
+        update.setAttribute('data-docker-stack-action', 'update');
+        update.textContent = `${this.actions?.label('update') || 'Update'} (${waiting.length})`;
+        update.title = this.t('dashboard.dockerStackUpdateHint', 'Update the containers in this stack that have an update waiting');
+        update.disabled = !waiting.length;
+        update.addEventListener('click', async () => {
+            await this.actions?.runBulk('update', waiting);
+        });
+        wrap.appendChild(update);
         return wrap;
     }
 

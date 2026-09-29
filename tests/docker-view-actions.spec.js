@@ -122,6 +122,39 @@ test.describe('docker view actions', () => {
       .toEqual(['POST /containers/radarr/stop', 'POST /containers/sonarr/stop']);
   });
 
+  // Update on a project's row takes only what has an update waiting: not a
+  // skipped or held version, not an image nobody checked.
+  test('a project group row updates what in its stack has an update waiting', async ({ page }) => {
+    const row = (name, project, update) => ({ id: name.padEnd(64, '0'), shortId: name.padEnd(12, '0'), name, image: `x/${name}`,
+      tag: 'latest', state: 'running', status: 'Up 2 days', health: '', created: 1790000000, ports: [], composeProject: project,
+      ...(update ? { update } : {}) });
+    const state = await mockDocker(page, { containers: [
+      row('sonarr', 'arr', { status: 'available' }), row('radarr', 'arr', { status: 'available' }),
+      row('lidarr', 'arr', { status: 'skipped', skippedDigest: 'sha256:x' }), row('prowlarr', 'arr', { status: 'current' }),
+      row('jellyfin', 'media', { status: 'held', held: true }), row('jellyseerr', 'media', null),
+    ] });
+    await page.goto('/#docker');
+    await page.locator('[data-docker-group]').selectOption('project');
+    const arr = page.locator('.docker-group-row[data-docker-group-project="arr"] [data-docker-stack-action="update"]');
+    const media = page.locator('.docker-group-row[data-docker-group-project="media"] [data-docker-stack-action="update"]');
+    await expect(arr).toHaveText(/\(2\)/);
+    await expect(arr).toBeEnabled();
+    await expect(media).toBeDisabled();
+
+    await arr.click();
+    const dialog = confirmDialog(page);
+    await expect(dialog).toContainText('radarr');
+    await expect(dialog).not.toContainText('lidarr');
+    await expect(dialog).not.toContainText('prowlarr');
+    await dialog.getByRole('button', { name: /cancel/i }).click();
+    expect(state.calls.filter((c) => c.endsWith('/update'))).toEqual([]);
+
+    await arr.click();
+    await confirmDialog(page).getByRole('button', { name: /^update$/i }).click();
+    await expect.poll(() => state.calls.filter((c) => c.endsWith('/update')).sort())
+      .toEqual(['POST /containers/radarr/update', 'POST /containers/sonarr/update']);
+  });
+
   test('read-only shows no stack buttons', async ({ page }) => {
     await openView(page, { control: false });
     await page.locator('[data-docker-group]').selectOption('project');

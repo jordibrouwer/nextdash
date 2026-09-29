@@ -1194,7 +1194,7 @@ Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `
 | **Stopped** | Containers that are down or paused |
 | **Updates** | Containers with a newer image waiting |
 
-**Group by status** folds the list under Updates, Running, Paused and Stopped; **group by project** folds it under each compose project, and a project's row has **Start**, **Stop** and **Restart** for the whole stack (Stop asks first, and the containers go one at a time).
+**Group by status** folds the list under Updates, Running, Paused and Stopped; **group by project** folds it under each compose project, and a project's row has **Start**, **Stop** and **Restart** for the whole stack, and **Update (n)** for the *n* containers in it with an update waiting — not a skipped or held version, not an image no check has looked at. Stop and Update ask first, naming the containers, and they go one at a time.
 
 Each row shows its name, image, status, **CPU** and **RAM**, a link to its web UI and its ports. CPU and RAM are the last reading, taken every 30 seconds; they are there while **Config → Containers → Keep the last hour of CPU and memory** is on. On a narrower screen the Image column goes first (below 1100 pixels), then CPU and RAM (below 900). Click **Name** or **Status** to sort, and again to turn the order round; the sort menu also offers uptime, CPU and memory, highest first.
 
