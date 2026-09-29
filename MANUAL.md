@@ -811,9 +811,11 @@ Active filters show as removable tokens above the groups, with **Clear filters**
 
 ### 11.2 The toolbar and the list
 
-The toolbar sits above the list: a **search** field (`/`) that matches name, URL, category, note, shortcut and tags; a count of what is shown; **Group** (No groups, Page, Category, Site, Status, Tag); **Sort** (Page order, Name A–Z, URL, Category, Recently added, Last opened, Most opened, Pinned first, and Health score once a Health filter is active); the row-density toggle shared with the other list views; and **Add bookmark**, which opens the full form on the page the list is filtered to.
+The toolbar sits above the list: a **search** field (`/`) that matches name, URL, category, note, shortcut and tags; a count of what is shown; **Group** (No groups, Page, Category, Site, Status, Tag); **Sort** (Page order, Name A–Z, URL, Category, Recently added, Last opened, Most opened, Pinned first, Tags, Shortcut, Usage, Health score); the row-density toggle shared with the other list views; and **Add bookmark**, which opens the full form on the page the list is filtered to.
 
 Rows show icon, name, host, tags, open count and last opened, plus a score column and status glow once Health has joined in. Only the rows near the screen are drawn, so thousands of bookmarks stay fast.
+
+**Column headings** name the columns View shows and stay in place while the list scrolls (not at phone width). Every heading with a value under it sorts: a click sorts by that column in its natural order — Name and Tags A to Z (by the first tag, untagged last), Shortcut the keyed ones first, Usage the most opens in the sparkline's window first, Opens, Last opened and Added highest or newest first, Pinned the pinned ones first, Score the worst first — and a second click turns it round. An arrow on the heading shows which way the list runs; **Sort** follows, and picking from **Sort** starts afresh in the natural order. `Enter` or `Space` on a focused heading does the same.
 
 ### 11.3 The side panel
 
@@ -940,12 +942,12 @@ A period select (today, 7, 14, 30 or 90 days) applies across the panel.
 ### 11.13 Addresses
 
 ```
-#bookmarks[/<page>]?q=&cat=&filter=&health=&tag=&sort=&group=
+#bookmarks[/<page>]?q=&cat=&filter=&health=&tag=&sort=&rev=&group=
 #unsorted
 #health                      → redirects here, on Broken
 ```
 
-`health=` takes one of the Health filter keys (`broken`, `content`, `duplicate`, `stale`, `unused`, `unchecked`, `monitored`, `certificates`, `healthy`, and a few more reachable only from Collection health, such as `drift`); `q=` is a search term. `Shift + U` and the address `#unsorted` open the view on Unsorted directly.
+`health=` takes one of the Health filter keys (`broken`, `content`, `duplicate`, `stale`, `unused`, `unchecked`, `monitored`, `certificates`, `healthy`, and a few more reachable only from Collection health, such as `drift`); `q=` is a search term; `rev=1` turns the sort round. `Shift + U` and the address `#unsorted` open the view on Unsorted directly.
 
 ---
 
@@ -1089,10 +1091,10 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`.
 
 - **A rail of filters** on the left, each with its count: **All**, **Unread**, **Snoozed** and **With note** (the last two only when they hold something) — it can fold behind a **Filters** button (Config → Inbox → Panel & clicks). *This week* is a readout above them.
 - **Narrowing** — by site, by tag (click a tag chip) and by search. Every count follows what is shown, and *Mark all read* becomes *Mark shown read*.
-- **Sort** — newest first (default), oldest first, title or site.
+- **Sort** — newest first (default), oldest first, title or site. The column headings sort too: **Title** and **Site** A to Z, a second click Z to A; **Added** switches between newest and oldest first. Under Snoozed, which keeps its wake order, the headings do not sort.
 - **Rows** are one line each and follow the app-wide density; the header stays in place. There are no tabs — a kept link goes straight to Bookmarks → Unsorted, not to a second list here ([§13.5](#135-keeping-a-link-unsorted-and-promote)).
 - **The side panel**, in the same style as the Bookmarks view's, shows the link in focus: Open, Promote, Keep, note, tags — suggested tag chips live in its Tags section — details and delete.
-- **The address** keeps filter, sort, site, tag and search (`ib_filter`, `ib_sort`, `ib_domain`, `ib_tag`, `ib_q`); filter, sort and site also return next time.
+- **The address** keeps filter, sort, site, tag and search (`ib_filter`, `ib_sort`, `ib_dir`, `ib_domain`, `ib_tag`, `ib_q`); filter, sort and site also return next time.
 - The **ℹ** explains the inbox; a sentence under the toolbar explains the active filter.
 
 ### 13.3 Acting on links
@@ -2360,7 +2362,7 @@ Escape              close, then leave
 | `/` | The dashboard |
 | `/#config`, `/#config/<section>/<tab>` | Config |
 | `/#config/help/<tab>/<topic>` | A help topic |
-| `/#bookmarks[/<page>]?q=&cat=&filter=&health=&tag=&sort=&group=` | The Bookmarks view |
+| `/#bookmarks[/<page>]?q=&cat=&filter=&health=&tag=&sort=&rev=&group=` | The Bookmarks view |
 | `/#unsorted` | The Bookmarks view, on Unsorted |
 | `/#health` | Redirects into the Bookmarks view, on Broken |
 | `/#inbox` | The inbox |

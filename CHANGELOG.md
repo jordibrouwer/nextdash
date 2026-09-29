@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **docs — Help and the manual describe the sortable column headings.** Config → Help (Bookmarks view → the list, Inbox → working the list, in all six languages) and MANUAL §11.2, §11.13 and §13: which headings sort and in what order, the arrow, that Sort follows, and the `rev=` and `ib_dir` address keys.
+
 - **fix — seven more places no longer report a failed settings save as done.** `saveSettings()` resolves `false` on a failed save rather than rejecting, and resetting onboarding, bringing a tour back, a choice in the changes tour, the Shift+Q search mode, the ask-again for browser notifications, the date-and-weather card and the feeds switch in the fresh tutorial each ignored that answer: they said the change was made, or kept it on screen, beside the save error. Each now checks the answer.
 - **fix — restoring a bookmark from the trash keeps its page free of duplicates.** A page holds each address once, as a save insists, but a restore put the bookmark back even when the address had been added again since: it is now refused and the item stays in the trash. A shortcut taken since is let go, and the bookmark comes back without it. `TestRestoreTrashItemKeepsThePageFreeOfDuplicates` fails on the old code.
 - **fix — the Go tests are race-clean again.** `go test -race ./...` failed four tests on races in shared state: the activity log's config and its test override were read without a lock while a save or a test replaced them, and every set of handlers rewired the Containers view's settings source. Both now sit behind atomic pointers.
