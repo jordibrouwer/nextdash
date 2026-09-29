@@ -50,7 +50,7 @@ func newDockerAPI() (*dockerAPI, string) {
 }
 
 func (d *dockerAPI) url(path string) string {
-	return "http://docker/" + dockerAPIVersion + path
+	return "http://docker/" + dockerAPIVersionFor(d.socket) + path
 }
 
 func (d *dockerAPI) do(ctx context.Context, method, path string, body any) (*http.Response, error) {

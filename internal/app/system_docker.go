@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -30,7 +31,53 @@ second, so twenty containers would be twenty seconds of polling per beat. That
 is a monitoring system, not a tile, and the custom widget already exists for it.
 */
 
+// dockerAPIVersion is the version nextDash speaks: old enough for any daemon
+// still in use. A daemon can refuse it -- Docker Engine 29.0 to 29.2 would take
+// nothing older than 1.44 -- and then its own minimum is used instead, which
+// dockerAPIVersionFor asks for once per socket.
 const dockerAPIVersion = "v1.41"
+
+var dockerAPIVersions sync.Map // socket -> "vX.Y"
+
+// dockerAPIVersionFor is the version to put in front of every path on this
+// socket. The unversioned /version answers on every daemon; a daemon that
+// cannot be reached is asked again next time, one that answers is not.
+func dockerAPIVersionFor(socket string) string {
+	if v, ok := dockerAPIVersions.Load(socket); ok {
+		return v.(string)
+	}
+	resp, err := dockerClientFor(socket).Get("http://docker/version")
+	if err != nil {
+		return dockerAPIVersion
+	}
+	defer resp.Body.Close()
+	version := dockerAPIVersion
+	var body struct {
+		MinAPIVersion string `json:"MinAPIVersion"`
+	}
+	if resp.StatusCode == http.StatusOK && json.NewDecoder(resp.Body).Decode(&body) == nil &&
+		dockerAPIVersionLess(strings.TrimPrefix(dockerAPIVersion, "v"), body.MinAPIVersion) {
+		version = "v" + body.MinAPIVersion
+	}
+	dockerAPIVersions.Store(socket, version)
+	return version
+}
+
+// dockerAPIVersionLess compares "1.41" and "1.44" as numbers, not text.
+func dockerAPIVersionLess(a, b string) bool {
+	parse := func(v string) (int, int, bool) {
+		major, minor, ok := strings.Cut(strings.TrimSpace(v), ".")
+		x, err1 := strconv.Atoi(major)
+		y, err2 := strconv.Atoi(minor)
+		return x, y, ok && err1 == nil && err2 == nil
+	}
+	am, an, ok1 := parse(a)
+	bm, bn, ok2 := parse(b)
+	if !ok1 || !ok2 {
+		return false
+	}
+	return am < bm || (am == bm && an < bn)
+}
 
 // How new a running container has to be to count as recently restarted.
 // Something up for minutes while everything else has run for days is the shape
@@ -226,7 +273,8 @@ func readDocker() DockerMetrics {
 	}
 	client := dockerClientFor(socket)
 
-	resp, err := client.Get("http://docker/" + dockerAPIVersion + "/containers/json?all=1")
+	version := dockerAPIVersionFor(socket)
+	resp, err := client.Get("http://docker/" + version + "/containers/json?all=1")
 	if err != nil {
 		return DockerMetrics{MetricStatus: MetricStatus{Reason: dockerDialReason(err)}}
 	}
@@ -249,7 +297,7 @@ func readDocker() DockerMetrics {
 	   rather than images: the same image under two tags is two CLI rows and one
 	   image here. The API's own number is the honest one.
 	*/
-	if info, err := client.Get("http://docker/" + dockerAPIVersion + "/info"); err == nil {
+	if info, err := client.Get("http://docker/" + version + "/info"); err == nil {
 		defer info.Body.Close()
 		var payload struct {
 			Images int `json:"Images"`

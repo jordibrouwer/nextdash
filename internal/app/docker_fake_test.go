@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -55,6 +56,10 @@ type fakeDocker struct {
 	reclaimed int64
 	// lastCreate is the body of the last /containers/create, as sent.
 	lastCreate map[string]any
+	// minAPI is what GET /version gives as MinAPIVersion ("" answers 404, as
+	// an old daemon might); versions records the prefix each request used.
+	minAPI   string
+	versions map[string]int
 }
 
 type fakeContainer struct {
@@ -185,13 +190,33 @@ func writeJSONFake(w http.ResponseWriter, status int, body any) {
 	_ = json.NewEncoder(w).Encode(body)
 }
 
+var fakeVersionPrefix = regexp.MustCompile(`^/v[0-9]+\.[0-9]+`)
+
 func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	// Every request the client sends is versioned ("/v1.41/..."); route on
 	// what follows that prefix, the way the plan's table names paths.
-	path := strings.TrimPrefix(r.URL.Path, "/"+dockerAPIVersion)
+	path := r.URL.Path
+	if m := fakeVersionPrefix.FindString(path); m != "" {
+		path = strings.TrimPrefix(path, m)
+		if f.versions == nil {
+			f.versions = map[string]int{}
+		}
+		f.versions[m]++
+		if f.minAPI != "" && m != "/v"+f.minAPI {
+			writeJSONFake(w, http.StatusBadRequest, map[string]string{"message": "client version " + strings.TrimPrefix(m, "/v") + " is too old"})
+			return
+		}
+	} else if path == "/version" {
+		if f.minAPI == "" {
+			writeJSONFake(w, http.StatusNotFound, map[string]string{"message": "page not found"})
+			return
+		}
+		writeJSONFake(w, http.StatusOK, map[string]string{"MinAPIVersion": f.minAPI, "ApiVersion": "1.51"})
+		return
+	}
 
 	switch {
 	case r.Method == "GET" && path == "/_ping":

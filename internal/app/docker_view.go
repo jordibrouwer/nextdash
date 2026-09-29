@@ -596,6 +596,12 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	}
 	list, err := api.listContainers(r.Context())
 	if err != nil {
+		// A daemon that answered and refused is not a missing socket.
+		var apiErr *dockerAPIError
+		if errors.As(err, &apiErr) {
+			writeJSON(w, map[string]any{"available": false, "reason": "daemon", "message": apiErr.Message, "containers": []any{}})
+			return
+		}
 		writeJSON(w, map[string]any{"available": false, "reason": dockerDialReason(err), "containers": []any{}})
 		return
 	}

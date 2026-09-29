@@ -255,3 +255,22 @@ func TestDockerSecretsNeedWriteToken(t *testing.T) {
 		}
 	}
 }
+
+// A daemon that refuses nextDash's API version (Docker Engine 29.0 to 29.2
+// took nothing older than 1.44) is spoken to at its own minimum, found once.
+func TestDockerSpeaksTheDaemonsMinimumVersionWhenOursIsTooOld(t *testing.T) {
+	f := startFakeDocker(t)
+	f.minAPI = "1.44"
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", Image: "nginx:alpine", State: "running"})
+	rec := httptest.NewRecorder()
+	newDockerTestRouter(dockerTestHandlers(t)).ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/containers", nil))
+	if !strings.Contains(rec.Body.String(), `"name":"web"`) {
+		t.Fatalf("list = %d %s", rec.Code, rec.Body)
+	}
+	if f.versions["/v1.41"] != 0 || f.versions["/v1.44"] == 0 {
+		t.Fatalf("versions used = %v", f.versions)
+	}
+	if m := readDocker(); !m.Available || m.Total != 1 {
+		t.Fatalf("widget read = %+v", m)
+	}
+}
