@@ -62,9 +62,15 @@ class DashboardDocker {
         // "pulling", ...). Kept here rather than on the row so a repaint
         // mid-action keeps showing it.
         this.busy = new Map();
-        // Rows picked with Cmd/Ctrl/Shift-click, for the bulk bar.
+        // Ticked rows, for the selection bar: by their box, x or Space,
+        // Cmd/Ctrl/Shift-click. Kept apart from this.selected, which is the
+        // keyboard cursor -- moving it must not change what is ticked.
         this.multi = new Set();
         this._multiAnchor = null;
+        /** The selection bar, built once and updated in place (syncBulkBar). */
+        this._bulkBar = null;
+        /** True while the bar's action runs, so a second press cannot start another. */
+        this.bulkRunning = false;
         this.actions = typeof window.DockerActions === 'function' ? new window.DockerActions(this) : null;
         this.menu = typeof window.DockerRowMenu === 'function' ? new window.DockerRowMenu(this) : null;
         this.restoreViewState();
@@ -284,8 +290,42 @@ class DashboardDocker {
             // <summary> toggling, a reveal button, a link) — never hijacked here.
             const inDrawer = Boolean(active?.closest?.('[data-docker-drawer]'));
             const rowAncestor = active?.closest?.('.docker-row');
-            const onRowControl = Boolean(rowAncestor && active !== rowAncestor && active?.matches?.('a, button, input, select'));
+            // A row's own tick is not a control the arrows have to leave alone:
+            // after ticking one with the mouse, ↓ still moves through the list.
+            const onRowControl = Boolean(rowAncestor && active !== rowAncestor
+                && active?.matches?.('a, button, input:not(.docker-tick-input), select'));
             const onHeading = Boolean(active?.matches?.('[data-docker-sort-head], [data-docker-stack-action]'));
+
+            // Ticking rows, with the keys Bookmarks and Inbox use: x or Space
+            // ticks the highlighted row, X or Shift+↑/↓ ticks the run from the
+            // last one ticked, Ctrl/Cmd+A ticks everything the filter shows and
+            // a second press clears it. Containers tab only, and never from a
+            // field or a control: Space on a focused button (or on a row's own
+            // tick) is that control's. From the drawer too, as s and r are.
+            const onControl = Boolean(active?.matches?.('a[href], button, input, select, textarea, summary'));
+            const canTick = this.tab === 'containers' && Boolean(this.status?.socket)
+                && !menuOrModalOpen && !typing;
+            if (canTick && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 'a' || e.key === 'A')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.checkAllVisible();
+                return;
+            }
+            const plain = !e.ctrlKey && !e.metaKey && !e.altKey;
+            if (canTick && plain && !onControl && this.selected && (e.key === 'x' || e.key === ' ' || e.key === 'X')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (e.key === 'X') this.extendCheckedTo(this.selected);
+                else this.toggleChecked(this.selected);
+                return;
+            }
+            if (canTick && plain && e.shiftKey && !inDrawer && !onRowControl && !onHeading && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.extendCheckedByKey(e.key === 'ArrowDown' ? 1 : -1);
+                return;
+            }
+
             if (!menuOrModalOpen && !inDrawer && !onRowControl && !onHeading && (typing ? isSearch : true)
                 && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter')) {
                 e.preventDefault();
@@ -317,7 +357,7 @@ class DashboardDocker {
                 if (e.key === 'l') {
                     this.openLogs(c);
                 } else if (!c.self) {
-                    void this.actions?.toggleMute(c).then(() => this.drawerRefresh?.());
+                    void this.actions?.toggleMute(c, { via: 'key' }).then(() => this.drawerRefresh?.());
                 }
                 return;
             }
@@ -331,7 +371,7 @@ class DashboardDocker {
                 if (c && action && this.actions?.allowed(c).includes(action)) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    void this.actions.run(action, c);
+                    void this.actions.run(action, c, { via: 'key' });
                 }
                 return;
             }
@@ -342,8 +382,7 @@ class DashboardDocker {
             e.preventDefault();
             e.stopImmediatePropagation();
             if (this.multi.size) {
-                this.multi.clear();
-                this.render();
+                this.clearChecked();
                 return;
             }
             // The drawer is the innermost thing on screen: the first Escape
@@ -565,6 +604,8 @@ class DashboardDocker {
         this.shell?.destroy?.();
         this.shell = null;
         this.drawerHost = null;
+        // It lived inside the shell's root, and went with it.
+        this._bulkBar = null;
     }
 
     applyFilter(key, via) {
@@ -797,6 +838,12 @@ class DashboardDocker {
         this.shell?.body?.querySelector(`[data-docker-sort-head="${headKey}"]`)?.focus();
     }
 
+    /** 'ascending', 'descending', or '' when the table is not sorted by this heading. */
+    headingSortState(key) {
+        if (this.sort !== key) return '';
+        return this.sortDir === 'desc' ? 'descending' : 'ascending';
+    }
+
     baseCompareFn() {
         if (this.sort === 'status') {
             return (a, b) => (DashboardDocker.SORT_RANK[a.state] ?? 3) - (DashboardDocker.SORT_RANK[b.state] ?? 3)
@@ -833,6 +880,7 @@ class DashboardDocker {
             updates: this.filterCount('updates'),
         });
         this.syncToolbar();
+        this.syncBulkBar();
 
         const body = this.shell.body;
         body.replaceChildren();
@@ -856,9 +904,6 @@ class DashboardDocker {
         const legend = legendAt === 'off' ? null : this.buildLegend({ control: this.status.control !== false });
         if (this.status.control === false) body.appendChild(this.buildReadOnlyLine());
         if (legend && legendAt !== 'below') body.appendChild(legend);
-        if (this.multi.size >= 2 && this.status.control) {
-            body.appendChild(this.buildBulkBar());
-        }
         body.appendChild(this.buildTable());
         if (legend && legendAt === 'below') {
             legend.classList.add('is-below');
@@ -875,6 +920,7 @@ class DashboardDocker {
             ['↑ / ↓', this.t('dashboard.dockerLegendMove', 'move')],
             ['Enter', this.t('dashboard.dockerLegendOpen', 'details')],
             ['/', this.t('dashboard.dockerLegendSearch', 'search')],
+            ['x', this.t('dashboard.dockerLegendSelect', 'select')],
             ...(control ? [
                 ['s', this.t('dashboard.dockerLegendRun', 'start / stop')],
                 ['r', this.t('dashboard.dockerLegendRestart', 'restart')],
@@ -898,28 +944,123 @@ class DashboardDocker {
         return wrap;
     }
 
+    /* ── The selection bar ──────────────────────────────────────────────
+     * The grid's and Inbox's bar (.multi-select-toolbar and its count and
+     * buttons, dashboard-multi-select.css), where Inbox puts its own: under
+     * the toolbar row, outside the body. Outside because a poll repaints the
+     * body every few seconds, and a bar rebuilt with it would take the
+     * keyboard off the button it was on -- so it is built once and updated
+     * in place. */
+
+    /** Ticked containers the list shows: what the bar's buttons act on. */
+    checkedContainers() {
+        return this.filteredSortedContainers().filter((c) => this.multi.has(c.name));
+    }
+
     buildBulkBar() {
         const bar = document.createElement('div');
-        bar.className = 'docker-bulk';
+        bar.className = 'multi-select-toolbar docker-bulk';
         bar.setAttribute('data-docker-bulk', '');
+        bar.setAttribute('role', 'toolbar');
+        bar.setAttribute('aria-label', this.t('dashboard.multiSelectToolbarAria', 'Selection actions'));
         const count = document.createElement('span');
-        count.className = 'docker-bulk-count';
-        count.textContent = this.t('dashboard.dockerBulkSelected', '{count} selected', { count: this.multi.size });
+        count.className = 'multi-select-count';
+        count.setAttribute('data-docker-bulk-count', '');
         bar.appendChild(count);
-        const picked = this.containers.filter((c) => this.multi.has(c.name));
-        ['start', 'stop', 'restart', 'update'].forEach((action) => {
+        ['select-all', 'start', 'stop', 'restart', 'update', 'mute', 'clear'].forEach((action) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'docker-action-btn';
+            btn.className = 'multi-select-btn';
             btn.setAttribute('data-docker-bulk-action', action);
-            btn.textContent = this.actions?.label(action) || action;
-            btn.disabled = !picked.some((c) => this.actions?.allowed(c).includes(action));
-            btn.addEventListener('click', async () => {
-                await this.actions?.runBulk(action, picked);
-            });
+            if (['start', 'stop', 'restart', 'update'].includes(action)) {
+                btn.textContent = this.actions?.label(action) || action;
+            }
+            if (action === 'clear') {
+                btn.textContent = this.t('dashboard.inboxSelectionClear', 'Clear selection');
+            }
+            btn.addEventListener('click', () => { void this.runBulkAction(action); });
             bar.appendChild(btn);
         });
         return bar;
+    }
+
+    /** Show, hide and relabel the bar for what is ticked now. */
+    syncBulkBar() {
+        const row = this.shell?.toolbarRow;
+        if (!row) return;
+        const picked = this.checkedContainers();
+        let bar = this._bulkBar;
+        if (this.tab !== 'containers' || !this.status?.socket || !picked.length) {
+            if (bar) bar.hidden = true;
+            return;
+        }
+        if (!bar || !bar.isConnected) {
+            bar = this.buildBulkBar();
+            row.after(bar);
+            this._bulkBar = bar;
+        }
+        bar.hidden = false;
+        bar.toggleAttribute('aria-busy', this.bulkRunning);
+        bar.querySelector('[data-docker-bulk-count]').textContent = this.t(
+            'dashboard.dockerBulkSelected', '{count} selected', { count: picked.length });
+        const visible = this.filteredSortedContainers();
+        const button = (action) => bar.querySelector(`[data-docker-bulk-action="${action}"]`);
+        // The same toggle Ctrl/Cmd+A is, so the label says which way it goes.
+        button('select-all').textContent = visible.every((c) => this.multi.has(c.name))
+            ? this.t('dashboard.inboxDeselectAll', 'Deselect all')
+            : this.t('dashboard.unsortedSelectAll', 'Select all');
+        // Start, stop, restart and update are Docker's, and only there while
+        // control is on -- the gate the drawer's buttons and the row keys
+        // answer to (allowed() is empty without it). Mute is a setting of
+        // nextDash's own, so it stays in read-only.
+        const control = this.status.control === true;
+        ['start', 'stop', 'restart', 'update'].forEach((action) => {
+            const btn = button(action);
+            btn.hidden = !control;
+            btn.disabled = this.bulkRunning || !picked.some((c) => this.actions?.allowed(c).includes(action));
+        });
+        // Mute while any of them still sends notices, else unmute; the
+        // container that is nextDash has no notices to mute.
+        const mutable = picked.filter((c) => !c.self);
+        const muting = mutable.some((c) => !this.actions?.isMuted(c));
+        const mute = button('mute');
+        mute.textContent = muting || !mutable.length
+            ? this.t('dashboard.dockerMenuMute', 'Mute notifications')
+            : this.t('dashboard.dockerMenuUnmute', 'Unmute notifications');
+        mute.disabled = this.bulkRunning || !mutable.length;
+        button('select-all').disabled = this.bulkRunning;
+        button('clear').disabled = this.bulkRunning;
+    }
+
+    setBulkRunning(on) {
+        this.bulkRunning = Boolean(on);
+        this.syncBulkBar();
+    }
+
+    async runBulkAction(action) {
+        if (this.bulkRunning) return;
+        if (action === 'select-all') {
+            this.checkAllVisible();
+            return;
+        }
+        if (action === 'clear') {
+            this.clearChecked();
+            return;
+        }
+        const picked = this.checkedContainers();
+        if (action === 'mute') {
+            const mutable = picked.filter((c) => !c.self);
+            const muting = mutable.some((c) => !this.actions?.isMuted(c));
+            this.setBulkRunning(true);
+            try {
+                await this.actions?.setMuted(mutable, muting, { via: 'bulk' });
+            } finally {
+                this.setBulkRunning(false);
+            }
+            this.drawerRefresh?.();
+            return;
+        }
+        await this.actions?.runBulk(action, picked, { via: 'bulk' });
     }
 
     /** s and p toggle: the same key starts a stopped container and stops a running one. */
@@ -993,7 +1134,9 @@ class DashboardDocker {
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
         // Name and Status sort the table (the sort key each one sets is the
-        // third entry); the button carries the click, the th the aria-sort.
+        // third entry). The shared sortable heading (list-view-shell.css, as
+        // Bookmarks and Inbox draw theirs): the button carries the click, the
+        // th data-lvs-sort for the drawn arrow and aria-sort for a reader.
         [
             ['name', this.t('dashboard.dockerColName', 'Name'), 'name'],
             ['image', this.t('dashboard.dockerFieldImage', 'Image')],
@@ -1013,11 +1156,14 @@ class DashboardDocker {
                 headRow.appendChild(th);
                 return;
             }
-            const active = this.sort === sortKey;
-            if (active) th.setAttribute('aria-sort', this.sortDir === 'desc' ? 'descending' : 'ascending');
+            const state = this.headingSortState(sortKey);
+            if (state) {
+                th.setAttribute('data-lvs-sort', state);
+                th.setAttribute('aria-sort', state);
+            }
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'docker-head-sort';
+            btn.className = 'lvs-colhead-sort';
             btn.setAttribute('data-docker-sort-head', key);
             btn.textContent = label;
             btn.addEventListener('click', () => this.sortByHeading(sortKey, key));
@@ -1067,7 +1213,7 @@ class DashboardDocker {
             btn.textContent = this.actions?.label(action) || action;
             btn.disabled = !stack.some((c) => this.actions?.allowed(c).includes(action));
             btn.addEventListener('click', async () => {
-                await this.actions?.runBulk(action, stack);
+                await this.actions?.runBulk(action, stack, { via: 'row' });
             });
             wrap.appendChild(btn);
         });
@@ -1084,7 +1230,7 @@ class DashboardDocker {
         update.title = this.t('dashboard.dockerStackUpdateHint', 'Update the containers in this stack that have an update waiting');
         update.disabled = !waiting.length;
         update.addEventListener('click', async () => {
-            await this.actions?.runBulk('update', waiting);
+            await this.actions?.runBulk('update', waiting, { via: 'row' });
         });
         wrap.appendChild(update);
         return wrap;
@@ -1148,7 +1294,9 @@ class DashboardDocker {
             tr.setAttribute('data-docker-self', '');
             tr.setAttribute('data-lvs-self', '');
         }
-        tr.setAttribute('aria-selected', String(this.selected === c.name || this.multi.has(c.name)));
+        const checked = this.multi.has(c.name);
+        tr.setAttribute('aria-selected', String(this.selected === c.name || checked));
+        tr.classList.toggle('is-checked', checked);
         const busy = this.busy.get(c.name);
         if (busy) {
             tr.setAttribute('data-docker-busy', busy);
@@ -1159,6 +1307,7 @@ class DashboardDocker {
 
         const nameCell = document.createElement('td');
         nameCell.className = 'docker-cell docker-cell--name';
+        nameCell.appendChild(this.buildTick(c, checked));
         const nameText = document.createElement('span');
         nameText.className = 'docker-name';
         nameText.textContent = c.name;
@@ -1258,7 +1407,8 @@ class DashboardDocker {
         });
 
         tr.addEventListener('click', (e) => {
-            if (e.target.closest('a')) return; // a port link handles its own click
+            // A port link and the tick handle their own click.
+            if (e.target.closest('a, .docker-tick')) return;
             if (e.metaKey || e.ctrlKey || e.shiftKey) {
                 this.toggleMulti(c.name, { range: e.shiftKey });
                 return;
@@ -1268,6 +1418,37 @@ class DashboardDocker {
             this.selectContainer(c.name, { openDrawer: true });
         });
         return tr;
+    }
+
+    /**
+     * The row's tick, inside the name cell rather than a column of its own,
+     * the way Inbox's sits in its row's first line: out of sight until the
+     * pointer, the focus or a live selection asks for it (docker-view.css).
+     * Shift-click ticks the run from the last one ticked.
+     */
+    buildTick(c, checked) {
+        const label = document.createElement('label');
+        label.className = 'docker-tick';
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.className = 'docker-tick-input';
+        box.setAttribute('data-docker-tick', c.name);
+        box.checked = checked;
+        box.setAttribute('aria-label', this.t('dashboard.dockerSelectRow', 'Select {name}', { name: c.name }));
+        // change carries no modifier state, so Shift is read on click.
+        let shiftHeld = false;
+        box.addEventListener('click', (e) => { shiftHeld = e.shiftKey; });
+        box.addEventListener('change', () => {
+            if (shiftHeld && this._multiAnchor && this._multiAnchor !== c.name) {
+                this.extendCheckedTo(c.name);
+            } else {
+                this.setChecked(c.name, box.checked);
+            }
+            shiftHeld = false;
+        });
+        label.addEventListener('click', (e) => e.stopPropagation());
+        label.appendChild(box);
+        return label;
     }
 
     phaseText(phase) {
@@ -1287,18 +1468,81 @@ class DashboardDocker {
     toggleMulti(name, { range = false } = {}) {
         if (!this.multi.size && this.selected) this.multi.add(this.selected);
         if (range && this._multiAnchor) {
-            const rows = this.filteredSortedContainers().map((c) => c.name);
-            const a = rows.indexOf(this._multiAnchor);
-            const b = rows.indexOf(name);
-            if (a >= 0 && b >= 0) {
-                rows.slice(Math.min(a, b), Math.max(a, b) + 1).forEach((n) => this.multi.add(n));
-            }
-        } else if (this.multi.has(name)) {
-            this.multi.delete(name);
-        } else {
-            this.multi.add(name);
+            this.extendCheckedTo(name);
+            return;
         }
         this._multiAnchor = this._multiAnchor || name;
+        this.setChecked(name, !this.multi.has(name));
+    }
+
+    /** Tick or untick one row, and make it the fixed end of the next range. */
+    setChecked(name, on) {
+        if (!name) return;
+        if (on) this.multi.add(name);
+        else this.multi.delete(name);
+        this._multiAnchor = name;
+        this.afterCheckChange();
+    }
+
+    toggleChecked(name) {
+        this.setChecked(name, !this.multi.has(name));
+    }
+
+    /**
+     * Tick every row from the last one ticked to `name`, in the order the
+     * list shows. Without an anchor there is no range, so it ticks the one.
+     */
+    extendCheckedTo(name) {
+        const rows = this.filteredSortedContainers().map((c) => c.name);
+        const a = rows.indexOf(this._multiAnchor);
+        const b = rows.indexOf(name);
+        if (a < 0 || b < 0) {
+            this.setChecked(name, true);
+            return;
+        }
+        rows.slice(Math.min(a, b), Math.max(a, b) + 1).forEach((n) => this.multi.add(n));
+        this.afterCheckChange();
+    }
+
+    /**
+     * Shift+↑/↓: the keyboard's Shift-click. The row it starts on is ticked
+     * first, then everything up to the one it moves to; no wrap at either
+     * end, so one keystroke at the top cannot tick the whole list.
+     */
+    extendCheckedByKey(delta) {
+        if (this.selected && !this.multi.has(this._multiAnchor)) {
+            this._multiAnchor = this.selected;
+            this.multi.add(this.selected);
+        }
+        this.moveRowSelection(delta, { wrap: false });
+        if (!this._multiAnchor) this._multiAnchor = this.selected;
+        const anchor = this._multiAnchor;
+        this.extendCheckedTo(this.selected);
+        this._multiAnchor = anchor;
+    }
+
+    /**
+     * Tick every row the filter shows, or clear them when they are all
+     * ticked already -- so the same chord undoes itself. Only what is shown:
+     * ticking rows nobody can see would arm the bar over a selection nobody
+     * made.
+     */
+    checkAllVisible() {
+        const visible = this.filteredSortedContainers();
+        if (!visible.length) return;
+        const all = visible.every((c) => this.multi.has(c.name));
+        visible.forEach((c) => (all ? this.multi.delete(c.name) : this.multi.add(c.name)));
+        this.afterCheckChange();
+    }
+
+    clearChecked() {
+        if (!this.multi.size) return;
+        this.multi.clear();
+        this._multiAnchor = null;
+        this.render();
+    }
+
+    afterCheckChange() {
         // Two or more picked is a selection to act on, not one container to
         // read: the drawer steps aside so the bulk bar is reachable.
         if (this.multi.size >= 2 && this.drawerOpen) {
@@ -1354,11 +1598,13 @@ class DashboardDocker {
     /** ↑/↓: moves the highlighted row and, if the drawer is already open,
      * what it shows — without this, arrowing past the open container would
      * leave the drawer pointed at a row that no longer looks selected. */
-    moveRowSelection(delta) {
+    moveRowSelection(delta, { wrap = true } = {}) {
         const rows = this.filteredSortedContainers();
         if (!rows.length) return;
         let idx = rows.findIndex((c) => c.name === this.selected);
-        idx = idx < 0 ? (delta > 0 ? 0 : rows.length - 1) : (idx + delta + rows.length) % rows.length;
+        if (idx < 0) idx = delta > 0 ? 0 : rows.length - 1;
+        else if (wrap) idx = (idx + delta + rows.length) % rows.length;
+        else idx = Math.max(0, Math.min(rows.length - 1, idx + delta));
         this.selectContainer(rows[idx].name, { openDrawer: this.drawerOpen });
         this.focusRow(rows[idx].name);
     }

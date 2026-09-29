@@ -63,7 +63,7 @@
                 if (action === 'remove') btn.classList.add('docker-action-btn--danger');
                 btn.textContent = this.label(action);
                 btn.disabled = this.view.busy.has(container.name);
-                btn.addEventListener('click', () => { void this.run(action, container); });
+                btn.addEventListener('click', () => { void this.run(action, container, { via: 'drawer' }); });
                 host.appendChild(btn);
             });
         }
@@ -111,20 +111,48 @@
             return true;
         }
 
-        async run(action, container, { confirm = true } = {}) {
+        /**
+         * One analytics event per action the reader took, sent where the
+         * action is taken rather than in send(): a bulk run of twelve is one
+         * event with a count, not twelve. Only fixed words go out -- the
+         * action, how it went and where it came from -- never a container's
+         * name, image or address; umami-analytics.js buckets the count.
+         */
+        track(action, ok, via, extra) {
+            window.nextdashTrack?.('docker-action', {
+                action,
+                result: ok ? 'ok' : 'fail',
+                ...(via ? { via } : {}),
+                ...(extra || {}),
+            });
+        }
+
+        /**
+         * `via` says where the action came from, for track(): 'row', 'drawer',
+         * 'menu', 'palette', 'bulk' or 'key'. A refused or cancelled action
+         * sends nothing: it was not taken.
+         */
+        async run(action, container, { confirm = true, via } = {}) {
             if (!container || !this.allowed(container).includes(action)) return { ok: false };
             if (this.view.busy.has(container.name)) {
                 this.notify(this.t('dockerBusy', 'Another action is still running on this container.'), 'error');
                 return { ok: false };
             }
             if (confirm && !(await this.confirm(action, container))) return { ok: false };
-            return this.send(action, container);
+            const result = await this.send(action, container);
+            this.track(action, result.ok, via);
+            return result;
         }
 
-        async send(action, container) {
+        /**
+         * `quiet` is the bulk run's: it owns the overlay and the one notice at
+         * the end, so a single container's overlay and error notice would
+         * only talk over it.
+         */
+        async send(action, container, { quiet = false } = {}) {
             const name = container.name;
             let phaseTimer = null;
-            const overlay = action === 'update' || action === 'rollback' ? window.ProgressOverlay : null;
+            const overlay = !quiet && (action === 'update' || action === 'rollback') ? window.ProgressOverlay : null;
             this.view.setBusy(name, { update: 'pulling', rollback: 'recreating' }[action] || action);
             if (action === 'rollback') {
                 overlay?.show?.(
@@ -160,7 +188,7 @@
 
             if (!res || !res.ok) {
                 overlay?.hide?.();
-                await this.explain(res, body);
+                await this.explain(res, body, { quiet });
                 return { ok: false };
             }
             const phase = body?.update?.phase;
@@ -171,7 +199,7 @@
                     ? this.t('dockerUpdateAlreadyCurrent', '{name} already runs the newest image.', { name })
                     : this.t('dockerUpdateDone', '{name} is up to date.', { name }));
             }
-            if (phase === 'rolled-back') {
+            if (phase === 'rolled-back' && !quiet) {
                 const step = body.update.failedStep || '?';
                 this.notify(action === 'rollback'
                     ? this.t('dockerRollbackRolledBack',
@@ -181,10 +209,12 @@
             }
             await this.view.refreshContainers();
             this.view.drawerRefresh?.();
+            // An update that put the old container back did not do what was asked.
+            if (phase === 'rolled-back') return { ...body, ok: false };
             return { ok: true, ...body };
         }
 
-        async explain(res, body) {
+        async explain(res, body, { quiet = false } = {}) {
             const reason = body?.reason;
             if (reason === 'docker-control-off') {
                 // The setting changed under an open page: show the view as it
@@ -215,7 +245,7 @@
             const text = entry
                 ? this.t(entry[0], entry[1], { containers: (body?.containers || []).join(', ') })
                 : (body?.message || this.t('dockerActionFailed', 'Docker did not do that.'));
-            this.notify(text, 'error');
+            if (!quiet) this.notify(text, 'error');
             await this.view.refreshContainers();
             // A failed update may have left a container under another id or
             // none; the side panel shows what is there now.
@@ -227,7 +257,7 @@
          * asking. Not one of allowed(): the drawer offers it only when the
          * server says the previous image is still there.
          */
-        async rollback(container, offer) {
+        async rollback(container, offer, { via = 'drawer' } = {}) {
             if (!container || this.view.status?.control !== true || container.self) return { ok: false };
             if (this.view.busy.has(container.name)) {
                 this.notify(this.t('dockerBusy', 'Another action is still running on this container.'), 'error');
@@ -247,7 +277,9 @@
                 })
                 : window.confirm(message);
             if (!ok) return { ok: false };
-            return this.send('rollback', container);
+            const result = await this.send('rollback', container);
+            this.track('rollback', result.ok, via);
+            return result;
         }
 
         /** Whether this container's notices are muted (Config → Containers → Notifications). */
@@ -257,14 +289,25 @@
         }
 
         /** Mute or unmute a container's notices; a setting, so no control is needed. */
-        async toggleMute(container) {
+        async toggleMute(container, { via } = {}) {
+            if (!container?.name) return false;
+            return this.setMuted([container], !this.isMuted(container), { via });
+        }
+
+        /**
+         * Mute or unmute several containers' notices in one settings write --
+         * the selection bar's Mute, and toggleMute's one. One write rather
+         * than one per container: each save sends the whole settings object,
+         * and six in flight at once could land in any order.
+         */
+        async setMuted(containers, muting, { via } = {}) {
             const d = this.view.dash;
-            if (!d?.settings || !container?.name) return false;
+            const names = (containers || []).map((c) => c?.name).filter(Boolean);
+            if (!d?.settings || !names.length) return false;
             const before = Array.isArray(d.settings.dockerNotifyMuted) ? d.settings.dockerNotifyMuted : [];
-            const muting = !before.includes(container.name);
             d.settings.dockerNotifyMuted = muting
-                ? [...before, container.name]
-                : before.filter((n) => n !== container.name);
+                ? [...before, ...names.filter((n) => !before.includes(n))]
+                : before.filter((n) => !names.includes(n));
             // saveSettings resolves false on a failed save (and says so itself)
             // rather than rejecting; either way the change did not happen.
             let saved = false;
@@ -273,18 +316,25 @@
             } catch {
                 this.notify(this.t('dockerMuteFailed', 'The change could not be saved.'), 'error');
             }
+            this.track(muting ? 'mute' : 'unmute', saved, via, via === 'bulk' ? { count: names.length } : null);
             if (!saved) {
                 d.settings.dockerNotifyMuted = before;
                 return false;
             }
-            this.notify(muting
-                ? this.t('dockerMuted', 'No more notices about {name}.', { name: container.name })
-                : this.t('dockerUnmuted', 'Notices about {name} are back on.', { name: container.name }), 'success');
+            if (names.length === 1) {
+                this.notify(muting
+                    ? this.t('dockerMuted', 'No more notices about {name}.', { name: names[0] })
+                    : this.t('dockerUnmuted', 'Notices about {name} are back on.', { name: names[0] }), 'success');
+            } else {
+                this.notify(muting
+                    ? this.t('dockerBulkMuted', 'No more notices about {count} containers.', { count: names.length })
+                    : this.t('dockerBulkUnmuted', 'Notices about {count} containers are back on.', { count: names.length }), 'success');
+            }
             return true;
         }
 
         /** Skip the update on offer, hold updates, or undo either, for the container's image. */
-        async choose(container, choice) {
+        async choose(container, choice, { via = 'drawer' } = {}) {
             let res = null;
             let body = null;
             try {
@@ -297,6 +347,7 @@
             } catch {
                 res = null;
             }
+            this.track(choice, Boolean(res?.ok), via);
             if (!res || !res.ok) {
                 await this.explain(res, body);
                 return { ok: false };
@@ -307,12 +358,17 @@
             return { ok: true };
         }
 
-        /** One action over a selection: stop and update ask once, listing the names. */
-        async runBulk(action, containers) {
+        /**
+         * One action over a selection: stop and update ask once, listing the
+         * names. The container that is nextDash itself never gets here --
+         * allowed() offers it nothing -- so stopping a selection cannot stop
+         * the page doing the stopping.
+         */
+        async runBulk(action, containers, { via = 'bulk' } = {}) {
             // An update of a selection leaves out what the reader skipped or held.
             const targets = containers.filter((c) => this.allowed(c).includes(action)
                 && !(action === 'update' && ['skipped', 'held'].includes(c.update?.status)));
-            if (!targets.length) return;
+            if (!targets.length) return null;
             if (action === 'stop' || action === 'update') {
                 const names = targets.map((c) => c.name).join(', ');
                 const message = action === 'stop'
@@ -326,13 +382,53 @@
                         cancelText: this.t('dockerCancel', 'Cancel'),
                     })
                     : window.confirm(message);
-                if (!ok) return;
+                if (!ok) return null;
             }
             // One at a time: updates pull images, and the daemon does better
-            // with one pull than with six fighting for the same bandwidth.
-            for (const c of targets) {
-                await this.send(action, c);
+            // with one pull than with six fighting for the same bandwidth. The
+            // overlay counts them off, since six restarts are long enough to
+            // look like nothing is happening; one that fails does not stop
+            // the rest, which are what a bulk action is for.
+            const overlay = window.ProgressOverlay;
+            const progress = (done) => this.t('dockerBulkProgress', '{done} of {total}', { done, total: targets.length });
+            this.view.setBulkRunning?.(true);
+            overlay?.show?.(this.label(action), progress(0));
+            let ok = 0;
+            let failed = 0;
+            try {
+                for (let i = 0; i < targets.length; i += 1) {
+                    overlay?.update?.(i, targets.length, progress(i));
+                    let result = null;
+                    try {
+                        result = await this.send(action, targets[i], { quiet: true });
+                    } catch {
+                        result = null;
+                    }
+                    if (result?.ok) ok += 1;
+                    else failed += 1;
+                }
+                overlay?.finish?.(progress(targets.length));
+            } catch {
+                overlay?.hide?.();
+            } finally {
+                this.view.setBulkRunning?.(false);
             }
+            this.track(action, failed === 0, via, { count: targets.length });
+            this.notify(this.bulkResultText(action, ok, failed), failed ? (ok ? 'info' : 'error') : 'success');
+            return { ok, failed };
+        }
+
+        /** "3 restarted, 1 failed": what a bulk run did, in one line. */
+        bulkResultText(action, ok, failed) {
+            const done = {
+                start: ['dockerBulkStarted', '{count} started'],
+                stop: ['dockerBulkStopped', '{count} stopped'],
+                restart: ['dockerBulkRestarted', '{count} restarted'],
+                update: ['dockerBulkUpdated', '{count} updated'],
+            }[action] || ['dockerBulkDone', '{count} done'];
+            const parts = [this.t(done[0], done[1], { count: ok })];
+            if (failed) parts.push(this.t('dockerBulkFailed', '{count} failed', { count: failed }));
+            return parts.join(', ');
         }
 
         notify(message, type) {
@@ -522,7 +618,7 @@
             } else if (id === 'webui') {
                 window.open(this.webuiFor(c), '_blank', 'noopener');
             } else if (id === 'mute') {
-                await view.actions?.toggleMute(c);
+                await view.actions?.toggleMute(c, { via: 'menu' });
                 view.drawerRefresh?.();
             } else if (id === 'copy-name' || id === 'copy-id') {
                 const text = id === 'copy-name' ? c.name : c.id;
@@ -533,7 +629,7 @@
                     window.AppNotification?.show?.(this.t('dockerMenuCopyFailed', 'Could not copy'), 'error');
                 }
             } else {
-                await view.actions?.run(id, c);
+                await view.actions?.run(id, c, { via: 'menu' });
             }
         }
     }

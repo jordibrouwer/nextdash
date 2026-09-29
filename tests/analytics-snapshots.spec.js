@@ -189,4 +189,38 @@ test.describe('the analytics snapshots', () => {
         expect(all).not.toContain('tower.lan');
         expect(all).not.toContain('secret-box');
     });
+
+    // A container action is one `docker-action` event of fixed words: which
+    // action, how it went and where from, with a bulk run's size as a bucket.
+    // Never the container's name, its image or an address.
+    test('a container action is counted and never named', async ({ page }) => {
+        const { mockDocker } = require('./helpers/docker-mock');
+        const state = await mockDocker(page);
+        await loadWithAnalyticsOn(page);
+        await page.goto('/#docker');
+        await page.locator('[data-docker-group]').selectOption('none');
+        await expect(page.locator('[data-docker-row]')).toHaveCount(4);
+        const actions = () => page.evaluate(() =>
+            (window.__events || []).filter(([name]) => name === 'docker-action').map(([, props]) => props));
+
+        // From the row keys: jellyfin is the second row by name.
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('r');
+        await expect.poll(actions).toEqual([{ action: 'restart', result: 'ok', via: 'key' }]);
+
+        // From the selection bar: one event for the run, its size bucketed.
+        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+a' : 'Control+a');
+        await page.locator('[data-docker-bulk-action="restart"]').click();
+        await expect.poll(() => state.calls.filter((c) => c.endsWith('/restart')).length).toBe(3);
+        await expect.poll(async () => (await actions()).length).toBe(2);
+        expect((await actions())[1]).toEqual({ action: 'restart', result: 'ok', via: 'bulk', count: '2' });
+
+        const sent = JSON.stringify(await actions());
+        for (const c of state.containers) {
+            expect(sent).not.toContain(c.name);
+            expect(sent).not.toContain(c.image);
+        }
+        expect(sent).not.toMatch(/\d{4}/);
+    });
 });

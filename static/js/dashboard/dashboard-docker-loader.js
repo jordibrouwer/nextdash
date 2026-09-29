@@ -155,7 +155,7 @@ class DashboardDockerLoader {
         if (!mod.isActiveView() && Array.isArray(fresh)) mod.containers = fresh;
         const container = mod.containers.find((c) => c.name === name);
         if (!container || !mod.actions) return false;
-        return mod.actions.run(action, container);
+        return mod.actions.run(action, container, { via: 'palette' });
     }
 
     selectContainer(...args) {

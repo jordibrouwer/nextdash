@@ -326,7 +326,7 @@ class DockerDrawer {
 
     async _toggleMute() {
         const summary = this._summary || {};
-        if (!(await this.view.actions?.toggleMute(summary))) return;
+        if (!(await this.view.actions?.toggleMute(summary, { via: 'drawer' }))) return;
         const item = this.base.panel?.querySelector('[data-slp-action="mute"]');
         if (item) item.textContent = this._muteLabel(summary);
         if (this._detail) this._renderOverview(this._els?.sections.overview, this._detail);

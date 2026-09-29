@@ -144,49 +144,11 @@
 }
 
 /* Column headings: the shared .lvs-colhead (list-view-shell.css) on each
-   cell, with the cells' own padding so the text sits over the column. */
+   cell, with the cells' own padding so the text sits over the column. A
+   sortable one is the shared .lvs-colhead-sort, its arrow drawn from the
+   cell's data-lvs-sort. */
 .docker-head {
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-}
-
-/* A sortable heading: the heading's own text, clickable, with an arrow on
-   the column the table is sorted by. */
-.docker-head-sort {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 0.25rem);
-    padding: 0;
-    border: 0;
-    background: none;
-    color: inherit;
-    font: inherit;
-    letter-spacing: inherit;
-    text-transform: inherit;
-    cursor: pointer;
-}
-
-.docker-head-sort:hover,
-.docker-head[aria-sort] .docker-head-sort {
-    color: var(--text-primary);
-}
-
-.docker-head-sort:focus-visible {
-    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
-    outline-offset: 2px;
-}
-
-/* The arrow is drawn, not text, so the heading reads as its label alone;
-   aria-sort on the th says the direction. */
-.docker-head[aria-sort] .docker-head-sort::after {
-    font-size: 0.8em;
-}
-
-.docker-head[aria-sort="ascending"] .docker-head-sort::after {
-    content: "\25B2";
-}
-
-.docker-head[aria-sort="descending"] .docker-head-sort::after {
-    content: "\25BC";
 }
 
 .docker-group-row td {
@@ -693,22 +655,52 @@
     gap: 0.3rem;
 }
 
+/* The selection bar is the grid's and Inbox's (.multi-select-toolbar,
+   dashboard-multi-select.css). The grid pins it to the top of the page; here
+   the shell's header already holds that place, so it stays where it stands,
+   under the toolbar, as Inbox's does. */
 .docker-bulk {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2, 0.5rem);
-    margin: 0 0 var(--space-2, 0.5rem);
-    padding: var(--space-2, 0.5rem);
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    background: var(--background-secondary);
+    position: static;
 }
 
-.docker-bulk-count {
-    margin-right: auto;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
+.docker-bulk[hidden] {
+    display: none;
+}
+
+/* A row's tick, in front of its name: out of sight until the pointer, the
+   focus or a live selection asks for it, as on Inbox's and Bookmarks' rows. */
+.docker-tick {
+    display: inline-flex;
+    align-items: center;
+    margin-right: var(--space-2, 0.5rem);
+    vertical-align: middle;
+    cursor: pointer;
+    visibility: hidden;
+}
+
+.docker-tick-input {
+    width: 0.95rem;
+    height: 0.95rem;
+    margin: 0;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+}
+
+.docker-row:hover .docker-tick,
+.docker-row:focus-within .docker-tick,
+.docker-row[aria-selected="true"] .docker-tick,
+.docker-table:has(.docker-tick-input:checked) .docker-tick {
+    visibility: visible;
+}
+
+@media (hover: none) {
+    .docker-tick {
+        visibility: visible;
+    }
+}
+
+.docker-row.is-checked {
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
 }
 
 /* ── Links in the drawer ─────────────────────────────────────────────────

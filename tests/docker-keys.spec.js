@@ -51,14 +51,14 @@ test.describe('containers keys', () => {
   test('the legend names every key; read-only leaves out the actions', async ({ page }) => {
     await openView(page);
     const keys = () => page.locator('.docker-legend kbd').allInnerTexts();
-    expect(await keys()).toEqual(['↑ / ↓', 'Enter', '/', 's', 'r', 'p', 'u', 'Del', 'l', 'm', 'd']);
+    expect(await keys()).toEqual(['↑ / ↓', 'Enter', '/', 'x', 's', 'r', 'p', 'u', 'Del', 'l', 'm', 'd']);
   });
 
   test('read-only still has a legend, without the action keys', async ({ page }) => {
     await mockDocker(page, { control: false });
     await page.goto('/#docker');
     await expect(page.locator('[data-docker-row]')).toHaveCount(4);
-    expect(await page.locator('.docker-legend kbd').allInnerTexts()).toEqual(['↑ / ↓', 'Enter', '/', 'l', 'm', 'd']);
+    expect(await page.locator('.docker-legend kbd').allInnerTexts()).toEqual(['↑ / ↓', 'Enter', '/', 'x', 'l', 'm', 'd']);
   });
 
   test('Shift+Y opens Containers from the dashboard', async ({ page }) => {
