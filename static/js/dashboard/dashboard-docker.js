@@ -364,14 +364,31 @@ class DashboardDocker {
 
             // Row actions, on the selected container. Never while typing or
             // with a modifier held, so Cmd+R still reloads the page.
+            // Backspace is the key a Mac calls delete, and many keyboards have
+            // no Delete at all; both remove.
             const actionKey = { s: 'toggle-run', r: 'restart', p: 'toggle-pause', u: 'update', Delete: 'remove', Backspace: 'remove' }[e.key];
-            if (actionKey && !typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey && this.selected) {
+            const plainKey = actionKey && !typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey;
+            // With containers ticked, remove means the ticked ones, as Delete
+            // does for a selection in the Bookmarks view.
+            if (plainKey && actionKey === 'remove' && this.multi.size && this.status?.control === true) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.runBulkAction('remove');
+                return;
+            }
+            if (plainKey && this.selected) {
                 const c = this.containers.find((x) => x.name === this.selected);
                 const action = this.resolveActionKey(actionKey, c);
                 if (c && action && this.actions?.allowed(c).includes(action)) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     void this.actions.run(action, c, { via: 'key' });
+                } else if (c && action === 'remove' && this.status?.control === true && !c.self) {
+                    // A running container cannot be removed; saying so beats a
+                    // key that seems to do nothing.
+                    e.preventDefault();
+                    this.actions?.notify(this.t('dashboard.dockerRemoveStopFirst',
+                        'Stop {name} first; only a stopped container can be removed.', { name: c.name }), 'info');
                 }
                 return;
             }
@@ -926,7 +943,7 @@ class DashboardDocker {
                 ['r', this.t('dashboard.dockerLegendRestart', 'restart')],
                 ['p', this.t('dashboard.dockerLegendPause', 'pause')],
                 ['u', this.t('dashboard.dockerLegendUpdate', 'update')],
-                ['Del', this.t('dashboard.dockerLegendRemove', 'remove')],
+                ['⌫', this.t('dashboard.dockerLegendRemove', 'remove')],
             ] : []),
             ['l', this.t('dashboard.dockerLegendLogs', 'logs')],
             ['m', this.t('dashboard.dockerLegendMute', 'mute')],
@@ -967,12 +984,12 @@ class DashboardDocker {
         count.className = 'multi-select-count';
         count.setAttribute('data-docker-bulk-count', '');
         bar.appendChild(count);
-        ['select-all', 'start', 'stop', 'restart', 'update', 'mute', 'clear'].forEach((action) => {
+        ['select-all', 'start', 'stop', 'restart', 'update', 'remove', 'mute', 'clear'].forEach((action) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'multi-select-btn';
+            btn.className = action === 'remove' ? 'multi-select-btn danger' : 'multi-select-btn';
             btn.setAttribute('data-docker-bulk-action', action);
-            if (['start', 'stop', 'restart', 'update'].includes(action)) {
+            if (['start', 'stop', 'restart', 'update', 'remove'].includes(action)) {
                 btn.textContent = this.actions?.label(action) || action;
             }
             if (action === 'clear') {
@@ -1009,12 +1026,12 @@ class DashboardDocker {
         button('select-all').textContent = visible.every((c) => this.multi.has(c.name))
             ? this.t('dashboard.inboxDeselectAll', 'Deselect all')
             : this.t('dashboard.unsortedSelectAll', 'Select all');
-        // Start, stop, restart and update are Docker's, and only there while
+        // Start, stop, restart, update and remove are Docker's, and only there while
         // control is on -- the gate the drawer's buttons and the row keys
         // answer to (allowed() is empty without it). Mute is a setting of
         // nextDash's own, so it stays in read-only.
         const control = this.status.control === true;
-        ['start', 'stop', 'restart', 'update'].forEach((action) => {
+        ['start', 'stop', 'restart', 'update', 'remove'].forEach((action) => {
             const btn = button(action);
             btn.hidden = !control;
             btn.disabled = this.bulkRunning || !picked.some((c) => this.actions?.allowed(c).includes(action));

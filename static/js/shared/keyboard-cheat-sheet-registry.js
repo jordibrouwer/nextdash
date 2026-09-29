@@ -262,7 +262,7 @@
                 { keys: 'Ctrl/Cmd+A', cheatKey: 'dkSelectAll', fallback: 'Tick every container the filter shows; again to clear' },
                 { keys: 's / r / p', cheatKey: 'dkRun', fallback: 'Start or stop / restart / pause the selected container', print: true },
                 { keys: 'u', cheatKey: 'dkUpdate', fallback: 'Update the selected container', print: true },
-                { keys: 'Delete', cheatKey: 'dkRemove', fallback: 'Remove the selected container (asks first)' },
+                { keys: '⌫ / Delete', cheatKey: 'dkRemove', fallback: 'Remove the selected container, or the ticked ones (asks first)' },
                 { keys: 'l', cheatKey: 'dkLogs', fallback: 'The logs window of the selected container, following live', print: true },
                 { keys: 'm', cheatKey: 'dkMute', fallback: 'Mute or unmute the selected container\u2019s notices' },
                 { keys: 'd', cheatKey: 'dkDisk', fallback: 'Switch between the container list and Disk', print: true },

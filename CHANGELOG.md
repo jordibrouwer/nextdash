@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [Unreleased](#unreleased)
 - [v1.15.2 — 29 September 2026](#v1152--29-september-2026)
 - [v1.15.1 — 29 September 2026](#v1151--29-september-2026)
 - [v1.15.0 — 28 September 2026](#v1150--28-september-2026)
@@ -225,6 +226,15 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## Unreleased
+
+### Containers
+
+- **new — remove ticked containers in one go.** The selection bar gains **Remove**: it takes the stopped containers among the ticked ones, asks once with their names and says how many running or paused ones it leaves, and ends with *N removed*. With containers ticked, `⌫` or `Delete` does the same. New specs in `docker-bulk-select.spec.js`.
+- **fix — `⌫` removes, and the legend says so.** A Mac's delete key sends Backspace, which already removed the selected container, but the legend, the row menu and the cheat sheet named `Del`, a key many keyboards lack; they now show `⌫`. Pressing it on a running container used to do nothing at all; it now says to stop the container first (`dockerRemoveStopFirst`). Help, the tour and MANUAL §14.2 and §14.4 follow, in all six languages.
 
 ---
 

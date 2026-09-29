@@ -126,12 +126,49 @@ test.describe('the selection bar', () => {
         await expect.poll(() => state.saved.at(-1)?.dockerNotifyMuted).toEqual([]);
     });
 
+    test('remove takes only the stopped ones, asks once, and says what it leaves', async ({ page }) => {
+        const state = await openView(page);
+        await page.keyboard.press(`${mod}+a`);
+        await bar(page).locator('[data-docker-bulk-action="remove"]').click();
+        const dialog = page.locator('.modal[role="dialog"]');
+        await expect(dialog).toContainText('bazarr');
+        await expect(dialog).not.toContainText('jellyfin');
+        await expect(dialog).toContainText('still running');
+        await dialog.getByRole('button', { name: /^remove$/i }).click();
+        await expect(page.locator('#app-notification')).toContainText('1 removed');
+        expect(state.calls.filter((c) => c.endsWith('/remove'))).toEqual(['POST /containers/bazarr/remove']);
+    });
+
+    // A Mac's delete key is Backspace; many keyboards have no Delete at all.
+    test('Backspace with containers ticked removes the ticked ones', async ({ page }) => {
+        const state = await openView(page);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('x');
+        // The highlight moves on to a running container: the ticked one is
+        // what goes, not the one under the cursor.
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Backspace');
+        const dialog = page.locator('.modal[role="dialog"]');
+        await expect(dialog).toContainText('bazarr');
+        await dialog.getByRole('button', { name: /^remove$/i }).click();
+        await expect.poll(() => state.calls.filter((c) => c.endsWith('/remove'))).toEqual(['POST /containers/bazarr/remove']);
+    });
+
+    test('Backspace on a running container says to stop it first', async ({ page }) => {
+        const state = await openView(page);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Backspace');
+        await expect(page.locator('#app-notification')).toContainText('Stop jellyfin first');
+        expect(state.calls.filter((c) => c.endsWith('/remove'))).toEqual([]);
+    });
+
     test('read-only keeps mute and offers none of Docker\'s own actions', async ({ page }) => {
         await openView(page, { control: false });
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('x');
         await expect(bar(page).locator('[data-docker-bulk-action="mute"]')).toBeVisible();
-        for (const action of ['start', 'stop', 'restart', 'update']) {
+        for (const action of ['start', 'stop', 'restart', 'update', 'remove']) {
             await expect(bar(page).locator(`[data-docker-bulk-action="${action}"]`)).toBeHidden();
         }
     });

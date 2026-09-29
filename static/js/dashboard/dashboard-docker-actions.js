@@ -369,17 +369,26 @@
             const targets = containers.filter((c) => this.allowed(c).includes(action)
                 && !(action === 'update' && ['skipped', 'held'].includes(c.update?.status)));
             if (!targets.length) return null;
-            if (action === 'stop' || action === 'update') {
+            if (action === 'stop' || action === 'update' || action === 'remove') {
                 const names = targets.map((c) => c.name).join(', ');
-                const message = action === 'stop'
-                    ? this.t('dockerConfirmBulkStop', 'Stop {names}?', { names })
-                    : this.t('dockerConfirmBulkUpdate', 'Update {names} to their newest images?', { names });
+                // Only stopped containers can be removed; a running one among
+                // the ticked is left out, and the question names what is not.
+                const left = action === 'remove' ? containers.length - targets.length : 0;
+                const message = {
+                    stop: () => this.t('dockerConfirmBulkStop', 'Stop {names}?', { names }),
+                    update: () => this.t('dockerConfirmBulkUpdate', 'Update {names} to their newest images?', { names }),
+                    remove: () => [
+                        this.t('dockerConfirmBulkRemove', 'Remove {names}? Their volumes and images stay.', { names }),
+                        left ? this.t('dockerConfirmBulkRemoveLeft', '{count} still running or paused stay as they are.', { count: left }) : '',
+                    ].filter(Boolean).join(' '),
+                }[action]();
                 const ok = typeof window.AppModal?.confirm === 'function'
                     ? await window.AppModal.confirm({
-                        title: this.label(action),
+                        title: action === 'remove' ? this.t('dockerConfirmBulkRemoveTitle', 'Remove containers') : this.label(action),
                         message,
                         confirmText: this.label(action),
                         cancelText: this.t('dockerCancel', 'Cancel'),
+                        ...(action === 'remove' ? { confirmClass: 'danger' } : {}),
                     })
                     : window.confirm(message);
                 if (!ok) return null;
@@ -425,6 +434,7 @@
                 stop: ['dockerBulkStopped', '{count} stopped'],
                 restart: ['dockerBulkRestarted', '{count} restarted'],
                 update: ['dockerBulkUpdated', '{count} updated'],
+                remove: ['dockerBulkRemoved', '{count} removed'],
             }[action] || ['dockerBulkDone', '{count} done'];
             const parts = [this.t(done[0], done[1], { count: ok })];
             if (failed) parts.push(this.t('dockerBulkFailed', '{count} failed', { count: failed }));
@@ -467,7 +477,7 @@
         entries(c) {
             const actions = this.view.actions;
             const allowed = actions ? actions.allowed(c) : [];
-            const keys = { start: 's', stop: 's', restart: 'r', pause: 'p', unpause: 'p', update: 'u', remove: 'Del' };
+            const keys = { start: 's', stop: 's', restart: 'r', pause: 'p', unpause: 'p', update: 'u', remove: '⌫' };
             const icons = { start: '▶', stop: '■', restart: '↻', pause: '⏸', unpause: '▶', update: '⇡', remove: '✕' };
             const list = [{ id: 'open', label: this.t('dockerMenuDetails', 'Details'), icon: 'ⓘ', key: 'Enter' }];
             allowed.filter((a) => a !== 'remove').forEach((a) => {
