@@ -136,7 +136,9 @@ test.describe('docker logs window', () => {
     await page.keyboard.press('Escape');
     await expect(modal).toHaveCount(0);
     expect(await page.evaluate(() => window.__logs.state.aborted)).toBe(1);
-    // The window was on top; the view underneath stays open.
+    // The window was on top; the view underneath stays open, and presses
+    // inside the window never counted as presses beside the side panel.
     await expect(page.locator('[data-docker-row="sonarr"]')).toBeVisible();
+    await expect(page.locator('[data-docker-drawer] .config-bm-panel-title')).toHaveText('sonarr');
   });
 });

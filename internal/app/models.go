@@ -925,18 +925,19 @@ type Settings struct {
 	BmViewKeyLegend    string   `json:"bmViewKeyLegend"`    // The key legend: below/above the list, or off
 
 	// Config → Inbox: how the Inbox view looks and behaves.
-	InboxViewFilter       string `json:"inboxViewFilter"`       // Opens on: last/all/unread/snoozed/noted
-	InboxViewSort         string `json:"inboxViewSort"`         // Sorted by: last/newest/oldest/title/domain
-	InboxViewAddress      string `json:"inboxViewAddress"`      // The row's address: domain/full/hidden
-	InboxViewUnreadMark   bool   `json:"inboxViewUnreadMark"`   // Unread rows stand out (default on)
-	InboxViewRail         string `json:"inboxViewRail"`         // The rail: open/folded
-	InboxViewPanelWidth   string `json:"inboxViewPanelWidth"`   // Side panel width: normal/wide
-	InboxViewCloseOutside bool   `json:"inboxViewCloseOutside"` // A click beside the side panel closes it (default on)
-	InboxViewClick        string `json:"inboxViewClick"`        // A click on a row: panel/select
-	InboxViewDblClick     string `json:"inboxViewDblClick"`     // A double click on a row: open/note
-	InboxViewBadge        bool   `json:"inboxViewBadge"`        // A count on the header's Inbox icon (default on)
-	InboxViewBadgeCounts  string `json:"inboxViewBadgeCounts"`  // What that count counts: unread/all
-	InboxViewKeyLegend    string `json:"inboxViewKeyLegend"`    // The key legend: below/above the list, or off
+	InboxViewFilter        string `json:"inboxViewFilter"`        // Opens on: last/all/unread/snoozed/noted
+	InboxViewSort          string `json:"inboxViewSort"`          // Sorted by: last/newest/oldest/title/domain
+	InboxViewAddress       string `json:"inboxViewAddress"`       // The row's address: domain/full/hidden
+	InboxViewUnreadMark    bool   `json:"inboxViewUnreadMark"`    // Unread rows stand out (default on)
+	InboxViewRail          string `json:"inboxViewRail"`          // The rail: open/folded
+	InboxViewPanelWidth    string `json:"inboxViewPanelWidth"`    // Side panel width: normal/wide
+	InboxViewCloseOutside  bool   `json:"inboxViewCloseOutside"`  // A click beside the side panel closes it (default on)
+	DockerViewCloseOutside bool   `json:"dockerViewCloseOutside"` // The same for the Containers view's side panel (default on)
+	InboxViewClick         string `json:"inboxViewClick"`         // A click on a row: panel/select
+	InboxViewDblClick      string `json:"inboxViewDblClick"`      // A double click on a row: open/note
+	InboxViewBadge         bool   `json:"inboxViewBadge"`         // A count on the header's Inbox icon (default on)
+	InboxViewBadgeCounts   string `json:"inboxViewBadgeCounts"`   // What that count counts: unread/all
+	InboxViewKeyLegend     string `json:"inboxViewKeyLegend"`     // The key legend: below/above the list, or off
 }
 
 // SavedSearch is a query the user named and kept from the search bar.
@@ -1693,6 +1694,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			DockerViewEnabled:              true,
 			DockerStatsHistory:             true,
 			DockerNotify:                   true,
+			DockerViewCloseOutside:         true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -4030,6 +4032,7 @@ func (fs *FileStore) GetSettings() Settings {
 			DockerViewEnabled:               true,
 			DockerStatsHistory:              true,
 			DockerNotify:                    true,
+			DockerViewCloseOutside:          true,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -4704,6 +4707,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["dockerNotify"]; !ok {
 			settings.DockerNotify = true
+		}
+		if _, ok := rawSettings["dockerViewCloseOutside"]; !ok {
+			settings.DockerViewCloseOutside = true
 		}
 		if _, ok := rawSettings["unsortedEnabled"]; !ok {
 			settings.UnsortedEnabled = true

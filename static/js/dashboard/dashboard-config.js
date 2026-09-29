@@ -3281,6 +3281,7 @@ class DashboardConfig {
         dockerUpdateInterval: ['docker', 'containers', 'updates', 'registry', 'image'],
         dockerConfirmStopRestart: ['docker', 'containers', 'confirm', 'stop', 'restart'],
         dockerStatsHistory: ['docker', 'containers', 'cpu', 'memory', 'chart', 'history', 'resources'],
+        dockerViewCloseOutside: ['docker', 'containers', 'panel', 'drawer', 'close'],
         dockerNotify: ['docker', 'containers', 'notify', 'notification', 'alert', 'crash', 'restart', 'unhealthy', 'webhook'],
         dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
@@ -12073,6 +12074,7 @@ class DashboardConfig {
         dockerConfirmStopRestart: { def: false },
         dockerStatsHistory: { def: true },
         dockerNotify: { def: true },
+        dockerViewCloseOutside: { def: true },
         dockerHostAddress: { def: '' },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
@@ -12423,6 +12425,7 @@ class DashboardConfig {
                         opt(100, '100'), opt(200, '200'), opt(500, '500'), opt(1000, '1000'),
                     ] },
                     bool('dockerStatsHistory', 'config.dockerStatsHistoryLabel', 'Keep the last hour of CPU and memory'),
+                    bool('dockerViewCloseOutside', 'config.bmViewCloseOutsideLabel', 'Close on a click beside it'),
                 ],
             },
             {

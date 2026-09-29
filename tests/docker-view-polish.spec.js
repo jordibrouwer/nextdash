@@ -196,3 +196,30 @@ test.describe('docker view follows Config -> Containers', () => {
     await expect.poll(() => tails).toContain('500');
   });
 });
+
+// Like the Bookmarks and Inbox side panels: a press beside the panel closes
+// it, a press on another row moves it there, and Config can keep it open.
+test.describe('docker drawer: close on a press beside it', () => {
+  test('a press beside the panel closes it; another row moves it', async ({ page }) => {
+    await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    const drawer = page.locator('[data-docker-drawer]');
+    await expect(drawer.locator('.config-bm-panel-title')).toHaveText('sonarr');
+
+    await page.locator('[data-docker-row="jellyfin"]').click();
+    await expect(drawer.locator('.config-bm-panel-title')).toHaveText('jellyfin');
+
+    await page.locator('.lvs-summary').click();
+    await expect(drawer).toHaveCount(0);
+    await expect(page).toHaveURL(/#docker$/);
+  });
+
+  test('switched off in Config, the panel stays', async ({ page }) => {
+    await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    await expect(page.locator('[data-docker-drawer] .config-bm-panel-title')).toHaveText('sonarr');
+    await page.evaluate(() => { window.dashboardInstance.settings.dockerViewCloseOutside = false; });
+    await page.locator('.lvs-summary').click();
+    await expect(page.locator('[data-docker-drawer] .config-bm-panel-title')).toHaveText('sonarr');
+  });
+});

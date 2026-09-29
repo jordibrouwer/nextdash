@@ -103,6 +103,10 @@ class DockerDrawer {
             defaultSections: DOCKER_SECTIONS_DEFAULT,
             closeLabel: this.t('dockerDrawerClose', 'Close'),
             onClose: () => this._onBaseClosed(),
+            // As in Bookmarks and Inbox: a press beside the panel closes it, a
+            // press on another row moves it there, unless Config keeps it open.
+            closeOnOutside: (target) => this.view.dash?.settings?.dockerViewCloseOutside !== false
+                && !target.closest('.docker-row'),
         });
     }
 

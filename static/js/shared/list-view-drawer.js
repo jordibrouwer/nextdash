@@ -212,7 +212,8 @@
             const target = e.target;
             if (!this._panel || !(target instanceof Element)) return;
             if (this._host?.contains(target)) return;
-            if (target.closest('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], .modal-overlay')) return;
+            // dialog: a native <dialog> has the role without the attribute.
+            if (target.closest('dialog, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], .modal-overlay')) return;
             if (this.closeOnOutside(target) === false) return;
             this.close();
         }

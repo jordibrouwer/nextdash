@@ -181,8 +181,8 @@ func TestDockerNotifierMasterSwitch(t *testing.T) {
 func TestDockerNotifyDefaultsOnForAnOlderSettingsFile(t *testing.T) {
 	startFakeDocker(t)
 	h, _ := healthRecheckTestHandlers(t, `{"theme":"dark"}`)
-	if !h.store.GetSettings().DockerNotify {
-		t.Fatal("dockerNotify must default to on when the file does not name it")
+	if !h.store.GetSettings().DockerNotify || !h.store.GetSettings().DockerViewCloseOutside {
+		t.Fatal("dockerNotify and dockerViewCloseOutside must default to on when the file does not name them")
 	}
 	h2, _ := healthRecheckTestHandlers(t, `{"dockerNotify":false}`)
 	if h2.store.GetSettings().DockerNotify {
