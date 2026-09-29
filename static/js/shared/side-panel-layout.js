@@ -33,10 +33,11 @@
     const SidePanelLayout = {
         /**
          * icon: markup; badge: { text, tone }; more: [{ action, label, danger }];
-         * url: an address to link; where: one line under it; actions:
+         * url: an address to link; urlTag: { action, label, title, attr } a
+         * small button after it; where: one line under it; actions:
          * [{ action, label, primary, title }].
          */
-        head(esc, { icon = '', title = '', badge = null, more = [], url = '', urlLabel = '', where = '', actions = [] }) {
+        head(esc, { icon = '', title = '', badge = null, more = [], url = '', urlLabel = '', urlTag = null, where = '', actions = [] }) {
             const button = (a, extra = '') => `<button type="button" class="config-btn config-btn--small${a.primary ? ' config-btn--primary' : ''}${a.danger ? ' config-btn--danger' : ''}${extra}"
                 data-slp-action="${esc(a.action)}"${a.title ? ` title="${esc(a.title)}"` : ''}>${esc(a.label)}</button>`;
             return `
@@ -51,10 +52,17 @@
                             <div class="config-bm-more-menu" role="menu" data-slp-more-menu hidden>${more.map((a) => button(a)).join('')}</div>
                         </span>` : ''}
                     </div>
-                    ${url ? `<a class="config-bm-panel-url" href="${esc(url)}" title="${esc(url)}" target="_blank" rel="noopener noreferrer" data-slp-url>${esc(urlLabel || url)}</a>` : ''}
+                    ${url ? this._urlLine(esc, url, urlLabel, urlTag) : ''}
                     ${where ? `<p class="config-bm-panel-where" title="${esc(where)}">${esc(where)}</p>` : ''}
                     ${actions.length ? `<div class="config-bm-panel-actions">${actions.map((a) => button(a)).join('')}</div>` : ''}
                 </header>`;
+        },
+
+        _urlLine(esc, url, urlLabel, urlTag) {
+            const link = `<a class="config-bm-panel-url" href="${esc(url)}" title="${esc(url)}" target="_blank" rel="noopener noreferrer" data-slp-url>${esc(urlLabel || url)}</a>`;
+            if (!urlTag) return link;
+            return `<div class="slp-url-line">${link}<button type="button" class="slp-url-tag" data-slp-action="${esc(urlTag.action)}"
+                ${urlTag.attr ? `${esc(urlTag.attr)} ` : ''}${urlTag.title ? `title="${esc(urlTag.title)}"` : ''}>${esc(urlTag.label)}</button></div>`;
         },
 
         /** One accordion section; open as last left, else openByDefault. */

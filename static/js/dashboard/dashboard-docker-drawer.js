@@ -243,6 +243,15 @@ class DockerDrawer {
                 ...(summary.self ? [] : [{ action: 'mute', label: this._muteLabel(summary) }]),
                 { action: 'copy-name', label: this.t('dockerCopyName', 'Copy name') },
             ],
+            // The address under the name, as the Bookmarks view shows a
+            // bookmark's; your own one is tagged, and the tag opens Custom.
+            url: webui,
+            urlTag: webui && summary.webuiCustom ? {
+                action: 'edit-webui',
+                attr: 'data-docker-webui-tag',
+                label: this.t('dockerSectionCustom', 'Custom'),
+                title: this.t('dockerWebUILabel', 'Web UI address'),
+            } : null,
             where,
             actions: webui ? [{ action: 'webui', label: this.t('dockerLinkWebUI', 'Open web UI'), primary: true }] : [],
         });
@@ -332,6 +341,8 @@ class DockerDrawer {
         if (action === 'webui') {
             const href = window.DockerSearchIndex.webuiHref(summary.webui, summary);
             if (href) window.open(href, '_blank', 'noopener,noreferrer');
+        } else if (action === 'edit-webui') {
+            this.openSection('custom');
         } else if (action === 'copy-name') {
             void navigator.clipboard?.writeText?.(String(summary.name || ''));
             this.view.dash?.showNotification?.(this.t('dockerNameCopied', 'Name copied'), 'success', { duration: 2000 });

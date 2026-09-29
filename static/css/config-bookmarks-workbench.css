@@ -1658,6 +1658,37 @@ html body .config-bm-more-menu .config-btn {
     text-overflow: ellipsis;
 }
 
+/* The address with a tag after it (a container's own web UI): the address
+   still ends in an ellipsis, the tag keeps its width. */
+.slp-url-line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+.slp-url-line .config-bm-panel-url {
+    flex: 0 1 auto;
+}
+
+.slp-url-tag {
+    flex: none;
+    padding: 0 var(--space-2, 0.5rem);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: var(--font-size-xs, 0.72rem);
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.slp-url-tag:hover,
+.slp-url-tag:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
 /* ── Usage tab ────────────────────────────────────────────────────────── */
 
 .config-bm-usage-kv {

@@ -99,6 +99,27 @@ test.describe('a custom web UI address', () => {
         await expect(drawer.locator('[data-docker-webui-input]')).toHaveValue('');
     });
 
+    // The address sits under the name, where the Bookmarks view shows a
+    // bookmark's; a custom one says so, and its tag opens Custom to edit it.
+    test('the head shows the address, with a custom tag only for your own', async ({ page }) => {
+        const { drawer } = await openOverview(page);
+        const url = drawer.locator('.config-bm-panel-head [data-slp-url]');
+        await expect(url).toHaveText(/:8989\/$/);
+        await expect(drawer.locator('[data-docker-webui-tag]')).toHaveCount(0);
+    });
+
+    test('a custom address is tagged, and the tag opens Custom', async ({ page }) => {
+        const { drawer } = await openOverview(page, {
+            ...SONARR, webui: 'https://sonarr.home.lan', webuiCustom: 'https://sonarr.home.lan',
+        });
+        await expect(drawer.locator('.config-bm-panel-head [data-slp-url]')).toHaveAttribute('href', 'https://sonarr.home.lan');
+        const tag = drawer.locator('[data-docker-webui-tag]');
+        await expect(tag).toHaveText(/custom/i);
+        await tag.click();
+        await expect(drawer.locator('[data-docker-section="custom"]')).toHaveAttribute('open', '');
+        await expect(drawer.locator('[data-docker-webui-input]')).toBeVisible();
+    });
+
     test('not a web address: said so, and nothing saved', async ({ page }) => {
         const { drawer, saved } = await openOverview(page);
         await drawer.locator('[data-docker-section="custom"] summary').click();
