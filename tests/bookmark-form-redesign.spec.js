@@ -174,6 +174,19 @@ test.describe('bookmark form tag suggestions', () => {
         expect(stored).toContain('agree.example|homelab');
     });
 
+    test('each suggested chip names what its buttons do for a screen reader', async ({ page }) => {
+        await stubPreview(page, { title: 'x' });
+        const form = await openAdd(page);
+        await seedSite(page, 'named.example');
+        await form.locator('[data-field="url"]').fill('https://named.example/new');
+        await form.locator('[data-field="url"]').blur();
+        const chips = form.locator('.bookmark-form-tags-suggest');
+        await expect(chips.getByRole('button', { name: 'Tag this bookmark #homelab' })).toBeVisible();
+        await chips.getByRole('button', { name: 'Stop proposing #homelab here' }).focus();
+        await page.keyboard.press('Enter');
+        await expect(chips.locator('.tag-suggest-chip[data-tag="homelab"]')).toHaveCount(0);
+    });
+
     test('editing an existing bookmark shows its suggestions without fetching the page', async ({ page }) => {
         const calls = await stubPreview(page, { title: 'x' });
         await openAdd(page);
