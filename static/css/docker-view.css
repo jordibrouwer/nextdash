@@ -1052,3 +1052,185 @@
         display: none;
     }
 }
+
+/* ── Tabs: Containers | Disk ─────────────────────────────────────────── */
+
+.docker-tabs {
+    display: flex;
+    gap: var(--space-1, 0.25rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.docker-tabs[hidden] {
+    display: none;
+}
+
+/* On the Disk tab the search, sort and group have nothing to act on. */
+.docker-layout .lvs-toolbar-slot[hidden] {
+    display: none;
+}
+
+.docker-tab {
+    padding: 0.25rem 0.8rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    cursor: pointer;
+}
+
+.docker-tab[aria-selected="true"] {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.docker-tab:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 1px;
+}
+
+/* ── Disk ────────────────────────────────────────────────────────────── */
+
+.docker-disk-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-disk-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-4, 1rem);
+}
+
+.docker-disk-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1, 0.25rem);
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-secondary);
+}
+
+.docker-disk-tile-label,
+.docker-disk-tile-sub {
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-disk-tile-value {
+    font-size: var(--text-lg, 1.1rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-disk-warning {
+    color: var(--accent-warning, #cb4);
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-disk-section {
+    margin-bottom: var(--space-4, 1rem);
+}
+
+.docker-disk-title {
+    margin: 0 0 var(--space-1, 0.25rem);
+    font-size: var(--text-sm, 0.85rem);
+    font-weight: var(--font-weight-semibold);
+}
+
+.docker-disk-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-controls);
+}
+
+.docker-disk-table th,
+.docker-disk-table td {
+    padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--border-primary);
+    text-align: left;
+}
+
+.docker-disk-table .docker-disk-num {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-disk-name {
+    overflow-wrap: anywhere;
+}
+
+.docker-disk-muted {
+    color: var(--text-secondary);
+}
+
+.docker-disk-action {
+    text-align: right;
+    width: 1%;
+    white-space: nowrap;
+}
+
+.docker-disk-chip {
+    padding: 0 var(--space-1-5, 0.4rem);
+    border: 1px solid var(--accent-warning, #cb4);
+    border-radius: 999px;
+    color: var(--accent-warning, #cb4);
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-volume-confirm {
+    /* Placed by hand: the page's reset (* { margin: 0 }) takes away the
+       margin: auto a browser centres a <dialog> with, which left it in the
+       top-left corner. */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    max-height: 90vh;
+    overflow: auto;
+    overflow-wrap: anywhere;
+    width: min(30rem, 92vw);
+    padding: var(--space-4, 1rem);
+    color: var(--text-primary);
+    background: var(--background-modal, var(--background-primary));
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-md, 12px);
+}
+
+.docker-volume-confirm::backdrop {
+    background: var(--modal-scrim, rgba(0, 0, 0, 0.55));
+}
+
+.docker-volume-confirm-title {
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--text-lg, 1.05rem);
+}
+
+.docker-volume-confirm .config-text {
+    width: 100%;
+    margin: var(--space-2, 0.5rem) 0;
+}
+
+.docker-volume-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+}
+
+@media (max-width: 767px) {
+    .docker-disk-table th:nth-child(2),
+    .docker-disk-table td:nth-child(2) {
+        display: none;
+    }
+}

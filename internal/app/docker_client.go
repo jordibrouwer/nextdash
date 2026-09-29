@@ -131,6 +131,11 @@ type dockerContainerSummary struct {
 			IPAddress string `json:"IPAddress"`
 		} `json:"Networks"`
 	} `json:"NetworkSettings"`
+	// Mounts: which volumes the container holds, running or not.
+	Mounts []struct {
+		Type string `json:"Type"`
+		Name string `json:"Name"`
+	} `json:"Mounts"`
 }
 
 func (c dockerContainerSummary) name() string { return containerName(c.Names) }

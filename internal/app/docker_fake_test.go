@@ -48,6 +48,10 @@ type fakeDocker struct {
 	// events is what GET /events streams, one JSON object per line, before
 	// the stream is held open until the client lets go.
 	events []map[string]any
+	// df is what GET /system/df answers; pruned and reclaimed are what the
+	// prune endpoints report.
+	df        map[string]any
+	reclaimed int64
 }
 
 type fakeContainer struct {
@@ -248,6 +252,25 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 
+	case r.Method == "GET" && path == "/system/df":
+		f.record("GET", "/system/df")
+		writeJSONFake(w, http.StatusOK, f.df)
+		return
+
+	case r.Method == "POST" && (path == "/images/prune" || path == "/build/prune"):
+		f.record("POST", path+"?"+r.URL.RawQuery)
+		key := "ImagesDeleted"
+		if path == "/build/prune" {
+			key = "CachesDeleted"
+		}
+		writeJSONFake(w, http.StatusOK, map[string]any{key: []any{map[string]string{"Deleted": "sha256:gone"}}, "SpaceReclaimed": f.reclaimed})
+		return
+
+	case r.Method == "DELETE" && strings.HasPrefix(path, "/volumes/"):
+		f.record("DELETE", path)
+		w.WriteHeader(http.StatusNoContent)
+		return
+
 	case r.Method == "GET" && path == "/events":
 		f.record("GET", "/events")
 		w.Header().Set("Content-Type", "application/json")
@@ -296,7 +319,7 @@ func (f *fakeDocker) handleList(w http.ResponseWriter) {
 			"Id": c.ID, "Names": []string{"/" + c.Name}, "Image": c.Image, "ImageID": c.ImageID,
 			"State": c.State, "Status": c.Status, "Created": c.Created, "Labels": c.Labels,
 			"Ports": c.Ports, "HostConfig": map[string]any{"NetworkMode": c.NetworkMode},
-			"NetworkSettings": map[string]any{"Networks": c.Networks},
+			"NetworkSettings": map[string]any{"Networks": c.Networks}, "Mounts": c.Mounts,
 		})
 	}
 	writeJSONFake(w, http.StatusOK, out)
@@ -604,6 +627,9 @@ func newDockerTestRouter(h *Handlers) http.Handler {
 	r.HandleFunc("/api/docker/github-token", h.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")
 	r.HandleFunc("/api/docker/updates/check", h.DockerUpdatesCheckHandler).Methods("POST")
 	r.HandleFunc("/api/docker/updates/choice", h.DockerUpdateChoiceHandler).Methods("POST")
+	r.HandleFunc("/api/docker/disk", h.DockerDiskHandler).Methods("GET")
+	r.HandleFunc("/api/docker/prune/{kind}", h.DockerPruneHandler).Methods("POST")
+	r.HandleFunc("/api/docker/volumes/{name}", h.DockerVolumeRemoveHandler).Methods("DELETE")
 	r.HandleFunc("/api/docker/containers/{id}/{action}", h.DockerActionHandler).Methods("POST")
 	return r
 }

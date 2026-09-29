@@ -27,6 +27,12 @@ class DashboardDocker {
      */
     static TUTORIAL_TIP_ID = 'containersTutorialV1';
 
+    /**
+     * The Disk tab's address, #docker/~disk: "~" cannot start a container
+     * name, so a container called "disk" keeps #docker/disk.
+     */
+    static DISK_ADDRESS = '~disk';
+
     /** Sorts on the stats sampler's reading: highest first, no reading last. */
     static USAGE_SORTS = new Set(['cpu', 'mem']);
 
@@ -40,6 +46,9 @@ class DashboardDocker {
         this.status = null;
         this.containers = [];
         this.usageEnabled = false;
+        this.tab = 'containers';     // or 'disk'
+        this.disk = null;
+        this.diskTotals = null;
         this.query = '';
         this.selected = null;
         this.drawerOpen = false;
@@ -120,7 +129,8 @@ class DashboardDocker {
      * sub-navigation inside this view worth a Back stop of its own yet.
      */
     restoreDockerHash() {
-        const target = this.selected ? `#docker/${encodeURIComponent(this.selected)}` : '#docker';
+        let target = this.selected ? `#docker/${encodeURIComponent(this.selected)}` : '#docker';
+        if (this.tab === 'disk') target = `#docker/${DashboardDocker.DISK_ADDRESS}`;
         if (window.location.hash === target) return;
         const next = `${window.location.pathname}${window.location.search}${target}`;
         history.replaceState(history.state, '', next);
@@ -210,6 +220,7 @@ class DashboardDocker {
      * the row menu stop with it.
      */
     onLeave() {
+        this.tab = 'containers';
         this.stopPolling();
         this.menu?.close();
         this.logsModal?.close({ restoreFocus: false });
@@ -242,7 +253,7 @@ class DashboardDocker {
             if (d.activeView !== DashboardDocker.VIEW) return;
             // The logs window owns the keyboard while it is open: its own
             // handler reads /, f, Enter and Escape.
-            if (window.DockerLogsModal?.isOpen?.()) return;
+            if (window.DockerLogsModal?.isOpen?.() || document.querySelector('dialog[open]')) return;
             // The row menu owns the keyboard while it is open; its own handler
             // closes it, and Escape must not also close the view underneath.
             if (document.getElementById('docker-row-menu')) return;
@@ -479,6 +490,12 @@ class DashboardDocker {
                 value: String(updates), tone: updates ? 'warn' : '' },
             { key: 'unhealthy', label: this.t('dashboard.dockerSummaryUnhealthy', 'Unhealthy'),
                 value: String(unhealthy), tone: unhealthy ? 'bad' : '' },
+            ...(this.diskTotals && window.DockerDisk ? [
+                { key: 'disk', label: this.t('dashboard.dockerSummaryDisk', 'Disk used'),
+                    value: window.DockerDisk.formatBytes(this.diskTotals.images + this.diskTotals.volumes + this.diskTotals.buildCache) },
+                { key: 'reclaimable', label: this.t('dashboard.dockerSummaryReclaimable', 'Reclaimable'),
+                    value: window.DockerDisk.formatBytes(this.diskTotals.reclaimable) },
+            ] : []),
         ];
     }
 
@@ -494,6 +511,7 @@ class DashboardDocker {
             .forEach((name) => container.removeAttribute(name));
         container.tabIndex = -1;
         this.shell = window.ListViewShell.mount(container, this.shellConfig());
+        this.shell.toolbar.parentNode?.insertBefore(this.buildTabs(), this.shell.toolbar);
         this.buildToolbar(this.shell.toolbar);
         this.buildHeaderActions(this.shell.headerActions);
         // The side panel is the shared one (list-view-drawer.js): a host on
@@ -518,6 +536,57 @@ class DashboardDocker {
         this.persistViewState();
         void via; // tracked nowhere yet; kept for parity with the shell's callback shape
         this.render();
+    }
+
+    /* ── Tabs: Containers | Disk ───────────────────────────────────────── */
+
+    buildTabs() {
+        const bar = document.createElement('div');
+        bar.className = 'docker-tabs';
+        bar.setAttribute('role', 'tablist');
+        [['containers', this.t('dashboard.dockerTabContainers', 'Containers')],
+            ['disk', this.t('dashboard.dockerTabDisk', 'Disk')]].forEach(([key, label]) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'docker-tab';
+            b.setAttribute('role', 'tab');
+            b.setAttribute('data-docker-tab', key);
+            b.textContent = label;
+            b.addEventListener('click', () => this.showTab(key));
+            bar.appendChild(b);
+        });
+        this.tabsEl = bar;
+        this.syncTabs();
+        return bar;
+    }
+
+    syncTabs() {
+        this.tabsEl?.querySelectorAll('[data-docker-tab]').forEach((b) => {
+            b.setAttribute('aria-selected', String(b.getAttribute('data-docker-tab') === this.tab));
+        });
+    }
+
+    showTab(tab) {
+        const next = tab === 'disk' ? 'disk' : 'containers';
+        if (next === 'disk') {
+            if (typeof window.DockerDisk !== 'function') return;
+            this.disk = this.disk || new window.DockerDisk(this);
+            if (this.selected) {
+                this.selected = null;
+                this.drawer?.close();
+                this.drawerOpen = false;
+            }
+        }
+        this.tab = next;
+        this.restoreDockerHash();
+        this.render();
+        if (next === 'disk') this.disk.ensureLoaded();
+    }
+
+    /** The Disk tab measured: its totals join the rail. */
+    onDiskMeasured(totals) {
+        this.diskTotals = totals;
+        this.shell?.setSummary?.(this.shellSummary());
     }
 
     /* ── Toolbar ───────────────────────────────────────────────────────── */
@@ -731,8 +800,18 @@ class DashboardDocker {
 
         const body = this.shell.body;
         body.replaceChildren();
+        this.syncTabs();
+        if (this.tabsEl) this.tabsEl.hidden = !this.status?.socket;
         if (!this.status?.socket) {
             body.appendChild(this.buildSetupCard());
+            return;
+        }
+        // Disk: the same element each time, so a poll's render keeps its scroll
+        // and what it has measured.
+        this.shell.toolbar.hidden = this.tab === 'disk';
+        if (this.tab === 'disk' && this.disk) {
+            if (this.status.control === false) body.appendChild(this.buildReadOnlyLine());
+            body.appendChild(this.disk.element());
             return;
         }
         if (this.status.control === false) {
@@ -1170,6 +1249,12 @@ class DashboardDocker {
      * #docker/<name> address. */
 
     selectContainer(name, { openDrawer = true, section = null } = {}) {
+        if (name === DashboardDocker.DISK_ADDRESS) {
+            this.showTab('disk');
+            return;
+        }
+        // A container asked for by name is on the Containers tab.
+        if (name && this.tab !== 'containers') this.tab = 'containers';
         this.selected = name || null;
         this.restoreDockerHash();
         this.render();

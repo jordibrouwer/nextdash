@@ -43,6 +43,7 @@ type Handlers struct {
 	// The update store is one file; the check and the scheduler share it.
 	dockerUpdatesMu    sync.Mutex
 	dockerCheckRunning atomic.Bool
+	dockerPruneRunning atomic.Bool // one prune at a time (docker_disk.go)
 	healthReport       BookmarkHealthReport
 	healthReportAt     time.Time
 	healthReportOK     bool

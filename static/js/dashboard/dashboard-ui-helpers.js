@@ -99,6 +99,9 @@ class DashboardUiHelpers {
         if (document.getElementById('new-bookmark-modal')?.classList.contains('show')) return true;
         if (document.getElementById('bookmark-form-modal')?.classList.contains('show')) return true;
         if (window.DockerLogsModal?.isOpen?.()) return true;
+        // Any native <dialog> shown modally (the logs window, the Disk tab's
+        // volume confirmation) is on top of the view.
+        if (document.querySelector('dialog[open]')) return true;
         return false;
     }
 

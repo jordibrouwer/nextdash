@@ -1,6 +1,25 @@
 // Mocks every /api/docker route with one in-memory daemon, so specs drive the
 // real UI without a Docker socket. Returns the state so a spec can assert on
 // what the UI sent.
+const MiB = 1048576;
+/** A disk report: sonarr's previous image is untagged and still its way back. */
+function mockDisk() {
+  return {
+    images: [
+      { id: 'sha256:new', tags: ['lscr.io/linuxserver/sonarr:latest'], size: 412 * MiB, usedBy: ['sonarr'], dangling: false },
+      { id: 'sha256:old1234567890ab', tags: [], size: 398 * MiB, usedBy: [], dangling: true, rollbackFor: ['sonarr'] },
+      { id: 'sha256:pg', tags: ['postgres:15'], size: 379 * MiB, usedBy: [], dangling: false },
+    ],
+    volumes: [
+      { name: 'old_pgdata', driver: 'local', size: 171 * MiB, usedBy: [] },
+      { name: 'arr_config', driver: 'local', size: 96 * MiB, usedBy: ['radarr', 'sonarr'] },
+    ],
+    totals: { images: 1189 * MiB, imagesUnused: 777 * MiB, imagesUnusedCount: 2, dangling: 398 * MiB, danglingCount: 1,
+      buildCache: 300 * MiB, buildCacheCount: 2, volumes: 267 * MiB, volumesUnused: 171 * MiB, volumesUnusedCount: 1,
+      reclaimable: 1248 * MiB },
+  };
+}
+
 async function mockDocker(page, { control = true, socket = true, containers = null, usage = false } = {}) {
   const state = {
     control, socket, usage, calls: [],
@@ -42,6 +61,19 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     }
     if (path === '/updates') return json({ checkedAt: Date.now() - 3 * 3600e3, images: {} });
     if (path === '/updates/check') return json({ checkedAt: Date.now(), images: {} });
+    // Disk: what images and volumes take, pruning, and one volume at a time.
+    if (path === '/disk') return json(state.disk || mockDisk());
+    if (path.startsWith('/prune/') && req.method() === 'POST') {
+      if (!state.control) return json({ reason: 'docker-control-off' }, 403);
+      return json({ ok: true, kind: path.slice('/prune/'.length), removed: 1, reclaimed: 398 * 1048576 });
+    }
+    if (path.startsWith('/volumes/') && req.method() === 'DELETE') {
+      if (!state.control) return json({ reason: 'docker-control-off' }, 403);
+      const name = decodeURIComponent(path.slice('/volumes/'.length));
+      state.volumeDeletes = [...(state.volumeDeletes || []), `${name}?confirm=${url.searchParams.get('confirm')}`];
+      if (url.searchParams.get('confirm') !== name) return json({ reason: 'confirm-name' }, 400);
+      return json({ ok: true });
+    }
     // Skip and hold, applied to every container on the image as the server does.
     if (path === '/updates/choice' && req.method() === 'POST') {
       const { image, choice } = JSON.parse(req.postData() || '{}');
