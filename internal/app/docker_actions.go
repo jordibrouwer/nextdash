@@ -156,6 +156,7 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		if outcome, ok := result["update"].(dockerRecreateResult); ok && outcome.FailedStep != "" {
 			var apiErr *dockerAPIError
 			if !errors.As(err, &apiErr) && !isDockerDialError(err) {
+				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadGateway)
 				writeJSON(w, map[string]string{"reason": "docker-error", "failedStep": outcome.FailedStep,
 					"message": "the update failed at " + outcome.FailedStep + ": " + err.Error()})

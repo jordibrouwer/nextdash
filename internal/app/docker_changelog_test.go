@@ -151,3 +151,14 @@ func TestChangelogRouteListsReleasesSinceRunningVersion(t *testing.T) {
 		t.Fatalf("github hit %d times, want 1 (cache)", hits)
 	}
 }
+
+// Every error a docker route writes is JSON, and says so.
+func TestDockerErrorsAreJSON(t *testing.T) {
+	startFakeDocker(t)
+	rec := httptest.NewRecorder()
+	newDockerTestRouter(dockerTestHandlers(t)).ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/containers/nobody", nil))
+	// Result: the headers as they were when the status went out.
+	if got := rec.Result().Header.Get("Content-Type"); rec.Code != 404 || got != "application/json" {
+		t.Fatalf("%d %q", rec.Code, got)
+	}
+}

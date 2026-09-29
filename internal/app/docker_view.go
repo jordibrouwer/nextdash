@@ -273,6 +273,8 @@ func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 // docker route uses: a daemon error names itself, a bad id is 404, anything
 // else (no socket, denied, unreachable) is a dial reason.
 func writeDockerError(w http.ResponseWriter, err error) {
+	// Before WriteHeader: a header set after it is not sent.
+	w.Header().Set("Content-Type", "application/json")
 	var apiErr *dockerAPIError
 	switch {
 	case errors.Is(err, errDockerNotFound):
@@ -345,8 +347,7 @@ func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) dockerTarget(w http.ResponseWriter, r *http.Request) (*dockerAPI, dockerContainerSummary, bool) {
 	api, reason := newDockerAPI()
 	if api == nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		writeJSON(w, map[string]string{"reason": reason})
+		dockerRefuse(w, http.StatusServiceUnavailable, reason)
 		return nil, dockerContainerSummary{}, false
 	}
 	c, err := h.resolveDockerID(r.Context(), api, mux.Vars(r)["id"])
