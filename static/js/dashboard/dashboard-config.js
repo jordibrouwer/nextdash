@@ -17501,19 +17501,25 @@ class DashboardConfig {
                 fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`),
                 fetch(`/api/categories?page=${encodeURIComponent(pageId)}`),
             ]);
-            const sourceBookmarks = bmRes.ok ? await bmRes.json() : [];
-            const sourceCategories = catRes.ok ? await catRes.json() : [];
+            // A failed read is not an empty page: copying it would announce an
+            // empty copy as a success.
+            if (!bmRes.ok || !catRes.ok) throw new Error('source not read');
+            const sourceBookmarks = await bmRes.json();
+            const sourceCategories = await catRes.json();
 
             pages.push(copy);
             if (!await this.savePages()) return;
 
             const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             if (Array.isArray(sourceCategories) && sourceCategories.length) {
-                await fetcher(`/api/categories?page=${encodeURIComponent(newId)}`, {
+                const catSaved = await fetcher(`/api/categories?page=${encodeURIComponent(newId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(sourceCategories),
                 });
+                // Without them the copied bookmarks would point at categories
+                // this page does not have.
+                if (!catSaved.ok) throw new Error('categories not saved');
             }
             if (withBookmarks && Array.isArray(sourceBookmarks) && sourceBookmarks.length) {
                 // Shortcuts are unique per page in practice but not enforced

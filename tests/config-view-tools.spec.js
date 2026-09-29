@@ -94,5 +94,25 @@ test.describe('copying structure', () => {
         expect(await page.evaluate(() =>
             typeof window.dashboardInstance.config.duplicateCategory)).toBe('function');
     });
+
+    // A copy made from a failed read would be an empty page announced as a
+    // success; it is not made at all.
+    test('a page is not duplicated when its bookmarks cannot be read', async ({ page }) => {
+        await config(page, 'structure');
+        await page.route('**/api/bookmarks?page=*', (route) => (route.request().method() === 'GET'
+            ? route.fulfill({ status: 500, body: 'boom' }) : route.fallback()));
+        const out = await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            const notes = [];
+            let saves = 0;
+            c.confirmAction = async () => true;
+            c.savePages = async () => { saves += 1; return true; };
+            c.notify = (text, type) => notes.push(type);
+            const before = c.dash.pages.length;
+            await c.duplicatePage(c.dash.pages[0].id);
+            return { saves, notes, grew: c.dash.pages.length - before };
+        });
+        expect(out).toEqual({ saves: 0, notes: ['error'], grew: 0 });
+    });
 });
 
