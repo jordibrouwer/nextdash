@@ -578,7 +578,11 @@ class DashboardInbox {
         const title = (text) => `<p class="inbox-promote-menu-title">${this.escape(text)}</p>`;
         const pageLabel = (page) => d.pageNav?.pageLabel?.(page.id) || page.name || String(page.id);
 
+        // Which step is showing: a page's categories that arrive after the
+        // reader went back, or on to another page, are not for this step.
+        let step = 0;
         const showPages = () => {
+            step += 1;
             menu.innerHTML = title(this.t('dashboard.inboxPromoteToPage', 'Promote to page'))
                 + pages.map((page) => option(`data-promote-page="${this.escape(String(page.id))}"`,
                     pageLabel(page))).join('');
@@ -588,10 +592,11 @@ class DashboardInbox {
          * be sorted, only somewhere else.
          */
         const showCategories = async (page) => {
+            const turn = (step += 1);
             menu.innerHTML = title(pageLabel(page))
                 + option('data-promote-back', `← ${this.t('dashboard.inboxPromoteToPage', 'Promote to page')}`);
             const categories = await this.categoriesOnPage(page);
-            if (!menu.isConnected) return;
+            if (!menu.isConnected || turn !== step) return;
             menu.innerHTML += categories.map((category) => option(
                 `data-promote-category="${this.escape(category.id)}" data-page="${this.escape(String(page.id))}"`,
                 category.label)).join('')

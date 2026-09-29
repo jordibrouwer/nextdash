@@ -395,6 +395,28 @@ test.describe('dashboard inbox phase 1', () => {
         await expect.poll(() => page.evaluate(() => window.location.search)).not.toContain('ib_');
     });
 
+    // Page A, back, page B: A's categories arriving late must not land under B.
+    test('the bulk promote menu shows the categories of the page last chosen', async ({ page }) => {
+        await seedInbox(page, ['One', 'Two']);
+        const rows = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const ib = d.inbox;
+            d.pages = [{ id: 901, name: 'A' }, { id: 902, name: 'B' }];
+            ib.categoriesOnPage = async (p) => {
+                await new Promise((r) => setTimeout(r, p.id === 901 ? 300 : 0));
+                return [{ id: `c${p.id}`, label: `cat ${p.id}` }];
+            };
+            ib.openBulkPromoteMenu(document.body);
+            const menu = document.querySelector('.inbox-promote-menu');
+            menu.querySelector('[data-promote-page="901"]').click();
+            menu.querySelector('[data-promote-back]').click();
+            menu.querySelector('[data-promote-page="902"]').click();
+            await new Promise((r) => setTimeout(r, 500));
+            return [...menu.querySelectorAll('[data-promote-category]')].map((b) => b.getAttribute('data-page'));
+        });
+        expect(rows).toEqual(['902', '902']);
+    });
+
     test('ticking rows opens a selection bar that acts on just those rows', async ({ page }) => {
         await seedInbox(page, ['Zebra one', 'Apple two', 'Mango three']);
 

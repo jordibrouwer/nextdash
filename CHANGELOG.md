@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — the inbox's bulk Promote menu could list one page's categories under another.** Choosing page A, going back and choosing B let A's categories, arriving late, be added under B's heading, so a click promoted to A. A late answer for a step no longer showing is now dropped.
+
 - **fix — duplicating a page could make an empty copy and call it a success.** A failed read of the source's bookmarks or categories counted as none, and a failed category save let the copied bookmarks point at categories the new page did not have. Either now stops the copy with an error.
 
 - **fix — an inbox tag filter stayed in the address after going back to a page.** Leaving the inbox removed its keys from the address by name, and `ib_tag` was not on the list, so a reload brought the tag back and it outranked the stored filter and sort. Every `ib_` and `hv_` key now goes, by prefix.
