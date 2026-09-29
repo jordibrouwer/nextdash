@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -174,23 +175,104 @@ func (h *Handlers) DockerDiskHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), dockerDiskTimeout)
 	defer cancel()
 	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(dockerDiskTimeout + 10*time.Second))
-	list, err := api.listContainers(ctx)
+	view, err := measureDockerDisk(ctx, api)
 	if err != nil {
 		writeDockerError(w, err)
 		return
+	}
+	writeJSON(w, view)
+}
+
+// measureDockerDisk is one /system/df read joined with the container list, and
+// remembered for the Containers tile's reclaimable figure.
+func measureDockerDisk(ctx context.Context, api *dockerAPI) (dockerDiskView, error) {
+	list, err := api.listContainers(ctx)
+	if err != nil {
+		return dockerDiskView{}, err
 	}
 	var df dockerDfResponse
 	resp, err := api.forActions().do(ctx, http.MethodGet, "/system/df", nil)
 	if err != nil {
-		writeDockerError(w, err)
-		return
+		return dockerDiskView{}, err
 	}
 	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&df); err != nil {
-		writeDockerError(w, err)
-		return
+		return dockerDiskView{}, err
 	}
-	writeJSON(w, buildDockerDiskView(df, list))
+	view := buildDockerDiskView(df, list)
+	rememberDockerDisk(view.Totals, time.Now())
+	return view, nil
+}
+
+/*
+The Containers tile's reclaimable figure: the last measurement, whoever asked
+for it (the Disk tab or the tile), never measured on the tile's own clock. A
+measurement older than dockerDiskStale is followed by a new one in the
+background; the tile shows the old figure meanwhile, or none before the first.
+*/
+const dockerDiskStale = 6 * time.Hour
+
+var dockerDiskCache struct {
+	mu        sync.Mutex
+	totals    *dockerDiskTotals
+	at        time.Time
+	measuring bool
+}
+
+func rememberDockerDisk(t dockerDiskTotals, at time.Time) {
+	dockerDiskCache.mu.Lock()
+	defer dockerDiskCache.mu.Unlock()
+	dockerDiskCache.totals = &t
+	dockerDiskCache.at = at
+	// A measurement has come in; the next stale read may start another.
+	dockerDiskCache.measuring = false
+}
+
+func resetDockerDiskCache() {
+	dockerDiskCache.mu.Lock()
+	defer dockerDiskCache.mu.Unlock()
+	dockerDiskCache.totals = nil
+	dockerDiskCache.at = time.Time{}
+	dockerDiskCache.measuring = false
+}
+
+// dockerDiskRefresh starts a background measurement; a variable so a test can
+// see it asked for without a daemon doing the work.
+var dockerDiskRefresh = startDockerDiskRefresh
+
+func startDockerDiskRefresh() {
+	go func() {
+		defer func() {
+			dockerDiskCache.mu.Lock()
+			dockerDiskCache.measuring = false
+			dockerDiskCache.mu.Unlock()
+		}()
+		api, _ := newDockerAPI()
+		if api == nil {
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), dockerDiskTimeout)
+		defer cancel()
+		if _, err := measureDockerDisk(ctx, api); err != nil {
+			logWarn(logComponentMutate, "the disk usage for the Containers tile could not be measured: %v", err)
+		}
+	}()
+}
+
+// dockerReclaimable is the last reclaimable figure (-1 when never measured)
+// and when it was taken, starting a new measurement when it is stale.
+func dockerReclaimable(now time.Time) (int64, int64) {
+	dockerDiskCache.mu.Lock()
+	defer dockerDiskCache.mu.Unlock()
+	stale := dockerDiskCache.totals == nil || now.Sub(dockerDiskCache.at) > dockerDiskStale
+	if stale && !dockerDiskCache.measuring {
+		dockerDiskCache.measuring = true
+		dockerDiskRefresh()
+	}
+	if dockerDiskCache.totals == nil {
+		return -1, 0
+	}
+	return dockerDiskCache.totals.Reclaimable, dockerDiskCache.at.UnixMilli()
 }
 
 // dockerDiskGuard is what every change to the disk asks first: control on and

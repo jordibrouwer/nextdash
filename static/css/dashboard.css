@@ -7110,7 +7110,8 @@ button.dashboard-widget-stat.keyboard-selected {
     }
 
     .dashboard-widget-stats[data-stat-count="3"],
-    .dashboard-widget-stats[data-stat-count="6"] {
+    .dashboard-widget-stats[data-stat-count="6"],
+    .dashboard-widget-stats[data-stat-count="9"] {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 

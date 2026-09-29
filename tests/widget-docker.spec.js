@@ -63,6 +63,8 @@ const READING = {
     running: 12, stopped: 4, paused: 1, total: 17, images: 19, unhealthy: 1,
     unhealthyNames: ['jellyfin'],
     restartedNames: ['sonarr'],
+    updates: 2, reclaimable: Math.round(3.2 * 1024 ** 3), reclaimableAt: Date.now() - 3600e3, incidents24h: 3,
+    topCpu: [{ name: 'plex', cpu: 84.2 }, { name: 'immich', cpu: 21.5 }, { name: 'sonarr', cpu: 3.1 }],
 };
 
 test.describe('the containers widget', () => {
@@ -83,7 +85,7 @@ test.describe('the containers widget', () => {
     test('with nothing chosen a wide tile shows every figure', async ({ page }) => {
         await openDashboard(page);
         const out = await renderDocker(page, READING, {}, 700);
-        expect(out.cells).toBe(6);
+        expect(out.cells).toBe(9);
     });
 
     /*
@@ -123,8 +125,8 @@ test.describe('the containers widget', () => {
 
         expect(wide.cells).toBeGreaterThan(narrow.cells);
         expect(wide.columns).toBeGreaterThan(narrow.columns);
-        // Six figures go three abreast rather than four: four columns would
-        // leave two patches of empty ground on the second row.
+        // Nine figures -- every one, nothing chosen -- go three abreast rather
+        // than four: four columns would leave gaps on the last row.
         expect(wide.columns).toBe(3);
         expect(wide.cells % wide.columns).toBe(0);
     });
@@ -165,6 +167,32 @@ test.describe('the containers widget', () => {
         expect(named.text).toContain('jellyfin');
         expect(named.text).toContain('sonarr');
         expect(named.rows).toBe(2);
+    });
+
+    // Updates as the reader sees them, what Disk last found reclaimable, and the
+    // day's incidents: three figures more, chosen like the rest.
+    test('shows updates, reclaimable space and the day\'s incidents when chosen', async ({ page }) => {
+        await openDashboard(page);
+        const out = await renderDocker(page, READING, { show: ['updates', 'reclaimable', 'incidents'] }, 700);
+        expect(out.cells).toBe(3);
+        const text = out.labels.join(' | ');
+        expect(text).toMatch(/2\s*updates?/i);
+        expect(text).toMatch(/3\.2 GiB/);
+        expect(text).toMatch(/3\s*incidents/i);
+
+        // Never measured: a dash, not a zero that claims there is nothing.
+        const never = await renderDocker(page, { ...READING, reclaimable: -1, reclaimableAt: 0 }, { show: ['reclaimable'] }, 700);
+        expect(never.labels.join(' ')).toContain('—');
+    });
+
+    test('names the three busiest containers when asked', async ({ page }) => {
+        await openDashboard(page);
+        const plain = await renderDocker(page, READING, { show: ['running'] }, 320);
+        expect(plain.text).not.toContain('plex');
+        const busy = await renderDocker(page, READING, { show: ['running'], showTopCpu: true }, 320);
+        expect(busy.text).toContain('plex 84.2 %');
+        expect(busy.text).toContain('immich 21.5 %');
+        expect(busy.text).toContain('sonarr 3.1 %');
     });
 
     // Nothing to report is not a row saying nothing.
@@ -219,11 +247,11 @@ test.describe('the containers widget in config', () => {
 
         expect(shape.offered).toBe(true);
         expect(shape.group).toBe('system');
-        expect(shape.keys).toEqual(['refreshSeconds', 'show', 'showUnhealthyNames', 'showRestarted']);
+        expect(shape.keys).toEqual(['refreshSeconds', 'show', 'showUnhealthyNames', 'showRestarted', 'showTopCpu']);
         // A checkset, so every figure is a tickbox rather than a fixed layout.
         expect(shape.showKind).toBe('checkset');
         expect(shape.options).toEqual(
-            ['running', 'stopped', 'paused', 'unhealthy', 'total', 'images'],
+            ['running', 'stopped', 'paused', 'unhealthy', 'total', 'images', 'updates', 'reclaimable', 'incidents'],
         );
         // The socket is the one real privilege these widgets ask for, so the
         // panel says what it grants rather than only how to grant it.

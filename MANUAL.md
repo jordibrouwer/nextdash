@@ -1365,8 +1365,8 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | **Processor** | CPU use and the load average |
 | **Memory** | What is really in use; the file cache counts as free |
 | **Disks** | Used, free and reserved space on the disks you name |
-| **Containers** | Running and total containers, failing healthchecks and recent restarts; opens the Containers view, and its update figure links to `#docker?filter=updates` |
-| **Container list** | The containers themselves, one row each: one column on a narrow tile, two on a wide one. Its settings choose **running only** or **all**, the order (**problems first**, name, longest or shortest uptime), what stands on the right of a row (uptime, the image tag or nothing) and where a click goes: the container in the Containers view, or its web UI. A problem — unhealthy, stopped, an update — replaces the uptime on its row. |
+| **Containers** | Running and total containers, failing healthchecks and recent restarts; opens the Containers view, and its update figure links to `#docker?filter=updates`. The figures you tick can add **updates waiting** (a skipped or held one does not count), **reclaimable** disk space — what the Disk tab last measured, measured again in the background once it is six hours old, a dash before the first — and **incidents** in the last 24 hours (crashes and turns unhealthy, from the timeline). **Name the three busiest by CPU** lists them under the figures. Nothing ticked means every figure. |
+| **Container list** | The containers themselves, one row each: one column on a narrow tile, two on a wide one. Its settings choose **running only** or **all**, the order (**problems first**, name, longest or shortest uptime, CPU or memory — busiest first), what stands on the right of a row (uptime, the image tag, CPU and memory, or nothing) and where a click goes: the container in the Containers view, or its web UI. A problem — unhealthy, stopped, an update — replaces the uptime on its row. |
 
 *What is happening around you?*
 
@@ -1666,7 +1666,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Behavior** | General · Keyboard & search · Fresh · Status & alerts · Privacy & sync ([§17.5](#175-behavior)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
 | **Widgets** | Widgets · Types ([§15](#15-widgets)) |
-| **Containers** | Connection · View · Updates · Safety · Hidden containers · GitHub token ([§17.7](#177-config-containers)) |
+| **Containers** | Connection · View · Updates · Safety · Notifications · Muted containers · Hidden containers · GitHub token ([§17.7](#177-config-containers)) |
 | **Statistics** | Overview · Activity · Content · Inbox · Health ([§18](#18-statistics)) |
 | **Help** | The in-app guide |
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |

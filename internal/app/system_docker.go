@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -56,6 +57,51 @@ type DockerMetrics struct {
 	// jellyfin" does not.
 	UnhealthyNames []string `json:"unhealthyNames,omitempty"`
 	RestartedNames []string `json:"restartedNames,omitempty"`
+
+	// What the Disk tab last found reclaimable (-1 before any measurement)
+	// and when; incidents -- crashes and turns unhealthy -- in the last day,
+	// from the timeline; and the three busiest containers by CPU, from the
+	// stats sampler.
+	Reclaimable   int64          `json:"reclaimable"`
+	ReclaimableAt int64          `json:"reclaimableAt,omitempty"`
+	Incidents24h  int            `json:"incidents24h"`
+	TopCPU        []dockerTopCPU `json:"topCpu,omitempty"`
+
+	running []dockerRunningRef // for the figures above; not sent
+}
+
+type dockerTopCPU struct {
+	Name string  `json:"name"`
+	CPU  float64 `json:"cpu"`
+}
+
+type dockerRunningRef struct{ ID, Name string }
+
+const dockerTopCPUCount = 3
+
+// fillDockerExtras adds what the container list alone cannot say: updates as
+// the reader sees them (skipped and held left out), the last reclaimable
+// figure, the day's incidents and the busiest containers.
+func fillDockerExtras(out *DockerMetrics, running []dockerRunningRef, now time.Time) {
+	out.Updates = 0
+	for _, u := range readDockerUpdateStore().withChoices() {
+		if u.Status == "available" {
+			out.Updates++
+		}
+	}
+	out.Reclaimable, out.ReclaimableAt = dockerReclaimable(now)
+	out.Incidents24h = dockerTimelines.countSince(now.Add(-24*time.Hour), "crash", "unhealthy")
+	var top []dockerTopCPU
+	for _, r := range running {
+		if p, ok := dockerStatsStore.latest(r.ID); ok {
+			top = append(top, dockerTopCPU{Name: r.Name, CPU: p.CPU})
+		}
+	}
+	sort.SliceStable(top, func(i, j int) bool { return top[i].CPU > top[j].CPU })
+	if len(top) > dockerTopCPUCount {
+		top = top[:dockerTopCPUCount]
+	}
+	out.TopCPU = top
 }
 
 /*
@@ -126,6 +172,7 @@ useless at the same time, and no count of running containers shows that.
 */
 func countContainers(body io.Reader) (DockerMetrics, error) {
 	var list []struct {
+		ID      string   `json:"Id"`
 		Names   []string `json:"Names"`
 		State   string   `json:"State"`
 		Status  string   `json:"Status"`
@@ -149,6 +196,7 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 		switch item.State {
 		case "running":
 			out.Running++
+			out.running = append(out.running, dockerRunningRef{ID: item.ID, Name: name})
 			// A container with no healthcheck at all is not unhealthy, it is
 			// simply unknown -- so this looks for the word, not its absence.
 			if strings.Contains(item.Status, "(unhealthy)") {
@@ -210,10 +258,6 @@ func readDocker() DockerMetrics {
 			out.Images = payload.Images
 		}
 	}
-	for _, update := range readDockerUpdateStore().Images {
-		if update.Status == "available" {
-			out.Updates++
-		}
-	}
+	fillDockerExtras(&out, out.running, time.Now())
 	return out
 }

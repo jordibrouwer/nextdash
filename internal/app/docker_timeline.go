@@ -117,6 +117,28 @@ func (t *dockerTimeline) flush() error {
 	return writeIndentJSONFile(dockerTimelineFilePath(), t.data)
 }
 
+// countSince counts the entries of the given kinds, across every container,
+// at or after since.
+func (t *dockerTimeline) countSince(since time.Time, kinds ...string) int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.loadLocked()
+	want := map[string]bool{}
+	for _, k := range kinds {
+		want[k] = true
+	}
+	n := 0
+	cutoff := since.UnixMilli()
+	for _, entries := range t.data {
+		for _, e := range entries {
+			if e.At >= cutoff && want[e.Kind] {
+				n++
+			}
+		}
+	}
+	return n
+}
+
 // forContainer is one container's recorded events, oldest first.
 func (t *dockerTimeline) forContainer(name string) []dockerTimelineEntry {
 	t.mu.Lock()

@@ -94,6 +94,22 @@ async function renderContainers(page, body, config = {}, width = 320) {
 const LIVE = { available: true, containers: FLEET };
 
 test.describe('the container list widget', () => {
+    // Busiest first, with CPU and RAM beside the name: a top three is this
+    // sort with three rows.
+    test('sorts by CPU or memory and shows the usage beside the name', async ({ page }) => {
+        await openDashboard(page);
+        const usage = { adguard: [2.5, 80], bazarr: [44.1, 300], duplicati: [12, 1600], emby: [0.4, 40] };
+        const fleet = FLEET.map((c) => (usage[c.name] ? { ...c, usage: { cpu: usage[c.name][0], mem: usage[c.name][1] * 1024 * 1024 } } : c));
+        const byCpu = await renderContainers(page, { available: true, containers: fleet, usageEnabled: true },
+            { sort: 'cpu', detail: 'usage', rows: 3 });
+        expect(byCpu.names).toEqual(['bazarr', 'duplicati', 'adguard']);
+        expect(byCpu.details[0]).toBe('44.1 % · 300 MiB');
+        const byMem = await renderContainers(page, { available: true, containers: fleet, usageEnabled: true },
+            { sort: 'memory', detail: 'usage', rows: 3 });
+        expect(byMem.names).toEqual(['duplicati', 'bazarr', 'adguard']);
+        expect(byMem.details[0]).toBe('12.0 % · 1.6 GiB');
+    });
+
     test('is offered with the system widgets', async ({ page }) => {
         await openDashboard(page);
         // The favicon sweep reopens Overview when it finishes; wait it out.

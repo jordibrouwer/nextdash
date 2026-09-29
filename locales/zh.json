@@ -2905,7 +2905,11 @@
     "dockerRollbackImageGone": "The previous image is no longer on this host, so there is nothing to go back to.",
     "dockerRollbackPinned": "This container is pinned to an image digest; roll it back from your Docker host.",
     "dockerSkipNothing": "There is no update on offer to skip.",
-    "dockerStackUpdateHint": "Update the containers in this stack that have an update waiting"
+    "dockerStackUpdateHint": "Update the containers in this stack that have an update waiting",
+    "widgetDockerUpdates": "updates",
+    "widgetDockerReclaimable": "reclaimable",
+    "widgetDockerIncidents": "incidents (24 h)",
+    "widgetDockerTopCpu": "busiest"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -7503,7 +7507,15 @@
     "containersGroupNotify": "Notifications",
     "containersGroupNotifyNote": "A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on.",
     "dockerNotifyLabel": "Notify about containers",
-    "pushNotifyContainersLabel": "Notify when a container stops, keeps restarting or turns unhealthy"
+    "pushNotifyContainersLabel": "Notify when a container stops, keeps restarting or turns unhealthy",
+    "widgetDockerShowUpdates": "Updates waiting",
+    "widgetDockerShowReclaimable": "Reclaimable disk space",
+    "widgetDockerShowIncidents": "Incidents in the last 24 hours",
+    "widgetDockerTopCpu": "Name the three busiest by CPU",
+    "widgetDockerTopCpuHint": "From the reading Containers takes every 30 seconds.",
+    "widgetContainersSortCpu": "CPU, busiest first",
+    "widgetContainersSortMemory": "Memory, most first",
+    "widgetContainersDetailUsage": "CPU and memory"
   },
   "colors": {
     "title": "主题自定义",
