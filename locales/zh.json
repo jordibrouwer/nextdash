@@ -552,7 +552,11 @@
       "navUnsortedView": "打开书签视图并显示“未分类”——等待归入页面的保留链接",
       "sectionContainers": "容器",
       "sectionDockerView": "容器视图",
-      "sectionLibraryView": "书签视图"
+      "sectionLibraryView": "书签视图",
+      "navDockerView": "Open Containers — what runs on the Docker host",
+      "dkLogs": "The logs window of the selected container, following live",
+      "dkMute": "Mute or unmute the selected container’s notices",
+      "dkDisk": "Switch between the container list and Disk"
     },
     "searchPrefix": ">",
     "searchModeSearch": "搜索",
@@ -2739,7 +2743,13 @@
     "waitBulkUpdateStatus": "正在保存每个书签",
     "widgetType.containers": "容器列表",
     "widgetActionOpenWebUI": "打开 Web UI",
-    "widgetActionOpenContainer": "在容器中打开"
+    "widgetActionOpenContainer": "在容器中打开",
+    "dockerLegendMove": "move",
+    "dockerLegendOpen": "details",
+    "dockerLegendSearch": "search",
+    "dockerLegendLogs": "logs",
+    "dockerLegendMute": "mute",
+    "dockerLegendDisk": "disk"
   },
   "health": {
     "reloadPage": "重新加载页面",

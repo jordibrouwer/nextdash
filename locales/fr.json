@@ -552,7 +552,11 @@
       "navUnsortedView": "Ouvrir la vue Favoris sur Non triés — les liens gardés qui attendent une page",
       "sectionContainers": "Conteneurs",
       "sectionDockerView": "Vue Conteneurs",
-      "sectionLibraryView": "Vue Favoris"
+      "sectionLibraryView": "Vue Favoris",
+      "navDockerView": "Open Containers — what runs on the Docker host",
+      "dkLogs": "The logs window of the selected container, following live",
+      "dkMute": "Mute or unmute the selected container’s notices",
+      "dkDisk": "Switch between the container list and Disk"
     },
     "searchPrefix": ">",
     "searchModeSearch": "RECHERCHE",
@@ -2739,7 +2743,13 @@
     "waitBulkUpdateStatus": "Enregistrement de chaque signet",
     "widgetType.containers": "Liste des conteneurs",
     "widgetActionOpenWebUI": "Ouvrir l’interface web",
-    "widgetActionOpenContainer": "Ouvrir dans Conteneurs"
+    "widgetActionOpenContainer": "Ouvrir dans Conteneurs",
+    "dockerLegendMove": "move",
+    "dockerLegendOpen": "details",
+    "dockerLegendSearch": "search",
+    "dockerLegendLogs": "logs",
+    "dockerLegendMute": "mute",
+    "dockerLegendDisk": "disk"
   },
   "health": {
     "reloadPage": "Recharger la page",

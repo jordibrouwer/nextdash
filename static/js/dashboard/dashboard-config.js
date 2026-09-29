@@ -1618,6 +1618,13 @@ class DashboardConfig {
                 void d.inbox.openInboxView();
                 return true;
             }
+            if (e.code === 'KeyY' && d.docker?.isEnabled?.()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.saveLastConfigLocation();
+                void d.docker.openDockerView();
+                return true;
+            }
         }
 
         return false;

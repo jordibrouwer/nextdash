@@ -552,7 +552,11 @@
       "navUnsortedView": "De weergave Bladwijzers openen op Ongesorteerd — bewaarde links die op een pagina wachten",
       "sectionContainers": "Containers",
       "sectionDockerView": "Weergave Containers",
-      "sectionLibraryView": "Weergave Bladwijzers"
+      "sectionLibraryView": "Weergave Bladwijzers",
+      "navDockerView": "Open Containers — what runs on the Docker host",
+      "dkLogs": "The logs window of the selected container, following live",
+      "dkMute": "Mute or unmute the selected container’s notices",
+      "dkDisk": "Switch between the container list and Disk"
     },
     "searchPrefix": ">",
     "searchModeSearch": "ZOEKEN",
@@ -2739,7 +2743,13 @@
     "waitBulkUpdateStatus": "Elke bladwijzer opslaan",
     "widgetType.containers": "Containerlijst",
     "widgetActionOpenWebUI": "Web-UI openen",
-    "widgetActionOpenContainer": "Openen in Containers"
+    "widgetActionOpenContainer": "Openen in Containers",
+    "dockerLegendMove": "move",
+    "dockerLegendOpen": "details",
+    "dockerLegendSearch": "search",
+    "dockerLegendLogs": "logs",
+    "dockerLegendMute": "mute",
+    "dockerLegendDisk": "disk"
   },
   "health": {
     "reloadPage": "Pagina herladen",

@@ -552,7 +552,11 @@
       "navUnsortedView": "Die Lesezeichen-Ansicht bei Unsortiert öffnen — behaltene Links, die auf eine Seite warten",
       "sectionContainers": "Container",
       "sectionDockerView": "Container-Ansicht",
-      "sectionLibraryView": "Lesezeichen-Ansicht"
+      "sectionLibraryView": "Lesezeichen-Ansicht",
+      "navDockerView": "Open Containers — what runs on the Docker host",
+      "dkLogs": "The logs window of the selected container, following live",
+      "dkMute": "Mute or unmute the selected container’s notices",
+      "dkDisk": "Switch between the container list and Disk"
     },
     "searchPrefix": ">",
     "searchModeSearch": "SUCHE",
@@ -2739,7 +2743,13 @@
     "waitBulkUpdateStatus": "Jedes Lesezeichen wird gespeichert",
     "widgetType.containers": "Containerliste",
     "widgetActionOpenWebUI": "Web-UI öffnen",
-    "widgetActionOpenContainer": "In Container öffnen"
+    "widgetActionOpenContainer": "In Container öffnen",
+    "dockerLegendMove": "move",
+    "dockerLegendOpen": "details",
+    "dockerLegendSearch": "search",
+    "dockerLegendLogs": "logs",
+    "dockerLegendMute": "mute",
+    "dockerLegendDisk": "disk"
   },
   "health": {
     "reloadPage": "Seite neu laden",

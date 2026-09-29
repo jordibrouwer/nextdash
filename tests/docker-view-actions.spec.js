@@ -78,7 +78,8 @@ test.describe('docker view actions', () => {
     await page.keyboard.press('s');
     await page.waitForTimeout(300);
     expect(state.calls.some((c) => c.startsWith('POST /containers'))).toBe(false);
-    await expect(page.locator('.docker-legend')).toHaveCount(0);
+    // The legend stays, without the keys that act on Docker.
+    await expect(page.locator('.docker-legend kbd', { hasText: /^s$/ })).toHaveCount(0);
   });
 
   test('bulk restart from multi-select', async ({ page }) => {

@@ -583,7 +583,11 @@
       "cvBmMove": "Move between bookmark rows when focus is in the list panel",
       "cvBmEdit": "Open the inline editor for the selected bookmark",
       "cvBmFirstLast": "Jump to the first / last bookmark row",
-      "cvBmFilter": "Focus the bookmark search field"
+      "cvBmFilter": "Focus the bookmark search field",
+      "navDockerView": "Open Containers — what runs on the Docker host",
+      "dkLogs": "The logs window of the selected container, following live",
+      "dkMute": "Mute or unmute the selected container’s notices",
+      "dkDisk": "Switch between the container list and Disk"
     },
     "searchPrefix": ">",
     "searchModeSearch": "SEARCH",
@@ -2739,7 +2743,13 @@
     "waitBulkUpdateStatus": "Saving each bookmark",
     "widgetType.containers": "Container list",
     "widgetActionOpenWebUI": "Open WebUI",
-    "widgetActionOpenContainer": "Open in Containers"
+    "widgetActionOpenContainer": "Open in Containers",
+    "dockerLegendMove": "move",
+    "dockerLegendOpen": "details",
+    "dockerLegendSearch": "search",
+    "dockerLegendLogs": "logs",
+    "dockerLegendMute": "mute",
+    "dockerLegendDisk": "disk"
   },
   "health": {
     "reloadPage": "Reload page",

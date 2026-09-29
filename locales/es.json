@@ -552,7 +552,11 @@
       "navUnsortedView": "Abrir la vista Marcadores en Sin ordenar — enlaces conservados que esperan una página",
       "sectionContainers": "Contenedores",
       "sectionDockerView": "Vista Contenedores",
-      "sectionLibraryView": "Vista Marcadores"
+      "sectionLibraryView": "Vista Marcadores",
+      "navDockerView": "Open Containers — what runs on the Docker host",
+      "dkLogs": "The logs window of the selected container, following live",
+      "dkMute": "Mute or unmute the selected container’s notices",
+      "dkDisk": "Switch between the container list and Disk"
     },
     "searchPrefix": ">",
     "searchModeSearch": "BUSCAR",
@@ -2739,7 +2743,13 @@
     "waitBulkUpdateStatus": "Guardando cada marcador",
     "widgetType.containers": "Lista de contenedores",
     "widgetActionOpenWebUI": "Abrir la interfaz web",
-    "widgetActionOpenContainer": "Abrir en Contenedores"
+    "widgetActionOpenContainer": "Abrir en Contenedores",
+    "dockerLegendMove": "move",
+    "dockerLegendOpen": "details",
+    "dockerLegendSearch": "search",
+    "dockerLegendLogs": "logs",
+    "dockerLegendMute": "mute",
+    "dockerLegendDisk": "disk"
   },
   "health": {
     "reloadPage": "Recargar la página",

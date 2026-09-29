@@ -299,6 +299,29 @@ class DashboardDocker {
                 return;
             }
 
+            // The view's own letters: d flips Containers and Disk; l opens the
+            // logs window and m mutes or unmutes the selected container. Never
+            // while typing or with a modifier held.
+            if (!typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey
+                && (e.key === 'd' || e.key === 'l' || e.key === 'm')) {
+                if (e.key === 'd') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    this.showTab(this.tab === 'disk' ? 'containers' : 'disk');
+                    return;
+                }
+                const c = this.selected ? this.containers.find((x) => x.name === this.selected) : null;
+                if (!c || this.tab !== 'containers') return;
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (e.key === 'l') {
+                    this.openLogs(c);
+                } else if (!c.self) {
+                    void this.actions?.toggleMute(c).then(() => this.drawerRefresh?.());
+                }
+                return;
+            }
+
             // Row actions, on the selected container. Never while typing or
             // with a modifier held, so Cmd+R still reloads the page.
             const actionKey = { s: 'toggle-run', r: 'restart', p: 'toggle-pause', u: 'update', Delete: 'remove', Backspace: 'remove' }[e.key];
@@ -816,6 +839,7 @@ class DashboardDocker {
         }
         if (this.status.control === false) {
             body.appendChild(this.buildReadOnlyLine());
+            body.appendChild(this.buildLegend({ control: false }));
         } else {
             body.appendChild(this.buildLegend());
         }
@@ -826,15 +850,24 @@ class DashboardDocker {
     }
 
     /** The row keys, as <kbd> chips; the keys stay untranslated, the labels do not. */
-    buildLegend() {
+    /** Every key of the view; read-only leaves out the ones that act on Docker. */
+    buildLegend({ control = true } = {}) {
         const wrap = document.createElement('div');
         wrap.className = 'docker-legend';
         [
-            ['s', this.t('dashboard.dockerLegendRun', 'start / stop')],
-            ['r', this.t('dashboard.dockerLegendRestart', 'restart')],
-            ['p', this.t('dashboard.dockerLegendPause', 'pause')],
-            ['u', this.t('dashboard.dockerLegendUpdate', 'update')],
-            ['Del', this.t('dashboard.dockerLegendRemove', 'remove')],
+            ['↑ / ↓', this.t('dashboard.dockerLegendMove', 'move')],
+            ['Enter', this.t('dashboard.dockerLegendOpen', 'details')],
+            ['/', this.t('dashboard.dockerLegendSearch', 'search')],
+            ...(control ? [
+                ['s', this.t('dashboard.dockerLegendRun', 'start / stop')],
+                ['r', this.t('dashboard.dockerLegendRestart', 'restart')],
+                ['p', this.t('dashboard.dockerLegendPause', 'pause')],
+                ['u', this.t('dashboard.dockerLegendUpdate', 'update')],
+                ['Del', this.t('dashboard.dockerLegendRemove', 'remove')],
+            ] : []),
+            ['l', this.t('dashboard.dockerLegendLogs', 'logs')],
+            ['m', this.t('dashboard.dockerLegendMute', 'mute')],
+            ['d', this.t('dashboard.dockerLegendDisk', 'disk')],
         ].forEach(([key, label]) => {
             const item = document.createElement('span');
             item.className = 'docker-legend-item';

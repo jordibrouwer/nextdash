@@ -534,6 +534,18 @@ class DashboardSetup {
                 return;
             }
 
+            // Containers. Y, as C, D, K, N and O were taken; the Docker-less
+            // install has no view and the key does nothing there.
+            if (e.shiftKey && e.code === 'KeyY') {
+                if (d.docker?.isEnabled?.()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + Y');
+                    void d.docker.openDockerView();
+                }
+                return;
+            }
+
             // Bookmarks, on what was kept and waits for a page.
             if (e.shiftKey && e.code === 'KeyU') {
                 if (d.config?.isEnabled?.()) {
