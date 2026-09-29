@@ -125,6 +125,19 @@
     text-overflow: ellipsis;
 }
 
+/* A custom address: a dot in front, the row's echo of the side panel's
+   Custom tag. */
+.docker-webui.is-custom::before {
+    content: '';
+    display: inline-block;
+    width: 0.4em;
+    height: 0.4em;
+    margin-right: 0.4em;
+    border-radius: 50%;
+    background: currentColor;
+    vertical-align: middle;
+}
+
 /* Second phone line (name/state stay in the normal cells); hidden until
    the mobile media query below turns it on. */
 .docker-row-line2 {

@@ -33,12 +33,19 @@ test.describe('the web UI in the table', () => {
         await open(page);
         await expect(webui(page, 'custom')).toHaveAttribute('href', 'https://nd.home.lan/');
         await expect(webui(page, 'custom')).toHaveText('nd.home.lan');
-        await expect(webui(page, 'custom')).toHaveAttribute('title', 'https://nd.home.lan/');
+        await expect(webui(page, 'custom')).toHaveAttribute('title', 'https://nd.home.lan/ · Custom');
         expect(await ports(page, 'custom').allInnerTexts()).toEqual(['8080', '9000']);
         // One line up: every row's web UI starts at the same x, and so do the ports.
         const x = async (loc) => Math.round((await loc.boundingBox())?.x || 0);
         expect(await x(page.locator('[data-docker-row="custom"] .docker-cell--ports')))
             .toBe(await x(page.locator('[data-docker-row="plain"] .docker-cell--ports')));
+    });
+
+    test('your own address is marked custom, a template one is not', async ({ page }) => {
+        await open(page);
+        await expect(webui(page, 'custom')).toHaveAttribute('data-docker-webui-custom', '');
+        await expect(webui(page, 'template')).not.toHaveAttribute('data-docker-webui-custom', '');
+        await expect(webui(page, 'plain')).not.toHaveAttribute('data-docker-webui-custom', '');
     });
 
     test('a template address on this host reads as its port', async ({ page }) => {

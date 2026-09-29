@@ -1367,6 +1367,12 @@ class DashboardDocker {
             if (webui.port) a.setAttribute('data-docker-webui-port', '');
             a.href = webui.href;
             a.title = webui.href;
+            // Your own address carries a dot, as the side panel tags it Custom.
+            if (!webui.port && c.webuiCustom) {
+                a.classList.add('is-custom');
+                a.setAttribute('data-docker-webui-custom', '');
+                a.title = `${webui.href} · ${this.t('dashboard.dockerSectionCustom', 'Custom')}`;
+            }
             a.target = '_blank';
             a.rel = 'noopener';
             a.textContent = webui.label;
