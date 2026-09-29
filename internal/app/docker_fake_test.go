@@ -35,12 +35,12 @@ type fakeDocker struct {
 	calls      []string                  // "POST /containers/abc/stop", in order
 	failCreate bool
 	// onCreate runs as a create arrives, before it is answered.
-	onCreate func()
-	failStart  map[string]bool // by container name
+	onCreate  func()
+	failStart map[string]bool // by container name
 	// goneOnFailedStart removes the new container as its start fails, the
 	// way a Remove from another tab in that moment would.
 	goneOnFailedStart bool
-	socket     string
+	socket            string
 	// slow holds a pull stream and a stop open this long, as a real daemon
 	// does while it downloads layers or waits out a stop timeout.
 	slow time.Duration

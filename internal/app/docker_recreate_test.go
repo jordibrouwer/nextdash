@@ -282,7 +282,7 @@ func TestDockerRecreateRefusesWhatItCannotSwapSafely(t *testing.T) {
 	if rec.Code != 409 || !strings.Contains(rec.Body.String(), `"network-shared"`) || !strings.Contains(rec.Body.String(), `"qbittorrent"`) {
 		t.Fatalf("shared network: %d %s", rec.Code, rec.Body)
 	}
-	if f.called("POST /images/create?fromImage=img&tag=latest") || f.called("POST /containers/" + c.ID + "/stop") {
+	if f.called("POST /images/create?fromImage=img&tag=latest") || f.called("POST /containers/"+c.ID+"/stop") {
 		t.Fatalf("nothing may be pulled or stopped: %v", f.calls)
 	}
 	delete(f.containers, strings.Repeat("c", 64))
