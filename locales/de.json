@@ -7346,7 +7346,7 @@
     "dockerRefresh30": "30 Sekunden",
     "dockerLogLinesLabel": "Angezeigte Logzeilen",
     "containersGroupLinks": "Links",
-    "containersGroupLinksNote": "Wohin Ports und Web-UI-Links zeigen. Leer nimmt die Adresse, unter der dieses Dashboard geöffnet ist. Ein Container mit eigener LAN-Adresse (macvlan, br0) verlinkt immer dorthin.",
+    "containersGroupLinksNote": "Wohin Ports und Web-UI-Links zeigen. Trage nur die LAN-Adresse oder den Namen des Servers ein, ohne http:// und ohne Port — zum Beispiel 192.168.1.10 oder tower.local; Port 8080 öffnet dann http://192.168.1.10:8080. Leer nimmt die Adresse, unter der dieses Dashboard geöffnet ist. Ein Container mit eigener LAN-Adresse (macvlan, br0) verlinkt immer dorthin.",
     "dockerHostAddressLabel": "Adresse des Docker-Hosts",
     "dockerStatsHistoryLabel": "Die letzte Stunde CPU und Speicher behalten",
     "containersGroupUpdates": "Updates",

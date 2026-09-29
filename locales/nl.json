@@ -7346,7 +7346,7 @@
     "dockerRefresh30": "30 seconden",
     "dockerLogLinesLabel": "Te tonen logregels",
     "containersGroupLinks": "Links",
-    "containersGroupLinksNote": "Waar poorten en webinterface-links naartoe wijzen. Leeg gebruikt het adres waarop dit dashboard open staat. Een container met een eigen LAN-adres (macvlan, br0) linkt altijd daarheen.",
+    "containersGroupLinksNote": "Waar poorten en webinterface-links naartoe wijzen. Vul alleen het LAN-adres of de naam van de server in, zonder http:// of poort — bijvoorbeeld 192.168.1.10 of tower.local; poort 8080 opent dan http://192.168.1.10:8080. Leeg gebruikt het adres waarop dit dashboard open staat. Een container met een eigen LAN-adres (macvlan, br0) linkt altijd daarheen.",
     "dockerHostAddressLabel": "Adres van de Docker-host",
     "dockerStatsHistoryLabel": "Het laatste uur CPU en geheugen bewaren",
     "containersGroupUpdates": "Updates",
