@@ -304,3 +304,27 @@ test('the closed cloud lets the grid have its clicks back', async ({ page }) => 
     expect(after.hitInsideModal, 'a click where the cloud was lands on the closed cloud').toBe(false);
     expect(after.focusLanded, 'the keyboard can still reach into an aria-hidden cloud').toBe(false);
 });
+
+/*
+ * The close button is a ×, which is not a name. It carries one in the page as
+ * served, before any translation has run, and keeps it once the cloud opens.
+ */
+test('the close button is named, from the first paint', async ({ page }) => {
+    await page.setViewportSize({ width: 1500, height: 1000 });
+    await markWhatsNewSeen(page);
+    const response = await page.goto('/');
+    const served = await response.text();
+    expect(served, 'the served close button has no aria-label')
+        .toMatch(/id="tag-cloud-modal-close"[^>]*aria-label="Close"/);
+
+    await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => {
+        window.dashboardInstance.settings.showTagCloudButton = true;
+        window.dashboardInstance.setupDOM?.();
+    });
+    await page.locator('body').press('/');
+    await expect.poll(() => page.locator('.tag-cloud-word').count()).toBeGreaterThan(1);
+    await expect(page.locator('#tag-cloud-modal-close')).toHaveAccessibleName('Close');
+});
