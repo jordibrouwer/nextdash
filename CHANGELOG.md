@@ -362,6 +362,8 @@ The Containers view's big round: a live logs window, a Disk tab, notices when a 
 
 ### Docs
 
+- **fix — the check-mode menu spec closes an open menu before the next right-click.** On CI the bookmark menu still open from the previous step covered the first row and took the click, every retry; `dashboard-check-mode-menu.spec.js` now presses Escape until it is gone.
+
 - **fix — the settings-jump spec looks for the uptime webhook by field.** Searching "webhook" now also finds Containers' notices first, so the test landed in Config → Containers; it picks `monitorNotifyUrl` itself.
 
 - **fix — a statistics CSV export could carry a bookmark's old name or count.** The export read the figures memoised at the last paint, so a rename or an open since then went out stale; `exportStatsCSV()` now drops the memo first. `config-stats-export-truncation.spec.js` memoises before renaming, and was the flaky failure on CI's third e2e shard.

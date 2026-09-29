@@ -22,6 +22,13 @@ async function firstRow(page) {
 }
 
 async function openContextMenu(page, row) {
+    // Escape closes the submenu first and the menu under it only on a second
+    // press, so a menu can still be open here. Where it lands depends on the
+    // fonts: on CI it covered the first row and took the right-click, three
+    // tries running.
+    const open = page.locator('#bookmark-context-menu');
+    for (let i = 0; i < 3 && await open.isVisible(); i++) await page.keyboard.press('Escape');
+    await expect(open).toBeHidden();
     await row.click({ button: 'right' });
     await page.waitForSelector('#bookmark-context-menu', { timeout: 10_000 });
 }
