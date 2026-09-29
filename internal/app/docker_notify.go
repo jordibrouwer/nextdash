@@ -295,7 +295,34 @@ func (h *Handlers) dispatchContainerNotices(ctx context.Context, notices []monit
 			})
 		}
 	}
-	h.postMonitorTarget(ctx, notices)
+	h.postMonitorTarget(ctx, collapseContainerNotices(notices))
+}
+
+// collapseContainerNotices is Health's digest for containers: four or more of
+// one event in one go -- a database down takes what depends on it along --
+// become one message, so a chat channel is not flooded or rate-limited.
+// Browser push keeps one per container, each replacing that container's last.
+func collapseContainerNotices(notices []monitorNotification) []monitorNotification {
+	if len(notices) < monitorDigestThreshold {
+		return notices
+	}
+	event := notices[0].Event
+	names := make([]string, 0, len(notices))
+	for _, n := range notices {
+		if n.Event != event {
+			return notices
+		}
+		names = append(names, n.Name)
+	}
+	summary := strings.Join(names[:3], ", ")
+	if rest := len(names) - 3; rest > 0 {
+		summary += fmt.Sprintf(" and %d more", rest)
+	}
+	title := fmt.Sprintf("%d containers need attention", len(notices))
+	if event == "up" {
+		title = fmt.Sprintf("%d containers recovered", len(notices))
+	}
+	return []monitorNotification{containerNotice(event, "", title, summary, time.UnixMilli(notices[0].At))}
 }
 
 func notifyDetailSuffix(detail string) string {

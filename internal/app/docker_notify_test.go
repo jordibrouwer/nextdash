@@ -208,3 +208,50 @@ func TestContainerNotifierLongStopsAndFinishedJobs(t *testing.T) {
 	r.at(time.Minute).ev("die", "web", "exitCode", "1").at(time.Minute).tick()
 	r.want("nginx stopped unexpectedly", "web stopped unexpectedly")
 }
+
+// A burst of container notices -- one crash taking its dependants along --
+// reaches the webhook as one digest; a few, or a mix of downs and ups, go one
+// by one as before.
+func TestDockerNotifierDigestsABurst(t *testing.T) {
+	var mu sync.Mutex
+	var got []monitorNotification
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		var n monitorNotification
+		_ = json.Unmarshal(body, &n)
+		mu.Lock()
+		got = append(got, n)
+		mu.Unlock()
+	}))
+	defer srv.Close()
+	h, _ := healthRecheckTestHandlers(t, `{"monitorNotifyUrl":"`+srv.URL+`","allowLocalBookmarks":true,"dockerNotify":true}`)
+	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	notices := func(event string, names ...string) []monitorNotification {
+		var out []monitorNotification
+		for _, name := range names {
+			out = append(out, containerNotice(event, name, name+" stopped unexpectedly", "exit code 1", now))
+		}
+		return out
+	}
+	take := func() []monitorNotification {
+		mu.Lock()
+		defer mu.Unlock()
+		out := got
+		got = nil
+		return out
+	}
+
+	h.dispatchContainerNotices(context.Background(), notices("down", "db", "api", "web", "worker", "cron", "proxy"))
+	if sent := take(); len(sent) != 1 || sent[0].Title != "6 containers need attention" ||
+		sent[0].Error != "db, api, web and 3 more" || sent[0].Source != "container" || sent[0].Event != "down" {
+		t.Fatalf("burst sent %+v", sent)
+	}
+	h.dispatchContainerNotices(context.Background(), notices("down", "db", "api", "web"))
+	if sent := take(); len(sent) != 3 {
+		t.Fatalf("three notices sent as %d", len(sent))
+	}
+	h.dispatchContainerNotices(context.Background(), append(notices("down", "db", "api"), notices("up", "web", "worker")...))
+	if sent := take(); len(sent) != 4 {
+		t.Fatalf("a mix sent as %d", len(sent))
+	}
+}
