@@ -167,3 +167,15 @@ func TestHeartbeatBucketsSkipMaintenanceSamples(t *testing.T) {
 		}
 	}
 }
+
+// A window whose days are all out of range is dropped, not widened: no days
+// means every day, so keeping it would silence alerts every night.
+func TestMaintenanceWindowWithOnlyBadDaysIsDropped(t *testing.T) {
+	got := normalizeMaintenanceWindows([]MaintenanceWindow{
+		{Start: "02:00", End: "03:00", Days: []int{7, -1}},
+		{Start: "04:00", End: "05:00"},
+	})
+	if len(got) != 1 || got[0].Start != "04:00" {
+		t.Fatalf("got %+v, want only the every-day window", got)
+	}
+}

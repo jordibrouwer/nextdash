@@ -116,6 +116,11 @@ func normalizeMaintenanceWindows(windows []MaintenanceWindow) []MaintenanceWindo
 			seen[d] = true
 			days = append(days, d)
 		}
+		// Days were given and none of them is a day: no days would read as
+		// every day, which is the opposite of what was asked.
+		if len(w.Days) > 0 && len(days) == 0 {
+			continue
+		}
 		sort.Ints(days)
 		// Seven days listed is the same as none, and "none" is the cheaper test.
 		if len(days) == 7 {
