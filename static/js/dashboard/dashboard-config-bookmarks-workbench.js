@@ -21,8 +21,9 @@
     // The way each sort runs before a second click on its heading turns it:
     // the comparators in computeVisibleBookmarks, as a heading's arrow says them.
     const SORT_NATURAL = {
-        name: 'ascending', pinned: 'descending', opens: 'descending',
-        lastOpened: 'descending', recent: 'descending', score: 'ascending',
+        name: 'ascending', tags: 'ascending', pinned: 'descending', shortcut: 'ascending',
+        usage: 'descending', opens: 'descending', lastOpened: 'descending',
+        recent: 'descending', score: 'ascending',
     };
 
     Object.assign(global.DashboardConfig.prototype, {
@@ -1860,6 +1861,31 @@
      */
     workbenchSparkCell(b) {
         const esc = (v) => this.dash.escapeHtml(v);
+        const { days, counts } = this.workbenchSparkCounts(b);
+        const BARS = counts.length;
+        const total = counts.reduce((a, n) => a + n, 0);
+        const title = total
+            ? this.t('config.bmSparkTitleDays', '{n} opens in the last {d} days').replace('{n}', String(total)).replace('{d}', String(days))
+            : this.t('config.bmSparkNoneDays', 'No opens in the last {d} days').replace('{d}', String(days));
+        const max = Math.max(1, ...counts);
+        const gap = 1;
+        // The same width whatever the number of bars.
+        const w = Math.max(2, Math.floor(60 / BARS) - gap);
+        const h = 14;
+        const bars = counts.map((n, i) => {
+            const bh = n ? Math.max(2, Math.round((n / max) * h)) : 1;
+            return `<rect data-count="${n}" x="${i * (w + gap)}" y="${h - bh}" width="${w}" height="${bh}" rx="0.5"${n ? '' : ' class="is-empty"'}></rect>`;
+        }).join('');
+        return `<span class="config-bm-spark" role="gridcell" title="${esc(title)}">
+            <svg viewBox="0 0 ${BARS * (w + gap) - gap} ${h}" width="${BARS * (w + gap) - gap}" height="${h}" aria-hidden="true">${bars}</svg></span>`;
+    },
+
+    /**
+     * The sparkline's bars: opens per bar over the window View sets, oldest
+     * first. The Usage heading sorts on their sum, so the order it gives is
+     * the one the bars show.
+     */
+    workbenchSparkCounts(b) {
         // View sets how far back: 7 and 14 days a bar a day, 30 days two.
         const days = [7, 14, 30].includes(Number(this.bmViewSetting('bmViewUsageDays', 30))) ? Number(this.bmViewSetting('bmViewUsageDays', 30)) : 30;
         const BARS = days === 30 ? 15 : days;
@@ -1876,21 +1902,7 @@
             if (!(age >= 0) || age >= BARS * SPAN) return;
             counts[BARS - 1 - Math.floor(age / SPAN)] += 1;
         });
-        const total = counts.reduce((a, n) => a + n, 0);
-        const title = total
-            ? this.t('config.bmSparkTitleDays', '{n} opens in the last {d} days').replace('{n}', String(total)).replace('{d}', String(days))
-            : this.t('config.bmSparkNoneDays', 'No opens in the last {d} days').replace('{d}', String(days));
-        const max = Math.max(1, ...counts);
-        const gap = 1;
-        // The same width whatever the number of bars.
-        const w = Math.max(2, Math.floor(60 / BARS) - gap);
-        const h = 14;
-        const bars = counts.map((n, i) => {
-            const bh = n ? Math.max(2, Math.round((n / max) * h)) : 1;
-            return `<rect data-count="${n}" x="${i * (w + gap)}" y="${h - bh}" width="${w}" height="${bh}" rx="0.5"${n ? '' : ' class="is-empty"'}></rect>`;
-        }).join('');
-        return `<span class="config-bm-spark" role="gridcell" title="${esc(title)}">
-            <svg viewBox="0 0 ${BARS * (w + gap) - gap} ${h}" width="${BARS * (w + gap) - gap}" height="${h}" aria-hidden="true">${bars}</svg></span>`;
+        return { days, counts };
     },
 
     /** When it was added: day and month this year, month and year before. */
@@ -2012,14 +2024,14 @@
                 <span class="config-bm-colhead-cell" aria-hidden="true"></span>
                 <span class="config-bm-colhead-cell" aria-hidden="true"></span>
                 ${cell('config-bm-colhead-name', this.t('config.bookmarkName', 'Name'), 'name')}
-                ${col('tags') ? cell('config-bm-colhead-tags', this.t('config.bmViewColTags', 'Tags')) : ''}
+                ${col('tags') ? cell('config-bm-colhead-tags', this.t('config.bmViewColTags', 'Tags'), 'tags') : ''}
                 ${col('pinned') ? cell('config-bm-extra config-bm-pinned', pinned, 'pinned', global.MenuIcons?.PIN || esc(pinned)) : ''}
-                ${col('shortcut') ? cell('config-bm-extra config-bm-key', this.t('config.bmViewColShortcut', 'Shortcut')) : ''}
-                ${col('usage') ? cell('config-bm-spark', this.t('config.bmViewColUsage', 'Usage')) : ''}
+                ${col('shortcut') ? cell('config-bm-extra config-bm-key', this.t('config.bmViewColShortcut', 'Shortcut'), 'shortcut') : ''}
+                ${col('usage') ? cell('config-bm-spark', this.t('config.bmViewColUsage', 'Usage'), 'usage') : ''}
                 ${col('opens') ? cell('config-bm-colhead-end', this.t('config.bmViewColOpens', 'Opens'), 'opens') : ''}
                 ${col('last') ? cell('config-bm-colhead-end', this.t('config.bmViewColLast', 'Last opened'), 'lastOpened') : ''}
                 ${col('added') ? cell('config-bm-added config-bm-colhead-end', this.t('config.bmViewColAdded', 'Added'), 'recent') : ''}
-                ${col('score') ? cell('config-bm-colhead-end', this.t('config.bmViewColScore', 'Score'), this.bmHealthFilter ? 'score' : '') : ''}
+                ${col('score') ? cell('config-bm-colhead-end', this.t('config.bmViewColScore', 'Score'), 'score') : ''}
             </div>`;
     },
 

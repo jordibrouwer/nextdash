@@ -176,4 +176,29 @@ test.describe('column headings over the list views', () => {
         await expect(nameHead()).toBeFocused();
         await expect(page.locator('.config-bm-colhead-name')).toHaveAttribute('data-lvs-sort', 'descending');
     });
+
+    // Every heading with a value under it sorts: Tags A to Z by the first
+    // tag (untagged last), Shortcut the keyed ones first, Usage the busiest
+    // of the sparkline's window first, Score the worst first.
+    test('Bookmarks: every column with a value sorts', async ({ page }) => {
+        await openBookmarksWithHealth(page, undefined, { view: 'library' });
+        await page.locator('#config-bm-group').selectOption('');
+        const heads = await page.locator('[data-bm-colhead] .config-bm-colhead-cell').evaluateAll((cells) =>
+            cells.filter((c) => c.textContent.trim() || c.querySelector('svg'))
+                .map((c) => c.querySelector('[data-bm-sort-head]')?.getAttribute('data-bm-sort-head') || null));
+        expect(heads).toEqual(['name', 'tags', 'pinned', 'shortcut', 'usage', 'opens', 'lastOpened', 'recent', 'score']);
+
+        for (const sort of ['tags', 'shortcut', 'usage', 'score']) {
+            await page.locator(`[data-bm-sort-head="${sort}"]`).click();
+            await expect(page.locator('#config-bm-sort')).toHaveValue(sort);
+            await expect(page.locator(`[data-bm-colhead] [data-lvs-sort]:has([data-bm-sort-head="${sort}"])`)).toHaveCount(1);
+        }
+
+        await page.locator('[data-bm-sort-head="tags"]').click();
+        const firstTags = await page.locator('#config-bm-list .config-bm-row').evaluateAll((rows) =>
+            rows.map((r) => [...r.querySelectorAll('.config-bm-tag:not(.config-bm-tag--more)')].map((t) => t.textContent.trim())[0] || ''));
+        const tagged = firstTags.filter(Boolean);
+        expect(tagged.length).toBeGreaterThan(0);
+        expect(firstTags).toEqual([...tagged.sort((a, b) => a.localeCompare(b)), ...firstTags.filter((t) => !t)]);
+    });
 });

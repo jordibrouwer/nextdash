@@ -18295,6 +18295,9 @@ class DashboardConfig {
                   ['unhealthy', ['config.widgetDockerShowUnhealthy', 'Unhealthy']],
                   ['total', ['config.widgetDockerShowTotal', 'Total']],
                   ['images', ['config.widgetDockerShowImages', 'Images']],
+                  ['updates', ['config.widgetDockerShowUpdates', 'Updates waiting']],
+                  ['reclaimable', ['config.widgetDockerShowReclaimable', 'Reclaimable disk space']],
+                  ['incidents', ['config.widgetDockerShowIncidents', 'Incidents in the last 24 hours']],
               ] },
             { key: 'showUnhealthyNames', kind: 'bool',
               label: ['config.widgetDockerNames', 'Name what is failing'],
@@ -18304,6 +18307,10 @@ class DashboardConfig {
               label: ['config.widgetDockerRestarted', 'Name what just restarted'],
               hint: ['config.widgetDockerRestartedHint',
                      'Up for minutes while the rest have run for days — the shape of a crashloop.'] },
+            { key: 'showTopCpu', kind: 'bool',
+              label: ['config.widgetDockerTopCpu', 'Name the three busiest by CPU'],
+              hint: ['config.widgetDockerTopCpuHint',
+                     'From the reading Containers takes every 30 seconds.'] },
         ],
         containers: [
             { key: 'show', kind: 'choice',
@@ -18319,6 +18326,8 @@ class DashboardConfig {
                   ['name', ['config.widgetContainersSortName', 'Name']],
                   ['uptime-long', ['config.widgetContainersSortUptimeLong', 'Uptime, longest first']],
                   ['uptime-short', ['config.widgetContainersSortUptimeShort', 'Uptime, shortest first']],
+                  ['cpu', ['config.widgetContainersSortCpu', 'CPU, busiest first']],
+                  ['memory', ['config.widgetContainersSortMemory', 'Memory, most first']],
               ] },
             { key: 'detail', kind: 'choice',
               label: ['config.widgetContainersDetail', 'Beside the name'],
@@ -18327,6 +18336,7 @@ class DashboardConfig {
               options: [
                   ['uptime', ['config.widgetContainersDetailUptime', 'Uptime']],
                   ['tag', ['config.widgetContainersDetailTag', 'Image tag']],
+                  ['usage', ['config.widgetContainersDetailUsage', 'CPU and memory']],
                   ['none', ['config.widgetContainersDetailNone', 'Nothing']],
               ] },
             { key: 'click', kind: 'choice',
@@ -23418,11 +23428,11 @@ class DashboardConfig {
             ['lastOpened', this.t('config.sortByLastOpened', 'Last opened')],
             ['opens', this.t('config.sortByOpens', 'Most opened')],
             ['pinned', this.t('config.sortByPinned', 'Pinned first')],
+            ['tags', this.t('config.bmViewColTags', 'Tags')],
+            ['shortcut', this.t('config.bmViewColShortcut', 'Shortcut')],
+            ['usage', this.t('config.bmViewColUsage', 'Usage')],
+            ['score', this.t('config.sortByScore', 'Health score')],
         ];
-        // Only means anything once a Health filter has picked out issues to
-        // score, so it is not offered the rest of the time -- an option that
-        // sorts nothing differently would just be a dead choice in the list.
-        if (this.bmHealthFilter) options.push(['score', this.t('config.sortByScore', 'Health score')]);
         return options.map(([v, label]) =>
             `<option value="${esc(v)}" ${this.bmSort === v ? 'selected' : ''}>${esc(label)}</option>`
         ).join('');
@@ -24112,6 +24122,12 @@ class DashboardConfig {
         const rows = all.filter((b) => tests.every((test) => test(b)));
         const order = this.pageOrderIndex();
         const pageIndex = (id) => (order.has(String(id)) ? order.get(String(id)) : -1);
+        // Once per row, not per comparison: the sum walks the open log.
+        const usageSums = new Map();
+        const usageSum = (x) => {
+            if (!usageSums.has(x)) usageSums.set(x, (this.workbenchSparkCounts?.(x)?.counts || []).reduce((n, c) => n + c, 0));
+            return usageSums.get(x);
+        };
         const cmp = {
             name: (a, b) => String(a.name || '').localeCompare(String(b.name || '')),
             url: (a, b) => String(a.url || '').localeCompare(String(b.url || '')),
@@ -24125,8 +24141,24 @@ class DashboardConfig {
                 if (dp !== 0) return dp;
                 return pageIndex(a.pageId) - pageIndex(b.pageId);
             },
-            // Worst first: only offered (bookmarkSortOptionsHtml) while a
-            // Health filter is active, so there is always an issue to score.
+            // By the first tag as the row shows it; untagged rows last.
+            tags: (a, b) => {
+                const first = (x) => String((x.tags || []).map((t) => String(t).trim()).find(Boolean) || '');
+                const fa = first(a);
+                const fb = first(b);
+                if (!fa || !fb) return (fa ? 0 : 1) - (fb ? 0 : 1);
+                return fa.localeCompare(fb);
+            },
+            // The keyed ones first, by their key.
+            shortcut: (a, b) => {
+                const ka = String(a.shortcut || '');
+                const kb = String(b.shortcut || '');
+                if (!ka || !kb) return (ka ? 0 : 1) - (kb ? 0 : 1);
+                return ka.localeCompare(kb);
+            },
+            // The busiest of the sparkline's window first.
+            usage: (a, b) => usageSum(b) - usageSum(a),
+            // Worst first. Rows without an issue score as healthy.
             score: (a, b) => Number(this.bmHealthIssue?.(a)?.score ?? 100) - Number(this.bmHealthIssue?.(b)?.score ?? 100),
         }[this.bmSort ?? this.defaultBookmarksSort()] || null;
         const ordered = cmp && this.bmSortReverse ? (a, b) => cmp(b, a) : cmp;
