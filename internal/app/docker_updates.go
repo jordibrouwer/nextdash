@@ -101,6 +101,30 @@ func localDigestFor(ref imageRef, repoDigests []string) string {
 	return ""
 }
 
+// dockerRowUpdate is the image's update state as it holds for one container.
+// The store says whether the tag is the newest; a container still on an older
+// image than its tag -- pulled but not recreated, or left behind when another
+// container on the same image was updated -- has an update waiting whatever
+// the store says, and it needs only a recreate.
+func dockerRowUpdate(u *dockerImageUpdate, c dockerContainerSummary, tagIDs map[string]string) *dockerImageUpdate {
+	tagID := tagIDs[dockerTagKey(c.Image)]
+	if tagID == "" || c.ImageID == "" || tagID == c.ImageID {
+		return u
+	}
+	if u != nil && u.Status != "current" && u.Status != "unknown" {
+		return u
+	}
+	out := dockerImageUpdate{}
+	if u != nil {
+		out = *u
+	}
+	out.Status, out.Reason = "available", ""
+	if out.Held {
+		out.Status = "held"
+	}
+	return &out
+}
+
 func (h *Handlers) runDockerUpdateCheck(ctx context.Context) (dockerUpdateStore, error) {
 	api, reason := newDockerAPI()
 	if api == nil {

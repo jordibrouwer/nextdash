@@ -219,6 +219,20 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 		f.handleInspect(w, id)
 		return
 
+	case r.Method == "GET" && path == "/images/json":
+		tags := map[string][]string{}
+		for ref, img := range f.images {
+			if !strings.Contains(ref, "@") && !strings.HasPrefix(ref, "sha256:") {
+				tags[img.ID] = append(tags[img.ID], ref)
+			}
+		}
+		out := []map[string]any{}
+		for id, refs := range tags {
+			out = append(out, map[string]any{"Id": id, "RepoTags": refs})
+		}
+		writeJSONFake(w, http.StatusOK, out)
+		return
+
 	case r.Method == "GET" && strings.HasPrefix(path, "/images/") && strings.HasSuffix(path, "/json"):
 		ref := strings.TrimSuffix(strings.TrimPrefix(path, "/images/"), "/json")
 		f.handleImageInspect(w, ref)
@@ -322,8 +336,14 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 func (f *fakeDocker) handleList(w http.ResponseWriter) {
 	out := make([]map[string]any, 0, len(f.containers))
 	for _, c := range f.containers {
+		// As the daemon does: once the tag points at another image than the
+		// one the container runs, the list names that image by its id.
+		image := c.Image
+		if img, ok := f.images[c.Image]; ok && c.ImageID != "" && img.ID != c.ImageID {
+			image = c.ImageID
+		}
 		out = append(out, map[string]any{
-			"Id": c.ID, "Names": []string{"/" + c.Name}, "Image": c.Image, "ImageID": c.ImageID,
+			"Id": c.ID, "Names": []string{"/" + c.Name}, "Image": image, "ImageID": c.ImageID,
 			"State": c.State, "Status": c.Status, "Created": c.Created, "Labels": c.Labels,
 			"Ports": c.Ports, "HostConfig": map[string]any{"NetworkMode": c.NetworkMode},
 			"NetworkSettings": map[string]any{"Networks": c.Networks}, "Mounts": c.Mounts,

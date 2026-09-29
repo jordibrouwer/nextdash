@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -208,3 +209,41 @@ func TestDockerRecreateLeavesImageDefaultsToTheNewImage(t *testing.T) {
 	}
 }
 
+// Two containers on one image: updating one moves the tag, and the other is
+// left on the old image. It keeps its own reference in the list (not the
+// image id the daemon lists it by) and shows an update waiting, although
+// the tag itself is now current.
+func TestDockerContainerLeftBehindByItsTagShowsAnUpdate(t *testing.T) {
+	f, h, _, _ := recreateFixture(t)
+	f.add(fakeContainer{ID: strings.Repeat("b", 64), Name: "sonarr2", Image: "img:latest", ImageID: "sha256:old",
+		State: "running", NetworkMode: "bridge", Networks: map[string]map[string]any{"bridge": {}}})
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	router := newDockerTestRouter(h)
+	if rec := dockerPost(router, "/api/docker/containers/sonarr/update"); rec.Code != 200 {
+		t.Fatalf("update: %d %s", rec.Code, rec.Body)
+	}
+
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/containers", nil))
+	var body struct {
+		Containers []dockerViewContainer `json:"containers"`
+	}
+	_ = json.NewDecoder(rec.Body).Decode(&body)
+	rows := map[string]dockerViewContainer{}
+	for _, c := range body.Containers {
+		rows[c.Name] = c
+	}
+	left := rows["sonarr2"]
+	if left.Image != "img:latest" || left.Tag != "latest" {
+		t.Fatalf("sonarr2 image = %q tag = %q, want its own reference", left.Image, left.Tag)
+	}
+	if left.Update == nil || left.Update.Status != "available" {
+		t.Fatalf("sonarr2 update = %+v, want available", left.Update)
+	}
+	if u := rows["sonarr"].Update; u != nil && u.Status == "available" {
+		t.Fatalf("the updated sonarr shows %+v", u)
+	}
+	if d := dockerDetail(t, h, "sonarr2"); d.Update == nil || d.Update.Status != "available" {
+		t.Fatalf("drawer update = %+v", d.Update)
+	}
+}

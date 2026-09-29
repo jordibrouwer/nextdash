@@ -142,8 +142,51 @@ func (c dockerContainerSummary) name() string { return containerName(c.Names) }
 
 func (d *dockerAPI) listContainers(ctx context.Context) ([]dockerContainerSummary, error) {
 	var out []dockerContainerSummary
-	err := d.getJSON(ctx, "/containers/json?all=1", &out)
-	return out, err
+	if err := d.getJSON(ctx, "/containers/json?all=1", &out); err != nil {
+		return out, err
+	}
+	// A container whose tag has moved on -- pulled but not recreated, or
+	// another container on the same image updated -- is listed by its image
+	// id. The reference it was made from is in its own Config, and everything
+	// keyed by image (the update state, the Image column) wants that.
+	for i := range out {
+		if strings.HasPrefix(out[i].Image, "sha256:") {
+			if in, err := d.inspectContainer(ctx, out[i].ID); err == nil && in.Config.Image != "" {
+				out[i].Image = in.Config.Image
+			}
+		}
+	}
+	return out, nil
+}
+
+// dockerTagKey names a tag the same way however it was written:
+// "nginx", "nginx:latest" and "docker.io/library/nginx:latest" are one.
+func dockerTagKey(ref string) string {
+	parsed, ok := parseImageRef(ref)
+	if !ok {
+		return ""
+	}
+	return parsed.Registry + "/" + parsed.Repo + ":" + parsed.Tag
+}
+
+// imageTagIDs maps each local tag to the image it points at, in one call.
+func (d *dockerAPI) imageTagIDs(ctx context.Context) map[string]string {
+	var images []struct {
+		ID       string   `json:"Id"`
+		RepoTags []string `json:"RepoTags"`
+	}
+	out := map[string]string{}
+	if err := d.getJSON(ctx, "/images/json", &images); err != nil {
+		return out
+	}
+	for _, im := range images {
+		for _, tag := range im.RepoTags {
+			if key := dockerTagKey(tag); key != "" {
+				out[key] = im.ID
+			}
+		}
+	}
+	return out
 }
 
 type dockerNetworkSummary struct {

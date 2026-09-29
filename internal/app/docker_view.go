@@ -396,7 +396,7 @@ func (h *Handlers) DockerContainerDetailHandler(w http.ResponseWriter, r *http.R
 	}
 	d := dockerViewDetail{dockerViewContainer: toDockerView(c, dockerSelfID())}
 	d.LanIP = dockerLanIP(c, api.dockerLanNetworks(r.Context()))
-	d.Update = h.dockerUpdateSnapshot()[c.Image]
+	d.Update = dockerRowUpdate(h.dockerUpdateSnapshot()[c.Image], c, api.imageTagIDs(r.Context()))
 	d.StartedAt = in.State.StartedAt
 	d.RestartPolicy = in.HostConfig.RestartPolicy.Name
 	for _, m := range in.Mounts {
@@ -603,6 +603,7 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	out := make([]dockerViewContainer, 0, len(list))
 	hidden := dockerHiddenSet()
 	lan := api.dockerLanNetworks(r.Context())
+	tagIDs := api.imageTagIDs(r.Context())
 	// The sampler's last reading rides along, so the table's CPU and RAM
 	// columns cost no stats call per row. Off in Config means no columns.
 	usageEnabled := h.store.GetSettings().DockerStatsHistory
@@ -612,7 +613,7 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 		}
 		v := toDockerView(c, self)
 		v.LanIP = dockerLanIP(c, lan)
-		v.Update = updates[c.Image]
+		v.Update = dockerRowUpdate(updates[c.Image], c, tagIDs)
 		if usageEnabled && c.State == "running" {
 			if p, ok := dockerStatsStore.latest(c.ID); ok {
 				v.Usage = &dockerViewUsage{CPU: p.CPU, Mem: p.Mem}
