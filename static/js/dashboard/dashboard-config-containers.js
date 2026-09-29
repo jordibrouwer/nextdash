@@ -17,6 +17,31 @@
         + 'environment:\n'
         + '  - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock';
 
+    // The rule the server keeps (normalizeDockerHostAddress in docker_settings.go).
+    const HOST_NAME = /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/;
+    const IPV4 = /^(\d{1,3})(\.\d{1,3}){3}$/;
+
+    /**
+     * What a typed host address will become: empty, fine as it is, fixable
+     * (a URL or host:port whose host is fine), or not an address at all.
+     */
+    global.DashboardConfig.checkDockerHost = function checkDockerHost(raw) {
+        const value = String(raw || '').trim();
+        if (!value) return { state: 'empty' };
+        const bare = value.replace(/^\[|\]$/g, '');
+        // IPv6 has two colons at least; one is a host with a port.
+        if ((bare.match(/:/g) || []).length >= 2 && /^[0-9a-f:.]+$/i.test(bare)) return { state: 'ok', host: `[${bare}]` };
+        if (IPV4.test(value) || HOST_NAME.test(value)) return { state: 'ok', host: value };
+        try {
+            const url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `http://${value}`);
+            const host = url.hostname;
+            if (host && (IPV4.test(host) || HOST_NAME.test(host) || host.startsWith('['))) return { state: 'fixable', host };
+        } catch {
+            // Not a URL either.
+        }
+        return { state: 'bad' };
+    };
+
     Object.assign(global.DashboardConfig.prototype, {
 
     renderContainersSection() {
@@ -162,9 +187,53 @@
 
     bindContainersSection(container) {
         void this.fillContainersStatus(container);
+        this.bindContainersHostCheck(container);
         this.bindContainersHidden(container);
         this.bindContainersMuted(container);
         this.bindContainersToken(container);
+    },
+
+    /*
+     * The host address, checked as it is typed. The server keeps a bare host
+     * only -- a name or an IP -- and drops anything else, so a pasted
+     * http://tower:8080 used to vanish on save without a word. The line under
+     * the field says where port 8080 would go, and a full address is cut down
+     * to its host before it is saved.
+     */
+    bindContainersHostCheck(container) {
+        const input = container.querySelector('[data-behavior-field="dockerHostAddress"]');
+        const row = input?.closest('.config-field-row, .config-field');
+        if (!input || !row) return;
+        const line = document.createElement('p');
+        line.className = 'config-field-check';
+        line.setAttribute('data-docker-host-check', '');
+        line.setAttribute('aria-live', 'polite');
+        row.after(line);
+        // Config's t() takes no parameters; the tokens are filled here.
+        const fill = (text, params) => Object.entries(params || {})
+            .reduce((out, [k, v]) => out.split(`{${k}}`).join(v), text);
+        const paint = () => {
+            const check = global.DashboardConfig.checkDockerHost(input.value);
+            const example = (host) => `http://${host}:8080`;
+            line.dataset.state = check.state;
+            line.textContent = {
+                empty: () => fill(this.t('config.dockerHostCheckEmpty', 'Empty: port 8080 opens {url}, the address this dashboard is open on.'),
+                    { url: example(global.location.hostname) }),
+                ok: () => fill(this.t('config.dockerHostCheckOk', '✓ Port 8080 opens {url}.'), { url: example(check.host) }),
+                fixable: () => fill(this.t('config.dockerHostCheckFixable', 'Only the address, without http:// or a port: {host} is what will be saved.'),
+                    { host: check.host }),
+                bad: () => this.t('config.dockerHostCheckBad', 'Not an address: use a name or an IP, such as 192.168.1.10 or tower.local.'),
+            }[check.state]();
+        };
+        input.addEventListener('input', paint);
+        // Capture, so the host is in the field before the save reads it.
+        container.addEventListener('change', (e) => {
+            if (e.target !== input) return;
+            const check = global.DashboardConfig.checkDockerHost(input.value);
+            if (check.state === 'fixable') input.value = check.host;
+            paint();
+        }, true);
+        paint();
     },
 
     async fillContainersStatus(container) {
