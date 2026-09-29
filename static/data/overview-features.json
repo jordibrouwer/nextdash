@@ -2,6 +2,70 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureContainersBulkTitle",
+      "titleFallback": "Several containers at once",
+      "whatKey": "config.overviewNewFeatureContainersBulkWhat",
+      "whatFallback": "Restarting five containers meant five rows, five keys and five waits.",
+      "howKey": "config.overviewNewFeatureContainersBulkHow",
+      "howFallback": "Tick containers with x or the box in front of the name, Shift for a run, Ctrl/Cmd+A for everything the filter shows. The bar above the list starts, stops, restarts, updates or mutes them one after another and says how many worked.",
+      "enableKey": "config.overviewNewFeatureContainersBulkEnable",
+      "enableFallback": "Press x on a container in the Containers view.",
+      "ctaKey": "config.overviewNewFeatureContainersBulkCta",
+      "ctaFallback": "Open Containers →",
+      "go": {
+        "view": "docker"
+      },
+      "since": "v1.15.2"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureContainersLogsLiveTitle",
+      "titleFallback": "A container's log, live",
+      "whatKey": "config.overviewNewFeatureContainersLogsLiveWhat",
+      "whatFallback": "Reading a container's log meant the last lines in the side panel, refreshed by hand, or a terminal on the host.",
+      "howKey": "config.overviewNewFeatureContainersLogsLiveHow",
+      "howFallback": "A window over most of the page follows the log as it is written. Scroll up to pause it, search and filter the lines, pick stdout or stderr, and copy or download what you see.",
+      "enableKey": "config.overviewNewFeatureContainersLogsLiveEnable",
+      "enableFallback": "Press l on a container in the Containers view, or Show logs in its row menu.",
+      "ctaKey": "config.overviewNewFeatureContainersLogsLiveCta",
+      "ctaFallback": "Open Containers →",
+      "go": {
+        "view": "docker"
+      },
+      "since": "v1.15.2"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureContainersDiskTabTitle",
+      "titleFallback": "What the Docker disk holds",
+      "whatKey": "config.overviewNewFeatureContainersDiskTabWhat",
+      "whatFallback": "Images, volumes and build cache piled up on the host, and seeing them meant docker system df in a terminal.",
+      "howKey": "config.overviewNewFeatureContainersDiskTabHow",
+      "howFallback": "Disk, beside Containers, shows what each takes up and what nothing uses, and clears unused images and the build cache after asking. Volumes go one at a time, only after you type delete.",
+      "enableKey": "config.overviewNewFeatureContainersDiskTabEnable",
+      "enableFallback": "Press d in the Containers view, or open its Disk tab.",
+      "ctaKey": "config.overviewNewFeatureContainersDiskTabCta",
+      "ctaFallback": "Open Containers →",
+      "go": {
+        "view": "docker"
+      },
+      "since": "v1.15.2"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureContainersNoticesTitle",
+      "titleFallback": "Told when a container goes down",
+      "whatKey": "config.overviewNewFeatureContainersNoticesWhat",
+      "whatFallback": "A container that crashed or kept restarting went unnoticed until you happened to look.",
+      "howKey": "config.overviewNewFeatureContainersNoticesHow",
+      "howFallback": "nextDash sends a notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and again when it recovers — to your alert webhook and browser notifications. m mutes a single container.",
+      "enableKey": "config.overviewNewFeatureContainersNoticesEnable",
+      "enableFallback": "On by default once the Docker socket is set; Config → Containers → Notifications switches them off.",
+      "ctaKey": "config.overviewNewFeatureContainersNoticesCta",
+      "ctaFallback": "Open Config → Containers →",
+      "go": {
+        "section": "containers"
+      },
+      "since": "v1.15.2"
+    },
+    {
       "titleKey": "config.overviewNewFeatureBookmarkFormReadsTitle",
       "titleFallback": "A bookmark form that reads the page",
       "whatKey": "config.overviewNewFeatureBookmarkFormReadsWhat",

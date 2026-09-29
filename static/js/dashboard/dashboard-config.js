@@ -5136,6 +5136,12 @@ class DashboardConfig {
         if (view === 'inbox' && d.inbox?.openInboxView) {
             return d.inbox.openInboxView();
         }
+        // As Shift+Y from config does: remember where config was, so leaving
+        // the view comes back to the card that sent you.
+        if (view === 'docker' && d.docker?.openDockerView) {
+            this.saveLastConfigLocation();
+            return d.docker.openDockerView();
+        }
         return Promise.resolve();
     }
 

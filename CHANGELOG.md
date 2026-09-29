@@ -8,7 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [v1.15.2 — 29 September 2026](#v1152--29-september-2026)
 - [v1.15.1 — 29 September 2026](#v1151--29-september-2026)
 - [v1.15.0 — 28 September 2026](#v1150--28-september-2026)
 - [v1.13.7 — 25 September 2026](#v1137--25-september-2026)
@@ -228,9 +228,27 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## Unreleased
+## v1.15.2 — 29 September 2026
+
+The Containers view's big round: a live logs window, a Disk tab, notices when a container goes down, a timeline and health checks per container, skip, hold and rollback for updates, CPU and RAM columns, compose stacks and ticked containers acted on as one, and the analytics that go with them. The Bookmarks and Inbox views get sortable column headings, a string of settings, backup and listener fixes lands everywhere, and the docs and translations catch up. Announced in the What's new window.
 
 ### Everywhere
+
+- **new — the category sort menu says what each sort does.** The ⋯ in a category header listed *Rec* and *Top*; it now reads **Manual**, **A–Z**, **Last opened**, **Newest** and **Most opened**, and only the chip in front of it keeps the short name. A new spec, `dashboard-category-sort-usage.spec.js`, checks the order Last opened and Most opened give, never-opened bookmarks last.
+
+- **fix — the Inbox key legend named keys that did nothing.** It always listed `Shift + K`, which only keeps a link while Unsorted is on, and called a double click *open* even with the double-click setting on *note*. The legend now follows both.
+
+- **fix — suggested tags were read out as a bare name and "×".** The chips under the tags field (bookmark form, inbox, Config → Bookmarks) now carry the same labels as their tooltips: *Tag this bookmark #…* and *Stop proposing #… here*.
+
+- **fix — the tag cloud's close button had no name until the modal first opened.** It now has a static `aria-label`, translated on open.
+
+- **fix — the analytics notice could pass markup through.** Its escape helper fell back to returning the text as it was; it and the stat tile now use the shared `escape-html.js`. A new spec, `shared-escape-callers.spec.js`, checks that markup arrives as text.
+
+- **fix — Config's status tiles, danger panel and setting swatches ignored the theme.** Hard-coded colours in `config-view.css` and `setting-art.css` are now the theme's success, warning and error tokens and a mix of its background; the six theme plates keep their own colours on purpose.
+
+- **fix — preview card images load lazily and decode off the main thread.** The favicon, the video poster and the link-preview image in the bookmark form gained `loading="lazy"` and `decoding="async"`, as the card's main image already had.
+
+- **fix — one `formatBytes` instead of three.** Widgets, Config and the mount picker each had their own; they now share `shared/format-bytes.js`, each keeping its wording through an option.
 
 - **i18n — the strings still in English are translated.** About 190 per language in Dutch, German, French, Spanish and Chinese, most of them the Containers view's newer text (Disk, logs, updates, rollback, the tour), plus three in the Dutch extension. Terms follow each language's existing file; words that read the same in that language (Docker, CPU, Tags, Health) stay as they are.
 
@@ -289,6 +307,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Containers
 
+- **new — tick containers and act on the lot.** A box in front of each name, `x` or `Space` ticks a row, `Shift`-click, `Shift + X` or `Shift + ↑/↓` a run, and `Ctrl/Cmd + A` everything the filter shows. The bar above the list starts, stops, restarts, updates or mutes the ticked containers one at a time, with a count, and ends with one notice such as *3 restarted, 1 failed*; nextDash's own container is left out, and without actions switched on only muting is offered. `Esc` clears the ticks first. New spec: `docker-bulk-select.spec.js`.
+- **new — container actions in analytics.** With analytics on, each action sends one `docker-action` event: which action, whether it worked, and where it came from (row, side panel, menu, key, command, selection bar), with a bucketed count for a selection. No names, images or addresses. An update the server had to roll back now counts as failed.
+- **new — a custom web UI address shows where you look.** The side panel's head shows the web UI address under the name, tagged **Custom** when it is one you set (the tag opens the Custom section), and the table's Web UI column puts a dot in front of it.
+- **fix — the Containers column headings use the shared `.lvs-colhead-sort`,** as Bookmarks and Inbox do; sort keys and the stored sort are unchanged.
 - **fix — an update keeps the container's anonymous volumes.** A volume the image declares (`VOLUME`) and nothing mounts by name is created per container, so the swap gave the new container a fresh, empty one and left the data in a volume nothing used -- which the Disk tab then offered to remove. `dockerKeepAnonymousVolumes()` mounts the old container's into the new one; binds and named volumes stay as HostConfig has them. A rollback does the same. `TestDockerRecreateKeepsAnonymousVolumes` fails on the old code.
 - **fix — an update or rollback refuses what it cannot swap safely, before anything is pulled or stopped.** A container others run inside (`network_mode: container:X`, a VPN container and its clients) would have left them pointing at a container that no longer exists: refused as `network-shared`, naming them. One started with `--rm` would have been removed by its own stop, with nothing to go back to: `auto-remove`. One made from an image id has no reference to update: `pinned-by-id`, and the update check no longer asks Docker Hub for `library/sha256`. Each has its own message. `TestDockerRecreateRefusesWhatItCannotSwapSafely` fails on the old code.
 - **fix — nextDash speaks the daemon's minimum API version when its own is too old.** Docker Engine 29.0 to 29.2 refused anything older than 1.44, and nextDash asked for 1.41: every Docker call failed, and the list said the socket was missing. The version is now read once per socket from `/version` and raised to the daemon's minimum when needed; a daemon that refuses is reported as such, not as a missing socket. `TestDockerSpeaksTheDaemonsMinimumVersionWhenOursIsTooOld` fails on the old code.
@@ -339,6 +361,12 @@ For install and security, see the [README](README.md). For how to use features, 
 - **new — web UI and port links reach the container, not just the page's host.** A container on a macvlan or ipvlan network (Unraid's `br0`) has its own LAN address, and `[IP]` in its web UI now means that address; the list and detail routes hand it over as `lanIP`, read from the daemon's network list, and a daemon that will not list its networks leaves the links as they were. Config → Containers → Links adds **Docker host address** for when the dashboard is opened through a reverse proxy or tunnel: ports and `[IP]` then point there instead of at the browser's host. One helper in `docker-search-index.js` now fills `[IP]` for the table, the drawer, the row menu and `:docker <name> open`, which each did it themselves before.
 
 ### Docs
+
+- **fix — CI's gofmt check passes again.** Two Containers test files, `docker_fake_test.go` and `docker_recreate_test.go`, were committed unformatted, so the `go-test` job stopped at `make fmt-check` before `go vet` and the tests ran.
+
+- **docs — `static/data/whats-new/v1.15.2.json` and its index entry, and four Overview features.** `whats-new-stub.js` moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v306` and `DASHBOARD_RELEASE` to v1.15.2, so the window opens once for this release. Config → Overview and About → News & features gain *Several containers at once*, *A container's log, live*, *What the Docker disk holds* and *Told when a container goes down* (`since: v1.15.2`, in all six languages); their buttons open the Containers view or Config → Containers, which `openViewFromTile()` now reaches. `go generate` refreshed `asset_hashes_gen.go`.
+
+- **docs — README, manual, Help and translations caught up for v1.15.2.** README's Containers list now names the logs window, Disk, notices, stack and ticked actions, skip, hold and rollback. MANUAL §9.3 describes the category ⋯ sort menu (it still spoke of A–Z and Recent chips), §14.2–§14.4 ticking containers, the custom address dot and head tag and their keys, §23.8 the `docker-action` event, and §14.9 the full *Behavior → Status & alerts → Downtime alerts* path. Config → Help (Containers, Bookmarks, Self-hosting) says the same. In Dutch, German, French, Spanish and Chinese: the 15 new keys, and 13 texts whose English had grown since they were translated (the Containers tour, the analytics notice, three Help pages).
 
 - **fix — the Docker host address spec no longer fails one run in twenty or so.** A load of `/#config/containers` draws config twice, from `loadData()` and again from `init()`'s `renderDashboard()` once the language is in; a `fill()` that landed between the two was drawn over, so Tab committed nothing and the poll of `/api/settings` never saw `tower.lan`. `docker-table-webui.spec.js` now waits for `_configRefreshReady` before typing; 100 runs in a row pass.
 
