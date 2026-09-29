@@ -9704,9 +9704,14 @@ class DashboardConfig {
                 if (isOpen() && !root.contains(document.activeElement)) close({ restore: true });
             }, 0);
         });
-        document.addEventListener('pointerdown', (e) => {
+        // One outside-click listener at a time: Appearance repaints bind a new
+        // picker, and the old one's listener would hold its detached list and
+        // revert the preview on every click after.
+        if (this._themePickerOutside) document.removeEventListener('pointerdown', this._themePickerOutside);
+        this._themePickerOutside = (e) => {
             if (isOpen() && !root.contains(e.target)) close({ restore: true });
-        });
+        };
+        document.addEventListener('pointerdown', this._themePickerOutside);
     }
 
     /**

@@ -108,6 +108,26 @@ test.describe('the tabs carry their own weight', () => {
 });
 
 test.describe('the picker owes what a select gives free', () => {
+    // Each Appearance repaint binds a new picker; the one before it lets go of
+    // the document, or its listener outlives its list.
+    test('a repaint leaves one outside-click listener, not one more each time', async ({ page }) => {
+        await openAppearance(page);
+        const added = await page.evaluate(() => {
+            const c = window.dashboardInstance.config;
+            let live = 0;
+            const add = document.addEventListener.bind(document);
+            const remove = document.removeEventListener.bind(document);
+            document.addEventListener = (type, fn, opts) => { if (type === 'pointerdown') live += 1; return add(type, fn, opts); };
+            document.removeEventListener = (type, fn, opts) => { if (type === 'pointerdown') live -= 1; return remove(type, fn, opts); };
+            const body = document.getElementById('config-appearance-body');
+            for (let i = 0; i < 3; i += 1) c.bindThemePicker(body);
+            document.addEventListener = add;
+            document.removeEventListener = remove;
+            return live;
+        });
+        expect(added).toBeLessThanOrEqual(1);
+    });
+
     test('typing jumps to a theme by name', async ({ page }) => {
         await openAppearance(page);
         await page.click('[data-theme-picker-button]');
