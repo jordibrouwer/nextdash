@@ -184,3 +184,34 @@ func TestDockerUpdateMarksImageCurrent(t *testing.T) {
 		t.Fatalf("after update = %+v, want current", u)
 	}
 }
+
+// An update that finishes while a check runs keeps its result: the check read
+// the old state, and writing that back would bring the badge back for a day.
+func TestDockerUpdateCheckKeepsAnUpdateThatFinishedDuringIt(t *testing.T) {
+	var h *Handlers
+	var ref string
+	during := false
+	host := withTestRegistry(t, func(w http.ResponseWriter, r *http.Request) {
+		if during {
+			h.markDockerImageCurrent(ref)
+		}
+		w.Header().Set("Docker-Content-Digest", "sha256:new")
+	})
+	f := startFakeDocker(t)
+	ref = host + "/app:1"
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", Image: ref, State: "running"})
+	f.images[ref] = fakeImage{ID: "sha256:img", RepoDigests: []string{host + "/app@sha256:old"}}
+
+	h = dockerTestHandlers(t)
+	if _, err := h.runDockerUpdateCheck(context.Background()); err != nil {
+		t.Fatalf("check: %v", err)
+	}
+	during = true
+	store, err := h.runDockerUpdateCheck(context.Background())
+	if err != nil {
+		t.Fatalf("check: %v", err)
+	}
+	if u := store.Images[ref]; u == nil || u.Status != "current" {
+		t.Fatalf("the finished update was overwritten: %+v", u)
+	}
+}

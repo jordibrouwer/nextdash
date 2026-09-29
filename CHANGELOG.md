@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — the update badge could come back right after an update.** An update check reads the image states, asks the registries, then writes them all back; an update or rollback that finished in between was overwritten by the older reading, and the badge stayed until the next check. An entry newer than the check's start is now kept.
+
 - **fix — a stop, restart or remove could slip into a running container update.** Actions were locked by container id, but they resolve the container by name, and an update moves the name to a new id halfway; a second tab could then act on the half-made new container. The lock now holds the name as well.
 
 - **fix — a failed container update could leave the old container stopped and renamed.** The rollback ran on the update's ten-minute budget, so an update that spent it on the pull failed its rollback too; and a new container already removed (from another tab) made the rollback stop before it restored the old one. The rollback now has two minutes of its own and treats a 404 on removing the new container as done.

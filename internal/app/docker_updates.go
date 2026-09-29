@@ -158,8 +158,15 @@ func (h *Handlers) runDockerUpdateCheck(ctx context.Context) (dockerUpdateStore,
 	h.dockerUpdatesMu.Lock()
 	defer h.dockerUpdatesMu.Unlock()
 	// Read again under the lock: a skip or hold made while the check ran
-	// must not be lost to it.
-	carryDockerUpdateChoices(readDockerUpdateStore(), &next)
+	// must not be lost to it, and neither may an update or rollback that
+	// finished meanwhile -- its entry is newer than anything this pass saw.
+	latest := readDockerUpdateStore()
+	carryDockerUpdateChoices(latest, &next)
+	for img, u := range latest.Images {
+		if _, checked := next.Images[img]; checked && u != nil && u.CheckedAt >= now {
+			next.Images[img] = u
+		}
+	}
 	return next, writeIndentJSONFile(dockerUpdatesFilePath(), next)
 }
 
