@@ -139,6 +139,46 @@
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
 }
 
+/* A sortable heading: the heading's own text, clickable, with an arrow on
+   the column the table is sorted by. */
+.docker-head-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+}
+
+.docker-head-sort:hover,
+.docker-head[aria-sort] .docker-head-sort {
+    color: var(--text-primary);
+}
+
+.docker-head-sort:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
+}
+
+/* The arrow is drawn, not text, so the heading reads as its label alone;
+   aria-sort on the th says the direction. */
+.docker-head[aria-sort] .docker-head-sort::after {
+    font-size: 0.8em;
+}
+
+.docker-head[aria-sort="ascending"] .docker-head-sort::after {
+    content: "\25B2";
+}
+
+.docker-head[aria-sort="descending"] .docker-head-sort::after {
+    content: "\25BC";
+}
+
 .docker-group-row td {
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     font-size: var(--text-xs, 0.72rem);

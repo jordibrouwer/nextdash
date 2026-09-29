@@ -67,6 +67,44 @@ test.describe('docker view polish', () => {
     expect(names).toEqual(['youngsteady', 'oldrestarted', 'ancientstopped']);
   });
 
+  test('a column heading sorts, a second click turns it round, and a reload keeps it', async ({ page }) => {
+    await openView(page);
+    await page.locator('[data-docker-group]').selectOption('none');
+    const rows = page.locator('[data-docker-row]');
+    const names = () => rows.evaluateAll((els) => els.map((r) => r.getAttribute('data-docker-row')));
+    const nameHead = page.locator('[data-docker-sort-head="name"]');
+    const statusHead = page.locator('.docker-head--state');
+
+    await page.locator('[data-docker-sort-head="state"]').click();
+    await expect(page.locator('[data-docker-sort]')).toHaveValue('status');
+    await expect(statusHead).toHaveAttribute('aria-sort', 'ascending');
+    expect((await names()).at(-1)).toBe('bazarr');
+
+    await nameHead.click();
+    await expect(page.locator('.docker-head--name')).toHaveAttribute('aria-sort', 'ascending');
+    await expect(statusHead).not.toHaveAttribute('aria-sort', /./);
+    expect(await names()).toEqual(['bazarr', 'jellyfin', 'nextdash', 'sonarr']);
+
+    // From the keyboard too: Enter on the focused heading sorts, and does
+    // not open a row's drawer.
+    await nameHead.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.docker-head--name')).toHaveAttribute('aria-sort', 'descending');
+    await expect(nameHead).toBeFocused();
+    await expect(page).not.toHaveURL(/#docker\//);
+    expect(await names()).toEqual(['sonarr', 'nextdash', 'jellyfin', 'bazarr']);
+
+    await page.reload();
+    await expect(rows).toHaveCount(4);
+    await expect(page.locator('.docker-head--name')).toHaveAttribute('aria-sort', 'descending');
+    expect(await names()).toEqual(['sonarr', 'nextdash', 'jellyfin', 'bazarr']);
+
+    // The toolbar picks a sort afresh, in its natural direction.
+    await page.locator('[data-docker-sort]').selectOption('uptime');
+    await page.locator('[data-docker-sort]').selectOption('name');
+    await expect(page.locator('.docker-head--name')).toHaveAttribute('aria-sort', 'ascending');
+  });
+
   test('rail summary is filled', async ({ page }) => {
     await openView(page);
     await expect(page.locator('.lvs-summary [data-lvs-summary-key="running"]')).toContainText('3 / 4');

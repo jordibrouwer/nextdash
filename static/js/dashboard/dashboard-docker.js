@@ -91,6 +91,7 @@ class DashboardDocker {
             saved = null;
         }
         this.sort = saved?.sort || 'name';
+        this.sortDir = saved?.sortDir === 'desc' ? 'desc' : 'asc';
         // Older saves stored a boolean for "group by project".
         const group = saved?.group === true ? 'project' : saved?.group;
         this.group = ['project', 'status'].includes(group) ? group : 'none';
@@ -100,7 +101,7 @@ class DashboardDocker {
     persistViewState() {
         try {
             localStorage.setItem('nextdash.docker.view', JSON.stringify({
-                sort: this.sort, group: this.group, filter: this.filter,
+                sort: this.sort, sortDir: this.sortDir, group: this.group, filter: this.filter,
             }));
         } catch {
             // Storage unavailable or full — the view still works this session.
@@ -265,7 +266,8 @@ class DashboardDocker {
             const inDrawer = Boolean(active?.closest?.('[data-docker-drawer]'));
             const rowAncestor = active?.closest?.('.docker-row');
             const onRowControl = Boolean(rowAncestor && active !== rowAncestor && active?.matches?.('a, button, input, select'));
-            if (!menuOrModalOpen && !inDrawer && !onRowControl && (typing ? isSearch : true)
+            const onHeading = Boolean(active?.matches?.('[data-docker-sort-head]'));
+            if (!menuOrModalOpen && !inDrawer && !onRowControl && !onHeading && (typing ? isSearch : true)
                 && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter')) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -541,6 +543,7 @@ class DashboardDocker {
 
         host.querySelector('[data-docker-sort]')?.addEventListener('change', (e) => {
             this.sort = e.target.value || 'name';
+            this.sortDir = 'asc';
             this.persistViewState();
             this.render();
         });
@@ -609,6 +612,29 @@ class DashboardDocker {
     }
 
     compareFn() {
+        const cmp = this.baseCompareFn();
+        return this.sortDir === 'desc' ? (a, b) => cmp(b, a) : cmp;
+    }
+
+    /**
+     * A click on a sortable heading sorts by its column; a second click on the
+     * same heading turns the order round. The toolbar select follows.
+     */
+    sortByHeading(key, headKey) {
+        if (this.sort === key) {
+            this.sortDir = this.sortDir === 'desc' ? 'asc' : 'desc';
+        } else {
+            this.sort = key;
+            this.sortDir = 'asc';
+        }
+        this.persistViewState();
+        this.syncToolbar();
+        this.render();
+        // The table was rebuilt; keep the keyboard on the heading it used.
+        this.shell?.body?.querySelector(`[data-docker-sort-head="${headKey}"]`)?.focus();
+    }
+
+    baseCompareFn() {
         if (this.sort === 'status') {
             return (a, b) => (DashboardDocker.SORT_RANK[a.state] ?? 3) - (DashboardDocker.SORT_RANK[b.state] ?? 3)
                 || a.name.localeCompare(b.name);
@@ -779,17 +805,32 @@ class DashboardDocker {
         // phone layout folds rows into two lines and hides them (CSS).
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
+        // Name and Status sort the table (the sort key each one sets is the
+        // third entry); the button carries the click, the th the aria-sort.
         [
-            ['name', this.t('dashboard.dockerColName', 'Name')],
+            ['name', this.t('dashboard.dockerColName', 'Name'), 'name'],
             ['image', this.t('dashboard.dockerFieldImage', 'Image')],
-            ['state', this.t('dashboard.dockerColStatus', 'Status')],
+            ['state', this.t('dashboard.dockerColStatus', 'Status'), 'status'],
             ['webui', this.t('dashboard.dockerLinkWebUI', 'Web UI')],
             ['ports', this.t('dashboard.dockerColPorts', 'Ports')],
-        ].forEach(([key, label]) => {
+        ].forEach(([key, label, sortKey]) => {
             const th = document.createElement('th');
             th.scope = 'col';
             th.className = `docker-head docker-head--${key} lvs-colhead`;
-            th.textContent = label;
+            if (!sortKey) {
+                th.textContent = label;
+                headRow.appendChild(th);
+                return;
+            }
+            const active = this.sort === sortKey;
+            if (active) th.setAttribute('aria-sort', this.sortDir === 'desc' ? 'descending' : 'ascending');
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'docker-head-sort';
+            btn.setAttribute('data-docker-sort-head', key);
+            btn.textContent = label;
+            btn.addEventListener('click', () => this.sortByHeading(sortKey, key));
+            th.appendChild(btn);
             headRow.appendChild(th);
         });
         thead.appendChild(headRow);
