@@ -18,6 +18,7 @@
 
     function formatBytes(n) {
         if (!Number.isFinite(n) || n < 0) return '—';
+        if (n < KIB) return `${n} B`;
         if (n < MIB) return `${Math.round(n / KIB)} KiB`;
         if (n < GIB) return `${Math.round(n / MIB)} MiB`;
         return `${(n / GIB).toFixed(1)} GiB`;

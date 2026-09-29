@@ -65,6 +65,14 @@ test.describe('docker disk', () => {
     await expect(box).toHaveCount(0);
   });
 
+  test('an empty tile reads 0 B, not 0 KiB', async ({ page }) => {
+    const state = await mockDocker(page);
+    state.disk = { images: [], volumes: [], totals: { images: 0, imagesUnused: 0, imagesUnusedCount: 0, dangling: 0, danglingCount: 0,
+      buildCache: 0, buildCacheCount: 0, volumes: 0, volumesUnused: 0, volumesUnusedCount: 0, reclaimable: 0 } };
+    await page.goto('/#docker/~disk');
+    await expect(page.locator('[data-docker-disk-tile="images-dangling"] .docker-disk-tile-value')).toHaveText('0 B');
+  });
+
   test('read-only shows the sizes and no way to remove anything', async ({ page }) => {
     await openDisk(page, { control: false });
     await expect(page.locator('[data-docker-disk-tile="images-unused"]')).toContainText('777 MiB');
