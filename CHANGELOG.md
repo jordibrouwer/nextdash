@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — a stop, restart or remove could slip into a running container update.** Actions were locked by container id, but they resolve the container by name, and an update moves the name to a new id halfway; a second tab could then act on the half-made new container. The lock now holds the name as well.
+
 - **fix — a failed container update could leave the old container stopped and renamed.** The rollback ran on the update's ten-minute budget, so an update that spent it on the pull failed its rollback too; and a new container already removed (from another tab) made the rollback stop before it restored the old one. The rollback now has two minutes of its own and treats a 404 on removing the new container as done.
 
 - **fix — two settings saves at once could drop one of them.** A settings POST, a favicon or font upload and the archive-key save each read the settings, changed their field and wrote the whole struct back; two at once started from the same snapshot and the second erased the first's change. Each read-change-write now runs under one lock.

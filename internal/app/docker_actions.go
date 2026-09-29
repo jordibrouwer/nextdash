@@ -46,6 +46,26 @@ func (h *Handlers) dockerLock(id string) (func(), bool) {
 	return func() { h.dockerBusy.Delete(id) }, true
 }
 
+// dockerLockContainer holds a container by id and by name. An update gives
+// the name a new id halfway through, and actions resolve names: locked by id
+// alone, a stop or remove on the name would slip in mid-update.
+func (h *Handlers) dockerLockContainer(c dockerContainerSummary) (func(), bool) {
+	releaseID, ok := h.dockerLock(c.ID)
+	if !ok {
+		return nil, false
+	}
+	name := c.name()
+	if name == "" {
+		return releaseID, true
+	}
+	releaseName, ok := h.dockerLock("name:" + name)
+	if !ok {
+		releaseID()
+		return nil, false
+	}
+	return func() { releaseName(); releaseID() }, true
+}
+
 // dockerAnyBusy says whether an action is running on any container.
 func (h *Handlers) dockerAnyBusy() bool {
 	busy := false
@@ -88,7 +108,7 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		dockerRefuse(w, http.StatusConflict, "running")
 		return
 	}
-	release, ok := h.dockerLock(c.ID)
+	release, ok := h.dockerLockContainer(c)
 	if !ok {
 		dockerRefuse(w, http.StatusConflict, "busy")
 		return

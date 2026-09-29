@@ -148,3 +148,24 @@ func TestDockerBusyContainerAnswers409(t *testing.T) {
 		t.Fatalf("code = %d, want 409", rec.Code)
 	}
 }
+
+// During an update the name moves to the new container's id; an action that
+// resolves the name must still find the container busy.
+func TestDockerLockCoversTheNameAcrossIDs(t *testing.T) {
+	h := dockerTestHandlers(t)
+	old := dockerContainerSummary{ID: strings.Repeat("a", 64), Names: []string{"/sonarr"}}
+	replacement := dockerContainerSummary{ID: strings.Repeat("b", 64), Names: []string{"/sonarr"}}
+	release, ok := h.dockerLockContainer(old)
+	if !ok {
+		t.Fatal("the first lock was refused")
+	}
+	if _, ok := h.dockerLockContainer(replacement); ok {
+		t.Fatal("the same name under a new id was not busy")
+	}
+	release()
+	if release, ok := h.dockerLockContainer(replacement); !ok {
+		t.Fatal("still busy after release")
+	} else {
+		release()
+	}
+}
