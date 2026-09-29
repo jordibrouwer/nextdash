@@ -105,6 +105,13 @@ test.describe('docker view', () => {
     await expect(drawer.locator('[data-docker-logs]')).toBeVisible();
   });
 
+  // The image reference already carries its tag; the chip must not add it again.
+  test('the drawer names the image once, tag and all', async ({ page }) => {
+    await mockDocker(page);
+    await page.goto('/#docker/sonarr');
+    await expect(page.locator('[data-docker-drawer] .config-bm-details-chip').first()).toHaveText('lscr.io/linuxserver/sonarr:latest');
+  });
+
   test('Enter opens the drawer with details and hidden env', async ({ page }) => {
     await mockDocker(page);
     await page.goto('/#docker');

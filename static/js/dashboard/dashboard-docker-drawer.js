@@ -237,7 +237,8 @@ class DockerDrawer {
             where,
             actions: webui ? [{ action: 'webui', label: this.t('dockerLinkWebUI', 'Open web UI'), primary: true }] : [],
         });
-        const image = [summary.image, summary.tag].filter(Boolean).join(':');
+        // The reference as the container was made from it, tag included.
+        const image = String(summary.image || '');
         const chips = [
             image ? L.chip(esc, image) : '',
             summary.update?.status === 'available' ? L.chip(esc, this.t('dockerUpdateAvailable', 'update available'), 'is-tag') : '',
