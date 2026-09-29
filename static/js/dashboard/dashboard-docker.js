@@ -1278,7 +1278,7 @@ class DashboardDocker {
         table.appendChild(thead);
         const tbody = document.createElement('tbody');
         if (this.group === 'project' || this.group === 'status') {
-            this.appendGroupedRows(tbody, list);
+            this.appendGroupedRows(tbody, list, headRow.children.length);
         } else {
             list.forEach((c) => tbody.appendChild(this.buildRow(c)));
         }
@@ -1344,7 +1344,7 @@ class DashboardDocker {
      * Grouped by compose project (project-less last) or by status (updates,
      * running, paused, stopped -- the order that needs attention first).
      */
-    appendGroupedRows(tbody, list) {
+    appendGroupedRows(tbody, list, columns) {
         const byStatus = this.group === 'status';
         const groups = new Map();
         list.forEach((c) => {
@@ -1371,7 +1371,9 @@ class DashboardDocker {
             if (byStatus) heading.setAttribute('data-docker-group-status', key);
             else if (key) heading.setAttribute('data-docker-group-project', key);
             const cell = document.createElement('td');
-            cell.colSpan = this.usageEnabled ? 7 : 5;
+            // Across every column the heading row has, so a column added
+            // later (Size was) cannot leave the band short of the right edge.
+            cell.colSpan = columns || 1;
             const label = document.createElement('span');
             label.textContent = byStatus
                 ? statusLabels[key]

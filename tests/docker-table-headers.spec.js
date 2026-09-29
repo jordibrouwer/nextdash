@@ -41,6 +41,17 @@ test.describe('the containers table headings', () => {
         await expect(page.locator('.docker-table thead + tbody .docker-group-row').first()).toBeVisible();
     });
 
+    // The group band runs across every column: its span was a fixed number,
+    // and the Size column left the Ports corner uncovered.
+    test('a group band spans every column', async ({ page }) => {
+        await open(page);
+        await page.locator('[data-docker-group]').selectOption('status');
+        const heads = await page.locator('.docker-table thead th').count();
+        const spans = await page.locator('.docker-group-row td').evaluateAll((cells) => cells.map((c) => c.colSpan));
+        expect(spans.length).toBeGreaterThan(0);
+        expect(new Set(spans)).toEqual(new Set([heads]));
+    });
+
     test('phone width hides the headings', async ({ page }) => {
         await page.setViewportSize({ width: 390, height: 800 });
         await open(page);
