@@ -380,6 +380,21 @@ test.describe('dashboard inbox phase 1', () => {
         }))).toEqual({ filter: 'unread', sort: 'title' });
     });
 
+    // Back on a page, no inbox state is left in the address: a tag kept there
+    // would come back after a reload and outrank the stored filter and sort.
+    test('leaving the inbox takes every ib_ key out of the address', async ({ page }) => {
+        await page.goto('/?ib_tag=news&ib_filter=unread#inbox');
+        await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+        await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.pageNav.restoreBookmarksViewForPage(d.pages[0].id);
+        });
+        await expect.poll(() => page.evaluate(() => window.location.search)).not.toContain('ib_');
+    });
+
     test('ticking rows opens a selection bar that acts on just those rows', async ({ page }) => {
         await seedInbox(page, ['Zebra one', 'Apple two', 'Mango three']);
 

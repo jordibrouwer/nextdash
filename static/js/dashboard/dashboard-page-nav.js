@@ -51,10 +51,11 @@ class DashboardPageNav {
         try {
             const url = new URL(window.location.href);
             const params = url.searchParams;
-            [
-                'hv_filter', 'hv_sort', 'hv_q', 'hv_id', 'hv_refresh',
-                'ib_filter', 'ib_sort', 'ib_dir', 'ib_q', 'ib_domain', 'ib_id',
-            ].forEach((key) => params.delete(key));
+            // Every Health and Inbox key, by prefix: a list of names missed
+            // ib_tag once, and a new key would be missed the same way.
+            [...params.keys()]
+                .filter((key) => key.startsWith('hv_') || key.startsWith('ib_'))
+                .forEach((key) => params.delete(key));
             const query = params.toString();
             const nextHash = pageIndex >= 0 ? `#${pageIndex + 1}` : '';
             const nextUrl = `${url.pathname}${query ? `?${query}` : ''}${nextHash}`;

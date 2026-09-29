@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — an inbox tag filter stayed in the address after going back to a page.** Leaving the inbox removed its keys from the address by name, and `ib_tag` was not on the list, so a reload brought the tag back and it outranked the stored filter and sort. Every `ib_` and `hv_` key now goes, by prefix.
+
 - **fix — the server log could show lines that did not match the filter, or the same lines twice.** A poll that landed after the search changed was appended to the filtered list, and on a slow server two polls asked from the same position. Only the newest read's answer is used now, and a poll waits while one is on its way.
 
 - **fix — clicking a category in Statistics → Collection opened an empty Bookmarks list.** The row passed the category's name as the filter, but bookmarks carry the category's id; it now passes the page-and-id key, and no longer also types the name into the search.
