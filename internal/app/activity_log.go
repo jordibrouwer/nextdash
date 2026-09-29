@@ -517,12 +517,11 @@ func (f *activityRotatingFile) rotate() error {
 	f.closeHandleLocked()
 	count := f.backupCount()
 	_ = os.Remove(f.path + "." + strconv.Itoa(count))
+	// Oldest first: .2 to .3 before .1 to .2, or each step overwrites the
+	// backup the next one was about to move.
 	for i := count - 1; i >= 1; i-- {
-		src := f.path
-		if i > 1 {
-			src = f.path + "." + strconv.Itoa(i-1)
-		}
-		dst := f.path + "." + strconv.Itoa(i)
+		src := f.path + "." + strconv.Itoa(i)
+		dst := f.path + "." + strconv.Itoa(i+1)
 		if _, err := os.Stat(src); err == nil {
 			_ = os.Rename(src, dst)
 		}

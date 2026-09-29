@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — the activity log kept one backup fewer than set.** Rotation moved `.1` onto `.2` before `.2` had moved on, so `.3` never existed and a rotation's worth of history was lost each time; the shift now runs oldest first.
+
 - **fix — Remember scroll position and soft 404 detection were off on installs from before 17 August.** Both default on, but a settings file written before they existed read as off; an absent key now means on, as it does for the other default-on switches.
 
 - **docs — Help and the manual describe the sortable column headings.** Config → Help (Bookmarks view → the list, Inbox → working the list, in all six languages) and MANUAL §11.2, §11.13 and §13: which headings sort and in what order, the arrow, that Sort follows, and the `rev=` and `ib_dir` address keys.
