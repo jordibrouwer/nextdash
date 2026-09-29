@@ -62,6 +62,22 @@ test.describe('the web UI in the table', () => {
         await expect(webui(page, 'template')).not.toHaveAttribute('data-docker-webui-port', '');
     });
 
+    // A port bound to the loopback address answers on the Docker host only; a
+    // link to it from any other machine goes nowhere.
+    test('a port bound to 127.0.0.1 or ::1 is no web UI', async ({ page }) => {
+        await mockDocker(page, { containers: [
+            { ...base, id: 'a'.repeat(64), name: 'db', ports: [{ private: 5432, public: 5432, type: 'tcp', ip: '127.0.0.1' }] },
+            { ...base, id: 'b'.repeat(64), name: 'db6', ports: [{ private: 6379, public: 6379, type: 'tcp', ip: '::1' }] },
+            { ...base, id: 'c'.repeat(64), name: 'mixed', ports: [{ private: 22, public: 2222, type: 'tcp', ip: '127.0.0.1' },
+                { private: 80, public: 18080, type: 'tcp', ip: '0.0.0.0' }] },
+        ] });
+        await page.goto('/#docker');
+        await expect(page.locator('[data-docker-row]')).toHaveCount(3);
+        await expect(webui(page, 'db')).toHaveCount(0);
+        await expect(webui(page, 'db6')).toHaveCount(0);
+        await expect(webui(page, 'mixed')).toHaveText(':18080');
+    });
+
     test('a long address is cut to the column, not the row', async ({ page }) => {
         await mockDocker(page, { containers: [{ ...base, id: 'd'.repeat(64), name: 'long', ports: [{ private: 1, public: 18999, type: 'tcp' }],
             webui: `https://${'very-long-subdomain.'.repeat(4)}example.lan/`, webuiCustom: 'x' }] });

@@ -114,11 +114,21 @@
         return `http://${hostAddress()}:${port}`;
     }
 
+    /**
+     * The first published port a web UI could be on: TCP, and reachable from
+     * another machine -- a port bound to 127.0.0.1 or ::1 only answers on the
+     * Docker host itself.
+     */
+    function firstWebPort(container) {
+        return (container?.ports || []).find((p) => p && p.public && p.type !== 'udp'
+            && p.ip !== '127.0.0.1' && p.ip !== '::1') || null;
+    }
+
     /** The last status fetched, without waiting: for the synchronous palette. */
     function statusNow() { return statusValue; }
 
     window.DockerSearchIndex = {
         status, statusNow, refresh, containers: () => (enabled() ? list : []), match, matches, invalidate, allowedActions, enabled,
-        hostAddress, webuiHref, portHref,
+        hostAddress, webuiHref, portHref, firstWebPort,
     };
 })();

@@ -732,7 +732,7 @@ class DashboardDocker {
      * address: the row menu's Web UI did this already. UDP is no web page.
      */
     static portLink(container) {
-        const port = (container?.ports || []).find((p) => p && p.public && p.type !== 'udp');
+        const port = window.DockerSearchIndex.firstWebPort(container);
         if (!port) return null;
         const href = window.DockerSearchIndex.portHref(port.public);
         return href ? { href, label: `:${port.public}`, port: true } : null;

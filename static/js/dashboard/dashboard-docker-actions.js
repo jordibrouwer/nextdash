@@ -389,7 +389,7 @@
         webuiFor(c) {
             const index = window.DockerSearchIndex;
             if (c.webui) return index.webuiHref(c.webui, c);
-            const port = (c.ports || []).find((p) => p && p.public && p.type !== 'udp');
+            const port = index.firstWebPort(c);
             return port ? index.portHref(port.public) : '';
         }
 
