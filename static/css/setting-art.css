@@ -559,8 +559,10 @@
     height: 1.1rem;
 }
 
-.setting-art-swatch.is-light { background: #f4f4f5; }
-.setting-art-swatch.is-dark { background: #1f2024; }
+/* The theme's own ground pushed to either end, so both halves stay light and
+   dark in any theme but still belong to the one they sit in. */
+.setting-art-swatch.is-light { background: color-mix(in srgb, var(--background-primary) 8%, white); }
+.setting-art-swatch.is-dark { background: color-mix(in srgb, var(--background-primary) 12%, black); }
 .setting-art-swatch.is-accent { background: var(--accent-primary); }
 
 /* The line your data does not cross. */
