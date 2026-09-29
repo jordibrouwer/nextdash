@@ -689,7 +689,7 @@ A category you just created stays visible even with *hide empty categories* on, 
 
 ### 9.3 Sorting and folding
 
-Each category header has **A–Z** and **Recent** chips; click the active one to go back to manual order. Pinned bookmarks always stay on top. A sorted category cannot be dragged — the cursor and a short note say so. Sorting is only a view; the stored order changes when you drag.
+Each category header has a **⋯** menu with **Manual**, **A–Z**, **Last opened**, **Newest** and **Most opened**. The chosen sort shows as a short chip in front of the ⋯ (*A–Z*, *Rec*, *New*, *Top*); click it to go back to manual order. **Last opened** and **Most opened** put bookmarks never opened last. Pinned bookmarks always stay on top. A sorted category cannot be dragged — the cursor and a short note say so. Sorting is only a view; the stored order changes when you drag.
 
 Click a header, or press `Enter` on it, to fold the category. **`.`** folds or unfolds everything on the page, widgets included; the state is kept per page. **Start with categories collapsed** (Appearance → Grid) starts every category folded.
 
@@ -1200,11 +1200,13 @@ Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `
 
 Each row shows its name, image, status, **CPU** and **RAM**, a link to its web UI and its ports. CPU and RAM are the last reading, taken every 30 seconds; they are there while **Config → Containers → Keep the last hour of CPU and memory** is on. On a narrower screen the Image column goes first (below 1100 pixels), then CPU and RAM (below 900). Click **Name** or **Status** to sort, and again to turn the order round; the sort menu also offers uptime, CPU and memory, highest first.
 
-The web UI link is the address you set in the side panel's **Custom** section, else the one the container's own labels offer (Unraid's template), else its first published TCP port. A local address shows as its port (`:8123`), another as its host. The header badge counts containers with an update waiting; a skipped or held update does not count.
+The web UI link is the address you set in the side panel's **Custom** section, else the one the container's own labels offer (Unraid's template), else its first published TCP port. A local address shows as its port (`:8123`), another as its host; an address of your own has a dot in front of it, and a long one is cut short, with the whole address on hover.
+
+**Selecting several.** Tick containers with the box in front of the name, `x` or `Space`; `Shift`-click a box, `Shift + X` or `Shift + ↑/↓` ticks a run, and `Ctrl/Cmd + A` ticks everything the filter shows (again to clear). A bar above the list then offers **Start**, **Stop**, **Restart**, **Update** and **Mute notifications** for the lot, one container at a time with a count, and ends with one notice such as *3 restarted, 1 failed*. The container nextDash runs in is left out. Without actions switched on ([§14.6](#146-what-it-needs)) the bar offers only muting. **Clear selection** or `Esc` lets go. The header badge counts containers with an update waiting; a skipped or held update does not count.
 
 ### 14.3 The side panel
 
-Selecting a container opens its side panel, with four tabs. A click beside the panel closes it, one on another row moves it there (**Config → Containers → Close on a click beside it**).
+Selecting a container opens its side panel, with four tabs. Its head shows the container's web UI address under the name, tagged **Custom** when it is one you set; the tag opens the Custom section. A click beside the panel closes it, one on another row moves it there (**Config → Containers → Close on a click beside it**).
 
 - **Overview** — an accordion of **Details**, **Health**, **Updates**, **Timeline**, **Network**, **Custom**, **Volumes** and **Environment**. **Health**, for a container with a healthcheck, shows its status, how many checks failed in a row, the command, and the last five checks with their exit code and output. **Updates** is [§14.5](#145-actions-and-updates). **Timeline** is what happened to the container, newest first: starts and stops (by you or by nextDash), crashes with their exit code, out-of-memory kills, a run of crashes as one *Kept restarting* line, health changes, pauses, updates and rollbacks. nextDash writes these down from Docker's own events, whatever the notices are set to — a hundred per container, for thirty days, from the moment this version runs. **Details** also says whether its notices are on, muted or off. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it.
 - **Resources** — CPU, memory and I/O for that container, with two charts under them: CPU and memory over the last hour. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
@@ -1216,6 +1218,9 @@ Selecting a container opens its side panel, with four tabs. A click beside the p
 | Key | Action |
 |---|---|
 | `↑` / `↓` | Move through the containers |
+| `x` / `Space` | Tick or untick the selected container |
+| `Shift + X` / `Shift + ↑/↓` | Tick a run of containers |
+| `Ctrl/Cmd + A` | Tick every container the filter shows; again to clear |
 | `Enter` | Open the side panel |
 | `/` | Search the containers |
 | `s` | Start or stop the selected container |
@@ -1226,7 +1231,7 @@ Selecting a container opens its side panel, with four tabs. A click beside the p
 | `l` | Open its logs window |
 | `m` | Mute or unmute its notices |
 | `d` | Switch between the list and Disk |
-| `Esc` | Clear the selection, close the panel, then leave the view |
+| `Esc` | Clear the ticks, then the selection, close the panel, then leave the view |
 
 The legend above the list names them; **Config → Containers → The key legend** puts it below the list or hides it. Without actions switched on, the legend leaves out the keys that act on Docker.
 
@@ -1319,7 +1324,7 @@ Every clean-up asks first and says how much it frees. Below the tiles, the image
 
 When a container **stops unexpectedly**, **keeps restarting** (three crashes in ten minutes) or **turns unhealthy**, nextDash sends a notice — and a second one when it recovers. A stop you or nextDash asked for is not a notice, and neither is a crash the restart policy fixes within 30 seconds. One notice per incident; four or more at once become one message.
 
-They go where Health's downtime alerts go: the alert webhook under **Behavior → Status → Downtime alerts** (with its presets), and browser notifications with **Notify when a container stops, keeps restarting or turns unhealthy** switched on. **Config → Containers → Notifications** switches them off. Mute a single container from its row menu, its side panel's ⋯ menu, or `m`; **Muted containers** lists them and says where notices go. Hidden containers and nextDash's own raise nothing.
+They go where Health's downtime alerts go: the alert webhook under **Behavior → Status & alerts → Downtime alerts** (with its presets), and browser notifications with **Notify when a container stops, keeps restarting or turns unhealthy** switched on. **Config → Containers → Notifications** switches them off. Mute a single container from its row menu, its side panel's ⋯ menu, or `m`; **Muted containers** lists them and says where notices go. Hidden containers and nextDash's own raise nothing.
 
 ---
 
@@ -2225,7 +2230,7 @@ nextDash can send **anonymous usage statistics** to a self-hosted [Umami](https:
 | Settings | The **name** of a setting you change, and on/off for toggles; once per load, which features are on and the release you run |
 | Size | Once per load, bucketed counts (for example `500+` bookmarks) |
 | Widgets | Once per load, how many widgets of each type, bucketed |
-| Containers | Once per load, how the Containers view is set up: which options are on, whether a socket and control are configured, and bucketed counts of hidden containers, custom addresses and waiting updates. Docker itself is not asked |
+| Containers | Once per load, how the Containers view is set up: which options are on, whether a socket and control are configured, and bucketed counts of hidden containers, custom addresses and waiting updates. Docker itself is not asked. Per action (start, stop, restart, update, mute and the like): which one, whether it worked, where it came from (row, side panel, menu, key, command, selection bar) and, for a selection, a bucketed count |
 | Health, Inbox, Bookmarks view | Once per load, bucketed counts (checked, down, certificates due, unread, snoozed) and the layout options chosen in their Config tabs |
 
 Every count is rounded into a band. **Never recorded:** bookmark names, URLs, search text, page or category names, notes or tag names, container, image or widget names, or any address. No cookies, no profile, no cross-site tracking. This is separate from the open counts in [§6](#6-opening-and-editing-bookmarks), which never leave your server.

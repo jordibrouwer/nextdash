@@ -212,7 +212,7 @@ The **Processor**, **Memory**, **Disks**, **Containers** and **Container list** 
 - For actions: set the template's **Docker actions** to `1` (it starts at `0`).
 - Unraid's socket belongs to the `docker` group, so leave **Run as root** at `0`.
 
-Once it runs, the `#docker` view lists every container with a status glow and a link to its web UI, a side panel with logs, an hour of CPU and memory charts and release notes, and a badge for images with an update waiting. **Config → Containers** shows the connection as the server sees it — socket, actions, write token, its own container — and holds the update checks and an optional GitHub token. The [manual](MANUAL.md#146-what-it-needs) has the details, including Synology and QNAP.
+Once it runs, the `#docker` view lists every container with a status glow, CPU and RAM and a link to its web UI, a side panel with health, a timeline, logs, an hour of CPU and memory charts and release notes, a logs window, a Disk tab, and a badge for images with an update waiting. **Config → Containers** shows the connection as the server sees it — socket, actions, write token, its own container — and holds the update checks and an optional GitHub token. The [manual](MANUAL.md#146-what-it-needs) has the details, including Synology and QNAP.
 
 ---
 
@@ -354,9 +354,10 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Containers**
 
-- A **Containers view** (`#docker`) for everything on the host: status glow, group by status, a web UI column, a side panel with logs, stats, an hour of CPU and memory charts and environment. Give any container a web UI address of your own; the list, the widget and `:docker <name> open` all use it. Search finds a container by name, and `:docker` opens the view. *[Containers view](MANUAL.md#14-containers)*
-- Image update checks, on request and on an interval, show what changed; the header icon carries a badge for how many are waiting. *[Containers view](MANUAL.md#145-actions-and-updates)*
-- Start, stop, pause, restart, update and remove, behind `NEXTDASH_DOCKER_CONTROL` and the write token; set it all under **Config → Containers**. *[Containers view](MANUAL.md#145-actions-and-updates)*
+- A **Containers view** (`#docker`, `Shift + Y`) for everything on the host: status glow, sortable columns with CPU and RAM, group by status or compose project, a web UI column, and a side panel with health checks, a timeline of what happened, stats, an hour of CPU and memory charts and environment. Give any container a web UI address of your own; the list, the widget and `:docker <name> open` all use it. *[Containers view](MANUAL.md#14-containers)*
+- Start, stop, pause, restart, update and remove — one container, a whole compose stack, or every container you tick — behind `NEXTDASH_DOCKER_CONTROL` and the write token; set it all under **Config → Containers**. *[Containers view](MANUAL.md#145-actions-and-updates)*
+- Image update checks, on request and on an interval, show what changed; skip a version, hold a container's updates, see what updates did and roll the last one back. The header icon carries a badge for how many are waiting. *[Containers view](MANUAL.md#145-actions-and-updates)*
+- A **logs window** that follows a container's log live, a **Disk** tab for what images, volumes and the build cache take up, and **notices** when a container stops, keeps restarting or turns unhealthy. *[Logs](MANUAL.md#148-the-logs-window) · [Disk](MANUAL.md#147-disk) · [Notices](MANUAL.md#149-notices)*
 
 **Appearance**
 
