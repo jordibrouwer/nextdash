@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [Unreleased](#unreleased)
 - [v1.15.1 — 29 September 2026](#v1151--29-september-2026)
 - [v1.15.0 — 28 September 2026](#v1150--28-september-2026)
 - [v1.13.7 — 25 September 2026](#v1137--25-september-2026)
@@ -224,6 +225,14 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## Unreleased
+
+### Containers
+
+- **new — the containers table names its columns.** Name, Image, Status, Web UI and Ports sit above the rows and stay pinned under the view's header while the list scrolls; at phone width, where rows fold into two lines, the headings are hidden. The Name, Status and Ports labels are new locale keys, still English outside `en` until the next docs round.
 
 ---
 

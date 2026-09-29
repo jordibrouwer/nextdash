@@ -773,6 +773,25 @@ class DashboardDocker {
         const list = this.filteredSortedContainers();
         const table = document.createElement('table');
         table.className = 'docker-table';
+        // Column headings, in the order buildRow() lays the cells out; the
+        // phone layout folds rows into two lines and hides them (CSS).
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        [
+            ['name', this.t('dashboard.dockerColName', 'Name')],
+            ['image', this.t('dashboard.dockerFieldImage', 'Image')],
+            ['state', this.t('dashboard.dockerColStatus', 'Status')],
+            ['webui', this.t('dashboard.dockerLinkWebUI', 'Web UI')],
+            ['ports', this.t('dashboard.dockerColPorts', 'Ports')],
+        ].forEach(([key, label]) => {
+            const th = document.createElement('th');
+            th.scope = 'col';
+            th.className = `docker-head docker-head--${key}`;
+            th.textContent = label;
+            headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
         const tbody = document.createElement('tbody');
         if (this.group === 'project' || this.group === 'status') {
             this.appendGroupedRows(tbody, list);

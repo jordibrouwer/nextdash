@@ -133,6 +133,24 @@
     text-decoration: underline;
 }
 
+/* Column headings: quiet, like the group labels, and pinned under the
+   view's sticky header so they stay readable in a long list. */
+.docker-head {
+    position: sticky;
+    top: var(--lvs-header-height, 0px);
+    z-index: 1;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: var(--font-weight-semibold);
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    background: var(--background-primary);
+    border-bottom: 1px solid var(--border-primary);
+    white-space: nowrap;
+}
+
 .docker-group-row td {
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     font-size: var(--text-xs, 0.72rem);
@@ -358,7 +376,8 @@
 }
 
 @media (max-width: 767px) {
-    .docker-legend {
+    .docker-legend,
+    .docker-table thead {
         display: none;
     }
 
