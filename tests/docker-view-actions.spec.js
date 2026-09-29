@@ -92,6 +92,42 @@ test.describe('docker view actions', () => {
     await expect.poll(() => state.calls.filter((c) => c.endsWith('/restart')).length).toBe(2);
   });
 
+  test('a project group row starts, stops and restarts its stack', async ({ page }) => {
+    const row = (name, project, state) => ({ id: name.padEnd(64, '0'), shortId: name.padEnd(12, '0'), name, image: `x/${name}`,
+      tag: 'latest', state, status: state === 'running' ? 'Up 2 days' : 'Exited (0) 1 hour ago', health: '', created: 1790000000,
+      ports: [], composeProject: project });
+    const state = await mockDocker(page, { containers: [
+      row('sonarr', 'arr', 'running'), row('radarr', 'arr', 'running'),
+      row('jellyfin', 'media', 'running'), row('jellyseerr', 'media', 'exited'),
+      row('bazarr', '', 'exited'),
+    ] });
+    await page.goto('/#docker');
+    await page.locator('[data-docker-group]').selectOption('project');
+    const arr = page.locator('.docker-group-row[data-docker-group-project="arr"]');
+    await expect(arr.locator('[data-docker-stack-action="start"]')).toBeDisabled();
+    await expect(page.locator('.docker-group-row[data-docker-group-project="media"] [data-docker-stack-action="start"]')).toBeEnabled();
+    // No project is not a stack.
+    await expect(page.locator('.docker-group-row').last().locator('[data-docker-stack-action]')).toHaveCount(0);
+
+    // Enter on a focused stack button runs it, not the selected row's drawer.
+    await arr.locator('[data-docker-stack-action="stop"]').focus();
+    await page.keyboard.press('Enter');
+    const dialog = confirmDialog(page);
+    await expect(dialog).toContainText('sonarr');
+    await expect(dialog).toContainText('radarr');
+    await expect(page).not.toHaveURL(/#docker\//);
+    await dialog.getByRole('button', { name: /^stop$/i }).click();
+    await expect.poll(() => state.calls.filter((c) => c.endsWith('/stop')).sort())
+      .toEqual(['POST /containers/radarr/stop', 'POST /containers/sonarr/stop']);
+  });
+
+  test('read-only shows no stack buttons', async ({ page }) => {
+    await openView(page, { control: false });
+    await page.locator('[data-docker-group]').selectOption('project');
+    await expect(page.locator('.docker-group-row')).not.toHaveCount(0);
+    await expect(page.locator('[data-docker-stack-action]')).toHaveCount(0);
+  });
+
   test('a refused action says why', async ({ page }) => {
     const state = await openView(page);
     state.control = false; // the setting changed under the open page

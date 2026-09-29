@@ -266,7 +266,7 @@ class DashboardDocker {
             const inDrawer = Boolean(active?.closest?.('[data-docker-drawer]'));
             const rowAncestor = active?.closest?.('.docker-row');
             const onRowControl = Boolean(rowAncestor && active !== rowAncestor && active?.matches?.('a, button, input, select'));
-            const onHeading = Boolean(active?.matches?.('[data-docker-sort-head]'));
+            const onHeading = Boolean(active?.matches?.('[data-docker-sort-head], [data-docker-stack-action]'));
             if (!menuOrModalOpen && !inDrawer && !onRowControl && !onHeading && (typing ? isSearch : true)
                 && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter')) {
                 e.preventDefault();
@@ -854,6 +854,29 @@ class DashboardDocker {
     }
 
     /**
+     * Start, stop and restart for a compose project's group row: the bulk
+     * path over the stack's rows as shown, so a filter narrows it the way it
+     * narrows a selection. Update stays with the selection bar.
+     */
+    buildStackActions(stack) {
+        const wrap = document.createElement('span');
+        wrap.className = 'docker-stack-actions';
+        ['start', 'stop', 'restart'].forEach((action) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'docker-action-btn';
+            btn.setAttribute('data-docker-stack-action', action);
+            btn.textContent = this.actions?.label(action) || action;
+            btn.disabled = !stack.some((c) => this.actions?.allowed(c).includes(action));
+            btn.addEventListener('click', async () => {
+                await this.actions?.runBulk(action, stack);
+            });
+            wrap.appendChild(btn);
+        });
+        return wrap;
+    }
+
+    /**
      * Grouped by compose project (project-less last) or by status (updates,
      * running, paused, stopped -- the order that needs attention first).
      */
@@ -882,11 +905,15 @@ class DashboardDocker {
             const heading = document.createElement('tr');
             heading.className = 'docker-group-row';
             if (byStatus) heading.setAttribute('data-docker-group-status', key);
+            else if (key) heading.setAttribute('data-docker-group-project', key);
             const cell = document.createElement('td');
             cell.colSpan = 5;
-            cell.textContent = byStatus
+            const label = document.createElement('span');
+            label.textContent = byStatus
                 ? statusLabels[key]
                 : (key || this.t('dashboard.dockerNoProject', 'No project'));
+            cell.appendChild(label);
+            if (!byStatus && key && this.status.control) cell.appendChild(this.buildStackActions(groups.get(key)));
             heading.appendChild(cell);
             tbody.appendChild(heading);
             groups.get(key).forEach((c) => tbody.appendChild(this.buildRow(c)));

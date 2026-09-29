@@ -189,6 +189,22 @@
     background: var(--background-secondary);
 }
 
+/* A project's stack buttons sit at the right end of its group row, small
+   enough to keep the row its height, and not in the heading's uppercase. */
+.docker-stack-actions {
+    float: right;
+    display: inline-flex;
+    gap: var(--space-1, 0.25rem);
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: normal;
+}
+
+.docker-stack-actions .docker-action-btn {
+    padding: 0 0.45rem;
+    font-size: var(--text-xs, 0.72rem);
+}
+
 .docker-setup {
     max-width: 40rem;
     padding: var(--space-4, 1rem);
