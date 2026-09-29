@@ -19,9 +19,10 @@ async function open(page) {
         { ...base, id: 'b'.repeat(64), name: 'template', ports: [{ private: 8989, public: 18989, type: 'tcp' }],
             webui: 'http://[IP]:18989/', webuiDefault: 'http://[IP]:18989/' },
         { ...base, id: 'c'.repeat(64), name: 'plain', ports: [{ private: 80, public: 18181, type: 'tcp' }] },
+        { ...base, id: 'f'.repeat(64), name: 'udponly', ports: [{ private: 53, public: 5353, type: 'udp' }] },
     ] });
     await page.goto('/#docker');
-    await expect(page.locator('[data-docker-row]')).toHaveCount(3);
+    await expect(page.locator('[data-docker-row]')).toHaveCount(4);
 }
 
 const webui = (page, name) => page.locator(`[data-docker-row="${name}"] .docker-cell--webui a`);
@@ -48,11 +49,17 @@ test.describe('the web UI in the table', () => {
         expect(await ports(page, 'template').allInnerTexts()).toEqual(['18989']);
     });
 
-    test('no web UI: an empty cell, and the port links as before', async ({ page }) => {
+    // No template and no address of the reader's own: the first published TCP
+    // port stands in, as the row menu's Web UI already did. UDP is no web page.
+    test('no web UI address: the first TCP port stands in; UDP alone leaves it empty', async ({ page }) => {
         await open(page);
-        await expect(webui(page, 'plain')).toHaveCount(0);
         const host = await page.evaluate(() => window.location.hostname);
+        await expect(webui(page, 'plain')).toHaveAttribute('href', `http://${host}:18181`);
+        await expect(webui(page, 'plain')).toHaveText(':18181');
+        await expect(webui(page, 'plain')).toHaveAttribute('data-docker-webui-port', '');
         await expect(ports(page, 'plain').first()).toHaveAttribute('href', `http://${host}:18181`);
+        await expect(webui(page, 'udponly')).toHaveCount(0);
+        await expect(webui(page, 'template')).not.toHaveAttribute('data-docker-webui-port', '');
     });
 
     test('a long address is cut to the column, not the row', async ({ page }) => {

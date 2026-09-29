@@ -622,6 +622,17 @@ class DashboardDocker {
         return { href, label: local ? `:${port}` : url.host.replace(/^www\./, '') };
     }
 
+    /**
+     * The first published TCP port, as a link, for a container with no web UI
+     * address: the row menu's Web UI did this already. UDP is no web page.
+     */
+    static portLink(container) {
+        const port = (container?.ports || []).find((p) => p && p.public && p.type !== 'udp');
+        if (!port) return null;
+        const href = window.DockerSearchIndex.portHref(port.public);
+        return href ? { href, label: `:${port.public}`, port: true } : null;
+    }
+
     /* ── Filtering, sorting, grouping ──────────────────────────────────── */
 
     matchesFilter(c) {
@@ -1054,11 +1065,12 @@ class DashboardDocker {
          */
         const webuiCell = document.createElement('td');
         webuiCell.className = 'docker-cell docker-cell--webui';
-        const webui = DashboardDocker.webuiLink(c.webui, c);
+        const webui = DashboardDocker.webuiLink(c.webui, c) || DashboardDocker.portLink(c);
         if (webui) {
             const a = document.createElement('a');
             a.className = 'docker-port docker-webui';
             a.setAttribute('data-docker-webui', '');
+            if (webui.port) a.setAttribute('data-docker-webui-port', '');
             a.href = webui.href;
             a.title = webui.href;
             a.target = '_blank';
