@@ -117,6 +117,12 @@ test.describe('the Docker host address', () => {
             { ...base, id: 'e'.repeat(64), name: 'plex', ports: [], lanIP: '192.168.1.50', webui: 'http://[IP]:32400/', webuiDefault: 'x' },
         ] });
         await page.goto('/#config/containers');
+        // A load draws config twice: once from loadData(), and again when
+        // init() renders the dashboard after the language is in. The field is
+        // there after the first, and text filled in before the second is
+        // drawn over, so Tab then commits nothing. init() sets this flag
+        // after its render.
+        await page.waitForFunction(() => window.dashboardInstance?._configRefreshReady === true);
         const field = page.locator('[data-behavior-field="dockerHostAddress"]');
         await field.fill('tower.lan');
         await field.press('Tab');

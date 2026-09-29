@@ -282,6 +282,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Docs
 
+- **fix — the Docker host address spec no longer fails one run in twenty or so.** A load of `/#config/containers` draws config twice, from `loadData()` and again from `init()`'s `renderDashboard()` once the language is in; a `fill()` that landed between the two was drawn over, so Tab committed nothing and the poll of `/api/settings` never saw `tower.lan`. `docker-table-webui.spec.js` now waits for `_configRefreshReady` before typing; 100 runs in a row pass.
+
 - **docs — Help, the manual and the cheat sheet describe the Containers additions.** Config → Help → Containers (*The Containers view* and *Setting it up*) and MANUAL §14 (with new §14.7 Disk, §14.8 The logs window, §14.9 Notices), §7.1 and §17.7 cover Shift+Y, the keys, sorting, CPU and RAM, stacks, Health, Updates, Timeline, the logs window, Disk, notices and the new settings; `npm run generate:cheatsheet` rebuilt the cheat sheet's HTML and PDF. The 176 locale keys the Containers work had left as code fallbacks are now in all six locale files, in English outside `en` until the next docs round translates them; the English Help and tour texts that changed keep their earlier translations until then.
 
 ---
