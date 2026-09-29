@@ -519,6 +519,24 @@
     margin-top: var(--space-2, 0.5rem);
 }
 
+/* Between the phone layout and a wide screen the table runs out of room:
+   Image goes first (the drawer names it), then CPU and RAM. */
+@media (min-width: 768px) and (max-width: 1099px) {
+    .docker-head--image,
+    .docker-cell--image {
+        display: none;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 899px) {
+    .docker-head--cpu,
+    .docker-head--mem,
+    .docker-cell--cpu,
+    .docker-cell--mem {
+        display: none;
+    }
+}
+
 @media (max-width: 767px) {
     .docker-legend {
         display: none;
