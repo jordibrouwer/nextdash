@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -50,13 +51,14 @@ type activityLogConfig struct {
 }
 
 var (
-	// activityCfgMu guards a runtime replacement of the config; the read path
-	// is unsynchronised and hot, so the swap is done whole rather than field by
-	// field.
+	// activityCfgMu serialises a runtime replacement of the config. The read
+	// path is hot and takes no lock: the config sits behind an atomic pointer
+	// and a replacement swaps the pointer, so a reader sees the old config or
+	// the new one, never half of each.
 	activityCfgMu    sync.Mutex
 	activityCfgOnce  sync.Once
-	activityCfg      activityLogConfig
-	activityCfgTest  *activityLogConfig
+	activityCfg      atomic.Pointer[activityLogConfig]
+	activityCfgTest  atomic.Pointer[activityLogConfig]
 	activityFile     *activityRotatingFile
 	activityFileOnce sync.Once
 
@@ -116,13 +118,11 @@ func loadActivityLogConfig() activityLogConfig {
 }
 
 func activityConfig() activityLogConfig {
-	if activityCfgTest != nil {
-		return *activityCfgTest
+	if t := activityCfgTest.Load(); t != nil {
+		return *t
 	}
-	activityCfgOnce.Do(func() {
-		activityCfg = loadActivityLogConfig()
-	})
-	return activityCfg
+	loadActivityConfigOnce()
+	return *activityCfg.Load()
 }
 
 /*
@@ -140,12 +140,12 @@ func setActivityChannelsForRuntime(enabled map[string]bool) {
 	cfg.disabled = false
 	activityCfgMu.Lock()
 	defer activityCfgMu.Unlock()
-	if activityCfgTest != nil {
-		*activityCfgTest = cfg
+	if activityCfgTest.Load() != nil {
+		activityCfgTest.Store(&cfg)
 		return
 	}
-	activityCfgOnce.Do(func() {})
-	activityCfg = cfg
+	loadActivityConfigOnce()
+	activityCfg.Store(&cfg)
 }
 
 /*
@@ -158,12 +158,12 @@ func setActivityOpenDetailForRuntime(level string) {
 	cfg.openDetail = level
 	activityCfgMu.Lock()
 	defer activityCfgMu.Unlock()
-	if activityCfgTest != nil {
-		*activityCfgTest = cfg
+	if activityCfgTest.Load() != nil {
+		activityCfgTest.Store(&cfg)
 		return
 	}
-	activityCfgOnce.Do(func() {})
-	activityCfg = cfg
+	loadActivityConfigOnce()
+	activityCfg.Store(&cfg)
 }
 
 // activityOpenDetailLevel is how much the open record carries beyond the
@@ -306,14 +306,23 @@ func activityEnabled(category string) bool {
 
 func resetActivityLogForTest(cfg activityLogConfig) {
 	copy := cfg
-	activityCfgTest = &copy
+	activityCfgTest.Store(&copy)
 	activityFileOnce = sync.Once{}
 	activityFile = nil
 	activityStatusDedupe = newStatusDedupeCache(activityStatusDedupeTTL)
 }
 
 func clearActivityLogTestOverride() {
-	activityCfgTest = nil
+	activityCfgTest.Store(nil)
+}
+
+// loadActivityConfigOnce reads the environment's config the first time it is
+// needed, so the pointer is never nil after it.
+func loadActivityConfigOnce() {
+	activityCfgOnce.Do(func() {
+		cfg := loadActivityLogConfig()
+		activityCfg.Store(&cfg)
+	})
 }
 
 // logActivity records one event twice, for two readers. The JSON goes to the

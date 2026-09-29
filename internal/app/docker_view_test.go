@@ -17,7 +17,7 @@ func dockerTestHandlers(t *testing.T) *Handlers {
 	t.Helper()
 	h := newTestHandlers(t)
 	h.wireDockerSettings()
-	t.Cleanup(func() { dockerHiddenNames = nil })
+	t.Cleanup(func() { dockerSettingsFrom.Store(nil) })
 	return h
 }
 
