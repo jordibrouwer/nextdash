@@ -58,8 +58,10 @@
         return fallback;
     }
 
+    // The shared escaper, loaded in the head. Asking the dashboard for one
+    // left a fallback that escaped nothing whenever it was not there yet.
     function escape(text) {
-        return dash()?.escapeHtml ? dash().escapeHtml(text) : String(text || '');
+        return window.NextDashHtml.escapeHtml(text);
     }
 
     function state() {
