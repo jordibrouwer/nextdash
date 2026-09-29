@@ -811,8 +811,14 @@
     display: none;
 }
 
-.docker-logs-modal::backdrop {
-    background: var(--modal-scrim, rgba(0, 0, 0, 0.55));
+/* ::backdrop inherits no custom properties in every browser (Safari), so
+   the scrim is written out: a shade darker than the app modal's, with its
+   blur, as neither dialog has the app modal's overlay behind it. */
+.docker-logs-modal::backdrop,
+.docker-volume-confirm::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
 }
 
 .docker-logs-head,
@@ -1206,10 +1212,6 @@
     background: var(--background-modal, var(--background-primary));
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-md, 12px);
-}
-
-.docker-volume-confirm::backdrop {
-    background: var(--modal-scrim, rgba(0, 0, 0, 0.55));
 }
 
 .docker-volume-confirm-title {
