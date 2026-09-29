@@ -2,6 +2,22 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureContainersSizeTitle",
+      "titleFallback": "What each container takes on disk",
+      "whatKey": "config.overviewNewFeatureContainersSizeWhat",
+      "whatFallback": "How much a container had written was a docker ps -s away, in a terminal.",
+      "howKey": "config.overviewNewFeatureContainersSizeHow",
+      "howFallback": "A Size column shows what each container wrote, with its image included on hover; the side panel names both. nextDash measures in the background every half hour, and whenever Disk is refreshed.",
+      "enableKey": "config.overviewNewFeatureContainersSizeEnable",
+      "enableFallback": "Open the Containers view; the Size column sits beside RAM.",
+      "ctaKey": "config.overviewNewFeatureContainersSizeCta",
+      "ctaFallback": "Open Containers →",
+      "go": {
+        "view": "docker"
+      },
+      "since": "v1.15.3"
+    },
+    {
       "titleKey": "config.overviewNewFeatureContainersBulkTitle",
       "titleFallback": "Several containers at once",
       "whatKey": "config.overviewNewFeatureContainersBulkWhat",

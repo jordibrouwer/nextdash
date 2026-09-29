@@ -8,7 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [v1.15.3 — 30 September 2026](#v1153--30-september-2026)
 - [v1.15.2 — 29 September 2026](#v1152--29-september-2026)
 - [v1.15.1 — 29 September 2026](#v1151--29-september-2026)
 - [v1.15.0 — 28 September 2026](#v1150--28-september-2026)
@@ -229,7 +229,9 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## Unreleased
+## v1.15.3 — 30 September 2026
+
+A Containers follow-up: a Size column, removing several containers at once (running ones stopped first, from the bar, `⌫` or a right-click on the ticked rows), `⌫` in place of a Delete key many keyboards lack, and port links that go to the right server — a note while no Docker host address is set, and an example and a live check on that setting. Announced in the What's new window.
 
 ### Containers
 
@@ -241,6 +243,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 
 ### Docs
+
+- **docs — Config → Help → Containers follows.** *The Containers view* says Remove stops running ones first and that a right-click on a ticked row and `⌫` do the same; *Setting it up* gains a Links paragraph: the host address format with an example, the live check and the note in the view. All six languages.
+
+- **docs — `static/data/whats-new/v1.15.3.json` and its index entry, and one Overview feature.** `whats-new-stub.js` moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v307` and `DASHBOARD_RELEASE` to v1.15.3. Config → Overview and About → News & features gain *What each container takes on disk* (`since: v1.15.3`, in all six languages); README's Containers line names the size. `tests/whats-new-hidden-release.spec.js` follows the new lead. `go generate` refreshed `asset_hashes_gen.go`.
 
 - **docs — the manual, Help and translations follow the Containers changes.** MANUAL §14.2 (Size, ticking and removing, the host address note) and §14.4 (`⌫` / `Delete`, removing the ticked ones); Config → Help → Containers (Size, removing several, `⌫`); the cheat sheet row and the tour step name `⌫` instead of `Delete`. The new keys (`dockerColSize`, `dockerFieldSize`, `dockerSizeTitle`, `dockerConfirmBulkRemove*`, `dockerBulkRemoved`, `dockerHostHint*`) are in all six languages.
 

@@ -1,0 +1,29 @@
+{
+  "tag": "v1.15.3",
+  "date": "30 September 2026",
+  "releasedAt": "2026-09-30",
+  "modalLead": "More for the <strong>Containers</strong> view: see what each container takes on disk, remove several at once, and get links that go to the right server.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A Size column.</strong> What each container wrote, with its image on hover; the side panel shows both."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Remove several containers at once.</strong> Tick them and press <em>Remove</em>, <kbd>⌫</kbd>, or right-click one of the ticked rows. Running ones are stopped first, after asking."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Links that go to the right server.</strong> Until a Docker host address is set, the view says where port links point, with a button to the setting. Config → Containers gives an example and checks the address as you type."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><kbd>⌫</kbd> removes, and the key legend says so.</strong> Many keyboards, a MacBook's among them, have no Delete key."
+        }
+      ]
+    }
+  ]
+}

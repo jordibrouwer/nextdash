@@ -152,15 +152,15 @@ test.describe('a release flagged hideFromModal', () => {
 
     // The cases above prove the mechanism against a fixture. This one asserts
     // what the shipped files do with it. v1.13.1, v1.13.5 and v1.13.6 were held
-    // back when they shipped; v1.13.7 brought them back in. v1.15.2 leads the
-    // modal, v1.15.0 follows it, and v1.15.1 stays held back between them.
-    test('v1.15.2 leads the modal, and the releases held back before it show under it', async ({ page }) => {
+    // back when they shipped; v1.13.7 brought them back in. v1.15.3 leads the
+    // modal, v1.15.2 and v1.15.0 follow it, and v1.15.1 stays held back.
+    test('v1.15.3 leads the modal, and the releases held back before it show under it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
-        expect(index[0].tag).toBe('v1.15.2');
+        expect(index[0].tag).toBe('v1.15.3');
         expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.15.1']);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
@@ -175,6 +175,7 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
+        expect(await shownTags()).toContain('v1.15.3');
         expect(await shownTags()).toContain('v1.15.2');
         expect(await shownTags()).toContain('v1.15.0');
         expect(await shownTags()).not.toContain('v1.15.1');
@@ -191,21 +192,21 @@ test.describe('a release flagged hideFromModal', () => {
         }
     });
 
-    test('the release constants name v1.15.2, the release the modal leads with', async ({ page }) => {
+    test('the release constants name v1.15.3, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
         /*
          * The release token names what the modal leads with, so it moves for a
          * release that leads and stays put for one that is held back. v1.13.1,
-         * v1.13.5 and v1.13.6 were held back and were never named here; v1.15.2
+         * v1.13.5 and v1.13.6 were held back and were never named here; v1.15.3
          * leads, so it is.
          *
          * Leaving it behind is the quiet failure this pins: every install that
-         * had already read v1.15.0's notes would simply never be shown v1.15.2.
+         * had already read v1.15.2's notes would simply never be shown v1.15.3.
          */
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.15.2'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.15.3'");
         // The data token moves regardless: the index changed, and a browser
-        // holding its old copy would never learn v1.15.2 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v306'");
+        // holding its old copy would never learn v1.15.3 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v307'");
     });
 });
