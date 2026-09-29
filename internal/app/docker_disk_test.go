@@ -154,7 +154,7 @@ func TestDockerPruneAndUpdateExcludeEachOther(t *testing.T) {
 
 	h.dockerPruneRunning.Store(true)
 	defer h.dockerPruneRunning.Store(false)
-	if rec := dockerPost(router, "/api/docker/containers/radarr/update"); rec.Code != 409 || !strings.Contains(rec.Body.String(), "busy") {
+	if rec := dockerPost(router, "/api/docker/containers/radarr/update"); rec.Code != 409 || !strings.Contains(rec.Body.String(), "prune-running") {
 		t.Fatalf("update during a prune: %d %s", rec.Code, rec.Body)
 	}
 	if rec := dockerPost(router, "/api/docker/containers/radarr/restart"); rec.Code != 200 {

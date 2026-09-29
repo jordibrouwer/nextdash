@@ -97,7 +97,7 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 	// The lock is taken before the prune flag is read, and the prune sets its
 	// flag before it reads the locks: one of the two always sees the other.
 	if (action == "update" || action == "rollback") && h.dockerPruneRunning.Load() {
-		dockerRefuse(w, http.StatusConflict, "busy")
+		dockerRefuse(w, http.StatusConflict, "prune-running")
 		return
 	}
 	// What nextDash stops or replaces itself is not a crash to tell about --

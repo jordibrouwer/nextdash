@@ -206,6 +206,7 @@
                 'old-image-gone': ['dockerRollbackImageGone', 'The previous image is no longer on this host, so there is nothing to go back to.'],
                 'pinned-by-digest': ['dockerRollbackPinned', 'This container is pinned to an image digest; roll it back from your Docker host.'],
                 'nothing-to-skip': ['dockerSkipNothing', 'There is no update on offer to skip.'],
+                'prune-running': ['dockerPruneRunning', 'A clean-up on the Disk tab is still running; try again when it is done.'],
                 'network-shared': ['dockerNetworkShared', '{containers} run inside this container\'s network and would be cut off. Update them together from your Docker host.'],
                 'auto-remove': ['dockerAutoRemove', 'This container is removed when it stops (--rm), so it cannot be swapped for a new one here.'],
                 'pinned-by-id': ['dockerPinnedById', 'This container was made from an image id, not a name, so there is nothing to update it to.'],
