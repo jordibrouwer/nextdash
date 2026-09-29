@@ -680,14 +680,16 @@ class DashboardConfig {
         this.bmHealthFilter = DashboardConfig.isHealthFilterKey(health) ? health : '';
         const tags = (params.get('tag') || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
         this.bmTagFilter = tags;
+        // Absent means the default, as bookmarksFilterQuery() writes it: a
+        // link without a sort must not open in the reader's last one.
         const sort = params.get('sort') || '';
-        if (sort) this.bmSort = sort;
+        this.bmSort = DashboardConfig.BM_SORTS.includes(sort) ? sort : null;
         this.bmSortReverse = params.get('rev') === '1';
         const groupParam = params.get('group');
-        if (groupParam != null) {
-            const group = groupParam === 'none' ? '' : groupParam;
-            if (DashboardConfig.BM_GROUPS.includes(group)) this.bmGroup = group;
-        }
+        const group = groupParam === 'none' ? '' : groupParam;
+        this.bmGroup = groupParam != null && DashboardConfig.BM_GROUPS.includes(group)
+            ? group
+            : (this._bmGroupDefaultAtLoad ?? null);
 
         const after = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
             this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort, this.bmGroup, this.bmSortReverse]);
@@ -23769,6 +23771,10 @@ class DashboardConfig {
         const stored = String(this.dash?.settings?.configBookmarksSort || '');
         return allowed.includes(stored) ? stored : 'page';
     }
+
+    /** Every sort the list knows: the toolbar's and the headings'. */
+    static BM_SORTS = ['page', 'name', 'url', 'category', 'recent', 'lastOpened', 'opens', 'pinned',
+        'tags', 'shortcut', 'usage', 'score'];
 
     /** '' groups nothing; every other value names a workbenchGroupKey shape. */
     static BM_GROUPS = ['', 'page', 'category', 'site', 'status', 'tag'];

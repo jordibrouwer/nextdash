@@ -202,3 +202,18 @@ test.describe('column headings over the list views', () => {
         expect(firstTags).toEqual([...tagged.sort((a, b) => a.localeCompare(b)), ...firstTags.filter((t) => !t)]);
     });
 });
+
+// A link names its list: without a sort in it, the list opens in the default
+// order, not in whatever the reader had sorted by before following it.
+test('a #bookmarks link without a sort opens in the default order', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await page.locator('[data-bm-sort-head="name"]').click();
+    await expect(page).toHaveURL(/sort=name/);
+    await page.evaluate(() => { window.location.hash = '#bookmarks?tag=nothing-here'; });
+    await expect.poll(() => page.evaluate(() => {
+        const c = window.dashboardInstance.config;
+        return c.bmSort ?? c.defaultBookmarksSort();
+    })).toBe(await page.evaluate(() => window.dashboardInstance.config.defaultBookmarksSort()));
+    await expect(page).not.toHaveURL(/sort=name/);
+});

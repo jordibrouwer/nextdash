@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — a Bookmarks view link kept the reader's last sort and group.** Absent keys in `#bookmarks?…` cleared the filters but not the sort or group, so following a link, or going Back to one, kept the order you had and then wrote it into the address. Absent now means the default, as the address is written; an unknown sort is ignored.
+
 - **fix — with the inbox rail folded, every visit left a document listener behind.** Its outside-click handler was added on each mount and never removed, each holding the old view. It is now removed when the view closes and before a new one is added.
 
 - **fix — every Appearance repaint left a document listener behind.** The theme picker's outside-click handler was added on each bind and never removed, so old ones held their detached lists, and one bound while the list was open could revert the theme preview on every later click. The previous handler is now removed first.
