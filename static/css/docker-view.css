@@ -720,3 +720,273 @@
     align-items: center;
     gap: var(--space-2, 0.5rem);
 }
+
+/* ── Logs window ─────────────────────────────────────────────────────── */
+
+/* A native dialog over most of the page: top/left with vw/vh rather than
+   inset, which the page's scrollbar gutter would narrow. */
+.docker-logs-modal {
+    position: fixed;
+    top: 4vh;
+    left: 4vw;
+    width: 92vw;
+    height: 92vh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--text-primary);
+    background: var(--background-modal, var(--background-primary));
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-md, 12px);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.docker-logs-modal:not([open]) {
+    display: none;
+}
+
+.docker-logs-modal::backdrop {
+    background: var(--modal-scrim, rgba(0, 0, 0, 0.55));
+}
+
+.docker-logs-head,
+.docker-logs-bar,
+.docker-logs-foot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+.docker-logs-head {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.docker-logs-modal-title {
+    margin: 0;
+    font-size: var(--text-lg, 1.05rem);
+    font-weight: var(--font-weight-semibold);
+}
+
+.docker-logs-badge {
+    padding: 0 var(--space-2, 0.5rem);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.docker-logs-badge[data-state="running"] { color: var(--accent-success, #3c6); }
+.docker-logs-badge[data-state="exited"],
+.docker-logs-badge[data-state="dead"] { color: var(--accent-error, #c55); }
+
+.docker-logs-spacer {
+    flex: 1;
+}
+
+.docker-logs-bar {
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+}
+
+.docker-logs-btn,
+.docker-logs-tail {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.docker-logs-btn[aria-pressed="true"],
+.docker-logs-follow[data-state="following"] {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.docker-logs-follow[data-state="paused"] {
+    border-color: var(--accent-warning, #cb4);
+    color: var(--accent-warning, #cb4);
+}
+
+.docker-logs-btn:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.docker-logs-btn:focus-visible,
+.docker-logs-tail:focus-visible,
+.docker-logs-search:focus-visible,
+.docker-logs-body:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 1px;
+}
+
+.docker-logs-search {
+    flex: 1 1 14rem;
+    min-width: 10rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--font-size-controls);
+}
+
+.docker-logs-count {
+    min-width: 4.5rem;
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-logs-seg {
+    display: inline-flex;
+}
+
+.docker-logs-seg .docker-logs-btn {
+    border-radius: 0;
+}
+
+.docker-logs-seg .docker-logs-btn + .docker-logs-btn {
+    border-left-width: 0;
+}
+
+.docker-logs-seg .docker-logs-btn:first-child { border-radius: 4px 0 0 4px; }
+.docker-logs-seg .docker-logs-btn:last-child { border-radius: 0 4px 4px 0; }
+
+.docker-logs-main {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.docker-logs-body {
+    flex: 1;
+    overflow: auto;
+    padding: var(--space-2, 0.5rem) 0;
+    background: var(--background-primary);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-sm, 0.85rem);
+    line-height: 1.45;
+}
+
+.docker-logs-line {
+    display: flex;
+    gap: var(--space-3, 0.75rem);
+    padding: 0 var(--space-3, 0.75rem);
+}
+
+.docker-logs-line[hidden] {
+    display: none;
+}
+
+.docker-logs-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    min-width: 0;
+}
+
+.docker-logs-body.is-no-wrap .docker-logs-text {
+    white-space: pre;
+    overflow-wrap: normal;
+}
+
+.docker-logs-time {
+    flex: 0 0 auto;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-logs-body.is-no-time .docker-logs-time {
+    display: none;
+}
+
+.docker-logs-line[data-stream="err"] {
+    color: var(--accent-error, #c55);
+    background: color-mix(in srgb, var(--accent-error, #c55) 7%, transparent);
+}
+
+.docker-logs-line mark {
+    border-radius: 2px;
+    color: inherit;
+    background: color-mix(in srgb, var(--accent-warning, #cb4) 40%, transparent);
+}
+
+.docker-logs-line.is-current mark {
+    outline: 1px solid var(--accent-warning, #cb4);
+}
+
+.docker-logs-jump {
+    position: absolute;
+    right: var(--space-4, 1rem);
+    bottom: var(--space-3, 0.75rem);
+    border-color: var(--accent-primary);
+    border-radius: 999px;
+    background: var(--accent-primary);
+    color: var(--background-primary);
+}
+
+.docker-logs-ended {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.docker-logs-ended[hidden] {
+    display: none;
+}
+
+.docker-logs-foot {
+    justify-content: space-between;
+    border-top: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-logs-keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+}
+
+.docker-logs-keys kbd {
+    padding: 0 0.3rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    font-family: var(--font-family-mono, monospace);
+    color: var(--text-primary);
+}
+
+/* A phone gets the whole screen, and no key legend it cannot use. */
+@media (max-width: 767px) {
+    .docker-logs-modal {
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .docker-logs-keys {
+        display: none;
+    }
+}

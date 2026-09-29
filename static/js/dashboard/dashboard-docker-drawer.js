@@ -747,6 +747,16 @@ class DockerDrawer {
         refresh.addEventListener('click', () => void this._loadLogs());
         body.appendChild(refresh);
 
+        // The quick look stays here; reading, following and searching happen in
+        // the logs window.
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.setAttribute('data-docker-logs-open', '');
+        open.className = 'config-btn config-btn--small docker-logs-refresh';
+        open.textContent = this.t('dockerLogsOpen', 'Open logs window');
+        open.addEventListener('click', () => this.view.openLogs?.(this._summary || this._name));
+        body.appendChild(open);
+
         const pre = document.createElement('pre');
         pre.setAttribute('data-docker-logs', '');
         pre.className = 'docker-logs';

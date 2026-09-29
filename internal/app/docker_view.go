@@ -572,14 +572,7 @@ func (h *Handlers) DockerContainerLogsHandler(w http.ResponseWriter, r *http.Req
 	if !ok {
 		return
 	}
-	tail, err := strconv.Atoi(r.URL.Query().Get("tail"))
-	if err != nil || tail <= 0 {
-		tail = 200
-	}
-	if tail > 1000 {
-		tail = 1000
-	}
-	lines, err := api.logsTail(r.Context(), c.ID, tail)
+	lines, err := api.logsTail(r.Context(), c.ID, dockerLogTail(r))
 	if err != nil {
 		writeDockerError(w, err)
 		return

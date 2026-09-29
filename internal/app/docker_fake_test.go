@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -56,9 +57,15 @@ type fakeContainer struct {
 	RestartPolicy                           string
 	NetworkMode                             string
 	Logs                                    []string
-	Health                                  map[string]any // State.Health as inspect reports it
-	Healthcheck                             []string       // Config.Healthcheck.Test
-	created                                 bool           // set once /containers/create has made it
+	ErrLogs                                 []string // stderr, after Logs
+	Tty                                     bool     // logs arrive raw, with no frame headers
+	// FollowLate is one more stdout line a follow request gets FollowDelay
+	// after the rest, the way a live container keeps writing.
+	FollowLate  string
+	FollowDelay time.Duration
+	Health      map[string]any // State.Health as inspect reports it
+	Healthcheck []string       // Config.Healthcheck.Test
+	created     bool           // set once /containers/create has made it
 }
 
 type fakeImage struct {
@@ -286,7 +293,7 @@ func (f *fakeDocker) handleInspect(w http.ResponseWriter, id string) {
 			"Status": c.State, "Running": c.State == "running", "Paused": c.State == "paused",
 			"StartedAt": "2024-01-01T00:00:00Z", "Health": health,
 		},
-		"Config": map[string]any{"Image": c.Image, "Env": c.Env, "Labels": c.Labels,
+		"Config": map[string]any{"Image": c.Image, "Env": c.Env, "Labels": c.Labels, "Tty": c.Tty,
 			"Healthcheck": map[string]any{"Test": c.Healthcheck}},
 		"HostConfig": map[string]any{
 			"RestartPolicy": map[string]any{"Name": c.RestartPolicy}, "Binds": []string{},
@@ -490,13 +497,37 @@ func (f *fakeDocker) handleLogs(w http.ResponseWriter, r *http.Request, id strin
 	// tail before the request ever left the process.
 	f.record("GET", "/containers/"+c.ID+"/logs?"+r.URL.RawQuery)
 	w.WriteHeader(http.StatusOK)
-	for _, line := range c.Logs {
+	stamps := r.URL.Query().Get("timestamps") == "1"
+	n := 0
+	write := func(stream byte, line string) {
 		full := line + "\n"
-		header := make([]byte, 8)
-		header[0] = 1 // stdout
-		binary.BigEndian.PutUint32(header[4:], uint32(len(full)))
-		_, _ = w.Write(header)
+		if stamps {
+			full = fmt.Sprintf("2026-09-29T10:00:%02d.000000000Z %s", n, full)
+		}
+		n++
+		if !c.Tty {
+			header := make([]byte, 8)
+			header[0] = stream
+			binary.BigEndian.PutUint32(header[4:], uint32(len(full)))
+			_, _ = w.Write(header)
+		}
 		_, _ = w.Write([]byte(full))
+	}
+	for _, line := range c.Logs {
+		write(1, line)
+	}
+	for _, line := range c.ErrLogs {
+		write(2, line)
+	}
+	if r.URL.Query().Get("follow") == "1" && c.FollowLate != "" {
+		if fl, ok := w.(http.Flusher); ok {
+			fl.Flush()
+		}
+		select {
+		case <-time.After(c.FollowDelay):
+			write(1, c.FollowLate)
+		case <-r.Context().Done():
+		}
 	}
 }
 
@@ -512,6 +543,7 @@ func newDockerTestRouter(h *Handlers) http.Handler {
 	r.HandleFunc("/api/docker/containers/{id}/env/{name}", h.DockerContainerEnvHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/stats", h.DockerContainerStatsHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/logs", h.DockerContainerLogsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/containers/{id}/logs/stream", h.DockerContainerLogStreamHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/health", h.DockerContainerHealthHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/changelog", h.DockerChangelogHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates", h.DockerUpdatesHandler).Methods("GET")

@@ -46,6 +46,10 @@ class DashboardDockerLoader {
         }
         // The drawer's sections, loaded before the view module so mountShell()
         // never constructs a DockerDrawer before the class exists.
+        if (typeof window.DockerLogsModal !== 'function') {
+            await load('js/dashboard/dashboard-docker-logs.js', 'dashboardDockerLogs',
+                () => typeof window.DockerLogsModal === 'function');
+        }
         if (typeof window.DockerDrawer !== 'function') {
             await load('js/dashboard/dashboard-docker-drawer.js', 'dashboardDockerDrawer',
                 () => typeof window.DockerDrawer === 'function');

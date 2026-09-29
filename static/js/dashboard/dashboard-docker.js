@@ -212,6 +212,7 @@ class DashboardDocker {
     onLeave() {
         this.stopPolling();
         this.menu?.close();
+        this.logsModal?.close({ restoreFocus: false });
         this._closeDrawerState();
         this._destroyShell();
         this.multi.clear();
@@ -239,6 +240,9 @@ class DashboardDocker {
         }
         this._escapeHandler = (e) => {
             if (d.activeView !== DashboardDocker.VIEW) return;
+            // The logs window owns the keyboard while it is open: its own
+            // handler reads /, f, Enter and Escape.
+            if (window.DockerLogsModal?.isOpen?.()) return;
             // The row menu owns the keyboard while it is open; its own handler
             // closes it, and Escape must not also close the view underneath.
             if (document.getElementById('docker-row-menu')) return;
@@ -892,6 +896,13 @@ class DashboardDocker {
         return table;
     }
 
+    /** The logs window for one container; one at a time. */
+    openLogs(c) {
+        if (typeof window.DockerLogsModal !== 'function') return;
+        this.logsModal = this.logsModal || new window.DockerLogsModal(this);
+        this.logsModal.open(c);
+    }
+
     /** Which status group a container belongs in; an update outranks its state. */
     statusGroup(c) {
         if (c.update?.status === 'available') return 'updates';
@@ -1146,6 +1157,9 @@ class DashboardDocker {
             const c = this.containers.find((x) => x.name === this.selected) || { name: this.selected };
             this.drawer?.open(c);
             if (section) this.drawer?.openSection?.(section);
+            // Logs asked for by name (the row menu, :docker <name> logs) open
+            // the logs window over the drawer's Logs tab.
+            if (section === 'logs') this.openLogs(c);
         } else if (!this.selected) {
             this.drawer?.close();
         }

@@ -181,6 +181,8 @@ type dockerInspect struct {
 		Image  string            `json:"Image"`
 		Env    []string          `json:"Env"`
 		Labels map[string]string `json:"Labels"`
+		// Tty: the log is the raw terminal output, with no frame headers.
+		Tty bool `json:"Tty"`
 		// Healthcheck.Test is the healthcheck command as the image or the
 		// run set it: ["CMD", args...], ["CMD-SHELL", line] or ["NONE"].
 		Healthcheck *struct {

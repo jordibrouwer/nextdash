@@ -240,7 +240,7 @@ func TestDockerSecretsNeedWriteToken(t *testing.T) {
 		Env: []string{"API_KEY=secret"}, Logs: []string{"token=abc"}})
 	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
 	router := newDockerTestRouter(dockerTestHandlers(t))
-	for _, path := range []string{"/api/docker/containers/web/env/API_KEY", "/api/docker/containers/web/logs", "/api/docker/containers/web/health"} {
+	for _, path := range []string{"/api/docker/containers/web/env/API_KEY", "/api/docker/containers/web/logs", "/api/docker/containers/web/health", "/api/docker/containers/web/logs/stream"} {
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
 		if rec.Code != 401 || strings.Contains(rec.Body.String(), "secret") || strings.Contains(rec.Body.String(), "abc") {
