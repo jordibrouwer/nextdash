@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -149,6 +150,78 @@ func TestChangelogRouteListsReleasesSinceRunningVersion(t *testing.T) {
 	}
 	if hits != 1 {
 		t.Fatalf("github hit %d times, want 1 (cache)", hits)
+	}
+}
+
+// changelogGitHub serves releases from body and counts the requests.
+func changelogGitHub(t *testing.T, status int, headers map[string]string, body string) *int {
+	t.Helper()
+	resetChangelogCache()
+	hits := 0
+	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		for k, v := range headers {
+			w.Header().Set(k, v)
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(gh.Close)
+	old, oldClient := dockerGitHubBase, dockerGitHubClient
+	dockerGitHubBase, dockerGitHubClient = gh.URL, gh.Client()
+	t.Cleanup(func() { dockerGitHubBase, dockerGitHubClient = old, oldClient })
+	return &hits
+}
+
+func changelogFor(t *testing.T, router http.Handler, name string) dockerChangelog {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/containers/"+name+"/changelog", nil))
+	var cl dockerChangelog
+	_ = json.NewDecoder(rec.Body).Decode(&cl)
+	return cl
+}
+
+// One repo, two containers: the one on a prerelease sees prereleases, the one
+// on a stable version does not, whichever asked first. And a list fetched
+// before the last update check is fetched again: the check may have found a
+// release it does not have.
+func TestChangelogCacheKeepsPrereleasesApartAndFollowsTheCheck(t *testing.T) {
+	hits := changelogGitHub(t, 200, map[string]string{"Content-Type": "application/json"}, `[
+		{"tag_name":"v5.0.0-beta2","prerelease":true},
+		{"tag_name":"v5.0.0-beta1","prerelease":true},
+		{"tag_name":"v4.0.10"},
+		{"tag_name":"v4.0.9"}
+	]`)
+	f := startFakeDocker(t)
+	src := "https://github.com/linuxserver/docker-sonarr"
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "stable", Image: "sonarr:latest", ImageID: "sha256:s", State: "running"})
+	f.add(fakeContainer{ID: strings.Repeat("b", 64), Name: "beta", Image: "sonarr:develop", ImageID: "sha256:b", State: "running"})
+	f.images["sha256:s"] = fakeImage{ID: "sha256:s", Labels: map[string]string{
+		"org.opencontainers.image.version": "4.0.9", "org.opencontainers.image.source": src}}
+	f.images["sha256:b"] = fakeImage{ID: "sha256:b", Labels: map[string]string{
+		"org.opencontainers.image.version": "5.0.0-beta1", "org.opencontainers.image.source": src}}
+	router := newChangelogTestRouter(dockerTestHandlers(t))
+
+	if cl := changelogFor(t, router, "stable"); len(cl.Releases) != 1 || cl.Releases[0].Tag != "v4.0.10" {
+		t.Fatalf("stable = %+v", cl.Releases)
+	}
+	if cl := changelogFor(t, router, "beta"); len(cl.Releases) != 1 || cl.Releases[0].Tag != "v5.0.0-beta2" {
+		t.Fatalf("beta = %+v", cl.Releases)
+	}
+	if *hits != 2 {
+		t.Fatalf("github hit %d times, want 2", *hits)
+	}
+	changelogFor(t, router, "stable")
+	if *hits != 2 {
+		t.Fatalf("a fresh list was fetched again: %d", *hits)
+	}
+	if err := writeIndentJSONFile(dockerUpdatesFilePath(), dockerUpdateStore{CheckedAt: time.Now().Add(time.Second).UnixMilli()}); err != nil {
+		t.Fatal(err)
+	}
+	changelogFor(t, router, "stable")
+	if *hits != 3 {
+		t.Fatalf("a list older than the last check was served from the cache: %d hits", *hits)
 	}
 }
 
