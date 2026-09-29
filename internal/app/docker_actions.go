@@ -148,6 +148,12 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 
 	var refusal *dockerRefusalError
 	if errors.As(err, &refusal) {
+		if len(refusal.Containers) > 0 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(refusal.Code)
+			writeJSON(w, map[string]any{"reason": refusal.Reason, "containers": refusal.Containers})
+			return
+		}
 		dockerRefuse(w, refusal.Code, refusal.Reason)
 		return
 	}

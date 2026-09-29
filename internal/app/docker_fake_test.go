@@ -79,6 +79,7 @@ type fakeContainer struct {
 	// ConfigExtra joins inspect's Config: Cmd, Entrypoint and the like, as the
 	// daemon reports them after folding the image's defaults in.
 	ConfigExtra map[string]any
+	AutoRemove  bool // HostConfig.AutoRemove: --rm
 	created     bool // set once /containers/create has made it
 }
 
@@ -371,7 +372,7 @@ func (f *fakeDocker) handleInspect(w http.ResponseWriter, id string) {
 		"Config": fakeInspectConfig(c),
 		"HostConfig": map[string]any{
 			"RestartPolicy": map[string]any{"Name": c.RestartPolicy}, "Binds": []string{},
-			"NetworkMode": c.NetworkMode,
+			"NetworkMode": c.NetworkMode, "AutoRemove": c.AutoRemove,
 		},
 		"Mounts": c.Mounts,
 		"NetworkSettings": map[string]any{

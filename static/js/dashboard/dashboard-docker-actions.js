@@ -206,10 +206,13 @@
                 'old-image-gone': ['dockerRollbackImageGone', 'The previous image is no longer on this host, so there is nothing to go back to.'],
                 'pinned-by-digest': ['dockerRollbackPinned', 'This container is pinned to an image digest; roll it back from your Docker host.'],
                 'nothing-to-skip': ['dockerSkipNothing', 'There is no update on offer to skip.'],
+                'network-shared': ['dockerNetworkShared', '{containers} run inside this container\'s network and would be cut off. Update them together from your Docker host.'],
+                'auto-remove': ['dockerAutoRemove', 'This container is removed when it stops (--rm), so it cannot be swapped for a new one here.'],
+                'pinned-by-id': ['dockerPinnedById', 'This container was made from an image id, not a name, so there is nothing to update it to.'],
             };
             const entry = messages[reason];
             const text = entry
-                ? this.t(entry[0], entry[1])
+                ? this.t(entry[0], entry[1], { containers: (body?.containers || []).join(', ') })
                 : (body?.message || this.t('dockerActionFailed', 'Docker did not do that.'));
             this.notify(text, 'error');
             await this.view.refreshContainers();

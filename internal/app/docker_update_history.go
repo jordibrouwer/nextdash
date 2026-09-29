@@ -60,6 +60,8 @@ type dockerRollbackOffer struct {
 type dockerRefusalError struct {
 	Code   int
 	Reason string
+	// Containers names the others a refusal is about, when there are any.
+	Containers []string
 }
 
 func (e *dockerRefusalError) Error() string { return e.Reason }
@@ -175,17 +177,20 @@ func (h *Handlers) dockerRollbackUpdate(ctx context.Context, api *dockerAPI, c d
 	}
 	ref := in.Config.Image
 	if strings.Contains(ref, "@") {
-		return res, &dockerRefusalError{http.StatusConflict, "pinned-by-digest"}
+		return res, &dockerRefusalError{Code: http.StatusConflict, Reason: "pinned-by-digest"}
+	}
+	if err := dockerRecreateRefusal(ctx, api, c, in); err != nil {
+		return res, err
 	}
 	e := dockerRollbackCandidate(dockerUpdateHistoryFor(c.name()), in.Image)
 	if e == nil {
-		return res, &dockerRefusalError{http.StatusConflict, "no-rollback"}
+		return res, &dockerRefusalError{Code: http.StatusConflict, Reason: "no-rollback"}
 	}
 	oldImg, err := api.inspectImage(ctx, e.FromImageID)
 	if err != nil {
 		var apiErr *dockerAPIError
 		if errors.As(err, &apiErr) && apiErr.Status == http.StatusNotFound {
-			return res, &dockerRefusalError{http.StatusConflict, "old-image-gone"}
+			return res, &dockerRefusalError{Code: http.StatusConflict, Reason: "old-image-gone"}
 		}
 		return res, err
 	}

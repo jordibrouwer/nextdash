@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 )
@@ -46,6 +48,9 @@ func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerC
 	if err != nil {
 		return res, err
 	}
+	if err := dockerRecreateRefusal(ctx, api, c, in); err != nil {
+		return res, err
+	}
 	res.OldImageID = in.Image
 	ref := in.Config.Image
 	if err := api.pullImage(ctx, ref); err != nil {
@@ -63,6 +68,55 @@ func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerC
 		return res, nil
 	}
 	return h.dockerRecreateOn(ctx, api, c, in, ref, res)
+}
+
+// dockerRecreateRefusal is what makes a container unsafe to swap, checked
+// before anything is pulled or stopped:
+//   - made from an image id rather than a reference: there is nothing to pull;
+//   - removed by the daemon once it stops (--rm): the stop would take it away
+//     before the new one exists, and there would be nothing to go back to;
+//   - another container runs in its network namespace (network_mode:
+//     container:X, as a VPN container's clients do): they would be left
+//     pointing at a container that no longer exists.
+func dockerRecreateRefusal(ctx context.Context, api *dockerAPI, c dockerContainerSummary, in dockerInspect) error {
+	if dockerIsImageID(in.Config.Image) {
+		return &dockerRefusalError{Code: http.StatusConflict, Reason: "pinned-by-id"}
+	}
+	if in.HostConfig.AutoRemove {
+		return &dockerRefusalError{Code: http.StatusConflict, Reason: "auto-remove"}
+	}
+	list, err := api.listContainers(ctx)
+	if err != nil {
+		return err
+	}
+	if users := dockerNetworkDependents(c, list); len(users) > 0 {
+		return &dockerRefusalError{Code: http.StatusConflict, Reason: "network-shared", Containers: users}
+	}
+	return nil
+}
+
+// dockerIsImageID: "sha256:…", or the bare hex a container made from an id
+// keeps, rather than a reference a registry knows.
+func dockerIsImageID(ref string) bool {
+	ref = strings.TrimPrefix(strings.TrimSpace(ref), "sha256:")
+	return dockerHexID.MatchString(ref) && len(ref) >= 12 && !strings.Contains(ref, "/")
+}
+
+// dockerNetworkDependents names the containers that share c's network
+// namespace. Docker keeps "container:" with the name or the id as given.
+func dockerNetworkDependents(c dockerContainerSummary, list []dockerContainerSummary) []string {
+	users := []string{}
+	for _, other := range list {
+		mode, ok := strings.CutPrefix(other.HostConfig.NetworkMode, "container:")
+		if !ok || other.ID == c.ID || mode == "" {
+			continue
+		}
+		if mode == c.name() || (len(mode) >= 12 && strings.HasPrefix(c.ID, mode)) {
+			users = append(users, other.name())
+		}
+	}
+	sort.Strings(users)
+	return users
 }
 
 // dockerKeepAnonymousVolumes mounts the volumes the old container got from its

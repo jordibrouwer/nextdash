@@ -28,7 +28,8 @@ func (r imageRef) key() string { return r.Registry + "/" + r.Repo + ":" + r.Tag 
 
 func parseImageRef(ref string) (imageRef, bool) {
 	ref = strings.TrimSpace(ref)
-	if ref == "" || strings.Contains(ref, "@") {
+	// An image id is no reference: no registry has it under that name.
+	if ref == "" || strings.Contains(ref, "@") || dockerIsImageID(ref) {
 		return imageRef{}, false
 	}
 	repo, tag := splitImageTag(ref)

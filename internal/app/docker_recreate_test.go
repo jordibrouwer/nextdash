@@ -268,3 +268,36 @@ func TestDockerRecreateKeepsAnonymousVolumes(t *testing.T) {
 		t.Fatalf("mounts sent = %s\nwant %s", mounts, want)
 	}
 }
+
+// Three containers nothing may swap: one another runs inside (a VPN container
+// and its clients), one the daemon removes when it stops, one made from an
+// image id. Each is refused with its reason, before anything is pulled.
+func TestDockerRecreateRefusesWhatItCannotSwapSafely(t *testing.T) {
+	f, h, c, _ := recreateFixture(t)
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	router := newDockerTestRouter(h)
+	f.add(fakeContainer{ID: strings.Repeat("c", 64), Name: "qbittorrent", Image: "qbit:latest", State: "running",
+		NetworkMode: "container:" + c.ID})
+	rec := dockerPost(router, "/api/docker/containers/sonarr/update")
+	if rec.Code != 409 || !strings.Contains(rec.Body.String(), `"network-shared"`) || !strings.Contains(rec.Body.String(), `"qbittorrent"`) {
+		t.Fatalf("shared network: %d %s", rec.Code, rec.Body)
+	}
+	if f.called("POST /images/create?fromImage=img&tag=latest") || f.called("POST /containers/" + c.ID + "/stop") {
+		t.Fatalf("nothing may be pulled or stopped: %v", f.calls)
+	}
+	delete(f.containers, strings.Repeat("c", 64))
+
+	f.containers[c.ID].AutoRemove = true
+	if rec := dockerPost(router, "/api/docker/containers/sonarr/update"); rec.Code != 409 || !strings.Contains(rec.Body.String(), `"auto-remove"`) {
+		t.Fatalf("auto-remove: %d %s", rec.Code, rec.Body)
+	}
+	f.containers[c.ID].AutoRemove = false
+
+	f.containers[c.ID].Image = "sha256:" + strings.Repeat("0", 64)
+	if rec := dockerPost(router, "/api/docker/containers/sonarr/update"); rec.Code != 409 || !strings.Contains(rec.Body.String(), `"pinned-by-id"`) {
+		t.Fatalf("image id: %d %s", rec.Code, rec.Body)
+	}
+	if _, ok := parseImageRef("sha256:" + strings.Repeat("0", 64)); ok {
+		t.Fatal("an image id is no reference for the update check")
+	}
+}

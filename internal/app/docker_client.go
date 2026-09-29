@@ -241,6 +241,8 @@ type dockerInspect struct {
 		RestartPolicy struct {
 			Name string `json:"Name"`
 		} `json:"RestartPolicy"`
+		// AutoRemove: the daemon removes the container once it stops.
+		AutoRemove bool `json:"AutoRemove"`
 	} `json:"HostConfig"`
 	Mounts []struct {
 		Type        string `json:"Type"`
