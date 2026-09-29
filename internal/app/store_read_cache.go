@@ -44,6 +44,16 @@ func (fs *FileStore) InvalidateReadCache() {
 	fs.invalidateReadCache()
 }
 
+// ReplaceDataFiles runs a restore's file writes under the store lock and drops
+// the read caches after, so no store write can interleave with it: a click
+// that read a page before the restore cannot write it back after.
+func (fs *FileStore) ReplaceDataFiles(write func() error) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	defer fs.invalidateReadCache()
+	return write()
+}
+
 func (fs *FileStore) invalidateReadCache() {
 	fs.readCache = newStoreReadCache()
 }

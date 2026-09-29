@@ -1351,6 +1351,8 @@ type Store interface {
 	GetSettingsRevision() string
 	// InvalidateReadCache drops in-memory read caches after out-of-band disk writes (import/restore).
 	InvalidateReadCache()
+	// ReplaceDataFiles runs out-of-band disk writes (a restore) under the store lock.
+	ReplaceDataFiles(write func() error) error
 	/*
 		DataGeneration counts writes, so a cache built from this store can tell
 		whether the data moved under it.

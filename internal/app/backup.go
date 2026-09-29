@@ -420,7 +420,9 @@ func commitPreparedImport(dataDir string, prepared []preparedImportFile) error {
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(dest, content, importFileMode(file.relPath)); err != nil {
+		// Atomic, so a crash or a full disk leaves each file whole, and with
+		// the mode set on an existing file too (WriteFile only sets it on create).
+		if err := writeFileAtomic(dest, content, importFileMode(file.relPath)); err != nil {
 			return err
 		}
 	}
@@ -710,11 +712,10 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 		return 0, &importError{msg: "archive contains no bookmark pages", code: http.StatusBadRequest}
 	}
 
-	if err := commitPreparedImport(dataDir, prepared); err != nil {
+	// Under the store lock, so no bookmark write lands between the files.
+	if err := h.store.ReplaceDataFiles(func() error { return commitPreparedImport(dataDir, prepared) }); err != nil {
 		return 0, &importError{msg: fmt.Sprintf("commit failed: %v", err), code: http.StatusInternalServerError}
 	}
-
-	h.store.InvalidateReadCache()
 
 	for pageID, categories := range importedCategoriesByPage {
 		if err := h.store.SaveCategoriesByPage(pageID, categories); err != nil {

@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — restoring a backup could leave torn or mixed data.** Each file was written straight over the live one, so a crash or a full disk mid-restore left half a JSON file, and a bookmark click during the restore could write its page back over the restored one. Files now go through the atomic writer (which also puts back 0600 on an existing secret file), all under the store lock.
+
 - **fix — a maintenance window whose days were all invalid silenced alerts every day.** Out-of-range days were dropped, and a window left with no days reads as every day; such a window is now dropped instead.
 
 - **fix — posting a settings file from another instance reset depth, glow and effects to follow.** `SaveSettings` kept every one-time migration marker a save left out except `surfaceFollowMigrated`, so the next read ran that pass again over the forced look.
