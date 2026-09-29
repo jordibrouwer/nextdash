@@ -175,6 +175,24 @@ test.describe('docker view', () => {
     await expect(page.locator('[data-docker-drawer] [data-docker-section="timeline"]')).toContainText(/nothing recorded yet/i);
   });
 
+  // Values and the log sit behind the write token: a refusal is said, not
+  // shown as an empty value or an empty log.
+  test('an env value or log that cannot be read says so', async ({ page }) => {
+    await mockDocker(page);
+    await page.route(/\/api\/docker\/containers\/sonarr\/(env\/.*|logs\?.*)$/, (route) => route.fulfill({
+      status: 401, contentType: 'application/json', body: JSON.stringify({ reason: 'write-token' }),
+    }));
+    await page.goto('/#docker/sonarr');
+    const drawer = page.locator('[data-docker-drawer]');
+    await drawer.locator('[data-docker-section="env"] summary').click();
+    await drawer.locator('[data-docker-env-reveal="API_KEY"]').click();
+    await expect(page.locator('#app-notification.show')).toContainText('could not be read');
+    await expect(drawer.locator('[data-docker-env-reveal="API_KEY"]')).toBeEnabled();
+    await expect(drawer.locator('[data-docker-env-value]')).toHaveCount(0);
+    await drawer.locator('[data-slp-tab="logs"]').click();
+    await expect(drawer.locator('[data-docker-logs]')).toContainText('could not be reached');
+  });
+
   test('logs load on open and refresh on demand', async ({ page }) => {
     const state = await mockDocker(page);
     await page.goto('/#docker/sonarr');

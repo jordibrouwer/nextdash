@@ -605,6 +605,14 @@ class DockerDrawer {
             `/api/docker/containers/${encodeURIComponent(containerName)}/env/${encodeURIComponent(name)}`
         );
         if (containerName !== this._name || !row.isConnected) return;
+        // A value that could not be read is not an empty one: say so, and
+        // leave the button to try again.
+        if (!data || typeof data.value !== 'string') {
+            button.disabled = false;
+            button.title = this.t('dockerEnvUnreadable', 'The value could not be read. Reading values needs the write token.');
+            this.view.dash?.showNotification?.(button.title, 'error');
+            return;
+        }
         const value = document.createElement('code');
         value.setAttribute('data-docker-env-value', '');
         value.className = 'docker-env-value';
@@ -809,7 +817,10 @@ class DockerDrawer {
         if (!name) return;
         const data = await dockerDrawerFetchJSONAuth(`/api/docker/containers/${encodeURIComponent(name)}/logs?tail=${this.logLines()}`);
         if (name !== this._name || !this._els?.logsEl) return;
-        this._els.logsEl.textContent = Array.isArray(data?.lines) ? data.lines.join('\n') : '';
+        // A log that could not be read says so, rather than looking empty.
+        this._els.logsEl.textContent = Array.isArray(data?.lines)
+            ? data.lines.join('\n')
+            : this.t('dockerLogsUnreachable', 'The log could not be reached.');
     }
 
     /* ── Updates ───────────────────────────────────────────────────────── */

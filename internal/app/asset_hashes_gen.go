@@ -121,7 +121,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/dashboard-date-weather.js":                 "c0c4a549e950",
 	"js/dashboard/dashboard-docker-actions.js":               "afbd02a8a5c6",
 	"js/dashboard/dashboard-docker-disk.js":                  "04a773a6217c",
-	"js/dashboard/dashboard-docker-drawer.js":                "ace5fe2d0a2a",
+	"js/dashboard/dashboard-docker-drawer.js":                "ac7baf6a82be",
 	"js/dashboard/dashboard-docker-loader.js":                "d6c902ea86a9",
 	"js/dashboard/dashboard-docker-logs.js":                  "46797b16340e",
 	"js/dashboard/dashboard-docker.js":                       "9e615be732f8",
