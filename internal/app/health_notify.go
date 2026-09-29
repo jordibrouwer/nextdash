@@ -419,14 +419,19 @@ func (h *Handlers) postMonitorNotification(ctx context.Context, client *http.Cli
 		logError(logComponentNotify, "the alert could not be prepared and was not sent: %v", err)
 		return
 	}
+	// A container notice has a name and no URL.
+	about := n.URL
+	if about == "" {
+		about = n.Name
+	}
 	resp, err := client.Do(req)
 	if err != nil {
-		logWarn(logComponentNotify, "%s could not be reached, so the alert did not arrive: %v", n.URL, err)
+		logWarn(logComponentNotify, "%s could not be reached, so the alert did not arrive: %v", about, err)
 		return
 	}
 	defer drainAndCloseResponse(resp)
 	if resp.StatusCode >= 400 {
-		logWarn(logComponentNotify, "%s answered %d; the alert was not accepted", n.URL, resp.StatusCode)
+		logWarn(logComponentNotify, "%s answered %d; the alert was not accepted", about, resp.StatusCode)
 	}
 }
 
