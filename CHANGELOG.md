@@ -232,6 +232,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Everywhere
 
+- **fix — the header hid its Bookmarks, Inbox, Containers and Config buttons at some window widths with room to spare.** `fitHeaderZones()` measured the clock by the box it is drawn in, and that box is the row's `1fr` track, stretched over whatever the other zones leave, so the sum always came to exactly the row's width and a fraction of a pixel decided: 1440px hid the buttons, 1452px kept them. Each zone is now measured at its content width (`max-content`, for the measurement only), with a pixel of slack for fractional widths. A new spec walks the window from 1100px to 1700px and fails on the old code at a dozen widths. The same comment block, pasted three times in that function, is down to one.
+
 - **new — the Bookmarks and Inbox views name their columns, as the Containers view does.** One shared style, `.lvs-colhead` in `list-view-shell.css`: the group heads' uppercase caption in the theme's own text, surface and rule colours, pinned under the view's header while the list scrolls, and gone at phone width. Bookmarks lays its headings on the rows' own grid from the same column choices (View → Columns shown) and the same cell classes, so a heading stands over its column at every width; it sits outside `#config-bm-list`, so the virtual window and the row queries never see it. Inbox shows Title, Site (Address when the whole address is shown, none when hidden) and Added. No new strings: every label already existed.
 
 ### Containers
