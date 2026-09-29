@@ -379,16 +379,15 @@ class DashboardDocker {
             if (plainKey && this.selected) {
                 const c = this.containers.find((x) => x.name === this.selected);
                 const action = this.resolveActionKey(actionKey, c);
-                if (c && action && this.actions?.allowed(c).includes(action)) {
+                if (c && action === 'remove' && this.actions?.canRemove(c)) {
+                    // A running one is stopped first, after asking.
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    void this.actions.removeOne(c, 'key');
+                } else if (c && action && this.actions?.allowed(c).includes(action)) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     void this.actions.run(action, c, { via: 'key' });
-                } else if (c && action === 'remove' && this.status?.control === true && !c.self) {
-                    // A running container cannot be removed; saying so beats a
-                    // key that seems to do nothing.
-                    e.preventDefault();
-                    this.actions?.notify(this.t('dashboard.dockerRemoveStopFirst',
-                        'Stop {name} first; only a stopped container can be removed.', { name: c.name }), 'info');
                 }
                 return;
             }
@@ -1048,7 +1047,11 @@ class DashboardDocker {
         ['start', 'stop', 'restart', 'update', 'remove'].forEach((action) => {
             const btn = button(action);
             btn.hidden = !control;
-            btn.disabled = this.bulkRunning || !picked.some((c) => this.actions?.allowed(c).includes(action));
+            // Remove takes running ones too, stopping them first.
+            const can = action === 'remove'
+                ? (c) => this.actions?.canRemove(c)
+                : (c) => this.actions?.allowed(c).includes(action);
+            btn.disabled = this.bulkRunning || !picked.some(can);
         });
         // Mute while any of them still sends notices, else unmute; the
         // container that is nextDash has no notices to mute.

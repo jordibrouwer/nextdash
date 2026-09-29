@@ -1202,7 +1202,7 @@ Each row shows its name, image, status, **CPU** and **RAM**, its **Size** — wh
 
 The web UI link is the address you set in the side panel's **Custom** section, else the one the container's own labels offer (Unraid's template), else its first published TCP port. A local address shows as its port (`:8123`), another as its host. A port link goes to the host you opened nextDash on unless **Config → Containers → Docker host address** names the server; opened through a domain — a reverse proxy — that is rarely right, and the view says so above the list with a button to that setting; an address of your own has a dot in front of it, and a long one is cut short, with the whole address on hover.
 
-**Selecting several.** Tick containers with the box in front of the name, `x` or `Space`; `Shift`-click a box, `Shift + X` or `Shift + ↑/↓` ticks a run, and `Ctrl/Cmd + A` ticks everything the filter shows (again to clear). A bar above the list then offers **Start**, **Stop**, **Restart**, **Update**, **Remove** and **Mute notifications** for the lot, one container at a time with a count, and ends with one notice such as *3 restarted, 1 failed*. **Remove** takes the stopped ones only and says how many running ones it leaves; `⌫` or `Delete` with containers ticked does the same. The container nextDash runs in is left out. Without actions switched on ([§14.6](#146-what-it-needs)) the bar offers only muting. **Clear selection** or `Esc` lets go. The header badge counts containers with an update waiting; a skipped or held update does not count.
+**Selecting several.** Tick containers with the box in front of the name, `x` or `Space`; `Shift`-click a box, `Shift + X` or `Shift + ↑/↓` ticks a run, and `Ctrl/Cmd + A` ticks everything the filter shows (again to clear). A bar above the list then offers **Start**, **Stop**, **Restart**, **Update**, **Remove** and **Mute notifications** for the lot, one container at a time with a count, and ends with one notice such as *3 restarted, 1 failed*. **Remove** asks once, naming the ones that still run, and stops those first; `⌫` or `Delete` with containers ticked does the same, and so does a right-click on one of the ticked rows, whose menu then offers the bar's actions for all of them. The container nextDash runs in is left out. Without actions switched on ([§14.6](#146-what-it-needs)) the bar offers only muting. **Clear selection** or `Esc` lets go. The header badge counts containers with an update waiting; a skipped or held update does not count.
 
 ### 14.3 The side panel
 
@@ -1227,7 +1227,7 @@ Selecting a container opens its side panel, with four tabs. Its head shows the c
 | `r` | Restart it |
 | `p` | Pause it |
 | `u` | Update it |
-| `⌫` / `Delete` | Remove it (asks first); a running container says to stop it first, and with containers ticked it removes the ticked ones |
+| `⌫` / `Delete` | Remove it (asks first; a running one is stopped first); with containers ticked, the ticked ones |
 | `l` | Open its logs window |
 | `m` | Mute or unmute its notices |
 | `d` | Switch between the list and Disk |
