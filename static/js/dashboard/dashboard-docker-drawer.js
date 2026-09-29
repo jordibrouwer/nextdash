@@ -537,7 +537,8 @@ class DockerDrawer {
         const before = d.settings.dockerWebUIs;
         d.settings.dockerWebUIs = all;
         try {
-            await d.saveSettings();
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
         } catch {
             d.settings.dockerWebUIs = before;
             d.showNotification?.(this.t('dockerWebUISaveFailed', 'Could not save the address.'), 'error');

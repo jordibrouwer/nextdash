@@ -1293,7 +1293,8 @@ class Dashboard {
             this.searchComponent.interleaveMode = next;
         }
         try {
-            await this.saveSettings();
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await this.saveSettings()) === false) throw new Error('not saved');
         } catch (err) {
             // Put it back rather than leaving the screen saying one thing and
             // the stored settings another.

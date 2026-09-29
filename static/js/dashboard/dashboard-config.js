@@ -8928,7 +8928,8 @@ class DashboardConfig {
         // below rather than on its own timer, so one click is one write.
         window.DiscoverabilityState?.clearSeenTips?.({ persist: false });
         try {
-            await this.dash.saveSettings?.();
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await this.dash.saveSettings?.()) === false) throw new Error('not saved');
             this.notify(this.t('config.resetOnboardingSuccess', 'Onboarding will replay next time.'), 'success');
         } catch {
             this.notify(this.t('config.resetOnboardingError', 'Could not reset onboarding.'), 'error');
@@ -14686,7 +14687,8 @@ class DashboardConfig {
                     qs.pushChoiceMade = false;
                     qs.pushAskAfter = 0;
                     qs.pushSnoozes = 0;
-                    await this.dash.saveSettings?.();
+                    // A failed save has said so already; no success after it.
+                    if ((await this.dash.saveSettings?.()) === false) return;
                 }
                 notify(this.t('config.pushNotifyAskAgainDone', 'The invitation will appear again on the dashboard.'));
             } catch (err) {
@@ -15096,7 +15098,8 @@ class DashboardConfig {
         }
 
         try {
-            await this.dash.saveSettings?.();
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await this.dash.saveSettings?.()) === false) throw new Error('not saved');
         } catch {
             this.notify(this.t('config.tourReplayError', 'Could not bring that tour back.'), 'error');
             return;

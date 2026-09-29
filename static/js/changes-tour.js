@@ -240,7 +240,8 @@
         if (!d?.settings || d.settings[field] === value) return;
         d.settings[field] = value;
         try {
-            await d.saveSettings?.();
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await d.saveSettings?.()) === false) throw new Error('not saved');
         } catch {
             d.showNotification?.(t('changesTourSaveFailed', 'Could not save that choice.'), 'error');
             return;

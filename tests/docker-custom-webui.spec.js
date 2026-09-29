@@ -72,6 +72,21 @@ test.describe('a custom web UI address', () => {
         await expect.poll(() => opened).toEqual(['https://sonarr.home.lan']);
     });
 
+    // The settings write failing is a failure: no "saved", and the drawer does
+    // not claim the address it could not store.
+    test('a save the server refuses says so and keeps nothing', async ({ page }) => {
+        const { drawer } = await openOverview(page);
+        await page.route('**/api/settings', (route) => (route.request().method() === 'POST'
+            ? route.fulfill({ status: 500, body: 'no' })
+            : route.fallback()));
+        await drawer.locator('[data-docker-section="custom"] summary').click();
+        await drawer.locator('[data-docker-webui-input]').fill('https://sonarr.home.lan');
+        await drawer.locator('[data-docker-webui-save]').click();
+        await expect(page.locator('#app-notification.show')).toContainText(/could not|failed/i);
+        await expect(page.locator('#app-notification.show')).not.toContainText('Web UI address saved');
+        expect(await page.evaluate(() => window.dashboardInstance?.settings?.dockerWebUIs?.sonarr)).toBeUndefined();
+    });
+
     test('back to the default clears it', async ({ page }) => {
         const { drawer, saved } = await openOverview(page, {
             ...SONARR, webui: 'https://sonarr.home.lan', webuiCustom: 'https://sonarr.home.lan',
