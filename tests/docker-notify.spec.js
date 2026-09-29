@@ -38,6 +38,24 @@ test.describe('docker notifications', () => {
     await expect(drawer.locator('[data-docker-notify-state]')).toHaveText('on');
   });
 
+  test('a mute the server refuses is not kept, and says nothing of success', async ({ page }) => {
+    await mockDocker(page);
+    const saved = await trackSettings(page);
+    await page.goto('/#docker');
+    await expect(page.locator('[data-docker-row]')).toHaveCount(4);
+    await page.route('**/api/settings', (route) => (route.request().method() === 'POST'
+      ? route.fulfill({ status: 500, body: 'no' })
+      : route.continue()));
+
+    await page.locator('[data-docker-row="jellyfin"]').click({ button: 'right' });
+    await page.locator('#docker-row-menu [data-docker-menu-action="mute"]').click();
+    await expect.poll(() => saved.some((s) => (s.dockerNotifyMuted || []).includes('jellyfin'))).toBe(true);
+    await expect(page.locator('#app-notification.show')).not.toContainText('No more notices');
+    await page.locator('[data-docker-row="jellyfin"]').click({ button: 'right' });
+    await expect(page.locator('#docker-row-menu [data-docker-menu-action="mute"]')).toContainText('Mute notifications');
+    await expect(page.locator('#docker-row-menu [data-docker-menu-action="mute"]')).not.toContainText('Unmute');
+  });
+
   test('Config → Containers: the switch, where notices go, and letting a muted one back in', async ({ page }) => {
     await mockDocker(page);
     const saved = await trackSettings(page);

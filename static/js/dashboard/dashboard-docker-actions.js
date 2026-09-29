@@ -258,11 +258,16 @@
             d.settings.dockerNotifyMuted = muting
                 ? [...before, container.name]
                 : before.filter((n) => n !== container.name);
+            // saveSettings resolves false on a failed save (and says so itself)
+            // rather than rejecting; either way the change did not happen.
+            let saved = false;
             try {
-                await d.saveSettings();
+                saved = (await d.saveSettings()) !== false;
             } catch {
-                d.settings.dockerNotifyMuted = before;
                 this.notify(this.t('dockerMuteFailed', 'The change could not be saved.'), 'error');
+            }
+            if (!saved) {
+                d.settings.dockerNotifyMuted = before;
                 return false;
             }
             this.notify(muting
