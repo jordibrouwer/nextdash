@@ -456,6 +456,7 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + I` | Inbox |
 | `Shift + H` | The Bookmarks view, on the broken ones |
 | `Shift + U` | The Bookmarks view, on Unsorted |
+| `Shift + Y` | Containers |
 | `Shift + S` or `<` | Config (and back) |
 | `Shift + A` | The theme browser |
 | `>` `:` `?` | Search, commands, finders |
@@ -1182,7 +1183,7 @@ The **Containers view** shows the Docker containers on the machine nextDash runs
 
 ### 14.1 Opening it
 
-Open it with the Containers icon in the header, `:docker`, or `/#docker`. It has no key of its own. Search also finds containers by name, and the **Containers** widget's tile opens the view.
+Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§14.7](#147-disk)).
 
 ### 14.2 The list
 
@@ -1193,15 +1194,19 @@ Open it with the Containers icon in the header, `:docker`, or `/#docker`. It has
 | **Stopped** | Containers that are down or paused |
 | **Updates** | Containers with a newer image waiting |
 
-**Group by status** folds the list under Updates, Running, Paused and Stopped. Each row shows its name, image, status glow and ports, and in a column of its own a link to its web UI. The link is the address you set in the side panel's **Custom** section, else the one the container's own labels offer. A local address shows as its port (`:8123`), another as its host. The header badge counts containers with an update waiting.
+**Group by status** folds the list under Updates, Running, Paused and Stopped; **group by project** folds it under each compose project, and a project's row has **Start**, **Stop** and **Restart** for the whole stack (Stop asks first, and the containers go one at a time).
+
+Each row shows its name, image, status, **CPU** and **RAM**, a link to its web UI and its ports. CPU and RAM are the last reading, taken every 30 seconds; they are there while **Config → Containers → Keep the last hour of CPU and memory** is on. On a narrower screen the Image column goes first (below 1100 pixels), then CPU and RAM (below 900). Click **Name** or **Status** to sort, and again to turn the order round; the sort menu also offers uptime, CPU and memory, highest first.
+
+The web UI link is the address you set in the side panel's **Custom** section, else the one the container's own labels offer (Unraid's template), else its first published TCP port. A local address shows as its port (`:8123`), another as its host. The header badge counts containers with an update waiting; a skipped or held update does not count.
 
 ### 14.3 The side panel
 
-Selecting a container opens its side panel, with four tabs:
+Selecting a container opens its side panel, with four tabs. A click beside the panel closes it, one on another row moves it there (**Config → Containers → Close on a click beside it**).
 
-- **Overview** — an accordion of **Details**, **Network**, **Custom**, **Volumes** and **Environment**. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it.
+- **Overview** — an accordion of **Details**, **Health**, **Updates**, **Timeline**, **Network**, **Custom**, **Volumes** and **Environment**. **Health**, for a container with a healthcheck, shows its status, how many checks failed in a row, the command, and the last five checks with their exit code and output. **Updates** is [§14.5](#145-actions-and-updates). **Timeline** is what happened to the container, newest first: starts and stops (by you or by nextDash), crashes with their exit code, out-of-memory kills, a run of crashes as one *Kept restarting* line, health changes, pauses, updates and rollbacks. nextDash writes these down from Docker's own events, whatever the notices are set to — a hundred per container, for thirty days, from the moment this version runs. **Details** also says whether its notices are on, muted or off. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it.
 - **Resources** — CPU, memory and I/O for that container, with two charts under them: CPU and memory over the last hour. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
-- **Logs** — recent log lines, following as they arrive.
+- **Logs** — the last lines, with **Refresh** and **Open logs window** ([§14.8](#148-the-logs-window)).
 - **What’s new** — the release notes behind an available update.
 
 ### 14.4 Keys
@@ -1216,13 +1221,27 @@ Selecting a container opens its side panel, with four tabs:
 | `p` | Pause it |
 | `u` | Update it |
 | `Delete` | Remove it (asks first) |
+| `l` | Open its logs window |
+| `m` | Mute or unmute its notices |
+| `d` | Switch between the list and Disk |
 | `Esc` | Clear the selection, close the panel, then leave the view |
+
+The legend above the list names them; **Config → Containers → The key legend** puts it below the list or hides it. Without actions switched on, the legend leaves out the keys that act on Docker.
 
 ### 14.5 Actions and updates
 
 Starting, stopping, pausing, restarting, updating and removing a container are all behind **`NEXTDASH_DOCKER_CONTROL=1`**, on top of the write token if the install has one — read-only access to the socket is not enough by itself. Update and remove always ask first; **Config → Containers → Safety** can add the same confirmation to stop and restart.
 
 Image update checks run on request and on an interval (Config → Containers → Updates: off, 6, 12 or 24 hours), asking the image's registry whether a newer tag is available. An optional GitHub token (Config → Containers) raises the rate limit for images hosted there. The container nextDash itself runs in refuses stop, pause, restart, remove and update.
+
+The side panel's **Updates** part says where the image stands and keeps your say over it:
+
+- **Skip this version** — the version on offer stops counting as an update: no badge, no count, and an update of a selection leaves it out. A newer version counts again. **Undo skip** takes it back.
+- **Hold updates** — the image never counts as having one until you choose **Resume updates**; the row shows a quiet *held* label.
+- **History** — what updates did, newest first, with the versions where the image names them.
+- **Roll back to …** — while the image the last update replaced is still on the host, this puts the container back on it after asking: the old image gets its tag back and the container is recreated on it, without a download. The version it leaves is skipped, so it is not offered straight back. Pruning dangling images ([§14.7](#147-disk)) removes the images a rollback needs.
+
+Updating by hand still works on a skipped or held image.
 
 ### 14.6 What it needs
 
@@ -1268,6 +1287,37 @@ All five are in the template. **Docker actions** starts at `0`, so the view only
 **Synology and QNAP** use the same `/var/run/docker.sock` path. If the log names gid 0, add `NEXTDASH_RUN_AS_ROOT=1`.
 
 **Checking it.** Config → Containers shows the connection as the server sees it: whether the socket answers, whether actions are on, whether a write token is set, and whether nextDash recognises the container it runs in. [§15.4](#154-system-widgets-and-what-they-need) covers the same socket for the Containers widget and the other system widgets.
+
+### 14.7 Disk
+
+**Disk** (the tab beside Containers, `d`, or `/#docker/~disk`) shows what images, volumes and the build cache take up. Measuring is slow on a large host, so it happens when you open the tab and on **Refresh**; after that the rail shows **Disk used** and **Reclaimable**.
+
+| Tile | Clears |
+|---|---|
+| **Unused images** | Every image no container uses — a container that needs one later downloads it again |
+| **Dangling images** | Untagged images — among them the ones a rollback would go back to; the tile names those containers |
+| **Build cache** | What `docker build` left behind |
+| **Unused volumes** | Nothing in bulk: volumes hold data, so they go one at a time |
+
+Every clean-up asks first and says how much it frees. Below the tiles, the images and volumes are listed biggest first, with what uses them; an untagged image that is still a container's way back says *rollback for …*. An unused volume has **Remove…** on its row: type **delete** to go on. A volume a container holds — a stopped one included — cannot be removed. All of it needs `NEXTDASH_DOCKER_CONTROL=1`; without it, Disk shows the sizes only.
+
+### 14.8 The logs window
+
+**Show logs** in the row menu, `l` on the selected row, `:docker <name> logs`, or **Open logs window** in the side panel opens a window over most of the page (the whole screen on a phone) that follows the container's log as it is written.
+
+- **Following** — scroll up and it pauses, counting what arrives meanwhile; **Jump to latest** catches up. `f` does the same.
+- **Search** marks every match; `Enter` and `Shift + Enter` step through them. **Filter** keeps only the matching lines.
+- **All / stdout / stderr**, how many lines to start with (100 to 1000), timestamps and wrapping — remembered in this browser. stderr lines are red.
+- **Copy** takes the lines on screen; **Download** saves the loaded lines as a `.log` file.
+- When the container stops the stream ends; **Resume** picks up after the last line.
+
+`/` searches, `Esc` closes. Reading logs sits behind the write token, as the side panel's Logs does.
+
+### 14.9 Notices
+
+When a container **stops unexpectedly**, **keeps restarting** (three crashes in ten minutes) or **turns unhealthy**, nextDash sends a notice — and a second one when it recovers. A stop you or nextDash asked for is not a notice, and neither is a crash the restart policy fixes within 30 seconds. One notice per incident; four or more at once become one message.
+
+They go where Health's downtime alerts go: the alert webhook under **Behavior → Status → Downtime alerts** (with its presets), and browser notifications with **Notify when a container stops, keeps restarting or turns unhealthy** switched on. **Config → Containers → Notifications** switches them off. Mute a single container from its row menu, its side panel's ⋯ menu, or `m`; **Muted containers** lists them and says where notices go. Hidden containers and nextDash's own raise nothing.
 
 ---
 
@@ -1697,9 +1747,11 @@ No tabs — one page of panels:
 | Panel | Shows |
 |---|---|
 | **Connection** | The Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable |
-| **View** | Show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the charts in the side panel |
+| **View** | Show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden |
 | **Updates** | Check for image updates: off, every 6, 12 or 24 hours |
 | **Safety** | Also confirm stop and restart (update and remove always ask first) |
+| **Notifications** | Notify about containers — on by default ([§14.9](#149-notices)) |
+| **Muted containers** | Where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
 | **Hidden containers** | Containers kept out of the view, search and the widget count — they keep running |
 | **GitHub token** | Raises the rate limit for images hosted on GHCR |
 
@@ -2288,7 +2340,7 @@ type        search              Enter       open top result
 1-9  ,      pages · pages panel             *  recent   /  tags   !  cheat sheet
 arrows j k  move                Esc         back / home
 Shift+E edit   Shift+M move   Shift+T tags   Shift+D delete   Shift+C checking
-Shift+H bookmarks (broken)   Shift+U bookmarks (unsorted)   Shift+I inbox   Shift+S config   Shift+A themes
+Shift+H bookmarks (broken)   Shift+U bookmarks (unsorted)   Shift+I inbox   Shift+Y containers   Shift+S config   Shift+A themes
 ```
 
 ### Config

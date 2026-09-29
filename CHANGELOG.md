@@ -268,6 +268,10 @@ For install and security, see the [README](README.md). For how to use features, 
 - **new — the containers table names its columns.** Name, Image, Status, Web UI and Ports sit above the rows and stay pinned under the view's header while the list scrolls; at phone width, where rows fold into two lines, the headings are hidden. The Name, Status and Ports labels are new locale keys, still English outside `en` until the next docs round.
 - **new — web UI and port links reach the container, not just the page's host.** A container on a macvlan or ipvlan network (Unraid's `br0`) has its own LAN address, and `[IP]` in its web UI now means that address; the list and detail routes hand it over as `lanIP`, read from the daemon's network list, and a daemon that will not list its networks leaves the links as they were. Config → Containers → Links adds **Docker host address** for when the dashboard is opened through a reverse proxy or tunnel: ports and `[IP]` then point there instead of at the browser's host. One helper in `docker-search-index.js` now fills `[IP]` for the table, the drawer, the row menu and `:docker <name> open`, which each did it themselves before.
 
+### Docs
+
+- **docs — Help, the manual and the cheat sheet describe the Containers additions.** Config → Help → Containers (*The Containers view* and *Setting it up*) and MANUAL §14 (with new §14.7 Disk, §14.8 The logs window, §14.9 Notices), §7.1 and §17.7 cover Shift+Y, the keys, sorting, CPU and RAM, stacks, Health, Updates, Timeline, the logs window, Disk, notices and the new settings; `npm run generate:cheatsheet` rebuilt the cheat sheet's HTML and PDF. The 176 locale keys the Containers work had left as code fallbacks are now in all six locale files, in English outside `en` until the next docs round translates them; the English Help and tour texts that changed keep their earlier translations until then.
+
 ---
 
 ## v1.15.1 — 29 September 2026
