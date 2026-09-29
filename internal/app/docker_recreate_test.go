@@ -247,3 +247,24 @@ func TestDockerContainerLeftBehindByItsTagShowsAnUpdate(t *testing.T) {
 		t.Fatalf("drawer update = %+v", d.Update)
 	}
 }
+
+// A volume the image declared and nothing mounted by name is anonymous: the
+// new container mounts the same one, rather than a fresh, empty one. What is
+// bound or mounted by name stays as HostConfig has it.
+func TestDockerRecreateKeepsAnonymousVolumes(t *testing.T) {
+	f, h, c, api := recreateFixture(t)
+	anon := strings.Repeat("9", 64)
+	f.containers[c.ID].Mounts = []map[string]any{
+		{"Type": "volume", "Name": anon, "Destination": "/var/lib/postgresql/data", "RW": true},
+		{"Type": "bind", "Source": "/mnt/config", "Destination": "/config", "RW": true},
+	}
+	if res, err := h.dockerRecreate(context.Background(), api, c); err != nil || res.Phase != "done" {
+		t.Fatalf("res = %+v err = %v", res, err)
+	}
+	host, _ := f.lastCreate["HostConfig"].(map[string]any)
+	mounts, _ := json.Marshal(host["Mounts"])
+	want := `[{"ReadOnly":false,"Source":"` + anon + `","Target":"/var/lib/postgresql/data","Type":"volume"}]`
+	if string(mounts) != want {
+		t.Fatalf("mounts sent = %s\nwant %s", mounts, want)
+	}
+}

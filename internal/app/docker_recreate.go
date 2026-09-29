@@ -65,6 +65,41 @@ func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerC
 	return h.dockerRecreateOn(ctx, api, c, in, ref, res)
 }
 
+// dockerKeepAnonymousVolumes mounts the volumes the old container got from its
+// image's VOLUME lines -- anonymous, named by Docker, not in HostConfig -- into
+// the new one. A new container would otherwise get fresh, empty ones, and the
+// data would sit in a volume nothing uses any more.
+func dockerKeepAnonymousVolumes(in dockerInspect, hostConfig map[string]any) {
+	covered := map[string]bool{}
+	if binds, ok := hostConfig["Binds"].([]any); ok {
+		for _, b := range binds {
+			if s, ok := b.(string); ok {
+				if parts := strings.Split(s, ":"); len(parts) >= 2 {
+					covered[parts[1]] = true
+				}
+			}
+		}
+	}
+	mounts, _ := hostConfig["Mounts"].([]any)
+	for _, m := range mounts {
+		if mm, ok := m.(map[string]any); ok {
+			if target, ok := mm["Target"].(string); ok {
+				covered[target] = true
+			}
+		}
+	}
+	for _, m := range in.Mounts {
+		if m.Type != "volume" || m.Name == "" || covered[m.Destination] {
+			continue
+		}
+		mounts = append(mounts, map[string]any{"Type": "volume", "Source": m.Name, "Target": m.Destination, "ReadOnly": !m.RW})
+		covered[m.Destination] = true
+	}
+	if len(mounts) > 0 {
+		hostConfig["Mounts"] = mounts
+	}
+}
+
 // dockerRecreateOn swaps the container for a new one made from ref, which
 // already names the image to run (pulled for an update, tagged back for a
 // rollback): stop, rename out of the way, create, reconnect, start, remove.
@@ -78,6 +113,8 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 	if err := json.Unmarshal(in.raw.HostConfig, &hostConfig); err != nil || hostConfig == nil {
 		return res, fmt.Errorf("reading the container's host configuration: %w", err)
 	}
+
+	dockerKeepAnonymousVolumes(in, hostConfig)
 
 	name := c.name()
 	// Running covers paused as well; either way the reader expects it back up.
