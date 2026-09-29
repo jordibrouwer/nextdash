@@ -237,8 +237,8 @@ func TestDockerContainerLeftBehindByItsTagShowsAnUpdate(t *testing.T) {
 	if left.Image != "img:latest" || left.Tag != "latest" {
 		t.Fatalf("sonarr2 image = %q tag = %q, want its own reference", left.Image, left.Tag)
 	}
-	if left.Update == nil || left.Update.Status != "available" {
-		t.Fatalf("sonarr2 update = %+v, want available", left.Update)
+	if left.Update == nil || left.Update.Status != "available" || !left.Update.Recreate {
+		t.Fatalf("sonarr2 update = %+v, want available by a recreate", left.Update)
 	}
 	if u := rows["sonarr"].Update; u != nil && u.Status == "available" {
 		t.Fatalf("the updated sonarr shows %+v", u)

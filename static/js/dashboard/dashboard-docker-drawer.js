@@ -836,6 +836,11 @@ class DockerDrawer {
             current: this.t('dockerUpdatesCurrent', 'Up to date.'),
         };
         let text = texts[u.status] || this.t('dockerUpdatesUnknown', 'Not known — no check has compared this image yet.');
+        // Pulled already, not yet recreated: there is no version on offer to
+        // skip, only a container to put on the image that is here.
+        if (u.recreate && u.status === 'available') {
+            text = this.t('dockerUpdatesRecreate', 'A newer image is already on this host; updating recreates the container on it.');
+        }
         if (u.held && u.status !== 'held') text += ` ${this.t('dockerUpdatesHeldNote', 'Updates are held.')}`;
         status.textContent = text;
         body.appendChild(status);
@@ -853,7 +858,7 @@ class DockerDrawer {
         if (control) {
             const row = document.createElement('div');
             row.className = 'docker-updates-actions';
-            if (u.status === 'available') row.appendChild(button('skip', this.t('dockerUpdateSkip', 'Skip this version')));
+            if (u.status === 'available' && !u.recreate) row.appendChild(button('skip', this.t('dockerUpdateSkip', 'Skip this version')));
             if (u.skippedDigest) row.appendChild(button('unskip', this.t('dockerUpdateUnskip', 'Undo skip')));
             row.appendChild(u.held
                 ? button('unhold', this.t('dockerUpdateUnhold', 'Resume updates'))

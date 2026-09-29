@@ -81,6 +81,19 @@ test.describe('docker updates: skip, hold, history and rollback', () => {
     await expect(note).not.toContainText('The update of');
   });
 
+  // Pulled already and not recreated: the newer image is on the host, so there
+  // is no version on offer to skip -- only the container to put on it.
+  test('a container left behind by its tag offers no skip', async ({ page }) => {
+    const state = await mockDocker(page);
+    state.containers.find((c) => c.name === 'sonarr').update = { status: 'available', recreate: true };
+    await page.goto('/#docker/sonarr');
+    const section = page.locator('[data-docker-drawer] [data-docker-section="updates"]');
+    await section.locator('summary').click();
+    await expect(section.locator('[data-docker-updates-status]')).toContainText('already on this host');
+    await expect(section.locator('[data-docker-update-choice="hold"]')).toHaveCount(1);
+    await expect(section.locator('[data-docker-update-choice="skip"]')).toHaveCount(0);
+  });
+
   test('read-only shows the history but no choices or rollback', async ({ page }) => {
     const { section } = await openUpdates(page, { control: false });
     await expect(section.locator('[data-docker-update-history] li')).toHaveCount(1);

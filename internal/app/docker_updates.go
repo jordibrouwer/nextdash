@@ -34,6 +34,9 @@ type dockerImageUpdate struct {
 	// (withChoices), never written per image.
 	Held          bool   `json:"held,omitempty"`
 	SkippedDigest string `json:"skippedDigest,omitempty"`
+	// Recreate is set per row, never stored: the newer image is on the host
+	// already and an update only recreates. There is no digest to skip.
+	Recreate bool `json:"recreate,omitempty"`
 }
 
 type dockerUpdateStore struct {
@@ -118,7 +121,7 @@ func dockerRowUpdate(u *dockerImageUpdate, c dockerContainerSummary, tagIDs map[
 	if u != nil {
 		out = *u
 	}
-	out.Status, out.Reason = "available", ""
+	out.Status, out.Reason, out.Recreate = "available", "", true
 	if out.Held {
 		out.Status = "held"
 	}
