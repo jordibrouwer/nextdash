@@ -168,6 +168,18 @@ test.describe('the Inbox view follows Config → Inbox', () => {
         await expect(page.locator('.inbox-legend')).toHaveCount(0);
     });
 
+    test('the legend names what a double click does', async ({ page }) => {
+        await open(page, { inboxViewDblClick: 'note' });
+        const line = page.locator('.inbox-legend span', { has: page.locator('kbd', { hasText: /^dblclick$/ }) });
+        await expect(line).toContainText('note');
+    });
+
+    test('with Unsorted off the legend drops Shift+K', async ({ page }) => {
+        await open(page, { unsortedEnabled: false });
+        await expect(page.locator('.inbox-legend')).toBeVisible();
+        await expect(page.locator('.inbox-legend kbd', { hasText: /^K$/ })).toHaveCount(0);
+    });
+
     test('a click can only select the row', async ({ page }) => {
         await open(page, { inboxViewClick: 'select' });
         await item(page, 'Read one').locator('.inbox-item-title').click();

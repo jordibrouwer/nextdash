@@ -4047,8 +4047,18 @@ class DashboardInbox {
                 (key, fallback) => this.t(`dashboard.${key}`, fallback),
             )
             : [];
+        // Shift+K does nothing with Unsorted switched off, so the legend
+        // should not offer it either.
+        if (!this.keptEnabled()) {
+            const at = keys.findIndex(([k]) => k === 'K');
+            if (at !== -1) keys.splice(at, 1);
+        }
+        // A double click follows Config → Inbox: the link, or its note.
         if (keys.length > 2) {
-            keys.splice(3, 0, ['dblclick', this.t('dashboard.inboxKeyDblClick', 'open')]);
+            const dblNote = this.dash.settings?.inboxViewDblClick === 'note';
+            keys.splice(3, 0, ['dblclick', dblNote
+                ? this.t('dashboard.inboxKeyNote', 'note')
+                : this.t('dashboard.inboxKeyDblClick', 'open')]);
         }
         legend.innerHTML = keys
             .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
