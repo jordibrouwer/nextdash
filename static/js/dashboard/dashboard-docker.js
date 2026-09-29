@@ -389,9 +389,20 @@ class DashboardDocker {
     /** Re-reads the container list only, for polling and the post-check refresh. */
     async refreshContainers() {
         if (!this.status?.socket) return;
+        // Only the newest read is applied: a slow answer that arrives after a
+        // later one would put an older list back.
+        const seq = (this._listSeq || 0) + 1;
+        this._listSeq = seq;
+        this._listInflight = true;
         const body = await dockerFetchJSON('/api/docker/containers');
-        this.containers = Array.isArray(body?.containers) ? body.containers : [];
-        this.usageEnabled = Boolean(body?.usageEnabled);
+        if (seq !== this._listSeq) return;
+        this._listInflight = false;
+        // A read that failed -- a timeout, a restart, the daemon answering
+        // "not available" -- keeps the list on screen rather than emptying it
+        // (and closing the drawer of a container that is still there).
+        if (!body || body.available === false || !Array.isArray(body.containers)) return;
+        this.containers = body.containers;
+        this.usageEnabled = Boolean(body.usageEnabled);
         this.render();
         this.syncNavBadge();
     }
@@ -405,6 +416,8 @@ class DashboardDocker {
         this.stopPolling();
         this._pollTimer = setInterval(() => {
             if (document.visibilityState !== 'visible' || !this.isActiveView()) return;
+            // A read still on its way is not doubled by the next tick.
+            if (this._listInflight) return;
             void this.refreshContainers();
         }, this.refreshMs());
     }

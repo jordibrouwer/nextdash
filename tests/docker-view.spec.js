@@ -209,6 +209,24 @@ test.describe('docker view', () => {
     expect(state.calls.filter((c) => c.endsWith('/stats')).length).toBe(n);
   });
 
+  // A list read that fails after an action -- the daemon slow, the server
+  // restarting -- keeps the table and the open drawer as they were.
+  test('a failed list read keeps the table and the drawer', async ({ page }) => {
+    await mockDocker(page);
+    await page.goto('/#docker/jellyfin');
+    const drawer = page.locator('[data-docker-drawer]');
+    await expect(drawer).toBeVisible();
+    await page.route('**/api/docker/containers', (route) => route.fulfill({
+      status: 200, contentType: 'application/json', body: JSON.stringify({ available: false, reason: 'docker-error', containers: [] }),
+    }));
+    await page.locator('[data-docker-row="jellyfin"]').click({ button: 'right' });
+    await page.locator('#docker-row-menu [data-docker-menu-action="restart"]').click();
+    await expect.poll(async () => page.evaluate(() => performance.getEntriesByType('resource')
+      .filter((e) => e.name.endsWith('/api/docker/containers')).length)).toBeGreaterThan(1);
+    await expect(page.locator('[data-docker-row]')).toHaveCount(4);
+    await expect(drawer).toBeVisible();
+  });
+
   test('Escape closes the drawer before the view', async ({ page }) => {
     await mockDocker(page);
     await page.goto('/#docker/sonarr');
