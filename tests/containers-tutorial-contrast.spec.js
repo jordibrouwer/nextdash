@@ -33,7 +33,7 @@ test('every scene reads in every built-in theme, light and dark', async ({ page 
     await page.locator('[data-docker-tour]').click();
     await expect(page.locator('.containers-tutorial-scene')).toBeVisible();
     const worst = [];
-    const STEPS = 10;
+    const STEPS = 13;
     for (let step = 1; step <= STEPS; step += 1) {
         await expect(page.locator('.containers-tutorial-progress')).toHaveText(`Step ${step} of ${STEPS}`);
         const res = await page.evaluate((themes) => {

@@ -128,3 +128,32 @@ body.no-animations .containers-tutorial-scene.is-forward,
 body.no-animations .containers-tutorial-scene.is-back {
     animation: none;
 }
+
+/* V2: for a reader who took the earlier tour -- a note on the first step that
+   this is an update, and a mark on the steps that are new or changed. */
+.containers-tutorial-update {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0 0 var(--space-3, 0.7rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-4, 6px);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    color: var(--text-primary);
+    font-size: var(--text-sm, 0.85rem);
+    line-height: 1.45;
+}
+
+.containers-tutorial-update span {
+    color: var(--text-secondary);
+}
+
+.containers-tutorial-new {
+    margin-left: var(--space-2, 0.5rem);
+    padding: 0 var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
+    background: var(--accent-primary);
+    color: var(--background-primary);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+}

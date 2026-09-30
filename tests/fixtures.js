@@ -123,7 +123,7 @@ const test = base.test.extend({
                         const init = value.init;
                         value.init = function seededInit(saved, ...rest) {
                             const wanted = window.__e2eWantTours || [];
-                            const tours = ['bookmarksTutorialV1', 'containersTutorialV1', 'dashboardTutorialV1']
+                            const tours = ['bookmarksTutorialV1', 'containersTutorialV2', 'dashboardTutorialV1']
                                 .filter((id) => !wanted.includes(id));
                             const seeded = { ...(saved || {}) };
                             // A tour a spec asks for starts unseen, whatever an

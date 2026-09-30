@@ -12,24 +12,25 @@ const { mockDocker } = require('./helpers/docker-mock');
  * list they want to click; this file is the one place that asks for it.
  */
 
-const STEPS = 10;
-const TIP = 'containersTutorialV1';
+const STEPS = 13;
+const TIP = 'containersTutorialV2';
 
-async function openViewWithTourUnseen(page) {
+async function openViewWithTourUnseen(page, { sawEarlier = false } = {}) {
     await mockDocker(page);
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
-    await page.evaluate((tip) => {
+    await page.evaluate(({ tip, sawEarlier }) => {
         const d = window.dashboardInstance;
         d.settings.enableSessionTips = true;
-        window.__e2eWantTours = ['containersTutorialV1'];
+        window.__e2eWantTours = ['containersTutorialV2'];
         const state = window.DiscoverabilityState;
         const exported = state.exportState();
-        exported.seenTips = (exported.seenTips || []).filter((id) => id !== tip);
+        exported.seenTips = (exported.seenTips || []).filter((id) => id !== tip && id !== 'containersTutorialV1');
+        if (sawEarlier) exported.seenTips.push('containersTutorialV1');
         state.init(exported);
-    }, TIP);
+    }, { tip: TIP, sawEarlier });
     await page.evaluate(() => window.dashboardInstance.docker.openDockerView());
     await expect(page.locator('[data-docker-row]').first()).toBeVisible({ timeout: 15_000 });
 }
@@ -38,7 +39,7 @@ const modal = (page) => page.locator('#app-modal.show .containers-tutorial-modal
 const next = (page) => page.locator('.modal-actions .modal-button').first();
 
 test.describe('containers view tutorial', () => {
-    test('shows on the first visit, with ten steps', async ({ page }) => {
+    test('shows on the first visit, with thirteen steps', async ({ page }) => {
         await openViewWithTourUnseen(page);
         await expect(modal(page)).toBeVisible();
         await expect(page.locator('.containers-tutorial-progress')).toHaveText(`Step 1 of ${STEPS}`);
@@ -60,10 +61,13 @@ test.describe('containers view tutorial', () => {
         expect(titles).toEqual([
             'Everything that runs, one screen',
             'Read the state at a glance',
+            'Your columns, your order',
             'Start, stop, restart, update',
             'Actions are yours to switch on',
             'One container, four tabs',
+            'A web UI and its bookmark',
             'Know when an image is out of date',
+            'Updates at night, rolled back if they fail',
             'Logs, live',
             'What the disk holds',
             'Config → Containers',
@@ -97,7 +101,7 @@ test.describe('containers view tutorial', () => {
         await prepareDashboardInteraction(page);
         await page.evaluate((tip) => {
             window.dashboardInstance.settings.enableSessionTips = false;
-            window.__e2eWantTours = ['containersTutorialV1'];
+            window.__e2eWantTours = ['containersTutorialV2'];
             const state = window.DiscoverabilityState;
             const exported = state.exportState();
             exported.seenTips = (exported.seenTips || []).filter((id) => id !== tip);
@@ -191,5 +195,30 @@ test.describe('containers view tutorial', () => {
         const english = [...words].filter((w) => !w.startsWith('#')).filter((w) =>
             /\b(running|stopped|paused|unhealthy|update|restart|restarting|pause|remove|search|memory|network|overview|resources|logs|cancel|hidden|refresh|actions|socket|token|tour|off|days?|containers)\b/i.test(w));
         expect(english).toEqual([]);
+    });
+});
+
+// The tour grew with v1.15.6. Whoever took the earlier tour sees it once more,
+// told on the first step that it is an update, with the new steps marked; a
+// first-time reader just gets the tour.
+test.describe('the updated tour', () => {
+    test('someone who took the earlier tour is told it is an update', async ({ page }) => {
+        await openViewWithTourUnseen(page, { sawEarlier: true });
+        await expect(modal(page)).toBeVisible();
+        const note = page.locator('[data-tour-update]');
+        await expect(note).toBeVisible();
+        await expect(note).toContainText('Updated with new features');
+        await expect(page.locator('[data-tour-new]')).toHaveCount(0);
+        await next(page).click();
+        await next(page).click();
+        await expect(page.locator('.containers-tutorial-step-title')).toHaveText('Your columns, your order');
+        await expect(page.locator('[data-tour-new]')).toHaveText('New');
+        await expect(page.locator('[data-tour-update]')).toHaveCount(0);
+    });
+
+    test('a first-time reader gets no update note', async ({ page }) => {
+        await openViewWithTourUnseen(page);
+        await expect(modal(page)).toBeVisible();
+        await expect(page.locator('[data-tour-update]')).toHaveCount(0);
     });
 });
