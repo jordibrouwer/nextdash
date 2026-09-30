@@ -1925,7 +1925,7 @@ webhook-timestamp: 1756253400
 webhook-signature: v1,K5s0…
 ```
 
-The signature is HMAC-SHA256 over `{id}.{timestamp}.{payload}`, base64. The signing key is shown once, when you save; afterwards the panel only says a key is set. Keys live in `webhooks.json` with owner-only permissions.
+The signature is HMAC-SHA256 over `{id}.{timestamp}.{payload}`, base64. The signing key is shown once, when you save; afterwards the panel only says a key is set. A key starts with `whsec_` and can be given as it is to the official Standard Webhooks libraries, which sign with its base64-decoded bytes. A key from before that (64 hex characters) keeps working, signed with its text as it is. Keys live in `webhooks.json` with owner-only permissions.
 
 A failed delivery is retried twice and then dropped; a `4xx` is not retried; redirects are not followed. **Send a test** posts one delivery and shows the status. Addresses follow the same rules as bookmark checks, checked when saved and again at delivery. Reading the list of receivers needs the write token.
 

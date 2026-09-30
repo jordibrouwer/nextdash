@@ -514,3 +514,56 @@ func TestCertExpiringReachesASubscribedWebhook(t *testing.T) {
 		t.Fatal("a certificate expiring never reached the receiver subscribed to it")
 	}
 }
+
+// Webhooks count against their own budget: a burst of them must not use up
+// the limiter previews, icons and feeds share, and the reverse.
+func TestWebhookDeliveryHasItsOwnOutboundBudget(t *testing.T) {
+	var got int
+	var mu sync.Mutex
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		got++
+		mu.Unlock()
+	}))
+	defer server.Close()
+	defer webhookAllowLocalForTest(true)()
+	globalOutboundLimiter.reset()
+	webhookOutboundLimiter.reset()
+	t.Cleanup(globalOutboundLimiter.reset)
+	for globalOutboundLimiter.allow("global") {
+	}
+
+	deliverWebhook(WebhookEndpoint{URL: server.URL, Secret: "k", Enabled: true},
+		webhookEventBookmarkAdded, map[string]any{})
+	mu.Lock()
+	defer mu.Unlock()
+	if got != 1 {
+		t.Fatalf("delivered %d times with the shared budget spent, want 1", got)
+	}
+}
+
+// A whsec_ key is what the Standard Webhooks libraries take, and they HMAC with
+// the base64-decoded bytes. A legacy hex key keeps its ASCII meaning.
+func TestWebhookSigningKeyFollowsStandardWebhooks(t *testing.T) {
+	secret, err := newWebhookSecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(secret, "whsec_") {
+		t.Fatalf("secret = %q, want the whsec_ form", secret)
+	}
+	raw, _ := base64.StdEncoding.DecodeString(strings.TrimPrefix(secret, "whsec_"))
+	mac := hmac.New(sha256.New, raw)
+	mac.Write([]byte("msg_1.1700000000.{}"))
+	want := "v1," + base64.StdEncoding.EncodeToString(mac.Sum(nil))
+	if got := signWebhookPayload(secret, "msg_1", 1700000000, []byte("{}")); got != want {
+		t.Fatalf("signature = %q, want %q (HMAC with the decoded key)", got, want)
+	}
+
+	legacy := strings.Repeat("ab", 32)
+	mac = hmac.New(sha256.New, []byte(legacy))
+	mac.Write([]byte("msg_1.1700000000.{}"))
+	if got := signWebhookPayload(legacy, "msg_1", 1700000000, []byte("{}")); got != "v1,"+base64.StdEncoding.EncodeToString(mac.Sum(nil)) {
+		t.Fatalf("a legacy hex key changed meaning")
+	}
+}
