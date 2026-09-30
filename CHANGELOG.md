@@ -303,8 +303,12 @@ The Containers tour catches up with v1.15.6 and is shown once more, the Bookmark
 ### Docs
 
 - **docs — MANUAL §11.4 describes the selection bar.** The tour's new texts are in all six languages.
-- **fix — the Go preview tests failed about one run in three.** The refresh tests walk the default bookmarks, which are real sites, and each queued a background picture download; the preview media worker finished seconds later and stored the file in whichever test's data directory was current by then, so the orphan sweep and file-count tests found one file too many. `queuePreviewMediaFetch` now honours `NEXTDASH_DISABLE_PREFETCH`, the brake `enrichInboxPreviewAsync` already has, which the Go suite and the e2e server both set. Covered by `TestQueuePreviewMediaFetchHonoursTheBrake`.
+- **docs — MANUAL brought up to date with the fixes**: §12.2 (the same address on two pages), §12.5 (maintenance and alerts), §13 (import stops at a full inbox), §14.5 (automatic updates of stopped containers, and after a rollback), §23.2 (what the write token keeps back).
 - **docs — MANUAL §19.3 describes `whsec_` webhook keys.** The five new messages from the fixes are in all six languages.
+
+### Tests
+
+- **fix — the Go preview tests failed about one run in three.** The refresh tests walk the default bookmarks, which are real sites, and each queued a background picture download; the preview media worker finished seconds later and stored the file in whichever test's data directory was current by then, so the orphan sweep and file-count tests found one file too many. `queuePreviewMediaFetch` now honours `NEXTDASH_DISABLE_PREFETCH`, the brake `enrichInboxPreviewAsync` already has, which the Go suite and the e2e server both set. Covered by `TestQueuePreviewMediaFetchHonoursTheBrake`.
 - **tests — most of the fixes above come with a test that fails without them**; the rest were small enough to verify by reading the change.
 
 ---
