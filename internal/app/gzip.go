@@ -131,21 +131,24 @@ func (w *gzipResponseWriter) Flush() {
 	if w.gz != nil {
 		_ = w.gz.Flush()
 	}
-	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
-		flusher.Flush()
-	}
+	// Through http.ResponseController, not a type assertion: the writer
+	// underneath is the request log's recorder, which reaches the connection
+	// by Unwrap rather than by having Flush itself. Asserting http.Flusher on
+	// it failed, so a followed container log sat in the connection's buffer
+	// until 4 KB of it had piled up.
+	_ = http.NewResponseController(w.ResponseWriter).Flush()
 }
 
 func (w *gzipResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	hijacker, ok := w.ResponseWriter.(http.Hijacker)
-	if !ok {
-		return nil, nil, http.ErrNotSupported
-	}
 	// The connection stops being an HTTP response, so there is nothing left to
-	// compress into it.
+	// compress into it. Through the controller for the reason Flush is.
+	conn, rw, err := http.NewResponseController(w.ResponseWriter).Hijack()
+	if err != nil {
+		return nil, nil, err
+	}
 	w.close()
 	w.compress = false
-	return hijacker.Hijack()
+	return conn, rw, nil
 }
 
 // close flushes and returns the gzip.Writer to the pool. Safe to call once.

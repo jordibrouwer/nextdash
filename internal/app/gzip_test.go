@@ -141,3 +141,26 @@ func (r *flushHijackRecorder) Flush() {}
 func (r *flushHijackRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return nil, nil, http.ErrNotSupported
 }
+
+/*
+A flush reaches the connection through the request log's recorder too.
+
+The recorder has Unwrap but no Flush of its own, and the wrapper asserted
+http.Flusher on it: the assertion failed, so nothing was flushed, and a
+followed container log reached a browser that accepts gzip only in 4 KB lumps.
+*/
+func TestGzipFlushReachesThroughTheRequestLog(t *testing.T) {
+	rec := httptest.NewRecorder()
+	handler := gzipMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/x-ndjson")
+		w.WriteHeader(http.StatusOK)
+		_, _ = io.WriteString(w, "{}\n")
+		if err := http.NewResponseController(w).Flush(); err != nil {
+			t.Errorf("flush: %v", err)
+		}
+	}))
+	handler.ServeHTTP(&responseRecorder{ResponseWriter: rec}, gzipRequest("/x", nil))
+	if !rec.Flushed {
+		t.Fatal("the flush stopped at the request log's recorder")
+	}
+}
