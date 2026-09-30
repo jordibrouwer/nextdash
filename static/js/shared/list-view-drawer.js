@@ -154,7 +154,7 @@
             close.className = 'lvs-drawer-close';
             close.setAttribute('aria-label', this.closeLabel);
             close.textContent = '×';
-            close.addEventListener('click', () => this.close());
+            close.addEventListener('click', () => this.close({ via: 'pointer' }));
             const heading = document.createElement('div');
             heading.className = 'lvs-drawer-heading';
             const titleEl = document.createElement('h3');
@@ -215,10 +215,11 @@
             // dialog: a native <dialog> has the role without the attribute.
             if (target.closest('dialog, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], .modal-overlay')) return;
             if (this.closeOnOutside(target) === false) return;
-            this.close();
+            this.close({ via: 'pointer' });
         }
 
-        close({ silent = false } = {}) {
+        /** `via: 'pointer'` when the mouse closed it (× or a press beside it); onClose hears which. */
+        close({ silent = false, via = 'keyboard' } = {}) {
             const wasOpen = this.isOpen();
             document.removeEventListener('pointerdown', this._outside, true);
             this._releaseLock();
@@ -229,7 +230,7 @@
                 this._host.hidden = true;
                 this._host.replaceChildren();
             }
-            if (wasOpen && !silent) this.onClose?.();
+            if (wasOpen && !silent) this.onClose?.(via);
         }
 
         _acquireLock() {
