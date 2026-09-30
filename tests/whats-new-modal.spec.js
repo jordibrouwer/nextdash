@@ -362,17 +362,24 @@ test('the what\'s-new button is in the bottom-right corner, the toast at the bot
     expect(toast.gap).toBeLessThanOrEqual(toast.edge + 1);
 });
 
-test('the header Esc sits exactly above the footer one', async ({ page }) => {
+test('Support and Esc sit in the header right corner, over the footer Esc', async ({ page }) => {
     await loadDashboard(page);
     await openWhatsNew(page);
     await page.waitForTimeout(100);
     const x = await page.evaluate(() => {
         const m = document.querySelector('.modal.whats-new-modal');
-        const left = (sel) => Math.round(m.querySelector(sel).getBoundingClientRect().left);
+        const box = (sel) => m.querySelector(sel).getBoundingClientRect();
+        const header = box('.modal-header');
+        const pad = parseFloat(getComputedStyle(m.querySelector('.modal-header')).paddingRight) || 0;
         return {
-            headEsc: left('.modal-header .wn-modal-close'),
-            footEsc: left(':scope > .wn-foot .wn-foot-esc'),
+            headEsc: Math.round(box('.modal-header .wn-modal-close').right),
+            footEsc: Math.round(box(':scope > .wn-foot .wn-foot-esc').right),
+            corner: Math.round(header.right - pad),
+            kofiToEsc: Math.round(box('.modal-header .wn-modal-close').left - box('.modal-header .wn-kofi-btn--head').right),
         };
     });
+    expect(Math.abs(x.headEsc - x.corner)).toBeLessThanOrEqual(2);
     expect(Math.abs(x.headEsc - x.footEsc)).toBeLessThanOrEqual(2);
+    // Support right beside Esc, not pushed away by a stretched close button.
+    expect(x.kofiToEsc).toBeLessThanOrEqual(24);
 });
