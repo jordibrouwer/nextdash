@@ -113,14 +113,24 @@ class DashboardDocker {
         this.sortDir = saved?.sortDir === 'desc' ? 'desc' : 'asc';
         // Older saves stored a boolean for "group by project".
         const group = saved?.group === true ? 'project' : saved?.group;
-        this.group = ['project', 'status'].includes(group) ? group : 'none';
+        this.group = DashboardDocker.GROUPS.includes(group) ? group : 'none';
         this.filter = saved?.filter || 'all';
+        // Columns switched off from the toolbar's Columns list; Name always shows.
+        const hidden = Array.isArray(saved?.hiddenColumns) ? saved.hiddenColumns : DashboardDocker.HIDDEN_BY_DEFAULT;
+        this.hiddenColumns = new Set(hidden.filter((k) => DashboardDocker.COLUMNS.includes(k)));
+    }
+
+    /** Whether the list draws this column: switched on, and CPU/RAM only while sampled. */
+    showsColumn(key) {
+        if ((key === 'cpu' || key === 'mem') && !this.usageEnabled) return false;
+        return !this.hiddenColumns?.has(key);
     }
 
     persistViewState() {
         try {
             localStorage.setItem('nextdash.docker.view', JSON.stringify({
                 sort: this.sort, sortDir: this.sortDir, group: this.group, filter: this.filter,
+                hiddenColumns: [...(this.hiddenColumns || [])],
             }));
         } catch {
             // Storage unavailable or full — the view still works this session.
@@ -186,7 +196,41 @@ class DashboardDocker {
         button.title = this.t('dashboard.dockerTourHint', 'A tour of the Containers view');
         button.textContent = this.t('dashboard.inboxTour', 'Tour');
         button.addEventListener('click', () => { void this.openTour(); });
-        host.append(button);
+        // ℹ beside it, as the Bookmarks and Inbox views have: what the view
+        // does, where the tour shows where things are.
+        const help = document.createElement('button');
+        help.type = 'button';
+        help.className = 'lvs-action view-help-btn';
+        help.setAttribute('data-docker-help', '');
+        help.setAttribute('aria-haspopup', 'dialog');
+        const label = this.t('dashboard.dockerHelpTitle', 'How the Containers view works');
+        help.title = label;
+        help.setAttribute('aria-label', label);
+        help.textContent = 'ℹ';
+        help.addEventListener('click', () => this.showExplainer());
+        host.append(button, help);
+    }
+
+    /** "How this works", behind the ℹ in the header. */
+    showExplainer() {
+        if (typeof window.AppModal?.show !== 'function') return;
+        window.nextdashTrack?.('docker:explainer');
+        const esc = (v) => this.escape(v);
+        const row = (key, title, body) => `<div class="view-explain-row"><h4>${esc(this.t(`dashboard.${key}Title`, title))}</h4><p>${esc(this.t(`dashboard.${key}`, body))}</p></div>`;
+        window.AppModal.show({
+            title: this.t('dashboard.dockerHelpTitle', 'How the Containers view works'),
+            htmlMessage: `<div class="view-explain">
+                ${row('dockerHelpList', 'The list', DashboardDocker.HELP.list)}
+                ${row('dockerHelpActions', 'Acting on containers', DashboardDocker.HELP.actions)}
+                ${row('dockerHelpPanel', 'The side panel', DashboardDocker.HELP.panel)}
+                ${row('dockerHelpUpdates', 'Updates', DashboardDocker.HELP.updates)}
+                ${row('dockerHelpDisk', 'Disk', DashboardDocker.HELP.disk)}
+            </div>`,
+            confirmText: this.t('dashboard.healthExplainClose', 'Got it'),
+            showCancel: false,
+            modalClass: 'view-explain-modal',
+            modalMaxWidth: 'min(34rem, calc(100vw - 2.5rem))',
+        });
     }
 
     /**
@@ -425,6 +469,9 @@ class DashboardDocker {
             ]);
             this.containers = Array.isArray(containersBody?.containers) ? containersBody.containers : [];
             this.usageEnabled = Boolean(containersBody?.usageEnabled);
+            // Every page's bookmarks, for the dot beside a web UI: the
+            // dashboard loads only its own page's unless a setting needs more.
+            if (!this.dash.allBookmarks?.length) await this.dash.deferredLoadAllBookmarks?.();
             this._checkedAt = updatesBody?.checkedAt || null;
         } else {
             this.containers = [];
@@ -694,6 +741,8 @@ class DashboardDocker {
                 ['cpu', this.t('dashboard.dockerSortCpu', 'CPU')],
                 ['mem', this.t('dashboard.dockerSortMem', 'memory')],
             ] : []),
+            ['size', this.t('dashboard.dockerSortSize', 'size')],
+            ['restarts', this.t('dashboard.dockerSortRestarts', 'restarts')],
         ].map(([value, label]) => `<option value="${value}">${this.escape(label)}</option>`).join('');
         host.innerHTML = `
             <input type="search" data-docker-search value="${this.escape(this.query)}"
@@ -703,7 +752,13 @@ class DashboardDocker {
                 <option value="none">${this.escape(this.t('dashboard.dockerGroupNone', 'no groups'))}</option>
                 <option value="project">${this.escape(this.t('dashboard.dockerGroupByProject', 'by project'))}</option>
                 <option value="status">${this.escape(this.t('dashboard.dockerGroupByStatus', 'by status'))}</option>
+                <option value="network">${this.escape(this.t('dashboard.dockerGroupByNetwork', 'by network'))}</option>
+                <option value="image">${this.escape(this.t('dashboard.dockerGroupByImage', 'by image'))}</option>
             </select>
+            <span class="docker-columns">
+                <button type="button" class="lvs-action" data-docker-columns aria-haspopup="true" aria-expanded="false">${this.escape(this.t('dashboard.dockerColumns', 'Columns'))} ▾</button>
+                <div class="docker-columns-pop" data-docker-columns-pop role="group" aria-label="${this.escape(this.t('dashboard.dockerColumns', 'Columns'))}" hidden></div>
+            </span>
             <button type="button" class="lvs-action" data-docker-check>${this.escape(this.t('dashboard.dockerCheckUpdates', 'Check for updates'))}</button>
             <span data-docker-checked-at class="docker-checked-at"></span>
         `;
@@ -739,6 +794,91 @@ class DashboardDocker {
         host.querySelector('[data-docker-check]')?.addEventListener('click', () => {
             void this.checkForUpdates();
         });
+        this.bindColumnsMenu(host);
+    }
+
+    /**
+     * The Columns list: a tick per column, saved with the view. Name is not
+     * in it -- a row needs something to be. CPU and RAM show only while the
+     * stats sampler runs, ticked or not, and say so.
+     */
+    bindColumnsMenu(host) {
+        const button = host.querySelector('[data-docker-columns]');
+        const pop = host.querySelector('[data-docker-columns-pop]');
+        if (!button || !pop) return;
+        const labels = this.columnLabels();
+        const close = () => {
+            pop.hidden = true;
+            button.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('pointerdown', outside, true);
+            window.removeEventListener('keydown', onKey, true);
+        };
+        const outside = (e) => { if (!pop.contains(e.target) && e.target !== button) close(); };
+        const onKey = (e) => {
+            if (e.key !== 'Escape') return;
+            e.stopPropagation();
+            close();
+            button.focus();
+        };
+        const fill = () => {
+            pop.replaceChildren();
+            DashboardDocker.COLUMNS.forEach((key) => {
+                const label = document.createElement('label');
+                label.className = 'docker-columns-item';
+                const box = document.createElement('input');
+                box.type = 'checkbox';
+                box.setAttribute('data-docker-column', key);
+                box.checked = !this.hiddenColumns.has(key);
+                box.addEventListener('change', () => {
+                    if (box.checked) this.hiddenColumns.delete(key);
+                    else this.hiddenColumns.add(key);
+                    this.persistViewState();
+                    this.render();
+                });
+                const text = document.createElement('span');
+                text.textContent = labels[key];
+                label.append(box, text);
+                if ((key === 'cpu' || key === 'mem') && !this.usageEnabled) {
+                    label.title = this.t('dashboard.dockerColumnsNeedsStats', 'Shows while Config → Containers keeps the last hour of CPU and memory');
+                    label.classList.add('is-idle');
+                }
+                pop.appendChild(label);
+            });
+            const reset = document.createElement('button');
+            reset.type = 'button';
+            reset.className = 'docker-columns-reset';
+            reset.setAttribute('data-docker-columns-reset', '');
+            reset.textContent = this.t('dashboard.dockerColumnsReset', 'Reset columns');
+            reset.addEventListener('click', () => {
+                this.hiddenColumns = new Set(DashboardDocker.HIDDEN_BY_DEFAULT);
+                this.persistViewState();
+                this.render();
+                fill();
+            });
+            pop.appendChild(reset);
+        };
+        button.addEventListener('click', () => {
+            if (!pop.hidden) { close(); return; }
+            fill();
+            pop.hidden = false;
+            button.setAttribute('aria-expanded', 'true');
+            document.addEventListener('pointerdown', outside, true);
+            window.addEventListener('keydown', onKey, true);
+        });
+    }
+
+    /** Each optional column's name, as its heading reads. */
+    columnLabels() {
+        return {
+            image: this.t('dashboard.dockerFieldImage', 'Image'),
+            state: this.t('dashboard.dockerColStatus', 'Status'),
+            cpu: this.t('dashboard.dockerColCpu', 'CPU'),
+            mem: this.t('dashboard.dockerColMem', 'RAM'),
+            size: this.t('dashboard.dockerColSize', 'Size'),
+            restarts: this.t('dashboard.dockerColRestarts', 'Restarts'),
+            webui: this.t('dashboard.dockerLinkWebUI', 'Web UI'),
+            ports: this.t('dashboard.dockerColPorts', 'Ports'),
+        };
     }
 
     /** What the toolbar says about the current view, without rebuilding it. */
@@ -805,14 +945,15 @@ class DashboardDocker {
     }
 
     compareFn() {
-        if (DashboardDocker.USAGE_SORTS.has(this.sort)) {
+        const numeric = DashboardDocker.NUMERIC_SORTS[this.sort];
+        if (numeric) {
             // Turning the order round never moves a container without a
-            // reading (stopped, or not sampled yet) above one that has it.
-            const key = this.sort;
+            // reading (stopped, not sampled or not measured yet) above one
+            // that has it.
             const sign = this.sortDir === 'desc' ? -1 : 1;
             return (a, b) => {
-                const va = a.usage?.[key];
-                const vb = b.usage?.[key];
+                const va = numeric(a);
+                const vb = numeric(b);
                 if (va == null || vb == null) return (va == null) - (vb == null) || a.name.localeCompare(b.name);
                 return sign * (va - vb) || a.name.localeCompare(b.name);
             };
@@ -823,7 +964,7 @@ class DashboardDocker {
 
     /** The direction a sort starts in: usage highest first, the rest A to Z. */
     static defaultSortDir(key) {
-        return DashboardDocker.USAGE_SORTS.has(key) ? 'desc' : 'asc';
+        return DashboardDocker.NUMERIC_SORTS[key] ? 'desc' : 'asc';
     }
 
     /** An image without its registry host and a :latest tag, as a person
@@ -834,6 +975,32 @@ class DashboardDocker {
         if (parts.length > 1 && /[.:]|^localhost$/.test(parts[0])) s = parts.slice(1).join('/');
         return s.replace(/:latest$/, '');
     }
+
+    /** The explainer's paragraphs, the English the locale files translate. */
+    static HELP = {
+        list: 'Every container on the Docker host, filtered from the rail and grouped by status or compose project. The glow is its state; an orange ↑ before the name means an update is waiting. CPU and RAM are the last reading, Size is what the container wrote, and the link opens its web UI.',
+        actions: 'Its menu or a key starts, stops, restarts, pauses, updates or removes it: s, r, p, u and ⌫. Tick several with x to do the same to all of them at once. Acting needs NEXTDASH_DOCKER_CONTROL=1, and nextDash never stops its own container.',
+        panel: 'Enter or a click opens a container: its health, updates, timeline, network, volumes and a web address of your own, with an hour of CPU and memory under Resources. l opens its logs window.',
+        updates: 'Check for updates compares each image with what its registry offers and shows what changed. You can skip a version, hold a container, or roll the last update back while the old image is still on the host.',
+        disk: 'd switches to Disk: what images, volumes and the build cache take up, and what nothing uses. It lists the host folders containers mount too. Every clean-up asks first, and a volume goes only one at a time.',
+    };
+
+    /** The columns the Columns list switches, in table order; Name always shows. */
+    static COLUMNS = ['image', 'state', 'cpu', 'mem', 'size', 'restarts', 'webui', 'ports'];
+
+    /** Off on a first visit: Restarts, which most hosts leave at 0. */
+    static HIDDEN_BY_DEFAULT = ['restarts'];
+
+    /** Sorts by a number, highest first; a container without one goes last either way. */
+    static NUMERIC_SORTS = {
+        cpu: (c) => c.usage?.cpu,
+        mem: (c) => c.usage?.mem,
+        size: (c) => c.size?.rw,
+        restarts: (c) => c.restarts || 0,
+    };
+
+    /** The groupings the list offers besides none. */
+    static GROUPS = ['project', 'status', 'network', 'image'];
 
     /** How many published ports a row shows before "+N". */
     static PORTS_SHOWN = 3;
@@ -1009,7 +1176,7 @@ class DashboardDocker {
         count.className = 'multi-select-count';
         count.setAttribute('data-docker-bulk-count', '');
         bar.appendChild(count);
-        ['select-all', 'start', 'stop', 'restart', 'update', 'remove', 'mute', 'clear'].forEach((action) => {
+        ['select-all', 'start', 'stop', 'restart', 'update', 'remove', 'mute', 'auto', 'clear'].forEach((action) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = action === 'remove' ? 'multi-select-btn danger' : 'multi-select-btn';
@@ -1074,6 +1241,15 @@ class DashboardDocker {
             ? this.t('dashboard.dockerMenuMute', 'Mute notifications')
             : this.t('dashboard.dockerMenuUnmute', 'Unmute notifications');
         mute.disabled = this.bulkRunning || !mutable.length;
+        // Automatic updates: on for all of them while any is off, else off.
+        const auto = button('auto');
+        const autoable = picked.filter((c) => !c.self);
+        const turningOn = autoable.some((c) => !this.isAutoUpdated(c));
+        auto.hidden = !control;
+        auto.textContent = turningOn || !autoable.length
+            ? this.t('dashboard.dockerAutoUpdateOn', 'Update automatically')
+            : this.t('dashboard.dockerAutoUpdateOff', 'Stop updating automatically');
+        auto.disabled = this.bulkRunning || !autoable.length;
         button('select-all').disabled = this.bulkRunning;
         button('clear').disabled = this.bulkRunning;
     }
@@ -1106,7 +1282,40 @@ class DashboardDocker {
             this.drawerRefresh?.();
             return;
         }
+        if (action === 'auto') {
+            const autoable = picked.filter((c) => !c.self);
+            await this.setAutoUpdate(autoable.map((c) => c.name), autoable.some((c) => !this.isAutoUpdated(c)));
+            return;
+        }
         await this.actions?.runBulk(action, picked, { via: 'bulk' });
+    }
+
+    /** Whether a container is updated on its own in the nightly window. */
+    isAutoUpdated(c) {
+        return (this.dash.settings?.dockerAutoUpdate || []).includes(c?.name);
+    }
+
+    /** Turn automatic updates on or off for these containers, saved with the settings. */
+    async setAutoUpdate(names, on) {
+        const d = this.dash;
+        const before = d.settings.dockerAutoUpdate || [];
+        const next = new Set(before);
+        names.forEach((n) => (on ? next.add(n) : next.delete(n)));
+        d.settings.dockerAutoUpdate = [...next];
+        try {
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
+        } catch {
+            d.settings.dockerAutoUpdate = before;
+            d.showNotification?.(this.t('dashboard.dockerAutoUpdateSaveFailed', 'Could not save automatic updates.'), 'error');
+            return false;
+        }
+        d.showNotification?.(on
+            ? this.t('dashboard.dockerAutoUpdateSavedOn', 'Updated automatically at night: {names}', { names: names.join(', ') })
+            : this.t('dashboard.dockerAutoUpdateSavedOff', 'No longer updated automatically: {names}', { names: names.join(', ') }),
+        'success', { duration: 2500 });
+        this.render();
+        this.drawerRefresh?.();
+        return true;
     }
 
     /** s and p toggle: the same key starts a stopped container and stops a running one. */
@@ -1252,18 +1461,18 @@ class DashboardDocker {
         // third entry). The shared sortable heading (list-view-shell.css, as
         // Bookmarks and Inbox draw theirs): the button carries the click, the
         // th data-lvs-sort for the drawn arrow and aria-sort for a reader.
+        const labels = this.columnLabels();
         [
             ['name', this.t('dashboard.dockerColName', 'Name'), 'name'],
-            ['image', this.t('dashboard.dockerFieldImage', 'Image')],
-            ['state', this.t('dashboard.dockerColStatus', 'Status'), 'status'],
-            ...(this.usageEnabled ? [
-                ['cpu', this.t('dashboard.dockerColCpu', 'CPU'), 'cpu'],
-                ['mem', this.t('dashboard.dockerColMem', 'RAM'), 'mem'],
-            ] : []),
-            ['size', this.t('dashboard.dockerColSize', 'Size')],
-            ['webui', this.t('dashboard.dockerLinkWebUI', 'Web UI')],
-            ['ports', this.t('dashboard.dockerColPorts', 'Ports')],
-        ].forEach(([key, label, sortKey]) => {
+            ['image', labels.image],
+            ['state', labels.state, 'status'],
+            ['cpu', labels.cpu, 'cpu'],
+            ['mem', labels.mem, 'mem'],
+            ['size', labels.size, 'size'],
+            ['restarts', labels.restarts, 'restarts'],
+            ['webui', labels.webui],
+            ['ports', labels.ports],
+        ].filter(([key]) => key === 'name' || this.showsColumn(key)).forEach(([key, label, sortKey]) => {
             const th = document.createElement('th');
             th.scope = 'col';
             th.className = `docker-head docker-head--${key} lvs-colhead`;
@@ -1289,7 +1498,7 @@ class DashboardDocker {
         thead.appendChild(headRow);
         table.appendChild(thead);
         const tbody = document.createElement('tbody');
-        if (this.group === 'project' || this.group === 'status') {
+        if (DashboardDocker.GROUPS.includes(this.group)) {
             this.appendGroupedRows(tbody, list, headRow.children.length);
         } else {
             list.forEach((c) => tbody.appendChild(this.buildRow(c)));
@@ -1358,9 +1567,17 @@ class DashboardDocker {
      */
     appendGroupedRows(tbody, list, columns) {
         const byStatus = this.group === 'status';
+        const byProject = this.group === 'project';
+        // What each grouping keys a container on; '' is the "none" band, last.
+        const keyOf = {
+            status: (c) => this.statusGroup(c),
+            project: (c) => c.composeProject || '',
+            network: (c) => c.network || '',
+            image: (c) => DashboardDocker.shortImage(String(c.image || '').replace(/@sha256:.*$/, '')).replace(/:[^/:]+$/, ''),
+        }[this.group];
         const groups = new Map();
         list.forEach((c) => {
-            const key = byStatus ? this.statusGroup(c) : (c.composeProject || '');
+            const key = keyOf(c);
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key).push(c);
         });
@@ -1381,26 +1598,73 @@ class DashboardDocker {
             const heading = document.createElement('tr');
             heading.className = 'docker-group-row';
             if (byStatus) heading.setAttribute('data-docker-group-status', key);
-            else if (key) heading.setAttribute('data-docker-group-project', key);
+            else if (key && byProject) heading.setAttribute('data-docker-group-project', key);
+            else if (key) heading.setAttribute(`data-docker-group-${this.group}`, key);
             const cell = document.createElement('td');
             // Across every column the heading row has, so a column added
             // later (Size was) cannot leave the band short of the right edge.
             cell.colSpan = columns || 1;
             const label = document.createElement('span');
-            label.textContent = byStatus
-                ? statusLabels[key]
-                : (key || this.t('dashboard.dockerNoProject', 'No project'));
+            const none = {
+                network: this.t('dashboard.dockerNoNetwork', 'No network'),
+                image: this.t('dashboard.dockerNoImage', 'No image'),
+            }[this.group] || this.t('dashboard.dockerNoProject', 'No project');
+            label.textContent = byStatus ? statusLabels[key] : (key || none);
             cell.appendChild(label);
             const count = document.createElement('span');
             count.className = 'docker-group-count';
             count.setAttribute('data-docker-group-count', '');
             count.textContent = ` · ${groups.get(key).length}`;
             cell.appendChild(count);
-            if (!byStatus && key && this.status.control) cell.appendChild(this.buildStackActions(groups.get(key)));
+            if (byProject && key && this.status.control) cell.appendChild(this.buildStackActions(groups.get(key)));
             heading.appendChild(cell);
             tbody.appendChild(heading);
             groups.get(key).forEach((c) => tbody.appendChild(this.buildRow(c)));
         });
+    }
+
+    /**
+     * The bookmark of this web UI, as a dot in its health colour: green its
+     * checks pass, red broken or down, grey not checked. A click opens the
+     * bookmark in the Bookmarks view.
+     */
+    bookmarkDot(linked) {
+        const b = linked.bookmark;
+        const state = window.DockerSearchIndex.bookmarkHealth(b);
+        const words = this.bookmarkWords();
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = `docker-bm-dot is-${state}`;
+        dot.setAttribute('data-docker-bm-dot', state);
+        // A bookmark's own shape, filled in its health colour.
+        dot.innerHTML = '<svg viewBox="0 0 12 16" aria-hidden="true"><path d="M1.5 1.5h9v13L6 11.2 1.5 14.5z"/></svg>';
+        const label = this.t('dashboard.dockerBookmarkDot', 'Bookmark {name} · {state} · {via}', {
+            name: b.name || b.url, state: words.state[state], via: words.via[linked.via] || '',
+        });
+        dot.title = label;
+        dot.setAttribute('aria-label', label);
+        dot.addEventListener('click', (e) => {
+            e.stopPropagation();
+            void this.dash.config?.openLibraryOnBookmark?.(b.pageId, b.url, { tab: 'details', focusRow: true });
+        });
+        return dot;
+    }
+
+    /** What a linked bookmark's state and match are called, row and side panel alike. */
+    bookmarkWords() {
+        return {
+            state: {
+                good: this.t('dashboard.dockerBookmarkGood', 'its checks pass'),
+                bad: this.t('dashboard.dockerBookmarkBad', 'broken or down'),
+                off: this.t('dashboard.dockerBookmarkOff', 'not checked'),
+            },
+            via: {
+                manual: this.t('dashboard.dockerBookmarkViaManual', 'set by you'),
+                port: this.t('dashboard.dockerBookmarkViaPort', 'same port'),
+                subdomain: this.t('dashboard.dockerBookmarkViaSubdomain', 'via subdomain'),
+                title: this.t('dashboard.dockerBookmarkViaTitle', 'same name'),
+            },
+        };
     }
 
     /** A published port as a link to it on this host. */
@@ -1536,12 +1800,12 @@ class DashboardDocker {
         imageCell.className = 'docker-cell docker-cell--image';
         imageCell.textContent = DashboardDocker.shortImage(c.image);
         if (c.image) imageCell.title = c.image;
-        tr.appendChild(imageCell);
+        if (this.showsColumn('image')) tr.appendChild(imageCell);
 
         const stateCell = document.createElement('td');
         stateCell.className = 'docker-cell docker-cell--state';
         stateCell.textContent = busy ? this.phaseText(busy) : (c.status || c.state || '');
-        tr.appendChild(stateCell);
+        if (this.showsColumn('state')) tr.appendChild(stateCell);
 
         // The stats sampler's last reading (every 30 s), when it is on.
         if (this.usageEnabled) {
@@ -1551,7 +1815,8 @@ class DashboardDocker {
             const memCell = document.createElement('td');
             memCell.className = 'docker-cell docker-cell--mem docker-cell--num';
             memCell.textContent = DashboardDocker.formatMem(c.usage?.mem);
-            tr.append(cpuCell, memCell);
+            if (this.showsColumn('cpu')) tr.appendChild(cpuCell);
+            if (this.showsColumn('mem')) tr.appendChild(memCell);
         }
 
         // What the container wrote, measured in the background every half
@@ -1560,7 +1825,17 @@ class DashboardDocker {
         sizeCell.className = 'docker-cell docker-cell--size docker-cell--num';
         sizeCell.textContent = DashboardDocker.formatSize(c.size);
         if (c.size) sizeCell.title = DashboardDocker.sizeTitle(c.size, (key, fallback, params) => this.t(key, fallback, params));
-        tr.appendChild(sizeCell);
+        if (this.showsColumn('size')) tr.appendChild(sizeCell);
+
+        // How often it started again in the last 24 hours, from the timeline.
+        if (this.showsColumn('restarts')) {
+            const restartsCell = document.createElement('td');
+            restartsCell.className = 'docker-cell docker-cell--restarts docker-cell--num';
+            restartsCell.textContent = String(c.restarts || 0);
+            restartsCell.classList.toggle('is-quiet', !c.restarts);
+            restartsCell.title = this.t('dashboard.dockerRestartsTitle', 'Started again {count} times in the last 24 hours', { count: c.restarts || 0 });
+            tr.appendChild(restartsCell);
+        }
 
         /*
          * The web UI in a column of its own -- the address set in the drawer's
@@ -1590,12 +1865,15 @@ class DashboardDocker {
             a.textContent = webui.label;
             webuiCell.appendChild(a);
         }
-        tr.appendChild(webuiCell);
+        const linked = window.DockerSearchIndex?.bookmarkFor?.(c, this.dash.allBookmarks);
+        // After the link, so the addresses keep one left edge down the column.
+        if (linked) webuiCell.appendChild(this.bookmarkDot(linked));
+        if (this.showsColumn('webui')) tr.appendChild(webuiCell);
 
         const portsCell = document.createElement('td');
         portsCell.className = 'docker-cell docker-cell--ports';
         this.fillPorts(portsCell, c);
-        tr.appendChild(portsCell);
+        if (this.showsColumn('ports')) tr.appendChild(portsCell);
 
         // Phone-width second line (image + the web UI, else the first public
         // port); CSS hides it at desktop and shows it, in place of the
@@ -1618,7 +1896,7 @@ class DashboardDocker {
 
         tr.addEventListener('click', (e) => {
             // A port link and the tick handle their own click.
-            if (e.target.closest('a, .docker-tick, .docker-ports-more, .docker-ports-pop')) return;
+            if (e.target.closest('a, .docker-tick, .docker-ports-more, .docker-ports-pop, .docker-bm-dot')) return;
             if (e.metaKey || e.ctrlKey || e.shiftKey) {
                 this.toggleMulti(c.name, { range: e.shiftKey });
                 return;

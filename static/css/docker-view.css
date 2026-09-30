@@ -117,7 +117,8 @@
 .docker-cell--num,
 .docker-head.docker-head--cpu,
 .docker-head.docker-head--mem,
-.docker-head.docker-head--size {
+.docker-head.docker-head--size,
+.docker-head.docker-head--restarts {
     text-align: right;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -190,7 +191,9 @@
 }
 
 .docker-webui {
-    display: block;
+    /* Inline, so a linked bookmark's mark stays on its line. */
+    display: inline-block;
+    vertical-align: bottom;
     max-width: clamp(6rem, 16vw, 14rem);
     overflow: hidden;
     white-space: nowrap;
@@ -344,16 +347,48 @@
 }
 
 .docker-network-row,
+/* A mount: the path in the container, its tags, and where it comes from. */
 .docker-volume-row {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2, 0.5rem);
-    word-break: break-all;
+    display: grid;
+    gap: 0.15rem;
+    padding: var(--space-2, 0.5rem) 0;
+    border-bottom: 1px solid var(--border-primary);
 }
 
-.docker-volume-readonly {
-    color: var(--text-tertiary, var(--text-secondary));
+.docker-volume-row:first-child { padding-top: 0; }
+.docker-volume-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.docker-volume-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-volume-dest {
+    font-weight: var(--font-weight-semibold);
+    overflow-wrap: anywhere;
+}
+
+.docker-volume-tags {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: var(--space-1, 0.25rem);
+}
+
+.docker-volume-tag {
+    padding: 0 var(--space-1-5, 0.4rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
     white-space: nowrap;
+}
+
+.docker-volume-source {
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
 }
 
 .docker-resource-row {
@@ -535,9 +570,22 @@
 
 /* Health: the command, then the last checks, newest first; a failing
    check's mark takes the error colour. */
+/* Small headings inside Health: the check, and the last checks. */
+.docker-health-label {
+    margin-top: var(--space-3, 0.75rem);
+    margin-bottom: var(--space-1, 0.25rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
 .docker-health-command {
     display: block;
-    margin: var(--space-2, 0.5rem) 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background: var(--background-tertiary, var(--background-primary));
+    border-radius: var(--radius-4, 6px);
+    white-space: pre-wrap;
     font-family: var(--font-family-mono, monospace);
     font-size: var(--text-sm, 0.85rem);
     color: var(--text-secondary);
@@ -547,17 +595,32 @@
 .docker-health-checks {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2, 0.5rem);
+    gap: var(--space-1, 0.25rem);
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
+/* One check a line: its mark, then when, side by side. */
 .docker-health-check-head {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1.5rem 1fr;
+    align-items: baseline;
     gap: var(--space-2, 0.5rem);
     font-size: var(--text-sm, 0.85rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.docker-health-check-head {
+    grid-template-columns: 1.5rem auto 1fr;
+}
+
+.docker-health-exit {
+    color: var(--accent-error, #c55);
+}
+
+.docker-health-output {
+    margin: 0.15rem 0 0 calc(1.5rem + var(--space-2, 0.5rem));
 }
 
 .docker-health-check[data-docker-health-check="pass"] .docker-health-mark {
@@ -625,9 +688,11 @@
     .docker-head--cpu,
     .docker-head--mem,
     .docker-head--size,
+    .docker-head--restarts,
     .docker-cell--cpu,
     .docker-cell--mem,
-    .docker-cell--size {
+    .docker-cell--size,
+    .docker-cell--restarts {
         display: none;
     }
 }
@@ -665,6 +730,7 @@
     .docker-cell--cpu,
     .docker-cell--mem,
     .docker-cell--size,
+    .docker-cell--restarts,
     .docker-cell--webui,
     .docker-cell--ports {
         display: none;
@@ -1375,4 +1441,142 @@
     .docker-disk-table td:nth-child(2) {
         display: none;
     }
+}
+
+/* Columns: the toolbar's list of columns to show, under its button. */
+.docker-columns {
+    position: relative;
+    display: inline-flex;
+}
+
+.docker-columns-pop {
+    position: absolute;
+    top: calc(100% + var(--space-1, 0.25rem));
+    left: 0;
+    z-index: 30;
+    display: grid;
+    gap: var(--space-1, 0.25rem);
+    min-width: 10rem;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    box-shadow: var(--shadow-md, 0 4px 16px rgb(0 0 0 / 0.3));
+}
+
+.docker-columns-pop[hidden] {
+    display: none;
+}
+
+.docker-columns-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.docker-columns-item.is-idle {
+    color: var(--text-secondary);
+}
+
+.docker-columns-reset {
+    justify-self: start;
+    margin-top: var(--space-1, 0.25rem);
+    padding: 0;
+    font: inherit;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.docker-columns-reset:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
+/* Restarts: a 0 is the usual answer, so it stays quiet. */
+.docker-cell--restarts.is-quiet {
+    color: var(--text-secondary);
+}
+
+/* A web UI's bookmark: its shape after the link, filled in its health
+   colour -- green its checks pass, red broken or down, an outline when
+   nothing checks it. After the link, so the addresses line up. */
+.docker-bm-dot {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.5em;
+    padding: 0;
+    vertical-align: -0.15em;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.docker-bm-dot svg {
+    width: 0.7em;
+    height: 0.95em;
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+}
+
+.docker-bm-dot.is-good { color: var(--accent-success, #3c6); }
+.docker-bm-dot.is-bad { color: var(--accent-error, #c55); }
+.docker-bm-dot.is-off svg { fill: none; }
+.docker-bm-dot:hover svg,
+.docker-bm-dot:focus-visible svg { filter: brightness(1.25); }
+
+/* The side panel's Bookmark section: the linked one, then the picker. */
+.docker-bm-card {
+    display: grid;
+    gap: var(--space-1, 0.25rem);
+    justify-items: start;
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.docker-bm-card-url {
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.72rem);
+    overflow-wrap: anywhere;
+}
+
+.docker-bm-card-meta { font-size: var(--text-xs, 0.72rem); color: var(--text-secondary); }
+.docker-bm-card-meta.is-good { color: var(--accent-success, #3c6); }
+.docker-bm-card-meta.is-bad { color: var(--accent-error, #c55); }
+
+/* The picker fits the section, whatever the longest bookmark is called. */
+.docker-bm-link {
+    display: grid;
+    gap: var(--space-1, 0.25rem);
+    min-width: 0;
+}
+
+.docker-bm-link select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    text-overflow: ellipsis;
+}
+
+/* Updates: the automatic-update switch, its note under it. */
+.docker-auto-update {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: var(--space-2, 0.5rem);
+    margin: var(--space-2, 0.5rem) 0;
+    cursor: pointer;
+}
+
+.docker-auto-update-note {
+    grid-column: 2;
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.72rem);
 }

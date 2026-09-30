@@ -387,6 +387,41 @@ type dockerStatsRaw struct {
 		Limit uint64            `json:"limit"`
 		Stats map[string]uint64 `json:"stats"`
 	} `json:"memory_stats"`
+	// Networks: bytes in and out per interface since the container started.
+	Networks map[string]struct {
+		Rx uint64 `json:"rx_bytes"`
+		Tx uint64 `json:"tx_bytes"`
+	} `json:"networks"`
+	// Blkio: bytes read and written since it started, per device and op.
+	// cgroup v1 names the ops Read/Write, v2 read/write.
+	Blkio struct {
+		Bytes []struct {
+			Op    string `json:"op"`
+			Value uint64 `json:"value"`
+		} `json:"io_service_bytes_recursive"`
+	} `json:"blkio_stats"`
+}
+
+// netTotals adds up every interface's bytes in and out.
+func (raw dockerStatsRaw) netTotals() (rx, tx uint64) {
+	for _, n := range raw.Networks {
+		rx += n.Rx
+		tx += n.Tx
+	}
+	return rx, tx
+}
+
+// diskTotals adds up the bytes read and written on every device.
+func (raw dockerStatsRaw) diskTotals() (read, write uint64) {
+	for _, b := range raw.Blkio.Bytes {
+		switch strings.ToLower(b.Op) {
+		case "read":
+			read += b.Value
+		case "write":
+			write += b.Value
+		}
+	}
+	return read, write
 }
 
 // memoryUsed is what `docker stats` shows: page cache is reclaimable, so it

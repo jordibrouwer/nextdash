@@ -11,7 +11,7 @@
 
 const DOCKER_SECTIONS_KEY = 'nextdash.docker.sections';
 const DOCKER_SECTIONS_DEFAULT = ['overview'];
-const DOCKER_SECTION_KEYS = ['overview', 'health', 'updates', 'timeline', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
+const DOCKER_SECTION_KEYS = ['overview', 'health', 'updates', 'timeline', 'network', 'custom', 'bookmark', 'volumes', 'resources', 'env', 'logs', 'changes'];
 
 /** fetch() that never throws and answers null on anything but a 2xx JSON body. */
 async function dockerDrawerFetchJSON(url, init) {
@@ -277,6 +277,7 @@ class DockerDrawer {
                 acc('timeline', this.t('dockerSectionTimeline', 'Timeline')),
                 acc('network', this.t('dockerSectionNetwork', 'Network')),
                 acc('custom', this.t('dockerSectionCustom', 'Custom')),
+                acc('bookmark', this.t('dockerSectionBookmark', 'Bookmark')),
                 acc('volumes', this.t('dockerSectionVolumes', 'Volumes')),
                 acc('env', this.t('dockerSectionEnv', 'Environment')),
             ])}`)}
@@ -391,6 +392,7 @@ class DockerDrawer {
         this._renderOverview(els.sections.overview, detail);
         this._renderNetwork(els.sections.network, detail);
         this._renderCustom(els.sections.custom, detail);
+        this._renderBookmark(els.sections.bookmark, detail);
         this._renderVolumes(els.sections.volumes, detail);
         this._renderEnv(els.sections.env, detail);
         this._showHealth(Boolean(detail?.health));
@@ -534,6 +536,117 @@ class DockerDrawer {
         body.append(label, hint, error, row);
     }
 
+    /**
+     * Bookmark: the one this container's web UI is saved as -- its name,
+     * address, what its checks say and how it was found -- with a way to
+     * open it, and the choice of another or none.
+     */
+    _renderBookmark(body, detail) {
+        if (!body || !detail) return;
+        body.replaceChildren();
+        const index = window.DockerSearchIndex;
+        const d = this.view.dash;
+        const summary = (this.view.containers || []).find((c) => c.name === detail.name) || detail;
+        const linked = index?.bookmarkFor?.(summary, d?.allBookmarks || []);
+        const card = document.createElement('div');
+        card.className = 'docker-bm-card';
+        card.setAttribute('data-docker-bm-card', '');
+        if (linked) {
+            const b = linked.bookmark;
+            const state = index.bookmarkHealth(b);
+            const name = document.createElement('strong');
+            name.className = 'docker-bm-card-name';
+            name.textContent = b.name || b.url;
+            const url = document.createElement('span');
+            url.className = 'docker-bm-card-url';
+            url.textContent = b.url;
+            const meta = document.createElement('span');
+            meta.className = `docker-bm-card-meta is-${state}`;
+            meta.setAttribute('data-docker-bm-state', state);
+            meta.textContent = `${this.view.bookmarkWords().state[state]} · ${this.view.bookmarkWords().via[linked.via] || ''}`;
+            const openBtn = document.createElement('button');
+            openBtn.type = 'button';
+            openBtn.className = 'config-btn config-btn--small';
+            openBtn.setAttribute('data-docker-bm-open', '');
+            openBtn.textContent = this.t('dockerBookmarkOpen', 'Open in Bookmarks');
+            openBtn.addEventListener('click', () => void d?.config?.openLibraryOnBookmark?.(b.pageId, b.url, { tab: 'details', focusRow: true }));
+            card.append(name, url, meta, openBtn);
+        } else {
+            const none = document.createElement('p');
+            none.className = 'docker-webui-hint';
+            none.textContent = this.t('dockerBookmarkNoneFound', 'No bookmark is linked. Pick one below, or save the web UI as a bookmark.');
+            card.appendChild(none);
+        }
+        body.append(card, this._bookmarkPicker(detail));
+    }
+
+    /**
+     * Linked bookmark: the one the table's dot reports on. Automatic names
+     * what the view found (or that it found none); No bookmark stops it
+     * guessing; any bookmark can be picked by hand.
+     */
+    _bookmarkPicker(detail) {
+        const d = this.view.dash;
+        const index = window.DockerSearchIndex;
+        const wrap = document.createElement('label');
+        wrap.className = 'docker-field-label docker-bm-link';
+        wrap.textContent = this.t('dockerBookmarkLabel', 'Linked bookmark');
+        const select = document.createElement('select');
+        select.className = 'config-select';
+        select.setAttribute('data-docker-bm-link', '');
+        const summary = (this.view.containers || []).find((c) => c.name === detail.name) || detail;
+        const bookmarks = (d?.allBookmarks || []).filter((b) => b?.url);
+        const links = d?.settings?.dockerBookmarkLinks || {};
+        const auto = index?.bookmarkFor?.(summary, bookmarks, { ...links, [detail.name]: undefined });
+        const option = (value, text) => {
+            const o = document.createElement('option');
+            o.value = value;
+            o.textContent = text;
+            return o;
+        };
+        select.append(
+            option('', auto
+                ? this.t('dockerBookmarkAuto', 'Automatic: {name}', { name: auto.bookmark.name || auto.bookmark.url })
+                : this.t('dockerBookmarkAutoNone', 'Automatic: none found')),
+            option('-', this.t('dockerBookmarkNone', 'No bookmark')),
+        );
+        const seen = new Set();
+        bookmarks.slice().sort((a, b) => String(a.name || a.url).localeCompare(String(b.name || b.url))).forEach((b) => {
+            const key = index.bookmarkKey(b);
+            if (seen.has(key)) return;
+            seen.add(key);
+            // Name and host: the whole address made the list as wide as its
+            // longest link. The title keeps the address.
+            let host = '';
+            try { host = new URL(b.url).host; } catch { host = b.url; }
+            const o = option(key, b.name && b.name !== host ? `${b.name} · ${host}` : host);
+            o.title = b.url;
+            select.append(o);
+        });
+        select.value = links[detail.name] && [...select.options].some((o) => o.value === links[detail.name]) ? links[detail.name] : '';
+        select.addEventListener('change', () => void this._saveBookmarkLink(detail.name, select.value));
+        wrap.appendChild(select);
+        return wrap;
+    }
+
+    async _saveBookmarkLink(name, value) {
+        const d = this.view.dash;
+        if (!name || !d) return;
+        const all = { ...(d.settings?.dockerBookmarkLinks || {}) };
+        if (value) all[name] = value;
+        else delete all[name];
+        const before = d.settings.dockerBookmarkLinks;
+        d.settings.dockerBookmarkLinks = all;
+        try {
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
+        } catch {
+            d.settings.dockerBookmarkLinks = before;
+            d.showNotification?.(this.t('dockerBookmarkSaveFailed', 'Could not save the link.'), 'error');
+            return;
+        }
+        this.view.render?.();
+    }
+
     /** The same rule the server keeps: http or https, with [IP] allowed for the host. */
     static isWebAddress(value) {
         try {
@@ -577,18 +690,45 @@ class DockerDrawer {
     _renderVolumes(body, detail) {
         if (!body || !detail) return;
         body.replaceChildren();
+        /*
+         * One block per mount: where it appears in the container, then where
+         * it comes from. A long path breaks after a slash, never mid-name.
+         */
+        const pathEl = (cls, value) => {
+            const el = document.createElement('span');
+            el.className = cls;
+            String(value || '').split('/').forEach((part, i) => {
+                if (i) el.append('/', document.createElement('wbr'));
+                el.append(part);
+            });
+            return el;
+        };
         (detail.mounts || []).forEach((m) => {
             const row = document.createElement('div');
             row.className = 'docker-volume-row';
-            const path = document.createElement('span');
-            path.textContent = `${m.source} → ${m.destination}`;
-            row.appendChild(path);
+            row.setAttribute('data-docker-mount', m.destination || '');
+            const head = document.createElement('div');
+            head.className = 'docker-volume-head';
+            head.appendChild(pathEl('docker-volume-dest', m.destination));
+            const tags = document.createElement('span');
+            tags.className = 'docker-volume-tags';
+            if (m.type) {
+                const type = document.createElement('span');
+                type.className = 'docker-volume-tag';
+                type.textContent = m.type;
+                tags.appendChild(type);
+            }
             if (m.readOnly) {
                 const ro = document.createElement('span');
-                ro.className = 'docker-volume-readonly';
-                ro.textContent = `(${this.t('dockerFieldReadOnly', 'Read-only')})`;
-                row.appendChild(ro);
+                ro.className = 'docker-volume-tag docker-volume-readonly';
+                ro.textContent = this.t('dockerFieldReadOnly', 'Read-only');
+                tags.appendChild(ro);
             }
+            head.appendChild(tags);
+            const from = document.createElement('div');
+            from.className = 'docker-volume-source';
+            from.append(`${this.t('dockerMountFrom', 'from')} `, pathEl('', m.source || m.name));
+            row.append(head, from);
             body.appendChild(row);
         });
     }
@@ -671,13 +811,31 @@ class DockerDrawer {
         sizeVal.textContent = window.DashboardDocker.formatSize(this._summary?.size);
         size.append(sizeLabel, sizeVal);
 
+        // Network and disk, as rates: the sampler's last reading, since a
+        // rate needs two -- a dash until there is one.
+        const ioRow = (label, attr) => {
+            const row = document.createElement('div');
+            row.className = 'docker-resource-row';
+            const name = document.createElement('span');
+            name.textContent = label;
+            const val = document.createElement('span');
+            val.setAttribute(attr, '');
+            val.textContent = '—';
+            row.append(name, val);
+            return [row, val];
+        };
+        const [net, netVal] = ioRow(this.t('dockerFieldNetwork', 'Network'), 'data-docker-net');
+        const [disk, diskVal] = ioRow(this.t('dockerFieldDiskIO', 'Disk I/O'), 'data-docker-diskio');
+
         // The last hour, under the figures: filled by _renderCharts once the
         // first answer with history lands.
         const charts = document.createElement('div');
         charts.className = 'docker-charts';
         charts.setAttribute('data-docker-charts', '');
 
-        body.append(cpu, mem, size, charts);
+        body.append(cpu, mem, size, net, disk, charts);
+        els.netEl = netVal;
+        els.diskIoEl = diskVal;
         els.cpuEl = cpuVal;
         els.memEl = memVal;
         els.sizeEl = sizeVal;
@@ -724,7 +882,26 @@ class DockerDrawer {
         if (withHistory && data) {
             this._history = { name, enabled: data.historyEnabled !== false, points: Array.isArray(data.history) ? data.history : [] };
         }
-        if (this._history?.name === name && data) this._renderCharts(data);
+        if (this._history?.name === name && data) {
+            this._renderIO();
+            this._renderCharts(data);
+        }
+    }
+
+    /** Network and disk from the newest sampled point: rates need two readings. */
+    _renderIO() {
+        const last = this._history?.enabled ? this._history.points[this._history.points.length - 1] : null;
+        const rate = (v) => (v > 0 ? `${dockerFormatBytes(v)}/s` : '0 B/s');
+        if (this._els?.netEl) {
+            this._els.netEl.textContent = last
+                ? this.t('dockerNetRates', '↓ {in} · ↑ {out}', { in: rate(last.netIn), out: rate(last.netOut) })
+                : '—';
+        }
+        if (this._els?.diskIoEl) {
+            this._els.diskIoEl.textContent = last
+                ? this.t('dockerDiskRates', 'read {read} · write {write}', { read: rate(last.diskRead), write: rate(last.diskWrite) })
+                : '—';
+        }
     }
 
     /* Two charts of the last hour: the sampler's points, then the figure now. */
@@ -755,6 +932,13 @@ class DockerDrawer {
                 (v) => dockerFormatCpu(v), nowMs),
             this._chart('mem', this.t('dockerChartMemory', 'Memory · last hour'), series, (p) => p.mem,
                 (v) => dockerFormatBytes(v), nowMs),
+            // In and out together, read and written together: one line each,
+            // the split is in the figures above. Sampled points only -- the
+            // figure "now" has no rate of its own.
+            this._chart('net', this.t('dockerChartNetwork', 'Network · last hour'), points, (p) => (p.netIn || 0) + (p.netOut || 0),
+                (v) => `${dockerFormatBytes(v)}/s`, nowMs),
+            this._chart('disk', this.t('dockerChartDiskIO', 'Disk I/O · last hour'), points, (p) => (p.diskRead || 0) + (p.diskWrite || 0),
+                (v) => `${dockerFormatBytes(v)}/s`, nowMs),
         );
     }
 
@@ -888,6 +1072,33 @@ class DockerDrawer {
         if (u.held && u.status !== 'held') text += ` ${this.t('dockerUpdatesHeldNote', 'Updates are held.')}`;
         status.textContent = text;
         body.appendChild(status);
+
+        // Automatic updates: this container, in the nightly window set in
+        // Config -> Containers, with a rollback if it does not keep running.
+        if (control) {
+            const d = this.view.dash;
+            const from = String(d.settings?.dockerAutoUpdateFrom ?? 3).padStart(2, '0');
+            const to = String(d.settings?.dockerAutoUpdateTo ?? 5).padStart(2, '0');
+            const wrap = document.createElement('label');
+            wrap.className = 'docker-auto-update';
+            const box = document.createElement('input');
+            box.type = 'checkbox';
+            box.setAttribute('data-docker-auto-update', '');
+            box.checked = this.view.isAutoUpdated(detail);
+            box.addEventListener('change', async () => {
+                const ok = await this.view.setAutoUpdate([detail.name], box.checked);
+                if (!ok) box.checked = !box.checked;
+            });
+            const text = document.createElement('span');
+            text.textContent = this.t('dockerAutoUpdateLabel', 'Update automatically');
+            const note = document.createElement('small');
+            note.className = 'docker-auto-update-note';
+            note.textContent = d.settings?.dockerUpdateInterval && d.settings.dockerUpdateInterval !== 'off'
+                ? this.t('dockerAutoUpdateNote', 'Between {from}:00 and {to}:00, when a check finds a newer image. Rolled back if it stops, restarts or turns unhealthy within 5 minutes.', { from, to })
+                : this.t('dockerAutoUpdateNeedsCheck', 'Needs the update check on in Config → Containers: it is what finds a newer image.');
+            wrap.append(box, text, note);
+            body.appendChild(wrap);
+        }
 
         const summary = this._summary?.name === detail.name ? { ...this._summary, ...detail } : detail;
         const button = (choice, label, primary = false) => {
@@ -1086,11 +1297,14 @@ class DockerDrawer {
                 this.t('dockerHealthFailing', '{count} in a row', { count: data.failingStreak }));
         }
         if (data.command) {
+            const label = document.createElement('div');
+            label.className = 'docker-health-label';
+            label.textContent = this.t('dockerHealthCommand', 'The check');
             const cmd = document.createElement('code');
             cmd.className = 'docker-health-command';
             cmd.setAttribute('data-docker-health-command', '');
             cmd.textContent = data.command;
-            body.appendChild(cmd);
+            body.append(label, cmd);
         }
         const checks = Array.isArray(data.checks) ? data.checks : [];
         if (!checks.length) {
@@ -1100,6 +1314,10 @@ class DockerDrawer {
             body.appendChild(msg);
             return;
         }
+        const recent = document.createElement('div');
+        recent.className = 'docker-health-label';
+        recent.textContent = this.t('dockerHealthRecent', 'Last checks');
+        body.appendChild(recent);
         const list = document.createElement('ol');
         list.className = 'docker-health-checks';
         checks.forEach((check) => {
@@ -1111,11 +1329,18 @@ class DockerDrawer {
             head.className = 'docker-health-check-head';
             const mark = document.createElement('span');
             mark.className = 'docker-health-mark';
-            mark.textContent = ok ? '✓' : `✗ ${this.t('dockerHealthExit', 'exit {code}', { code: check.exitCode })}`;
+            mark.textContent = ok ? '✓' : '✗';
             const when = document.createElement('span');
             when.className = 'docker-health-when';
             when.textContent = dockerFormatDate(check.start);
             head.append(mark, when);
+            // The exit code after the time, so every time starts in one column.
+            if (!ok) {
+                const code = document.createElement('span');
+                code.className = 'docker-health-exit';
+                code.textContent = this.t('dockerHealthExit', 'exit {code}', { code: check.exitCode });
+                head.appendChild(code);
+            }
             item.appendChild(head);
             if (check.output) {
                 const out = document.createElement('pre');

@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.15.6 — 30 September 2026](#v1156--30-september-2026)
 - [v1.15.5 — 30 September 2026](#v1155--30-september-2026)
 - [v1.15.4 — 30 September 2026](#v1154--30-september-2026)
 - [v1.15.3 — 30 September 2026](#v1153--30-september-2026)
@@ -228,6 +229,44 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.15.6 — 30 September 2026
+
+The Containers view grows up: choose your columns, see a web UI's bookmark and its health, get told when a container runs hot, let updates run at night with a rollback, and measure what Unraid's appdata takes. It leads the What's new window.
+
+### Containers
+
+- **new — automatic updates.** A switch in a container's Updates section, or **Update automatically** in the selection bar, lets nextDash update it in a nightly window (Config → Containers → Updates, 03:00–05:00 at first). One container at a time, only what the last check found, never a skipped or held version or nextDash's own. Each update is watched for five minutes; a container that stops, restarts on its own or turns unhealthy is rolled back and the version skipped. Updates, rollbacks and failures send a notice. New `docker_auto_update.go`.
+- **new — a web UI's bookmark.** A bookmark mark follows a container's web UI link in the colour of the bookmark's checks; a click opens the bookmark in the Bookmarks view, its row in view and in focus, on Details. It is found by hand (the side panel's new **Bookmark** section), else by the same port on this server, a subdomain named after the container, or its title — and not guessed between two. The bookmark's Details say **Runs in** back. Chosen links are kept in `dockerBookmarkLinks`.
+- **new — notices when a container runs hot.** Above 90 % CPU of every core or 90 % memory of its limit for 10 minutes (each adjustable in Config → Containers → Notifications), and when it is back under. Reads the stats history. New `docker_usage_alerts.go`.
+- **new — Columns.** Show or hide Image, Status, CPU, RAM, Size, Restarts, Web UI and Ports; remembered with the view. **Restarts** (off at first) counts starts again in the last 24 hours, from the timeline.
+- **new — sort by size and restarts**, from the headings and the sort menu.
+- **new — group by network or by image**, beside project and status.
+- **new — network and disk I/O** in Resources: in/out and read/written now, and two more charts of the last hour.
+- **new — Disk: remove stopped containers** in one go, after naming them; volumes and images stay, hidden ones and nextDash's own are left.
+- **new — Disk: measure a bind mount's folder.** A short-lived `alpine` container mounts it read-only with no network and runs `du`; only folders a container mounts can be measured. New `POST /api/docker/binds/measure`.
+- **new — an ℹ in the header** explains the view, as Bookmarks and Inbox have.
+- **fix — a followed container log stayed silent in the browser.** The gzip middleware asserted `http.Flusher` on the request log's recorder, which only has `Unwrap`, so nothing was flushed until 4 KB had piled up. It now flushes through `http.ResponseController`.
+- **fix — the side panel's Volumes and Health were hard to read.** A mount shows where it appears in the container, with where it comes from under it and tags for its kind and read-only; the health check sits in its own block, and each last check is a mark and a time in one column.
+
+### Bookmarks
+
+- **fix — a bookmark further down than the first page lost its cursor** when opened from elsewhere; the list is drawn down to it and scrolled to it.
+- **fix — after closing the side panel with the mouse, the page would not scroll** until Escape: the row stayed the cursor and kept Space and the arrow keys. Closed with the mouse it lets go; closed with Escape or `i` it stays.
+
+### What's new
+
+- **fix — Support and Esc sit in the header's right corner.**
+
+### Tests
+
+- **fix — the update-status fixture let a test end mid-fetch without failing it.**
+
+### Docs
+
+- **docs — MANUAL §11.3 and §14, Config → Help and four new tips describe all of the above, in six languages; README's Containers caption too.** `static/data/whats-new/v1.15.6.json`, its index entry and two Overview entries (the bookmark link and automatic updates); `whats-new-stub.js` moves `DASHBOARD_RELEASE` to v1.15.6 and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v310`.
 
 ---
 

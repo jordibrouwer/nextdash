@@ -2582,6 +2582,8 @@ class DashboardConfig {
 
     clearBookmarkKeyboardSelection() {
         this._bmKeyboardKey = null;
+        this._bmRevealKey = null;
+        this._bmRevealFocusUntil = 0;
         this._bmPanelHoldKey = null;
         document.querySelectorAll('#config-bm-list .config-bm-row.keyboard-selected').forEach((row) => {
             row.classList.remove('keyboard-selected');
@@ -2616,6 +2618,18 @@ class DashboardConfig {
             this._bmKeyboardKey = null;
         }
         this.applyBookmarkKeyboardSelection(rows);
+        if (this._bmKeyboardKey && this._bmRevealFocusUntil > Date.now()) {
+            this.revealBookmarkRow(rows.find((row) => this.bookmarkRowKey(row) === this._bmKeyboardKey));
+        }
+    }
+
+    /** A row in the middle of the list and in focus, unless the reader is typing elsewhere. */
+    revealBookmarkRow(row) {
+        if (!row) return;
+        const active = document.activeElement;
+        if (active && active !== document.body && !active.closest?.('#config-bm-list') && active.matches?.('input, textarea, select')) return;
+        row.scrollIntoView({ block: 'center', behavior: 'instant' });
+        row.focus({ preventScroll: true });
     }
 
     moveBookmarkKeyboardSelection(delta, rows) {
@@ -3293,6 +3307,7 @@ class DashboardConfig {
         dockerViewCloseOutside: ['docker', 'containers', 'panel', 'drawer', 'close'],
         dockerViewKeyLegend: ['docker', 'containers', 'keys', 'legend', 'keyboard'],
         dockerNotify: ['docker', 'containers', 'notify', 'notification', 'alert', 'crash', 'restart', 'unhealthy', 'webhook'],
+        dockerUsageAlerts: ['docker', 'containers', 'notify', 'alert', 'cpu', 'memory', 'ram', 'usage', 'threshold', 'hot'],
         dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
         statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
@@ -5150,7 +5165,13 @@ class DashboardConfig {
      * in Health"): the view with nothing filtered away, the row under the
      * cursor and its panel open on Health.
      */
-    async openLibraryOnBookmark(pageId, url) {
+    /**
+     * The Bookmarks view at one bookmark: filters cleared, its row the cursor.
+     * By default its side panel opens on Health (the context menu's "Show in
+     * Bookmarks"); `tab` names another, and `focusRow` puts the keyboard on
+     * the row, as when the Containers view hands a web UI's bookmark over.
+     */
+    async openLibraryOnBookmark(pageId, url, { tab = 'health', focusRow = false } = {}) {
         history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}#bookmarks`);
         await this.openLibraryView();
         const wanted = String(url || '').trim();
@@ -5158,9 +5179,39 @@ class DashboardConfig {
             && String(x.url || '').trim() === wanted);
         if (!b) return false;
         if (this.bookmarksFiltersActive()) this.clearBookmarkFilters();
-        this._bmKeyboardKey = this.bookmarkKey(b);
+        const key = this.bookmarkKey(b);
+        this._bmKeyboardKey = key;
+        /*
+         * The list draws a page of rows at a time, and a render that finds no
+         * row for the cursor drops it. A bookmark further down than the first
+         * page is drawn first: the limit is raised to reach it, then the row
+         * is waited for, so the cursor lands on it rather than on nothing.
+         */
+        this._bmRevealKey = key;
+        const index = this.visibleBookmarks().findIndex((x) => this.bookmarkKey(x) === key);
+        if (index >= 0 && !document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(key)}"]`)) {
+            this.repaintBookmarksList?.();
+        }
+        const rowFor = () => document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(key)}"]`);
+        for (let i = 0; i < 40 && !rowFor(); i += 1) {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        this._bmKeyboardKey = key;
+        if (index >= 0 && this.bookmarkRowWindow?.()) this.scrollBookmarkRowIntoWindow?.(index);
         this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
-        this.openBmHealthPanelSection();
+        if (tab === 'health') {
+            this.openBmHealthPanelSection();
+        } else {
+            this._libDrawerWanted = true;
+            this.repaintWorkbenchPanel?.();
+            this.setWorkbenchPanelTab?.(tab);
+        }
+        if (focusRow) {
+            // The list redraws once more as its categories land; for a few
+            // seconds each redraw puts the row back in view and in focus.
+            this._bmRevealFocusUntil = Date.now() + 4000;
+            this.revealBookmarkRow(rowFor());
+        }
         return true;
     }
 
@@ -12102,6 +12153,12 @@ class DashboardConfig {
         dockerConfirmStopRestart: { def: false },
         dockerStatsHistory: { def: true },
         dockerNotify: { def: true },
+        dockerUsageAlerts: { def: true },
+        dockerCpuAlertPercent: { def: 90 },
+        dockerMemAlertPercent: { def: 90 },
+        dockerUsageAlertMinutes: { def: 10 },
+        dockerAutoUpdateFrom: { def: 3 },
+        dockerAutoUpdateTo: { def: 5 },
         dockerViewCloseOutside: { def: true },
         dockerViewKeyLegend: { def: 'above' },
         dockerHostAddress: { def: '' },
@@ -12478,7 +12535,7 @@ class DashboardConfig {
                 section: 'containers',
                 tab: null,
                 title: t('config.containersGroupUpdates', 'Updates'),
-                note: t('config.containersGroupUpdatesNote', 'Asks the registries whether a newer image is waiting. Off by default because it makes outbound requests.'),
+                note: t('config.containersGroupUpdatesNote', 'Asks the registries whether a newer image is waiting. Off by default because it makes outbound requests. Containers you set to update automatically (in their side panel) are updated in the window below, and rolled back if they stop, restart or turn unhealthy within 5 minutes.'),
                 controls: [
                     { field: 'dockerUpdateInterval', type: 'select', label: t('config.dockerUpdateIntervalLabel', 'Check for image updates'), options: [
                         opt('off', t('dashboard.dockerIntervalOff', 'Off')),
@@ -12486,6 +12543,12 @@ class DashboardConfig {
                         opt('12h', t('dashboard.dockerInterval12h', 'Every 12 hours')),
                         opt('24h', t('dashboard.dockerInterval24h', 'Every 24 hours')),
                     ] },
+                    // The window automatic updates run in; which containers
+                    // take part is chosen per container, in its side panel.
+                    { field: 'dockerAutoUpdateFrom', type: 'select', label: t('config.dockerAutoUpdateFromLabel', 'Automatic updates from'),
+                        options: Array.from({ length: 24 }, (_, h) => opt(h, `${String(h).padStart(2, '0')}:00`)) },
+                    { field: 'dockerAutoUpdateTo', type: 'select', label: t('config.dockerAutoUpdateToLabel', 'until'),
+                        options: Array.from({ length: 24 }, (_, h) => opt(h, `${String(h).padStart(2, '0')}:00`)) },
                 ],
             },
             {
@@ -12501,9 +12564,23 @@ class DashboardConfig {
                 section: 'containers',
                 tab: null,
                 title: t('config.containersGroupNotify', 'Notifications'),
-                note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on.'),
+                note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on. CPU is a share of every core, memory of the container’s limit (the host’s memory when it has none); those notices need Keep the last hour of CPU and memory on.'),
                 controls: [
                     bool('dockerNotify', 'config.dockerNotifyLabel', 'Notify about containers'),
+                    // Reads the stats history, so it says nothing while that is off.
+                    bool('dockerUsageAlerts', 'config.dockerUsageAlertsLabel', 'Also when one uses too much CPU or memory'),
+                    { field: 'dockerCpuAlertPercent', type: 'select', label: t('config.dockerCpuAlertLabel', 'CPU above'), options: [
+                        opt(50, '50 %'), opt(70, '70 %'), opt(80, '80 %'), opt(90, '90 %'), opt(95, '95 %'),
+                    ] },
+                    { field: 'dockerMemAlertPercent', type: 'select', label: t('config.dockerMemAlertLabel', 'Memory above'), options: [
+                        opt(70, '70 %'), opt(80, '80 %'), opt(90, '90 %'), opt(95, '95 %'),
+                    ] },
+                    { field: 'dockerUsageAlertMinutes', type: 'select', label: t('config.dockerUsageAlertMinutesLabel', 'For at least'), options: [
+                        opt(5, t('config.dockerUsageMinutes5', '5 minutes')),
+                        opt(10, t('config.dockerUsageMinutes10', '10 minutes')),
+                        opt(15, t('config.dockerUsageMinutes15', '15 minutes')),
+                        opt(30, t('config.dockerUsageMinutes30', '30 minutes')),
+                    ] },
                 ],
             },
             // Config → Bookmarks had no settings at all; the list made these
@@ -22316,7 +22393,13 @@ class DashboardConfig {
      */
     bookmarkVisibleLimit(total) {
         const page = this.bmPageSize();
-        const wanted = Math.max(page, Number(this.bmVisibleLimit) || page);
+        let wanted = Math.max(page, Number(this.bmVisibleLimit) || page);
+        // A bookmark handed over from elsewhere (openLibraryOnBookmark) stays
+        // drawn however a later render orders the list, so its cursor holds.
+        if (this._bmRevealKey) {
+            const at = this.visibleBookmarks().findIndex((b) => this.bookmarkKey(b) === this._bmRevealKey);
+            if (at >= 0) wanted = Math.max(wanted, at + 1);
+        }
         return Math.max(page, Math.min(wanted, Number(total) || 0) || page);
     }
 
@@ -25580,6 +25663,12 @@ class DashboardConfig {
         this.updateBookmarkListChrome();
         if (scrollHost) scrollHost.scrollTop = scrollTop;
         else window.scrollTo(0, scrollTop);
+        // A bookmark handed over from elsewhere wins over the kept position:
+        // after it, so the restore above does not undo it.
+        if (this._bmKeyboardKey && this._bmRevealFocusUntil > Date.now()) {
+            this.revealBookmarkRow([...host.querySelectorAll('.config-bm-row')]
+                .find((row) => this.bookmarkRowKey(row) === this._bmKeyboardKey));
+        }
         this.setupBookmarkLoadMore(host);
         this.bindBookmarkWindowScroll();
         if (focusedKey) {

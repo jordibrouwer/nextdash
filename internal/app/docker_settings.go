@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -40,6 +41,15 @@ func normalizeDockerSettings(s *Settings) {
 	if !dockerLogLineChoices[s.DockerLogLines] {
 		s.DockerLogLines = 200
 	}
+	if !dockerCPUAlertChoices[s.DockerCPUAlertPercent] {
+		s.DockerCPUAlertPercent = 90
+	}
+	if !dockerMemAlertChoices[s.DockerMemAlertPercent] {
+		s.DockerMemAlertPercent = 90
+	}
+	if !dockerUsageMinutesChoices[s.DockerUsageAlertMinutes] {
+		s.DockerUsageAlertMinutes = 10
+	}
 	switch s.DockerViewKeyLegend {
 	case "above", "below", "off":
 	default:
@@ -47,7 +57,20 @@ func normalizeDockerSettings(s *Settings) {
 	}
 	s.DockerHiddenContainers = normalizeDockerNameList(s.DockerHiddenContainers)
 	s.DockerNotifyMuted = normalizeDockerNameList(s.DockerNotifyMuted)
+	s.DockerAutoUpdate = normalizeDockerNameList(s.DockerAutoUpdate)
+	// 3 to 5 at night until chosen; a stored 0/0 is no window, so both zero
+	// reads as never set.
+	if s.DockerAutoUpdateFrom == 0 && s.DockerAutoUpdateTo == 0 {
+		s.DockerAutoUpdateFrom, s.DockerAutoUpdateTo = 3, 5
+	}
+	if !dockerAutoHourChoices[s.DockerAutoUpdateFrom] {
+		s.DockerAutoUpdateFrom = 3
+	}
+	if !dockerAutoHourChoices[s.DockerAutoUpdateTo] {
+		s.DockerAutoUpdateTo = 5
+	}
 	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
+	s.DockerBookmarkLinks = normalizeDockerBookmarkLinks(s.DockerBookmarkLinks)
 	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)
 }
 
@@ -93,6 +116,37 @@ func normalizeDockerHostAddress(raw string) string {
 var dockerHostName = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$`)
 
 const dockerMaxWebUILen = 2048
+
+// normalizeDockerBookmarkLinks keeps "-" (no bookmark) and "<pageId>::<url>"
+// with a web address, per container name.
+func normalizeDockerBookmarkLinks(in map[string]string) map[string]string {
+	out := map[string]string{}
+	for rawName, rawLink := range in {
+		name := strings.TrimPrefix(strings.TrimSpace(rawName), "/")
+		link := strings.TrimSpace(rawLink)
+		if name == "" || len(name) > dockerMaxHiddenNameLen || link == "" || len(link) > dockerMaxWebUILen {
+			continue
+		}
+		if link != "-" {
+			page, address, ok := strings.Cut(link, "::")
+			if _, err := strconv.Atoi(page); !ok || err != nil {
+				continue
+			}
+			parsed, err := url.Parse(address)
+			if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+				continue
+			}
+		}
+		out[name] = link
+		if len(out) == dockerMaxHidden {
+			break
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
 
 // normalizeDockerWebUIs keeps only web addresses. [IP] is Unraid's stand-in
 // for the host the dashboard was opened on, so it is allowed where a host goes.

@@ -59,12 +59,18 @@ type dockerViewContainer struct {
 	// LanIP is the container's own address on the LAN, set only when it sits
 	// on a macvlan or ipvlan network (Unraid's br0): there [IP] means the
 	// container, not the host nextDash was opened on.
-	LanIP  string             `json:"lanIP,omitempty"`
-	Update *dockerImageUpdate `json:"update,omitempty"`
-	Self   bool               `json:"self,omitempty"`
+	LanIP string `json:"lanIP,omitempty"`
+	// Network is the one the list groups the container under: the network
+	// mode it runs in when that is a network, else the first it joined.
+	Network string             `json:"network,omitempty"`
+	Update  *dockerImageUpdate `json:"update,omitempty"`
+	Self    bool               `json:"self,omitempty"`
 	// Size is the last background measurement (docker_sizes.go), absent
 	// before the first.
 	Size *dockerContainerSize `json:"size,omitempty"`
+	// Restarts is how often it started again in the last 24 hours, from the
+	// timeline (docker_timeline.go); absent at none.
+	Restarts int `json:"restarts,omitempty"`
 	// Usage is the stats sampler's latest reading, on the list only and only
 	// for a running container the sampler has read twice (CPU is a delta).
 	Usage *dockerViewUsage `json:"usage,omitempty"`
@@ -253,6 +259,7 @@ func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 	if len(c.ID) >= 12 {
 		v.ShortID = c.ID[:12]
 	}
+	v.Network = dockerPrimaryNetwork(c)
 	// One address for everything that opens it: the table, the palette, the
 	// widget and the drawer read webui and never choose between the two.
 	v.WebUI = v.WebUICustom
@@ -270,6 +277,29 @@ func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 		v.Ports = append(v.Ports, dockerViewPort{Private: p.PrivatePort, Public: p.PublicPort, Type: p.Type, IP: p.IP})
 	}
 	return v
+}
+
+// dockerPrimaryNetwork: the network a container is grouped under. Its network
+// mode when that names a network it is on (bridge, br0, a compose network)
+// or is host; a container sharing another's stack (container:<id>) and a
+// custom mode fall back to the first network it joined, by name.
+func dockerPrimaryNetwork(c dockerContainerSummary) string {
+	mode := c.HostConfig.NetworkMode
+	if mode == "host" || mode == "none" {
+		return mode
+	}
+	if _, ok := c.NetworkSettings.Networks[mode]; ok {
+		return mode
+	}
+	names := make([]string, 0, len(c.NetworkSettings.Networks))
+	for n := range c.NetworkSettings.Networks {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	if len(names) > 0 {
+		return names[0]
+	}
+	return mode
 }
 
 // writeDockerError maps whatever went wrong to the status and shape every
@@ -620,13 +650,15 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	usageEnabled := h.store.GetSettings().DockerStatsHistory
 	now := time.Now()
 	for _, c := range list {
-		if hidden[c.name()] {
+		// Hidden in Config, or a size measurement's throwaway container.
+		if hidden[c.name()] || c.Labels[dockerBindMeasureLabel] == "1" {
 			continue
 		}
 		v := toDockerView(c, self)
 		v.LanIP = dockerLanIP(c, lan)
 		v.Update = dockerRowUpdate(updates[c.Image], c, tagIDs)
 		v.Size = dockerSizeOf(c.ID, now)
+		v.Restarts = dockerTimelines.restartsSince(c.name(), now.Add(-24*time.Hour))
 		if usageEnabled && c.State == "running" {
 			if p, ok := dockerStatsStore.latest(c.ID); ok {
 				v.Usage = &dockerViewUsage{CPU: p.CPU, Mem: p.Mem}

@@ -573,26 +573,6 @@
         modal.querySelectorAll(':scope > [data-wn-foot]').forEach((el) => el.remove());
         foot.classList.add('wn-foot--lifted');
         body.after(foot);
-        alignHeaderToFooter();
-    }
-
-    /*
-     * The header's Support and Esc sit exactly above the footer's.
-     *
-     * The footer says "Esc to close" and the header "Esc x", so the two differ
-     * in width by however long "to close" is in the reader's language. The
-     * header's close takes the footer's measured width, right-aligned, and
-     * with the same gaps (CSS) the two Support buttons line up too.
-     */
-    function alignHeaderToFooter() {
-        const modal = document.querySelector('#app-modal .whats-new-modal');
-        const close = modal?.querySelector('.modal-header .wn-modal-close');
-        const esc = modal?.querySelector(':scope > [data-wn-foot] .wn-foot-esc');
-        if (!close || !esc) return;
-        requestAnimationFrame(() => {
-            const width = esc.getBoundingClientRect().width;
-            if (width) close.style.width = `${Math.ceil(width)}px`;
-        });
     }
 
     /** The shared modal shows other things too; the lifted footer is ours. */
@@ -926,8 +906,7 @@
             tools.innerHTML = buildKofiButtonHtml('wn-kofi-btn--head').trim();
             tools.appendChild(close);
             wnHeader.appendChild(tools);
-            alignHeaderToFooter();
-        }
+            }
 
         mountWhatsNewUpdateCheckHeader();
         if (updateCheckEnabled()) {

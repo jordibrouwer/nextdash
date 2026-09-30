@@ -739,6 +739,7 @@
             const b = this.findBookmarkByKey(key);
             void this.fillBmDetailsCopies?.(panel, b);
             void this.fillBmDetailsPreview?.(panel, b);
+            this.fillBmDetailsContainers?.(panel, b);
         }
         if (mode === 'bulk') void this.fillWorkbenchBulkSuggestions(panel);
         this.syncWorkbenchToolbar();
@@ -764,7 +765,7 @@
                 id: 'library',
                 storageKey: 'nextdash.library.drawer',
                 closeLabel: this.t('config.bmCloseDetails', 'Close'),
-                onClose: () => this.onLibraryDrawerClosed(),
+                onClose: (via) => this.onLibraryDrawerClosed(via),
                 // A press beside the panel closes it; one on a row, or on a
                 // row's tick box, moves it there instead.
                 // Unless View says the panel stays until it is closed.
@@ -810,11 +811,19 @@
     },
 
     /** × on the side panel: closed until the next click; a selection is dropped with it. */
-    onLibraryDrawerClosed() {
+    onLibraryDrawerClosed(via) {
         this._libDrawerWanted = false;
         if (this.bmSelected.size > 1) {
             this.bmSelected.clear();
             this.afterSelectionChange();
+        }
+        // Closed with the mouse, the row lets go too: left as the cursor, it
+        // kept the arrow keys and Space for itself, and the page would not
+        // scroll until Escape. Closed from the keyboard (Escape, i), the
+        // cursor stays where the keys left it.
+        if (via === 'pointer') {
+            if (document.activeElement?.closest?.('#config-bm-list')) document.activeElement.blur();
+            this.clearBookmarkKeyboardSelection();
         }
     },
 

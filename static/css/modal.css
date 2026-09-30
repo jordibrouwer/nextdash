@@ -2409,7 +2409,6 @@ html body #app-modal .modal.whats-new-modal {
 }
 .whats-new-modal .wn-kofi-btn--head .wn-kofi-icon { width: 13px; height: 13px; }
 
-/* Mirrors the footer row: the same gap and the same margin after the button,
-   so the two Support buttons share a column (see alignHeaderToFooter). */
-.wn-head-tools .wn-kofi-btn--head { margin-right: var(--space-3, 0.75rem); }
-.wn-head-tools .wn-modal-close { justify-content: flex-start; text-align: left; padding-left: 0; box-sizing: border-box; }
+/* Support and Esc sit in the header's top-right corner: Esc's right edge on
+   the same line as the footer's "Esc to close" below it. */
+.wn-head-tools .wn-modal-close { padding-right: 0; }
