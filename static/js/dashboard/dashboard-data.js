@@ -139,7 +139,8 @@ class DashboardData {
         try {
             const [pagesRes, settingsRes, findersRes] = await Promise.all([
                 fetch('/api/pages'),
-                fetch('/api/settings'),
+                // With the token: without it the stored keys come back blank.
+                dashFetch('/api/settings'),
                 fetch('/api/finders')
             ]);
 

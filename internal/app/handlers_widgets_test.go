@@ -217,3 +217,31 @@ func TestSaveBlocksRefusesMoreThanThePageHolds(t *testing.T) {
 		t.Fatalf("status = %d, want 400 rather than a silent truncation", rec.Code)
 	}
 }
+
+/*
+Without the token, GET redacts a custom widget's url and credentialId, and the
+dashboard writes the whole list back after a rename. The stored address must
+survive that round trip.
+*/
+func TestSaveBlocksKeepsARedactedCustomWidgetAddress(t *testing.T) {
+	h := newTestHandlers(t)
+	saved := callBlocks(t, h, http.MethodPut,
+		`{"widgets":[{"type":"custom","title":"Pi","config":{"url":"http://10.0.0.2/api","credentialId":"cred-1","ttl":60}}]}`)
+	id := saved.Widgets[0].ID
+
+	after := callBlocks(t, h, http.MethodPut,
+		`{"widgets":[{"id":"`+id+`","type":"custom","title":"Renamed","config":{"ttl":60}}]}`)
+	cfg := after.Widgets[0].Config
+	if cfg["url"] != "http://10.0.0.2/api" || cfg["credentialId"] != "cred-1" {
+		t.Fatalf("config = %v: the address was wiped by a redacted write-back", cfg)
+	}
+	if after.Widgets[0].Title != "Renamed" {
+		t.Errorf("title = %q", after.Widgets[0].Title)
+	}
+
+	cleared := callBlocks(t, h, http.MethodPut,
+		`{"widgets":[{"id":"`+id+`","type":"custom","title":"Renamed","config":{"url":"","ttl":60}}]}`)
+	if cleared.Widgets[0].Config["url"] == "http://10.0.0.2/api" {
+		t.Errorf("an explicit url must replace the stored one")
+	}
+}

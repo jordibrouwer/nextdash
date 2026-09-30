@@ -2326,7 +2326,29 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	if updateCheckDisabledByEnv() {
 		settings.UpdateCheckEnabled = false
 	}
+	if !hasWriteAccess(r) {
+		redactSettingsSecrets(&settings)
+	}
 	writeJSONWithETag(w, r, settings)
+}
+
+/*
+redactSettingsSecrets blanks the stored keys and tokens for a reader without the
+write token.
+
+This route answers with Access-Control-Allow-Origin: *, so with a token set any
+page open in the browser could read the archive keys, the Pushover token and the
+alert URL (a Telegram one carries the bot token). The app's own pages read it
+with the token. Blank rather than removed: the fields are omitempty, so they do
+not appear at all, and a settings POST that leaves a key out keeps what is
+stored (see mergeSettingsFromBody).
+*/
+func redactSettingsSecrets(settings *Settings) {
+	settings.ArchiveSaveAccessKey = ""
+	settings.ArchiveSaveSecret = ""
+	settings.MonitorNotifyPushoverToken = ""
+	settings.MonitorNotifyPushoverUserKey = ""
+	settings.MonitorNotifyURL = ""
 }
 
 func mergeSettingsFromBody(stored Settings, body []byte) (Settings, error) {

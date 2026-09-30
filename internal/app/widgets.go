@@ -404,6 +404,51 @@ func (fs *FileStore) GetPageBlocks(pageID int) ([]Widget, []string) {
 }
 
 /*
+keepRedactedWidgetAddresses puts back a custom widget's url and credentialId
+when the incoming copy leaves the key out.
+
+Without the token, GET /api/pages/{id}/blocks hands those two back redacted
+(see redactWidgetAddresses), and the dashboard writes the whole list back after
+a rename, resize or hide. Stored as sent, every custom widget on the page lost
+its address. A key that is present, even empty, is the caller's choice.
+*/
+func keepRedactedWidgetAddresses(incoming, stored []Widget) []Widget {
+	byID := make(map[string]Widget, len(stored))
+	for _, widget := range stored {
+		byID[widget.ID] = widget
+	}
+	out := make([]Widget, len(incoming))
+	for i, widget := range incoming {
+		out[i] = widget
+		old, ok := byID[widget.ID]
+		if !ok || widget.Type != WidgetTypeCustom || old.Type != WidgetTypeCustom {
+			continue
+		}
+		var merged map[string]any
+		for _, key := range []string{"url", "credentialId"} {
+			if _, sent := widget.Config[key]; sent {
+				continue
+			}
+			value, had := old.Config[key]
+			if !had {
+				continue
+			}
+			if merged == nil {
+				merged = make(map[string]any, len(widget.Config)+2)
+				for k, v := range widget.Config {
+					merged[k] = v
+				}
+			}
+			merged[key] = value
+		}
+		if merged != nil {
+			out[i].Config = merged
+		}
+	}
+	return out
+}
+
+/*
 SavePageBlocks writes a page's widgets and block order together.
 
 Read-modify-write inside the lock, touching only these two fields: everything
@@ -421,11 +466,19 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 		return err
 	}
 
-	saved, err := normalizeWidgetsForSave(widgets)
-	if err != nil {
-		return err
+	// nil keeps what is stored, read under this lock: a drag sends only the
+	// order, and reading the widgets before taking it wrote back a list that
+	// could miss a widget added in between.
+	if widgets != nil {
+		saved, err := normalizeWidgetsForSave(keepRedactedWidgetAddresses(widgets, page.Widgets))
+		if err != nil {
+			return err
+		}
+		page.Widgets = saved
 	}
-	page.Widgets = saved
+	if order == nil {
+		order = page.BlockOrder
+	}
 	// Resolved rather than stored as given, so a caller cannot write an order
 	// naming blocks that do not exist -- or leave one out and make it vanish.
 	page.BlockOrder = resolveBlockOrder(order, page.Categories, page.Widgets)

@@ -138,14 +138,20 @@ func (h *Handlers) SavePageBlocksHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	current, currentOrder := h.store.GetPageBlocks(pageID)
-	widgets := current
+	// nil for "not sent": the store fills it from what it holds, under its lock.
+	var widgets []Widget
 	if body.Widgets != nil {
 		widgets = *body.Widgets
+		if widgets == nil {
+			widgets = []Widget{}
+		}
 	}
-	order := currentOrder
+	var order []string
 	if body.Order != nil {
 		order = *body.Order
+		if order == nil {
+			order = []string{}
+		}
 	}
 
 	if err := h.store.SavePageBlocks(pageID, widgets, order); err != nil {
@@ -159,6 +165,14 @@ func (h *Handlers) SavePageBlocksHandler(w http.ResponseWriter, r *http.Request)
 		}
 		respondStorePersistError(w, err)
 		return
+	}
+
+	// A tile answers from a cache that lives for the widget's TTL -- up to a
+	// day -- so an edited url, field or label only showed once it ran out.
+	for _, widget := range widgets {
+		if widget.Type == WidgetTypeCustom {
+			customWidgetForget(strconv.Itoa(pageID) + ":" + widget.ID)
+		}
 	}
 
 	savedWidgets, savedOrder := h.store.GetPageBlocks(pageID)

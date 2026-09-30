@@ -128,7 +128,7 @@ class SearchCommandColumns {
         } else {
             // For server settings, we need to fetch current settings, update columnsPerRow, and save back
             try {
-                const response = await fetch('/api/settings');
+                const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/settings');
                 if (response.ok) {
                     const currentSettings = await response.json();
                     currentSettings.columnsPerRow = parseInt(columns, 10);

@@ -6312,7 +6312,7 @@ class DashboardConfig {
         if (this.logQuery) params.set('q', this.logQuery);
 
         try {
-            const res = await fetch(`/api/logs?${params.toString()}`);
+            const res = await this.writeFetch(`/api/logs?${params.toString()}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             if (stale()) return;
@@ -6558,9 +6558,14 @@ class DashboardConfig {
                 }
                 break;
             }
-            case 'download':
-                window.location.href = '/api/logs/download';
+            case 'download': {
+                // A navigation cannot carry the write token, and the route
+                // wants it: with one set, the whole view became "Unauthorized".
+                const stamp = new Date().toISOString().replace(/\..+/, '').replace(/[:T]/g, '-');
+                void this.downloadViaBlob('/api/logs/download', `nextdash-server-${stamp}.log`,
+                    'config.logDownloadFailed', 'Could not download the log.');
                 break;
+            }
             case 'clear': {
                 const ok = await this.confirmAction(
                     this.t('config.logClearConfirm', 'Delete every stored log line? The file on disk goes too, and this cannot be undone.'),
@@ -8926,7 +8931,7 @@ class DashboardConfig {
     async exportSettings() {
         const endWait = this.beginWait(this.t('config.waitExportSettingsTitle', 'Preparing the export…'), this.t('config.waitExportSettingsStatus', 'Collecting your settings'));
         try {
-            const res = await fetch('/api/settings');
+            const res = await this.writeFetch('/api/settings');
             if (!res.ok) throw new Error(res.statusText);
             const settings = await res.json();
             const date = new Date().toISOString().slice(0, 10);
