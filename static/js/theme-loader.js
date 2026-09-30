@@ -161,12 +161,25 @@
         return normalizedStored;
     }
     
+    /*
+     * localStorage, tolerating a browser that refuses it. With site data
+     * blocked the getter itself throws, and this script runs at the top of the
+     * page: one bare read ended it before ThemeLoader existed.
+     */
+    function readStorage(key) {
+        try {
+            return localStorage.getItem(key);
+        } catch (_error) {
+            return null;
+        }
+    }
+
     function readDeviceLocalSettings() {
-        const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
+        const deviceSpecific = readStorage('deviceSpecificSettings') === 'true';
         if (!deviceSpecific) {
             return null;
         }
-        const settings = localStorage.getItem('dashboardSettings');
+        const settings = readStorage('dashboardSettings');
         if (!settings) {
             return null;
         }
@@ -183,7 +196,7 @@
      * @returns {string} The theme name ('dark' or 'light')
      */
     function getTheme() {
-        const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
+        const deviceSpecific = readStorage('deviceSpecificSettings') === 'true';
         let storedTheme = DEFAULT_THEME;
         let parsedSettings = null;
         let autoDarkMode = document.documentElement.getAttribute('data-auto-dark-mode') === 'true';
@@ -221,7 +234,7 @@
      * @returns {string} The font size ('xs', 's', 'sm', 'm', 'lg', 'l', 'xl')
      */
     function getFontSize() {
-        const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
+        const deviceSpecific = readStorage('deviceSpecificSettings') === 'true';
         let fontSize = 'm'; // default
 
         if (deviceSpecific) {

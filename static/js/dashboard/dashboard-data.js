@@ -155,8 +155,17 @@ class DashboardData {
             const serverSettings = await settingsRes.json();
             
             // Load settings from localStorage or server based on device-specific flag
-            const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
-                || localStorage.getItem('deviceSpecificSettings') === 'true';
+            // isDeviceSpecificEnabled already reads the flag and survives a
+            // browser that refuses storage; the bare read behind it threw
+            // there and failed the whole dashboard load.
+            let deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true;
+            if (!deviceSpecific && !window.DeviceSettingsMerge) {
+                try {
+                    deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
+                } catch (_error) {
+                    deviceSpecific = false;
+                }
+            }
             if (deviceSpecific && window.DeviceSettingsMerge?.mergeServerAndDeviceSettings) {
                 const deviceSettings = window.DeviceSettingsMerge.getDeviceSettingsRaw?.();
                 d.settings = window.DeviceSettingsMerge.mergeServerAndDeviceSettings(serverSettings, deviceSettings);

@@ -677,8 +677,11 @@ class SearchCommandsComponent {
             return this.availableCommands.tag([tagShorthand[1], ...parts.slice(1)], query);
         }
 
-        // Check if it's a complete command
-        if (this.availableCommands[potentialCommand]) {
+        // Check if it's a complete command. Own keys only: the table is a
+        // plain object, so ":constructor" and ":__proto__" found Object's own
+        // members -- one threw on every keystroke, the other listed its words
+        // as matches.
+        if (Object.prototype.hasOwnProperty.call(this.availableCommands, potentialCommand)) {
             return this.availableCommands[potentialCommand](parts.slice(1), query);
         }
 
@@ -784,7 +787,7 @@ class SearchCommandsComponent {
             });
             if (isExpanded) {
                 for (const cmd of group.commands) {
-                    if (this.availableCommands[cmd]) {
+                    if (Object.prototype.hasOwnProperty.call(this.availableCommands, cmd)) {
                         const useCtx = ctxName && bookmarkContextCmds.has(cmd);
                         result.push({
                             name: useCtx ? ctxName : '',

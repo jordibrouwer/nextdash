@@ -24,7 +24,10 @@
             pageId: Number.isFinite(pageId) ? pageId : null,
             bookmarkIndex: Number.isFinite(bookmarkIndex) ? bookmarkIndex : null,
             categoryId: categoryRaw || null,
-            url: urlRaw ? decodeURIComponent(urlRaw) : null,
+            // URLSearchParams has decoded it already. Decoding again threw on a
+            // lone "%" (the dashboard then failed to load, and every reload
+            // did the same) and turned %C3%A9 into é, which no row matches.
+            url: urlRaw || null,
             edit: editRaw === '1' || editRaw === 'true',
         };
     }
