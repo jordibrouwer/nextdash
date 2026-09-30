@@ -3293,6 +3293,7 @@ class DashboardConfig {
         dockerViewCloseOutside: ['docker', 'containers', 'panel', 'drawer', 'close'],
         dockerViewKeyLegend: ['docker', 'containers', 'keys', 'legend', 'keyboard'],
         dockerNotify: ['docker', 'containers', 'notify', 'notification', 'alert', 'crash', 'restart', 'unhealthy', 'webhook'],
+        dockerUsageAlerts: ['docker', 'containers', 'notify', 'alert', 'cpu', 'memory', 'ram', 'usage', 'threshold', 'hot'],
         dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
         statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
@@ -12102,6 +12103,10 @@ class DashboardConfig {
         dockerConfirmStopRestart: { def: false },
         dockerStatsHistory: { def: true },
         dockerNotify: { def: true },
+        dockerUsageAlerts: { def: true },
+        dockerCpuAlertPercent: { def: 90 },
+        dockerMemAlertPercent: { def: 90 },
+        dockerUsageAlertMinutes: { def: 10 },
         dockerViewCloseOutside: { def: true },
         dockerViewKeyLegend: { def: 'above' },
         dockerHostAddress: { def: '' },
@@ -12501,9 +12506,23 @@ class DashboardConfig {
                 section: 'containers',
                 tab: null,
                 title: t('config.containersGroupNotify', 'Notifications'),
-                note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on.'),
+                note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on. CPU is a share of every core, memory of the container’s limit (the host’s memory when it has none); those notices need Keep the last hour of CPU and memory on.'),
                 controls: [
                     bool('dockerNotify', 'config.dockerNotifyLabel', 'Notify about containers'),
+                    // Reads the stats history, so it says nothing while that is off.
+                    bool('dockerUsageAlerts', 'config.dockerUsageAlertsLabel', 'Also when one uses too much CPU or memory'),
+                    { field: 'dockerCpuAlertPercent', type: 'select', label: t('config.dockerCpuAlertLabel', 'CPU above'), options: [
+                        opt(50, '50 %'), opt(70, '70 %'), opt(80, '80 %'), opt(90, '90 %'), opt(95, '95 %'),
+                    ] },
+                    { field: 'dockerMemAlertPercent', type: 'select', label: t('config.dockerMemAlertLabel', 'Memory above'), options: [
+                        opt(70, '70 %'), opt(80, '80 %'), opt(90, '90 %'), opt(95, '95 %'),
+                    ] },
+                    { field: 'dockerUsageAlertMinutes', type: 'select', label: t('config.dockerUsageAlertMinutesLabel', 'For at least'), options: [
+                        opt(5, t('config.dockerUsageMinutes5', '5 minutes')),
+                        opt(10, t('config.dockerUsageMinutes10', '10 minutes')),
+                        opt(15, t('config.dockerUsageMinutes15', '15 minutes')),
+                        opt(30, t('config.dockerUsageMinutes30', '30 minutes')),
+                    ] },
                 ],
             },
             // Config → Bookmarks had no settings at all; the list made these

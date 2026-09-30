@@ -143,6 +143,7 @@ test.describe('config info + reset affordances', () => {
             // explanation is on screen, as with Theme above.
             'dockerViewEnabled', 'dockerRefreshSeconds', 'dockerLogLines', 'dockerStatsHistory',
             'dockerUpdateInterval', 'dockerConfirmStopRestart', 'dockerHostAddress', 'dockerNotify', 'dockerViewCloseOutside', 'dockerViewKeyLegend',
+            'dockerUsageAlerts', 'dockerCpuAlertPercent', 'dockerMemAlertPercent', 'dockerUsageAlertMinutes',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });

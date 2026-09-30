@@ -40,6 +40,15 @@ func normalizeDockerSettings(s *Settings) {
 	if !dockerLogLineChoices[s.DockerLogLines] {
 		s.DockerLogLines = 200
 	}
+	if !dockerCPUAlertChoices[s.DockerCPUAlertPercent] {
+		s.DockerCPUAlertPercent = 90
+	}
+	if !dockerMemAlertChoices[s.DockerMemAlertPercent] {
+		s.DockerMemAlertPercent = 90
+	}
+	if !dockerUsageMinutesChoices[s.DockerUsageAlertMinutes] {
+		s.DockerUsageAlertMinutes = 10
+	}
 	switch s.DockerViewKeyLegend {
 	case "above", "below", "off":
 	default:

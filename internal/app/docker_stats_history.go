@@ -51,6 +51,10 @@ type dockerStatsPoint struct {
 	NetOut    float64 `json:"netOut"`
 	DiskRead  float64 `json:"diskRead"`
 	DiskWrite float64 `json:"diskWrite"`
+	// cpuShare and memShare are CPU as a share of every core and memory as a
+	// share of the limit, both in percent: what the usage alerts compare.
+	cpuShare float64
+	memShare float64
 }
 
 // dockerStatsStore is the one history, shared by the sampler and the stats route.
@@ -86,6 +90,10 @@ func (h *dockerStatsHistory) record(id string, now time.Time, t dockerStatsTotal
 			online = 1
 		}
 		point.CPU = cpuDelta / sysDelta * float64(online) * 100
+		point.cpuShare = point.CPU / float64(online)
+	}
+	if t.MemLimit > 0 {
+		point.memShare = float64(t.MemUsed) / float64(t.MemLimit) * 100
 	}
 	// A total that went down is a restarted counter, not negative traffic.
 	if secs := now.Sub(prevAt).Seconds(); secs > 0 {
@@ -149,11 +157,12 @@ type dockerStatsSource interface {
 	statsTotals(ctx context.Context, id string) (dockerStatsTotals, error)
 }
 
-// sampleDockerStats reads every running container once, four at a time.
-func sampleDockerStats(ctx context.Context, src dockerStatsSource, hist *dockerStatsHistory, now time.Time) {
+// sampleDockerStats reads every running container once, four at a time, and
+// hands back the list it read.
+func sampleDockerStats(ctx context.Context, src dockerStatsSource, hist *dockerStatsHistory, now time.Time) []dockerContainerSummary {
 	list, err := src.listContainers(ctx)
 	if err != nil {
-		return
+		return nil
 	}
 	running := map[string]bool{}
 	for _, c := range list {
@@ -177,6 +186,7 @@ func sampleDockerStats(ctx context.Context, src dockerStatsSource, hist *dockerS
 		}(id)
 	}
 	wg.Wait()
+	return list
 }
 
 // statsTotals asks for one reading without Docker's own second one.
@@ -226,5 +236,7 @@ func (h *Handlers) sampleDockerStatsOnce() {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), dockerStatsInterval)
 	defer cancel()
-	sampleDockerStats(ctx, api, dockerStatsStore, time.Now())
+	now := time.Now()
+	list := sampleDockerStats(ctx, api, dockerStatsStore, now)
+	h.dispatchContainerNotices(ctx, h.checkDockerUsage(list, now))
 }
