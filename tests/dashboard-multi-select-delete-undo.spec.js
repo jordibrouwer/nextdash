@@ -225,3 +225,32 @@ test.describe('undoing a selection delete, the awkward cases', () => {
         selected.forEach((url) => expect(onOther).not.toContain(url));
     });
 });
+
+test.describe('a reorder made while the last one is saving', () => {
+    // The save that finished nulled the newer drag's timer handle and its
+    // snapshot, so a page switch or closing the tab had nothing to flush.
+    test('keeps the newer drag pending', async ({ page }) => {
+        await openDashboard(page);
+        let held = false;
+        await page.route('**/api/bookmarks?page=*', async (route) => {
+            if (route.request().method() === 'POST' && !held) {
+                held = true;
+                await new Promise((r) => setTimeout(r, 600));
+            }
+            return route.continue();
+        });
+        const pending = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            d.pendingReorderSnapshot = [...d.bookmarks];
+            const saving = d.saveBookmarkOrder();
+            await new Promise((r) => setTimeout(r, 150));
+            // A second drag while the first is on the wire.
+            d.pendingReorderSnapshot = [...d.bookmarks];
+            d.scheduleBookmarkOrderSave();
+            await saving;
+            const out = { timer: d.pendingReorderSave != null, snapshot: d.pendingReorderSnapshot != null };
+            return out;
+        });
+        expect(pending).toEqual({ timer: true, snapshot: true });
+    });
+});

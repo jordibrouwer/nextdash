@@ -222,3 +222,65 @@ test('a new page does not reuse the id of a page in the trash', async ({ page })
     expect(Math.max(...ids.filter((id) => id < 999999))).toBe(trashedId + 1);
     await api(page, 'DELETE', `/api/pages/${trashedId + 1}`);
 });
+
+// A category list that arrives after the picker moved on was shown, and then
+// saved, under the page picked since.
+test('the category editor ignores a list for a page it has left', async ({ page }) => {
+    await openBookmarks(page);
+    await page.evaluate(() => window.dashboardInstance.config.addPage());
+    await page.waitForFunction(() => window.dashboardInstance.pages.length > 1, null, { timeout: 15_000 });
+    const [a, b] = await page.evaluate(() => {
+        const ids = window.dashboardInstance.pages.map((p) => Number(p.id)).filter((id) => id < 999999);
+        return [ids[0], ids[ids.length - 1]];
+    });
+    const marker = `cat-slow-${Date.now()}`;
+    const cats = await page.evaluate(async (p) => (await (await fetch(`/api/categories?page=${p}`)).json()), a);
+    await api(page, 'POST', `/api/categories?page=${a}`, [...cats, { id: marker, name: 'Only on A' }]);
+    await page.route(`**/api/categories?page=${a}`, async (route) => {
+        await new Promise((r) => setTimeout(r, 600));
+        return route.continue();
+    });
+    const shown = await page.evaluate(async ({ a, b }) => {
+        const d = window.dashboardInstance;
+        const c = d.config.instance || d.config._module || d.config;
+        c._catPageId = a;
+        c._categories = null;
+        const slow = c.loadCategoriesEditor();
+        await new Promise((r) => setTimeout(r, 100));
+        c._catPageId = b;
+        c._categories = null;
+        await c.loadCategoriesEditor();
+        await slow;
+        return { page: c._catPageId, ids: (c._categories || []).map((x) => x.id) };
+    }, { a, b });
+    expect(shown.page).toBe(b);
+    expect(shown.ids).not.toContain(marker);
+    await api(page, 'DELETE', `/api/pages/${b}`);
+});
+
+// Two quick settings saves could land in either order; the older snapshot
+// landing last put the first change back and dropped the second.
+test('settings saves land in the order they were made', async ({ page }) => {
+    await openBookmarks(page);
+    let first = true;
+    await page.route('**/api/settings', async (route) => {
+        if (route.request().method() === 'POST' && first) {
+            first = false;
+            await new Promise((r) => setTimeout(r, 700));
+        }
+        return route.continue();
+    });
+    const before = await page.evaluate(() => Boolean(window.dashboardInstance.settings.showCheatSheetButton));
+    await page.evaluate(async (start) => {
+        const d = window.dashboardInstance;
+        const c = d.config.instance || d.config._module || d.config;
+        d.settings.showCheatSheetButton = !start;
+        const one = c.saveSettingsWithFeedback();
+        await new Promise((r) => setTimeout(r, 50));
+        d.settings.showCheatSheetButton = start;
+        const two = c.saveSettingsWithFeedback();
+        await Promise.all([one, two]);
+    }, before);
+    const stored = await page.evaluate(async () => Boolean((await (await fetch('/api/settings')).json()).showCheatSheetButton));
+    expect(stored).toBe(before);
+});

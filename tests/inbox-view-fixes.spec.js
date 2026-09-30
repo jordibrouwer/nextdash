@@ -419,3 +419,42 @@ test.describe('opening the selection', () => {
         expect(read).toBe(1);
     });
 });
+
+test.describe('undoing a bulk keep', () => {
+    // A link already on the kept page left the inbox with the rest, but the
+    // undo only brought back the ones this keep had copied.
+    test('every link comes back, and a copy that was already kept stays', async ({ page }) => {
+        await openInbox(page);
+        const stamp = Date.now();
+        await seed(page, [[`bulk-keep-a-${stamp}.example.com`, 'Bulk keep A'], [`bulk-keep-b-${stamp}.example.com`, 'Bulk keep B']]);
+        const alreadyKept = `https://bulk-keep-b-${stamp}.example.com/one`;
+        await page.evaluate(async (url) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const unsorted = await (await fetch('/api/unsorted')).json();
+            await api('/api/bookmarks/add', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: unsorted.page.id, bookmark: { name: 'Kept before', url, category: '' } }),
+            });
+        }, alreadyKept);
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const inbox = d.inbox;
+            inbox.items.filter((i) => i.title.startsWith('Bulk keep')).forEach((i) => inbox.setChecked(i.id, true));
+            const original = d.showNotification.bind(d);
+            window.__undo = null;
+            d.showNotification = (msg, type, opts) => { if (opts?.undoCallback) window.__undo = opts.undoCallback; return original(msg, type, opts); };
+            try { await inbox.bulkKeep(); } finally { d.showNotification = original; }
+            await window.__undo();
+        });
+        const after = await page.evaluate(async (url) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const inbox = await (await api('/api/inbox')).json();
+            const titles = (Array.isArray(inbox) ? inbox : inbox.items || []).map((i) => i.title);
+            const unsorted = await (await fetch('/api/unsorted')).json();
+            const rows = await (await fetch(`/api/bookmarks?page=${unsorted.page.id}`)).json();
+            return { titles, stillKept: (Array.isArray(rows) ? rows : rows.bookmarks || []).some((b) => b.url === url) };
+        }, alreadyKept);
+        expect(after.titles).toEqual(expect.arrayContaining(['Bulk keep A', 'Bulk keep B']));
+        expect(after.stillKept).toBe(true);
+    });
+});

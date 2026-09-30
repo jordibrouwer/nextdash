@@ -151,3 +151,36 @@ test.describe('move bookmark to another page', () => {
         expect(target.some((b) => b.url === uniqueUrl)).toBe(false);
     });
 });
+
+test.describe('moving a bookmark whose address was edited too', () => {
+    // The source row was deleted by the edited URL: the server matches by URL,
+    // so the old row stayed (a duplicate and an error), or another row with the
+    // new URL was deleted instead.
+    test('the old row leaves the source page', async ({ page }) => {
+        const stamp = Date.now();
+        const oldUrl = `https://example.com/move-edit-old-${stamp}.test`;
+        const newUrl = `https://example.com/move-edit-new-${stamp}.test`;
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        const sourcePageId = await page.evaluate(() => Number(window.dashboardInstance.currentPageId));
+        const { id: targetPageId } = await ensureSecondPage(page);
+        await seedBookmark(page, sourcePageId, 'Edited and moved', oldUrl);
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 15_000 });
+
+        await page.evaluate(async ({ oldUrl, newUrl, targetPageId }) => {
+            const d = window.dashboardInstance;
+            const mod = await d.inlineEdit.load();
+            const bookmark = d.bookmarks.find((b) => b.url === oldUrl);
+            const ref = d.resolveBookmarkReference(bookmark);
+            const row = document.querySelector(`.bookmark-link[data-bookmark-url="${CSS.escape(oldUrl)}"]`);
+            await mod._moveBookmarkToPage(ref, { ...bookmark, url: newUrl }, targetPageId, row);
+        }, { oldUrl, newUrl, targetPageId });
+
+        const source = await bookmarksOnPage(page, sourcePageId);
+        const target = await bookmarksOnPage(page, targetPageId);
+        expect(source.map((b) => b.url)).not.toContain(oldUrl);
+        expect(target.map((b) => b.url)).toContain(newUrl);
+    });
+});

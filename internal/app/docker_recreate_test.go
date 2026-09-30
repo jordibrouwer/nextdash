@@ -335,3 +335,24 @@ func TestDockerRollbackOutlivesTheUpdateDeadline(t *testing.T) {
 		t.Fatalf("old container not restored: %+v err = %v", back, err)
 	}
 }
+
+// A container on another container's network (a VPN client behind gluetun)
+// carries that container's hostname in its config; sent back, the daemon
+// refuses the create with "conflicting options: hostname and the network mode".
+func TestDockerRecreateDropsTheHostnameOnAContainerNetwork(t *testing.T) {
+	f, h, c, api := recreateFixture(t)
+	vpnID := strings.Repeat("v", 64)
+	f.add(fakeContainer{ID: vpnID, Name: "gluetun", Image: "vpn:latest", State: "running", NetworkMode: "bridge"})
+	f.containers[c.ID].NetworkMode = "container:" + vpnID
+	f.containers[c.ID].ConfigExtra = map[string]any{"Hostname": "gluetun-host", "Domainname": "lan"}
+	res, err := h.dockerRecreate(context.Background(), api, c)
+	if err != nil || res.Phase != "done" {
+		t.Fatalf("res = %+v err = %v", res, err)
+	}
+	if _, sent := f.lastCreate["Hostname"]; sent {
+		t.Fatalf("the create carried Hostname %v on a container network", f.lastCreate["Hostname"])
+	}
+	if _, sent := f.lastCreate["Domainname"]; sent {
+		t.Fatalf("the create carried Domainname on a container network")
+	}
+}

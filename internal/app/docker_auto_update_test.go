@@ -195,3 +195,19 @@ func TestDockerAutoUpdateWatchLeavesAUserStopAlone(t *testing.T) {
 		t.Fatalf("a user stop was rolled back: %s", after.ImageID)
 	}
 }
+
+// A container skipped because a prune was running gets the next tick, not the
+// next night: it was not tried, so it is not marked as tried.
+func TestDockerAutoUpdateSkippedForAPruneIsTriedAgainTheSameNight(t *testing.T) {
+	_, h, api, _ := autoUpdateTestSetup(t)
+	h.dockerPruneRunning.Store(true)
+	h.runDockerAutoUpdates(time.Date(2026, 9, 30, 3, 10, 0, 0, time.Local))
+	if c, _ := h.resolveDockerID(context.Background(), api, "sonarr"); c.ImageID != "sha256:old" {
+		t.Fatalf("updated during a prune: %s", c.ImageID)
+	}
+	h.dockerPruneRunning.Store(false)
+	h.runDockerAutoUpdates(time.Date(2026, 9, 30, 3, 20, 0, 0, time.Local))
+	if c, _ := h.resolveDockerID(context.Background(), api, "sonarr"); c.ImageID != "sha256:new" {
+		t.Fatalf("not updated once the prune was done: %s", c.ImageID)
+	}
+}
