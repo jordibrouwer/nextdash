@@ -59,12 +59,12 @@ type dockerViewContainer struct {
 	// LanIP is the container's own address on the LAN, set only when it sits
 	// on a macvlan or ipvlan network (Unraid's br0): there [IP] means the
 	// container, not the host nextDash was opened on.
-	LanIP  string             `json:"lanIP,omitempty"`
+	LanIP string `json:"lanIP,omitempty"`
 	// Network is the one the list groups the container under: the network
 	// mode it runs in when that is a network, else the first it joined.
-	Network string `json:"network,omitempty"`
-	Update *dockerImageUpdate `json:"update,omitempty"`
-	Self   bool               `json:"self,omitempty"`
+	Network string             `json:"network,omitempty"`
+	Update  *dockerImageUpdate `json:"update,omitempty"`
+	Self    bool               `json:"self,omitempty"`
 	// Size is the last background measurement (docker_sizes.go), absent
 	// before the first.
 	Size *dockerContainerSize `json:"size,omitempty"`

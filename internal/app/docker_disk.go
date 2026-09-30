@@ -110,7 +110,7 @@ type dockerDiskTotals struct {
 	// nextDash's own and hidden containers are not counted.
 	ContainersStopped      int64 `json:"containersStopped"`
 	ContainersStoppedCount int   `json:"containersStoppedCount"`
-	Reclaimable        int64 `json:"reclaimable"`
+	Reclaimable            int64 `json:"reclaimable"`
 }
 
 type dockerDiskView struct {
@@ -118,8 +118,8 @@ type dockerDiskView struct {
 	Volumes []dockerDiskVolume `json:"volumes"`
 	Binds   []dockerDiskBind   `json:"binds"`
 	// Stopped names the containers "Remove stopped" would remove.
-	Stopped []string `json:"stopped"`
-	Totals  dockerDiskTotals   `json:"totals"`
+	Stopped []string         `json:"stopped"`
+	Totals  dockerDiskTotals `json:"totals"`
 }
 
 func dockerTagged(tags []string) []string {
