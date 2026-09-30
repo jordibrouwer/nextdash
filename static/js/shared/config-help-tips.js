@@ -148,7 +148,8 @@
             // what the server says about it.
             titleKey: 'tipsGroupData',
             titleFallback: 'Data in and out',
-            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs', 'tipDataContainers', 'tipDataContainerWebUI'],
+            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs', 'tipDataContainers', 'tipDataContainerWebUI',
+                'tipDataContainerBookmark', 'tipDataContainerColumns', 'tipDataContainerAutoUpdate', 'tipDataContainerBinds'],
         },
     ];
 

@@ -226,7 +226,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/shared/clock-format.js":                              "2fb45e03f722",
 	"js/shared/config-custom-themes.js":                      "505ee4249345",
 	"js/shared/config-favicon-prefetch.js":                   "9f8cf03cbb56",
-	"js/shared/config-help-tips.js":                          "46007f03fc6a",
+	"js/shared/config-help-tips.js":                          "5be535dd61d7",
 	"js/shared/config-language.js":                           "1f806525c920",
 	"js/shared/config-preview.js":                            "ae8a42f49b99",
 	"js/shared/config-setting-promo.js":                      "21f2e2480265",
