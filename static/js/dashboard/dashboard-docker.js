@@ -186,7 +186,41 @@ class DashboardDocker {
         button.title = this.t('dashboard.dockerTourHint', 'A tour of the Containers view');
         button.textContent = this.t('dashboard.inboxTour', 'Tour');
         button.addEventListener('click', () => { void this.openTour(); });
-        host.append(button);
+        // ℹ beside it, as the Bookmarks and Inbox views have: what the view
+        // does, where the tour shows where things are.
+        const help = document.createElement('button');
+        help.type = 'button';
+        help.className = 'lvs-action view-help-btn';
+        help.setAttribute('data-docker-help', '');
+        help.setAttribute('aria-haspopup', 'dialog');
+        const label = this.t('dashboard.dockerHelpTitle', 'How the Containers view works');
+        help.title = label;
+        help.setAttribute('aria-label', label);
+        help.textContent = 'ℹ';
+        help.addEventListener('click', () => this.showExplainer());
+        host.append(button, help);
+    }
+
+    /** "How this works", behind the ℹ in the header. */
+    showExplainer() {
+        if (typeof window.AppModal?.show !== 'function') return;
+        window.nextdashTrack?.('docker:explainer');
+        const esc = (v) => this.escape(v);
+        const row = (key, title, body) => `<div class="view-explain-row"><h4>${esc(this.t(`dashboard.${key}Title`, title))}</h4><p>${esc(this.t(`dashboard.${key}`, body))}</p></div>`;
+        window.AppModal.show({
+            title: this.t('dashboard.dockerHelpTitle', 'How the Containers view works'),
+            htmlMessage: `<div class="view-explain">
+                ${row('dockerHelpList', 'The list', DashboardDocker.HELP.list)}
+                ${row('dockerHelpActions', 'Acting on containers', DashboardDocker.HELP.actions)}
+                ${row('dockerHelpPanel', 'The side panel', DashboardDocker.HELP.panel)}
+                ${row('dockerHelpUpdates', 'Updates', DashboardDocker.HELP.updates)}
+                ${row('dockerHelpDisk', 'Disk', DashboardDocker.HELP.disk)}
+            </div>`,
+            confirmText: this.t('dashboard.healthExplainClose', 'Got it'),
+            showCancel: false,
+            modalClass: 'view-explain-modal',
+            modalMaxWidth: 'min(34rem, calc(100vw - 2.5rem))',
+        });
     }
 
     /**
@@ -834,6 +868,15 @@ class DashboardDocker {
         if (parts.length > 1 && /[.:]|^localhost$/.test(parts[0])) s = parts.slice(1).join('/');
         return s.replace(/:latest$/, '');
     }
+
+    /** The explainer's paragraphs, the English the locale files translate. */
+    static HELP = {
+        list: 'Every container on the Docker host, filtered from the rail and grouped by status or compose project. The glow is its state; an orange ↑ before the name means an update is waiting. CPU and RAM are the last reading, Size is what the container wrote, and the link opens its web UI.',
+        actions: 'Its menu or a key starts, stops, restarts, pauses, updates or removes it: s, r, p, u and ⌫. Tick several with x to do the same to all of them at once. Acting needs NEXTDASH_DOCKER_CONTROL=1, and nextDash never stops its own container.',
+        panel: 'Enter or a click opens a container: its health, updates, timeline, network, volumes and a web address of your own, with an hour of CPU and memory under Resources. l opens its logs window.',
+        updates: 'Check for updates compares each image with what its registry offers and shows what changed. You can skip a version, hold a container, or roll the last update back while the old image is still on the host.',
+        disk: 'd switches to Disk: what images, volumes and the build cache take up, and what nothing uses. It lists the host folders containers mount too. Every clean-up asks first, and a volume goes only one at a time.',
+    };
 
     /** How many published ports a row shows before "+N". */
     static PORTS_SHOWN = 3;
