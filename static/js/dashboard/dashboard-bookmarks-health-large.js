@@ -457,7 +457,9 @@
                 for (let i = 0; i < nDays; i += 1) {
                     const d = byDay.get(first.getTime() + i * DAY);
                     bars.push({ ratio: d && d.n ? d.u / d.n : null, n: d?.n || 0,
-                        label: new Date(first.getTime() + i * DAY).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) });
+                        // The days are UTC days (setUTCHours above); labelled in
+                        // local time, west of UTC each bar named the day before.
+                        label: new Date(first.getTime() + i * DAY).toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' }) });
                 }
             }
             const hasBars = bars.some((x) => x.ratio != null);

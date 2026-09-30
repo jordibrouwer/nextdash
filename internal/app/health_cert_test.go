@@ -49,8 +49,28 @@ func TestCertRenewalRearmsAlerts(t *testing.T) {
 	if marks := stored["a.example"].NotifiedDays; len(marks) != 0 {
 		t.Fatalf("after renewal: notified = %v, want empty", marks)
 	}
-	if got := recordHostCertificates(stored, []PingResult{{CertHost: "a.example", CertExpiry: at(5)}}, now); len(got) != 1 {
+	// The renewed certificate nearing its own expiry, 85 days on.
+	later := now.Add(85 * 24 * time.Hour)
+	if got := recordHostCertificates(stored, []PingResult{{CertHost: "a.example", CertExpiry: at(90)}}, later); len(got) != 1 {
 		t.Fatalf("renewed certificate nearing expiry: %d alerts, want 1", len(got))
+	}
+}
+
+// Behind a load balancer the old and the renewed certificate take turns during
+// a rollout. The old one coming back is not a renewal and must not re-arm the
+// alert every round.
+func TestCertFlipDuringRolloutDoesNotRealert(t *testing.T) {
+	now := time.Now()
+	at := func(days int) int64 { return now.Add(time.Duration(days) * 24 * time.Hour).UnixMilli() }
+	stored := map[string]HostCertificate{}
+	recordHostCertificates(stored, []PingResult{{CertHost: "a.example", CertExpiry: at(29)}}, now)
+	alerts := 0
+	for round := 0; round < 4; round++ {
+		alerts += len(recordHostCertificates(stored, []PingResult{{CertHost: "a.example", CertExpiry: at(89)}}, now))
+		alerts += len(recordHostCertificates(stored, []PingResult{{CertHost: "a.example", CertExpiry: at(29)}}, now))
+	}
+	if alerts != 0 {
+		t.Fatalf("the rollout flip alerted %d times", alerts)
 	}
 }
 

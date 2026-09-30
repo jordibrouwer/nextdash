@@ -266,6 +266,11 @@ func (h *Handlers) runDueMonitors() {
 					result = h.pingURLExpecting(ctx, t.url, t.expect)
 				}
 			}
+			// Past the round's deadline every check fails at once; that is the
+			// deadline, not the bookmark, and is not recorded as an outage.
+			if ctx.Err() != nil {
+				return
+			}
 			mu.Lock()
 			logDebug(logComponentHealth, "%s is %s (%dms)", t.url, result.Status, result.PingMs)
 			outcomes = append(outcomes, outcome{target: t, result: result, at: time.Now().UnixMilli()})
@@ -325,7 +330,13 @@ func (h *Handlers) runDueMonitors() {
 	// real outage that happened to start during maintenance.
 	var pending []monitorNotification
 	if !inMaintenance {
-		pending = h.pendingMonitorNotifications(transitions)
+		var alerted map[string]bool
+		pending, alerted = h.pendingMonitorNotificationsAlerted(transitions)
+		for key := range alerted {
+			if samples := historyUpdates[key]; len(samples) > 0 {
+				samples[len(samples)-1].Alerted = true
+			}
+		}
 	}
 
 	if err := h.appendHealthSamples(historyUpdates); err != nil {

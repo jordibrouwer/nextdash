@@ -4504,6 +4504,10 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	// The checks run one after another, up to retestAllMaxBookmarks of them, so
+	// a run can outlast the server's 60 s WriteTimeout: the results were saved
+	// but the answer never arrived, and the view said the re-check failed.
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(retestAllMaxBookmarks*maxHealthCheckTimeout + time.Minute))
 
 	scope := strings.TrimSpace(r.URL.Query().Get("scope"))
 	includeFlagged := strings.EqualFold(scope, "all")
@@ -4576,12 +4580,19 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				res.Skipped++
 				continue
 			}
-			if res.Tested >= retestAllMaxBookmarks {
+			if res.Tested >= retestAllMaxBookmarks || ctx.Err() != nil {
 				res.SkippedOverLimit++
 				continue
 			}
 
 			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
+			// Cancelled -- the page was left, or the scheduler's deadline hit --
+			// makes every check fail at once as "Unreachable". That says nothing
+			// about the bookmark and must not be saved as if it did.
+			if ctx.Err() != nil {
+				res.SkippedOverLimit++
+				continue
+			}
 			res.Tested++
 			if result.Status == "online" {
 				res.OnlineCount++

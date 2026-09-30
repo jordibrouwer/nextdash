@@ -378,3 +378,28 @@ func TestTestMonitorNotificationSurfacesUpstreamRejection(t *testing.T) {
 		t.Fatalf("status = %d, want 502 when the upstream service rejects the test alert", rec.Code)
 	}
 }
+
+// Failures recorded inside a maintenance window neither count toward an alert
+// nor make the first good check after it a "back online".
+func TestPendingNotificationsIgnoreMaintenanceSamples(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{"monitorNotifyUrl":"https://hooks.example/notify","monitorNotifyRetries":3}`)
+	now := time.Now()
+	if err := h.appendHealthSamples(map[string][]HealthSample{
+		"https://a.example": {
+			{T: msAgo(now, 25*time.Minute), Up: true},
+			{T: msAgo(now, 20*time.Minute), Up: false, Maint: true},
+			{T: msAgo(now, 15*time.Minute), Up: false, Maint: true},
+			{T: msAgo(now, 10*time.Minute), Up: false, Maint: true},
+		},
+	}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	up := monitorTransition{key: "https://a.example", url: "https://a.example", up: true, at: now.UnixMilli()}
+	if got := h.pendingMonitorNotifications([]monitorTransition{up}); len(got) != 0 {
+		t.Fatalf("a nightly window produced %#v", got)
+	}
+	down := monitorTransition{key: "https://a.example", url: "https://a.example", up: false, reason: "Timeout", at: now.UnixMilli()}
+	if got := h.pendingMonitorNotifications([]monitorTransition{down}); len(got) != 0 {
+		t.Fatalf("the first failure after a window alerted at once: %#v", got)
+	}
+}

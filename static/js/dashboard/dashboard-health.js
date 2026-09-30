@@ -1080,9 +1080,11 @@ class DashboardHealth {
                 status === 'online' ? 'success' : 'info',
                 { duration: 3000 }
             );
-        } catch (error) {
-            const failDetail = error?.message || this.t('dashboard.healthPingFailed', 'ping failed');
-            await persist('offline', failDetail, 0).catch(() => { /* already failing */ });
+        } catch (_error) {
+            // Nothing is recorded: the check never ran. A 429 from the
+            // dashboard's own ping limit, a proxy's 502 or a network blip was
+            // saved as the bookmark's outage ("ping HTTP 429"), with a Down
+            // sample on monitored ones that fed the alert count.
             if (silent) {
                 return;
             }

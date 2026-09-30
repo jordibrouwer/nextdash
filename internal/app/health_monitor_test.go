@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -273,4 +274,60 @@ func hostnameOnly(t *testing.T, rawURL string) string {
 		t.Fatalf("parse %q: %v", rawURL, err)
 	}
 	return strings.ToLower(u.Hostname())
+}
+
+// With "alert after 1 failure", the round that alerts must stamp its own
+// sample: the stored one before it is the last "up", so stamping that did
+// nothing and the next round alerted again.
+func TestRunDueMonitorsStampsTheAlertingSampleAtThresholdOne(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	h, dir := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true,"monitorNotifyUrl":"https://hooks.example/notify","monitorNotifyRetries":1}`)
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"Down","url":"` + server.URL + `","monitor":true,"monitorIntervalMinutes":5}
+	]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(pageJSON), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+	key := canonicalBookmarkURLKey(server.URL)
+	if err := h.appendHealthSamples(map[string][]HealthSample{key: {{T: time.Now().Add(-time.Hour).UnixMilli(), Up: true}}}); err != nil {
+		t.Fatal(err)
+	}
+
+	h.runDueMonitors()
+
+	samples := h.healthHistoryFor(key)
+	if len(samples) != 2 || samples[1].Up {
+		t.Fatalf("samples = %#v", samples)
+	}
+	if !currentOutageAlerted(samples) {
+		t.Fatalf("the outage that alerted is not marked as alerted: %#v", samples)
+	}
+}
+
+// A cancelled "Retest all" -- the page was left -- must not save the checks
+// that failed because of the cancellation as broken bookmarks.
+func TestRetestAllCancelledRecordsNothing(t *testing.T) {
+	h, dir := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true}`)
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"Fine","url":"https://fine.example","checkStatus":true}
+	]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(pageJSON), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	res, err := h.runHealthRetest(ctx, false, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Tested != 0 {
+		t.Fatalf("tested %d after cancellation", res.Tested)
+	}
+	if got := h.store.GetBookmarksByPage(1)[0].LastError; got != "" {
+		t.Fatalf("LastError = %q: a cancelled check was saved as broken", got)
+	}
 }
