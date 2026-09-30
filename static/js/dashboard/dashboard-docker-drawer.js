@@ -690,18 +690,45 @@ class DockerDrawer {
     _renderVolumes(body, detail) {
         if (!body || !detail) return;
         body.replaceChildren();
+        /*
+         * One block per mount: where it appears in the container, then where
+         * it comes from. A long path breaks after a slash, never mid-name.
+         */
+        const pathEl = (cls, value) => {
+            const el = document.createElement('span');
+            el.className = cls;
+            String(value || '').split('/').forEach((part, i) => {
+                if (i) el.append('/', document.createElement('wbr'));
+                el.append(part);
+            });
+            return el;
+        };
         (detail.mounts || []).forEach((m) => {
             const row = document.createElement('div');
             row.className = 'docker-volume-row';
-            const path = document.createElement('span');
-            path.textContent = `${m.source} → ${m.destination}`;
-            row.appendChild(path);
+            row.setAttribute('data-docker-mount', m.destination || '');
+            const head = document.createElement('div');
+            head.className = 'docker-volume-head';
+            head.appendChild(pathEl('docker-volume-dest', m.destination));
+            const tags = document.createElement('span');
+            tags.className = 'docker-volume-tags';
+            if (m.type) {
+                const type = document.createElement('span');
+                type.className = 'docker-volume-tag';
+                type.textContent = m.type;
+                tags.appendChild(type);
+            }
             if (m.readOnly) {
                 const ro = document.createElement('span');
-                ro.className = 'docker-volume-readonly';
-                ro.textContent = `(${this.t('dockerFieldReadOnly', 'Read-only')})`;
-                row.appendChild(ro);
+                ro.className = 'docker-volume-tag docker-volume-readonly';
+                ro.textContent = this.t('dockerFieldReadOnly', 'Read-only');
+                tags.appendChild(ro);
             }
+            head.appendChild(tags);
+            const from = document.createElement('div');
+            from.className = 'docker-volume-source';
+            from.append(`${this.t('dockerMountFrom', 'from')} `, pathEl('', m.source || m.name));
+            row.append(head, from);
             body.appendChild(row);
         });
     }
@@ -1243,11 +1270,14 @@ class DockerDrawer {
                 this.t('dockerHealthFailing', '{count} in a row', { count: data.failingStreak }));
         }
         if (data.command) {
+            const label = document.createElement('div');
+            label.className = 'docker-health-label';
+            label.textContent = this.t('dockerHealthCommand', 'The check');
             const cmd = document.createElement('code');
             cmd.className = 'docker-health-command';
             cmd.setAttribute('data-docker-health-command', '');
             cmd.textContent = data.command;
-            body.appendChild(cmd);
+            body.append(label, cmd);
         }
         const checks = Array.isArray(data.checks) ? data.checks : [];
         if (!checks.length) {
@@ -1257,6 +1287,10 @@ class DockerDrawer {
             body.appendChild(msg);
             return;
         }
+        const recent = document.createElement('div');
+        recent.className = 'docker-health-label';
+        recent.textContent = this.t('dockerHealthRecent', 'Last checks');
+        body.appendChild(recent);
         const list = document.createElement('ol');
         list.className = 'docker-health-checks';
         checks.forEach((check) => {
@@ -1268,11 +1302,18 @@ class DockerDrawer {
             head.className = 'docker-health-check-head';
             const mark = document.createElement('span');
             mark.className = 'docker-health-mark';
-            mark.textContent = ok ? '✓' : `✗ ${this.t('dockerHealthExit', 'exit {code}', { code: check.exitCode })}`;
+            mark.textContent = ok ? '✓' : '✗';
             const when = document.createElement('span');
             when.className = 'docker-health-when';
             when.textContent = dockerFormatDate(check.start);
             head.append(mark, when);
+            // The exit code after the time, so every time starts in one column.
+            if (!ok) {
+                const code = document.createElement('span');
+                code.className = 'docker-health-exit';
+                code.textContent = this.t('dockerHealthExit', 'exit {code}', { code: check.exitCode });
+                head.appendChild(code);
+            }
             item.appendChild(head);
             if (check.output) {
                 const out = document.createElement('pre');
