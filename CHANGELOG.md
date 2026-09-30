@@ -314,6 +314,7 @@ The Containers tour catches up with v1.15.6 and is shown once more, the Bookmark
 - **tests — most of the fixes above come with a test that fails without them**; the rest were small enough to verify by reading the change.
 - **tests — four specs caught up with the fixes above.** The server-log spec reads `/api/logs` with the token and no longer expects line 1 after a clear (the count goes on); the webhook spec expects a `whsec_` key; Density left the list of settings that need a reload; and `docker_logstream.go` is gofmt-clean, which the CI's `fmt-check` wanted.
 - **tests — the reduced-motion move test measured a whole move.** It sent the bookmark to page 0, which failed only because of the shortcut bug fixed above; now that the move goes through, the time included the refresh after it and ran over on a slow runner. The test refuses the write in the page and times the pause before it.
+- **tests — the preview sweep's Stop test failed on CI and proved nothing.** The previews were answered at once, so on a slow runner the three rows were done and the bar closed before the click, which then waited on a hidden Stop; and a Stop that did nothing passed too. The answers now take 800 ms, the side panel's own requests are left out of the count, and the test checks that no row is asked for after Stop.
 
 ---
 

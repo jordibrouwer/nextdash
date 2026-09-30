@@ -110,6 +110,11 @@ test('Stop ends a sweep where it stands', async ({ page }) => {
     let asked = 0;
     await page.route('**/api/bookmark-preview**', async (route) => {
         asked += 1;
+        // Slow on purpose. Answered at once, three rows were done before the
+        // click landed, the bar had closed, and the click waited on a hidden
+        // Stop until the test ran out of time. It also meant a Stop that did
+        // nothing passed: the sweep had nothing left to stop.
+        await new Promise((resolve) => setTimeout(resolve, 800));
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -118,14 +123,19 @@ test('Stop ends a sweep where it stands', async ({ page }) => {
     });
     await openBookmarks(page);
     await tickRows(page, 3);
+    // The side panel asks for a row's preview as it shows it; only the
+    // sweep's requests are counted.
+    asked = 0;
     await page.locator('#config-bm-panel [data-bm-bulk-action="previews"]').click();
 
     const overlay = page.locator('#nextdash-progress-overlay');
     await expect(overlay).toBeVisible();
     await overlay.locator('[data-progress-cancel]').click();
+    // Counted when a request starts, so the row in flight is already in here.
+    const atStop = asked;
     await expect(overlay).toBeHidden({ timeout: 15_000 });
 
-    const seen = asked;
     await page.waitForTimeout(1500);
-    expect(asked).toBe(seen);
+    expect(atStop).toBeLessThan(3);
+    expect(asked, 'a row was asked for after Stop').toBe(atStop);
 });
