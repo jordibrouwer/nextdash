@@ -143,9 +143,13 @@ const test = base.test.extend({
         // the message a spec waits for. So no update is offered, unless a spec
         // routes /api/update-status itself (its route wins, being later).
         await page.route('**/api/update-status*', async (route) => {
-            const response = await route.fetch();
-            const body = await response.json().catch(() => ({}));
-            await route.fulfill({ response, json: { ...body, updateAvailable: false, latest: body.current } });
+            // A test that ends while the check is in flight closes the page
+            // under it; that is not the test's failure, so it is let go.
+            try {
+                const response = await route.fetch();
+                const body = await response.json().catch(() => ({}));
+                await route.fulfill({ response, json: { ...body, updateAvailable: false, latest: body.current } });
+            } catch { /* page closed */ }
         });
         await use(page);
         if (testInfo.status === testInfo.expectedStatus) return;
