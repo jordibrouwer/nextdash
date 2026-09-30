@@ -237,3 +237,22 @@ test('an update is an arrow before the name, the image is short', async ({ page 
   await expect(image).toHaveAttribute('title', 'lscr.io/linuxserver/sonarr:latest');
   await expect(page.locator('[data-docker-row="jellyfin"] .docker-cell--image')).toHaveText('jellyfin/jellyfin:10.10');
 });
+
+// By network and by image, beside project and status: a band per network the
+// containers run in, and per image whatever its registry or tag.
+test('group by network and by image', async ({ page }) => {
+  const row = (name, image, network) => ({ id: name.padEnd(64, '0'), shortId: name.padEnd(12, '0'), name, image, tag: 'latest',
+    state: 'running', status: 'Up', health: '', created: 1790000000, ports: [], network });
+  await mockDocker(page, { containers: [
+    row('sonarr', 'lscr.io/linuxserver/sonarr:latest', 'br0'),
+    row('radarr', 'lscr.io/linuxserver/radarr:latest', 'br0'),
+    row('db1', 'postgres:15', 'bridge'),
+    row('db2', 'postgres:16', 'host'),
+  ] });
+  await page.goto('/#docker');
+  await page.locator('[data-docker-group]').selectOption('network');
+  await expect(page.locator('.docker-group-row')).toHaveText(['br0 · 2', 'bridge · 1', 'host · 1']);
+  await page.locator('[data-docker-group]').selectOption('image');
+  await expect(page.locator('.docker-group-row')).toHaveText(['linuxserver/radarr · 1', 'linuxserver/sonarr · 1', 'postgres · 2']);
+  await expect(page.locator('.docker-group-row [data-docker-stack-action]')).toHaveCount(0);
+});

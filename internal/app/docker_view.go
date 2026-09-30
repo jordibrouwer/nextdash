@@ -60,6 +60,9 @@ type dockerViewContainer struct {
 	// on a macvlan or ipvlan network (Unraid's br0): there [IP] means the
 	// container, not the host nextDash was opened on.
 	LanIP  string             `json:"lanIP,omitempty"`
+	// Network is the one the list groups the container under: the network
+	// mode it runs in when that is a network, else the first it joined.
+	Network string `json:"network,omitempty"`
 	Update *dockerImageUpdate `json:"update,omitempty"`
 	Self   bool               `json:"self,omitempty"`
 	// Size is the last background measurement (docker_sizes.go), absent
@@ -253,6 +256,7 @@ func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 	if len(c.ID) >= 12 {
 		v.ShortID = c.ID[:12]
 	}
+	v.Network = dockerPrimaryNetwork(c)
 	// One address for everything that opens it: the table, the palette, the
 	// widget and the drawer read webui and never choose between the two.
 	v.WebUI = v.WebUICustom
@@ -270,6 +274,29 @@ func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 		v.Ports = append(v.Ports, dockerViewPort{Private: p.PrivatePort, Public: p.PublicPort, Type: p.Type, IP: p.IP})
 	}
 	return v
+}
+
+// dockerPrimaryNetwork: the network a container is grouped under. Its network
+// mode when that names a network it is on (bridge, br0, a compose network)
+// or is host; a container sharing another's stack (container:<id>) and a
+// custom mode fall back to the first network it joined, by name.
+func dockerPrimaryNetwork(c dockerContainerSummary) string {
+	mode := c.HostConfig.NetworkMode
+	if mode == "host" || mode == "none" {
+		return mode
+	}
+	if _, ok := c.NetworkSettings.Networks[mode]; ok {
+		return mode
+	}
+	names := make([]string, 0, len(c.NetworkSettings.Networks))
+	for n := range c.NetworkSettings.Networks {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	if len(names) > 0 {
+		return names[0]
+	}
+	return mode
 }
 
 // writeDockerError maps whatever went wrong to the status and shape every

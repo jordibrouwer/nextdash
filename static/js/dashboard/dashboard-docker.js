@@ -113,7 +113,7 @@ class DashboardDocker {
         this.sortDir = saved?.sortDir === 'desc' ? 'desc' : 'asc';
         // Older saves stored a boolean for "group by project".
         const group = saved?.group === true ? 'project' : saved?.group;
-        this.group = ['project', 'status'].includes(group) ? group : 'none';
+        this.group = DashboardDocker.GROUPS.includes(group) ? group : 'none';
         this.filter = saved?.filter || 'all';
     }
 
@@ -737,6 +737,8 @@ class DashboardDocker {
                 <option value="none">${this.escape(this.t('dashboard.dockerGroupNone', 'no groups'))}</option>
                 <option value="project">${this.escape(this.t('dashboard.dockerGroupByProject', 'by project'))}</option>
                 <option value="status">${this.escape(this.t('dashboard.dockerGroupByStatus', 'by status'))}</option>
+                <option value="network">${this.escape(this.t('dashboard.dockerGroupByNetwork', 'by network'))}</option>
+                <option value="image">${this.escape(this.t('dashboard.dockerGroupByImage', 'by image'))}</option>
             </select>
             <button type="button" class="lvs-action" data-docker-check>${this.escape(this.t('dashboard.dockerCheckUpdates', 'Check for updates'))}</button>
             <span data-docker-checked-at class="docker-checked-at"></span>
@@ -877,6 +879,9 @@ class DashboardDocker {
         updates: 'Check for updates compares each image with what its registry offers and shows what changed. You can skip a version, hold a container, or roll the last update back while the old image is still on the host.',
         disk: 'd switches to Disk: what images, volumes and the build cache take up, and what nothing uses. It lists the host folders containers mount too. Every clean-up asks first, and a volume goes only one at a time.',
     };
+
+    /** The groupings the list offers besides none. */
+    static GROUPS = ['project', 'status', 'network', 'image'];
 
     /** How many published ports a row shows before "+N". */
     static PORTS_SHOWN = 3;
@@ -1332,7 +1337,7 @@ class DashboardDocker {
         thead.appendChild(headRow);
         table.appendChild(thead);
         const tbody = document.createElement('tbody');
-        if (this.group === 'project' || this.group === 'status') {
+        if (DashboardDocker.GROUPS.includes(this.group)) {
             this.appendGroupedRows(tbody, list, headRow.children.length);
         } else {
             list.forEach((c) => tbody.appendChild(this.buildRow(c)));
@@ -1401,9 +1406,17 @@ class DashboardDocker {
      */
     appendGroupedRows(tbody, list, columns) {
         const byStatus = this.group === 'status';
+        const byProject = this.group === 'project';
+        // What each grouping keys a container on; '' is the "none" band, last.
+        const keyOf = {
+            status: (c) => this.statusGroup(c),
+            project: (c) => c.composeProject || '',
+            network: (c) => c.network || '',
+            image: (c) => DashboardDocker.shortImage(String(c.image || '').replace(/@sha256:.*$/, '')).replace(/:[^/:]+$/, ''),
+        }[this.group];
         const groups = new Map();
         list.forEach((c) => {
-            const key = byStatus ? this.statusGroup(c) : (c.composeProject || '');
+            const key = keyOf(c);
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key).push(c);
         });
@@ -1424,22 +1437,25 @@ class DashboardDocker {
             const heading = document.createElement('tr');
             heading.className = 'docker-group-row';
             if (byStatus) heading.setAttribute('data-docker-group-status', key);
-            else if (key) heading.setAttribute('data-docker-group-project', key);
+            else if (key && byProject) heading.setAttribute('data-docker-group-project', key);
+            else if (key) heading.setAttribute(`data-docker-group-${this.group}`, key);
             const cell = document.createElement('td');
             // Across every column the heading row has, so a column added
             // later (Size was) cannot leave the band short of the right edge.
             cell.colSpan = columns || 1;
             const label = document.createElement('span');
-            label.textContent = byStatus
-                ? statusLabels[key]
-                : (key || this.t('dashboard.dockerNoProject', 'No project'));
+            const none = {
+                network: this.t('dashboard.dockerNoNetwork', 'No network'),
+                image: this.t('dashboard.dockerNoImage', 'No image'),
+            }[this.group] || this.t('dashboard.dockerNoProject', 'No project');
+            label.textContent = byStatus ? statusLabels[key] : (key || none);
             cell.appendChild(label);
             const count = document.createElement('span');
             count.className = 'docker-group-count';
             count.setAttribute('data-docker-group-count', '');
             count.textContent = ` · ${groups.get(key).length}`;
             cell.appendChild(count);
-            if (!byStatus && key && this.status.control) cell.appendChild(this.buildStackActions(groups.get(key)));
+            if (byProject && key && this.status.control) cell.appendChild(this.buildStackActions(groups.get(key)));
             heading.appendChild(cell);
             tbody.appendChild(heading);
             groups.get(key).forEach((c) => tbody.appendChild(this.buildRow(c)));

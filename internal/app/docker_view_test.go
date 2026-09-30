@@ -274,3 +274,36 @@ func TestDockerSpeaksTheDaemonsMinimumVersionWhenOursIsTooOld(t *testing.T) {
 		t.Fatalf("widget read = %+v", m)
 	}
 }
+
+// A container groups under its network mode when that names a network it is
+// on, else under the first network it joined; host stays host.
+func TestDockerPrimaryNetwork(t *testing.T) {
+	mk := func(mode string, nets ...string) dockerContainerSummary {
+		var c dockerContainerSummary
+		c.HostConfig.NetworkMode = mode
+		c.NetworkSettings.Networks = map[string]struct {
+			IPAddress string `json:"IPAddress"`
+		}{}
+		for _, n := range nets {
+			c.NetworkSettings.Networks[n] = struct {
+				IPAddress string `json:"IPAddress"`
+			}{}
+		}
+		return c
+	}
+	cases := []struct {
+		c    dockerContainerSummary
+		want string
+	}{
+		{mk("br0", "br0"), "br0"},
+		{mk("host"), "host"},
+		{mk("container:abc", "proxy", "arr"), "arr"},
+		{mk("default", "media_default"), "media_default"},
+		{mk("bridge"), "bridge"},
+	}
+	for _, tc := range cases {
+		if got := dockerPrimaryNetwork(tc.c); got != tc.want {
+			t.Errorf("%+v = %q, want %q", tc.c.HostConfig, got, tc.want)
+		}
+	}
+}
