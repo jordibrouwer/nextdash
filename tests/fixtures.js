@@ -137,6 +137,16 @@ const test = base.test.extend({
                 },
             });
         });
+        // The server asks GitHub for the newest release. A run on a commit
+        // older than that release (a rerun after the next one shipped) then
+        // gets the "is available" toast, which takes #app-notification from
+        // the message a spec waits for. So no update is offered, unless a spec
+        // routes /api/update-status itself (its route wins, being later).
+        await page.route('**/api/update-status*', async (route) => {
+            const response = await route.fetch();
+            const body = await response.json().catch(() => ({}));
+            await route.fulfill({ response, json: { ...body, updateAvailable: false, latest: body.current } });
+        });
         await use(page);
         if (testInfo.status === testInfo.expectedStatus) return;
         try {
