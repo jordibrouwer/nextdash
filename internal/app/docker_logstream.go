@@ -11,9 +11,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 /*
