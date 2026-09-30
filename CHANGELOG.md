@@ -248,6 +248,7 @@ The Containers tour catches up with v1.15.6 and is shown once more, and the Book
 ### Docs
 
 - **docs — MANUAL §11.4 describes the selection bar.** The tour's new texts are in all six languages.
+- **fix — the Go preview tests failed about one run in three.** The refresh tests walk the default bookmarks, which are real sites, and each queued a background picture download; the preview media worker finished seconds later and stored the file in whichever test's data directory was current by then, so the orphan sweep and file-count tests found one file too many. `queuePreviewMediaFetch` now honours `NEXTDASH_DISABLE_PREFETCH`, the brake `enrichInboxPreviewAsync` already has, which the Go suite and the e2e server both set. Covered by `TestQueuePreviewMediaFetchHonoursTheBrake`.
 
 ---
 

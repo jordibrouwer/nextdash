@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -139,6 +140,43 @@ func TestRunPreviewMediaJobStoresLocallyAndUpdatesTheCache(t *testing.T) {
 	}
 	if files, _ := previewImageCacheUsage(); files != 1 {
 		t.Errorf("%d files stored, want 1", files)
+	}
+}
+
+// With prefetching switched off -- as the whole Go suite and the e2e server run
+// -- nothing is queued. A queued job finishes after its test has moved on and
+// drops its picture into whichever data directory is current by then.
+func TestQueuePreviewMediaFetchHonoursTheBrake(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Setenv("NEXTDASH_DISABLE_PREFETCH", "1")
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		w.Header().Set("Content-Type", "image/png")
+		_, _ = w.Write(pngBytes(32))
+	}))
+	defer server.Close()
+
+	h := &Handlers{store: NewStore()}
+	settings := h.store.GetSettings()
+	settings.AllowLocalBookmarks = true
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+
+	h.queuePreviewMediaFetch("https://example.com", BookmarkPreview{
+		URL:         "https://example.com",
+		FetchedAt:   time.Now().UnixMilli(),
+		ImageSource: server.URL + "/og.png",
+	})
+
+	time.Sleep(300 * time.Millisecond)
+	if n := hits.Load(); n != 0 {
+		t.Errorf("the worker fetched %d times with prefetching disabled", n)
+	}
+	if files, _ := previewImageCacheUsage(); files != 0 {
+		t.Errorf("%d files stored with prefetching disabled", files)
 	}
 }
 

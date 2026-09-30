@@ -147,6 +147,20 @@ func (h *Handlers) startPreviewMediaWorkers() {
 }
 
 func (h *Handlers) queuePreviewMediaFetch(key string, entry BookmarkPreview) {
+	/*
+	 * The brake enrichInboxPreviewAsync already has.
+	 *
+	 * A job outlives the call that queued it, and it writes wherever the data
+	 * directory points by the time the download finishes. Under `go test` that
+	 * is a later test's t.TempDir: the refresh tests walk the default bookmarks,
+	 * which are real sites, and their pictures landed seconds later in whatever
+	 * test was running then -- one extra file in a directory the orphan sweep
+	 * or a file count was about to judge. Tests that mean to exercise the job
+	 * call runPreviewMediaJob directly.
+	 */
+	if os.Getenv("NEXTDASH_DISABLE_PREFETCH") == "1" {
+		return
+	}
 	if key == "" || !previewMediaFetchDue(entry) {
 		return
 	}
