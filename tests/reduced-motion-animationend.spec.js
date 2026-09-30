@@ -82,24 +82,41 @@ async function firesAnimationEnd(page, className, { pseudo = false } = {}) {
 }
 
 /**
- * Time _moveBookmarkToPage up to its first await past the animation wait.
+ * Time _moveBookmarkToPage up to the write that follows the animation wait.
  *
- * Page 0 does not exist, so the write behind it fails immediately — what is
- * measured is the pause before it, not the round trip.
+ * The add is refused in the page before it leaves, so what is measured is the
+ * pause before it, not a round trip, and nothing is written. A missing page
+ * used to do this, but only by accident: the add failed on the bookmark's own
+ * shortcut, and since that was fixed a move to page 0 goes through and runs the
+ * whole refresh after it.
  */
 async function timeMoveOut(page) {
     return page.evaluate(async () => {
         const d = window.dashboardInstance;
         const row = document.querySelector('#dashboard-layout .bookmark-link');
         const bookmark = { ...d.bookmarks[0] };
+        const realFetch = window.fetch;
+        let reachedWrite = null;
+        window.fetch = (input, init) => {
+            if (reachedWrite === null && String(input).includes('/api/bookmarks/add')) {
+                reachedWrite = performance.now();
+                return Promise.reject(new Error('refused by the test'));
+            }
+            return realFetch(input, init);
+        };
         const started = performance.now();
-        await d.inlineEdit._moveBookmarkToPage(
-            { bookmark, index: 0, pageId: d.currentPageId, scope: 'current' },
-            bookmark,
-            0,
-            row,
-        ).catch(() => {});
-        return performance.now() - started;
+        try {
+            await d.inlineEdit._moveBookmarkToPage(
+                { bookmark, index: 0, pageId: d.currentPageId, scope: 'current' },
+                bookmark,
+                0,
+                row,
+            ).catch(() => {});
+        } finally {
+            window.fetch = realFetch;
+        }
+        if (reachedWrite === null) throw new Error('the move never reached its write');
+        return reachedWrite - started;
     });
 }
 

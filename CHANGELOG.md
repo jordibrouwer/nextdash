@@ -312,6 +312,7 @@ The Containers tour catches up with v1.15.6 and is shown once more, the Bookmark
 - **fix — the Go preview tests failed about one run in three.** The refresh tests walk the default bookmarks, which are real sites, and each queued a background picture download; the preview media worker finished seconds later and stored the file in whichever test's data directory was current by then, so the orphan sweep and file-count tests found one file too many. `queuePreviewMediaFetch` now honours `NEXTDASH_DISABLE_PREFETCH`, the brake `enrichInboxPreviewAsync` already has, which the Go suite and the e2e server both set. Covered by `TestQueuePreviewMediaFetchHonoursTheBrake`.
 - **tests — most of the fixes above come with a test that fails without them**; the rest were small enough to verify by reading the change.
 - **tests — four specs caught up with the fixes above.** The server-log spec reads `/api/logs` with the token and no longer expects line 1 after a clear (the count goes on); the webhook spec expects a `whsec_` key; Density left the list of settings that need a reload; and `docker_logstream.go` is gofmt-clean, which the CI's `fmt-check` wanted.
+- **tests — the reduced-motion move test measured a whole move.** It sent the bookmark to page 0, which failed only because of the shortcut bug fixed above; now that the move goes through, the time included the refresh after it and ran over on a slow runner. The test refuses the write in the page and times the pause before it.
 
 ---
 
