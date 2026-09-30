@@ -109,3 +109,16 @@ func TestResolveImportCategoriesIsStablePerName(t *testing.T) {
 		t.Error("no id for the name")
 	}
 }
+
+// A category made in Config has a cat-<ts>-<rand> id; importing a folder with
+// its name must reuse it, not create a second one next to it.
+func TestResolveImportCategoriesReusesAnExistingCategoryByName(t *testing.T) {
+	existing := []Category{{ID: "cat-m1x2-ab12", Name: "Work"}}
+	nameToID, created := resolveImportCategories(existing, []ImportedRow{{Category: "work"}, {Category: "Home"}})
+	if nameToID["work"] != "cat-m1x2-ab12" {
+		t.Fatalf("work -> %q, want the existing id", nameToID["work"])
+	}
+	if len(created) != 1 || created[0].Name != "Home" {
+		t.Fatalf("created = %+v, want only Home", created)
+	}
+}

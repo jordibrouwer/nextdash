@@ -647,3 +647,63 @@ func TestCommonZipPrefixKeepsIconsDir(t *testing.T) {
 		})
 	}
 }
+
+func importZipOf(t *testing.T, h *Handlers, files map[string]string) *httptest.ResponseRecorder {
+	t.Helper()
+	var zbuf bytes.Buffer
+	zw := zip.NewWriter(&zbuf)
+	for name, body := range files {
+		f, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = f.Write([]byte(body))
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	part, _ := mw.CreateFormFile("file", "nextDash-backup.zip")
+	_, _ = part.Write(zbuf.Bytes())
+	_ = mw.Close()
+	req := httptest.NewRequest(http.MethodPost, "/api/import", &body)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	rec := httptest.NewRecorder()
+	h.Import(rec, req)
+	return rec
+}
+
+// bookmarks-0.json is not a page file: it must not count as the archive's
+// pages, and the real pages must survive the refused import.
+func TestImportRefusesAnArchiveWhoseOnlyPageIsBookmarksZero(t *testing.T) {
+	t.Setenv("NEXTDASH_AUTO_BACKUP_DIR", t.TempDir())
+	h := newTestHandlers(t)
+	if err := h.store.SaveBookmarksByPage(1, []Bookmark{{Name: "Keep", URL: "https://keep.example/"}}); err != nil {
+		t.Fatal(err)
+	}
+	rec := importZipOf(t, h, map[string]string{
+		"bookmarks-0.json": `{"page":{"id":1,"name":"X"},"bookmarks":[{"name":"bad","url":"javascript:alert(1)"}]}`,
+	})
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d %s, want 400", rec.Code, rec.Body.String())
+	}
+	if got := h.store.GetBookmarksByPage(1); len(got) != 1 || got[0].Name != "Keep" {
+		t.Fatalf("page 1 = %+v: a refused import must leave the pages alone", got)
+	}
+}
+
+// A refused import must not write a safety backup: that prunes the rotation.
+func TestRefusedImportWritesNoSafetyBackup(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("NEXTDASH_AUTO_BACKUP_DIR", dir)
+	h := newTestHandlers(t)
+	rec := importZipOf(t, h, map[string]string{"settings.json": `{"theme":"default"}`})
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d %s, want 400", rec.Code, rec.Body.String())
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 0 {
+		t.Fatalf("a refused import wrote %d backup(s)", len(entries))
+	}
+}

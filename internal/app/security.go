@@ -359,6 +359,12 @@ func securityHeaders(next http.Handler) http.Handler {
 		limit := int64(jsonBodyLimit)
 		if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/") {
 			limit = multipartBodyLimit
+		} else if r.URL.Path == "/api/bookmarks/import-html" {
+			// A browser's bookmark export, posted as the raw file: its
+			// ICON="data:..." attributes put a few thousand bookmarks past the
+			// JSON ceiling, and the handler's own 32 MB limit cannot raise this
+			// one. The handler caps it at maxImportBytes.
+			limit = maxImportBytes
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, limit)
 		next.ServeHTTP(w, r)

@@ -1776,6 +1776,17 @@ func resolveImportCategories(existing []Category, rows []ImportedRow) (map[strin
 		taken[id] = struct{}{}
 	}
 
+	// An existing category by its name, whatever its id: one made in Config is
+	// cat-<ts>-<rand> and a renamed one keeps its old id, so matching on the
+	// slug alone put the imported rows in a second "Work" next to the first.
+	byName := make(map[string]string, len(existing))
+	for _, c := range existing {
+		key := strings.ToLower(strings.TrimSpace(c.Name))
+		if _, seen := byName[key]; key != "" && !seen {
+			byName[key] = c.ID
+		}
+	}
+
 	nameToID := map[string]string{}
 	var created []Category
 
@@ -1785,6 +1796,10 @@ func resolveImportCategories(existing []Category, rows []ImportedRow) (map[strin
 			continue
 		}
 		if _, done := nameToID[name]; done {
+			continue
+		}
+		if id, ok := byName[strings.ToLower(name)]; ok {
+			nameToID[name] = id
 			continue
 		}
 

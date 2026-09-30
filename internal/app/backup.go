@@ -280,7 +280,7 @@ func importBookmarkFilenames(prepared []preparedImportFile) map[string]bool {
 	names := make(map[string]bool)
 	for _, file := range prepared {
 		base := filepath.Base(file.relPath)
-		if strings.HasPrefix(base, "bookmarks-") && strings.HasSuffix(base, ".json") {
+		if _, ok := parseBookmarkPageIDFromFilename(base); ok {
 			names[base] = true
 		}
 	}
@@ -310,7 +310,7 @@ func removeImportOrphans(dataDir string, prepared []preparedImportFile) error {
 			continue
 		}
 		name := entry.Name()
-		if strings.HasPrefix(name, "bookmarks-") && strings.HasSuffix(name, ".json") {
+		if _, ok := parseBookmarkPageIDFromFilename(name); ok {
 			if !bookmarkNames[name] {
 				if err := os.Remove(filepath.Join(dataDir, name)); err != nil {
 					return err
@@ -516,12 +516,11 @@ func (h *Handlers) isValidImportFilename(filename string) bool {
 	}
 
 	// Check if it's a bookmarks file (bookmarks- followed by digits and .json)
-	if strings.HasPrefix(filename, "bookmarks-") && strings.HasSuffix(filename, ".json") {
-		// Extract the number part
-		numberPart := strings.TrimPrefix(strings.TrimSuffix(filename, ".json"), "bookmarks-")
-		if _, err := strconv.Atoi(numberPart); err == nil {
-			return true
-		}
+	// The same test the store reads pages with: bookmarks-0.json passed a plain
+	// Atoi, skipped the URL sanitizing, satisfied the "has pages" guard and then
+	// had every real page removed as an orphan.
+	if _, ok := parseBookmarkPageIDFromFilename(filename); ok {
+		return true
 	}
 
 	// Check if it's a per-page categories file (categories-{page}.json)
@@ -679,20 +678,6 @@ func (e *importError) status() int   { return e.code }
 // atomic commit, save categories) for a set of staged files. It returns the
 // number of skipped bookmarks, or an *importError with an HTTP status.
 func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) (int, *importError) {
-	// A copy of what is about to be replaced, taken here because this is the one
-	// path both the ZIP import and the auto-backup restore commit through.
-	//
-	// After staging rather than before: staging is what proves the archive is
-	// readable, and a backup taken for an import that then turns out to be
-	// rubbish is a rotation slot spent on nothing. Failure is logged and the
-	// import proceeds — refusing to import because the safety copy could not be
-	// written would leave someone stuck with no way forward and no way back.
-	if err := h.writeAutoBackup(); err != nil {
-		logWarn(logComponentImport, "the safety backup could not be made (%v); the import went ahead without one", err)
-	} else {
-		logInfo(logComponentImport, "safety backup written before the data was replaced")
-	}
-
 	allowLocalBookmarks := resolveImportAllowLocalBookmarks(staged, h.store.GetSettings().AllowLocalBookmarks)
 
 	prepared, importedCategoriesByPage, skippedBookmarks, err := prepareImportFromStaged(staged, allowLocalBookmarks)
@@ -710,6 +695,21 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	// at least contain the everything it replaces.
 	if len(importBookmarkFilenames(prepared)) == 0 {
 		return 0, &importError{msg: "archive contains no bookmark pages", code: http.StatusBadRequest}
+	}
+
+	// A copy of what is about to be replaced, taken here because this is the one
+	// path both the ZIP import and the auto-backup restore commit through.
+	//
+	// After every check rather than before: the backup prunes the rotation, so
+	// one taken for an archive that is then refused spent a slot on nothing --
+	// and three refused attempts replaced every older backup with copies of the
+	// state someone was trying to recover from. Failure is logged and the
+	// import proceeds — refusing to import because the safety copy could not be
+	// written would leave someone stuck with no way forward and no way back.
+	if err := h.writeAutoBackup(); err != nil {
+		logWarn(logComponentImport, "the safety backup could not be made (%v); the import went ahead without one", err)
+	} else {
+		logInfo(logComponentImport, "safety backup written before the data was replaced")
 	}
 
 	// Under the store lock, so no bookmark write lands between the files.

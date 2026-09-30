@@ -60,7 +60,7 @@ func (h *Handlers) UploadFavicon(w http.ResponseWriter, r *http.Request) {
 	}
 
 	faviconPath := filepath.Join(ResolveDataDir(), "favicon"+ext)
-	if err := os.WriteFile(faviconPath, data, 0644); err != nil {
+	if err := writeFileAtomic(faviconPath, data, 0644); err != nil {
 		http.Error(w, "Unable to save file", http.StatusInternalServerError)
 		return
 	}
@@ -116,7 +116,7 @@ func (h *Handlers) UploadFont(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fontPath := filepath.Join(dataDir, "font"+ext)
-	if err := os.WriteFile(fontPath, data, 0644); err != nil {
+	if err := writeFileAtomic(fontPath, data, 0644); err != nil {
 		http.Error(w, "Unable to save file", http.StatusInternalServerError)
 		return
 	}

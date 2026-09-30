@@ -140,3 +140,19 @@ func TestStagedFilesFromZipStillAcceptsAnOrdinaryBackup(t *testing.T) {
 		t.Errorf("staged = %+v, want one settings.json", staged)
 	}
 }
+
+// A browser's bookmark export is posted raw as text/html. It gets the import's
+// own ceiling, not the 4 MB JSON one.
+func TestHTMLBookmarkImportIsNotCappedAtTheJSONLimit(t *testing.T) {
+	body := bytes.Repeat([]byte("x"), jsonBodyLimit+(1<<20))
+	var readErr error
+	handler := securityHeaders(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		_, readErr = io.Copy(io.Discard, r.Body)
+	}))
+	req := httptest.NewRequest(http.MethodPost, "/api/bookmarks/import-html?page=1", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "text/html")
+	handler.ServeHTTP(httptest.NewRecorder(), req)
+	if readErr != nil {
+		t.Fatalf("a 5 MB bookmark file was cut off: %v", readErr)
+	}
+}

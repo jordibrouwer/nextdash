@@ -129,3 +129,47 @@ func TestExistingBraveFinderIsNotDuplicated(t *testing.T) {
 		t.Fatalf("the reader's own Brave entry was changed: %+v", finders[0])
 	}
 }
+
+// The seed's marker must not write the whole settings struct back: a key the
+// older file lacked would become an explicit false, and its default-on
+// behaviour would be lost for good.
+func TestBraveSeedKeepsMissingDefaultOnSettings(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
+	t.Chdir(tmp)
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
+		t.Fatal(err)
+	}
+	finders, _ := json.Marshal([]Finder{{Name: "DuckDuckGo", SearchUrl: "https://duckduckgo.com/?q=%s", Shortcut: "du"}})
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "finders.json"), finders, 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), []byte(`{"theme":"default"}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewStore()
+	store.GetFinders()
+
+	raw, _ := os.ReadFile(filepath.Join(ResolveDataDir(), "settings.json"))
+	if strings.Contains(string(raw), `"showCheatSheetButton"`) {
+		t.Fatalf("the seed wrote keys it does not own:\n%s", raw)
+	}
+	if !strings.Contains(string(raw), `"braveFinderSeededMigrated": true`) {
+		t.Fatalf("marker missing:\n%s", raw)
+	}
+	if !NewStore().GetSettings().ShowCheatSheetButton {
+		t.Fatalf("a default-on setting was turned off by the seed")
+	}
+}
+
+// A fresh install writes the stale limit it means (50), not 0 ("unlimited"):
+// the key exists in the file, so the missing-key fallback never runs.
+func TestFreshInstallStaleLimitIsFifty(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
+	t.Chdir(tmp)
+	if got := NewStore().GetSettings().SmartStaleLimit; got != 50 {
+		t.Fatalf("SmartStaleLimit = %d, want 50", got)
+	}
+}
