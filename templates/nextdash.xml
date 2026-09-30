@@ -47,6 +47,13 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.15.5 (2026-09-30)
+- Containers: a Size column with what each container wrote, measured in the background every half hour
+- Containers: tick several and start, stop, restart, update, remove or mute them at once; Backspace removes, running ones are stopped first after asking
+- Containers: a waiting update is an arrow before the name; names and images stay on one line, and three ports show before +N
+- Containers: Disk lists bind mounts, the appdata folders containers keep their data in, with who mounts each where
+- Config: the Docker host address is checked as you type, with an example; until it is set the view says where port links go
+
 ### v1.15.0 (2026-09-28)
 - Bookmarks view: the whole collection with health filters, grouping and a side panel for details, health and usage; the Health view lives here now
 - Containers view: the Docker host nextDash runs on, with status, ports, web UI links, logs, an hour of CPU and memory, and update checks
@@ -73,12 +80,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 ### v1.13.5 (2026-09-24)
 - Preview card: only a bookmark that is a video offers a play button — v1.13.4 drew one on every hover card
 
-### v1.13.4 (2026-09-24)
-- Bookmarks: a row whose link is a video carries a small play mark, read from the address alone
-- Preview card: the thumbnail gains a play button, and the video plays in the card; nothing reaches the provider until it is pressed
-- Keyboard: Shift+V puts the cursor on the play button; Escape, the close button or a click away ends the video
-- Fixed: the byline and the player could not be kept in Config → Bookmarks; the keyboard cursor's glow was cut off square
-
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -86,7 +87,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-09-28</Date>
+  <Date>2026-09-30</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
