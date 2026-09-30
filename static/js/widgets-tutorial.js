@@ -251,7 +251,9 @@
             // Escape, the backdrop and walking away all count as seen: the Types
             // tab covers the same ground on demand, so reopening this on every
             // visit to the section would be nagging.
-            onHide: () => finish('dismissed'),
+            // Only a real dismissal: Next and Back close the window too, and
+            // reach here with their own reason after they have run.
+            onHide: ({ reason } = {}) => { if (reason === 'dismiss') finish('dismissed'); },
         });
     }
 

@@ -633,7 +633,9 @@
             },
             // Escape, the backdrop and navigating away all count as seen: the
             // Tour button and the ℹ cover the same ground on demand.
-            onHide: () => finish('dismissed'),
+            // Only a real dismissal: Next and Back close the window too, and
+            // reach here with their own reason after they have run.
+            onHide: ({ reason } = {}) => { if (reason === 'dismiss') finish('dismissed'); },
         });
     }
 
