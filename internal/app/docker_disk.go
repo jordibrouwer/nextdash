@@ -106,6 +106,10 @@ type dockerDiskTotals struct {
 	Volumes            int64 `json:"volumes"`
 	VolumesUnused      int64 `json:"volumesUnused"`
 	VolumesUnusedCount int   `json:"volumesUnusedCount"`
+	// Stopped containers: what their writable layers take, and how many.
+	// nextDash's own and hidden containers are not counted.
+	ContainersStopped      int64 `json:"containersStopped"`
+	ContainersStoppedCount int   `json:"containersStoppedCount"`
 	Reclaimable        int64 `json:"reclaimable"`
 }
 
@@ -113,6 +117,8 @@ type dockerDiskView struct {
 	Images  []dockerDiskImage  `json:"images"`
 	Volumes []dockerDiskVolume `json:"volumes"`
 	Binds   []dockerDiskBind   `json:"binds"`
+	// Stopped names the containers "Remove stopped" would remove.
+	Stopped []string `json:"stopped"`
 	Totals  dockerDiskTotals   `json:"totals"`
 }
 
@@ -145,6 +151,27 @@ func dockerSystemBind(src string) bool {
 		return true
 	}
 	return strings.HasPrefix(src, "/dev/") || strings.HasPrefix(src, "/sys/") || strings.HasPrefix(src, "/proc/")
+}
+
+// dockerPrunableContainers: what "Remove stopped" removes -- exited, created
+// or dead, and neither hidden in Config nor nextDash's own. Docker's own
+// /containers/prune cannot leave the hidden ones be, so it is not used.
+func dockerPrunableContainers(list []dockerContainerSummary) []dockerContainerSummary {
+	hidden := dockerHiddenSet()
+	self := dockerSelfID()
+	out := []dockerContainerSummary{}
+	for _, c := range list {
+		switch c.State {
+		case "exited", "created", "dead":
+		default:
+			continue
+		}
+		if hidden[c.name()] || isDockerSelf(c.ID, self) {
+			continue
+		}
+		out = append(out, c)
+	}
+	return out
 }
 
 func buildDockerDiskView(df dockerDfResponse, list []dockerContainerSummary) dockerDiskView {
@@ -223,7 +250,18 @@ func buildDockerDiskView(df dockerDfResponse, list []dockerContainerSummary) doc
 			cacheFree += bc.Size
 		}
 	}
-	v.Totals.Reclaimable = v.Totals.ImagesUnused + cacheFree + v.Totals.VolumesUnused
+	written := map[string]int64{}
+	for _, c := range df.Containers {
+		written[c.ID] = c.SizeRw
+	}
+	v.Stopped = []string{}
+	for _, c := range dockerPrunableContainers(list) {
+		v.Stopped = append(v.Stopped, c.name())
+		v.Totals.ContainersStopped += written[c.ID]
+		v.Totals.ContainersStoppedCount++
+	}
+	sort.Strings(v.Stopped)
+	v.Totals.Reclaimable = v.Totals.ImagesUnused + cacheFree + v.Totals.VolumesUnused + v.Totals.ContainersStopped
 	sort.SliceStable(v.Images, func(i, j int) bool { return v.Images[i].Size > v.Images[j].Size })
 	sort.SliceStable(v.Volumes, func(i, j int) bool { return v.Volumes[i].Size > v.Volumes[j].Size })
 	return v
@@ -381,6 +419,9 @@ func (h *Handlers) DockerPruneHandler(w http.ResponseWriter, r *http.Request) {
 		path = "/images/prune?filters=" + url.QueryEscape(string(filters))
 	case "build-cache":
 		path = "/build/prune?all=true"
+	case "containers-stopped":
+		h.pruneStoppedContainers(w, r)
+		return
 	default:
 		dockerRefuse(w, http.StatusNotFound, "unknown-kind")
 		return
@@ -421,6 +462,54 @@ func (h *Handlers) DockerPruneHandler(w http.ResponseWriter, r *http.Request) {
 	logActivity(activityCategoryMutate, "docker.prune", map[string]any{"kind": kind, "removed": removed, "reclaimed": out.SpaceReclaimed},
 		"docker prune "+kind)
 	writeJSON(w, map[string]any{"ok": true, "kind": kind, "removed": removed, "reclaimed": out.SpaceReclaimed})
+}
+
+// pruneStoppedContainers removes the stopped containers the Disk tab named,
+// one at a time, and says how many went and which did not. Their volumes and
+// images stay, as with one container's remove.
+func (h *Handlers) pruneStoppedContainers(w http.ResponseWriter, r *http.Request) {
+	api, ok := h.dockerDiskGuard(w, r)
+	if !ok {
+		return
+	}
+	if !h.dockerPruneRunning.CompareAndSwap(false, true) {
+		dockerRefuse(w, http.StatusConflict, "busy")
+		return
+	}
+	defer h.dockerPruneRunning.Store(false)
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(dockerActionTimeout + time.Minute))
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), dockerActionTimeout)
+	defer cancel()
+	list, err := api.listContainers(ctx)
+	if err != nil {
+		writeDockerError(w, err)
+		return
+	}
+	removed := 0
+	failed := []string{}
+	var reclaimed int64
+	for _, c := range dockerPrunableContainers(list) {
+		// Held like one container's remove, so an action already running on
+		// it is not cut short; that one is left and named.
+		release, ok := h.dockerLockContainer(c)
+		if !ok {
+			failed = append(failed, c.name())
+			continue
+		}
+		err := api.remove(ctx, c.ID)
+		release()
+		if err != nil {
+			failed = append(failed, c.name())
+			continue
+		}
+		removed++
+		if size := dockerSizeOf(c.ID, time.Now()); size != nil {
+			reclaimed += size.RW
+		}
+	}
+	logActivity(activityCategoryMutate, "docker.prune", map[string]any{"kind": "containers-stopped", "removed": removed, "failed": failed},
+		"docker prune containers-stopped")
+	writeJSON(w, map[string]any{"ok": true, "kind": "containers-stopped", "removed": removed, "failed": failed, "reclaimed": reclaimed})
 }
 
 // DockerVolumeRemoveHandler removes one volume, named twice (?confirm=), that

@@ -122,6 +122,9 @@
                 this.tile('volumes', this.t('dockerDiskUnusedVolumes', 'Unused volumes'), totals.volumesUnused,
                     this.t('dockerDiskOfVolumes', '{count} of {total} volumes', { count: totals.volumesUnusedCount || 0, total: volumes.length }),
                     null, []),
+                this.tile('containers-stopped', this.t('dockerDiskStopped', 'Stopped containers'), totals.containersStopped,
+                    this.t('dockerDiskStoppedCount', '{count} stopped', { count: totals.containersStoppedCount || 0 }),
+                    this.t('dockerDiskRemoveStopped', 'Remove stopped…'), [], totals.containersStoppedCount),
             );
             root.appendChild(tiles);
             root.appendChild(this.imagesTable(images));
@@ -130,7 +133,7 @@
             if (binds.length) root.appendChild(this.bindsTable(binds));
         }
 
-        tile(kind, label, bytes, sub, action, rollback) {
+        tile(kind, label, bytes, sub, action, rollback, count) {
             const tile = el('div', 'docker-disk-tile');
             tile.setAttribute('data-docker-disk-tile', kind);
             tile.append(el('span', 'docker-disk-tile-label', label), el('b', 'docker-disk-tile-value', formatBytes(bytes || 0)),
@@ -139,7 +142,9 @@
                 const btn = el('button', 'docker-action-btn', action);
                 btn.type = 'button';
                 btn.setAttribute('data-docker-prune', kind);
-                btn.disabled = !bytes;
+                // A stopped container that wrote nothing still goes: it is the
+                // count that says whether there is anything to do.
+                btn.disabled = count === undefined ? !bytes : !count;
                 btn.addEventListener('click', () => void this.prune(kind));
                 tile.appendChild(btn);
             } else if (kind === 'volumes' && this.control) {
@@ -265,6 +270,13 @@
                         { size: formatBytes(totals.buildCache || 0) }),
                     this.t('dockerDiskClear', 'Clear')],
             };
+            const stopped = this.data?.stopped || [];
+            const shown = stopped.slice(0, 8).join(', ') + (stopped.length > 8
+                ? ` ${this.t('dockerDiskAndMore', 'and {count} more', { count: stopped.length - 8 })}` : '');
+            questions['containers-stopped'] = [this.t('dockerDiskPruneStoppedTitle', 'Remove stopped containers'),
+                this.t('dockerDiskPruneStoppedBody', 'Remove {count} stopped containers: {names}? Their volumes and images stay.',
+                    { count: stopped.length, names: shown }),
+                this.t('dockerDiskRemove', 'Remove')];
             const [title, message, confirmText] = questions[kind] || [];
             if (!title) return;
             const modal = window.AppModal;
@@ -284,6 +296,16 @@
                 this.notify(body?.reason === 'busy'
                     ? this.t('dockerDiskBusy', 'A clean-up or an update is still running. Try again when it is done.')
                     : (body?.message || this.t('dockerActionFailed', 'Docker did not do that.')), 'error');
+                return;
+            }
+            if (kind === 'containers-stopped') {
+                const failed = body?.failed || [];
+                this.notify(failed.length
+                    ? this.t('dockerDiskStoppedPartly', 'Removed {count}; {names} could not be removed.', { count: body?.removed || 0, names: failed.join(', ') })
+                    : this.t('dockerDiskStoppedRemoved', 'Removed {count} stopped containers.', { count: body?.removed || 0 }),
+                failed.length ? 'warning' : 'success');
+                await this.load();
+                void this.view?.refreshContainers?.();
                 return;
             }
             this.notify(this.t('dockerDiskFreed', 'Freed {size}.', { size: formatBytes(body?.reclaimed || 0) }), 'success');

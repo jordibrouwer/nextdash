@@ -67,7 +67,7 @@ func TestDockerDiskUsage(t *testing.T) {
 	}
 	want := dockerDiskTotals{Images: 1469 * mb, ImagesUnused: 769 * mb, Dangling: 390 * mb, DanglingCount: 1, ImagesUnusedCount: 2,
 		BuildCache: 300 * mb, BuildCacheCount: 2, Volumes: 267 * mb, VolumesUnused: 171 * mb, VolumesUnusedCount: 1,
-		Reclaimable: (769 + 300 + 171) * mb}
+		ContainersStoppedCount: 1, Reclaimable: (769 + 300 + 171) * mb} // radarr is stopped
 	if d.Totals != want {
 		t.Fatalf("totals = %+v\nwant     %+v", d.Totals, want)
 	}
@@ -209,5 +209,41 @@ func TestDockerDiskBinds(t *testing.T) {
 	at := d.Binds[0].UsedBy
 	if len(at) != 2 || at[0].Container != "bazarr" || at[0].Destination != "/media" || at[1].Container != "radarr" {
 		t.Fatalf("used by = %+v", at)
+	}
+}
+
+// Remove stopped takes the exited and created containers one at a time,
+// leaves running and hidden ones, and the disk view names what it would take.
+func TestDockerPruneStoppedContainers(t *testing.T) {
+	f, h := diskFixture(t) // sonarr running, radarr exited
+	f.add(fakeContainer{ID: strings.Repeat("c", 64), Name: "bazarr", Image: "b:latest", ImageID: "sha256:b", State: "created"})
+	f.add(fakeContainer{ID: strings.Repeat("d", 64), Name: "portainer", Image: "p:latest", ImageID: "sha256:p", State: "exited"})
+	settings := h.store.GetSettings()
+	settings.DockerHiddenContainers = []string{"portainer"}
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	router := newDockerTestRouter(h)
+
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/disk", nil))
+	var d dockerDiskView
+	if err := json.NewDecoder(rec.Body).Decode(&d); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(d.Stopped, ",") != "bazarr,radarr" || d.Totals.ContainersStoppedCount != 2 {
+		t.Fatalf("stopped = %v, %+v", d.Stopped, d.Totals)
+	}
+
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	rec = dockerPost(router, "/api/docker/prune/containers-stopped")
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"removed":2`) {
+		t.Fatalf("prune: %d %s", rec.Code, rec.Body)
+	}
+	if !f.called("DELETE /containers/"+strings.Repeat("b", 64)) || !f.called("DELETE /containers/"+strings.Repeat("c", 64)) {
+		t.Fatalf("calls = %v", f.calls)
+	}
+	if f.called("DELETE /containers/"+strings.Repeat("a", 64)) || f.called("DELETE /containers/"+strings.Repeat("d", 64)) {
+		t.Fatalf("a running or hidden container went: %v", f.calls)
 	}
 }

@@ -101,3 +101,21 @@ test.describe('docker disk', () => {
     await expect(page.locator('[data-docker-volume-remove]')).toHaveCount(0);
   });
 });
+
+// Stopped containers: a tile with the count, and Remove stopped asks first,
+// naming them, before one request removes them.
+test('Remove stopped names the containers, asks, then removes them', async ({ page }) => {
+  const state = await mockDocker(page);
+  await page.goto('/#docker/~disk');
+  const tile = page.locator('[data-docker-disk-tile="containers-stopped"]');
+  await expect(tile).toContainText('1 stopped');
+  await tile.locator('[data-docker-prune="containers-stopped"]').click();
+  const dialog = page.locator('.modal[role="dialog"]');
+  await expect(dialog).toContainText('bazarr');
+  await expect(dialog).toContainText('volumes and images stay');
+  await dialog.getByRole('button', { name: /cancel/i }).click();
+  expect(state.calls).not.toContain('POST /prune/containers-stopped');
+  await tile.locator('[data-docker-prune="containers-stopped"]').click();
+  await dialog.getByRole('button', { name: /^remove$/i }).click();
+  await expect.poll(() => state.calls).toContain('POST /prune/containers-stopped');
+});

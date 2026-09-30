@@ -20,7 +20,8 @@ function mockDisk() {
     ],
     totals: { images: 1189 * MiB, imagesUnused: 777 * MiB, imagesUnusedCount: 2, dangling: 398 * MiB, danglingCount: 1,
       buildCache: 300 * MiB, buildCacheCount: 2, volumes: 267 * MiB, volumesUnused: 171 * MiB, volumesUnusedCount: 1,
-      reclaimable: 1248 * MiB },
+      reclaimable: 1248 * MiB, containersStopped: 2 * MiB, containersStoppedCount: 1 },
+    stopped: ['bazarr'],
   };
 }
 
