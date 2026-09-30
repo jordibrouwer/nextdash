@@ -2582,6 +2582,8 @@ class DashboardConfig {
 
     clearBookmarkKeyboardSelection() {
         this._bmKeyboardKey = null;
+        this._bmRevealKey = null;
+        this._bmRevealFocusUntil = 0;
         this._bmPanelHoldKey = null;
         document.querySelectorAll('#config-bm-list .config-bm-row.keyboard-selected').forEach((row) => {
             row.classList.remove('keyboard-selected');
@@ -2616,6 +2618,18 @@ class DashboardConfig {
             this._bmKeyboardKey = null;
         }
         this.applyBookmarkKeyboardSelection(rows);
+        if (this._bmKeyboardKey && this._bmRevealFocusUntil > Date.now()) {
+            this.revealBookmarkRow(rows.find((row) => this.bookmarkRowKey(row) === this._bmKeyboardKey));
+        }
+    }
+
+    /** A row in the middle of the list and in focus, unless the reader is typing elsewhere. */
+    revealBookmarkRow(row) {
+        if (!row) return;
+        const active = document.activeElement;
+        if (active && active !== document.body && !active.closest?.('#config-bm-list') && active.matches?.('input, textarea, select')) return;
+        row.scrollIntoView({ block: 'center', behavior: 'instant' });
+        row.focus({ preventScroll: true });
     }
 
     moveBookmarkKeyboardSelection(delta, rows) {
@@ -5165,7 +5179,25 @@ class DashboardConfig {
             && String(x.url || '').trim() === wanted);
         if (!b) return false;
         if (this.bookmarksFiltersActive()) this.clearBookmarkFilters();
-        this._bmKeyboardKey = this.bookmarkKey(b);
+        const key = this.bookmarkKey(b);
+        this._bmKeyboardKey = key;
+        /*
+         * The list draws a page of rows at a time, and a render that finds no
+         * row for the cursor drops it. A bookmark further down than the first
+         * page is drawn first: the limit is raised to reach it, then the row
+         * is waited for, so the cursor lands on it rather than on nothing.
+         */
+        this._bmRevealKey = key;
+        const index = this.visibleBookmarks().findIndex((x) => this.bookmarkKey(x) === key);
+        if (index >= 0 && !document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(key)}"]`)) {
+            this.repaintBookmarksList?.();
+        }
+        const rowFor = () => document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(key)}"]`);
+        for (let i = 0; i < 40 && !rowFor(); i += 1) {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        this._bmKeyboardKey = key;
+        if (index >= 0 && this.bookmarkRowWindow?.()) this.scrollBookmarkRowIntoWindow?.(index);
         this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
         if (tab === 'health') {
             this.openBmHealthPanelSection();
@@ -5175,8 +5207,10 @@ class DashboardConfig {
             this.setWorkbenchPanelTab?.(tab);
         }
         if (focusRow) {
-            const row = document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(this._bmKeyboardKey)}"]`);
-            row?.focus({ preventScroll: true });
+            // The list redraws once more as its categories land; for a few
+            // seconds each redraw puts the row back in view and in focus.
+            this._bmRevealFocusUntil = Date.now() + 4000;
+            this.revealBookmarkRow(rowFor());
         }
         return true;
     }
@@ -22351,7 +22385,13 @@ class DashboardConfig {
      */
     bookmarkVisibleLimit(total) {
         const page = this.bmPageSize();
-        const wanted = Math.max(page, Number(this.bmVisibleLimit) || page);
+        let wanted = Math.max(page, Number(this.bmVisibleLimit) || page);
+        // A bookmark handed over from elsewhere (openLibraryOnBookmark) stays
+        // drawn however a later render orders the list, so its cursor holds.
+        if (this._bmRevealKey) {
+            const at = this.visibleBookmarks().findIndex((b) => this.bookmarkKey(b) === this._bmRevealKey);
+            if (at >= 0) wanted = Math.max(wanted, at + 1);
+        }
         return Math.max(page, Math.min(wanted, Number(total) || 0) || page);
     }
 
@@ -25615,6 +25655,12 @@ class DashboardConfig {
         this.updateBookmarkListChrome();
         if (scrollHost) scrollHost.scrollTop = scrollTop;
         else window.scrollTo(0, scrollTop);
+        // A bookmark handed over from elsewhere wins over the kept position:
+        // after it, so the restore above does not undo it.
+        if (this._bmKeyboardKey && this._bmRevealFocusUntil > Date.now()) {
+            this.revealBookmarkRow([...host.querySelectorAll('.config-bm-row')]
+                .find((row) => this.bookmarkRowKey(row) === this._bmKeyboardKey));
+        }
         this.setupBookmarkLoadMore(host);
         this.bindBookmarkWindowScroll();
         if (focusedKey) {

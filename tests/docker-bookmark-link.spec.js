@@ -30,10 +30,10 @@ const BOOKMARKS = [
     { name: 'Media server', url: 'http://mediabox.lan:32400/web', pageId: 2, category: 'c2' },
 ];
 
-async function open(page, hash = '#docker') {
+async function open(page, hash = '#docker', bookmarks = BOOKMARKS) {
     const state = await mockDocker(page, { containers: CONTAINERS.map((c) => ({ ...c })) });
     await page.route((url) => url.pathname === '/api/bookmarks' && url.searchParams.get('all') === 'true',
-        (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(BOOKMARKS) }));
+        (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(bookmarks) }));
     const saved = [];
     await page.route('**/api/settings', async (route) => {
         if (route.request().method() !== 'POST') return route.fallback();
@@ -126,4 +126,19 @@ test('a click on the mark opens the bookmark, its row in focus, on Details', asy
     await expect(row).toBeFocused();
     await expect(page.locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-key', '1::http://localhost:8989/');
     await expect(page.locator('#config-bm-panel [data-bm-tab-panel="details"]')).toHaveAttribute('aria-selected', 'true');
+});
+
+// Further down than the first page of rows: the list is drawn down to it, and
+// a later redraw (the categories landing) neither drops the cursor nor
+// scrolls it away.
+test('a bookmark far down the list still gets its row, in view and in focus', async ({ page }) => {
+    const filler = Array.from({ length: 80 }, (_, i) => ({ name: `Aaa ${String(i).padStart(2, '0')}`, url: `https://filler-${i}.example.org/`, pageId: 1, category: 'c1' }));
+    await open(page, '#docker', [...filler, { name: 'Zz Sonarr', url: 'http://localhost:8989/', pageId: 1, category: 'c1', checkStatus: true }]);
+    await page.locator('[data-docker-row="sonarr"] [data-docker-bm-dot]').click();
+    const row = page.locator('#config-bm-list .config-bm-row[data-bm-key="1::http://localhost:8989/"]');
+    await expect(row).toBeFocused();
+    await page.waitForTimeout(1500);
+    await expect(row).toBeFocused();
+    await expect(row).toBeInViewport();
+    await expect(page.locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-key', '1::http://localhost:8989/');
 });
