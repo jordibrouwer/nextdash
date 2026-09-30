@@ -2,6 +2,22 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureContainersBindsTitle",
+      "titleFallback": "Where your containers keep their data",
+      "whatKey": "config.overviewNewFeatureContainersBindsWhat",
+      "whatFallback": "Disk listed Docker volumes only, and on Unraid container data lives in host folders, so it looked as if nothing used any.",
+      "howKey": "config.overviewNewFeatureContainersBindsHow",
+      "howFallback": "Bind mounts, under Volumes on the Disk tab, names each host folder containers mount and who mounts it where. Docker does not measure folders, so there is no size beside them.",
+      "enableKey": "config.overviewNewFeatureContainersBindsEnable",
+      "enableFallback": "Open Containers and press d for Disk.",
+      "ctaKey": "config.overviewNewFeatureContainersBindsCta",
+      "ctaFallback": "Open Containers →",
+      "go": {
+        "view": "docker"
+      },
+      "since": "v1.15.5"
+    },
+    {
       "titleKey": "config.overviewNewFeatureContainersSizeTitle",
       "titleFallback": "What each container takes on disk",
       "whatKey": "config.overviewNewFeatureContainersSizeWhat",

@@ -1,0 +1,29 @@
+{
+  "tag": "v1.15.5",
+  "date": "30 September 2026",
+  "releasedAt": "2026-09-30",
+  "modalLead": "A tidier <strong>Containers</strong> table, and the folders your containers keep their data in.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Bind mounts on the Disk tab.</strong> The host folders your containers mount, and who mounts each where. On Unraid that is your appdata, which the Volumes list never showed."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Three ports, then +N.</strong> A container with many ports keeps its row on one line; the rest open in a list."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An update is an arrow before the name.</strong> Names line up again, and long names and images stay on one line, whole on hover."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Group bands count their containers</strong>, as in <em>Updates · 9</em>."
+        }
+      ]
+    }
+  ]
+}

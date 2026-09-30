@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -81,6 +82,19 @@ type dockerDiskVolume struct {
 	UsedBy []string `json:"usedBy"`
 }
 
+// dockerDiskBind is a host folder containers mount (a bind mount, as Unraid's
+// appdata). Not a volume: Docker neither owns nor measures it, so it has no
+// size and no remove; it is listed so the data a container keeps is findable.
+type dockerDiskBind struct {
+	Source string             `json:"source"`
+	UsedBy []dockerDiskBindAt `json:"usedBy"`
+}
+
+type dockerDiskBindAt struct {
+	Container   string `json:"container"`
+	Destination string `json:"destination"`
+}
+
 type dockerDiskTotals struct {
 	Images             int64 `json:"images"`
 	ImagesUnused       int64 `json:"imagesUnused"`
@@ -98,6 +112,7 @@ type dockerDiskTotals struct {
 type dockerDiskView struct {
 	Images  []dockerDiskImage  `json:"images"`
 	Volumes []dockerDiskVolume `json:"volumes"`
+	Binds   []dockerDiskBind   `json:"binds"`
 	Totals  dockerDiskTotals   `json:"totals"`
 }
 
@@ -122,19 +137,38 @@ func dockerRollbackImages(list []dockerContainerSummary) map[string][]string {
 	return out
 }
 
+// dockerSystemBind: a host file a container mounts to reach the host itself
+// (the Docker socket, the clock), not data it keeps.
+func dockerSystemBind(src string) bool {
+	switch src {
+	case "/var/run/docker.sock", "/run/docker.sock", "/etc/localtime", "/etc/timezone":
+		return true
+	}
+	return strings.HasPrefix(src, "/dev/") || strings.HasPrefix(src, "/sys/") || strings.HasPrefix(src, "/proc/")
+}
+
 func buildDockerDiskView(df dockerDfResponse, list []dockerContainerSummary) dockerDiskView {
 	imageUsers := map[string][]string{}
 	volumeUsers := map[string][]string{}
+	bindUsers := map[string][]dockerDiskBindAt{}
 	for _, c := range list {
 		imageUsers[c.ImageID] = append(imageUsers[c.ImageID], c.name())
 		for _, m := range c.Mounts {
 			if m.Type == "volume" && m.Name != "" {
 				volumeUsers[m.Name] = append(volumeUsers[m.Name], c.name())
 			}
+			if m.Type == "bind" && m.Source != "" && !dockerSystemBind(m.Source) {
+				bindUsers[m.Source] = append(bindUsers[m.Source], dockerDiskBindAt{Container: c.name(), Destination: m.Destination})
+			}
 		}
 	}
 	rollback := dockerRollbackImages(list)
-	v := dockerDiskView{Images: []dockerDiskImage{}, Volumes: []dockerDiskVolume{}}
+	v := dockerDiskView{Images: []dockerDiskImage{}, Volumes: []dockerDiskVolume{}, Binds: []dockerDiskBind{}}
+	for src, at := range bindUsers {
+		sort.Slice(at, func(i, j int) bool { return at[i].Container < at[j].Container })
+		v.Binds = append(v.Binds, dockerDiskBind{Source: src, UsedBy: at})
+	}
+	sort.Slice(v.Binds, func(i, j int) bool { return v.Binds[i].Source < v.Binds[j].Source })
 	for _, im := range df.Images {
 		users := append([]string{}, imageUsers[im.ID]...)
 		sort.Strings(users)
