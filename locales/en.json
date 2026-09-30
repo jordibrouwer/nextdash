@@ -2157,6 +2157,7 @@
     "dockerGroupByProject": "by project",
     "dockerNoProject": "No project",
     "dockerUpdateBadge": "update",
+    "dockerUpdateBadgeTitle": "Update available",
     "dockerDrawerClose": "Close",
     "dockerSectionOverview": "Overview",
     "dockerMoreActions": "More actions",

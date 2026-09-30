@@ -2393,6 +2393,7 @@
     "dockerUpdateAlreadyCurrent": "{name} läuft bereits mit dem neuesten Image.",
     "dockerUpdateAvailable": "Update verfügbar",
     "dockerUpdateBadge": "Update",
+    "dockerUpdateBadgeTitle": "Update available",
     "dockerUpdateDone": "{name} ist aktuell.",
     "dockerUpdateRolledBack": "Das Update von {name} ist bei „{step}“ fehlgeschlagen; der vorherige Container läuft wieder.",
     "dockerUpdatesCount": "{count} Updates",

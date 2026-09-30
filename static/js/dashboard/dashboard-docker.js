@@ -826,6 +826,15 @@ class DashboardDocker {
         return DashboardDocker.USAGE_SORTS.has(key) ? 'desc' : 'asc';
     }
 
+    /** An image without its registry host and a :latest tag, as a person
+     *  reads it: lscr.io/linuxserver/sonarr:latest is linuxserver/sonarr. */
+    static shortImage(image) {
+        let s = String(image || '');
+        const parts = s.split('/');
+        if (parts.length > 1 && /[.:]|^localhost$/.test(parts[0])) s = parts.slice(1).join('/');
+        return s.replace(/:latest$/, '');
+    }
+
     static formatCpu(pct) {
         return Number.isFinite(pct) ? `${pct.toFixed(1)} %` : '—';
     }
@@ -1379,6 +1388,11 @@ class DashboardDocker {
                 ? statusLabels[key]
                 : (key || this.t('dashboard.dockerNoProject', 'No project'));
             cell.appendChild(label);
+            const count = document.createElement('span');
+            count.className = 'docker-group-count';
+            count.setAttribute('data-docker-group-count', '');
+            count.textContent = ` · ${groups.get(key).length}`;
+            cell.appendChild(count);
             if (!byStatus && key && this.status.control) cell.appendChild(this.buildStackActions(groups.get(key)));
             heading.appendChild(cell);
             tbody.appendChild(heading);
@@ -1414,17 +1428,23 @@ class DashboardDocker {
         const nameCell = document.createElement('td');
         nameCell.className = 'docker-cell docker-cell--name';
         nameCell.appendChild(this.buildTick(c, checked));
-        const nameText = document.createElement('span');
-        nameText.className = 'docker-name';
-        nameText.textContent = c.name;
-        nameCell.appendChild(nameText);
+        // An update is an arrow ahead of the name, not a pill after it: the
+        // names keep one left edge and the row one line.
         if (c.update?.status === 'available') {
             const badge = document.createElement('span');
             badge.setAttribute('data-docker-update-badge', '');
-            badge.className = 'docker-badge';
-            badge.textContent = this.t('dashboard.dockerUpdateBadge', 'update');
+            badge.className = 'docker-update-mark';
+            badge.textContent = '↑';
+            const label = this.t('dashboard.dockerUpdateBadgeTitle', 'Update available');
+            badge.title = label;
+            badge.setAttribute('aria-label', label);
             nameCell.appendChild(badge);
         }
+        const nameText = document.createElement('span');
+        nameText.className = 'docker-name';
+        nameText.textContent = c.name;
+        nameText.title = c.name;
+        nameCell.appendChild(nameText);
         if (c.update?.held) {
             const held = document.createElement('span');
             held.setAttribute('data-docker-held-badge', '');
@@ -1437,7 +1457,8 @@ class DashboardDocker {
 
         const imageCell = document.createElement('td');
         imageCell.className = 'docker-cell docker-cell--image';
-        imageCell.textContent = c.image || '';
+        imageCell.textContent = DashboardDocker.shortImage(c.image);
+        if (c.image) imageCell.title = c.image;
         tr.appendChild(imageCell);
 
         const stateCell = document.createElement('td');

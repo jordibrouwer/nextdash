@@ -2393,6 +2393,7 @@
     "dockerUpdateAlreadyCurrent": "{name} draait al de nieuwste image.",
     "dockerUpdateAvailable": "update beschikbaar",
     "dockerUpdateBadge": "update",
+    "dockerUpdateBadgeTitle": "Update available",
     "dockerUpdateDone": "{name} is up-to-date.",
     "dockerUpdateRolledBack": "De update van {name} mislukte bij \"{step}\"; de vorige container draait weer.",
     "dockerUpdatesCount": "{count} updates",

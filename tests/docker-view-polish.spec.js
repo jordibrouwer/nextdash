@@ -46,7 +46,7 @@ test.describe('docker view polish', () => {
   test('group by status', async ({ page }) => {
     await openView(page);
     await page.locator('[data-docker-group]').selectOption('status');
-    await expect(page.locator('.docker-group-row')).toHaveText(['Updates', 'Running', 'Stopped']);
+    await expect(page.locator('.docker-group-row')).toHaveText(['Updates · 1', 'Running · 2', 'Stopped · 1']);
   });
 
   // Uptime is how long a container has been up, not how old it is: an old
@@ -222,4 +222,18 @@ test.describe('docker drawer: close on a press beside it', () => {
     await page.locator('.lvs-summary').click();
     await expect(page.locator('[data-docker-drawer] .config-bm-panel-title')).toHaveText('sonarr');
   });
+});
+
+// An update is an arrow ahead of the name, so the names keep one left edge;
+// the image drops its registry host and :latest, the full one on hover.
+test('an update is an arrow before the name, the image is short', async ({ page }) => {
+  await openView(page);
+  const cell = page.locator('[data-docker-row="sonarr"] .docker-cell--name');
+  const order = await cell.evaluate((td) => [...td.children].map((el) => el.className));
+  expect(order.indexOf('docker-update-mark')).toBeLessThan(order.indexOf('docker-name'));
+  await expect(cell.locator('[data-docker-update-badge]')).toHaveAttribute('aria-label', 'Update available');
+  const image = page.locator('[data-docker-row="sonarr"] .docker-cell--image');
+  await expect(image).toHaveText('linuxserver/sonarr');
+  await expect(image).toHaveAttribute('title', 'lscr.io/linuxserver/sonarr:latest');
+  await expect(page.locator('[data-docker-row="jellyfin"] .docker-cell--image')).toHaveText('jellyfin/jellyfin:10.10');
 });
