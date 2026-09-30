@@ -101,7 +101,7 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-containers.jpg" alt="Containers view" width="100%" />
       <br />
-      <sub><b>Containers</b> <i>(ThinkDashboard)</i> — Every container on the host with a status glow, its ports and a web UI column. The side panel shows CPU and memory over the last hour. Start, stop and update are one key away when you turn control on.</sub>
+      <sub><b>Containers</b> <i>(ThinkDashboard)</i> — Every container on the host with a status glow, its ports and a web UI column. The side panel shows CPU, memory, network and disk over the last hour, and a web UI's bookmark carries its health. Start, stop and update are one key away when you turn control on — or updates run at night, rolled back if they fail.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-themes.jpg" alt="Theme browser" width="100%" />
