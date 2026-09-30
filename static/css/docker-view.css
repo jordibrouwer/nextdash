@@ -1376,3 +1376,57 @@
         display: none;
     }
 }
+
+/* Columns: the toolbar's list of columns to show, under its button. */
+.docker-columns {
+    position: relative;
+    display: inline-flex;
+}
+
+.docker-columns-pop {
+    position: absolute;
+    top: calc(100% + var(--space-1, 0.25rem));
+    left: 0;
+    z-index: 30;
+    display: grid;
+    gap: var(--space-1, 0.25rem);
+    min-width: 10rem;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    box-shadow: var(--shadow-md, 0 4px 16px rgb(0 0 0 / 0.3));
+}
+
+.docker-columns-pop[hidden] {
+    display: none;
+}
+
+.docker-columns-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.docker-columns-item.is-idle {
+    color: var(--text-secondary);
+}
+
+.docker-columns-reset {
+    justify-self: start;
+    margin-top: var(--space-1, 0.25rem);
+    padding: 0;
+    font: inherit;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.docker-columns-reset:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}

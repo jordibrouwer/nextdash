@@ -115,12 +115,22 @@ class DashboardDocker {
         const group = saved?.group === true ? 'project' : saved?.group;
         this.group = DashboardDocker.GROUPS.includes(group) ? group : 'none';
         this.filter = saved?.filter || 'all';
+        // Columns switched off from the toolbar's Columns list; Name always shows.
+        const hidden = Array.isArray(saved?.hiddenColumns) ? saved.hiddenColumns : DashboardDocker.HIDDEN_BY_DEFAULT;
+        this.hiddenColumns = new Set(hidden.filter((k) => DashboardDocker.COLUMNS.includes(k)));
+    }
+
+    /** Whether the list draws this column: switched on, and CPU/RAM only while sampled. */
+    showsColumn(key) {
+        if ((key === 'cpu' || key === 'mem') && !this.usageEnabled) return false;
+        return !this.hiddenColumns?.has(key);
     }
 
     persistViewState() {
         try {
             localStorage.setItem('nextdash.docker.view', JSON.stringify({
                 sort: this.sort, sortDir: this.sortDir, group: this.group, filter: this.filter,
+                hiddenColumns: [...(this.hiddenColumns || [])],
             }));
         } catch {
             // Storage unavailable or full — the view still works this session.
@@ -740,6 +750,10 @@ class DashboardDocker {
                 <option value="network">${this.escape(this.t('dashboard.dockerGroupByNetwork', 'by network'))}</option>
                 <option value="image">${this.escape(this.t('dashboard.dockerGroupByImage', 'by image'))}</option>
             </select>
+            <span class="docker-columns">
+                <button type="button" class="lvs-action" data-docker-columns aria-haspopup="true" aria-expanded="false">${this.escape(this.t('dashboard.dockerColumns', 'Columns'))} ▾</button>
+                <div class="docker-columns-pop" data-docker-columns-pop role="group" aria-label="${this.escape(this.t('dashboard.dockerColumns', 'Columns'))}" hidden></div>
+            </span>
             <button type="button" class="lvs-action" data-docker-check>${this.escape(this.t('dashboard.dockerCheckUpdates', 'Check for updates'))}</button>
             <span data-docker-checked-at class="docker-checked-at"></span>
         `;
@@ -775,6 +789,90 @@ class DashboardDocker {
         host.querySelector('[data-docker-check]')?.addEventListener('click', () => {
             void this.checkForUpdates();
         });
+        this.bindColumnsMenu(host);
+    }
+
+    /**
+     * The Columns list: a tick per column, saved with the view. Name is not
+     * in it -- a row needs something to be. CPU and RAM show only while the
+     * stats sampler runs, ticked or not, and say so.
+     */
+    bindColumnsMenu(host) {
+        const button = host.querySelector('[data-docker-columns]');
+        const pop = host.querySelector('[data-docker-columns-pop]');
+        if (!button || !pop) return;
+        const labels = this.columnLabels();
+        const close = () => {
+            pop.hidden = true;
+            button.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('pointerdown', outside, true);
+            window.removeEventListener('keydown', onKey, true);
+        };
+        const outside = (e) => { if (!pop.contains(e.target) && e.target !== button) close(); };
+        const onKey = (e) => {
+            if (e.key !== 'Escape') return;
+            e.stopPropagation();
+            close();
+            button.focus();
+        };
+        const fill = () => {
+            pop.replaceChildren();
+            DashboardDocker.COLUMNS.forEach((key) => {
+                const label = document.createElement('label');
+                label.className = 'docker-columns-item';
+                const box = document.createElement('input');
+                box.type = 'checkbox';
+                box.setAttribute('data-docker-column', key);
+                box.checked = !this.hiddenColumns.has(key);
+                box.addEventListener('change', () => {
+                    if (box.checked) this.hiddenColumns.delete(key);
+                    else this.hiddenColumns.add(key);
+                    this.persistViewState();
+                    this.render();
+                });
+                const text = document.createElement('span');
+                text.textContent = labels[key];
+                label.append(box, text);
+                if ((key === 'cpu' || key === 'mem') && !this.usageEnabled) {
+                    label.title = this.t('dashboard.dockerColumnsNeedsStats', 'Shows while Config → Containers keeps the last hour of CPU and memory');
+                    label.classList.add('is-idle');
+                }
+                pop.appendChild(label);
+            });
+            const reset = document.createElement('button');
+            reset.type = 'button';
+            reset.className = 'docker-columns-reset';
+            reset.setAttribute('data-docker-columns-reset', '');
+            reset.textContent = this.t('dashboard.dockerColumnsReset', 'Reset columns');
+            reset.addEventListener('click', () => {
+                this.hiddenColumns = new Set(DashboardDocker.HIDDEN_BY_DEFAULT);
+                this.persistViewState();
+                this.render();
+                fill();
+            });
+            pop.appendChild(reset);
+        };
+        button.addEventListener('click', () => {
+            if (!pop.hidden) { close(); return; }
+            fill();
+            pop.hidden = false;
+            button.setAttribute('aria-expanded', 'true');
+            document.addEventListener('pointerdown', outside, true);
+            window.addEventListener('keydown', onKey, true);
+        });
+    }
+
+    /** Each optional column's name, as its heading reads. */
+    columnLabels() {
+        return {
+            image: this.t('dashboard.dockerFieldImage', 'Image'),
+            state: this.t('dashboard.dockerColStatus', 'Status'),
+            cpu: this.t('dashboard.dockerColCpu', 'CPU'),
+            mem: this.t('dashboard.dockerColMem', 'RAM'),
+            size: this.t('dashboard.dockerColSize', 'Size'),
+            webui: this.t('dashboard.dockerLinkWebUI', 'Web UI'),
+            ports: this.t('dashboard.dockerColPorts', 'Ports'),
+        };
     }
 
     /** What the toolbar says about the current view, without rebuilding it. */
@@ -879,6 +977,12 @@ class DashboardDocker {
         updates: 'Check for updates compares each image with what its registry offers and shows what changed. You can skip a version, hold a container, or roll the last update back while the old image is still on the host.',
         disk: 'd switches to Disk: what images, volumes and the build cache take up, and what nothing uses. It lists the host folders containers mount too. Every clean-up asks first, and a volume goes only one at a time.',
     };
+
+    /** The columns the Columns list switches, in table order; Name always shows. */
+    static COLUMNS = ['image', 'state', 'cpu', 'mem', 'size', 'webui', 'ports'];
+
+    /** Off on a first visit: none yet. */
+    static HIDDEN_BY_DEFAULT = [];
 
     /** The groupings the list offers besides none. */
     static GROUPS = ['project', 'status', 'network', 'image'];
@@ -1300,18 +1404,17 @@ class DashboardDocker {
         // third entry). The shared sortable heading (list-view-shell.css, as
         // Bookmarks and Inbox draw theirs): the button carries the click, the
         // th data-lvs-sort for the drawn arrow and aria-sort for a reader.
+        const labels = this.columnLabels();
         [
             ['name', this.t('dashboard.dockerColName', 'Name'), 'name'],
-            ['image', this.t('dashboard.dockerFieldImage', 'Image')],
-            ['state', this.t('dashboard.dockerColStatus', 'Status'), 'status'],
-            ...(this.usageEnabled ? [
-                ['cpu', this.t('dashboard.dockerColCpu', 'CPU'), 'cpu'],
-                ['mem', this.t('dashboard.dockerColMem', 'RAM'), 'mem'],
-            ] : []),
-            ['size', this.t('dashboard.dockerColSize', 'Size')],
-            ['webui', this.t('dashboard.dockerLinkWebUI', 'Web UI')],
-            ['ports', this.t('dashboard.dockerColPorts', 'Ports')],
-        ].forEach(([key, label, sortKey]) => {
+            ['image', labels.image],
+            ['state', labels.state, 'status'],
+            ['cpu', labels.cpu, 'cpu'],
+            ['mem', labels.mem, 'mem'],
+            ['size', labels.size],
+            ['webui', labels.webui],
+            ['ports', labels.ports],
+        ].filter(([key]) => key === 'name' || this.showsColumn(key)).forEach(([key, label, sortKey]) => {
             const th = document.createElement('th');
             th.scope = 'col';
             th.className = `docker-head docker-head--${key} lvs-colhead`;
@@ -1595,12 +1698,12 @@ class DashboardDocker {
         imageCell.className = 'docker-cell docker-cell--image';
         imageCell.textContent = DashboardDocker.shortImage(c.image);
         if (c.image) imageCell.title = c.image;
-        tr.appendChild(imageCell);
+        if (this.showsColumn('image')) tr.appendChild(imageCell);
 
         const stateCell = document.createElement('td');
         stateCell.className = 'docker-cell docker-cell--state';
         stateCell.textContent = busy ? this.phaseText(busy) : (c.status || c.state || '');
-        tr.appendChild(stateCell);
+        if (this.showsColumn('state')) tr.appendChild(stateCell);
 
         // The stats sampler's last reading (every 30 s), when it is on.
         if (this.usageEnabled) {
@@ -1610,7 +1713,8 @@ class DashboardDocker {
             const memCell = document.createElement('td');
             memCell.className = 'docker-cell docker-cell--mem docker-cell--num';
             memCell.textContent = DashboardDocker.formatMem(c.usage?.mem);
-            tr.append(cpuCell, memCell);
+            if (this.showsColumn('cpu')) tr.appendChild(cpuCell);
+            if (this.showsColumn('mem')) tr.appendChild(memCell);
         }
 
         // What the container wrote, measured in the background every half
@@ -1619,7 +1723,7 @@ class DashboardDocker {
         sizeCell.className = 'docker-cell docker-cell--size docker-cell--num';
         sizeCell.textContent = DashboardDocker.formatSize(c.size);
         if (c.size) sizeCell.title = DashboardDocker.sizeTitle(c.size, (key, fallback, params) => this.t(key, fallback, params));
-        tr.appendChild(sizeCell);
+        if (this.showsColumn('size')) tr.appendChild(sizeCell);
 
         /*
          * The web UI in a column of its own -- the address set in the drawer's
@@ -1649,12 +1753,12 @@ class DashboardDocker {
             a.textContent = webui.label;
             webuiCell.appendChild(a);
         }
-        tr.appendChild(webuiCell);
+        if (this.showsColumn('webui')) tr.appendChild(webuiCell);
 
         const portsCell = document.createElement('td');
         portsCell.className = 'docker-cell docker-cell--ports';
         this.fillPorts(portsCell, c);
-        tr.appendChild(portsCell);
+        if (this.showsColumn('ports')) tr.appendChild(portsCell);
 
         // Phone-width second line (image + the web UI, else the first public
         // port); CSS hides it at desktop and shows it, in place of the
