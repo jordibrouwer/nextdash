@@ -2,6 +2,38 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureContainersAutoUpdateTitle",
+      "titleFallback": "Updates at night, rolled back if they fail",
+      "whatKey": "config.overviewNewFeatureContainersAutoUpdateWhat",
+      "whatFallback": "Keeping containers current meant checking the list and pressing Update, one by one, awake.",
+      "howKey": "config.overviewNewFeatureContainersAutoUpdateHow",
+      "howFallback": "Switch Update automatically on for a container and nextDash updates it in a nightly window, then watches it for five minutes: if it stops, restarts or turns unhealthy, it goes back to the image it had and that version is skipped.",
+      "enableKey": "config.overviewNewFeatureContainersAutoUpdateEnable",
+      "enableFallback": "In a container's side panel, Updates → Update automatically; the window is in Config → Containers → Updates.",
+      "ctaKey": "config.overviewNewFeatureContainersAutoUpdateCta",
+      "ctaFallback": "Open Containers →",
+      "go": {
+        "view": "docker"
+      },
+      "since": "v1.15.6"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureContainersBookmarkTitle",
+      "titleFallback": "A container's web UI and its bookmark, joined",
+      "whatKey": "config.overviewNewFeatureContainersBookmarkWhat",
+      "whatFallback": "The Containers view and your bookmarks each knew half: that a container ran, and whether its page answered.",
+      "howKey": "config.overviewNewFeatureContainersBookmarkHow",
+      "howFallback": "A bookmark mark after a container's web UI link, in the colour of the bookmark's checks; a click opens the bookmark. It is found by the same port, a subdomain named after the container, or its title — or chosen in the side panel's Bookmark section. The bookmark says which container it runs in.",
+      "enableKey": "config.overviewNewFeatureContainersBookmarkEnable",
+      "enableFallback": "Open Containers; the mark shows where a bookmark matches. Set a bookmark to be checked to get its colour.",
+      "ctaKey": "config.overviewNewFeatureContainersBookmarkCta",
+      "ctaFallback": "Open Containers →",
+      "go": {
+        "view": "docker"
+      },
+      "since": "v1.15.6"
+    },
+    {
       "titleKey": "config.overviewNewFeatureContainersBindsTitle",
       "titleFallback": "Where your containers keep their data",
       "whatKey": "config.overviewNewFeatureContainersBindsWhat",

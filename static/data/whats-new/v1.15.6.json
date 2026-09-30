@@ -1,0 +1,50 @@
+{
+  "tag": "v1.15.6",
+  "date": "30 September 2026",
+  "releasedAt": "2026-09-30",
+  "modalLead": "The <strong>Containers</strong> view grows up: updates at night with a rollback, a web UI's bookmark and its health, and a notice when a container runs hot.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Update automatically.</strong> Switch it on per container; nextDash updates it at night and rolls it back if it stops, restarts or turns unhealthy."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A web UI's bookmark.</strong> A bookmark mark after the link, in the colour of its checks. Click it to open the bookmark."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Notices when a container runs hot</strong> on CPU or memory for a while."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Columns, and more ways to sort and group.</strong> Hide what you never read; sort by size or restarts; group by network or image."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Network and disk I/O</strong> in Resources, now and over the hour."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Disk: remove stopped containers, and measure a bind mount's folder.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Followed logs show up live again.</strong>"
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The page scrolls again after you close the side panel with the mouse.</strong>"
+        }
+      ]
+    }
+  ]
+}
