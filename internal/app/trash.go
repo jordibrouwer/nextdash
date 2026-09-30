@@ -56,6 +56,11 @@ type TrashedPage struct {
 	Page       Page       `json:"page"`
 	Categories []Category `json:"categories,omitempty"`
 	Bookmarks  []Bookmark `json:"bookmarks,omitempty"`
+	// Widgets and BlockOrder are the page's widgets and how its blocks were
+	// arranged. A restore without them brought the page back bare: every feed
+	// list, custom endpoint and the arrangement were gone.
+	Widgets    []Widget `json:"widgets,omitempty"`
+	BlockOrder []string `json:"blockOrder,omitempty"`
 	// OrderIndex is where the page sat in the page order, so a restore puts the
 	// tab back in place instead of appending it. Clamped on restore.
 	OrderIndex int `json:"orderIndex"`

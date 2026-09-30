@@ -980,6 +980,21 @@ class DashboardMultiSelect {
      * Best-effort, like the category undo: a stale entry is untidy, a blocked
      * undo is not.
      */
+    /** Restore entries through the trash, each onto the page it left. */
+    async restoreFromTrash(entries) {
+        let ok = false;
+        try {
+            ok = await window.DashboardTrash?.restoreEntries?.(entries);
+        } catch (_error) {
+            ok = false;
+        }
+        if (!ok) {
+            this.dash.showErrorNotification?.(
+                this.t('dashboard.multiSelectUndoFailed', 'Could not restore the bookmarks; they are in the trash')
+            );
+        }
+    }
+
     async dropRestoredTrashEntries(entries) {
         try {
             const data = await window.DashboardTrash?.list?.();
@@ -1085,17 +1100,31 @@ class DashboardMultiSelect {
                 // each splice shifts everything after it.
                 duration: 8000,
                 undoCallback: async () => {
+                    const pageIds = [...new Set(trashed.map((entry) => Number(entry.pageId)))];
+                    // The toast outlives a page switch. Spliced into whatever
+                    // page is showing, the rows were saved onto that page and
+                    // their own stayed without them; the trash puts each one
+                    // back where it came from.
+                    if (pageIds.some((id) => id !== Number(d.currentPageId))) {
+                        await this.restoreFromTrash(trashed);
+                        await d.data?.refreshAfterBookmarkMutation?.({ pageIds });
+                        return;
+                    }
                     [...trashed].sort((a, b) => a.index - b.index).forEach((entry) => {
                         d.bookmarks.splice(entry.index, 0, entry.bookmark);
                         d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
                     });
                     d.pendingReorderSnapshot = null;
                     try {
-                        await d.saveBookmarkOrder();
+                        // saveBookmarkOrder answers false rather than throwing.
+                        // Dropping the trash entries after a failed save lost
+                        // the rows from the page and the trash both.
+                        if (await d.saveBookmarkOrder() === false) {
+                            await d.data?.refreshAfterBookmarkMutation?.({ pageIds });
+                            return;
+                        }
                         await this.dropRestoredTrashEntries(trashed);
-                        await d.data?.refreshAfterBookmarkMutation?.({
-                            pageIds: [...new Set(trashed.map((entry) => entry.pageId))],
-                        });
+                        await d.data?.refreshAfterBookmarkMutation?.({ pageIds });
                     } catch (_error) {
                         // saveBookmarkOrder surfaces its own errors and reverts.
                     }

@@ -907,7 +907,13 @@ class DashboardCategoryMenu {
                             d.showErrorNotification?.(undone.error);
                             return;
                         }
-                        await d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
+                        // Only redraw the page it is on: loading pageId from
+                        // another page jumped the reader back to it.
+                        if (Number(d.currentPageId) === Number(pageId)) {
+                            await d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
+                        } else {
+                            d.data?.invalidatePageDataCache?.(pageId);
+                        }
                         // Restored through the categories endpoint, so its trash
                         // entry now shadows a live category. Dropping it goes
                         // straight through the trash module, which config does

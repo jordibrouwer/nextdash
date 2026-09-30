@@ -913,8 +913,12 @@ class DashboardRenderCore {
         if (!Array.isArray(order) || order.length === 0) return blocks;
 
         // Smart collections and the virtual categories keep their position:
-        // they are not the reader's to arrange.
-        const fixed = blocks.filter((b) => b.category?.isSmartCollection || b.category?.isVirtualCategory);
+        // they are not the reader's to arrange. Smart collections are built
+        // first and stay at the top; the virtual ones (Other, an unknown id)
+        // are built last and stay at the end. Lumped together they all went
+        // to the top, so Other jumped above every category the reader arranged.
+        const smart = blocks.filter((b) => b.category?.isSmartCollection);
+        const virtual = blocks.filter((b) => !b.category?.isSmartCollection && b.category?.isVirtualCategory);
         const movable = blocks.filter((b) => !b.category?.isSmartCollection && !b.category?.isVirtualCategory);
 
         const byId = new Map();
@@ -931,7 +935,7 @@ class DashboardRenderCore {
         // a category added since the last drag appears rather than vanishing.
         byId.forEach((block) => sorted.push(block));
 
-        return [...fixed, ...sorted];
+        return [...smart, ...sorted, ...virtual];
     }
 
 
@@ -1021,7 +1025,12 @@ class DashboardRenderCore {
         container.classList.remove('page-transition', 'tag-filter-layout', 'tag-filter-view',
             'packed-masonry');
 
-        if (!Array.isArray(d.bookmarks) || d.bookmarks.length === 0) {
+        // Widgets, or a category just made and pinned on screen, are something
+        // to draw: returning here for want of bookmarks left an RSS or weather
+        // widget on an otherwise empty page never drawn.
+        const hasOtherBlocks = (Array.isArray(d.widgets) && d.widgets.some((w) => w?.config?.enabled !== false))
+            || d.pinnedEmptyCategoryId != null;
+        if ((!Array.isArray(d.bookmarks) || d.bookmarks.length === 0) && !hasOtherBlocks) {
             const hasBookmarksOnOtherPages = Array.isArray(d.allBookmarks) && d.allBookmarks.length > 0;
             const currentPage = d.pages.find(p => p.id === d.currentPageId);
             const pageName = currentPage ? d.escapeHtml(currentPage.name) : '';
@@ -1880,10 +1889,28 @@ class DashboardRenderCore {
     scheduleBlockOrderSave() {
         const d = this.dash;
         if (d._pendingBlockOrderSave) clearTimeout(d._pendingBlockOrderSave);
+        // The page and the order as they are now. Read when the timer fired,
+        // a page switch inside the second wrote the new page's order to itself
+        // and the drag was lost -- and nothing flushed it on a switch or on
+        // closing the tab.
+        // Not an order that is another page's: see blocksBelongElsewhere.
+        if (this.blocksBelongElsewhere()) return;
+        d._pendingBlockOrder = { pageId: Number(d.currentPageId), order: [...(d.blockOrder || [])] };
         d._pendingBlockOrderSave = setTimeout(() => {
-            d._pendingBlockOrderSave = null;
-            void this.saveBlockOrder(Number(d.currentPageId), [...(d.blockOrder || [])]);
+            void this.flushPendingBlockOrderSave();
         }, 1000);
+    }
+
+    /** Write a block order still waiting out its debounce, now. */
+    async flushPendingBlockOrderSave() {
+        const d = this.dash;
+        if (d._pendingBlockOrderSave) {
+            clearTimeout(d._pendingBlockOrderSave);
+            d._pendingBlockOrderSave = null;
+        }
+        const pending = d._pendingBlockOrder;
+        d._pendingBlockOrder = null;
+        if (pending) await this.saveBlockOrder(pending.pageId, pending.order);
     }
 
     /*
@@ -1903,12 +1930,26 @@ class DashboardRenderCore {
      * -- a caller that has drawn the new state optimistically has to put the old
      * one back, and every one of them does.
      */
+    /** True when the widgets on screen were loaded for another page. */
+    blocksBelongElsewhere() {
+        const d = this.dash;
+        return d._blocksPageId != null && Number(d._blocksPageId) !== Number(d.currentPageId);
+    }
+
     async saveWidgetPatch(widgetId, patch) {
         const d = this.dash;
         const pageId = Number(d.currentPageId);
         const widgets = Array.isArray(d.widgets) ? d.widgets : [];
         const index = widgets.findIndex((w) => String(w?.id) === String(widgetId));
         if (!Number.isFinite(pageId) || index < 0) return false;
+        // The list is another page's (this page's blocks did not load): sent
+        // here it would replace this page's widgets with it.
+        if (this.blocksBelongElsewhere()) {
+            d.showErrorNotification?.(d.formatDashboardLabel?.('widgetsNotLoaded', {},
+                'This page\'s widgets did not load; reload the page to change them.')
+                || 'This page\'s widgets did not load; reload the page to change them.');
+            return false;
+        }
 
         const before = widgets[index];
         const next = { ...before };
@@ -2244,9 +2285,16 @@ class DashboardRenderCore {
             allowEmpty: false,
             onCommit: async (newName) => {
                 category.name = newName;
-                // Orphan categories (bookmarks referencing a non-existent category ID) are not
-                // in d.categories, so the save would skip them. Add the category first.
-                if (!d.categories.some(c => String(c.id) === String(category.id))) {
+                // The header keeps the object it was drawn with, and a reload of
+                // the same page replaces d.categories with new ones while the
+                // incremental render keeps the header: renamed there, the save
+                // sent the old name. The stored one is found by id.
+                const stored = d.categories.find((c) => String(c.id) === String(category.id));
+                if (stored) {
+                    stored.name = newName;
+                } else {
+                    // Orphan categories (bookmarks referencing a non-existent category ID) are not
+                    // in d.categories, so the save would skip them. Add the category first.
                     d.categories.push({ id: category.id, name: newName });
                 }
                 await this.saveCategoryOrder();

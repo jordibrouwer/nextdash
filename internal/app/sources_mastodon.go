@@ -165,9 +165,12 @@ func (h *Handlers) fetchMastodonAt(ctx context.Context, base string, source Sour
 			if out.NewestID == "" {
 				out.NewestID = status.ID
 			}
-			// Already imported: ids are ordered, so anything at or below the
-			// cursor was seen last round.
-			if source.Cursor != "" && status.ID <= source.Cursor {
+			// Already imported: the list is in the order you bookmarked, and the
+			// cursor is the first row of the last round, so the walk stops at
+			// that post. Not at the first id below it: a post from last week
+			// bookmarked today has an older id and was skipped for good, and
+			// ids compared as strings are not even ordered by length.
+			if source.Cursor != "" && status.ID == source.Cursor {
 				return out, nil
 			}
 

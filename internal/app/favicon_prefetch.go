@@ -135,7 +135,10 @@ func (h *Handlers) fetchAndStoreBookmarkIcon(bookmarkURL string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 	preview := h.fetchBookmarkPreview(ctx, bookmarkURL, nil, false)
-	if iconURL := strings.TrimSpace(preview.Icon); iconURL != "" {
+	// IconSource is the page's own <link rel=icon>. Icon is a local copy the
+	// media worker makes later, and is always empty on a fresh fetch like this
+	// one -- reading it sent every site straight to /favicon.ico.
+	if iconURL := strings.TrimSpace(preview.IconSource); iconURL != "" {
 		if fileName, err := downloadIconFromURL(iconURL, allowLocal); err == nil && fileName != "" {
 			return fileName
 		}

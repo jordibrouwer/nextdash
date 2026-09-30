@@ -2,6 +2,22 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureBookmarksSelectionBarTitle",
+      "titleFallback": "Tick bookmarks, act on them from one bar",
+      "whatKey": "config.overviewNewFeatureBookmarksSelectionBarWhat",
+      "whatFallback": "Ticking rows in the Bookmarks view opened the side panel, and there was no way to see what was ticked or act on it at once.",
+      "howKey": "config.overviewNewFeatureBookmarksSelectionBarHow",
+      "howFallback": "Tick rows and a bar above the list counts them and offers Edit…, Re-check, Mute alerts, Export CSV, Delete and Clear selection — the same bar Inbox and Containers have. Edit… opens the form for the selection in the side panel.",
+      "enableKey": "config.overviewNewFeatureBookmarksSelectionBarEnable",
+      "enableFallback": "Open the Bookmarks view and tick a row with its box, x, or X for the whole page.",
+      "ctaKey": "config.overviewNewFeatureBookmarksSelectionBarCta",
+      "ctaFallback": "Open Bookmarks →",
+      "go": {
+        "section": "bookmarks"
+      },
+      "since": "v1.15.7"
+    },
+    {
       "titleKey": "config.overviewNewFeatureContainersAutoUpdateTitle",
       "titleFallback": "Updates at night, rolled back if they fail",
       "whatKey": "config.overviewNewFeatureContainersAutoUpdateWhat",

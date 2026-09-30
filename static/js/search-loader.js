@@ -24,7 +24,9 @@
     let ready = false;
 
     /** The keys that open some part of the search stack. */
-    const OPENING_KEYS = ['>', ':', '?', '*', '/'];
+    // Not '*': the toolbar opens Recent bookmarks on it without the search
+    // bundle, and taking the key here opened the search panel instead.
+    const OPENING_KEYS = ['>', ':', '?', '/'];
 
     function bundleHref() {
         const marker = document.querySelector('[data-nextdash-search-js]');
@@ -138,6 +140,9 @@
         // is in. `/` is the one key a view keeps: config, the containers view
         // and the tag cloud use it for their own search or filter.
         if (event.key === '/' && global.dashboardInstance && !global.dashboardInstance.isBookmarksView?.()) return;
+        // On the grid with tags to browse, / opens the tag cloud -- a handler
+        // that needs no search bundle, which this one was pre-empting.
+        if (event.key === '/' && global.DashboardTagCloud?.isEligible?.()) return;
         event.preventDefault();
         event.stopImmediatePropagation();
         loadThenOpen(event.key);

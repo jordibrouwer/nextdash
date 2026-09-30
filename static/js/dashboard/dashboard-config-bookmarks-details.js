@@ -234,11 +234,14 @@
                 // The same wait Health's own capture shows: the page is fetched
                 // whole, images and all, which can take half a minute.
                 const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-                const res = await global.ProgressOverlay?.run
+                // Parenthesised: `await a ? b : c` awaited the test, not the
+                // call, so res was a pending promise, res.ok undefined, and a
+                // copy that saved fine was reported as failed.
+                const res = await (global.ProgressOverlay?.run
                     ? global.ProgressOverlay.run(
                         this.t('config.localArchiveCapturingTitle', 'Saving a copy…'), b.url,
                         () => fetcher(`/api/archives/capture?url=${encodeURIComponent(b.url)}`, { method: 'POST' }))
-                    : fetcher(`/api/archives/capture?url=${encodeURIComponent(b.url)}`, { method: 'POST' });
+                    : fetcher(`/api/archives/capture?url=${encodeURIComponent(b.url)}`, { method: 'POST' }));
                 this.notify(res.ok
                     ? this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.')
                     : this.t('dashboard.healthLocalCopyError', 'Could not save a copy of that page.'), res.ok ? 'success' : 'error');

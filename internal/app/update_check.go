@@ -155,6 +155,10 @@ func releaseTagParts(tag string) []int {
 	return out
 }
 
+// updateCheckErrorRetry is how long a failed update check is kept before a
+// read tries again.
+const updateCheckErrorRetry = 15 * time.Minute
+
 func (h *Handlers) getUpdateCheckCache() updateCheckCacheEntry {
 	h.updateCheckMu.RLock()
 	defer h.updateCheckMu.RUnlock()
@@ -180,7 +184,11 @@ func (h *Handlers) buildUpdateStatus(forceRefresh bool) UpdateStatusResponse {
 	}
 
 	entry := h.getUpdateCheckCache()
-	stale := entry.fetchedAt.IsZero() || time.Since(entry.fetchedAt) >= updateCheckCacheTTL
+	stale := entry.fetchedAt.IsZero() || time.Since(entry.fetchedAt) >= updateCheckCacheTTL ||
+		// A failure is retried sooner than a day: a container that starts
+		// before its network is up failed its first check and showed that
+		// error, and no update notice, until the next day.
+		(entry.err != nil && time.Since(entry.fetchedAt) >= updateCheckErrorRetry)
 	if forceRefresh || stale {
 		ctx, cancel := context.WithTimeout(context.Background(), updateCheckRequestTimeout)
 		defer cancel()

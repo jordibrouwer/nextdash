@@ -400,29 +400,55 @@ func (fs *FileStore) iconReferenced(fileName string) bool {
 // not a failure worth surfacing to the caller). Call this AFTER the referencing
 // item has been removed, so the just-deleted item does not count as a reference.
 func (fs *FileStore) removeUnusedIconFile(fileName string) {
-	fileName = strings.TrimSpace(fileName)
-	if fileName == "" || strings.ContainsAny(fileName, "/:") {
+	fs.removeUnusedIconFiles([]string{fileName})
+}
+
+// removeUnusedIconFiles is removeUnusedIconFile for many names, reading the
+// bookmarks and the inbox once rather than once per name: a Clear read of a few
+// hundred items re-read both a few hundred times.
+func (fs *FileStore) removeUnusedIconFiles(fileNames []string) {
+	candidates := map[string]struct{}{}
+	for _, name := range fileNames {
+		name = strings.TrimSpace(name)
+		if name != "" && !strings.ContainsAny(name, "/:") {
+			candidates[name] = struct{}{}
+		}
+	}
+	if len(candidates) == 0 {
 		return
 	}
-	if fs.iconReferenced(fileName) {
-		return
+	for _, bm := range fs.GetAllBookmarks() {
+		delete(candidates, strings.TrimSpace(bm.Icon))
 	}
-	_ = os.Remove(filepath.Join(fs.dataDir, "icons", fileName))
+	for _, item := range fs.GetInboxItems() {
+		delete(candidates, strings.TrimSpace(item.Icon))
+	}
+	for name := range candidates {
+		_ = os.Remove(filepath.Join(fs.dataDir, "icons", name))
+	}
 }
 
 func (fs *FileStore) RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error) {
+	restored, _, err := fs.RestoreInboxLinkEvicting(link, maxItems)
+	return restored, err
+}
+
+// RestoreInboxLinkEvicting is RestoreInboxLink plus what the capacity trim
+// dropped to make room, as AddInboxLink reports it: the caller removes their
+// icons (that needs the lock held here) and tells the user.
+func (fs *FileStore) RestoreInboxLinkEvicting(link InboxLink, maxItems int) (InboxLink, []InboxLink, error) {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
 	id := strings.TrimSpace(link.ID)
 	if id == "" {
-		return InboxLink{}, fmt.Errorf("invalid inbox id")
+		return InboxLink{}, nil, fmt.Errorf("invalid inbox id")
 	}
 
 	inbox := fs.readInboxDataLocked()
 	for _, existing := range inbox.Items {
 		if existing.ID == id {
-			return existing, nil
+			return existing, nil, nil
 		}
 	}
 
@@ -430,7 +456,7 @@ func (fs *FileStore) RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, 
 	link.ID = id
 	link.URL = strings.TrimSpace(link.URL)
 	if link.URL == "" {
-		return InboxLink{}, fmt.Errorf("invalid inbox url")
+		return InboxLink{}, nil, fmt.Errorf("invalid inbox url")
 	}
 	if link.AddedAt == 0 {
 		link.AddedAt = time.Now().UnixMilli()
@@ -449,7 +475,9 @@ func (fs *FileStore) RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, 
 	// Trimmed with the restored item protected: it is old by definition, so an
 	// age-ordered cut at capacity would drop the very item being restored and
 	// still report success.
+	beforeTrim := append([]InboxLink(nil), inbox.Items...)
 	inbox.Items = trimInboxItemsKeeping(inbox.Items, maxItems, link.ID)
+	evicted := evictedInboxItems(beforeTrim, inbox.Items)
 
 	// The protection above is what makes this hold, so the check is belt and
 	// braces — but it is the difference between a caller that can trust the
@@ -464,13 +492,13 @@ func (fs *FileStore) RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, 
 		}
 	}
 	if !survived {
-		return InboxLink{}, ErrInboxAtCapacity
+		return InboxLink{}, nil, ErrInboxAtCapacity
 	}
 
 	if err := fs.saveInboxDataLocked(inbox); err != nil {
-		return InboxLink{}, err
+		return InboxLink{}, nil, err
 	}
-	return link, nil
+	return link, evicted, nil
 }
 
 func (fs *FileStore) UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error) {

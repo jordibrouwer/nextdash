@@ -167,8 +167,12 @@ func applyOEmbed(preview *BookmarkPreview, data oembedResponse) {
 	if preview.SiteName == "" {
 		preview.SiteName = trimToLength(data.ProviderName, 80)
 	}
-	if preview.Image == "" {
-		preview.Image = strings.TrimSpace(data.ThumbnailURL)
+	// The remote address goes in ImageSource, as for og:image: Image is the
+	// local copy the media worker downloads, and the card shows local images
+	// only. Written into Image, the thumbnail was never fetched or shown, and
+	// the editor hotlinked it from the third party.
+	if preview.ImageSource == "" && preview.Image == "" {
+		preview.ImageSource = strings.TrimSpace(data.ThumbnailURL)
 	}
 	// Only for the types that are actually a player: a "link" response has no
 	// embed, and a "photo" is already covered by the thumbnail.

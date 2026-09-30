@@ -131,10 +131,46 @@ class DashboardBookmarkRows {
      * would file everything into one category — which is exactly what an undo
      * of a bulk move must not do, since the rows came from several.
      */
+    /** undoBookmarkCategoryMove through /api/bookmarks/move, one call per category. */
+    async undoBookmarkCategoryMoveOnServer(entries) {
+        const d = this.dash;
+        const groups = new Map();
+        entries.forEach(({ ref, category }) => {
+            const pageId = Number(ref.pageId || d.currentPageId);
+            const key = `${pageId}::${category ?? ''}`;
+            if (!groups.has(key)) groups.set(key, { pageId, category: category ?? '', items: [] });
+            groups.get(key).items.push({ pageId, url: ref.bookmark.url });
+        });
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            for (const group of groups.values()) {
+                const res = await api('/api/bookmarks/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ toPage: group.pageId, category: group.category, items: group.items }),
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            }
+        } catch (_error) {
+            d.showErrorNotification?.(d.formatDashboardLabel?.('bookmarkOrderSaveFailed', {}, 'Failed to save bookmark order.')
+                || 'Failed to save bookmark order.');
+        }
+        await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [...new Set([...groups.values()].map((g) => g.pageId))] });
+    }
+
     undoBookmarkCategoryMove(previous) {
         const d = this.dash;
         const entries = (previous || []).filter((entry) => entry?.ref?.bookmark);
         if (!entries.length) return;
+
+        // The toast outlives a page switch, and the objects it holds belong to
+        // the page that was loaded then: changing them and saving the page on
+        // screen did nothing at all. Off that page, the server moves them back.
+        const current = Number(d.currentPageId);
+        if (entries.some(({ ref }) => Number(ref.pageId || current) !== current)) {
+            void this.undoBookmarkCategoryMoveOnServer(entries);
+            return;
+        }
 
         d.ensureBookmarkMutationSnapshot();
         entries.forEach(({ ref, category }) => {
@@ -259,6 +295,7 @@ class DashboardBookmarkRows {
         }
 
         let moved = 0;
+        const sources = new Set();
         (refs || []).forEach((ref) => {
             const bookmark = ref?.bookmark;
             if (!bookmark) {
@@ -272,12 +309,20 @@ class DashboardBookmarkRows {
 
             row.setAttribute('data-category-id', normalizedCategoryId);
             if (row.parentElement !== targetList) {
+                if (row.parentElement) sources.add(row.parentElement);
                 targetList.appendChild(row);
             }
             moved += 1;
         });
 
-        return moved > 0 && moved === (refs || []).length;
+        // The target's "no bookmarks" placeholder goes now that it has one.
+        if (moved > 0) {
+            targetList.querySelectorAll('.empty-state--category').forEach((node) => node.remove());
+        }
+        // A list the move emptied needs the placeholder (or hiding) a full
+        // render gives it: answering false sends the caller there.
+        const emptiedSource = [...sources].some((list) => !list.querySelector('.bookmark-link'));
+        return moved > 0 && moved === (refs || []).length && !emptiedSource;
     }
 
 

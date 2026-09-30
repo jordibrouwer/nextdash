@@ -189,15 +189,36 @@ func normalizeWebhookID(raw string) string {
 	return id
 }
 
-// newWebhookSecret returns a fresh signing key. 32 bytes because that is the
-// block size of the SHA-256 HMAC that consumes it, hex because a receiver's
-// config field has to survive being pasted into a YAML file.
+// newWebhookSecret returns a fresh signing key in the Standard Webhooks form,
+// "whsec_" and the base64 of 32 random bytes: that is what the official
+// libraries take, and they HMAC with the decoded bytes (see webhookSigningKey).
+// Keys made before this were 64 hex characters and keep working as they are.
 func newWebhookSecret() (string, error) {
 	buf := make([]byte, 32)
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(buf), nil
+	return webhookSecretPrefix + base64.StdEncoding.EncodeToString(buf), nil
+}
+
+const webhookSecretPrefix = "whsec_"
+
+/*
+webhookSigningKey is the HMAC key a secret stands for.
+
+A whsec_ key is base64, and a Standard Webhooks library verifies with the
+decoded bytes. The older hex keys were signed with their ASCII text; the same
+libraries decode a 64-character hex string as base64 into different bytes and
+reject every delivery, so those keys keep the ASCII meaning for the receivers
+already verifying them by hand.
+*/
+func webhookSigningKey(secret string) []byte {
+	if rest, ok := strings.CutPrefix(secret, webhookSecretPrefix); ok {
+		if key, err := base64.StdEncoding.DecodeString(rest); err == nil {
+			return key
+		}
+	}
+	return []byte(secret)
 }
 
 // sanitizeWebhookEndpoint drops what cannot be delivered and bounds what can.
@@ -357,7 +378,7 @@ it recognises a redelivery it has already acted on, and the timestamp is how it
 refuses one replayed at it a day later.
 */
 func signWebhookPayload(secret, id string, timestamp int64, body []byte) string {
-	mac := hmac.New(sha256.New, []byte(secret))
+	mac := hmac.New(sha256.New, webhookSigningKey(secret))
 	mac.Write([]byte(id))
 	mac.Write([]byte("."))
 	mac.Write([]byte(strconv.FormatInt(timestamp, 10)))
@@ -456,8 +477,19 @@ is to acknowledge a POST; a 3xx is either a misconfiguration worth seeing in the
 log or somebody steering the delivery, and neither is worth following.
 */
 func webhookHTTPClient() *http.Client {
-	return newOutboundHTTPClient(webhookAllowLocal(), webhookTimeout, 0)
+	return newOutboundHTTPClientLimited(webhookAllowLocal(), webhookTimeout, 0, webhookOutboundLimiter)
 }
+
+/*
+webhookOutboundLimiter is the webhooks' own budget, the same size as the shared
+one.
+
+A save sends one event per changed bookmark, so a bulk tag or an import of a few
+hundred rows used up the shared limiter by itself: for the rest of that minute
+previews, icon fetches, feeds and archive lookups failed with "outbound rate
+limit exceeded".
+*/
+var webhookOutboundLimiter = newSlidingWindowLimiter(outboundRequestsPerMinute(), time.Minute)
 
 /*
 deliverWebhook posts one delivery, retrying a failure.
@@ -499,6 +531,12 @@ func deliverWebhook(endpoint WebhookEndpoint, event string, data map[string]any)
 			err = errors.New("HTTP " + strconv.Itoa(status))
 		} else {
 			cancel()
+			// Over the budget: a retry 5 or 10 seconds later is still inside the
+			// same minute's window, so it could only fail again.
+			if errors.Is(err, errOutboundRateLimited) {
+				logWarn(logComponentNotify, "too many webhook deliveries this minute; %s was not sent to %s", event, endpoint.URL)
+				return
+			}
 		}
 		if attempt == webhookAttempts {
 			logError(logComponentNotify, "gave up on %s after %d attempts; %s was not delivered: %v",

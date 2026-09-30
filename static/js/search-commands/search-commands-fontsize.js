@@ -117,7 +117,7 @@ class SearchCommandFontSize {
         } else {
             // For server settings, we need to fetch current settings, update fontSize, and save back
             try {
-                const response = await fetch('/api/settings');
+                const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/settings');
                 if (response.ok) {
                     const currentSettings = await response.json();
                     currentSettings.fontSize = fontSize;

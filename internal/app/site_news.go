@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"encoding/json"
-	"encoding/xml"
 	"html"
 	"io"
 	"net/http"
@@ -175,7 +174,7 @@ func summariseSiteNews(raw string) string {
 // without one cannot take its place in it.
 func parseSiteNews(body []byte) []SiteNewsItem {
 	var doc siteNewsFeed
-	if err := xml.Unmarshal(body, &doc); err != nil {
+	if err := decodeFeedXML(body, &doc); err != nil {
 		return nil
 	}
 	items := make([]SiteNewsItem, 0, siteNewsMaxItems)

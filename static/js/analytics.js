@@ -2,7 +2,7 @@
  * Bookmark open tracking (dashboard). Analytics UI lives in Config → Stats and dashboard health.
  */
 class BookmarkAnalytics {
-    async trackBookmarkOpen(pageId, index, source, method, extra) {
+    async trackBookmarkOpen(pageId, index, source, method, extra, url) {
         // Usage analytics (Umami): count that a bookmark was opened, and from where.
         // No id/name/url — `source` is a fixed enum, which keeps it PII-free.
         const resolvedSource = source || 'dashboard';
@@ -15,6 +15,9 @@ class BookmarkAnalytics {
             pageId, index, source: resolvedSource, method: method || 'unknown',
             sessionId: window.nextdashSessionId?.(),
         };
+        // The address names the row on the server; the index alone credited
+        // whatever sat there on disk after an unsaved drag.
+        if (url) body.url = url;
         // The "full" extras travel only when the reader actually turned the
         // level up. A call site can hand over resultRank or rowIndex whether
         // or not that is on — it is cheap to compute — so the gate belongs

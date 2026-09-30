@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
@@ -189,7 +188,7 @@ func parseRSSItems(raw []byte) ([]RSSItem, string) {
 		return nil, "that address did not answer with a feed"
 	}
 	var doc feedSourceDoc
-	if err := xml.Unmarshal(raw, &doc); err != nil {
+	if err := decodeFeedXML(raw, &doc); err != nil {
 		return nil, "that address did not answer with a feed"
 	}
 
@@ -226,8 +225,8 @@ func parseRSSItems(raw []byte) ([]RSSItem, string) {
 			title = link
 		}
 		summary := feedEntryNote(entry)
-		if len(summary) > rssMaxSummary {
-			summary = strings.TrimSpace(summary[:rssMaxSummary]) + "…"
+		if cut := truncateRunes(summary, rssMaxSummary); cut != summary {
+			summary = strings.TrimSpace(cut) + "…"
 		}
 		items = append(items, RSSItem{
 			Title:       title,
@@ -243,7 +242,7 @@ func parseRSSItems(raw []byte) ([]RSSItem, string) {
 // isFeedDocument reports whether the first element is one a feed starts with:
 // <rss>, <feed> for Atom, or RDF for the older RSS 1.0.
 func isFeedDocument(raw []byte) bool {
-	decoder := xml.NewDecoder(bytes.NewReader(raw))
+	decoder := newFeedXMLDecoder(raw)
 	decoder.Strict = false
 	for {
 		token, err := decoder.Token()

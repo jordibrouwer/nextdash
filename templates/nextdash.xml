@@ -47,6 +47,23 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.15.7 (2026-09-30)
+- Bookmarks view: tick rows and a selection bar offers Edit, Re-check, Mute alerts, Export CSV and Delete
+- Containers: the tour covers the v1.15.6 features and runs once more
+- Containers: a stopped container is updated and left stopped; a rollback starts the old version; a VPN client can be updated
+- Dashboard: moving or undoing across pages no longer loses bookmarks, and Other is at the end of the page again
+- Inbox: the selection bar's Delete works, and an import stops at a full inbox instead of pushing out older links
+- Write token: settings no longer return stored keys and tokens, and the server log needs the token
+- More than a hundred smaller fixes across Health, Search, Config, widgets and feeds
+
+### v1.15.6 (2026-09-30)
+- Containers: update automatically per container in a nightly window, rolled back if it stops, restarts or turns unhealthy
+- Containers: a web UI's bookmark shows its health after the link; click it to open the bookmark
+- Containers: a notice when a container stays above a CPU or memory line (90 % for 10 minutes by default)
+- Containers: choose the columns, sort by size or restarts, group by network or image, network and disk I/O in Resources
+- Disk: remove stopped containers in one go, and measure a bind mount's folder (Unraid appdata) on request
+- Fixed: followed container logs stayed empty in the browser until 4 KB had piled up
+
 ### v1.15.5 (2026-09-30)
 - Containers: a Size column with what each container wrote, measured in the background every half hour
 - Containers: tick several and start, stop, restart, update, remove or mute them at once; Backspace removes, running ones are stopped first after asking
@@ -70,15 +87,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Tags: suggested tags in Shift+T, the Config → Bookmarks side panel and the Tags button of a selection
 - Dashboard: a narrow window keeps as many columns as fit; only a phone held upright shows one
 - Fixed: page titles showed codes like &amp;amp; for an ampersand, and early clicks could not open the bookmark form
-
-### v1.13.6 (2026-09-25)
-- Bookmarks: the play mark sits on the corner of the favicon instead of taking room on the row
-- Theme browser: Light and Dark turn every card to that half, so the grid previews only light or only dark themes
-- Themes: the theme settings and their help are translated into Dutch, German, French, Spanish and Chinese
-- Fixed: the What has changed tour pointed at a Gloss badge and a Guided tours tab that no longer exist
-
-### v1.13.5 (2026-09-24)
-- Preview card: only a bookmark that is a video offers a play button — v1.13.4 drew one on every hover card
 
   </Changes>
 

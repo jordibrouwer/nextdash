@@ -183,10 +183,16 @@ func newOutboundHTTPClientWithHeaderTimeout(allowLocal bool, timeout, headerTime
 }
 
 func newOutboundHTTPClient(allowLocal bool, timeout time.Duration, maxRedirects int) *http.Client {
+	return newOutboundHTTPClientLimited(allowLocal, timeout, maxRedirects, globalOutboundLimiter)
+}
+
+// newOutboundHTTPClientLimited is newOutboundHTTPClient counted against its own
+// limiter rather than the shared one.
+func newOutboundHTTPClientLimited(allowLocal bool, timeout time.Duration, maxRedirects int, limiter *slidingWindowLimiter) *http.Client {
 	baseTransport := newSSRFSafeTransport(allowLocal, 0)
 	transport := http.RoundTripper(&rateLimitedTransport{
 		base:    baseTransport,
-		limiter: globalOutboundLimiter,
+		limiter: limiter,
 	})
 	return &http.Client{
 		Timeout:       timeout,

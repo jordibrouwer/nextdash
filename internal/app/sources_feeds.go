@@ -60,12 +60,12 @@ type feedSourceEntry struct {
 	 * catches it -- so this holds the text and the attributes together and the
 	 * reader below picks whichever is filled.
 	 */
-	Link        feedSourceLink `xml:"link"`
-	GUID        string         `xml:"guid"`
-	Description string         `xml:"description"`
-	PubDate     string         `xml:"pubDate"`
-	Published   string         `xml:"published"`
-	Updated     string         `xml:"updated"`
+	Links       []feedSourceLink `xml:"link"`
+	GUID        string           `xml:"guid"`
+	Description string           `xml:"description"`
+	PubDate     string           `xml:"pubDate"`
+	Published   string           `xml:"published"`
+	Updated     string           `xml:"updated"`
 }
 
 // feedSourceLink is a <link>, as RSS and Atom each write one.
@@ -76,14 +76,24 @@ type feedSourceLink struct {
 }
 
 // url returns the entry's address from whichever shape carried it.
+//
+// Every <link> is kept: an Atom entry often has several (WordPress writes
+// rel="alternate" and then rel="replies"), and a single field kept only the
+// last, so the entry had no address and was dropped.
 func (e feedSourceEntry) url() string {
-	if link := strings.TrimSpace(e.Link.Text); link != "" {
-		return link
+	for _, link := range e.Links {
+		if text := strings.TrimSpace(link.Text); text != "" {
+			return text
+		}
 	}
 	// Atom: rel="alternate" is the page; anything else is an enclosure or a
 	// self-reference, neither of which is what a reader wants to open.
-	if rel := strings.TrimSpace(e.Link.Rel); rel == "" || strings.EqualFold(rel, "alternate") {
-		return strings.TrimSpace(e.Link.Href)
+	for _, link := range e.Links {
+		if rel := strings.TrimSpace(link.Rel); rel == "" || strings.EqualFold(rel, "alternate") {
+			if href := strings.TrimSpace(link.Href); href != "" {
+				return href
+			}
+		}
 	}
 	return ""
 }
@@ -144,7 +154,7 @@ func (h *Handlers) fetchFeedSource(ctx context.Context, feedURL, since, category
 	}
 
 	var doc feedSourceDoc
-	if err := xml.Unmarshal(body, &doc); err != nil {
+	if err := decodeFeedXML(body, &doc); err != nil {
 		return out, fmt.Errorf("that address did not answer with a feed: %w", err)
 	}
 
@@ -222,10 +232,9 @@ var feedTagPattern = regexp.MustCompile(`<[^>]*>`)
 func feedEntryNote(entry feedSourceEntry) string {
 	note := feedTagPattern.ReplaceAllString(entry.Description, " ")
 	note = strings.Join(strings.Fields(note), " ")
-	if len(note) > 500 {
-		note = note[:500]
-	}
-	return note
+	// By characters: a byte cut can split one, and the half left over became
+	// "\uFFFD" in every non-ASCII feed.
+	return truncateRunes(note, 500)
 }
 
 /*
@@ -259,7 +268,11 @@ func (h *Handlers) FetchHackerNewsFavorites(ctx context.Context, source SourceSt
 			}},
 		}, nil
 	}
-	return h.fetchFeedSource(ctx, feedURL, source.Cursor, source.TargetCategory)
+	// No cursor: hnrss lists favorites by when the story was posted, not when
+	// it was favorited, so yesterday's story favorited after today's fell
+	// below the cursor and was never imported. The import's own "already
+	// here" check keeps what came in last round out.
+	return h.fetchFeedSource(ctx, feedURL, "", source.TargetCategory)
 }
 
 // youtubeChannelPattern matches the channel id YouTube's feed needs.

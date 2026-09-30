@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 /*
@@ -57,13 +58,48 @@ type dockerLogLine struct {
 // soon as the daemon sends it. Lines carry the daemon's timestamp in front.
 func readDockerLogFrames(r io.Reader, tty bool, emit func(dockerLogLine), flush func()) error {
 	partial := map[string]*bytes.Buffer{"out": {}, "err": {}}
+	// continued: the stream's buffer holds the rest of a line whose start was
+	// already sent. It has no timestamp in front to parse, and carries the one
+	// its line started with, so a resumed window places it after that line.
+	continued := map[string]bool{}
+	startedAt := map[string]string{}
 	lineOut := func(stream string, raw []byte) {
 		text := strings.TrimRight(string(raw), "\r")
+		if continued[stream] {
+			emit(dockerLogLine{T: startedAt[stream], S: stream, M: capRunes(text, dockerLogLineMax)})
+			return
+		}
 		t, m, ok := strings.Cut(text, " ")
 		if !ok {
 			t, m = "", text
 		}
+		startedAt[stream] = t
 		emit(dockerLogLine{T: t, S: stream, M: capRunes(m, dockerLogLineMax)})
+	}
+	// pieces sends data in pieces of at most dockerLogLineMax bytes, cut on a
+	// rune boundary, and returns what is left under that size. With end set the
+	// rest goes too: it is the end of the line.
+	pieces := func(stream string, data []byte, end bool) []byte {
+		for len(data) > dockerLogLineMax {
+			cut := dockerLogLineMax
+			for cut > 0 && !utf8.RuneStart(data[cut]) {
+				cut--
+			}
+			if cut == 0 {
+				cut = dockerLogLineMax
+			}
+			lineOut(stream, data[:cut])
+			continued[stream] = true
+			data = data[cut:]
+		}
+		if end {
+			if len(data) > 0 || !continued[stream] {
+				lineOut(stream, data)
+			}
+			continued[stream] = false
+			return nil
+		}
+		return data
 	}
 	take := func(stream string, payload []byte) {
 		buf := partial[stream]
@@ -74,21 +110,24 @@ func readDockerLogFrames(r io.Reader, tty bool, emit func(dockerLogLine), flush 
 				break
 			}
 			buf.Write(payload[:i])
-			lineOut(stream, buf.Bytes())
+			pieces(stream, buf.Bytes(), true)
 			buf.Reset()
 			payload = payload[i+1:]
 		}
-		// A line with no end in sight is let go at a cap rather than held
-		// without limit; the rest follows as a line of its own.
+		// A line with no end in sight is let go in pieces rather than held
+		// without limit, each piece a line of its own. Sent whole, it was cut
+		// at dockerLogLineMax and the rest of the buffer -- most of the line --
+		// was thrown away.
 		if buf.Len() > 4*dockerLogLineMax {
-			lineOut(stream, buf.Bytes())
+			rest := append([]byte(nil), pieces(stream, buf.Bytes(), false)...)
 			buf.Reset()
+			buf.Write(rest)
 		}
 	}
 	finish := func() {
 		for _, s := range []string{"out", "err"} {
 			if partial[s].Len() > 0 {
-				lineOut(s, partial[s].Bytes())
+				pieces(s, partial[s].Bytes(), true)
 				partial[s].Reset()
 			}
 		}

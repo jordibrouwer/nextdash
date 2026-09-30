@@ -464,7 +464,9 @@
             // Escape, the backdrop and navigating away all count as seen. The ℹ
             // in the toolbar covers the same ground on demand, so reopening the
             // tour on every visit would only be nagging.
-            onHide: () => finish('dismissed'),
+            // Only a real dismissal: Next and Back close the window too, and
+            // reach here with their own reason after they have run.
+            onHide: ({ reason } = {}) => { if (reason === 'dismiss') finish('dismissed'); },
         });
     }
 

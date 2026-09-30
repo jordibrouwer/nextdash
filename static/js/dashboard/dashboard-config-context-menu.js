@@ -211,7 +211,10 @@ class DashboardConfigContextMenu {
             item.setAttribute('role', 'menuitem');
             item.setAttribute('tabindex', '-1');
             item.setAttribute('data-action', action.id);
-            item.addEventListener('mouseenter', () => this.setFocus(items, items.indexOf(item)));
+            // The keyboard's position follows the pointer: Enter clicks
+            // items[index], and a hover that only moved the highlight left
+            // Enter on the item the arrows had reached -- Delete, one wrap up.
+            item.addEventListener('mouseenter', () => { index = items.indexOf(item); this.setFocus(items, index); });
 
             const icon = document.createElement('span');
             icon.className = 'move-popover-check';
@@ -420,7 +423,10 @@ class DashboardConfigContextMenu {
                 void this.config.setBookmarkCheckMode(key, option.mode);
             };
             item.addEventListener('click', choose);
-            item.addEventListener('mouseenter', () => this.setFocus(items, items.indexOf(item)));
+            // The keyboard's position follows the pointer: Enter clicks
+            // items[index], and a hover that only moved the highlight left
+            // Enter on the item the arrows had reached -- Delete, one wrap up.
+            item.addEventListener('mouseenter', () => { index = items.indexOf(item); this.setFocus(items, index); });
             pop.appendChild(item);
             items.push(item);
         });

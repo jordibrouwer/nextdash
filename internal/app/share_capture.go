@@ -144,6 +144,17 @@ func (h *Handlers) captureToInbox(rawURL, title, source string) (InboxLink, erro
 	for _, item := range evicted {
 		h.store.removeUnusedIconFile(item.Icon)
 	}
+	if err == nil {
+		// What AddInboxItem does after a save as well: without these a shared
+		// link kept the bare domain as its title, with no preview or icon, and
+		// was never counted as added while its later promote or delete was.
+		h.store.RecordInboxEvent(InboxEvent{
+			Type:   inboxEventAdded,
+			Source: created.Source,
+			AtMs:   created.AddedAt,
+		})
+		h.enrichInboxPreviewAsync(created.ID, created.URL)
+	}
 	return created, err
 }
 

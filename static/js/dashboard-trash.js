@@ -116,6 +116,35 @@
         return res.json();
     }
 
+    /**
+     * Restore deleted bookmarks through the trash, each onto the page it came
+     * from. For an undo that can no longer splice into the page on screen --
+     * the reader has moved to another one since the delete.
+     *
+     * @param {Array<{pageId:number,bookmark:object}>} entries
+     * @returns {Promise<boolean>} false when any of them could not be restored
+     */
+    async function restoreEntries(entries) {
+        let ok = true;
+        const data = await list();
+        const items = data?.items || [];
+        for (const entry of entries || []) {
+            const hit = items.find((item) => item.kind !== 'category'
+                && Number(item.pageId) === Number(entry.pageId)
+                && String(item.bookmark?.url || '') === String(entry.bookmark?.url || ''));
+            if (!hit) {
+                ok = false;
+                continue;
+            }
+            try {
+                await restore(hit.id);
+            } catch (_error) {
+                ok = false;
+            }
+        }
+        return ok;
+    }
+
     async function remove(id) {
         const res = await fetch(ENDPOINT, {
             method: 'DELETE',
@@ -140,5 +169,5 @@
         return res.json();
     }
 
-    global.DashboardTrash = { record, recordOne, recordCategory, list, restore, remove, empty };
+    global.DashboardTrash = { record, recordOne, recordCategory, list, restore, restoreEntries, remove, empty };
 }(typeof window !== 'undefined' ? window : globalThis));

@@ -143,7 +143,13 @@ func fillDockerExtras(out *DockerMetrics, running []dockerRunningRef, now time.T
 		}
 	}
 	out.Reclaimable, out.ReclaimableAt = dockerReclaimable(now)
-	out.Incidents24h = dockerTimelines.countSince(now.Add(-24*time.Hour), "crash", "unhealthy")
+	// The listed containers only: a hidden one is kept out of the widget's
+	// counts, and its crashes are no different.
+	listed := make(map[string]bool, len(out.containers))
+	for _, c := range out.containers {
+		listed[c.name()] = true
+	}
+	out.Incidents24h = dockerTimelines.countSinceFor(now.Add(-24*time.Hour), listed, "crash", "unhealthy")
 	var top []dockerTopCPU
 	for _, r := range running {
 		if p, ok := dockerStatsStore.latest(r.ID); ok {

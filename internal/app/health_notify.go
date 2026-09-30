@@ -151,8 +151,21 @@ func lastSampleUp(samples []HealthSample) (up bool, ok bool) {
 //   - up: fires only when the previous state was down *and* an alert had already
 //     been sent, so a blip that never alerted does not produce a lone recovery.
 func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) []monitorNotification {
+	pending, _ := h.pendingMonitorNotificationsAlerted(transitions)
+	return pending
+}
+
+/*
+pendingMonitorNotificationsAlerted is pendingMonitorNotifications plus the keys
+whose outage alerted on this pass.
+
+The newest stored sample is stamped as the alerting one, but with "alert after 1
+failure" that sample is the last "up" one, so nothing was stamped and the next
+round alerted again. The caller marks this round's own sample for those keys.
+*/
+func (h *Handlers) pendingMonitorNotificationsAlerted(transitions []monitorTransition) ([]monitorNotification, map[string]bool) {
 	if len(transitions) == 0 {
-		return nil
+		return nil, nil
 	}
 	settings := h.store.GetSettings()
 	// Gate on the sinks dispatchMonitorNotifications actually uses, not on the
@@ -164,7 +177,7 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 	_, webhookConfigured := monitorNotifyTarget(settings)
 	pushConfigured := settings.PushNotifyEnabled && settings.PushNotifyMonitor
 	if !webhookConfigured && !pushConfigured {
-		return nil
+		return nil, nil
 	}
 	threshold := clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
 
@@ -184,7 +197,11 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 			continue
 		}
 
-		prior := history[t.key]
+		// Without the samples taken inside a maintenance window. Uptime and
+		// incidents already leave them out; counted here, the failures of a
+		// nightly window made the first good check after it send "back online"
+		// with no "down" before it, every night.
+		prior := withoutMaintenanceSamples(history[t.key])
 		priorFailures := trailingFailures(prior)
 		prevUp, hadState := lastSampleUp(prior)
 
@@ -241,7 +258,23 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 	}
 
 	h.markOutagesAlerted(alerted)
-	return pending
+	return pending, alerted
+}
+
+// withoutMaintenanceSamples is samples minus the ones recorded in a window.
+func withoutMaintenanceSamples(samples []HealthSample) []HealthSample {
+	for _, s := range samples {
+		if s.Maint {
+			out := make([]HealthSample, 0, len(samples))
+			for _, s := range samples {
+				if !s.Maint {
+					out = append(out, s)
+				}
+			}
+			return out
+		}
+	}
+	return samples
 }
 
 // markOutagesAlerted stamps the newest stored sample of each key as the one that

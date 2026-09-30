@@ -269,6 +269,11 @@ func SaveSource(id string, next SourceState) (SourceStatus, error) {
 	merged.Handle = strings.TrimSpace(next.Handle)
 	merged.AsRows = next.AsRows
 	merged.Enabled = next.Enabled
+	// Another account or channel starts from the top: its older items are not
+	// behind this one's position.
+	if merged.Handle != strings.TrimSpace(existing.Handle) || merged.Kind != strings.TrimSpace(existing.Kind) {
+		merged.Cursor = ""
+	}
 	if token := strings.TrimSpace(next.Token); token != "" {
 		// A changed token invalidates the cursor: it may be a different account,
 		// and resuming someone else's import from this one's position would

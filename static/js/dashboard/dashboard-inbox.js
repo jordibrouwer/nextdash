@@ -274,6 +274,7 @@ class DashboardInbox {
             return;
         }
         const leaving = [];
+        const leavingSnaps = [];
         const made = [];
         let filedElsewhere = 0;
         let failed = 0;
@@ -296,6 +297,7 @@ class DashboardInbox {
                     continue;
                 }
                 leaving.push(item.id);
+                leavingSnaps.push(JSON.parse(JSON.stringify(item)));
             } catch {
                 failed += 1;
             }
@@ -319,7 +321,10 @@ class DashboardInbox {
                 'success',
                 {
                     duration: 8000,
-                    undoCallback: made.length ? () => this.undoBulkKeep(made) : null,
+                    // Every entry that left the inbox comes back, including
+                    // those already on the kept page; only the copies this
+                    // keep made are taken off it.
+                    undoCallback: () => this.undoBulkKeep(leavingSnaps, made.map((snap) => snap.url)),
                 }
             );
         }
@@ -336,11 +341,12 @@ class DashboardInbox {
     }
 
     /** Back into the queue, and the kept copies this made off the kept page. */
-    async undoBulkKeep(snapshots) {
+    async undoBulkKeep(snapshots, madeUrls = null) {
         const d = this.dash;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const pageId = Number(d._unsortedPageId) || 999999;
         const keptEntries = d.settings?.inboxDeleteAfterPromote === false;
+        const made = madeUrls ? new Set(madeUrls) : null;
         let back = 0;
         for (const snap of snapshots) {
             try {
@@ -349,11 +355,14 @@ class DashboardInbox {
                 } else if (!(await this.restoreItem(snap))) {
                     continue;
                 }
-                await fetcher('/api/bookmarks', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ page: pageId, bookmark: { url: snap.url } }),
-                });
+                // Only a copy this keep made; one already there stays.
+                if (!made || made.has(snap.url)) {
+                    await fetcher('/api/bookmarks', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page: pageId, bookmark: { url: snap.url } }),
+                    });
+                }
                 back += 1;
             } catch {
                 // Counted below; the link is still kept.
@@ -414,11 +423,30 @@ class DashboardInbox {
         const targets = this.checkedItems();
         if (!targets.length) return;
         this._trackAction('bulk-open', { size: this._countBucket(targets.length) });
+        /*
+         * Only what the browser actually opened is marked read. One click
+         * allows one popup; the rest are blocked -- and with 'noopener'
+         * window.open answers null either way, so every ticked link was
+         * marked read while one tab opened. Opened plainly and cut loose from
+         * this page after, the answer says which ones got through.
+         */
+        const opened = [];
         targets.forEach((item) => {
             const href = this.dash.safeBookmarkOpenHref?.(item.url) || item.url;
-            if (href) window.open(href, '_blank', 'noopener,noreferrer');
+            if (!href) return;
+            const tab = window.open(href, '_blank');
+            if (!tab) return;
+            try { tab.opener = null; } catch { /* cross-origin already: nothing to cut */ }
+            opened.push(item);
         });
-        const unread = targets.filter((item) => !item.readAt);
+        const blocked = targets.length - opened.length;
+        if (blocked > 0) {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxBulkOpenBlocked', 'The browser blocked {count} tabs — allow pop-ups for this site to open them all', { count: blocked }),
+                'warning'
+            );
+        }
+        const unread = opened.filter((item) => !item.readAt);
         if (unread.length) {
             void Promise.allSettled(unread.map((item) => this.markRead(item.id)))
                 .then(() => {
@@ -635,13 +663,27 @@ class DashboardInbox {
             void this.bulkPromote(catBtn.getAttribute('data-page'), catBtn.getAttribute('data-promote-category'));
         });
 
+        // Held where closeSnoozeMenu can take them off, as the snooze menu's
+        // are: the outside listener outlived every close but its own, and with
+        // no Escape of its own the view's handler cleared the ticks and left
+        // this menu floating over nothing selected.
         const onOutside = (e) => {
             if (!menu.contains(e.target) && e.target !== anchor) {
                 this.closeSnoozeMenu();
-                document.removeEventListener('click', onOutside, true);
             }
         };
-        setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+        this._snoozeOutside = onOutside;
+        this._snoozeEsc = (e) => {
+            if (e.key !== 'Escape') return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.closeSnoozeMenu();
+            anchor?.focus?.({ preventScroll: true });
+        };
+        document.addEventListener('keydown', this._snoozeEsc, true);
+        setTimeout(() => {
+            if (this._snoozeOutside === onOutside) document.addEventListener('click', onOutside, true);
+        }, 0);
     }
 
     /**
@@ -799,7 +841,7 @@ class DashboardInbox {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const tags = [...current, tag];
         try {
-            const res = await fetcher('/api/inbox', {
+            const res = await this._inboxWrite('/api/inbox', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: item.id, tags }),
@@ -961,7 +1003,7 @@ class DashboardInbox {
             });
             if (next.length === current.length) continue;
             try {
-                const res = await fetcher('/api/inbox', {
+                const res = await this._inboxWrite('/api/inbox', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, tags: next }),
@@ -1640,6 +1682,21 @@ class DashboardInbox {
         }, delay);
     }
 
+    /*
+     * Every write to /api/inbox goes through here, so a list fetch can tell
+     * that one happened while it was on the wire. Counted on the way out and
+     * on the way back: the write may reach the server before or after the read.
+     */
+    async _inboxWrite(url, init) {
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        this._mutationSeq = (this._mutationSeq || 0) + 1;
+        try {
+            return await fetcher(url, init);
+        } finally {
+            this._mutationSeq += 1;
+        }
+    }
+
     async fetchItems() {
         if (this._fetchPromise) {
             return this._fetchPromise;
@@ -1651,11 +1708,21 @@ class DashboardInbox {
         );
         this._fetchPromise = (async () => {
             try {
-                const res = await fetch('/api/inbox');
-                if (!res.ok) {
-                    throw new Error(`inbox HTTP ${res.status}`);
+                const readList = async () => {
+                    const res = await fetch('/api/inbox');
+                    if (!res.ok) {
+                        throw new Error(`inbox HTTP ${res.status}`);
+                    }
+                    return res.json();
+                };
+                // A snapshot taken before a delete, snooze or note that landed
+                // while it was on the wire put the deleted row back (and a
+                // second delete then 404'd). Read again once when that happened.
+                const seqAtStart = this._mutationSeq || 0;
+                let data = await readList();
+                if ((this._mutationSeq || 0) !== seqAtStart) {
+                    data = await readList();
                 }
-                const data = await res.json();
                 this.items = Array.isArray(data.items) ? data.items : [];
                 this.items.forEach((item) => {
                     // An explicit "mark unread" outranks the snapshot: it says
@@ -1671,6 +1738,7 @@ class DashboardInbox {
                     }
                 });
                 this._itemsLoaded = true;
+                delete this.dash._widgetInbox;
                 return this.items;
             } finally {
                 this._fetchPromise = null;
@@ -1705,7 +1773,7 @@ class DashboardInbox {
         }
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
-            const res = await fetcher('/api/inbox', {
+            const res = await this._inboxWrite('/api/inbox', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1776,7 +1844,7 @@ class DashboardInbox {
         // reason=promote lets the server attribute the delete as a conversion
         // (vs. a plain discard) in the durable inbox stats aggregate.
         const reasonParam = options.reason === 'promote' ? '&reason=promote' : '';
-        const res = await fetcher(`/api/inbox?id=${encodeURIComponent(id)}${reasonParam}`, { method: 'DELETE' });
+        const res = await this._inboxWrite(`/api/inbox?id=${encodeURIComponent(id)}${reasonParam}`, { method: 'DELETE' });
         if (!res.ok) {
             throw new Error(`inbox delete HTTP ${res.status}`);
         }
@@ -1792,7 +1860,7 @@ class DashboardInbox {
      */
     async batchInbox(op, ids, extra = {}) {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const res = await fetcher('/api/inbox/batch', {
+        const res = await this._inboxWrite('/api/inbox/batch', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ op, ids, ...extra }),
@@ -1847,7 +1915,7 @@ class DashboardInbox {
             return null;
         }
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const res = await fetcher('/api/inbox', {
+        const res = await this._inboxWrite('/api/inbox', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ item: snapshot }),
@@ -1894,6 +1962,18 @@ class DashboardInbox {
         }
         const next = visible[index + 1] || visible[index - 1];
         return next ? next.id : null;
+    }
+
+    /** True when no action is in flight for id yet, and marks one as started. */
+    claimPending(id) {
+        this._pendingIds = this._pendingIds || new Set();
+        if (this._pendingIds.has(id)) return false;
+        this._pendingIds.add(id);
+        return true;
+    }
+
+    releasePending(id) {
+        this._pendingIds?.delete(id);
     }
 
     async deleteItemWithUndo(id, options = {}) {
@@ -1970,7 +2050,7 @@ class DashboardInbox {
      */
     async markRead(id) {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const res = await fetcher('/api/inbox', {
+        const res = await this._inboxWrite('/api/inbox', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, readAt: Date.now() }),
@@ -1998,7 +2078,7 @@ class DashboardInbox {
      */
     async markUnread(id) {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const res = await fetcher('/api/inbox', {
+        const res = await this._inboxWrite('/api/inbox', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, readAt: 0 }),
@@ -2558,7 +2638,10 @@ class DashboardInbox {
         if (e.key === 'K' && selected && this.keptEnabled()) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            void this.keepItem(selected);
+            // A held key repeats, and the row stays selected until the write
+            // comes back: once per row, not once per keystroke.
+            if (e.repeat || !this.claimPending(selected.id)) return true;
+            void this.keepItem(selected).finally(() => this.releasePending(selected.id));
             return true;
         }
         if ((e.key === 'r') && selected) {
@@ -2606,7 +2689,10 @@ class DashboardInbox {
         if ((e.key === 'd' || e.key === 'Delete') && selected) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            void this.deleteItemWithUndo(selected.id);
+            // As for Shift+K: a second DELETE for the same row got a 404 and a
+            // "Could not delete" straight after "Removed from Inbox".
+            if (e.repeat || !this.claimPending(selected.id)) return true;
+            void this.deleteItemWithUndo(selected.id).finally(() => this.releasePending(selected.id));
             return true;
         }
         /*
@@ -2954,7 +3040,7 @@ class DashboardInbox {
     /** Persist a snooze wake time (or 0 to wake) via PATCH. */
     async patchSnooze(id, snoozedUntil) {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const res = await fetcher('/api/inbox', {
+        const res = await this._inboxWrite('/api/inbox', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, snoozedUntil }),
@@ -3841,16 +3927,20 @@ class DashboardInbox {
         }
         const date = new Date(value);
         const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        // Calendar days, not 24-hour steps: the day the clocks go back has 25
+        // hours, and midnight minus 24h then lands at 01:00 on the day before.
+        const y = now.getFullYear();
+        const m = now.getMonth();
+        const dd = now.getDate();
+        const startOfToday = new Date(y, m, dd).getTime();
         const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-        const dayMs = 86400000;
         if (startOfDate >= startOfToday) {
             return 'today';
         }
-        if (startOfDate >= startOfToday - dayMs) {
+        if (startOfDate >= new Date(y, m, dd - 1).getTime()) {
             return 'yesterday';
         }
-        if (startOfDate >= startOfToday - (7 * dayMs)) {
+        if (startOfDate >= new Date(y, m, dd - 7).getTime()) {
             return 'week';
         }
         return 'older';
@@ -3877,7 +3967,12 @@ class DashboardInbox {
         if (!this.isGroupedSort()) {
             return items.length ? [{ key: 'flat', label: '', items }] : [];
         }
-        const order = ['today', 'yesterday', 'week', 'older'];
+        // In the order the sort runs: oldest first puts the backlog on top,
+        // or the groups ran against the rows and shift-click and the cursor
+        // after a delete walked a different order than the one on screen.
+        const order = this.sort === 'oldest'
+            ? ['older', 'week', 'yesterday', 'today']
+            : ['today', 'yesterday', 'week', 'older'];
         const buckets = new Map(order.map((key) => [key, []]));
         items.forEach((item) => {
             const key = this.getDateGroupKey(item.addedAt);
@@ -3891,8 +3986,14 @@ class DashboardInbox {
     /** Bucket snoozed items by how soon they wake: later today, tomorrow, this week, later. */
     groupSnoozedItems(items) {
         const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const dayMs = 86400000;
+        const y = now.getFullYear();
+        const m = now.getMonth();
+        const dd = now.getDate();
+        const startOfToday = new Date(y, m, dd).getTime();
+        // Calendar days, as in getDateGroupKey: a 25-hour day put tomorrow's
+        // wake under "This week".
+        const startOfTomorrow = new Date(y, m, dd + 1).getTime();
+        const startInAWeek = new Date(y, m, dd + 7).getTime();
         const order = ['wakeToday', 'wakeTomorrow', 'wakeWeek', 'wakeLater'];
         const labels = {
             wakeToday: this.t('dashboard.inboxSnoozeGroupToday', 'Later today'),
@@ -3904,8 +4005,8 @@ class DashboardInbox {
             const wake = Number(ts || 0);
             const wakeDay = new Date(new Date(wake).getFullYear(), new Date(wake).getMonth(), new Date(wake).getDate()).getTime();
             if (wakeDay <= startOfToday) return 'wakeToday';
-            if (wakeDay <= startOfToday + dayMs) return 'wakeTomorrow';
-            if (wakeDay <= startOfToday + (7 * dayMs)) return 'wakeWeek';
+            if (wakeDay <= startOfTomorrow) return 'wakeTomorrow';
+            if (wakeDay <= startInAWeek) return 'wakeWeek';
             return 'wakeLater';
         };
         const buckets = new Map(order.map((key) => [key, []]));
@@ -4120,6 +4221,9 @@ class DashboardInbox {
         }
         this._searchRenderTimer = setTimeout(() => {
             this._searchRenderTimer = null;
+            // Left within the 80 ms: render() would mount the inbox shell over
+            // whatever view is showing now.
+            if (!this.isActiveView()) return;
             // searchQuery is already assigned by the input handler above; the
             // patch carries nothing new, which is why action is passed explicitly
             // instead of being derived from the (empty) patch's keys. persist:
@@ -4305,6 +4409,9 @@ class DashboardInbox {
 
     /** The header badge, after anything that moved the count. */
     syncBadge() {
+        // The Inbox widget's rows come from the same list; its cache was only
+        // ever cleared by a Config → Widgets save.
+        delete this.dash._widgetInbox;
         this.dash.pageNav?.updateInboxTabBadge?.();
     }
 
@@ -4690,6 +4797,10 @@ class DashboardInbox {
         }
         this.applyRailSetting(shell);
         const container = document.getElementById('dashboard-layout');
+        // Up front, not only at the end: the empty-list branches return early
+        // while still saying "N asleep, wakes at …", and with no timer set the
+        // last snoozed link never came back on its own.
+        this.scheduleWakeRefresh();
 
         d._abortInlineEditForRender?.();
         d.updateTagFilterIndicator?.();
@@ -5306,6 +5417,9 @@ class DashboardInbox {
         // queue, and the row the flight starts from is gone by the time it
         // lands.
         const flightFrom = this.keepFlightSource(item);
+        // The entry as it is now, for the undo: its id, when it was added,
+        // whether it was read and when it wakes all go back as they were.
+        const snapshot = JSON.parse(JSON.stringify(item));
         /*
          * Straight to where the rest of the site lives, when the reader asked
          * for that.
@@ -5350,7 +5464,7 @@ class DashboardInbox {
                     || Number(conflict.pageId) === Number(d._unsortedPageId);
                 if (!onKept && body?.error === 'duplicate_url') {
                     await this.completePromote(item.id);
-                    this.announceAlreadyFiled(item, conflict);
+                    this.announceAlreadyFiled(snapshot, conflict);
                     return true;
                 }
                 createdCopy = false;
@@ -5367,7 +5481,7 @@ class DashboardInbox {
             await d.loadAllBookmarks?.();
             this.syncBadge();
             await this.completePromote(item.id);
-            this.announceKeep(item, { createdCopy });
+            this.announceKeep(snapshot, { createdCopy });
             return true;
         } catch (_error) {
             d.showNotification(this.t('dashboard.inboxKeepFailed', 'Could not keep this link'), 'error');
@@ -5526,23 +5640,36 @@ class DashboardInbox {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const headers = { 'Content-Type': 'application/json' };
         try {
-            const added = await fetcher('/api/inbox', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                    url: item.url,
-                    title: item.title || item.previewTitle || '',
-                    note: item.note || '',
-                    tags: Array.isArray(item.tags) ? item.tags : [],
-                    source: item.source || 'keep-undo',
-                }),
-            });
-            // Already waiting in the queue is fine; a full queue is not -- the
-            // kept copy is then the only one, and must stay.
-            if (!added.ok) {
-                const body = await added.json().catch(() => null);
-                if (!(added.status === 409 && body?.error === 'duplicate_url')) {
-                    throw new Error(`inbox HTTP ${added.status}`);
+            /*
+             * The entry itself comes back, as the bulk undo does it. Added anew
+             * it had a new id and today's date, lost when it was read or would
+             * wake, counted as a new "added", and at the cap pushed an old link
+             * out; with entries kept after promote it was only marked read, so
+             * the add was refused and the link stayed read.
+             */
+            if (this.dash.settings?.inboxDeleteAfterPromote === false && item.id) {
+                if (!item.readAt) await this.markUnread(item.id);
+            } else if (item.id) {
+                // Throws on a full inbox: the kept copy is then the only one,
+                // and must stay.
+                await this.restoreItem(item);
+            } else {
+                const added = await this._inboxWrite('/api/inbox', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        url: item.url,
+                        title: item.title || item.previewTitle || '',
+                        note: item.note || '',
+                        tags: Array.isArray(item.tags) ? item.tags : [],
+                        source: item.source || 'keep-undo',
+                    }),
+                });
+                if (!added.ok) {
+                    const body = await added.json().catch(() => null);
+                    if (!(added.status === 409 && body?.error === 'duplicate_url')) {
+                        throw new Error(`inbox HTTP ${added.status}`);
+                    }
                 }
             }
             // Only the copy this keep made: one that was already on the kept
@@ -5653,7 +5780,7 @@ class DashboardInbox {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const clearParam = next.trim() === '' ? '?clearNote=1' : '';
         try {
-            const res = await fetcher(`/api/inbox${clearParam}`, {
+            const res = await this._inboxWrite(`/api/inbox${clearParam}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: item.id, note: next }),
@@ -5712,7 +5839,7 @@ class DashboardInbox {
 
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
-            const res = await fetcher('/api/inbox', {
+            const res = await this._inboxWrite('/api/inbox', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 // Sent even when empty: the server takes a null/absent tags field
@@ -6071,21 +6198,45 @@ class DashboardInbox {
 
         this._trackAction('import', { size: this._countBucket(rows.length) });
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        /*
+         * The room left, counted before the first row. The server never
+         * refuses an add at capacity: it keeps the new link and drops the
+         * oldest other one, so the "at_capacity" answer below never came and an
+         * import of 200 into a nearly full inbox deleted the reader's own links
+         * without a word. An import stops at the cap instead.
+         */
+        await this.loadItems?.();
+        const maxItems = Number(this.dash.settings?.inboxMaxItems) > 0 ? Number(this.dash.settings.inboxMaxItems) : 500;
+        const room = Math.max(0, maxItems - (Array.isArray(this.items) ? this.items.length : 0));
         let added = 0;
         let duplicates = 0;
         let failed = 0;
+        let evicted = 0;
         let full = false;
         for (const row of rows) {
+            if (added >= room) {
+                full = true;
+                break;
+            }
             // One at a time and in order: there is no bulk endpoint, and the
             // capacity cap means a later row can be the one that is refused.
             try {
-                const res = await fetcher('/api/inbox', {
+                const res = await this._inboxWrite('/api/inbox', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(row),
                 });
                 if (res.ok) {
                     added += 1;
+                    // Something else filled the inbox meanwhile (the extension,
+                    // a share): stop rather than push out another link.
+                    const answer = await res.json().catch(() => ({}));
+                    const pushedOut = Number(answer?.evicted) || 0;
+                    if (pushedOut > 0) {
+                        evicted += pushedOut;
+                        full = true;
+                        break;
+                    }
                     continue;
                 }
                 const body = await res.json().catch(() => ({}));
@@ -6117,6 +6268,9 @@ class DashboardInbox {
         }
         if (full) {
             parts.push(this.t('dashboard.inboxImportFull', 'inbox full — the rest was left out'));
+        }
+        if (evicted) {
+            parts.push(this.t('dashboard.inboxImportEvicted', '{count} older links pushed out', { count: evicted }));
         }
         this.dash.showNotification?.(parts.join(' · '), full || failed ? 'warning' : 'success');
     }

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 	"sync"
@@ -95,6 +96,28 @@ type monitorTarget struct {
 	// the bookmark's settings so the notification pass never has to reach back
 	// into the store for a bookmark that may since have moved.
 	muted bool
+	// rule is monitorRuleKey of the bookmark this target checks for.
+	rule string
+	// secondary marks a second check of an URL that is already checked this
+	// round, for a copy of the bookmark with other rules (see dueMonitorTargets).
+	// Its result only reaches the bookmarks with those rules: history, the scan
+	// cache, alerts and certificates stay with the first, per URL, as before.
+	secondary bool
+}
+
+/*
+monitorRuleKey is what makes two monitored bookmarks on one URL check
+differently: what they expect back and how they reach it.
+
+The same URL can be saved on two pages. It used to be checked once, with the
+first bookmark's rules, and the answer written onto both -- so a copy with no
+rules could be shown broken for the other's missing text, and one with drift
+watching on never got a baseline when the first had it off.
+*/
+func monitorRuleKey(b Bookmark) string {
+	e := expectationFor(b)
+	return fmt.Sprintf("%s\x00%t\x00%s\x00%t\x00%s\x00%s\x00%t",
+		e.Text, e.TextAbsent, e.Status, e.WatchDrift, e.CheckURL, strings.TrimSpace(b.CredentialID), e.AllowInsecureTLS)
 }
 
 // StartHealthMonitorScheduler runs the uptime-monitor loop until stop is closed.
@@ -135,6 +158,10 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 	known = map[string]bool{}
 	liveHosts = map[string]struct{}{}
 	seen := map[string]bool{}
+	primaryRule := map[string]string{}
+	seenRule := map[string]bool{}
+	dueKeys := map[string]bool{}
+	dueIndex := map[string]int{}
 
 	for _, page := range h.store.GetPages() {
 		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
@@ -158,11 +185,31 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 				continue
 			}
 			known[key] = true
-			// The same URL can be bookmarked on several pages; check it once.
+			rule := monitorRuleKey(bm)
+			// The same URL can be bookmarked on several pages; check it once --
+			// once per set of rules, that is. A copy with rules of its own is
+			// checked beside the first, in the same round, when the first is due.
 			if seen[key] {
+				ruleKey := key + "\x00" + rule
+				if rule != primaryRule[key] && dueKeys[key] && !seenRule[ruleKey] {
+					seenRule[ruleKey] = true
+					first := targets[dueIndex[key]]
+					targets = append(targets, monitorTarget{
+						key:       key,
+						url:       bm.URL,
+						name:      bm.Name,
+						pageID:    page.ID,
+						interval:  first.interval,
+						expect:    expectationFor(bm).withSoftNotFound(softNotFound),
+						muted:     true,
+						rule:      rule,
+						secondary: true,
+					})
+				}
 				continue
 			}
 			seen[key] = true
+			primaryRule[key] = rule
 
 			interval := time.Duration(clampMonitorIntervalMinutes(bm.MonitorIntervalMinutes)) * time.Minute
 			samples := history[key]
@@ -180,7 +227,10 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 				interval: interval,
 				expect:   expectationFor(bm).withSoftNotFound(softNotFound),
 				muted:    bm.NotifyMuted,
+				rule:     rule,
 			})
+			dueKeys[key] = true
+			dueIndex[key] = len(targets) - 1
 		}
 	}
 	return targets, known, liveHosts
@@ -266,6 +316,11 @@ func (h *Handlers) runDueMonitors() {
 					result = h.pingURLExpecting(ctx, t.url, t.expect)
 				}
 			}
+			// Past the round's deadline every check fails at once; that is the
+			// deadline, not the bookmark, and is not recorded as an outage.
+			if ctx.Err() != nil {
+				return
+			}
 			mu.Lock()
 			logDebug(logComponentHealth, "%s is %s (%dms)", t.url, result.Status, result.PingMs)
 			outcomes = append(outcomes, outcome{target: t, result: result, at: time.Now().UnixMilli()})
@@ -281,6 +336,10 @@ func (h *Handlers) runDueMonitors() {
 	cacheUpdates := make(map[string]HealthScanCache, len(outcomes))
 	historyUpdates := make(map[string][]HealthSample, len(outcomes))
 	transitions := make([]monitorTransition, 0, len(outcomes))
+	// The first check of each URL, whose rules the other copies are compared
+	// with, and the results of the extra checks, keyed URL and rules.
+	primaryRules := make(map[string]string, len(outcomes))
+	secondary := make(map[string]monitorRuleResult)
 
 	for _, out := range outcomes {
 		up := out.result.Status == "online"
@@ -291,6 +350,14 @@ func (h *Handlers) runDueMonitors() {
 				errMsg = "Unreachable"
 			}
 		}
+		if out.target.secondary {
+			secondary[out.target.key+"\x00"+out.target.rule] = monitorRuleResult{
+				update: HealthScanCache{URL: out.target.key, Status: out.result.Status, PingMs: out.result.PingMs, LastScanned: out.at, Error: errMsg},
+				result: out.result,
+			}
+			continue
+		}
+		primaryRules[out.target.key] = out.target.rule
 
 		cacheUpdates[out.target.key] = HealthScanCache{
 			URL:         out.target.key,
@@ -325,7 +392,13 @@ func (h *Handlers) runDueMonitors() {
 	// real outage that happened to start during maintenance.
 	var pending []monitorNotification
 	if !inMaintenance {
-		pending = h.pendingMonitorNotifications(transitions)
+		var alerted map[string]bool
+		pending, alerted = h.pendingMonitorNotificationsAlerted(transitions)
+		for key := range alerted {
+			if samples := historyUpdates[key]; len(samples) > 0 {
+				samples[len(samples)-1].Alerted = true
+			}
+		}
 	}
 
 	if err := h.appendHealthSamples(historyUpdates); err != nil {
@@ -356,9 +429,11 @@ func (h *Handlers) runDueMonitors() {
 	h.pruneCertificates(liveHosts)
 	driftResults := make(map[string]PingResult, len(outcomes))
 	for _, out := range outcomes {
-		driftResults[out.target.key] = out.result
+		if !out.target.secondary {
+			driftResults[out.target.key] = out.result
+		}
 	}
-	h.mirrorMonitorResultsToBookmarks(cacheUpdates, driftResults)
+	h.mirrorMonitorResultsToBookmarks(cacheUpdates, driftResults, primaryRules, secondary)
 	h.invalidateHealthReportCache()
 
 	// What the round did, in one line. Until this existed a sweep of a hundred
@@ -377,9 +452,38 @@ func (h *Handlers) runDueMonitors() {
 // mirrorMonitorResultsToBookmarks copies each result onto the matching bookmarks
 // so the row and the report score agree with the monitor, matching what
 // runHealthRetest and CheckBookmarkHealthURL already do.
-func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScanCache, drift map[string]PingResult) {
+// monitorRuleResult is one extra check's answer, for the copies with its rules.
+type monitorRuleResult struct {
+	update HealthScanCache
+	result PingResult
+}
+
+func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScanCache, drift map[string]PingResult, primaryRules map[string]string, secondary map[string]monitorRuleResult) {
 	if len(updates) == 0 {
 		return
+	}
+	// The result for this bookmark: its own rules' check when it had one, the
+	// URL's first check when its rules are that one's. A copy whose own check
+	// did not run this round is left as it was rather than given an answer to
+	// a question it did not ask.
+	resultFor := func(bm Bookmark) (HealthScanCache, PingResult, bool) {
+		key := canonicalBookmarkURLKey(bm.URL)
+		update, ok := updates[key]
+		if !ok {
+			return HealthScanCache{}, PingResult{}, false
+		}
+		first, known := primaryRules[key]
+		if !known || !bm.Monitor {
+			return update, drift[key], true
+		}
+		rule := monitorRuleKey(bm)
+		if rule == first {
+			return update, drift[key], true
+		}
+		if own, ok := secondary[key+"\x00"+rule]; ok {
+			return own.update, own.result, true
+		}
+		return HealthScanCache{}, PingResult{}, false
 	}
 	for _, page := range h.store.GetPages() {
 		relevant := false
@@ -394,12 +498,11 @@ func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScan
 		}
 		err := h.store.MutateBookmarksOnPage(page.ID, func(current []Bookmark) ([]Bookmark, error) {
 			for i := range current {
-				update, ok := updates[canonicalBookmarkURLKey(current[i].URL)]
+				update, result, ok := resultFor(current[i])
 				if !ok {
 					continue
 				}
 				setBookmarkCheckResult(&current[i], update.LastScanned, update.Error)
-				result := drift[canonicalBookmarkURLKey(current[i].URL)]
 				if result.CertHost != "" {
 					current[i].CertHost = result.CertHost
 				}

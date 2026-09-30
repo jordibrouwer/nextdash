@@ -228,11 +228,17 @@ class SearchComponent {
             });
 
             mobileInput.addEventListener('keydown', (e) => {
+                // Handled here, so it does not reach the document handler as
+                // well: one Enter ran the match twice -- a completion filled
+                // in and then ran, a toggle flipped and flipped back.
+                if (e.isComposing) return;
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    e.stopPropagation();
                     this.selectCurrentMatch();
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
+                    e.stopPropagation();
                     if (!this.isAppModalOpen()) {
                         this.closeSearch();
                     }
@@ -1855,7 +1861,8 @@ class SearchComponent {
             ? this.language.t(fullKey)
             : fallback;
         Object.entries(vars).forEach(([name, value]) => {
-            text = text.replace(new RegExp(`\\{${name}\\}`, 'g'), String(value));
+            // A function, so "$&" or "$'" in a query is text, not a pattern.
+            text = text.replace(new RegExp(`\\{${name}\\}`, 'g'), () => String(value));
         });
         return text;
     }
@@ -3203,10 +3210,12 @@ class SearchComponent {
                 };
                 add.addEventListener('click', openFinderConfig);
                 this.matchElements.push(add);
-                this.selectableMatches.push({ action: openFinderConfig, type: 'hint' });
+                // 'hint-finder', the type selectCurrentMatch runs the action
+                // for: as 'hint' it fell through to openBookmark(undefined).
+                this.selectableMatches.push({ action: openFinderConfig, type: 'hint-finder' });
                 matchesContainer.appendChild(add);
-                this.selectedIndex = 0;
-                this.updateSelectedMatch?.();
+                this.selectedMatchIndex = 0;
+                this.updateSelectionHighlight();
                 return;
             }
 
@@ -4006,6 +4015,7 @@ class SearchComponent {
                 .map((match) => match.bookmark?.url)
                 .filter(Boolean),
         );
+        let added = 0;
         for (const match of fuzzy) {
             const url = match.bookmark?.url;
             if (!url || seen.has(url)) {
@@ -4013,6 +4023,13 @@ class SearchComponent {
             }
             seen.add(url);
             this.searchMatches.push({ ...match, type: 'bookmark', query: parsed.query });
+            added += 1;
+        }
+        // updateSearch() has painted already; without a second paint the new
+        // rows sat in searchMatches and the panel said "No matches found", with
+        // Enter on the "new bookmark" hint.
+        if (added) {
+            this.renderSearchMatches();
         }
     }
 

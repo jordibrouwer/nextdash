@@ -847,9 +847,14 @@ class DockerDrawer {
         this._statsBeat = 0;
         this._history = null;
         // Each beat is a stats call to the daemon: none while the tab is hidden.
+        // One at a time. The daemon holds a stats call for a second or two for
+        // its second reading; on a busy host that ran past the 2 s beat, calls
+        // piled up, and an older answer landing later drew over a newer one.
         const tick = () => {
             if (document.visibilityState !== 'visible') return;
-            void this._loadStats();
+            if (this._statsInflight) return;
+            this._statsInflight = true;
+            void this._loadStats().finally(() => { this._statsInflight = false; });
         };
         tick();
         this._statsTimer = setInterval(tick, 2000);

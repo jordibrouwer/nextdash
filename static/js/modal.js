@@ -272,6 +272,14 @@ class Modal {
 
         this.ensureModalStructure();
 
+        // A caller whose window is still open is told it went: without this a
+        // second show() swapped the callbacks and the first caller's confirm()
+        // waited for ever.
+        if (typeof this._onHideCallback === 'function') {
+            const replaced = this._onHideCallback;
+            this._onHideCallback = null;
+            replaced({ reason: 'replaced' });
+        }
         this._onHideCallback = typeof onHide === 'function' ? onHide : null;
 
         const titleEl = document.getElementById('modal-title');
@@ -313,10 +321,7 @@ class Modal {
         confirmName.className = 'modal-button-name';
         confirmName.textContent = confirmText;
         confirmButton.appendChild(confirmName);
-        confirmButton.onclick = () => {
-            this.hide();
-            onConfirm();
-        };
+        confirmButton.onclick = () => this._closeWith('confirm', onConfirm);
         actionsContainer.appendChild(confirmButton);
 
         // Cancel button
@@ -328,10 +333,7 @@ class Modal {
             cancelName.className = 'modal-button-name';
             cancelName.textContent = cancelText;
             cancelButton.appendChild(cancelName);
-            cancelButton.onclick = () => {
-                this.hide();
-                onCancel();
-            };
+            cancelButton.onclick = () => this._closeWith('cancel', onCancel);
             actionsContainer.appendChild(cancelButton);
         }
 
@@ -463,11 +465,33 @@ class Modal {
         });
     }
 
+    /*
+     * A button's way out: the window goes, the button's own handler runs, and
+     * only then onHide, told which button it was.
+     *
+     * onHide used to run first, inside hide(), so a caller that settles on
+     * onHide (a confirm answered false, a tour marked dismissed) had already
+     * settled before it heard it was Confirm or Next -- the Inbox's bulk
+     * Delete never deleted, and every tour reported "dismissed" at step 1.
+     */
+    _closeWith(reason, handler) {
+        const onHideCallback = this._onHideCallback;
+        this._onHideCallback = null;
+        this.hide();
+        try {
+            handler();
+        } finally {
+            if (typeof onHideCallback === 'function') onHideCallback({ reason });
+        }
+    }
+
+    // reason reaches onHide: 'dismiss' here (Escape, the backdrop, a caller's
+    // own hide), 'confirm' or 'cancel' from a button, 'replaced' from show().
     hide() {
         if (typeof this._onHideCallback === 'function') {
             const callback = this._onHideCallback;
             this._onHideCallback = null;
-            callback();
+            callback({ reason: 'dismiss' });
         }
 
         // Move focus out of the modal before hiding it. Setting aria-hidden
@@ -539,23 +563,36 @@ class Modal {
     }
 
     // Convenience methods for common modal types
+    // Settled however the window goes: Escape and the backdrop used to leave
+    // the promise pending, and a caller awaiting it (a Health row marked busy
+    // until the answer) stayed stuck until a reload.
     confirm(options) {
         return new Promise((resolve) => {
+            const callerOnHide = options?.onHide;
             this.show({
                 ...options,
                 onConfirm: () => resolve(true),
-                onCancel: () => resolve(false)
+                onCancel: () => resolve(false),
+                onHide: (info) => {
+                    if (typeof callerOnHide === 'function') callerOnHide(info);
+                    resolve(false);
+                }
             });
         });
     }
 
     alert(options) {
         return new Promise((resolve) => {
+            const callerOnHide = options?.onHide;
             this.show({
                 ...options,
                 showCancel: false,
                 confirmText: options.confirmText || this._t('dashboard.ok', 'OK'),
-                onConfirm: () => resolve(true)
+                onConfirm: () => resolve(true),
+                onHide: (info) => {
+                    if (typeof callerOnHide === 'function') callerOnHide(info);
+                    resolve(false);
+                }
             });
         });
     }

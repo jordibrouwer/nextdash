@@ -281,6 +281,12 @@ func classifyPingError(err error, resp *http.Response) string {
 		if errors.As(err, &netErr) && netErr.Timeout() {
 			return "Timeout"
 		}
+		// The cause only: a *url.Error's text starts with the address, so a
+		// bookmark on nextdns.io read as "DNS lookup failed" for any failure.
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) && urlErr.Err != nil {
+			err = urlErr.Err
+		}
 		msg := strings.ToLower(err.Error())
 		switch {
 		case strings.Contains(msg, "no such host"), strings.Contains(msg, "dns"):

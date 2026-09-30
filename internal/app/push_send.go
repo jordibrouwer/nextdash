@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -80,7 +81,7 @@ func (h *Handlers) sendWebPushNotification(ctx context.Context, msg webPushMessa
 	if msg.At == 0 {
 		msg.At = time.Now().UnixMilli()
 	}
-	payload, err := json.Marshal(msg)
+	payload, err := fitPushPayload(msg)
 	if err != nil {
 		logPushError("failed to encode message: %v", err)
 		return
@@ -113,6 +114,54 @@ func (h *Handlers) sendWebPushNotification(ctx context.Context, msg webPushMessa
 	wg.Wait()
 
 	recordPushDeliveryResults(results)
+}
+
+/*
+fitPushPayload encodes msg and shortens its body, then its title, until it fits
+the size every push service must accept.
+
+The size is a property of the message, not of any device. Left to
+encryptPushPayload, "too large" came back as an encryption error, which reads as
+a subscription whose keys will never work -- so one long alert (a long URL, an
+error with escaped characters) removed every device.
+*/
+func fitPushPayload(msg webPushMessage) ([]byte, error) {
+	for attempt := 0; attempt < 64; attempt++ {
+		payload, err := json.Marshal(msg)
+		if err != nil {
+			return nil, err
+		}
+		if len(payload) <= pushMaxPayload {
+			return payload, nil
+		}
+		over := len(payload) - pushMaxPayload
+		switch {
+		case msg.Body != "":
+			msg.Body = shortenForPush(msg.Body, over)
+		case msg.URL != "":
+			msg.URL = ""
+		case msg.Title != "":
+			msg.Title = shortenForPush(msg.Title, over)
+		default:
+			return nil, fmt.Errorf("push payload too large: %d bytes (max %d)", len(payload), pushMaxPayload)
+		}
+	}
+	return nil, fmt.Errorf("push payload could not be shortened below %d bytes", pushMaxPayload)
+}
+
+// shortenForPush drops at least over bytes from the end of text, on a rune
+// boundary, and marks the cut.
+func shortenForPush(text string, over int) string {
+	runes := []rune(text)
+	drop := 0
+	for cut := len(runes); cut > 0 && drop < over+len("…"); cut-- {
+		drop += len(string(runes[cut-1]))
+		runes = runes[:cut-1]
+	}
+	if len(runes) == 0 {
+		return ""
+	}
+	return string(runes) + "…"
 }
 
 // vapidSubject is the contact address sent in the VAPID claim. Push services

@@ -416,6 +416,13 @@ class DashboardInboxTriage {
         if (this.isLayeredModalOpen() && e.key !== 'Escape') {
             return;
         }
+        // The snooze menu (z) sits on <body>, outside this overlay, and its own
+        // keys are bound after this handler: Enter opened the card's link,
+        // the arrows moved to the next card and Escape closed triage with the
+        // menu left on the page. Every key is the menu's while it is open.
+        if (this.inbox?._snoozeMenu?.isConnected) {
+            return;
+        }
         const tag = e.target?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) {
             return;
@@ -646,7 +653,18 @@ class DashboardInboxTriage {
     async afterAction(removed, sync = {}) {
         if (removed) {
             const removedId = sync.removedId ?? this.queue[this.index]?.id;
-            this.queue.splice(this.index, 1);
+            // By id: the action awaited the network, and j or k during that
+            // wait moved the index -- splicing at it took out a card that was
+            // never acted on and left the kept or deleted one in the run.
+            const at = removedId != null ? this.queue.findIndex((entry) => entry?.id === removedId) : this.index;
+            if (at < 0) {
+                this.render();
+                return;
+            }
+            this.queue.splice(at, 1);
+            if (at < this.index) {
+                this.index -= 1;
+            }
             if (!this.queue.length) {
                 // Clearing every link is the best run there is, and it used to
                 // be the one that closed without a word. Show the same panel a

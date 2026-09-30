@@ -91,6 +91,18 @@ func (h *Handlers) dockerUpdateSnapshot() map[string]*dockerImageUpdate {
 // names them the way the daemon does ("linuxserver/sonarr@sha256:..."), so each
 // is parsed with the same rules as the reference being checked.
 func localDigestFor(ref imageRef, repoDigests []string) string {
+	if all := localDigestsFor(ref, repoDigests); len(all) > 0 {
+		return all[0]
+	}
+	return ""
+}
+
+// localDigestsFor is every digest the image carries for the repository. One
+// image can hold several for one repo -- a re-pull whose index digest changed
+// while the platform image did not, or app:latest and app:latest-amd64 side by
+// side -- and the daemon lists them sorted, not newest first.
+func localDigestsFor(ref imageRef, repoDigests []string) []string {
+	var out []string
 	for _, entry := range repoDigests {
 		name, digest, ok := strings.Cut(entry, "@")
 		if !ok {
@@ -98,10 +110,10 @@ func localDigestFor(ref imageRef, repoDigests []string) string {
 		}
 		parsed, ok := parseImageRef(name)
 		if ok && parsed.Registry == ref.Registry && parsed.Repo == ref.Repo {
-			return digest
+			out = append(out, digest)
 		}
 	}
-	return ""
+	return out
 }
 
 // dockerRowUpdate is the image's update state as it holds for one container.
@@ -180,12 +192,22 @@ func (h *Handlers) checkDockerImage(ctx context.Context, api *dockerAPI, image s
 	}
 	local, err := api.inspectImage(ctx, image)
 	if err != nil {
+		// A daemon error or the pass running out of time says nothing about
+		// the image: keep what was known, as a registry failure below does.
+		// Answered "no-digest", every image after the deadline lost its
+		// "available" badge until the next pass.
+		if !isDockerNotFound(err) && prev != nil && prev.Status != "unknown" {
+			kept := *prev
+			kept.Reason = "unreachable"
+			return &kept
+		}
 		return unknown("no-digest")
 	}
-	localDigest := localDigestFor(ref, local.RepoDigests)
-	if localDigest == "" {
+	localDigests := localDigestsFor(ref, local.RepoDigests)
+	if len(localDigests) == 0 {
 		return unknown("no-digest")
 	}
+	localDigest := localDigests[0]
 	remote, why, _ := dockerRegistry.remoteDigest(ctx, ref)
 	if remote == "" {
 		if why == "" {
@@ -199,9 +221,12 @@ func (h *Handlers) checkDockerImage(ctx context.Context, api *dockerAPI, image s
 		}
 		return unknown(why)
 	}
-	status := "current"
-	if remote != localDigest {
-		status = "available"
+	status := "available"
+	for _, digest := range localDigests {
+		if digest == remote {
+			status, localDigest = "current", digest
+			break
+		}
 	}
 	return &dockerImageUpdate{Status: status, RemoteDigest: remote, LocalDigest: localDigest, CheckedAt: now}
 }

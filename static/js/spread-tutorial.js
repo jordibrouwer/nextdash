@@ -160,7 +160,9 @@
                 state.index -= 1;
                 render();
             },
-            onHide: () => finish('dismissed'),
+            // Only a real dismissal: Next and Back close the window too, and
+            // reach here with their own reason after they have run.
+            onHide: ({ reason } = {}) => { if (reason === 'dismiss') finish('dismissed'); },
         });
     }
 

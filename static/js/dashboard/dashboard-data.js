@@ -139,7 +139,8 @@ class DashboardData {
         try {
             const [pagesRes, settingsRes, findersRes] = await Promise.all([
                 fetch('/api/pages'),
-                fetch('/api/settings'),
+                // With the token: without it the stored keys come back blank.
+                dashFetch('/api/settings'),
                 fetch('/api/finders')
             ]);
 
@@ -154,8 +155,17 @@ class DashboardData {
             const serverSettings = await settingsRes.json();
             
             // Load settings from localStorage or server based on device-specific flag
-            const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
-                || localStorage.getItem('deviceSpecificSettings') === 'true';
+            // isDeviceSpecificEnabled already reads the flag and survives a
+            // browser that refuses storage; the bare read behind it threw
+            // there and failed the whole dashboard load.
+            let deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true;
+            if (!deviceSpecific && !window.DeviceSettingsMerge) {
+                try {
+                    deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
+                } catch (_error) {
+                    deviceSpecific = false;
+                }
+            }
             if (deviceSpecific && window.DeviceSettingsMerge?.mergeServerAndDeviceSettings) {
                 const deviceSettings = window.DeviceSettingsMerge.getDeviceSettingsRaw?.();
                 d.settings = window.DeviceSettingsMerge.mergeServerAndDeviceSettings(serverSettings, deviceSettings);
@@ -940,7 +950,12 @@ class DashboardData {
         if (blocks !== undefined) {
             d.widgets = Array.isArray(blocks?.widgets) ? blocks.widgets : [];
             d.blockOrder = Array.isArray(blocks?.order) ? blocks.order : [];
+            d._blocksPageId = targetPageId;
         }
+        // Otherwise the widgets on screen stay, and _blocksPageId still names
+        // the page they belong to. On a switch that is another page: the
+        // writes that send the whole list (saveWidgetPatch, the block order)
+        // check it, or editing one wrote that page's widgets over this one's.
         // 'default' is the placeholder the instance is constructed with,
         // before the first page has actually loaded — that first load is not
         // a switch away from anything, so it does not count as nav.
@@ -1145,6 +1160,12 @@ class DashboardData {
                 this.setPageDataCache(targetPageId, bookmarks, categories, blocks);
             }
             await this.fetchAndStoreDataRevision();
+            // A later load may have started while the revision was on its way:
+            // the older one drew its page over the newer and moved the hash
+            // back to it.
+            if (!this.isCurrentPageBookmarksLoad(loadId)) {
+                return false;
+            }
 
             this._applyLoadedPageData(targetPageId, bookmarks, categories, { skipRender, animate, blocks });
             return true;

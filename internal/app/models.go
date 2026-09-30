@@ -1319,6 +1319,7 @@ type Store interface {
 	SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error
 	SaveBookmarkPageUpdates(updates map[int][]Bookmark) error
 	TrackBookmarkOpen(pageID int, index int) error
+	TrackBookmarkOpenURL(pageID int, index int, url string) error
 	MutateBookmarkAt(pageID int, index int, mutate func(*Bookmark) error) error
 	MutateBookmarksOnPage(pageID int, mutate func([]Bookmark) ([]Bookmark, error)) error
 	MutateBookmarkPages(pageIDs []int, mutate func(map[int][]Bookmark) (map[int][]Bookmark, error)) error
@@ -1382,6 +1383,7 @@ type Store interface {
 	GetInboxItems() []InboxLink
 	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []InboxLink, error)
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
+	RestoreInboxLinkEvicting(link InboxLink, maxItems int) (InboxLink, []InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
 	BatchInboxLinks(ids []string, mutate func(*InboxLink) bool) ([]InboxLink, []string, error)
@@ -1392,6 +1394,8 @@ type Store interface {
 
 	// Inbox stats (durable aggregate; survives triaged-away items)
 	RecordInboxEvent(evt InboxEvent)
+	RecordInboxEvents(evts []InboxEvent)
+	removeUnusedIconFiles(fileNames []string)
 	GetInboxStats() InboxStats
 
 	// Trash (deleted bookmarks, pages and categories, restorable for 30 days)
@@ -1658,6 +1662,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowSmartMostUsedCollection:     false,
 			SmartTodayLimit:                 8,
 			SmartRecentLimit:                50,
+			SmartStaleLimit:                 50,
 			SmartMostUsedLimit:              25,
 			CategoryItemLimit:               15,
 			QuickStart:                      QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
@@ -2221,12 +2226,27 @@ func (fs *FileStore) writePageWithBookmarksLocked(pageID int, pageWithBookmarks 
 }
 
 func (fs *FileStore) TrackBookmarkOpen(pageID int, index int) error {
+	return fs.TrackBookmarkOpenURL(pageID, index, "")
+}
+
+/*
+TrackBookmarkOpenURL counts an open on the row at index -- or, when url is
+given, on the row with that URL, index being only the first place to look.
+
+The index alone credited whatever sits there on disk: a click within a second
+of a drag the browser had not saved yet, or after another device inserted a
+row, counted the open on the wrong bookmark.
+*/
+func (fs *FileStore) TrackBookmarkOpenURL(pageID int, index int, url string) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
 	pageWithBookmarks, err := fs.readPageWithBookmarksLocked(pageID)
 	if err != nil {
 		return err
+	}
+	if strings.TrimSpace(url) != "" {
+		index = locateBookmark(pageWithBookmarks.Bookmarks, index, url)
 	}
 	if index < 0 || index >= len(pageWithBookmarks.Bookmarks) {
 		return ErrBookmarkNotFound
@@ -2560,7 +2580,10 @@ func (fs *FileStore) GetAllBookmarks() []Bookmark {
 	}
 
 	for _, file := range files {
-		if file.IsDir() || !strings.HasPrefix(file.Name(), "bookmarks-") || !strings.HasSuffix(file.Name(), ".json") {
+		// The id comes from the file name, as getPages takes it: a file that is
+		// not a page's (bookmarks-0.json) is not read at all.
+		fileID, ok := parseBookmarkPageIDFromFilename(file.Name())
+		if file.IsDir() || !ok {
 			continue
 		}
 
@@ -2575,7 +2598,7 @@ func (fs *FileStore) GetAllBookmarks() []Bookmark {
 			continue
 		}
 
-		pageID := pageWithBookmarks.Page.ID
+		pageID := fileID
 		for i := range pageWithBookmarks.Bookmarks {
 			pageWithBookmarks.Bookmarks[i].PageID = pageID
 		}
@@ -2701,11 +2724,19 @@ func (fs *FileStore) seedBraveFinderOnce(finders []Finder) []Finder {
 		}
 	}
 
-	settings.BraveFinderSeededMigrated = true
-	data, err := json.MarshalIndent(settings, "", "  ")
-	if err == nil {
-		_ = writeFileAtomic(fs.settingsFile, data, 0644)
-		fs.readCache.settingsOK = false
+	// Only the marker key, on the raw map, like setMigrationMarker (which takes
+	// the lock this is already under). Writing the whole Settings struct back
+	// turned every key an older file lacked into an explicit false, and with it
+	// every default-on setting GetSettings fills in for a missing key.
+	if raw, err := os.ReadFile(fs.settingsFile); err == nil {
+		var fields map[string]json.RawMessage
+		if json.Unmarshal(raw, &fields) == nil {
+			fields["braveFinderSeededMigrated"] = json.RawMessage(`true`)
+			if data, err := json.MarshalIndent(fields, "", "  "); err == nil {
+				_ = writeFileAtomic(fs.settingsFile, data, 0644)
+				fs.readCache.settingsOK = false
+			}
+		}
 	}
 	return finders
 }
@@ -3092,7 +3123,9 @@ func parseBookmarkPageIDFromFilename(name string) (int, bool) {
 	}
 	idStr := strings.TrimSuffix(strings.TrimPrefix(name, "bookmarks-"), ".json")
 	id, err := strconv.Atoi(idStr)
-	if err != nil || id < 1 {
+	// Canonical only: "bookmarks-007.json" or "bookmarks-+7.json" parse as 7 but
+	// are not the file page 7 lives in.
+	if err != nil || id < 1 || strconv.Itoa(id) != idStr {
 		return 0, false
 	}
 	return id, true
@@ -3638,7 +3671,9 @@ func (fs *FileStore) SavePage(page Page) error {
 // on first use. It is idempotent: once the page exists, later calls read it
 // back rather than re-saving it.
 func (fs *FileStore) EnsureUnsortedPage() (Page, error) {
-	for _, p := range fs.getPages() {
+	// GetPages, not getPages: with pages.json missing the latter writes the
+	// default order and the read cache, and it expects the lock to be held.
+	for _, p := range fs.GetPages() {
 		if p.ID == unsortedPageID {
 			return p, nil
 		}
@@ -3830,6 +3865,8 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 		Page:       snapshot.Page,
 		Categories: snapshot.Categories,
 		Bookmarks:  snapshot.Bookmarks,
+		Widgets:    snapshot.Widgets,
+		BlockOrder: snapshot.BlockOrder,
 	}
 	if restored.Bookmarks == nil {
 		restored.Bookmarks = []Bookmark{}
@@ -3856,7 +3893,10 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	next = append(next, snapshot.Page.ID)
 	next = append(next, order[at:]...)
 	if err := fs.savePageOrder(next); err != nil {
-		return err
+		// The page file is written and the page is live: getPages lists a page
+		// missing from the order at the end. Answering with the error put the
+		// entry back in the trash, where every later restore hit ErrPageExists.
+		logWarn("trash", "RestorePage: page %d is back but its place in the order was not saved: %v", snapshot.Page.ID, err)
 	}
 	fs.noteDataMutation(0)
 	return nil

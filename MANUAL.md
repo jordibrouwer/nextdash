@@ -831,7 +831,7 @@ On a narrow window the rail becomes a drawer and the side panel a sheet. What yo
 
 ### 11.4 Selecting several
 
-Tick rows (`x` / `X` for the whole page shown, or **Select all** in the ⋯ menu) to open the selection bar: page, category, tags (add, replace, remove), pin all / unpin all, checking and interval, **Mute alerts** / **Unmute**, **Re-check**, **Follow redirects**, **Accept drift**, **Rebuild previews**, **Refresh favicons**, **Save a copy on this disk**, **Export CSV**, and **Delete**. Fields that differ read *mixed*. The slow ones run one page at a time behind a progress bar, wait out a rate limit, and can be stopped. A selection survives a filter change; bulk changes and moves can be undone from the toast.
+Tick rows (`x` / `X` for the whole page shown, or **Select all** in the ⋯ menu) and the selection bar appears above the list — ticking does not open the side panel, as in Inbox and Containers. The bar counts what is ticked and offers **Edit…**, **Re-check**, **Mute alerts**, **Export CSV**, **Delete** and **Clear selection**. **Edit…** opens the form for the selection in the side panel (one ticked row opens its own panel): page, category, tags (add, replace, remove), pin all / unpin all, checking and interval, **Mute alerts** / **Unmute**, **Re-check**, **Follow redirects**, **Accept drift**, **Rebuild previews**, **Refresh favicons**, **Save a copy on this disk**, **Export CSV**, and **Delete**. Fields that differ read *mixed*. The slow ones run one page at a time behind a progress bar, wait out a rate limit, and can be stopped. A selection survives a filter change; bulk changes and moves can be undone from the toast.
 
 ### 11.5 The row menu
 
@@ -1001,6 +1001,8 @@ On a monitored bookmark, **Expected response** opens a panel:
 
 Failures of these tests go to the **Content** filter, not Broken. Clearing both test fields clears the failure.
 
+**The same address on two pages.** It is checked once per round. A copy with its own expected response, drift setting, check address or credential is checked with those too, and gets its own result; uptime, history and alerts stay one per address, from the first copy.
+
 **Pages that say "not found" with a 200.** With **Spot pages that answer 200 but say "not found"** on, a monitored check reads the title and opening text for a not-found message in five languages, and once a day per site asks the host what it does with an address that cannot exist. A site that sends everything to a sign-in page is left alone.
 
 ### 12.3 Drift
@@ -1048,7 +1050,7 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 
 A window is a recurring period when downtime is expected — days, a start and an end. An end before the start runs past midnight. Windows apply to every monitor.
 
-Inside a window, checks still run and the heartbeat still records them, but a failure opens no incident, does not count against uptime and sends no alert. A failure that continues after the window raises the alarm as usual.
+Inside a window, checks still run and the heartbeat still records them, but a failure opens no incident, does not count against uptime or toward the failures an alert waits for, and sends no alert. A failure that continues after the window raises the alarm as usual.
 
 ### 12.6 Fresh
 
@@ -1129,7 +1131,7 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`.
 - **Several at once** — promote (to one page and category), keep, tags, open, copy links, mark read, snooze, delete — each with undo. **Select all** in the ⋯ menu ticks every link the filters leave, and reads **Deselect all** once they all are.
 - **Mark all read** and **Clear read** — for the whole (shown) list. Clear read leaves snoozed links alone.
 - **Stats** — how many links were added, promoted and deleted, and how long links wait.
-- **Export and import** — CSV and JSON of what is shown; **Import** reads a JSON export back and skips links already there.
+- **Export and import** — CSV and JSON of what is shown; **Import** reads a JSON export back, skips links already there, and stops when the inbox is full rather than pushing older links out.
 
 ### 13.4 Triage
 
@@ -1263,7 +1265,7 @@ The side panel's **Updates** part says where the image stands and keeps your say
 
 Updating by hand still works on a skipped or held image.
 
-**Update automatically** — a switch in the same part, or the selection bar for several — lets nextDash update the container on its own, in the nightly window set in **Config → Containers → Updates** (03:00 to 05:00 until you change it; a window past midnight, 22 to 4, works too). Inside it, every five minutes, a container with this switch on and an update waiting — as the last check found it; not skipped, not held, never nextDash's own — is updated as the Update button would, one at a time, and tried once per night for a given image. It is then watched for five minutes: if it stops, starts again on its own or turns unhealthy, it is rolled back to the image it had and that version is skipped. Each update, rollback or failure sends a notice ([§14.9](#149-notices)). It needs `NEXTDASH_DOCKER_CONTROL=1`, and the update check switched on — that is what finds a newer image.
+**Update automatically** — a switch in the same part, or the selection bar for several — lets nextDash update the container on its own, in the nightly window set in **Config → Containers → Updates** (03:00 to 05:00 until you change it; a window past midnight, 22 to 4, works too). Inside it, every five minutes, a container with this switch on and an update waiting — as the last check found it; not skipped, not held, never nextDash's own — is updated as the Update button would, one at a time, and tried once per night for a given image. It is then watched for five minutes: if it stops, starts again on its own or turns unhealthy, it is rolled back to the image it had, started again, and that version is skipped. A stop or restart you make yourself during those five minutes is left alone. A container that was not running is updated and left stopped, without the watch. Each update, rollback or failure sends a notice ([§14.9](#149-notices)). It needs `NEXTDASH_DOCKER_CONTROL=1`, and the update check switched on — that is what finds a newer image.
 
 ### 14.6 What it needs
 
@@ -1925,7 +1927,7 @@ webhook-timestamp: 1756253400
 webhook-signature: v1,K5s0…
 ```
 
-The signature is HMAC-SHA256 over `{id}.{timestamp}.{payload}`, base64. The signing key is shown once, when you save; afterwards the panel only says a key is set. Keys live in `webhooks.json` with owner-only permissions.
+The signature is HMAC-SHA256 over `{id}.{timestamp}.{payload}`, base64. The signing key is shown once, when you save; afterwards the panel only says a key is set. A key starts with `whsec_` and can be given as it is to the official Standard Webhooks libraries, which sign with its base64-decoded bytes. A key from before that (64 hex characters) keeps working, signed with its text as it is. Keys live in `webhooks.json` with owner-only permissions.
 
 A failed delivery is retried twice and then dropped; a `4xx` is not retried; redirects are not followed. **Send a test** posts one delivery and shows the status. Addresses follow the same rules as bookmark checks, checked when saved and again at delivery. Reading the list of receivers needs the write token.
 
@@ -2163,7 +2165,7 @@ Set `NEXTDASH_WRITE_TOKEN` and every write or destructive API call — saves, im
 
 **Choosing one.** Use a long random string, such as the output of `openssl rand -hex 32`. At startup the server logs a warning when `NEXTDASH_WRITE_TOKEN` or `NEXTDASH_CAPTURE_TOKEN` is shorter than 16 characters or still one of the example values from these docs. It still starts.
 
-Read-only routes (bookmarks, settings, the health list, ping) stay open. The extension stores the token under **Settings → Write token**. `GET /api/backup` and the automatic-backup routes need the token, because a backup is the whole library.
+Read-only routes (bookmarks, settings, the health list, ping) stay open, with two exceptions: without the token, settings come back without the stored keys and tokens (the archive keys, the Pushover token and user key, the alert URL), and the server log needs it. The dashboard reads both with the token. The extension stores the token under **Settings → Write token**. `GET /api/backup` and the automatic-backup routes need the token, because a backup is the whole library.
 
 **The data directory is not served.** Only `data/icons/` and an uploaded favicon or font are published, with a long cache lifetime. Settings, bookmark files, the inbox, the trash and stored backups are reachable only through the API.
 

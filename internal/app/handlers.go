@@ -1490,6 +1490,12 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+	// A page that does not exist took the row anyway, and a move there then
+	// deleted the source: the bookmark was stored where nothing draws it.
+	if !h.pageExists(request.Page) && request.Page != unsortedPageID {
+		http.Error(w, "Page not found", http.StatusNotFound)
+		return
+	}
 
 	// Validate the bookmark URL
 	if err := h.validateBookmarkURL(request.Bookmark.URL); err != nil {
@@ -1514,7 +1520,14 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	// which of the two it is looking at.
 	newKey := canonicalBookmarkURLKey(request.Bookmark.URL)
 	if newKey != "" {
-		if existing := findBookmarkByURLKey(h.store, newKey); existing != nil {
+		existing := findBookmarkByURLKey(h.store, newKey)
+		// A copy on this page wins over the first one found across all pages:
+		// that one can sit on another page and hide the copy here, which let a
+		// move with allowDuplicate put the same URL on one page twice.
+		if onPage := findBookmarkByURLKeyOnPage(h.store, request.Page, newKey); onPage != nil {
+			existing = onPage
+		}
+		if existing != nil {
 			samePage := existing.PageID == request.Page
 			if samePage || !request.AllowDuplicate {
 				logBookmarkSaveFailed(request.Page, "duplicate_url", r)
@@ -1542,7 +1555,20 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 
 	shortcut := normalizeShortcut(request.Bookmark.Shortcut)
 	if shortcut != "" {
-		if conflict := findShortcutConflictWithExisting(h.store.GetAllBookmarks(), shortcut); conflict != nil {
+		others := h.store.GetAllBookmarks()
+		if request.AllowDuplicate && newKey != "" {
+			// A move from the dashboard is this add followed by a delete of the
+			// source row, which still holds the shortcut: it is not a conflict
+			// with itself.
+			kept := others[:0:0]
+			for _, bm := range others {
+				if canonicalBookmarkURLKey(bm.URL) != newKey {
+					kept = append(kept, bm)
+				}
+			}
+			others = kept
+		}
+		if conflict := findShortcutConflictWithExisting(others, shortcut); conflict != nil {
 			logBookmarkSaveFailed(request.Page, "duplicate_shortcut", r)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusConflict)
@@ -1756,6 +1782,17 @@ func resolveImportCategories(existing []Category, rows []ImportedRow) (map[strin
 		taken[id] = struct{}{}
 	}
 
+	// An existing category by its name, whatever its id: one made in Config is
+	// cat-<ts>-<rand> and a renamed one keeps its old id, so matching on the
+	// slug alone put the imported rows in a second "Work" next to the first.
+	byName := make(map[string]string, len(existing))
+	for _, c := range existing {
+		key := strings.ToLower(strings.TrimSpace(c.Name))
+		if _, seen := byName[key]; key != "" && !seen {
+			byName[key] = c.ID
+		}
+	}
+
 	nameToID := map[string]string{}
 	var created []Category
 
@@ -1765,6 +1802,10 @@ func resolveImportCategories(existing []Category, rows []ImportedRow) (map[strin
 			continue
 		}
 		if _, done := nameToID[name]; done {
+			continue
+		}
+		if id, ok := byName[strings.ToLower(name)]; ok {
+			nameToID[name] = id
 			continue
 		}
 
@@ -2204,6 +2245,7 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+	widgets, blockOrder := h.store.GetPageBlocks(pageID)
 	if err := h.store.AddTrashedBookmarks([]TrashedBookmark{{
 		Kind:     TrashKindPage,
 		PageID:   pageID,
@@ -2213,6 +2255,8 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 			Page:       deleted,
 			Categories: h.store.GetCategoriesByPage(pageID),
 			Bookmarks:  h.store.GetBookmarksByPage(pageID),
+			Widgets:    widgets,
+			BlockOrder: blockOrder,
 			OrderIndex: orderIndex,
 		},
 	}}); err != nil {
@@ -2303,7 +2347,29 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	if updateCheckDisabledByEnv() {
 		settings.UpdateCheckEnabled = false
 	}
+	if !hasWriteAccess(r) {
+		redactSettingsSecrets(&settings)
+	}
 	writeJSONWithETag(w, r, settings)
+}
+
+/*
+redactSettingsSecrets blanks the stored keys and tokens for a reader without the
+write token.
+
+This route answers with Access-Control-Allow-Origin: *, so with a token set any
+page open in the browser could read the archive keys, the Pushover token and the
+alert URL (a Telegram one carries the bot token). The app's own pages read it
+with the token. Blank rather than removed: the fields are omitempty, so they do
+not appear at all, and a settings POST that leaves a key out keeps what is
+stored (see mergeSettingsFromBody).
+*/
+func redactSettingsSecrets(settings *Settings) {
+	settings.ArchiveSaveAccessKey = ""
+	settings.ArchiveSaveSecret = ""
+	settings.MonitorNotifyPushoverToken = ""
+	settings.MonitorNotifyPushoverUserKey = ""
+	settings.MonitorNotifyURL = ""
 }
 
 func mergeSettingsFromBody(stored Settings, body []byte) (Settings, error) {
@@ -3728,6 +3794,14 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	if endpoint := discoverOEmbedURL(htmlBody, preview.URL); endpoint != "" {
 		if data, ok := h.fetchOEmbed(ctx, endpoint); ok {
 			applyOEmbed(&preview, data)
+			// The same carry-over as og:image above, for a thumbnail that is
+			// the page's only image: unchanged, its local copy stands.
+			if cache != nil && preview.Image == "" && preview.ImageSource != "" {
+				if previous, ok := cache.Cache[cacheKey]; ok && previous.ImageSource == preview.ImageSource {
+					preview.Image = previous.Image
+					preview.ImageFetchedAt = previous.ImageFetchedAt
+				}
+			}
 		}
 	}
 
@@ -3787,9 +3861,6 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
-	if !h.requireSSRFAPIRateLimit(w, r) {
-		return
-	}
 	w.Header().Set("Content-Type", "application/json")
 
 	rawURL := strings.TrimSpace(r.URL.Query().Get("url"))
@@ -3807,12 +3878,22 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	cacheKey := canonicalBookmarkURLKey(rawURL)
 	forceRefresh := strings.EqualFold(r.URL.Query().Get("refresh"), "1") ||
 		strings.EqualFold(r.URL.Query().Get("refresh"), "true")
+	/*
+	 * A cached answer before the rate limit: it reaches out to nothing, and
+	 * the limit exists for the fetches that do. The dashboard asks on the
+	 * first hover of every row after a load (the fields its own shortcut
+	 * needs are not stored on the bookmark), so skimming a page used up the
+	 * 60 a minute on answers already in hand, and the card stopped opening.
+	 */
 	if !forceRefresh {
 		if cached, ok := h.getPreviewCacheEntry(cacheKey); ok {
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(cached)
 			return
 		}
+	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
+		return
 	}
 
 	localCache := &PreviewCacheFile{Cache: make(map[string]BookmarkPreview)}
@@ -4161,13 +4242,20 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The URL, when the client sends it, names the row; the index is a hint.
+	openedURL, _ := raw["url"].(string)
 	existing := h.store.GetBookmarksByPage(pageID)
+	if strings.TrimSpace(openedURL) != "" {
+		if at := locateBookmark(existing, index, openedURL); at >= 0 {
+			index = at
+		}
+	}
 	var bookmark Bookmark
 	if index >= 0 && index < len(existing) {
 		bookmark = existing[index]
 	}
 
-	if err := h.store.TrackBookmarkOpen(pageID, index); err != nil {
+	if err := h.store.TrackBookmarkOpenURL(pageID, index, openedURL); err != nil {
 		if !respondBookmarkMutationError(w, err) {
 			return
 		}
@@ -4437,6 +4525,10 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	// The checks run one after another, up to retestAllMaxBookmarks of them, so
+	// a run can outlast the server's 60 s WriteTimeout: the results were saved
+	// but the answer never arrived, and the view said the re-check failed.
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(retestAllMaxBookmarks*maxHealthCheckTimeout + time.Minute))
 
 	scope := strings.TrimSpace(r.URL.Query().Get("scope"))
 	includeFlagged := strings.EqualFold(scope, "all")
@@ -4509,12 +4601,19 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				res.Skipped++
 				continue
 			}
-			if res.Tested >= retestAllMaxBookmarks {
+			if res.Tested >= retestAllMaxBookmarks || ctx.Err() != nil {
 				res.SkippedOverLimit++
 				continue
 			}
 
 			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
+			// Cancelled -- the page was left, or the scheduler's deadline hit --
+			// makes every check fail at once as "Unreachable". That says nothing
+			// about the bookmark and must not be saved as if it did.
+			if ctx.Err() != nil {
+				res.SkippedOverLimit++
+				continue
+			}
 			res.Tested++
 			if result.Status == "online" {
 				res.OnlineCount++
@@ -5223,6 +5322,21 @@ func findBookmarkByURLKey(store Store, key string) *Bookmark {
 	for _, bookmark := range store.GetAllBookmarks() {
 		if canonicalBookmarkURLKey(bookmark.URL) == key {
 			found := bookmark
+			return &found
+		}
+	}
+	return nil
+}
+
+// findBookmarkByURLKeyOnPage is the first bookmark on that page with the key.
+func findBookmarkByURLKeyOnPage(store Store, pageID int, key string) *Bookmark {
+	if key == "" {
+		return nil
+	}
+	for _, bookmark := range store.GetBookmarksByPage(pageID) {
+		if canonicalBookmarkURLKey(bookmark.URL) == key {
+			found := bookmark
+			found.PageID = pageID
 			return &found
 		}
 	}

@@ -20,6 +20,11 @@ Disk tab's /system/df read carries the same figures and refreshes them too.
 const (
 	dockerSizesStale   = 30 * time.Minute
 	dockerSizesTimeout = 60 * time.Second
+	// dockerSizesRetry is the wait after a measurement starts before another
+	// may. A failed one left the cache as stale as before, and every list poll
+	// (every few seconds, and per row) started the next: on the slow hosts
+	// where it times out, the daemon was walking every layer without a pause.
+	dockerSizesRetry = 5 * time.Minute
 )
 
 type dockerContainerSize struct {
@@ -33,6 +38,7 @@ var dockerSizesCache struct {
 	mu        sync.Mutex
 	byID      map[string]dockerContainerSize
 	at        time.Time
+	tried     time.Time
 	measuring bool
 }
 
@@ -49,6 +55,7 @@ func resetDockerSizesCache() {
 	defer dockerSizesCache.mu.Unlock()
 	dockerSizesCache.byID = nil
 	dockerSizesCache.at = time.Time{}
+	dockerSizesCache.tried = time.Time{}
 	dockerSizesCache.measuring = false
 }
 
@@ -99,8 +106,10 @@ func measureDockerSizes(ctx context.Context, api *dockerAPI) error {
 func dockerSizeOf(id string, now time.Time) *dockerContainerSize {
 	dockerSizesCache.mu.Lock()
 	defer dockerSizesCache.mu.Unlock()
-	if (dockerSizesCache.byID == nil || now.Sub(dockerSizesCache.at) > dockerSizesStale) && !dockerSizesCache.measuring {
+	due := dockerSizesCache.byID == nil || now.Sub(dockerSizesCache.at) > dockerSizesStale
+	if due && !dockerSizesCache.measuring && now.Sub(dockerSizesCache.tried) >= dockerSizesRetry {
 		dockerSizesCache.measuring = true
+		dockerSizesCache.tried = now
 		dockerSizesRefresh()
 	}
 	size, ok := dockerSizesCache.byID[id]

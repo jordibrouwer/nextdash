@@ -16,7 +16,11 @@
 
     // Also named in DashboardDocker (the view checks it before fetching this
     // file) and in the replay list in config and search. All must agree.
-    const TIP_ID = 'containersTutorialV1';
+    // V2: the tour grew with v1.15.6 (columns, a web UI's bookmark, automatic
+    // updates, notices when a container runs hot, I/O, Disk), so everyone sees
+    // it once more. Who saw V1 is told on the first step that it is an update.
+    const TIP_ID = 'containersTutorialV2';
+    const PREVIOUS_TIP_ID = 'containersTutorialV1';
 
     function t(key, fallback, params) {
         const lang = global.dashboardInstance?.language;
@@ -345,20 +349,46 @@
                         <rect x="228" y="83" width="110" height="18" rx="4" class="ctv-select ctv-anim ctv-a-slide"/>
                         ${keycap(356, 12, '/')}${label(382, 26, f('dockerTourKeySearch', 'search'))}
                         ${keycap(356, 42, ':docker')}
-                        ${label(228, 134, f('dockerTourS2Group', 'group by project or status'), 'ctv-caption')}
+                        ${label(228, 134, f('dockerTourS2Group', 'group by project, status, network or image'), 'ctv-caption')}
                     `, f('dockerTourS2Alt', 'Rows glowing by state, and the filters with their counts'));
                 })(),
                 body: `<p>${esc(f('dockerTourS2Body1',
                     'Each row glows with its state: running, stopped, paused, unhealthy, or waiting for an update. The filters on the left — All, Running, Stopped, Updates — carry a count each.'))}</p>
                     <p>${esc(f('dockerTourS2Body2',
-                    'Click Name or Status to sort — again to turn the order round — or pick uptime, CPU or memory; group by project or status, and / searches by name. CPU and RAM come from a reading every 30 seconds. :docker opens the view from the command palette, Shift+Y from anywhere.'))}</p>`,
+                    'Click Name or Status to sort — again to turn the order round — or pick uptime, CPU or memory; group by project, status, network or image, and / searches by name. CPU and RAM come from a reading every 30 seconds. :docker opens the view from the command palette, Shift+Y from anywhere.'))}</p>`,
+            },
+            // New in V2 — columns and sorting
+            {
+                isNew: true,
+                title: f('dockerTourColsTitle', 'Your columns, your order'),
+                visual: (() => {
+                    const cols = [['Image', true], ['Status', true], ['CPU', true], ['RAM', true], ['Size', true],
+                        [f('dockerColRestarts', 'Restarts'), false], ['Web UI', true], ['Ports', false]];
+                    return svg(`
+                        ${pill(14, 8, `${f('dockerColumns', 'Columns')} ▾`, { kind: 'active', motion: anim('bump', 0.1) })}
+                        <rect x="14" y="34" width="150" height="110" rx="8" class="ctv-panel"/>
+                        ${cols.map(([l, on], i) => `
+                            <g class="ctv-anim ctv-a-drop" style="animation-delay:${(i * 0.06).toFixed(2)}s">
+                                <rect x="24" y="${42 + i * 12.5}" width="8" height="8" rx="2" class="${on ? 'ctv-dot is-accent' : 'ctv-pill-box'}"/>
+                                ${label(38, 50 + i * 12.5, l)}
+                            </g>`).join('')}
+                        ${label(186, 22, f('dockerColName', 'Name'), 'ctv-title')}${label(300, 22, 'Size ▼', 'ctv-title')}${label(380, 22, 'Web UI', 'ctv-title')}
+                        ${[['plex', '2.1 GiB'], ['sonarr', '233 MiB'], ['radarr', '77 MiB']].map(([n, v], i) =>
+                            `${crow(180, 32 + i * 28, 110, n)}${label(350, 47 + i * 28, v, 'ctv-mono', 'end')}${label(380, 47 + i * 28, `:${[32400, 8989, 7878][i]}`, 'ctv-mono')}`).join('')}
+                        ${label(180, 136, f('dockerTourColsGroup', 'group by network or image'), 'ctv-caption')}
+                    `, f('dockerTourColsAlt', 'The Columns list, and the list sorted by size'));
+                })(),
+                body: `<p>${esc(f('dockerTourColsBody1',
+                    'Columns, in the toolbar, shows or hides each column — Ports and Image when you never read them, and Restarts, how often a container started again in the last 24 hours. The choice is kept.'))}</p>
+                    <p>${esc(f('dockerTourColsBody2',
+                    'Size and Restarts sort as well, highest first, and the list groups by network or by image besides project and status.'))}</p>`,
             },
             // 3 — actions
             {
                 title: f('dockerTourS3Title', 'Start, stop, restart, update'),
                 visual: (() => {
                     const keys = [['s', f('dockerLegendRun', 'start / stop')], ['r', f('dockerLegendRestart', 'restart')],
-                        ['p', f('dockerLegendPause', 'pause')], ['u', f('dockerLegendUpdate', 'update')], ['Del', f('dockerLegendRemove', 'remove')],
+                        ['p', f('dockerLegendPause', 'pause')], ['u', f('dockerLegendUpdate', 'update')], ['⌫', f('dockerLegendRemove', 'remove')],
                         ['m', f('dockerLegendMute', 'mute')]];
                     return svg(`
                         ${crow(14, 12, 230, 'radarr', { image: 'radarr:latest', kind: 'accent' })}
@@ -381,7 +411,7 @@
                     `, f('dockerTourS3Alt', 'The action keys, a restart in progress, and a confirmation'));
                 })(),
                 body: `<p>${esc(f('dockerTourS3Body1',
-                    'Use the row menu, or a key on the selected row: s starts or stops, r restarts, p pauses, u updates, Delete removes, m mutes its notices. The row shows the change while it happens. Grouped by project, a project’s row starts, stops or restarts the whole stack.'))}</p>
+                    'Use the row menu, or a key on the selected row: s starts or stops, r restarts, p pauses, u updates, ⌫ removes, m mutes its notices. The row shows the change while it happens. Grouped by project, a project’s row starts, stops or restarts the whole stack.'))}</p>
                     <p>${esc(f('dockerTourS3Body2',
                     'Update and remove always ask first. Also confirm stop and restart, under Config → Containers, adds those two.'))}</p>`,
             },
@@ -431,9 +461,36 @@
                     `, f('dockerTourS5Alt', 'The side panel’s tabs, live resource meters and scrolling logs'));
                 })(),
                 body: `<p>${esc(f('dockerTourS5Body1',
-                    'The side panel shows the container you pick. Overview has the image, ports and project, and three parts to open: Health with its last checks, Updates, and Timeline — what happened to it, from starts and crashes to updates. Resources shows CPU, memory and network as they move.'))}</p>
+                    'The side panel shows the container you pick. Overview has the image, ports and project, and parts to open: Health with its last checks, Updates, Timeline — what happened to it — and Bookmark, the bookmark of its web UI. Resources shows CPU, memory, network and disk I/O, now and over the last hour.'))}</p>
                     <p>${esc(f('dockerTourS5Body2',
                     'Logs shows the last lines, and What’s new the release notes behind an available update. A click beside the panel closes it.'))}</p>`,
+            },
+            // New in V2 — a web UI's bookmark
+            {
+                isNew: true,
+                title: f('dockerTourBmTitle', 'A web UI and its bookmark'),
+                visual: svg(`
+                    ${crow(14, 14, 150, 'sonarr')}
+                    ${label(178, 29, ':8989', 'ctv-mono')}
+                    <path d="M216,18 h8 v14 l-4,-3 l-4,3 z" class="ctv-dot is-ok ctv-anim ctv-a-bump"/>
+                    ${crow(14, 44, 150, 'radarr')}
+                    ${label(178, 59, ':7878', 'ctv-mono')}
+                    <path d="M216,48 h8 v14 l-4,-3 l-4,3 z" class="ctv-dot is-bad"/>
+                    ${crow(14, 74, 150, 'plex')}
+                    ${label(178, 89, ':32400', 'ctv-mono')}
+                    ${line('M232,26 C262,26 268,40 292,40', { delay: 0.2, arrow: true })}
+                    <g class="ctv-anim ctv-a-panel">
+                        <rect x="298" y="10" width="172" height="80" rx="8" class="ctv-panel"/>
+                        ${label(310, 30, f('dockerTourBookmarks', 'Bookmarks'), 'ctv-heading')}
+                        ${row(308, 40, 154, 'Sonarr', { dot: 'ok', kind: 'accent' })}
+                        ${label(310, 80, f('dockerTourBmRunsIn', 'runs in sonarr'), 'ctv-caption')}
+                    </g>
+                    ${pillFlow(14, 110, 456, [[f('dockerBookmarkViaPort', 'same port'), 'plain'], [f('dockerBookmarkViaSubdomain', 'via subdomain'), 'plain'], [f('dockerBookmarkViaTitle', 'same name'), 'plain'], [f('dockerBookmarkViaManual', 'set by you'), 'active']])}
+                `, f('dockerTourBmAlt', 'Bookmark marks after the web UI links, and the bookmark opened in the Bookmarks view')),
+                body: `<p>${esc(f('dockerTourBmBody1',
+                    'When a container’s web UI is saved as a bookmark, a bookmark mark follows the link — green while its checks pass, red when it is broken or down, an outline when nothing checks it. A click opens the bookmark in the Bookmarks view.'))}</p>
+                    <p>${esc(f('dockerTourBmBody2',
+                    'It is found by the same port, a subdomain named after the container, or its title — or chosen in the side panel’s Bookmark section. The bookmark says back which container it runs in.'))}</p>`,
             },
             // 6 — updates
             {
@@ -454,6 +511,30 @@
                     'Update checks compare the image a container runs with what its registry offers — on request with Check for updates, or every 6, 12 or 24 hours. Rows that wait for one get an update badge, and so does the header icon.'))}</p>
                     <p>${esc(f('dockerTourS6Body2',
                     'Updates, in the side panel, skips a version you do not want or holds a container’s updates, lists what updates did, and rolls the last one back while its old image is still here. If an update fails, the previous container is started again.'))}</p>`,
+            },
+            // New in V2 — updates at night
+            {
+                isNew: true,
+                title: f('dockerTourAutoTitle', 'Updates at night, rolled back if they fail'),
+                visual: svg(`
+                    <rect x="14" y="12" width="12" height="12" rx="3" class="ctv-dot is-accent"/>
+                    ${label(34, 22, f('dockerAutoUpdateLabel', 'Update automatically'), 'ctv-title')}
+                    ${label(14, 46, '03:00 — 05:00', 'ctv-mono')}
+                    ${crow(14, 60, 170, 'sonarr', { image: '4.0.9 → 4.1.0', state: 'warn' })}
+                    ${line('M188,71 C214,71 216,40 240,40', { delay: 0.2, arrow: true })}
+                    <g class="ctv-anim ctv-a-drop" style="animation-delay:0.3s">
+                        ${ring(276, 44, 22, 0.6, '5m', { kind: 'ok' })}
+                    </g>
+                    ${label(310, 32, f('dockerTourAutoWatch', 'watched for 5 minutes'), 'ctv-title')}
+                    ${label(310, 50, f('dockerTourAutoFail', 'stops or unhealthy?'))}
+                    ${line('M310,58 C340,80 360,90 390,96', { kind: 'bad', delay: 0.6, arrow: true })}
+                    ${pill(394, 86, f('dockerTourAutoBack', 'rolled back'), { kind: 'bad', w: 76 })}
+                    ${label(14, 120, f('dockerTourAutoHot', 'and a notice when one runs hot: 90 % CPU or memory for 10 minutes'), 'ctv-caption')}
+                `, f('dockerTourAutoAlt', 'An automatic update in the nightly window, watched and rolled back when it fails')),
+                body: `<p>${esc(f('dockerTourAutoBody1',
+                    'Update automatically, in a container’s Updates section or the selection bar, lets nextDash update it in a nightly window — 03:00 to 05:00 until you change it in Config → Containers. It watches it for five minutes after; a container that stops, restarts on its own or turns unhealthy goes back to the image it had, and that version is skipped.'))}</p>
+                    <p>${esc(f('dockerTourAutoBody2',
+                    'Notices now also come when a container stays above a CPU or memory line for a while — 90 % for 10 minutes until you change it — and when it is back under.'))}</p>`,
             },
             // 7 — the logs window
             {
@@ -483,6 +564,7 @@
             },
             // 8 — disk
             {
+                isNew: true,
                 title: f('dockerTourS10Title', 'What the disk holds'),
                 visual: (() => {
                     const tiles = [[f('dockerDiskUnusedImages', 'Unused images'), '4.1 GiB'], [f('dockerDiskDangling', 'Dangling images'), '1.9 GiB'],
@@ -502,10 +584,11 @@
                 body: `<p>${esc(f('dockerTourS10Body1',
                     'Disk, beside Containers (or d), shows what images, volumes and the build cache take up, and what nothing uses. Each tile clears its kind after asking; clearing dangling images says which rollbacks it ends.'))}</p>
                     <p>${esc(f('dockerTourS10Body2',
-                    'Volumes hold data, so they go one at a time, from their row, and only after you type delete.'))}</p>`,
+                    'Volumes hold data, so they go one at a time, from their row, and only after you type delete. New: Remove stopped clears every stopped container after naming them, and Bind mounts lists the host folders containers keep their data in — Measure counts one.'))}</p>`,
             },
             // 7 — config
             {
+                isNew: true,
                 title: f('dockerTourS7Title', 'Config → Containers'),
                 visual: (() => {
                     const status = [[f('dockerTourSocket', 'Docker socket'), 'ok'], [f('dockerTourActions', 'Actions'), 'ok'],
@@ -530,7 +613,7 @@
                 body: `<p>${esc(f('dockerTourS7Body1',
                     'Config → Containers shows the connection as the server sees it — the socket, whether actions are on, the write token, and whether nextDash recognises its own container. Those are set by environment variables, not here.'))}</p>
                     <p>${esc(f('dockerTourS7Body2',
-                    'Below: the view and its header icon, how often the list refreshes (2 to 30 seconds), how many log lines to show, update checks, confirmations, notices when a container stops, keeps restarting or turns unhealthy — sent to your alert webhook and browser notifications, with the containers you mute — the containers you hide, and an optional GitHub token for release notes.'))}</p>`,
+                    'Below: the view and its header icon, how often the list refreshes (2 to 30 seconds), how many log lines to show, update checks, confirmations, notices when a container stops, keeps restarting or turns unhealthy — sent to your alert webhook and browser notifications, with the containers you mute — the containers you hide, and an optional GitHub token for release notes. New: the window automatic updates run in, and the lines for notices when a container runs hot.'))}</p>`,
             },
             // 8 — dashboard and keys
             {
@@ -567,10 +650,22 @@
         const isFirst = state.index === 0;
         const isLast = state.index === total - 1;
         const progress = t('dashboard.inboxTutorialProgress', 'Step {n} of {total}', { n: state.index + 1, total });
+        // For a reader who took the earlier tour: the first step says this is
+        // an update, and the steps that are new or changed carry a mark.
+        const banner = state.updated && isFirst
+            ? `<div class="containers-tutorial-update" data-tour-update role="note">
+                <strong>${esc(t('dockerTourUpdatedTitle', 'Updated with new features'))}</strong>
+                <span>${esc(t('dockerTourUpdatedBody', 'Since your last tour: choose your columns, a web UI’s bookmark and its health, updates at night with a rollback, notices when a container runs hot, network and disk I/O, and more on Disk. Steps marked New show them.'))}</span>
+            </div>`
+            : '';
+        const newChip = state.updated && step.isNew
+            ? ` <span class="containers-tutorial-new" data-tour-new>${esc(t('dockerTourNew', 'New'))}</span>`
+            : '';
 
         const html = `
             <div class="containers-tutorial">
-                <div class="containers-tutorial-progress">${esc(progress)}</div>
+                ${banner}
+                <div class="containers-tutorial-progress">${esc(progress)}${newChip}</div>
                 <div class="containers-tutorial-scene is-${state.direction}">${step.visual}</div>
                 <h3 class="containers-tutorial-step-title">${esc(step.title)}</h3>
                 <div class="containers-tutorial-step-body">${step.body}</div>
@@ -608,8 +703,15 @@
             },
             // Escape, the backdrop and navigating away all count as seen: the
             // Tour button and the ℹ cover the same ground on demand.
-            onHide: () => finish('dismissed'),
+            // Only a real dismissal: Next and Back close the window too, and
+            // reach here with their own reason after they have run.
+            onHide: ({ reason } = {}) => { if (reason === 'dismiss') finish('dismissed'); },
         });
+    }
+
+    /** Whether this reader saw the tour before it grew: they are told it is an update. */
+    function tookEarlierTour() {
+        return Boolean(global.DiscoverabilityState?.hasSeenTip?.(PREVIOUS_TIP_ID));
     }
 
     let finished = false;
@@ -630,10 +732,10 @@
         if (d.searchComponent?.isActive?.()) return false;
         if (!global.AppModal?.show) return false;
 
-        state = { index: 0, direction: 'forward' };
+        state = { index: 0, direction: 'forward', updated: tookEarlierTour() };
         finished = false;
         render();
-        global.nextdashTrack?.('containers-tutorial:shown');
+        global.nextdashTrack?.('containers-tutorial:shown', { updated: state.updated });
         return true;
     }
 
@@ -642,12 +744,12 @@
         const d = global.dashboardInstance;
         if (!global.AppModal?.show) return false;
         if (typeof d?.isModalOpen === 'function' && d.isModalOpen()) return false;
-        state = { index: 0, direction: 'forward' };
+        state = { index: 0, direction: 'forward', updated: tookEarlierTour() };
         finished = false;
         render();
         global.nextdashTrack?.('containers-tutorial:opened');
         return true;
     }
 
-    global.ContainersTutorial = { TIP_ID, maybeShow, open };
+    global.ContainersTutorial = { TIP_ID, PREVIOUS_TIP_ID, maybeShow, open };
 }(typeof window !== 'undefined' ? window : globalThis));

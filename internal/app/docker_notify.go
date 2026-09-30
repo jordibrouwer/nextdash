@@ -93,6 +93,13 @@ func (n *containerNotifier) expect(name string, until time.Time) {
 	n.expected[name] = until
 }
 
+// expectedUntil is the mark expect last set for name; zero when there is none.
+func (n *containerNotifier) expectedUntil(name string) time.Time {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return n.expected[name]
+}
+
 // dockerStopSignal: a kill that ends the container -- the SIGTERM of a stop,
 // the SIGKILL after its grace period -- rather than a HUP asking it to reload.
 func dockerStopSignal(sig string) bool {
@@ -143,6 +150,12 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 	}
 	name := ev.Actor.Attributes["name"]
 	if name == "" {
+		return nil
+	}
+	// nextDash's own disk-measuring containers: du exits 1 when a file vanishes
+	// mid-scan, which was recorded as a crash of a container the reader never
+	// sees, and gave each run its own timeline key for 30 days.
+	if ev.Actor.Attributes[dockerBindMeasureLabel] == "1" {
 		return nil
 	}
 	n.mu.Lock()

@@ -18,6 +18,11 @@ const serverLogPageLimit = 500
 // The viewer polls with ?since=<seq> and receives only what it has not seen,
 // which keeps a 2s refresh interval close to free once the first page is in.
 func (h *Handlers) GetServerLog(w http.ResponseWriter, r *http.Request) {
+	// Behind the token like download and clear: the lines can name a webhook
+	// URL, or a Telegram URL with its bot token in a delivery error.
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	q := r.URL.Query()
 
 	since := int64(-1)

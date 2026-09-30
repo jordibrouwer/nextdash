@@ -16,8 +16,16 @@ class DashboardConfigSync {
                 return;
             }
             if (d._configReturnRefreshInFlight) {
-                // A refresh is already running; this event's pending marker survives in
-                // sessionStorage and is drained by maybeRefreshAfterConfigReturn() below.
+                // A refresh is already running. The drain in its finally reads
+                // this tab's sessionStorage -- which only the tab that published
+                // writes to, never this one -- so the event is kept there for it;
+                // dropped, the second change waited for a manual reload.
+                try {
+                    const pendingKey = event.key === d.structureSyncEventKey
+                        ? d.pendingStructureSyncKey
+                        : d.pendingSettingsSyncKey;
+                    sessionStorage.setItem(pendingKey, event.newValue);
+                } catch { /* private mode: the next focus poll catches most of it */ }
                 return;
             }
             d._configReturnRefreshInFlight = true;

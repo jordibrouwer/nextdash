@@ -162,10 +162,15 @@ func recordHostCertificatesWith(stored map[string]HostCertificate, seen []PingRe
 			continue
 		}
 		entry, existed := stored[host]
-		// A moved expiry is a renewal, which clears the notification history:
+		// A later expiry is a renewal, which clears the notification history:
 		// the new certificate has its own thresholds to cross, and keeping the
 		// old marks would silence the next expiry entirely.
-		if !existed || entry.ExpiresAt != result.CertExpiry {
+		//
+		// An earlier one is not, and leaves the entry alone. Behind a load
+		// balancer or CDN a renewal rolls out node by node, and the old and new
+		// certificate take turns; resetting on every change re-crossed the 30-day
+		// mark each time the old one came back, up to every monitor round.
+		if !existed || result.CertExpiry > entry.ExpiresAt {
 			entry = HostCertificate{Host: host, ExpiresAt: result.CertExpiry}
 		}
 		entry.SeenAt = now.UnixMilli()

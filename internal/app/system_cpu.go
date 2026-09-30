@@ -72,6 +72,11 @@ func parseProcStat(data []byte) (idle, total uint64, cores int, err error) {
 			if convErr != nil {
 				return 0, 0, 0, errMalformedProcStat
 			}
+			// guest and guest_nice are already inside user and nice; added
+			// again, a host running VMs read busier than it was.
+			if i == 8 || i == 9 {
+				continue
+			}
 			total += value
 			// user, nice, system, idle, iowait, ...
 			if i == 3 || i == 4 {
