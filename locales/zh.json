@@ -2394,6 +2394,7 @@
     "dockerUpdateAvailable": "有可用更新",
     "dockerUpdateBadge": "更新",
     "dockerUpdateBadgeTitle": "Update available",
+    "dockerPortsAll": "All {count} ports",
     "dockerUpdateDone": "{name} 已是最新。",
     "dockerUpdateRolledBack": "{name} 在“{step}”步骤更新失败，之前的容器已重新运行。",
     "dockerUpdatesCount": "{count} 个更新",

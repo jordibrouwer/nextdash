@@ -2158,6 +2158,7 @@
     "dockerNoProject": "No project",
     "dockerUpdateBadge": "update",
     "dockerUpdateBadgeTitle": "Update available",
+    "dockerPortsAll": "All {count} ports",
     "dockerDrawerClose": "Close",
     "dockerSectionOverview": "Overview",
     "dockerMoreActions": "More actions",

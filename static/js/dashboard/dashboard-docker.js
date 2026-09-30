@@ -835,6 +835,9 @@ class DashboardDocker {
         return s.replace(/:latest$/, '');
     }
 
+    /** How many published ports a row shows before "+N". */
+    static PORTS_SHOWN = 3;
+
     static formatCpu(pct) {
         return Number.isFinite(pct) ? `${pct.toFixed(1)} %` : '—';
     }
@@ -1400,6 +1403,80 @@ class DashboardDocker {
         });
     }
 
+    /** A published port as a link to it on this host. */
+    portLink(port, text) {
+        const a = document.createElement('a');
+        a.className = 'docker-port';
+        a.href = window.DockerSearchIndex.portHref(port);
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = text || String(port);
+        return a;
+    }
+
+    /**
+     * The first three published ports, then "+N" for the rest in a popover,
+     * so a container that publishes many keeps its row one line. A port
+     * published for tcp and udp counts once here; the popover names both.
+     */
+    fillPorts(cell, c) {
+        const published = (c.ports || []).filter((p) => p && p.public);
+        const unique = [...new Set(published.map((p) => p.public))];
+        unique.slice(0, DashboardDocker.PORTS_SHOWN).forEach((port) => cell.appendChild(this.portLink(port)));
+        const rest = unique.length - DashboardDocker.PORTS_SHOWN;
+        if (rest <= 0) return;
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'docker-ports-more';
+        more.setAttribute('data-docker-ports-more', '');
+        more.setAttribute('aria-expanded', 'false');
+        more.textContent = `+${rest}`;
+        more.title = this.t('dashboard.dockerPortsAll', 'All {count} ports', { count: unique.length });
+        const pop = document.createElement('div');
+        pop.className = 'docker-ports-pop';
+        pop.setAttribute('data-docker-ports-pop', '');
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', more.title);
+        pop.hidden = true;
+        const seen = new Set();
+        published.forEach((p) => {
+            const key = `${p.public}/${p.type || 'tcp'}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            const line = document.createElement('div');
+            line.className = 'docker-ports-pop-line';
+            const into = document.createElement('span');
+            into.className = 'docker-ports-pop-private';
+            into.textContent = `→ ${p.private}/${p.type || 'tcp'}`;
+            line.append(this.portLink(p.public), into);
+            pop.appendChild(line);
+        });
+        const close = () => {
+            pop.hidden = true;
+            more.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('pointerdown', outside, true);
+            window.removeEventListener('keydown', onKey, true);
+        };
+        const outside = (e) => { if (!cell.contains(e.target)) close(); };
+        const onKey = (e) => {
+            if (e.key !== 'Escape') return;
+            e.stopPropagation();
+            close();
+            more.focus();
+        };
+        more.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!pop.hidden) { close(); return; }
+            pop.hidden = false;
+            more.setAttribute('aria-expanded', 'true');
+            document.addEventListener('pointerdown', outside, true);
+            // On window, in capture: ahead of the view's own Escape, which
+            // would otherwise leave the view along with the popover.
+            window.addEventListener('keydown', onKey, true);
+        });
+        cell.append(more, pop);
+    }
+
     buildRow(c) {
         const tr = document.createElement('tr');
         tr.className = 'docker-row';
@@ -1517,15 +1594,7 @@ class DashboardDocker {
 
         const portsCell = document.createElement('td');
         portsCell.className = 'docker-cell docker-cell--ports';
-        (c.ports || []).filter((p) => p && p.public).forEach((p) => {
-            const a = document.createElement('a');
-            a.className = 'docker-port';
-            a.href = window.DockerSearchIndex.portHref(p.public);
-            a.target = '_blank';
-            a.rel = 'noopener';
-            a.textContent = String(p.public);
-            portsCell.appendChild(a);
-        });
+        this.fillPorts(portsCell, c);
         tr.appendChild(portsCell);
 
         // Phone-width second line (image + the web UI, else the first public
@@ -1549,7 +1618,7 @@ class DashboardDocker {
 
         tr.addEventListener('click', (e) => {
             // A port link and the tick handle their own click.
-            if (e.target.closest('a, .docker-tick')) return;
+            if (e.target.closest('a, .docker-tick, .docker-ports-more, .docker-ports-pop')) return;
             if (e.metaKey || e.ctrlKey || e.shiftKey) {
                 this.toggleMulti(c.name, { range: e.shiftKey });
                 return;

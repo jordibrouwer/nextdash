@@ -127,8 +127,59 @@
     white-space: nowrap;
 }
 
-.docker-cell--ports .docker-port + .docker-port {
+.docker-cell--ports {
+    position: relative;
+    white-space: nowrap;
+}
+
+.docker-cell--ports .docker-port + .docker-port,
+.docker-cell--ports .docker-ports-more {
     margin-left: var(--space-2, 0.5rem);
+}
+
+/* "+N": the ports past the first three, in a popover under the cell. */
+.docker-ports-more {
+    padding: 0 var(--space-1-5, 0.4rem);
+    font: inherit;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    cursor: pointer;
+}
+
+.docker-ports-more:hover,
+.docker-ports-more[aria-expanded="true"] {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+.docker-ports-pop {
+    position: absolute;
+    top: 100%;
+    right: var(--space-3, 0.75rem);
+    z-index: 20;
+    display: grid;
+    gap: var(--space-1, 0.25rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    box-shadow: var(--shadow-md, 0 4px 16px rgb(0 0 0 / 0.3));
+}
+
+.docker-ports-pop[hidden] {
+    display: none;
+}
+
+.docker-ports-pop-line {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-ports-pop-private {
+    color: var(--text-secondary);
 }
 
 /* A column of its own, and a narrow one: a long host is cut, not wrapped,

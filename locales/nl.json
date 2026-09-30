@@ -2394,6 +2394,7 @@
     "dockerUpdateAvailable": "update beschikbaar",
     "dockerUpdateBadge": "update",
     "dockerUpdateBadgeTitle": "Update available",
+    "dockerPortsAll": "All {count} ports",
     "dockerUpdateDone": "{name} is up-to-date.",
     "dockerUpdateRolledBack": "De update van {name} mislukte bij \"{step}\"; de vorige container draait weer.",
     "dockerUpdatesCount": "{count} updates",
