@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.15.5 — 30 September 2026](#v1155--30-september-2026)
 - [v1.15.4 — 30 September 2026](#v1154--30-september-2026)
 - [v1.15.3 — 30 September 2026](#v1153--30-september-2026)
 - [v1.15.2 — 29 September 2026](#v1152--29-september-2026)
@@ -227,6 +228,28 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.15.5 — 30 September 2026
+
+A tidier Containers table, and the host folders containers keep their data in. It leads the What's new window.
+
+### Containers
+
+- **new — Disk lists bind mounts.** Under Volumes, **Bind mounts** names each host folder containers mount and who mounts it where (`sonarr → /config`). On Unraid that is where container data lives, so the Volumes list there is mostly anonymous leftovers. Docker neither measures nor removes a folder, so the list has no size and no **Remove…**; the Docker socket and host files such as `/etc/localtime` are left out. `/api/docker/disk` carries them as `binds`.
+- **new — three ports in a row, the rest behind +N.** A container that publishes many ports kept its row wide; the rest now open in a popover with the port inside the container and tcp or udp. A port published for both counts once in the row.
+- **fix — an update is an arrow before the name.** The orange *update* pill after the name broke the names' left edge and wrapped long ones; an orange **↑** in front of the name says the same, with *Update available* on hover.
+- **fix — names and images on one line.** Both are cut short with the whole text on hover, and the image drops its registry host and a `:latest` tag: `lscr.io/linuxserver/sonarr:latest` reads `linuxserver/sonarr`.
+- **new — a group band counts its containers** (*Updates · 9*).
+
+### Tests
+
+- **fix — no "is available" toast in a run older than the latest release.** A rerun of a commit made before v1.15.4 shipped got the update toast in `#app-notification`, where specs wait for their own message. `tests/fixtures.js` now answers `/api/update-status` with no update unless a spec routes it itself.
+
+### Docs
+
+- **docs — MANUAL §14.2 and §14.7, and Config → Help → Containers, describe the arrow, the short image, the band count, +N and bind mounts, in all six languages.** `static/data/whats-new/v1.15.5.json`, its index entry and an Overview entry for bind mounts; `whats-new-stub.js` moves `DASHBOARD_RELEASE` to v1.15.5 and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v309`.
 
 ---
 
