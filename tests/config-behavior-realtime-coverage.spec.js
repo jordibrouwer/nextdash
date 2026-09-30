@@ -37,18 +37,19 @@ const UNTESTABLE = new Set([
  *                 case calls renderDateWeatherLine(); only updateDateVisibility()
  *                 adds or removes #date-element. Turning the date off leaves it
  *                 on screen.
- *   densityMode   Appearance → Layout. special: 'render' re-renders the grid,
- *                 but the spacing comes from body[data-density-mode].
  *
- * Each needs 'chrome' (or 'chromeRender'), which is a behaviour change to ship
- * deliberately rather than fold into a test commit. Remove from this list with
- * the fix and the test starts guarding it.
+ * It needs 'chrome' (or 'chromeRender'), which is a behaviour change to ship
+ * deliberately rather than fold into a test commit. Remove it from this list
+ * with the fix and the test starts guarding it.
+ *
+ * densityMode was here too, until its setting got the 'chromeRender' it
+ * needed for body[data-density-mode] to follow without a reload.
  *
  * showShortcuts was the third. It became shortcutDisplay -- three answers
  * instead of two -- and the rewrite carried the 'chrome' handler it had always
  * needed, so it is guarded below rather than excused here.
  */
-const KNOWN_BROKEN = new Set(['showDate', 'densityMode']);
+const KNOWN_BROKEN = new Set(['showDate']);
 
 async function load(page) {
     await markWhatsNewSeen(page);

@@ -86,9 +86,9 @@ test.describe('Data & backups → Webhooks', () => {
         await expect(row).toBeVisible();
         const secretLine = row.locator('[data-webhook-secret]');
         await expect(secretLine).toBeVisible();
-        // A key short enough to guess is not a key. The generated one is 32
-        // bytes as hex.
-        expect(await secretLine.textContent()).toMatch(/[0-9a-f]{64}/);
+        // A key short enough to guess is not a key. The generated one is a
+        // Standard Webhooks key: whsec_ and 32 bytes as base64.
+        expect(await secretLine.textContent()).toMatch(/whsec_[A-Za-z0-9+/]{43}=/);
 
         // And it is gone on the next paint: a screen that redisplays a key
         // turns every screenshot into a leak.

@@ -55,13 +55,13 @@ async function openLogs(page, { capture = true, clear = false, maxEntries = 0 } 
     if (capture !== ((await toggle.getAttribute('aria-pressed')) === 'true')) {
         await toggle.click();
         await expect.poll(() => page.evaluate(async () =>
-            (await (await fetch('/api/logs')).json()).capturing), { timeout: 10_000 }).toBe(capture);
+            (await (await nextDashFetch('/api/logs')).json()).capturing), { timeout: 10_000 }).toBe(capture);
     }
     // One server is shared across the file, so a previous test's lines are
     // still in the buffer. Tests that assert on what is *not* there start clean.
     if (clear) {
         await page.evaluate(async () => {
-            await fetch('/api/logs', { method: 'DELETE' });
+            await nextDashFetch('/api/logs', { method: 'DELETE' });
             // Awaited rather than clicking Refresh: the click returns before
             // the fetch behind it lands, and the next assertion would race it.
             await window.dashboardInstance.config.loadServerLog({ reset: true });
@@ -104,8 +104,10 @@ test.describe('Logs → Server logs', () => {
         const numbers = () => page.locator('.config-log-seq').allTextContents();
         const before = (await numbers()).map(Number);
         expect(before.length).toBeGreaterThan(2);
-        // Counting up, one per line, starting at 1 for a cleared buffer.
-        expect(before).toEqual(before.map((_, i) => i + 1));
+        // Counting up, one per line. Clearing empties the buffer but keeps
+        // the count going, so a reader polling from an older number misses
+        // nothing: the first line after a clear is not necessarily 1.
+        expect(before).toEqual(before.map((_, i) => before[0] + i));
 
         // The number belongs to the line, not to its place on screen: what
         // survives a filter keeps the number it had.
@@ -188,7 +190,7 @@ test.describe('Logs → Server logs', () => {
         // The DELETE is itself logged, so "empty" means down to a line or two
         // rather than zero.
         await expect.poll(() => page.evaluate(async () => {
-            const res = await fetch('/api/logs');
+            const res = await nextDashFetch('/api/logs');
             return (await res.json()).stats.total;
         }), { timeout: 10_000 }).toBeLessThan(5);
         await expect.poll(() => page.locator('.config-log-line').count()).toBeLessThan(5);
@@ -218,9 +220,9 @@ test.describe('Logs → Server logs', () => {
         // Stopping halts capture without discarding what is already there.
         await page.locator('[data-log-toggle="capture"]').click();
         await expect.poll(() => page.evaluate(async () =>
-            (await (await fetch('/api/logs')).json()).capturing), { timeout: 10_000 }).toBe(false);
+            (await (await nextDashFetch('/api/logs')).json()).capturing), { timeout: 10_000 }).toBe(false);
 
-        const total = () => page.evaluate(async () => (await (await fetch('/api/logs')).json()).stats.total);
+        const total = () => page.evaluate(async () => (await (await nextDashFetch('/api/logs')).json()).stats.total);
         const before = await total();
         expect(before).toBeGreaterThan(0);
         for (let i = 0; i < 5; i++) await page.evaluate(() => fetch('/api/pages'));
@@ -280,7 +282,7 @@ test.describe('Logs → Server logs', () => {
         // rather than a number the server merely stores.
         await page.locator('[data-log-select="maxEntries"]').selectOption('500');
         await expect.poll(() => page.evaluate(async () =>
-            (await (await fetch('/api/logs')).json()).capacity), { timeout: 10_000 }).toBe(500);
+            (await (await nextDashFetch('/api/logs')).json()).capacity), { timeout: 10_000 }).toBe(500);
         expect(await page.evaluate(async () => {
             const s = await (await fetch('/api/settings')).json();
             return [s.serverLogRetentionMode, s.serverLogMaxEntries];
@@ -289,7 +291,7 @@ test.describe('Logs → Server logs', () => {
         // Back to age, and the entry cap stops applying.
         await page.locator('[data-log-select="mode"]').selectOption('time');
         await expect.poll(() => page.evaluate(async () =>
-            (await (await fetch('/api/logs')).json()).capacity), { timeout: 10_000 }).toBe(2000);
+            (await (await nextDashFetch('/api/logs')).json()).capacity), { timeout: 10_000 }).toBe(2000);
         await openLogSettingsPopover(page);
         await expect(page.locator('[data-log-select="maxEntries"]')).toBeDisabled();
     });
