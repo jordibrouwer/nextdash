@@ -497,7 +497,7 @@ class DashboardRecent {
         d.refreshSmartCollectionsAfterOpen(bookmark.url);
 
         if (index >= 0 && pageId > 0) {
-            d.analytics?.trackBookmarkOpen(pageId, index, source, method, extra);
+            d.analytics?.trackBookmarkOpen(pageId, index, source, method, extra, bookmark.url);
         }
     }
 

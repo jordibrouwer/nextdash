@@ -940,7 +940,12 @@ class DashboardData {
         if (blocks !== undefined) {
             d.widgets = Array.isArray(blocks?.widgets) ? blocks.widgets : [];
             d.blockOrder = Array.isArray(blocks?.order) ? blocks.order : [];
+            d._blocksPageId = targetPageId;
         }
+        // Otherwise the widgets on screen stay, and _blocksPageId still names
+        // the page they belong to. On a switch that is another page: the
+        // writes that send the whole list (saveWidgetPatch, the block order)
+        // check it, or editing one wrote that page's widgets over this one's.
         // 'default' is the placeholder the instance is constructed with,
         // before the first page has actually loaded — that first load is not
         // a switch away from anything, so it does not count as nav.
@@ -1145,6 +1150,12 @@ class DashboardData {
                 this.setPageDataCache(targetPageId, bookmarks, categories, blocks);
             }
             await this.fetchAndStoreDataRevision();
+            // A later load may have started while the revision was on its way:
+            // the older one drew its page over the newer and moved the hash
+            // back to it.
+            if (!this.isCurrentPageBookmarksLoad(loadId)) {
+                return false;
+            }
 
             this._applyLoadedPageData(targetPageId, bookmarks, categories, { skipRender, animate, blocks });
             return true;

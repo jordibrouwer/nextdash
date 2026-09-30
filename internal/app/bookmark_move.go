@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -109,12 +110,28 @@ func (h *Handlers) MoveBookmarks(w http.ResponseWriter, r *http.Request) {
 
 	// A later copy of a URL moves before an earlier one, so taking it off its
 	// page does not renumber the copy still to come.
-	sort.SliceStable(req.Items, func(a, b int) bool {
-		if canonicalBookmarkURLKey(req.Items[a].URL) != canonicalBookmarkURLKey(req.Items[b].URL) {
-			return false
+	// The copies of one URL on one page trade places among the slots they hold,
+	// so every other row keeps its request order. A comparator that answered
+	// "not less" for different URLs was not transitive: with another URL in
+	// between, a later copy stayed behind an earlier one.
+	slots := map[string][]int{}
+	for i, item := range req.Items {
+		key := fmt.Sprintf("%d|%s", item.PageID, canonicalBookmarkURLKey(item.URL))
+		slots[key] = append(slots[key], i)
+	}
+	for _, at := range slots {
+		if len(at) < 2 {
+			continue
 		}
-		return req.Items[a].Occurrence > req.Items[b].Occurrence
-	})
+		group := make([]bookmarkMoveItem, len(at))
+		for i, idx := range at {
+			group[i] = req.Items[idx]
+		}
+		sort.SliceStable(group, func(a, b int) bool { return group[a].Occurrence > group[b].Occurrence })
+		for i, idx := range at {
+			req.Items[idx] = group[i]
+		}
+	}
 	ids := []int{req.ToPage}
 	for _, item := range req.Items {
 		ids = append(ids, item.PageID)
@@ -131,6 +148,11 @@ func (h *Handlers) MoveBookmarks(w http.ResponseWriter, r *http.Request) {
 		for _, item := range req.Items {
 			key := canonicalBookmarkURLKey(strings.TrimSpace(item.URL))
 			source := pages[item.PageID]
+			if item.PageID == req.ToPage {
+				// The target as it stands now, with the rows already moved in:
+				// pages[ToPage] is only written back after the loop.
+				source = target
+			}
 			at := locateBookmarkAt(source, -1, item.URL, item.Occurrence)
 			if key == "" || at < 0 {
 				skipped = append(skipped, bookmarkMoveSkip{PageID: item.PageID, URL: item.URL, Reason: "gone"})

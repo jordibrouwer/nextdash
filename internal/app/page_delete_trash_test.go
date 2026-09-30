@@ -341,3 +341,39 @@ func TestTrashEntryWithoutKindStillRestoresAsABookmark(t *testing.T) {
 		t.Fatalf("page 2 = %v, want [Legacy]", got)
 	}
 }
+
+// A page's widgets and block arrangement come back with it.
+func TestRestoreTrashedPageBringsItsWidgetsBack(t *testing.T) {
+	h, _ := newPageDeleteFixture(t, `{"page":{"id":2,"name":"Work"},"categories":[
+		{"id":"tools","name":"Tools"}
+	],"bookmarks":[{"name":"A","url":"https://a.example","category":"tools"}]}`)
+	if err := h.store.SavePageBlocks(2, []Widget{{Type: WidgetTypeHealth, Title: "Status"}}, nil); err != nil {
+		t.Fatal(err)
+	}
+	widgets, order := h.store.GetPageBlocks(2)
+	if len(widgets) != 1 {
+		t.Fatalf("seed widgets = %+v", widgets)
+	}
+	wantOrder := append([]string{widgets[0].ID}, "tools")
+	if err := h.store.SavePageBlocks(2, nil, wantOrder); err != nil {
+		t.Fatal(err)
+	}
+	_, order = h.store.GetPageBlocks(2)
+
+	if rec := deletePageViaRouter(t, h, "2"); rec.Code != http.StatusOK {
+		t.Fatalf("delete status = %d", rec.Code)
+	}
+	id := h.store.GetTrashItems()[0].ID
+	rec := httptest.NewRecorder()
+	h.RestoreTrashItem(rec, httptest.NewRequest(http.MethodPost, "/api/trash/restore", strings.NewReader(`{"id":"`+id+`"}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("restore status = %d %s", rec.Code, rec.Body.String())
+	}
+	got, gotOrder := h.store.GetPageBlocks(2)
+	if len(got) != 1 || got[0].Title != "Status" {
+		t.Fatalf("restored widgets = %+v, want the Status widget", got)
+	}
+	if strings.Join(gotOrder, ",") != strings.Join(order, ",") {
+		t.Errorf("restored order = %v, want %v", gotOrder, order)
+	}
+}

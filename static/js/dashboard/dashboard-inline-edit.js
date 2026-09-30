@@ -2716,6 +2716,18 @@ class DashboardInlineEdit {
             {
                 duration: 5000,
                 undoCallback: async () => {
+                    // Moved to another page since: splicing into that page
+                    // saved the bookmark there and left its own page without
+                    // it. The trash puts it back where it was.
+                    if (Number(d.currentPageId) !== Number(deleteRef.pageId)) {
+                        try {
+                            await window.DashboardTrash?.restoreEntries?.([{ pageId: deleteRef.pageId, bookmark: deletedBookmark }]);
+                        } catch (_error) {
+                            // Still in the trash, where it can be restored by hand.
+                        }
+                        await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [deleteRef.pageId] });
+                        return;
+                    }
                     d.bookmarks.splice(deletedIndex, 0, deletedBookmark);
                     d.restoreBookmarkInAllBookmarks(deletedBookmark, deleteRef.pageId);
                     d.pendingReorderSnapshot = null;
@@ -2896,7 +2908,17 @@ class DashboardInlineEdit {
             const deleteRes = await dashFetch('/api/bookmarks', {
                 method: 'DELETE',
                 headers,
-                body: JSON.stringify({ page: sourcePageId, bookmark: bookmarkState }),
+                // The row as it is stored, not as edited: the server finds it by
+                // URL, so an edit that changed the address as well missed the
+                // old row (a duplicate and an error) or hit another one.
+                body: JSON.stringify({
+                    page: sourcePageId,
+                    bookmark: {
+                        ...bookmarkState,
+                        url: bookmarkRef.original?.url ?? bookmarkRef.bookmark?.url ?? bookmarkState.url,
+                        name: bookmarkRef.original?.name ?? bookmarkRef.bookmark?.name ?? bookmarkState.name,
+                    },
+                }),
             });
             if (!deleteRes.ok) {
                 // The copy on the target page is now the only way to avoid losing

@@ -168,8 +168,11 @@
             // DOM rather than from the bookmark object so what you can see is
             // what you can filter on, whichever layout preset is in use.
             const text = row.textContent || '';
-            const url = row.getAttribute('href') || '';
-            const tags = row.getAttribute('data-tags') || row.dataset?.tags || '';
+            // The row is a div, not a link, and carries the address and the
+            // tags as data-bookmark-*: reading href and data-tags matched
+            // neither, whatever the comment above promised.
+            const url = row.getAttribute('data-bookmark-url') || row.getAttribute('href') || '';
+            const tags = row.getAttribute('data-bookmark-tags') || row.getAttribute('data-tags') || '';
             return `${text} ${url} ${tags}`.toLowerCase();
         }
 

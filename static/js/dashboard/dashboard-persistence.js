@@ -11,6 +11,7 @@ class DashboardPersistence {
         await d.flushPendingBookmarkSave();
         await this.flushPendingPreviewSave();
         await d.flushPendingCategorySave();
+        await d.renderCore?.flushPendingBlockOrderSave?.();
     }
 
 
@@ -42,13 +43,33 @@ class DashboardPersistence {
             clearTimeout(d._pendingCategorySave);
             d._pendingCategorySave = null;
         }
-        if (!hadReorder && !hadPreview && !hadCategory) {
+        const pendingBlocks = d._pendingBlockOrder;
+        if (d._pendingBlockOrderSave) {
+            clearTimeout(d._pendingBlockOrderSave);
+            d._pendingBlockOrderSave = null;
+        }
+        d._pendingBlockOrder = null;
+        if (!hadReorder && !hadPreview && !hadCategory && !pendingBlocks) {
             return;
         }
 
         const headers = typeof nextDashWriteHeaders === 'function'
             ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
             : { 'Content-Type': 'application/json' };
+
+        // A category or widget dragged in the last second before the tab went.
+        if (pendingBlocks && Number.isFinite(pendingBlocks.pageId) && pendingBlocks.order.length) {
+            try {
+                fetch(`/api/pages/${pendingBlocks.pageId}/blocks`, {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify({ order: pendingBlocks.order }),
+                    keepalive: true
+                });
+            } catch (_error) {
+                // Best-effort on tab close; ignore network errors.
+            }
+        }
         const pageId = Number(d.currentPageId);
 
         if ((hadReorder || hadPreview) && Array.isArray(d.bookmarks) && Number.isFinite(pageId)) {
@@ -164,13 +185,19 @@ class DashboardPersistence {
                     throw new Error(message);
                 }
 
-                if (d.settings.globalShortcuts) {
-                    await d.loadAllBookmarks();
+                // Cleared only when nothing newer is waiting: a drag made while
+                // this save was on the wire has its own timer and snapshot, and
+                // nulling them dropped that drag, and left its timer to post
+                // whichever page was showing when it fired.
+                if (pageId === Number(d.currentPageId) && !d.pendingReorderSave) {
+                    d.pendingReorderSnapshot = null;
                 }
 
-                if (pageId === Number(d.currentPageId)) {
-                    d.pendingReorderSave = null;
-                    d.pendingReorderSnapshot = null;
+                // Not awaited: with a snapshot pending it can reload the page,
+                // whose flush waits on this very save -- a promise that waited
+                // on itself, and every later page switch hung.
+                if (d.settings.globalShortcuts) {
+                    void d.loadAllBookmarks();
                 }
                 d.data?.updatePageDataCache?.(pageId, { bookmarks: payload });
                 void d.data?.fetchAndStoreDataRevision?.();

@@ -105,3 +105,25 @@ test.describe('scroll position', () => {
         })).toBe(0);
     });
 });
+
+test.describe('grid filter reads the address and the tags', () => {
+    test('a term found only in the URL or a tag still matches', async ({ page }) => {
+        await dashboard(page);
+        const pageId = await page.evaluate(() => window.dashboardInstance.currentPageId);
+        await page.evaluate(async (pageId) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await api('/api/bookmarks/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: pageId, bookmark: { name: 'Plain row', url: 'https://urlonlyqwx.example/', tags: ['tagonlyqwy'] } }),
+            });
+        }, pageId);
+        await dashboard(page);
+        await page.keyboard.press('Shift+F');
+        await expect(page.locator('#grid-filter-bar')).toBeVisible();
+        for (const term of ['urlonlyqwx', 'tagonlyqwy']) {
+            await page.locator('.grid-filter-input').fill(term);
+            await expect(page.locator('.bookmark-link:not(.grid-filter-hidden)')).toHaveCount(1);
+        }
+    });
+});

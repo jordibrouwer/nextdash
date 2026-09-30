@@ -1319,6 +1319,7 @@ type Store interface {
 	SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error
 	SaveBookmarkPageUpdates(updates map[int][]Bookmark) error
 	TrackBookmarkOpen(pageID int, index int) error
+	TrackBookmarkOpenURL(pageID int, index int, url string) error
 	MutateBookmarkAt(pageID int, index int, mutate func(*Bookmark) error) error
 	MutateBookmarksOnPage(pageID int, mutate func([]Bookmark) ([]Bookmark, error)) error
 	MutateBookmarkPages(pageIDs []int, mutate func(map[int][]Bookmark) (map[int][]Bookmark, error)) error
@@ -2221,12 +2222,27 @@ func (fs *FileStore) writePageWithBookmarksLocked(pageID int, pageWithBookmarks 
 }
 
 func (fs *FileStore) TrackBookmarkOpen(pageID int, index int) error {
+	return fs.TrackBookmarkOpenURL(pageID, index, "")
+}
+
+/*
+TrackBookmarkOpenURL counts an open on the row at index -- or, when url is
+given, on the row with that URL, index being only the first place to look.
+
+The index alone credited whatever sits there on disk: a click within a second
+of a drag the browser had not saved yet, or after another device inserted a
+row, counted the open on the wrong bookmark.
+*/
+func (fs *FileStore) TrackBookmarkOpenURL(pageID int, index int, url string) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
 	pageWithBookmarks, err := fs.readPageWithBookmarksLocked(pageID)
 	if err != nil {
 		return err
+	}
+	if strings.TrimSpace(url) != "" {
+		index = locateBookmark(pageWithBookmarks.Bookmarks, index, url)
 	}
 	if index < 0 || index >= len(pageWithBookmarks.Bookmarks) {
 		return ErrBookmarkNotFound
@@ -3830,6 +3846,8 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 		Page:       snapshot.Page,
 		Categories: snapshot.Categories,
 		Bookmarks:  snapshot.Bookmarks,
+		Widgets:    snapshot.Widgets,
+		BlockOrder: snapshot.BlockOrder,
 	}
 	if restored.Bookmarks == nil {
 		restored.Bookmarks = []Bookmark{}
@@ -3856,7 +3874,10 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	next = append(next, snapshot.Page.ID)
 	next = append(next, order[at:]...)
 	if err := fs.savePageOrder(next); err != nil {
-		return err
+		// The page file is written and the page is live: getPages lists a page
+		// missing from the order at the end. Answering with the error put the
+		// entry back in the trash, where every later restore hit ErrPageExists.
+		logWarn("trash", "RestorePage: page %d is back but its place in the order was not saved: %v", snapshot.Page.ID, err)
 	}
 	fs.noteDataMutation(0)
 	return nil

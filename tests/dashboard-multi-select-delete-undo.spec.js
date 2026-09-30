@@ -157,3 +157,71 @@ test.describe('deleting a selection', () => {
         expect(await urlsOnPage(page)).toEqual(before);
     });
 });
+
+const trashCount = (page) => page.evaluate(async () => {
+    const data = await window.DashboardTrash.list();
+    return (data.items || []).length;
+});
+
+test.describe('undoing a selection delete, the awkward cases', () => {
+    // saveBookmarkOrder answers false instead of throwing. The undo dropped the
+    // trash entries anyway, and the rows were then on neither the page nor in
+    // the trash.
+    test('a failed undo save keeps the rows in the trash', async ({ page }) => {
+        await openDashboard(page);
+        const selected = await selectTwoBookmarks(page);
+        await deleteSelectionCapturingUndo(page);
+        await expect.poll(() => trashCount(page)).toBeGreaterThanOrEqual(2);
+        const inTrash = await trashCount(page);
+
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            d.saveBookmarkOrder = async () => false;
+            await window.__capturedUndo();
+        });
+        expect(await trashCount(page)).toBe(inTrash);
+        const stored = await page.evaluate(async () => {
+            const res = await fetch(`/api/bookmarks?page=${window.dashboardInstance.currentPageId}`);
+            const body = await res.json();
+            return (Array.isArray(body) ? body : body.bookmarks || []).map((b) => b.url);
+        });
+        selected.forEach((url) => expect(stored).not.toContain(url));
+    });
+
+    // The toast outlives a page switch: the rows go back to their own page,
+    // not the one on screen.
+    test('undo after switching page restores onto the page they left', async ({ page }) => {
+        await openDashboard(page);
+        // The shared data has one page; a second one to switch to.
+        await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const list = await (await api('/api/pages')).json();
+            if (list.some((p) => p.name === 'undo-target')) return;
+            const next = [...list, { id: Math.max(...list.filter((p) => p.id < 999999).map((p) => p.id)) + 1, name: 'undo-target' }];
+            await api('/api/pages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) });
+        });
+        await openDashboard(page);
+        const sourcePage = await page.evaluate(() => Number(window.dashboardInstance.currentPageId));
+        const other = await page.evaluate((src) => window.dashboardInstance.pages
+            .map((p) => Number(p.id)).find((id) => id !== src && id !== 999999), sourcePage);
+        expect(other, 'no second page to switch to').toBeTruthy();
+        const selected = await selectTwoBookmarks(page);
+        await deleteSelectionCapturingUndo(page);
+
+        await page.evaluate((id) => window.dashboardInstance.loadPageBookmarks(id), other);
+        await expect.poll(() => page.evaluate(() => Number(window.dashboardInstance.currentPageId))).toBe(other);
+        await page.evaluate(() => window.__capturedUndo());
+
+        const read = (id) => page.evaluate(async (id) => {
+            const res = await fetch(`/api/bookmarks?page=${id}`);
+            const body = await res.json();
+            return (Array.isArray(body) ? body : body.bookmarks || []).map((b) => b.url);
+        }, id);
+        await expect.poll(async () => {
+            const back = await read(sourcePage);
+            return selected.every((url) => back.includes(url));
+        }, { timeout: 10_000 }).toBe(true);
+        const onOther = await read(other);
+        selected.forEach((url) => expect(onOther).not.toContain(url));
+    });
+});

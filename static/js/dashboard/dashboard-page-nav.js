@@ -1402,6 +1402,9 @@ class DashboardPageNav {
         iconInput.placeholder = '📌';
         iconInput.maxLength = 4;
 
+        // A swatch writes page.color at once; Escape and a failed save put
+        // this back, or the colour stayed and went out with the next save.
+        const previousColor = page.color;
         const swatches = document.createElement('div');
         swatches.className = 'page-tab-color-swatches';
         PAGE_COLORS.forEach(color => {
@@ -1488,6 +1491,7 @@ class DashboardPageNav {
             } catch (error) {
                 page.name = previousName;
                 page.icon = previousIcon;
+                page.color = previousColor;
                 this._renderPageTabContent(btn, page, index);
                 this.updatePageTitle(previousName || '');
                 const message = d.formatDashboardLabel(
@@ -1504,6 +1508,7 @@ class DashboardPageNav {
             done = true;
             removeRepositionListeners();
             popover.remove();
+            page.color = previousColor;
             this._renderPageTabContent(btn, page, index);
             btn.focus({ preventScroll: true });
         };

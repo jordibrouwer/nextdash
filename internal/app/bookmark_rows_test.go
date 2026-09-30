@@ -181,3 +181,100 @@ func TestRowWritesReachTheSecondCopyOfAURL(t *testing.T) {
 		t.Fatalf("after delete = %+v", rows)
 	}
 }
+
+func TestMoveBookmarksKeepsRowsFromOtherPagesWhenTheTargetsOwnRowsFollow(t *testing.T) {
+	h, store := patchTestHandlers(t)
+	seedPages(t, store, map[int][]Bookmark{
+		7: {{Name: "A", URL: "https://a.example/"}},
+		8: {{Name: "B", URL: "https://b.example/"}},
+	})
+	rec, _ := rowsReq(t, h.MoveBookmarks, http.MethodPost, map[string]any{
+		"toPage": 8, "category": "c2",
+		"items": []map[string]any{{"pageId": 7, "url": "https://a.example/"}, {"pageId": 8, "url": "https://b.example/"}},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d %s", rec.Code, rec.Body.String())
+	}
+	dst := store.GetBookmarksByPage(8)
+	if len(dst) != 2 || findByURL(dst, "https://a.example/") == nil {
+		t.Fatalf("target = %+v: the row from page 7 must land", dst)
+	}
+	if len(store.GetBookmarksByPage(7)) != 0 {
+		t.Fatalf("source still holds the moved row")
+	}
+}
+
+func TestMoveBookmarksTakesTheLaterCopyFirstWithAnotherURLInBetween(t *testing.T) {
+	h, store := patchTestHandlers(t)
+	seedPages(t, store, map[int][]Bookmark{7: {
+		{Name: "First", URL: "https://dup.example/"},
+		{Name: "V", URL: "https://v.example/"},
+		{Name: "Second", URL: "https://dup.example/"},
+	}, 8: {{Name: "Other", URL: "https://other.example/"}}})
+	rec, out := rowsReq(t, h.MoveBookmarks, http.MethodPost, map[string]any{
+		"toPage": 8,
+		"items": []map[string]any{
+			{"pageId": 7, "url": "https://dup.example/", "occurrence": 0},
+			{"pageId": 7, "url": "https://v.example/"},
+			{"pageId": 7, "url": "https://dup.example/", "occurrence": 1},
+		},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d %s", rec.Code, rec.Body.String())
+	}
+	for _, s := range out["skipped"].([]any) {
+		if s.(map[string]any)["reason"] == "gone" {
+			t.Fatalf("a copy was reported gone: %v", out)
+		}
+	}
+	src := store.GetBookmarksByPage(7)
+	if len(src) != 1 || src[0].Name != "First" {
+		t.Fatalf("source = %+v: the later copy moves, the earlier one stays as a duplicate", src)
+	}
+}
+
+func TestAddBookmarkRefusesACopyOnTheSamePageHiddenByOneElsewhere(t *testing.T) {
+	h, store := patchTestHandlers(t)
+	seedPages(t, store, map[int][]Bookmark{
+		1: {{Name: "U on 1", URL: "https://u.example/"}},
+		2: {{Name: "U on 2", URL: "https://u.example/"}},
+	})
+	rec, out := rowsReq(t, h.AddBookmark, http.MethodPost, map[string]any{
+		"page": 2, "allowDuplicate": true, "bookmark": map[string]any{"name": "U", "url": "https://u.example/"},
+	})
+	if rec.Code != http.StatusConflict || out["samePage"] != true {
+		t.Fatalf("status = %d %v: page 2 already has this URL", rec.Code, out)
+	}
+}
+
+func TestAddBookmarkMoveWithAShortcutDoesNotConflictWithItself(t *testing.T) {
+	h, store := patchTestHandlers(t)
+	seedPages(t, store, map[int][]Bookmark{
+		1: {{Name: "W", URL: "https://w.example/", Shortcut: "w"}},
+		2: {{Name: "Other", URL: "https://o.example/"}},
+	})
+	rec, _ := rowsReq(t, h.AddBookmark, http.MethodPost, map[string]any{
+		"page": 2, "allowDuplicate": true, "bookmark": map[string]any{"name": "W", "url": "https://w.example/", "shortcut": "w"},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d %s: the source row of a move is not a shortcut conflict", rec.Code, rec.Body.String())
+	}
+}
+
+// An open names its row by URL; a stale index (an unsaved drag, a row added
+// elsewhere) must not credit the bookmark that now sits there.
+func TestTrackOpenCreditsTheBookmarkByURL(t *testing.T) {
+	h, store := patchTestHandlers(t)
+	seedPages(t, store, map[int][]Bookmark{7: {
+		{Name: "A", URL: "https://a.example/"},
+		{Name: "B", URL: "https://b.example/"},
+	}})
+	rec, _ := rowsReq(t, h.TrackBookmarkOpen, http.MethodPost, map[string]any{"pageId": 7, "index": 0, "url": "https://b.example/"})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	rows := store.GetBookmarksByPage(7)
+	if rows[0].OpenCount != 0 || rows[1].OpenCount != 1 {
+		t.Fatalf("open counts = %d, %d: the open went to the wrong row", rows[0].OpenCount, rows[1].OpenCount)
+	}
+}
