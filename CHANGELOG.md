@@ -235,20 +235,76 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## v1.15.7 — 30 September 2026
 
-The Containers tour catches up with v1.15.6 and is shown once more, and the Bookmarks view's selection gets the bar Inbox and Containers have.
+The Containers tour catches up with v1.15.6 and is shown once more, the Bookmarks view's selection gets the bar Inbox and Containers have, and a bug hunt across the app fixes more than a hundred bugs — several of which lost bookmarks, widgets or settings.
 
 ### Bookmarks
 
 - **fix — ticking rows opened the side panel, and there was no selection bar.** A tick counted as a click on the row, which opens the panel, and two or more ticked rows always opened the bulk form there. Ticking now only selects: a selection bar above the list — the shared multi-select toolbar Inbox and Containers use — counts what is ticked and offers **Edit…**, **Re-check**, **Mute alerts**, **Export CSV**, **Delete** and **Clear selection**. **Edit…** opens the form in the side panel (one ticked row opens its own panel). The side panel still opens for a bookmark you click. `syncLibraryDrawer` opens the bulk form only when `_bmBulkPanelWanted` is set.
 
+### Everywhere
+
+- **fix — the Inbox selection bar's Delete deleted nothing, and a confirm dismissed with Escape never answered.** `AppModal` ran a caller's `onHide` before the button's own handler, so a confirm settled on "no" before it heard **Delete**, and Escape or the backdrop left `confirm()`/`alert()` pending — a Health row waiting on one stayed busy until a reload. A button's handler now runs first and `onHide` is told the reason (`confirm`, `cancel`, `dismiss`, `replaced`); the tours no longer report "dismissed" at step 1.
+
+### Dashboard
+
+- **fix — a bulk move could lose rows.** A selection with rows from the target page and from other pages dropped the other pages' rows from both (`bookmark_move.go`); copies of one URL now move in a stable order.
+- **fix — moving a bookmark with a shortcut to another page always failed**, and a move could put the same URL on one page twice (`AddBookmark`).
+- **fix — undo after a page switch put bookmarks on the wrong page.** The single and multi-select delete undo, the category-move undo and the category-delete undo restore where the rows came from; a failed multi-select undo no longer empties their trash entries.
+- **fix — a failed blocks fetch on a page switch let an edit write one page's widgets over another's.** The widgets on screen still stay, but a widget edit or a block move on the new page is refused until its own blocks have loaded.
+- **fix — saves that were dropped.** A category rename after a same-page reload, a block move within a second of leaving the page or closing the tab, and a second drag while the first was saving are kept; a reorder save no longer waits on itself. A deleted page comes back from the trash with its widgets.
+- **fix — smaller things.** A page with only widgets draws them; Shift+F matches URLs and tags; the page-tab colour goes back on Escape; an older page load no longer lands after a newer one; opens are counted on the bookmark by URL.
+
 ### Containers
 
 - **new — the Containers tour covers v1.15.6, and runs once more for everyone.** Three new steps — your columns and order, a web UI and its bookmark, updates at night with a rollback and notices when a container runs hot — and the side panel, Disk and Config steps brought up to date: thirteen steps instead of ten. The tip id moves to `containersTutorialV2` (in the tour, the view, the replay lists in Config and search, and the e2e helpers), so the tour opens again on the next visit. Whoever took the earlier tour is told on the first step that it is an update with new features, and the new or changed steps carry a **New** mark; a first-time reader gets the plain tour.
+
+- **fix — automatic updates.** A stopped container is updated and left stopped instead of being rolled back every night; a rollback starts the old version; a stop or restart from the view during the watch is left alone; each container gets its own time, is marked as tried only once it was, and waits for a running prune.
+- **fix — updates and checks.** A VPN client (`network_mode: container:`) can be updated; an image with two digests for one repo reads current; a check that runs out of time keeps what was known; size measuring backs off after a failure; very long log lines arrive whole; the widget counts incidents of listed containers only.
+- **fix — the view.** The arrows and Shift ranges follow grouped rows, Resources keeps one stats call in flight, and the "+N" ports list survives a refresh.
+
+### Config
+
+- **fix — a move made the category on the target page under its raw id**, CSV export wrote category ids that the import read back as names, and an import made a second category beside one with the same name.
+- **fix — Enter in the right-click menu ran the item the arrows had reached**, not the one under the pointer — a Delete, one wrap up.
+- **fix — a new page took the id of a page in the trash**, so that page could no longer be restored.
+- **fix — a refused import still wrote a safety backup and pruned the rotation**; an archive with `bookmarks-0.json` is refused instead of removing every page; the HTML bookmark import takes files over 4 MB.
+- **fix — smaller things.** **Save a copy now** no longer reports a failure; a failed reset no longer leaves the overlay up; Density applies without a reload; settings saves are sent one after another; the auto-backup and log panels read back after the save; a stale category-editor or news answer is ignored; cross-tab sync keeps an event that arrives mid-refresh; the Stats tabs bind once; Appearance's intro shows once; deleting the active custom theme applies the default; the Brave finder seed no longer turns default-on settings off; a fresh install has a stale limit of 50.
+
+### Inbox
+
+- **fix — an import into a nearly full inbox pushed out older links.** It now stops at the cap.
+- **fix — triage.** Keys in the snooze menu no longer act on the card behind it, and a card is removed by id after an action that awaited the network.
+- **fix — undo.** Undo of Keep restores the entry itself (its id, date and read state); bulk-keep undo brings back every link and leaves a copy that was already kept; undo of a delete drops an icon file that went with it and reports a link it pushed out.
+- **fix — smaller things.** A list read no longer undoes a delete made while it loaded; snoozed links wake with an empty list; Oldest first orders the date groups; the groups survive the clock change; bulk Open marks only the tabs that opened as read; d and Shift+K act once per row; the promote menu closes on Escape; shared links get a preview and count as added; a batch delete writes the stats once.
+
+### Health
+
+- **fix — cancelling Retest all marked every remaining bookmark broken**, and a run over 60 s reported failure.
+- **fix — alerts.** Samples inside a maintenance window no longer alert; "alert after 1 failure" alerts once; a certificate rollout no longer re-alerts.
+- **fix — the same URL on two pages with different rules was checked once, with the first bookmark's rules.** A copy with other rules is checked by its own in the same round; history, alerts and certificates stay per URL.
+- **fix — smaller things.** Errors are classified by their cause, not by the URL; a re-check the dashboard could not run records nothing; the per-day bars are labelled in UTC.
+
+### Search
+
+- **fix — a deep link with `%` in the URL failed the dashboard load.** Also: one Enter on mobile ran a match twice; `?` with no finders opened nothing; `:__proto__` threw; `$` in a query was read as a pattern; `*` and `/` pressed before the search bundle loaded opened the wrong thing; blocked site data stopped the start-up.
+
+### Widgets and feeds
+
+- **fix — a feed retired after five failures was never polled again.** It is tried again a day later. Atom entries with several links and feeds in ISO-8859-1 or windows-1252 are read; summaries are cut on a character.
+- **fix — Mastodon and Hacker News imports skipped links saved since the last round**, and a new handle kept the old cursor.
+- **fix — smaller things.** Favicon fetches use the page's declared icon; oEmbed thumbnails are downloaded; cached previews are answered without the rate limit; an edited custom widget answers with its new config; all-day calendar events keep their day; CPU no longer counts guest time twice; a failed update check is retried after 15 minutes.
+
+### Security
+
+- **fix — with a write token set, `GET /api/settings` returned stored keys and tokens, and `GET /api/logs` answered without the token.** Both are fixed, and the app reads them with the token. Logs → **Download** works with a token, and editing a widget no longer wipes a custom widget's address and credential.
+- **fix — webhooks and push.** New webhook keys are `whsec_` keys the Standard Webhooks libraries verify (older hex keys keep working); webhooks have their own outbound budget; an alert too long for a push message is shortened instead of removing every device.
 
 ### Docs
 
 - **docs — MANUAL §11.4 describes the selection bar.** The tour's new texts are in all six languages.
 - **fix — the Go preview tests failed about one run in three.** The refresh tests walk the default bookmarks, which are real sites, and each queued a background picture download; the preview media worker finished seconds later and stored the file in whichever test's data directory was current by then, so the orphan sweep and file-count tests found one file too many. `queuePreviewMediaFetch` now honours `NEXTDASH_DISABLE_PREFETCH`, the brake `enrichInboxPreviewAsync` already has, which the Go suite and the e2e server both set. Covered by `TestQueuePreviewMediaFetchHonoursTheBrake`.
+- **docs — MANUAL §19.3 describes `whsec_` webhook keys.** The five new messages from the fixes are in all six languages.
+- **tests — most of the fixes above come with a test that fails without them**; the rest were small enough to verify by reading the change.
 
 ---
 
