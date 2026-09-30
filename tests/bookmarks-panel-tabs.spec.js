@@ -100,6 +100,7 @@ test.describe('bookmark panel tabs', () => {
       await page.keyboard.press('j');
       await page.keyboard.press('x');
     }
+    await page.locator('[data-bm-selbar-action="edit"]').click();
     await expect(panel(page)).toHaveAttribute('data-bm-panel-mode', 'bulk');
     await expect(panel(page).locator('[data-bm-tab-panel]')).toHaveCount(0);
   });

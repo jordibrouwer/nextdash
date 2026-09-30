@@ -132,6 +132,8 @@
                         ${this.renderWorkbenchDensityToggle()}
                         <button type="button" class="config-btn config-btn--primary config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     </div>
+                    <div class="multi-select-toolbar config-bm-selbar" data-bm-selbar role="toolbar"
+                         aria-label="${esc(this.t('dashboard.multiSelectToolbarAria', 'Selection actions'))}" hidden></div>
                     ${this.renderWorkbenchColumnHeads()}
                     <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
                 </section>
@@ -707,6 +709,9 @@
     },
 
     repaintWorkbenchPanel() {
+        // The selection bar follows every repaint, a whole list redraw included.
+        this.bindBookmarkSelectionBar();
+        this.syncBookmarkSelectionBar();
         // In the Bookmarks view the panel lives in the side panel, which is
         // out of the document while closed; it is still the one to draw.
         const panel = this._libPanel || document.getElementById('config-bm-panel');
@@ -776,6 +781,61 @@
         return this._libDrawer || null;
     },
 
+    /**
+     * The selection bar: above the list whenever a row is ticked, one or
+     * many -- the count, Edit (the full form, in the side panel), the quick
+     * actions, and Clear. Built again on every change; the rows stay put.
+     */
+    syncBookmarkSelectionBar() {
+        const bar = document.querySelector('[data-bm-selbar]');
+        if (!bar) return;
+        const n = this.bmSelected?.size || 0;
+        bar.hidden = n === 0;
+        if (!n) {
+            bar.replaceChildren();
+            return;
+        }
+        const esc = (v) => this.dash.escapeHtml(v);
+        const health = Boolean(this.bmHealthBulkRunner?.()?.selected?.size);
+        const btn = (action, label, cls = '') => `<button type="button" class="multi-select-btn${cls}" data-bm-selbar-action="${action}">${esc(label)}</button>`;
+        bar.innerHTML = `
+            <span class="multi-select-count" data-bm-selbar-count>${esc(this.t('config.bmSelectedN', '{n} selected').replace('{n}', String(n)))}</span>
+            ${btn('edit', this.t('config.bmSelEdit', 'Edit…'))}
+            ${health ? btn('recheck', this.t('dashboard.healthBulkRecheck', 'Re-check')) : ''}
+            ${health ? btn('mute', this.t('dashboard.healthBulkMute', 'Mute alerts')) : ''}
+            ${btn('export', this.t('config.bulkExportCsv', 'Export CSV'))}
+            ${btn('delete', this.t('config.bmDeleteN', 'Delete {n}').replace('{n}', String(n)), ' danger')}
+            ${btn('clear', this.t('config.bulkClearSelection', 'Clear selection'))}`;
+    },
+
+    bindBookmarkSelectionBar() {
+        const bar = document.querySelector('[data-bm-selbar]');
+        if (!bar || bar.dataset.bound) return;
+        bar.dataset.bound = '1';
+        bar.addEventListener('click', (e) => {
+            const action = e.target.closest('[data-bm-selbar-action]')?.getAttribute('data-bm-selbar-action');
+            if (!action) return;
+            if (action === 'edit') {
+                // One ticked row edits in its own panel; several share the form.
+                if (this.bmSelected.size === 1) {
+                    this._bmKeyboardKey = [...this.bmSelected][0];
+                    this._libDrawerWanted = true;
+                    this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
+                } else {
+                    this._bmBulkPanelWanted = true;
+                    this.repaintWorkbenchPanel();
+                }
+                this.syncLibraryDrawer();
+                return;
+            }
+            if (action === 'recheck' || action === 'mute') {
+                void this.runBmHealthBulk?.(action);
+                return;
+            }
+            void this.handleBulkAction(action).then(() => this.afterSelectionChange());
+        });
+    },
+
     /** Take the freshly drawn panel out of the layout; the side panel shows it. */
     adoptLibraryPanel(panel) {
         if (!panel) return;
@@ -790,7 +850,9 @@
         const panel = this._libPanel;
         if (!drawer || !panel) return;
         const mode = this.workbenchPanelMode();
-        const want = mode === 'bulk' || (mode === 'single' && this._libDrawerWanted);
+        // A selection alone does not open the panel -- the bar above the list
+        // is its menu, as in Inbox and Containers. Its Edit opens the form.
+        const want = (mode === 'bulk' && this._bmBulkPanelWanted) || (mode === 'single' && this._libDrawerWanted);
         if (want) {
             if (!drawer.isOpen() || !drawer.panel?.contains(panel)) {
                 drawer.open('library', {
@@ -813,6 +875,7 @@
     /** × on the side panel: closed until the next click; a selection is dropped with it. */
     onLibraryDrawerClosed(via) {
         this._libDrawerWanted = false;
+        this._bmBulkPanelWanted = false;
         if (this.bmSelected.size > 1) {
             this.bmSelected.clear();
             this.afterSelectionChange();
@@ -1492,6 +1555,7 @@
 
     focusWorkbenchBulkField(name) {
         this._libDrawerWanted = true;
+        this._bmBulkPanelWanted = true;
         this.redrawBulkPanel();
         this.syncLibraryDrawer();
         document.querySelector(`#config-bm-panel [data-bm-bulk-field="${name}"]`)?.focus();

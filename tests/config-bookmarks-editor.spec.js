@@ -178,12 +178,13 @@ test.describe('config bookmarks editor', () => {
         await expect(shortcutInput).not.toHaveClass(/field-conflict/);
     });
 
-    test('ticking two rows turns the panel into the bulk form', async ({ page }) => {
+    test('ticking two rows, then Edit, turns the panel into the bulk form', async ({ page }) => {
         await openBookmarks(page);
         // The box shows on hover (rows keep it out of sight at rest, as in Health).
         await page.locator('#config-bm-list .config-bm-row').first().hover();
         await page.locator('[data-bm-tick]').first().check();
         await page.locator('[data-bm-tick]').nth(1).check();
+        await page.locator('[data-bm-selbar-action="edit"]').click();
         const panel = page.locator('#config-bm-panel');
         await expect(panel).toHaveAttribute('data-bm-panel-mode', 'bulk');
         for (const a of ['apply', 'export', 'favicons', 'delete', 'clear']) {
@@ -198,6 +199,7 @@ test.describe('config bookmarks editor', () => {
         await page.locator('#config-bm-list .config-bm-row').first().hover();
         await page.locator('[data-bm-tick]').first().check();
         await page.locator('[data-bm-tick]').nth(1).check();
+        await page.locator('[data-bm-selbar-action="edit"]').click();
         await page.fill('#config-bm-panel [data-bm-bulk-field="tags"]', 'bulktag');
         await page.click('#config-bm-panel [data-bm-bulk-action="apply"]');
         await expect.poll(() => posts.some((list) =>
@@ -460,7 +462,9 @@ test.describe('a category always exists on the page it is used on', () => {
                 || all.find((b) => b !== bm);
             cfg.bmSelected.add(cfg.bookmarkKey(bm));
             cfg.bmSelected.add(cfg.bookmarkKey(other));
+            cfg._bmBulkPanelWanted = true;
             cfg.afterSelectionChange();
+            cfg.syncLibraryDrawer();
         }, source);
 
         const panel = page.locator('#config-bm-panel');

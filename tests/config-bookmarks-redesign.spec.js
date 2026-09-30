@@ -144,6 +144,7 @@ test.describe('config bookmarks redesign: suggestions for a selection', () => {
       await bmRow(page, n).hover();
       await bmRow(page, n).locator('.config-bm-tick').check();
     }
+    await page.locator('[data-bm-selbar-action="edit"]').click();
     const chips = page.locator('#config-bm-panel [data-bm-bulk-suggest] .tag-suggest-chip-add');
     await expect(chips.first()).toHaveText('#shared-offer');
     await chips.first().click();

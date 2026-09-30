@@ -20,6 +20,8 @@ async function tickRows(page, n) {
         await page.keyboard.press('j');
         await page.keyboard.press('x');
     }
+    // A selection opens the bar; its Edit opens the form in the side panel.
+    await page.locator('[data-bm-selbar-action="edit"]').click();
     return page.evaluate(() => [...window.dashboardInstance.config.bmSelected]);
 }
 
@@ -46,7 +48,9 @@ test.describe('the bulk form', () => {
         await page.evaluate((ks) => {
             const c = window.dashboardInstance.config;
             ks.forEach((k) => c.bmSelected.add(k));
+            c._bmBulkPanelWanted = true;
             c.afterSelectionChange();
+            c.syncLibraryDrawer();
         }, keys);
         await expect(page.locator('#config-bm-panel .config-bm-bulk-pinned')).toContainText(/mixed|1 of 2/i);
     });
@@ -159,6 +163,7 @@ test.describe('the bulk form', () => {
                 await page.locator(`#config-bm-list .config-bm-row[data-bm-key="${k}"]`).hover();
                 await page.locator(`[data-bm-tick="${k}"]`).check();
             }
+            await page.locator('[data-bm-selbar-action="edit"]').click();
             const urls = await page.evaluate((ks) => ks.map((k) =>
                 window.dashboardInstance.config.findBookmarkByKey(k).url), keys);
             const panel = page.locator('#config-bm-panel');

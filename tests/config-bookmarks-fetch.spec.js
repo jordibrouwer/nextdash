@@ -26,6 +26,7 @@ async function tickRows(page, n) {
         await page.keyboard.press('j');
         await page.keyboard.press('x');
     }
+    await page.locator('[data-bm-selbar-action="edit"]').click();
 }
 
 test('the bulk panel offers both fetches, counting what they would ask for', async ({ page }) => {

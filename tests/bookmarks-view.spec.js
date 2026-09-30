@@ -126,7 +126,7 @@ test.describe('bookmarks view: the side panel', () => {
     expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('library');
   });
 
-  test('ticking two rows opens the bulk form in it', async ({ page }) => {
+  test('ticking two rows, then Edit, opens the bulk form in it', async ({ page }) => {
     await coldLoad(page, '#bookmarks');
     await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
     await page.evaluate(() => document.activeElement?.blur?.());
@@ -134,6 +134,7 @@ test.describe('bookmarks view: the side panel', () => {
       await page.keyboard.press('j');
       await page.keyboard.press('x');
     }
+    await page.locator('[data-bm-selbar-action="edit"]').click();
     await expect(drawer(page)).toBeVisible();
     await expect(drawer(page).locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-mode', 'bulk');
   });

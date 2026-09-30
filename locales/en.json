@@ -5066,6 +5066,8 @@
     "weatherSourceAuto": "Automatic (by IP)",
     "bulkActionError": "Could not apply the bulk action.",
     "bulkClearSelection": "Clear selection",
+    "bmSelectedN": "{n} selected",
+    "bmSelEdit": "Edit…",
     "bulkDelete": "Delete",
     "bulkDeleteConfirm": "Delete {n} bookmarks?",
     "bulkDeleteDone": "Bookmarks deleted.",

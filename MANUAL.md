@@ -831,7 +831,7 @@ On a narrow window the rail becomes a drawer and the side panel a sheet. What yo
 
 ### 11.4 Selecting several
 
-Tick rows (`x` / `X` for the whole page shown, or **Select all** in the ⋯ menu) to open the selection bar: page, category, tags (add, replace, remove), pin all / unpin all, checking and interval, **Mute alerts** / **Unmute**, **Re-check**, **Follow redirects**, **Accept drift**, **Rebuild previews**, **Refresh favicons**, **Save a copy on this disk**, **Export CSV**, and **Delete**. Fields that differ read *mixed*. The slow ones run one page at a time behind a progress bar, wait out a rate limit, and can be stopped. A selection survives a filter change; bulk changes and moves can be undone from the toast.
+Tick rows (`x` / `X` for the whole page shown, or **Select all** in the ⋯ menu) and the selection bar appears above the list — ticking does not open the side panel, as in Inbox and Containers. The bar counts what is ticked and offers **Edit…**, **Re-check**, **Mute alerts**, **Export CSV**, **Delete** and **Clear selection**. **Edit…** opens the form for the selection in the side panel (one ticked row opens its own panel): page, category, tags (add, replace, remove), pin all / unpin all, checking and interval, **Mute alerts** / **Unmute**, **Re-check**, **Follow redirects**, **Accept drift**, **Rebuild previews**, **Refresh favicons**, **Save a copy on this disk**, **Export CSV**, and **Delete**. Fields that differ read *mixed*. The slow ones run one page at a time behind a progress bar, wait out a rate limit, and can be stopped. A selection survives a filter change; bulk changes and moves can be undone from the toast.
 
 ### 11.5 The row menu
 

@@ -3330,3 +3330,8 @@ body[data-density-mode="dense"] .config-bm-workbench {
     width: 0.85rem;
     height: 0.85rem;
 }
+
+/* The selection bar: the shared multi-select toolbar, hidden with nothing ticked. */
+.config-bm-selbar[hidden] {
+    display: none;
+}

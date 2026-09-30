@@ -219,6 +219,8 @@ test.describe('bookmarks: Health\'s bulk actions and duplicates', () => {
       await page.keyboard.press('j');
       await page.keyboard.press('x');
     }
+    // A selection opens the bar, not the panel; its Edit opens the form.
+    await page.locator('[data-bm-selbar-action="edit"]').click();
     await expect(page.locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-mode', 'bulk');
   }
 

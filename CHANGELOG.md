@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.15.7 — 30 September 2026](#v1157--30-september-2026)
 - [v1.15.6 — 30 September 2026](#v1156--30-september-2026)
 - [v1.15.5 — 30 September 2026](#v1155--30-september-2026)
 - [v1.15.4 — 30 September 2026](#v1154--30-september-2026)
@@ -229,6 +230,24 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.15.7 — 30 September 2026
+
+The Containers tour catches up with v1.15.6 and is shown once more, and the Bookmarks view's selection gets the bar Inbox and Containers have.
+
+### Bookmarks
+
+- **fix — ticking rows opened the side panel, and there was no selection bar.** A tick counted as a click on the row, which opens the panel, and two or more ticked rows always opened the bulk form there. Ticking now only selects: a selection bar above the list — the shared multi-select toolbar Inbox and Containers use — counts what is ticked and offers **Edit…**, **Re-check**, **Mute alerts**, **Export CSV**, **Delete** and **Clear selection**. **Edit…** opens the form in the side panel (one ticked row opens its own panel). The side panel still opens for a bookmark you click. `syncLibraryDrawer` opens the bulk form only when `_bmBulkPanelWanted` is set.
+
+### Containers
+
+- **new — the Containers tour covers v1.15.6, and runs once more for everyone.** Three new steps — your columns and order, a web UI and its bookmark, updates at night with a rollback and notices when a container runs hot — and the side panel, Disk and Config steps brought up to date: thirteen steps instead of ten. The tip id moves to `containersTutorialV2` (in the tour, the view, the replay lists in Config and search, and the e2e helpers), so the tour opens again on the next visit. Whoever took the earlier tour is told on the first step that it is an update with new features, and the new or changed steps carry a **New** mark; a first-time reader gets the plain tour.
+
+### Docs
+
+- **docs — MANUAL §11.4 describes the selection bar.** The tour's new texts are in all six languages.
 
 ---
 

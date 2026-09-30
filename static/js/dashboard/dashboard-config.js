@@ -2855,6 +2855,8 @@ class DashboardConfig {
             host.addEventListener('click', (e) => {
                 const row = e.target.closest('.config-bm-row');
                 if (!row || !host.contains(row)) return;
+                // Ticking a row selects it; it does not open the panel.
+                if (e.target.closest('.config-bm-tick-cell')) return;
                 // A click is the way into the side panel -- unless View has a
                 // click only select the row; an open panel follows it either way.
                 if ((this.dash.settings?.bmViewClick || 'panel') !== 'select' || this._libDrawer?.isOpen()) {
@@ -24404,6 +24406,8 @@ class DashboardConfig {
             const box = row.querySelector('.config-bm-tick');
             if (box) box.checked = on;
         });
+        // A selection of fewer than two has no shared form to show.
+        if (this.bmSelected.size < 2) this._bmBulkPanelWanted = false;
         this.repaintWorkbenchPanel?.();
     }
 

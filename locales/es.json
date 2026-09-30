@@ -4881,6 +4881,8 @@
     "weatherSourceAuto": "Automática (por IP)",
     "bulkActionError": "No se pudo aplicar la acción en bloque.",
     "bulkClearSelection": "Quitar la selección",
+    "bmSelectedN": "{n} selected",
+    "bmSelEdit": "Edit…",
     "bulkDelete": "Eliminar",
     "bulkDeleteConfirm": "¿Eliminar {n} marcadores?",
     "bulkDeleteDone": "Marcadores eliminados.",

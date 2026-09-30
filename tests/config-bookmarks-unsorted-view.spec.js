@@ -138,6 +138,8 @@ test('giving a kept bookmark a page and a category files it', async ({ page }) =
         const d = window.dashboardInstance;
         return (d.config.instance || d.config).bmSelected.size;
     })).toBe(1);
+    // One ticked row edits in its own panel, from the bar's Edit.
+    await page.locator('[data-bm-selbar-action="edit"]').click();
     const pageSelect = page.locator('.config-bm-panel select[data-bm-field="page"]').first();
     await expect(pageSelect).toBeVisible();
     // Its own page is an option rather than a gap, so staying put is the

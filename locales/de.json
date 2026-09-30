@@ -4881,6 +4881,8 @@
     "weatherSourceAuto": "Automatisch (per IP)",
     "bulkActionError": "Sammelaktion konnte nicht ausgeführt werden.",
     "bulkClearSelection": "Auswahl aufheben",
+    "bmSelectedN": "{n} selected",
+    "bmSelEdit": "Edit…",
     "bulkDelete": "Löschen",
     "bulkDeleteConfirm": "{n} Lesezeichen löschen?",
     "bulkDeleteDone": "Lesezeichen gelöscht.",
