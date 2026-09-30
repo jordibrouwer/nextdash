@@ -331,3 +331,42 @@ func TestRetestAllCancelledRecordsNothing(t *testing.T) {
 		t.Fatalf("LastError = %q: a cancelled check was saved as broken", got)
 	}
 }
+
+// The same URL on two pages with different rules: each copy gets the answer to
+// its own rules, not the first one's.
+func TestRunDueMonitorsChecksEachCopyByItsOwnRules(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("<html><body>Hello</body></html>"))
+	}))
+	defer server.Close()
+
+	// Soft-404 off: a two-word test page reads as "not found" otherwise.
+	h, dir := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true,"detectSoftNotFound":false}`)
+	withRule := `{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"Strict","url":"` + server.URL + `","monitor":true,"monitorIntervalMinutes":5,"expectText":"Welcome"}
+	]}`
+	plain := `{"id":2,"name":"Page 2","bookmarks":[
+		{"name":"Plain","url":"` + server.URL + `","monitor":true,"monitorIntervalMinutes":5}
+	]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(withRule), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-2.json"), []byte(plain), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	h.runDueMonitors()
+
+	strict := h.store.GetBookmarksByPage(1)[0]
+	loose := h.store.GetBookmarksByPage(2)[0]
+	if strict.LastError == "" {
+		t.Fatalf("the copy expecting \"Welcome\" should fail its own rule")
+	}
+	if loose.LastError != "" {
+		t.Fatalf("the copy with no rules was given the other's failure: %q", loose.LastError)
+	}
+	// History stays one series per URL, written by the first copy's check.
+	if samples := h.healthHistoryFor(canonicalBookmarkURLKey(server.URL)); len(samples) != 1 {
+		t.Fatalf("history samples = %d, want 1", len(samples))
+	}
+}
