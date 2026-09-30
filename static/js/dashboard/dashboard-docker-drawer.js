@@ -671,13 +671,31 @@ class DockerDrawer {
         sizeVal.textContent = window.DashboardDocker.formatSize(this._summary?.size);
         size.append(sizeLabel, sizeVal);
 
+        // Network and disk, as rates: the sampler's last reading, since a
+        // rate needs two -- a dash until there is one.
+        const ioRow = (label, attr) => {
+            const row = document.createElement('div');
+            row.className = 'docker-resource-row';
+            const name = document.createElement('span');
+            name.textContent = label;
+            const val = document.createElement('span');
+            val.setAttribute(attr, '');
+            val.textContent = '—';
+            row.append(name, val);
+            return [row, val];
+        };
+        const [net, netVal] = ioRow(this.t('dockerFieldNetwork', 'Network'), 'data-docker-net');
+        const [disk, diskVal] = ioRow(this.t('dockerFieldDiskIO', 'Disk I/O'), 'data-docker-diskio');
+
         // The last hour, under the figures: filled by _renderCharts once the
         // first answer with history lands.
         const charts = document.createElement('div');
         charts.className = 'docker-charts';
         charts.setAttribute('data-docker-charts', '');
 
-        body.append(cpu, mem, size, charts);
+        body.append(cpu, mem, size, net, disk, charts);
+        els.netEl = netVal;
+        els.diskIoEl = diskVal;
         els.cpuEl = cpuVal;
         els.memEl = memVal;
         els.sizeEl = sizeVal;
@@ -724,7 +742,26 @@ class DockerDrawer {
         if (withHistory && data) {
             this._history = { name, enabled: data.historyEnabled !== false, points: Array.isArray(data.history) ? data.history : [] };
         }
-        if (this._history?.name === name && data) this._renderCharts(data);
+        if (this._history?.name === name && data) {
+            this._renderIO();
+            this._renderCharts(data);
+        }
+    }
+
+    /** Network and disk from the newest sampled point: rates need two readings. */
+    _renderIO() {
+        const last = this._history?.enabled ? this._history.points[this._history.points.length - 1] : null;
+        const rate = (v) => (v > 0 ? `${dockerFormatBytes(v)}/s` : '0 B/s');
+        if (this._els?.netEl) {
+            this._els.netEl.textContent = last
+                ? this.t('dockerNetRates', '↓ {in} · ↑ {out}', { in: rate(last.netIn), out: rate(last.netOut) })
+                : '—';
+        }
+        if (this._els?.diskIoEl) {
+            this._els.diskIoEl.textContent = last
+                ? this.t('dockerDiskRates', 'read {read} · write {write}', { read: rate(last.diskRead), write: rate(last.diskWrite) })
+                : '—';
+        }
     }
 
     /* Two charts of the last hour: the sampler's points, then the figure now. */
@@ -755,6 +792,13 @@ class DockerDrawer {
                 (v) => dockerFormatCpu(v), nowMs),
             this._chart('mem', this.t('dockerChartMemory', 'Memory · last hour'), series, (p) => p.mem,
                 (v) => dockerFormatBytes(v), nowMs),
+            // In and out together, read and written together: one line each,
+            // the split is in the figures above. Sampled points only -- the
+            // figure "now" has no rate of its own.
+            this._chart('net', this.t('dockerChartNetwork', 'Network · last hour'), points, (p) => (p.netIn || 0) + (p.netOut || 0),
+                (v) => `${dockerFormatBytes(v)}/s`, nowMs),
+            this._chart('disk', this.t('dockerChartDiskIO', 'Disk I/O · last hour'), points, (p) => (p.diskRead || 0) + (p.diskWrite || 0),
+                (v) => `${dockerFormatBytes(v)}/s`, nowMs),
         );
     }
 

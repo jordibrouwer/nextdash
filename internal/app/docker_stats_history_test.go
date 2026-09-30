@@ -199,3 +199,35 @@ func TestContainerListCarriesLatestUsage(t *testing.T) {
 		t.Fatalf("switched off: enabled = %v, web = %+v", enabled, got["web"].Usage)
 	}
 }
+
+// Network and disk become bytes a second between two readings; a counter that
+// went down (the container restarted) is no traffic, not a negative rate.
+func TestDockerStatsHistoryRates(t *testing.T) {
+	h := newDockerStatsHistory()
+	now := time.Now()
+	h.record("a", now, dockerStatsTotals{NetRx: 1000, NetTx: 500, DiskRead: 0, DiskWrite: 3000})
+	h.record("a", now.Add(10*time.Second), dockerStatsTotals{NetRx: 11_000, NetTx: 1500, DiskRead: 2000, DiskWrite: 1000})
+	got := h.points("a")
+	if len(got) != 1 {
+		t.Fatalf("points = %+v", got)
+	}
+	p := got[0]
+	if p.NetIn != 1000 || p.NetOut != 100 || p.DiskRead != 200 || p.DiskWrite != 0 {
+		t.Fatalf("rates = %+v", p)
+	}
+}
+
+// The daemon's figures: every interface, and both spellings of the ops.
+func TestDockerStatsRawIOTotals(t *testing.T) {
+	var raw dockerStatsRaw
+	if err := json.Unmarshal([]byte(`{"networks":{"eth0":{"rx_bytes":10,"tx_bytes":1},"eth1":{"rx_bytes":5,"tx_bytes":2}},
+		"blkio_stats":{"io_service_bytes_recursive":[{"op":"Read","value":7},{"op":"write","value":9},{"op":"Total","value":16}]}}`), &raw); err != nil {
+		t.Fatal(err)
+	}
+	if rx, tx := raw.netTotals(); rx != 15 || tx != 3 {
+		t.Fatalf("net = %d %d", rx, tx)
+	}
+	if r, w := raw.diskTotals(); r != 7 || w != 9 {
+		t.Fatalf("disk = %d %d", r, w)
+	}
+}

@@ -30,10 +30,30 @@ async function openResources(page, stats) {
 const NOW = { cpuPercent: 3.2, memoryUsed: 262144000, memoryLimit: 8589934592 };
 
 test.describe('resource charts', () => {
-    test('two charts of the last hour under the figures, each with its peak', async ({ page }) => {
+    // Network and disk: rates from the newest sampled point, in the figures
+    // and as two more charts of the hour.
+    test('network and disk I/O, now and over the hour', async ({ page }) => {
+        const MiB = 1024 * 1024;
+        const history = hour().map((p, i, all) => (i === all.length - 1
+            ? { ...p, netIn: 2 * MiB, netOut: 512 * 1024, diskRead: 0, diskWrite: 3 * MiB }
+            : { ...p, netIn: 1024, netOut: 1024, diskRead: 0, diskWrite: 0 }));
+        await openResources(page, { ...NOW, historyEnabled: true, history });
+        await expect(page.locator('[data-docker-net]')).toHaveText('↓ 2.0 MiB/s · ↑ 0.5 MiB/s');
+        await expect(page.locator('[data-docker-diskio]')).toHaveText('read 0 B/s · write 3.0 MiB/s');
+        await expect(page.locator('[data-docker-chart="net"]')).toContainText('2.5 MiB/s');
+        await expect(page.locator('[data-docker-chart="disk"] path.docker-chart-line')).toHaveCount(1);
+    });
+
+    test('history off: network and disk stay a dash', async ({ page }) => {
+        await openResources(page, { ...NOW, historyEnabled: false, history: [] });
+        await expect(page.locator('[data-docker-net]')).toHaveText('—');
+        await expect(page.locator('[data-docker-diskio]')).toHaveText('—');
+    });
+
+    test('four charts of the last hour under the figures, each with its peak', async ({ page }) => {
         await openResources(page, { ...NOW, historyEnabled: true, history: hour() });
         const charts = page.locator('[data-docker-chart]');
-        await expect(charts).toHaveCount(2);
+        await expect(charts).toHaveCount(4);
         await expect(page.locator('[data-docker-chart="cpu"] path.docker-chart-line')).toHaveCount(1);
         await expect(page.locator('[data-docker-chart="mem"] path.docker-chart-line')).toHaveCount(1);
         await expect(page.locator('[data-docker-chart="cpu"]')).toContainText('38');

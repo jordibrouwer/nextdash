@@ -37,12 +37,20 @@ type dockerStatsTotals struct {
 	CPU, System       uint64
 	Online            int
 	MemUsed, MemLimit uint64
+	// Running byte totals: network in and out, disk read and written.
+	NetRx, NetTx, DiskRead, DiskWrite uint64
 }
 
 type dockerStatsPoint struct {
 	T   int64   `json:"t"` // unix milliseconds
 	CPU float64 `json:"cpu"`
 	Mem uint64  `json:"mem"`
+	// Bytes a second since the reading before: network in and out, disk read
+	// and written.
+	NetIn     float64 `json:"netIn"`
+	NetOut    float64 `json:"netOut"`
+	DiskRead  float64 `json:"diskRead"`
+	DiskWrite float64 `json:"diskWrite"`
 }
 
 // dockerStatsStore is the one history, shared by the sampler and the stats route.
@@ -52,17 +60,20 @@ type dockerStatsHistory struct {
 	mu     sync.Mutex
 	series map[string][]dockerStatsPoint
 	prev   map[string]dockerStatsTotals
+	prevAt map[string]time.Time
 }
 
 func newDockerStatsHistory() *dockerStatsHistory {
-	return &dockerStatsHistory{series: map[string][]dockerStatsPoint{}, prev: map[string]dockerStatsTotals{}}
+	return &dockerStatsHistory{series: map[string][]dockerStatsPoint{}, prev: map[string]dockerStatsTotals{}, prevAt: map[string]time.Time{}}
 }
 
 func (h *dockerStatsHistory) record(id string, now time.Time, t dockerStatsTotals) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	prev, had := h.prev[id]
+	prevAt := h.prevAt[id]
 	h.prev[id] = t
+	h.prevAt[id] = now
 	if !had {
 		return
 	}
@@ -75,6 +86,17 @@ func (h *dockerStatsHistory) record(id string, now time.Time, t dockerStatsTotal
 			online = 1
 		}
 		point.CPU = cpuDelta / sysDelta * float64(online) * 100
+	}
+	// A total that went down is a restarted counter, not negative traffic.
+	if secs := now.Sub(prevAt).Seconds(); secs > 0 {
+		rate := func(cur, before uint64) float64 {
+			if cur < before {
+				return 0
+			}
+			return float64(cur-before) / secs
+		}
+		point.NetIn, point.NetOut = rate(t.NetRx, prev.NetRx), rate(t.NetTx, prev.NetTx)
+		point.DiskRead, point.DiskWrite = rate(t.DiskRead, prev.DiskRead), rate(t.DiskWrite, prev.DiskWrite)
 	}
 	series := append(h.series[id], point)
 	cutoff := now.Add(-dockerStatsHistoryWindow).UnixMilli()
@@ -112,6 +134,7 @@ func (h *dockerStatsHistory) keepOnly(ids map[string]bool) {
 	for id := range h.prev {
 		if !ids[id] {
 			delete(h.prev, id)
+			delete(h.prevAt, id)
 			delete(h.series, id)
 		}
 	}
@@ -164,9 +187,12 @@ func (d *dockerAPI) statsTotals(ctx context.Context, id string) (dockerStatsTota
 	if err := d.getJSON(ctx, "/containers/"+url.PathEscape(id)+"/stats?stream=false&one-shot=true", &raw); err != nil {
 		return dockerStatsTotals{}, err
 	}
+	rx, tx := raw.netTotals()
+	read, write := raw.diskTotals()
 	return dockerStatsTotals{
 		CPU: raw.CPU.Usage.Total, System: raw.CPU.System, Online: raw.CPU.Online,
 		MemUsed: raw.memoryUsed(), MemLimit: raw.Mem.Limit,
+		NetRx: rx, NetTx: tx, DiskRead: read, DiskWrite: write,
 	}, nil
 }
 
