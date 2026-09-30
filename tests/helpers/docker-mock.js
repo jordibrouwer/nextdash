@@ -68,6 +68,12 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     if (path === '/updates/check') return json({ checkedAt: Date.now(), images: {} });
     // Disk: what images and volumes take, pruning, and one volume at a time.
     if (path === '/disk') return json(state.disk || mockDisk());
+    if (path === '/binds/measure' && req.method() === 'POST') {
+      if (!state.control) return json({ reason: 'docker-control-off' }, 403);
+      const { source } = JSON.parse(req.postData() || '{}');
+      state.measured = [...(state.measured || []), source];
+      return json({ ok: true, source, bytes: 3 * 1073741824, at: Date.now() });
+    }
     if (path.startsWith('/prune/') && req.method() === 'POST') {
       if (!state.control) return json({ reason: 'docker-control-off' }, 403);
       return json({ ok: true, kind: path.slice('/prune/'.length), removed: 1, reclaimed: 398 * 1048576 });

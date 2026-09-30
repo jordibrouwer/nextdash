@@ -650,7 +650,8 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	usageEnabled := h.store.GetSettings().DockerStatsHistory
 	now := time.Now()
 	for _, c := range list {
-		if hidden[c.name()] {
+		// Hidden in Config, or a size measurement's throwaway container.
+		if hidden[c.name()] || c.Labels[dockerBindMeasureLabel] == "1" {
 			continue
 		}
 		v := toDockerView(c, self)

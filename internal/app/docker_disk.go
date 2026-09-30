@@ -88,6 +88,8 @@ type dockerDiskVolume struct {
 type dockerDiskBind struct {
 	Source string             `json:"source"`
 	UsedBy []dockerDiskBindAt `json:"usedBy"`
+	// Size is the last measurement asked for (docker_bind_sizes.go), if any.
+	Size *dockerBindSize `json:"size,omitempty"`
 }
 
 type dockerDiskBindAt struct {
@@ -193,7 +195,11 @@ func buildDockerDiskView(df dockerDfResponse, list []dockerContainerSummary) doc
 	v := dockerDiskView{Images: []dockerDiskImage{}, Volumes: []dockerDiskVolume{}, Binds: []dockerDiskBind{}}
 	for src, at := range bindUsers {
 		sort.Slice(at, func(i, j int) bool { return at[i].Container < at[j].Container })
-		v.Binds = append(v.Binds, dockerDiskBind{Source: src, UsedBy: at})
+		bind := dockerDiskBind{Source: src, UsedBy: at}
+		if size, ok := dockerBindSizeOf(src); ok {
+			bind.Size = &size
+		}
+		v.Binds = append(v.Binds, bind)
 	}
 	sort.Slice(v.Binds, func(i, j int) bool { return v.Binds[i].Source < v.Binds[j].Source })
 	for _, im := range df.Images {

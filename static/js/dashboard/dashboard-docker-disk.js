@@ -231,17 +231,63 @@
         bindsTable(binds) {
             const { wrap, tbody } = this.table(this.t('dockerDiskBinds', 'Bind mounts'), [
                 [this.t('dockerDiskColFolder', 'Host folder')], [this.t('dockerDiskColUsedBy', 'Used by')],
+                [this.t('dockerDiskColSize', 'Size'), 'docker-disk-num'], [''],
             ]);
             wrap.querySelector('.docker-disk-title').after(el('p', 'docker-disk-note',
-                this.t('dockerDiskBindsNote', 'Folders on the host that containers mount. Docker does not measure them.')));
+                this.t('dockerDiskBindsNote', 'Folders on the host that containers mount. Docker does not measure them; Measure counts one.')));
             binds.forEach((b) => {
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-docker-disk-bind', b.source);
                 const used = (b.usedBy || []).map((u) => `${u.container} → ${u.destination}`).join(', ');
-                tr.append(el('td', 'docker-disk-name', b.source), el('td', '', used));
+                const size = el('td', 'docker-disk-num', b.size ? formatBytes(b.size.bytes) : '—');
+                size.setAttribute('data-docker-bind-size', '');
+                if (b.size) {
+                    size.title = this.t('dockerDiskMeasuredAt', 'Measured {when}', { when: new Date(b.size.at).toLocaleString() });
+                }
+                const action = el('td', 'docker-disk-action');
+                if (this.control) {
+                    const btn = el('button', 'docker-action-btn', b.size
+                        ? this.t('dockerDiskMeasureAgain', 'Measure again')
+                        : this.t('dockerDiskMeasure', 'Measure'));
+                    btn.type = 'button';
+                    btn.setAttribute('data-docker-bind-measure', b.source);
+                    btn.title = this.t('dockerDiskMeasureHint', 'A short-lived container mounts this folder read-only and counts it');
+                    btn.addEventListener('click', () => void this.measureBind(b, btn, size));
+                    action.appendChild(btn);
+                }
+                tr.append(el('td', 'docker-disk-name', b.source), el('td', '', used), size, action);
                 tbody.appendChild(tr);
             });
             return wrap;
+        }
+
+        /** One folder measured by the server; its row shows the size when it is back. */
+        async measureBind(bind, btn, cell) {
+            btn.disabled = true;
+            const label = btn.textContent;
+            btn.textContent = this.t('dockerDiskMeasuring', 'Measuring…');
+            let res = null;
+            let body = null;
+            try {
+                res = await window.nextDashFetch('/api/docker/binds/measure', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: bind.source }),
+                });
+                body = await res.json().catch(() => null);
+            } catch {
+                res = null;
+            }
+            btn.disabled = false;
+            if (!res?.ok) {
+                btn.textContent = label;
+                this.notify(body?.reason === 'busy'
+                    ? this.t('dockerDiskMeasureBusy', 'Another folder is being measured. Try again when it is done.')
+                    : (body?.message || this.t('dockerDiskMeasureFailed', 'The folder could not be measured.')), 'error');
+                return;
+            }
+            bind.size = { bytes: body.bytes, at: body.at };
+            cell.textContent = formatBytes(body.bytes);
+            cell.title = this.t('dockerDiskMeasuredAt', 'Measured {when}', { when: new Date(body.at).toLocaleString() });
+            btn.textContent = this.t('dockerDiskMeasureAgain', 'Measure again');
         }
 
         /* ── Changing the disk ───────────────────────────────────────────── */

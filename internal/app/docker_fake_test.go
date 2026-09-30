@@ -707,6 +707,7 @@ func newDockerTestRouter(h *Handlers) http.Handler {
 	r.HandleFunc("/api/docker/updates/choice", h.DockerUpdateChoiceHandler).Methods("POST")
 	r.HandleFunc("/api/docker/disk", h.DockerDiskHandler).Methods("GET")
 	r.HandleFunc("/api/docker/prune/{kind}", h.DockerPruneHandler).Methods("POST")
+	r.HandleFunc("/api/docker/binds/measure", h.DockerBindMeasureHandler).Methods("POST")
 	r.HandleFunc("/api/docker/volumes/{name}", h.DockerVolumeRemoveHandler).Methods("DELETE")
 	r.HandleFunc("/api/docker/containers/{id}/{action}", h.DockerActionHandler).Methods("POST")
 	return r

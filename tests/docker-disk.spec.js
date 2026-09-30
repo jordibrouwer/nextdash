@@ -12,14 +12,14 @@ async function openDisk(page, opts) {
 
 test.describe('docker disk', () => {
   // Unraid keeps container data in host folders, not volumes: they are listed
-  // with who mounts them where, and have no size and no remove.
-  test('bind mounts are listed by host folder, without a size or a remove', async ({ page }) => {
+  // with who mounts them where, and have no remove -- only Measure.
+  test('bind mounts are listed by host folder, without a remove', async ({ page }) => {
     await openDisk(page);
     const media = page.locator('[data-docker-disk-bind="/mnt/user/media"]');
     await expect(media).toContainText('jellyfin → /media');
     await expect(media).toContainText('sonarr → /tv');
     await expect(page.locator('[data-docker-disk-bind]')).toHaveCount(2);
-    await expect(page.locator('[data-docker-disk-bind] button')).toHaveCount(0);
+    await expect(page.locator('[data-docker-disk-bind] button:not([data-docker-bind-measure])')).toHaveCount(0);
   });
 
   test('no bind mounts, no section', async ({ page }) => {
@@ -118,4 +118,24 @@ test('Remove stopped names the containers, asks, then removes them', async ({ pa
   await tile.locator('[data-docker-prune="containers-stopped"]').click();
   await dialog.getByRole('button', { name: /^remove$/i }).click();
   await expect.poll(() => state.calls).toContain('POST /prune/containers-stopped');
+});
+
+// A bind mount's folder is measured on request, one at a time, and the row
+// shows the size; without actions there is no button.
+test('Measure counts a bind mount folder and shows its size', async ({ page }) => {
+  const state = await mockDocker(page);
+  await page.goto('/#docker/~disk');
+  const row = page.locator('[data-docker-disk-bind="/mnt/user/media"]');
+  await expect(row.locator('[data-docker-bind-size]')).toHaveText('—');
+  await row.locator('[data-docker-bind-measure]').click();
+  await expect(row.locator('[data-docker-bind-size]')).toHaveText('3.0 GiB');
+  await expect(row.locator('[data-docker-bind-measure]')).toHaveText('Measure again');
+  expect(state.measured).toEqual(['/mnt/user/media']);
+});
+
+test('read-only: no Measure button', async ({ page }) => {
+  await mockDocker(page, { control: false });
+  await page.goto('/#docker/~disk');
+  await expect(page.locator('[data-docker-disk-bind]').first()).toBeVisible();
+  await expect(page.locator('[data-docker-bind-measure]')).toHaveCount(0);
 });

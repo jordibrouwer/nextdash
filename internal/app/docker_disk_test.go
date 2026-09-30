@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"net/http/httptest"
 	"net/url"
@@ -245,5 +246,50 @@ func TestDockerPruneStoppedContainers(t *testing.T) {
 	}
 	if f.called("DELETE /containers/"+strings.Repeat("a", 64)) || f.called("DELETE /containers/"+strings.Repeat("d", 64)) {
 		t.Fatalf("a running or hidden container went: %v", f.calls)
+	}
+}
+
+// Only a folder a container mounts can be measured; the size is kept and the
+// Disk view carries it.
+func TestDockerBindMeasure(t *testing.T) {
+	_, h := diskFixture(t) // radarr mounts /mnt
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	measured := []string{}
+	dockerBindMeasureRun = func(_ context.Context, _ *dockerAPI, source string) (int64, error) {
+		measured = append(measured, source)
+		return 42 << 20, nil
+	}
+	t.Cleanup(func() { dockerBindMeasureRun = measureDockerBind })
+	router := newDockerTestRouter(h)
+	post := func(source string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/api/docker/binds/measure", strings.NewReader(`{"source":"`+source+`"}`))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(rec, req)
+		return rec
+	}
+	if rec := post("/etc"); rec.Code != 400 || len(measured) != 0 {
+		t.Fatalf("a folder nothing mounts: %d %v", rec.Code, measured)
+	}
+	if rec := post("/mnt"); rec.Code != 200 || !strings.Contains(rec.Body.String(), `"bytes":44040192`) {
+		t.Fatalf("measure: %d %s", rec.Code, rec.Body)
+	}
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/disk", nil))
+	var d dockerDiskView
+	if err := json.NewDecoder(rec.Body).Decode(&d); err != nil {
+		t.Fatal(err)
+	}
+	if len(d.Binds) != 1 || d.Binds[0].Size == nil || d.Binds[0].Size.Bytes != 42<<20 {
+		t.Fatalf("binds = %+v", d.Binds)
+	}
+}
+
+func TestParseDuBytes(t *testing.T) {
+	if n, err := parseDuBytes([]string{"du: cannot read '/measure/x': Permission denied", "123456\t/measure"}); err != nil || n != 123456 {
+		t.Fatalf("%d %v", n, err)
+	}
+	if _, err := parseDuBytes([]string{"sh: du: not found"}); err == nil {
+		t.Fatal("no number is no size")
 	}
 }
