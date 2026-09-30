@@ -305,6 +305,7 @@ The Containers tour catches up with v1.15.6 and is shown once more, the Bookmark
 - **docs — MANUAL §11.4 describes the selection bar.** The tour's new texts are in all six languages.
 - **docs — MANUAL brought up to date with the fixes**: §12.2 (the same address on two pages), §12.5 (maintenance and alerts), §13 (import stops at a full inbox), §14.5 (automatic updates of stopped containers, and after a rollback), §23.2 (what the write token keeps back).
 - **docs — MANUAL §19.3 describes `whsec_` webhook keys.** The five new messages from the fixes are in all six languages.
+- **docs — `static/data/whats-new/v1.15.7.json` and its index entry**, leading the What's new window; `whats-new-stub.js` moves `DASHBOARD_RELEASE` to v1.15.7 and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v311`. Config → Overview names the Bookmarks selection bar (`overview-features.json`, `since: "v1.15.7"`, in all six languages). `go generate` refreshed `asset_hashes_gen.go`.
 
 ### Tests
 

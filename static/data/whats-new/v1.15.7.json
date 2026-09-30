@@ -1,0 +1,86 @@
+{
+  "tag": "v1.15.7",
+  "date": "30 September 2026",
+  "releasedAt": "2026-09-30",
+  "modalLead": "The <strong>Bookmarks</strong> view gets a selection bar, the <strong>Containers</strong> tour catches up, and more than a hundred fixes — several of them kept bookmarks, widgets and settings from getting lost.",
+  "sections": [
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A selection bar.</strong> Tick rows and a bar above the list offers Edit, Re-check, Mute alerts, Export CSV and Delete. Ticking no longer opens the side panel."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Moving a bookmark to another page keeps its category's name</strong>, and an exported CSV shows category names."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Moving several bookmarks to another page no longer loses some of them.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Undo puts bookmarks back on their own page</strong>, also after you switched to another one."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A renamed category and a moved widget stay the way you left them</strong>, and bookmarks without a category are at the end of the page again."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Delete in the selection bar deletes again.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Importing into a nearly full inbox no longer removes your older links</strong>, and Undo after Keep brings the link back as it was."
+        }
+      ]
+    },
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The tour covers the new features</strong> and runs once more: columns, a web UI's bookmark, updates at night."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Automatic updates</strong> no longer roll back a container that was stopped, and start the old version after a rollback."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Leaving the page during Retest all no longer marks every bookmark broken.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No night-time \"back online\" after a maintenance window</strong>, and one alert per outage."
+        }
+      ]
+    },
+    {
+      "title": "Privacy",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>With a write token set, your stored keys and the server log stay out of reach of other sites.</strong>"
+        }
+      ]
+    }
+  ]
+}
