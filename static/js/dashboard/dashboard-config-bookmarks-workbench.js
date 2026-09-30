@@ -739,6 +739,7 @@
             const b = this.findBookmarkByKey(key);
             void this.fillBmDetailsCopies?.(panel, b);
             void this.fillBmDetailsPreview?.(panel, b);
+            this.fillBmDetailsContainers?.(panel, b);
         }
         if (mode === 'bulk') void this.fillWorkbenchBulkSuggestions(panel);
         this.syncWorkbenchToolbar();

@@ -191,7 +191,9 @@
 }
 
 .docker-webui {
-    display: block;
+    /* Inline, so a linked bookmark's mark stays on its line. */
+    display: inline-block;
+    vertical-align: bottom;
     max-width: clamp(6rem, 16vw, 14rem);
     overflow: hidden;
     white-space: nowrap;
@@ -1438,4 +1440,67 @@
 /* Restarts: a 0 is the usual answer, so it stays quiet. */
 .docker-cell--restarts.is-quiet {
     color: var(--text-secondary);
+}
+
+/* A web UI's bookmark: its shape after the link, filled in its health
+   colour -- green its checks pass, red broken or down, an outline when
+   nothing checks it. After the link, so the addresses line up. */
+.docker-bm-dot {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.5em;
+    padding: 0;
+    vertical-align: -0.15em;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.docker-bm-dot svg {
+    width: 0.7em;
+    height: 0.95em;
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+}
+
+.docker-bm-dot.is-good { color: var(--accent-success, #3c6); }
+.docker-bm-dot.is-bad { color: var(--accent-error, #c55); }
+.docker-bm-dot.is-off svg { fill: none; }
+.docker-bm-dot:hover svg,
+.docker-bm-dot:focus-visible svg { filter: brightness(1.25); }
+
+/* The side panel's Bookmark section: the linked one, then the picker. */
+.docker-bm-card {
+    display: grid;
+    gap: var(--space-1, 0.25rem);
+    justify-items: start;
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.docker-bm-card-url {
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.72rem);
+    overflow-wrap: anywhere;
+}
+
+.docker-bm-card-meta { font-size: var(--text-xs, 0.72rem); color: var(--text-secondary); }
+.docker-bm-card-meta.is-good { color: var(--accent-success, #3c6); }
+.docker-bm-card-meta.is-bad { color: var(--accent-error, #c55); }
+
+/* The picker fits the section, whatever the longest bookmark is called. */
+.docker-bm-link {
+    display: grid;
+    gap: var(--space-1, 0.25rem);
+    min-width: 0;
+}
+
+.docker-bm-link select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    text-overflow: ellipsis;
 }

@@ -60,6 +60,30 @@
         },
 
         /** Address: where it points, and what can be done with the link itself. */
+        /**
+         * "Runs in": the containers whose web UI this bookmark is, as the
+         * Containers view matches them -- filled once the container list is in,
+         * a link each to that container's side panel.
+         */
+        fillBmDetailsContainers(root, b) {
+            const index = global.DockerSearchIndex;
+            const row = root?.querySelector?.('[data-bm-containers]');
+            if (!row || !index?.enabled?.()) return;
+            void index.refresh().then(() => {
+                const names = index.containersFor(b, this.dash.allBookmarks || []).map((c) => c.name);
+                const host = row.querySelector('[data-bm-containers-list]');
+                if (!names.length || !host) return;
+                host.replaceChildren(...names.flatMap((name, i) => {
+                    const a = document.createElement('a');
+                    a.href = `#docker/${encodeURIComponent(name)}`;
+                    a.setAttribute('data-bm-container', name);
+                    a.textContent = name;
+                    return i ? [document.createTextNode(', '), a] : [a];
+                }));
+                row.hidden = false;
+            });
+        },
+
         renderBmDetailsAddress(b) {
             const esc = (v) => this.dash.escapeHtml(v);
             const t = (key, fallback) => this.t(`config.${key}`, fallback);
@@ -81,6 +105,7 @@
                 ${kv(t('bmDetailsHost', 'Host'), home ? `${host} · ${t('bmDetailsHome', 'home network')}` : host)}
                 ${kv(t('bmDetailsSecure', 'Secure'), secure ? t('bmDetailsYesHttps', 'yes, https') : t('bmDetailsNoHttp', 'no, plain http'), secure ? '' : 'is-warn')}
                 ${kv(t('bmDetailsAlsoOn', 'Also on'), elsewhere.length ? elsewhere.join(', ') : '—')}
+                <div class="config-bm-usage-kv" data-bm-containers hidden><span>${esc(t('bmDetailsContainer', 'Runs in'))}</span><span data-bm-containers-list></span></div>
                 <div class="config-bm-details-buttons">
                     ${button('open-new-tab', t('bmDetailsOpenNewTab', 'Open in new tab'))}
                     ${button('copy-url', this.t('dashboard.contextMenuCopyUrl', 'Copy URL'))}

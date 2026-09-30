@@ -11,7 +11,7 @@
 
 const DOCKER_SECTIONS_KEY = 'nextdash.docker.sections';
 const DOCKER_SECTIONS_DEFAULT = ['overview'];
-const DOCKER_SECTION_KEYS = ['overview', 'health', 'updates', 'timeline', 'network', 'custom', 'volumes', 'resources', 'env', 'logs', 'changes'];
+const DOCKER_SECTION_KEYS = ['overview', 'health', 'updates', 'timeline', 'network', 'custom', 'bookmark', 'volumes', 'resources', 'env', 'logs', 'changes'];
 
 /** fetch() that never throws and answers null on anything but a 2xx JSON body. */
 async function dockerDrawerFetchJSON(url, init) {
@@ -277,6 +277,7 @@ class DockerDrawer {
                 acc('timeline', this.t('dockerSectionTimeline', 'Timeline')),
                 acc('network', this.t('dockerSectionNetwork', 'Network')),
                 acc('custom', this.t('dockerSectionCustom', 'Custom')),
+                acc('bookmark', this.t('dockerSectionBookmark', 'Bookmark')),
                 acc('volumes', this.t('dockerSectionVolumes', 'Volumes')),
                 acc('env', this.t('dockerSectionEnv', 'Environment')),
             ])}`)}
@@ -391,6 +392,7 @@ class DockerDrawer {
         this._renderOverview(els.sections.overview, detail);
         this._renderNetwork(els.sections.network, detail);
         this._renderCustom(els.sections.custom, detail);
+        this._renderBookmark(els.sections.bookmark, detail);
         this._renderVolumes(els.sections.volumes, detail);
         this._renderEnv(els.sections.env, detail);
         this._showHealth(Boolean(detail?.health));
@@ -532,6 +534,117 @@ class DockerDrawer {
             row.appendChild(reset);
         }
         body.append(label, hint, error, row);
+    }
+
+    /**
+     * Bookmark: the one this container's web UI is saved as -- its name,
+     * address, what its checks say and how it was found -- with a way to
+     * open it, and the choice of another or none.
+     */
+    _renderBookmark(body, detail) {
+        if (!body || !detail) return;
+        body.replaceChildren();
+        const index = window.DockerSearchIndex;
+        const d = this.view.dash;
+        const summary = (this.view.containers || []).find((c) => c.name === detail.name) || detail;
+        const linked = index?.bookmarkFor?.(summary, d?.allBookmarks || []);
+        const card = document.createElement('div');
+        card.className = 'docker-bm-card';
+        card.setAttribute('data-docker-bm-card', '');
+        if (linked) {
+            const b = linked.bookmark;
+            const state = index.bookmarkHealth(b);
+            const name = document.createElement('strong');
+            name.className = 'docker-bm-card-name';
+            name.textContent = b.name || b.url;
+            const url = document.createElement('span');
+            url.className = 'docker-bm-card-url';
+            url.textContent = b.url;
+            const meta = document.createElement('span');
+            meta.className = `docker-bm-card-meta is-${state}`;
+            meta.setAttribute('data-docker-bm-state', state);
+            meta.textContent = `${this.view.bookmarkWords().state[state]} · ${this.view.bookmarkWords().via[linked.via] || ''}`;
+            const openBtn = document.createElement('button');
+            openBtn.type = 'button';
+            openBtn.className = 'config-btn config-btn--small';
+            openBtn.setAttribute('data-docker-bm-open', '');
+            openBtn.textContent = this.t('dockerBookmarkOpen', 'Open in Bookmarks');
+            openBtn.addEventListener('click', () => void d?.config?.openLibraryOnBookmark?.(b.pageId, b.url, { tab: 'details', focusRow: true }));
+            card.append(name, url, meta, openBtn);
+        } else {
+            const none = document.createElement('p');
+            none.className = 'docker-webui-hint';
+            none.textContent = this.t('dockerBookmarkNoneFound', 'No bookmark is linked. Pick one below, or save the web UI as a bookmark.');
+            card.appendChild(none);
+        }
+        body.append(card, this._bookmarkPicker(detail));
+    }
+
+    /**
+     * Linked bookmark: the one the table's dot reports on. Automatic names
+     * what the view found (or that it found none); No bookmark stops it
+     * guessing; any bookmark can be picked by hand.
+     */
+    _bookmarkPicker(detail) {
+        const d = this.view.dash;
+        const index = window.DockerSearchIndex;
+        const wrap = document.createElement('label');
+        wrap.className = 'docker-field-label docker-bm-link';
+        wrap.textContent = this.t('dockerBookmarkLabel', 'Linked bookmark');
+        const select = document.createElement('select');
+        select.className = 'config-select';
+        select.setAttribute('data-docker-bm-link', '');
+        const summary = (this.view.containers || []).find((c) => c.name === detail.name) || detail;
+        const bookmarks = (d?.allBookmarks || []).filter((b) => b?.url);
+        const links = d?.settings?.dockerBookmarkLinks || {};
+        const auto = index?.bookmarkFor?.(summary, bookmarks, { ...links, [detail.name]: undefined });
+        const option = (value, text) => {
+            const o = document.createElement('option');
+            o.value = value;
+            o.textContent = text;
+            return o;
+        };
+        select.append(
+            option('', auto
+                ? this.t('dockerBookmarkAuto', 'Automatic: {name}', { name: auto.bookmark.name || auto.bookmark.url })
+                : this.t('dockerBookmarkAutoNone', 'Automatic: none found')),
+            option('-', this.t('dockerBookmarkNone', 'No bookmark')),
+        );
+        const seen = new Set();
+        bookmarks.slice().sort((a, b) => String(a.name || a.url).localeCompare(String(b.name || b.url))).forEach((b) => {
+            const key = index.bookmarkKey(b);
+            if (seen.has(key)) return;
+            seen.add(key);
+            // Name and host: the whole address made the list as wide as its
+            // longest link. The title keeps the address.
+            let host = '';
+            try { host = new URL(b.url).host; } catch { host = b.url; }
+            const o = option(key, b.name && b.name !== host ? `${b.name} · ${host}` : host);
+            o.title = b.url;
+            select.append(o);
+        });
+        select.value = links[detail.name] && [...select.options].some((o) => o.value === links[detail.name]) ? links[detail.name] : '';
+        select.addEventListener('change', () => void this._saveBookmarkLink(detail.name, select.value));
+        wrap.appendChild(select);
+        return wrap;
+    }
+
+    async _saveBookmarkLink(name, value) {
+        const d = this.view.dash;
+        if (!name || !d) return;
+        const all = { ...(d.settings?.dockerBookmarkLinks || {}) };
+        if (value) all[name] = value;
+        else delete all[name];
+        const before = d.settings.dockerBookmarkLinks;
+        d.settings.dockerBookmarkLinks = all;
+        try {
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
+        } catch {
+            d.settings.dockerBookmarkLinks = before;
+            d.showNotification?.(this.t('dockerBookmarkSaveFailed', 'Could not save the link.'), 'error');
+            return;
+        }
+        this.view.render?.();
     }
 
     /** The same rule the server keeps: http or https, with [IP] allowed for the host. */

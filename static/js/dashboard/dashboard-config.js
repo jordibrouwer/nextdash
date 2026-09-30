@@ -5151,7 +5151,13 @@ class DashboardConfig {
      * in Health"): the view with nothing filtered away, the row under the
      * cursor and its panel open on Health.
      */
-    async openLibraryOnBookmark(pageId, url) {
+    /**
+     * The Bookmarks view at one bookmark: filters cleared, its row the cursor.
+     * By default its side panel opens on Health (the context menu's "Show in
+     * Bookmarks"); `tab` names another, and `focusRow` puts the keyboard on
+     * the row, as when the Containers view hands a web UI's bookmark over.
+     */
+    async openLibraryOnBookmark(pageId, url, { tab = 'health', focusRow = false } = {}) {
         history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}#bookmarks`);
         await this.openLibraryView();
         const wanted = String(url || '').trim();
@@ -5161,7 +5167,17 @@ class DashboardConfig {
         if (this.bookmarksFiltersActive()) this.clearBookmarkFilters();
         this._bmKeyboardKey = this.bookmarkKey(b);
         this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
-        this.openBmHealthPanelSection();
+        if (tab === 'health') {
+            this.openBmHealthPanelSection();
+        } else {
+            this._libDrawerWanted = true;
+            this.repaintWorkbenchPanel?.();
+            this.setWorkbenchPanelTab?.(tab);
+        }
+        if (focusRow) {
+            const row = document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(this._bmKeyboardKey)}"]`);
+            row?.focus({ preventScroll: true });
+        }
         return true;
     }
 

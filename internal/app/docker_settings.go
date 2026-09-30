@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -57,6 +58,7 @@ func normalizeDockerSettings(s *Settings) {
 	s.DockerHiddenContainers = normalizeDockerNameList(s.DockerHiddenContainers)
 	s.DockerNotifyMuted = normalizeDockerNameList(s.DockerNotifyMuted)
 	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
+	s.DockerBookmarkLinks = normalizeDockerBookmarkLinks(s.DockerBookmarkLinks)
 	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)
 }
 
@@ -102,6 +104,37 @@ func normalizeDockerHostAddress(raw string) string {
 var dockerHostName = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$`)
 
 const dockerMaxWebUILen = 2048
+
+// normalizeDockerBookmarkLinks keeps "-" (no bookmark) and "<pageId>::<url>"
+// with a web address, per container name.
+func normalizeDockerBookmarkLinks(in map[string]string) map[string]string {
+	out := map[string]string{}
+	for rawName, rawLink := range in {
+		name := strings.TrimPrefix(strings.TrimSpace(rawName), "/")
+		link := strings.TrimSpace(rawLink)
+		if name == "" || len(name) > dockerMaxHiddenNameLen || link == "" || len(link) > dockerMaxWebUILen {
+			continue
+		}
+		if link != "-" {
+			page, address, ok := strings.Cut(link, "::")
+			if _, err := strconv.Atoi(page); !ok || err != nil {
+				continue
+			}
+			parsed, err := url.Parse(address)
+			if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+				continue
+			}
+		}
+		out[name] = link
+		if len(out) == dockerMaxHidden {
+			break
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
 
 // normalizeDockerWebUIs keeps only web addresses. [IP] is Unraid's stand-in
 // for the host the dashboard was opened on, so it is allowed where a host goes.

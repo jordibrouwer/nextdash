@@ -469,6 +469,9 @@ class DashboardDocker {
             ]);
             this.containers = Array.isArray(containersBody?.containers) ? containersBody.containers : [];
             this.usageEnabled = Boolean(containersBody?.usageEnabled);
+            // Every page's bookmarks, for the dot beside a web UI: the
+            // dashboard loads only its own page's unless a setting needs more.
+            if (!this.dash.allBookmarks?.length) await this.dash.deferredLoadAllBookmarks?.();
             this._checkedAt = updatesBody?.checkedAt || null;
         } else {
             this.containers = [];
@@ -1578,6 +1581,50 @@ class DashboardDocker {
         });
     }
 
+    /**
+     * The bookmark of this web UI, as a dot in its health colour: green its
+     * checks pass, red broken or down, grey not checked. A click opens the
+     * bookmark in the Bookmarks view.
+     */
+    bookmarkDot(linked) {
+        const b = linked.bookmark;
+        const state = window.DockerSearchIndex.bookmarkHealth(b);
+        const words = this.bookmarkWords();
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = `docker-bm-dot is-${state}`;
+        dot.setAttribute('data-docker-bm-dot', state);
+        // A bookmark's own shape, filled in its health colour.
+        dot.innerHTML = '<svg viewBox="0 0 12 16" aria-hidden="true"><path d="M1.5 1.5h9v13L6 11.2 1.5 14.5z"/></svg>';
+        const label = this.t('dashboard.dockerBookmarkDot', 'Bookmark {name} · {state} · {via}', {
+            name: b.name || b.url, state: words.state[state], via: words.via[linked.via] || '',
+        });
+        dot.title = label;
+        dot.setAttribute('aria-label', label);
+        dot.addEventListener('click', (e) => {
+            e.stopPropagation();
+            void this.dash.config?.openLibraryOnBookmark?.(b.pageId, b.url, { tab: 'details', focusRow: true });
+        });
+        return dot;
+    }
+
+    /** What a linked bookmark's state and match are called, row and side panel alike. */
+    bookmarkWords() {
+        return {
+            state: {
+                good: this.t('dashboard.dockerBookmarkGood', 'its checks pass'),
+                bad: this.t('dashboard.dockerBookmarkBad', 'broken or down'),
+                off: this.t('dashboard.dockerBookmarkOff', 'not checked'),
+            },
+            via: {
+                manual: this.t('dashboard.dockerBookmarkViaManual', 'set by you'),
+                port: this.t('dashboard.dockerBookmarkViaPort', 'same port'),
+                subdomain: this.t('dashboard.dockerBookmarkViaSubdomain', 'via subdomain'),
+                title: this.t('dashboard.dockerBookmarkViaTitle', 'same name'),
+            },
+        };
+    }
+
     /** A published port as a link to it on this host. */
     portLink(port, text) {
         const a = document.createElement('a');
@@ -1776,6 +1823,9 @@ class DashboardDocker {
             a.textContent = webui.label;
             webuiCell.appendChild(a);
         }
+        const linked = window.DockerSearchIndex?.bookmarkFor?.(c, this.dash.allBookmarks);
+        // After the link, so the addresses keep one left edge down the column.
+        if (linked) webuiCell.appendChild(this.bookmarkDot(linked));
         if (this.showsColumn('webui')) tr.appendChild(webuiCell);
 
         const portsCell = document.createElement('td');
@@ -1804,7 +1854,7 @@ class DashboardDocker {
 
         tr.addEventListener('click', (e) => {
             // A port link and the tick handle their own click.
-            if (e.target.closest('a, .docker-tick, .docker-ports-more, .docker-ports-pop')) return;
+            if (e.target.closest('a, .docker-tick, .docker-ports-more, .docker-ports-pop, .docker-bm-dot')) return;
             if (e.metaKey || e.ctrlKey || e.shiftKey) {
                 this.toggleMulti(c.name, { range: e.shiftKey });
                 return;

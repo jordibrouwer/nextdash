@@ -127,11 +127,104 @@
             && p.ip !== '127.0.0.1' && p.ip !== '::1') || null;
     }
 
+    /* ── A container's bookmark ─────────────────────────────────────── */
+
+    /** "Sonarr-4K", "sonarr_4k" and "sonarr 4k" are one name. */
+    function looseName(value) {
+        return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function parsedUrl(raw) {
+        try {
+            const u = new URL(String(raw || '').trim());
+            if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+            return { host: u.hostname.toLowerCase().replace(/^\[|\]$/g, ''), port: u.port || (u.protocol === 'https:' ? '443' : '80') };
+        } catch {
+            return null;
+        }
+    }
+
+    function bookmarkKey(b) {
+        return `${b.pageId}::${String(b.url || '').trim()}`;
+    }
+
+    /** One bookmark per address: the same link on two pages is one candidate. */
+    function oneAddress(list) {
+        const byUrl = new Map();
+        list.forEach((b) => { if (!byUrl.has(String(b.url).trim())) byUrl.set(String(b.url).trim(), b); });
+        return [...byUrl.values()];
+    }
+
+    /**
+     * The bookmark of a container's web UI, and why: set by hand in its side
+     * panel ("manual"), else the same port on this server ("port"), else a
+     * subdomain named after it ("subdomain", as a reverse proxy gives), else a
+     * bookmark titled after it ("title"). The first step that finds exactly
+     * one address wins; two at one step is no guess at all.
+     */
+    function bookmarkFor(container, bookmarks, links) {
+        if (!container) return null;
+        const all = (bookmarks || []).filter((b) => b && b.url);
+        const manual = (links || window.dashboardInstance?.settings?.dockerBookmarkLinks || {})[container.name];
+        if (manual === '-') return null;
+        if (manual) {
+            const hit = all.find((b) => bookmarkKey(b) === manual);
+            if (hit) return { bookmark: hit, via: 'manual' };
+        }
+        // This server under any name it goes by here, and the container's
+        // own LAN address when it has one.
+        const hosts = new Set([hostAddress(), window.location.hostname, container.lanIP, 'localhost', '127.0.0.1']
+            .filter(Boolean).map((h) => String(h).toLowerCase().replace(/^\[|\]$/g, '')));
+        const ports = new Set();
+        const web = parsedUrl(webuiHref(container.webui, container));
+        if (web) {
+            hosts.add(web.host);
+            ports.add(web.port);
+        }
+        (container.ports || []).forEach((p) => { if (p?.public && p.type !== 'udp') ports.add(String(p.public)); });
+        const name = looseName(container.name);
+        const steps = [
+            ['port', (u) => ports.has(u.port) && hosts.has(u.host)],
+            ['subdomain', (u) => name && u.host.includes('.') && looseName(u.host.split('.')[0]) === name],
+            ['title', (u, b) => name && looseName(b.name) === name],
+        ];
+        for (const [via, test] of steps) {
+            const hits = oneAddress(all.filter((b) => {
+                const u = parsedUrl(b.url);
+                return u && test(u, b);
+            }));
+            if (hits.length === 1) return { bookmark: hits[0], via };
+            if (hits.length > 1) return null;
+        }
+        return null;
+    }
+
+    /** The containers whose bookmark is this one, from the cached list. */
+    function containersFor(bookmark, bookmarks) {
+        if (!bookmark?.url) return [];
+        const url = String(bookmark.url).trim();
+        return list.filter((c) => String(bookmarkFor(c, bookmarks)?.bookmark?.url || '').trim() === url);
+    }
+
+    /**
+     * What the bookmark's checks last said: 'good', 'bad' (broken, or a
+     * monitor that finds it down) or 'off' (not checked). Health's own facts,
+     * without loading the Bookmarks view.
+     */
+    function bookmarkHealth(bookmark) {
+        if (!bookmark) return 'off';
+        const checked = window.CheckMode?.of ? window.CheckMode.of(bookmark) !== 'off' : bookmark.checkStatus === true;
+        if (!checked) return 'off';
+        const facts = window.HealthFacts?.get?.(bookmark.url);
+        if (facts && (facts.brokenSince > 0 || facts.downSince > 0)) return 'bad';
+        return 'good';
+    }
+
     /** The last status fetched, without waiting: for the synchronous palette. */
     function statusNow() { return statusValue; }
 
     window.DockerSearchIndex = {
         status, statusNow, refresh, containers: () => (enabled() ? list : []), match, matches, invalidate, allowedActions, enabled,
-        hostAddress, webuiHref, portHref, firstWebPort,
+        hostAddress, webuiHref, portHref, firstWebPort, bookmarkFor, containersFor, bookmarkHealth, bookmarkKey,
     };
 })();

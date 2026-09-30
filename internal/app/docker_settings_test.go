@@ -152,3 +152,20 @@ func TestDockerViewKeyLegendChoices(t *testing.T) {
 		}
 	}
 }
+
+// A container's bookmark: "-" for none, or a page and a web address.
+func TestNormalizeDockerBookmarkLinks(t *testing.T) {
+	got := normalizeDockerBookmarkLinks(map[string]string{
+		"sonarr": " 2::https://sonarr.home.lan ", "radarr": "-", "/plex": "1::http://tower:32400/web",
+		"bad1": "https://no-page.lan", "bad2": "x::https://a.lan", "bad3": "1::javascript:alert(1)", "": "1::https://a.lan",
+	})
+	want := map[string]string{"sonarr": "2::https://sonarr.home.lan", "radarr": "-", "plex": "1::http://tower:32400/web"}
+	if len(got) != len(want) {
+		t.Fatalf("got %v", got)
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Fatalf("%s = %q, want %q (all %v)", k, got[k], v, got)
+		}
+	}
+}
