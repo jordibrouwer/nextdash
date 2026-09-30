@@ -252,6 +252,7 @@ The Containers tour catches up with v1.15.6 and is shown once more, the Bookmark
 - **fix — undo after a page switch put bookmarks on the wrong page.** The single and multi-select delete undo, the category-move undo and the category-delete undo restore where the rows came from; a failed multi-select undo no longer empties their trash entries.
 - **fix — a failed blocks fetch on a page switch let an edit write one page's widgets over another's.** The widgets on screen still stay, but a widget edit or a block move on the new page is refused until its own blocks have loaded.
 - **fix — saves that were dropped.** A category rename after a same-page reload, a block move within a second of leaving the page or closing the tab, and a second drag while the first was saving are kept; a reorder save no longer waits on itself. A deleted page comes back from the trash with its widgets.
+- **fix — Other went to the top of the page.** Bookmarks without a category (or with one that no longer exists) jumped above every category once a block order was stored; they are at the end again, as the manual says.
 - **fix — smaller things.** A page with only widgets draws them; Shift+F matches URLs and tags; the page-tab colour goes back on Escape; an older page load no longer lands after a newer one; opens are counted on the bookmark by URL.
 
 ### Containers

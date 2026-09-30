@@ -913,8 +913,12 @@ class DashboardRenderCore {
         if (!Array.isArray(order) || order.length === 0) return blocks;
 
         // Smart collections and the virtual categories keep their position:
-        // they are not the reader's to arrange.
-        const fixed = blocks.filter((b) => b.category?.isSmartCollection || b.category?.isVirtualCategory);
+        // they are not the reader's to arrange. Smart collections are built
+        // first and stay at the top; the virtual ones (Other, an unknown id)
+        // are built last and stay at the end. Lumped together they all went
+        // to the top, so Other jumped above every category the reader arranged.
+        const smart = blocks.filter((b) => b.category?.isSmartCollection);
+        const virtual = blocks.filter((b) => !b.category?.isSmartCollection && b.category?.isVirtualCategory);
         const movable = blocks.filter((b) => !b.category?.isSmartCollection && !b.category?.isVirtualCategory);
 
         const byId = new Map();
@@ -931,7 +935,7 @@ class DashboardRenderCore {
         // a category added since the last drag appears rather than vanishing.
         byId.forEach((block) => sorted.push(block));
 
-        return [...fixed, ...sorted];
+        return [...smart, ...sorted, ...virtual];
     }
 
 

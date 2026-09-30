@@ -79,14 +79,20 @@ const cursorWhy = (page, selector) => page.evaluate((sel) => {
     };
 }, selector);
 
-/** Walk the cursor with real key presses until it lands inside a widget. */
-async function arrowIntoWidget(page, limit = 40) {
-    for (let n = 0; n < limit; n += 1) {
-        await page.keyboard.press('ArrowDown');
-        const at = await cursor(page);
-        if (at?.widget) return at;
+/**
+ * Walk the cursor with real key presses until it lands inside a widget.
+ *
+ * ↓ onto the grid, then → across it: which column the widget falls in is the
+ * layout's business, and ↓ alone stays in the first column.
+ */
+async function arrowIntoWidget(page, limit = 60) {
+    await page.keyboard.press('ArrowDown');
+    let at = await cursor(page);
+    for (let n = 0; n < limit && !at?.widget; n += 1) {
+        await page.keyboard.press('ArrowRight');
+        at = await cursor(page);
     }
-    return null;
+    return at?.widget ? at : null;
 }
 
 test.describe('arrowing through a widget', () => {

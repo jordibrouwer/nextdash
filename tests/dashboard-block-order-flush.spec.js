@@ -118,3 +118,26 @@ test('a page with only widgets draws them', async ({ page }) => {
     await expect(page.locator('#dashboard-layout .empty-state')).toHaveCount(0);
 });
 
+
+// Other (bookmarks without a category, or with one that no longer exists) is
+// built last and stays last under a stored order; the smart collections stay
+// first. Lumped together, Other jumped above every category the reader
+// arranged -- where the manual says it sits at the end.
+test('the block order keeps the virtual categories at the end', async ({ page }) => {
+    await openDashboard(page);
+    const ids = await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        const saved = d.blockOrder;
+        d.blockOrder = ['b', 'a'];
+        const blocks = [
+            { category: { id: '__smart_today', isSmartCollection: true } },
+            { category: { id: 'a' } },
+            { category: { id: 'b' } },
+            { category: { id: '', isVirtualCategory: true } },
+        ];
+        const out = d.renderCore.applyBlockOrder(blocks).map((b) => b.category.id);
+        d.blockOrder = saved;
+        return out;
+    });
+    expect(ids).toEqual(['__smart_today', 'b', 'a', '']);
+});

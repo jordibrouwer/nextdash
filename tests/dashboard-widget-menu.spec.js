@@ -227,14 +227,19 @@ test('the widget keeps its place in the viewport when its width changes', async 
      * the anchor was already scrolled as far as the page allows. With room on
      * both sides the same widen moves the block by a pixel.
      */
-    await page.evaluate(() => window.scrollTo(0,
-        Math.round((document.documentElement.scrollHeight - window.innerHeight) * 0.6)));
+    // The widget itself in the middle of the window: a fixed fraction of the
+    // page put it above the viewport once the blocks around it moved.
+    await page.evaluate(() => {
+        const box = document.querySelector('.dashboard-widget').getBoundingClientRect();
+        window.scrollTo(0, Math.round(window.scrollY + box.top - (window.innerHeight - box.height) / 2));
+    });
     await page.waitForTimeout(400);
 
     const topOf = () => page.evaluate(() =>
         Math.round(document.querySelector('.dashboard-widget').getBoundingClientRect().top));
     const before = await topOf();
     // A test that starts with the widget off screen would prove nothing.
+    expect(before).toBeGreaterThanOrEqual(0);
     expect(before).toBeLessThan(await page.evaluate(() => window.innerHeight));
 
     await block.locator('.category-title').press('Shift+W');
@@ -308,13 +313,18 @@ test('the widget keeps its place with packed columns too', async ({ page }) => {
      * the anchor was already scrolled as far as the page allows. With room on
      * both sides the same widen moves the block by a pixel.
      */
-    await page.evaluate(() => window.scrollTo(0,
-        Math.round((document.documentElement.scrollHeight - window.innerHeight) * 0.6)));
+    // The widget itself in the middle of the window: a fixed fraction of the
+    // page put it above the viewport once the blocks around it moved.
+    await page.evaluate(() => {
+        const box = document.querySelector('.dashboard-widget').getBoundingClientRect();
+        window.scrollTo(0, Math.round(window.scrollY + box.top - (window.innerHeight - box.height) / 2));
+    });
     await page.waitForTimeout(400);
 
     const topOf = () => page.evaluate(() =>
         Math.round(document.querySelector('.dashboard-widget').getBoundingClientRect().top));
     const before = await topOf();
+    expect(before).toBeGreaterThanOrEqual(0);
 
     await block.locator('.category-title').press('Shift+W');
     await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 }).toBe(2);
