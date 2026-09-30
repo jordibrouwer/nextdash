@@ -813,6 +813,11 @@ type Settings struct {
 	DockerCPUAlertPercent   int  `json:"dockerCpuAlertPercent"`   // 50, 70, 80, 90 or 95: of every core
 	DockerMemAlertPercent   int  `json:"dockerMemAlertPercent"`   // 70, 80, 90 or 95: of its limit
 	DockerUsageAlertMinutes int  `json:"dockerUsageAlertMinutes"` // 5, 10, 15 or 30
+	// DockerAutoUpdate names the containers updated on their own inside the
+	// nightly window [From, To) in local hours (docker_auto_update.go).
+	DockerAutoUpdate     []string `json:"dockerAutoUpdate,omitempty"`
+	DockerAutoUpdateFrom int      `json:"dockerAutoUpdateFrom"`
+	DockerAutoUpdateTo   int      `json:"dockerAutoUpdateTo"`
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
 	// feed can then say when it has published something since you last opened
 	// it. Off by default because it is the only thing here that reaches out to

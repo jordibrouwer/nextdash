@@ -144,6 +144,7 @@ test.describe('config info + reset affordances', () => {
             'dockerViewEnabled', 'dockerRefreshSeconds', 'dockerLogLines', 'dockerStatsHistory',
             'dockerUpdateInterval', 'dockerConfirmStopRestart', 'dockerHostAddress', 'dockerNotify', 'dockerViewCloseOutside', 'dockerViewKeyLegend',
             'dockerUsageAlerts', 'dockerCpuAlertPercent', 'dockerMemAlertPercent', 'dockerUsageAlertMinutes',
+            'dockerAutoUpdateFrom', 'dockerAutoUpdateTo',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });

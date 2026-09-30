@@ -12157,6 +12157,8 @@ class DashboardConfig {
         dockerCpuAlertPercent: { def: 90 },
         dockerMemAlertPercent: { def: 90 },
         dockerUsageAlertMinutes: { def: 10 },
+        dockerAutoUpdateFrom: { def: 3 },
+        dockerAutoUpdateTo: { def: 5 },
         dockerViewCloseOutside: { def: true },
         dockerViewKeyLegend: { def: 'above' },
         dockerHostAddress: { def: '' },
@@ -12533,7 +12535,7 @@ class DashboardConfig {
                 section: 'containers',
                 tab: null,
                 title: t('config.containersGroupUpdates', 'Updates'),
-                note: t('config.containersGroupUpdatesNote', 'Asks the registries whether a newer image is waiting. Off by default because it makes outbound requests.'),
+                note: t('config.containersGroupUpdatesNote', 'Asks the registries whether a newer image is waiting. Off by default because it makes outbound requests. Containers you set to update automatically (in their side panel) are updated in the window below, and rolled back if they stop, restart or turn unhealthy within 5 minutes.'),
                 controls: [
                     { field: 'dockerUpdateInterval', type: 'select', label: t('config.dockerUpdateIntervalLabel', 'Check for image updates'), options: [
                         opt('off', t('dashboard.dockerIntervalOff', 'Off')),
@@ -12541,6 +12543,12 @@ class DashboardConfig {
                         opt('12h', t('dashboard.dockerInterval12h', 'Every 12 hours')),
                         opt('24h', t('dashboard.dockerInterval24h', 'Every 24 hours')),
                     ] },
+                    // The window automatic updates run in; which containers
+                    // take part is chosen per container, in its side panel.
+                    { field: 'dockerAutoUpdateFrom', type: 'select', label: t('config.dockerAutoUpdateFromLabel', 'Automatic updates from'),
+                        options: Array.from({ length: 24 }, (_, h) => opt(h, `${String(h).padStart(2, '0')}:00`)) },
+                    { field: 'dockerAutoUpdateTo', type: 'select', label: t('config.dockerAutoUpdateToLabel', 'until'),
+                        options: Array.from({ length: 24 }, (_, h) => opt(h, `${String(h).padStart(2, '0')}:00`)) },
                 ],
             },
             {

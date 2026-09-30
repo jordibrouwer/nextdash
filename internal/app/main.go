@@ -371,6 +371,7 @@ func Run(files assetFS) {
 	handlers.StartDockerUpdateScheduler(schedulerStop)
 	// The last hour of CPU and memory per container, for the drawer's charts.
 	handlers.StartDockerStatsSampler(schedulerStop)
+	handlers.StartDockerAutoUpdater(schedulerStop)
 	handlers.StartDockerNotifier(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)

@@ -1176,7 +1176,7 @@ class DashboardDocker {
         count.className = 'multi-select-count';
         count.setAttribute('data-docker-bulk-count', '');
         bar.appendChild(count);
-        ['select-all', 'start', 'stop', 'restart', 'update', 'remove', 'mute', 'clear'].forEach((action) => {
+        ['select-all', 'start', 'stop', 'restart', 'update', 'remove', 'mute', 'auto', 'clear'].forEach((action) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = action === 'remove' ? 'multi-select-btn danger' : 'multi-select-btn';
@@ -1241,6 +1241,15 @@ class DashboardDocker {
             ? this.t('dashboard.dockerMenuMute', 'Mute notifications')
             : this.t('dashboard.dockerMenuUnmute', 'Unmute notifications');
         mute.disabled = this.bulkRunning || !mutable.length;
+        // Automatic updates: on for all of them while any is off, else off.
+        const auto = button('auto');
+        const autoable = picked.filter((c) => !c.self);
+        const turningOn = autoable.some((c) => !this.isAutoUpdated(c));
+        auto.hidden = !control;
+        auto.textContent = turningOn || !autoable.length
+            ? this.t('dashboard.dockerAutoUpdateOn', 'Update automatically')
+            : this.t('dashboard.dockerAutoUpdateOff', 'Stop updating automatically');
+        auto.disabled = this.bulkRunning || !autoable.length;
         button('select-all').disabled = this.bulkRunning;
         button('clear').disabled = this.bulkRunning;
     }
@@ -1273,7 +1282,40 @@ class DashboardDocker {
             this.drawerRefresh?.();
             return;
         }
+        if (action === 'auto') {
+            const autoable = picked.filter((c) => !c.self);
+            await this.setAutoUpdate(autoable.map((c) => c.name), autoable.some((c) => !this.isAutoUpdated(c)));
+            return;
+        }
         await this.actions?.runBulk(action, picked, { via: 'bulk' });
+    }
+
+    /** Whether a container is updated on its own in the nightly window. */
+    isAutoUpdated(c) {
+        return (this.dash.settings?.dockerAutoUpdate || []).includes(c?.name);
+    }
+
+    /** Turn automatic updates on or off for these containers, saved with the settings. */
+    async setAutoUpdate(names, on) {
+        const d = this.dash;
+        const before = d.settings.dockerAutoUpdate || [];
+        const next = new Set(before);
+        names.forEach((n) => (on ? next.add(n) : next.delete(n)));
+        d.settings.dockerAutoUpdate = [...next];
+        try {
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
+        } catch {
+            d.settings.dockerAutoUpdate = before;
+            d.showNotification?.(this.t('dashboard.dockerAutoUpdateSaveFailed', 'Could not save automatic updates.'), 'error');
+            return false;
+        }
+        d.showNotification?.(on
+            ? this.t('dashboard.dockerAutoUpdateSavedOn', 'Updated automatically at night: {names}', { names: names.join(', ') })
+            : this.t('dashboard.dockerAutoUpdateSavedOff', 'No longer updated automatically: {names}', { names: names.join(', ') }),
+        'success', { duration: 2500 });
+        this.render();
+        this.drawerRefresh?.();
+        return true;
     }
 
     /** s and p toggle: the same key starts a stopped container and stops a running one. */

@@ -57,6 +57,18 @@ func normalizeDockerSettings(s *Settings) {
 	}
 	s.DockerHiddenContainers = normalizeDockerNameList(s.DockerHiddenContainers)
 	s.DockerNotifyMuted = normalizeDockerNameList(s.DockerNotifyMuted)
+	s.DockerAutoUpdate = normalizeDockerNameList(s.DockerAutoUpdate)
+	// 3 to 5 at night until chosen; a stored 0/0 is no window, so both zero
+	// reads as never set.
+	if s.DockerAutoUpdateFrom == 0 && s.DockerAutoUpdateTo == 0 {
+		s.DockerAutoUpdateFrom, s.DockerAutoUpdateTo = 3, 5
+	}
+	if !dockerAutoHourChoices[s.DockerAutoUpdateFrom] {
+		s.DockerAutoUpdateFrom = 3
+	}
+	if !dockerAutoHourChoices[s.DockerAutoUpdateTo] {
+		s.DockerAutoUpdateTo = 5
+	}
 	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
 	s.DockerBookmarkLinks = normalizeDockerBookmarkLinks(s.DockerBookmarkLinks)
 	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)

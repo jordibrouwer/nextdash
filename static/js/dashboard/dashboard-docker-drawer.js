@@ -1073,6 +1073,33 @@ class DockerDrawer {
         status.textContent = text;
         body.appendChild(status);
 
+        // Automatic updates: this container, in the nightly window set in
+        // Config -> Containers, with a rollback if it does not keep running.
+        if (control) {
+            const d = this.view.dash;
+            const from = String(d.settings?.dockerAutoUpdateFrom ?? 3).padStart(2, '0');
+            const to = String(d.settings?.dockerAutoUpdateTo ?? 5).padStart(2, '0');
+            const wrap = document.createElement('label');
+            wrap.className = 'docker-auto-update';
+            const box = document.createElement('input');
+            box.type = 'checkbox';
+            box.setAttribute('data-docker-auto-update', '');
+            box.checked = this.view.isAutoUpdated(detail);
+            box.addEventListener('change', async () => {
+                const ok = await this.view.setAutoUpdate([detail.name], box.checked);
+                if (!ok) box.checked = !box.checked;
+            });
+            const text = document.createElement('span');
+            text.textContent = this.t('dockerAutoUpdateLabel', 'Update automatically');
+            const note = document.createElement('small');
+            note.className = 'docker-auto-update-note';
+            note.textContent = d.settings?.dockerUpdateInterval && d.settings.dockerUpdateInterval !== 'off'
+                ? this.t('dockerAutoUpdateNote', 'Between {from}:00 and {to}:00, when a check finds a newer image. Rolled back if it stops, restarts or turns unhealthy within 5 minutes.', { from, to })
+                : this.t('dockerAutoUpdateNeedsCheck', 'Needs the update check on in Config → Containers: it is what finds a newer image.');
+            wrap.append(box, text, note);
+            body.appendChild(wrap);
+        }
+
         const summary = this._summary?.name === detail.name ? { ...this._summary, ...detail } : detail;
         const button = (choice, label, primary = false) => {
             const b = document.createElement('button');
