@@ -126,6 +126,8 @@
             root.appendChild(tiles);
             root.appendChild(this.imagesTable(images));
             root.appendChild(this.volumesTable(volumes));
+            const binds = this.data.binds || [];
+            if (binds.length) root.appendChild(this.bindsTable(binds));
         }
 
         tile(kind, label, bytes, sub, action, rollback) {
@@ -214,6 +216,24 @@
                 }
                 tr.append(el('td', 'docker-disk-name', vol.name), el('td', used ? '' : 'docker-disk-muted', used || '—'),
                     el('td', 'docker-disk-num', formatBytes(vol.size)), action);
+                tbody.appendChild(tr);
+            });
+            return wrap;
+        }
+
+        /** Host folders containers mount (Unraid's appdata): not volumes, so
+         *  Docker neither measures nor removes them -- listed to be found. */
+        bindsTable(binds) {
+            const { wrap, tbody } = this.table(this.t('dockerDiskBinds', 'Bind mounts'), [
+                [this.t('dockerDiskColFolder', 'Host folder')], [this.t('dockerDiskColUsedBy', 'Used by')],
+            ]);
+            wrap.querySelector('.docker-disk-title').after(el('p', 'docker-disk-note',
+                this.t('dockerDiskBindsNote', 'Folders on the host that containers mount. Docker does not measure them.')));
+            binds.forEach((b) => {
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-docker-disk-bind', b.source);
+                const used = (b.usedBy || []).map((u) => `${u.container} → ${u.destination}`).join(', ');
+                tr.append(el('td', 'docker-disk-name', b.source), el('td', '', used));
                 tbody.appendChild(tr);
             });
             return wrap;

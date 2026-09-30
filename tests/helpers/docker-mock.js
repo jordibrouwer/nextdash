@@ -14,6 +14,10 @@ function mockDisk() {
       { name: 'old_pgdata', driver: 'local', size: 171 * MiB, usedBy: [] },
       { name: 'arr_config', driver: 'local', size: 96 * MiB, usedBy: ['radarr', 'sonarr'] },
     ],
+    binds: [
+      { source: '/mnt/user/appdata/sonarr', usedBy: [{ container: 'sonarr', destination: '/config' }] },
+      { source: '/mnt/user/media', usedBy: [{ container: 'jellyfin', destination: '/media' }, { container: 'sonarr', destination: '/tv' }] },
+    ],
     totals: { images: 1189 * MiB, imagesUnused: 777 * MiB, imagesUnusedCount: 2, dangling: 398 * MiB, danglingCount: 1,
       buildCache: 300 * MiB, buildCacheCount: 2, volumes: 267 * MiB, volumesUnused: 171 * MiB, volumesUnusedCount: 1,
       reclaimable: 1248 * MiB },

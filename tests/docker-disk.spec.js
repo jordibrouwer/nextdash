@@ -11,6 +11,27 @@ async function openDisk(page, opts) {
 }
 
 test.describe('docker disk', () => {
+  // Unraid keeps container data in host folders, not volumes: they are listed
+  // with who mounts them where, and have no size and no remove.
+  test('bind mounts are listed by host folder, without a size or a remove', async ({ page }) => {
+    await openDisk(page);
+    const media = page.locator('[data-docker-disk-bind="/mnt/user/media"]');
+    await expect(media).toContainText('jellyfin → /media');
+    await expect(media).toContainText('sonarr → /tv');
+    await expect(page.locator('[data-docker-disk-bind]')).toHaveCount(2);
+    await expect(page.locator('[data-docker-disk-bind] button')).toHaveCount(0);
+  });
+
+  test('no bind mounts, no section', async ({ page }) => {
+    const state = await mockDocker(page);
+    state.disk = { images: [], volumes: [], binds: [], totals: {} };
+    await page.goto('/#docker/~disk');
+    await expect(page.locator('[data-docker-disk]')).toBeVisible();
+    await expect(page.locator('[data-docker-disk-tile="volumes"]')).toBeVisible();
+    await expect(page.locator('[data-docker-disk-bind]')).toHaveCount(0);
+    await expect(page.getByText('Bind mounts')).toHaveCount(0);
+  });
+
   test('#docker/~disk opens the Disk tab: tiles, lists, and the rail totals', async ({ page }) => {
     await openDisk(page);
     await expect(page.locator('[data-docker-tab="disk"]')).toHaveAttribute('aria-selected', 'true');

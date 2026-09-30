@@ -186,3 +186,28 @@ func TestDockerDiskCountsSharedLayersOnce(t *testing.T) {
 		t.Fatalf("build cache %d reclaimable %d MB", tot.BuildCache/mb, tot.Reclaimable/mb)
 	}
 }
+
+// Bind mounts are listed by host folder with who mounts it where; the Docker
+// socket and the clock are the host's own, not data, and are left out.
+func TestDockerDiskBinds(t *testing.T) {
+	f, h := diskFixture(t)
+	f.add(fakeContainer{ID: strings.Repeat("c", 64), Name: "bazarr", Image: "bazarr:latest", ImageID: "sha256:b", State: "running",
+		Mounts: []map[string]any{
+			{"Type": "bind", "Source": "/mnt", "Destination": "/media"},
+			{"Type": "bind", "Source": "/var/run/docker.sock", "Destination": "/var/run/docker.sock"},
+			{"Type": "bind", "Source": "/etc/localtime", "Destination": "/etc/localtime"},
+		}})
+	rec := httptest.NewRecorder()
+	newDockerTestRouter(h).ServeHTTP(rec, httptest.NewRequest("GET", "/api/docker/disk", nil))
+	var d dockerDiskView
+	if err := json.NewDecoder(rec.Body).Decode(&d); err != nil || rec.Code != 200 {
+		t.Fatalf("%d %v %s", rec.Code, err, rec.Body)
+	}
+	if len(d.Binds) != 1 || d.Binds[0].Source != "/mnt" {
+		t.Fatalf("binds = %+v", d.Binds)
+	}
+	at := d.Binds[0].UsedBy
+	if len(at) != 2 || at[0].Container != "bazarr" || at[0].Destination != "/media" || at[1].Container != "radarr" {
+		t.Fatalf("used by = %+v", at)
+	}
+}

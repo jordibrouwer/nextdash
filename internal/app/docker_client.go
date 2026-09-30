@@ -133,8 +133,10 @@ type dockerContainerSummary struct {
 	} `json:"NetworkSettings"`
 	// Mounts: which volumes the container holds, running or not.
 	Mounts []struct {
-		Type string `json:"Type"`
-		Name string `json:"Name"`
+		Type        string `json:"Type"`
+		Name        string `json:"Name"`
+		Source      string `json:"Source"`
+		Destination string `json:"Destination"`
 	} `json:"Mounts"`
 }
 

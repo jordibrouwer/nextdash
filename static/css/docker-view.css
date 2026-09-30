@@ -1236,6 +1236,12 @@
     font-weight: var(--font-weight-semibold);
 }
 
+.docker-disk-note {
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
 .docker-disk-table {
     width: 100%;
     border-collapse: collapse;
