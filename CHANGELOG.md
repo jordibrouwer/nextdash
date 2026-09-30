@@ -249,6 +249,7 @@ The Containers tour catches up with v1.15.6 and is shown once more, the Bookmark
 
 - **fix — a bulk move could lose rows.** A selection with rows from the target page and from other pages dropped the other pages' rows from both (`bookmark_move.go`); copies of one URL now move in a stable order.
 - **fix — moving a bookmark with a shortcut to another page always failed**, and a move could put the same URL on one page twice (`AddBookmark`).
+- **fix — an add to a page that does not exist was stored.** `POST /api/bookmarks/add` took any page id, so a move there removed the bookmark from its own page and left it where nothing shows it. It now answers 404, as the bulk move already did; Unsorted still takes adds.
 - **fix — undo after a page switch put bookmarks on the wrong page.** The single and multi-select delete undo, the category-move undo and the category-delete undo restore where the rows came from; a failed multi-select undo no longer empties their trash entries.
 - **fix — a failed blocks fetch on a page switch let an edit write one page's widgets over another's.** The widgets on screen still stay, but a widget edit or a block move on the new page is refused until its own blocks have loaded.
 - **fix — saves that were dropped.** A category rename after a same-page reload, a block move within a second of leaving the page or closing the tab, and a second drag while the first was saving are kept; a reorder save no longer waits on itself. A deleted page comes back from the trash with its widgets.

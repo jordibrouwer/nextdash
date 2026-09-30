@@ -1490,6 +1490,12 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+	// A page that does not exist took the row anyway, and a move there then
+	// deleted the source: the bookmark was stored where nothing draws it.
+	if !h.pageExists(request.Page) && request.Page != unsortedPageID {
+		http.Error(w, "Page not found", http.StatusNotFound)
+		return
+	}
 
 	// Validate the bookmark URL
 	if err := h.validateBookmarkURL(request.Bookmark.URL); err != nil {

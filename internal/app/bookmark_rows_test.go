@@ -261,6 +261,25 @@ func TestAddBookmarkMoveWithAShortcutDoesNotConflictWithItself(t *testing.T) {
 	}
 }
 
+// A move to a page that does not exist used to succeed: the add took the row
+// and the delete then emptied the source, leaving it where nothing draws it.
+func TestAddBookmarkRefusesAPageThatDoesNotExist(t *testing.T) {
+	h, store := patchTestHandlers(t)
+	seedPages(t, store, map[int][]Bookmark{2: {{Name: "Other", URL: "https://o.example/"}}})
+	if h.pageExists(4242) {
+		t.Fatal("page 4242 exists; pick another id")
+	}
+	rec, _ := rowsReq(t, h.AddBookmark, http.MethodPost, map[string]any{
+		"page": 4242, "bookmark": map[string]any{"name": "Lost", "url": "https://lost.example/"},
+	})
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d %s: there is no page 4242", rec.Code, rec.Body.String())
+	}
+	if n := len(store.GetBookmarksByPage(4242)); n != 0 {
+		t.Fatalf("page 4242 holds %d rows", n)
+	}
+}
+
 // An open names its row by URL; a stale index (an unsaved drag, a row added
 // elsewhere) must not credit the bookmark that now sits there.
 func TestTrackOpenCreditsTheBookmarkByURL(t *testing.T) {
