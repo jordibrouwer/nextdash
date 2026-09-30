@@ -185,6 +185,12 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 		if !haveStart || summary == "" {
 			return
 		}
+		// An all-day event without DTEND lasts that one day (RFC 5545 3.6.1).
+		// With no end it was over from its own midnight, and a holiday feed
+		// lost today's events at 00:00 UTC.
+		if allDay && end == 0 {
+			end = start + 24*60*60*1000
+		}
 		// A multi-day or ongoing event is still coming up as long as it has
 		// not ended; a point-in-time one is judged by its own start.
 		cutoff := start

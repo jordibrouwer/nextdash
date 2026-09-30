@@ -3788,6 +3788,14 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	if endpoint := discoverOEmbedURL(htmlBody, preview.URL); endpoint != "" {
 		if data, ok := h.fetchOEmbed(ctx, endpoint); ok {
 			applyOEmbed(&preview, data)
+			// The same carry-over as og:image above, for a thumbnail that is
+			// the page's only image: unchanged, its local copy stands.
+			if cache != nil && preview.Image == "" && preview.ImageSource != "" {
+				if previous, ok := cache.Cache[cacheKey]; ok && previous.ImageSource == preview.ImageSource {
+					preview.Image = previous.Image
+					preview.ImageFetchedAt = previous.ImageFetchedAt
+				}
+			}
 		}
 	}
 
@@ -3847,9 +3855,6 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
-	if !h.requireSSRFAPIRateLimit(w, r) {
-		return
-	}
 	w.Header().Set("Content-Type", "application/json")
 
 	rawURL := strings.TrimSpace(r.URL.Query().Get("url"))
@@ -3867,12 +3872,22 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	cacheKey := canonicalBookmarkURLKey(rawURL)
 	forceRefresh := strings.EqualFold(r.URL.Query().Get("refresh"), "1") ||
 		strings.EqualFold(r.URL.Query().Get("refresh"), "true")
+	/*
+	 * A cached answer before the rate limit: it reaches out to nothing, and
+	 * the limit exists for the fetches that do. The dashboard asks on the
+	 * first hover of every row after a load (the fields its own shortcut
+	 * needs are not stored on the bookmark), so skimming a page used up the
+	 * 60 a minute on answers already in hand, and the card stopped opening.
+	 */
 	if !forceRefresh {
 		if cached, ok := h.getPreviewCacheEntry(cacheKey); ok {
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(cached)
 			return
 		}
+	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
+		return
 	}
 
 	localCache := &PreviewCacheFile{Cache: make(map[string]BookmarkPreview)}

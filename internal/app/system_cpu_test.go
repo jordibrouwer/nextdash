@@ -124,3 +124,16 @@ func TestCPUReadsAMountedProc(t *testing.T) {
 		t.Fatal("the second read should produce a percentage")
 	}
 }
+
+// guest and guest_nice are already counted in user and nice; a host running
+// VMs must not have them added a second time.
+func TestParseProcStatDoesNotCountGuestTwice(t *testing.T) {
+	stat := []byte("cpu  1000 0 0 1000 0 0 0 0 800 0\ncpu0 1000 0 0 1000 0 0 0 0 800 0\n")
+	idle, total, _, err := parseProcStat(stat)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if idle != 1000 || total != 2000 {
+		t.Fatalf("idle %d total %d, want 1000 of 2000 (50%% busy)", idle, total)
+	}
+}

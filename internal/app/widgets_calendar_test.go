@@ -204,3 +204,17 @@ func TestCalendarWidgetConfigIsNarrowed(t *testing.T) {
 		t.Errorf("rows = %v", clean["rows"])
 	}
 }
+
+// An all-day event with no DTEND lasts its day: it is still coming up at
+// noon on that day.
+func TestParseICSAllDayWithoutEndLastsItsDay(t *testing.T) {
+	now := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
+	ics := "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:Holiday\r\nDTSTART;VALUE=DATE:20261001\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+	events := parseICS([]byte(ics), now)
+	if len(events) != 1 {
+		t.Fatalf("events = %+v: today's all-day event was dropped at midnight", events)
+	}
+	if events[0].End != events[0].Start+24*60*60*1000 {
+		t.Errorf("end = %d, want start + one day", events[0].End)
+	}
+}

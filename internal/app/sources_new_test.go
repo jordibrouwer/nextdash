@@ -182,3 +182,27 @@ func TestFeedSourceReadsBothLinkShapes(t *testing.T) {
 		}
 	}
 }
+
+// Bookmarks come in the order they were bookmarked. An old post bookmarked
+// since the last round sits above the cursor with a lower id, and must still
+// be imported; the walk stops at the cursor itself.
+func TestMastodonImportsAnOldPostBookmarkedSinceLastRound(t *testing.T) {
+	h := newTestHandlers(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		post := func(id string) map[string]any {
+			return map[string]any{"id": id, "url": "https://m.example/@a/" + id, "content": "<p>post " + id + "</p>",
+				"created_at": "2026-03-01T12:00:00Z", "account": map[string]any{"acct": "a", "display_name": "A"}}
+		}
+		_ = json.NewEncoder(w).Encode([]map[string]any{post("100"), post("900"), post("50")})
+	}))
+	defer server.Close()
+	source := SourceState{Kind: "mastodon", Token: "tok", Handle: strings.TrimPrefix(server.URL, "http://"), Cursor: "900"}
+	result, err := h.fetchMastodonAt(context.Background(), server.URL, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Bookmarks) != 1 || result.Bookmarks[0].URL != "https://m.example/@a/100" {
+		t.Fatalf("bookmarks = %+v, want only the newly bookmarked post 100", result.Bookmarks)
+	}
+}

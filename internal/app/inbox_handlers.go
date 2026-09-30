@@ -235,7 +235,9 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 		// from /data/icons/ (same store as bookmark icons).
 		allowLocal := h.allowLocalBookmarks()
 		iconFile := ""
-		if iconURL := strings.TrimSpace(preview.Icon); iconURL != "" {
+		// IconSource, the page's declared icon: Icon is only ever a local copy
+		// and is empty on a fresh fetch (see fetchIconForBookmark).
+		if iconURL := strings.TrimSpace(preview.IconSource); iconURL != "" {
 			if name, err := downloadIconFromURL(iconURL, allowLocal); err == nil {
 				iconFile = name
 			}

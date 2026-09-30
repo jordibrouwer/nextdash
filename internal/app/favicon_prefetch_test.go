@@ -1,6 +1,8 @@
 package app
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -90,5 +92,28 @@ func TestSaveIconBytesSanitizesSVG(t *testing.T) {
 	lower := strings.ToLower(string(stored))
 	if strings.Contains(lower, "<script") || strings.Contains(lower, "onclick") {
 		t.Fatalf("stored svg still contains unsafe content: %s", stored)
+	}
+}
+
+// A site that declares its icon with <link rel=icon> and has no /favicon.ico
+// still gets its icon.
+func TestFetchAndStoreBookmarkIconUsesTheDeclaredIcon(t *testing.T) {
+	png := []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/":
+			w.Header().Set("Content-Type", "text/html")
+			_, _ = w.Write([]byte(`<html><head><title>X</title><link rel="icon" href="/static/app-icon.png"></head></html>`))
+		case "/static/app-icon.png":
+			w.Header().Set("Content-Type", "image/png")
+			_, _ = w.Write(png)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	h, _ := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true}`)
+	if name := h.fetchAndStoreBookmarkIcon(server.URL + "/"); name == "" {
+		t.Fatal("no icon stored for a site that declares one")
 	}
 }

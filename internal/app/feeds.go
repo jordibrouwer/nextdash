@@ -53,6 +53,10 @@ const (
 	// feedMaxFailures is when polling gives up on a feed until it is rediscovered.
 	// A feed that has answered badly this many times in a row is gone, not slow.
 	feedMaxFailures = 5
+	// feedRetiredRetry is how long a retired feed waits for another try. Retired
+	// for good, one night's outage -- five hourly rounds with no network --
+	// turned Fresh off for every feed until its URL changed.
+	feedRetiredRetry = 24 * time.Hour
 	// feedPollInterval is how often a known feed is asked whether it has
 	// anything new.
 	//
@@ -91,6 +95,9 @@ type FeedState struct {
 	ETag         string `json:"etag,omitempty"`
 	LastModified string `json:"lastModified,omitempty"`
 	CheckedAt    int64  `json:"checkedAt,omitempty"`
+	// TriedAt is the last poll attempt, answered or not: a retired feed is
+	// tried again once a day from it (see feedRetiredRetry).
+	TriedAt int64 `json:"triedAt,omitempty"`
 	// LastItemAt is the newest entry's timestamp, and RecentItems are the
 	// timestamps behind it, newest first. Timestamps only: the badge needs to
 	// count entries newer than your last visit, and nothing here needs to know
@@ -396,7 +403,7 @@ type feedEntry struct {
 // now, because counting it as now would make every poll report something new.
 func feedEntryTimestamps(body []byte) []int64 {
 	var doc feedDocument
-	if err := xml.Unmarshal(body, &doc); err != nil {
+	if err := decodeFeedXML(body, &doc); err != nil {
 		return nil
 	}
 	entries := append(append([]feedEntry{}, doc.Items...), doc.Entries...)
@@ -456,9 +463,11 @@ func (h *Handlers) pollFeed(ctx context.Context, state FeedState) FeedState {
 	}
 	if err := validateHTTPURL(feedURL, h.allowLocalBookmarks()); err != nil {
 		state.Failures = feedMaxFailures
+		state.TriedAt = time.Now().UnixMilli()
 		return state
 	}
 
+	state.TriedAt = time.Now().UnixMilli()
 	client := h.outboundHTTPClient(feedFetchTimeout, 5)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, feedURL, nil)
 	if err != nil {
@@ -582,7 +591,10 @@ func (h *Handlers) PollAllFeeds(ctx context.Context) int {
 		if _, ok := live[key]; !ok {
 			continue
 		}
-		if feed.FeedURL == "" || feed.Failures >= feedMaxFailures {
+		if feed.FeedURL == "" {
+			continue
+		}
+		if feed.Failures >= feedMaxFailures && time.Since(time.UnixMilli(feed.TriedAt)) < feedRetiredRetry {
 			continue
 		}
 		targets[key] = feed

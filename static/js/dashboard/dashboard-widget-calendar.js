@@ -46,8 +46,10 @@
         const locale = dash?.settings?.language || document.documentElement.getAttribute('data-lang') || 'en';
         const start = new Date(event.start);
         if (event.allDay) {
+            // An all-day date is midnight UTC on the server. Formatted in the
+            // reader's zone, west of UTC it showed the day before.
             try {
-                return new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' }).format(start);
+                return new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(start);
             } catch (error) {
                 return start.toDateString();
             }
@@ -78,7 +80,7 @@
         const locale = dash?.settings?.language || document.documentElement.getAttribute('data-lang') || 'en';
         let date;
         try {
-            date = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(start);
+            date = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', ...(event?.allDay ? { timeZone: 'UTC' } : {}) }).format(start);
         } catch (error) {
             date = start.toLocaleDateString();
         }

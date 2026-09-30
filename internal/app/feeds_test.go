@@ -175,3 +175,41 @@ func TestFreshnessCountsSinceLastOpened(t *testing.T) {
 		t.Fatalf("expected no entry for a bookmark without a feed, got %+v", fresh)
 	}
 }
+
+// A retired feed is tried again a day after its last try, and back in service
+// when it answers; before that it is left alone.
+func TestPollAllFeedsRetriesARetiredFeedDaily(t *testing.T) {
+	hits := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		_, _ = w.Write([]byte(`<rss><channel><item><pubDate>Mon, 02 Jun 2025 10:00:00 +0000</pubDate></item></channel></rss>`))
+	}))
+	defer server.Close()
+
+	h, _ := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true}`)
+	if err := h.store.SaveBookmarksByPage(1, []Bookmark{{Name: "Blog", URL: "https://example.com/blog"}}); err != nil {
+		t.Fatal(err)
+	}
+	key := canonicalBookmarkURLKey("https://example.com/blog")
+	seed := func(triedAgo time.Duration) {
+		if err := writeFeedStateFile(FeedStateFile{Feeds: map[string]FeedState{key: {
+			FeedURL: server.URL, Failures: feedMaxFailures, TriedAt: time.Now().Add(-triedAgo).UnixMilli(),
+		}}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	seed(time.Hour)
+	h.PollAllFeeds(t.Context())
+	if hits != 0 {
+		t.Fatalf("a feed retired an hour ago was polled")
+	}
+	seed(25 * time.Hour)
+	h.PollAllFeeds(t.Context())
+	if hits != 1 {
+		t.Fatalf("a feed retired a day ago was not tried again")
+	}
+	if got := readFeedStateFile().Feeds[key].Failures; got != 0 {
+		t.Fatalf("failures = %d after it answered", got)
+	}
+}

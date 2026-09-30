@@ -79,6 +79,11 @@ func TestApplyOEmbedFillsGapsWithoutOverwriting(t *testing.T) {
 	if empty.Title != "Provider title" {
 		t.Errorf("title = %q", empty.Title)
 	}
+	// The thumbnail is a remote address to fetch, not the local copy: the
+	// card shows local images only, and the media worker reads ImageSource.
+	if empty.ImageSource != "https://p.example/thumb.jpg" || empty.Image != "" {
+		t.Errorf("thumbnail: ImageSource %q, Image %q", empty.ImageSource, empty.Image)
+	}
 
 	// A "link" response has no player, so none is stored.
 	linkOnly := BookmarkPreview{}

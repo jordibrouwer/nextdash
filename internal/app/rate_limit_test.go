@@ -140,3 +140,23 @@ func TestClientIPTrustsForwardedForFromANamedProxy(t *testing.T) {
 		}
 	}
 }
+
+// A preview already in the cache is answered without spending the limit that
+// exists for outbound fetches: hovering down a page asked for each row.
+func TestCachedBookmarkPreviewIsNotRateLimited(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{}`)
+	h.ssrfAPILimiter = newSlidingWindowLimiter(1, time.Minute)
+	key := canonicalBookmarkURLKey("https://cached.example/")
+	if err := h.mergePreviewCacheUpdates(map[string]BookmarkPreview{key: {URL: key, Title: "Cached", FetchedAt: time.Now().UnixMilli()}}); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 5; i++ {
+		req := httptest.NewRequest(http.MethodGet, "/api/bookmark-preview?url=https://cached.example/", nil)
+		req.RemoteAddr = "203.0.113.10:1234"
+		rec := httptest.NewRecorder()
+		h.GetBookmarkPreview(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("request %d = %d, want 200 from the cache", i, rec.Code)
+		}
+	}
+}
