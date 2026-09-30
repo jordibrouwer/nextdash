@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 )
@@ -128,29 +129,50 @@ func (h *Handlers) runDockerAutoUpdates(now time.Time) {
 		return
 	}
 	api = api.forActions()
-	ctx, cancel := context.WithTimeout(context.Background(), dockerActionTimeout*3)
-	defer cancel()
+	listCtx, cancelList := context.WithTimeout(context.Background(), time.Minute)
+	candidates := h.dockerAutoUpdateCandidates(listCtx, api, settings.DockerAutoUpdate)
+	cancelList()
 	day := now.Format("2006-01-02")
-	for _, c := range h.dockerAutoUpdateCandidates(ctx, api, settings.DockerAutoUpdate) {
+	for _, c := range candidates {
 		mark := day + "|" + c.ImageID
 		a.mu.Lock()
 		seen := a.tried[c.name()] == mark
-		a.tried[c.name()] = mark
 		a.mu.Unlock()
 		if seen || h.dockerPruneRunning.Load() {
 			continue
 		}
-		h.autoUpdateOne(ctx, api, c)
+		// Each its own time. One context for the whole night let a couple of
+		// large pulls use it up, and every container after them failed at once
+		// with "context deadline exceeded", a notice each.
+		ctx, cancel := context.WithTimeout(context.Background(), dockerActionTimeout)
+		attempted := h.autoUpdateOne(ctx, api, c)
+		cancel()
+		// Marked only once it was really tried: skipped for a running prune or
+		// a manual action holding it, it gets the next tick instead of the
+		// next night.
+		if attempted {
+			a.mu.Lock()
+			a.tried[c.name()] = mark
+			a.mu.Unlock()
+		}
 	}
 }
 
 // autoUpdateOne updates one container as the Update button does, tells of
-// it, and watches it in the background.
-func (h *Handlers) autoUpdateOne(ctx context.Context, api *dockerAPI, c dockerContainerSummary) {
+// it, and watches it in the background. False when it did not get to try:
+// the container was busy or a prune was running.
+func (h *Handlers) autoUpdateOne(ctx context.Context, api *dockerAPI, c dockerContainerSummary) bool {
 	name := c.name()
 	release, ok := h.dockerLockContainer(c)
 	if !ok {
-		return
+		return false
+	}
+	// Read after the lock, the order a prune relies on (docker_disk.go): it
+	// sets the flag and then checks the locks. Read before, a prune starting in
+	// between could delete the image this update pulls.
+	if h.dockerPruneRunning.Load() {
+		release()
+		return false
 	}
 	dockerNotifications.expect(name, time.Now().Add(dockerActionTimeout))
 	outcome, err := h.dockerRecreate(ctx, api, c)
@@ -161,18 +183,27 @@ func (h *Handlers) autoUpdateOne(ctx context.Context, api *dockerAPI, c dockerCo
 		logWarn(logComponentMutate, "the automatic update of %s failed: %v", name, err)
 		h.dispatchContainerNotices(ctx, []monitorNotification{containerNotice("down", name,
 			name+" could not be updated automatically", err.Error(), time.Now())})
-		return
+		return true
 	}
 	if outcome.Phase == "done" || outcome.Phase == "already-current" {
 		h.markDockerImageCurrent(c.Image)
 	}
 	if outcome.Phase != "done" {
-		return
+		return true
 	}
 	h.recordDockerUpdate(ctx, api, "update", name, c.Image, outcome.OldImageID, outcome.NewImageID)
+	// A stopped container is updated and stays stopped, as it was: there is
+	// nothing to watch, and the watch read its "created" state as a failed
+	// update, rolled it back and skipped the new version, every night.
+	if c.State != "running" {
+		h.dispatchContainerNotices(ctx, []monitorNotification{containerNotice("up", name,
+			name+" was updated automatically", "it was not running, and is left stopped", time.Now())})
+		return true
+	}
 	h.dispatchContainerNotices(ctx, []monitorNotification{containerNotice("up", name,
 		name+" was updated automatically", "watching it for "+fmt.Sprint(int(dockerAutoUpdateWatch.Minutes()))+" minutes", time.Now())})
 	dockerAutoUpdateWatcher(h, api, name)
+	return true
 }
 
 // dockerAutoUpdateVerdict: what a look at the container says, against when it
@@ -206,8 +237,15 @@ func (h *Handlers) watchAutoUpdate(api *dockerAPI, name string) {
 		return
 	}
 	started := first.State.StartedAt
+	// Where the update left the "this is nextDash's doing" mark. A stop or a
+	// restart from the view moves it later: then the change is the user's, not a
+	// failed update, and rolling back and skipping the version would be wrong.
+	ownMark := dockerNotifications.expectedUntil(name)
 	for waited := time.Duration(0); waited < dockerAutoUpdateWatch; waited += dockerAutoUpdatePoll {
 		dockerAutoUpdateSleep(dockerAutoUpdatePoll)
+		if dockerNotifications.expectedUntil(name).After(ownMark) {
+			return
+		}
 		in, err := api.inspectContainer(ctx, name)
 		if err != nil {
 			return
@@ -240,8 +278,28 @@ func (h *Handlers) rollBackAutoUpdate(ctx context.Context, api *dockerAPI, name,
 		return
 	}
 	defer release()
+	// Not while a prune runs: the old image is re-tagged with no container on
+	// it yet, which is exactly what "remove unused images" deletes.
+	for h.dockerPruneRunning.Load() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(2 * time.Second):
+		}
+	}
 	dockerNotifications.expect(name, time.Now().Add(dockerActionTimeout))
-	_, err = h.dockerRollbackUpdate(ctx, api, *c)
+	res, err := h.dockerRollbackUpdate(ctx, api, *c)
+	// The container was running when the update began, and the rollback
+	// recreates it from the failed one's state -- exited, most of the time -- so
+	// the old version came back created but never started, and a restart policy
+	// does not pick that up.
+	if err == nil && res.ContainerID != "" {
+		if in, ierr := api.inspectContainer(ctx, res.ContainerID); ierr == nil && !in.State.Running {
+			if serr := api.post(ctx, "/containers/"+url.PathEscape(res.ContainerID)+"/start", nil); serr != nil {
+				err = fmt.Errorf("rolled back, but it did not start: %w", serr)
+			}
+		}
+	}
 	dockerNotifications.expect(name, time.Now().Add(dockerNotifyExpectWindow))
 	logActivity(activityCategoryMutate, "docker.auto-rollback", map[string]any{"container": name, "ok": err == nil, "why": reason}, "docker auto-rollback "+name)
 	title := name + " was rolled back after its automatic update"

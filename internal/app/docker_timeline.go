@@ -120,6 +120,11 @@ func (t *dockerTimeline) flush() error {
 // countSince counts the entries of the given kinds, across every container,
 // at or after since.
 func (t *dockerTimeline) countSince(since time.Time, kinds ...string) int {
+	return t.countSinceFor(since, nil, kinds...)
+}
+
+// countSinceFor is countSince over the named containers only; nil counts all.
+func (t *dockerTimeline) countSinceFor(since time.Time, names map[string]bool, kinds ...string) int {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.loadLocked()
@@ -129,7 +134,10 @@ func (t *dockerTimeline) countSince(since time.Time, kinds ...string) int {
 	}
 	n := 0
 	cutoff := since.UnixMilli()
-	for _, entries := range t.data {
+	for name, entries := range t.data {
+		if names != nil && !names[name] {
+			continue
+		}
 		for _, e := range entries {
 			if e.At >= cutoff && want[e.Kind] {
 				n++

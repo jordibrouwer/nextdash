@@ -122,3 +122,76 @@ func TestDockerAutoUpdateRollsBackAFailure(t *testing.T) {
 		t.Fatalf("not rolled back: %s, calls %v", back.ImageID, f.calls)
 	}
 }
+
+func autoUpdateTestSetup(t *testing.T) (*fakeDocker, *Handlers, *dockerAPI, *[]string) {
+	t.Helper()
+	f, h, _, api := recreateFixture(t)
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	if err := writeIndentJSONFile(dockerUpdatesFilePath(), dockerUpdateStore{CheckedAt: time.Now().UnixMilli(),
+		Images: map[string]*dockerImageUpdate{"img:latest": {Status: "available", RemoteDigest: "sha256:r2"}}}); err != nil {
+		t.Fatal(err)
+	}
+	watched := []string{}
+	dockerAutoUpdateWatcher = func(_ *Handlers, _ *dockerAPI, name string) { watched = append(watched, name) }
+	dockerAutoUpdateSleep = func(time.Duration) {}
+	t.Cleanup(func() {
+		dockerAutoUpdateWatcher = func(h *Handlers, api *dockerAPI, name string) { go h.watchAutoUpdate(api, name) }
+		dockerAutoUpdateSleep = time.Sleep
+		dockerAutoUpdates.tried = map[string]string{}
+	})
+	dockerAutoUpdates.tried = map[string]string{}
+	settings := h.store.GetSettings()
+	settings.DockerAutoUpdate = []string{"sonarr"}
+	settings.DockerAutoUpdateFrom, settings.DockerAutoUpdateTo = 3, 5
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	return f, h, api, &watched
+}
+
+// A stopped container is updated and left stopped, not watched: its "created"
+// state read as a failed update and rolled it back every night.
+func TestDockerAutoUpdateLeavesAStoppedContainerUnwatched(t *testing.T) {
+	f, h, api, watched := autoUpdateTestSetup(t)
+	for id := range f.containers {
+		f.containers[id].State = "exited"
+	}
+	h.runDockerAutoUpdates(time.Date(2026, 9, 30, 3, 10, 0, 0, time.Local))
+	now, _ := h.resolveDockerID(context.Background(), api, "sonarr")
+	if now.ImageID != "sha256:new" {
+		t.Fatalf("not updated: %s", now.ImageID)
+	}
+	if len(*watched) != 0 {
+		t.Fatalf("a stopped container was watched: %v", *watched)
+	}
+}
+
+// The rollback brings the old version back running, as it was before the update.
+func TestDockerAutoRollbackStartsTheOldVersion(t *testing.T) {
+	f, h, api, _ := autoUpdateTestSetup(t)
+	h.runDockerAutoUpdates(time.Date(2026, 9, 30, 3, 10, 0, 0, time.Local))
+	updated, _ := h.resolveDockerID(context.Background(), api, "sonarr")
+	f.containers[updated.ID].State = "exited"
+	h.watchAutoUpdate(api, "sonarr")
+	back, _ := h.resolveDockerID(context.Background(), api, "sonarr")
+	if back.ImageID != "sha256:old" || back.State != "running" {
+		t.Fatalf("after rollback: image %s, state %s", back.ImageID, back.State)
+	}
+}
+
+// A stop from the view during the watch is the user's, not a failed update.
+func TestDockerAutoUpdateWatchLeavesAUserStopAlone(t *testing.T) {
+	f, h, api, _ := autoUpdateTestSetup(t)
+	h.runDockerAutoUpdates(time.Date(2026, 9, 30, 3, 10, 0, 0, time.Local))
+	updated, _ := h.resolveDockerID(context.Background(), api, "sonarr")
+	// The stop arrives while the watch is running, as it would from the view.
+	dockerAutoUpdateSleep = func(time.Duration) {
+		dockerNotifications.expect("sonarr", time.Now().Add(24*time.Hour))
+		f.containers[updated.ID].State = "exited"
+	}
+	h.watchAutoUpdate(api, "sonarr")
+	after, _ := h.resolveDockerID(context.Background(), api, "sonarr")
+	if after.ImageID != "sha256:new" {
+		t.Fatalf("a user stop was rolled back: %s", after.ImageID)
+	}
+}

@@ -33,9 +33,36 @@ func TestDockerSizeOfMeasuresInTheBackground(t *testing.T) {
 		t.Fatal("a container not in the measurement has no size")
 	}
 
-	rememberDockerSizes(map[string]dockerContainerSize{"id-a": {RW: 1, RootFs: 2}}, now.Add(-dockerSizesStale-time.Minute))
-	got = dockerSizeOf("id-a", now)
+	later := now.Add(dockerSizesRetry)
+	rememberDockerSizes(map[string]dockerContainerSize{"id-a": {RW: 1, RootFs: 2}}, later.Add(-dockerSizesStale-time.Minute))
+	got = dockerSizeOf("id-a", later)
 	if got == nil || got.RW != 1 || measured != 2 {
 		t.Fatalf("stale: size %v, measured %d times", got, measured)
+	}
+}
+
+// A measurement that failed leaves the cache stale; the next one waits
+// dockerSizesRetry instead of starting on the very next list poll.
+func TestDockerSizeOfBacksOffAfterAFailedMeasurement(t *testing.T) {
+	measured := 0
+	dockerSizesRefresh = func() { measured++ }
+	t.Cleanup(func() { dockerSizesRefresh = startDockerSizesRefresh })
+	resetDockerSizesCache()
+	t.Cleanup(resetDockerSizesCache)
+	now := time.Now()
+
+	_ = dockerSizeOf("id-a", now)
+	// The attempt ends without a result, as a timeout or daemon error does.
+	dockerSizesCache.mu.Lock()
+	dockerSizesCache.measuring = false
+	dockerSizesCache.mu.Unlock()
+
+	_ = dockerSizeOf("id-a", now.Add(3*time.Second))
+	if measured != 1 {
+		t.Fatalf("measured %d times: a failure must not restart it on the next poll", measured)
+	}
+	_ = dockerSizeOf("id-a", now.Add(dockerSizesRetry))
+	if measured != 2 {
+		t.Fatalf("measured %d times: it should try again after the back-off", measured)
 	}
 }

@@ -200,6 +200,15 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 	if host, _ := config["Hostname"].(string); len(c.ID) >= 12 && host == c.ID[:12] {
 		delete(config, "Hostname")
 	}
+	// Another container's network (gluetun and other VPN clients): Docker
+	// copies that container's hostname and domain into this one's config when
+	// it starts, and a create that sends them back is refused with
+	// "conflicting options: hostname and the network mode" -- every update
+	// failed at "create" and rolled back.
+	if mode, _ := hostConfig["NetworkMode"].(string); strings.HasPrefix(mode, "container:") {
+		delete(config, "Hostname")
+		delete(config, "Domainname")
+	}
 	body := dockerCreateBody{}
 	for k, v := range config {
 		body[k] = v

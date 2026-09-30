@@ -215,3 +215,20 @@ func TestDockerUpdateCheckKeepsAnUpdateThatFinishedDuringIt(t *testing.T) {
 		t.Fatalf("the finished update was overwritten: %+v", u)
 	}
 }
+
+// One image can carry two digests for one repo. When the registry's digest is
+// either of them, the image is current, whichever the daemon lists first.
+func TestDockerUpdateCheckMatchesAnyLocalDigest(t *testing.T) {
+	host := withTestRegistry(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Docker-Content-Digest", "sha256:bbb")
+	})
+	f := startFakeDocker(t)
+	ref := host + "/app:1"
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", Image: ref, State: "running"})
+	f.images[ref] = fakeImage{ID: "sha256:img", RepoDigests: []string{host + "/app@sha256:aaa", host + "/app@sha256:bbb"}}
+	h := dockerTestHandlers(t)
+	store, _ := h.runDockerUpdateCheck(context.Background())
+	if u := store.Images[ref]; u == nil || u.Status != "current" || u.LocalDigest != "sha256:bbb" {
+		t.Fatalf("update = %+v, want current on the matching digest", u)
+	}
+}

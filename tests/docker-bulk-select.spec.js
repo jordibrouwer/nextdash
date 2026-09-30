@@ -209,3 +209,24 @@ test.describe('the column headings', () => {
         await expect(nameHead).not.toHaveAttribute('data-lvs-sort', /./);
     });
 });
+
+test.describe('moving through a grouped list', () => {
+    // The arrows walked the flat sorted list while the table showed bands, so
+    // ↓ jumped into another band and Shift ranges ticked rows outside the one
+    // on screen.
+    test('the arrows follow the rows as the table draws them', async ({ page }) => {
+        await openView(page);
+        for (const group of ['status', 'image', 'project']) {
+            await page.locator('[data-docker-group]').selectOption(group);
+            const onScreen = await page.locator('[data-docker-row]').evaluateAll(
+                (rows) => rows.map((r) => r.getAttribute('data-docker-row')));
+            await page.evaluate(() => { window.dashboardInstance.docker.selected = null; });
+            const walked = [];
+            for (let i = 0; i < onScreen.length; i += 1) {
+                await page.keyboard.press('ArrowDown');
+                walked.push(await page.evaluate(() => window.dashboardInstance.docker.selected));
+            }
+            expect(walked, `grouped by ${group}`).toEqual(onScreen);
+        }
+    });
+});

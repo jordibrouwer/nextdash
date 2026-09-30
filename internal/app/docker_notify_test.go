@@ -255,3 +255,14 @@ func TestDockerNotifierDigestsABurst(t *testing.T) {
 		t.Fatalf("a mix sent as %d", len(sent))
 	}
 }
+
+// nextDash's own disk-measuring container exiting 1 is not a crash anyone
+// should hear about or count.
+func TestContainerNotifierIgnoresMeasureContainers(t *testing.T) {
+	r := newNotifierRun(t)
+	r.ev("die", "nextdash-measure-ab12cd34", "exitCode", "1", "nextdash.measure", "1").at(time.Minute).tick()
+	r.want()
+	if w := r.n.watch["nextdash-measure-ab12cd34"]; w != nil {
+		t.Fatalf("a measure container is being watched: %+v", w)
+	}
+}

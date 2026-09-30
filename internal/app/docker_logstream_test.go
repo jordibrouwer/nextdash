@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"testing/iotest"
 	"time"
 )
 
@@ -37,7 +38,9 @@ func TestReadDockerLogFramesSplitsLinesPerStream(t *testing.T) {
 		{T: "2026-09-29T10:00:00.3Z", S: "err", M: "oops"},
 		{T: "2026-09-29T10:00:00.2Z", S: "out", M: "second"},
 	}
-	if len(got) != 5 {
+	// The line over the cap arrives in two pieces, the second a continuation
+	// without a timestamp, and nothing of it is lost.
+	if len(got) != 6 {
 		t.Fatalf("got %d lines: %+v", len(got), got)
 	}
 	for i, w := range want {
@@ -45,11 +48,11 @@ func TestReadDockerLogFramesSplitsLinesPerStream(t *testing.T) {
 			t.Errorf("line %d = %+v, want %+v", i, got[i], w)
 		}
 	}
-	if len([]rune(got[3].M)) != dockerLogLineMax {
-		t.Errorf("long line kept %d runes", len([]rune(got[3].M)))
+	if got[3].T != "2026-09-29T10:00:00.4Z" || got[4].T != "2026-09-29T10:00:00.4Z" || got[3].M+got[4].M != strings.Repeat("x", dockerLogLineMax+50) {
+		t.Errorf("long line pieces = %d+%d runes, T %q/%q", len(got[3].M), len(got[4].M), got[3].T, got[4].T)
 	}
-	if got[4].M != "no newline at the end" {
-		t.Errorf("last partial line = %+v", got[4])
+	if got[5].M != "no newline at the end" {
+		t.Errorf("last partial line = %+v", got[5])
 	}
 }
 
@@ -164,5 +167,31 @@ func TestDockerLogStreamHeartbeatEndsWithTheHandler(t *testing.T) {
 		if got := readNDJSON(t, body.String()); len(got) != 1 || got[0].M != "hello" {
 			t.Fatalf("got %+v", got)
 		}
+	}
+}
+
+// A line far longer than the cap reaches the window whole, in pieces: the
+// first with its timestamp, the rest as continuations.
+func TestReadDockerLogFramesKeepsAVeryLongLineWhole(t *testing.T) {
+	body := strings.Repeat("é", 60<<10) // 120 KB of two-byte runes
+	stream := "2026-09-30T12:00:00.000000000Z " + body + "\n"
+	var lines []dockerLogLine
+	// Fed in small reads, the way the daemon sends it.
+	r := iotest.OneByteReader(strings.NewReader(stream))
+	if err := readDockerLogFrames(r, true, func(l dockerLogLine) { lines = append(lines, l) }, func() {}); err != nil {
+		t.Fatal(err)
+	}
+	var got strings.Builder
+	for i, l := range lines {
+		if i == 0 && l.T != "2026-09-30T12:00:00.000000000Z" {
+			t.Fatalf("first piece T = %q", l.T)
+		}
+		if i > 0 && l.T != "2026-09-30T12:00:00.000000000Z" {
+			t.Fatalf("piece %d has T %q, want its line's timestamp", i, l.T)
+		}
+		got.WriteString(l.M)
+	}
+	if got.String() != body {
+		t.Fatalf("got %d bytes of %d: the middle of the line was lost", got.Len(), len(body))
 	}
 }

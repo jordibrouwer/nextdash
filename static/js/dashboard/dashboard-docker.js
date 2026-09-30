@@ -505,7 +505,11 @@ class DashboardDocker {
         if (!body || body.available === false || !Array.isArray(body.containers)) return;
         this.containers = body.containers;
         this.usageEnabled = Boolean(body.usageEnabled);
-        this.render();
+        // Not while a "+N" ports list is open: the redraw threw away the row it
+        // sits in, a few seconds after it was opened. The list is drawn from
+        // this data once it closes.
+        if (!this._portsPopClose) this.render();
+        else this._renderAfterPortsPop = true;
         this.syncNavBadge();
     }
 
@@ -1091,6 +1095,10 @@ class DashboardDocker {
         this.syncBulkBar();
 
         const body = this.shell.body;
+        // Any other redraw closes an open ports list first, so its listeners
+        // go with it rather than outliving the row.
+        this._renderAfterPortsPop = false;
+        this._portsPopClose?.();
         body.replaceChildren();
         this.syncTabs();
         if (this.tabsEl) this.tabsEl.hidden = !this.status?.socket;
@@ -1565,9 +1573,24 @@ class DashboardDocker {
      * Grouped by compose project (project-less last) or by status (updates,
      * running, paused, stopped -- the order that needs attention first).
      */
-    appendGroupedRows(tbody, list, columns) {
+    /*
+     * The rows in the order they are on screen: grouped when a grouping is on.
+     *
+     * The arrows, Shift-click and Shift+arrow walked the flat sorted list while
+     * the table showed it grouped, so ↓ jumped to a row in another band and a
+     * range ticked rows outside the one the reader saw -- before a bulk stop,
+     * update or remove.
+     */
+    visibleRows() {
+        const list = this.filteredSortedContainers();
+        if (!DashboardDocker.GROUPS.includes(this.group)) return list;
+        const { keys, groups } = this.groupRows(list);
+        return keys.flatMap((key) => groups.get(key));
+    }
+
+    /** The bands a grouping makes, in drawing order. */
+    groupRows(list) {
         const byStatus = this.group === 'status';
-        const byProject = this.group === 'project';
         // What each grouping keys a container on; '' is the "none" band, last.
         const keyOf = {
             status: (c) => this.statusGroup(c),
@@ -1588,6 +1611,13 @@ class DashboardDocker {
             keys = [...groups.keys()].filter((k) => k !== '').sort((a, b) => a.localeCompare(b));
             if (groups.has('')) keys.push('');
         }
+        return { keys, groups };
+    }
+
+    appendGroupedRows(tbody, list, columns) {
+        const byStatus = this.group === 'status';
+        const byProject = this.group === 'project';
+        const { keys, groups } = this.groupRows(list);
         const statusLabels = {
             updates: this.t('dashboard.dockerFilterUpdates', 'Updates'),
             running: this.t('dashboard.dockerFilterRunning', 'Running'),
@@ -1720,10 +1750,21 @@ class DashboardDocker {
             more.setAttribute('aria-expanded', 'false');
             document.removeEventListener('pointerdown', outside, true);
             window.removeEventListener('keydown', onKey, true);
+            if (this._portsPopClose === close) {
+                this._portsPopClose = null;
+                if (this._renderAfterPortsPop) {
+                    this._renderAfterPortsPop = false;
+                    // After the click that closed it has been handled.
+                    setTimeout(() => this.render(), 0);
+                }
+            }
         };
         const outside = (e) => { if (!cell.contains(e.target)) close(); };
         const onKey = (e) => {
             if (e.key !== 'Escape') return;
+            // Thrown away by a refresh since: let go, and leave the key to
+            // the view instead of swallowing it for a popover that is gone.
+            if (!pop.isConnected) { close(); return; }
             e.stopPropagation();
             close();
             more.focus();
@@ -1731,6 +1772,10 @@ class DashboardDocker {
         more.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!pop.hidden) { close(); return; }
+            // One open at a time, and known to render(), which closes it
+            // before a refresh replaces the row it lives in.
+            this._portsPopClose?.();
+            this._portsPopClose = close;
             pop.hidden = false;
             more.setAttribute('aria-expanded', 'true');
             document.addEventListener('pointerdown', outside, true);
@@ -1981,7 +2026,7 @@ class DashboardDocker {
      * list shows. Without an anchor there is no range, so it ticks the one.
      */
     extendCheckedTo(name) {
-        const rows = this.filteredSortedContainers().map((c) => c.name);
+        const rows = this.visibleRows().map((c) => c.name);
         const a = rows.indexOf(this._multiAnchor);
         const b = rows.indexOf(name);
         if (a < 0 || b < 0) {
@@ -2087,7 +2132,7 @@ class DashboardDocker {
      * what it shows — without this, arrowing past the open container would
      * leave the drawer pointed at a row that no longer looks selected. */
     moveRowSelection(delta, { wrap = true } = {}) {
-        const rows = this.filteredSortedContainers();
+        const rows = this.visibleRows();
         if (!rows.length) return;
         let idx = rows.findIndex((c) => c.name === this.selected);
         if (idx < 0) idx = delta > 0 ? 0 : rows.length - 1;

@@ -26,10 +26,13 @@ func TestDockerMetricsExtras(t *testing.T) {
 
 	dockerTimelines = newDockerTimeline()
 	t.Cleanup(func() { dockerTimelines = newDockerTimeline() })
-	dockerTimelines.add("web", dockerTimelineEntry{At: now.Add(-2 * time.Hour).UnixMilli(), Kind: "crash"})
-	dockerTimelines.add("web", dockerTimelineEntry{At: now.Add(-time.Hour).UnixMilli(), Kind: "unhealthy"})
-	dockerTimelines.add("web", dockerTimelineEntry{At: now.Add(-time.Hour).UnixMilli(), Kind: "start"})
-	dockerTimelines.add("db", dockerTimelineEntry{At: now.Add(-30 * time.Hour).UnixMilli(), Kind: "crash"})
+	dockerTimelines.add("alpha", dockerTimelineEntry{At: now.Add(-2 * time.Hour).UnixMilli(), Kind: "crash"})
+	dockerTimelines.add("alpha", dockerTimelineEntry{At: now.Add(-time.Hour).UnixMilli(), Kind: "unhealthy"})
+	dockerTimelines.add("alpha", dockerTimelineEntry{At: now.Add(-time.Hour).UnixMilli(), Kind: "start"})
+	dockerTimelines.add("bravo", dockerTimelineEntry{At: now.Add(-30 * time.Hour).UnixMilli(), Kind: "crash"})
+	// Not in the list -- hidden, or one of nextDash's own measuring
+	// containers -- so not in the widget's count either.
+	dockerTimelines.add("hidden-one", dockerTimelineEntry{At: now.Add(-time.Hour).UnixMilli(), Kind: "crash"})
 
 	dockerStatsStore.reset()
 	t.Cleanup(dockerStatsStore.reset)
