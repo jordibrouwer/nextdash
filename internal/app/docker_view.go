@@ -68,6 +68,9 @@ type dockerViewContainer struct {
 	// Size is the last background measurement (docker_sizes.go), absent
 	// before the first.
 	Size *dockerContainerSize `json:"size,omitempty"`
+	// Restarts is how often it started again in the last 24 hours, from the
+	// timeline (docker_timeline.go); absent at none.
+	Restarts int `json:"restarts,omitempty"`
 	// Usage is the stats sampler's latest reading, on the list only and only
 	// for a running container the sampler has read twice (CPU is a delta).
 	Usage *dockerViewUsage `json:"usage,omitempty"`
@@ -654,6 +657,7 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 		v.LanIP = dockerLanIP(c, lan)
 		v.Update = dockerRowUpdate(updates[c.Image], c, tagIDs)
 		v.Size = dockerSizeOf(c.ID, now)
+		v.Restarts = dockerTimelines.restartsSince(c.name(), now.Add(-24*time.Hour))
 		if usageEnabled && c.State == "running" {
 			if p, ok := dockerStatsStore.latest(c.ID); ok {
 				v.Usage = &dockerViewUsage{CPU: p.CPU, Mem: p.Mem}

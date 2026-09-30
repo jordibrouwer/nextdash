@@ -738,6 +738,8 @@ class DashboardDocker {
                 ['cpu', this.t('dashboard.dockerSortCpu', 'CPU')],
                 ['mem', this.t('dashboard.dockerSortMem', 'memory')],
             ] : []),
+            ['size', this.t('dashboard.dockerSortSize', 'size')],
+            ['restarts', this.t('dashboard.dockerSortRestarts', 'restarts')],
         ].map(([value, label]) => `<option value="${value}">${this.escape(label)}</option>`).join('');
         host.innerHTML = `
             <input type="search" data-docker-search value="${this.escape(this.query)}"
@@ -870,6 +872,7 @@ class DashboardDocker {
             cpu: this.t('dashboard.dockerColCpu', 'CPU'),
             mem: this.t('dashboard.dockerColMem', 'RAM'),
             size: this.t('dashboard.dockerColSize', 'Size'),
+            restarts: this.t('dashboard.dockerColRestarts', 'Restarts'),
             webui: this.t('dashboard.dockerLinkWebUI', 'Web UI'),
             ports: this.t('dashboard.dockerColPorts', 'Ports'),
         };
@@ -939,14 +942,15 @@ class DashboardDocker {
     }
 
     compareFn() {
-        if (DashboardDocker.USAGE_SORTS.has(this.sort)) {
+        const numeric = DashboardDocker.NUMERIC_SORTS[this.sort];
+        if (numeric) {
             // Turning the order round never moves a container without a
-            // reading (stopped, or not sampled yet) above one that has it.
-            const key = this.sort;
+            // reading (stopped, not sampled or not measured yet) above one
+            // that has it.
             const sign = this.sortDir === 'desc' ? -1 : 1;
             return (a, b) => {
-                const va = a.usage?.[key];
-                const vb = b.usage?.[key];
+                const va = numeric(a);
+                const vb = numeric(b);
                 if (va == null || vb == null) return (va == null) - (vb == null) || a.name.localeCompare(b.name);
                 return sign * (va - vb) || a.name.localeCompare(b.name);
             };
@@ -957,7 +961,7 @@ class DashboardDocker {
 
     /** The direction a sort starts in: usage highest first, the rest A to Z. */
     static defaultSortDir(key) {
-        return DashboardDocker.USAGE_SORTS.has(key) ? 'desc' : 'asc';
+        return DashboardDocker.NUMERIC_SORTS[key] ? 'desc' : 'asc';
     }
 
     /** An image without its registry host and a :latest tag, as a person
@@ -979,10 +983,18 @@ class DashboardDocker {
     };
 
     /** The columns the Columns list switches, in table order; Name always shows. */
-    static COLUMNS = ['image', 'state', 'cpu', 'mem', 'size', 'webui', 'ports'];
+    static COLUMNS = ['image', 'state', 'cpu', 'mem', 'size', 'restarts', 'webui', 'ports'];
 
-    /** Off on a first visit: none yet. */
-    static HIDDEN_BY_DEFAULT = [];
+    /** Off on a first visit: Restarts, which most hosts leave at 0. */
+    static HIDDEN_BY_DEFAULT = ['restarts'];
+
+    /** Sorts by a number, highest first; a container without one goes last either way. */
+    static NUMERIC_SORTS = {
+        cpu: (c) => c.usage?.cpu,
+        mem: (c) => c.usage?.mem,
+        size: (c) => c.size?.rw,
+        restarts: (c) => c.restarts || 0,
+    };
 
     /** The groupings the list offers besides none. */
     static GROUPS = ['project', 'status', 'network', 'image'];
@@ -1411,7 +1423,8 @@ class DashboardDocker {
             ['state', labels.state, 'status'],
             ['cpu', labels.cpu, 'cpu'],
             ['mem', labels.mem, 'mem'],
-            ['size', labels.size],
+            ['size', labels.size, 'size'],
+            ['restarts', labels.restarts, 'restarts'],
             ['webui', labels.webui],
             ['ports', labels.ports],
         ].filter(([key]) => key === 'name' || this.showsColumn(key)).forEach(([key, label, sortKey]) => {
@@ -1724,6 +1737,16 @@ class DashboardDocker {
         sizeCell.textContent = DashboardDocker.formatSize(c.size);
         if (c.size) sizeCell.title = DashboardDocker.sizeTitle(c.size, (key, fallback, params) => this.t(key, fallback, params));
         if (this.showsColumn('size')) tr.appendChild(sizeCell);
+
+        // How often it started again in the last 24 hours, from the timeline.
+        if (this.showsColumn('restarts')) {
+            const restartsCell = document.createElement('td');
+            restartsCell.className = 'docker-cell docker-cell--restarts docker-cell--num';
+            restartsCell.textContent = String(c.restarts || 0);
+            restartsCell.classList.toggle('is-quiet', !c.restarts);
+            restartsCell.title = this.t('dashboard.dockerRestartsTitle', 'Started again {count} times in the last 24 hours', { count: c.restarts || 0 });
+            tr.appendChild(restartsCell);
+        }
 
         /*
          * The web UI in a column of its own -- the address set in the drawer's

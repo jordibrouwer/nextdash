@@ -139,6 +139,23 @@ func (t *dockerTimeline) countSince(since time.Time, kinds ...string) int {
 	return n
 }
 
+// restartsSince counts a container's starts since a moment that came after
+// something else in its history: a start is a restart once the container had
+// stopped, exited or crashed before it. The first start on record is not one.
+func (t *dockerTimeline) restartsSince(name string, since time.Time) int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.loadLocked()
+	cutoff := since.UnixMilli()
+	n := 0
+	for i, e := range t.data[name] {
+		if i > 0 && e.Kind == "start" && e.At >= cutoff {
+			n++
+		}
+	}
+	return n
+}
+
 // forContainer is one container's recorded events, oldest first.
 func (t *dockerTimeline) forContainer(name string) []dockerTimelineEntry {
 	t.mu.Lock()

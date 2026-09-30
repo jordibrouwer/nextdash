@@ -117,7 +117,8 @@
 .docker-cell--num,
 .docker-head.docker-head--cpu,
 .docker-head.docker-head--mem,
-.docker-head.docker-head--size {
+.docker-head.docker-head--size,
+.docker-head.docker-head--restarts {
     text-align: right;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -625,9 +626,11 @@
     .docker-head--cpu,
     .docker-head--mem,
     .docker-head--size,
+    .docker-head--restarts,
     .docker-cell--cpu,
     .docker-cell--mem,
-    .docker-cell--size {
+    .docker-cell--size,
+    .docker-cell--restarts {
         display: none;
     }
 }
@@ -665,6 +668,7 @@
     .docker-cell--cpu,
     .docker-cell--mem,
     .docker-cell--size,
+    .docker-cell--restarts,
     .docker-cell--webui,
     .docker-cell--ports {
         display: none;
@@ -1429,4 +1433,9 @@
 .docker-columns-reset:hover {
     color: var(--text-primary);
     text-decoration: underline;
+}
+
+/* Restarts: a 0 is the usual answer, so it stays quiet. */
+.docker-cell--restarts.is-quiet {
+    color: var(--text-secondary);
 }

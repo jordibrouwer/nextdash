@@ -42,3 +42,26 @@ test('grouped, the band still spans the columns that show', async ({ page }) => 
     const spans = await page.locator('.docker-group-row td').evaluateAll((tds) => tds.map((td) => td.colSpan));
     expect(new Set(spans)).toEqual(new Set([5]));
 });
+
+// Size and Restarts sort, highest first; Restarts is off until ticked, and
+// counts the starts of the last 24 hours the server sends.
+test('sort by size and by restarts', async ({ page }) => {
+    const row = (name, rw, restarts) => ({ id: name.padEnd(64, '0'), shortId: name.padEnd(12, '0'), name, image: `x/${name}`, tag: 'latest',
+        state: 'running', status: 'Up', health: '', created: 1790000000, ports: [], size: rw == null ? undefined : { rw, rootFs: rw * 2 }, restarts });
+    await mockDocker(page, { containers: [row('alpha', 10, 0), row('bravo', 900, 4), row('charlie', null, 1), row('delta', 50, 0)] });
+    await page.goto('/#docker');
+    await expect(page.locator('.docker-head--restarts')).toHaveCount(0);
+    const names = page.locator('.docker-table tbody .docker-name');
+
+    await page.locator('[data-docker-sort-head="size"]').click();
+    await expect(names).toHaveText(['bravo', 'delta', 'alpha', 'charlie']);
+    await page.locator('[data-docker-sort-head="size"]').click();
+    await expect(names).toHaveText(['alpha', 'delta', 'bravo', 'charlie']);
+
+    await page.locator('[data-docker-columns]').click();
+    await page.locator('[data-docker-column="restarts"]').check();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-docker-row="bravo"] .docker-cell--restarts')).toHaveText('4');
+    await page.locator('[data-docker-sort]').selectOption('restarts');
+    await expect(names).toHaveText(['bravo', 'charlie', 'alpha', 'delta']);
+});

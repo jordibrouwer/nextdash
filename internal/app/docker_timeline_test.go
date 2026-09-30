@@ -122,3 +122,28 @@ func TestDockerTimelineRoute(t *testing.T) {
 		t.Fatalf("loop = %+v", body.Entries[1])
 	}
 }
+
+// A start counts as a restart only after something else in the container's
+// history, and only inside the window.
+func TestDockerTimelineRestartsSince(t *testing.T) {
+	tl := newDockerTimeline()
+	tl.loaded = true
+	now := time.Now()
+	at := func(d time.Duration) int64 { return now.Add(-d).UnixMilli() }
+	tl.data["sonarr"] = []dockerTimelineEntry{
+		{At: at(30 * time.Hour), Kind: "start"},
+		{At: at(29 * time.Hour), Kind: "crash"},
+		{At: at(29 * time.Hour), Kind: "start"}, // before the window
+		{At: at(3 * time.Hour), Kind: "crash"},
+		{At: at(3 * time.Hour), Kind: "start"},
+		{At: at(1 * time.Hour), Kind: "stop"},
+		{At: at(1 * time.Hour), Kind: "start"},
+	}
+	tl.data["fresh"] = []dockerTimelineEntry{{At: at(time.Hour), Kind: "start"}}
+	if got := tl.restartsSince("sonarr", now.Add(-24*time.Hour)); got != 2 {
+		t.Fatalf("sonarr = %d, want 2", got)
+	}
+	if got := tl.restartsSince("fresh", now.Add(-24*time.Hour)); got != 0 {
+		t.Fatalf("a first start is not a restart: %d", got)
+	}
+}
