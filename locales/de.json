@@ -2952,7 +2952,7 @@
     "dockerDiskMeasureAgain": "Measure again",
     "dockerDiskMeasure": "Measure",
     "dockerDiskMeasureHint": "A short-lived container mounts this folder read-only and counts it",
-    "dockerDiskMeasuring": "Measuring…",
+    "dockerDiskMeasuringFolder": "Measuring…",
     "dockerDiskMeasureBusy": "Another folder is being measured. Try again when it is done.",
     "dockerDiskMeasureFailed": "The folder could not be measured.",
     "dockerDiskStopped": "Stopped containers",

@@ -265,7 +265,7 @@
         async measureBind(bind, btn, cell) {
             btn.disabled = true;
             const label = btn.textContent;
-            btn.textContent = this.t('dockerDiskMeasuring', 'Measuring…');
+            btn.textContent = this.t('dockerDiskMeasuringFolder', 'Measuring…');
             let res = null;
             let body = null;
             try {
