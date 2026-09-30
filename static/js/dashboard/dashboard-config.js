@@ -1814,7 +1814,14 @@ class DashboardConfig {
             if (!btn.hasAttribute('data-label')) {
                 btn.setAttribute('data-label', btn.textContent.trim());
             }
-            btn.addEventListener('click', () => activateTracked(btn.getAttribute(attr), 'click'));
+            // Bound once per button, calling whichever activate the latest bind
+            // handed over. A strip that outlives its section body (Stats) was
+            // bound again on every repaint, and one click then sent one
+            // analytics event per repaint so far.
+            btn._subTabActivate = activateTracked;
+            if (btn.dataset.subtabBound === '1') return;
+            btn.dataset.subtabBound = '1';
+            btn.addEventListener('click', () => btn._subTabActivate(btn.getAttribute(attr), 'click'));
             btn.addEventListener('keydown', (e) => {
                 const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
                 if (!keys.includes(e.key)) return;
@@ -1828,7 +1835,7 @@ class DashboardConfig {
                 if (!target) return;
                 const tab = target.getAttribute(attr);
                 target.focus();
-                activateTracked(tab, 'keyboard');
+                btn._subTabActivate(tab, 'keyboard');
                 // Some sections repaint through render(), which replaces the
                 // strip wholesale and drops the focus set above. Re-focus the
                 // rebuilt button so a second arrow press still works.
@@ -4682,11 +4689,15 @@ class DashboardConfig {
             ? Promise.resolve({ enabled: false, items: [] })
             : news.fetchSiteNews();
 
-        this._newsStreamPromise = Promise.all([
+        const promise = Promise.all([
             site,
             news.fetchReleases().catch(() => []),
             this.loadOverviewFeatures(),
         ]).then(([siteNews, releases, features]) => {
+            // Replaced by a forced reload while this one was out (turning site
+            // news off, say): a slow answer landing last put back what the
+            // newer one had taken away.
+            if (this._newsStreamPromise !== promise) return this._newsStream || [];
             this._siteNewsEnabled = siteNews.enabled !== false;
             this._siteNewsFailed = siteNews.failed === true;
             this._newsStream = news.buildStream({ site: siteNews, releases, features });
@@ -4701,10 +4712,12 @@ class DashboardConfig {
             }
             return this._newsStream;
         }).catch(() => {
+            if (this._newsStreamPromise !== promise) return this._newsStream || [];
             this._newsStream = [];
             return [];
         });
-        return this._newsStreamPromise;
+        this._newsStreamPromise = promise;
+        return promise;
     }
 
     /** The unread count on Overview in the section rail. */
@@ -6429,17 +6442,16 @@ class DashboardConfig {
                 }
                 if (kind === 'retention') {
                     this.dash.settings.serverLogRetentionHours = Number(value) || 0;
-                    void this.saveSettingsWithFeedback();
                     // The server prunes on save, so pull a fresh window rather
-                    // than leaving expired lines on screen.
-                    void this.loadServerLog({ reset: true });
+                    // than leaving expired lines on screen -- after the save,
+                    // or the read comes back before the prune.
+                    void this.saveSettingsWithFeedback().then(() => this.loadServerLog({ reset: true }));
                     return;
                 }
                 if (kind === 'maxEntries') {
                     this.dash.settings.serverLogMaxEntries = Number(value)
                         || DashboardConfig.SERVER_LOG_DEFAULT_MAX_ENTRIES;
-                    void this.saveSettingsWithFeedback();
-                    void this.loadServerLog({ reset: true });
+                    void this.saveSettingsWithFeedback().then(() => this.loadServerLog({ reset: true }));
                     return;
                 }
                 if (kind === 'mode') {
@@ -7441,10 +7453,12 @@ class DashboardConfig {
         }
         if (name === 'autoBackupEnabled' || name === 'healthAutoRecheckEnabled') {
             d.settings[name] = value;
-            void this.saveSettingsWithFeedback();
+            const saved = this.saveSettingsWithFeedback();
             // Repaint so the interval select enables/disables and the tile updates.
+            // After the save: the tile's state is read from the stored settings,
+            // and sent alongside, the read usually beat the write.
             if (name === 'autoBackupEnabled') {
-                void this.loadBackupData();
+                void saved.then(() => this.loadBackupData());
             } else {
                 this.repaintBackupSection();
             }
@@ -7462,9 +7476,9 @@ class DashboardConfig {
             this.dash.settings.autoBackupIntervalDays = Number(value) || 0;
             // Saved through the same path as the recheck interval beside it,
             // rather than a patch helper of its own.
-            void this.saveSettingsWithFeedback();
-            // The tile says when the next one is due, which this changes.
-            void this.loadBackupData();
+            // The tile says when the next one is due, which this changes --
+            // read once the new interval is stored.
+            void this.saveSettingsWithFeedback().then(() => this.loadBackupData());
             return;
         }
         if (name === 'previewImageCacheMB') {
@@ -7907,6 +7921,9 @@ class DashboardConfig {
             this.notify(this.t('config.backupResetSuccess', 'All data reset. Reloading…'), 'success');
             setTimeout(() => window.location.reload(), 800);
         } catch {
+            // The overlay holds the scroll lock; left up, the error sat behind
+            // it on a page only a reload could leave.
+            this.hideProgressOverlay();
             this.notify(this.t('config.backupResetError', 'Could not reset data.'), 'error');
         }
     }
@@ -7957,13 +7974,14 @@ class DashboardConfig {
             const bookmarks = await bookmarksRes.json();
             const pages = await pagesRes.json();
             const pageNames = Object.fromEntries(pages.map((p) => [p.id, p.name]));
+            const catNames = await this.categoryNamesByPage(pages.map((p) => p.id));
 
             const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
             const header = ['Name', 'URL', 'Category', 'Page', 'Shortcut', 'Tags', 'Notes'].map(escape).join(',');
             const rows = (Array.isArray(bookmarks) ? bookmarks : []).map((bm) => [
                 escape(bm.name),
                 escape(bm.url),
-                escape(bm.category || ''),
+                escape(this.categoryNameFor(catNames, bm)),
                 escape(pageNames[bm.pageId] ?? bm.pageId ?? ''),
                 escape(bm.shortcut),
                 escape(Array.isArray(bm.tags) ? bm.tags.join(', ') : ''),
@@ -10147,7 +10165,12 @@ class DashboardConfig {
                 if (body) {
                     body.innerHTML = this.renderAppearance();
                     const container = document.getElementById('dashboard-layout');
-                    if (container) this.bindAppearanceControls(container);
+                    if (container) {
+                        this.bindAppearanceControls(container);
+                        // The fresh body carries the intro line again; lifted to
+                        // the band as repaintBackupSection does, or it showed twice.
+                        this._fillShellHeadFromSection(container);
+                    }
                 }
                 restoreFocus();
             });
@@ -10851,12 +10874,16 @@ class DashboardConfig {
         if (this._themeSelected === id) this._themeSelected = null;
         // A deleted theme that is still selected would leave the dashboard on a
         // theme that no longer exists, so fall back to the default.
-        if (this.dash.settings?.theme === id) {
+        const wasActive = this.dash.settings?.theme === id;
+        if (wasActive) {
             this.dash.settings.theme = 'default';
             void this.saveSettingsWithFeedback();
         }
         this.repaintAppearanceBody();
         await this.saveColorsData();
+        // The page still said data-theme="<deleted id>", and the reloaded theme
+        // CSS no longer had a block for it: put the default on screen too.
+        if (wasActive) this.applyThemeLive();
     }
 
     moveCustomTheme(id, direction) {
@@ -12932,7 +12959,7 @@ class DashboardConfig {
                     // reapplied as well as a re-render.
                     { field: 'layoutPreset', type: 'select', label: t('config.layoutPresetLabelShort', 'Layout preset'), special: 'chromeRender',
                         options: layoutPresets.map((p) => opt(p, t(`config.layoutPresetName.${p}`, p))) },
-                    { field: 'densityMode', type: 'select', label: t('config.densityLabel', 'Density'), special: 'render', art: 'density', options: [
+                    { field: 'densityMode', type: 'select', label: t('config.densityLabel', 'Density'), special: 'chromeRender', art: 'density', options: [
                         opt('comfortable', t('config.densityComfortable', 'Comfortable')), opt('compact', t('config.densityCompact', 'Compact')),
                         opt('dense', t('config.densityDense', 'Dense')), opt('auto', t('config.densityAuto', 'Auto')),
                     ] },
@@ -15729,7 +15756,15 @@ class DashboardConfig {
      */
     async saveSettingsWithFeedback() {
         this.setSaveState('saving');
-        const promise = (async () => {
+        /*
+         * One after another. Each save sends the whole of d.settings, and two
+         * sent at once can reach the server's lock in either order: the older
+         * snapshot landing last put the first toggle back and dropped the
+         * second, with the screen showing both. Waiting for the one before
+         * means the last to land is the latest.
+         */
+        const prior = this._settingsSaveChain || Promise.resolve();
+        const promise = prior.then(async () => {
             let ok = false;
             try {
                 const theme = this.dash.settings?.theme;
@@ -15744,7 +15779,8 @@ class DashboardConfig {
             }
             this.setSaveState(ok ? 'saved' : 'error');
             return ok;
-        })();
+        });
+        this._settingsSaveChain = promise.catch(() => false);
         this._settingsSavePromise = promise;
         try {
             return await promise;
@@ -17536,9 +17572,31 @@ class DashboardConfig {
         }
     }
 
+    /*
+     * The highest page id in use, the trash included.
+     *
+     * A deleted page keeps its id in the trash, and restoring it writes that id
+     * back. Counting only the live pages handed that id to the next new page,
+     * and the restore then failed with "a page with that id already exists" --
+     * for good -- while an undo inside the toast wrote the old page over the new.
+     */
+    async highestPageId() {
+        const pages = this.dash.pages || [];
+        let maxId = pages.length ? Math.max(...pages.map((p) => Number(p.id) || 0)) : 0;
+        try {
+            const data = await window.DashboardTrash?.list?.();
+            (data?.items || []).forEach((item) => {
+                if (item?.kind !== 'page') return;
+                const id = Number(item.pageId) || 0;
+                if (id > maxId && id < 999999) maxId = id;
+            });
+        } catch { /* the trash could not be read: live pages only, as before */ }
+        return maxId;
+    }
+
     async addPage() {
         const pages = this.dash.pages || [];
-        const maxId = pages.length ? Math.max(...pages.map((p) => Number(p.id) || 0)) : 0;
+        const maxId = await this.highestPageId();
         // Deleting page 3 of 3 and adding again would otherwise reuse "Page 3".
         const name = DashboardConfig.uniqueNameFrom(
             `${this.t('config.pagePrefix', 'Page')} ${maxId + 1}`,
@@ -17584,7 +17642,7 @@ class DashboardConfig {
         ) === true;
 
         const pages = this.dash.pages || [];
-        const maxId = pages.length ? Math.max(...pages.map((p) => Number(p.id) || 0)) : 0;
+        const maxId = await this.highestPageId();
         const newId = maxId + 1;
         const name = DashboardConfig.uniqueNameFrom(
             this.t('config.pageDuplicateName', '{name} copy').replace('{name}', source.name || ''),
@@ -22045,6 +22103,9 @@ class DashboardConfig {
             if (!res || !res.ok) throw new Error(`HTTP ${res?.status ?? 'network'}`);
             const data = await res.json();
             if (!Array.isArray(data)) throw new Error('categories: unexpected payload');
+            // The picker moved on while this was loading: another page's list
+            // shown under this one, and the next edit saved it over it.
+            if (String(this._catPageId) !== String(pageId)) return;
             this._categories = data;
             this._categoriesLoadFailed = false;
             // A blocks failure is not a categories failure: the list still
@@ -22174,8 +22235,12 @@ class DashboardConfig {
                 // category that is still there, contradicting the error toast
                 // saveCategories had just shown.
                 if (await this.saveCategories(pageId) === false) {
-                    this._categories.splice(i, 0, removed);
-                    this.repaintPtBody();
+                    // Only onto the list it came from: the picker may be on
+                    // another page by now, whose list is not this one's.
+                    if (String(this._catPageId) === String(pageId) && this._categories) {
+                        this._categories.splice(i, 0, removed);
+                        this.repaintPtBody();
+                    }
                     return;
                 }
                 // After the save, so a delete that did not persist cannot leave
@@ -25272,7 +25337,7 @@ class DashboardConfig {
      * for a just-typed name, otherwise the id's display name elsewhere — so a
      * category carried onto a new page keeps reading the same.
      */
-    async ensureCategoryOnPage(pageId, categoryId) {
+    async ensureCategoryOnPage(pageId, categoryId, sourcePageIds = []) {
         if (!pageId || !categoryId) return;
         const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
         // A failed read must not degrade to an empty list: the POST below sends
@@ -25284,9 +25349,33 @@ class DashboardConfig {
         if (!Array.isArray(current)) throw new Error('categories: unexpected payload');
         const list = current;
         if (list.some((c) => String(c.id) === String(categoryId))) return;
-        const name = this._pendingCategories?.get(categoryId)
-            || this.knownCategories(pageId).find((c) => String(c.id) === String(categoryId))?.label
-            || String(categoryId);
+        // The name from the page the category comes from. Looked up on the
+        // target alone -- where, by definition, it is not yet -- a move made
+        // the category there under its raw id ("cat-lz3k-ab12").
+        // A page whose list is not loaded names its categories by id: that is
+        // no name, so keep looking.
+        const nameOn = (pid) => {
+            const label = this.knownCategories(pid).find((c) => String(c.id) === String(categoryId))?.label;
+            return label && label !== String(categoryId) ? label : '';
+        };
+        const lookIn = [pageId, ...sourcePageIds, ...(this.dash.pages || []).map((p) => p.id)];
+        let name = this._pendingCategories?.get(categoryId);
+        for (const pid of lookIn) {
+            if (name) break;
+            if (pid == null || pid === '') continue;
+            name = nameOn(pid);
+        }
+        // Not loaded here: ask the source pages themselves.
+        for (const pid of sourcePageIds) {
+            if (name) break;
+            if (pid == null || pid === '' || String(pid) === String(pageId)) continue;
+            try {
+                const srcRes = await fetch(`/api/categories?page=${encodeURIComponent(pid)}`);
+                const srcList = srcRes.ok ? await srcRes.json() : [];
+                name = (Array.isArray(srcList) ? srcList : []).find((c) => String(c.id) === String(categoryId))?.name || '';
+            } catch { /* fall back to the id below */ }
+        }
+        name = name || String(categoryId);
         const saveRes = await this.writeFetch(`/api/categories?page=${encodeURIComponent(pageId)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -25898,7 +25987,7 @@ class DashboardConfig {
             if (action === 'pin') await this.bulkPin(picked);
             else if (action === 'favicons') await this.bulkFavicons(picked);
             else if (action === 'previews') await this.bulkPreviews(picked);
-            else if (action === 'export') this.bulkExportCsv(picked);
+            else if (action === 'export') void this.bulkExportCsv(picked);
             else if (action === 'delete') await this.bulkDelete(picked);
         } catch {
             this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
@@ -26012,7 +26101,7 @@ class DashboardConfig {
             const applyTo = picked;
             const pages = new Set(applyTo.map((b) => String(b.pageId)));
             for (const pageId of pages) {
-                await this.ensureCategoryOnPage(pageId, targetCat);
+                await this.ensureCategoryOnPage(pageId, targetCat, [...pages, this.bmPageFilter]);
             }
             await this.mutateSelected(applyTo, (b) => ({ ...b, category: targetCat }));
             this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
@@ -26023,7 +26112,9 @@ class DashboardConfig {
         // only taken off its page once it can land. A move used to remove the
         // rows first and add them after, so a target that refused (the same
         // URL already there) left them on no page at all.
-        if (targetCat) await this.ensureCategoryOnPage(targetPage, targetCat);
+        if (targetCat) {
+            await this.ensureCategoryOnPage(targetPage, targetCat, picked.map((b) => String(b.pageId)));
+        }
         let result;
         try {
             result = await this.moveRows(targetPage, targetCat,
@@ -26528,15 +26619,43 @@ class DashboardConfig {
         if (result.ok) await this.saveSweptFields(byPage);
     }
 
-    bulkExportCsv(picked) {
+    /*
+     * The category names of these pages, keyed pageId::id.
+     *
+     * A bookmark stores its category as an id, and the CSV import reads that
+     * column as a name: exported as the id, a round trip made categories called
+     * "cat-lz3k-ab12" on every page.
+     */
+    async categoryNamesByPage(pageIds) {
+        const names = new Map();
+        await Promise.all([...new Set((pageIds || []).map(String))].map(async (pid) => {
+            try {
+                const res = await fetch(`/api/categories?page=${encodeURIComponent(pid)}`);
+                const list = res.ok ? await res.json() : [];
+                (Array.isArray(list) ? list : []).forEach((c) => {
+                    if (c?.id) names.set(`${pid}::${c.id}`, String(c.name || c.id));
+                });
+            } catch { /* that page's column falls back to the id */ }
+        }));
+        return names;
+    }
+
+    categoryNameFor(names, bm) {
+        const id = String(bm?.category || '');
+        if (!id) return '';
+        return names.get(`${bm.pageId}::${id}`) || id;
+    }
+
+    async bulkExportCsv(picked) {
         if (!picked?.length) return;
         const pageNames = Object.fromEntries((this.dash.pages || []).map((p) => [p.id, p.name]));
+        const catNames = await this.categoryNamesByPage(picked.map((bm) => bm.pageId));
         const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
         const header = ['Name', 'URL', 'Category', 'Page', 'Shortcut', 'Tags', 'Notes'].map(escape).join(',');
         const rows = picked.map((bm) => [
             escape(bm.name),
             escape(bm.url),
-            escape(bm.category || ''),
+            escape(this.categoryNameFor(catNames, bm)),
             escape(pageNames[bm.pageId] ?? bm.pageId ?? ''),
             escape(bm.shortcut),
             escape(Array.isArray(bm.tags) ? bm.tags.join(', ') : ''),

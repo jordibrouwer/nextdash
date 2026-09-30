@@ -82,7 +82,17 @@ class DashboardStructureCreate {
             if (list.some((p) => String(p.name || '').trim().toLowerCase() === name.toLowerCase())) {
                 return { error: cfg('pageExists', 'That page already exists.') };
             }
-            const nextId = list.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1;
+            // Past the ids in the trash too: a new page on a deleted page's id
+            // made that page impossible to restore (see Config's highestPageId).
+            let maxId = list.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0);
+            try {
+                const trash = await window.DashboardTrash?.list?.();
+                (trash?.items || []).forEach((item) => {
+                    const id = Number(item?.pageId) || 0;
+                    if (item?.kind === 'page' && id > maxId && id < 999999) maxId = id;
+                });
+            } catch { /* live pages only */ }
+            const nextId = maxId + 1;
             const payload = [...list, { id: nextId, name }];
             const save = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/pages', {
                 method: 'POST',

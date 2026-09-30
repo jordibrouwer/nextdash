@@ -275,3 +275,26 @@ test.describe('config bookmarks context menu', () => {
         expect(after).toBeLessThanOrEqual(before);
     });
 });
+
+test.describe('config bookmarks context menu and the pointer', () => {
+    // Enter clicked the item the arrows had reached, not the one the pointer
+    // had just highlighted: ArrowUp wraps to Delete, hover on the first entry,
+    // Enter -- and the bookmark was deleted.
+    test('Enter acts on the item under the pointer', async ({ page }) => {
+        await openBookmarksSection(page);
+        await rightClickFirstRow(page);
+        await page.keyboard.press('ArrowUp');
+        const first = page.locator(ITEM).first();
+        const firstAction = await first.getAttribute('data-action');
+        expect(firstAction).not.toBe('delete');
+        await first.hover();
+        await page.evaluate(() => { window.__chosen = null; });
+        await page.evaluate(() => {
+            document.querySelectorAll('#config-bm-context-menu .move-popover-item').forEach((el) => {
+                el.addEventListener('click', (e) => { window.__chosen = el.getAttribute('data-action'); e.stopImmediatePropagation(); e.preventDefault(); }, { capture: true });
+            });
+        });
+        await page.keyboard.press('Enter');
+        expect(await page.evaluate(() => window.__chosen)).toBe(firstAction);
+    });
+});

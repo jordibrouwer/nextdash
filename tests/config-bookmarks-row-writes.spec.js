@@ -155,3 +155,70 @@ test('duplicating a page copies its bookmarks, shortcuts and all', async ({ page
     expect(await pageUrls(page, added[0])).toContain(a.url);
     await api(page, 'DELETE', `/api/pages/${added[0]}`);
 });
+
+// A category carried onto another page is made there under its name, not
+// its id: the lookup ran on the target, where it was not yet.
+test('moving into a category from another page keeps its name', async ({ page }) => {
+    await openBookmarks(page);
+    await page.evaluate(() => window.dashboardInstance.config.addPage());
+    await page.waitForFunction(() => window.dashboardInstance.pages.length > 1, null, { timeout: 15_000 });
+    const pages = await page.evaluate(() => (window.dashboardInstance.pages || []).map((p) => p.id));
+    const from = pages[0];
+    const to = pages[pages.length - 1];
+    const catId = `cat-named-${Date.now()}`;
+    const cats = await page.evaluate(async (p) => (await (await fetch(`/api/categories?page=${p}`)).json()), from);
+    await api(page, 'POST', `/api/categories?page=${from}`, [...cats, { id: catId, name: 'Named Cat' }]);
+    const [a] = await seed(page, 'rw-catname', [{ name: 'RW cat', pageId: from, category: catId }]);
+    const rows = (await picked(page, [a.url])).filter((b) => Number(b.pageId) === Number(from));
+    await page.evaluate(async ({ rows, to, catId }) => {
+        await window.dashboardInstance.config.bulkMove(rows, { pageId: String(to), category: catId });
+    }, { rows, to, catId });
+    const onTarget = await page.evaluate(async (p) => (await (await fetch(`/api/categories?page=${p}`)).json()), to);
+    expect(onTarget.find((c) => c.id === catId)?.name).toBe('Named Cat');
+    await api(page, 'DELETE', `/api/pages/${to}`);
+});
+
+// The CSV's Category column is read back as a name on import, so it has to
+// hold the name, not the stored id.
+test('the CSV export writes category names', async ({ page }) => {
+    await openBookmarks(page);
+    const from = await page.evaluate(() => window.dashboardInstance.pages[0].id);
+    const catId = `cat-csv-${Date.now()}`;
+    const cats = await page.evaluate(async (p) => (await (await fetch(`/api/categories?page=${p}`)).json()), from);
+    await api(page, 'POST', `/api/categories?page=${from}`, [...cats, { id: catId, name: 'Csv Named' }]);
+    const [a] = await seed(page, 'rw-csv', [{ name: 'RW csv', pageId: from, category: catId }]);
+    const rows = await picked(page, [a.url]);
+    const csv = await page.evaluate(async (rows) => {
+        const config = window.dashboardInstance.config;
+        let text = '';
+        const original = config.triggerDownload.bind(config);
+        config.triggerDownload = (blob) => { text = blob; };
+        try {
+            await config.bulkExportCsv(rows);
+        } finally {
+            config.triggerDownload = original;
+        }
+        return text.text();
+    }, rows);
+    expect(csv).toContain('"Csv Named"');
+    expect(csv).not.toContain(catId);
+});
+
+// A deleted page's id waits in the trash; a new page must not take it, or the
+// restore fails for good.
+test('a new page does not reuse the id of a page in the trash', async ({ page }) => {
+    await openBookmarks(page);
+    await page.evaluate(() => window.dashboardInstance.config.addPage());
+    await page.waitForFunction(() => window.dashboardInstance.pages.length > 1, null, { timeout: 15_000 });
+    const trashedId = await page.evaluate(() => Math.max(...window.dashboardInstance.pages.map((p) => Number(p.id)).filter((id) => id < 999999)));
+    await api(page, 'DELETE', `/api/pages/${trashedId}`);
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.pages = await (await fetch('/api/pages')).json();
+        await d.config.addPage();
+    });
+    const ids = await page.evaluate(() => window.dashboardInstance.pages.map((p) => Number(p.id)));
+    expect(ids).not.toContain(trashedId);
+    expect(Math.max(...ids.filter((id) => id < 999999))).toBe(trashedId + 1);
+    await api(page, 'DELETE', `/api/pages/${trashedId + 1}`);
+});

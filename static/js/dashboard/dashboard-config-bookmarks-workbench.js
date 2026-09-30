@@ -1519,8 +1519,9 @@
         try {
             if (Object.keys(inPlace).length || intervalOnly) {
                 if (inPlace.category) {
-                    for (const pid of new Set(picked.map((b) => String(b.pageId)))) {
-                        await this.ensureCategoryOnPage(pid, inPlace.category);
+                    const pagesPicked = new Set(picked.map((b) => String(b.pageId)));
+                    for (const pid of pagesPicked) {
+                        await this.ensureCategoryOnPage(pid, inPlace.category, [...pagesPicked]);
                     }
                 }
                 const snapshots = await this.mutateSelected(picked, mutate);
