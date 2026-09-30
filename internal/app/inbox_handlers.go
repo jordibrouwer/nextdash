@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -316,6 +317,18 @@ func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
 	}
 	request.Item.URL = restoredURL
 	request.Item.Icon = sanitizeBookmarkIcon(request.Item.Icon)
+	// The delete this undoes removed the icon file (every icon name is unique,
+	// so nothing else held it). Restored as it was, the name pointed at nothing,
+	// was never fetched again because Icon was set, and a later Keep copied the
+	// dead name onto the bookmark.
+	needsIcon := false
+	if request.Item.Icon != "" {
+		if _, err := os.Stat(filepath.Join(ResolveDataDir(), "icons", request.Item.Icon)); err != nil {
+			request.Item.Icon = ""
+			request.Item.IconFetchedAt = 0
+			needsIcon = true
+		}
+	}
 
 	settings := h.store.GetSettings()
 	maxItems := settings.InboxMaxItems
@@ -323,7 +336,7 @@ func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
 		maxItems = 500
 	}
 
-	restored, err := h.store.RestoreInboxLink(request.Item, maxItems)
+	restored, evicted, err := h.store.RestoreInboxLinkEvicting(request.Item, maxItems)
 	if err != nil {
 		// A full inbox is not a server fault: nothing broke, there is simply no
 		// room. Answered as 409 so the client can tell the user why undo did
@@ -345,11 +358,20 @@ func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// What making room pushed out, reported and cleaned up as the add path does.
+	for _, item := range evicted {
+		h.store.removeUnusedIconFile(item.Icon)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"status": "success",
-		"item":   restored,
+		"status":  "success",
+		"item":    restored,
+		"evicted": len(evicted),
 	})
+	if needsIcon {
+		h.enrichInboxPreviewAsync(restored.ID, restored.URL)
+	}
 }
 
 func (h *Handlers) DeleteInboxItem(w http.ResponseWriter, r *http.Request) {

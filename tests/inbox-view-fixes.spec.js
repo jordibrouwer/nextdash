@@ -293,3 +293,129 @@ test.describe('what the view says in words', () => {
         expect(hits).toBe(1);
     });
 });
+
+test.describe('importing into a nearly full inbox', () => {
+    // The server keeps a new link at the cap by dropping the oldest other one,
+    // so the import went on and deleted the reader's own links in silence.
+    test('stops at the cap instead of pushing out existing links', async ({ page }) => {
+        await openInbox(page);
+        await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await api('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inboxMaxItems: 3 }) });
+            window.dashboardInstance.settings.inboxMaxItems = 3;
+        });
+        try {
+            await seed(page, [['keep-a.example.com', 'Keep A'], ['keep-b.example.com', 'Keep B']]);
+            await page.evaluate(() => {
+                const inbox = window.dashboardInstance.inbox;
+                inbox.confirm = async () => true;
+                const file = new File([JSON.stringify([
+                    { url: 'https://imp-1.example.com/a', title: 'Imp 1' },
+                    { url: 'https://imp-2.example.com/b', title: 'Imp 2' },
+                    { url: 'https://imp-3.example.com/c', title: 'Imp 3' },
+                ])], 'inbox.json', { type: 'application/json' });
+                return inbox.importFromFile(file);
+            });
+            const titles = await page.evaluate(async () => {
+                const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                const body = await (await api('/api/inbox')).json();
+                return (Array.isArray(body) ? body : body.items || []).map((i) => i.title);
+            });
+            expect(titles).toEqual(expect.arrayContaining(['Keep A', 'Keep B']));
+            expect(titles).toHaveLength(3);
+        } finally {
+            await page.evaluate(async () => {
+                const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                await api('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inboxMaxItems: 500 }) });
+            });
+        }
+    });
+});
+
+test.describe('a list read that crosses a write', () => {
+    // A snapshot taken before a delete put the deleted row back when it landed.
+    test('a delete made while the list is loading stays deleted', async ({ page }) => {
+        await openInbox(page);
+        await seed(page, [['stale-a.example.com', 'Stale A'], ['stale-b.example.com', 'Stale B']]);
+        let held = false;
+        await page.route('**/api/inbox', async (route) => {
+            if (route.request().method() === 'GET' && !held) {
+                held = true;
+                const response = await route.fetch();
+                await new Promise((r) => setTimeout(r, 600));
+                return route.fulfill({ response });
+            }
+            return route.continue();
+        });
+        const titles = await page.evaluate(async () => {
+            const inbox = window.dashboardInstance.inbox;
+            const target = inbox.items.find((i) => i.title === 'Stale A');
+            const reading = inbox.fetchItems();
+            await new Promise((r) => setTimeout(r, 100));
+            await inbox._inboxWrite(`/api/inbox?id=${encodeURIComponent(target.id)}`, { method: 'DELETE' });
+            await reading;
+            return inbox.items.map((i) => i.title);
+        });
+        expect(titles).not.toContain('Stale A');
+        expect(titles).toContain('Stale B');
+    });
+});
+
+test.describe('undoing a keep', () => {
+    // Undo added the link anew: a new id, today's date, its read state gone.
+    test('the entry comes back as it was', async ({ page }) => {
+        await openInbox(page);
+        await seed(page, [['keep-undo.example.com', 'Keep undo']]);
+        const before = await page.evaluate(() => {
+            const item = window.dashboardInstance.inbox.items.find((i) => i.title === 'Keep undo');
+            return { id: item.id, addedAt: item.addedAt };
+        });
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const inbox = d.inbox;
+            const original = d.showNotification.bind(d);
+            window.__undo = null;
+            d.showNotification = (msg, type, opts) => { if (opts?.undoCallback) window.__undo = opts.undoCallback; return original(msg, type, opts); };
+            try {
+                await inbox.keepItem(inbox.items.find((i) => i.title === 'Keep undo'));
+            } finally {
+                d.showNotification = original;
+            }
+            await window.__undo();
+        });
+        const after = await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const body = await (await api('/api/inbox')).json();
+            const item = (Array.isArray(body) ? body : body.items || []).find((i) => i.title === 'Keep undo');
+            return item ? { id: item.id, addedAt: item.addedAt } : null;
+        });
+        expect(after).toEqual(before);
+    });
+});
+
+test.describe('opening the selection', () => {
+    // One click allows one popup; the blocked ones must stay unread.
+    test('only the links the browser opened are marked read', async ({ page }) => {
+        await openInbox(page);
+        await seed(page, [['open-a.example.com', 'Open A'], ['open-b.example.com', 'Open B']]);
+        await page.evaluate(() => {
+            const inbox = window.dashboardInstance.inbox;
+            let calls = 0;
+            window.open = () => { calls += 1; return calls === 1 ? {} : null; };
+            inbox.items.forEach((i) => inbox.setChecked(i.id, true));
+            inbox.bulkOpen();
+        });
+        await expect.poll(async () => page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const body = await (await api('/api/inbox')).json();
+            return (Array.isArray(body) ? body : body.items || []).filter((i) => i.readAt).length;
+        })).toBe(1);
+        await page.waitForTimeout(300);
+        const read = await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const body = await (await api('/api/inbox')).json();
+            return (Array.isArray(body) ? body : body.items || []).filter((i) => i.readAt).length;
+        });
+        expect(read).toBe(1);
+    });
+});

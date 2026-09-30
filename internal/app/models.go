@@ -1383,6 +1383,7 @@ type Store interface {
 	GetInboxItems() []InboxLink
 	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []InboxLink, error)
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
+	RestoreInboxLinkEvicting(link InboxLink, maxItems int) (InboxLink, []InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
 	BatchInboxLinks(ids []string, mutate func(*InboxLink) bool) ([]InboxLink, []string, error)
@@ -1393,6 +1394,8 @@ type Store interface {
 
 	// Inbox stats (durable aggregate; survives triaged-away items)
 	RecordInboxEvent(evt InboxEvent)
+	RecordInboxEvents(evts []InboxEvent)
+	removeUnusedIconFiles(fileNames []string)
 	GetInboxStats() InboxStats
 
 	// Trash (deleted bookmarks, pages and categories, restorable for 30 days)

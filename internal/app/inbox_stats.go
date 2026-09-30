@@ -133,17 +133,40 @@ func pruneInboxStatsBuckets(buckets map[string]InboxDayCounts) {
 // to persist must never block the inbox action that triggered it, mirroring the
 // activity-log philosophy.
 func (fs *FileStore) RecordInboxEvent(evt InboxEvent) {
-	evtType := strings.ToLower(strings.TrimSpace(evt.Type))
-	switch evtType {
-	case inboxEventAdded, inboxEventPromoted, inboxEventDeleted, inboxEventKept:
-	default:
+	fs.RecordInboxEvents([]InboxEvent{evt})
+}
+
+// RecordInboxEvents applies several events under one lock with one write: a
+// batch delete used to read and rewrite the stats file once per item.
+func (fs *FileStore) RecordInboxEvents(evts []InboxEvent) {
+	if len(evts) == 0 {
 		return
 	}
-
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
 	stats := fs.readInboxStatsLocked()
+	changed := false
+	for _, evt := range evts {
+		if applyInboxEvent(&stats, evt) {
+			changed = true
+		}
+	}
+	if !changed {
+		return
+	}
+	pruneInboxStatsBuckets(stats.DailyBuckets)
+	_ = fs.saveInboxStatsLocked(stats)
+}
+
+// applyInboxEvent adds one event to the aggregate; false for an unknown type.
+func applyInboxEvent(stats *InboxStats, evt InboxEvent) bool {
+	evtType := strings.ToLower(strings.TrimSpace(evt.Type))
+	switch evtType {
+	case inboxEventAdded, inboxEventPromoted, inboxEventDeleted, inboxEventKept:
+	default:
+		return false
+	}
 
 	at := evt.AtMs
 	if at <= 0 {
@@ -182,9 +205,7 @@ func (fs *FileStore) RecordInboxEvent(evt InboxEvent) {
 	}
 
 	stats.DailyBuckets[day] = bucket
-	pruneInboxStatsBuckets(stats.DailyBuckets)
-
-	_ = fs.saveInboxStatsLocked(stats)
+	return true
 }
 
 // GetInboxStats returns a copy of the durable aggregate for the stats API.

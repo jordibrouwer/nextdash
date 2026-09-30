@@ -169,3 +169,33 @@ func TestRestoreReportsCapacityRatherThanFakingSuccess(t *testing.T) {
 		t.Errorf("expected only the restored item at cap 1, got %+v", live)
 	}
 }
+
+// Undo at capacity reports what it pushed out, and a restored item whose icon
+// file went with the delete does not keep the dead name.
+func TestUndoReportsEvictionsAndDropsADeadIcon(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{"inboxMaxItems":2}`)
+	now := time.Now().UnixMilli()
+	for i, u := range []string{"https://a.example", "https://b.example"} {
+		if _, _, err := h.store.AddInboxLink(InboxLink{URL: u, AddedAt: now - int64(i*1000)}, false, 2); err != nil {
+			t.Fatalf("seed: %v", err)
+		}
+	}
+	gone := InboxLink{ID: "inl_gone", URL: "https://gone.example", AddedAt: now - 900000, Icon: "icon-deadbeef.png"}
+	body, _ := json.Marshal(map[string]any{"item": gone})
+	rec := httptest.NewRecorder()
+	h.PutInboxItem(rec, httptest.NewRequest(http.MethodPut, "/api/inbox", strings.NewReader(string(body))))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("restore = %d %s", rec.Code, rec.Body.String())
+	}
+	var out struct {
+		Evicted int       `json:"evicted"`
+		Item    InboxLink `json:"item"`
+	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &out)
+	if out.Evicted != 1 {
+		t.Fatalf("evicted = %d, want 1: the undo pushed a link out", out.Evicted)
+	}
+	if out.Item.Icon != "" {
+		t.Fatalf("icon = %q: the file is gone, the name must go too", out.Item.Icon)
+	}
+}

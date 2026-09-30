@@ -96,11 +96,13 @@ func (h *Handlers) BatchInbox(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// One stats write and one read of the references for the whole batch.
+	var events []InboxEvent
 	switch request.Op {
 	case "read":
 		for _, item := range before {
 			if item.ReadAt == 0 {
-				h.store.RecordInboxEvent(InboxEvent{Type: inboxEventKept, Source: item.Source})
+				events = append(events, InboxEvent{Type: inboxEventKept, Source: item.Source})
 			}
 		}
 	case "delete":
@@ -108,15 +110,18 @@ func (h *Handlers) BatchInbox(w http.ResponseWriter, r *http.Request) {
 		if strings.EqualFold(strings.TrimSpace(request.Reason), "promote") {
 			eventType = inboxEventPromoted
 		}
+		icons := make([]string, 0, len(before))
 		for _, item := range before {
-			h.store.removeUnusedIconFile(item.Icon)
+			icons = append(icons, item.Icon)
 			var retentionMs int64
 			if item.AddedAt > 0 && now > item.AddedAt {
 				retentionMs = now - item.AddedAt
 			}
-			h.store.RecordInboxEvent(InboxEvent{Type: eventType, Source: item.Source, RetentionMs: retentionMs})
+			events = append(events, InboxEvent{Type: eventType, Source: item.Source, RetentionMs: retentionMs})
 		}
+		h.store.removeUnusedIconFiles(icons)
 	}
+	h.store.RecordInboxEvents(events)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{

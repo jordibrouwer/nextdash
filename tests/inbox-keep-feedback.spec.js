@@ -194,8 +194,10 @@ test('undoing a keep into a full inbox keeps the link in Kept', async ({ page })
     await keepRow(page, 'Full undo');
     await expect.poll(() => keptHas(page, url), { timeout: 15_000 }).toBe(true);
 
+    // The undo restores the entry itself (PUT), or adds it anew (POST) when it
+    // has no id: either way a full inbox answers 409.
     await page.route('**/api/inbox', async (route) => {
-        if (route.request().method() !== 'POST') return route.continue();
+        if (!['POST', 'PUT'].includes(route.request().method())) return route.continue();
         return route.fulfill({
             status: 409, contentType: 'application/json',
             body: JSON.stringify({ error: 'at_capacity', message: 'Inbox is full' }),

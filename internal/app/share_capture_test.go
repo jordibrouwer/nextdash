@@ -154,3 +154,15 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+// A shared link counts as added, like one saved through the API.
+func TestShareCaptureRecordsTheAddedEvent(t *testing.T) {
+	h, _ := healthTestStore(t, `{"id":1,"name":"Page 1","bookmarks":[]}`)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "")
+	before := h.store.GetInboxStats().TotalAdded
+	rec := httptest.NewRecorder()
+	h.ShareTargetCapture(rec, httptest.NewRequest(http.MethodGet, "/share?url=https://example.com/shared", nil))
+	if got := h.store.GetInboxStats().TotalAdded; got != before+1 {
+		t.Fatalf("totalAdded = %d, want %d", got, before+1)
+	}
+}

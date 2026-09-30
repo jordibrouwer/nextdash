@@ -86,3 +86,43 @@ test.describe('triage keyboard', () => {
         expect(blocked.quietWhenClosed).toBe(false);
     });
 });
+
+test.describe('triage and the snooze menu', () => {
+    // The menu is on <body>, outside the overlay; triage took its keys first.
+    test('ArrowDown in the snooze menu does not move to the next card', async ({ page }) => {
+        await openTriage(page);
+        const before = await index(page);
+        await page.keyboard.press('z');
+        await expect(page.locator('.inbox-snooze-menu')).toBeVisible();
+        await page.keyboard.press('ArrowDown');
+        expect(await index(page)).toBe(before);
+        await page.keyboard.press('Escape');
+        await expect(page.locator('.inbox-snooze-menu')).toHaveCount(0);
+        expect(await page.evaluate(() => window.dashboardInstance.inbox.triage.isOpen())).toBe(true);
+    });
+
+    // An action awaits the network; j pressed meanwhile moved the index, and the
+    // card spliced out was the one on screen, not the one acted on.
+    test('a delete that lands after j removes the deleted card', async ({ page }) => {
+        await openTriage(page);
+        const before = await page.evaluate(() => {
+            const tri = window.dashboardInstance.inbox.triage;
+            return { first: tri.queue[0].id, second: tri.queue[1].id, length: tri.queue.length };
+        });
+        await page.evaluate(async () => {
+            const tri = window.dashboardInstance.inbox.triage;
+            const id = tri.currentItem().id;
+            tri.index += 1;
+            await tri.afterAction(true, { removedId: id });
+        });
+        const after = await page.evaluate(() => {
+            const tri = window.dashboardInstance.inbox.triage;
+            return { ids: tri.queue.map((e) => e.id), current: tri.currentItem()?.id };
+        });
+        expect(after.ids).not.toContain(before.first);
+        expect(after.ids).toContain(before.second);
+        expect(after.ids).toHaveLength(before.length - 1);
+        // The card on screen stays on screen.
+        expect(after.current).toBe(before.second);
+    });
+});
