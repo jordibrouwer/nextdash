@@ -27,20 +27,11 @@ const UNTESTABLE = new Set([
 ]);
 
 /**
- * Known-failing, deliberately not fixed here.
+ * Known-failing, deliberately not fixed here. Empty now; the history:
  *
- * All three were found by this test and then confirmed by hand through the real
- * config UI: the setting saves and the control reflects it, but the <body>
- * attribute CSS keys off is never rewritten, so nothing moves until a reload.
- *
- *   showDate      Behavior → Date, time & weather. setBehavior's 'datetime'
- *                 case calls renderDateWeatherLine(); only updateDateVisibility()
- *                 adds or removes #date-element. Turning the date off leaves it
- *                 on screen.
- *
- * It needs 'chrome' (or 'chromeRender'), which is a behaviour change to ship
- * deliberately rather than fold into a test commit. Remove it from this list
- * with the fix and the test starts guarding it.
+ * showDate (Behavior → Date, time & weather) only drew or removed #date-element
+ * after a reload, until it, showTime and showWeatherWithDate got the 'chrome'
+ * special that re-runs updateDateVisibility.
  *
  * densityMode was here too, until its setting got the 'chromeRender' it
  * needed for body[data-density-mode] to follow without a reload.
@@ -48,8 +39,11 @@ const UNTESTABLE = new Set([
  * showShortcuts was the third. It became shortcutDisplay -- three answers
  * instead of two -- and the rewrite carried the 'chrome' handler it had always
  * needed, so it is guarded below rather than excused here.
+ *
+ * A setting found here and fixed later goes in with its fix, and the test
+ * starts guarding it.
  */
-const KNOWN_BROKEN = new Set(['showDate']);
+const KNOWN_BROKEN = new Set([]);
 
 async function load(page) {
     await markWhatsNewSeen(page);
@@ -183,4 +177,65 @@ test('every special in the schema is one setBehavior actually handles', async ({
         'visual', 'feeds', 'previewCard', 'siteNews', 'search', 'healthBadge', 'inboxBadge'];
     expect(used.length).toBeGreaterThan(3);
     expect(used.filter((s) => !handled.includes(s))).toEqual([]);
+});
+
+// Hypr mode and the date line's toggles had no apply step: Hypr mode stayed as
+// it was, and with the date, time and weather all off the date line did not
+// come back when one was turned on -- until a reload.
+test('Hypr mode and the date toggles apply without a reload', async ({ page }) => {
+    await load(page);
+    const result = await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        const cfg = d.config;
+        const special = (field) => {
+            for (const panel of cfg.behaviorSchema()) {
+                const c = (panel.controls || []).find((x) => x.field === field);
+                if (c) return c.special;
+            }
+            return undefined;
+        };
+        await cfg.setBehavior('hyprMode', true, special('hyprMode'));
+        const hypr = window.hyprMode?.isEnabled?.() ?? window.hyprMode?.enabled;
+        await cfg.setBehavior('hyprMode', false, special('hyprMode'));
+        for (const f of ['showDate', 'showTime', 'showWeatherWithDate']) await cfg.setBehavior(f, false, special(f));
+        const goneWhenOff = !document.getElementById('date-element');
+        await cfg.setBehavior('showDate', true, special('showDate'));
+        return { hypr, goneWhenOff, back: Boolean(document.getElementById('date-element')) };
+    });
+    expect(result.hypr, 'Hypr mode did not switch on').toBe(true);
+    expect(result.goneWhenOff).toBe(true);
+    expect(result.back, 'the date line did not come back').toBe(true);
+});
+
+// "Reset panel" put the values back and saved, but skipped each setting's own
+// apply step: a reset language left the page in the old one until a reload.
+test('Reset panel applies a reset language at once', async ({ page }) => {
+    await load(page);
+    const result = await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        const cfg = d.config.instance || d.config;
+        await cfg.setBehavior('language', 'nl', 'language');
+        const before = d.language.currentLanguage;
+        const box = document.createElement('div');
+        box.innerHTML = '<button data-panel-reset="language"></button>'
+            + '<select data-behavior-field="language" data-behavior-special="language"></select>';
+        document.body.appendChild(box);
+        const realConfirm = window.AppModal.confirm;
+        window.AppModal.confirm = async () => true;
+        try {
+            cfg.bindPanelResetActions(box);
+            box.querySelector('button').click();
+            const until = Date.now() + 5000;
+            while (d.language.currentLanguage === before && Date.now() < until) {
+                await new Promise((r) => setTimeout(r, 50));
+            }
+        } finally {
+            window.AppModal.confirm = realConfirm;
+            box.remove();
+        }
+        return { before, after: d.language.currentLanguage, saved: d.settings.language };
+    });
+    expect(result.before).toBe('nl');
+    expect(result.saved).toBe('en');
+    expect(result.after, 'the page stayed in the old language').toBe('en');
 });

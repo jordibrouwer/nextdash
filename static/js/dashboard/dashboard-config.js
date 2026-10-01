@@ -8213,6 +8213,9 @@ class DashboardConfig {
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const state = await res.json();
+            // The settings in memory follow what was stored, or the next
+            // ordinary settings save writes the old state back.
+            this.dash.settings.archiveSaveEnabled = Boolean(state.enabled);
             // Cleared once stored: a key sitting in a form field is one
             // screenshot away from being shared.
             if (key) key.value = '';
@@ -8244,6 +8247,9 @@ class DashboardConfig {
                 body: JSON.stringify({ forget: true }),
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // Forgetting switches archiving off on the server; the settings in
+            // memory must say so, or the next save turns it back on.
+            this.dash.settings.archiveSaveEnabled = false;
             this.notify(this.t('config.archiveForgotten', 'Archive keys forgotten.'), 'success');
             void this.loadArchiveSettings();
         } catch {
@@ -12871,7 +12877,7 @@ class DashboardConfig {
                 title: t('config.generalGroupHyprMode', 'Hypr mode'),
                 note: t('config.generalGroupHyprModeNote', 'For nextDash installed as a Progressive Web App (PWA). Clicking a bookmark opens it in a new browser tab, then closes the PWA window automatically — the behaviour of a traditional app launcher.'),
                 controls: [
-                    bool('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
+                    chrome('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
                 ],
             },
             {
@@ -12892,8 +12898,8 @@ class DashboardConfig {
                     { field: 'timeFormat', type: 'select', label: t('config.timeFormatLabel', 'Time format'), special: 'datetime', options: [
                         opt('24h', '23:59'), opt('12h', '11:59 PM'),
                     ] },
-                    bool('showDate', 'config.showDateLabel', 'Show the date'),
-                    bool('showTime', 'config.showTimeLabel', 'Show the time'),
+                    chrome('showDate', 'config.showDateLabel', 'Show the date'),
+                    chrome('showTime', 'config.showTimeLabel', 'Show the time'),
                 ],
             },
             {
@@ -12924,7 +12930,7 @@ class DashboardConfig {
                 title: t('config.generalGroupWeather', 'Weather'),
                 note: t('config.generalGroupWeatherNote', 'Whether the temperature joins the date line, where it is measured, and how often it is fetched.'),
                 controls: [
-                    bool('showWeatherWithDate', 'config.showWeatherWithDate', 'Show weather next to the date'),
+                    chrome('showWeatherWithDate', 'config.showWeatherWithDate', 'Show weather next to the date'),
                     { field: 'weatherSource', type: 'select', label: t('config.weatherSourceLabel', 'Weather source'), special: 'datetime', options: [
                         opt('manual', t('config.weatherSourceManual', 'Manual location')), opt('auto', t('config.weatherSourceAuto', 'Automatic (by IP)')),
                     ] },
@@ -14350,6 +14356,16 @@ class DashboardConfig {
 
                 if (visual) d.visual?.applyVisualSettings?.();
                 if (special) this.applyChromeSettings();
+                // Each field's own apply step too: the passes above cover the
+                // chrome and visual ones, not a language, the weather, the
+                // badges or the shortcut hints.
+                for (const field of fields) {
+                    const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
+                    const fieldSpecial = el?.getAttribute('data-behavior-special');
+                    if (fieldSpecial && !['chrome', 'chromeRender', 'visual', 'render'].includes(fieldSpecial)) {
+                        await this.applySettingSpecial(field, d.settings[field], fieldSpecial);
+                    }
+                }
                 d.renderDashboard?.({ animate: false });
                 await this.saveSettingsWithFeedback();
                 this.repaintActiveControlPanels();
@@ -15334,6 +15350,23 @@ class DashboardConfig {
             const panels = document.getElementById('config-appearance-body');
             if (panels) this.paintPreviewSample(panels);
         }
+        await this.applySettingSpecial(field, value, special);
+        await this.saveSettingsWithFeedback();
+        // Repaint the active control panel so the ↺ reset button's visibility and
+        // the control's own value reflect the change (important after a reset).
+        this.repaintActiveControlPanels();
+    }
+
+    /**
+     * What a setting's change needs beyond the save: its `special`.
+     *
+     * Its own method so the panel reset runs it as well. The reset folded every
+     * special into a chrome or visual pass, so a reset language stayed in the
+     * old one, a cleared weather location kept its reading, and the shortcut
+     * hints stayed bound, until a reload.
+     */
+    async applySettingSpecial(field, value, special) {
+        const d = this.dash;
         switch (special) {
             case 'language':
                 await d.language?.init?.(value);
@@ -15436,10 +15469,6 @@ class DashboardConfig {
                 d.renderDashboard?.({ animate: false });
                 break;
         }
-        await this.saveSettingsWithFeedback();
-        // Repaint the active control panel so the ↺ reset button's visibility and
-        // the control's own value reflect the change (important after a reset).
-        this.repaintActiveControlPanels();
     }
 
     /* ── Appearance and Behavior tabs ─────────────────────────────────────── */
@@ -15674,6 +15703,9 @@ class DashboardConfig {
      */
     applyChromeSettings() {
         const d = this.dash;
+        // setupDOM redraws the date line (date, time and weather toggles) but
+        // never re-read Hypr mode, which only took effect after a reload.
+        window.hyprMode?.setEnabled?.(Boolean(d.settings.hyprMode));
         d.setupDOM?.();
         // setupDOM covers the data-* attributes and the config/health/tabs links;
         // the tab labels themselves are built in JS, so showPageNamesInTabs needs
