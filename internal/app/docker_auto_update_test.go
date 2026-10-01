@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -209,5 +210,19 @@ func TestDockerAutoUpdateSkippedForAPruneIsTriedAgainTheSameNight(t *testing.T) 
 	h.runDockerAutoUpdates(time.Date(2026, 9, 30, 3, 20, 0, 0, time.Local))
 	if c, _ := h.resolveDockerID(context.Background(), api, "sonarr"); c.ImageID != "sha256:new" {
 		t.Fatalf("not updated once the prune was done: %s", c.ImageID)
+	}
+}
+
+// A failure the recreate recovered from comes back without an error; it is
+// still a failure, and the notice says where it broke.
+func TestAutoUpdateFailureDetailCountsARollback(t *testing.T) {
+	if got := autoUpdateFailureDetail(dockerRecreateResult{Phase: "rolled-back", FailedStep: "start"}, nil); !strings.Contains(got, "failed at start") {
+		t.Fatalf("detail = %q", got)
+	}
+	if got := autoUpdateFailureDetail(dockerRecreateResult{Phase: "done"}, nil); got != "" {
+		t.Fatalf("a done update reads as failed: %q", got)
+	}
+	if got := autoUpdateFailureDetail(dockerRecreateResult{}, errors.New("pull refused")); got != "pull refused" {
+		t.Fatalf("detail = %q", got)
 	}
 }

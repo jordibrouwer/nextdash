@@ -178,11 +178,12 @@ func (h *Handlers) autoUpdateOne(ctx context.Context, api *dockerAPI, c dockerCo
 	outcome, err := h.dockerRecreate(ctx, api, c)
 	dockerNotifications.expect(name, time.Now().Add(dockerNotifyExpectWindow))
 	release()
-	logActivity(activityCategoryMutate, "docker.auto-update", map[string]any{"container": name, "ok": err == nil}, "docker auto-update "+name)
-	if err != nil {
-		logWarn(logComponentMutate, "the automatic update of %s failed: %v", name, err)
+	failure := autoUpdateFailureDetail(outcome, err)
+	logActivity(activityCategoryMutate, "docker.auto-update", map[string]any{"container": name, "ok": failure == ""}, "docker auto-update "+name)
+	if failure != "" {
+		logWarn(logComponentMutate, "the automatic update of %s failed: %s", name, failure)
 		h.dispatchContainerNotices(ctx, []monitorNotification{containerNotice("down", name,
-			name+" could not be updated automatically", err.Error(), time.Now())})
+			name+" could not be updated automatically", failure, time.Now())})
 		return true
 	}
 	if outcome.Phase == "done" || outcome.Phase == "already-current" {
@@ -309,4 +310,17 @@ func (h *Handlers) rollBackAutoUpdate(ctx context.Context, api *dockerAPI, name,
 		detail = reason + "; " + err.Error()
 	}
 	h.dispatchContainerNotices(ctx, []monitorNotification{containerNotice("down", name, title, detail, time.Now())})
+}
+
+// autoUpdateFailureDetail says why an automatic update did not happen, or ""
+// when it did. A recreate that failed and put the old container back returns
+// no error, so it was logged as a success and nobody heard of it, every night.
+func autoUpdateFailureDetail(outcome dockerRecreateResult, err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	if outcome.Phase == "rolled-back" {
+		return "it failed at " + outcome.FailedStep + "; the previous container runs again"
+	}
+	return ""
 }

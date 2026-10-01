@@ -108,6 +108,30 @@ func TestDockerSelfIDFrom(t *testing.T) {
 	}
 }
 
+// The root mount comes first in mountinfo and, on overlay2 and btrfs, carries
+// a 64-hex layer id; taking the first 64-hex string named a layer, so nextDash
+// did not know its own row and let itself be stopped mid-update.
+func TestDockerSelfIDFromMountinfoSkipsTheStorageLayer(t *testing.T) {
+	layer := strings.Repeat("1", 64)
+	self := strings.Repeat("c", 64)
+	for name, root := range map[string]string{
+		"overlay2": "1210 1150 0:120 / / rw,relatime master:400 - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/ABC,upperdir=/var/lib/docker/overlay2/" + layer + "/diff,workdir=/var/lib/docker/overlay2/" + layer + "/work",
+		"btrfs":    "1210 1150 0:44 /btrfs/subvolumes/" + layer + " / rw,relatime - btrfs /dev/loop2 rw,space_cache=v2,subvol=/btrfs/subvolumes/" + layer,
+	} {
+		t.Run(name, func(t *testing.T) {
+			mountinfo := root + "\n" +
+				"1230 1210 0:44 /containers/" + self + "/resolv.conf /etc/resolv.conf rw,relatime - btrfs /dev/loop2 rw\n" +
+				"1231 1210 0:44 /containers/" + self + "/hostname /etc/hostname rw,relatime - btrfs /dev/loop2 rw\n"
+			if got := dockerSelfIDFromMountinfo(mountinfo); got != self {
+				t.Fatalf("self = %q, want the container id %q", got, self)
+			}
+		})
+	}
+	if got := dockerSelfIDFromMountinfo("1210 1150 0:120 / / rw - overlay overlay rw,upperdir=/x/" + layer + "/diff\n"); got != "" {
+		t.Fatalf("self = %q from a layer id alone", got)
+	}
+}
+
 func TestDockerSelfIDUsesOverrideForTests(t *testing.T) {
 	old := dockerSelfOverride
 	defer func() { dockerSelfOverride = old }()

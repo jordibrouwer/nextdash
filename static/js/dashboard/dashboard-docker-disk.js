@@ -333,7 +333,12 @@
             let res = null;
             let body = null;
             try {
-                res = await window.nextDashFetch(`/api/docker/prune/${kind}`, { method: 'POST' });
+                // Remove stopped takes only the containers the question named:
+                // one stopped since the tab measured was never asked about.
+                const init = kind === 'containers-stopped'
+                    ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ names: stopped }) }
+                    : { method: 'POST' };
+                res = await window.nextDashFetch(`/api/docker/prune/${kind}`, init);
                 body = await res.json().catch(() => null);
             } catch {
                 res = null;

@@ -249,6 +249,23 @@ func TestDockerPruneStoppedContainers(t *testing.T) {
 	}
 }
 
+// The confirmation names what the Disk tab measured; a container stopped since
+// then is not in it and stays.
+func TestDockerPruneStoppedTakesOnlyTheNamedContainers(t *testing.T) {
+	f, h := diskFixture(t) // sonarr running, radarr exited
+	f.add(fakeContainer{ID: strings.Repeat("c", 64), Name: "plex", Image: "p:latest", ImageID: "sha256:p", State: "exited"})
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	router := newDockerTestRouter(h)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest("POST", "/api/docker/prune/containers-stopped", strings.NewReader(`{"names":["radarr"]}`)))
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"removed":1`) {
+		t.Fatalf("prune: %d %s", rec.Code, rec.Body)
+	}
+	if f.called("DELETE /containers/" + strings.Repeat("c", 64)) {
+		t.Fatalf("plex was never named and went anyway: %v", f.calls)
+	}
+}
+
 // Only a folder a container mounts can be measured; the size is kept and the
 // Disk view carries it.
 func TestDockerBindMeasure(t *testing.T) {

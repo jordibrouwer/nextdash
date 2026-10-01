@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -486,6 +487,20 @@ func (h *Handlers) pruneStoppedContainers(w http.ResponseWriter, r *http.Request
 	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(dockerActionTimeout + time.Minute))
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), dockerActionTimeout)
 	defer cancel()
+	// The names the confirmation showed. Without them the list is whatever is
+	// stopped now, and a container stopped after the tab measured went too,
+	// unasked.
+	var body struct {
+		Names []string `json:"names"`
+	}
+	_ = json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&body)
+	var asked map[string]bool
+	if body.Names != nil {
+		asked = make(map[string]bool, len(body.Names))
+		for _, n := range body.Names {
+			asked[n] = true
+		}
+	}
 	list, err := api.listContainers(ctx)
 	if err != nil {
 		writeDockerError(w, err)
@@ -495,6 +510,9 @@ func (h *Handlers) pruneStoppedContainers(w http.ResponseWriter, r *http.Request
 	failed := []string{}
 	var reclaimed int64
 	for _, c := range dockerPrunableContainers(list) {
+		if asked != nil && !asked[c.name()] {
+			continue
+		}
 		// Held like one container's remove, so an action already running on
 		// it is not cut short; that one is left and named.
 		release, ok := h.dockerLockContainer(c)

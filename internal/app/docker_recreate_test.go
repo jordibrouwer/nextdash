@@ -356,3 +356,18 @@ func TestDockerRecreateDropsTheHostnameOnAContainerNetwork(t *testing.T) {
 		t.Fatalf("the create carried Domainname on a container network")
 	}
 }
+
+// A published port the old image EXPOSEd is dropped with the image's defaults;
+// it must come back, or the new container runs with the port unpublished.
+func TestRecreateKeepsPublishedPortsExposed(t *testing.T) {
+	config := map[string]any{"ExposedPorts": map[string]any{"80/tcp": map[string]any{}, "9000/tcp": map[string]any{}}}
+	dropImageDefaults(config, map[string]any{"ExposedPorts": map[string]any{"80/tcp": map[string]any{}}})
+	keepPublishedPortsExposed(config, map[string]any{"PortBindings": map[string]any{"80/tcp": []any{map[string]any{"HostPort": "8080"}}}})
+	exposed := config["ExposedPorts"].(map[string]any)
+	if _, ok := exposed["80/tcp"]; !ok {
+		t.Fatalf("exposed = %v: 80/tcp is published and must stay exposed", exposed)
+	}
+	if _, ok := exposed["9000/tcp"]; !ok {
+		t.Fatalf("exposed = %v: the container's own port went", exposed)
+	}
+}
