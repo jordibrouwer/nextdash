@@ -55,9 +55,9 @@ type themeArchetype struct {
 	GrainAngle     float64
 	GrainScale     float64
 
-	// Backdrop names a recipe from themeBackdropRecipes, for the one
-	// archetype that is about the page rather than about the surfaces on it.
-	// Empty leaves the recipe the theme's id hashes to.
+	// Backdrop names a recipe from themeBackdropRecipes, so an archetype
+	// brings a page with it as well as a surface. Empty leaves the recipe the
+	// theme's id hashes to.
 	Backdrop string
 }
 
@@ -75,6 +75,7 @@ var themeArchetypes = map[string]themeArchetype{
 	"lacquer": {
 		AlphaScale: 1, BlurScale: 1, GlowScale: 1, GlowLift: -1,
 		Sheen: 0.60, RadiusScale: 1.0, LabelWeight: 600,
+		Backdrop: "sweep",
 	},
 
 	// You look through it. Alpha down, blur up, corners generous -- the three
@@ -82,6 +83,7 @@ var themeArchetypes = map[string]themeArchetype{
 	"glass": {
 		AlphaScale: 0.80, BlurScale: 1.30, GlowScale: 1.10, GlowLift: -1,
 		Sheen: 0.25, RadiusScale: 1.40, LabelWeight: 500,
+		Backdrop: "mesh",
 	},
 
 	// Glass gone cold: it still blurs, but it has stopped being clear, so the
@@ -89,6 +91,7 @@ var themeArchetypes = map[string]themeArchetype{
 	"frost": {
 		AlphaScale: 0.93, BlurScale: 1.50, GlowScale: 0.75, GlowLift: -1,
 		Sheen: 0.05, RadiusScale: 1.20, LabelWeight: 500,
+		Backdrop: "bokeh",
 	},
 
 	// Opaque, matte, square-ish, and the label carries it. Paper does not
@@ -97,6 +100,7 @@ var themeArchetypes = map[string]themeArchetype{
 		AlphaScale: 1.30, BlurScale: 0, GlowScale: 0.20, GlowLift: 0,
 		Sheen: 0, RadiusScale: 0.35,
 		LabelTransform: "uppercase", LabelSpacing: "0.12em", LabelWeight: 600,
+		Backdrop: "topo",
 	},
 
 	// Square, unlit, tracked wide. The one archetype that is mostly about
@@ -105,6 +109,7 @@ var themeArchetypes = map[string]themeArchetype{
 		AlphaScale: 1.20, BlurScale: 0, GlowScale: 0.35, GlowLift: -1,
 		Sheen: 0, RadiusScale: 0.05,
 		LabelTransform: "uppercase", LabelSpacing: "0.18em", LabelWeight: 700,
+		Backdrop: "perspective",
 	},
 
 	// The accent leaves the surface. A halo always, never a shadow: a shadow
@@ -112,6 +117,7 @@ var themeArchetypes = map[string]themeArchetype{
 	"neon": {
 		AlphaScale: 0.95, BlurScale: 1.10, GlowScale: 1.90, GlowLift: 1,
 		Sheen: 0.15, RadiusScale: 0.90, LabelWeight: 600,
+		Backdrop: "prism",
 	},
 
 	// Deep and soft and entirely unlit: the light is absorbed rather than
@@ -119,6 +125,7 @@ var themeArchetypes = map[string]themeArchetype{
 	"velvet": {
 		AlphaScale: 1.10, BlurScale: 0.80, GlowScale: 0.85, GlowLift: 0,
 		Sheen: 0, RadiusScale: 1.45, LabelWeight: 700,
+		Backdrop: "nebula",
 	},
 
 	// Confectionery, ceramic, a painted tin: the roundest and the shiniest at
@@ -126,6 +133,7 @@ var themeArchetypes = map[string]themeArchetype{
 	"enamel": {
 		AlphaScale: 1.15, BlurScale: 0.60, GlowScale: 1.20, GlowLift: -1,
 		Sheen: 0.70, RadiusScale: 1.55, LabelWeight: 600,
+		Backdrop: "dunes",
 	},
 
 	// No surface effects whatsoever. The type and the hairlines do the work,
@@ -134,6 +142,7 @@ var themeArchetypes = map[string]themeArchetype{
 		AlphaScale: 1.30, BlurScale: 0, GlowScale: 0.15, GlowLift: 0,
 		Sheen: 0, RadiusScale: 0.50,
 		LabelSpacing: "0.06em", LabelWeight: 700,
+		Backdrop: "halftone",
 	},
 
 	// Metal with a direction: the grain is the whole difference between this
@@ -142,6 +151,7 @@ var themeArchetypes = map[string]themeArchetype{
 		AlphaScale: 1.05, BlurScale: 0.70, GlowScale: 0.70, GlowLift: -1,
 		Sheen: 0.35, RadiusScale: 0.70, LabelWeight: 600,
 		GrainAngle: 100, GrainScale: 0.55,
+		Backdrop: "pinstripe",
 	},
 
 	// A weave rather than a polish: two directions at a low strength, and
@@ -150,6 +160,7 @@ var themeArchetypes = map[string]themeArchetype{
 		AlphaScale: 1.10, BlurScale: 0.50, GlowScale: 0.45, GlowLift: 0,
 		Sheen: 0.20, RadiusScale: 0.60, LabelWeight: 600,
 		GrainAngle: 45, GrainScale: 1.0,
+		Backdrop: "hexagons",
 	},
 
 	// The one archetype about the page instead of the surfaces on it: it

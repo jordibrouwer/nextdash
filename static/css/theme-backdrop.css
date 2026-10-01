@@ -36,7 +36,14 @@ html[data-theme] body[data-theme-backdrop="on"] {
      */
     background-image: var(--theme-backdrop, none), var(--depth-wash, none);
     background-repeat: repeat;
-    background-size: cover;
+
+    /*
+     * Elke laag van de achtergrond heeft zijn eigen tegel en plek
+     * (themeBackdropImage zet de lijsten even lang als de lagen). De laatste
+     * twee entries zijn de twee wolken van --depth-wash, die het venster vullen.
+     */
+    background-size: var(--theme-backdrop-size, cover), auto, auto;
+    background-position: var(--theme-backdrop-position, 0 0), 0 0, 0 0;
 
     /*
      * Vast ten opzichte van het venster, zodat de achtergrond blijft staan
@@ -65,6 +72,8 @@ html[data-theme] body[data-theme-backdrop="off"] {
  */
 html[data-theme] body[data-theme-backdrop="on"][data-depth="flat"] {
     background-image: var(--theme-backdrop, none);
+    background-size: var(--theme-backdrop-size, cover);
+    background-position: var(--theme-backdrop-position, 0 0);
     background-color: var(--background-primary);
 }
 

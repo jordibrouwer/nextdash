@@ -158,7 +158,7 @@ func TestAThemeCanPickItsBackdrop(t *testing.T) {
 	tc := ThemeColors{BackgroundPrimary: "#101010", AccentSuccess: "#22aa55"}
 	hashed := themeBackdropImage("theme-abc", tc)
 
-	seen := map[string]bool{}
+	seen := map[backdropLook]bool{}
 	for _, name := range themeBackdropRecipes {
 		tc.Backdrop = name
 		seen[themeBackdropImage("theme-abc", tc)] = true

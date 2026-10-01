@@ -3314,6 +3314,38 @@ func themeLabelWeight(weight int) string {
 	return strconv.Itoa(weight - weight%100)
 }
 
+// backdropLayer is one layer of a backdrop with the size and position it needs.
+// An empty size means the layer fills the page; an empty position means 0 0.
+type backdropLayer struct{ image, size, pos string }
+
+// backdropLook is a finished backdrop as three comma lists of the same length,
+// one entry per layer. They become --theme-backdrop, --theme-backdrop-size and
+// --theme-backdrop-position, so theme-backdrop.css can hand each layer its own
+// tile without knowing which recipe drew it.
+type backdropLook struct{ Image, Size, Position string }
+
+func joinBackdropLayers(layers []backdropLayer) backdropLook {
+	images := make([]string, len(layers))
+	sizes := make([]string, len(layers))
+	positions := make([]string, len(layers))
+	for i, layer := range layers {
+		images[i] = layer.image
+		sizes[i] = layer.size
+		if sizes[i] == "" {
+			sizes[i] = "cover"
+		}
+		positions[i] = layer.pos
+		if positions[i] == "" {
+			positions[i] = "0 0"
+		}
+	}
+	return backdropLook{
+		Image:    strings.Join(images, ", "),
+		Size:     strings.Join(sizes, ", "),
+		Position: strings.Join(positions, ", "),
+	}
+}
+
 /*
 themeBackdropImage builds the backdrop a theme is drawn on.
 
@@ -3323,7 +3355,7 @@ come from its own palette, mixed down to the point where they read as
 atmosphere rather than decoration. A theme that is all greens gets a green
 backdrop; one built around a magenta accent gets a magenta one. The same id
 always lands on the same backdrop, so a theme does not change appearance
-between releases -- except for one deliberate case, described next.
+between releases -- except for the deliberate cases described next.
 
 A "-light" and "-dark" pair are two colourings of one theme, not two themes,
 and a reader switching Quick mode between them should see the same shape
@@ -3338,22 +3370,44 @@ themes instead of 111. An id with no such suffix -- the plain "light" and
 "dark" defaults, and any custom theme -- is not part of a pair and keeps
 hashing exactly as before.
 
-The result is a CSS background-image list, referencing the custom properties
-declared in the same block. It is composed here rather than declared in the
-theme because sanitizeCSSColor (security.go) accepts only flat colours by
-design, and widening that to arbitrary gradients would mean parsing untrusted
-CSS. Generated on our side there is nothing to parse: every value below is a
-number this function chose.
+The other deliberate case is the number of recipes. The hash is taken modulo
+the length of themeBackdropRecipes, so growing the list from nine to twenty-six
+moved every theme that has no recipe of its own onto a new one.
 
-Nine recipes, in the order the hash reaches them. They differ in kind and not
-only in angle -- blooms, sweeps, wireframes, rings, scanlines -- because eight
-variations on one gradient would still read as one background.
+The result is a list of CSS background layers, referencing the custom
+properties declared in the same block. It is composed here rather than declared
+in the theme because sanitizeCSSColor (security.go) accepts only flat colours
+by design, and widening that to arbitrary gradients would mean parsing
+untrusted CSS. Generated on our side there is nothing to parse: every value
+below is a number this function chose.
+
+Strength and distance are not baked in. Every colour percentage is multiplied
+by --bd-strength and every length by --bd-scale, both defaulting to 1, so a
+slider can change them live without the block being rendered again.
+
+The seed moves what the id decides about a recipe -- positions, angles,
+spacing -- and leaves the recipe itself where it was. Seed 0 is the id as it
+has always been hashed.
+
+Twenty-six recipes, in the order the hash reaches them. They differ in kind
+and not only in angle -- blooms, sweeps, wireframes, rings, meshes, mountains,
+hexagons -- because twenty-five variations on one gradient would still read as
+one background.
 */
-func themeBackdropImage(themeID string, tc ThemeColors) string {
-	h := fnv32(themeBackdropHashID(themeID))
+func themeBackdropImage(themeID string, tc ThemeColors) backdropLook {
+	return themeBackdropSeeded(themeID, tc, 0)
+}
+
+func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook {
+	id := themeBackdropHashID(themeID)
+	h := fnv32(id)
 	recipe := pick23(h)
 	if chosen := themeBackdropRecipeIndex(archetypeBackdrop(tc)); chosen >= 0 {
 		recipe = chosen
+	}
+	// The recipe is settled; the seed only moves the numbers it draws with.
+	if seed != 0 {
+		h = fnv32(id + ":" + strconv.Itoa(seed))
 	}
 	pick := func(shift uint, span int) int {
 		if span <= 0 {
@@ -3361,63 +3415,227 @@ func themeBackdropImage(themeID string, tc ThemeColors) string {
 		}
 		return int((h >> shift) % uint32(span))
 	}
+	// rnd is for recipes that need more numbers than 32 bits can be shifted
+	// into: a scatter of nine dots wants twenty-seven.
+	rnd := func(n, span int) int {
+		x := h ^ uint32(n)*0x9E3779B1
+		x ^= x >> 15
+		x *= 0x2C1B3C6D
+		x ^= x >> 12
+		return int(x % uint32(span))
+	}
 
 	accent := "var(--accent-primary)"
 	second := "var(--accent-error)"
 	if tc.AccentPrimary == "" {
 		accent = "var(--accent-success)"
 	}
+	bg := "var(--background-primary)"
+
+	// The share of a colour is its own number times --bd-strength, held to 100
+	// because color-mix refuses more than that.
+	strength := func(p int) string {
+		return "min(100%, calc(" + strconv.Itoa(p) + "% * var(--bd-strength, 1)))"
+	}
+	// A length is its own number times --bd-scale.
+	scaled := func(n int, unit string) string {
+		return "calc(" + strconv.Itoa(n) + unit + " * var(--bd-scale, 1))"
+	}
+	px := func(n int) string { return scaled(n, "px") }
+	tile := func(n int) string { return px(n) + " " + px(n) }
 
 	// Mixed against the page rather than transparent: over a light theme a
 	// translucent accent turns milky, over a dark one it glows. Mixing with the
 	// theme's own background keeps a backdrop the same weight either way.
-	wash := func(color string, pct int) string {
-		return "color-mix(in srgb, " + color + " " + strconv.Itoa(pct) + "%, var(--background-primary))"
+	wash := func(color string, p int) string {
+		return "color-mix(in srgb, " + color + " " + strength(p) + ", " + bg + ")"
 	}
-	veil := func(color string, pct int) string {
-		return "color-mix(in srgb, " + color + " " + strconv.Itoa(pct) + "%, transparent)"
+	veil := func(color string, p int) string {
+		return "color-mix(in srgb, " + color + " " + strength(p) + ", transparent)"
 	}
+
+	// plain is a recipe whose layers all fill the page.
+	plain := func(images ...string) []backdropLayer {
+		layers := make([]backdropLayer, len(images))
+		for i, image := range images {
+			layers[i] = backdropLayer{image: image}
+		}
+		return layers
+	}
+	// A flat page colour is not a valid background-image layer, so the
+	// layers that want one get a gradient from it to itself.
+	solid := "linear-gradient(" + bg + ", " + bg + ")"
 
 	angle := 15 + pick(3, 150)
 	x1, y1 := 4+pick(7, 34), pick(11, 22)
 	x2, y2 := 62+pick(13, 34), pick(17, 26)
 	base := "linear-gradient(" + strconv.Itoa(160+pick(19, 40)) + "deg, " +
-		wash(accent, 6) + " 0%, var(--background-primary) 68%)"
+		wash(accent, 6) + " 0%, " + bg + " 68%)"
 
-	switch recipe {
-	case 0: // twee zachte blooms, de vorm van de referentie
-		return "radial-gradient(120% 88% at " + pct(x1) + " " + pct(y1) + ", " + veil(second, 26) + " 0%, transparent 56%), " +
-			"radial-gradient(110% 80% at " + pct(x2) + " " + pct(y2) + ", " + veil(accent, 24) + " 0%, transparent 60%), " + base
-	case 1: // brede sweep vanuit een hoek
-		return "conic-gradient(from " + strconv.Itoa(angle) + "deg at " + pct(x1) + " -10%, " +
-			veil(accent, 22) + " 0deg, transparent 140deg, " + veil(second, 16) + " 300deg, transparent 360deg), " + base
-	case 2: // wireframe: twee sets dunne lijnen onder een hoek
-		return "repeating-linear-gradient(" + strconv.Itoa(angle) + "deg, " + veil(accent, 12) + " 0 1px, transparent 1px " + strconv.Itoa(38+pick(2, 24)) + "px), " +
-			"repeating-linear-gradient(" + strconv.Itoa(-angle/2) + "deg, " + veil(accent, 8) + " 0 1px, transparent 1px " + strconv.Itoa(46+pick(5, 28)) + "px), " + base
-	case 3: // gloed van onderaf, vignet eromheen
-		return "radial-gradient(150% 70% at 50% 108%, " + veil(accent, 26) + " 0%, transparent 62%), " +
-			"radial-gradient(120% 120% at 50% 50%, transparent 42%, " + veil(second, 12) + " 100%), " + base
-	case 4: // diagonale band
-		return "linear-gradient(" + strconv.Itoa(angle) + "deg, transparent 0%, " + veil(accent, 20) + " " + pct(28+pick(2, 20)) + ", transparent " + pct(64+pick(5, 18)) + "), " + base
-	case 5: // concentrische ringen
-		return "repeating-radial-gradient(circle at " + pct(x1) + " " + pct(y1) + ", " +
-			veil(accent, 9) + " 0 1px, transparent 1px " + strconv.Itoa(52+pick(2, 40)) + "px), " + base
-	case 6: // scanlijnen met een bloom bovenin
-		return "repeating-linear-gradient(0deg, " + veil(accent, 10) + " 0 1px, transparent 1px 3px), " +
-			"radial-gradient(120% 96% at 50% 0%, " + veil(accent, 18) + " 0%, transparent 66%), " + base
-	case 7: // kruisarcering
-		return "repeating-linear-gradient(45deg, " + veil(accent, 8) + " 0 1px, transparent 1px " + strconv.Itoa(14+pick(2, 12)) + "px), " +
-			"repeating-linear-gradient(-45deg, " + veil(second, 6) + " 0 1px, transparent 1px " + strconv.Itoa(16+pick(5, 14)) + "px), " + base
+	var layers []backdropLayer
+	switch themeBackdropRecipes[recipe] {
+	case "blooms": // twee zachte blooms, de vorm van de referentie
+		layers = plain(
+			"radial-gradient(120% 88% at "+pct(x1)+" "+pct(y1)+", "+veil(second, 26)+" 0%, transparent 56%)",
+			"radial-gradient(110% 80% at "+pct(x2)+" "+pct(y2)+", "+veil(accent, 24)+" 0%, transparent 60%)", base)
+	case "sweep": // brede sweep vanuit een hoek
+		layers = plain(
+			"conic-gradient(from "+strconv.Itoa(angle)+"deg at "+pct(x1)+" -10%, "+
+				veil(accent, 22)+" 0deg, transparent 140deg, "+veil(second, 16)+" 300deg, transparent 360deg)", base)
+	case "wireframe": // twee sets dunne lijnen onder een hoek
+		layers = plain(
+			"repeating-linear-gradient("+strconv.Itoa(angle)+"deg, "+veil(accent, 12)+" 0 1px, transparent 1px "+px(38+pick(2, 24))+")",
+			"repeating-linear-gradient("+strconv.Itoa(-angle/2)+"deg, "+veil(accent, 8)+" 0 1px, transparent 1px "+px(46+pick(5, 28))+")", base)
+	case "glow": // gloed van onderaf, vignet eromheen
+		layers = plain(
+			"radial-gradient(150% 70% at 50% 108%, "+veil(accent, 26)+" 0%, transparent 62%)",
+			"radial-gradient(120% 120% at 50% 50%, transparent 42%, "+veil(second, 12)+" 100%)", base)
+	case "band": // diagonale band
+		layers = plain(
+			"linear-gradient("+strconv.Itoa(angle)+"deg, transparent 0%, "+veil(accent, 20)+" "+pct(28+pick(2, 20))+", transparent "+pct(64+pick(5, 18))+")", base)
+	case "rings": // concentrische ringen
+		layers = plain(
+			"repeating-radial-gradient(circle at "+pct(x1)+" "+pct(y1)+", "+
+				veil(accent, 9)+" 0 1px, transparent 1px "+px(52+pick(2, 40))+")", base)
+	case "scanlines": // scanlijnen met een bloom bovenin
+		layers = plain(
+			"repeating-linear-gradient(0deg, "+veil(accent, 10)+" 0 1px, transparent 1px 3px)",
+			"radial-gradient(120% 96% at 50% 0%, "+veil(accent, 18)+" 0%, transparent 66%)", base)
+	case "crosshatch": // kruisarcering
+		layers = plain(
+			"repeating-linear-gradient(45deg, "+veil(accent, 8)+" 0 1px, transparent 1px "+px(14+pick(2, 12))+")",
+			"repeating-linear-gradient(-45deg, "+veil(second, 6)+" 0 1px, transparent 1px "+px(16+pick(5, 14))+")", base)
+	case "mesh": // vier hoeken, vier wolken
+		layers = plain(
+			"radial-gradient(70% 60% at 0% 0%, "+veil(accent, 30)+", transparent 70%)",
+			"radial-gradient(70% 60% at 100% 0%, "+veil(second, 22)+", transparent 70%)",
+			"radial-gradient(70% 60% at 100% 100%, "+veil(accent, 18)+", transparent 70%)",
+			"radial-gradient(70% 60% at 0% 100%, "+veil(second, 14)+", transparent 70%)", solid)
+	case "aurora": // brede lichtbanden bovenin
+		layers = plain(
+			"radial-gradient(70% 22% at "+pct(20+x1/2)+" 18%, "+veil(accent, 34)+", transparent 70%)",
+			"radial-gradient(55% 18% at "+pct(x2)+" 30%, "+veil(second, 22)+", transparent 70%)",
+			"radial-gradient(90% 26% at 50% 8%, "+veil(accent, 18)+", transparent 70%)",
+			"linear-gradient(180deg, "+wash(accent, 10)+" 0%, "+bg+" 60%)")
+	case "bokeh": // negen zachte lichtvlekken
+		images := make([]string, 0, 10)
+		for i := 0; i < 9; i++ {
+			colour := second
+			if i%2 == 1 {
+				colour = accent
+			}
+			images = append(images, "radial-gradient(circle at "+pct(rnd(10+i, 101))+" "+pct(rnd(20+i, 101))+", "+
+				veil(colour, 22)+" 0, transparent "+scaled(4+rnd(30+i, 7), "%")+")")
+		}
+		layers = plain(append(images, base)...)
+	case "nebula": // sterretjes voor twee kleurwolken
+		layers = []backdropLayer{
+			{"radial-gradient(1px 1px at 30% 40%, " + veil("#ffffff", 60) + ", transparent)", tile(120), ""},
+			{"radial-gradient(1.4px 1.4px at 80% 20%, " + veil("#ffffff", 50) + ", transparent)", px(170) + " " + px(150), ""},
+			{"radial-gradient(60% 45% at " + pct(x1+20) + " " + pct(y1+30) + ", " + veil(second, 30) + ", transparent 70%)", "", ""},
+			{"radial-gradient(50% 40% at " + pct(x2) + " " + pct(y2+40) + ", " + veil(accent, 26) + ", transparent 70%)", "", ""},
+			{solid, "", ""},
+		}
+	case "stars": // drie tegels met sterren, elk met een eigen maat
+		off := func(n int) string { return strconv.Itoa(rnd(n, 140)) + "px " + strconv.Itoa(rnd(n+1, 140)) + "px" }
+		layers = []backdropLayer{
+			{"radial-gradient(1.2px 1.2px at 20% 30%, " + veil("#ffffff", 70) + ", transparent)", tile(140), off(1)},
+			{"radial-gradient(1px 1px at 70% 80%, " + veil("#ffffff", 55) + ", transparent)", px(90) + " " + px(110), off(3)},
+			{"radial-gradient(1.5px 1.5px at 40% 60%, " + veil(accent, 80) + ", transparent)", px(210) + " " + px(190), off(5)},
+			{"linear-gradient(180deg, " + wash(accent, 8) + ", " + bg + " 70%)", "", ""},
+		}
+	case "sunset": // een zon op de horizon
+		layers = plain(
+			"radial-gradient(circle at 50% 64%, "+veil(second, 60)+" 0, "+veil(second, 60)+" "+scaled(8, "%")+
+				", transparent calc(8% * var(--bd-scale, 1) + .3%))",
+			"linear-gradient(180deg, "+wash(accent, 14)+" 0%, "+wash(second, 22)+" 60%, "+bg+" 64.5%, "+wash(accent, 8)+" 100%)")
+	case "dunes": // drie duinruggen
+		layers = plain(
+			"radial-gradient(140% 60% at 15% 115%, "+wash(accent, 20)+" 60%, transparent 60.4%)",
+			"radial-gradient(130% 55% at 85% 120%, "+wash(second, 16)+" 62%, transparent 62.4%)",
+			"radial-gradient(160% 70% at 50% 135%, "+wash(accent, 10)+" 62%, transparent 62.4%)", base)
+	case "mountains": // twee bergruggen en een maan
+		layers = plain(
+			"linear-gradient("+strconv.Itoa(150+x1/3)+"deg, transparent 58%, "+wash(accent, 14)+" 58.3%)",
+			"linear-gradient("+strconv.Itoa(210-x2/5)+"deg, transparent 62%, "+wash(second, 12)+" 62.3%)",
+			"radial-gradient(40% 30% at "+pct(x2)+" 25%, "+veil(second, 26)+", transparent 70%)",
+			"linear-gradient(180deg, "+wash(accent, 12)+", "+bg+" 75%)")
+	case "waves": // golven die van onderaf aanrollen
+		layers = plain(
+			"repeating-radial-gradient(ellipse 140% 60% at 50% 135%, "+veil(accent, 14)+" 0 2px, transparent 2px "+px(28)+")", base)
+	case "topo": // hoogtelijnen rond twee toppen
+		layers = plain(
+			"repeating-radial-gradient(ellipse at "+pct(x1)+" "+pct(y1+20)+", "+veil(accent, 10)+" 0 1px, transparent 1px "+px(22)+")",
+			"repeating-radial-gradient(ellipse at "+pct(x2)+" "+pct(y2+60)+", "+veil(second, 8)+" 0 1px, transparent 1px "+px(26)+")", base)
+	case "perspective": // een raster dat naar de horizon loopt
+		layers = plain(
+			"radial-gradient(70% 40% at 50% 55%, "+veil(accent, 30)+", transparent 70%)",
+			"linear-gradient(180deg, "+bg+" 55%, transparent 55%)",
+			"repeating-conic-gradient(from 90deg at 50% 55%, "+veil(accent, 26)+" 0 .6deg, transparent .6deg "+scaled(8, "deg")+")",
+			"repeating-linear-gradient(180deg, "+veil(accent, 18)+" 0 1px, transparent 1px "+px(24)+")", solid)
+	case "blueprint": // millimeterpapier: een groot en een fijn raster
+		major, minor := veil(accent, 16), veil(accent, 7)
+		layers = []backdropLayer{
+			{"linear-gradient(" + major + " 1px, transparent 1px)", tile(100), ""},
+			{"linear-gradient(90deg, " + major + " 1px, transparent 1px)", tile(100), ""},
+			{"linear-gradient(" + minor + " 1px, transparent 1px)", tile(20), ""},
+			{"linear-gradient(90deg, " + minor + " 1px, transparent 1px)", tile(20), ""},
+			{base, "", ""},
+		}
+	case "pinstripe": // krijtstreep met een lichtval
+		layers = plain(
+			"repeating-linear-gradient(90deg, "+veil(accent, 9)+" 0 1px, transparent 1px "+px(9)+")",
+			"radial-gradient(90% 70% at "+pct(x1)+" 0%, "+veil(accent, 16)+", transparent 70%)", base)
+	case "hexagons": // honingraat van zes verschoven lagen
+		a, b := veil(accent, 9), veil(second, 6)
+		cell := px(56) + " " + px(98)
+		half := px(28) + " " + px(49)
+		edge := func(deg int, colour string) string {
+			return "linear-gradient(" + strconv.Itoa(deg) + "deg, " + colour + " 12%, transparent 12.5%, transparent 87%, " + colour + " 87.5%)"
+		}
+		slant := "linear-gradient(60deg, " + b + " 25%, transparent 25.5%, transparent 75%, " + b + " 75%)"
+		layers = []backdropLayer{
+			{edge(30, a), cell, "0 0"},
+			{edge(150, a), cell, "0 0"},
+			{edge(30, a), cell, half},
+			{edge(150, a), cell, half},
+			{slant, cell, "0 0"},
+			{slant, cell, half},
+			{base, "", ""},
+		}
+	case "halftone": // rasterpunten die naar een hoek vervagen
+		layers = []backdropLayer{
+			{"linear-gradient(" + strconv.Itoa(120+angle/4) + "deg, " + bg + " 20%, transparent 85%)", "", ""},
+			{"radial-gradient(circle, " + veil(accent, 22) + " 1.4px, transparent 1.6px)", tile(10), ""},
+			{base, "", ""},
+		}
+	case "prism": // gebroken licht vanuit een punt
+		layers = plain(
+			"conic-gradient(from "+strconv.Itoa(angle)+"deg at "+pct(x1+20)+" "+pct(y1+20)+", "+
+				veil(accent, 18)+" 0deg 40deg, transparent 40deg 95deg, "+veil(second, 14)+" 95deg 130deg, transparent 130deg 210deg, "+
+				veil(accent, 10)+" 210deg 250deg, transparent 250deg)", base)
+	case "chevron": // een zigzag van schuine vlakken
+		layers = []backdropLayer{
+			{"linear-gradient(135deg, " + veil(accent, 8) + " 25%, transparent 25%)", tile(36), ""},
+			{"linear-gradient(225deg, " + veil(accent, 8) + " 25%, transparent 25%)", tile(36), ""},
+			{base, "", ""},
+		}
 	default: // horizon: een lichte band met een donkere grond
-		return "linear-gradient(" + strconv.Itoa(178+pick(2, 6)) + "deg, " + veil(accent, 16) + " 0%, transparent " + pct(34+pick(5, 16)) + "), " +
-			"radial-gradient(140% 60% at " + pct(x2) + " 100%, " + veil(second, 18) + " 0%, transparent 58%), " + base
+		layers = plain(
+			"linear-gradient("+strconv.Itoa(178+pick(2, 6))+"deg, "+veil(accent, 16)+" 0%, transparent "+pct(34+pick(5, 16))+")",
+			"radial-gradient(140% 60% at "+pct(x2)+" 100%, "+veil(second, 18)+" 0%, transparent 58%)", base)
 	}
+	return joinBackdropLayers(layers)
 }
 
-// themeBackdropRecipes names the nine recipes above, in their switch order, so
-// a theme can pick one instead of taking the one its id hashes to.
+// themeBackdropRecipes names the recipes above, in their switch order, so a
+// theme can pick one instead of taking the one its id hashes to. The order is
+// part of the contract: the hash is taken modulo this list, so a new recipe
+// goes at the end, and the first nine keep the places they always had.
 var themeBackdropRecipes = []string{
 	"blooms", "sweep", "wireframe", "glow", "band", "rings", "scanlines", "crosshatch", "horizon",
+	"mesh", "aurora", "bokeh", "nebula", "stars", "sunset", "dunes", "mountains", "waves", "topo",
+	"perspective", "blueprint", "pinstripe", "hexagons", "halftone", "prism", "chevron",
 }
 
 // themeBackdropRecipeIndex is the recipe a name stands for, or -1.
@@ -3538,6 +3756,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
 	// once per theme and the block stays a list of tokens.
 	labelTransform, labelSpacing, labelWeight := archetypeLabel(tc)
 	grainAngle, grainScale := archetypeGrain(tc)
+	backdrop := themeBackdropImage(selector, s)
 	return `html[data-theme="` + selector + `"] {
     --text-primary: ` + s.TextPrimary + `;
     --text-secondary: ` + s.TextSecondary + `;
@@ -3555,7 +3774,9 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --accent-info: ` + themeAccentInfo(tc) + `;
     --accent-vivid: ` + themeAccentVivid(tc) + `;
     --ink-dir: ` + themeInkDirection(s.BackgroundPrimary) + `;
-    --theme-backdrop: ` + themeBackdropImage(selector, s) + `;
+    --theme-backdrop: ` + backdrop.Image + `;
+    --theme-backdrop-size: ` + backdrop.Size + `;
+    --theme-backdrop-position: ` + backdrop.Position + `;
     --theme-surface-alpha: ` + themeSurfaceAlpha(tc) + `;
     --theme-surface-blur: ` + themeSurfaceBlur(tc) + `px;
     --theme-surface-glow: ` + themeSurfaceGlow(tc) + `;
