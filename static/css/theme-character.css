@@ -391,6 +391,19 @@ html[data-theme] body[data-depth="glass"] .dashboard-widget {
         var(--dashboard-widget-cell-solid) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
 }
 
+/*
+ * De dunne rand om de ruiten, voor wie ze scherper wil zien tegen een drukke
+ * achtergrond (Appearance → Oppervlak → Kaartglas). Een outline naar binnen en
+ * geen border: een border verschuift de inhoud en komt op elke ruit anders
+ * uit, en de box-shadow van het widgetlichaam is al bezet.
+ */
+html[data-theme] body[data-depth="glass"][data-card-border="on"] .dashboard-grid.layout-cards .category,
+html[data-theme] body[data-depth="glass"][data-card-border="on"] .dashboard-grid.layout-widgets .category,
+html[data-theme] body[data-depth="glass"][data-card-border="on"] .dashboard-widget .dashboard-widget-body {
+    outline: 1px solid color-mix(in srgb, var(--text-primary) 16%, transparent);
+    outline-offset: -1px;
+}
+
 @media (prefers-reduced-transparency: reduce) {
     html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-cards .category,
     html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .category {

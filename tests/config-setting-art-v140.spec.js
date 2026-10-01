@@ -26,10 +26,10 @@ test.describe('the v1.4.0 setting drawings', () => {
         await openConfig(page, () => {
             const c = window.dashboardInstance.config;
             (c.appearanceTab = c.appearanceTab || 'general', c).openConfigView('appearance');
-            c.switchAppearanceTab?.('theme');
+            c.switchAppearanceTab?.('surface');
         });
         await expect(page.locator('[data-appearance-select="themeDepth"]')).toHaveCount(1);
-        await expect(page.locator('[data-appearance-select="backgroundPattern"]')).toHaveCount(1);
+
         // Every option is in the list, which is what a select is for.
         const depths = await page.locator('[data-appearance-select="themeDepth"] option')
             .evaluateAll((els) => els.map((e) => e.value));
@@ -37,6 +37,9 @@ test.describe('the v1.4.0 setting drawings', () => {
         // archetypes, and follow leads: it is the default, and it is what
         // hands the question to the theme.
         expect(depths).toEqual(['follow', 'flat', 'soft', 'rich', 'vivid', 'glass']);
+        // The pattern went with the background.
+        await page.locator('[data-appearance-tab="background"]').click();
+        await expect(page.locator('[data-appearance-select="backgroundPattern"]')).toHaveCount(1);
         const backdrops = await page.locator('[data-appearance-select="backgroundPattern"] option')
             .evaluateAll((els) => els.map((e) => e.value));
         expect(backdrops).toEqual(['auto', 'dots', 'grid', 'lines', 'hatch', 'none']);

@@ -634,6 +634,23 @@ type Settings struct {
 	ThemeBackdrop string `json:"themeBackdrop,omitempty"`
 
 	/*
+	 * CardGlass is the card glass when every theme is forced to one answer
+	 * (ThemeSurfacesForceAll); otherwise it lives per theme in
+	 * ThemeSurfacePrefs. Empty fields are the theme's own.
+	 */
+	CardGlass ThemeSurfacePref `json:"cardGlass,omitempty"`
+
+	/*
+	 * The category header, which is what a category is called above its
+	 * bookmarks; see category_header.go for the values.
+	 */
+	CategoryHeaderStyle      string `json:"categoryHeaderStyle,omitempty"`
+	CategoryHeaderSize       string `json:"categoryHeaderSize,omitempty"`
+	ShowCategoryIcon         bool   `json:"showCategoryIcon"`
+	ShowCategoryCount        bool   `json:"showCategoryCount"`
+	CategoryHeaderAccentLine bool   `json:"categoryHeaderAccentLine"`
+
+	/*
 	 * BackdropTuning is the sliders on the backdrop; see backdrop_tuning.go.
 	 * Its zero value is not the default, so GetSettings fills in what a file
 	 * without it should read as.
@@ -1669,6 +1686,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 			InkGap:                          defaultInkGap,
 			ThemeBackdrop:                   surfaceFollow,
 			BackdropTuning:                  defaultBackdropTuning(),
+			CategoryHeaderStyle:             categoryHeaderThemeOwn,
+			CategoryHeaderSize:              "m",
+			ShowCategoryIcon:                true,
 			BackgroundPattern:               "auto",
 			BackgroundOpacity:               1,
 			FontWeight:                      "normal",
@@ -4131,6 +4151,9 @@ func (fs *FileStore) GetSettings() Settings {
 			InkGap:                          defaultInkGap,
 			ThemeBackdrop:                   surfaceFollow,
 			BackdropTuning:                  defaultBackdropTuning(),
+			CategoryHeaderStyle:             categoryHeaderThemeOwn,
+			CategoryHeaderSize:              "m",
+			ShowCategoryIcon:                true,
 			BackgroundPattern:               "auto",
 			DensityMode:                     "compact",
 			CategorySpacing:                 "balanced",
@@ -4237,6 +4260,11 @@ func (fs *FileStore) GetSettings() Settings {
 		// A missing object is the default tuning; a partial one keeps what it
 		// has and takes the default for the rest. See fillMissingBackdropTuning.
 		fillMissingBackdropTuning(&settings.BackdropTuning, rawSettings["backdropTuning"])
+		// On by default, and a decoded false is the same as a missing key, so
+		// the file has to say which it was.
+		if _, ok := rawSettings["showCategoryIcon"]; !ok {
+			settings.ShowCategoryIcon = true
+		}
 
 		if _, ok := rawSettings["backgroundPattern"]; !ok {
 			settings.BackgroundPattern = "auto"
@@ -4561,6 +4589,9 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.InkGap = normalizeInkGap(settings.InkGap)
 		settings.ThemeBackdrop = normalizeThemeBackdrop(settings.ThemeBackdrop)
 		settings.BackdropTuning = normalizeBackdropTuning(settings.BackdropTuning)
+		settings.CategoryHeaderStyle = normalizeCategoryHeaderStyle(settings.CategoryHeaderStyle)
+		settings.CategoryHeaderSize = normalizeCategoryHeaderSize(settings.CategoryHeaderSize)
+		settings.CardGlass = sanitizeCardGlass(settings.CardGlass)
 		switch settings.ThemeDepth {
 		case "flat", "soft", "rich", "vivid", "glass", surfaceFollow:
 		default:

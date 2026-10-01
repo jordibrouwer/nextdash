@@ -434,6 +434,12 @@ type themeMeta struct {
 	Effects     string `json:"effects"`
 	// New marks the latest collection, for the browser's badge and search.
 	New bool `json:"new,omitempty"`
+	// Backdrop is the recipe the theme is drawn with when nothing overrides it,
+	// and SurfaceAlpha and SurfaceBlur are its card glass: what "follow the
+	// theme" means in Appearance, said in numbers.
+	Backdrop     string `json:"backdrop"`
+	SurfaceAlpha string `json:"surfaceAlpha"`
+	SurfaceBlur  string `json:"surfaceBlur"`
 }
 
 // themeMetaFor answers for one theme.
@@ -443,11 +449,14 @@ func themeMetaFor(themeID string, tc ThemeColors) themeMeta {
 		character = ""
 	}
 	return themeMeta{
-		Character:   character,
-		Description: themeDescription(themeID),
-		Depth:       themeIdealDepth(tc),
-		Glow:        themeIdealGlow(tc),
-		Effects:     themeIdealEffects(tc),
-		New:         themeIsNew(themeID),
+		Character:    character,
+		Description:  themeDescription(themeID),
+		Depth:        themeIdealDepth(tc),
+		Glow:         themeIdealGlow(tc),
+		Effects:      themeIdealEffects(tc),
+		New:          themeIsNew(themeID),
+		Backdrop:     themeBackdropRecipes[themeBackdropRecipeFor(themeBackdropHashID(themeID), tc)],
+		SurfaceAlpha: themeSurfaceAlpha(tc),
+		SurfaceBlur:  themeSurfaceBlur(tc),
 	}
 }

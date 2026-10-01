@@ -7591,3 +7591,108 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .config-field-check[data-state="ok"] { color: var(--accent-success, var(--accent-primary)); }
 .config-field-check[data-state="fixable"] { color: var(--accent-warning); }
 .config-field-check[data-state="bad"] { color: var(--accent-error); }
+
+
+/* ── Appearance → Background and Surface ─────────────────────────────────── */
+
+/* The recipes, each drawn in the colours of the theme on screen: the thumbnail
+   sits inside the page, so the variables a recipe is written in are the
+   theme's own. */
+.config-backdrop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.config-backdrop-thumb {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.78em;
+    cursor: pointer;
+    text-align: left;
+}
+
+.config-backdrop-thumb:hover {
+    border-color: var(--accent-primary);
+}
+
+.config-backdrop-thumb.is-active {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 1px var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.config-backdrop-sw {
+    display: block;
+    height: 56px;
+    border-radius: 5px;
+    background-color: var(--background-primary);
+    background-repeat: repeat;
+    overflow: hidden;
+}
+
+.config-backdrop-name em {
+    font-style: normal;
+    opacity: 0.6;
+    font-size: 0.9em;
+}
+
+.config-field--slider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.config-field--slider .config-field-label {
+    flex: 0 0 8.5em;
+}
+
+.config-field--slider .config-range {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.config-field--slider .config-range-value {
+    flex: 0 0 3.2em;
+    text-align: right;
+}
+
+.config-glass-badge {
+    font-variant-numeric: tabular-nums;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border-primary);
+}
+
+.config-glass-badge[data-grade="ok"] { color: var(--accent-success); }
+.config-glass-badge[data-grade="warn"] { color: var(--accent-warning); }
+.config-glass-badge[data-grade="bad"] { color: var(--accent-error); }
+
+/* The category header in the small preview, following the same five looks. */
+.config-pv-cat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0 4px;
+    font-size: 0.8em;
+    color: var(--text-secondary);
+}
+
+.config-pv-cat-count { margin-left: auto; opacity: 0.6; display: none; }
+.config-preview[data-preview-catcount="on"] .config-pv-cat-count { display: inline; }
+.config-preview[data-preview-caticon="off"] .config-pv-cat-icon { display: none; }
+.config-preview[data-preview-catsize="s"] .config-pv-cat { font-size: 0.7em; }
+.config-preview[data-preview-catsize="l"] .config-pv-cat { font-size: 0.95em; }
+.config-preview[data-preview-cathead="underlined"] .config-pv-cat { border-bottom: 1px solid var(--border-primary); padding-bottom: 3px; }
+.config-preview[data-preview-cathead="underlined"][data-preview-cataccent="on"] .config-pv-cat { border-bottom: 2px solid var(--accent-primary); }
+.config-preview[data-preview-cathead="boxed"] .config-pv-cat { padding: 3px 8px; border-radius: 6px; background: var(--background-secondary); }
+.config-preview[data-preview-cathead="label"] .config-pv-cat { text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700; font-size: 0.65em; }
+.config-preview[data-preview-cathead="group"] .config-pv-cat { padding-bottom: 3px; border-bottom: 1px solid var(--border-secondary); }

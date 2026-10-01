@@ -597,5 +597,5 @@
         bind();
     }
 
-    global.ThemeBrowser = { open };
+    global.ThemeBrowser = { open, contrastRatio };
 })(typeof window !== 'undefined' ? window : globalThis);

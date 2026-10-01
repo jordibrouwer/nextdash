@@ -1,6 +1,9 @@
 package app
 
-import "strings"
+import (
+	"math"
+	"strings"
+)
 
 /*
 Whose answer the surfaces are.
@@ -39,6 +42,45 @@ type ThemeSurfacePref struct {
 
 	// Backdrop is "off" or the name of a recipe. Empty is the theme's own.
 	Backdrop string `json:"backdrop,omitempty"`
+
+	// Alpha and Blur are the card glass: how solid a pane is and how far the
+	// page is blurred behind it. A pointer because 0 is an answer for Blur
+	// and nil is "the theme's own". Border is "on" for a thin edge round the
+	// panes, or empty. They only show at depth Glass, which is where panes are
+	// panes; see theme-character.css.
+	Alpha  *float64 `json:"alpha,omitempty"`
+	Blur   *float64 `json:"blur,omitempty"`
+	Border string   `json:"border,omitempty"`
+}
+
+// The ranges the card glass sliders offer.
+const (
+	glassAlphaMin = 0.2
+	glassAlphaMax = 1.0
+	glassBlurMax  = 30.0
+)
+
+// cleanGlass clamps the glass part of a pref to its sliders and rounds it to
+// the step they offer. Anything that is not a number is the theme's own.
+func cleanGlass(pref ThemeSurfacePref) (alpha, blur *float64, border string) {
+	clamp := func(v *float64, lo, hi float64) *float64 {
+		if v == nil || math.IsNaN(*v) || math.IsInf(*v, 0) {
+			return nil
+		}
+		out := math.Round(math.Min(hi, math.Max(lo, *v))*100) / 100
+		return &out
+	}
+	if strings.EqualFold(strings.TrimSpace(pref.Border), "on") {
+		border = "on"
+	}
+	return clamp(pref.Alpha, glassAlphaMin, glassAlphaMax), clamp(pref.Blur, 0, glassBlurMax), border
+}
+
+// sanitizeCardGlass is cleanGlass for the install-wide answer, which lives in
+// Settings.CardGlass and holds when every theme is forced to the same one.
+func sanitizeCardGlass(pref ThemeSurfacePref) ThemeSurfacePref {
+	alpha, blur, border := cleanGlass(pref)
+	return ThemeSurfacePref{Alpha: alpha, Blur: blur, Border: border}
 }
 
 // ResolvedSurfaces is what a page is actually drawn with.
@@ -52,6 +94,12 @@ type ResolvedSurfaces struct {
 	Effects  string
 	Backdrop string
 	Recipe   string
+
+	// The card glass as the stylesheet wants it: a number as text, or empty for
+	// the theme's own. Border is "on" or empty.
+	GlassAlpha  string
+	GlassBlur   string
+	GlassBorder string
 }
 
 /*
@@ -92,6 +140,20 @@ func resolveSurfaces(settings Settings, themeID string, tc ThemeColors) Resolved
 	case themeBackdropRecipeIndex(backdrop) >= 0:
 		resolved.Recipe = backdrop
 	}
+	// The glass belongs to the theme on screen, or to every theme when the
+	// reader forced one answer; there is no third place for it to come from.
+	glass := pref
+	if settings.ThemeSurfacesForceAll {
+		glass = settings.CardGlass
+	}
+	alpha, blur, border := cleanGlass(glass)
+	if alpha != nil {
+		resolved.GlassAlpha = formatFloat(*alpha)
+	}
+	if blur != nil {
+		resolved.GlassBlur = formatFloat(*blur)
+	}
+	resolved.GlassBorder = border
 	return resolved
 }
 
@@ -142,11 +204,15 @@ func sanitizeSurfacePrefs(prefs map[string]ThemeSurfacePref, known map[string]bo
 		if id == "" || (known != nil && !known[id]) {
 			continue
 		}
+		alpha, blur, border := cleanGlass(pref)
 		clean := ThemeSurfacePref{
 			Depth:    keep(pref.Depth, depths),
 			Glow:     keep(pref.Glow, glows),
 			Effects:  keep(pref.Effects, effects),
 			Backdrop: keepBackdrop(pref.Backdrop),
+			Alpha:    alpha,
+			Blur:     blur,
+			Border:   border,
 		}
 		// An entry with nothing left in it is not a preference.
 		if clean == (ThemeSurfacePref{}) {

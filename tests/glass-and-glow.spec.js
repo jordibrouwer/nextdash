@@ -142,6 +142,8 @@ test('the choice is saved and comes back', async ({ page }) => {
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('.config-view', { timeout: 20_000 });
 
+    // Glow lives on Surface now.
+    await page.locator('[data-appearance-tab="surface"]').click();
     await page.locator('[data-appearance-select="glowStrength"]').selectOption('full');
     await expect.poll(() => page.evaluate(
         () => document.body.getAttribute('data-glow')), { timeout: 5_000 }).toBe('full');

@@ -136,6 +136,7 @@ test.describe('config fields line up in a grid', () => {
     /** The slider needs a fourth column for its percentage readout. */
     test('the opacity slider keeps its readout on the same row', async ({ page }) => {
         await openSection(page, 'appearance');
+        await page.locator('[data-appearance-tab="background"]').click();
 
         const row = await page.evaluate(() => {
             /*

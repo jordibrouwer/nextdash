@@ -486,6 +486,11 @@
         return surfaceMetaPromise;
     }
 
+    /** What the theme answers when nothing overrides it, once the meta is in; else null. */
+    function surfaceMetaFor(theme) {
+        return (surfaceMeta && surfaceMeta.themes && surfaceMeta.themes[theme]) || null;
+    }
+
     /** Forget the cache, for when a theme's character has just been edited. */
     function refreshSurfaceMeta() {
         surfaceMeta = null;
@@ -511,13 +516,35 @@
         // "on" is what "follow" was called before recipes could be chosen.
         const backdropWord = (v) => (String(v || '').trim().toLowerCase() === 'on' ? '' : v);
         const backdrop = pick(backdropWord(s.themeBackdrop), backdropWord(prefs.backdrop), 'follow');
+        // The card glass lives per theme, or install-wide when every theme is
+        // forced to one answer. A number is an answer; anything else is the
+        // theme's own.
+        const glassSource = s.themeSurfacesForceAll ? (s.cardGlass || {}) : prefs;
+        const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
         return {
+            glass: { alpha: num(glassSource.alpha), blur: num(glassSource.blur), border: glassSource.border === 'on' },
             depth: pick(s.themeDepth, prefs.depth, ideal.depth || 'soft'),
             glow: pick(s.glowStrength, prefs.glow, ideal.glow || 'off'),
             effects: pick(s.themeEffects, prefs.effects, ideal.effects || 'held'),
             backdrop: backdrop === 'off' ? 'off' : 'on',
             backdropRecipe: backdrop === 'off' || backdrop === 'follow' ? '' : backdrop,
         };
+    }
+
+    /**
+     * Writes the card glass for the theme on screen: alpha and blur as the two
+     * variables the glass surfaces read, on <html> where they outrank the
+     * theme's own block, and the border switch on <body>. Null is the theme's
+     * own, so the inline value is taken away rather than set to a default.
+     */
+    function applyCardGlass(glass) {
+        const root = document.documentElement;
+        const g = glass || {};
+        if (typeof g.alpha === 'number') root.style.setProperty('--theme-surface-alpha', String(g.alpha));
+        else root.style.removeProperty('--theme-surface-alpha');
+        if (typeof g.blur === 'number') root.style.setProperty('--theme-surface-blur', `${g.blur}px`);
+        else root.style.removeProperty('--theme-surface-blur');
+        if (document.body) document.body.setAttribute('data-card-border', g.border ? 'on' : '');
     }
 
     /** Resolve and write all three attributes for a theme. */
@@ -528,6 +555,7 @@
             applyGlowStrength(resolved.glow);
             applyThemeEffects(resolved.effects);
             applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
+            applyCardGlass(resolved.glass);
             return resolved;
         });
     }
@@ -722,8 +750,11 @@
         applySurfacesForTheme: applySurfacesForTheme,
         resolveSurfacesFor: resolveSurfacesFor,
         refreshSurfaceMeta: refreshSurfaceMeta,
+        loadSurfaceMeta: loadSurfaceMeta,
+        surfaceMetaFor: surfaceMetaFor,
         applyInkGap: applyInkGap,
         applyThemeBackdrop: applyThemeBackdrop,
+        applyCardGlass: applyCardGlass,
         applyBackgroundPattern: applyBackgroundPattern,
         syncBackgroundDots: syncBackgroundDots,
         syncThemeColorMeta: syncThemeColorMeta,

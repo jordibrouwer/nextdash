@@ -1220,8 +1220,13 @@ type htmlPageData struct {
 	// BackdropRecipe is the recipe the reader put behind this theme, written
 	// to <body> for the first paint. Empty when the theme's own stands.
 	BackdropRecipe string `json:"-"`
-	WriteToken     string `json:"-"`
-	AppVersion     string
+	// The card glass for the first paint: numbers as text, empty for the
+	// theme's own. See ResolvedSurfaces.
+	SurfaceAlpha string `json:"-"`
+	SurfaceBlur  string `json:"-"`
+	CardBorder   string `json:"-"`
+	WriteToken   string `json:"-"`
+	AppVersion   string
 	// ReleaseTag is the published version ("v2026.07.23.6"), reported with the
 	// analytics settings snapshot so adoption can be read per release. Empty
 	// when the What's new index cannot be read.
@@ -1288,6 +1293,9 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	return htmlPageData{
 		Settings:               settings,
 		BackdropRecipe:         surfaces.Recipe,
+		SurfaceAlpha:           surfaces.GlassAlpha,
+		SurfaceBlur:            surfaces.GlassBlur,
+		CardBorder:             surfaces.GlassBorder,
 		ThemePoolCSV:           themePoolCSV(colors),
 		CustomThemeIDsCSV:      customThemeIDsCSV(colors),
 		ThemeColorMeta:         themeBackgroundPrimary(themeID, colors),
@@ -2561,6 +2569,9 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	clampCategoryLayoutSettings(&settings)
 	settings.ThemeBackdrop = normalizeThemeBackdrop(settings.ThemeBackdrop)
 	settings.BackdropTuning = normalizeBackdropTuning(settings.BackdropTuning)
+	settings.CategoryHeaderStyle = normalizeCategoryHeaderStyle(settings.CategoryHeaderStyle)
+	settings.CategoryHeaderSize = normalizeCategoryHeaderSize(settings.CategoryHeaderSize)
+	settings.CardGlass = sanitizeCardGlass(settings.CardGlass)
 	settings.ThemeSurfacePrefs = sanitizeSurfacePrefs(settings.ThemeSurfacePrefs, nil)
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
@@ -2661,6 +2672,37 @@ func (h *Handlers) ThemeMeta(w http.ResponseWriter, r *http.Request) {
 		"archetypes": themeArchetypeOrder,
 		"themes":     meta,
 	})
+}
+
+/*
+ThemeBackdrops answers with every recipe as the page would draw it: the three
+lists themeBackdropImage writes, for the reader's own roll of the seed.
+
+Appearance paints a thumbnail of each recipe in the colours of the theme on
+screen, which it can do because a recipe is written in the theme's own
+variables. The seed comes from the query when it is given, so a slider being
+dragged can ask for a roll it has not saved yet, and from the stored setting
+when it is not.
+*/
+func (h *Handlers) ThemeBackdrops(w http.ResponseWriter, r *http.Request) {
+	seed := normalizeBackdropTuning(h.store.GetSettings().BackdropTuning).Seed
+	if raw := strings.TrimSpace(r.URL.Query().Get("seed")); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil {
+			seed = normalizeBackdropTuning(BackdropTuning{Strength: 1, Scale: 1, Brightness: 1, Saturate: 1, Seed: n}).Seed
+		}
+	}
+	type look struct {
+		Image    string `json:"image"`
+		Size     string `json:"size"`
+		Position string `json:"position"`
+	}
+	looks := make(map[string]look, len(themeBackdropRecipes))
+	for _, name := range themeBackdropRecipes {
+		l := themeBackdropSeeded("recipe:"+name, ThemeColors{Backdrop: name, AccentPrimary: "var"}, seed)
+		looks[name] = look{Image: l.Image, Size: l.Size, Position: l.Position}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"recipes": themeBackdropRecipes, "looks": looks, "seed": seed})
 }
 
 /*

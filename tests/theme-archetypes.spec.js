@@ -97,6 +97,7 @@ test('the character chips narrow the browser, and search reaches the written lin
 test('a theme brings its own surfaces, and a change belongs to the theme it was made on', async ({ page }) => {
     await openDashboard(page);
     await openAppearance(page);
+    await page.locator('[data-appearance-tab="surface"]').click();
 
     const pick = (id) => page.evaluate(
         (theme) => window.dashboardInstance.config.applyThemeChoice(theme), id);
@@ -131,6 +132,7 @@ test('a theme brings its own surfaces, and a change belongs to the theme it was 
 test('Reset puts a theme back to the surfaces it ships with', async ({ page }) => {
     await openDashboard(page);
     await openAppearance(page);
+    await page.locator('[data-appearance-tab="surface"]').click();
     await page.evaluate(() => window.dashboardInstance.config.applyThemeChoice('tarnished-brass-dark'));
     await page.waitForTimeout(500);
 
@@ -148,6 +150,7 @@ test('Reset puts a theme back to the surfaces it ships with', async ({ page }) =
 test('Effects off takes the character out of the drawing', async ({ page }) => {
     await openDashboard(page);
     await openAppearance(page);
+    await page.locator('[data-appearance-tab="surface"]').click();
     await page.evaluate(() => window.dashboardInstance.config.applyThemeChoice('gloss-liquid-chrome-dark'));
     await page.waitForTimeout(500);
 

@@ -563,13 +563,21 @@ test.describe('config dashboard view (scaffold)', () => {
 
         await expect(page.locator('[data-appearance-select="fontPreset"]')).toBeVisible();
         await expect(page.locator('[data-appearance-weight="bold"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-bg="gradient"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-range="backgroundOpacity"]')).toBeVisible();
         await expect(page.locator('[data-appearance-action="upload-font"]')).toBeVisible();
         // One button to the editor, not two: "Open the theme editor…" and
         // "Make your own theme…" went to the same tab, so the goto hook is
         // what survived.
         await expect(page.locator('[data-appearance-goto="custom-themes"]')).toBeVisible();
+
+        // The background and the backdrop have a tab of their own, and so do
+        // depth, glow and the card glass.
+        await page.locator('[data-appearance-tab="background"]').click();
+        await expect(page.locator('[data-appearance-bg="gradient"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-range="backgroundOpacity"]')).toBeVisible();
+        await expect(page.locator('[data-backdrop-mode="pick"]')).toBeVisible();
+        await page.locator('[data-appearance-tab="surface"]').click();
+        await expect(page.locator('[data-appearance-select="themeDepth"]')).toBeVisible();
+        await expect(page.locator('[data-glass-range="alpha"]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="layout"]').click();
         // Icon size moved out of the Layout version panel and into Bookmarks
@@ -600,6 +608,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
+        await page.locator('[data-appearance-tab="background"]').click();
         await page.locator('[data-appearance-bg="gradient"]').click();
         const swatches = page.locator('[data-appearance-gradient]');
         await expect(swatches.first()).toBeVisible();

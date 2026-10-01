@@ -28,6 +28,7 @@ test.describe('config form keyboard controls', () => {
 
     test('range sliders honour Home and End', async ({ page }) => {
         await openSection(page, 'appearance');
+        await page.locator('[data-appearance-tab="background"]').click();
         const range = page.locator('[data-appearance-range="backgroundOpacity"]');
         await range.focus();
         await page.keyboard.press('End');

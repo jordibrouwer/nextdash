@@ -127,6 +127,9 @@ test.describe('theme glow', () => {
         await chooseTheme(page, 'aurora-glass-dark');
         expect(await panelShadow(page)).not.toBe('none');
 
+        // Depth lives on Surface now.
+        await page.locator('[data-appearance-tab="surface"]').click();
+
         const depth = page.locator('[data-appearance-select="themeDepth"]');
         const previous = await depth.inputValue();
         // What the page is drawn with, which is not what the select says: on

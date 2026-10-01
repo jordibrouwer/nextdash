@@ -85,7 +85,7 @@ const toggle = '.config-view-head [data-config-action="toggle-changed"]';
 test.describe('appearance only-changed filter', () => {
     // Branding is not a tab: one toggle, a text field and an upload live on
     // Display rather than owning a tab of their own.
-    for (const tab of ['general', 'layout', 'buttonbar', 'display', 'header']) {
+    for (const tab of ['general', 'background', 'surface', 'layout', 'buttonbar', 'display', 'header']) {
         test(`the ${tab} tab offers the filter`, async ({ page }) => {
             await openAppearance(page, tab);
             await expect(page.locator(bar)).toBeVisible();
@@ -94,7 +94,7 @@ test.describe('appearance only-changed filter', () => {
     }
 
     test('the count covers hand-written controls, not just schema panels', async ({ page }) => {
-        await openAppearance(page, 'general', [['backgroundType', 'none']]);
+        await openAppearance(page, 'background', [['backgroundType', 'none']]);
 
         const before = await page.locator('.config-changed-count').innerText();
 
@@ -109,21 +109,21 @@ test.describe('appearance only-changed filter', () => {
     });
 
     test('turning it on hides the unchanged hand-written rows', async ({ page }) => {
-        // General is all hand-written: the background picker, the typeface and
-        // its weight. Change one and the other two are what the filter has to
-        // take away -- the half it used to be blind to, on both counts.
-        await openAppearance(page, 'general', [['backgroundType', 'none']]);
+        // Background is hand-written: the source picker, the backdrop and the
+        // pattern. Change one and the others are what the filter has to take
+        // away -- the half it used to be blind to, on both counts.
+        await openAppearance(page, 'background', [['backgroundType', 'none']]);
 
         await page.locator('[data-appearance-bg="gradient"]').click();
         await expect(page.locator(toggle)).toBeEnabled();
         await page.locator(toggle).click();
 
         await expect(page.locator('[data-appearance-bg="gradient"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-font]').first()).toBeHidden();
+        await expect(page.locator('[data-appearance-select="backgroundPattern"]')).toBeHidden();
 
         // Turning it back off brings everything back.
         await page.locator(toggle).click();
-        await expect(page.locator('[data-appearance-font]').first()).toBeVisible();
+        await expect(page.locator('[data-appearance-select="backgroundPattern"]')).toBeVisible();
 
         await resetField(page, 'backgroundType', 'none');
     });
@@ -137,7 +137,7 @@ test.describe('appearance only-changed filter', () => {
      * where the enclosing panel was *not* hidden too — exactly this case.
      */
     test('an unchanged row is hidden even when its panel stays', async ({ page }) => {
-        await openAppearance(page, 'general', [
+        await openAppearance(page, 'background', [
             ['backgroundType', 'none'],
             ['backgroundOpacity', 1],
         ]);
@@ -178,7 +178,7 @@ test.describe('appearance only-changed filter', () => {
     test('the filter survives a tab switch and still hides the right rows', async ({ page }) => {
         // From the default, so the change below is the only thing the filter
         // has to find -- starting from another position would already count.
-        await openAppearance(page, 'general', [
+        await openAppearance(page, 'background', [
             ['backgroundType', 'none'],
             ['showIcons', true],
         ]);
@@ -196,7 +196,7 @@ test.describe('appearance only-changed filter', () => {
         await expect(page.locator('#config-appearance-body .config-panel-empty').first()).toBeVisible();
         await expect(page.locator('#config-appearance-body .config-panel:visible')).toHaveCount(0);
 
-        await page.locator('[data-appearance-tab="general"]').click();
+        await page.locator('[data-appearance-tab="background"]').click();
         await expect(page.locator('[data-appearance-bg="gradient"]')).toBeVisible();
 
         await resetField(page, 'backgroundType', 'none');

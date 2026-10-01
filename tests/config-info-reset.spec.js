@@ -103,6 +103,10 @@ test.describe('config info + reset affordances', () => {
             'newBookmarkCategory',
             // Reads as part of the toggle above it, which carries the ℹ.
             'rowTagsMax', 'smartAddedLimit',
+            // The category header: the panel's note says what the five do and
+            // each control is a plain word, so the explanation is on screen.
+            'categoryHeaderStyle', 'categoryHeaderSize', 'showCategoryIcon',
+            'showCategoryCount', 'categoryHeaderAccentLine',
             // The control names its own default: the first option is
             // "Default (3 seconds)", so an ℹ would repeat the select.
             'healthCheckTimeoutSeconds',
@@ -186,8 +190,10 @@ test.describe('config info + reset affordances', () => {
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         // fontPreset and backgroundType carry info entries in the old config.
         await expect(page.locator('[data-info-field="fontPreset"]')).toBeVisible();
-        await expect(page.locator('[data-info-field="backgroundType"]')).toBeVisible();
         await expect(page.locator('[data-info-field="autoDarkMode"]')).toBeVisible();
+        // The background moved to its own tab.
+        await page.locator('[data-appearance-tab="background"]').click();
+        await expect(page.locator('[data-info-field="backgroundType"]')).toBeVisible();
     });
 
     test('appearance reset-to-default appears when a value differs and resets it', async ({ page }) => {
@@ -205,6 +211,7 @@ test.describe('config info + reset affordances', () => {
             window.dashboardInstance.settings.backgroundType = 'gradient';
             (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance');
         });
+        await page.locator('[data-appearance-tab="background"]').click();
 
         const resetBtn = page.locator('[data-reset-field="backgroundType"]');
         await expect(resetBtn).toHaveClass(/is-visible/);

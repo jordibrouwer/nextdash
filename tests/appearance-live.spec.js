@@ -33,12 +33,15 @@ async function openAppearance(page) {
 }
 
 /** Opens the appearance section and waits for its controls to exist. */
-async function appearanceControls(page) {
+async function appearanceControls(page, tab = 'surface') {
     await openAppearance(page);
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('#config-appearance-body', { timeout: 20_000 });
-    await page.click('[data-appearance-tab="general"]');
-    await page.waitForSelector('[data-appearance-select="themeDepth"]', { timeout: 20_000 });
+    // Depth lives on Surface now; Look keeps the text contrast.
+    await page.click(`[data-appearance-tab="${tab}"]`);
+    await page.waitForSelector(tab === 'general'
+        ? '[data-appearance-select="inkGap"]'
+        : tab === 'background' ? '[data-backdrop-mode]' : '[data-appearance-select="themeDepth"]', { timeout: 20_000 });
 }
 
 const stillLive = (page) => page.evaluate(() => window.__notReloaded === true);
@@ -79,7 +82,7 @@ test.describe('appearance controls apply live', () => {
     });
 
     test('text contrast moves the moment it is chosen', async ({ page }) => {
-        await appearanceControls(page);
+        await appearanceControls(page, 'general');
         // A select now, drawn like Depth and Glow above it: the slider offered
         // twenty-nine steps for a question with four answers.
         const select = page.locator('[data-appearance-select="inkGap"]');
@@ -109,14 +112,12 @@ test.describe('appearance controls apply live', () => {
     });
 
     test('the backdrop goes off and on again in place', async ({ page }) => {
-        await appearanceControls(page);
-        const select = page.locator('[data-appearance-select="themeBackdrop"]');
-        await select.waitFor({ timeout: 20_000 });
+        await appearanceControls(page, 'background');
 
-        await select.selectOption('off');
+        await page.locator('[data-backdrop-mode="off"]').click();
         await expect.poll(() => page.getAttribute('body', 'data-theme-backdrop')).toBe('off');
 
-        await select.selectOption('on');
+        await page.locator('[data-backdrop-mode="follow"]').click();
         await expect.poll(() => page.getAttribute('body', 'data-theme-backdrop')).toBe('on');
 
         expect(await stillLive(page), 'the page reloaded to apply the backdrop').toBe(true);

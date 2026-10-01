@@ -2764,6 +2764,17 @@ class DashboardRenderCore {
             trailingWrap.appendChild(window.DashboardCategorySort.createSortControls(d, category, this));
         }
 
+        // How many bookmarks the category holds. Always built and shown only
+        // when body[data-cat-count="on"] says so (category-header.css), so the
+        // setting is a repaint. A smart collection already carries its count
+        // in its name.
+        if (!isSmartCollection) {
+            const countSpan = document.createElement('span');
+            countSpan.className = 'category-title-count';
+            countSpan.textContent = String(Array.isArray(bookmarks) ? bookmarks.length : 0);
+            trailingWrap.appendChild(countSpan);
+        }
+
         const chevron = document.createElement('span');
         chevron.className = 'category-chevron';
         chevron.setAttribute('aria-hidden', 'true');

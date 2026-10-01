@@ -2020,7 +2020,7 @@ class DashboardConfig {
      */
     _changedFilterContext() {
         if (this.section === 'appearance') {
-            const tab = ['general', 'layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)
+            const tab = ['general', 'background', 'surface', 'layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)
                 ? this.appearanceTab
                 : null;
             return tab ? { section: 'appearance', tab } : null;
@@ -3255,10 +3255,17 @@ class DashboardConfig {
         { field: 'fontPreset', labelKey: 'fontPresetLabel', fallback: 'Font', section: 'appearance', subTab: 'general' },
         { field: 'fontWeight', labelKey: 'fontWeightLabel', fallback: 'Weight', section: 'appearance', subTab: 'general' },
         { field: 'fontSize', labelKey: 'appearanceFontSize', fallback: 'Font size', section: 'appearance', subTab: 'general' },
-        { field: 'backgroundType', labelKey: 'backgroundLabel', fallback: 'Background', section: 'appearance', subTab: 'general' },
-        { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
+        { field: 'backgroundType', labelKey: 'backgroundLabel', fallback: 'Background', section: 'appearance', subTab: 'background' },
+        { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'background' },
         { field: 'inkGap', labelKey: 'inkGapLabel', fallback: 'Text contrast', section: 'appearance', subTab: 'general' },
-        { field: 'themeBackdrop', labelKey: 'themeBackdropLabel', fallback: 'Theme backdrop', section: 'appearance', subTab: 'general' },
+        { field: 'themeBackdrop', labelKey: 'themeBackdropLabel', fallback: 'Theme backdrop', section: 'appearance', subTab: 'background' },
+        { field: 'backdropTuning', labelKey: 'backdropTuningTitle', fallback: 'Backdrop settings', section: 'appearance', subTab: 'background' },
+        { field: 'backgroundPattern', labelKey: 'backgroundPatternLabel', fallback: 'Pattern over it', section: 'appearance', subTab: 'background' },
+        { field: 'cardGlass', labelKey: 'cardGlassTitle', fallback: 'Card glass', section: 'appearance', subTab: 'surface' },
+        { field: 'themeDepth', labelKey: 'themeDepthLabel', fallback: 'Depth', section: 'appearance', subTab: 'surface' },
+        { field: 'glowStrength', labelKey: 'glowStrengthLabel', fallback: 'Glow', section: 'appearance', subTab: 'surface' },
+        { field: 'themeEffects', labelKey: 'themeEffectsLabel', fallback: 'Effects', section: 'appearance', subTab: 'surface' },
+        { field: 'themeSurfacesForceAll', labelKey: 'themeSurfacesForceAllLabel', fallback: 'Use these for every theme', section: 'appearance', subTab: 'surface' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
         { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'general' },
@@ -3349,7 +3356,14 @@ class DashboardConfig {
         backgroundType: ['background', 'wallpaper', 'gradient', 'image'],
         backgroundOpacity: ['background', 'opacity', 'transparency', 'fade'],
         inkGap: ['contrast', 'readability', 'text', 'legibility', 'faint', 'ink', 'accessibility'],
-        themeBackdrop: ['backdrop', 'background', 'gradient', 'atmosphere', 'theme'],
+        themeBackdrop: ['backdrop', 'background', 'gradient', 'atmosphere', 'theme', 'recipe', 'mesh', 'aurora', 'bokeh', 'nebula', 'stars', 'sunset', 'dunes', 'mountains', 'waves', 'topo', 'blueprint', 'hexagons', 'halftone'],
+        backdropTuning: ['backdrop', 'intensity', 'scale', 'variant', 'seed', 'blur', 'brightness', 'saturation', 'tint', 'dice'],
+        cardGlass: ['glass', 'card', 'pane', 'opacity', 'alpha', 'blur', 'border', 'frosted', 'transparent', 'contrast'],
+        categoryHeaderStyle: ['category', 'header', 'heading', 'title', 'underline', 'boxed', 'label', 'group', 'clean'],
+        categoryHeaderSize: ['category', 'header', 'heading', 'title', 'size', 'small', 'large'],
+        showCategoryIcon: ['category', 'header', 'icon', 'emoji'],
+        showCategoryCount: ['category', 'header', 'count', 'number', 'bookmarks'],
+        categoryHeaderAccentLine: ['category', 'header', 'underline', 'accent', 'line', 'colour', 'color'],
         showIcons: ['favicon', 'icon', 'image'],
         faviconRefreshPolicy: ['favicon', 'icon', 'refresh', 'cache'],
         autoBackupEnabled: ['backup', 'automatic', 'snapshot'],
@@ -9130,14 +9144,6 @@ class DashboardConfig {
             `<button type="button" class="config-choice${weight === val ? ' is-active' : ''}" data-appearance-weight="${esc(val)}" aria-pressed="${weight === val}">${esc(label)}</button>`
         ).join('');
 
-        const bgType = s.backgroundType || 'none';
-        const bgTypes = [['auto', this.t('config.backgroundAuto', 'Auto')], ['none', this.t('config.backgroundNone', 'None')], ['gradient', this.t('config.backgroundGradient', 'Gradient')], ['image', this.t('config.backgroundImage', 'Image')]];
-        const bgChoices = bgTypes.map(([val, label]) =>
-            `<button type="button" class="config-choice${bgType === val ? ' is-active' : ''}" data-appearance-bg="${esc(val)}" aria-pressed="${bgType === val}">${esc(label)}</button>`
-        ).join('');
-        const opacity = window.VisualSettings?.clampBackgroundOpacity
-            ? window.VisualSettings.clampBackgroundOpacity(s.backgroundOpacity)
-            : (Number.isFinite(Number(s.backgroundOpacity)) ? Number(s.backgroundOpacity) : 1);
         // The ink gap is a lightness distance, not a percentage of anything, so
         // it is shown as the contrast it buys rather than as its own number:
         // "0.44" means nothing to a reader, "normal" and the ends of the range
@@ -9155,33 +9161,6 @@ class DashboardConfig {
         const randomShowingHint = randomMode !== 'off'
             ? `<p class="config-field-hint">${esc(this.t('config.randomThemeShowingHint', 'Currently showing: {theme}').replace('{theme}', this.themeDisplayName(showingThemeId, this._themeList?.[showingThemeId])))}</p>`
             : '';
-
-        // Picking "Gradient" or "Image" only sets the type; these sub-sections
-        // are what actually choose one, so the type buttons do not dead-end.
-        const bgPresets = window.VisualSettings?.BACKGROUND_PRESETS || {};
-        const activeGradient = s.backgroundGradient || '';
-        const gradientSwatches = Object.entries(bgPresets).map(([name, css]) =>
-            `<button type="button" class="config-bg-swatch${activeGradient === name ? ' is-active' : ''}"
-                     data-appearance-gradient="${esc(name)}" style="background:${esc(css)}"
-                     aria-pressed="${activeGradient === name}"
-                     aria-label="${esc(this.t(`config.backgroundPreset.${name}`, name))}"
-                     title="${esc(this.t(`config.backgroundPreset.${name}`, name))}"></button>`).join('');
-        const bgDetail = bgType === 'auto'
-            ? `<p class="config-field-hint">${esc(this.t('config.backgroundAutoHint', 'A gradient matched to your active theme.'))}</p>`
-            : bgType === 'gradient'
-            ? `<div class="config-field">
-                   <span class="config-field-label">${esc(this.t('config.backgroundGradientLabel', 'Gradient'))}</span>
-                   <div class="config-bg-swatches" role="group">${gradientSwatches}</div>
-                   <p class="config-field-hint">${esc(this.t('config.backgroundGradientHint', 'Thirteen presets, from dark to light. Pair a light gradient with a light theme.'))}</p>
-               </div>`
-            : bgType === 'image'
-                ? `<div class="config-field">
-                       <span class="config-field-label">${esc(this.t('config.backgroundImageUrlLabel', 'Image URL'))}</span>
-                       <input type="url" class="config-text" data-appearance-text="backgroundImageUrl"
-                              value="${esc(s.backgroundImageUrl || '')}" placeholder="https://example.com/image.jpg">
-                       <p class="config-field-hint">${esc(this.t('config.backgroundImageUrlHint', 'A direct link to an image file. Lower the opacity below if it makes the bookmarks hard to read.'))}</p>
-                   </div>`
-                : '';
 
         /*
          * One column of settings with the live preview beside it.
@@ -9216,6 +9195,12 @@ class DashboardConfig {
 
         if (this.appearanceTab === 'custom-themes') {
             return shell(this.renderCustomThemes());
+        }
+        if (this.appearanceTab === 'background') {
+            return shell(this.renderAppearanceBackgroundBody());
+        }
+        if (this.appearanceTab === 'surface') {
+            return shell(this.renderAppearanceSurfaceBody());
         }
         if (this.appearanceTab === 'layout') {
             return shell(this.renderAppearanceLayoutBody());
@@ -9284,36 +9269,7 @@ class DashboardConfig {
             </div>
 
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceSurfacesTitle', 'Surfaces'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceSurfacesNote', 'How a theme is drawn, rather than which theme it is. Both apply to whichever one is on.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.themeDepthLabel', 'Depth'))}</span>
-                    <select class="config-select" data-appearance-select="themeDepth">
-                        <option value="follow"${this.surfaceSelectValue('themeDepth') === 'follow' ? ' selected' : ''}>${esc(this.t('config.themeSurfacesFollow', 'Follow the theme'))}</option>
-                        ${['flat', 'soft', 'rich', 'vivid', 'glass'].map((option) => `<option value="${option}"${this.surfaceSelectValue('themeDepth') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
-                    </select>
-                    ${this.surfaceAff('themeDepth')}
-                    <p class="config-panel-note">${esc(this.t('config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Follow the theme lets each theme bring the depth it was drawn for; pick a value instead and it holds for the theme you are on.'))}</p>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.glowStrengthLabel', 'Glow'))}</span>
-                    <select class="config-select" data-appearance-select="glowStrength">
-                        <option value="follow"${this.surfaceSelectValue('glowStrength') === 'follow' ? ' selected' : ''}>${esc(this.t('config.themeSurfacesFollow', 'Follow the theme'))}</option>
-                        ${[['soft', 'Soft'], ['full', 'Full'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${this.surfaceSelectValue('glowStrength') === option ? ' selected' : ''}>${esc(this.t('config.glowStrength' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
-                    </select>
-                    ${this.surfaceAff('glowStrength')}
-                    <p class="config-panel-note">${esc(this.t('config.glowStrengthNote', 'How far the theme\'s own colour carries around a surface and around what you are acting on. Follow the theme lets each theme bring its own; Full is what earlier versions drew, and Soft is the middle. Depth decides whether there is a glow at all — flat has none.'))}</p>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.themeEffectsLabel', 'Effects'))}</span>
-                    <select class="config-select" data-appearance-select="themeEffects">
-                        <option value="follow"${this.surfaceSelectValue('themeEffects') === 'follow' ? ' selected' : ''}>${esc(this.t('config.themeSurfacesFollow', 'Follow the theme'))}</option>
-                        ${[['full', 'Full'], ['held', 'Held back'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${this.surfaceSelectValue('themeEffects') === option ? ' selected' : ''}>${esc(this.t('config.themeEffects' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
-                    </select>
-                    ${this.surfaceAff('themeEffects')}
-                    <p class="config-panel-note">${esc(this.t('config.themeEffectsNote', 'How loudly a theme\'s character is drawn: the shine on a lacquered surface, the glow around a neon one, the grain on a brushed one, and how round its corners are. Off leaves the palette and nothing else. Depth is a different question — it decides how much of the theme is drawn behind the content.'))}</p>
-                </div>
-
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceTextMotionTitle', 'Text and motion'))}</h3>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
                     <select class="config-select" data-appearance-select="inkGap">
@@ -9328,49 +9284,6 @@ class DashboardConfig {
                         <span>${esc(this.t('config.enableAnimations', 'Enable animations'))}</span>
                     </label>
                     ${this.appearanceAff('animationsEnabled')}
-                </div>
-            </div>
-
-            <!-- Whose the three above are. Its own panel rather than two more
-                 rows in Surfaces: they are not settings about how a theme is
-                 drawn, they are about who answers, and Surfaces was seven
-                 fields deep with them in it. -->
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceSurfaceScopeTitle', 'Whose surfaces these are'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceSurfaceScopeNote', 'Depth, Glow and Effects can belong to the theme you are on, or to every theme.'))}</p>
-                <div class="config-field-row">
-                    <label class="config-toggle">
-                        <input type="checkbox" data-appearance-toggle="themeSurfacesForceAll"${s.themeSurfacesForceAll ? ' checked' : ''}>
-                        <span>${esc(this.t('config.themeSurfacesForceAllLabel', 'Use these for every theme'))}</span>
-                    </label>
-                    ${this.appearanceAff('themeSurfacesForceAll')}
-                </div>
-                <p class="config-panel-note">${esc(this.t('config.themeSurfacesForceAllNote', 'Off, the three above belong to the theme you are on and each theme keeps its own. On, they hold for every theme and a theme brings nothing of its own.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.themeResetLabel', 'This theme'))}</span>
-                    <button type="button" class="config-btn config-btn--field" data-appearance-action="reset-theme-surfaces">${esc(this.t('config.themeResetToIdeal', 'Back to the theme\'s own'))}</button>
-                    <p class="config-panel-note">${esc(this.t('config.themeResetNote', 'Changes you make while Follow the theme is on belong to the theme you are on, so switching away and back finds them again. This puts the theme you are on back to what it ships with.'))}</p>
-                </div>
-            </div>
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceBackdropTitle', 'Backdrop'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceBackdropNote', 'What is behind the content, under your own background image.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.themeBackdropLabel', 'Theme backdrop'))}</span>
-                    <select class="config-select" data-appearance-select="themeBackdrop">
-                        ${[['follow', 'On'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${(s.themeBackdrop === 'off' ? 'off' : 'follow') === option ? ' selected' : ''}>${esc(this.t('config.themeBackdrop' + (option === 'follow' ? 'On' : 'Off'), label))}</option>`).join('')}
-                    </select>
-                    ${this.appearanceAff('themeBackdrop')}
-                    <p class="config-panel-note">${esc(this.t('config.themeBackdropNote', 'Every theme brings its own backdrop, built from its own colours, so no two look alike. Turn it off for a flat surface. Your own background image, if you set one, is drawn over it either way.'))}</p>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.backgroundPatternLabel', 'Backdrop'))}</span>
-                    <select class="config-select" data-appearance-select="backgroundPattern">
-                        ${[['auto', 'Follow the theme'], ['dots', 'Dots'], ['grid', 'Grid'], ['lines', 'Lines'], ['hatch', 'Hatch'], ['none', 'None']].map(([option, label]) => `<option value="${option}"${(s.backgroundPattern || 'auto') === option ? ' selected' : ''}>${esc(this.t('config.backgroundPattern' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
-                    </select>
-                    ${this.appearanceAff('backgroundPattern')}
-                    <p class="config-panel-note">${esc(this.t('config.backgroundPatternNote', 'The texture behind the dashboard. Left to the theme, most ask for dots and a few ask for something that suits them. Lines and hatch cover more of the page than dots do, so they read heavier on a light theme.'))}</p>
                 </div>
             </div>
 
@@ -9403,23 +9316,7 @@ class DashboardConfig {
                     <input type="file" id="config-font-input" accept=".woff,.woff2,.ttf,.otf" hidden>
                 </div>
             </div>
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceBackgroundTitle', 'Background'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceBackgroundNote', 'What sits behind the bookmarks. Auto follows your theme; Gradient and Image let you choose your own, and opacity fades it back so the text stays readable.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.backgroundLabel', 'Background'))}</span>
-                    <div class="config-choices" role="group">${bgChoices}</div>
-                    ${this.appearanceAff('backgroundType')}
-                </div>
-                ${bgDetail}
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.backgroundOpacityLabel', 'Opacity'))}</span>
-                    <input type="range" class="config-range" data-appearance-range="backgroundOpacity" min="0.65" max="1" step="0.05" value="${opacity}">
-                    <span class="config-range-value">${Math.round(opacity * 100)}%</span>
-                    ${this.appearanceAff('backgroundOpacity')}
-                </div>
-            </div>`);
+`);
     }
 
     /**
@@ -10112,6 +10009,8 @@ class DashboardConfig {
             : container.querySelector('#config-appearance-body');
         this.applyAppearanceChangedFilter(body);
         this.bindFormKeyboard(container);
+        // The Background and Surface tabs bind what is new on them.
+        this.bindLookControls?.(container);
     }
 
     /** Wait for any in-flight settings write before swapping appearance tabs. */
@@ -10235,6 +10134,8 @@ class DashboardConfig {
     appearanceTabLabel(tab) {
         const map = {
             general: ['config.appearanceTabLook', 'Look'],
+            background: ['config.appearanceTabBackground', 'Background'],
+            surface: ['config.appearanceTabSurface', 'Surface'],
             layout: ['config.appearanceTabGrid', 'Grid'],
             display: ['config.appearanceTabRows', 'Rows'],
             header: ['config.appearanceTabHeader', 'Header'],
@@ -12268,6 +12169,11 @@ class DashboardConfig {
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
         inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.47 },
         themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'follow' },
+        categoryHeaderStyle: { def: 'theme' },
+        categoryHeaderSize: { def: 'm' },
+        showCategoryIcon: { def: true },
+        showCategoryCount: { def: false },
+        categoryHeaderAccentLine: { def: false },
         backgroundPattern: { info: ['backgroundPatternInfoTitle', 'backgroundPatternInfoMessage'], def: 'auto' },
         fontSize: { def: 'm' },
         customTitle: { def: '' },
@@ -13117,6 +13023,38 @@ class DashboardConfig {
                 title: t('config.appearanceBrowserTabTitle', 'Browser tab'),
                 controls: [
                     bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
+                ],
+            },
+            {
+                // What a category is called above its bookmarks. First on the
+                // tab: it is the one setting here that changes how the whole
+                // page reads, and the rest are about a single row.
+                section: 'appearance',
+                tab: 'display',
+                order: -10,
+                title: t('config.categoryHeaderGroup', 'Category header'),
+                note: t('config.categoryHeaderNote', 'What a category is called above its bookmarks. Follow the theme leaves it as the theme and layout draw it. The icon is chosen per category, from its menu.'),
+                controls: [
+                    { field: 'categoryHeaderStyle', type: 'select', special: 'chrome',
+                        label: t('config.categoryHeaderStyleLabel', 'Style'),
+                        options: [
+                            opt('theme', t('config.categoryHeaderTheme', 'Follow the theme')),
+                            opt('clean', t('config.categoryHeaderClean', 'Clean')),
+                            opt('underlined', t('config.categoryHeaderUnderlined', 'Underlined')),
+                            opt('boxed', t('config.categoryHeaderBoxed', 'Boxed')),
+                            opt('label', t('config.categoryHeaderLabel', 'Label')),
+                            opt('group', t('config.categoryHeaderGroupCard', 'Group card')),
+                        ] },
+                    { field: 'categoryHeaderSize', type: 'select', special: 'chrome',
+                        label: t('config.categoryHeaderSizeLabel', 'Size'),
+                        options: [
+                            opt('s', t('config.categoryHeaderSmall', 'Small')),
+                            opt('m', t('config.categoryHeaderMedium', 'Medium')),
+                            opt('l', t('config.categoryHeaderLarge', 'Large')),
+                        ] },
+                    chrome('showCategoryIcon', 'config.showCategoryIconLabel', 'Show the category icon'),
+                    chrome('showCategoryCount', 'config.showCategoryCountLabel', 'Show how many bookmarks it holds'),
+                    chrome('categoryHeaderAccentLine', 'config.categoryHeaderAccentLabel', 'Underline in the accent colour'),
                 ],
             },
             {
@@ -15912,6 +15850,8 @@ class DashboardConfig {
             const body = document.getElementById('config-appearance-body');
             const render = {
                 header: () => this.renderAppearanceToolbarBody(),
+                background: () => this.renderAppearanceBackgroundBody(),
+                surface: () => this.renderAppearanceSurfaceBody(),
                 layout: () => this.renderAppearanceLayoutBody(),
                 buttonbar: () => this.renderAppearanceActionBarBody(),
                 display: () => this.renderAppearanceDisplayBody(),
@@ -16041,7 +15981,7 @@ class DashboardConfig {
     // on the strip are Look, Grid, Rows, Header, Action bar and Date & weather.
     // Custom themes is last and is not on the strip: it is a page inside Look,
     // reached from Look's own button, with a way back to it.
-    static APPEARANCE_TABS = ['general', 'layout', 'display', 'header', 'buttonbar', 'datetime', 'custom-themes'];
+    static APPEARANCE_TABS = ['general', 'background', 'surface', 'layout', 'display', 'header', 'buttonbar', 'datetime', 'custom-themes'];
 
     /** Tabs a section keeps addressable but does not draw on its strip. */
     static APPEARANCE_SUBPAGES = { 'custom-themes': 'general' };
