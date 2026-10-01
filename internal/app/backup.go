@@ -410,21 +410,43 @@ func commitPreparedImport(dataDir string, prepared []preparedImportFile) error {
 		return err
 	}
 
+	// Every file is written beside its destination first, and only when all of
+	// them are on disk is any renamed into place. Written and renamed one by
+	// one, a full disk half-way left half the archive and half the old data,
+	// with the orphan cleanup never run.
+	type stagedFile struct{ tmp, dest string }
+	staged := make([]stagedFile, 0, len(prepared))
+	discard := func() {
+		for _, f := range staged {
+			_ = os.Remove(f.tmp)
+		}
+	}
 	for _, file := range prepared {
 		src := filepath.Join(stagingDataDir, file.relPath)
 		dest := filepath.Join(dataDir, file.relPath)
-		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-			return err
-		}
 		content, err := os.ReadFile(src)
 		if err != nil {
+			discard()
 			return err
 		}
-		// Atomic, so a crash or a full disk leaves each file whole, and with
-		// the mode set on an existing file too (WriteFile only sets it on create).
-		if err := writeFileAtomic(dest, content, importFileMode(file.relPath)); err != nil {
+		// With the mode set on an existing file too (WriteFile only sets it on create).
+		tmp, err := stageFileBeside(dest, content, importFileMode(file.relPath))
+		if err != nil {
+			discard()
 			return err
 		}
+		staged = append(staged, stagedFile{tmp: tmp, dest: dest})
+	}
+	dirs := map[string]bool{}
+	for _, f := range staged {
+		if err := os.Rename(f.tmp, f.dest); err != nil {
+			discard()
+			return err
+		}
+		dirs[filepath.Dir(f.dest)] = true
+	}
+	for dir := range dirs {
+		syncDir(dir)
 	}
 
 	if err := removeImportOrphans(dataDir, prepared); err != nil {
@@ -706,7 +728,7 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	// state someone was trying to recover from. Failure is logged and the
 	// import proceeds — refusing to import because the safety copy could not be
 	// written would leave someone stuck with no way forward and no way back.
-	if err := h.writeAutoBackup(); err != nil {
+	if err := h.writeSafetyBackup(); err != nil {
 		logWarn(logComponentImport, "the safety backup could not be made (%v); the import went ahead without one", err)
 	} else {
 		logInfo(logComponentImport, "safety backup written before the data was replaced")

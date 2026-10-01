@@ -155,6 +155,15 @@ func (h *Handlers) RestoreTrashItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Shortcuts are unique across pages, not only on this one: a key given to a
+	// bookmark elsewhere since the delete left two pages refusing every save.
+	// Read before the page is locked for the write below.
+	elsewhere := map[string]bool{}
+	for _, b := range h.store.GetAllBookmarks() {
+		if b.PageID != item.PageID && b.Shortcut != "" {
+			elsewhere[strings.ToUpper(strings.TrimSpace(b.Shortcut))] = true
+		}
+	}
 	restoreErr := h.store.MutateBookmarksOnPage(item.PageID, func(bookmarks []Bookmark) ([]Bookmark, error) {
 		// A page holds each address once, as a save insists; the address may
 		// have been added again since the delete. A shortcut taken since is
@@ -170,6 +179,9 @@ func (h *Handlers) RestoreTrashItem(w http.ResponseWriter, r *http.Request) {
 			if restoredBookmark.Shortcut != "" && strings.EqualFold(b.Shortcut, restoredBookmark.Shortcut) {
 				restoredBookmark.Shortcut = ""
 			}
+		}
+		if elsewhere[strings.ToUpper(strings.TrimSpace(restoredBookmark.Shortcut))] {
+			restoredBookmark.Shortcut = ""
 		}
 		// The stored index is a hint from delete time; clamp it rather than
 		// trusting it, since the page has been writable in between.

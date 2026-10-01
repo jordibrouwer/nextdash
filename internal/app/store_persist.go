@@ -72,6 +72,37 @@ func writeFileAtomic(path string, data []byte, perm os.FileMode) (err error) {
 	return nil
 }
 
+// stageFileBeside writes data, synced, to a temp file in path's directory and
+// returns its name, ready to be renamed over path. A caller that must replace
+// several files together stages them all first, so a full disk is found before
+// any of them is touched.
+func stageFileBeside(path string, data []byte, perm os.FileMode) (string, error) {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+	tmp, err := os.CreateTemp(dir, ".tmp-*")
+	if err != nil {
+		return "", err
+	}
+	tmpPath := tmp.Name()
+	_, err = tmp.Write(data)
+	if err == nil {
+		err = tmp.Chmod(perm)
+	}
+	if err == nil {
+		err = tmp.Sync()
+	}
+	if closeErr := tmp.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		_ = os.Remove(tmpPath)
+		return "", err
+	}
+	return tmpPath, nil
+}
+
 // syncDir flushes a directory entry so a completed rename survives a crash.
 func syncDir(dir string) {
 	handle, err := os.Open(dir)

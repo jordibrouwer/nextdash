@@ -249,6 +249,18 @@ func listAutoBackupFiles() ([]string, error) {
 // writeAutoBackup builds a fresh backup ZIP, writes it atomically into the
 // auto-backup directory, and prunes the oldest beyond maxAutoBackups.
 func (h *Handlers) writeAutoBackup() error {
+	return h.writeAutoBackupPruning(true)
+}
+
+// writeSafetyBackup is the copy taken before an import or restore replaces the
+// data. It does not prune: the rotation went down to the limit at once, and
+// restoring the oldest backup deleted the very archive being restored. The
+// next scheduled backup trims the list.
+func (h *Handlers) writeSafetyBackup() error {
+	return h.writeAutoBackupPruning(false)
+}
+
+func (h *Handlers) writeAutoBackupPruning(prune bool) error {
 	h.autoBackupMu.Lock()
 	defer h.autoBackupMu.Unlock()
 
@@ -265,7 +277,9 @@ func (h *Handlers) writeAutoBackup() error {
 	if err := writeFileAtomic(filepath.Join(dir, uniqueAutoBackupName(dir)), data, 0644); err != nil {
 		return err
 	}
-
+	if !prune {
+		return nil
+	}
 	return pruneAutoBackups()
 }
 

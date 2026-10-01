@@ -2419,8 +2419,17 @@ func (fs *FileStore) SaveBookmarkPageUpdates(updates map[int][]Bookmark) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
-	for pageID, bookmarks := range updates {
-		if err := fs.saveBookmarksByPageLocked(pageID, bookmarks); err != nil {
+	// Pages that gained rows first (see pageWriteOrder): a merge or move that
+	// fails half-way leaves a duplicate rather than losing rows.
+	before := func(id int) int {
+		page, err := fs.readPageWithBookmarksLocked(id)
+		if err != nil {
+			return 0
+		}
+		return len(page.Bookmarks)
+	}
+	for _, pageID := range pageWriteOrder(updates, before) {
+		if err := fs.saveBookmarksByPageLocked(pageID, updates[pageID]); err != nil {
 			return err
 		}
 	}

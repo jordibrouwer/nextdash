@@ -445,3 +445,31 @@ func TestAutoBackupListSaysWhereTheBackupsAre(t *testing.T) {
 		t.Error("a directory outside the data directory was flagged as inside it")
 	}
 }
+
+// With the rotation full, the safety copy taken before a restore pruned the
+// oldest backup -- which was the archive being restored.
+func TestRestoringTheOldestBackupKeepsIt(t *testing.T) {
+	h := newTestHandlers(t)
+	t.Setenv("NEXTDASH_AUTO_BACKUP_KEEP", "1")
+	if err := h.writeAutoBackup(); err != nil {
+		t.Fatalf("writeAutoBackup: %v", err)
+	}
+	names, err := listAutoBackupFiles()
+	if err != nil || len(names) != 1 {
+		t.Fatalf("setup: %d backups, %v", len(names), err)
+	}
+	// Dated a year back, so it is unmistakably the oldest in the rotation.
+	restoreFrom := autoBackupPrefix + time.Now().UTC().AddDate(-1, 0, 0).Format(autoBackupTimeLayout) + ".zip"
+	if err := os.Rename(filepath.Join(autoBackupDir(), names[0]), filepath.Join(autoBackupDir(), restoreFrom)); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/auto-backups/restore?name="+restoreFrom, nil)
+	rec := httptest.NewRecorder()
+	h.RestoreAutoBackup(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("restore status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	if _, err := os.Stat(filepath.Join(autoBackupDir(), restoreFrom)); err != nil {
+		t.Fatalf("the restored archive is gone: %v", err)
+	}
+}

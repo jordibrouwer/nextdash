@@ -1912,10 +1912,26 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 		}
 	}
 
+	// As every other write: rows for a page that does not exist were stored
+	// where nothing shows them.
+	if !h.pageExists(request.PageID) && request.PageID != unsortedPageID {
+		http.Error(w, "Page not found", http.StatusNotFound)
+		return
+	}
+
 	existing := h.store.GetBookmarksByPage(request.PageID)
 	existingURLs := make(map[string]struct{}, len(existing))
 	for _, b := range existing {
 		existingURLs[canonicalBookmarkURLKey(b.URL)] = struct{}{}
+	}
+	// A shortcut is unique across the whole collection. An exported CSV brought
+	// back onto another page carried the same keys, and from then on both pages
+	// answered 409 on every save; a key already taken is let go.
+	takenShortcuts := map[string]bool{}
+	for _, b := range h.store.GetAllBookmarks() {
+		if sc := normalizeShortcut(b.Shortcut); sc != "" {
+			takenShortcuts[sc] = true
+		}
 	}
 
 	categories := h.store.GetCategoriesByPage(request.PageID)
@@ -1943,6 +1959,12 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 			continue
 		}
 		catID := nameToID[strings.TrimSpace(bm.Category)]
+		shortcut := normalizeShortcut(bm.Shortcut)
+		if takenShortcuts[shortcut] {
+			shortcut = ""
+		} else if shortcut != "" {
+			takenShortcuts[shortcut] = true
+		}
 		if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.PageID, Bookmark{
 			Name:     bm.Name,
 			URL:      bm.URL,
@@ -1950,7 +1972,7 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 			PageID:   request.PageID,
 			// Through the same normalisers every other write uses, so an
 			// imported row cannot hold a shape a typed one could not.
-			Shortcut: normalizeShortcut(bm.Shortcut),
+			Shortcut: shortcut,
 			Note:     strings.TrimSpace(bm.Note),
 			Tags:     normalizeTags(bm.Tags),
 			// Only what a file actually carried. Zero leaves the store to stamp

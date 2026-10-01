@@ -50,3 +50,31 @@ func TestReplaceDataFilesHoldsTheStoreLock(t *testing.T) {
 		t.Fatal("the store was not locked while the files were replaced")
 	}
 }
+
+// One file that cannot be written must leave every file as it was: renamed into
+// place one by one, a full disk half-way left half the archive in place.
+func TestImportCommitChangesNothingWhenOneFileCannotBeWritten(t *testing.T) {
+	dataDir := t.TempDir()
+	settings := filepath.Join(dataDir, "settings.json")
+	if err := os.WriteFile(settings, []byte(`{"old":true}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	icons := filepath.Join(dataDir, "icons")
+	if err := os.MkdirAll(icons, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(icons, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(icons, 0o755) })
+	prepared := []preparedImportFile{
+		{relPath: "settings.json", content: []byte(`{"new":true}`)},
+		{relPath: "icons/a.png", content: []byte("png")},
+	}
+	if err := commitPreparedImport(dataDir, prepared); err == nil {
+		t.Skip("the icons folder took the write anyway (running as root?)")
+	}
+	if got, _ := os.ReadFile(settings); string(got) != `{"old":true}` {
+		t.Fatalf("settings.json = %s: replaced although the import failed", got)
+	}
+}
