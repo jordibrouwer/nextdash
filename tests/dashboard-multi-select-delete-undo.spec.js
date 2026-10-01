@@ -254,3 +254,39 @@ test.describe('a reorder made while the last one is saving', () => {
         expect(pending).toEqual({ timer: true, snapshot: true });
     });
 });
+
+test.describe('undo of a tag change', () => {
+    // The undo changed the objects the toast held and saved the page. Any
+    // reload since -- a focus that found a new revision is enough -- replaced
+    // d.bookmarks, and the save wrote the page unchanged: the tag stayed.
+    test('still takes the tag off after the page has been reloaded', async ({ page }) => {
+        await openDashboard(page);
+        const selected = await selectTwoBookmarks(page);
+        const tag = `undo-tag-${Date.now()}`;
+        await page.evaluate(async (tag) => {
+            const d = window.dashboardInstance;
+            const originalGrouped = d.showGroupedNotification.bind(d);
+            d.showGroupedNotification = (...args) => {
+                window.__capturedTagUndo = args[4]?.onAction || null;
+                return originalGrouped(...args);
+            };
+            try {
+                await d.multiSelect.applyTagToSelection(tag, 'add');
+            } finally {
+                d.showGroupedNotification = originalGrouped;
+            }
+        }, tag);
+        const tagsOnServer = () => page.evaluate(async (urls) => {
+            const d = window.dashboardInstance;
+            const body = await (await fetch(`/api/bookmarks?page=${d.currentPageId}`)).json();
+            const rows = Array.isArray(body) ? body : body.bookmarks || [];
+            return rows.filter((b) => urls.includes(b.url)).map((b) => b.tags || []);
+        }, selected);
+        expect((await tagsOnServer()).every((tags) => tags.includes(tag))).toBe(true);
+
+        await page.evaluate(() => window.dashboardInstance.loadPageBookmarks(window.dashboardInstance.currentPageId));
+        await page.evaluate(() => window.__capturedTagUndo());
+
+        await expect.poll(async () => (await tagsOnServer()).some((tags) => tags.includes(tag)), { timeout: 10_000 }).toBe(false);
+    });
+});

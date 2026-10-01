@@ -2856,6 +2856,33 @@ class DashboardInlineEdit {
     }
 
 
+    /**
+     * The category a row moved to another page should have there.
+     *
+     * Category ids are per page. Sent as it was, the source page's id put the
+     * row under "Unknown category" on the target. An id the target has is
+     * kept (the form already picked one there); otherwise the category with
+     * the same name, or none.
+     */
+    async categoryOnPage(categoryId, targetPageId) {
+        const d = this.dash;
+        const id = String(categoryId || '');
+        if (!id) return '';
+        let target = [];
+        try {
+            const res = await dashFetch(`/api/categories?page=${encodeURIComponent(targetPageId)}`);
+            if (res.ok) target = await res.json();
+        } catch (_error) {
+            target = [];
+        }
+        if (!Array.isArray(target)) target = [];
+        if (target.some((c) => String(c.id) === id)) return id;
+        const source = (d.categories || []).find((c) => String(c.id) === id);
+        const name = String(source?.name || '').trim().toLowerCase();
+        const match = name ? target.find((c) => String(c.name || '').trim().toLowerCase() === name) : null;
+        return match ? String(match.id) : '';
+    }
+
     async _moveBookmarkToPage(bookmarkRef, bookmarkState, targetPageId, row) {
         const d = this.dash;
         const sourcePageId = Number(bookmarkRef.pageId || d.currentPageId);
@@ -2888,13 +2915,14 @@ class DashboardInlineEdit {
             // both lists entirely. AddBookmark/DeleteBookmark are each atomic
             // under the store's own lock, so a mid-move failure now leaves the
             // bookmark exactly where it started rather than nowhere.
+            const category = await this.categoryOnPage(bookmarkState.category, targetPageId);
             const addRes = await dashFetch('/api/bookmarks/add', {
                 method: 'POST',
                 headers,
                 // allowDuplicate: a move is an add followed by a delete, so
                 // between the two the URL is on both pages by design. Without
                 // this the cross-page duplicate check would refuse every move.
-                body: JSON.stringify({ page: targetPageId, bookmark: { ...bookmarkState }, allowDuplicate: true }),
+                body: JSON.stringify({ page: targetPageId, bookmark: { ...bookmarkState, category }, allowDuplicate: true }),
             });
             if (!addRes.ok) {
                 let message = 'Failed to save target page bookmarks.';

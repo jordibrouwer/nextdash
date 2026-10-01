@@ -29,6 +29,14 @@ func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 		if !ok {
 			continue
 		}
+		// A tab loaded before an open elsewhere sends the counts it loaded:
+		// non-zero, so they used to win, and the newer opens were lost. The
+		// three fields move together, and the newer last open decides.
+		if previous.LastOpened > next[i].LastOpened {
+			next[i].OpenCount = previous.OpenCount
+			next[i].LastOpened = previous.LastOpened
+			next[i].OpenLog = previous.OpenLog
+		}
 		if next[i].OpenCount == 0 {
 			next[i].OpenCount = previous.OpenCount
 		}
@@ -47,6 +55,14 @@ func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 		// Read before LastChecked is filled in, or the answer is always "the
 		// payload had a time".
 		reportsACheck := next[i].LastChecked != 0
+		// The check time a tab loaded and sends back is not a check of its
+		// own: a newer one stored since, a failure found by the monitor, wins
+		// with its error and "down since".
+		if reportsACheck && previous.LastChecked > next[i].LastChecked {
+			next[i].LastChecked = previous.LastChecked
+			next[i].LastError = previous.LastError
+			next[i].BrokenSince = previous.BrokenSince
+		}
 		if next[i].LastChecked == 0 {
 			next[i].LastChecked = previous.LastChecked
 		}

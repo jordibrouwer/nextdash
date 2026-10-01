@@ -1305,6 +1305,13 @@ class DashboardRenderCore {
                 listElement.removeAttribute('title');
             }
 
+            const coarsePointerDrag = (() => {
+                try {
+                    return Number(navigator.maxTouchPoints) > 0 && window.matchMedia('(pointer: coarse)').matches;
+                } catch {
+                    return false;
+                }
+            })();
             const reorderInstance = new DragReorder({
                 container: listElement,
                 itemSelector: '.bookmark-link',
@@ -1313,7 +1320,12 @@ class DashboardRenderCore {
                    browser's native link-drag can't hijack the reorder. The 500 ms
                    long-press editor still works: HTML5 drag only starts once the
                    pointer moves, and any move >8 px cancels the long-press timer. */
-                handleSelector: null,
+                // On a touch screen the whole row as handle took every touch
+                // as a drag: the page locked its scroll at touchstart, so a
+                // swipe that began on a row could not scroll. There the grip
+                // over the icon drags, the rest of the row scrolls, and a long
+                // press still opens the editor.
+                handleSelector: coarsePointerDrag ? '.bookmark-reorder-handle' : null,
                 longPressMs: 0,
                 delegateItemDragOver: true,
                 onReorder: () => {

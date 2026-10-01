@@ -668,7 +668,8 @@ class DashboardMultiSelect {
         // The same eight seconds a move and a delete offer. Twenty rows tagged
         // in one click is one misclick, and putting it right by hand means
         // finding every row again.
-        const snapshot = refs.map((ref, i) => ({ ref, tags: previous[i] }));
+        const pageId = Number(d.currentPageId);
+        const snapshot = refs.map((ref, i) => ({ ref, pageId, url: ref.bookmark.url, tags: previous[i] }));
         d.showGroupedNotification?.(
             'multi-select-tags',
             changed,
@@ -695,17 +696,37 @@ class DashboardMultiSelect {
     async undoTagChange(snapshot) {
         const d = this.dash;
         if (!Array.isArray(snapshot) || !snapshot.length) return;
-        d.ensureBookmarkMutationSnapshot?.();
-        snapshot.forEach(({ ref, tags }) => {
-            if (ref?.bookmark) ref.bookmark.tags = [...(tags || [])];
+        // Written on the server by URL, not by changing the objects the toast
+        // holds: any reload since (a focus that found a new revision, a page
+        // switch and back) replaced d.bookmarks, so those objects were no
+        // longer on screen and the save wrote the page unchanged.
+        const byPage = new Map();
+        snapshot.forEach(({ ref, pageId, url, tags }) => {
+            const id = Number(pageId ?? d.currentPageId);
+            const address = url ?? ref?.bookmark?.url;
+            if (!address) return;
+            if (!byPage.has(id)) byPage.set(id, []);
+            byPage.get(id).push({ url: address, fields: { tags: [...(tags || [])] } });
         });
-        d.renderDashboard?.({ incremental: false });
-        const saved = await d.saveBookmarkOrder();
-        if (!saved) {
-            d.pendingReorderSnapshot = null;
-            return;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        let failed = false;
+        for (const [page, updates] of byPage) {
+            try {
+                const res = await api('/api/bookmarks', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page, updates }),
+                });
+                if (!res.ok) failed = true;
+            } catch (_error) {
+                failed = true;
+            }
         }
-        void d.data?.fetchAndStoreDataRevision?.();
+        if (failed) {
+            d.showErrorNotification?.(this.t('dashboard.multiSelectTagsUndoFailed', 'Could not put the tags back'));
+        }
+        await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [...byPage.keys()] });
+        window.TagSuggestLive?.changed?.(d);
     }
 
     /**

@@ -79,3 +79,24 @@ func TestAPageSaveCarriesNothingForANewURL(t *testing.T) {
 		t.Fatalf("a new URL inherited %d opens", next[0].OpenCount)
 	}
 }
+
+// A tab sends back the opens and the check it loaded. Newer ones stored since
+// -- an open on the phone, a failure the monitor found -- must not be undone by
+// a drag on the desktop.
+func TestAPageSaveKeepsNewerOpensAndChecks(t *testing.T) {
+	stored := []Bookmark{{
+		URL: "https://example.com", OpenCount: 5, LastOpened: 2_000, OpenLog: []int64{1_000, 1_500, 2_000},
+		LastChecked: 9_000, LastError: "timeout", BrokenSince: 9_000,
+	}}
+	next := []Bookmark{{
+		URL: "https://example.com", OpenCount: 2, LastOpened: 1_000, OpenLog: []int64{1_000},
+		LastChecked: 5_000, LastError: "",
+	}}
+	carryServerOwnedBookmarkFields(next, stored)
+	if next[0].OpenCount != 5 || next[0].LastOpened != 2_000 || len(next[0].OpenLog) != 3 {
+		t.Fatalf("opens = %d %d %v, want the stored newer ones", next[0].OpenCount, next[0].LastOpened, next[0].OpenLog)
+	}
+	if next[0].LastError != "timeout" || next[0].BrokenSince != 9_000 || next[0].LastChecked != 9_000 {
+		t.Fatalf("check = %q %d %d, want the stored newer failure", next[0].LastError, next[0].BrokenSince, next[0].LastChecked)
+	}
+}

@@ -457,7 +457,16 @@ class StatusMonitor {
      */
     beaconPendingStatuses() {
         const pending = this._pendingStatuses;
-        if (!pending || pending.size === 0 || typeof navigator?.sendBeacon !== 'function') {
+        if (!pending || pending.size === 0) {
+            return;
+        }
+        // A beacon cannot carry X-NextDash-Token, and the route needs it when
+        // one is set: every pending result was refused. A keepalive fetch
+        // outlives the page the same way and takes the header.
+        const hasWriteToken = Boolean(
+            document.querySelector('meta[name="nextdash-write-token"]')?.content?.trim()
+        );
+        if (!hasWriteToken && typeof navigator?.sendBeacon !== 'function') {
             return;
         }
         this._pendingStatuses = new Map();
@@ -470,8 +479,18 @@ class StatusMonitor {
         });
         byPage.forEach((results, pageId) => {
             try {
-                navigator.sendBeacon('/api/health/statuses',
-                    new Blob([JSON.stringify({ pageId, results })], { type: 'application/json' }));
+                const body = JSON.stringify({ pageId, results });
+                if (hasWriteToken) {
+                    void fetch('/api/health/statuses', {
+                        method: 'POST',
+                        keepalive: true,
+                        headers: window.nextDashWriteHeaders?.({ 'Content-Type': 'application/json' })
+                            || { 'Content-Type': 'application/json' },
+                        body,
+                    }).catch(() => {});
+                } else {
+                    navigator.sendBeacon('/api/health/statuses', new Blob([body], { type: 'application/json' }));
+                }
             } catch {
                 // Nothing useful to do while the page is unloading.
             }
