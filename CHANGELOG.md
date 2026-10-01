@@ -335,7 +335,7 @@ The documentation puts the self-hosting half up front: how the Containers view, 
 
 ### Tests
 
-- **tests — specs that relied on old behaviour.** The trash spec brings a deleted page back from the trash rather than by posting its id again (now refused); the page-delete spec picks new page ids past the trash, as the app does; the grid-shortcut spec runs in "Enter opens" mode, since in instant mode it passed only because of the reopening search.
+- **tests — specs that relied on old behaviour.** The trash spec brings a deleted page back from the trash rather than by posting its id again (now refused); the page-delete spec picks new page ids past the trash, as the app does; the grid-shortcut spec runs in "Enter opens" mode, since in instant mode it passed only because of the reopening search. The Go decimals test reads its ratio as a share now that *Percentage* means 0–100.
 - **tests — new specs and Go tests for most of the fixes above**, each checked to fail without its fix; the smaller fixes are covered by the existing specs.
 
 ---
