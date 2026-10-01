@@ -2952,6 +2952,7 @@
     "dockerLogsCopied": "Lignes copiées",
     "dockerLogsCopyFailed": "Le navigateur n’a pas autorisé la copie.",
     "dockerDiskMeasuring": "Mesure en cours… cela peut prendre du temps sur un gros hôte.",
+    "dockerDiskMeasuringTitle": "Measuring disk use…",
     "dockerDiskFailed": "Impossible de mesurer le disque.",
     "dockerDiskRefresh": "Actualiser",
     "dockerDiskUnusedImages": "Images inutilisées",

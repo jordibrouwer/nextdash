@@ -2952,6 +2952,7 @@
     "dockerLogsCopied": "Regels gekopieerd",
     "dockerLogsCopyFailed": "De browser stond kopiëren niet toe.",
     "dockerDiskMeasuring": "Meten… dit kan even duren op een grote host.",
+    "dockerDiskMeasuringTitle": "Measuring disk use…",
     "dockerDiskFailed": "De schijf kon niet worden gemeten.",
     "dockerDiskRefresh": "Vernieuwen",
     "dockerDiskUnusedImages": "Ongebruikte images",

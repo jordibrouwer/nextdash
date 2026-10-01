@@ -2952,6 +2952,7 @@
     "dockerLogsCopied": "Líneas copiadas",
     "dockerLogsCopyFailed": "El navegador no permitió copiar.",
     "dockerDiskMeasuring": "Midiendo… puede tardar en un host grande.",
+    "dockerDiskMeasuringTitle": "Measuring disk use…",
     "dockerDiskFailed": "No se pudo medir el disco.",
     "dockerDiskRefresh": "Actualizar",
     "dockerDiskUnusedImages": "Imágenes sin usar",

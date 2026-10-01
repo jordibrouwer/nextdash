@@ -2952,6 +2952,7 @@
     "dockerLogsCopied": "Lines copied",
     "dockerLogsCopyFailed": "The browser did not allow copying.",
     "dockerDiskMeasuring": "Measuring… this can take a while on a large host.",
+    "dockerDiskMeasuringTitle": "Measuring disk use…",
     "dockerDiskFailed": "The disk could not be measured.",
     "dockerDiskRefresh": "Refresh",
     "dockerDiskUnusedImages": "Unused images",

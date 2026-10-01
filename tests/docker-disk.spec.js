@@ -13,6 +13,33 @@ async function openDisk(page, opts) {
 test.describe('docker disk', () => {
   // Unraid keeps container data in host folders, not volumes: they are listed
   // with who mounts them where, and have no remove -- only Measure.
+  // A measurement is one /system/df read that can take long on a large host;
+  // the shared progress overlay says it is working, on open and on Refresh.
+  test('measuring shows the progress overlay until the answer arrives', async ({ page }) => {
+    await mockDocker(page);
+    let release;
+    const hold = () => new Promise((resolve) => { release = resolve; });
+    let held = hold();
+    await page.route('**/api/docker/disk', async (route) => {
+      await held;
+      await route.fallback();
+    });
+    const overlay = page.locator('#nextdash-progress-overlay');
+
+    await page.goto('/#docker/~disk');
+    await expect(overlay).toBeVisible();
+    await expect(overlay.getByRole('progressbar')).toBeVisible();
+    release();
+    await expect(overlay).toBeHidden();
+    await expect(page.locator('[data-docker-disk-tile="build-cache"]')).toContainText('300 MiB');
+
+    held = hold();
+    await page.locator('[data-docker-disk-refresh]').click();
+    await expect(overlay).toBeVisible();
+    release();
+    await expect(overlay).toBeHidden();
+  });
+
   test('bind mounts are listed by host folder, without a remove', async ({ page }) => {
     await openDisk(page);
     const media = page.locator('[data-docker-disk-bind="/mnt/user/media"]');

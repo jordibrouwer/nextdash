@@ -64,12 +64,19 @@
             this.loading = true;
             this.failed = false;
             this.paint();
+            // One /system/df read that takes as long as the host makes it;
+            // the shared overlay says so after 300 ms, and not for a quick one.
+            const endWait = (window.ProgressOverlay?.begin || (() => () => {}))(
+                this.t('dockerDiskMeasuringTitle', 'Measuring disk use…'),
+                this.t('dockerDiskMeasuring', 'Measuring… this can take a while on a large host.'));
             let data = null;
             try {
                 const res = await fetch('/api/docker/disk', { cache: 'no-store' });
                 data = res.ok ? await res.json() : null;
             } catch {
                 data = null;
+            } finally {
+                endWait();
             }
             this.loading = false;
             if (data) this.data = data;
