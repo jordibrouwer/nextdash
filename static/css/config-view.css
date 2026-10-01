@@ -7696,3 +7696,16 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .config-preview[data-preview-cathead="boxed"] .config-pv-cat { padding: 3px 8px; border-radius: 6px; background: var(--background-secondary); }
 .config-preview[data-preview-cathead="label"] .config-pv-cat { text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700; font-size: 0.65em; }
 .config-preview[data-preview-cathead="group"] .config-pv-cat { padding-bottom: 3px; border-bottom: 1px solid var(--border-secondary); }
+
+/* Card glass and the backdrop sliders: the control sits on the right, where
+   the selects above it do, rather than wherever its label happens to end. The
+   Follow / Own pair has no label, so it is pushed there on its own. */
+[data-glass-panel] .config-field:has(> .config-choices:only-child) {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.config-field--slider .config-range {
+    flex: 0 1 14rem;
+    margin-left: auto;
+}
