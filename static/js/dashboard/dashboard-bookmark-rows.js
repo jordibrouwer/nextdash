@@ -523,6 +523,10 @@ class DashboardBookmarkRows {
             row.removeAttribute('data-bookmark-index');
         }
         row.setAttribute('data-category-id', categoryId);
+        // What the keyboard move reads to keep pinned rows above the rest; the
+        // pin badge it looked for is only drawn when the icon setting is on.
+        if (bookmark.pinned) row.setAttribute('data-pinned', 'true');
+        else row.removeAttribute('data-pinned');
         d.contextMenu?.bindRow(row);
 
         const lead = document.createElement('div');

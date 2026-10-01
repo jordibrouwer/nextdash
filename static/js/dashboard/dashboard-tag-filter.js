@@ -533,7 +533,12 @@ class DashboardTagFilter {
         d.data?.invalidatePageDataCache?.(targetPageId);
         void d.data?.fetchAndStoreDataRevision?.();
         await d.loadAllBookmarks();
-        await d.data?.loadPageBookmarks?.(sourcePageId);
+        // Reloaded only when it is the page showing: loading it navigates, and
+        // an undo clicked from a third page jumped there.
+        const showing = Number(d.currentPageId);
+        if (showing === Number(sourcePageId) || showing === Number(targetPageId)) {
+            await d.data?.loadPageBookmarks?.(showing);
+        }
         d.renderDashboard();
 
         if (restored < refs.length) {

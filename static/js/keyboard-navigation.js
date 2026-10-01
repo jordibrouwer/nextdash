@@ -234,7 +234,10 @@ class KeyboardNavigation {
             // through on one without a check of its own.
             if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
                 && this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
-                if (e.code === 'KeyM') {
+                // M itself, or a letter on the key at the US M (Cyrillic and
+                // the like) -- not whatever else that key types: on AZERTY it
+                // is "?", which opened Move instead of finders.
+                if (/^m$/i.test(e.key) || (e.code === 'KeyM' && /^\p{L}$/u.test(e.key))) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
@@ -837,13 +840,7 @@ class KeyboardNavigation {
         const categories = Array.isArray(d?.categories) ? d.categories : [];
         const from = categories.findIndex((c) => String(c.id) === id);
         if (from < 0) return false;
-        const to = from + direction;
-        if (to < 0 || to >= categories.length) return false;
-
-        const next = [...categories];
-        const [moved] = next.splice(from, 1);
-        next.splice(to, 0, moved);
-        d.categories = next;
+        const moved = categories[from];
         /*
          * Through blockOrder, the one list that decides what is drawn where.
          *
@@ -853,7 +850,13 @@ class KeyboardNavigation {
          * and the other is not -- so moving with the keyboard writes the same
          * order dragging does.
          */
-        d.renderCore?.moveBlockInOrder?.(String(moved.id), direction);
+        // The bounds are blockOrder's, which holds the widgets as well: checked
+        // against the categories alone, the first or last one could never move
+        // past a widget.
+        if (d.renderCore?.moveBlockInOrder?.(String(moved.id), direction) === false) return false;
+        // The category list follows the block order it was moved in.
+        const at = new Map((d.blockOrder || []).map((bid, i) => [String(bid), i]));
+        d.categories = [...categories].sort((a, b) => (at.get(String(a.id)) ?? Infinity) - (at.get(String(b.id)) ?? Infinity));
         d.renderDashboard?.({ animate: false });
 
         // The header element is rebuilt by the render, so focus follows the
@@ -2493,7 +2496,13 @@ class KeyboardNavigation {
         // wrapper, the list inside it *and* every row, so "the category beside
         // it" was whatever node came next in document order -- usually the next
         // bookmark in the same category, which made the move a silent no-op.
-        const lists = [...document.querySelectorAll('#dashboard-layout .bookmarks-list[data-category-id]')]
+        // In reading order, as the grid shows them: in packed columns document
+        // order runs down each column, so "beside" landed on the category below.
+        const grid = document.getElementById('dashboard-layout');
+        const ordered = d?.renderCore?.readCategoryElementsInOrder?.(grid) || [];
+        const lists = (ordered.length
+            ? ordered.map((cat) => cat.querySelector('.bookmarks-list[data-category-id]')).filter(Boolean)
+            : [...document.querySelectorAll('#dashboard-layout .bookmarks-list[data-category-id]')])
             .filter((el) => el.getAttribute('data-smart-collection') !== 'true');
         const here = lists.indexOf(list);
         const target = lists[here + (direction < 0 ? -1 : 1)];
@@ -2512,7 +2521,10 @@ class KeyboardNavigation {
         // on the bookmark rather than on the element that used to hold it.
         requestAnimationFrame(() => {
             this.updateNavigableElements?.();
-            const again = this.navigableElements.findIndex((el) => el.getAttribute?.('href') === row.getAttribute('href'));
+            // By address: a row is a div with no href, so null matched null and
+            // the cursor jumped to the first row of the page.
+            const url = row.getAttribute('data-bookmark-url');
+            const again = url ? this.navigableElements.findIndex((el) => el.getAttribute?.('data-bookmark-url') === url) : -1;
             if (again >= 0) {
                 this.currentIndex = again;
                 this.highlightCurrentElement({ keyboardNav: true });

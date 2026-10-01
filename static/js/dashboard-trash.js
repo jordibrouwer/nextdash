@@ -28,6 +28,11 @@
      * @param {Array<{pageId:number,index:number,bookmark:object}>} entries
      * @param {string} source  Where the delete came from, for the trash list.
      */
+    /** The dashboard's trash and duplicates tiles follow every trash change. */
+    function refreshTiles() {
+        try { window.dashboardInstance?.renderCore?.refreshBookmarkTiles?.(); } catch (_error) { /* a tile is not a reason to fail */ }
+    }
+
     async function record(entries, source = '') {
         const items = (entries || [])
             .filter((entry) => entry && entry.bookmark && (entry.bookmark.url || entry.bookmark.name))
@@ -45,6 +50,7 @@
                 headers: writeHeaders(),
                 body: JSON.stringify({ source, items }),
             });
+            if (res.ok) refreshTiles();
             return res.ok;
         } catch (_error) {
             // Offline or blocked: the delete itself already succeeded, so this
@@ -113,6 +119,7 @@
             const text = await res.text().catch(() => '');
             throw new Error(text || `restore failed: ${res.status}`);
         }
+        refreshTiles();
         return res.json();
     }
 

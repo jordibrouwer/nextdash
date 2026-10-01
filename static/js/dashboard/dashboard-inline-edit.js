@@ -2732,7 +2732,10 @@ class DashboardInlineEdit {
                     d.restoreBookmarkInAllBookmarks(deletedBookmark, deleteRef.pageId);
                     d.pendingReorderSnapshot = null;
                     try {
-                        await d.saveBookmarkOrder();
+                        if (await d.saveBookmarkOrder() === false) return;
+                        // The row is back, so its trash entry is a copy of a
+                        // live bookmark: a later Restore answered 409 for 30 days.
+                        await d.multiSelect?.dropRestoredTrashEntries?.([{ pageId: deleteRef.pageId, bookmark: deletedBookmark }]);
                         await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [deleteRef.pageId] });
                     } catch (_error) {
                         // saveBookmarkOrder already surfaces errors and reverts when possible.

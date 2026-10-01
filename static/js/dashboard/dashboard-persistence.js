@@ -74,12 +74,17 @@ class DashboardPersistence {
 
         if ((hadReorder || hadPreview) && Array.isArray(d.bookmarks) && Number.isFinite(pageId)) {
             try {
-                fetch(`/api/bookmarks?page=${pageId}`, {
+                // Without what the server keeps for itself (it puts those back,
+                // see carryServerOwnedBookmarkFields): a keepalive body is capped
+                // at 64 KB in all, and the open log alone ran a busy page past
+                // it, so the last reorder was refused as the tab closed.
+                const rows = d.bookmarks.map(({ openLog, openCount, lastOpened, lastChecked, lastError, brokenSince, ...rest }) => rest);
+                void fetch(`/api/bookmarks?page=${pageId}`, {
                     method: 'POST',
                     headers,
-                    body: JSON.stringify([...d.bookmarks]),
+                    body: JSON.stringify(rows),
                     keepalive: true
-                });
+                }).catch(() => {});
             } catch (_error) {
                 // Best-effort on tab close; ignore network errors.
             }
@@ -211,6 +216,10 @@ class DashboardPersistence {
                     d.renderDashboard();
                 }
                 if (pageId === Number(d.currentPageId)) {
+                    // A drag made while this save was in flight armed a timer;
+                    // left running, it posted the rolled-back list and said
+                    // "Bookmark order saved" right after "Changes were reverted".
+                    if (d.pendingReorderSave) clearTimeout(d.pendingReorderSave);
                     d.pendingReorderSave = null;
                     d.pendingReorderSnapshot = null;
                 }
