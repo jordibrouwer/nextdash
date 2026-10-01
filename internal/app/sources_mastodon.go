@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 /*
@@ -264,9 +265,11 @@ func mastodonStatusToRow(status mastodonStatus, category string) *ImportedRow {
 		author = strings.TrimSpace(status.Account.Acct)
 	}
 
+	// Cut on a character: cut on a byte, an emoji across byte 70 ended the
+	// name in "�".
 	name := text
-	if len(name) > 70 {
-		name = strings.TrimSpace(name[:70]) + "…"
+	if utf8.RuneCountInString(name) > 70 {
+		name = strings.TrimSpace(truncateRunes(name, 70)) + "…"
 	}
 	if author != "" {
 		if name == "" {

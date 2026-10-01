@@ -24,8 +24,12 @@
             const res = await fetch('/api/inbox');
             if (!res.ok) return null;
             const data = await res.json();
-            dash._widgetInbox = Array.isArray(data?.items) ? data.items
+            const items = Array.isArray(data?.items) ? data.items
                 : Array.isArray(data) ? data : [];
+            // Sleeping links are not waiting: the view, the tab badge and the
+            // tiles leave them out, and the widget disagreed with all three.
+            const now = Date.now();
+            dash._widgetInbox = items.filter((item) => !(Number(item?.snoozedUntil) > now));
             return dash._widgetInbox;
         } catch (_error) {
             return null;

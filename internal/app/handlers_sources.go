@@ -218,6 +218,9 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// What this source brought in before and the reader then deleted or moved
+	// is not new again.
+	rows = withoutSeenRows(rows, source.Seen)
 	preview := h.previewImport(pageID, rows)
 
 	if r.Method == http.MethodGet || r.URL.Query().Get("dryRun") == "1" {
@@ -256,6 +259,11 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 	h.importRows(rec, r, pageID, valid)
 	if rec.status == 0 || rec.status == http.StatusOK {
 		RecordSourceRun(id, cursor, sourceRunSummary(preview), nil)
+		keys := make([]string, 0, len(valid))
+		for _, row := range valid {
+			keys = append(keys, canonicalBookmarkURLKey(row.URL))
+		}
+		RecordSourceSeen(id, keys)
 	} else {
 		RecordSourceRun(id, "", "", errors.New("the import failed: "+strings.TrimSpace(rec.body.String())))
 	}

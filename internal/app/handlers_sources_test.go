@@ -342,3 +342,44 @@ func TestRunSourceRefusesAPageThatIsGone(t *testing.T) {
 		t.Fatalf("the cursor moved to %q", source.Cursor)
 	}
 }
+
+// A source re-read in full (Hacker News has no cursor) brought back every
+// favourite the reader had deleted. What it imported once is not new again.
+func TestRunSourceDoesNotBringBackADeletedRow(t *testing.T) {
+	h := newTestHandlers(t)
+	raindropStub(t,
+		[]map[string]any{raindropItemJSON("https://rd.example.com/gone", "Gone", 42, "2026-03-01T00:00:00Z", nil, "", "")},
+		[]map[string]any{{"_id": 42, "title": "Reading"}})
+	if got := doSources(t, h, http.MethodPut, "/api/sources/raindrop:all",
+		`{"kind":"raindrop","token":"t","targetPage":1,"enabled":true}`); got.Code != http.StatusOK {
+		t.Fatalf("save = %d", got.Code)
+	}
+	if got := doSources(t, h, http.MethodPost, "/api/sources/raindrop:all/run", ""); got.Code != http.StatusOK {
+		t.Fatalf("run = %d: %s", got.Code, got.Body.String())
+	}
+	kept := []Bookmark{}
+	for _, b := range h.store.GetBookmarksByPage(1) {
+		if b.URL != "https://rd.example.com/gone" {
+			kept = append(kept, b)
+		}
+	}
+	if err := h.store.SaveBookmarksByPage(1, kept); err != nil {
+		t.Fatal(err)
+	}
+	// The cursor would hide the row anyway; a source without one is the case.
+	state := readSourceStateFile()
+	src := state.Sources["raindrop:all"]
+	src.Cursor = ""
+	state.Sources["raindrop:all"] = src
+	if err := writeSourceStateFile(state); err != nil {
+		t.Fatal(err)
+	}
+	if got := doSources(t, h, http.MethodPost, "/api/sources/raindrop:all/run", ""); got.Code != http.StatusOK {
+		t.Fatalf("second run = %d: %s", got.Code, got.Body.String())
+	}
+	for _, b := range h.store.GetBookmarksByPage(1) {
+		if b.URL == "https://rd.example.com/gone" {
+			t.Fatal("the deleted row came back")
+		}
+	}
+}

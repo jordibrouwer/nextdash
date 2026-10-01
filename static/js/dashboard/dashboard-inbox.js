@@ -351,7 +351,9 @@ class DashboardInbox {
         for (const snap of snapshots) {
             try {
                 if (keptEntries) {
-                    await this.markUnread(snap.id);
+                    // Only what the keep marked read: one already read before
+                    // went back into the unread count and the badge.
+                    if (!snap.readAt) await this.markUnread(snap.id);
                 } else if (!(await this.restoreItem(snap))) {
                     continue;
                 }
@@ -474,11 +476,12 @@ class DashboardInbox {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const results = await Promise.allSettled(targets.map(async (item) => {
             const snapshot = JSON.parse(JSON.stringify(item));
-            const res = await fetcher('/api/bookmarks/add', {
+            const add = (allowDuplicate) => fetcher('/api/bookmarks/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     page: Number(pageId),
+                    ...(allowDuplicate ? { allowDuplicate: true } : {}),
                     bookmark: {
                         name: item.previewTitle || item.title || item.domain || item.url,
                         url: item.url,
@@ -496,6 +499,26 @@ class DashboardInbox {
                     },
                 }),
             });
+            let res = await add(false);
+            // A copy kept in Unsorted is the link waiting to be filed, not a
+            // bookmark already saved: refused over it, the promote filed
+            // nothing and still took the entry. It is filed and the kept copy
+            // goes, as promoting from the Unsorted view does.
+            if (res.status === 409) {
+                const body = await res.clone().json().catch(() => ({}));
+                const unsortedId = Number(d._unsortedPageId) || 999999;
+                if (body?.error === 'duplicate_url' && body.samePage !== true
+                    && Number(body?.conflict?.pageId) === unsortedId) {
+                    res = await add(true);
+                    if (res.ok) {
+                        await fetcher('/api/bookmarks', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ page: unsortedId, bookmark: { url: body.conflict.url || item.url } }),
+                        }).catch(() => {});
+                    }
+                }
+            }
             // A link already saved as a bookmark is not a failure of this
             // promote — it is the reason the inbox entry can go. Counted apart
             // from real errors below so the message can say which happened.
@@ -562,7 +585,9 @@ class DashboardInbox {
         for (const snap of snapshots) {
             try {
                 if (keptEntries) {
-                    await this.markUnread(snap.id);
+                    // Only what the keep marked read: one already read before
+                    // went back into the unread count and the badge.
+                    if (!snap.readAt) await this.markUnread(snap.id);
                 } else if (!(await this.restoreItem(snap))) {
                     continue;
                 }
@@ -1767,7 +1792,10 @@ class DashboardInbox {
 
     async addFromUrl(url, options = {}) {
         const d = this.dash;
-        const trimmed = String(url || '').trim();
+        // A pasted "github.com/x" has no scheme, which the server refuses;
+        // the bookmark form adds one, and so does this now.
+        const raw = String(url || '').trim();
+        const trimmed = (raw && window.BookmarkUrlUtils?.ensureHttpUrl?.(raw)) || raw;
         if (!trimmed) {
             return null;
         }
@@ -1943,6 +1971,23 @@ class DashboardInbox {
                 this.items.unshift(item);
             }
             this.dash.pageNav?.updateInboxTabBadge?.();
+        }
+        // Put back at the cap, an undo pushes the oldest link out. The server
+        // says how many; unread, the dropped row stayed drawn and answered 404
+        // when opened. Named, and the list read again once the caller is done.
+        const evicted = Number(body?.evicted) || 0;
+        if (evicted > 0) {
+            this.dash.showNotification?.(
+                evicted === 1
+                    ? this.t('dashboard.inboxEvictedOne', 'Inbox is full — the oldest link was removed')
+                    : this.t('dashboard.inboxEvictedCount', 'Inbox is full — the {count} oldest links were removed', { count: evicted }),
+                'info',
+                { duration: 6000 }
+            );
+            setTimeout(() => {
+                if (this.isActiveView()) void this.loadAndRender({ refresh: true });
+                else void this.refreshBadge();
+            }, 0);
         }
         return item;
     }
@@ -2202,10 +2247,23 @@ class DashboardInbox {
                         icon: item.icon || '',
                         previewTitle: item.previewTitle || '',
                         previewDesc: item.previewDesc || '',
+                        previewImage: item.previewImage || '',
                     },
                 }),
             });
             if (res.status !== 409 && !res.ok) return false;
+            if (res.status === 409) {
+                // Every 409 read as "filed there": a copy on another page, or a
+                // shortcut clash, said "Filed on X" with nothing filed on X.
+                const body = await res.json().catch(() => ({}));
+                if (body?.samePage !== true) {
+                    if (body?.error !== 'duplicate_url') return false;
+                    await this.completePromote(item.id);
+                    this.syncBadge();
+                    this.announceAlreadyFiled(item, body.conflict || {});
+                    return true;
+                }
+            }
             const place = found.categoryLabel
                 ? `${found.pageLabel} / ${found.categoryLabel}`
                 : found.pageLabel;
@@ -2920,6 +2978,7 @@ class DashboardInbox {
                     }
                     this._trackAction('snooze');
                     const d = this.dash;
+                    const before = Number(item.snoozedUntil) || 0;
                     try {
                         await this.patchSnooze(item.id, value);
                         d.pageNav?.updateInboxTabBadge?.();
@@ -2933,7 +2992,7 @@ class DashboardInbox {
                                 duration: 6000,
                                 undoCallback: async () => {
                                     try {
-                                        await this.patchSnooze(item.id, 0);
+                                        await this.patchSnooze(item.id, before > Date.now() ? before : 0);
                                         d.pageNav?.updateInboxTabBadge?.();
                                         if (this.isActiveView()) {
                                             this.render();
@@ -3062,6 +3121,10 @@ class DashboardInbox {
             return;
         }
         this._trackAction('snooze');
+        // A link already asleep goes back to its own wake time on undo, not
+        // awake: the menu is offered on snoozed rows too.
+        const before = Number(item.snoozedUntil) || 0;
+        const undoUntil = () => (before > Date.now() ? before : 0);
         try {
             await this.patchSnooze(item.id, until);
             this.dash.pageNav?.updateInboxTabBadge?.();
@@ -3075,7 +3138,7 @@ class DashboardInbox {
                     duration: 6000,
                     undoCallback: async () => {
                         try {
-                            await this.patchSnooze(item.id, 0);
+                            await this.patchSnooze(item.id, undoUntil());
                             this.dash.pageNav?.updateInboxTabBadge?.();
                             if (this.isActiveView()) this.render();
                         } catch {
