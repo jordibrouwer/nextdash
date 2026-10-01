@@ -748,6 +748,7 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	}
 
 	h.invalidateHealthReportCache()
+	applyRuntimeSettings(h.store.GetSettings())
 	return skippedBookmarks, nil
 }
 

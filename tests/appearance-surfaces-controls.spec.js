@@ -136,10 +136,12 @@ test('the reset puts the value back and repaints the page', async ({ page }) => 
     await expect.poll(() => page.evaluate(
         () => document.body.getAttribute('data-glow')), { timeout: 5_000 }).not.toBe('full');
 
-    // Text contrast is the install's own answer and keeps its ↺.
+    // Text contrast is the install's own answer and keeps its ↺. Its default is
+    // the server's 0.47: 0.44, which the select used to call Normal, fails AA
+    // on the dark theme's top surface.
     const reset = (field) => page.locator(`[data-reset-field="${field}"]`);
     await expect(reset('inkGap')).toHaveClass(/is-visible/);
     await reset('inkGap').click();
     await expect.poll(() => page.evaluate(
-        () => Number(window.dashboardInstance.settings.inkGap)), { timeout: 5_000 }).toBe(0.44);
+        () => Number(window.dashboardInstance.settings.inkGap)), { timeout: 5_000 }).toBe(0.47);
 });

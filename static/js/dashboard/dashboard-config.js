@@ -9143,7 +9143,7 @@ class DashboardConfig {
         // do. Kept in step with normalizeInkGap on the server.
         const inkGap = Number.isFinite(Number(s.inkGap)) && Number(s.inkGap) > 0
             ? Math.min(0.58, Math.max(0.30, Number(s.inkGap)))
-            : 0.44;
+            : 0.47;
         const randomMode = window.ThemeUtils?.normalizeRandomThemeMode?.(s) ?? s.randomThemeMode ?? 'off';
         const showingThemeId = randomMode !== 'off'
             ? (document.documentElement.getAttribute('data-theme')
@@ -11953,7 +11953,7 @@ class DashboardConfig {
      */
     static INK_GAP_STEPS = [
         [0.34, 'inkGapSoft', 'Soft'],
-        [0.44, 'inkGapNormal', 'Normal'],
+        [0.47, 'inkGapNormal', 'Normal'],
         [0.51, 'inkGapHigh', 'High'],
         [0.58, 'inkGapMax', 'Maximum'],
     ];
@@ -11961,9 +11961,9 @@ class DashboardConfig {
     /** The step a stored number belongs to, so the select can show it. */
     static inkGapStepFor(gap) {
         const value = Number(gap);
-        if (!Number.isFinite(value)) return 0.44;
+        if (!Number.isFinite(value)) return 0.47;
         if (value < 0.36) return 0.34;
-        if (value < 0.48) return 0.44;
+        if (value < 0.48) return 0.47;
         if (value < 0.54) return 0.51;
         return 0.58;
     }
@@ -12265,7 +12265,7 @@ class DashboardConfig {
         glowStrength: { info: ['glowStrengthInfoTitle', 'glowStrengthInfoMessage'], def: 'follow' },
         themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
-        inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.44 },
+        inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.47 },
         themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'on' },
         backgroundPattern: { info: ['backgroundPatternInfoTitle', 'backgroundPatternInfoMessage'], def: 'auto' },
         fontSize: { def: 'm' },
@@ -14706,6 +14706,13 @@ class DashboardConfig {
             btn.disabled = true;
             if (status) status.textContent = this.t('config.monitorNotifyTestSending', 'Sending…');
             try {
+                // An address typed and the button clicked at once: the field
+                // saves on blur, and the test read the stored settings before
+                // that save landed -- "nothing configured", or the old address.
+                // One tick lets the blur's save join the chain, then it is awaited.
+                document.activeElement?.blur?.();
+                await new Promise((resolve) => setTimeout(resolve, 0));
+                await (this._settingsSaveChain || Promise.resolve());
                 // Through writeFetch: /api/health/test-notification is behind
                 // requireWriteAccess, so a bare fetch got a flat 401 on every
                 // install that sets NEXTDASH_WRITE_TOKEN.
@@ -26958,7 +26965,9 @@ class DashboardConfig {
     async loadStatsLibrary() {
         const get = async (url) => {
             try {
-                const res = await fetch(url);
+                // With the token: /api/sources and /api/auto-backups need it,
+                // and a bare fetch dropped both rows from the panel.
+                const res = await this.writeFetch(url);
                 return res && res.ok ? await res.json() : null;
             } catch {
                 return null;

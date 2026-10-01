@@ -2423,6 +2423,27 @@ with the token. Blank rather than removed: the fields are omitempty, so they do
 not appear at all, and a settings POST that leaves a key out keeps what is
 stored (see mergeSettingsFromBody).
 */
+// applyRuntimeSettings puts the settings the server acts on itself into
+// effect: a settings save and a restore both call it, or a restored backup
+// kept capturing at the old level until a restart.
+func applyRuntimeSettings(settings Settings) {
+	// Half of the feature snapshots are settings; a cached copy would report
+	// the old ones for ten minutes. Settings are cheap to read, so drop it.
+	invalidateAnalyticsSnapshotsCache()
+	// Apply straight away, so starting or stopping capture and changing the cap
+	// take effect on the next poll rather than at the next restart.
+	serverLog.SetRetention(
+		settings.ServerLogRetentionMode,
+		settings.ServerLogRetentionHours,
+		settings.ServerLogMaxEntries,
+	)
+	serverLog.SetPaused(!settings.ServerLogEnabled)
+	// The detail level and the channel list take effect on the next line
+	// written, not at the next restart: someone turning Verbose on is usually
+	// mid-investigation and wants the next thing that happens.
+	applyLogSettings(settings)
+}
+
 func redactSettingsSecrets(settings *Settings) {
 	settings.ArchiveSaveAccessKey = ""
 	settings.ArchiveSaveSecret = ""
@@ -2545,21 +2566,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
 		return
 	}
-	// Half of the feature snapshots are settings; a cached copy would report
-	// the old ones for ten minutes. Settings are cheap to read, so drop it.
-	invalidateAnalyticsSnapshotsCache()
-	// Apply straight away, so starting or stopping capture and changing the cap
-	// take effect on the next poll rather than at the next restart.
-	serverLog.SetRetention(
-		settings.ServerLogRetentionMode,
-		settings.ServerLogRetentionHours,
-		settings.ServerLogMaxEntries,
-	)
-	serverLog.SetPaused(!settings.ServerLogEnabled)
-	// The detail level and the channel list take effect on the next line
-	// written, not at the next restart: someone turning Verbose on is usually
-	// mid-investigation and wants the next thing that happens.
-	applyLogSettings(settings)
+	applyRuntimeSettings(settings)
 	w.Header().Set("Content-Type", "application/json")
 	response := map[string]any{"status": "success"}
 	if len(droppedCollections) > 0 {

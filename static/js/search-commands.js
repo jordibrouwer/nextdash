@@ -2493,9 +2493,9 @@ class SearchCommandsComponent {
      */
     handleContrastCommand(args) {
         const t = (key, fb) => this._t(key, fb);
-        const bands = { soft: 0.34, normal: 0.44, high: 0.5, max: 0.56 };
+        const bands = { soft: 0.34, normal: 0.47, high: 0.5, max: 0.56 };
         const bandOf = (gap) => {
-            const value = Number(gap) || 0.44;
+            const value = Number(gap) || 0.47;
             if (value < 0.36) return 'soft';
             if (value < 0.48) return 'normal';
             if (value < 0.54) return 'high';

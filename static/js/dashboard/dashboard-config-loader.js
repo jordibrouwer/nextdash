@@ -71,12 +71,18 @@ class DashboardConfigLoader {
     /** Mirrors DashboardConfig.SUB_TAB_STATE for pre-load sub-tab replay. */
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
+        about: 'aboutTab',
         'structure': 'ptTab',
         appearance: 'appearanceTab',
         stats: 'statsTab',
-        'data-backups': 'dataTab',
+        // dbTab, as the module names it: dataTab was copied across to a
+        // property nothing reads, so Data & backups opened on its first tab.
+        'data-backups': 'dbTab',
         help: 'helpTab',
         logs: 'logsTab',
+        bookmarks: 'bmTab',
+        widgets: 'widgetsTab',
+        inbox: 'inboxTab',
     };
 
     /** Mirrors DashboardConfig.loadLastConfigLocation for cold load on bare `#config`. */
@@ -122,9 +128,13 @@ class DashboardConfigLoader {
         'appearanceTab',
         'behaviorTab',
         'helpTab',
-        'bookmarksTab',
-        'dataTab',
+        'bmTab',
+        'dbTab',
         'statsTab',
+        'logsTab',
+        'widgetsTab',
+        'inboxTab',
+        'aboutTab',
     ];
 
     constructor(dashboard) {
