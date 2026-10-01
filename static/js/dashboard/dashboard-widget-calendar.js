@@ -131,7 +131,14 @@
         // time beside it, which is the shape that pairs.
         const list = utils?.rowList?.() || document.createElement('div');
         if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
-        events.forEach((event) => {
+        // The server keeps an all-day event for 14 hours past its UTC end, so
+        // it lasts its whole day west of UTC; here, where the reader's date is
+        // known, one whose day is already over is left out.
+        const today = new Date();
+        const localDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+        const shown = events.filter((event) => !event?.allDay
+            || Number(event.end || (Number(event.start) + 86400000)) > localDay);
+        shown.forEach((event) => {
             const row = document.createElement('div');
             row.className = 'dashboard-widget-row';
             const name = document.createElement('span');

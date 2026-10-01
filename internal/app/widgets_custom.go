@@ -175,7 +175,7 @@ func customWidgetCached(id string, now time.Time) (CustomWidgetResult, bool) {
 	customWidgetCache.Lock()
 	defer customWidgetCache.Unlock()
 	entry, ok := customWidgetCache.at[id]
-	if !ok || now.After(entry.expires) {
+	if !ok || now.Add(widgetBeatSlack).After(entry.expires) {
 		return CustomWidgetResult{}, false
 	}
 	return entry.result, true

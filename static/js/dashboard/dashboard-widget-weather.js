@@ -72,7 +72,15 @@
 
         let result = null;
         try {
-            result = await dash.weatherService.fetchForecast(settings, forecastRangeOf(widget), { useCache: true });
+            // The tile's beat equals the forecast cache's age limit, and the
+            // cache was written a moment after the timer started, so every
+            // other beat got the cached answer: hourly instead of half-hourly.
+            // A beat (the last fetch a minute or more ago) asks afresh; a
+            // redraw in between keeps using the cache.
+            const lastAt = Number(dash._weatherTileFetchedAt) || 0;
+            const isBeat = lastAt > 0 && Date.now() - lastAt >= 60_000;
+            result = await dash.weatherService.fetchForecast(settings, forecastRangeOf(widget), { useCache: !isBeat });
+            dash._weatherTileFetchedAt = Date.now();
         } catch (error) {
             result = null;
         }

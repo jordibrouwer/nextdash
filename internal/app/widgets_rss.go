@@ -98,7 +98,7 @@ func rssFeedCached(url string, now time.Time) (rssFeedEntry, bool) {
 	rssFeedCache.Lock()
 	defer rssFeedCache.Unlock()
 	entry, ok := rssFeedCache.at[url]
-	if !ok || now.After(entry.expires) {
+	if !ok || now.Add(widgetBeatSlack).After(entry.expires) {
 		return rssFeedEntry{}, false
 	}
 	return entry, true
@@ -214,7 +214,7 @@ func parseRSSItems(raw []byte) ([]RSSItem, string) {
 		}
 		seen[link] = struct{}{}
 
-		title := strings.TrimSpace(entry.Title)
+		title := entry.title()
 		if title == "" {
 			// A headline is the whole of what this tile shows, so an entry
 			// without one falls back to its address rather than to a blank

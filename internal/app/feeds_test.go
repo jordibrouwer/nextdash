@@ -232,3 +232,21 @@ func TestAnRDFFeedHasItems(t *testing.T) {
 		t.Fatalf("timestamps = %v, want two", got)
 	}
 }
+
+// Dates as feeds really write them: a one-digit day, no seconds, no weekday,
+// UT, a colon in the offset, and US zone names read at their own offset.
+func TestFeedDatesInTheVariantsFeedsUse(t *testing.T) {
+	want := time.Date(2026, 10, 1, 15, 4, 0, 0, time.UTC).UnixMilli()
+	for _, raw := range []string{
+		"Thu, 1 Oct 2026 15:04:00 +0000",
+		"Thu, 1 Oct 2026 15:04 +0000",
+		"01 Oct 2026 15:04:00 +0000",
+		"Thu, 01 Oct 2026 15:04:00 UT",
+		"Thu, 01 Oct 2026 17:04:00 +02:00",
+		"Thu, 01 Oct 2026 11:04:00 EDT",
+	} {
+		if got := parseFeedTime(raw); got != want {
+			t.Errorf("parseFeedTime(%q) = %d, want %d", raw, got, want)
+		}
+	}
+}

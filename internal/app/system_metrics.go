@@ -218,6 +218,13 @@ func (c *systemMetricsCache) Get(want []string, mounts []string, labels map[stri
 			// disks are two readings, not one answer serving both.
 			key := "disks:" + strings.Join(mounts, ",")
 			value := c.value(key, metricsDiskFloor, func() any { return c.readDisksFn(mounts, labels) }).(DiskMetrics)
+			// The names are this request's, not the cached reading's: a renamed
+			// disk, or a second tile naming the same mounts differently, showed
+			// the names of whoever asked first for up to a beat.
+			value.Mounts = append([]DiskMount(nil), value.Mounts...)
+			for i := range value.Mounts {
+				value.Mounts[i].Label = labels[value.Mounts[i].Path]
+			}
 			out.Disks = &value
 		}
 		// Anything else is ignored: an unknown name is not an error, it is

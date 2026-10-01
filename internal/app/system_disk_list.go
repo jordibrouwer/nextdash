@@ -81,7 +81,9 @@ func parseMountInfo(data []byte) []MountCandidate {
 		if sep < 0 || sep+1 >= len(fields) {
 			continue
 		}
-		mountPoint := fields[4]
+		// The kernel escapes space, tab, newline and backslash in a mount
+		// point; offered as "My\040Drive", the chosen disk read unreadable.
+		mountPoint := mountInfoUnescaper.Replace(fields[4])
 		fsType := fields[sep+1]
 
 		if _, pseudo := pseudoFilesystems[fsType]; pseudo {
@@ -162,3 +164,5 @@ func listMountCandidates() []MountCandidate {
 	}
 	return mounts
 }
+
+var mountInfoUnescaper = strings.NewReplacer(`\040`, " ", `\011`, "\t", `\012`, "\n", `\134`, `\`)

@@ -244,3 +244,36 @@ func TestParseICSIgnoresAReminderInsideTheEvent(t *testing.T) {
 		t.Fatalf("events = %+v, want one called Dentist", events)
 	}
 }
+
+// An event given a DURATION rather than an end stays while it runs, and an
+// all-day event stays until its day is over west of UTC too.
+func TestCalendarKeepsDurationAndAllDayEventsWhileTheyLast(t *testing.T) {
+	now := time.Date(2026, 9, 9, 0, 30, 0, 0, time.UTC) // 20:30 on the 8th in New York
+	ics := strings.Join([]string{
+		"BEGIN:VCALENDAR",
+		"BEGIN:VEVENT", "DTSTART;VALUE=DATE:20260908", "SUMMARY:Holiday", "END:VEVENT",
+		"BEGIN:VEVENT", "DTSTART:20260909T000000Z", "DURATION:PT2H", "SUMMARY:Running", "END:VEVENT",
+		"END:VCALENDAR",
+	}, "\r\n")
+	events := parseICS([]byte(ics), now)
+	titles := map[string]bool{}
+	for _, e := range events {
+		titles[e.Title] = true
+	}
+	if !titles["Holiday"] || !titles["Running"] {
+		t.Fatalf("events = %+v, want both still listed", events)
+	}
+	if got := filterCalendarEvents(events, map[string]any{}, now); len(got) != 2 {
+		t.Fatalf("filtered = %+v, want both", got)
+	}
+}
+
+// Outlook names zones the Windows way; read as UTC, a 14:00 meeting in
+// Amsterdam showed at 16:00.
+func TestParseICSReadsAWindowsZoneName(t *testing.T) {
+	got, _, ok := parseICSDateTime("20260908T140000", map[string]string{"TZID": "W. Europe Standard Time"})
+	want := time.Date(2026, 9, 8, 12, 0, 0, 0, time.UTC)
+	if !ok || !got.Equal(want) {
+		t.Fatalf("got %v, want %v", got.UTC(), want)
+	}
+}

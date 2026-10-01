@@ -180,12 +180,20 @@ func (h *Handlers) runPreviewMediaJob(job previewMediaJob) {
 	entry := job.entry
 	allowLocal := h.allowLocalBookmarks()
 
-	if job.wantImage && entry.ImageSource != "" && !previewMediaPresent(entry.Image) {
+	// Stamped only for what was asked for. With "Image" off in the card the
+	// job skipped the picture yet stamped the entry, and turned back on the
+	// pictures stayed away until the stamp aged out, a week or more.
+	tryImage := job.wantImage && entry.ImageSource != "" && !previewMediaPresent(entry.Image)
+	tryIcon := job.wantIcon && entry.IconSource != "" && !previewMediaPresent(entry.Icon)
+	if !tryImage && !tryIcon {
+		return
+	}
+	if tryImage {
 		if name, err := downloadPreviewImage(entry.ImageSource, allowLocal); err == nil && name != "" {
 			entry.Image = "/data/" + previewImageDirName + "/" + name
 		}
 	}
-	if job.wantIcon && entry.IconSource != "" && !previewMediaPresent(entry.Icon) {
+	if tryIcon {
 		if name, err := downloadPreviewIcon(entry.IconSource, allowLocal); err == nil && name != "" {
 			entry.Icon = "/data/" + previewImageDirName + "/" + name
 		}
