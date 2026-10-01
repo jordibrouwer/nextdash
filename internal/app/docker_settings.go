@@ -21,9 +21,10 @@ Most are plain fields on Settings and are normalised here to the values the
 page offers, so a hand-edited settings file cannot ask the view to poll every
 millisecond or the daemon for a million log lines.
 
-The GitHub token is kept apart, in docker-secrets.json at 0600 and out of the
-backup, the way health-credentials.json is: it is a credential, and a settings
-file travels to places a credential should not.
+The GitHub token is kept apart, in docker-secrets.json at 0600, the way
+health-credentials.json is: it is a credential, and a settings file travels to
+places a credential should not. A backup carries it only while "leave out
+credentials" is off, like the other secrets (see dataFiles in backup.go).
 */
 
 var dockerRefreshChoices = map[int]bool{2: true, 5: true, 10: true, 30: true}
