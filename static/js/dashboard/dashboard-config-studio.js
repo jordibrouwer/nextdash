@@ -43,39 +43,65 @@
 
     /*
      * The built-in looks. A look is a set of answers, not a theme: it sets the
-     * backdrop, the card glass and the headers, and leaves the theme alone.
-     * The three glass looks ask for depth Glass as well, because card glass is
-     * only drawn there and would otherwise change nothing.
+     * backdrop and its sliders, the card glass, the depth and the category
+     * headers, and leaves the theme's colours alone. Every look with glass
+     * asks for depth Glass as well, because card glass is only drawn there and
+     * would otherwise change nothing. Plain keeps the depth it finds.
+     *
+     * Each one names all five header answers, so going from one look to the
+     * next never leaves a header setting behind from the one before.
      */
+    const look = (id, label, note, backdrop, tuning, glass, depth, heads) => ({
+        id, label, note, backdrop, depth,
+        labelKey: `config.look.${id}`, noteKey: `config.look.${id}Note`,
+        tuning: { strength: 1, blur: 0, brightness: 1, saturate: 1, tint: 0, ...tuning },
+        glass: { border: null, ...glass },
+        heads: { categoryHeaderSize: 'm', showCategoryIcon: true, showCategoryCount: false,
+            categoryHeaderAccentLine: false, ...heads },
+    });
+
     const LOOKS = [
-        {
-            id: 'homepage', labelKey: 'config.lookHomepage', label: 'Homepage',
-            noteKey: 'config.lookHomepageNote', note: 'Photo-like backdrop, glass cards, clean headers',
-            backdrop: 'sunset', tuning: { strength: 1.2, blur: 0, brightness: 0.85, saturate: 1.1, tint: 0 },
-            glass: { alpha: 0.55, blur: 12, border: null }, depth: 'glass',
-            heads: { categoryHeaderStyle: 'clean', showCategoryIcon: true, showCategoryCount: false },
-        },
-        {
-            id: 'homepage-boxed', labelKey: 'config.lookHomepageBoxed', label: 'Homepage boxed',
-            noteKey: 'config.lookHomepageBoxedNote', note: 'Boxed headers, a little more blur',
-            backdrop: 'mountains', tuning: { strength: 1.3, blur: 2, brightness: 0.75, saturate: 1.2, tint: 0 },
-            glass: { alpha: 0.6, blur: 10, border: 'on' }, depth: 'glass',
-            heads: { categoryHeaderStyle: 'boxed', showCategoryIcon: true, showCategoryCount: true },
-        },
-        {
-            id: 'frosted', labelKey: 'config.lookFrosted', label: 'Frosted',
-            noteKey: 'config.lookFrostedNote', note: 'Lots of blur, see-through cards',
-            backdrop: 'bokeh', tuning: { strength: 1.6, blur: 8, brightness: 1, saturate: 1.4, tint: 0 },
-            glass: { alpha: 0.3, blur: 24, border: 'on' }, depth: 'glass',
-            heads: { categoryHeaderStyle: 'underlined', showCategoryIcon: false, showCategoryCount: false },
-        },
-        {
-            id: 'plain', labelKey: 'config.lookPlain', label: 'Plain',
-            noteKey: 'config.lookPlainNote', note: 'No backdrop, solid cards, label headers',
-            backdrop: 'off', tuning: { strength: 1, blur: 0, brightness: 1, saturate: 1, tint: 0 },
-            glass: { alpha: 1, blur: 0, border: 'on' }, depth: null,
-            heads: { categoryHeaderStyle: 'label', showCategoryIcon: false, showCategoryCount: true },
-        },
+        look('homepage', 'Homepage', 'Photo-like backdrop, glass cards, clean headers',
+            'sunset', { strength: 1.2, brightness: 0.85, saturate: 1.1 },
+            { alpha: 0.55, blur: 12 }, 'glass', { categoryHeaderStyle: 'clean' }),
+        look('homepage-boxed', 'Homepage boxed', 'Boxed headers, a little more blur',
+            'mountains', { strength: 1.3, blur: 2, brightness: 0.75, saturate: 1.2 },
+            { alpha: 0.6, blur: 10, border: 'on' }, 'glass',
+            { categoryHeaderStyle: 'boxed', showCategoryCount: true }),
+        look('frosted', 'Frosted', 'Lots of blur, see-through cards',
+            'bokeh', { strength: 1.6, blur: 8, saturate: 1.4 },
+            { alpha: 0.3, blur: 24, border: 'on' }, 'glass',
+            { categoryHeaderStyle: 'underlined', showCategoryIcon: false }),
+        look('aurora', 'Aurora', 'Northern light behind clear glass',
+            'aurora', { strength: 1.4, blur: 4, saturate: 1.2 },
+            { alpha: 0.45, blur: 16 }, 'glass', { categoryHeaderStyle: 'underlined' }),
+        look('night-sky', 'Night sky', 'Stars on a darkened page, quiet labels',
+            'stars', { brightness: 0.8 },
+            { alpha: 0.6, blur: 10 }, 'glass', { categoryHeaderStyle: 'label', showCategoryIcon: false }),
+        look('soft', 'Soft', 'A blurred wash of colour, calm cards',
+            'mesh', { strength: 0.8, blur: 6, saturate: 0.9 },
+            { alpha: 0.7, blur: 14 }, 'glass', { categoryHeaderStyle: 'clean' }),
+        look('desert', 'Desert', 'Warm dunes tinted by the theme, with counts',
+            'dunes', { tint: 0.2 },
+            { alpha: 0.6, blur: 12 }, 'glass', { categoryHeaderStyle: 'clean', showCategoryCount: true }),
+        look('paper', 'Paper', 'Contour lines and near-solid cards, accent underline',
+            'topo', { brightness: 1.05 },
+            { alpha: 0.85, blur: 6 }, 'glass', { categoryHeaderStyle: 'underlined', categoryHeaderAccentLine: true }),
+        look('blueprint', 'Blueprint', 'A drafting grid, edged cards, boxed headers',
+            'blueprint', {},
+            { alpha: 0.85, blur: 4, border: 'on' }, 'glass',
+            { categoryHeaderStyle: 'boxed', showCategoryCount: true }),
+        look('terminal', 'Terminal', 'Scanlines, solid cards, bare labels',
+            'scanlines', {},
+            { alpha: 0.9, blur: 0 }, 'glass',
+            { categoryHeaderStyle: 'label', showCategoryIcon: false, showCategoryCount: true }),
+        look('neon', 'Neon', 'Bright prisms, see-through cards, group cards',
+            'prism', { strength: 1.6, saturate: 1.6 },
+            { alpha: 0.4, blur: 18, border: 'on' }, 'glass', { categoryHeaderStyle: 'group' }),
+        look('plain', 'Plain', 'No backdrop, solid cards, label headers',
+            'off', {},
+            { alpha: 1, blur: 0, border: 'on' }, null,
+            { categoryHeaderStyle: 'label', showCategoryIcon: false, showCategoryCount: true }),
     ];
 
     const clone = (value) => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)));
@@ -277,15 +303,19 @@
                 }
                 case 'looks':
                     return `
-                        <p class="config-panel-note">${e(t('config.studioLooksNote', 'A look sets the backdrop, the card glass and the headers in one go. The theme stays what it is.'))}</p>
-                        <div class="look-studio-looks">${LOOKS.map((look) => `
-                            <div class="look-studio-look" data-studio-look="${e(look.id)}">
-                                <span class="look-studio-look-sw" data-studio-look-sw="${e(look.backdrop)}" aria-hidden="true"></span>
+                        <div class="look-studio-looks-intro">
+                            <p>${e(t('config.studioLooksIntro', 'A look is a set of answers for the other tabs: which backdrop is drawn and how strongly, how solid and blurred the cards are, and how category headers read. Your theme keeps its colours; a look only changes how they are used.'))}</p>
+                            <p>${e(t('config.studioLooksHow', 'Use shows it on the page straight away. Nothing is stored until Apply, and Cancel puts everything back. “Applies to” below decides whether it holds for this theme or every theme. Afterwards each part can be tuned in its own tab.'))}</p>
+                        </div>
+                        <div class="look-studio-looks">${LOOKS.map((item) => `
+                            <div class="look-studio-look" data-studio-look="${e(item.id)}">
+                                <span class="look-studio-look-sw" data-studio-look-sw="${e(item.backdrop)}" aria-hidden="true"></span>
                                 <span class="look-studio-look-text">
-                                    <b>${e(t(look.labelKey, look.label))}</b>
-                                    <span>${e(t(look.noteKey, look.note))}</span>
+                                    <b>${e(t(item.labelKey, item.label))}</b>
+                                    <span>${e(t(item.noteKey, item.note))}</span>
+                                    <span class="look-studio-look-parts">${e(this.describeStudioLook(item))}</span>
                                 </span>
-                                <button type="button" class="look-studio-btn" data-studio-use-look="${e(look.id)}">${e(t('config.studioUseLook', 'Use'))}</button>
+                                <button type="button" class="look-studio-btn" data-studio-use-look="${e(item.id)}">${e(t('config.studioUseLook', 'Use'))}</button>
                             </div>`).join('')}
                         </div>`;
                 default:
@@ -311,6 +341,32 @@
                 });
                 void this.paintStudioLooks(host);
             }
+        },
+
+        /** What a look sets, in one line: "Backdrop sunset · Glass 55%, blur 12 · Clean headers". */
+        describeStudioLook(item) {
+            const t = (k, f) => this.t(k, f);
+            const styleName = {
+                clean: t('config.categoryHeaderClean', 'Clean'),
+                underlined: t('config.categoryHeaderUnderlined', 'Underlined'),
+                boxed: t('config.categoryHeaderBoxed', 'Boxed'),
+                label: t('config.categoryHeaderLabel', 'Label'),
+                group: t('config.categoryHeaderGroupCard', 'Group card'),
+            }[item.heads.categoryHeaderStyle] || item.heads.categoryHeaderStyle;
+            const parts = [
+                item.backdrop === 'off'
+                    ? t('config.lookPartNoBackdrop', 'No backdrop')
+                    : t('config.lookPartBackdrop', 'Backdrop {recipe}').replace('{recipe}', item.backdrop),
+                (item.glass.alpha >= 1
+                    ? t('config.lookPartSolid', 'Solid cards')
+                    : t('config.lookPartGlass', 'Glass {alpha}%, blur {blur}')
+                        .replace('{alpha}', String(Math.round(item.glass.alpha * 100)))
+                        .replace('{blur}', String(item.glass.blur)))
+                    + (item.glass.border === 'on' ? t('config.lookPartEdge', ', edged') : ''),
+                t('config.lookPartHeaders', '{style} headers').replace('{style}', styleName)
+                    + (item.heads.showCategoryCount ? t('config.lookPartCount', ' with counts') : ''),
+            ];
+            return parts.join(' · ');
         },
 
         /** The recipes as /api/themes/backdrops draws them, fetched once per opening. */

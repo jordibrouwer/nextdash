@@ -537,6 +537,20 @@ body.look-studio-open .quickstart-card {
     color: var(--text-tertiary);
 }
 
+/* What the look sets, smaller and quieter than what it is for. */
+.look-studio-look-text .look-studio-look-parts {
+    margin-top: 2px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.look-studio-looks-intro p {
+    margin: 0 0 var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    line-height: 1.45;
+}
+
 @media (max-width: 767px) {
     .look-studio {
         top: 45vh;
