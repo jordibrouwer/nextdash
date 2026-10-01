@@ -1,0 +1,104 @@
+{
+  "tag": "v1.15.8",
+  "date": "1 October 2026",
+  "releasedAt": "2026-10-01",
+  "modalLead": "More than a hundred fixes — bookmarks that landed on the wrong page, settings and backups that did not keep, automatic <strong>container</strong> updates that failed in silence — and a guide to running your self-hosted setup from nextDash.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The Disk tab shows its progress.</strong> Measuring can take a while on a large host; a progress window now says it is busy."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>nextDash no longer stops itself in the middle of an update.</strong> On Unraid and some other hosts it could mistake another container for its own."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A failed automatic update tells you</strong>, and at which step. Notices from automatic updates follow the Notifications switch and your muted containers."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An update keeps every published port</strong>, and <strong>Remove stopped</strong> removes only the containers it showed you."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Moves and undos keep bookmarks on their own page</strong>, also after a reload and when the same address is saved on two pages."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Pinned bookmarks and sorted categories keep the order you gave them</strong> after a drag."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks and Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>With the same address on two pages, Health and Work through act on the right one.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Saving Expectations in the Bookmarks view keeps the bookmark's sign-in.</strong>"
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A source no longer skips a round that failed</strong>, and no longer brings back a link you deleted."
+        }
+      ]
+    },
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The note editor and the cheat sheet keep their keys</strong> when opened from the command palette: Enter, the arrows and Escape no longer reach the palette behind them."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Custom widget percentages say their scale.</strong> <em>Show as</em> offers <em>Percentage (0–100)</em> and <em>Percentage from a share (0–1)</em>, so 0.8% no longer shows as 80%."
+        }
+      ]
+    },
+    {
+      "title": "Settings and backups",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Keep settings on this device only no longer undoes other browsers.</strong> Tag rules, saved searches and alert settings added elsewhere stay."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Backups include the images you held or skipped in Containers</strong>, and restoring the oldest automatic backup no longer deletes it."
+        }
+      ]
+    },
+    {
+      "title": "Help",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A guide to your self-hosted setup.</strong> Help → Containers explains how containers, bookmarks, health checks and alerts work together, and Tips has a group of its own for it."
+        }
+      ]
+    }
+  ]
+}

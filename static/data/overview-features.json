@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureSelfHostedGuideTitle",
+      "titleFallback": "Containers, bookmarks and health, together",
+      "whatKey": "config.overviewNewFeatureSelfHostedGuideWhat",
+      "whatFallback": "The Containers view, the bookmarks of your services, their health checks and the alerts were each explained on their own, and how they fit together was left to you.",
+      "howKey": "config.overviewNewFeatureSelfHostedGuideHow",
+      "howFallback": "Help → Containers now explains how they connect: a container's web UI is linked to its bookmark, that bookmark's check watches it, and one alert setting sends notices for both. Tips has a group for your self-hosted setup, and the manual a guide in four steps.",
+      "enableKey": "config.overviewNewFeatureSelfHostedGuideEnable",
+      "enableFallback": "Give nextDash the Docker socket, then open the Containers view with Shift + Y.",
+      "ctaKey": "config.overviewNewFeatureSelfHostedGuideCta",
+      "ctaFallback": "Read the guide →",
+      "go": {
+        "section": "help",
+        "helpTab": "containers"
+      },
+      "since": "v1.15.8"
+    },
+    {
       "titleKey": "config.overviewNewFeatureBookmarksSelectionBarTitle",
       "titleFallback": "Tick bookmarks, act on them from one bar",
       "whatKey": "config.overviewNewFeatureBookmarksSelectionBarWhat",
