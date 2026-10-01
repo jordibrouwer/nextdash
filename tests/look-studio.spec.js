@@ -512,6 +512,42 @@ test.describe('the look studio', () => {
         await expect(studio(page)).toHaveCount(0);
     });
 
+    test('a widget in a category that is already a pane draws no card of its own', async ({ page }) => {
+        await openDashboard(page);
+        await expect(page.locator('.dashboard-widget').first()).toBeAttached({ timeout: 15_000 });
+        const before = await stored(page);
+        // The widget's own surface: its background and its edge.
+        const surface = () => page.locator('.dashboard-grid .dashboard-widget .dashboard-widget-body').first().evaluate((el) => {
+            const cs = getComputedStyle(el);
+            const clear = /rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor) && cs.backgroundImage === 'none';
+            return clear && cs.borderTopWidth === '0px' ? 'none' : 'card';
+        });
+        await openStudio(page);
+        await page.locator('[data-studio-tab="layout"]').click();
+        const layout = '[data-look-studio] select[data-behavior-field="layoutPreset"]';
+
+        await page.selectOption(layout, 'widgets');
+        await expect.poll(surface, { message: 'a widget kept its card inside a Widgets pane' }).toBe('none');
+        await page.selectOption(layout, 'cards');
+        await expect.poll(surface).toBe('none');
+
+        // No pane round the category: the widget is the only surface there.
+        await page.selectOption(layout, 'default');
+        await expect.poll(surface, { message: 'a widget lost its card where nothing else draws one' }).toBe('card');
+
+        // Own card glass gives the category a pane, so the widget steps back.
+        await page.locator('[data-studio-tab="surface"]').click();
+        const useGlass = page.locator('[data-glass-panel] [data-glass-action="depth"]');
+        if (await useGlass.count()) await useGlass.click();
+        await expect.poll(() => bodyAttr(page, 'data-depth')).toBe('glass');
+        await page.locator('[data-glass-panel] [data-glass-mode="own"]').click();
+        await expect.poll(surface, { message: 'a widget kept its card inside an own glass pane' }).toBe('none');
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+        expect((await stored(page)).layoutPreset).toBe(before.layoutPreset);
+    });
+
     test('opened from Appearance, it hands the page back to Appearance on close', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));

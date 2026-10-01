@@ -454,6 +454,30 @@ html[data-theme] body[data-depth="glass"][data-card-border="on"] .dashboard-widg
     }
 }
 
+/*
+ * Eén vlak per widget.
+ *
+ * Een widget tekent een eigen kaart, uit de tijd dat een categorie er geen
+ * had. Waar de categorie zelf al een ruit is -- Cards en Widgets, en bij eigen
+ * kaartglas ook Default, Compact en Masonry -- stond die kaart in de kaart, en
+ * het weerbericht drie lagen diep. Daar laat het widgetlichaam zijn vlak, rand,
+ * schaduw en blur vallen en lijnt het uit met de kop, zoals de bookmarkrijen.
+ * De cellen erin (weerrijen, stattegels, trendrijen) blijven de ene stap
+ * boven de ruit. Zonder ruit om zich heen houdt de widget zijn kaart: dan is
+ * hij het enige vlak tussen de inhoud en de backdrop.
+ */
+html[data-theme] body .dashboard-grid:is(.layout-cards, .layout-widgets) .dashboard-widget .dashboard-widget-body,
+html[data-theme] body[data-depth="glass"][data-card-glass="own"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .dashboard-widget-body {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    outline: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
 /* ── Gloed ───────────────────────────────────────────────────────────────
    Nul is de vlakke rand die elk theme vandaag heeft, en blijft de default voor
    een theme dat om stilte vraagt.
