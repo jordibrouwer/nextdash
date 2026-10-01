@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.15.8 — 1 October 2026](#v1158--1-october-2026)
 - [v1.15.7 — 30 September 2026](#v1157--30-september-2026)
 - [v1.15.6 — 30 September 2026](#v1156--30-september-2026)
 - [v1.15.5 — 30 September 2026](#v1155--30-september-2026)
@@ -230,6 +231,104 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.15.8 — 1 October 2026
+
+A second bug hunt across the app fixes 108 more bugs: moves and undos that put bookmarks on the wrong page, copies of one address acting for each other, settings and backups that did not keep, and automatic container updates that failed in silence.
+
+### Dashboard
+
+- **fix — undo of a tag-filter delete after a page switch saved the rows onto the wrong page.** It now restores them from the trash onto their own page, as the multi-select undo does, and drops the trash entries after a same-page undo.
+- **fix — a page save undid newer opens and health results.** A tab sends back the open counts and check it loaded; a newer last open or check stored since (another device, the monitor) now wins, with its error and "down since".
+- **fix — a tab still showing a deleted page brought it back as "Page N".** Saving rows to a page that does not exist answers 404, a page list naming a page that sits in the trash leaves it out, and deleting a page that is already gone no longer adds an empty trash entry that blocked restoring the real one. Undo of a page delete in Config now restores the page from the trash, widgets included.
+- **fix — undo of a multi-select tag change, or of a category move, did nothing once the page had reloaded.** A focus that found a new revision was enough. The tag undo now writes through `PATCH /api/bookmarks` by URL, and the category undo takes the server path when its rows are no longer the ones on screen.
+- **fix — `GET /api/trash` without the token returned a deleted page's custom-widget address and credential id.** The listing now withholds them, as the blocks route does.
+- **fix — a bookmark moved to another page kept the source page's category id** and sat under "Unknown category" there (Shift+M, the selection bar and the tag filter). It now takes the target's category with the same name, or none.
+- **fix — on a touch screen every touch on a bookmark started a drag**, so a swipe that began on a row could not scroll. There the grip over the icon drags and the rest of the row scrolls; a cancelled touch now ends a drag instead of leaving the scroll lock on.
+- **fix — with a write token, health results still pending when the tab closed were refused.** A beacon cannot carry the token; a keepalive fetch with it is used instead.
+- **fix — smaller things.** An undone delete no longer leaves a trash entry that refused Restore; pinned rows keep the order they are given; a drag no longer overwrites the hand-made order of sorted categories; Shift+Alt+←/→ files the row in the category beside it in packed columns and keeps the cursor on it; Alt+←/→ on a category steps past widgets and over hidden empty categories; undo of a bulk move no longer jumps to the source page; a failed reorder save no longer reports "saved" afterwards.
+
+### Bookmarks and Health
+
+- **fix — editing the second copy of a duplicated address changed the first.** The side panel, the Checking select and the icon and preview sweeps now send which copy they mean.
+- **fix — with the same address on two pages, the side panel's Health tab, its keys and Work through acted on the other page's copy.** The report is joined by page and address.
+- **fix — in the Unsorted view, Delete, Export CSV and the icon and preview fetches on a selection did nothing.** They read the same rows the selection bar counts.
+- **fix — saving Expectations in the Bookmarks view removed the bookmark's sign-in.** The credential names were never loaded there (and with a write token were refused), so the select showed "Nothing"; they load with the report, and a credential missing from the list stays selected.
+- **fix — a manual re-check used the first copy's rules but recorded the result on the copy that was clicked.** `/api/ping` takes the row's page and index.
+- **fix — checks from Retest all, the daily re-check and manual re-checks inside a maintenance window counted as outages.** Their samples are now marked like the monitor's own.
+- **fix — a certificate threshold crossed during Retest all or a check was marked notified with no alert**, so the monitor never warned for it. Those checks now send the warning.
+- **fix — `health.down` and `health.up` webhooks never fired unless an alert service or push was also set up.** An enabled Config → Webhooks endpoint now counts as a listener.
+- **fix — moving a category to another page, or merging it, removed the category even when some bookmarks stayed behind.** It now stays until every bookmark has left.
+- **fix — Work through in the Bookmarks view went to the wrong card after a delete.** Its queue is remapped with Health's when the report reloads.
+- **fix — a collection rule "Category includes …" picked from the suggestions never matched.** A `page::id` value matches that page's category; a bare id still matches on every page.
+- **fix — smaller things.** Copies of an address are counted as the server counts them; saving Expectations on an unmonitored bookmark keeps its monitor settings; Enter in a tags field with nothing chosen saves instead of adding a tag; "Recently opened" shows the most recent; a check-mode change from Health touches only that page's copy.
+
+### Inbox
+
+- **fix — holding `d` or Shift+K in triage acted on card after card**, with no undo for deletes; and a second key while a write was in flight acted on the same card again. Repeats are ignored and one action runs per card at a time.
+- **fix — Ctrl/Cmd chords ran triage actions**: Ctrl/Cmd+D deleted the link, Cmd+R marked it read and blocked the reload. Chords are left to the browser, as in the list.
+- **fix — a source run moved its cursor before the import was written**, so a refused or failed round was skipped for good; one invalid row also refused the whole round. The cursor moves after the write, and invalid rows are left out.
+- **fix — a source whose page was deleted imported into a page nothing shows.** The run is refused with a message.
+- **fix — with a write token, the extension's link previews and icon uploads were refused.** The shared code now gets the token in the extension too.
+- **fix — smaller things.** A pasted bare domain saves to the Inbox; a source no longer brings back a link it imported before and the reader deleted; Mastodon names are cut on a character; the extension shows "D" for an address filed on another page and keeps typed tags on "Save to Inbox"; undoing a snooze restores the old wake time; bulk Keep and Promote undo leave read links read; bulk Promote files a link whose copy waits in Unsorted; auto-file on Keep no longer claims "Filed on X" for a link that was not; an undo that pushes a link out at the cap says so; the Inbox widget no longer counts snoozed links.
+
+### Containers
+
+- **new — the Disk tab shows the progress overlay while it measures.** A measurement is one `/system/df` read and can take a long time on a large host. The first load and **Refresh** now use the shared `ProgressOverlay.begin` (`dockerDiskMeasuringTitle`, new in all six locales and still in English), which appears after 300 ms and closes when the answer arrives.
+- **fix — nextDash could miss its own container and stop itself mid-update.** With a set hostname or host networking on cgroup v2, it took the first 64-hex string in `/proc/self/mountinfo`, which on overlay2, btrfs (Unraid's docker.img) and zfs is a storage layer; now only Docker's `/containers/<id>/` paths count.
+- **fix — Remove stopped took containers that stopped after the Disk tab measured.** The request now names the containers the question showed, and only those go.
+- **fix — an automatic update that failed and put the old container back was logged as a success with no notice.** It now sends "could not be updated automatically" with the step it failed at.
+- **fix — an update could unpublish a port.** A published port the old image also EXPOSEd was dropped with the image defaults; every port in `PortBindings` stays exposed.
+- **fix — smaller things.** A paused container is left out of automatic updates and a restarting one is watched; failure notices of an update that ran out of time arrive; a night's window past midnight tries a failed update once, and a run respects opt-outs and the window's end; the Logs tab keeps the newest lines; the widget leaves out nextDash's disk-measuring container; Backspace on the Disk tab no longer offers to remove containers ticked elsewhere; a window with the same start and end hour becomes two hours.
+
+### Config
+
+- **fix — forgetting or changing the archive keys was undone by the next settings save** in the same tab, which posted the keys loaded with the page. Settings saves no longer carry the keys, and the panel updates the in-memory switch.
+- **fix — "Keep settings on this device only" let an old device copy overwrite the server's data**: tag rules, saved searches, maintenance windows, alert, backup, log and container settings added in another browser were lost on the next save. The device copy now holds only how this device looks.
+- **fix — Hypr mode and the date, time and weather toggles only applied after a reload.**
+- **fix — "Reset panel" skipped each setting's own apply step**, so a reset language, weather location or shortcut hints stayed as they were until a reload.
+- **fix — smaller things.** Text contrast "Normal" is 0.47, the server's default; a restore applies its log settings at once; "Send test" waits for the address just typed; Statistics → Collection keeps its backups and sources rows with a write token; a bare `#config` restores the Data & backups, Logs, Bookmarks, Widgets, Inbox and About sub-tabs.
+
+### Search
+
+- **fix — an instant shortcut opened its bookmark and then reopened the search on its empty state** 50 ms later.
+- **fix — `:pin`, `:tag`, `:move`, `:edit`, `:copy` and `:archive` never saw the selected row.** The search reset the row ':' was pressed on with every keystroke; it now lasts until the search closes.
+- **fix — a dialog over the palette (the `:note` editor, the cheat sheet) lost Enter, the arrows, Tab and Escape to the palette behind it.** A newline wiped the note, and Escape closed both.
+- **fix — `:remove` deleted on the page showing, not the bookmark's own page**: a silent 404, or the copy of the same address that was here. Failures now say so, and the toast is no longer in Dutch.
+- **fix — `:save` saved while typing**, so `:save my` stored three searches and `:saved` saved one too. It saves on Enter, names the search it will save, and never saves the command text.
+- **fix — swiping sideways changed the dashboard page from every view**, a slider in Config included. It works on the bookmarks view only, and not from a form control or during a drag.
+- **fix — a network error counted against a push subscription**, so a burst of alerts during an outage removed every device. Only an answer from the push service counts now.
+- **fix — smaller things.** The mobile search box takes pastes, swipe-typed words and corrections whole; Ctrl/Cmd+Enter on a result opens a new tab; `?` on AZERTY opens finders instead of Move; a failed What's New load no longer leaves it dead; a slow What's New no longer writes into another dialog.
+
+### Widgets, feeds and previews
+
+- **new — custom widget percentages say their scale.** "Show as" offers *Percentage (0–100)* and *Percentage from a share (0–1)*. The old guess read every value from 0 to 1 as a share, so 0.8% showed as 80%; fields saved before keep that guess as *Percentage (guessed)* until changed.
+- **fix — every re-read of a preview dropped its pictures.** The carry-over looked in a cache no caller filled; it reads the stored preview now, so a refresh, an expiry or a keyword round keeps a picture whose address did not change.
+- **fix — the picture downloader wrote back a stale copy of the whole preview**, undoing "Clear suggested words" and a refresh's new title, and batch rounds dropped pictures stored while they ran. Only the picture fields are written, and a stored picture stands.
+- **fix — RSS 1.0 (RDF) feeds had no items**, in the RSS tile, Fresh (which retired them) and the sources; `dc:date` is read too.
+- **fix — a calendar event with an e-mail reminder showed as "Alarm notification".** Properties of nested components are ignored.
+- **fix — smaller things.** Polled tiles and the weather tile fetch afresh on each beat; disk names follow the request; all-day events last their whole day west of UTC and DURATION events stay while they run; floating and Windows-named calendar times are read in the server's zone and the right zone; the trash and duplicates tiles follow deletes on the dashboard; "Image" turned back on in the card fetches pictures again; long widget titles are cut on a character; mount points with spaces are offered unescaped; feed dates in common variants and US zones are read, and feed previews show Atom text and no raw HTML entities.
+
+### Data and backups
+
+- **fix — backups left out the Containers view's held and skipped images and its GitHub token.** `docker-updates.json` is now carried, and an older archive without it leaves the current one in place. `docker-secrets.json` is carried as a credential: it is left out with **leave out credentials** and restored at 0600. The timeline, update history, disk sizes and logs stay out on purpose, because they belong to the host. The four hand-kept lists in `backup.go` are now one register, `dataFiles`, with a policy per file. `TestEveryDataFileHasABackupPolicy` fails for any file written to the data directory that the register does not know.
+- **fix — a move or merge could lose rows on a full disk.** Pages were written in map order and the write stopped at the first failure, so the source could be emptied before the target failed. Pages that gain rows are now written first: a failure leaves a duplicate, not a loss.
+- **fix — a restore or import on a full disk left half the archive and half the old data.** Every file is now written beside its destination first, and only renamed into place once all of them are on disk.
+- **fix — restoring the oldest automatic backup deleted it.** The safety copy taken before a restore or import no longer prunes the rotation; the next scheduled backup does.
+- **fix — a CSV import or a trash restore could give two pages the same shortcut, after which both refused every save.** A shortcut already taken elsewhere is let go; an import to a page that does not exist is refused.
+- **fix — the container chowned only `/app/data`.** A data folder set with `NEXTDASH_DATA_DIR` (which failed the start-up write check and restarted in a loop) and the `NEXTDASH_AUTO_BACKUP_DIR` folder (every backup failed) are now given to the app's user too.
+- **fix — smaller things.** "Detect redirect" and the Sources widget work with a write token; a settings save keeps the preview-image migration marker, so restarts no longer rewrite every page; a config change from another tab during a refresh is no longer lost; the save on tab close fits the keepalive limit; a webhook retry keeps its message id; icons are written atomically.
+
+### Security (write token)
+
+- **fix — without the token, `GET /api/settings` still returned the private calendar address, and the blocks route an RSS widget's feed addresses.** Both are withheld now; a save that comes back without the feeds keeps the stored ones.
+
+### Tests
+
+- **tests — specs that relied on old behaviour.** The trash spec brings a deleted page back from the trash rather than by posting its id again (now refused); the page-delete spec picks new page ids past the trash, as the app does; the grid-shortcut spec runs in "Enter opens" mode, since in instant mode it passed only because of the reopening search.
+- **tests — new specs and Go tests for most of the fixes above**, each checked to fail without its fix; the smaller fixes are covered by the existing specs.
 
 ---
 
