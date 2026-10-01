@@ -225,10 +225,76 @@ test.describe('the look studio', () => {
 
         // Put back what this moved, for the specs after it.
         await page.waitForFunction(() => window.dashboardInstance?.settings, null, { timeout: 20_000 });
+        // Absent fields are written as their empty value: a save keeps a field
+        // it is not sent, so deleting one would leave this test's look behind.
         await page.evaluate(async (prev) => {
             const d = window.dashboardInstance;
+            const empty = { themeSurfacePrefs: {}, cardGlass: {}, themeBackdrop: 'follow', themeDepth: 'follow' };
             ['categoryHeaderStyle', 'showCategoryIcon', 'showCategoryCount', 'themeSurfacePrefs',
                 'backdropTuning', 'themeBackdrop', 'cardGlass', 'themeDepth'].forEach((key) => {
+                if (prev[key] !== undefined) d.settings[key] = prev[key];
+                else if (key in empty) d.settings[key] = empty[key];
+                else delete d.settings[key];
+            });
+            await d.saveSettings();
+        }, before);
+    });
+
+    test('card glass says why nothing changes, and gives a layout without cards its panes', async ({ page }) => {
+        await openDashboard(page);
+        const before = await stored(page);
+        // A layout that draws no card round a category, on a theme not at
+        // Glass, and no card glass of the reader's own. Written as empty
+        // values rather than left out: a save keeps a field it is not sent.
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            Object.assign(d.settings, {
+                layoutPreset: 'default', themeDepth: 'flat', themeSurfacesForceAll: false,
+                themeSurfacePrefs: {}, cardGlass: {},
+            });
+            await d.saveSettings();
+        });
+        await page.reload();
+        await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+        await waitForConfigReady(page);
+        await openStudio(page);
+        await page.locator('[data-studio-tab="surface"]').click();
+
+        const panel = page.locator('[data-glass-panel]');
+        await expect(panel.locator('[data-glass-depth-hint]')).toBeVisible();
+        await expect(panel.locator('[data-glass-layout-hint]')).toBeVisible();
+
+        await panel.locator('[data-glass-action="depth"]').click();
+        await expect.poll(() => bodyAttr(page, 'data-depth')).toBe('glass');
+        await expect(page.locator('[data-glass-panel] [data-glass-depth-hint]')).toHaveCount(0);
+
+        const categoryAlpha = () => page.locator('.dashboard-grid .category').first().evaluate(
+            (el) => getComputedStyle(el).backgroundColor);
+        expect(await categoryAlpha(), 'a default-layout category had a pane before Own').toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+
+        await page.locator('[data-glass-panel] [data-glass-mode="own"]').click();
+        await expect(page.locator('[data-glass-panel] [data-glass-layout-hint]')).toHaveCount(0);
+        await expect.poll(categoryAlpha, { message: 'Own gave the category no pane' }).not.toMatch(/rgba\(0, 0, 0, 0\)/);
+        const first = await categoryAlpha();
+        await page.locator('[data-glass-range="alpha"]').fill('0.3');
+        await expect.poll(categoryAlpha, { message: 'the opacity slider did not reach the pane' }).not.toBe(first);
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+
+        // The layout dropdown redraws the grid at once. A layout is not part of
+        // the look, so it saves.
+        await openStudio(page);
+        await page.locator('[data-studio-tab="surface"]').click();
+        await page.selectOption('[data-glass-panel] [data-glass-layout]', 'cards');
+        await expect.poll(() => page.locator('.dashboard-grid').getAttribute('class')).toContain('layout-cards');
+        await expect(page.locator('[data-glass-panel] [data-glass-layout-hint]')).toHaveCount(0);
+        await expect.poll(async () => (await stored(page)).layoutPreset).toBe('cards');
+        await page.keyboard.press('Escape');
+
+        await page.evaluate(async (prev) => {
+            const d = window.dashboardInstance;
+            ['layoutPreset', 'themeDepth'].forEach((key) => {
                 if (prev[key] === undefined) delete d.settings[key]; else d.settings[key] = prev[key];
             });
             await d.saveSettings();

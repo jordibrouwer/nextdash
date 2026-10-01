@@ -7709,3 +7709,20 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
     flex: 0 1 14rem;
     margin-left: auto;
 }
+
+/* A hint that comes with its way out: the text, and the button beside it. */
+.config-glass-hint {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.config-glass-hint .config-field-hint {
+    flex: 1 1 auto;
+    margin: 0;
+}
+
+.config-glass-hint .config-btn {
+    flex: 0 0 auto;
+}

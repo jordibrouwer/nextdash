@@ -371,6 +371,37 @@ html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .catego
 }
 
 /*
+ * Kaartglas in een layout zonder kaarten.
+ *
+ * Standaard, Compact en Masonry tekenen geen vlak om een categorie, dus daar
+ * had de kaartglas-schuif niets om op te werken. Wie eigen kaartglas kiest
+ * (data-card-glass="own") krijgt er alsnog een ruit. Alleen dan: een glas-theme
+ * dat iemand nooit heeft aangeraakt houdt de vlakke kolommen die het had.
+ * Padding binnen de kolom, zodat de kolombreedte niet verandert.
+ */
+html[data-theme] body[data-depth="glass"][data-card-glass="own"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .category {
+    background-color: color-mix(in srgb,
+        var(--surface-2) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    border-radius: var(--radius-6, 10px);
+    padding: var(--space-3, 0.75rem);
+}
+
+html[data-theme] body[data-depth="glass"][data-card-glass="own"][data-card-border="on"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .category {
+    outline: 1px solid color-mix(in srgb, var(--text-primary) 16%, transparent);
+    outline-offset: -1px;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-depth="glass"][data-card-glass="own"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .category {
+        background-color: var(--surface-2);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+/*
  * Het widgetlichaam onder glas.
  *
  * Zelfde vlak als buiten glas -- de kleur van de pagina, een stap ernaast --

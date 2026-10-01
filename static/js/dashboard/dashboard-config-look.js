@@ -366,7 +366,12 @@
                 <div class="config-panel" data-glass-panel>
                     <h3 class="config-panel-title">${e(t('config.cardGlassTitle', 'Card glass'))}</h3>
                     <p class="config-panel-note">${e(t('config.cardGlassNote', 'How solid a pane is and how far the page is blurred behind it. Panes are only panes at depth Glass, so this shows there.'))}</p>
-                    ${depth === 'glass' ? '' : `<p class="config-field-hint" data-glass-depth-hint>${e(t('config.cardGlassDepthHint', 'The theme on screen is not drawn at depth Glass, so nothing changes until it is.'))}</p>`}
+                    ${depth === 'glass' ? '' : `
+                    <div class="config-glass-hint" data-glass-depth-hint>
+                        <p class="config-field-hint">${e(t('config.cardGlassDepthHint', 'The theme on screen is not drawn at depth Glass, so nothing changes until it is.'))}</p>
+                        <button type="button" class="config-btn config-btn--small" data-glass-action="depth">${e(t('config.cardGlassUseGlass', 'Use depth Glass'))}</button>
+                    </div>`}
+                    ${this.renderCardGlassLayoutHint(isOwn)}
                     <div class="config-field">
                         <div class="config-choices" role="group">${seg}</div>
                     </div>
@@ -390,6 +395,40 @@
                         <span class="config-field-label">${e(t('config.cardGlassContrast', 'Text on a pane'))}</span>
                         <span class="config-glass-badge" data-glass-contrast></span>
                     </div>
+                </div>`;
+        },
+
+        /**
+         * What the layout does with card glass, when that is not obvious.
+         *
+         * Cards and Widgets draw a pane round every category. Default, Compact
+         * and Masonry only get one once the reader picks Own numbers, and
+         * Terminal, List and Launcher have none at all; without saying so the
+         * sliders looked broken.
+         */
+        renderCardGlassLayoutHint(isOwn) {
+            const t = (k, f) => this.t(k, f);
+            const e = (v) => esc(this, v);
+            const preset = this.dash.settings?.layoutPreset || 'default';
+            const presets = window.LayoutUtils?.getLayoutPresets?.()
+                || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
+            const name = (p) => t(`config.layoutPresetName.${p}`, p);
+            const columns = ['default', 'compact', 'masonry'].includes(preset);
+            let text = '';
+            if (columns && !isOwn) {
+                text = t('config.cardGlassLayoutOwnHint', 'Your layout ({layout}) draws no cards of its own. Choose Own to give each category a glass pane, or pick a layout with cards.');
+            } else if (!columns && preset !== 'cards' && preset !== 'widgets') {
+                text = t('config.cardGlassLayoutNoneHint', 'Your layout ({layout}) has no panes for glass to work on; only widgets change. Cards and Widgets draw one round every category.');
+            }
+            // The layout itself, so its effect on the glass can be seen at once.
+            // A setting of its own rather than part of the look: it saves.
+            return `
+                ${text ? `<p class="config-field-hint" data-glass-layout-hint>${e(text.replace('{layout}', name(preset)))}</p>` : ''}
+                <div class="config-field">
+                    <span class="config-field-label">${e(t('config.layoutPresetLabelShort', 'Layout preset'))}</span>
+                    <select class="config-select" data-glass-layout>
+                        ${presets.map((p) => `<option value="${e(p)}"${p === preset ? ' selected' : ''}>${e(name(p))}</option>`).join('')}
+                    </select>
                 </div>`;
         },
 
@@ -608,6 +647,28 @@
                 });
                 input.addEventListener('change', () => { void this.saveSettingsWithFeedback(); });
             });
+            // The two ways out of "nothing changes": depth Glass for this theme
+            // (through setSurface, so the scope decides where it lands), and the
+            // layout. The layout is not part of a look, so in the theme browser
+            // it saves at once like any other setting.
+            container.querySelectorAll('[data-glass-action]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    this.setSurface('themeDepth', 'glass');
+                    // setSurface repaints before <body> says Glass, and the
+                    // hint reads <body>: draw again once it does.
+                    await this.applyResolvedSurfaces();
+                    this.repaintAppearanceBody();
+                });
+            });
+            const layout = container.querySelector('[data-glass-layout]');
+            if (layout) {
+                layout.addEventListener('change', async () => {
+                    await this.setBehavior('layoutPreset', layout.value, 'chromeRender');
+                    this.repaintAppearanceBody();
+                    // The repaint replaced the select; keep the keyboard on it.
+                    container.querySelector('[data-glass-layout]')?.focus();
+                });
+            }
             const border = container.querySelector('[data-glass-border]');
             if (border) {
                 border.addEventListener('change', () => {

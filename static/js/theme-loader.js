@@ -544,7 +544,12 @@
         else root.style.removeProperty('--theme-surface-alpha');
         if (typeof g.blur === 'number') root.style.setProperty('--theme-surface-blur', `${g.blur}px`);
         else root.style.removeProperty('--theme-surface-blur');
-        if (document.body) document.body.setAttribute('data-card-border', g.border ? 'on' : '');
+        if (document.body) {
+            document.body.setAttribute('data-card-border', g.border ? 'on' : '');
+            // Own numbers also give a layout without cards its glass panes.
+            const own = typeof g.alpha === 'number' || typeof g.blur === 'number';
+            document.body.setAttribute('data-card-glass', own ? 'own' : '');
+        }
     }
 
     /** Resolve and write all three attributes for a theme. */
