@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"strings"
@@ -386,6 +387,9 @@ type feedDocument struct {
 	XMLName xml.Name    `xml:"-"`
 	Items   []feedEntry `xml:"channel>item"`
 	Entries []feedEntry `xml:"entry"`
+	// RSS 1.0 (RDF) items sit beside the channel; without them such a feed
+	// counted no entries and Fresh retired it after five polls.
+	RDFItems []feedEntry `xml:"item"`
 }
 
 type feedEntry struct {
@@ -406,7 +410,7 @@ func feedEntryTimestamps(body []byte) []int64 {
 	if err := decodeFeedXML(body, &doc); err != nil {
 		return nil
 	}
-	entries := append(append([]feedEntry{}, doc.Items...), doc.Entries...)
+	entries := append(append(append([]feedEntry{}, doc.Items...), doc.Entries...), doc.RDFItems...)
 	times := make([]int64, 0, len(entries))
 	for _, entry := range entries {
 		for _, raw := range []string{entry.PubDate, entry.Published, entry.Updated, entry.Date} {
@@ -435,6 +439,14 @@ func parseFeedTime(raw string) int64 {
 	if raw == "" {
 		return 0
 	}
+	// A US zone name: time.Parse reads "EST" as an unknown zone at offset 0,
+	// four to eight hours off. Swapped for its offset first.
+	for name, offset := range feedZoneOffsets {
+		if strings.HasSuffix(raw, " "+name) {
+			raw = strings.TrimSuffix(raw, name) + offset
+			break
+		}
+	}
 	layouts := []string{
 		time.RFC1123Z,
 		time.RFC1123,
@@ -442,13 +454,27 @@ func parseFeedTime(raw string) int64 {
 		"2006-01-02T15:04:05Z0700",
 		"2006-01-02 15:04:05",
 		"2006-01-02",
+		"Mon, _2 Jan 2006 15:04:05 -07:00",
 	}
 	for _, layout := range layouts {
 		if parsed, err := time.Parse(layout, raw); err == nil {
 			return parsed.UnixMilli()
 		}
 	}
+	// RFC 5322 as mail parses it: a one-digit day, no seconds, no weekday, UT
+	// and GMT. Feeds write all of these, and an unread date counted as a
+	// failed poll until Fresh retired the feed.
+	if parsed, err := mail.ParseDate(raw); err == nil {
+		return parsed.UnixMilli()
+	}
 	return 0
+}
+
+var feedZoneOffsets = map[string]string{
+	"EST": "-0500", "EDT": "-0400",
+	"CST": "-0600", "CDT": "-0500",
+	"MST": "-0700", "MDT": "-0600",
+	"PST": "-0800", "PDT": "-0700",
 }
 
 // pollFeed asks one feed whether anything is new, and returns the updated state.

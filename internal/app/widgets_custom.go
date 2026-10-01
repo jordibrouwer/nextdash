@@ -66,7 +66,7 @@ const (
 // customWidgetFormats are the only ways a value may be presented. Named rather
 // than free-form: a format is a choice from a list, and a list can be a dropdown.
 var customWidgetFormats = map[string]bool{
-	"count": true, "bytes": true, "percent": true,
+	"count": true, "bytes": true, "percent": true, "share": true, "percentAuto": true,
 	"duration": true, "ms": true, "relativeDate": true, "text": true,
 	"rate": true, "data": true, "temperature": true, "power": true,
 }
@@ -175,7 +175,7 @@ func customWidgetCached(id string, now time.Time) (CustomWidgetResult, bool) {
 	customWidgetCache.Lock()
 	defer customWidgetCache.Unlock()
 	entry, ok := customWidgetCache.at[id]
-	if !ok || now.After(entry.expires) {
+	if !ok || now.Add(widgetBeatSlack).After(entry.expires) {
 		return CustomWidgetResult{}, false
 	}
 	return entry.result, true
@@ -408,7 +408,7 @@ func customWidgetSpecFrom(config map[string]any) (customWidgetSpec, error) {
 		// A meter over anything but a percentage would be a bar drawn against a
 		// whole nobody stated, so the shape is dropped rather than honoured and
 		// the figure is written out as it always was.
-		if shape == "meter" && format != "percent" {
+		if shape == "meter" && !isPercentFormat(format) {
 			shape = ""
 		}
 		tone := strings.TrimSpace(stringOr(entry["tone"]))
@@ -733,13 +733,9 @@ func formatCustomValue(raw any, format string, decimals *int, dataUnit, tempSuff
 		if number, ok := toFloat(raw); ok {
 			return formatWatts(number)
 		}
-	case "percent":
+	case "percent", "share", "percentAuto":
 		if number, ok := toFloat(raw); ok {
-			// A ratio and a percentage both turn up in the wild, and 0..1 is
-			// unambiguous enough: no service reports 0.4% as 0.004.
-			if number > 0 && number <= 1 {
-				number *= 100
-			}
+			number = percentValue(number, format)
 			// One decimal, and never a trailing ".0". Printing every digit the
 			// float carried showed "43.729183739999996%" on a tile the size of
 			// a stamp: the scaling above turns a clean ratio into a value no
@@ -774,11 +770,33 @@ reason: both turn up in the wild and 0..1 is unambiguous enough. Clamped at
 both ends, because a service reporting 104% of a quota is reporting something
 true and a bar wider than its track is not a way to say it.
 */
-func meterShare(number float64) float64 {
-	if number > 0 && number <= 1 {
-		number *= 100
+func meterShare(number float64, format string) float64 {
+	return math.Max(0, math.Min(1, percentValue(number, format)/100))
+}
+
+/*
+percentValue reads a number as a percentage the way its format says.
+
+"percent" is a value on 0..100 and "share" one on 0..1. "percentAuto" is the
+old guess -- 0..1 read as a share -- which a field saved before the choice
+existed keeps: right for most services, and wrong for the ones that report
+0.8% as 0.8, which the guess turned into 80%.
+*/
+func percentValue(number float64, format string) float64 {
+	switch format {
+	case "share":
+		return number * 100
+	case "percentAuto":
+		if number > 0 && number <= 1 {
+			return number * 100
+		}
 	}
-	return math.Max(0, math.Min(1, number/100))
+	return number
+}
+
+// isPercentFormat: the formats a meter can be drawn for.
+func isPercentFormat(format string) bool {
+	return format == "percent" || format == "share" || format == "percentAuto"
 }
 
 // trimTrailingZeroDecimal drops a ".0" tail so a whole percentage reads as
@@ -893,13 +911,8 @@ func scaleForFormat(value float64, format string) (float64, string) {
 			index++
 		}
 		return value, units[index]
-	case "percent":
-		// The same reading the percent format makes: a ratio and a percentage
-		// both turn up, and 0..1 is unambiguous enough.
-		if value > 0 && value <= 1 {
-			value *= 100
-		}
-		return value, "%"
+	case "percent", "share", "percentAuto":
+		return percentValue(value, format), "%"
 	case "ms":
 		// Seconds in, milliseconds out, as the ms format does.
 		return value * 1000, ""
@@ -1253,7 +1266,7 @@ func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetch
 		// empty track says "no answer" where a full one would say zero.
 		if field.Shape == "meter" && !value.Missing {
 			if number, ok := toFloat(found); ok {
-				value.Share = meterShare(number)
+				value.Share = meterShare(number, field.Format)
 			}
 		}
 		result.Values = append(result.Values, value)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -89,7 +90,7 @@ func calendarFeedCached(url string, now time.Time) (calendarFeedEntry, bool) {
 	calendarFeedCache.Lock()
 	defer calendarFeedCache.Unlock()
 	entry, ok := calendarFeedCache.at[url]
-	if !ok || now.After(entry.expires) {
+	if !ok || now.Add(widgetBeatSlack).After(entry.expires) {
 		return calendarFeedEntry{}, false
 	}
 	return entry, true
@@ -180,10 +181,16 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 	var start, end int64
 	var allDay bool
 	var haveStart bool
+	var duration time.Duration
 
 	flush := func() {
 		if !haveStart || summary == "" {
 			return
+		}
+		// DURATION in place of DTEND: with no end the event was judged by its
+		// start and went the moment it began.
+		if end == 0 && duration > 0 {
+			end = start + duration.Milliseconds()
 		}
 		// An all-day event without DTEND lasts that one day (RFC 5545 3.6.1).
 		// With no end it was over from its own midnight, and a holiday feed
@@ -197,6 +204,9 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 		if end > 0 {
 			cutoff = end
 		}
+		if allDay {
+			cutoff += calendarAllDayGraceMs
+		}
 		if cutoff < now.UnixMilli() {
 			return
 		}
@@ -205,12 +215,18 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 		}
 	}
 
+	// Components nested in an event (VALARM above all) carry properties of
+	// their own: an e-mail reminder's SUMMARY, "Alarm notification" from
+	// Google, replaced the event's title. Only depth 0 is the event's.
+	nested := 0
 	for _, line := range lines {
 		switch {
 		case line == "BEGIN:VEVENT":
 			inEvent = true
+			nested = 0
 			summary, start, end = "", 0, 0
 			allDay, haveStart = false, false
+			duration = 0
 			continue
 		case line == "END:VEVENT":
 			if inEvent {
@@ -220,6 +236,19 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 			continue
 		}
 		if !inEvent {
+			continue
+		}
+		if strings.HasPrefix(line, "BEGIN:") {
+			nested++
+			continue
+		}
+		if strings.HasPrefix(line, "END:") {
+			if nested > 0 {
+				nested--
+			}
+			continue
+		}
+		if nested > 0 {
 			continue
 		}
 
@@ -235,6 +264,8 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 			if t, _, ok := parseICSDateTime(value, params); ok {
 				end = t.UnixMilli()
 			}
+		case "DURATION":
+			duration = parseICSDuration(value)
 		}
 	}
 
@@ -311,8 +342,17 @@ func parseICSDateTime(value string, params map[string]string) (t time.Time, allD
 		return parsed, false, true
 	}
 
-	loc := time.UTC
-	if tzid := params["TZID"]; tzid != "" {
+	// A floating time (no zone at all) is the reader's local time in RFC
+	// 5545; read as UTC it showed the wrong hour. The server's own zone (TZ in
+	// the container) is the nearest thing to the reader's.
+	loc := time.Local
+	if tzid := strings.Trim(params["TZID"], `"`); tzid != "" {
+		loc = time.UTC
+		// Outlook and Exchange name zones the Windows way, which LoadLocation
+		// does not know; those fell back to UTC.
+		if iana, ok := windowsTimeZones[tzid]; ok {
+			tzid = iana
+		}
 		if named, err := time.LoadLocation(tzid); err == nil {
 			loc = named
 		}
@@ -405,6 +445,9 @@ func filterCalendarEvents(events []CalendarEvent, config map[string]any, now tim
 		if event.End > 0 {
 			ended = event.End
 		}
+		if event.AllDay {
+			ended += calendarAllDayGraceMs
+		}
 		if ended < nowMs || event.Start > cutoff {
 			continue
 		}
@@ -421,4 +464,60 @@ func widgetConfigIntOr(raw any, fallback int) int {
 		return value
 	}
 	return fallback
+}
+
+// calendarAllDayGraceMs keeps an all-day event until its day is over west of
+// UTC as well. Its end is midnight UTC, so judged by the instant a reader in
+// New York lost today's all-day event at 20:00; UTC-12 is the widest offset.
+const calendarAllDayGraceMs = int64(14 * time.Hour / time.Millisecond)
+
+var icsDurationPattern = regexp.MustCompile(`^[+]?P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$`)
+
+// parseICSDuration reads an RFC 5545 DURATION (P1W, P1DT2H, PT90M); 0 when it
+// is not one. A negative duration means nothing for an event's end.
+func parseICSDuration(raw string) time.Duration {
+	m := icsDurationPattern.FindStringSubmatch(strings.TrimSpace(raw))
+	if m == nil {
+		return 0
+	}
+	units := []time.Duration{7 * 24 * time.Hour, 24 * time.Hour, time.Hour, time.Minute, time.Second}
+	var total time.Duration
+	for i, unit := range units {
+		if m[i+1] != "" {
+			n, _ := strconv.Atoi(m[i+1])
+			total += time.Duration(n) * unit
+		}
+	}
+	return total
+}
+
+// windowsTimeZones maps the Windows zone names Outlook feeds use most to IANA.
+var windowsTimeZones = map[string]string{
+	"W. Europe Standard Time":        "Europe/Amsterdam",
+	"Romance Standard Time":          "Europe/Paris",
+	"Central Europe Standard Time":   "Europe/Budapest",
+	"Central European Standard Time": "Europe/Warsaw",
+	"GMT Standard Time":              "Europe/London",
+	"Greenwich Standard Time":        "Atlantic/Reykjavik",
+	"E. Europe Standard Time":        "Europe/Chisinau",
+	"FLE Standard Time":              "Europe/Helsinki",
+	"GTB Standard Time":              "Europe/Bucharest",
+	"Russian Standard Time":          "Europe/Moscow",
+	"Eastern Standard Time":          "America/New_York",
+	"Central Standard Time":          "America/Chicago",
+	"Mountain Standard Time":         "America/Denver",
+	"US Mountain Standard Time":      "America/Phoenix",
+	"Pacific Standard Time":          "America/Los_Angeles",
+	"Alaskan Standard Time":          "America/Anchorage",
+	"Hawaiian Standard Time":         "Pacific/Honolulu",
+	"Atlantic Standard Time":         "America/Halifax",
+	"E. South America Standard Time": "America/Sao_Paulo",
+	"China Standard Time":            "Asia/Shanghai",
+	"Tokyo Standard Time":            "Asia/Tokyo",
+	"India Standard Time":            "Asia/Kolkata",
+	"Singapore Standard Time":        "Asia/Singapore",
+	"AUS Eastern Standard Time":      "Australia/Sydney",
+	"New Zealand Standard Time":      "Pacific/Auckland",
+	"South Africa Standard Time":     "Africa/Johannesburg",
+	"UTC":                            "UTC",
 }

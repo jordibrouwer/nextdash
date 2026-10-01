@@ -447,6 +447,15 @@ class DashboardTagFilter {
             {
                 duration: 8000,
                 undoCallback: async () => {
+                    const pageIds = [...new Set(trashed.map((entry) => Number(entry.pageId)))];
+                    // The toast outlives a page switch: spliced into the page
+                    // showing now, the rows were saved onto it and their own page
+                    // stayed without them. The trash puts each one back home.
+                    if (pageIds.some((id) => id !== Number(d.currentPageId))) {
+                        await d.multiSelect?.restoreFromTrash?.(trashed);
+                        await d.data?.refreshAfterBookmarkMutation?.({ pageIds });
+                        return;
+                    }
                     // Lowest index first, mirroring how a single-bookmark delete's
                     // undo re-inserts: splicing high-to-low would shift the still-
                     // pending lower indexes out from under themselves.
@@ -457,10 +466,14 @@ class DashboardTagFilter {
                     });
                     d.pendingReorderSnapshot = null;
                     try {
-                        await d.saveBookmarkOrder();
-                        await d.data?.refreshAfterBookmarkMutation?.({
-                            pageIds: [...new Set(restoreOrder.map((entry) => entry.pageId))],
-                        });
+                        if (await d.saveBookmarkOrder() === false) {
+                            await d.data?.refreshAfterBookmarkMutation?.({ pageIds });
+                            return;
+                        }
+                        // Left in the trash, the entries made a later Restore of
+                        // the same rows answer 409.
+                        await d.multiSelect?.dropRestoredTrashEntries?.(trashed);
+                        await d.data?.refreshAfterBookmarkMutation?.({ pageIds });
                     } catch (_error) {
                         // saveBookmarkOrder already surfaces errors and reverts when possible.
                     }
@@ -520,7 +533,12 @@ class DashboardTagFilter {
         d.data?.invalidatePageDataCache?.(targetPageId);
         void d.data?.fetchAndStoreDataRevision?.();
         await d.loadAllBookmarks();
-        await d.data?.loadPageBookmarks?.(sourcePageId);
+        // Reloaded only when it is the page showing: loading it navigates, and
+        // an undo clicked from a third page jumped there.
+        const showing = Number(d.currentPageId);
+        if (showing === Number(sourcePageId) || showing === Number(targetPageId)) {
+            await d.data?.loadPageBookmarks?.(showing);
+        }
         d.renderDashboard();
 
         if (restored < refs.length) {
@@ -563,12 +581,15 @@ class DashboardTagFilter {
         // pattern as the inbox's bulk actions.
         const outcomes = await Promise.allSettled(sorted.map(async (ref) => {
             const bookmarkPayload = { ...ref.bookmark };
+            // Category ids are per page: the source's id put every row under
+            // "Unknown category" on the target.
+            const category = await d.inlineEdit.categoryOnPage(ref.bookmark.category, targetId);
             const addRes = await dashFetch('/api/bookmarks/add', {
                 method: 'POST',
                 headers,
                 // A bulk move is many add-then-delete pairs; each one holds the
                 // URL on two pages until its delete lands.
-                body: JSON.stringify({ page: targetId, bookmark: bookmarkPayload, allowDuplicate: true }),
+                body: JSON.stringify({ page: targetId, bookmark: { ...bookmarkPayload, category }, allowDuplicate: true }),
             });
             if (!addRes.ok) {
                 throw new Error('add failed');

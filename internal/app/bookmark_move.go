@@ -37,17 +37,37 @@ func (fs *FileStore) MutateBookmarkPages(pageIDs []int, mutate func(map[int][]Bo
 	if err != nil {
 		return err
 	}
-	for id, list := range changed {
+	for _, id := range pageWriteOrder(changed, func(id int) int { return len(pages[id].Bookmarks) }) {
 		page, ok := pages[id]
 		if !ok {
 			continue
 		}
-		page.Bookmarks = list
+		page.Bookmarks = changed[id]
 		if err := fs.writePageWithBookmarksLocked(id, page); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// pageWriteOrder puts the pages that gained rows first. The writes stop at the
+// first failure, and in map order a full disk could take the rows off the
+// source and then fail on the target: on neither page, and not in the trash.
+// Targets first, a failure leaves a duplicate instead of a loss.
+func pageWriteOrder(changed map[int][]Bookmark, before func(id int) int) []int {
+	ids := make([]int, 0, len(changed))
+	for id := range changed {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool {
+		gi := len(changed[ids[i]]) - before(ids[i])
+		gj := len(changed[ids[j]]) - before(ids[j])
+		if gi != gj {
+			return gi > gj
+		}
+		return ids[i] < ids[j]
+	})
+	return ids
 }
 
 type bookmarkMoveItem struct {

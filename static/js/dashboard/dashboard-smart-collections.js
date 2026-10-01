@@ -114,10 +114,13 @@ class DashboardSmartCollections {
             };
         };
 
+        // Newest first before the list is cut to its limit: cut in storage
+        // order, the section held whichever 50 came first by page and position,
+        // and the link opened a minute ago could be missing.
         const recentBookmarks = memo(() => normalized.filter((bookmark) => {
             const lastOpened = Number(bookmark.lastOpened || 0);
             return lastOpened > 0 && (now - lastOpened) <= oneWeekMs;
-        }));
+        }).sort((a, b) => Number(b.lastOpened || 0) - Number(a.lastOpened || 0)));
 
         const staleBookmarks = memo(() => normalized.filter((bookmark) => {
             const lastOpened = Number(bookmark.lastOpened || 0);
@@ -431,7 +434,14 @@ class DashboardSmartCollections {
                     return op === 'excludes' ? !has : has;
                 }
                 if (field === 'category') {
-                    const match = (bm.category || '').toLowerCase() === val;
+                    // Category ids are per page, and a value picked from the
+                    // suggestions is "pageId::id"; compared whole with the bare
+                    // id it never matched. A bare id matches on every page.
+                    const sep = val.indexOf('::');
+                    const pageId = sep >= 0 ? val.slice(0, sep) : '';
+                    const categoryId = sep >= 0 ? val.slice(sep + 2) : val;
+                    const match = (bm.category || '').toLowerCase() === categoryId
+                        && (!pageId || String(bm.pageId) === pageId);
                     return op === 'excludes' ? !match : match;
                 }
                 if (field === 'shortcut') {

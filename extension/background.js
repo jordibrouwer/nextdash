@@ -113,6 +113,15 @@ async function quickSaveBookmark(name, url) {
       previewDesc,
       previewImage,
     });
+    // The address already filed on another page: the server says so with a
+    // 409, which is a duplicate, not a failure -- "D", not the red "!".
+    if (res.status === 409) {
+      const body = await res.json().catch(() => ({}));
+      if (body?.error === 'duplicate_url') {
+        flashBadge('D', '#FFD600');
+        return { ok: false, reason: 'duplicate' };
+      }
+    }
     if (!res.ok) {
       flashBadge('!', '#FF0055');
       return { ok: false, reason: 'http' };

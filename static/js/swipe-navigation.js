@@ -31,7 +31,7 @@ class SwipeNavigation {
             this._usesPointerEvents = true;
             this._pointerDownHandler = (e) => {
                 if (e.pointerType !== 'touch') return;
-                this.handleTouchStart({ changedTouches: [{ clientX: e.clientX, clientY: e.clientY }] });
+                this.handleTouchStart({ changedTouches: [{ clientX: e.clientX, clientY: e.clientY }], target: e.target });
             };
             this._pointerMoveHandler = (e) => {
                 if (e.pointerType !== 'touch') return;
@@ -87,6 +87,7 @@ class SwipeNavigation {
     }
 
     handleTouchStart(e) {
+        this.touchStartTarget = e.target || null;
         this.touchStartX = e.changedTouches[0].clientX;
         this.touchStartY = e.changedTouches[0].clientY;
         this.touchMoveX = this.touchStartX;
@@ -126,6 +127,19 @@ class SwipeNavigation {
     shouldBlockSwipeNavigation() {
         const dashboard = this.dashboard;
         if (!dashboard) {
+            return true;
+        }
+        // Pages are swiped through on the bookmarks view only. Elsewhere a
+        // sideways drag -- a slider in Config, a flick in Inbox or Containers --
+        // left the view for the next dashboard page.
+        if (typeof dashboard.isBookmarksView === 'function' && !dashboard.isBookmarksView()) {
+            return true;
+        }
+        // A gesture that began on a control, or a drag reorder, is not a swipe.
+        if (this.touchStartTarget?.closest?.('input, select, textarea, [contenteditable="true"]')) {
+            return true;
+        }
+        if (document.body.classList.contains('bookmark-dragging')) {
             return true;
         }
         if (document.body.classList.contains('bookmark-inline-edit-active')) {

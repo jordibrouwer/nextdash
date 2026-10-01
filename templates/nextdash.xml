@@ -47,6 +47,15 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.15.8 (2026-10-01)
+- Containers: nextDash no longer mistakes a storage layer for its own container and stops itself mid-update (Unraid's docker.img)
+- Containers: a failed automatic update sends a notice, and an update keeps every published port
+- Containers: the Disk tab shows progress while it measures
+- Backups: held and skipped images and the GitHub token are carried; a custom data or backup folder is given to the app's user
+- Dashboard: moves, undos and copies of one address on two pages keep bookmarks on the right page
+- Widgets: custom percentages say their scale, 0–100 or a share from 0–1
+- Docs: a self-hosted guide for Containers, health checks and alerts; more than a hundred smaller fixes
+
 ### v1.15.7 (2026-09-30)
 - Bookmarks view: tick rows and a selection bar offers Edit, Re-check, Mute alerts, Export CSV and Delete
 - Containers: the tour covers the v1.15.6 features and runs once more
@@ -80,14 +89,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Themes: 34 new families, each light and dark (310 themes); a fresh install starts on Matrix Bluepill
 - Setup: Docker actions and Run as root are off by default; see the README for the socket and when root is needed
 
-### v1.13.7 (2026-09-25)
-- Bookmark form: one column that reads the page once the address is in — icon, a name, its own line and picture, and suggested tags
-- Bookmark form: page and category are one field with a filter, and a new page or category can be made on the spot
-- Bookmark form: asks before saving without a category, names a link you already saved, and works by keyboard alone
-- Tags: suggested tags in Shift+T, the Config → Bookmarks side panel and the Tags button of a selection
-- Dashboard: a narrow window keeps as many columns as fit; only a phone held upright shows one
-- Fixed: page titles showed codes like &amp;amp; for an ampersand, and early clicks could not open the bookmark form
-
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -95,7 +96,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-09-30</Date>
+  <Date>2026-10-01</Date>
 
   <Config Name="WebUI Port"
           Target="8080"

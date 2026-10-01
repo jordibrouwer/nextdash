@@ -166,8 +166,11 @@ class DashboardBookmarkRows {
         // The toast outlives a page switch, and the objects it holds belong to
         // the page that was loaded then: changing them and saving the page on
         // screen did nothing at all. Off that page, the server moves them back.
+        // The same after a reload of this page (a focus that found a new
+        // revision): d.bookmarks holds new objects, and the old ones changed
+        // nothing on screen or on disk.
         const current = Number(d.currentPageId);
-        if (entries.some(({ ref }) => Number(ref.pageId || current) !== current)) {
+        if (entries.some(({ ref }) => Number(ref.pageId || current) !== current || !d.bookmarks.includes(ref.bookmark))) {
             void this.undoBookmarkCategoryMoveOnServer(entries);
             return;
         }
@@ -520,6 +523,10 @@ class DashboardBookmarkRows {
             row.removeAttribute('data-bookmark-index');
         }
         row.setAttribute('data-category-id', categoryId);
+        // What the keyboard move reads to keep pinned rows above the rest; the
+        // pin badge it looked for is only drawn when the icon setting is on.
+        if (bookmark.pinned) row.setAttribute('data-pinned', 'true');
+        else row.removeAttribute('data-pinned');
         d.contextMenu?.bindRow(row);
 
         const lead = document.createElement('div');

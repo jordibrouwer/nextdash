@@ -178,10 +178,18 @@ const CheckMode = {
         const key = String(url || '').trim();
         if (!key) return;
 
-        const matches = (candidate) => String(candidate?.url || '').trim() === key;
-        (d.bookmarks || []).forEach((candidate) => {
-            if (matches(candidate)) CheckMode.assign(candidate, mode, intervalMinutes);
-        });
+        // The server changed one row, on one page. Matched by address alone,
+        // the copy of the same address on another page read as changed too
+        // until a reload.
+        const page = Number(pageId);
+        const onPage = (candidate) => !Number.isFinite(page) || candidate?.pageId == null
+            || Number(candidate.pageId) === page;
+        const matches = (candidate) => String(candidate?.url || '').trim() === key && onPage(candidate);
+        if (!Number.isFinite(page) || Number(d.currentPageId) === page) {
+            (d.bookmarks || []).forEach((candidate) => {
+                if (String(candidate?.url || '').trim() === key) CheckMode.assign(candidate, mode, intervalMinutes);
+            });
+        }
         // allBookmarks needs its own pass: syncEditedBookmarkAcrossCollections
         // matches on page id and entries here carry none, so it skips them.
         // The kept bookmarks are a third array for the same reason -- they are
@@ -193,7 +201,6 @@ const CheckMode = {
         });
         if (bookmarkRef) d.syncEditedBookmarkAcrossCollections?.(bookmarkRef, key);
 
-        const page = Number(pageId);
         if (Number.isFinite(page)) d.data?.invalidatePageDataCache?.(page);
         void d.data?.fetchAndStoreDataRevision?.();
     },

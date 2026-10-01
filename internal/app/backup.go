@@ -108,23 +108,96 @@ type preparedImportFile struct {
 	content []byte
 }
 
-var importManagedRootFilenames = []string{
-	"settings.json",
-	"colors.json",
-	"pages.json",
-	"finders.json",
-	"inbox.json",
-	"health-history.json",
-	"trash.json",
-	"favicon.ico",
-	"favicon.png",
-	"favicon.jpg",
-	"favicon.gif",
-	"font.woff",
-	"font.woff2",
-	"font.ttf",
-	"font.otf",
-	".custom-themes-reset-v1",
+/*
+dataFilePolicy is what a backup and a restore do with one named file in the
+data directory.
+
+The lists this replaces were kept by hand -- what a backup may carry, what a
+restore removes when an archive omits it, which files are credentials, which
+are 0600 -- and a feature that added a file had to remember all four. The
+Containers view did not, and its update choices and token were in no backup.
+TestEveryDataFileHasABackupPolicy now fails for a file nobody decided about.
+*/
+type dataFilePolicy int
+
+const (
+	// Not carried: rebuilt on its own, bound to this host, or a log.
+	dataNever dataFilePolicy = iota
+	// Not carried, and removed on restore so it is rebuilt against the
+	// restored data rather than describing the old.
+	dataCache
+	// Carried, and replaced wholesale: a restore removes it when the archive
+	// does not have it.
+	dataReplace
+	// Carried, and left alone when an archive does not have it -- an archive
+	// written before the feature existed must not take its data with it.
+	dataKeep
+	// Carried unless BackupExcludeSecrets; restored 0600; left alone when
+	// absent, which is also what an archive made with secrets excluded is.
+	dataSecret
+)
+
+var dataFiles = map[string]dataFilePolicy{
+	"settings.json":           dataReplace,
+	"colors.json":             dataReplace,
+	"pages.json":              dataReplace,
+	"inbox.json":              dataReplace,
+	"favicon.ico":             dataReplace,
+	"favicon.png":             dataReplace,
+	"favicon.jpg":             dataReplace,
+	"favicon.gif":             dataReplace,
+	"font.woff":               dataReplace,
+	"font.woff2":              dataReplace,
+	"font.ttf":                dataReplace,
+	"font.otf":                dataReplace,
+	".custom-themes-reset-v1": dataReplace, // migration marker (FileStore.customThemesMigrationMarker)
+
+	"finders.json": dataKeep, // predates the finders feature in archives
+	// Uptime samples for monitored bookmarks. Unlike the caches these cannot
+	// be recomputed: a 30-day window takes 30 days to earn back.
+	"health-history.json": dataKeep,
+	// Deleted bookmarks still inside their 30 days; dropping them would empty
+	// the one place they still existed.
+	"trash.json": dataKeep,
+	// Left out one at a time, each for a reason that held alone -- a trend
+	// re-records daily, a feed re-polls -- and together a restored install
+	// that had to earn back weeks of history. health-trend needs three days
+	// before its chart appears at all.
+	"health-trend.json":       dataKeep,
+	"feeds.json":              dataKeep,
+	"inbox-stats.json":        dataKeep,
+	"site-news.json":          dataKeep,
+	"push-subscriptions.json": dataKeep,
+	// Which images are held, and which update was skipped.
+	"docker-updates.json": dataKeep,
+
+	/*
+	 * Credentials, at the owner's explicit instruction.
+	 *
+	 * Import tokens, the keys and passwords a health check sends, the keys
+	 * outgoing deliveries are signed with, and the GitHub token the container
+	 * changelogs are fetched with. Including them makes a restore complete;
+	 * it also makes every backup file a secret in its own right, since a ZIP
+	 * has no permissions to carry the 0600 these have on disk.
+	 */
+	"sources.json":            dataSecret,
+	"health-credentials.json": dataSecret,
+	"webhooks.json":           dataSecret,
+	"docker-secrets.json":     dataSecret,
+
+	"preview-cache.json": dataCache,
+	"health-cache.json":  dataCache,
+
+	"docker-bind-sizes.json":     dataNever, // measured from this host's disks
+	"docker-events.json":         dataNever, // this host's container timeline
+	"docker-update-history.json": dataNever, // rollbacks name this host's image ids
+	"activity.log":               dataNever,
+	"server.log":                 dataNever,
+}
+
+func dataFilePolicyOf(relPath string) (dataFilePolicy, bool) {
+	policy, ok := dataFiles[relPath]
+	return policy, ok
 }
 
 func isImportRootImage(filename string) bool {
@@ -319,25 +392,16 @@ func removeImportOrphans(dataDir string, prepared []preparedImportFile) error {
 		}
 	}
 
-	for _, name := range importManagedRootFilenames {
-		if !preparedHasRelPath(prepared, name) {
-			// Keep what is already there when an older ZIP omits the file.
-			// finders.json predates the finders feature in archives; every ZIP
-			// written before monitoring history was included omits that too, and
-			// deleting it would throw away measurements the import cannot restore
-			// for a feature the archive simply did not know about.
-			// trash.json is the same case: a ZIP written before the trash
-			// existed omits it, and removing it would permanently destroy
-			// bookmarks that were still restorable.
-			if name == "finders.json" || name == "health-history.json" || name == "trash.json" {
-				continue
+	for name, policy := range dataFiles {
+		switch policy {
+		case dataReplace:
+			if !preparedHasRelPath(prepared, name) {
+				_ = os.Remove(filepath.Join(dataDir, name))
 			}
+		case dataCache:
 			_ = os.Remove(filepath.Join(dataDir, name))
 		}
 	}
-
-	_ = os.Remove(filepath.Join(dataDir, "preview-cache.json"))
-	_ = os.Remove(filepath.Join(dataDir, "health-cache.json"))
 
 	iconsDir := filepath.Join(dataDir, "icons")
 	iconEntries, err := os.ReadDir(iconsDir)
@@ -374,8 +438,7 @@ A ZIP carries no permissions, so this is where they are put back rather than
 where they are preserved.
 */
 func importFileMode(relPath string) os.FileMode {
-	switch relPath {
-	case "sources.json", "health-credentials.json", "webhooks.json":
+	if policy, _ := dataFilePolicyOf(relPath); policy == dataSecret {
 		return 0600
 	}
 	return 0644
@@ -410,21 +473,43 @@ func commitPreparedImport(dataDir string, prepared []preparedImportFile) error {
 		return err
 	}
 
+	// Every file is written beside its destination first, and only when all of
+	// them are on disk is any renamed into place. Written and renamed one by
+	// one, a full disk half-way left half the archive and half the old data,
+	// with the orphan cleanup never run.
+	type stagedFile struct{ tmp, dest string }
+	staged := make([]stagedFile, 0, len(prepared))
+	discard := func() {
+		for _, f := range staged {
+			_ = os.Remove(f.tmp)
+		}
+	}
 	for _, file := range prepared {
 		src := filepath.Join(stagingDataDir, file.relPath)
 		dest := filepath.Join(dataDir, file.relPath)
-		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-			return err
-		}
 		content, err := os.ReadFile(src)
 		if err != nil {
+			discard()
 			return err
 		}
-		// Atomic, so a crash or a full disk leaves each file whole, and with
-		// the mode set on an existing file too (WriteFile only sets it on create).
-		if err := writeFileAtomic(dest, content, importFileMode(file.relPath)); err != nil {
+		// With the mode set on an existing file too (WriteFile only sets it on create).
+		tmp, err := stageFileBeside(dest, content, importFileMode(file.relPath))
+		if err != nil {
+			discard()
 			return err
 		}
+		staged = append(staged, stagedFile{tmp: tmp, dest: dest})
+	}
+	dirs := map[string]bool{}
+	for _, f := range staged {
+		if err := os.Rename(f.tmp, f.dest); err != nil {
+			discard()
+			return err
+		}
+		dirs[filepath.Dir(f.dest)] = true
+	}
+	for dir := range dirs {
+		syncDir(dir)
 	}
 
 	if err := removeImportOrphans(dataDir, prepared); err != nil {
@@ -449,70 +534,9 @@ func (h *Handlers) isValidImportFilename(filename string) bool {
 		return false
 	}
 
-	// Allow only specific filenames with their extensions
-	allowedFiles := []string{
-		".custom-themes-reset-v1", // migration marker under data/ (see FileStore.customThemesMigrationMarker)
-		"settings.json",
-		"colors.json",
-		"pages.json",
-		"finders.json",
-		"inbox.json",
-		// Uptime samples for monitored bookmarks. Unlike preview-cache.json and
-		// health-cache.json — which are re-derived by scanning and are dropped on
-		// import — these are measurements that cannot be recomputed: losing them
-		// resets every monitored row's chart, uptime windows and outage list, and
-		// a 30-day window takes 30 days to earn back.
-		"health-history.json",
-		// Deleted bookmarks still inside their 30 days. A restore that dropped
-		// these would quietly empty the one place they still existed.
-		"trash.json",
-		"favicon.ico",
-		"favicon.png",
-		"favicon.jpg",
-		"favicon.gif",
-		"font.woff",
-		"font.woff2",
-		"font.ttf",
-		"font.otf",
-		/*
-		 * The rest of the data directory.
-		 *
-		 * These were left out one at a time, each for a reason that made sense
-		 * alone: a trend is re-recorded daily, a feed re-polls, a cache
-		 * regenerates. Together they meant a restored install lost its history
-		 * and its counters and had to earn them back over weeks — health-trend
-		 * needs three days before its chart appears at all, and thirty before
-		 * the window it claims is real.
-		 */
-		"health-trend.json",
-		"feeds.json",
-		"inbox-stats.json",
-		"site-news.json",
-		"push-subscriptions.json",
-		/*
-		 * Credentials, at the owner's explicit instruction.
-		 *
-		 * sources.json holds import tokens and health-credentials.json holds API
-		 * keys and passwords, and both were deliberately kept out of the backup:
-		 * a ZIP travels to a NAS, to a laptop, into a Downloads folder, and a
-		 * token is worth more than the cursor beside it. Including them makes a
-		 * restore complete — nothing to type in again — and makes every backup
-		 * file a secret in its own right. Both files are 0600 on disk; a backup
-		 * has no permissions to carry, so that protection ends at the ZIP.
-		 */
-		"sources.json",
-		"health-credentials.json",
-		// webhooks.json holds the keys deliveries are signed with. Same trade:
-		// a restore that has them is complete, and a backup that has them is
-		// enough to forge a delivery to somebody's automation.
-		"webhooks.json",
-	}
-
-	// Check if it's one of the specific files
-	for _, allowed := range allowedFiles {
-		if filename == allowed {
-			return true
-		}
+	// A named file is allowed when the register carries it.
+	if policy, ok := dataFilePolicyOf(filename); ok {
+		return policy != dataNever && policy != dataCache
 	}
 
 	// Check if it's a bookmarks file (bookmarks- followed by digits and .json)
@@ -706,7 +730,7 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	// state someone was trying to recover from. Failure is logged and the
 	// import proceeds — refusing to import because the safety copy could not be
 	// written would leave someone stuck with no way forward and no way back.
-	if err := h.writeAutoBackup(); err != nil {
+	if err := h.writeSafetyBackup(); err != nil {
 		logWarn(logComponentImport, "the safety backup could not be made (%v); the import went ahead without one", err)
 	} else {
 		logInfo(logComponentImport, "safety backup written before the data was replaced")
@@ -724,6 +748,7 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	}
 
 	h.invalidateHealthReportCache()
+	applyRuntimeSettings(h.store.GetSettings())
 	return skippedBookmarks, nil
 }
 
@@ -748,20 +773,12 @@ type backupSkips struct {
 	secrets  bool
 }
 
-// backupSecretFilenames are the files that hold credentials rather than data:
-// import tokens, the keys and passwords a health check sends, and the keys
-// outgoing deliveries are signed with.
-var backupSecretFilenames = map[string]bool{
-	"sources.json":            true,
-	"health-credentials.json": true,
-	"webhooks.json":           true,
-}
-
 func (s backupSkips) skip(relPath string) bool {
 	if s.archives && strings.HasPrefix(relPath, archiveDirName+"/") {
 		return true
 	}
-	return s.secrets && backupSecretFilenames[relPath]
+	policy, _ := dataFilePolicyOf(relPath)
+	return s.secrets && policy == dataSecret
 }
 
 func (h *Handlers) buildBackupZip() ([]byte, error) {

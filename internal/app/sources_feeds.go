@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	neturl "net/url"
@@ -48,10 +49,28 @@ type feedSourceDoc struct {
 	AtomTitle string            `xml:"title"`
 	Items     []feedSourceEntry `xml:"channel>item"`
 	Entries   []feedSourceEntry `xml:"entry"`
+	// RSS 1.0 (RDF) puts its items beside the channel, not in it: read as
+	// RSS 2.0 alone, such a feed had no items at all.
+	RDFItems []feedSourceEntry `xml:"item"`
+}
+
+// entries are the feed's items in whichever of the three shapes it uses.
+func (d feedSourceDoc) entries() []feedSourceEntry {
+	switch {
+	case len(d.Items) > 0:
+		return d.Items
+	case len(d.RDFItems) > 0:
+		return d.RDFItems
+	default:
+		return d.Entries
+	}
 }
 
 type feedSourceEntry struct {
-	Title string `xml:"title"`
+	// Every <title> child, itunes:title and media:title included: one field
+	// took the last of them, so a podcast's headline became its short iTunes
+	// title. The first is the item's own; see title().
+	Titles []string `xml:"title"`
 	/*
 	 * One field for both shapes.
 	 *
@@ -63,9 +82,14 @@ type feedSourceEntry struct {
 	Links       []feedSourceLink `xml:"link"`
 	GUID        string           `xml:"guid"`
 	Description string           `xml:"description"`
-	PubDate     string           `xml:"pubDate"`
-	Published   string           `xml:"published"`
-	Updated     string           `xml:"updated"`
+	// Atom's text: never read, so every Atom entry had no preview.
+	Summary   string `xml:"summary"`
+	Content   string `xml:"content"`
+	PubDate   string `xml:"pubDate"`
+	Published string `xml:"published"`
+	Updated   string `xml:"updated"`
+	// dc:date: the only date RSS 1.0 carries, and some RSS 2.0 feeds' too.
+	Date string `xml:"date"`
 }
 
 // feedSourceLink is a <link>, as RSS and Atom each write one.
@@ -99,7 +123,7 @@ func (e feedSourceEntry) url() string {
 }
 
 func (e feedSourceEntry) publishedAt() int64 {
-	for _, raw := range []string{e.Published, e.PubDate, e.Updated} {
+	for _, raw := range []string{e.Published, e.PubDate, e.Updated, e.Date} {
 		if at := parseFeedTime(raw); at > 0 {
 			return at
 		}
@@ -163,10 +187,7 @@ func (h *Handlers) fetchFeedSource(ctx context.Context, feedURL, since, category
 		out.Title = strings.TrimSpace(doc.AtomTitle)
 	}
 
-	entries := doc.Items
-	if len(entries) == 0 {
-		entries = doc.Entries
-	}
+	entries := doc.entries()
 
 	sinceAt := int64(0)
 	if parsed := parseFeedTime(since); parsed > 0 {
@@ -203,7 +224,7 @@ func (h *Handlers) fetchFeedSource(ctx context.Context, feedURL, since, category
 		}
 		seen[key] = struct{}{}
 
-		name := strings.TrimSpace(entry.Title)
+		name := entry.title()
 		if name == "" {
 			name = link
 		}
@@ -230,7 +251,17 @@ func (r FeedSourceResult) parsedNewest() int64 {
 var feedTagPattern = regexp.MustCompile(`<[^>]*>`)
 
 func feedEntryNote(entry feedSourceEntry) string {
-	note := feedTagPattern.ReplaceAllString(entry.Description, " ")
+	text := entry.Description
+	if strings.TrimSpace(text) == "" {
+		text = entry.Summary
+	}
+	if strings.TrimSpace(text) == "" {
+		text = entry.Content
+	}
+	note := feedTagPattern.ReplaceAllString(text, " ")
+	// The text is escaped HTML; with the tags gone, the entities still read
+	// "It&#8217;s" in the tile.
+	note = html.UnescapeString(note)
 	note = strings.Join(strings.Fields(note), " ")
 	// By characters: a byte cut can split one, and the half left over became
 	// "\uFFFD" in every non-ASCII feed.
@@ -381,4 +412,14 @@ func (h *Handlers) resolveYouTubeChannelID(ctx context.Context, handle string) (
 		return "", errors.New("could not find the channel id on that page — paste the UC… id instead")
 	}
 	return string(match[1]), nil
+}
+
+// title is the entry's own title: the first non-empty <title> child.
+func (e feedSourceEntry) title() string {
+	for _, t := range e.Titles {
+		if t = strings.TrimSpace(t); t != "" {
+			return t
+		}
+	}
+	return ""
 }

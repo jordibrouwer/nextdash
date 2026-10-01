@@ -190,6 +190,12 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 		// first page is where a bookmark with no home goes everywhere else.
 		pageID = 1
 	}
+	// A page deleted since the source was set up: its rows went into a file
+	// nothing draws, and the cursor moved past them.
+	if !h.pageExists(pageID) {
+		http.Error(w, "The page this source imports into no longer exists", http.StatusNotFound)
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), sourceRunTimeout)
 	defer cancel()
@@ -212,6 +218,9 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// What this source brought in before and the reader then deleted or moved
+	// is not new again.
+	rows = withoutSeenRows(rows, source.Seen)
 	preview := h.previewImport(pageID, rows)
 
 	if r.Method == http.MethodGet || r.URL.Query().Get("dryRun") == "1" {
@@ -236,8 +245,35 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 		// up the remainder rather than skipping it forever.
 		cursor = ""
 	}
-	RecordSourceRun(id, cursor, sourceRunSummary(preview), nil)
-	h.importRows(w, r, pageID, rows)
+	// One row that fails validation (a dead domain, with local bookmarks off)
+	// refused the whole batch; it is left out instead, as a file import does.
+	valid := rows[:0:0]
+	for _, row := range rows {
+		if h.validateBookmarkURL(row.URL) == nil {
+			valid = append(valid, row)
+		}
+	}
+	// The cursor moves only once the rows are written. Recorded first, a
+	// refused or failed import skipped that round's rows for good.
+	rec := &bufferedResponse{header: http.Header{}}
+	h.importRows(rec, r, pageID, valid)
+	if rec.status == 0 || rec.status == http.StatusOK {
+		RecordSourceRun(id, cursor, sourceRunSummary(preview), nil)
+		keys := make([]string, 0, len(valid))
+		for _, row := range valid {
+			keys = append(keys, canonicalBookmarkURLKey(row.URL))
+		}
+		RecordSourceSeen(id, keys)
+	} else {
+		RecordSourceRun(id, "", "", errors.New("the import failed: "+strings.TrimSpace(rec.body.String())))
+	}
+	for key, values := range rec.header {
+		w.Header()[key] = values
+	}
+	if rec.status != 0 {
+		w.WriteHeader(rec.status)
+	}
+	_, _ = w.Write(rec.body.Bytes())
 }
 
 // sourceRunSummary is the one line the config panel shows per source.

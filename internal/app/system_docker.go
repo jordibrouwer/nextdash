@@ -238,6 +238,9 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 		State   string   `json:"State"`
 		Status  string   `json:"Status"`
 		Created int64    `json:"Created"`
+		// nextDash's own short-lived disk-measuring container carries a label;
+		// counted, it showed as running, "just restarted" and top CPU.
+		Labels map[string]string `json:"Labels"`
 	}
 	if err := json.NewDecoder(body).Decode(&list); err != nil {
 		return DockerMetrics{}, err
@@ -250,7 +253,7 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 	hidden := dockerHiddenSet()
 	for _, item := range list {
 		name := containerName(item.Names)
-		if hidden[name] {
+		if hidden[name] || item.Labels[dockerBindMeasureLabel] == "1" {
 			continue
 		}
 		out.Total++

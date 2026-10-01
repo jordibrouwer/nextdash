@@ -64,12 +64,19 @@
             this.loading = true;
             this.failed = false;
             this.paint();
+            // One /system/df read that takes as long as the host makes it;
+            // the shared overlay says so after 300 ms, and not for a quick one.
+            const endWait = (window.ProgressOverlay?.begin || (() => () => {}))(
+                this.t('dockerDiskMeasuringTitle', 'Measuring disk use…'),
+                this.t('dockerDiskMeasuring', 'Measuring… this can take a while on a large host.'));
             let data = null;
             try {
                 const res = await fetch('/api/docker/disk', { cache: 'no-store' });
                 data = res.ok ? await res.json() : null;
             } catch {
                 data = null;
+            } finally {
+                endWait();
             }
             this.loading = false;
             if (data) this.data = data;
@@ -333,7 +340,12 @@
             let res = null;
             let body = null;
             try {
-                res = await window.nextDashFetch(`/api/docker/prune/${kind}`, { method: 'POST' });
+                // Remove stopped takes only the containers the question named:
+                // one stopped since the tab measured was never asked about.
+                const init = kind === 'containers-stopped'
+                    ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ names: stopped }) }
+                    : { method: 'POST' };
+                res = await window.nextDashFetch(`/api/docker/prune/${kind}`, init);
                 body = await res.json().catch(() => null);
             } catch {
                 res = null;

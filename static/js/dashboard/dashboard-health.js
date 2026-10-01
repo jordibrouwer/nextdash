@@ -180,8 +180,11 @@ class DashboardHealth {
     carryKeysAcross(oldIssues, newIssues) {
         const ms = this._multiSelect;
         const hasTicks = ms?.selected?.size > 0;
-        const focusQueue = this._focus?.active ? this._focus.queue : null;
-        if (!hasTicks && !this.selectedKey && !focusQueue?.length) return;
+        // The Bookmarks view walks with a Focus of its own (libraryFocus); its
+        // queue holds the same page:index keys and went stale after a delete,
+        // so it is carried across with Health's.
+        const walks = [this._focus, this._extraFocus].filter((f) => f?.active && f.queue?.length);
+        if (!hasTicks && !this.selectedKey && !walks.length) return;
         const ident = (issue) => `${Number(issue?.pageId)}\u0000${this.canonicalUrl(issue?.url)}`;
         const byIdent = new Map();
         newIssues.forEach((issue) => {
@@ -208,9 +211,9 @@ class DashboardHealth {
         // A run through the rows holds keys as well. A card whose bookmark is
         // gone gets a key nothing resolves, which the run already skips; its
         // place in the queue stays, so the position still counts right.
-        if (focusQueue?.length) {
-            this._focus.queue = focusQueue.map((key) => follow(key) || `gone:${key}`);
-        }
+        walks.forEach((walk) => {
+            walk.queue = walk.queue.map((key) => follow(key) || `gone:${key}`);
+        });
         // The cursor follows too, but where its bookmark is gone it keeps the
         // old key: sitting on the row that took the deleted one's place is what
         // the view has always done after a delete.
@@ -635,7 +638,10 @@ class DashboardHealth {
     async loadHealthCredentials() {
         if (this.dash.healthCredentials) return this.dash.healthCredentials;
         try {
-            const res = await fetch('/api/health/credentials');
+            // With the token: a plain fetch got 401 when one is set, the list
+            // stayed empty, and saving Expectations then removed the sign-in.
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await api('/api/health/credentials');
             if (!res.ok) return {};
             const data = await res.json();
             this.dash.healthCredentials = data?.credentials || {};
@@ -648,7 +654,11 @@ class DashboardHealth {
     /** The names of the stored credentials — never their values. */
     renderCredentialOptions(selected) {
         const esc = (v) => this.escape(v);
-        const list = this.dash.healthCredentials || {};
+        const list = { ...(this.dash.healthCredentials || {}) };
+        // A credential the list does not name (not loaded, or refused) is
+        // still the bookmark's: without its own option the select fell back to
+        // "Nothing", and the next Save removed the sign-in.
+        if (selected && !(selected in list)) list[selected] = selected;
         return Object.keys(list).sort().map((id) => `
             <option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(list[id] || id)}</option>
         `).join('');
@@ -1059,7 +1069,11 @@ class DashboardHealth {
         };
 
         try {
-            const res = await fetcher(`/api/ping?url=${encodeURIComponent(url)}`);
+            // The row too, so the check uses this copy's rules: the verdict
+            // is recorded on it below.
+            const row = Number.isFinite(Number(issue.pageId)) && Number.isFinite(Number(issue.index))
+                ? `&page=${encodeURIComponent(issue.pageId)}&index=${encodeURIComponent(issue.index)}` : '';
+            const res = await fetcher(`/api/ping?url=${encodeURIComponent(url)}${row}`);
             if (!res.ok) {
                 throw new Error(`ping HTTP ${res.status}`);
             }
@@ -1379,7 +1393,9 @@ class DashboardHealth {
         this.syncRowBusy(key, true);
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
-            const res = await fetch(
+            // fetcher, with the token: the route needs it, and a bare fetch
+            // made "Detect redirect" fail on every install that sets one.
+            const res = await fetcher(
                 `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(issue.pageId)}&index=${encodeURIComponent(issue.index)}&redirectOnly=1`
             );
             if (!res.ok) throw new Error(`suggest HTTP ${res.status}`);
@@ -1748,11 +1764,19 @@ class DashboardHealth {
         const pageId = Number(issue?.pageId);
         if (!url || !Number.isFinite(pageId)) return undefined;
 
-        const text = String(wrap.querySelector('[data-expect-text]')?.value || '').trim();
-        const absent = Boolean(wrap.querySelector('[data-expect-absent]')?.checked);
-        const status = String(wrap.querySelector('[data-expect-status]')?.value || '').trim();
-        const watchDrift = Boolean(wrap.querySelector('[data-watch-drift]')?.checked);
-        const notifyMuted = Boolean(wrap.querySelector('[data-notify-muted]')?.checked);
+        // A field the form did not draw (the monitor fields, on a bookmark that
+        // is not monitored) keeps what is stored: the save replaces every
+        // field, so sending blanks erased the keyword, status codes and mute
+        // that came back when the bookmark was monitored again.
+        const field = (selector, read, stored) => {
+            const el = wrap.querySelector(selector);
+            return el ? read(el) : stored;
+        };
+        const text = field('[data-expect-text]', (el) => String(el.value || '').trim(), String(issue.expectText || ''));
+        const absent = field('[data-expect-absent]', (el) => Boolean(el.checked), Boolean(issue.expectTextAbsent));
+        const status = field('[data-expect-status]', (el) => String(el.value || '').trim(), String(issue.expectStatus || ''));
+        const watchDrift = field('[data-watch-drift]', (el) => Boolean(el.checked), Boolean(issue.watchDrift));
+        const notifyMuted = field('[data-notify-muted]', (el) => Boolean(el.checked), Boolean(issue.notifyMuted));
         // Reachability: present whether or not the bookmark is monitored, so
         // these are read unconditionally rather than from the monitored block.
         const checkUrl = String(wrap.querySelector('[data-check-url]')?.value || '').trim();

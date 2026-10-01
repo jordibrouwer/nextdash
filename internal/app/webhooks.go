@@ -415,7 +415,7 @@ type webhookDelivery struct {
 // buildWebhookRequest formats and signs one delivery. Separate from sending it
 // so the signature can be checked in a test without a server, and so the test
 // path and the dispatch path can never sign different bytes.
-func buildWebhookRequest(ctx context.Context, endpoint WebhookEndpoint, event string, data map[string]any, now time.Time) (*http.Request, error) {
+func buildWebhookRequest(ctx context.Context, endpoint WebhookEndpoint, event string, data map[string]any, now time.Time, id string) (*http.Request, error) {
 	body, err := json.Marshal(webhookDelivery{
 		Type:      event,
 		Timestamp: now.UTC().Format(time.RFC3339),
@@ -428,7 +428,6 @@ func buildWebhookRequest(ctx context.Context, endpoint WebhookEndpoint, event st
 	if err != nil {
 		return nil, err
 	}
-	id := newWebhookMessageID()
 	timestamp := now.Unix()
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "nextDash-Webhook/1.0")
@@ -500,9 +499,13 @@ again unchanged produces the same answer while looking like an outage.
 */
 func deliverWebhook(endpoint WebhookEndpoint, event string, data map[string]any) {
 	client := webhookHTTPClient()
+	// One id for every attempt: Standard Webhooks resends with the same id, and
+	// that is how a receiver that acted and then answered 502 knows the retry
+	// is a repeat. A fresh id per attempt ran its flow twice.
+	id := newWebhookMessageID()
 	for attempt := 1; attempt <= webhookAttempts; attempt++ {
 		ctx, cancel := context.WithTimeout(context.Background(), webhookTimeout)
-		req, err := buildWebhookRequest(ctx, endpoint, event, data, time.Now())
+		req, err := buildWebhookRequest(ctx, endpoint, event, data, time.Now(), id)
 		if err != nil {
 			cancel()
 			logError(logComponentNotify, "the %s message for %s could not be prepared and was not sent: %v", event, endpoint.URL, err)
@@ -729,7 +732,7 @@ func (h *Handlers) TestWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		"name":   "nextDash test",
 		"url":    "https://example.com/",
 		"pageId": 1,
-	}, time.Now())
+	}, time.Now(), newWebhookMessageID())
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": err.Error()})
 		return

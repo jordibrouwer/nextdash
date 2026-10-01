@@ -815,6 +815,20 @@ class DashboardRenderCore {
      * these belongs to one tile, and a tile that starts caching something else
      * has to say so here.
      */
+    /**
+     * The trash and duplicates tiles, after bookmarks were deleted, restored
+     * or moved on the dashboard. They cached their answer until a widget edit
+     * in Config, so the count, the "empties on" date and the duplicate groups
+     * stayed as they were.
+     */
+    refreshBookmarkTiles() {
+        const d = this.dash;
+        delete d._widgetTrash;
+        delete d._widgetDuplicates;
+        this.refreshWidgets('trash');
+        this.refreshWidgets('duplicates');
+    }
+
     forgetWidgetCaches() {
         const d = this.dash;
         delete d._widgetSources;
@@ -1199,9 +1213,13 @@ class DashboardRenderCore {
             ? categoryContext
             : (categoryContext != null ? { id: categoryContext } : null);
         const method = window.DashboardCategorySort?.getCategorySortMode(d, category) || 'order';
-        const pinned = sorted
-            .filter((bookmark) => Boolean(bookmark?.pinned))
-            .sort((a, b) => (a?.name || '').localeCompare(b?.name || '', undefined, { sensitivity: 'base' }));
+        // In manual order the pinned rows keep the order they were given: sorted
+        // A–Z here, a pinned row moved with Alt+arrow or a drag was saved and
+        // then drawn straight back where it had been.
+        const pinned = sorted.filter((bookmark) => Boolean(bookmark?.pinned));
+        if (method !== 'order') {
+            pinned.sort((a, b) => (a?.name || '').localeCompare(b?.name || '', undefined, { sensitivity: 'base' }));
+        }
         const regular = sorted.filter((bookmark) => !bookmark?.pinned);
 
         if (method === 'az') {
@@ -1305,6 +1323,13 @@ class DashboardRenderCore {
                 listElement.removeAttribute('title');
             }
 
+            const coarsePointerDrag = (() => {
+                try {
+                    return Number(navigator.maxTouchPoints) > 0 && window.matchMedia('(pointer: coarse)').matches;
+                } catch {
+                    return false;
+                }
+            })();
             const reorderInstance = new DragReorder({
                 container: listElement,
                 itemSelector: '.bookmark-link',
@@ -1313,7 +1338,12 @@ class DashboardRenderCore {
                    browser's native link-drag can't hijack the reorder. The 500 ms
                    long-press editor still works: HTML5 drag only starts once the
                    pointer moves, and any move >8 px cancels the long-press timer. */
-                handleSelector: null,
+                // On a touch screen the whole row as handle took every touch
+                // as a drag: the page locked its scroll at touchstart, so a
+                // swipe that began on a row could not scroll. There the grip
+                // over the icon drags, the rest of the row scrolls, and a long
+                // press still opens the editor.
+                handleSelector: coarsePointerDrag ? '.bookmark-reorder-handle' : null,
                 longPressMs: 0,
                 delegateItemDragOver: true,
                 onReorder: () => {
@@ -1693,7 +1723,17 @@ class DashboardRenderCore {
                 return;
             }
             const categoryId = listElement.getAttribute('data-category-id') || '';
-            const listBookmarks = listElement.querySelectorAll('.bookmark-link[data-bookmark-index]');
+            let listBookmarks = [...listElement.querySelectorAll('.bookmark-link[data-bookmark-index]')];
+            // A list shown sorted (A–Z, newest, most opened…) is drawn in that
+            // order, not its own; read from the screen, a drag anywhere on the
+            // page stored the sorted order over its hand-made one. Its rows keep
+            // their stored order instead.
+            const category = (d.categories || []).find((c) => String(c.id) === categoryId) || { id: categoryId };
+            const mode = window.DashboardCategorySort?.getCategorySortMode?.(d, category) || 'order';
+            if (mode !== 'order') {
+                const at = (el) => parseInt(el.getAttribute('data-bookmark-index'), 10);
+                listBookmarks = listBookmarks.sort((a, b) => at(a) - at(b));
+            }
 
             listBookmarks.forEach((bookmarkElement) => {
                 const oldBookmarkIndex = parseInt(bookmarkElement.getAttribute('data-bookmark-index'), 10);
@@ -1871,7 +1911,13 @@ class DashboardRenderCore {
         }
         const from = order.indexOf(String(id));
         if (from < 0) return false;
-        const to = from + (direction < 0 ? -1 : 1);
+        // The neighbour the reader can see: blockOrder also holds categories
+        // hidden as empty, and swapping with one of those changed nothing on
+        // screen while the move was announced.
+        const shown = new Set(this.blockOrderFromDom());
+        const step = direction < 0 ? -1 : 1;
+        let to = from + step;
+        while (to >= 0 && to < order.length && shown.size && !shown.has(order[to])) to += step;
         if (to < 0 || to >= order.length) return false;
 
         [order[from], order[to]] = [order[to], order[from]];

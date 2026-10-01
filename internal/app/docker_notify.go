@@ -290,6 +290,17 @@ func (h *Handlers) dockerNotifyAllowed(name, id string) bool {
 }
 
 func (h *Handlers) dispatchContainerNotices(ctx context.Context, notices []monitorNotification) {
+	// The switch and the mute list are checked here too, not only where a
+	// notice is made: the automatic update and its rollback send theirs
+	// straight here, and they went out with the switch off or the container
+	// muted.
+	allowed := make([]monitorNotification, 0, len(notices))
+	for _, n := range notices {
+		if h.dockerNotifyAllowed(n.Name, "") {
+			allowed = append(allowed, n)
+		}
+	}
+	notices = allowed
 	if len(notices) == 0 {
 		return
 	}

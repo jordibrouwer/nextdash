@@ -28,6 +28,40 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
 
 ---
 
+## 🏠 Run your self-hosted setup from one screen
+
+nextDash is a bookmark dashboard that also knows your Docker host. The link to Sonarr, the Sonarr container and the check that watches it are one thing, not three tabs in three different tools.
+
+**How it fits together**
+
+1. **Containers** — the Containers view (`Shift + Y`, `#docker`) lists every container on the host: a status glow, CPU, RAM, size on disk, ports, its web UI, healthcheck results and a timeline of what happened to it. Start, stop, restart, update, roll back or follow its logs from the keyboard, one container, a compose stack or a whole selection at a time.
+2. **Bookmarks** — each container's web UI is matched to the bookmark you already have for it: by port, by subdomain behind a reverse proxy, or by name — or by hand. The container row carries that bookmark's health mark; the bookmark's side panel says which container it **runs in**. Open the service from the dashboard, from search, or with `:docker sonarr open`.
+3. **Health** — set that bookmark to **Monitor** and the server checks it on its own, as often as every five minutes: 30 days of uptime and response times, outages, certificate expiry, a phrase the page must contain, the status codes that count as healthy, and drift when a page turns into something else. A service behind a sign-in can be checked on a status address, with a stored key.
+4. **Alerts and push** — a site that goes down and a container that crashes, keeps restarting, turns unhealthy or runs hot reach you the same way: ntfy, Pushover, Gotify, Telegram, Slack, Discord, your own JSON receiver, or a push notification on your phone, even with the dashboard closed. Recovery is announced too, and a host that takes ten services down sends one message, not ten.
+
+**Keeping it current and tidy.** Image update checks run on an interval and show the release notes behind an update. Skip a version, hold a container, or let nextDash update it in a nightly window: each update is watched for five minutes and rolled back when the container stops, loops or turns unhealthy. The **Disk** tab shows what images, volumes, build cache and bind mounts take up, and clears it after naming what goes.
+
+**On the dashboard.** A homelab page can carry the **Containers** and **Container list** widgets, **Uptime**, **Certificates**, **Health**, **Processor**, **Memory** and **Disks**, and a **Custom widget** that reads Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and 23 more services — next to the bookmarks for all of them.
+
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-containers-health.jpg" alt="Containers view with health" width="100%" />
+      <br />
+      <sub><b>Containers and health</b> <i>(Gloss Chrome)</i> — Grouped by compose project, each web UI with its bookmark's mark: green where the monitor finds it up, red for Immich. Its side panel shows why — three failed healthchecks, out of memory, a restart loop since the update two hours ago.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-containers-updates.jpg" alt="Automatic update rolled back" width="100%" />
+      <br />
+      <sub><b>Updates with a way back</b> <i>(Cosmic Editor)</i> — Paperless updates itself between 03:00 and 05:00. Last night's version turned unhealthy within two minutes, so it was rolled back and skipped; History and Timeline say what happened, and a notice said so on your phone.</sub>
+    </td>
+  </tr>
+</table>
+
+📖 **[Self-hosted guide in the manual](MANUAL.md#self-hosted-guide)** — the set-up in four steps, how the pieces link up, and a morning routine. Setting up the Docker socket is under [Containers view](#containers-view) below.
+
+---
+
 ## Screenshots
 <table border="0" width="100%">
   <tr>
@@ -352,12 +386,15 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - A widget set to two columns says more rather than the same thing larger: the load behind the processor's percentage, the container failing by name, the expiry date of a certificate, what the weather feels like. One column keeps the important half. *[Manual §11.2](MANUAL.md#152-adding-and-arranging)*
 - A **Custom widget** reads any service that answers with JSON, with 28 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and more. *[Manual §11.5](MANUAL.md#155-the-custom-widget)*
 
-**Containers**
+**Containers and your homelab**
 
 - A **Containers view** (`#docker`, `Shift + Y`) for everything on the host: status glow, sortable columns with CPU, RAM and each container's size on disk, group by status or compose project, a web UI column, and a side panel with health checks, a timeline of what happened, stats, an hour of CPU and memory charts and environment. Give any container a web UI address of your own; the list, the widget and `:docker <name> open` all use it. *[Containers view](MANUAL.md#14-containers)*
 - Start, stop, pause, restart, update and remove — one container, a whole compose stack, or every container you tick — behind `NEXTDASH_DOCKER_CONTROL` and the write token; set it all under **Config → Containers**. *[Containers view](MANUAL.md#145-actions-and-updates)*
 - Image update checks, on request and on an interval, show what changed; skip a version, hold a container's updates, see what updates did and roll the last one back. The header icon carries a badge for how many are waiting. *[Containers view](MANUAL.md#145-actions-and-updates)*
 - A **logs window** that follows a container's log live, a **Disk** tab for what images, volumes and the build cache take up, and **notices** when a container stops, keeps restarting or turns unhealthy. *[Logs](MANUAL.md#148-the-logs-window) · [Disk](MANUAL.md#147-disk) · [Notices](MANUAL.md#149-notices)*
+- **Containers and bookmarks know each other.** A container's web UI is matched to its bookmark, and the row shows that bookmark's health in colour; the bookmark names the container it runs in. Monitor the bookmark and you watch the service from the outside while the Containers view watches it from the inside. *[Self-hosted guide](MANUAL.md#self-hosted-guide)*
+- **One place for bad news.** Container notices — stopped, restarting, unhealthy, too much CPU or memory, an automatic update done or rolled back — use the same alert channels and phone push notifications as downtime and certificate alerts. Mute one container or one bookmark without muting the rest. *[Self-hosted guide](MANUAL.md#sh-get-told)*
+- **Updates at night, with a way back.** Pick containers that update themselves in a window you choose; each one is watched for five minutes and put back on its old image if it fails. *[Containers view](MANUAL.md#145-actions-and-updates)*
 
 **Appearance**
 

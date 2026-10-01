@@ -98,6 +98,10 @@ type SourceState struct {
 	LastResult string `json:"lastResult,omitempty"`
 	LastError  string `json:"lastError,omitempty"`
 	Enabled    bool   `json:"enabled"`
+	// Seen holds the addresses this source has imported, newest last and
+	// bounded. A source without a cursor (Hacker News) checked only the target
+	// page as it is now, so a favourite deleted or moved came back every run.
+	Seen []string `json:"seen,omitempty"`
 }
 
 // SourceStateFile is the whole register on disk.
@@ -217,6 +221,10 @@ type SourceStatus struct {
 	LastResult string `json:"lastResult,omitempty"`
 	LastError  string `json:"lastError,omitempty"`
 	Enabled    bool   `json:"enabled"`
+	// Seen holds the addresses this source has imported, newest last and
+	// bounded. A source without a cursor (Hacker News) checked only the target
+	// page as it is now, so a favourite deleted or moved came back every run.
+	Seen []string `json:"seen,omitempty"`
 }
 
 func sourceStatusOf(id string, source SourceState) SourceStatus {
@@ -273,6 +281,7 @@ func SaveSource(id string, next SourceState) (SourceStatus, error) {
 	// behind this one's position.
 	if merged.Handle != strings.TrimSpace(existing.Handle) || merged.Kind != strings.TrimSpace(existing.Kind) {
 		merged.Cursor = ""
+		merged.Seen = nil
 	}
 	if token := strings.TrimSpace(next.Token); token != "" {
 		// A changed token invalidates the cursor: it may be a different account,
@@ -399,4 +408,56 @@ func RecordSourceRun(id string, cursor string, result string, runErr error) {
 	}
 	state.Sources[id] = source
 	_ = writeSourceStateFile(state)
+}
+
+// sourceSeenMax bounds Seen: enough for any list a source re-reads in full,
+// small enough that sources.json stays a settings file.
+const sourceSeenMax = 1000
+
+// RecordSourceSeen adds the addresses a round imported to the source's Seen.
+func RecordSourceSeen(id string, keys []string) {
+	id = normalizeSourceID(id)
+	if id == "" || len(keys) == 0 {
+		return
+	}
+	sourceStateMu.Lock()
+	defer sourceStateMu.Unlock()
+	state := readSourceStateFile()
+	source, ok := state.Sources[id]
+	if !ok {
+		return
+	}
+	known := make(map[string]bool, len(source.Seen))
+	for _, k := range source.Seen {
+		known[k] = true
+	}
+	for _, k := range keys {
+		if k != "" && !known[k] {
+			source.Seen = append(source.Seen, k)
+			known[k] = true
+		}
+	}
+	if over := len(source.Seen) - sourceSeenMax; over > 0 {
+		source.Seen = append([]string(nil), source.Seen[over:]...)
+	}
+	state.Sources[id] = source
+	_ = writeSourceStateFile(state)
+}
+
+// withoutSeenRows drops the rows a source has imported before.
+func withoutSeenRows(rows []ImportedRow, seen []string) []ImportedRow {
+	if len(seen) == 0 {
+		return rows
+	}
+	known := make(map[string]bool, len(seen))
+	for _, k := range seen {
+		known[k] = true
+	}
+	out := rows[:0:0]
+	for _, row := range rows {
+		if !known[canonicalBookmarkURLKey(row.URL)] {
+			out = append(out, row)
+		}
+	}
+	return out
 }

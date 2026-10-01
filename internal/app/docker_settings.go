@@ -21,9 +21,10 @@ Most are plain fields on Settings and are normalised here to the values the
 page offers, so a hand-edited settings file cannot ask the view to poll every
 millisecond or the daemon for a million log lines.
 
-The GitHub token is kept apart, in docker-secrets.json at 0600 and out of the
-backup, the way health-credentials.json is: it is a credential, and a settings
-file travels to places a credential should not.
+The GitHub token is kept apart, in docker-secrets.json at 0600, the way
+health-credentials.json is: it is a credential, and a settings file travels to
+places a credential should not. A backup carries it only while "leave out
+credentials" is off, like the other secrets (see dataFiles in backup.go).
 */
 
 var dockerRefreshChoices = map[int]bool{2: true, 5: true, 10: true, 30: true}
@@ -68,6 +69,12 @@ func normalizeDockerSettings(s *Settings) {
 	}
 	if !dockerAutoHourChoices[s.DockerAutoUpdateTo] {
 		s.DockerAutoUpdateTo = 5
+	}
+	// The same hour twice is an empty window: stored as it was, opted-in
+	// containers were never updated and nothing said so. Two hours from the
+	// start, like the default.
+	if s.DockerAutoUpdateFrom == s.DockerAutoUpdateTo {
+		s.DockerAutoUpdateTo = (s.DockerAutoUpdateFrom + 2) % 24
 	}
 	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
 	s.DockerBookmarkLinks = normalizeDockerBookmarkLinks(s.DockerBookmarkLinks)

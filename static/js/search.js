@@ -210,18 +210,28 @@ class SearchComponent {
                 const inFinderText = inFinderMode && this.currentQuery.includes(' ');
                 const shouts = (inFinderMode && !inFinderText) || inGlobalMode;
                 const value = shouts ? raw.toUpperCase() : raw;
-                if (value.length > this.currentQuery.length) {
-                    // Character added
-                    const newChar = value[value.length - 1];
-                    const allowed = shouts
-                        ? /^[A-Z0-9: \?/#\.\-_]$/.test(newChar)
-                        : /^[\x20-\x7E]$/.test(newChar);
-                    if (allowed) {
-                        this.addToQuery(newChar);
+                const allowedChar = (ch) => (shouts
+                    ? /^[A-Z0-9: \?/#\.\-_]$/.test(ch)
+                    : /^[\x20-\x7E]$/.test(ch));
+                // The field's value is what was typed. A paste, a swipe-typed
+                // word or an autocorrection inserts several characters at
+                // once, and a selection deleted takes several away: only the
+                // last character, or one removal, was taken before.
+                const before = shouts ? this.currentQuery.toUpperCase() : this.currentQuery;
+                if (value.length > before.length && value.startsWith(before)) {
+                    for (const ch of value.slice(before.length)) {
+                        if (allowedChar(ch)) this.addToQuery(ch);
                     }
-                } else if (value.length < this.currentQuery.length) {
-                    // Character removed
-                    this.removeLastChar();
+                } else if (value.length < before.length && before.startsWith(value)) {
+                    for (let i = value.length; i < before.length; i += 1) this.removeLastChar();
+                } else if (value !== before) {
+                    // An edit in the middle, or a word replaced.
+                    if (!value) {
+                        while (this.currentQuery.length) this.removeLastChar();
+                    } else {
+                        this.currentQuery = [...value].filter(allowedChar).join('');
+                        this._scheduleUpdateSearch();
+                    }
                 }
                 // Keep input synced
                 e.target.value = this.currentQuery;
@@ -251,6 +261,18 @@ class SearchComponent {
             if (this._isInboxSearchContext(e)) {
                 return;
             }
+            // A dialog opened over the palette (the :note editor, the cheat
+            // sheet) owns its keys. Enter, the arrows, Tab and Escape reached
+            // the palette behind it: a newline re-ran the row and wiped the
+            // note, and Escape closed both.
+            if (this.searchActive && (this.isAppModalOpen() || e.target?.closest?.('#app-modal'))) {
+                return;
+            }
+            // The modal's Escape has already hidden it (its listener runs first
+            // and prevents the default); that Escape was the dialog's.
+            if (this.searchActive && e.key === 'Escape' && e.defaultPrevented) {
+                return;
+            }
 
             // Don't trigger shortcuts if user is typing in an input, except when search is active and it's a navigation key
             const tag = e.target?.tagName;
@@ -272,10 +294,13 @@ class SearchComponent {
             // rather than naming its members: the list it replaced still held
             // the four keys that existed when it was written and had silently
             // fallen behind the ones added since.
+            // Not when the key typed a launcher character: on AZERTY "?" is
+            // Shift plus the key at the US M, and was never let through.
             if (
                 !this.searchActive
                 && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
                 && /^Key[A-Z]$/.test(e.code || '')
+                && !(e.key.length === 1 && !/^\p{L}$/u.test(e.key))
             ) {
                 return;
             }
@@ -844,7 +869,7 @@ class SearchComponent {
         if (
             !this.searchActive
             && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
-            && (e.code === 'KeyM' || e.code === 'KeyD' || e.code === 'KeyT'
+            && (((e.code === 'KeyM' || e.code === 'KeyD' || e.code === 'KeyT') && /^\p{L}$/u.test(e.key))
                 || (key.length === 1 && /^[A-Z]$/.test(key)))
         ) {
             return;
@@ -1267,7 +1292,9 @@ class SearchComponent {
         // What typing does with a shortcut is a setting: Enter opens (the
         // default), a short pause opens, or the match opens on the spot. See
         // _maybeAutoOpenShortcut.
-        this._maybeAutoOpenShortcut();
+        // An instant open has closed the search; a search update scheduled
+        // after it reopened the overlay on its empty state 50 ms later.
+        if (this._maybeAutoOpenShortcut()) return;
         this._scheduleUpdateSearch();
     }
 
@@ -1355,7 +1382,7 @@ class SearchComponent {
             window.nextdashRecordKey?.(match.shortcut);
             this.openBookmark(match, { source: 'shortcut', method: 'keyboard-shortcut' });
             this.resetQuery();
-            return;
+            return true;
         }
 
         const query = this.currentQuery;
@@ -1390,12 +1417,12 @@ class SearchComponent {
         this.updateSearch();
     }
 
-    _activateMatchAt(index) {
+    _activateMatchAt(index, options = {}) {
         if (index < 0 || index >= this.selectableMatches.length) {
             return;
         }
         this.selectedMatchIndex = index;
-        this.selectCurrentMatch();
+        this.selectCurrentMatch(options);
     }
 
     _bindMatchKeyboardActivate(element, index) {
@@ -1418,7 +1445,10 @@ class SearchComponent {
             }
             e.preventDefault();
             e.stopPropagation();
-            this._activateMatchAt(index);
+            // Ctrl/Cmd+Enter forces a new tab, as on the grid. The focused row
+            // takes Enter before the document handler that honoured it, so
+            // the chord opened in the same tab.
+            this._activateMatchAt(index, { newTab: e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.altKey });
         });
     }
 
@@ -2450,7 +2480,9 @@ class SearchComponent {
                 this.searchMatches = this._groupFuzzyMatches(fuzzy, searchQuery);
             }
 
-            this.lastNonCommandQuery = query;
+            // The last real search, for :save. Not overwritten by the empty
+            // query on the way to typing ':', or there was nothing left to save.
+            if (String(query || '').trim()) this.lastNonCommandQuery = query;
         }
 
         if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('?') && this.currentQuery.length > 0) {
@@ -2928,6 +2960,8 @@ class SearchComponent {
             window.nextdashTrackSearch?.(query, this._lastSearchResultCount || 0, Boolean(this._searchOpened));
         }
         this._searchOpened = false;
+        // The row ':' was pressed on belongs to this session only.
+        if (this.commandsComponent) this.commandsComponent.contextBookmark = null;
         if (this._debounceTimer) {
             clearTimeout(this._debounceTimer);
             this._debounceTimer = null;
@@ -4340,7 +4374,8 @@ class SearchComponent {
      * other is a real failure they would otherwise never hear about.
      */
     saveCurrentSearch(name = null) {
-        const query = (this.lastNonCommandQuery || this.currentQuery || '').trim();
+        // Only a search counts: with none, the command text itself was saved.
+        const query = (this.lastNonCommandQuery || '').trim();
         if (!query) {
             return 'no-query';
         }

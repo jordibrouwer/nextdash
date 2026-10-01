@@ -8,7 +8,15 @@
     const DEVICE_SETTINGS_KEY = 'dashboardSettings';
     const DEVICE_FLAG_KEY = 'deviceSpecificSettings';
 
-    /** Always loaded from server; never kept in device localStorage overlay. */
+    /**
+     * Always loaded from server; never kept in device localStorage overlay.
+     *
+     * Beyond the look of the page, the server's own data: lists other browsers
+     * add to, and what the server does on its own (alerts, backups, logs,
+     * containers). Overlaid from an old device copy, a tag rule or saved search
+     * added in another browser was gone here, and the next save from this
+     * browser removed it from the server too.
+     */
     const GLOBAL_SERVER_SETTING_KEYS = [
         'enableCustomFavicon',
         'customFaviconPath',
@@ -16,6 +24,49 @@
         'customFontPath',
         'fontPreset',
         'collections',
+        'tagRules',
+        'dismissedTagSuggestions',
+        'savedSearches',
+        'quickStart',
+        'maintenanceWindows',
+        'calendarIcsUrl',
+        'bookmarkArchiveUrl',
+        'archiveSaveEnabled',
+        'archiveSaveAccessKey',
+        'archiveSaveSecret',
+        'autoBackupEnabled',
+        'autoBackupIntervalDays',
+        'backupExcludeArchives',
+        'serverLogEnabled',
+        'serverLogLevel',
+        'serverLogRetentionMode',
+        'serverLogRetentionHours',
+        'serverLogMaxEntries',
+        'activityChannels',
+        'activityOpenDetail',
+        'monitorNotifyUrl',
+        'monitorNotifyRetries',
+        'monitorNotifyPreset',
+        'monitorNotifyTelegramChatId',
+        'monitorNotifyPushoverToken',
+        'monitorNotifyPushoverUserKey',
+        'monitorNotifyDashboardUrl',
+        'pushNotifyEnabled',
+        'pushNotifySubject',
+        'pushNotifyMonitor',
+        'pushNotifyBackup',
+        'pushNotifyContainers',
+        'pushNotifyRelease',
+        'dockerHiddenContainers',
+        'dockerWebUIs',
+        'dockerBookmarkLinks',
+        'dockerUsageAlerts',
+        'dockerCpuAlertPercent',
+        'dockerMemAlertPercent',
+        'dockerUsageAlertMinutes',
+        'dockerAutoUpdate',
+        'dockerAutoUpdateFrom',
+        'dockerAutoUpdateTo',
     ];
 
     function isDeviceSpecificEnabled() {

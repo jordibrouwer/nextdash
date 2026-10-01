@@ -1268,6 +1268,7 @@ class DashboardData {
         } = options;
 
         pageIds.forEach((pid) => this.invalidatePageDataCache(pid));
+        d.renderCore?.refreshBookmarkTiles?.();
 
         await this.loadAllBookmarks();
 

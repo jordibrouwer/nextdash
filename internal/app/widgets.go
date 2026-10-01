@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 /*
@@ -222,9 +223,8 @@ func normalizeWidget(widget Widget) (Widget, error) {
 	}
 
 	widget.Title = strings.TrimSpace(widget.Title)
-	if len(widget.Title) > 80 {
-		widget.Title = widget.Title[:80]
-	}
+	// On a character: cut on a byte, a long Chinese title ended in "�".
+	widget.Title = truncateRunes(widget.Title, 80)
 	// Config is the client's, so it is narrowed to what this type declares
 	// before it reaches storage -- see sanitizeWidgetConfig.
 	widget.Config = sanitizeWidgetConfig(widget.Type, widget.Config)
@@ -421,11 +421,12 @@ func keepRedactedWidgetAddresses(incoming, stored []Widget) []Widget {
 	for i, widget := range incoming {
 		out[i] = widget
 		old, ok := byID[widget.ID]
-		if !ok || widget.Type != WidgetTypeCustom || old.Type != WidgetTypeCustom {
+		withheld := withheldWidgetKeys[widget.Type]
+		if !ok || len(withheld) == 0 || old.Type != widget.Type {
 			continue
 		}
 		var merged map[string]any
-		for _, key := range []string{"url", "credentialId"} {
+		for key := range withheld {
 			if _, sent := widget.Config[key]; sent {
 				continue
 			}
@@ -490,3 +491,9 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 	fs.invalidateReadCache()
 	return nil
 }
+
+// widgetBeatSlack is how early a tile's cached answer counts as expired. A
+// tile beats on the cache's own TTL, and the cache was written a moment after
+// the timer started, so a beat found it still valid by milliseconds and drew
+// the same figures again: up to twice the TTL between real fetches.
+const widgetBeatSlack = 3 * time.Second

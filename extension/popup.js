@@ -650,6 +650,8 @@ async function saveToInbox() {
         const response = await postInboxLink(data.serverUrl, data.url, {
             title: data.name,
             note: data.note,
+            // Typed in the same form; saved with a bookmark, dropped here.
+            tags: data.tags,
             source: 'extension',
         });
         if (response.status === 409) {

@@ -3171,6 +3171,7 @@ class DashboardConfig {
         { tab: 'bookmarks', titleKey: 'config.helpCollectionHealthTitle', fallback: 'Collection health' },
         { tab: 'bookmarks', titleKey: 'config.helpBmKeysTitle', fallback: 'Keys' },
         { tab: 'containers', titleKey: 'config.helpContainersSetupTitle', fallback: 'Before it works: Docker, a write token and sometimes root' },
+        { tab: 'containers', titleKey: 'config.helpContainersTogetherTitle', fallback: 'Containers, bookmarks and health together' },
         { tab: 'containers', titleKey: 'config.helpContainersTitle', fallback: 'The Containers view' },
         { tab: 'containers', titleKey: 'config.helpContainersConfigTitle', fallback: 'Setting it up' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
@@ -8213,6 +8214,9 @@ class DashboardConfig {
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const state = await res.json();
+            // The settings in memory follow what was stored, or the next
+            // ordinary settings save writes the old state back.
+            this.dash.settings.archiveSaveEnabled = Boolean(state.enabled);
             // Cleared once stored: a key sitting in a form field is one
             // screenshot away from being shared.
             if (key) key.value = '';
@@ -8244,6 +8248,9 @@ class DashboardConfig {
                 body: JSON.stringify({ forget: true }),
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // Forgetting switches archiving off on the server; the settings in
+            // memory must say so, or the next save turns it back on.
+            this.dash.settings.archiveSaveEnabled = false;
             this.notify(this.t('config.archiveForgotten', 'Archive keys forgotten.'), 'success');
             void this.loadArchiveSettings();
         } catch {
@@ -9137,7 +9144,7 @@ class DashboardConfig {
         // do. Kept in step with normalizeInkGap on the server.
         const inkGap = Number.isFinite(Number(s.inkGap)) && Number(s.inkGap) > 0
             ? Math.min(0.58, Math.max(0.30, Number(s.inkGap)))
-            : 0.44;
+            : 0.47;
         const randomMode = window.ThemeUtils?.normalizeRandomThemeMode?.(s) ?? s.randomThemeMode ?? 'off';
         const showingThemeId = randomMode !== 'off'
             ? (document.documentElement.getAttribute('data-theme')
@@ -11947,7 +11954,7 @@ class DashboardConfig {
      */
     static INK_GAP_STEPS = [
         [0.34, 'inkGapSoft', 'Soft'],
-        [0.44, 'inkGapNormal', 'Normal'],
+        [0.47, 'inkGapNormal', 'Normal'],
         [0.51, 'inkGapHigh', 'High'],
         [0.58, 'inkGapMax', 'Maximum'],
     ];
@@ -11955,9 +11962,9 @@ class DashboardConfig {
     /** The step a stored number belongs to, so the select can show it. */
     static inkGapStepFor(gap) {
         const value = Number(gap);
-        if (!Number.isFinite(value)) return 0.44;
+        if (!Number.isFinite(value)) return 0.47;
         if (value < 0.36) return 0.34;
-        if (value < 0.48) return 0.44;
+        if (value < 0.48) return 0.47;
         if (value < 0.54) return 0.51;
         return 0.58;
     }
@@ -12259,7 +12266,7 @@ class DashboardConfig {
         glowStrength: { info: ['glowStrengthInfoTitle', 'glowStrengthInfoMessage'], def: 'follow' },
         themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
-        inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.44 },
+        inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.47 },
         themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'on' },
         backgroundPattern: { info: ['backgroundPatternInfoTitle', 'backgroundPatternInfoMessage'], def: 'auto' },
         fontSize: { def: 'm' },
@@ -12871,7 +12878,7 @@ class DashboardConfig {
                 title: t('config.generalGroupHyprMode', 'Hypr mode'),
                 note: t('config.generalGroupHyprModeNote', 'For nextDash installed as a Progressive Web App (PWA). Clicking a bookmark opens it in a new browser tab, then closes the PWA window automatically — the behaviour of a traditional app launcher.'),
                 controls: [
-                    bool('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
+                    chrome('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
                 ],
             },
             {
@@ -12892,8 +12899,8 @@ class DashboardConfig {
                     { field: 'timeFormat', type: 'select', label: t('config.timeFormatLabel', 'Time format'), special: 'datetime', options: [
                         opt('24h', '23:59'), opt('12h', '11:59 PM'),
                     ] },
-                    bool('showDate', 'config.showDateLabel', 'Show the date'),
-                    bool('showTime', 'config.showTimeLabel', 'Show the time'),
+                    chrome('showDate', 'config.showDateLabel', 'Show the date'),
+                    chrome('showTime', 'config.showTimeLabel', 'Show the time'),
                 ],
             },
             {
@@ -12924,7 +12931,7 @@ class DashboardConfig {
                 title: t('config.generalGroupWeather', 'Weather'),
                 note: t('config.generalGroupWeatherNote', 'Whether the temperature joins the date line, where it is measured, and how often it is fetched.'),
                 controls: [
-                    bool('showWeatherWithDate', 'config.showWeatherWithDate', 'Show weather next to the date'),
+                    chrome('showWeatherWithDate', 'config.showWeatherWithDate', 'Show weather next to the date'),
                     { field: 'weatherSource', type: 'select', label: t('config.weatherSourceLabel', 'Weather source'), special: 'datetime', options: [
                         opt('manual', t('config.weatherSourceManual', 'Manual location')), opt('auto', t('config.weatherSourceAuto', 'Automatic (by IP)')),
                     ] },
@@ -14350,6 +14357,16 @@ class DashboardConfig {
 
                 if (visual) d.visual?.applyVisualSettings?.();
                 if (special) this.applyChromeSettings();
+                // Each field's own apply step too: the passes above cover the
+                // chrome and visual ones, not a language, the weather, the
+                // badges or the shortcut hints.
+                for (const field of fields) {
+                    const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
+                    const fieldSpecial = el?.getAttribute('data-behavior-special');
+                    if (fieldSpecial && !['chrome', 'chromeRender', 'visual', 'render'].includes(fieldSpecial)) {
+                        await this.applySettingSpecial(field, d.settings[field], fieldSpecial);
+                    }
+                }
                 d.renderDashboard?.({ animate: false });
                 await this.saveSettingsWithFeedback();
                 this.repaintActiveControlPanels();
@@ -14690,6 +14707,13 @@ class DashboardConfig {
             btn.disabled = true;
             if (status) status.textContent = this.t('config.monitorNotifyTestSending', 'Sending…');
             try {
+                // An address typed and the button clicked at once: the field
+                // saves on blur, and the test read the stored settings before
+                // that save landed -- "nothing configured", or the old address.
+                // One tick lets the blur's save join the chain, then it is awaited.
+                document.activeElement?.blur?.();
+                await new Promise((resolve) => setTimeout(resolve, 0));
+                await (this._settingsSaveChain || Promise.resolve());
                 // Through writeFetch: /api/health/test-notification is behind
                 // requireWriteAccess, so a bare fetch got a flat 401 on every
                 // install that sets NEXTDASH_WRITE_TOKEN.
@@ -15334,6 +15358,23 @@ class DashboardConfig {
             const panels = document.getElementById('config-appearance-body');
             if (panels) this.paintPreviewSample(panels);
         }
+        await this.applySettingSpecial(field, value, special);
+        await this.saveSettingsWithFeedback();
+        // Repaint the active control panel so the ↺ reset button's visibility and
+        // the control's own value reflect the change (important after a reset).
+        this.repaintActiveControlPanels();
+    }
+
+    /**
+     * What a setting's change needs beyond the save: its `special`.
+     *
+     * Its own method so the panel reset runs it as well. The reset folded every
+     * special into a chrome or visual pass, so a reset language stayed in the
+     * old one, a cleared weather location kept its reading, and the shortcut
+     * hints stayed bound, until a reload.
+     */
+    async applySettingSpecial(field, value, special) {
+        const d = this.dash;
         switch (special) {
             case 'language':
                 await d.language?.init?.(value);
@@ -15436,10 +15477,6 @@ class DashboardConfig {
                 d.renderDashboard?.({ animate: false });
                 break;
         }
-        await this.saveSettingsWithFeedback();
-        // Repaint the active control panel so the ↺ reset button's visibility and
-        // the control's own value reflect the change (important after a reset).
-        this.repaintActiveControlPanels();
     }
 
     /* ── Appearance and Behavior tabs ─────────────────────────────────────── */
@@ -15674,6 +15711,9 @@ class DashboardConfig {
      */
     applyChromeSettings() {
         const d = this.dash;
+        // setupDOM redraws the date line (date, time and weather toggles) but
+        // never re-read Hypr mode, which only took effect after a reload.
+        window.hyprMode?.setEnabled?.(Boolean(d.settings.hyprMode));
         d.setupDOM?.();
         // setupDOM covers the data-* attributes and the config/health/tabs links;
         // the tab labels themselves are built in JS, so showPageNamesInTabs needs
@@ -17751,53 +17791,29 @@ class DashboardConfig {
         if (Number(id) === 1) return;
         if (!await this.confirmAction(this.t('config.pageDeleteConfirm', 'Delete this page and its bookmarks?'))) return;
 
-        // Snapshot everything the page owns *now*, not from this.dash.allBookmarks:
-        // that mirror can lag behind a write from another view, and restoring a
-        // stale copy would silently drop whatever was added since. A snapshot we
-        // could not take is left null, and then no undo is offered rather than a
-        // partial one.
-        const pagesBefore = [...(this.dash.pages || [])];
-        let bookmarksBefore = null;
-        let categoriesBefore = null;
-        try {
-            const [bmRes, catRes] = await Promise.all([
-                fetch(`/api/bookmarks?page=${encodeURIComponent(id)}`),
-                fetch(`/api/categories?page=${encodeURIComponent(id)}`),
-            ]);
-            if (bmRes.ok) bookmarksBefore = await bmRes.json();
-            if (catRes.ok) categoriesBefore = await catRes.json();
-        } catch { /* offer the delete without an undo rather than blocking it */ }
-
         try {
             const res = await this.writeFetch(`/api/pages/${encodeURIComponent(id)}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.dash.pages = (this.dash.pages || []).filter((p) => Number(p.id) !== Number(id));
             this.dash.pageNav?.renderPageNavigation?.();
 
-            // The server also drops the page's bookmarks into the trash, so this
-            // toast is the fast path and the trash is the long one.
-            const undoCallback = bookmarksBefore ? async () => {
+            // The server puts the whole page in the trash -- bookmarks,
+            // categories and widgets -- and the undo restores that entry. It
+            // used to post the old page list and lists back, which the server
+            // now refuses for a page in the trash: that is exactly what a tab
+            // that missed the delete would send.
+            const undoCallback = async () => {
                 try {
-                    await this.restoreList('/api/pages', pagesBefore);
-                    await this.restoreList(
-                        `/api/bookmarks?page=${encodeURIComponent(id)}`,
-                        bookmarksBefore
-                    );
-                    if (categoriesBefore) {
-                        await this.restoreList(
-                            `/api/categories?page=${encodeURIComponent(id)}`,
-                            categoriesBefore
-                        );
-                    }
-                    this.dash.pages = pagesBefore;
+                    const items = (await window.DashboardTrash?.list?.())?.items || [];
+                    const entry = items.find((item) => item.kind === 'page' && Number(item.pageId) === Number(id));
+                    if (!entry) throw new Error('no trash entry');
+                    await window.DashboardTrash.restore(entry.id);
+                    const pages = await (await fetch('/api/pages', { cache: 'no-store' })).json();
+                    if (Array.isArray(pages)) this.dash.pages = pages;
                     this.dash.pageNav?.renderPageNavigation?.();
                     this.invalidateBookmarkCategoriesCache(id);
                     await this.refreshBookmarksAfterWrite();
                     this.repaintPtBody();
-                    // The page is back through the write endpoints, so its trash
-                    // entry is now a duplicate of a live page.
-                    await this.dropTrashEntry((item) => item.kind === 'page'
-                        && Number(item.pageId) === Number(id));
                     await this.refreshTrashIfVisible();
                     this.notify(this.t('config.pageDeleteUndone', 'Page restored.'), 'success');
                 } catch {
@@ -17806,7 +17822,7 @@ class DashboardConfig {
                         'error'
                     );
                 }
-            } : null;
+            };
 
             this.notify(this.t('config.pageDeleted', 'Page deleted.'), 'success', {
                 undoCallback,
@@ -18717,7 +18733,15 @@ class DashboardConfig {
     };
 
     /** The formats a value may be shown in — the server accepts these and no others. */
-    static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'power', 'temperature', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
+    static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'power', 'temperature', 'percent', 'share', 'duration', 'ms', 'relativeDate', 'text'];
+
+    /*
+     * The formats that are a percentage, each saying its scale: "percent" is
+     * 0..100, "share" 0..1. "percentAuto" is the old guess a field saved before
+     * the choice keeps; offered only on such a field, so it can be kept or
+     * changed but not picked anew.
+     */
+    static PERCENT_FORMATS = ['percent', 'share', 'percentAuto'];
 
     /*
      * The units a Data figure may already be counted in.
@@ -18742,7 +18766,7 @@ class DashboardConfig {
     /** Which shapes a format can wear. */
     static shapesFor(format) {
         return DashboardConfig.CUSTOM_SHAPES.filter(
-            (shape) => shape !== 'meter' || format === 'percent');
+            (shape) => shape !== 'meter' || DashboardConfig.PERCENT_FORMATS.includes(format));
     }
 
     /*
@@ -19378,9 +19402,15 @@ class DashboardConfig {
     renderCustomWidgetFields(widget, index) {
         const esc = (v) => this.dash.escapeHtml(v);
         const fields = Array.isArray(widget?.config?.fields) ? widget.config.fields : [];
-        const formatOptions = (selected) => DashboardConfig.CUSTOM_FORMATS.map((format) =>
+        const formatLabels = {
+            percent: 'Percentage (0–100)',
+            share: 'Percentage from a share (0–1)',
+            percentAuto: 'Percentage (guessed)',
+        };
+        const formatOptions = (selected) => [...DashboardConfig.CUSTOM_FORMATS,
+            ...(selected === 'percentAuto' ? ['percentAuto'] : [])].map((format) =>
             `<option value="${esc(format)}" ${format === selected ? 'selected' : ''}>${esc(
-                this.t(`config.widgetFormat.${format}`, format))}</option>`).join('');
+                this.t(`config.widgetFormat.${format}`, formatLabels[format] || format))}</option>`).join('');
         /*
          * The shapes this format can wear, which is all of them but the meter.
          *
@@ -21085,7 +21115,7 @@ class DashboardConfig {
      */
     dropMeterOnNonPercent(index, row) {
         const field = this.widgetDraft(index)?.config?.fields?.[row];
-        if (field?.shape === 'meter' && field.format !== 'percent') {
+        if (field?.shape === 'meter' && !DashboardConfig.PERCENT_FORMATS.includes(field.format)) {
             delete field.shape;
             delete field.tone;
         }
@@ -24415,7 +24445,10 @@ class DashboardConfig {
         const seen = new Map();
         const index = new Map();
         [...all, ...kept].forEach((b) => {
-            const base = DashboardConfig.bookmarkKeyBase(b);
+            // Counted as the server counts them, on the canonical address:
+            // "https://x/" and "https://x" were both copy 0 here and 0 and 1
+            // there, so a write to the second landed on the first.
+            const base = `${b.pageId}::${DashboardConfig.canonicalUrl(b.url)}`;
             const n = seen.get(base) || 0;
             index.set(b, n);
             seen.set(base, n + 1);
@@ -24623,7 +24656,13 @@ class DashboardConfig {
             // The fields that changed, on this row, by its URL: the page is no
             // longer read and written back whole around a one-field edit.
             try {
-                await this.patchRows(pageId, [{ url: current.url, fields: DashboardConfig.changedFields(current, next) }]);
+                // With its occurrence: by URL alone the server takes the first
+                // copy, so editing the second copy of a duplicate changed the first.
+                await this.patchRows(pageId, [{
+                    url: current.url,
+                    occurrence: this.occurrenceOf(record.bookmark),
+                    fields: DashboardConfig.changedFields(current, next),
+                }]);
             } catch (err) {
                 if (err?.conflict) {
                     this.notify(this.conflictMessage(err, 'config.bookmarkSaveError', 'Could not save the bookmark.'), 'error');
@@ -24817,7 +24856,8 @@ class DashboardConfig {
         this.syncBookmarkRowBusy(key, true);
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
-            const res = await fetch(
+            // fetcher, with the token: see the same call in dashboard-health.
+            const res = await fetcher(
                 `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(record.pageId)}&index=${encodeURIComponent(record.index)}&redirectOnly=1`
             );
             if (!res.ok) throw new Error(`suggest HTTP ${res.status}`);
@@ -24877,6 +24917,7 @@ class DashboardConfig {
         try {
             await this.patchRows(record.pageId, [{
                 url: record.record.url,
+                occurrence: this.occurrenceOf(record.bookmark),
                 fields: DashboardConfig.changedFields(record.record, updated),
             }]);
             await this.refreshBookmarksAfterWrite({ silent: true });
@@ -25962,8 +26003,10 @@ class DashboardConfig {
 
     /** The ticked bookmarks, resolved back to live objects. */
     selectedBookmarks() {
-        const keys = this.bmSelected;
-        return (this.dash.allBookmarks || []).filter((b) => keys.has(this.bookmarkKey(b)));
+        // From the same pool the bar counts: kept bookmarks live outside
+        // allBookmarks, so in the Unsorted view Delete, Export CSV and the
+        // fetches got nothing and did nothing.
+        return this.bookmarksFromKeys([...this.bmSelected]);
     }
 
     async handleBulkAction(action) {
@@ -26006,10 +26049,17 @@ class DashboardConfig {
      */
     static matchesParsedKey(parsed) {
         let n = 0;
+        const wanted = DashboardConfig.canonicalUrl(parsed.url);
         return (b) => {
-            if (b.url !== parsed.url) return false;
+            if (DashboardConfig.canonicalUrl(b.url) !== wanted) return false;
             return n++ === (parsed.occurrence || 0);
         };
+    }
+
+    /** The server's canonical form of an address, so copies are counted alike. */
+    static canonicalUrl(url) {
+        const raw = String(url || '');
+        return window.BookmarkUrlUtils?.canonicalBookmarkURLKey?.(raw) || raw;
     }
 
     /**
@@ -26059,6 +26109,9 @@ class DashboardConfig {
             // is named rather than folded into "could not".
             this.notify(this.conflictMessage(failure, 'config.bulkActionError', 'Could not apply the bulk action.'), 'error');
         }
+        // Read by a caller that must not go on when a page refused, such as a
+        // merge that would otherwise remove the category its rows still use.
+        undo.failed = Boolean(failure);
         return undo;
     }
 
@@ -26122,7 +26175,7 @@ class DashboardConfig {
         } catch {
             this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
             await this.refreshBookmarksAfterWrite();
-            return;
+            return null;
         }
         const movedKeys = new Set(result.moved.map((m) => `${m.fromPage}\u0000${m.url}`));
         const moving = picked.filter((b) => movedKeys.has(`${Number(b.pageId)}\u0000${b.url}`)
@@ -26160,10 +26213,11 @@ class DashboardConfig {
                 .replace('{moved}', String(result.moved.length))
                 .replace('{skipped}', String(result.skipped.length))
                 .replace('{url}', String(first.url || '')), 'warning', { duration: 8000, undoCallback });
-            return;
+            return result;
         }
         this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success',
             undoCallback ? { duration: 8000, undoCallback } : undefined);
+        return result;
     }
 
     async bulkPin(picked, pinned) {
@@ -26493,15 +26547,26 @@ class DashboardConfig {
     /**
      * Write what a sweep collected: one PATCH per page, naming each row by URL.
      *
-     * @param {Map<string, Map<string, object>>} byPage pageId → url → fields
+     * @param {Map<string, Map<string, object>>} byPage pageId → row key → { url, occurrence, fields }
      */
+    /**
+     * One swept row's fields, keyed by URL and occurrence: keyed by URL alone,
+     * the second copy of a duplicate overwrote the first and the write landed
+     * on the first copy.
+     */
+    sweepPut(page, record, fields) {
+        const url = record.record?.url || record.bookmark?.url;
+        const occurrence = this.occurrenceOf(record.bookmark);
+        page.set(`${url}\u0000${occurrence}`, { url, occurrence, fields });
+    }
+
     async saveSweptFields(byPage) {
         for (const [pageId, rows] of byPage) {
             if (!rows.size) continue;
             try {
                 // By URL, only the swept fields: a sweep takes minutes, and a
                 // whole-page write at its end undid whatever changed meanwhile.
-                await this.patchRows(pageId, [...rows].map(([url, fields]) => ({ url, fields })));
+                await this.patchRows(pageId, [...rows.values()].map(({ url, occurrence, fields }) => ({ url, occurrence, fields })));
             } catch {
                 // The next sweep can ask again; a page that will not save is
                 // not a reason to drop the pages after it.
@@ -26558,7 +26623,7 @@ class DashboardConfig {
                     previewEnriched: true,
                 };
                 const page = byPage.get(String(record.pageId)) || new Map();
-                page.set(record.record?.url || record.bookmark?.url, fields);
+                this.sweepPut(page, record, fields);
                 byPage.set(String(record.pageId), page);
                 return 'ok';
             },
@@ -26606,7 +26671,7 @@ class DashboardConfig {
                 const record = await this.sweepRecordFor(bookmark);
                 if (!record) return 'failed';
                 const page = byPage.get(String(record.pageId)) || new Map();
-                page.set(record.record?.url || record.bookmark?.url, { icon: iconPath });
+                this.sweepPut(page, record, { icon: iconPath });
                 byPage.set(String(record.pageId), page);
                 return 'ok';
             },
@@ -26915,7 +26980,9 @@ class DashboardConfig {
     async loadStatsLibrary() {
         const get = async (url) => {
             try {
-                const res = await fetch(url);
+                // With the token: /api/sources and /api/auto-backups need it,
+                // and a bare fetch dropped both rows from the panel.
+                const res = await this.writeFetch(url);
                 return res && res.ok ? await res.json() : null;
             } catch {
                 return null;
@@ -28371,6 +28438,10 @@ class DashboardConfig {
      * jump lands on the panel rather than on the top of its tab.
      */
     static HELP_PANEL_SEE_ALSO = {
+        'config.helpContainersTogetherTitle': [
+            { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
+            { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
+        ],
         'config.helpHealthTitle': [
             { tab: 'monitoring', panel: 'health-stats', labelKey: 'config.helpHealthStatsTitle', label: 'Uptime, trends & statistics' },
             { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
@@ -29291,6 +29362,10 @@ class DashboardConfig {
         // Docker, and two of the settings are security decisions.
         return this.helpPanel('config.helpContainersSetupTitle', 'Before it works: Docker, a write token and sometimes root',
             'config.helpContainersSetupBody', '')
+            // Second: why a bookmark dashboard has a Containers view at all --
+            // the link to the bookmark, its checks and the shared alerts.
+            + this.helpPanel('config.helpContainersTogetherTitle', 'Containers, bookmarks and health together',
+                'config.helpContainersTogetherBody', '')
             + this.helpPanel('config.helpContainersTitle', 'The Containers view',
             'config.helpContainersBody', '')
             + this.helpPanel('config.helpContainersConfigTitle', 'Setting it up',

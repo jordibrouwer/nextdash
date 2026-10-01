@@ -39,7 +39,7 @@ class DashboardConfigSync {
                     const structureTs = payload?.timestamp || Date.now();
                     d.lastAppliedStructureSyncAt = structureTs;
                     try {
-                        sessionStorage.removeItem(d.pendingStructureSyncKey);
+                        this.clearPendingIfApplied(d.pendingStructureSyncKey, structureTs);
                         // The structure refresh is a superset of a settings refresh, so
                         // any pending settings sync at or before it is already applied.
                         const settingsPending = this.readPendingConfigSync(d.pendingSettingsSyncKey);
@@ -55,7 +55,7 @@ class DashboardConfigSync {
                     await this.refreshAfterConfigSettingsUpdate(payload);
                     d.lastAppliedSettingsSyncAt = payload?.timestamp || Date.now();
                     try {
-                        sessionStorage.removeItem(d.pendingSettingsSyncKey);
+                        this.clearPendingIfApplied(d.pendingSettingsSyncKey, d.lastAppliedSettingsSyncAt);
                     } catch { /* ignore */ }
                     this.showSyncToast(d.formatDashboardLabel('syncSettingsApplied', {}, 'Applied dashboard settings update.'));
                 }
@@ -138,6 +138,22 @@ class DashboardConfigSync {
     }
 
 
+    /**
+     * Drop a pending marker only if it is the one just applied, or older.
+     *
+     * A change that arrived while a refresh ran is stashed under the same key;
+     * removed unread when that refresh ended, the drain after it found nothing
+     * and the second change was lost.
+     */
+    clearPendingIfApplied(key, appliedTs) {
+        try {
+            const pending = this.readPendingConfigSync(key);
+            if (!pending || Number(pending.timestamp) <= Number(appliedTs)) {
+                sessionStorage.removeItem(key);
+            }
+        } catch { /* ignore */ }
+    }
+
     readPendingConfigSync(key) {
         const d = this.dash;
         try {
@@ -217,14 +233,14 @@ class DashboardConfigSync {
             if (structureTs > d.lastAppliedStructureSyncAt) {
                 await this.refreshAfterConfigStructureUpdate(structurePending || {});
                 d.lastAppliedStructureSyncAt = structureTs;
-                sessionStorage.removeItem(d.pendingStructureSyncKey);
+                this.clearPendingIfApplied(d.pendingStructureSyncKey, structureTs);
                 structureApplied = true;
                 // The structure refresh is a superset of the settings refresh (same
                 // loadData + re-render), so a settings sync at or before it is already
                 // applied — consume its marker instead of running a second full reload.
                 if (settingsTs > 0 && settingsTs <= structureTs) {
                     d.lastAppliedSettingsSyncAt = Math.max(d.lastAppliedSettingsSyncAt, settingsTs);
-                    sessionStorage.removeItem(d.pendingSettingsSyncKey);
+                    this.clearPendingIfApplied(d.pendingSettingsSyncKey, structureTs);
                 }
                 this.showSyncToast(d.formatDashboardLabel('syncConfigChanges', {}, 'Synced config changes.'));
             }
@@ -232,7 +248,7 @@ class DashboardConfigSync {
             if (settingsTs > d.lastAppliedSettingsSyncAt) {
                 await this.refreshAfterConfigSettingsUpdate(settingsPending || {});
                 d.lastAppliedSettingsSyncAt = settingsTs;
-                sessionStorage.removeItem(d.pendingSettingsSyncKey);
+                this.clearPendingIfApplied(d.pendingSettingsSyncKey, settingsTs);
                 if (!structureApplied) {
                     this.showSyncToast(d.formatDashboardLabel('syncSettingsApplied', {}, 'Applied dashboard settings update.'));
                 }

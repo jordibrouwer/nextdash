@@ -113,7 +113,7 @@ func (h *Handlers) CheckBookmarkHealthURL(w http.ResponseWriter, r *http.Request
 	// so record it here too rather than only in the monitor sweep — otherwise a
 	// bookmark that is only ever checked on demand never contributes one.
 	if result.CertExpiry > 0 && result.CertHost != "" {
-		h.recordMonitorCertificates([]PingResult{result})
+		h.recordCertificatesAndAlert(r.Context(), []PingResult{result})
 	}
 
 	h.invalidateHealthReportCache()

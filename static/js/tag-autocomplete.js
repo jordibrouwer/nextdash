@@ -95,7 +95,10 @@ class TagAutocomplete {
             e.preventDefault();
             this._activeIndex = Math.max(this._activeIndex - 1, 0);
             this._highlightActive();
-        } else if (e.key === 'Tab' && this._activeIndex < 0) {
+        } else if ((e.key === 'Tab' || (e.key === 'Enter' && !this._currentToken())) && this._activeIndex < 0) {
+            // Enter with nothing typed and nothing chosen is the form's Enter
+            // (save, apply): taking the first suggestion added a tag nobody
+            // asked for, and the save never happened.
             // Nothing chosen in the list: Tab moves on, the way it does
             // everywhere else. Taking the first entry unasked filled in tag
             // after tag and kept the keyboard in this field.

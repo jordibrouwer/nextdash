@@ -622,7 +622,7 @@ func sanitizeCustomWidgetFields(raw any) []any {
 		 * nobody stated.
 		 */
 		shape := strings.TrimSpace(stringOr(entry["shape"]))
-		if customWidgetShapes[shape] && shape != "normal" && (shape != "meter" || format == "percent") {
+		if customWidgetShapes[shape] && shape != "normal" && (shape != "meter" || isPercentFormat(format)) {
 			clean["shape"] = shape
 			if tone := strings.TrimSpace(stringOr(entry["tone"])); customWidgetTones[tone] {
 				clean["tone"] = tone

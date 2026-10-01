@@ -81,10 +81,10 @@ it here would edit it for every later read as well.
 func redactWidgetAddresses(widgets []Widget) []Widget {
 	out := make([]Widget, 0, len(widgets))
 	for _, widget := range widgets {
-		if widget.Type == WidgetTypeCustom && len(widget.Config) > 0 {
+		if withheld := withheldWidgetKeys[widget.Type]; len(withheld) > 0 && len(widget.Config) > 0 {
 			narrowed := make(map[string]any, len(widget.Config))
 			for key, value := range widget.Config {
-				if key == "url" || key == "credentialId" {
+				if withheld[key] {
 					continue
 				}
 				narrowed[key] = value
@@ -94,6 +94,14 @@ func redactWidgetAddresses(widgets []Widget) []Widget {
 		out = append(out, widget)
 	}
 	return out
+}
+
+// withheldWidgetKeys are the config fields a tokenless read does not get. A
+// private feed's address often carries its own key (?token=), and the RSS tile
+// reads its items by widget id, so it never needs the addresses either.
+var withheldWidgetKeys = map[WidgetType]map[string]bool{
+	WidgetTypeCustom: {"url": true, "credentialId": true},
+	WidgetTypeRSS:    {"feedUrls": true},
 }
 
 /*

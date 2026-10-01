@@ -180,12 +180,20 @@ func (h *Handlers) runPreviewMediaJob(job previewMediaJob) {
 	entry := job.entry
 	allowLocal := h.allowLocalBookmarks()
 
-	if job.wantImage && entry.ImageSource != "" && !previewMediaPresent(entry.Image) {
+	// Stamped only for what was asked for. With "Image" off in the card the
+	// job skipped the picture yet stamped the entry, and turned back on the
+	// pictures stayed away until the stamp aged out, a week or more.
+	tryImage := job.wantImage && entry.ImageSource != "" && !previewMediaPresent(entry.Image)
+	tryIcon := job.wantIcon && entry.IconSource != "" && !previewMediaPresent(entry.Icon)
+	if !tryImage && !tryIcon {
+		return
+	}
+	if tryImage {
 		if name, err := downloadPreviewImage(entry.ImageSource, allowLocal); err == nil && name != "" {
 			entry.Image = "/data/" + previewImageDirName + "/" + name
 		}
 	}
-	if job.wantIcon && entry.IconSource != "" && !previewMediaPresent(entry.Icon) {
+	if tryIcon {
 		if name, err := downloadPreviewIcon(entry.IconSource, allowLocal); err == nil && name != "" {
 			entry.Icon = "/data/" + previewImageDirName + "/" + name
 		}
@@ -193,6 +201,38 @@ func (h *Handlers) runPreviewMediaJob(job previewMediaJob) {
 	// Stamped even when both failed: that is what stops the retry loop.
 	entry.ImageFetchedAt = time.Now().UnixMilli()
 
-	_ = h.mergePreviewCacheUpdates(map[string]BookmarkPreview{job.key: entry})
+	h.applyPreviewMedia(job.key, entry)
 	_, _ = evictPreviewImages(h.previewImageCapBytes())
+}
+
+// applyPreviewMedia writes a job's media fields onto the entry as it is now.
+// The job carries a copy taken when it was queued; written back whole, it
+// undid what happened in between -- "Clear suggested words", a refresh's new
+// title -- and the copy with no picture won over one that had it.
+func (h *Handlers) applyPreviewMedia(key string, done BookmarkPreview) {
+	h.previewCacheMu.Lock()
+	defer h.previewCacheMu.Unlock()
+	h.ensurePreviewCacheLoadedLocked()
+	current, ok := h.previewCache.Cache[key]
+	if !ok {
+		// Nothing stored to be overtaken: the job's copy is all there is.
+		h.previewCache.Cache[key] = done
+		h.previewCacheDirty = true
+		return
+	}
+	changed := false
+	if current.ImageSource == done.ImageSource {
+		current.Image = done.Image
+		changed = true
+	}
+	if current.IconSource == done.IconSource {
+		current.Icon = done.Icon
+		changed = true
+	}
+	if !changed {
+		return
+	}
+	current.ImageFetchedAt = done.ImageFetchedAt
+	h.previewCache.Cache[key] = current
+	h.previewCacheDirty = true
 }

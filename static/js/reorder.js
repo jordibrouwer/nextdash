@@ -54,7 +54,10 @@ class DragReorder {
         this.touchStartHandler = (e) => this.touchStart(e);
         this.touchMoveHandler = (e) => this.touchMove(e);
         this.touchEndHandler = (e) => this.touchEnd(e);
-        this.touchCancelHandler = () => this.cancelTouchPress();
+        // A cancel the system sends mid-drag (an incoming call, a gesture the
+        // OS takes over) ends the drag like a lift: only clearing the press
+        // left the scroll lock, the body class and the selection behind.
+        this.touchCancelHandler = (e) => (this.touchDragActive ? this.touchEnd(e) : this.cancelTouchPress());
         this.mouseDownHandler = (e) => this.mouseDown(e);
         this.mouseUpHandler = (e) => this.mouseUp(e);
         this.preventDrop = (e) => e.preventDefault();

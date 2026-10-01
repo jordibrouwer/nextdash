@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"slices"
 	"sync"
 	"time"
 )
@@ -95,7 +96,10 @@ func (h *Handlers) dockerAutoUpdateCandidates(ctx context.Context, api *dockerAP
 	self := dockerSelfID()
 	out := []dockerContainerSummary{}
 	for _, c := range list {
-		if !want[c.name()] || isDockerSelf(c.ID, self) {
+		// Paused on purpose: the update started it again, unpaused, and the
+		// notice said it was left stopped. The view offers no update for a
+		// paused container either.
+		if !want[c.name()] || isDockerSelf(c.ID, self) || c.State == "paused" {
 			continue
 		}
 		if u := dockerRowUpdate(updates[c.Image], c, tagIDs); u != nil && u.Status == "available" {
@@ -132,8 +136,18 @@ func (h *Handlers) runDockerAutoUpdates(now time.Time) {
 	listCtx, cancelList := context.WithTimeout(context.Background(), time.Minute)
 	candidates := h.dockerAutoUpdateCandidates(listCtx, api, settings.DockerAutoUpdate)
 	cancelList()
-	day := now.Format("2006-01-02")
+	// The night the window opened, not the calendar day: a window from 23:00
+	// got a new day at midnight and tried a failed update a second time.
+	day := now.Add(-time.Duration(settings.DockerAutoUpdateFrom) * time.Hour).Format("2006-01-02")
+	started := time.Now()
 	for _, c := range candidates {
+		// A run can take an hour. Turned off for this container meanwhile, or
+		// past the end of the window, it is left alone.
+		current := h.store.GetSettings()
+		if !slices.Contains(current.DockerAutoUpdate, c.name()) ||
+			!dockerInAutoWindow(now.Add(time.Since(started)), current.DockerAutoUpdateFrom, current.DockerAutoUpdateTo) {
+			continue
+		}
 		mark := day + "|" + c.ImageID
 		a.mu.Lock()
 		seen := a.tried[c.name()] == mark
@@ -178,11 +192,16 @@ func (h *Handlers) autoUpdateOne(ctx context.Context, api *dockerAPI, c dockerCo
 	outcome, err := h.dockerRecreate(ctx, api, c)
 	dockerNotifications.expect(name, time.Now().Add(dockerNotifyExpectWindow))
 	release()
-	logActivity(activityCategoryMutate, "docker.auto-update", map[string]any{"container": name, "ok": err == nil}, "docker auto-update "+name)
-	if err != nil {
-		logWarn(logComponentMutate, "the automatic update of %s failed: %v", name, err)
-		h.dispatchContainerNotices(ctx, []monitorNotification{containerNotice("down", name,
-			name+" could not be updated automatically", err.Error(), time.Now())})
+	// The notices on a context of their own: an update that ran into its time
+	// limit sent its failure on the expired one, and it never arrived.
+	nctx, ncancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	defer ncancel()
+	failure := autoUpdateFailureDetail(outcome, err)
+	logActivity(activityCategoryMutate, "docker.auto-update", map[string]any{"container": name, "ok": failure == ""}, "docker auto-update "+name)
+	if failure != "" {
+		logWarn(logComponentMutate, "the automatic update of %s failed: %s", name, failure)
+		h.dispatchContainerNotices(nctx, []monitorNotification{containerNotice("down", name,
+			name+" could not be updated automatically", failure, time.Now())})
 		return true
 	}
 	if outcome.Phase == "done" || outcome.Phase == "already-current" {
@@ -191,16 +210,18 @@ func (h *Handlers) autoUpdateOne(ctx context.Context, api *dockerAPI, c dockerCo
 	if outcome.Phase != "done" {
 		return true
 	}
-	h.recordDockerUpdate(ctx, api, "update", name, c.Image, outcome.OldImageID, outcome.NewImageID)
+	h.recordDockerUpdate(nctx, api, "update", name, c.Image, outcome.OldImageID, outcome.NewImageID)
 	// A stopped container is updated and stays stopped, as it was: there is
 	// nothing to watch, and the watch read its "created" state as a failed
 	// update, rolled it back and skipped the new version, every night.
-	if c.State != "running" {
-		h.dispatchContainerNotices(ctx, []monitorNotification{containerNotice("up", name,
+	// Restarting counts as running: it was started again, and a crash-looping
+	// container is the one the watch exists for.
+	if c.State != "running" && c.State != "restarting" {
+		h.dispatchContainerNotices(nctx, []monitorNotification{containerNotice("up", name,
 			name+" was updated automatically", "it was not running, and is left stopped", time.Now())})
 		return true
 	}
-	h.dispatchContainerNotices(ctx, []monitorNotification{containerNotice("up", name,
+	h.dispatchContainerNotices(nctx, []monitorNotification{containerNotice("up", name,
 		name+" was updated automatically", "watching it for "+fmt.Sprint(int(dockerAutoUpdateWatch.Minutes()))+" minutes", time.Now())})
 	dockerAutoUpdateWatcher(h, api, name)
 	return true
@@ -309,4 +330,17 @@ func (h *Handlers) rollBackAutoUpdate(ctx context.Context, api *dockerAPI, name,
 		detail = reason + "; " + err.Error()
 	}
 	h.dispatchContainerNotices(ctx, []monitorNotification{containerNotice("down", name, title, detail, time.Now())})
+}
+
+// autoUpdateFailureDetail says why an automatic update did not happen, or ""
+// when it did. A recreate that failed and put the old container back returns
+// no error, so it was logged as a success and nobody heard of it, every night.
+func autoUpdateFailureDetail(outcome dockerRecreateResult, err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	if outcome.Phase == "rolled-back" {
+		return "it failed at " + outcome.FailedStep + "; the previous container runs again"
+	}
+	return ""
 }

@@ -29,7 +29,10 @@
     async function load(dash) {
         if (dash._widgetSources) return dash._widgetSources;
         try {
-            const res = await fetch('/api/sources');
+            // With the token: /api/sources needs it, and the tile sat on
+            // "Loading…" for good on an install that sets one.
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await api('/api/sources');
             if (!res.ok) return null;
             const data = await res.json();
             // Measured against the running app: the route answers a bare array.

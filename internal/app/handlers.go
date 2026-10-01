@@ -88,6 +88,17 @@ func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	return false
 }
 
+// trashedPageIDs names the pages that sit in the trash as a whole page.
+func (h *Handlers) trashedPageIDs() map[int]bool {
+	ids := map[int]bool{}
+	for _, item := range h.store.GetTrashItems() {
+		if item.Kind == TrashKindPage && item.TrashedPage != nil {
+			ids[item.PageID] = true
+		}
+	}
+	return ids
+}
+
 func (h *Handlers) pageExists(pageID int) bool {
 	for _, page := range h.store.GetPages() {
 		if page.ID == pageID {
@@ -1389,6 +1400,12 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
 		return
 	}
+	// A tab still showing a page deleted elsewhere saved its rows back into a
+	// new "Page N", and the real page in the trash could then not be restored.
+	if !h.pageExists(pageID) && pageID != unsortedPageID {
+		http.Error(w, "Page not found", http.StatusNotFound)
+		return
+	}
 
 	// Reject duplicate URLs within the submitted page payload.
 	seenURLKeys := make(map[string]struct{}, len(bookmarks))
@@ -1912,10 +1929,26 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 		}
 	}
 
+	// As every other write: rows for a page that does not exist were stored
+	// where nothing shows them.
+	if !h.pageExists(request.PageID) && request.PageID != unsortedPageID {
+		http.Error(w, "Page not found", http.StatusNotFound)
+		return
+	}
+
 	existing := h.store.GetBookmarksByPage(request.PageID)
 	existingURLs := make(map[string]struct{}, len(existing))
 	for _, b := range existing {
 		existingURLs[canonicalBookmarkURLKey(b.URL)] = struct{}{}
+	}
+	// A shortcut is unique across the whole collection. An exported CSV brought
+	// back onto another page carried the same keys, and from then on both pages
+	// answered 409 on every save; a key already taken is let go.
+	takenShortcuts := map[string]bool{}
+	for _, b := range h.store.GetAllBookmarks() {
+		if sc := normalizeShortcut(b.Shortcut); sc != "" {
+			takenShortcuts[sc] = true
+		}
 	}
 
 	categories := h.store.GetCategoriesByPage(request.PageID)
@@ -1943,6 +1976,12 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 			continue
 		}
 		catID := nameToID[strings.TrimSpace(bm.Category)]
+		shortcut := normalizeShortcut(bm.Shortcut)
+		if takenShortcuts[shortcut] {
+			shortcut = ""
+		} else if shortcut != "" {
+			takenShortcuts[shortcut] = true
+		}
 		if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.PageID, Bookmark{
 			Name:     bm.Name,
 			URL:      bm.URL,
@@ -1950,7 +1989,7 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 			PageID:   request.PageID,
 			// Through the same normalisers every other write uses, so an
 			// imported row cannot hold a shape a typed one could not.
-			Shortcut: normalizeShortcut(bm.Shortcut),
+			Shortcut: shortcut,
 			Note:     strings.TrimSpace(bm.Note),
 			Tags:     normalizeTags(bm.Tags),
 			// Only what a file actually carried. Zero leaves the store to stamp
@@ -2172,6 +2211,20 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// A list from a tab that has not heard of a delete still names that page.
+	// Saved, it came back as an empty page with default categories, and the
+	// real one in the trash answered 409 on Restore. A deleted page is left
+	// out; a new page has no trash entry and is saved as before.
+	deleted := h.trashedPageIDs()
+	kept := pages[:0]
+	for _, page := range pages {
+		if deleted[page.ID] && !h.pageExists(page.ID) {
+			continue
+		}
+		kept = append(kept, page)
+	}
+	pages = kept
+
 	// Extract page order (array of IDs)
 	order := make([]int, len(pages))
 	for i, page := range pages {
@@ -2216,6 +2269,12 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 	}
 	if pageID == unsortedPageID {
 		http.Error(w, "Cannot delete the unsorted page", http.StatusBadRequest)
+		return
+	}
+	// A page already gone (deleted in another tab) left an empty page entry in
+	// the trash, which then blocked restoring the real one.
+	if !h.pageExists(pageID) {
+		http.Error(w, "Page not found", http.StatusNotFound)
 		return
 	}
 
@@ -2364,12 +2423,36 @@ with the token. Blank rather than removed: the fields are omitempty, so they do
 not appear at all, and a settings POST that leaves a key out keeps what is
 stored (see mergeSettingsFromBody).
 */
+// applyRuntimeSettings puts the settings the server acts on itself into
+// effect: a settings save and a restore both call it, or a restored backup
+// kept capturing at the old level until a restart.
+func applyRuntimeSettings(settings Settings) {
+	// Half of the feature snapshots are settings; a cached copy would report
+	// the old ones for ten minutes. Settings are cheap to read, so drop it.
+	invalidateAnalyticsSnapshotsCache()
+	// Apply straight away, so starting or stopping capture and changing the cap
+	// take effect on the next poll rather than at the next restart.
+	serverLog.SetRetention(
+		settings.ServerLogRetentionMode,
+		settings.ServerLogRetentionHours,
+		settings.ServerLogMaxEntries,
+	)
+	serverLog.SetPaused(!settings.ServerLogEnabled)
+	// The detail level and the channel list take effect on the next line
+	// written, not at the next restart: someone turning Verbose on is usually
+	// mid-investigation and wants the next thing that happens.
+	applyLogSettings(settings)
+}
+
 func redactSettingsSecrets(settings *Settings) {
 	settings.ArchiveSaveAccessKey = ""
 	settings.ArchiveSaveSecret = ""
 	settings.MonitorNotifyPushoverToken = ""
 	settings.MonitorNotifyPushoverUserKey = ""
 	settings.MonitorNotifyURL = ""
+	// A private calendar's secret iCal address reads the whole calendar; the
+	// widget fetches it by widget id so the page never holds it.
+	settings.CalendarIcsUrl = ""
 }
 
 func mergeSettingsFromBody(stored Settings, body []byte) (Settings, error) {
@@ -2483,21 +2566,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
 		return
 	}
-	// Half of the feature snapshots are settings; a cached copy would report
-	// the old ones for ten minutes. Settings are cheap to read, so drop it.
-	invalidateAnalyticsSnapshotsCache()
-	// Apply straight away, so starting or stopping capture and changing the cap
-	// take effect on the next poll rather than at the next restart.
-	serverLog.SetRetention(
-		settings.ServerLogRetentionMode,
-		settings.ServerLogRetentionHours,
-		settings.ServerLogMaxEntries,
-	)
-	serverLog.SetPaused(!settings.ServerLogEnabled)
-	// The detail level and the channel list take effect on the next line
-	// written, not at the next restart: someone turning Verbose on is usually
-	// mid-investigation and wants the next thing that happens.
-	applyLogSettings(settings)
+	applyRuntimeSettings(settings)
 	w.Header().Set("Content-Type", "application/json")
 	response := map[string]any{"status": "success"}
 	if len(droppedCollections) > 0 {
@@ -3735,17 +3804,25 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	 * Only when the address is unchanged: a page that now advertises a
 	 * different og:image gets that one, immediately.
 	 */
+	// Every caller hands in an empty or nil cache, so the stored entry is read
+	// as well: looked up in the caller's map alone, this never found anything
+	// and every re-parse dropped the pictures.
+	previous, hadPrevious := BookmarkPreview{}, false
 	if cache != nil {
-		if previous, ok := cache.Cache[cacheKey]; ok {
-			if previous.ImageSource == preview.ImageSource {
-				preview.Image = previous.Image
+		previous, hadPrevious = cache.Cache[cacheKey]
+	}
+	if !hadPrevious {
+		previous, hadPrevious = h.storedPreview(cacheKey)
+	}
+	if hadPrevious {
+		if previous.ImageSource == preview.ImageSource {
+			preview.Image = previous.Image
+			preview.ImageFetchedAt = previous.ImageFetchedAt
+		}
+		if previous.IconSource == preview.IconSource {
+			preview.Icon = previous.Icon
+			if preview.ImageFetchedAt == 0 {
 				preview.ImageFetchedAt = previous.ImageFetchedAt
-			}
-			if previous.IconSource == preview.IconSource {
-				preview.Icon = previous.Icon
-				if preview.ImageFetchedAt == 0 {
-					preview.ImageFetchedAt = previous.ImageFetchedAt
-				}
 			}
 		}
 	}
@@ -3796,8 +3873,8 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 			applyOEmbed(&preview, data)
 			// The same carry-over as og:image above, for a thumbnail that is
 			// the page's only image: unchanged, its local copy stands.
-			if cache != nil && preview.Image == "" && preview.ImageSource != "" {
-				if previous, ok := cache.Cache[cacheKey]; ok && previous.ImageSource == preview.ImageSource {
+			if preview.Image == "" && preview.ImageSource != "" {
+				if hadPrevious && previous.ImageSource == preview.ImageSource {
 					preview.Image = previous.Image
 					preview.ImageFetchedAt = previous.ImageFetchedAt
 				}
@@ -4648,12 +4725,16 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				// Collected here and written once at the end: one history write per
 				// run rather than one per bookmark.
 				if bm.Monitor {
+					// Marked like the monitor's own samples: a failure inside a
+					// maintenance window dented uptime, opened an incident and
+					// could send a lone "back online" afterwards.
 					historyUpdates[key] = append(historyUpdates[key], HealthSample{
 						T:      lastChecked,
 						Up:     result.Status == "online",
 						PingMs: result.PingMs,
 						Code:   result.HTTPStatus,
 						Fail:   failureClass(result.ErrorDetail),
+						Maint:  inMaintenanceWindow(h.store.GetSettings().MaintenanceWindows, time.UnixMilli(lastChecked)),
 					})
 				}
 			}
@@ -4720,7 +4801,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 		}
 	}
 	if len(certResults) > 0 {
-		h.recordMonitorCertificates(certResults)
+		h.recordCertificatesAndAlert(ctx, certResults)
 	}
 
 	h.invalidateHealthReportCache()

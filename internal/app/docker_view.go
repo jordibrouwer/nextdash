@@ -26,6 +26,10 @@ var (
 	errDockerNotFound = errors.New("container not found")
 	dockerHexID       = regexp.MustCompile(`^[a-f0-9]{12,64}$`)
 	dockerCgroupID    = regexp.MustCompile(`[a-f0-9]{64}`)
+	// Only Docker's per-container directory names the container: the first
+	// 64-hex string in mountinfo is the root mount's storage layer on overlay2,
+	// btrfs (Unraid's docker.img) and zfs, which is no container at all.
+	dockerMountinfoID = regexp.MustCompile(`/containers/([a-f0-9]{64})/`)
 )
 
 // dockerSelfOverride lets tests hand dockerSelfID() a fixed answer instead of
@@ -160,7 +164,17 @@ func dockerSelfID() string {
 		return id
 	}
 	mi, _ := os.ReadFile("/proc/self/mountinfo")
-	return dockerSelfIDFrom("", string(mi))
+	return dockerSelfIDFromMountinfo(string(mi))
+}
+
+// dockerSelfIDFromMountinfo reads the id from the bind mounts Docker makes for
+// every container (resolv.conf, hostname, hosts), which live under
+// .../containers/<id>/.
+func dockerSelfIDFromMountinfo(mountinfo string) string {
+	if m := dockerMountinfoID.FindStringSubmatch(mountinfo); m != nil {
+		return m[1]
+	}
+	return ""
 }
 
 func isDockerSelf(fullID, self string) bool {

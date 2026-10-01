@@ -126,9 +126,18 @@ class SearchCommandRemove {
      * Remove a bookmark from the current page, with undo toast.
      * @param {Object} bookmark - The bookmark to remove
      */
+    /** A translation, or the English fallback when the key is missing (t() answers the key). */
+    tr(key, fallback) {
+        const value = this.language ? this.language.t(key) : null;
+        return value && value !== key ? value : fallback;
+    }
+
     async removeBookmark(bookmark) {
         const dash = window.dashboardInstance;
-        const currentPageId = dash ? dash.currentPageId : 1;
+        // The bookmark's own page: the list offers every page, and deleting on
+        // the page showing answered 404, or took the copy of the same address
+        // that happened to be here.
+        const currentPageId = Number(bookmark?.pageId ?? (dash ? dash.currentPageId : 1));
 
         // Snapshot the full bookmark list before deleting so undo can restore it.
         let snapshotBeforeDelete = null;
@@ -145,7 +154,7 @@ class SearchCommandRemove {
             });
 
             if (!response.ok) {
-                console.error('Failed to delete bookmark');
+                dash?.showErrorNotification?.(this.tr('commands.removeFailed', 'Could not remove the bookmark'));
                 return;
             }
 
@@ -153,7 +162,7 @@ class SearchCommandRemove {
 
             if (dash) {
                 await dash.loadAllBookmarks();
-                await dash.loadPageBookmarks(currentPageId);
+                await dash.loadPageBookmarks(dash.currentPageId);
             }
 
             const undoCallback = snapshotBeforeDelete ? async () => {
@@ -165,7 +174,7 @@ class SearchCommandRemove {
                     });
                     if (restoreRes.ok && dash) {
                         await dash.loadAllBookmarks();
-                        await dash.loadPageBookmarks(currentPageId);
+                        await dash.loadPageBookmarks(dash.currentPageId);
                         dash.showNotification(
                             (this.language ? this.language.t('others.undone') : null) || 'Undone.',
                             'success'
@@ -175,7 +184,7 @@ class SearchCommandRemove {
             } : null;
 
             const deletedName = bookmark.name || bookmark.url || 'Bookmark';
-            const message = `"${deletedName}" verwijderd`;
+            const message = this.tr('commands.removedBookmark', '"{name}" removed').replace('{name}', deletedName);
             if (dash) {
                 dash.showNotification(message, 'success', { undoCallback, duration: 8000 });
             }

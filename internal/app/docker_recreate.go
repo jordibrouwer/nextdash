@@ -193,6 +193,7 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 	// the new image fills it in; what was set for the container stays.
 	if imgConfig, err := api.inspectImageConfig(ctx, in.Image); err == nil && imgConfig != nil {
 		dropImageDefaults(config, imgConfig)
+		keepPublishedPortsExposed(config, hostConfig)
 	}
 	config["Image"] = ref
 	// Docker defaults the hostname to the short id; carried over, the new
@@ -267,6 +268,28 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 // because its image had it. Env lines and labels go one by one; Cmd goes only
 // with the Entrypoint, since an entrypoint set for the container keeps the
 // command that came with it.
+// keepPublishedPortsExposed puts back every port the container publishes. The
+// daemon only binds a port that is in ExposedPorts, so a published port the
+// old image happened to EXPOSE, dropped above as an image default, went
+// unpublished if the new image no longer exposes it -- and the update still
+// reported done.
+func keepPublishedPortsExposed(config, hostConfig map[string]any) {
+	bindings, _ := hostConfig["PortBindings"].(map[string]any)
+	if len(bindings) == 0 {
+		return
+	}
+	exposed, _ := config["ExposedPorts"].(map[string]any)
+	if exposed == nil {
+		exposed = map[string]any{}
+	}
+	for port := range bindings {
+		if _, ok := exposed[port]; !ok {
+			exposed[port] = map[string]any{}
+		}
+	}
+	config["ExposedPorts"] = exposed
+}
+
 func dropImageDefaults(config, image map[string]any) {
 	if env, ok := config["Env"].([]any); ok {
 		fromImage := map[string]bool{}

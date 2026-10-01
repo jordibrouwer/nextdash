@@ -209,10 +209,44 @@ func (h *Handlers) mergePreviewCacheUpdates(updates map[string]BookmarkPreview) 
 
 	h.ensurePreviewCacheLoadedLocked()
 	for key, entry := range updates {
+		// A batch collects its previews for minutes and merges them at the
+		// end; the worker may have stored the picture in the meantime. Same
+		// source, no file in the update: the stored file stands.
+		if stored, ok := h.previewCache.Cache[key]; ok {
+			keepPreviewMedia(&entry, stored)
+		}
 		h.previewCache.Cache[key] = entry
 	}
 	h.previewCacheDirty = true
 	return nil
+}
+
+// keepPreviewMedia carries the local picture and icon of stored into entry
+// when the page still points at the same ones. A re-parse starts with none,
+// and every refresh, expiry and keyword round otherwise dropped them until a
+// hover had them downloaded again.
+func keepPreviewMedia(entry *BookmarkPreview, stored BookmarkPreview) {
+	if entry.Image == "" && stored.Image != "" && entry.ImageSource == stored.ImageSource {
+		entry.Image = stored.Image
+		if stored.ImageFetchedAt > entry.ImageFetchedAt {
+			entry.ImageFetchedAt = stored.ImageFetchedAt
+		}
+	}
+	if entry.Icon == "" && stored.Icon != "" && entry.IconSource == stored.IconSource {
+		entry.Icon = stored.Icon
+		if stored.ImageFetchedAt > entry.ImageFetchedAt {
+			entry.ImageFetchedAt = stored.ImageFetchedAt
+		}
+	}
+}
+
+// storedPreview is the preview on disk for key, whatever its age.
+func (h *Handlers) storedPreview(key string) (BookmarkPreview, bool) {
+	h.previewCacheMu.Lock()
+	defer h.previewCacheMu.Unlock()
+	h.ensurePreviewCacheLoadedLocked()
+	entry, ok := h.previewCache.Cache[key]
+	return entry, ok
 }
 
 func (h *Handlers) replacePreviewCache(cache PreviewCacheFile) error {

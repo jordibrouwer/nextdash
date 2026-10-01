@@ -231,7 +231,9 @@ class SearchCommandsComponent {
     resetState() {
         this.resetTransientState();
         this.expandedGroups.clear();
-        this.contextBookmark = null;
+        // contextBookmark is not reset here: this runs on every keystroke,
+        // including the ':' that set it, so :pin, :tag, :move and the rest
+        // never saw the selected row. The search clears it when it closes.
     }
 
     resetTransientState() {
@@ -2094,16 +2096,31 @@ class SearchCommandsComponent {
             return [];
         }
 
+        // Saved when the row is chosen, not while it is drawn: the list is
+        // rebuilt on every keystroke, so typing ":save my" saved three junk
+        // searches, and ":saved" passed through ":save" and saved too.
         const label = args.join(' ').trim();
-        const saved = searchComponent.saveCurrentSearch(label || null);
-        if (saved === 'storage-failed') {
-            return [{ name: 'Could not save — browser storage unavailable', shortcut: ':SAVE', action: () => false, type: 'command' }];
-        }
-        if (saved !== true) {
+        const query = String(searchComponent.lastNonCommandQuery || '').trim();
+        if (!query) {
             return [{ name: 'No active search to save', shortcut: ':SAVE', action: () => false, type: 'command' }];
         }
-
-        return [{ name: `Saved search${label ? `: ${label}` : ''}`, shortcut: ':SAVE', action: () => false, type: 'command' }];
+        return [{
+            name: `Save search “${label || query}”`,
+            shortcut: ':SAVE',
+            type: 'command',
+            action: () => {
+                const saved = searchComponent.saveCurrentSearch(label || null);
+                const dash = window.dashboardInstance;
+                if (saved === true) {
+                    dash?.showNotification?.(`Saved search${label ? `: ${label}` : ''}`, 'success');
+                    return { refresh: false };
+                }
+                dash?.showErrorNotification?.(saved === 'storage-failed'
+                    ? 'Could not save — browser storage unavailable'
+                    : 'No active search to save');
+                return false;
+            },
+        }];
     }
 
     handleSavedSearchesCommand(args, fullQuery) {
@@ -2476,9 +2493,9 @@ class SearchCommandsComponent {
      */
     handleContrastCommand(args) {
         const t = (key, fb) => this._t(key, fb);
-        const bands = { soft: 0.34, normal: 0.44, high: 0.5, max: 0.56 };
+        const bands = { soft: 0.34, normal: 0.47, high: 0.5, max: 0.56 };
         const bandOf = (gap) => {
-            const value = Number(gap) || 0.44;
+            const value = Number(gap) || 0.47;
             if (value < 0.36) return 'soft';
             if (value < 0.48) return 'normal';
             if (value < 0.54) return 'high';

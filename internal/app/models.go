@@ -426,6 +426,11 @@ type Settings struct {
 	LinkPreviewCardsOffMigrated     bool   `json:"linkPreviewCardsOffMigrated,omitempty"`     // one-time: default hover preview cards to off
 	ShortcutTooltipsOffMigrated     bool   `json:"shortcutTooltipsOffMigrated,omitempty"`     // one-time: default the toolbar shortcut hints to off
 	ShortcutOpenModeInstantMigrated bool   `json:"shortcutOpenModeInstantMigrated,omitempty"` // one-time: undo v1.2.0's "Enter opens" default
+	// Set by migrateStripBookmarkPreviewImages as a raw key. Without a field the
+	// first settings save after boot dropped it, and every restart rewrote
+	// every page file to strip images again.
+	PreviewImagesStrippedMigrated   bool   `json:"previewImagesStrippedMigrated,omitempty"`
+	CustomPercentGuessMigrated      bool   `json:"customPercentGuessMigrated,omitempty"`
 	ConfigButtonDefaultOnMigrated   bool   `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
 	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
 	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
@@ -1767,7 +1772,44 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.migrateHideEmptyCategoriesDefaultOn()
 	fs.migrateConfigButtonDefaultOn()
 	fs.migrateStripBookmarkPreviewImages()
+	fs.migrateCustomPercentToGuess()
 
+}
+
+/*
+ * One-time migration: custom-widget percentages saved before the scale choice.
+ *
+ * "percent" read 0..1 as a share and everything else as a percentage, so 0.8%
+ * reported as 0.8 showed as 80%. It now means 0..100, with "share" for 0..1.
+ * A field saved under the old reading moves to "percentAuto", which keeps it,
+ * so nothing that showed right before shows differently after an update.
+ */
+func (fs *FileStore) migrateCustomPercentToGuess() {
+	if fs.migrationMarkerSet("customPercentGuessMigrated") {
+		return
+	}
+	for _, page := range fs.GetPages() {
+		widgets, order := fs.GetPageBlocks(page.ID)
+		changed := false
+		for i := range widgets {
+			if widgets[i].Type != WidgetTypeCustom {
+				continue
+			}
+			fields, _ := widgets[i].Config["fields"].([]any)
+			for _, raw := range fields {
+				if field, ok := raw.(map[string]any); ok && field["format"] == "percent" {
+					field["format"] = "percentAuto"
+					changed = true
+				}
+			}
+		}
+		if changed {
+			if err := fs.SavePageBlocks(page.ID, widgets, order); err != nil {
+				return // unmarked: the next start tries again
+			}
+		}
+	}
+	fs.setMigrationMarker("customPercentGuessMigrated")
 }
 
 /*
@@ -2419,8 +2461,17 @@ func (fs *FileStore) SaveBookmarkPageUpdates(updates map[int][]Bookmark) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
-	for pageID, bookmarks := range updates {
-		if err := fs.saveBookmarksByPageLocked(pageID, bookmarks); err != nil {
+	// Pages that gained rows first (see pageWriteOrder): a merge or move that
+	// fails half-way leaves a duplicate rather than losing rows.
+	before := func(id int) int {
+		page, err := fs.readPageWithBookmarksLocked(id)
+		if err != nil {
+			return 0
+		}
+		return len(page.Bookmarks)
+	}
+	for _, pageID := range pageWriteOrder(updates, before) {
+		if err := fs.saveBookmarksByPageLocked(pageID, updates[pageID]); err != nil {
 			return err
 		}
 	}
@@ -4912,6 +4963,8 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.LinkPreviewCardsOffMigrated = settings.LinkPreviewCardsOffMigrated || stored.LinkPreviewCardsOffMigrated
 			settings.ShortcutTooltipsOffMigrated = settings.ShortcutTooltipsOffMigrated || stored.ShortcutTooltipsOffMigrated
 			settings.ShortcutOpenModeInstantMigrated = settings.ShortcutOpenModeInstantMigrated || stored.ShortcutOpenModeInstantMigrated
+			settings.PreviewImagesStrippedMigrated = settings.PreviewImagesStrippedMigrated || stored.PreviewImagesStrippedMigrated
+			settings.CustomPercentGuessMigrated = settings.CustomPercentGuessMigrated || stored.CustomPercentGuessMigrated
 			settings.HideEmptyCategoriesMigrated = settings.HideEmptyCategoriesMigrated || stored.HideEmptyCategoriesMigrated
 			settings.ShortcutDisplayAlwaysMigrated = settings.ShortcutDisplayAlwaysMigrated || stored.ShortcutDisplayAlwaysMigrated
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated

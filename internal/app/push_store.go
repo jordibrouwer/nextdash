@@ -252,6 +252,8 @@ func recordPushDeliveryResults(results map[string]pushDeliveryOutcome) {
 			if s.FailureCount >= maxPushDeliveryFailures {
 				continue
 			}
+		case pushDeliveryUnreachable:
+			// Not the subscription's doing; see pushDeliveryUnreachable.
 		case pushDeliveryOK:
 			if s.FailureCount != 0 {
 				s.FailureCount = 0

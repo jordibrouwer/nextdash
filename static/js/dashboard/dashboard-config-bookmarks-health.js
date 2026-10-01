@@ -37,7 +37,9 @@
                 });
             }
             if (!this._bmHealthLoading) {
-                this._bmHealthLoading = health.fetchReport()
+                // The credential names come with it: the Expectations form
+                // draws its "Sign in with" select from them.
+                this._bmHealthLoading = Promise.all([health.fetchReport(), health.loadHealthCredentials?.()])
                     .then(() => this.rebuildBmHealthJoin(health))
                     .catch(() => {
                         // A failed report leaves the list as it was; the next
@@ -56,18 +58,32 @@
             this.invalidateVisibleBookmarks?.();
             // The rail's counts are cached against this: a new report is a new count.
             this._bmHealthGen = (this._bmHealthGen || 0) + 1;
+            // By page and URL first: the report has one issue per row, and keyed
+            // by URL alone the copy on a later page overwrote the earlier one,
+            // so the panel, the keys and work-through acted on the other page's
+            // copy. The URL-only map stays as the fallback for a row the report
+            // names without a page.
             const byUrl = new Map();
+            const byPageUrl = new Map();
             (health.report?.issues || []).forEach((issue) => {
                 const key = global.HealthFacts?.keyFor?.(issue.url);
-                if (key) byUrl.set(key, issue);
+                if (!key) return;
+                if (!byUrl.has(key)) byUrl.set(key, issue);
+                const pageId = Number(issue.pageId ?? issue.pageID);
+                const pageKey = `${pageId}\u0000${key}`;
+                if (Number.isFinite(pageId) && !byPageUrl.has(pageKey)) byPageUrl.set(pageKey, issue);
             });
             this._bmHealthByUrl = byUrl;
+            this._bmHealthByPageUrl = byPageUrl;
         },
 
         /** The report's issue for one bookmark, or null before the report lands. */
         bmHealthIssue(b) {
             const key = global.HealthFacts?.keyFor?.(b?.url);
-            return key ? (this._bmHealthByUrl?.get(key) || null) : null;
+            if (!key) return null;
+            const pageId = Number(b?.pageId);
+            const own = Number.isFinite(pageId) ? this._bmHealthByPageUrl?.get(`${pageId}\u0000${key}`) : null;
+            return own || this._bmHealthByUrl?.get(key) || null;
         },
 
         /**
