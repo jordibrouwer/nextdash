@@ -210,18 +210,28 @@ class SearchComponent {
                 const inFinderText = inFinderMode && this.currentQuery.includes(' ');
                 const shouts = (inFinderMode && !inFinderText) || inGlobalMode;
                 const value = shouts ? raw.toUpperCase() : raw;
-                if (value.length > this.currentQuery.length) {
-                    // Character added
-                    const newChar = value[value.length - 1];
-                    const allowed = shouts
-                        ? /^[A-Z0-9: \?/#\.\-_]$/.test(newChar)
-                        : /^[\x20-\x7E]$/.test(newChar);
-                    if (allowed) {
-                        this.addToQuery(newChar);
+                const allowedChar = (ch) => (shouts
+                    ? /^[A-Z0-9: \?/#\.\-_]$/.test(ch)
+                    : /^[\x20-\x7E]$/.test(ch));
+                // The field's value is what was typed. A paste, a swipe-typed
+                // word or an autocorrection inserts several characters at
+                // once, and a selection deleted takes several away: only the
+                // last character, or one removal, was taken before.
+                const before = shouts ? this.currentQuery.toUpperCase() : this.currentQuery;
+                if (value.length > before.length && value.startsWith(before)) {
+                    for (const ch of value.slice(before.length)) {
+                        if (allowedChar(ch)) this.addToQuery(ch);
                     }
-                } else if (value.length < this.currentQuery.length) {
-                    // Character removed
-                    this.removeLastChar();
+                } else if (value.length < before.length && before.startsWith(value)) {
+                    for (let i = value.length; i < before.length; i += 1) this.removeLastChar();
+                } else if (value !== before) {
+                    // An edit in the middle, or a word replaced.
+                    if (!value) {
+                        while (this.currentQuery.length) this.removeLastChar();
+                    } else {
+                        this.currentQuery = [...value].filter(allowedChar).join('');
+                        this._scheduleUpdateSearch();
+                    }
                 }
                 // Keep input synced
                 e.target.value = this.currentQuery;
@@ -284,10 +294,13 @@ class SearchComponent {
             // rather than naming its members: the list it replaced still held
             // the four keys that existed when it was written and had silently
             // fallen behind the ones added since.
+            // Not when the key typed a launcher character: on AZERTY "?" is
+            // Shift plus the key at the US M, and was never let through.
             if (
                 !this.searchActive
                 && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
                 && /^Key[A-Z]$/.test(e.code || '')
+                && !(e.key.length === 1 && !/^\p{L}$/u.test(e.key))
             ) {
                 return;
             }
@@ -856,7 +869,7 @@ class SearchComponent {
         if (
             !this.searchActive
             && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
-            && (e.code === 'KeyM' || e.code === 'KeyD' || e.code === 'KeyT'
+            && (((e.code === 'KeyM' || e.code === 'KeyD' || e.code === 'KeyT') && /^\p{L}$/u.test(e.key))
                 || (key.length === 1 && /^[A-Z]$/.test(key)))
         ) {
             return;
@@ -1404,12 +1417,12 @@ class SearchComponent {
         this.updateSearch();
     }
 
-    _activateMatchAt(index) {
+    _activateMatchAt(index, options = {}) {
         if (index < 0 || index >= this.selectableMatches.length) {
             return;
         }
         this.selectedMatchIndex = index;
-        this.selectCurrentMatch();
+        this.selectCurrentMatch(options);
     }
 
     _bindMatchKeyboardActivate(element, index) {
@@ -1432,7 +1445,10 @@ class SearchComponent {
             }
             e.preventDefault();
             e.stopPropagation();
-            this._activateMatchAt(index);
+            // Ctrl/Cmd+Enter forces a new tab, as on the grid. The focused row
+            // takes Enter before the document handler that honoured it, so
+            // the chord opened in the same tab.
+            this._activateMatchAt(index, { newTab: e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.altKey });
         });
     }
 

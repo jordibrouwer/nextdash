@@ -861,9 +861,15 @@
         // which fires onHide but not onConfirm/onCancel, so hang it there and guard
         // against running twice when the button path fires both.
         let finished = false;
+        // Still this What's New: #app-modal is every dialog's, so "a modal is
+        // open" let a slow fetch write release notes into whatever replaced it
+        // (the cheat sheet, a confirm). Closing ends the session for good.
+        const stillOurs = () => isModalStillOpen() && sessionId === modalSessionId
+            && document.querySelector('#app-modal .whats-new-modal') != null;
         const finishOnce = () => {
             if (finished) return;
             finished = true;
+            if (sessionId === modalSessionId) modalSessionId += 1;
             teardownWhatsNewUpdateCheckHeader();
             dropLiftedFooter();
             finish();
@@ -917,7 +923,7 @@
 
         return fetchManifest()
             .then((manifest) => {
-                if (!isModalStillOpen()) {
+                if (!stillOurs()) {
                     return;
                 }
                 const visible = getVisibleManifest(manifest);
@@ -929,7 +935,7 @@
                     return;
                 }
                 return fetchRelease(visible[0].id).then((first) => {
-                    if (!isModalStillOpen() || sessionId !== modalSessionId) {
+                    if (!stillOurs()) {
                         return;
                     }
                     const textEl = getModalTextEl();
@@ -953,7 +959,7 @@
                 });
             })
             .catch(() => {
-                if (isModalStillOpen()) {
+                if (stillOurs()) {
                     showEmptyMessage(wnTranslate(
                         'dashboard.whatsNewLoadFailed',
                         'Could not load release notes. Try again or see <strong>CHANGELOG.md</strong> in Config → Help.'

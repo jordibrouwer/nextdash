@@ -83,6 +83,7 @@
                 existing.addEventListener('load', () => resolve(), { once: true });
                 existing.addEventListener('error', () => {
                     loadPromise = null;
+                    existing.remove();
                     reject(new Error('whats-new-modal failed to load'));
                 }, { once: true });
                 return;
@@ -94,6 +95,10 @@
             script.onload = () => resolve();
             script.onerror = () => {
                 loadPromise = null;
+                // The failed tag goes too: left in place, the next call waited
+                // on it for an event that never fires again, and What's New
+                // stayed dead until a reload.
+                script.remove();
                 reject(new Error('whats-new-modal failed to load'));
             };
             document.head.appendChild(script);
