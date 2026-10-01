@@ -2059,10 +2059,10 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 - **Download backup** — a ZIP of everything, to your computer.
 - **Make a backup now** — stores one on the server.
 - **Create a backup automatically** and **How often** — every day, week (default), two weeks or month. A run happens whenever the newest backup is older than that, so frequent restarts do not skip it. The newest **three** are kept; `NEXTDASH_AUTO_BACKUP_KEEP` (1–50) changes that and `NEXTDASH_AUTO_BACKUP_DIR` (an absolute path) stores them elsewhere. The default place is `data/auto-backups/`, which is left out of backups. **The panel names the directory it is actually using**, and warns when that is inside the data directory — backups kept there are lost with the thing they back up.
-- **What a backup carries** — a backup holds the whole data directory: bookmarks, pages, categories, finders, the inbox, settings, custom themes, check history, icons and uploads. Two switches decide the rest:
+- **What a backup carries** — a backup holds the whole data directory: bookmarks, pages, categories, finders, the inbox, settings, custom themes, check history, icons and uploads, and the images held or skipped in the Containers view. Two switches decide the rest:
   - **Local copies of pages** — the largest part of a backup.
-  - **Tokens and passwords** — source tokens, stored sign-ins and webhook keys. With them in, a restore needs nothing typed again, and the ZIP itself becomes a secret. They are written back with owner-only permissions.
-- Left out on purpose: cached previews and pictures, the health cache, and browser push subscriptions — all rebuilt or re-registered after a restore.
+  - **Tokens and passwords** — source tokens, stored sign-ins, webhook keys and the Containers view's GitHub token. With them in, a restore needs nothing typed again, and the ZIP itself becomes a secret. They are written back with owner-only permissions.
+- Left out on purpose: cached previews and pictures, the health cache, and browser push subscriptions — all rebuilt or re-registered after a restore. The Containers view's timeline, update history, disk sizes and logs stay out too: they belong to the Docker host, not to the data.
 - **Stored backups** — each with its age, size and contents (*1.7 MB · 412 bookmarks on 5 pages*), and **Download**, **Restore** and **Delete**. **Download all** saves them all.
 - **Full backup (zip)** → **Import backup…** — restores a ZIP.
 
