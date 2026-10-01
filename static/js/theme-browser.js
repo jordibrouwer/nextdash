@@ -33,6 +33,8 @@
      * stays the only place the list is written down.
      */
     let ARCHETYPES = [];
+    // The collections, in the order the server lists them. A theme names its own.
+    let COLLECTIONS = [];
     const FAVORITE_LIMIT = 24;
 
     /* ── Reading a palette ─────────────────────────────────────────────── */
@@ -129,6 +131,17 @@
     /** The archetype a theme belongs to, or '' for one that names none. */
     function characterOf(id) {
         return String(metaFor(id).character || '');
+    }
+
+    /** The collection a theme belongs to, or '' for one in none. */
+    function collectionOf(id) {
+        return String(metaFor(id).collection || '');
+    }
+
+    /** The name a collection goes by on screen, capitalised when no locale says it. */
+    function collectionLabel(name, t) {
+        const fallback = name.charAt(0).toUpperCase() + name.slice(1);
+        return t(`config.themeCollection.${name}`, fallback);
     }
 
     /* ── Grouping ──────────────────────────────────────────────────────── */
@@ -255,6 +268,10 @@
             && !Object.values(family.variants).some((v) => characterOf(v.id) === state.archetype)) {
             return false;
         }
+        if (state.collection
+            && !Object.values(family.variants).some((v) => collectionOf(v.id) === state.collection)) {
+            return false;
+        }
         const query = state.query.trim().toLowerCase();
         if (!query) return true;
         // The archetype goes in twice, as its own word and as its translated
@@ -281,6 +298,10 @@
             `<button type="button" class="theme-browser-chip${st.archetype === name ? ' is-on' : ''}"
                      data-theme-character="${escapeHtml(name)}"
                      aria-pressed="${st.archetype === name}">${escapeHtml(label)}</button>`;
+        const collectionButton = (name, label, st) =>
+            `<button type="button" class="theme-browser-chip${st.collection === name ? ' is-on' : ''}"
+                     data-theme-collection="${escapeHtml(name)}"
+                     aria-pressed="${st.collection === name}">${escapeHtml(label)}</button>`;
         const segmentButton = (key, label) =>
             `<button type="button" class="theme-browser-segment${state.segment === key ? ' is-on' : ''}"
                      data-theme-segment="${key}" aria-pressed="${state.segment === key}">${escapeHtml(label)}</button>`;
@@ -304,6 +325,12 @@
                      aria-label="${escapeHtml(t('config.themeCharacterFilter', 'Character'))}">
                     ${chipButton('', t('config.themeSegmentAll', 'All'), state)}
                     ${ARCHETYPES.map((name) => chipButton(name, archetypeLabel(name, t), state)).join('')}
+                </div>` : ''}
+                ${COLLECTIONS.length ? `
+                <div class="theme-browser-characters" role="group" data-theme-collections
+                     aria-label="${escapeHtml(t('config.themeCollectionFilter', 'Collection'))}">
+                    ${collectionButton('', t('config.themeSegmentAll', 'All'), state)}
+                    ${COLLECTIONS.map((name) => collectionButton(name, collectionLabel(name, t), state)).join('')}
                 </div>` : ''}
                 <p class="theme-browser-count">${escapeHtml(
                     t('config.themeBrowserCount', '{shown} of {total} themes · {favorites} favourites')
@@ -329,6 +356,7 @@
         const palettes = opts.palettes || {};
         META = opts.meta && opts.meta.themes ? opts.meta : { themes: {} };
         ARCHETYPES = Array.isArray(opts.meta?.archetypes) ? opts.meta.archetypes : [];
+        COLLECTIONS = Array.isArray(opts.meta?.collections) ? opts.meta.collections : [];
         if (!global.AppModal?.show) return;
 
         const families = buildFamilies(palettes, displayName);
@@ -342,6 +370,8 @@
             // family you are looking at, an archetype is what kind of thing it
             // is, and wanting "dark velvet" is an ordinary thing to want.
             archetype: '',
+            // Empty means every collection; a second axis beside the archetype.
+            collection: '',
             current: opts.current || 'dark',
             favorites: Array.isArray(opts.favorites) ? opts.favorites.slice() : [],
             // Which half of a family the card is showing. Starts at whichever
@@ -476,6 +506,14 @@
                     // is the only way back to everything without hunting for
                     // the All chip at the far end of a twelve-chip row.
                     state.archetype = state.archetype === name ? '' : name;
+                    repaint();
+                });
+            });
+
+            root.querySelectorAll('[data-theme-collection]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const name = button.getAttribute('data-theme-collection') || '';
+                    state.collection = state.collection === name ? '' : name;
                     repaint();
                 });
             });
