@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{/* Dark Reader leaves the page alone. nextDash draws its own dark themes,
+         and the extension's rewrite of colour variables turned the backdrop
+         gradients invalid, so a page opened from a link came up without them
+         until a refresh. */}}
+    <meta name="darkreader-lock">
     {{if .WriteToken}}<meta name="nextdash-write-token" content="{{.WriteToken}}">{{end}}
     <meta name="nextdash-app-version" content="{{.AppVersion}}">
     {{if .TelemetryLockedOff}}<meta name="nextdash-telemetry-locked" content="1">{{end}}
