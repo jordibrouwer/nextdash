@@ -246,7 +246,7 @@ test.describe('the look studio', () => {
         await openStudio(page);
 
         await page.locator('[data-studio-tab="looks"]').click();
-        await page.locator('[data-studio-use-look="homepage-boxed"]').click();
+        await page.locator('[data-studio-use-look="glass-boxed"]').click();
         await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe('boxed');
         await expect.poll(() => dirtyTabs(page)).toEqual(['backdrop', 'surface', 'heads', 'layout']);
 

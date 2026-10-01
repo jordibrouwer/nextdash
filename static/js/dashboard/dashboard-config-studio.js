@@ -88,11 +88,11 @@
     });
 
     const LOOKS = [
-        look('homepage', 'Homepage', 'Photo-like backdrop, glass cards, clean headers',
+        look('glass', 'Glass', 'Photo-like backdrop, glass cards, clean headers',
             'sunset', { strength: 1.2, brightness: 0.85, saturate: 1.1 },
             { alpha: 0.55, blur: 12 }, 'glass', { categoryHeaderStyle: 'clean' },
             ['inter', 'comfortable', 'balanced']),
-        look('homepage-boxed', 'Homepage boxed', 'Boxed headers, a little more blur',
+        look('glass-boxed', 'Glass boxed', 'Boxed headers, a little more blur',
             'mountains', { strength: 1.3, blur: 2, brightness: 0.75, saturate: 1.2 },
             { alpha: 0.6, blur: 10, border: 'on' }, 'glass',
             { categoryHeaderStyle: 'boxed', showCategoryCount: true },
