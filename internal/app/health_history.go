@@ -192,7 +192,9 @@ func (h *Handlers) recordManualHealthSample(key string, up bool, pingMs, code in
 	if !h.isMonitoredURL(key) {
 		return
 	}
-	sample := HealthSample{T: time.Now().UnixMilli(), Up: up, PingMs: pingMs, Code: code, Fail: failureClass(failDetail)}
+	now := time.Now()
+	sample := HealthSample{T: now.UnixMilli(), Up: up, PingMs: pingMs, Code: code, Fail: failureClass(failDetail),
+		Maint: inMaintenanceWindow(h.store.GetSettings().MaintenanceWindows, now)}
 	if err := h.appendHealthSamples(map[string][]HealthSample{key: {sample}}); err != nil {
 		logWarn(logComponentHealth, "the check of %s could not be added to the history (%v); the graph will show a gap", key, err)
 	}

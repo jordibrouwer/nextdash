@@ -329,7 +329,14 @@
                 return;
             }
             const picked = this.bookmarksOfStructure(pageId, categoryId);
-            if (picked.length) await this.bulkMove(picked, { pageId: toPageId, category: id });
+            // The category goes only when every bookmark went with it: a row the
+            // target refused (already there) or a failed move stayed behind
+            // pointing at a category that no longer existed.
+            const result = picked.length ? await this.bulkMove(picked, { pageId: toPageId, category: id }) : { skipped: [] };
+            if (!result || result.skipped.length) {
+                await this.dash.loadAllBookmarks?.();
+                return;
+            }
             this._categories = (this._categories || []).filter((c) => String(c.id) !== String(categoryId));
             await this.saveCategories(pageId);
             await this.dash.loadAllBookmarks?.();
@@ -346,7 +353,14 @@
                 .replace('{n}', String(picked.length)).replaceAll('{from}', String(from.name || from.id)).replace('{into}', String(into.name || into.id)),
             { confirmLabel: this.t('config.bmStructureMerge', 'Merge') });
             if (!ok) return;
-            if (picked.length) await this.mutateSelected(picked, (b) => ({ ...b, category: String(intoId) }));
+            if (picked.length) {
+                const undo = await this.mutateSelected(picked, (b) => ({ ...b, category: String(intoId) }));
+                // A page that refused keeps its rows in this category, so it stays.
+                if (undo?.failed) {
+                    await this.dash.loadAllBookmarks?.();
+                    return;
+                }
+            }
             this._categories = (this._categories || []).filter((c) => String(c.id) !== String(categoryId));
             await this.saveCategories(pageId);
             await this.dash.loadAllBookmarks?.();

@@ -24599,7 +24599,13 @@ class DashboardConfig {
             // The fields that changed, on this row, by its URL: the page is no
             // longer read and written back whole around a one-field edit.
             try {
-                await this.patchRows(pageId, [{ url: current.url, fields: DashboardConfig.changedFields(current, next) }]);
+                // With its occurrence: by URL alone the server takes the first
+                // copy, so editing the second copy of a duplicate changed the first.
+                await this.patchRows(pageId, [{
+                    url: current.url,
+                    occurrence: this.occurrenceOf(record.bookmark),
+                    fields: DashboardConfig.changedFields(current, next),
+                }]);
             } catch (err) {
                 if (err?.conflict) {
                     this.notify(this.conflictMessage(err, 'config.bookmarkSaveError', 'Could not save the bookmark.'), 'error');
@@ -24853,6 +24859,7 @@ class DashboardConfig {
         try {
             await this.patchRows(record.pageId, [{
                 url: record.record.url,
+                occurrence: this.occurrenceOf(record.bookmark),
                 fields: DashboardConfig.changedFields(record.record, updated),
             }]);
             await this.refreshBookmarksAfterWrite({ silent: true });
@@ -25938,8 +25945,10 @@ class DashboardConfig {
 
     /** The ticked bookmarks, resolved back to live objects. */
     selectedBookmarks() {
-        const keys = this.bmSelected;
-        return (this.dash.allBookmarks || []).filter((b) => keys.has(this.bookmarkKey(b)));
+        // From the same pool the bar counts: kept bookmarks live outside
+        // allBookmarks, so in the Unsorted view Delete, Export CSV and the
+        // fetches got nothing and did nothing.
+        return this.bookmarksFromKeys([...this.bmSelected]);
     }
 
     async handleBulkAction(action) {
@@ -26035,6 +26044,9 @@ class DashboardConfig {
             // is named rather than folded into "could not".
             this.notify(this.conflictMessage(failure, 'config.bulkActionError', 'Could not apply the bulk action.'), 'error');
         }
+        // Read by a caller that must not go on when a page refused, such as a
+        // merge that would otherwise remove the category its rows still use.
+        undo.failed = Boolean(failure);
         return undo;
     }
 
@@ -26098,7 +26110,7 @@ class DashboardConfig {
         } catch {
             this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
             await this.refreshBookmarksAfterWrite();
-            return;
+            return null;
         }
         const movedKeys = new Set(result.moved.map((m) => `${m.fromPage}\u0000${m.url}`));
         const moving = picked.filter((b) => movedKeys.has(`${Number(b.pageId)}\u0000${b.url}`)
@@ -26136,10 +26148,11 @@ class DashboardConfig {
                 .replace('{moved}', String(result.moved.length))
                 .replace('{skipped}', String(result.skipped.length))
                 .replace('{url}', String(first.url || '')), 'warning', { duration: 8000, undoCallback });
-            return;
+            return result;
         }
         this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success',
             undoCallback ? { duration: 8000, undoCallback } : undefined);
+        return result;
     }
 
     async bulkPin(picked, pinned) {
@@ -26469,15 +26482,26 @@ class DashboardConfig {
     /**
      * Write what a sweep collected: one PATCH per page, naming each row by URL.
      *
-     * @param {Map<string, Map<string, object>>} byPage pageId → url → fields
+     * @param {Map<string, Map<string, object>>} byPage pageId → row key → { url, occurrence, fields }
      */
+    /**
+     * One swept row's fields, keyed by URL and occurrence: keyed by URL alone,
+     * the second copy of a duplicate overwrote the first and the write landed
+     * on the first copy.
+     */
+    sweepPut(page, record, fields) {
+        const url = record.record?.url || record.bookmark?.url;
+        const occurrence = this.occurrenceOf(record.bookmark);
+        page.set(`${url}\u0000${occurrence}`, { url, occurrence, fields });
+    }
+
     async saveSweptFields(byPage) {
         for (const [pageId, rows] of byPage) {
             if (!rows.size) continue;
             try {
                 // By URL, only the swept fields: a sweep takes minutes, and a
                 // whole-page write at its end undid whatever changed meanwhile.
-                await this.patchRows(pageId, [...rows].map(([url, fields]) => ({ url, fields })));
+                await this.patchRows(pageId, [...rows.values()].map(({ url, occurrence, fields }) => ({ url, occurrence, fields })));
             } catch {
                 // The next sweep can ask again; a page that will not save is
                 // not a reason to drop the pages after it.
@@ -26534,7 +26558,7 @@ class DashboardConfig {
                     previewEnriched: true,
                 };
                 const page = byPage.get(String(record.pageId)) || new Map();
-                page.set(record.record?.url || record.bookmark?.url, fields);
+                this.sweepPut(page, record, fields);
                 byPage.set(String(record.pageId), page);
                 return 'ok';
             },
@@ -26582,7 +26606,7 @@ class DashboardConfig {
                 const record = await this.sweepRecordFor(bookmark);
                 if (!record) return 'failed';
                 const page = byPage.get(String(record.pageId)) || new Map();
-                page.set(record.record?.url || record.bookmark?.url, { icon: iconPath });
+                this.sweepPut(page, record, { icon: iconPath });
                 byPage.set(String(record.pageId), page);
                 return 'ok';
             },

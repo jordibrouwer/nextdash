@@ -245,6 +245,8 @@
             view.closeDrawer = () => {};
             view.applyFilter = () => {};
             this._libFocus = new Focus(view);
+            // Registered with the module, so a report reload remaps its queue.
+            health._extraFocus = this._libFocus;
             return this._libFocus;
         },
 

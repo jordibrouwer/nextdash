@@ -4707,12 +4707,16 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				// Collected here and written once at the end: one history write per
 				// run rather than one per bookmark.
 				if bm.Monitor {
+					// Marked like the monitor's own samples: a failure inside a
+					// maintenance window dented uptime, opened an incident and
+					// could send a lone "back online" afterwards.
 					historyUpdates[key] = append(historyUpdates[key], HealthSample{
 						T:      lastChecked,
 						Up:     result.Status == "online",
 						PingMs: result.PingMs,
 						Code:   result.HTTPStatus,
 						Fail:   failureClass(result.ErrorDetail),
+						Maint:  inMaintenanceWindow(h.store.GetSettings().MaintenanceWindows, time.UnixMilli(lastChecked)),
 					})
 				}
 			}
@@ -4779,7 +4783,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 		}
 	}
 	if len(certResults) > 0 {
-		h.recordMonitorCertificates(certResults)
+		h.recordCertificatesAndAlert(ctx, certResults)
 	}
 
 	h.invalidateHealthReportCache()

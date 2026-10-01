@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"math"
 	"sort"
 	"strings"
@@ -307,4 +308,15 @@ func (h *Handlers) hostCertificates() map[string]HostCertificate {
 		out[k] = v
 	}
 	return out
+}
+
+// recordCertificatesAndAlert records what checks outside the monitor learned
+// about certificates and sends the warnings for thresholds they crossed.
+// recordMonitorCertificates stamps a crossed threshold as notified; a caller
+// that dropped its answer used the threshold up and the monitor then never
+// warned for it.
+func (h *Handlers) recordCertificatesAndAlert(ctx context.Context, results []PingResult) {
+	if crossed := h.recordMonitorCertificates(results); len(crossed) > 0 {
+		h.dispatchMonitorNotifications(context.WithoutCancel(ctx), certExpiryNotifications(crossed, time.Now()))
+	}
 }

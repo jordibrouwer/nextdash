@@ -80,6 +80,28 @@ test.describe('custom collection rules', () => {
         expect(out.noNumber).toEqual([]);
     });
 
+    // A category picked from the suggestions is stored as "pageId::id"; it was
+    // compared whole with the bare id and never matched.
+    test('a category rule picked as page::id matches that page\'s category only', async ({ page }) => {
+        await load(page);
+        const out = await page.evaluate(() => {
+            const sc = window.dashboardInstance.smartCollections;
+            const rows = [
+                { url: 'work-docs', pageId: 3, category: 'docs', tags: [] },
+                { url: 'home-docs', pageId: 4, category: 'docs', tags: [] },
+            ];
+            const run = (rule) => sc._evaluateCollection({ logic: 'and', rules: [rule] }, rows).map((b) => b.url);
+            return {
+                picked: run({ field: 'category', operator: 'includes', value: '3::docs' }),
+                bare: run({ field: 'category', operator: 'includes', value: 'docs' }),
+                excludes: run({ field: 'category', operator: 'excludes', value: '3::docs' }),
+            };
+        });
+        expect(out.picked).toEqual(['work-docs']);
+        expect(out.bare).toEqual(['work-docs', 'home-docs']);
+        expect(out.excludes).toEqual(['home-docs']);
+    });
+
     test('the server keeps a valueless rule instead of dropping the collection', async ({ page }) => {
         await load(page);
         const kept = await page.evaluate(async () => {

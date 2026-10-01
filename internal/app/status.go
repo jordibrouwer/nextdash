@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -53,7 +54,7 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	expect := expectation{}
-	if bm, ok := h.findBookmarkByURL(urlParam); ok {
+	if bm, ok := h.pingTarget(r, urlParam); ok {
 		expect = expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings()))
 	}
 	result := h.pingURLExpecting(r.Context(), urlParam, expect)
@@ -86,4 +87,21 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(payload)
+}
+
+// pingTarget is the bookmark whose rules a ping uses. A re-check names its row
+// (page and index), and the verdict is recorded on that row; taking the first
+// copy of the URL across all pages checked one copy with another copy's rules.
+// The URL guards the index, and without page and index the first copy answers.
+func (h *Handlers) pingTarget(r *http.Request, rawURL string) (Bookmark, bool) {
+	q := r.URL.Query()
+	page, pageErr := strconv.Atoi(q.Get("page"))
+	index, indexErr := strconv.Atoi(q.Get("index"))
+	if pageErr == nil && indexErr == nil && index >= 0 {
+		rows := h.store.GetBookmarksByPage(page)
+		if index < len(rows) && canonicalBookmarkURLKey(rows[index].URL) == canonicalBookmarkURLKey(rawURL) {
+			return rows[index], true
+		}
+	}
+	return h.findBookmarkByURL(rawURL)
 }

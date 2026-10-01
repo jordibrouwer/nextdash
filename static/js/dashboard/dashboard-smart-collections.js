@@ -431,7 +431,14 @@ class DashboardSmartCollections {
                     return op === 'excludes' ? !has : has;
                 }
                 if (field === 'category') {
-                    const match = (bm.category || '').toLowerCase() === val;
+                    // Category ids are per page, and a value picked from the
+                    // suggestions is "pageId::id"; compared whole with the bare
+                    // id it never matched. A bare id matches on every page.
+                    const sep = val.indexOf('::');
+                    const pageId = sep >= 0 ? val.slice(0, sep) : '';
+                    const categoryId = sep >= 0 ? val.slice(sep + 2) : val;
+                    const match = (bm.category || '').toLowerCase() === categoryId
+                        && (!pageId || String(bm.pageId) === pageId);
                     return op === 'excludes' ? !match : match;
                 }
                 if (field === 'shortcut') {

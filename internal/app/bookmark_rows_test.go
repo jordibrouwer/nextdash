@@ -297,3 +297,37 @@ func TestTrackOpenCreditsTheBookmarkByURL(t *testing.T) {
 		t.Fatalf("open counts = %d, %d: the open went to the wrong row", rows[0].OpenCount, rows[1].OpenCount)
 	}
 }
+
+// A re-check names its row; the ping must use that copy's rules, not those of
+// the first copy of the URL on another page.
+func TestPingTargetIsTheNamedRow(t *testing.T) {
+	h, store := patchTestHandlers(t)
+	seedPages(t, store, map[int][]Bookmark{
+		1: {{Name: "Monitored", URL: "https://p.example/"}},
+		2: {{Name: "Other", URL: "https://o.example/"}, {Name: "Plain", URL: "https://p.example/"}},
+	})
+	req := httptest.NewRequest(http.MethodGet, "/api/ping?url=https://p.example/&page=2&index=1", nil)
+	if bm, ok := h.pingTarget(req, "https://p.example/"); !ok || bm.Name != "Plain" {
+		t.Fatalf("target = %q %v, want the copy on page 2", bm.Name, ok)
+	}
+	// An index that names another address falls back to the first copy.
+	req = httptest.NewRequest(http.MethodGet, "/api/ping?url=https://p.example/&page=2&index=0", nil)
+	if bm, _ := h.pingTarget(req, "https://p.example/"); bm.Name != "Monitored" {
+		t.Fatalf("target = %q, want the first copy", bm.Name)
+	}
+}
+
+// The page that gains rows is written before the one that loses them, so a
+// write that fails half-way leaves a duplicate, never rows on neither page.
+func TestPageWriteOrderPutsTheTargetFirst(t *testing.T) {
+	changed := map[int][]Bookmark{
+		2: {{URL: "https://keep.example/"}},
+		3: {{URL: "https://a.example/"}, {URL: "https://b.example/"}, {URL: "https://c.example/"}},
+		4: {{URL: "https://x.example/"}},
+	}
+	before := map[int]int{2: 3, 3: 1, 4: 1}
+	got := pageWriteOrder(changed, func(id int) int { return before[id] })
+	if len(got) != 3 || got[0] != 3 || got[2] != 2 {
+		t.Fatalf("order = %v, want the target (3) first and the source (2) last", got)
+	}
+}

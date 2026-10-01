@@ -403,3 +403,64 @@ func TestPendingNotificationsIgnoreMaintenanceSamples(t *testing.T) {
 		t.Fatalf("the first failure after a window alerted at once: %#v", got)
 	}
 }
+
+// A re-check inside a maintenance window is marked like the monitor's own
+// samples: unmarked, it counted as an outage and fed the alerts.
+func TestAManualRecheckInAMaintenanceWindowIsMarked(t *testing.T) {
+	h, dir := healthRecheckTestHandlers(t, `{"maintenanceWindows":[{"start":"00:00","end":"23:59"}]}`)
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[{"name":"A","url":"https://a.example","monitor":true}]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(pageJSON), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+	key := canonicalBookmarkURLKey("https://a.example")
+	h.recordManualHealthSample(key, false, 0, 503, "HTTP 503")
+	samples := readHealthHistoryFile().Samples[key]
+	if len(samples) != 1 || !samples[0].Maint {
+		t.Fatalf("samples = %#v, want one marked as maintenance", samples)
+	}
+}
+
+// A threshold crossed during Retest all or a check-url was stamped notified
+// with nothing sent, and the monitor then never warned for it.
+func TestACertificateThresholdSeenOutsideTheMonitorIsSent(t *testing.T) {
+	var (
+		mu       sync.Mutex
+		received []monitorNotification
+	)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var n monitorNotification
+		_ = json.NewDecoder(r.Body).Decode(&n)
+		mu.Lock()
+		received = append(received, n)
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	h, _ := healthRecheckTestHandlers(t, `{"monitorNotifyUrl":"`+srv.URL+`","allowLocalBookmarks":true}`)
+
+	expiry := time.Now().Add(20 * 24 * time.Hour).UnixMilli()
+	h.recordCertificatesAndAlert(context.Background(), []PingResult{{CertHost: "cert.example", CertExpiry: expiry}})
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(received) != 1 {
+		t.Fatalf("notifications = %d, want the 30-day warning", len(received))
+	}
+}
+
+// An install whose only listener is a Config → Webhooks endpoint still has to
+// get health.down: the events come from this list, and the gate returned none.
+func TestPendingNotificationsWithOnlyAWebhookEndpoint(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{"monitorNotifyRetries":1}`)
+	if _, err := saveWebhookEndpoint("ha", WebhookEndpoint{URL: "https://ha.example/hook", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now()
+	transition := monitorTransition{key: "https://a.example", url: "https://a.example", name: "A", up: false, reason: "HTTP 503", at: now.UnixMilli()}
+	if err := h.appendHealthSamples(map[string][]HealthSample{"https://a.example": {{T: now.UnixMilli(), Up: false}}}); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.pendingMonitorNotifications([]monitorTransition{transition}); len(got) != 1 {
+		t.Fatalf("notifications = %#v, want the down event for the webhook", got)
+	}
+}

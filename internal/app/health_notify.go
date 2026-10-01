@@ -176,7 +176,10 @@ func (h *Handlers) pendingMonitorNotificationsAlerted(transitions []monitorTrans
 	// and made the setup look correct.
 	_, webhookConfigured := monitorNotifyTarget(settings)
 	pushConfigured := settings.PushNotifyEnabled && settings.PushNotifyMonitor
-	if !webhookConfigured && !pushConfigured {
+	// Config → Webhooks endpoints count too: dispatch emits health.down and
+	// health.up only from this list, so an install with webhooks and nothing
+	// else never got either event.
+	if !webhookConfigured && !pushConfigured && !webhooksConfigured() {
 		return nil, nil
 	}
 	threshold := clampMonitorNotifyRetries(settings.MonitorNotifyRetries)

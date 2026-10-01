@@ -229,6 +229,27 @@ test('a whole selection can be filed at once, with a category', async ({ page })
     expect(filed[0]).toBe(categoryId);
 });
 
+// The bar counted the ticked kept bookmarks, but the bulk actions read only the
+// filed library: Delete sent nothing and said nothing.
+test('Delete on a selection in the Unsorted view deletes it', async ({ page }) => {
+    await openBookmarksSection(page, [kept('delone'), kept('deltwo')]);
+    await openUnsortedView(page);
+    await page.locator('#config-bm-search').fill('cfg-del');
+    await expect.poll(async () => (await configView(page)).visible.length, { timeout: 10_000 }).toBe(2);
+    await clearSelection(page);
+    await page.locator('#config-bm-list [data-bm-key*="cfg-delone.example"]').hover();
+    await page.locator('#config-bm-list [data-bm-key*="cfg-delone.example"] input[type="checkbox"]').check();
+    await page.locator('#config-bm-list [data-bm-key*="cfg-deltwo.example"] input[type="checkbox"]').check();
+
+    await page.locator('[data-bm-selbar-action="delete"]').click();
+    await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
+
+    await expect.poll(async () => page.evaluate(async () => {
+        const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();
+        return (data.bookmarks || []).filter((b) => /cfg-del(one|two)/.test(b.url)).length;
+    }), { timeout: 15_000 }).toBe(0);
+});
+
 /*
  * Promote, as the Inbox does it: the same bookmark form, opened on a real page,
  * and saving it files the bookmark there.
