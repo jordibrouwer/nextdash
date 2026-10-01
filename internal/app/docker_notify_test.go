@@ -176,6 +176,39 @@ func TestDockerNotifierMasterSwitch(t *testing.T) {
 	}
 }
 
+// The automatic update sends its notices without the notifier in between, so
+// the switch and the mute list have to hold where every notice goes out.
+func TestContainerNoticesRespectTheSwitchAndTheMuteList(t *testing.T) {
+	var mu sync.Mutex
+	var got []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		var n monitorNotification
+		_ = json.Unmarshal(body, &n)
+		mu.Lock()
+		got = append(got, n.Title)
+		mu.Unlock()
+	}))
+	defer srv.Close()
+	startFakeDocker(t)
+	failed := func(name string) []monitorNotification {
+		return []monitorNotification{containerNotice("down", name, name+" could not be updated automatically", "pull failed", time.Now())}
+	}
+	settings := func(extra string) string {
+		return `{"monitorNotifyUrl":"` + srv.URL + `","allowLocalBookmarks":true,` + extra + `}`
+	}
+	off, _ := healthRecheckTestHandlers(t, settings(`"dockerNotify":false`))
+	off.dispatchContainerNotices(context.Background(), failed("web"))
+	on, _ := healthRecheckTestHandlers(t, settings(`"dockerNotify":true,"dockerNotifyMuted":["quiet"]`))
+	on.dispatchContainerNotices(context.Background(), failed("quiet"))
+	on.dispatchContainerNotices(context.Background(), failed("web"))
+	mu.Lock()
+	defer mu.Unlock()
+	if strings.Join(got, " | ") != "web could not be updated automatically" {
+		t.Fatalf("webhook got %q; only the unmuted container with the switch on should reach it", got)
+	}
+}
+
 // A settings file written before the switch existed never answered it: the
 // switch is on for it, as it is for a fresh install.
 func TestDockerNotifyDefaultsOnForAnOlderSettingsFile(t *testing.T) {
