@@ -291,20 +291,17 @@
 }
 
 /* ── The look studio ──────────────────────────────────────────────────
-   The browser as a panel docked on the right, beside the dashboard rather
-   than over it: what is being chosen is how the page looks. The page gives
-   up the panel's width while it is open, so nothing hides under it. Below
-   768px it is a sheet over the lower part of the screen instead.
+   The browser as a panel docked on the right rather than a modal in the
+   middle: what is being chosen is how the page looks, so most of the page
+   stays in view. It lies over the dashboard and the page keeps its layout:
+   squeezing the columns to make room changed the very thing being judged.
+   Below 768px it is a sheet over the lower part of the screen instead.
 
    Placed with top/left and a width rather than inset or right: 0, which on a
    page with a classic scrollbar lands a gutter short of the edge. */
 
 :root {
     --look-studio-width: min(440px, 100vw);
-}
-
-body.look-studio-open {
-    padding-right: var(--look-studio-width);
 }
 
 /* The bottom-left cards sit above everything and are inert while the studio
@@ -541,11 +538,6 @@ body.look-studio-open .quickstart-card {
 }
 
 @media (max-width: 767px) {
-    body.look-studio-open {
-        padding-right: 0;
-        padding-bottom: 55vh;
-    }
-
     .look-studio {
         top: 45vh;
         left: 0;

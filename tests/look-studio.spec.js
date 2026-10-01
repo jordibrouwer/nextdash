@@ -42,13 +42,21 @@ test.describe('the look studio', () => {
     // Each save writes the whole settings object: these take turns.
     test.describe.configure({ mode: 'serial' });
 
-    test('docks beside the dashboard; ←/→ walk the tabs and the page still scrolls', async ({ page }) => {
+    test('lies over the dashboard without moving it; ←/→ walk the tabs and the page still scrolls', async ({ page }) => {
         await openDashboard(page, { height: 420 });
+        // Where the columns are, as a reader sees them.
+        const columns = () => page.locator('.category').evaluateAll(
+            (els) => els.slice(0, 6).map((el) => {
+                const r = el.getBoundingClientRect();
+                return [Math.round(r.left), Math.round(r.width)];
+            }));
+        const before = await columns();
+        expect(before.length, 'no columns to measure').toBeGreaterThan(0);
         await openStudio(page);
 
         const box = await studio(page).boundingBox();
         expect(box?.x, 'the panel is not on the right').toBeGreaterThan(900);
-        expect(await page.evaluate(() => getComputedStyle(document.body).paddingRight)).toBe('440px');
+        expect(await columns(), 'opening the studio moved the columns').toEqual(before);
 
         const selected = () => page.locator('.look-studio-tab[aria-selected="true"]').getAttribute('data-studio-tab');
         await page.locator('[data-studio-tab="themes"]').focus();
@@ -71,6 +79,8 @@ test.describe('the look studio', () => {
         await page.keyboard.press('Escape');
         await expect(studio(page)).toHaveCount(0);
         expect(await page.evaluate(() => document.querySelector('[inert]'))).toBeNull();
+        await page.evaluate(() => window.scrollTo(0, 0));
+        expect(await columns(), 'closing the studio left the columns moved').toEqual(before);
     });
 
     test('a change is live and dotted, and Cancel puts it back without storing it', async ({ page }) => {
