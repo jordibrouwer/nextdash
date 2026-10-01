@@ -421,7 +421,8 @@
                 text = t('config.cardGlassLayoutNoneHint', 'Your layout ({layout}) has no panes for glass to work on; only widgets change. Cards and Widgets draw one round every category.');
             }
             // The layout itself, so its effect on the glass can be seen at once.
-            // A setting of its own rather than part of the look: it saves.
+            // In config it saves like any setting; in the theme browser it is
+            // previewed with the look until Apply.
             return `
                 ${text ? `<p class="config-field-hint" data-glass-layout-hint>${e(text.replace('{layout}', name(preset)))}</p>` : ''}
                 <div class="config-field">
@@ -649,8 +650,8 @@
             });
             // The two ways out of "nothing changes": depth Glass for this theme
             // (through setSurface, so the scope decides where it lands), and the
-            // layout. The layout is not part of a look, so in the theme browser
-            // it saves at once like any other setting.
+            // layout. In the theme browser the layout is previewed with the rest
+            // of the look, and Cancel puts it back.
             container.querySelectorAll('[data-glass-action]').forEach((btn) => {
                 btn.addEventListener('click', async () => {
                     this.setSurface('themeDepth', 'glass');

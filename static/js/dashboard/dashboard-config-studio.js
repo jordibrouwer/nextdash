@@ -22,9 +22,14 @@
     const HEAD_FIELDS = ['categoryHeaderStyle', 'categoryHeaderSize', 'showCategoryIcon',
         'showCategoryCount', 'categoryHeaderAccentLine'];
 
-    /** Every setting the studio previews. Only these are gated and put back. */
+    /**
+     * Every setting the studio previews. Only these are gated and put back.
+     * The layout is among them because the card glass panel offers it: what a
+     * pane looks like depends on whether the layout draws one.
+     */
     const LOOK_FIELDS = ['theme', 'themeBackdrop', 'themeSurfacePrefs', 'themeSurfacesForceAll',
-        'backdropTuning', 'cardGlass', 'themeDepth', 'glowStrength', 'themeEffects', ...HEAD_FIELDS];
+        'backdropTuning', 'cardGlass', 'themeDepth', 'glowStrength', 'themeEffects', 'layoutPreset',
+        ...HEAD_FIELDS];
 
     /*
      * What each tab owns, for its dot and its Reset. themeSurfacePrefs holds
@@ -33,7 +38,7 @@
     const TAB_FIELDS = {
         themes: { fields: ['theme'], prefs: [] },
         backdrop: { fields: ['themeBackdrop', 'backdropTuning'], prefs: ['backdrop'] },
-        surface: { fields: ['themeDepth', 'glowStrength', 'themeEffects', 'cardGlass'],
+        surface: { fields: ['themeDepth', 'glowStrength', 'themeEffects', 'cardGlass', 'layoutPreset'],
             prefs: ['depth', 'glow', 'effects', 'alpha', 'blur', 'border'] },
         heads: { fields: HEAD_FIELDS, prefs: [] },
         looks: { fields: [], prefs: [] },
@@ -249,6 +254,14 @@
             }
             this.applyBackdropTuning({ ...DEFAULT_TUNING, ...(settings.backdropTuning || {}) });
             this.applyChromeSettings();
+            // The layout class is drawn by the grid itself, so a layout that
+            // changed back needs the grid drawn again; the chrome alone does
+            // not do it. Only then: a redraw on every compare would flicker.
+            const preset = settings.layoutPreset || 'default';
+            const grid = document.querySelector('.dashboard-grid');
+            if (grid && !grid.classList.contains(`layout-${preset}`)) {
+                this.dash.renderDashboard?.({ animate: false });
+            }
             void this.applyResolvedSurfaces();
         },
 

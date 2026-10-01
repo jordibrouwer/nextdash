@@ -282,15 +282,20 @@ test.describe('the look studio', () => {
         await page.keyboard.press('Escape');
         await expect(studio(page)).toHaveCount(0);
 
-        // The layout dropdown redraws the grid at once. A layout is not part of
-        // the look, so it saves.
+        // The layout dropdown redraws the grid at once, as a preview: dotted
+        // on Surface, nothing stored, and Cancel draws the old layout again.
         await openStudio(page);
         await page.locator('[data-studio-tab="surface"]').click();
         await page.selectOption('[data-glass-panel] [data-glass-layout]', 'cards');
-        await expect.poll(() => page.locator('.dashboard-grid').getAttribute('class')).toContain('layout-cards');
+        const gridClass = () => page.locator('.dashboard-grid').getAttribute('class');
+        await expect.poll(gridClass).toContain('layout-cards');
         await expect(page.locator('[data-glass-panel] [data-glass-layout-hint]')).toHaveCount(0);
-        await expect.poll(async () => (await stored(page)).layoutPreset).toBe('cards');
+        await expect.poll(() => dirtyTabs(page)).toContain('surface');
+        expect((await stored(page)).layoutPreset, 'the previewed layout was stored').toBe('default');
         await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(gridClass, { message: 'Cancel left the previewed layout' }).toContain('layout-default');
+        expect((await stored(page)).layoutPreset).toBe('default');
 
         await page.evaluate(async (prev) => {
             const d = window.dashboardInstance;
