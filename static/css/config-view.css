@@ -7697,16 +7697,55 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .config-preview[data-preview-cathead="label"] .config-pv-cat { text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700; font-size: 0.65em; }
 .config-preview[data-preview-cathead="group"] .config-pv-cat { padding-bottom: 3px; border-bottom: 1px solid var(--border-secondary); }
 
-/* Card glass and the backdrop sliders: the control sits on the right, where
-   the selects above it do, rather than wherever its label happens to end. The
-   Follow / Own pair has no label, so it is pushed there on its own. */
-[data-glass-panel] .config-field:has(> .config-choices:only-child) {
-    display: flex;
-    justify-content: flex-end;
+/* Card glass and the backdrop sliders: the control starts in the control
+   column, where every other row in config puts it -- 200px of label and the
+   14px gap of .config-field. The Follow / Own pair has no label, so it is put
+   in that column on its own. */
+[data-glass-panel] .config-field > .config-choices:only-child {
+    grid-column: 2;
+}
+
+.config-field--slider {
+    gap: 14px;
+}
+
+.config-field--slider .config-field-label {
+    flex: 0 0 200px;
 }
 
 .config-field--slider .config-range {
     flex: 0 1 14rem;
+}
+
+/* Narrow, the label goes above the slider, as it does for the grid rows. */
+@media (max-width: 560px) {
+    .config-field--slider {
+        flex-wrap: wrap;
+        gap: 6px 10px;
+    }
+
+    .config-field--slider .config-field-label {
+        flex-basis: 100%;
+    }
+}
+
+/* In the theme browser the panel is narrow and has no control column to line
+   up with: the controls go to the right edge instead. */
+.look-studio-pane [data-glass-panel] .config-field:has(> .config-choices:only-child) {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.look-studio-pane .config-field--slider {
+    flex-wrap: nowrap;
+    gap: 10px;
+}
+
+.look-studio-pane .config-field--slider .config-field-label {
+    flex: 0 0 8.5em;
+}
+
+.look-studio-pane .config-field--slider .config-range {
     margin-left: auto;
 }
 
