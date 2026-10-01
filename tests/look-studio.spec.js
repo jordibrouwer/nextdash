@@ -341,6 +341,26 @@ test.describe('the look studio', () => {
         await expect.poll(texture).toBe('none');
     });
 
+    test('scrolling past the end of the panel does not move the dashboard', async ({ page }) => {
+        await openDashboard(page, { height: 420 });
+        await openStudio(page);
+        const pane = page.locator('[data-studio-pane]');
+        const box = await pane.boundingBox();
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        for (let i = 0; i < 40; i += 1) await page.mouse.wheel(0, 800);
+        await expect.poll(() => pane.evaluate((el) => el.scrollTop), { message: 'the panel did not scroll' }).toBeGreaterThan(0);
+        expect(await page.evaluate(() => window.scrollY), 'the scroll ran on into the dashboard').toBe(0);
+
+        // Over the footer, which does not scroll at all.
+        const foot = await page.locator('.look-studio-foot').boundingBox();
+        await page.mouse.move(foot.x + 10, foot.y + 10);
+        await page.mouse.wheel(0, 800);
+        await page.waitForTimeout(200);
+        expect(await page.evaluate(() => window.scrollY), 'a wheel over the footer moved the dashboard').toBe(0);
+
+        await page.keyboard.press('Escape');
+    });
+
     test('opened from Appearance, it hands the page back to Appearance on close', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));

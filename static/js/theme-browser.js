@@ -852,6 +852,30 @@
         // dashboard's capture-phase handlers bow out through isModalOpen.
         root.addEventListener('keydown', (event) => event.stopPropagation());
 
+        /*
+         * The wheel stays in the panel.
+         *
+         * At the bottom of the grid the browser hands the rest of a scroll to
+         * the page, and the dashboard moved under a panel that was being read.
+         * A scroll the panel can still take is left alone; one it cannot -- at
+         * an end, or over the header and footer, which do not scroll -- is
+         * dropped rather than passed on. The page beside the panel still
+         * scrolls under its own pointer.
+         */
+        root.addEventListener('wheel', (event) => {
+            if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+            for (let el = event.target; el && el !== root; el = el.parentElement) {
+                if (el.scrollHeight <= el.clientHeight) continue;
+                if (!/(auto|scroll)/.test(getComputedStyle(el).overflowY)) continue;
+                const atEnd = event.deltaY > 0
+                    ? el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+                    : el.scrollTop <= 0;
+                if (!atEnd) return;
+                break;
+            }
+            event.preventDefault();
+        }, { passive: false });
+
         // Any change in a tab may have changed what is dirty.
         const later = () => requestAnimationFrame(refresh);
         pane.addEventListener('input', later);

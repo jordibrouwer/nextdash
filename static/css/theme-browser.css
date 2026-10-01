@@ -399,6 +399,9 @@ body.look-studio-open .quickstart-card {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+    /* A touch scroll that reaches the end stops there instead of moving the
+       page; theme-browser.js does the same for the wheel. */
+    overscroll-behavior: contain;
     padding: var(--space-3, 0.75rem) var(--space-3, 0.9rem);
 }
 
