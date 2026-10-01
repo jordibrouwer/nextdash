@@ -536,8 +536,26 @@
             }
         };
 
+        /*
+         * Pointing at a card, or moving focus onto it, shows that theme on the
+         * page; leaving the grid shows the chosen one again. Only a click or
+         * Enter chooses. `previewing` is the theme shown that way, if any.
+         */
+        let previewing = null;
+        const preview = (id) => {
+            if (!id || comparing || id === previewing) return;
+            previewing = id;
+            opts.onPreview?.(id);
+        };
+        const endPreview = () => {
+            if (!previewing) return;
+            previewing = null;
+            opts.onPreviewEnd?.();
+        };
+
         const select = (id) => {
             if (!id) return;
+            previewing = null;
             opts.onSelect?.(id);
             refresh();
         };
@@ -573,6 +591,17 @@
                 });
             });
             pane.querySelectorAll('[data-theme-card]').forEach(bindCard);
+            const grid = pane.querySelector('[data-theme-grid]');
+            grid?.addEventListener('mouseleave', () => {
+                // Keyboard focus still on a card keeps that card's preview. A
+                // card focused by the click that chose it does not count: it
+                // left the last card pointed at on screen after the pointer went.
+                const active = document.activeElement;
+                if (!(grid.contains(active) && active.matches(':focus-visible'))) endPreview();
+            });
+            grid?.addEventListener('focusout', (event) => {
+                if (!grid.contains(event.relatedTarget) && !grid.matches(':hover')) endPreview();
+            });
             // The card in use gets the roving stop, so Tab lands on it.
             const cards = Array.from(pane.querySelectorAll('[data-theme-card]'));
             (cards.find((c) => c.classList.contains('is-current')) || cards[0])?.setAttribute('tabindex', '0');
@@ -628,8 +657,10 @@
                 });
             });
 
-            // A click chooses, live. Nothing is stored until Apply, so there
-            // is no separate preview on hover: the page already shows it.
+            // Hover and focus preview; a click chooses. Nothing is stored
+            // until Apply either way.
+            card.addEventListener('mouseenter', () => preview(id()));
+            card.addEventListener('focus', () => preview(id()));
             card.addEventListener('click', () => select(id()));
             card.addEventListener('keydown', (event) => {
                 if (event.target !== card) return;
@@ -718,6 +749,7 @@
 
         const setComparing = (on) => {
             if (on === comparing || closed) return;
+            if (on) endPreview();
             comparing = on;
             root.classList.toggle('is-comparing', on);
             root.querySelector('[data-studio-compare]')?.setAttribute('aria-pressed', String(on));
@@ -726,6 +758,7 @@
 
         const close = () => {
             if (closed) return;
+            previewing = null;
             setComparing(false);
             closed = true;
             ACTIVE = null;
@@ -744,6 +777,7 @@
         const cancel = async () => {
             if (closed) return;
             setComparing(false);
+            endPreview();
             await opts.onCancel?.();
             close();
             opts.onClose?.();
@@ -752,6 +786,8 @@
         const apply = async () => {
             if (closed) return;
             setComparing(false);
+            // What is stored is the chosen theme, so that is what stays drawn.
+            endPreview();
             const ok = await opts.onApply?.();
             if (ok === false) return;
             close();

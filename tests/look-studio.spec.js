@@ -127,6 +127,26 @@ test.describe('the look studio', () => {
         expect(((await stored(page)).favoriteThemes || []).includes(id)).toBe(!wasOn);
     });
 
+    test('pointing at a theme shows it, and leaving the grid shows the chosen one again', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        const chosen = await page.evaluate(() => window.dashboardInstance.settings.theme);
+        const shown = () => page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+
+        const card = page.locator('[data-theme-card]:not(.is-current)').first();
+        const id = await card.getAttribute('data-theme-id');
+        await card.hover();
+        await expect.poll(shown).toBe(id);
+        expect(await page.evaluate(() => window.dashboardInstance.settings.theme), 'hovering chose the theme').toBe(chosen);
+        await expect.poll(() => dirtyTabs(page)).toEqual([]);
+
+        // Out of the grid, onto the footer.
+        await page.locator('[data-studio-compare]').hover();
+        await expect.poll(shown).toBe(chosen);
+
+        await page.keyboard.press('Escape');
+    });
+
     test('Enter on a theme card shows that theme and keeps the studio open', async ({ page }) => {
         await openDashboard(page);
         const before = (await stored(page)).theme;

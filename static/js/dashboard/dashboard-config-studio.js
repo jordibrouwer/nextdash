@@ -170,6 +170,8 @@
                 t: (key, fallback) => this.t(key, fallback),
                 displayName: (id, name) => this.themeDisplayName(id, name),
                 onSelect: (id) => this.studioSelectTheme(id),
+                onPreview: (id) => this.studioPreviewTheme(id),
+                onPreviewEnd: () => this.studioEndPreview(),
                 onFavorites: (favorites) => {
                     // Not a look field, so this save goes through as it is.
                     this.dash.settings.favoriteThemes = favorites;
@@ -231,6 +233,25 @@
                 if (Object.prototype.hasOwnProperty.call(source, field)) settings[field] = clone(source[field]);
                 else delete settings[field];
             });
+        },
+
+        /**
+         * Show a theme the pointer is on, without choosing it: the colours,
+         * and the surfaces the reader has for that theme. The settings keep
+         * the chosen theme, so Apply, Cancel and the dots are unaffected.
+         */
+        studioPreviewTheme(id) {
+            if (!id || !this._lookStudio || this._lookStudio.held) return;
+            this.previewThemeChoice(id);
+            void window.ThemeLoader?.applySurfacesForTheme?.(id, this.dash.settings);
+        },
+
+        /** Back to the chosen theme once the pointer leaves the grid. */
+        studioEndPreview() {
+            if (!this._lookStudio) return;
+            this.clearThemePreview();
+            window.ThemeLoader?.applyTheme?.(this.displayTheme(), this.currentFontSize());
+            void this.applyResolvedSurfaces();
         },
 
         studioSelectTheme(id) {
