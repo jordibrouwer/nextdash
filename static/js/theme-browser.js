@@ -396,8 +396,8 @@
                             <button type="button" data-studio-scope="global" aria-pressed="false">${escapeHtml(t('config.studioScopeAll', 'All themes'))}</button>
                         </span>
                     </div>
-                    <button type="button" class="look-studio-btn" data-studio-compare
-                            title="${escapeHtml(t('config.studioCompareHint', 'Hold, or hold \\, to see the look from before you opened this'))}">${escapeHtml(t('config.studioCompare', 'Compare'))}</button>
+                    <button type="button" class="look-studio-btn" data-studio-compare aria-pressed="false"
+                            title="${escapeHtml(t('config.studioCompareHint', 'Show the look from before you opened this, until you press it again (or hold \\)'))}">${escapeHtml(t('config.studioCompare', 'Compare'))}</button>
                     <button type="button" class="look-studio-btn" data-studio-reset>${escapeHtml(t('config.studioResetTab', 'Reset tab'))}</button>
                     <button type="button" class="look-studio-btn" data-studio-dice
                             aria-label="${escapeHtml(t('config.studioDice', 'Surprise me'))}"
@@ -752,7 +752,11 @@
             if (on) endPreview();
             comparing = on;
             root.classList.toggle('is-comparing', on);
-            root.querySelector('[data-studio-compare]')?.setAttribute('aria-pressed', String(on));
+            const button = root.querySelector('[data-studio-compare]');
+            if (button) {
+                button.setAttribute('aria-pressed', String(on));
+                button.textContent = on ? t('config.studioCompareOn', 'Before') : t('config.studioCompare', 'Compare');
+            }
             opts.onCompare?.(on);
         };
 
@@ -826,25 +830,20 @@
         root.querySelector('[data-studio-cancel]').addEventListener('click', () => { void cancel(); });
         root.querySelector('[data-studio-apply]').addEventListener('click', () => { void apply(); });
 
+        /*
+         * Compare is a switch: on shows the look from before the studio
+         * opened, off brings the changes back. Holding \ does the same for as
+         * long as it is held.
+         *
+         * Anything else done in the panel switches it off first. While it is
+         * on, the settings hold the old look, and a change made then would
+         * land on that and be thrown away when it went off again.
+         */
         const compareButton = root.querySelector('[data-studio-compare]');
-        compareButton.addEventListener('pointerdown', (event) => {
-            compareButton.setPointerCapture?.(event.pointerId);
-            setComparing(true);
-        });
-        ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((name) => {
-            compareButton.addEventListener(name, () => setComparing(false));
-        });
-        // Space or Enter on the button holds as long as the key does.
-        compareButton.addEventListener('keydown', (event) => {
-            if ((event.key === ' ' || event.key === 'Enter') && !event.repeat) {
-                event.preventDefault();
-                setComparing(true);
-            }
-        });
-        compareButton.addEventListener('keyup', (event) => {
-            if (event.key === ' ' || event.key === 'Enter') setComparing(false);
-        });
-        compareButton.addEventListener('click', (event) => event.preventDefault());
+        compareButton.addEventListener('click', () => setComparing(!comparing));
+        root.addEventListener('pointerdown', (event) => {
+            if (comparing && !compareButton.contains(event.target)) setComparing(false);
+        }, true);
 
         // Whatever the studio did not take is the focused control's, and never
         // the dashboard's: its single-letter shortcuts would act on a page that
@@ -871,6 +870,10 @@
                 root.querySelector('[data-studio-tab][aria-selected="true"]')?.focus();
             }
             const key = event.key;
+            if (comparing && key !== '\\' && !compareButton.contains(target)
+                && !['Shift', 'Control', 'Alt', 'Meta', 'Tab'].includes(key)) {
+                setComparing(false);
+            }
             if (key === 'Escape') {
                 event.preventDefault();
                 event.stopPropagation();

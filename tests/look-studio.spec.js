@@ -181,6 +181,24 @@ test.describe('the look studio', () => {
         await page.keyboard.up('\\');
         await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(style);
 
+        // The button is a switch: on until pressed again.
+        const compare = page.locator('[data-studio-compare]');
+        await compare.click();
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(headBefore);
+        await expect(compare).toHaveAttribute('aria-pressed', 'true');
+        await page.waitForTimeout(300);
+        expect(await bodyAttr(page, 'data-cat-head'), 'Compare let go on its own').toBe(headBefore);
+        await compare.click();
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(style);
+
+        // Touching anything else first puts the changes back, so nothing is
+        // changed on top of the old look.
+        await compare.click();
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(headBefore);
+        await page.locator('[data-studio-tab="looks"]').click();
+        await expect(compare).toHaveAttribute('aria-pressed', 'false');
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(style);
+
         await page.keyboard.press('Escape');
         await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(headBefore);
     });
