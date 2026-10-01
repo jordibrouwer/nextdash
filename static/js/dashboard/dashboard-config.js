@@ -15681,6 +15681,9 @@ class DashboardConfig {
     }
 
     setSaveState(state) {
+        // In the theme browser a change is a preview until Apply: "Saved"
+        // there said the opposite of what had happened. A failure still shows.
+        if (this._lookStudio && state !== 'error') return;
         const el = this.ensureSaveStateHost();
         if (!el) return;
         clearTimeout(this._saveStateTimer);
