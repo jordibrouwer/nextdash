@@ -126,3 +126,36 @@ test.describe('triage and the snooze menu', () => {
         expect(after.current).toBe(before.second);
     });
 });
+
+test.describe('triage keys that must not act', () => {
+    const inboxCount = (page) => page.evaluate(async () => {
+        const res = await fetch('/api/inbox');
+        const body = await res.json();
+        return (Array.isArray(body) ? body : body.items || []).length;
+    });
+
+    // A held d auto-repeats every 30 ms or so: card after card went, silently.
+    test('a held d deletes one link, not one per repeat', async ({ page }) => {
+        await openTriage(page);
+        const before = await inboxCount(page);
+        await page.keyboard.down('d');
+        await expect.poll(() => inboxCount(page), { timeout: 5_000 }).toBe(before - 1);
+        // The repeats arrive after the first delete has landed, on the next card.
+        for (let i = 0; i < 2; i += 1) {
+            await page.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', repeat: true, bubbles: true })));
+            await page.waitForTimeout(200);
+        }
+        await page.keyboard.up('d');
+        await page.waitForTimeout(400);
+        expect(await inboxCount(page)).toBe(before - 1);
+    });
+
+    // Ctrl/Cmd+D is the browser's "bookmark this page", not a delete.
+    test('Ctrl+D leaves the link alone', async ({ page }) => {
+        await openTriage(page);
+        const before = await inboxCount(page);
+        await page.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true })));
+        await page.waitForTimeout(500);
+        expect(await inboxCount(page)).toBe(before);
+    });
+});

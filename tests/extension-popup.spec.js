@@ -47,6 +47,11 @@ test.describe('extension popup', () => {
             await page.locator('#write-token').fill(WRITE_TOKEN);
             await page.locator('#settings-form button[type="submit"]').click();
             await expect(page.locator('.message.success')).toBeVisible({ timeout: 15_000 });
+            // The shared preview and icon code sends the token through
+            // nextDashWriteHeaders, which only the dashboard used to define:
+            // every preview and icon upload from the extension got 401.
+            await expect.poll(() => page.evaluate(() =>
+                globalThis.nextDashWriteHeaders?.()['X-NextDash-Token'] || ''), { timeout: 5_000 }).toBe(WRITE_TOKEN);
 
             await page.locator('.tab-button[data-tab="save"]').click();
             await expect(page.locator('#page-select option')).not.toHaveCount(0, { timeout: 15_000 });

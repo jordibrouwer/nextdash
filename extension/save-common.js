@@ -7,10 +7,37 @@ function normalizeServerUrl(serverUrl) {
 async function getStoredWriteToken() {
   try {
     const sync = await chrome.storage.sync.get(['writeToken']);
-    return String(sync.writeToken || '').trim();
+    const token = String(sync.writeToken || '').trim();
+    // Every read refreshes the copy nextDashWriteHeaders sends (below).
+    cachedWriteToken = token;
+    return token;
   } catch {
     return '';
   }
+}
+
+// The shared bookmark-form code (link previews, icon uploads) adds the token
+// through a synchronous nextDashWriteHeaders, which only the dashboard defined:
+// with a token set, every preview and icon upload from the extension got 401
+// and was dropped as "optional". Defined here from a cached copy of the token,
+// kept current as the options page changes it.
+let cachedWriteToken = '';
+void getStoredWriteToken().then((token) => { cachedWriteToken = token; });
+try {
+  chrome.storage?.onChanged?.addListener((changes, area) => {
+    if (area === 'sync' && changes.writeToken) {
+      cachedWriteToken = String(changes.writeToken.newValue || '').trim();
+    }
+  });
+} catch {
+  // No storage events (a test harness): the token read at start stands.
+}
+if (typeof globalThis.nextDashWriteHeaders !== 'function') {
+  globalThis.nextDashWriteHeaders = (extraHeaders = {}) => {
+    const headers = { ...(extraHeaders || {}) };
+    if (cachedWriteToken) headers['X-NextDash-Token'] = cachedWriteToken;
+    return headers;
+  };
 }
 
 async function apiWriteHeaders(extraHeaders = {}) {

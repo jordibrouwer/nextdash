@@ -423,6 +423,12 @@ class DashboardInboxTriage {
         if (this.inbox?._snoozeMenu?.isConnected) {
             return;
         }
+        // A chord is the browser's or the system's: Ctrl/Cmd+D deleted the link
+        // with no undo, Cmd+R marked it read and blocked the reload. The list
+        // view has always let them through.
+        if (e.ctrlKey || e.metaKey || e.altKey) {
+            return;
+        }
         const tag = e.target?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) {
             return;
@@ -465,6 +471,8 @@ class DashboardInboxTriage {
         // lowercase test below takes k for "previous".
         if (e.key === 'K') {
             e.preventDefault();
+            // A held key repeats every 30 ms or so: card after card went.
+            if (e.repeat) return;
             void this.actKeep();
             return;
         }
@@ -496,6 +504,7 @@ class DashboardInboxTriage {
         }
         if (key === 'd' || e.key === 'Delete') {
             e.preventDefault();
+            if (e.repeat) return;
             void this.actDelete();
             return;
         }
@@ -590,35 +599,47 @@ class DashboardInboxTriage {
 
     async actKeep() {
         const item = this.currentItem();
-        if (!item) {
+        // One action per card at a time, as in the list: a second key while
+        // the first write is in flight acted on the same card again.
+        if (!item || !this.inbox.claimPending(item.id)) {
             return;
         }
-        if (!(await this.inbox.keepItem(item))) {
-            return;
+        try {
+            if (!(await this.inbox.keepItem(item))) {
+                return;
+            }
+            this.tally.kept += 1;
+            await this.afterAction(true, { removedId: item.id });
+        } finally {
+            this.inbox.releasePending(item.id);
         }
-        this.tally.kept += 1;
-        await this.afterAction(true, { removedId: item.id });
     }
 
     async actDelete() {
         const item = this.currentItem();
-        if (!item) {
+        // A second delete of the same card while the first is in flight got a
+        // 404 and said "Could not delete" right after a delete that worked.
+        if (!item || !this.inbox.claimPending(item.id)) {
             return;
         }
-        // The result decides whether the card may go. It was discarded before,
-        // and `silent` suppresses the toast as well, so a failed delete removed
-        // the card from the queue and the row from the feed while the item was
-        // still on the server — reappearing on the next reload, with nothing
-        // said. Same shape as actOpen's markReadReporting check above.
-        const deleted = await this.inbox.deleteItemWithUndo(item.id, { silent: true, skipRender: true });
-        if (!deleted) {
-            this.inbox.dash.showErrorNotification?.(
-                this.inbox.t('dashboard.inboxDeleteFailed', 'Could not delete')
-            );
-            return;
+        try {
+            // The result decides whether the card may go. It was discarded before,
+            // and `silent` suppresses the toast as well, so a failed delete removed
+            // the card from the queue and the row from the feed while the item was
+            // still on the server — reappearing on the next reload, with nothing
+            // said. Same shape as actOpen's markReadReporting check above.
+            const deleted = await this.inbox.deleteItemWithUndo(item.id, { silent: true, skipRender: true });
+            if (!deleted) {
+                this.inbox.dash.showErrorNotification?.(
+                    this.inbox.t('dashboard.inboxDeleteFailed', 'Could not delete')
+                );
+                return;
+            }
+            this.tally.deleted += 1;
+            await this.afterAction(true, { removedId: item.id });
+        } finally {
+            this.inbox.releasePending(item.id);
         }
-        this.tally.deleted += 1;
-        await this.afterAction(true, { removedId: item.id });
     }
 
     async actSnooze(anchor) {

@@ -320,3 +320,25 @@ func TestEveryImporterIsRegisteredThroughTheHandlers(t *testing.T) {
 		t.Error("registering added nothing")
 	}
 }
+
+// A source whose page was deleted wrote its rows into a file nothing draws,
+// and moved its cursor past them. It is refused, and the cursor stays.
+func TestRunSourceRefusesAPageThatIsGone(t *testing.T) {
+	h := newTestHandlers(t)
+	withGitHubAPI(t, func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, starPage([]string{"golang/go"}, []string{"2026-03-01T00:00:00Z"}))
+	})
+	if rec := doSources(t, h, http.MethodPut, "/api/sources/github:stars",
+		`{"kind":"github-stars","token":"ghp_x","targetPage":7,"enabled":true}`); rec.Code != http.StatusOK {
+		t.Fatalf("save = %d", rec.Code)
+	}
+	if rec := doSources(t, h, http.MethodPost, "/api/sources/github:stars/run", ""); rec.Code != http.StatusNotFound {
+		t.Fatalf("run = %d: %s", rec.Code, rec.Body.String())
+	}
+	if len(h.store.GetBookmarksByPage(7)) != 0 {
+		t.Fatal("rows were written to a page that does not exist")
+	}
+	if source, _ := GetSource("github:stars"); source.Cursor != "" {
+		t.Fatalf("the cursor moved to %q", source.Cursor)
+	}
+}
