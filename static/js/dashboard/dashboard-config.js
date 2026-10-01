@@ -24423,7 +24423,10 @@ class DashboardConfig {
         const seen = new Map();
         const index = new Map();
         [...all, ...kept].forEach((b) => {
-            const base = DashboardConfig.bookmarkKeyBase(b);
+            // Counted as the server counts them, on the canonical address:
+            // "https://x/" and "https://x" were both copy 0 here and 0 and 1
+            // there, so a write to the second landed on the first.
+            const base = `${b.pageId}::${DashboardConfig.canonicalUrl(b.url)}`;
             const n = seen.get(base) || 0;
             index.set(b, n);
             seen.set(base, n + 1);
@@ -24831,7 +24834,8 @@ class DashboardConfig {
         this.syncBookmarkRowBusy(key, true);
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
-            const res = await fetch(
+            // fetcher, with the token: see the same call in dashboard-health.
+            const res = await fetcher(
                 `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(record.pageId)}&index=${encodeURIComponent(record.index)}&redirectOnly=1`
             );
             if (!res.ok) throw new Error(`suggest HTTP ${res.status}`);
@@ -26023,10 +26027,17 @@ class DashboardConfig {
      */
     static matchesParsedKey(parsed) {
         let n = 0;
+        const wanted = DashboardConfig.canonicalUrl(parsed.url);
         return (b) => {
-            if (b.url !== parsed.url) return false;
+            if (DashboardConfig.canonicalUrl(b.url) !== wanted) return false;
             return n++ === (parsed.occurrence || 0);
         };
+    }
+
+    /** The server's canonical form of an address, so copies are counted alike. */
+    static canonicalUrl(url) {
+        const raw = String(url || '');
+        return window.BookmarkUrlUtils?.canonicalBookmarkURLKey?.(raw) || raw;
     }
 
     /**

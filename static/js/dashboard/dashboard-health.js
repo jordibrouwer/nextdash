@@ -1393,7 +1393,9 @@ class DashboardHealth {
         this.syncRowBusy(key, true);
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
-            const res = await fetch(
+            // fetcher, with the token: the route needs it, and a bare fetch
+            // made "Detect redirect" fail on every install that sets one.
+            const res = await fetcher(
                 `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(issue.pageId)}&index=${encodeURIComponent(issue.index)}&redirectOnly=1`
             );
             if (!res.ok) throw new Error(`suggest HTTP ${res.status}`);
@@ -1762,11 +1764,19 @@ class DashboardHealth {
         const pageId = Number(issue?.pageId);
         if (!url || !Number.isFinite(pageId)) return undefined;
 
-        const text = String(wrap.querySelector('[data-expect-text]')?.value || '').trim();
-        const absent = Boolean(wrap.querySelector('[data-expect-absent]')?.checked);
-        const status = String(wrap.querySelector('[data-expect-status]')?.value || '').trim();
-        const watchDrift = Boolean(wrap.querySelector('[data-watch-drift]')?.checked);
-        const notifyMuted = Boolean(wrap.querySelector('[data-notify-muted]')?.checked);
+        // A field the form did not draw (the monitor fields, on a bookmark that
+        // is not monitored) keeps what is stored: the save replaces every
+        // field, so sending blanks erased the keyword, status codes and mute
+        // that came back when the bookmark was monitored again.
+        const field = (selector, read, stored) => {
+            const el = wrap.querySelector(selector);
+            return el ? read(el) : stored;
+        };
+        const text = field('[data-expect-text]', (el) => String(el.value || '').trim(), String(issue.expectText || ''));
+        const absent = field('[data-expect-absent]', (el) => Boolean(el.checked), Boolean(issue.expectTextAbsent));
+        const status = field('[data-expect-status]', (el) => String(el.value || '').trim(), String(issue.expectStatus || ''));
+        const watchDrift = field('[data-watch-drift]', (el) => Boolean(el.checked), Boolean(issue.watchDrift));
+        const notifyMuted = field('[data-notify-muted]', (el) => Boolean(el.checked), Boolean(issue.notifyMuted));
         // Reachability: present whether or not the bookmark is monitored, so
         // these are read unconditionally rather than from the monitored block.
         const checkUrl = String(wrap.querySelector('[data-check-url]')?.value || '').trim();

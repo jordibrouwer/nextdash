@@ -114,10 +114,13 @@ class DashboardSmartCollections {
             };
         };
 
+        // Newest first before the list is cut to its limit: cut in storage
+        // order, the section held whichever 50 came first by page and position,
+        // and the link opened a minute ago could be missing.
         const recentBookmarks = memo(() => normalized.filter((bookmark) => {
             const lastOpened = Number(bookmark.lastOpened || 0);
             return lastOpened > 0 && (now - lastOpened) <= oneWeekMs;
-        }));
+        }).sort((a, b) => Number(b.lastOpened || 0) - Number(a.lastOpened || 0)));
 
         const staleBookmarks = memo(() => normalized.filter((bookmark) => {
             const lastOpened = Number(bookmark.lastOpened || 0);
