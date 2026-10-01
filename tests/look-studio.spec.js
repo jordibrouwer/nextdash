@@ -306,6 +306,41 @@ test.describe('the look studio', () => {
         }, before);
     });
 
+    test('a pattern left to the theme steps aside for a backdrop, and one picked here is previewed', async ({ page }) => {
+        await openDashboard(page);
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            Object.assign(d.settings, { backgroundPattern: 'auto', themeBackdrop: 'follow', themeSurfacePrefs: {} });
+            await d.saveSettings();
+        });
+        await page.reload();
+        await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+        await waitForConfigReady(page);
+        const texture = () => page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage);
+
+        // Backdrop on, pattern on auto: no dots over it.
+        expect(await bodyAttr(page, 'data-theme-backdrop')).toBe('on');
+        expect(await texture(), 'the theme pattern was drawn over the backdrop').toBe('none');
+
+        await openStudio(page);
+        await page.locator('[data-studio-tab="backdrop"]').click();
+        await page.selectOption('[data-look-studio] [data-appearance-select="backgroundPattern"]', 'dots');
+        await expect.poll(() => bodyAttr(page, 'data-pattern')).toBe('dots');
+        await expect.poll(texture, { message: 'a picked pattern did not draw over the backdrop' }).toContain('radial-gradient');
+        await expect.poll(() => dirtyTabs(page)).toContain('backdrop');
+        expect((await stored(page)).backgroundPattern || 'auto', 'the previewed pattern was stored').toBe('auto');
+
+        // Backdrop off: the theme's own pattern comes back on auto.
+        await page.selectOption('[data-look-studio] [data-appearance-select="backgroundPattern"]', 'auto');
+        await page.locator('[data-backdrop-mode="off"]').click();
+        await expect.poll(() => bodyAttr(page, 'data-theme-backdrop')).toBe('off');
+        await expect.poll(texture, { message: 'with the backdrop off the theme pattern stayed away' }).not.toBe('none');
+
+        await page.keyboard.press('Escape');
+        await expect.poll(() => bodyAttr(page, 'data-theme-backdrop')).toBe('on');
+        await expect.poll(texture).toBe('none');
+    });
+
     test('opened from Appearance, it hands the page back to Appearance on close', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));

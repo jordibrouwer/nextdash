@@ -940,6 +940,24 @@ html[data-theme] body[data-pattern="none"]::before {
     background-image: none;
 }
 
+/* ── A backdrop is texture enough ──────────────────────────────────────────
+   The pattern was the only texture once; now every theme draws a backdrop,
+   and dots on top of bokeh or mountains read as a screen door. Left to the
+   theme ("auto"), the pattern steps aside while a backdrop is on screen and
+   comes back when it is switched off. A pattern the reader picked still
+   draws, over anything. */
+html[data-theme] body[data-pattern="auto"][data-theme-backdrop="on"]::before {
+    background-image: none;
+}
+
+/* Reduced transparency hides the backdrop layer, so the theme's own pattern
+   is all the texture left and comes back. */
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-pattern="auto"][data-theme-backdrop="on"]:not(.no-background-dots)::before {
+        background-image: var(--theme-pattern-image);
+    }
+}
+
 /* ── Status colours as a family ────────────────────────────────────────────
    accent-success, -warning and -error are used at full saturation for every
    badge and pill, which is right for a dot and loud for a filled shape. These

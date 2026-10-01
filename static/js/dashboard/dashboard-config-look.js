@@ -161,11 +161,6 @@
                            </div>`
                         : '';
 
-            // --- the pattern drawn over both ---
-            const patterns = [['auto', 'Follow the theme'], ['dots', 'Dots'], ['grid', 'Grid'], ['lines', 'Lines'], ['hatch', 'Hatch'], ['none', 'None']];
-            const patternOptions = patterns.map(([option, label]) =>
-                `<option value="${option}"${(s.backgroundPattern || 'auto') === option ? ' selected' : ''}>${e(t('config.backgroundPattern' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('');
-
             return `
                 <div class="config-panel">
                     <h3 class="config-panel-title">${e(t('config.appearanceBackgroundTitle', 'Background'))}</h3>
@@ -185,13 +180,25 @@
                 </div>
                 ${this.renderBackdropPanel()}
                 ${this.renderBackdropTuningPanel()}
+                ${this.renderPatternPanel()}`;
+        },
+
+        /** The pattern drawn over the backdrop; on the Background tab and in the theme browser. */
+        renderPatternPanel() {
+            const t = (k, f) => this.t(k, f);
+            const e = (v) => esc(this, v);
+            const current = this.dash.settings?.backgroundPattern || 'auto';
+            const patterns = [['auto', 'Follow the theme'], ['dots', 'Dots'], ['grid', 'Grid'], ['lines', 'Lines'], ['hatch', 'Hatch'], ['none', 'None']];
+            const options = patterns.map(([option, label]) =>
+                `<option value="${option}"${current === option ? ' selected' : ''}>${e(t('config.backgroundPattern' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('');
+            return `
                 <div class="config-panel">
                     <h3 class="config-panel-title">${e(t('config.appearancePatternTitle', 'Pattern'))}</h3>
                     <div class="config-field">
                         <span class="config-field-label">${e(t('config.backgroundPatternLabel', 'Pattern over it'))}</span>
-                        <select class="config-select" data-appearance-select="backgroundPattern">${patternOptions}</select>
+                        <select class="config-select" data-appearance-select="backgroundPattern">${options}</select>
                         ${this.appearanceAff('backgroundPattern')}
-                        <p class="config-panel-note">${e(t('config.backgroundPatternNote', 'The texture behind the dashboard. Left to the theme, most ask for dots and a few ask for something that suits them. Lines and hatch cover more of the page than dots do.'))}</p>
+                        <p class="config-panel-note">${e(t('config.backgroundPatternNote', 'A texture drawn over the backdrop. Left to the theme, there is none while a backdrop is shown; with the backdrop off, most themes ask for dots and a few for something that suits them. Pick one to draw it over anything. Lines and hatch cover more of the page than dots do.'))}</p>
                     </div>
                 </div>`;
         },

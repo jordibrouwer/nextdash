@@ -28,7 +28,7 @@
      * pane looks like depends on whether the layout draws one.
      */
     const LOOK_FIELDS = ['theme', 'themeBackdrop', 'themeSurfacePrefs', 'themeSurfacesForceAll',
-        'backdropTuning', 'cardGlass', 'themeDepth', 'glowStrength', 'themeEffects', 'layoutPreset',
+        'backdropTuning', 'backgroundPattern', 'cardGlass', 'themeDepth', 'glowStrength', 'themeEffects', 'layoutPreset',
         ...HEAD_FIELDS];
 
     /*
@@ -37,7 +37,7 @@
      */
     const TAB_FIELDS = {
         themes: { fields: ['theme'], prefs: [] },
-        backdrop: { fields: ['themeBackdrop', 'backdropTuning'], prefs: ['backdrop'] },
+        backdrop: { fields: ['themeBackdrop', 'backdropTuning', 'backgroundPattern'], prefs: ['backdrop'] },
         surface: { fields: ['themeDepth', 'glowStrength', 'themeEffects', 'cardGlass', 'layoutPreset'],
             prefs: ['depth', 'glow', 'effects', 'alpha', 'blur', 'border'] },
         heads: { fields: HEAD_FIELDS, prefs: [] },
@@ -253,6 +253,7 @@
                 this.previewThemeChoice(shown);
             }
             this.applyBackdropTuning({ ...DEFAULT_TUNING, ...(settings.backdropTuning || {}) });
+            window.ThemeLoader?.applyBackgroundPattern?.(settings.backgroundPattern || 'auto');
             this.applyChromeSettings();
             // The layout class is drawn by the grid itself, so a layout that
             // changed back needs the grid drawn again; the chrome alone does
@@ -306,7 +307,7 @@
             const t = (k, f) => this.t(k, f);
             switch (tab) {
                 case 'backdrop':
-                    return this.renderBackdropPanel() + this.renderBackdropTuningPanel();
+                    return this.renderBackdropPanel() + this.renderBackdropTuningPanel() + this.renderPatternPanel();
                 case 'surface':
                     return this.renderSurfacesPanel() + this.renderCardGlassPanel();
                 case 'heads': {
