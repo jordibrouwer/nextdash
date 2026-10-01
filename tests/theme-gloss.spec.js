@@ -55,8 +55,9 @@ test('gloss themes carry their character as a badge and a chip', async ({ page }
 test('picking a gloss theme with the glow off offers to turn it on', async ({ page }) => {
     await openBrowser(page);
     await page.locator(`[data-theme-id="${GLOSS}"]`).first().click();
-    await page.keyboard.press('Enter').catch(() => {});
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(GLOSS);
+    // The studio previews until Apply; the offer comes with the choice.
+    await page.locator('[data-studio-apply]').click();
 
     const offer = page.locator('#app-notification.show');
     // Says what the theme has, not which group it came from: the offer fires

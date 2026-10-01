@@ -8,7 +8,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * A for Appearance, the section the browser lives under -- the same
  * first-letter mnemonic the neighbouring keys use: Shift+I for Inbox, Shift+H
  * for Health, Shift+S for Settings. Unlike those it does not stop at a
- * section: it opens the modal on top of the dashboard the same way the
+ * section: it opens the panel beside the dashboard the same way the
  * "Browse themes" button in Appearance does, via the config view's own
  * openThemeBrowser(), so a theme can be picked without ever entering config.
  */
@@ -24,11 +24,11 @@ async function openDashboard(page) {
 }
 
 test.describe('Shift+A opens the theme browser', () => {
-    test('the modal appears over the dashboard, config untouched', async ({ page }) => {
+    test('the panel appears beside the dashboard, config untouched', async ({ page }) => {
         await openDashboard(page);
 
         await page.keyboard.press('Shift+A');
-        await expect(page.locator('.modal--theme-browser')).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('[data-look-studio]')).toBeVisible({ timeout: 10_000 });
 
         // Reached without ever entering config -- the point of doing this from
         // the dashboard rather than three clicks into Appearance.
@@ -40,7 +40,7 @@ test.describe('Shift+A opens the theme browser', () => {
         await openDashboard(page);
 
         await page.keyboard.press('Shift+A');
-        await expect(page.locator('.modal--theme-browser')).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('[data-look-studio]')).toBeVisible({ timeout: 10_000 });
 
         const card = page.locator('[data-theme-id]').first();
         await expect(card).toBeAttached();
@@ -52,7 +52,7 @@ test.describe('Shift+A opens the theme browser', () => {
         await page.keyboard.press('a');
         await page.waitForTimeout(700);
 
-        const open = await page.evaluate(() => !!document.querySelector('.modal--theme-browser'));
+        const open = await page.evaluate(() => !!document.querySelector('[data-look-studio]'));
         expect(open).toBe(false);
     });
 

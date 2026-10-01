@@ -1,6 +1,10 @@
 package app
 
-import "testing"
+import (
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
 
 func TestCategoryHeaderWordsNormalise(t *testing.T) {
 	for in, want := range map[string]string{
@@ -97,5 +101,35 @@ func TestThemeBackdropsEndpointAnswersEveryRecipe(t *testing.T) {
 	b := themeBackdropSeeded("recipe:bokeh", ThemeColors{Backdrop: "bokeh", AccentPrimary: "var"}, 9)
 	if a == b {
 		t.Fatal("the seed did not change the recipe's positions")
+	}
+}
+
+// The theme browser previews a roll before it is saved, so /api/theme.css
+// takes the seed from the query, and never lets a cache keep that answer.
+func TestThemeCSSTakesSeedFromQuery(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	h := &Handlers{store: NewStore()}
+	get := func(url string) (string, string) {
+		rec := httptest.NewRecorder()
+		h.CustomThemeCSS(rec, httptest.NewRequest("GET", url, nil))
+		return rec.Body.String(), rec.Header().Get("Cache-Control")
+	}
+	plain, cache := get("/api/theme.css")
+	if !strings.Contains(cache, "no-store") {
+		t.Errorf("Cache-Control = %q, want no-store", cache)
+	}
+	rolled, cache := get("/api/theme.css?seed=9")
+	if !strings.Contains(cache, "no-store") {
+		t.Errorf("seeded Cache-Control = %q, want no-store", cache)
+	}
+	if rolled == plain {
+		t.Error("seed=9 served the same stylesheet as the stored seed")
+	}
+	if junk, _ := get("/api/theme.css?seed=x"); junk != plain {
+		t.Error("an unreadable seed should fall back to the stored one")
+	}
+	if stored := normalizeBackdropTuning(h.store.GetSettings().BackdropTuning).Seed; stored != 0 {
+		t.Errorf("a previewed seed was stored: %d", stored)
 	}
 }

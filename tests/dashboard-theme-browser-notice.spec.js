@@ -39,7 +39,7 @@ test.describe('the theme browser invitation', () => {
 
         // The real browser, not a trip to the settings screen: that is the whole
         // point of offering it here, because the preview lands on this page.
-        await expect(page.locator('.modal--theme-browser')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-look-studio]')).toBeVisible({ timeout: 15_000 });
         await expect(page.locator('[data-theme-card]').first()).toBeVisible();
         expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('bookmarks');
     });
@@ -53,9 +53,9 @@ test.describe('the theme browser invitation', () => {
         await expect(hint).toHaveCount(0);
 
         await page.locator('.theme-browser-notice-card [data-tb-action="try"]').click();
-        await expect(page.locator('.modal--theme-browser')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-look-studio]')).toBeVisible({ timeout: 15_000 });
         await page.keyboard.press('Escape');
-        await expect(page.locator('.modal--theme-browser')).toHaveCount(0);
+        await expect(page.locator('[data-look-studio]')).toHaveCount(0);
 
         await expect(hint).toBeVisible();
         await expect(hint.locator('kbd')).toHaveText(':theme');
@@ -68,9 +68,9 @@ test.describe('the theme browser invitation', () => {
         const before = await page.evaluate(() => window.dashboardInstance.settings.theme);
 
         await page.locator('.theme-browser-notice-card [data-tb-action="try"]').click();
-        await expect(page.locator('.modal--theme-browser')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-look-studio]')).toBeVisible({ timeout: 15_000 });
         await page.keyboard.press('Escape');
-        await expect(page.locator('.modal--theme-browser')).toHaveCount(0);
+        await expect(page.locator('[data-look-studio]')).toHaveCount(0);
 
         expect(await page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(before);
         // And the dashboard is still the dashboard — opening the browser from

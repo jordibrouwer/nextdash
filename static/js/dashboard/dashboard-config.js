@@ -9436,47 +9436,14 @@ class DashboardConfig {
     }
 
     /**
-     * The theme browser, over the config view.
+     * The theme browser, docked beside the dashboard.
      *
-     * Preview and revert are the config view's own — the same pair the inline
-     * picker uses — so browsing here can no more strand a theme than browsing
-     * there can. _themePickerPrevious is what revert restores to, and it has to
-     * be set before the first preview rather than by the browser itself.
+     * The studio itself lives in dashboard-config-studio.js; this is the name
+     * Shift+A, the notice card, the changes tour and Appearance's Browse button
+     * all call.
      */
-    async openThemeBrowser() {
-        if (!window.ThemeBrowser?.open) return;
-        const [colors, meta] = await Promise.all([
-            this.loadColorsData(), this.loadThemeMeta(), this.loadThemeList(),
-        ]).then(([c, m]) => [c, m]);
-        const palettes = {
-            light: colors?.light || {},
-            dark: colors?.dark || {},
-            ...(colors?.builtIn || {}),
-            ...(colors?.custom || {}),
-        };
-        this._themePickerPrevious = this.dash.settings?.theme || 'dark';
-        window.ThemeBrowser.open({
-            palettes,
-            meta,
-            current: this.dash.settings?.theme || 'dark',
-            favorites: Array.isArray(this.dash.settings?.favoriteThemes)
-                ? this.dash.settings.favoriteThemes
-                : [],
-            t: (key, fallback) => this.t(key, fallback),
-            displayName: (id, name) => this.themeDisplayName(id, name),
-            onPreview: (id) => this.previewThemeChoice(id),
-            onRevert: () => this.revertThemePreview(),
-            onFavorites: (favorites) => {
-                this.dash.settings.favoriteThemes = favorites;
-                this.persistAppearance();
-            },
-            onPick: async (id) => {
-                this.clearThemePreview();
-                this._themePickerPrevious = null;
-                await this.applyThemeChoice(id);
-                this.repaintAppearanceBody();
-            },
-        });
+    async openThemeBrowser(options) {
+        return this.openLookStudio?.(options);
     }
 
     renderThemeOptions() {
@@ -10048,6 +10015,12 @@ class DashboardConfig {
     /** Persist a settings change and repaint the appearance section. */
     persistAppearance() {
         const savePromise = this.saveSettingsWithFeedback();
+        // In the theme browser the tab that changed draws itself again; the
+        // config body is not on screen.
+        if (this._lookStudio) {
+            this._lookStudio.ui?.repaint();
+            return savePromise;
+        }
         if (this.isActiveView() && this.section === 'appearance') {
             /*
              * Capture before the save, restore after the repaint.
@@ -10578,6 +10551,10 @@ class DashboardConfig {
      * to patch in place.
      */
     repaintAppearanceBody() {
+        if (this._lookStudio) {
+            this._lookStudio.ui?.repaint();
+            return;
+        }
         // The theme browser can be opened from the dashboard now, and its
         // onPick lands here. Without this the fallback below would render the
         // whole config view over the bookmarks someone is looking at, because
@@ -11917,6 +11894,14 @@ class DashboardConfig {
 
     /** Reload the server-rendered theme stylesheet so a theme change takes effect. */
     reloadThemeCSS() {
+        // The theme browser previews a backdrop roll before it is saved, and
+        // the roll is in this stylesheet, so it asks for the one on screen.
+        if (this._lookStudio) {
+            const seed = Number(this.dash.settings?.backdropTuning?.seed) || 0;
+            this._lookStudio.loadedSeed = seed;
+            window.VisualSettings?.reloadThemeCSS?.({ seed });
+            return;
+        }
         window.VisualSettings?.reloadThemeCSS?.();
     }
 

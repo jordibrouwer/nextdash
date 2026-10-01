@@ -3864,10 +3864,24 @@ func renderThemeCSSBlockSeeded(selector string, tc ThemeColors, seed int) string
 `
 }
 
+/*
+CustomThemeCSS serves the generated theme stylesheet.
+
+The seed comes from the query when it is given, for the same reason it does in
+ThemeBackdrops: the theme browser previews a roll it has not saved yet, and the
+roll is baked into this file rather than into a variable. Served no-store
+either way, so a previewed roll is never what a later plain request gets back.
+*/
 func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/css")
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	w.Write([]byte(h.customThemeCSS()))
+	seed := normalizeBackdropTuning(h.store.GetSettings().BackdropTuning).Seed
+	if raw := strings.TrimSpace(r.URL.Query().Get("seed")); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil {
+			seed = normalizeBackdropTuning(BackdropTuning{Strength: 1, Scale: 1, Brightness: 1, Saturate: 1, Seed: n}).Seed
+		}
+	}
+	w.Write([]byte(h.customThemeCSSSeeded(seed)))
 }
 
 // customThemeCSS is the same stylesheet the endpoint serves. Split out so the
@@ -3876,8 +3890,11 @@ func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 // The endpoint stays: switching a theme reloads it, and it is the one path that
 // must not depend on a page render.
 func (h *Handlers) customThemeCSS() string {
+	return h.customThemeCSSSeeded(normalizeBackdropTuning(h.store.GetSettings().BackdropTuning).Seed)
+}
+
+func (h *Handlers) customThemeCSSSeeded(seed int) string {
 	colors := h.store.GetColors()
-	seed := normalizeBackdropTuning(h.store.GetSettings().BackdropTuning).Seed
 
 	// Built with a Builder: this renders ~150 theme blocks and the += version
 	// reallocated and copied the whole (76 KB) string on every one of them, on

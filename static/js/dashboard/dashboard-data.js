@@ -1352,9 +1352,29 @@ class DashboardData {
     async saveSettings() {
         const d = this.dash;
         try {
-            const payload = typeof sanitizeSettingsForPersist === 'function'
+            let payload = typeof sanitizeSettingsForPersist === 'function'
                 ? sanitizeSettingsForPersist(d.settings)
                 : d.settings;
+            /*
+             * While the theme browser is open, the look on screen is a preview.
+             *
+             * Its fields are sent as they were when it opened, and everything
+             * else as it is now: a favourite starred or a setting changed
+             * elsewhere still saves, but the preview only lands on Apply.
+             * Gated here rather than in the browser's controls, so a save from
+             * anywhere on the page cannot store it half-way.
+             */
+            const committed = d._lookStudioCommitted;
+            if (committed) {
+                payload = { ...payload };
+                committed.keys.forEach((key) => {
+                    if (Object.prototype.hasOwnProperty.call(committed.values, key)) {
+                        payload[key] = committed.values[key];
+                    } else {
+                        delete payload[key];
+                    }
+                });
+            }
             const response = await dashFetch('/api/settings', {
                 method: 'POST',
                 headers: {

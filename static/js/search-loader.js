@@ -136,6 +136,7 @@
         if (event.ctrlKey || event.metaKey || event.altKey) return;
         if (isTypingTarget(event.target)) return;
         if (!OPENING_KEYS.includes(event.key)) return;
+        if (document.querySelector('[data-look-studio]')) return;
         // > : ? * open the overlay from any view, as they do once the bundle
         // is in. `/` is the one key a view keeps: config, the containers view
         // and the tag cloud use it for their own search or filter.

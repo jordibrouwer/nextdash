@@ -211,7 +211,9 @@
                 `<button type="button" class="config-choice${mode === val ? ' is-active' : ''}" data-backdrop-mode="${val}" aria-pressed="${mode === val}">${e(label)}</button>`).join('');
             const scopeNote = this.surfaceScope() === 'global'
                 ? t('config.backdropScopeGlobal', 'This holds for every theme.')
-                : t('config.backdropScopeTheme', 'This belongs to the theme you are on. Tick “Use these for every theme” on the Surface tab to make it hold for all of them.');
+                : this._lookStudio
+                    ? t('config.backdropScopeStudio', 'This belongs to the theme you are on. “Applies to” below makes it hold for every theme.')
+                    : t('config.backdropScopeTheme', 'This belongs to the theme you are on. Tick “Use these for every theme” on the Surface tab to make it hold for all of them.');
             const followNote = own.backdrop
                 ? t('config.backdropFollowNote', 'This theme draws “{recipe}”.').replace('{recipe}', own.backdrop)
                 : '';
@@ -280,9 +282,16 @@
         /* ------------------------------------------------------------------ */
 
         renderAppearanceSurfaceBody() {
+            return `
+                ${this.renderSurfacesPanel()}
+                ${this.renderSurfaceScopePanel()}
+                ${this.renderCardGlassPanel()}`;
+        },
+
+        /** Depth, Glow and Effects; on the Surface tab and in the theme browser. */
+        renderSurfacesPanel() {
             const t = (k, f) => this.t(k, f);
             const e = (v) => esc(this, v);
-            const s = this.dash.settings || {};
             const cap = (o) => o.charAt(0).toUpperCase() + o.slice(1);
             const select = (field, labelKey, label, options, optionKey, noteKey, note) => `
                 <div class="config-field">
@@ -307,7 +316,15 @@
                     ${select('themeEffects', 'config.themeEffectsLabel', 'Effects',
                         [['full', 'Full'], ['held', 'Held back'], ['off', 'Off']], 'config.themeEffects',
                         'config.themeEffectsNote', 'How loudly a theme’s character is drawn: the shine on a lacquered surface, the glow around a neon one, the grain on a brushed one, and how round its corners are.')}
-                </div>
+                </div>`;
+        },
+
+        /** "Use these for every theme"; the theme browser has it in its footer instead. */
+        renderSurfaceScopePanel() {
+            const t = (k, f) => this.t(k, f);
+            const e = (v) => esc(this, v);
+            const s = this.dash.settings || {};
+            return `
                 <div class="config-panel">
                     <h3 class="config-panel-title">${e(t('config.appearanceSurfaceScopeTitle', 'Whose surfaces these are'))}</h3>
                     <p class="config-panel-note">${e(t('config.appearanceSurfaceScopeNote', 'Depth, Glow, Effects, the backdrop and the card glass can belong to the theme you are on, or to every theme.'))}</p>
@@ -322,8 +339,7 @@
                         <span class="config-field-label">${e(t('config.themeResetLabel', 'This theme'))}</span>
                         <button type="button" class="config-btn config-btn--field" data-appearance-action="reset-theme-surfaces">${e(t('config.themeResetToIdeal', 'Back to the theme’s own'))}</button>
                     </div>
-                </div>
-                ${this.renderCardGlassPanel()}`;
+                </div>`;
         },
 
         /** The glass numbers that apply now: this theme's own entry, or the forced one. */
@@ -543,6 +559,12 @@
                     this.applyBackdropTuning(DEFAULT_TUNING);
                     await this.saveSettingsWithFeedback();
                     if (wasSeed !== 0) this.reloadThemeCSS();
+                    // In the theme browser the tab is drawn again by its own
+                    // repaint; in config, the Background tab is.
+                    if (this._lookStudio) {
+                        this._lookStudio.ui?.repaint();
+                        return;
+                    }
                     const body = document.getElementById('config-appearance-body');
                     if (body) {
                         body.innerHTML = this.renderAppearanceBackgroundBody();

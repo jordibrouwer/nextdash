@@ -102,6 +102,8 @@ class DashboardUiHelpers {
         // Any native <dialog> shown modally (the logs window, the Disk tab's
         // volume confirmation) is on top of the view.
         if (document.querySelector('dialog[open]')) return true;
+        // The theme browser's docked panel: the page beside it is a preview.
+        if (document.querySelector('[data-look-studio]')) return true;
         return false;
     }
 
