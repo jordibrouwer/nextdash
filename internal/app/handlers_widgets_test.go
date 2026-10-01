@@ -245,3 +245,26 @@ func TestSaveBlocksKeepsARedactedCustomWidgetAddress(t *testing.T) {
 		t.Errorf("an explicit url must replace the stored one")
 	}
 }
+
+// Without the token an RSS widget's feed addresses are withheld like a custom
+// widget's address, and a save that comes back without them keeps the stored
+// ones. The private calendar address is withheld from the settings.
+func TestTokenlessReadsWithholdFeedAndCalendarAddresses(t *testing.T) {
+	widgets := []Widget{{ID: "w1", Type: WidgetTypeRSS, Config: map[string]any{"feedUrls": []any{"https://feed.example/?token=s"}, "title": "News"}}}
+	redacted := redactWidgetAddresses(widgets)
+	if _, has := redacted[0].Config["feedUrls"]; has || redacted[0].Config["title"] != "News" {
+		t.Fatalf("redacted = %v", redacted[0].Config)
+	}
+	if _, has := widgets[0].Config["feedUrls"]; !has {
+		t.Fatal("the redaction reached the stored widget")
+	}
+	kept := keepRedactedWidgetAddresses(redacted, widgets)
+	if _, has := kept[0].Config["feedUrls"]; !has {
+		t.Fatalf("a save without the feeds dropped them: %v", kept[0].Config)
+	}
+	settings := Settings{CalendarIcsUrl: "https://calendar.example/private/basic.ics"}
+	redactSettingsSecrets(&settings)
+	if settings.CalendarIcsUrl != "" {
+		t.Fatal("the calendar address was handed out without the token")
+	}
+}

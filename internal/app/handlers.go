@@ -2429,6 +2429,9 @@ func redactSettingsSecrets(settings *Settings) {
 	settings.MonitorNotifyPushoverToken = ""
 	settings.MonitorNotifyPushoverUserKey = ""
 	settings.MonitorNotifyURL = ""
+	// A private calendar's secret iCal address reads the whole calendar; the
+	// widget fetches it by widget id so the page never holds it.
+	settings.CalendarIcsUrl = ""
 }
 
 func mergeSettingsFromBody(stored Settings, body []byte) (Settings, error) {

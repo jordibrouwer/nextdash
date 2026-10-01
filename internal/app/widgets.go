@@ -421,11 +421,12 @@ func keepRedactedWidgetAddresses(incoming, stored []Widget) []Widget {
 	for i, widget := range incoming {
 		out[i] = widget
 		old, ok := byID[widget.ID]
-		if !ok || widget.Type != WidgetTypeCustom || old.Type != WidgetTypeCustom {
+		withheld := withheldWidgetKeys[widget.Type]
+		if !ok || len(withheld) == 0 || old.Type != widget.Type {
 			continue
 		}
 		var merged map[string]any
-		for _, key := range []string{"url", "credentialId"} {
+		for key := range withheld {
 			if _, sent := widget.Config[key]; sent {
 				continue
 			}
