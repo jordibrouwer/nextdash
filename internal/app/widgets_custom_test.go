@@ -446,7 +446,7 @@ func TestFormattingToAChosenNumberOfDecimals(t *testing.T) {
 		{float64(130760634), "bytes", places(2), "124.70 MB", "a size keeps its unit"},
 		{float64(130760634), "bytes", places(0), "125 MB", "and rounds to whole"},
 		{float64(1046085072), "rate", places(2), "1.05 Gbps", "a rate keeps its unit"},
-		{0.4372, "percent", places(1), "43.7%", "a ratio is read as a percentage first"},
+		{0.4372, "share", places(1), "43.7%", "a share is read as a percentage first"},
 		// A service that reports numbers as strings is the whole reason this
 		// exists: text carries no unit, so it is the number and nothing else.
 		{"3342.65", "text", places(1), "3342.7", "a numeric string rounds"},
