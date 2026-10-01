@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.16.0 — 1 October 2026](#v1160--1-october-2026)
 - [v1.15.8 — 1 October 2026](#v1158--1-october-2026)
 - [v1.15.7 — 30 September 2026](#v1157--30-september-2026)
 - [v1.15.6 — 30 September 2026](#v1156--30-september-2026)
@@ -91,6 +92,13 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
+## v1.16.0 — 1 October 2026
+
+### Dashboard
+
+- **fix — with the Launcher layout preset, widgets looked empty.** Widgets are `.category` blocks too, so `.layout-launcher .category`'s `align-items: flex-start` shrank their body to the width of its widest word. `.layout-launcher .category.dashboard-widget` stretches them to the full row again (`dashboard.css`); `asset_hashes_gen.go` regenerated.
+
+---
 
 ## v1.15.8 — 1 October 2026
 

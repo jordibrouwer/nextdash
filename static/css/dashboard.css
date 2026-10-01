@@ -2453,6 +2453,12 @@ body[data-layout-preset="launcher"] .dashboard-grid {
     padding: 0;
 }
 
+/* Widgets are .category too, but have no tile row to hug: flex-start left
+   their body as wide as its widest word, which reads as an empty dashboard. */
+.layout-launcher .category.dashboard-widget {
+    align-items: stretch;
+}
+
 .layout-launcher .category-title {
     text-align: left;
     white-space: nowrap;
