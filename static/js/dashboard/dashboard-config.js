@@ -3171,6 +3171,7 @@ class DashboardConfig {
         { tab: 'bookmarks', titleKey: 'config.helpCollectionHealthTitle', fallback: 'Collection health' },
         { tab: 'bookmarks', titleKey: 'config.helpBmKeysTitle', fallback: 'Keys' },
         { tab: 'containers', titleKey: 'config.helpContainersSetupTitle', fallback: 'Before it works: Docker, a write token and sometimes root' },
+        { tab: 'containers', titleKey: 'config.helpContainersTogetherTitle', fallback: 'Containers, bookmarks and health together' },
         { tab: 'containers', titleKey: 'config.helpContainersTitle', fallback: 'The Containers view' },
         { tab: 'containers', titleKey: 'config.helpContainersConfigTitle', fallback: 'Setting it up' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
@@ -28437,6 +28438,10 @@ class DashboardConfig {
      * jump lands on the panel rather than on the top of its tab.
      */
     static HELP_PANEL_SEE_ALSO = {
+        'config.helpContainersTogetherTitle': [
+            { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
+            { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
+        ],
         'config.helpHealthTitle': [
             { tab: 'monitoring', panel: 'health-stats', labelKey: 'config.helpHealthStatsTitle', label: 'Uptime, trends & statistics' },
             { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
@@ -29357,6 +29362,10 @@ class DashboardConfig {
         // Docker, and two of the settings are security decisions.
         return this.helpPanel('config.helpContainersSetupTitle', 'Before it works: Docker, a write token and sometimes root',
             'config.helpContainersSetupBody', '')
+            // Second: why a bookmark dashboard has a Containers view at all --
+            // the link to the bookmark, its checks and the shared alerts.
+            + this.helpPanel('config.helpContainersTogetherTitle', 'Containers, bookmarks and health together',
+                'config.helpContainersTogetherBody', '')
             + this.helpPanel('config.helpContainersTitle', 'The Containers view',
             'config.helpContainersBody', '')
             + this.helpPanel('config.helpContainersConfigTitle', 'Setting it up',

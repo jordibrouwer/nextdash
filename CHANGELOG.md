@@ -236,7 +236,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## v1.15.8 — 1 October 2026
 
-A second bug hunt across the app fixes 108 more bugs: moves and undos that put bookmarks on the wrong page, copies of one address acting for each other, settings and backups that did not keep, and automatic container updates that failed in silence.
+The documentation puts the self-hosting half up front: how the Containers view, the bookmarks of your services, their health checks and the alerts work together. A second bug hunt across the app fixes 108 more bugs: moves and undos that put bookmarks on the wrong page, copies of one address acting for each other, settings and backups that did not keep, and automatic container updates that failed in silence.
 
 ### Dashboard
 
@@ -324,6 +324,14 @@ A second bug hunt across the app fixes 108 more bugs: moves and undos that put b
 ### Security (write token)
 
 - **fix — without the token, `GET /api/settings` still returned the private calendar address, and the blocks route an RSS widget's feed addresses.** Both are withheld now; a save that comes back without the feeds keeps the stored ones.
+
+### Docs
+
+- **docs — README opens with "Run your self-hosted setup from one screen"**, between the intro and the screenshots: containers, bookmarks, health and alerts and push in four steps, nightly updates with a rollback, the Disk tab and the homelab widgets. Two new screenshots sit under it, `screenshots/nextdash-containers-health.jpg` (grouped by project, the bookmark marks, a failing healthcheck and its timeline) and `screenshots/nextdash-containers-updates.jpg` (an automatic update rolled back and skipped), made from demo data with a mocked Docker host. The Features section's **Containers and your homelab** gains three lines on the bookmark link, the shared alerts and updates at night.
+- **docs — MANUAL gains a Self-hosted guide** (`#self-hosted-guide`), unnumbered, between the table of contents and §1, and linked from the resource table and the top of the contents: what it gives you, the set-up in four steps with a compose example, linking web UIs to bookmarks, monitoring them, alerts, push and container notices, updates, Disk and logs, a homelab page, a morning routine and the keys. The chapter numbers and anchors are unchanged.
+- **docs — MANUAL §7.1 no longer says the Containers view has no key of its own**: `Shift + Y` opens it.
+- **docs — Config → Help → Containers gains "Containers, bookmarks and health together"** (`helpContainersTogetherTitle`/`Body`), after the set-up panel, with *Continues in* links to Alerts & notifications and Availability & health, and an entry in `HELP_JUMP_PANELS`.
+- **docs — Tips gain a group, "Your self-hosted setup"** (`tipsGroupSelfHosted`, after Keeping it healthy, in `config-help-tips.js`): the seven container tips move there from Data in and out and Making it yours, and six are new — monitoring a web UI's bookmark, *Runs in*, container notices on your phone, holding databases, `:docker <name> logs` and a homelab page. The nine new strings are in all six languages. `go generate` refreshed `asset_hashes_gen.go`.
 
 ### Tests
 

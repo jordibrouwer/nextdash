@@ -12,6 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
+| 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 
 This manual describes nextDash as it is now. It follows the same topics as Config → Help and goes into more detail. What changed in which release is in the [changelog](CHANGELOG.md).
 
@@ -20,6 +21,8 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 <a id="table-of-contents"></a>
 
 ## 📚 Table of contents
+
+🏠 **[Self-hosted guide: containers, bookmarks and health](#self-hosted-guide)** — start here if nextDash runs next to your own services.
 
 1. [What is nextDash?](#1-what-is-nextdash)
 2. [Installation and first launch](#2-installation-and-first-launch)
@@ -46,6 +49,202 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 23. [Security and self-hosting](#23-security-and-self-hosting)
 24. [Troubleshooting](#24-troubleshooting)
 25. [Quick reference](#25-quick-reference)
+
+---
+
+<a id="self-hosted-guide"></a>
+
+## 🏠 Self-hosted guide: containers, bookmarks and health
+
+Most people who self-host keep three things apart: a dashboard with links to their services, something that tells them when a service is down, and something to look at their Docker containers. nextDash does all three on one screen, and — more useful than that — it knows they are about the same services. The bookmark for Sonarr, the Sonarr container and the check that watches it are linked, so a problem shows up wherever you happen to look, and the fix is one key away.
+
+This guide shows how the pieces fit together. Each part links to the chapter with every detail.
+
+<a id="sh-what-it-gives-you"></a>
+
+### What it gives you
+
+| Question | Where you see the answer |
+|---|---|
+| *Is everything running?* | The **Containers view** (`Shift + Y`): every container with a status glow, CPU, RAM, healthcheck, restarts and an orange **↑** for an update waiting ([§14](#14-containers)) |
+| *Can I actually reach it?* | The bookmark of its web UI, set to **Monitor**: checked by the server, with uptime, response time and certificate ([§12](#12-checks-health)) |
+| *Which link belongs to which container?* | The bookmark mark on a container's row, in the colour of that bookmark's checks — and **Runs in** on the bookmark's own side panel ([§14.2](#142-the-list)) |
+| *What went wrong, and when?* | The container's **Timeline** (crashes with exit code, out-of-memory kills, health changes, updates, rollbacks) and the bookmark's **Health in large** (every check, every outage) |
+| *Will I hear about it?* | One set of alert channels and push notifications for sites going down, certificates running out and containers stopping, restarting, turning unhealthy or running hot ([§12.4](#124-alerts), [§14.9](#149-notices)) |
+| *Is it up to date?* | Image update checks with release notes, skip and hold, a history, a rollback, and optional nightly updates that roll themselves back on failure ([§14.5](#145-actions-and-updates)) |
+| *Where did my disk go?* | The **Disk** tab: images, volumes, build cache and bind mounts, biggest first, with clean-ups that say what they free ([§14.7](#147-disk)) |
+| *How is the machine?* | The **Processor**, **Memory**, **Disks**, **Containers** and **Container list** widgets on the dashboard ([§15.4](#154-system-widgets-and-what-they-need)) |
+
+The difference with separate tools is in the links between those rows. A container that keeps restarting is a red glow in the Containers view, a problem on its Container list row, a notice on your phone — and, because its web UI stops answering, a red mark on its bookmark, an outage in that bookmark's history and a downtime alert. Each place leads to the others with a click.
+
+<a id="sh-set-it-up"></a>
+
+### Set it up in four steps
+
+nextDash runs fine without any of this; the steps below add the self-hosting half. [§14.6](#146-what-it-needs) has every detail, including Unraid, Synology and QNAP.
+
+1. **Give it the Docker socket.** Mount `/var/run/docker.sock` and set `NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock`. The Containers view, the Containers widgets and the header icon appear. Read-only (`:ro`) is enough to look.
+2. **Decide whether it may act.** `NEXTDASH_DOCKER_CONTROL=1` allows start, stop, pause, restart, update, remove, rollback, automatic updates and Disk clean-ups. Without it the view only reads — a sensible first week.
+3. **Set a write token.** `NEXTDASH_WRITE_TOKEN` with a long random string (`openssl rand -hex 32`). Access to the Docker socket is root on the host, so other websites and scripts must not be able to send requests in your name.
+4. **Put a gate in front.** The token is not a login: the dashboard hands it to every browser that opens the page. Keep nextDash behind Tailscale or a reverse proxy with authentication ([§23](#23-security-and-self-hosting)) — with actions on, anyone who can open the dashboard can stop your containers.
+
+```yaml
+services:
+  nextdash:
+    image: ghcr.io/jordibrouwer/nextdash:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /mnt:/host/root/mnt:ro,rslave              # for the Disks widget
+    environment:
+      - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+      - NEXTDASH_DOCKER_CONTROL=1
+      - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string
+      - NEXTDASH_HOST_ROOT=/host/root
+      # - NEXTDASH_RUN_AS_ROOT=1                   # only if the log says "owned by gid 0"
+    restart: unless-stopped
+```
+
+Then open **Config → Containers**. **Connection** shows what the server sees — socket, actions, write token, its own container. Fill in **Docker host address** (the server's LAN address or name, such as `192.168.1.10` or `tower.local`) so port links open on the server rather than on the machine you are browsing from, and switch **Check for image updates** to every 6, 12 or 24 hours.
+
+<a id="sh-link-bookmarks"></a>
+
+### Link each web UI to a bookmark
+
+You probably have bookmarks for your services already. nextDash finds the one that belongs to each container on its own, in this order, and stops at the first step that finds exactly one:
+
+1. the bookmark you chose in the container's side panel, under **Bookmark**;
+2. a bookmark on the same port of this server — `http://192.168.1.10:8989` for a container publishing 8989;
+3. a bookmark whose subdomain is the container's name — `sonarr.example.com`, as a reverse proxy gives it;
+4. a bookmark titled after the container.
+
+Once linked, the container's row shows a small bookmark mark: green when its checks pass, red when it is broken or down, an outline when nothing checks it. A click opens the bookmark in the Bookmarks view. The other way round, the bookmark's side panel shows **Details → Address → Runs in**, a link to the container.
+
+**When the guess is wrong** — two bookmarks on one port, a service behind a path rather than a subdomain — choose the bookmark by hand under the container's **Bookmark → Linked bookmark**, or *No bookmark*. A container without a bookmark at all is a hint: add one, so it shows on your dashboard and can be monitored.
+
+**When the web UI is somewhere else** — behind your reverse proxy, on another port — set it in the side panel's **Custom → Web UI address**. `[IP]` stands for this server. The list, the Container list widget, search and `:docker <name> open` all use it.
+
+<a id="sh-monitor"></a>
+
+### Monitor it
+
+A running container is not the same as a working service. A container can be *up* while its web UI shows an error page, its database is gone or its certificate has expired. The bookmark checks the service the way you use it — from the outside.
+
+1. Open the bookmark (from the container's row, or the Bookmarks view) and set its availability to **Monitor** — `Shift + C` on the dashboard, `c` in the Bookmarks view.
+2. Choose how often: 5 minutes to 24 hours, 15 minutes by default.
+3. For a service that answers *200* while it is broken, open **Expected response** and give it a phrase that only shows when it works, or the status codes that count as healthy.
+4. For a service behind a sign-in, give it an **Address to check instead** — a `/health` or `/api/status` endpoint — and, if needed, a stored sign-in from a Custom widget.
+5. A self-signed certificate on your LAN? Tick **Accept a certificate this machine does not trust**.
+
+Local addresses are checked once **Allow local bookmarks** is on ([§23.3](#233-local-addresses-and-outgoing-requests)). Planned downtime — the nightly backup that stops a database — goes in a **maintenance window** ([§12.5](#125-maintenance-windows)), so it opens no incident and sends no alert.
+
+**Collection health** shows uptime and certificates for every monitor at once; the **Uptime** and **Certificates** widgets put the same on a dashboard page.
+
+<a id="sh-get-told"></a>
+
+### Get told: alerts, push and notices
+
+There is one place where bad news goes, and both halves use it.
+
+**Where it goes.** Set it up once under **Behavior → Status & alerts**:
+
+- **Downtime alerts** — Slack, Discord, Telegram, Gotify, **ntfy**, **Pushover** or your own JSON receiver. **Send test alert** proves the route. ntfy alerts carry **Open link** and **Health** buttons, and failures go out at a higher priority than recoveries.
+- **Browser notifications** — push to your phone, tablet or desktop, even with nextDash closed. Press **Enable on this device** on each device. On iPhone and iPad, add nextDash to the home screen first, and serve it over HTTPS ([§22](#22-phones-tablets-and-the-installed-app)).
+
+**What arrives there:**
+
+| From | Message |
+|---|---|
+| A monitored bookmark | Down, after the failures in a row you chose (3 by default), and up again with how long it was down |
+| A certificate | 30, 7 and 3 days before it expires |
+| A container | Stopped unexpectedly, keeps restarting (three crashes in ten minutes), turned unhealthy — and recovered |
+| A container running hot | Above the CPU or memory line for longer than you allow (90 % for 10 minutes until you change it), and back under it |
+| An automatic update | Done, rolled back and why, or not possible |
+
+For containers on your phone, also switch on **Notify when a container stops, keeps restarting or turns unhealthy** under the browser notifications.
+
+**Keeping it quiet.** nextDash leaves out what you did yourself: a stop you asked for is not a notice, nor is a crash the restart policy fixes within 30 seconds. One incident is one notice; four or more at once become one message, and a host that takes many bookmarks down together sends one downtime alert. Mute what you do not care about — a container with `m` or its row menu, a bookmark with **Do not alert me about this bookmark** — and it still shows its state on screen. **Config → Containers → Muted containers** says where container notices go, and **Hidden containers** keeps test containers out of the view and the widget count altogether.
+
+**For other programs.** Outgoing webhooks send `health.down`, `health.up` and `health.cert-expiring`, signed, to anything that listens — Home Assistant, n8n, a script ([§19.3](#193-webhooks)).
+
+<a id="sh-keep-current"></a>
+
+### Keep it current
+
+With **Check for image updates** on, nextDash asks each image's registry for a newer version on the interval you chose. A container with one waiting gets an orange **↑**, the header icon a count, and the **Updates** filter lists them all. The side panel's **What's new** tab shows the release notes behind the update before you take it.
+
+- **Update one** — `u` on the row, or `:docker sonarr update`. Update and remove always ask first.
+- **Update a stack** — **Group by project**, then **Update (n)** on the compose project's row.
+- **Update a selection** — tick rows with `x`, then **Update** in the bar.
+- **Skip this version** — when a release is known to be bad. A newer one counts again.
+- **Hold updates** — for a container you pin on purpose, such as a database.
+- **Roll back** — while the old image is still on the host, **Roll back to …** puts the container back on it, without a download, and skips the version it leaves.
+
+**Update automatically** lets nextDash do it for you, in a nightly window (03:00 to 05:00 until you change it). Each container is updated one at a time and then watched for five minutes. If it stops, starts again on its own or turns unhealthy, it is rolled back to the image it had and that version is skipped — and you get a notice either way. Good candidates are stateless apps with a healthcheck; keep databases and anything with a migration on **Hold** and update those by hand.
+
+Because the bookmark is monitored too, an update that leaves the container running but breaks the web UI still raises a downtime alert in the morning.
+
+<a id="sh-keep-tidy"></a>
+
+### Keep it tidy
+
+- **Disk** (`d` in the Containers view) shows what images, volumes and the build cache take up, and what can be reclaimed. Clear unused or dangling images, the build cache and stopped containers in bulk; volumes go one at a time, after typing **delete**. A dangling image that is still a container's way back says *rollback for …* before you remove it. On Unraid, **Bind mounts** lists the appdata folders each container uses, with **Measure** to size one.
+- **The logs window** (`l`, or `:docker <name> logs` from anywhere) follows a container's log live, with search, a filter, stdout and stderr apart, and download.
+- **The timeline** keeps thirty days of what happened to each container — useful after a night of automatic updates, or when a container *seemed* fine.
+- The **Containers** widget can show **reclaimable** space, so a filling disk shows up on the dashboard before it becomes a problem.
+
+<a id="sh-homelab-page"></a>
+
+### A homelab page
+
+Give your services their own page — *Homelab*, *Server* — and put the bookmarks for every web UI on it, grouped the way you think of them: *Media*, *Network*, *Home*, *Tools*. Then add widgets beside them ([§15](#15-widgets)):
+
+| Widget | Why on this page |
+|---|---|
+| **Containers** | Running and total, failing healthchecks, restarts, updates waiting, reclaimable space, incidents in 24 hours, the three busiest |
+| **Container list** | Every container on its own row, problems first; a click opens it in the Containers view or goes straight to its web UI |
+| **Uptime** | The monitored bookmarks on this page, worst first, with a heartbeat |
+| **Certificates** | The ones that run out soon |
+| **Health** | Broken, down and changed bookmarks on this page; each figure opens its filter |
+| **Processor**, **Memory**, **Disks** | The machine itself — name `/mnt/user` and `/mnt/cache` on Unraid |
+| **Custom** | Figures from the services themselves — the queue in Sonarr, blocked queries in Pi-hole, a sensor in Home Assistant, CPU and memory in Proxmox — 28 services filled in ([§15.5](#155-the-custom-widget)) |
+
+Set a widget to two columns and it says more, not the same thing larger: the container failing by name, the expiry date of a certificate, the load behind the processor's percentage.
+
+<a id="sh-morning-routine"></a>
+
+### A morning routine
+
+What a check of your setup can look like, all from the keyboard:
+
+1. Open the homelab page. The Containers widget says *0 incidents*, Uptime is green, nothing waits in Certificates.
+2. Or not: a notice on your phone said the automatic update of Paperless was rolled back at 04:09, and its bookmark sent a downtime alert and a recovery around the same time. `Shift + Y` opens the Containers view; Paperless runs again, on its old image.
+3. `Enter` opens its side panel. The **Timeline** shows the update at 04:05, the crashes after it and the rollback. **Updates → History** names both versions.
+4. `l` opens the logs window; search for `error` to see why the new version failed.
+5. The version stays skipped until a newer one arrives. **Hold updates** if you would rather wait for a fix before nextDash tries again.
+6. Click its bookmark mark: the bookmark's **Health** tab shows the minutes of downtime that matched the crashes.
+7. `d` for Disk: the new image that failed is still on the host, used by nothing. Clear **Unused images** once you are sure — a later update downloads what it needs.
+8. Elsewhere, an orange **↑**: `#docker?filter=updates`, read **What's new** for each, and update what you trust.
+
+<a id="sh-keys"></a>
+
+### Keys and commands for daily use
+
+| Key or command | Does |
+|---|---|
+| `Shift + Y` | Open the Containers view |
+| `:docker <name>` | Find a container from anywhere; add `open`, `logs`, `start`, `stop`, `restart`, `pause`, `update` or `remove` |
+| `s` · `r` · `p` · `u` | Start or stop, restart, pause, update the selected container |
+| `l` · `m` · `d` | Logs window, mute notices, Disk |
+| `x` · `Shift + X` · `Ctrl/Cmd + A` | Tick one, a run, everything the filter shows |
+| `/` | Search the containers |
+| `Shift + C` | Change a bookmark's availability (Off, Periodic, Monitor) on the dashboard |
+| `#docker?filter=updates` | The containers with an update waiting |
+| `#bookmarks?health=monitored` | Every monitored bookmark, with its uptime |
+
+The full list is in [§14.4](#144-keys) and on `!`.
 
 ---
 
@@ -472,7 +671,7 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + Q` | Switch whether letters search names or shortcuts |
 | `Esc` | Close the panel; on a bare grid, go to the first page; on the first page, open search |
 
-The Containers view has no key of its own — open it from its header icon or with `:docker`.
+The Containers view opens with `Shift + Y`, its header icon or `:docker`.
 
 ### 7.2 Moving on the grid
 

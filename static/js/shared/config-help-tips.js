@@ -113,6 +113,28 @@
             ],
         },
         {
+            // The Docker host beside the bookmarks: a container, the bookmark
+            // of its web UI, the check on that bookmark and the alerts both
+            // send are one subject, so their tips sit together.
+            titleKey: 'tipsGroupSelfHosted',
+            titleFallback: 'Your self-hosted setup',
+            tips: [
+                'tipDataContainers',
+                'tipHostMonitorWebUI',
+                'tipDataContainerBookmark',
+                'tipHostRunsIn',
+                'tipDataContainerWebUI',
+                'tipHostOnePlace',
+                'tipDataContainerAutoUpdate',
+                'tipHostHold',
+                'tipHostLogs',
+                'tipDataContainerColumns',
+                'tipDataContainerBinds',
+                'tipTuneContainerList',
+                'tipHostHomelabPage',
+            ],
+        },
+        {
             titleKey: 'tipsGroupTuning',
             titleFallback: 'Making it yours',
             tips: [
@@ -129,7 +151,6 @@
                 'tipTuneFresh',
                 'tipTuneReviewOffers',
                 'tipTuneWidgets',
-                'tipTuneContainerList',
                 'tipTuneWidgetFold',
                 'tipTuneCustomWidget',
                 'tipTuneAmbientWidgets',
@@ -148,8 +169,7 @@
             // what the server says about it.
             titleKey: 'tipsGroupData',
             titleFallback: 'Data in and out',
-            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs', 'tipDataContainers', 'tipDataContainerWebUI',
-                'tipDataContainerBookmark', 'tipDataContainerColumns', 'tipDataContainerAutoUpdate', 'tipDataContainerBinds'],
+            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs'],
         },
     ];
 
