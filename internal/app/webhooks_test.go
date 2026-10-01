@@ -29,7 +29,7 @@ func TestWebhookSignatureIsOverIDTimestampAndBody(t *testing.T) {
 	now := time.Unix(1750000000, 0)
 
 	req, err := buildWebhookRequest(context.Background(), endpoint,
-		webhookEventBookmarkAdded, map[string]any{"name": "X"}, now)
+		webhookEventBookmarkAdded, map[string]any{"name": "X"}, now, newWebhookMessageID())
 	if err != nil {
 		t.Fatal(err)
 	}

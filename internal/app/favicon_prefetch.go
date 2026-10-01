@@ -116,7 +116,10 @@ func saveIconBytes(data []byte, ext string) (string, error) {
 	}
 	fileName := "icon-" + randomHex(8) + ext
 	filePath := filepath.Join(iconsDir, fileName)
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
+	// Atomic and synced, as the page files that point at it are: served as
+	// immutable for a year, a half-written icon after a power cut or a full
+	// disk stayed broken.
+	if err := writeFileAtomic(filePath, data, 0644); err != nil {
 		return "", err
 	}
 	return fileName, nil

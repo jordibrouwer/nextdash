@@ -183,3 +183,23 @@ func readPageBookmarks(t *testing.T, dir string, pageID int) []Bookmark {
 	}
 	return page.Bookmarks
 }
+
+// The marker the preview-image migration leaves must survive a settings save,
+// or every restart rewrites every page file to strip images again.
+func TestPreviewImageMigrationMarkerSurvivesASettingsSave(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	fs := NewStore().(*FileStore)
+	if err := fs.SaveSettings(fs.GetSettings()); err != nil {
+		t.Fatal(err)
+	}
+	if !fs.setMigrationMarker("previewImagesStrippedMigrated") {
+		t.Fatal("marker not set")
+	}
+	if err := fs.SaveSettings(fs.GetSettings()); err != nil {
+		t.Fatal(err)
+	}
+	if !fs.migrationMarkerSet("previewImagesStrippedMigrated") {
+		t.Fatal("a settings save dropped the marker")
+	}
+}
