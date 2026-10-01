@@ -7749,6 +7749,50 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
     margin-left: auto;
 }
 
+/* The Layout tab carries Appearance's widest rows. With the page's 200px
+   label column the weight and size choices wrapped a button per line, so the
+   label column narrows and the control goes to the right edge, as on the
+   other tabs here. */
+.look-studio-pane[data-studio-pane="layout"] .config-field {
+    grid-template-columns: minmax(0, 7.5em) minmax(0, 1fr) auto;
+}
+
+.look-studio-pane[data-studio-pane="layout"] .config-field > :is(.config-choices, .config-select, .config-text) {
+    justify-self: end;
+}
+
+/* The seven font sizes do not fit beside a label; they get a row of their own. */
+.look-studio-pane[data-studio-pane="layout"] .config-field:has(> .config-choices .config-choice--art) > .config-choices {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-wrap: nowrap;
+}
+
+.look-studio-pane[data-studio-pane="layout"] .config-choice--art {
+    padding-inline: 6px;
+}
+
+/* The dashboard beside the panel is the preview, so the small drawings go,
+   and the cards keep only their names, side by side: stacked with their
+   sentences, three of them were taller than the panel. */
+.look-studio-pane .config-field-art,
+.look-studio-pane .config-choice-card .setting-art,
+.look-studio-pane .config-choice-card-body {
+    display: none;
+}
+
+.look-studio-pane .config-choice-cards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.look-studio-pane .config-choice-card {
+    flex: 0 0 auto;
+    padding: 0.3rem 0.7rem;
+}
+
 /* A hint that comes with its way out: the text, and the button beside it. */
 .config-glass-hint {
     display: flex;

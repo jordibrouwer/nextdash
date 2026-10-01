@@ -358,7 +358,7 @@
        the controls they reuse from Appearance; this file owns the shell, the
        keyboard and the theme grid. */
 
-    const TABS = ['themes', 'backdrop', 'surface', 'heads', 'looks'];
+    const TABS = ['themes', 'backdrop', 'surface', 'heads', 'layout', 'looks'];
 
     function tabLabel(tab, t) {
         return {
@@ -366,6 +366,7 @@
             backdrop: t('config.studioTabBackdrop', 'Backdrop'),
             surface: t('config.studioTabSurface', 'Surface'),
             heads: t('config.studioTabHeads', 'Headers'),
+            layout: t('config.studioTabLayout', 'Layout'),
             looks: t('config.studioTabLooks', 'Looks'),
         }[tab] || tab;
     }
@@ -735,8 +736,15 @@
                 button.querySelector('.look-studio-dot')?.setAttribute('title', dirty ? t('config.studioChanged', 'Changed') : '');
             });
             const scope = opts.scope?.() || 'theme';
+            // Greyed where it decides nothing: a tab whose settings it does
+            // not route to a theme.
+            const scoped = opts.usesScope ? opts.usesScope(tab) !== false : true;
+            const scopeBox = root.querySelector('.look-studio-scope');
+            scopeBox?.classList.toggle('is-off', !scoped);
+            scopeBox?.setAttribute('title', scoped ? '' : t('config.studioScopeNotHere', 'Applies to is for the backdrop and the surface; this tab does not use it'));
             root.querySelectorAll('[data-studio-scope]').forEach((button) => {
                 button.setAttribute('aria-pressed', String(button.getAttribute('data-studio-scope') === scope));
+                button.disabled = !scoped;
             });
             if (tab === 'themes') {
                 pane.querySelectorAll('[data-theme-card]').forEach((card) => {

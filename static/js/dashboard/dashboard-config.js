@@ -9111,16 +9111,10 @@ class DashboardConfig {
         return DashboardConfig.FONT_SIZES.includes(size) ? size : 'm';
     }
 
-    renderAppearance() {
+    /** Font, weight and size: on General, and on the studio's Layout tab. */
+    renderTypeFields() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const apIntro = `<p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>`;
-        // Which half of the current family is showing, so Quick mode marks the
-        // right button whatever theme is picked. Reading s.theme directly only
-        // ever matched the two legacy ids, leaving both buttons unlit on every
-        // other theme.
-        const theme = String(s.theme || 'dark').endsWith('-light') || s.theme === 'light' ? 'light' : 'dark';
-
         // Small / Medium / Large names a size without showing one, so each
         // button carries the letters at the size it sets. Hovering still applies
         // the real thing to the dashboard behind the panel; this is what the
@@ -9144,6 +9138,27 @@ class DashboardConfig {
             `<button type="button" class="config-choice${weight === val ? ' is-active' : ''}" data-appearance-weight="${esc(val)}" aria-pressed="${weight === val}">${esc(label)}</button>`
         ).join('');
 
+        return `
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.fontPresetLabel', 'Font'))}</span>
+                    <select class="config-select" data-appearance-select="fontPreset">${fontPresetOptions}</select>
+                    ${this.appearanceAff('fontPreset')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.fontWeightLabel', 'Weight'))}</span>
+                    <div class="config-choices" role="group">${weightChoices}</div>
+                    ${this.appearanceAff('fontWeight')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.appearanceFontSize', 'Font size'))}</span>
+                    <div class="config-choices" role="group">${fontOptions}</div>
+                </div>`;
+    }
+
+    /** Text contrast: on General, and on the studio's Layout tab. */
+    renderInkGapField() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
         // The ink gap is a lightness distance, not a percentage of anything, so
         // it is shown as the contrast it buys rather than as its own number:
         // "0.44" means nothing to a reader, "normal" and the ends of the range
@@ -9151,6 +9166,27 @@ class DashboardConfig {
         const inkGap = Number.isFinite(Number(s.inkGap)) && Number(s.inkGap) > 0
             ? Math.min(0.58, Math.max(0.30, Number(s.inkGap)))
             : 0.47;
+        return `
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
+                    <select class="config-select" data-appearance-select="inkGap">
+                        ${DashboardConfig.INK_GAP_STEPS.map(([value, key, fallback]) => `<option value="${value}"${DashboardConfig.inkGapStepFor(inkGap) === value ? ' selected' : ''}>${esc(this.t(`config.${key}`, fallback))}</option>`).join('')}
+                    </select>
+                    ${this.appearanceAff('inkGap')}
+                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
+                </div>`;
+    }
+
+    renderAppearance() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const apIntro = `<p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>`;
+        // Which half of the current family is showing, so Quick mode marks the
+        // right button whatever theme is picked. Reading s.theme directly only
+        // ever matched the two legacy ids, leaving both buttons unlit on every
+        // other theme.
+        const theme = String(s.theme || 'dark').endsWith('-light') || s.theme === 'light' ? 'light' : 'dark';
+
         const randomMode = window.ThemeUtils?.normalizeRandomThemeMode?.(s) ?? s.randomThemeMode ?? 'off';
         const showingThemeId = randomMode !== 'off'
             ? (document.documentElement.getAttribute('data-theme')
@@ -9270,14 +9306,7 @@ class DashboardConfig {
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceTextMotionTitle', 'Text and motion'))}</h3>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
-                    <select class="config-select" data-appearance-select="inkGap">
-                        ${DashboardConfig.INK_GAP_STEPS.map(([value, key, fallback]) => `<option value="${value}"${DashboardConfig.inkGapStepFor(inkGap) === value ? ' selected' : ''}>${esc(this.t(`config.${key}`, fallback))}</option>`).join('')}
-                    </select>
-                    ${this.appearanceAff('inkGap')}
-                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
-                </div>
+                ${this.renderInkGapField()}
                 <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="animationsEnabled" ${s.animationsEnabled !== false ? 'checked' : ''}>
@@ -9296,20 +9325,7 @@ class DashboardConfig {
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceTypeTitle', 'Type'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceTypeNote', 'The typeface, weight, and size used across the dashboard. Upload a font file to use one that is not listed.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.fontPresetLabel', 'Font'))}</span>
-                    <select class="config-select" data-appearance-select="fontPreset">${fontPresetOptions}</select>
-                    ${this.appearanceAff('fontPreset')}
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.fontWeightLabel', 'Weight'))}</span>
-                    <div class="config-choices" role="group">${weightChoices}</div>
-                    ${this.appearanceAff('fontWeight')}
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.appearanceFontSize', 'Font size'))}</span>
-                    <div class="config-choices" role="group">${fontOptions}</div>
-                </div>
+                ${this.renderTypeFields()}
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.uploadFontLabel', 'Custom font'))}</span>
                     <button type="button" class="config-btn config-btn--small" data-appearance-action="upload-font">${esc(this.t('config.detailUploadIconBtn', 'Upload…'))}</button>
@@ -9394,6 +9410,16 @@ class DashboardConfig {
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live on their own tab.'))}</p>
+                ${this.renderRowToggles()}
+            </div>
+            ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}`;
+    }
+
+    /** Icons and status colour on bookmark rows: on Display, and in the studio. */
+    renderRowToggles() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        return `
                 <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="showIcons" ${s.showIcons !== false ? 'checked' : ''}>
@@ -9407,9 +9433,7 @@ class DashboardConfig {
                         <span>${esc(this.t('config.colorizeStatus', 'Colour status on bookmark rows'))}</span>
                     </label>
                     ${this.appearanceAff('colorizeStatus')}
-                </div>
-            </div>
-            ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}`;
+                </div>`;
     }
 
     /** Friendly name for a theme id, matching the old config's labels. */
@@ -9810,44 +9834,7 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-theme]').forEach((btn) => {
             btn.addEventListener('click', () => this.setQuickMode(btn.getAttribute('data-appearance-theme')));
         });
-        container.querySelectorAll('[data-appearance-font]').forEach((btn) => {
-            // Small/Medium/Large says nothing about what the grid will look
-            // like, so pointing at one shows it and leaving puts it back. The
-            // theme picker already works this way; type is the other choice you
-            // cannot judge from its label.
-            const size = btn.getAttribute('data-appearance-font');
-            const preview = () => {
-                if (this._fontSizeBeforePreview == null) {
-                    this._fontSizeBeforePreview = this.currentFontSize();
-                }
-                // Before the class changes: the panel must keep the size it has.
-                this.holdConfigTypeScale();
-                this.dash.settings.fontSize = size;
-                this.dash.applyFontSize?.();
-            };
-            const revert = () => {
-                const previous = this._fontSizeBeforePreview;
-                this._fontSizeBeforePreview = null;
-                this.releaseConfigTypeScale();
-                if (previous == null) return;
-                this.dash.settings.fontSize = previous;
-                this.dash.applyFontSize?.();
-            };
-            btn.addEventListener('pointerenter', preview);
-            btn.addEventListener('focus', preview);
-            btn.addEventListener('pointerleave', revert);
-            btn.addEventListener('blur', revert);
-            btn.addEventListener('click', () => {
-                // Taken, so there is nothing to put back — and the panel takes
-                // the new size with everything else.
-                this._fontSizeBeforePreview = null;
-                this.releaseConfigTypeScale();
-                this.setFontSize(size);
-            });
-        });
-        container.querySelectorAll('[data-appearance-weight]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setFontWeight(btn.getAttribute('data-appearance-weight')));
-        });
+        this.bindAppearanceFieldControls(container);
         container.querySelectorAll('[data-appearance-randommode]').forEach((btn) => {
             btn.addEventListener('click', () => this.setAppearanceSelect('randomThemeMode', btn.getAttribute('data-appearance-randommode')));
         });
@@ -9862,23 +9849,6 @@ class DashboardConfig {
         if (bgUrl) {
             bgUrl.addEventListener('change', () => this.setBackgroundImageUrl(bgUrl.value));
         }
-        container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
-            input.addEventListener('change', () => {
-                const field = input.getAttribute('data-appearance-toggle');
-                const host = container.querySelector(`[data-appearance-art="${CSS.escape(field)}"]`);
-                if (host) {
-                    host.innerHTML = window.SettingArt?.render?.(
-                        host.getAttribute('data-art-kind') || '', input.checked) || '';
-                }
-                return this.setToggle(field, input.checked);
-            });
-        });
-        // `select` only: the theme picker shares the data-appearance-select hook
-        // so search and the changed-filter still find it, but it is a button with
-        // its own listbox and no change event to listen for.
-        container.querySelectorAll('select[data-appearance-select]').forEach((select) => {
-            select.addEventListener('change', () => this.setAppearanceSelect(select.getAttribute('data-appearance-select'), select.value));
-        });
         this.bindThemePicker(container);
         // Range and text update live without a full repaint so the control keeps focus.
         const range = container.querySelector('[data-appearance-range="backgroundOpacity"]');
@@ -9905,39 +9875,6 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleAppearanceAction(btn.getAttribute('data-appearance-action')));
         });
-        // Favicon harmonisation: the on/off and style buttons repaint (they change
-        // which controls are shown); the slider updates live so it keeps the pointer.
-        container.querySelectorAll('[data-appearance-toggle-icons]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                void this.setIconStyling({ enabled: btn.getAttribute('data-appearance-toggle-icons') === 'on' });
-            });
-        });
-        container.querySelectorAll('[data-appearance-iconstyle]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                void this.setIconStyling({ style: btn.getAttribute('data-appearance-iconstyle') });
-            });
-        });
-        const iconRange = container.querySelector('[data-appearance-icon-intensity]');
-        if (iconRange) {
-            iconRange.addEventListener('input', () => {
-                const val = Number(iconRange.value);
-                const out = iconRange.parentElement?.querySelector('.config-range-value');
-                if (out) out.textContent = `${Math.round(val * 100)}%`;
-                iconRange.parentElement?.querySelectorAll('.config-icon-preview-dot').forEach((dot) => {
-                    dot.style.setProperty('--icon-theme-intensity', String(val));
-                });
-                const nextEntry = { ...this.iconStylingEntry(), intensity: val };
-                const map = { ...(this.dash.settings.themeIconStyling || {}) };
-                for (const key of this.iconStylingThemeKeysForWrite()) {
-                    map[key] = { ...nextEntry };
-                }
-                this.dash.settings.themeIconStyling = map;
-                window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(this.dash.settings);
-            });
-            iconRange.addEventListener('change', () => {
-                void this.setIconStyling({ intensity: Number(iconRange.value) }, { repaint: false });
-            });
-        }
         const fontInput = container.querySelector('#config-font-input');
         if (fontInput) {
             fontInput.addEventListener('change', () => {
@@ -9978,6 +9915,103 @@ class DashboardConfig {
         this.bindFormKeyboard(container);
         // The Background and Surface tabs bind what is new on them.
         this.bindLookControls?.(container);
+    }
+
+    /**
+     * The binders for Appearance's own field controls -- font, weight, size,
+     * the selects, the toggles and favicon styling. Shared with the look
+     * studio, which shows some of these controls and must not bind the rest of
+     * the config view (the shell head, the tab strip, the filter).
+     */
+    bindAppearanceFieldControls(container) {
+        container.querySelectorAll('[data-appearance-font]').forEach((btn) => {
+            // Small/Medium/Large says nothing about what the grid will look
+            // like, so pointing at one shows it and leaving puts it back. The
+            // theme picker already works this way; type is the other choice you
+            // cannot judge from its label.
+            const size = btn.getAttribute('data-appearance-font');
+            const preview = () => {
+                if (this._fontSizeBeforePreview == null) {
+                    this._fontSizeBeforePreview = this.currentFontSize();
+                }
+                // Before the class changes: the panel must keep the size it has.
+                this.holdConfigTypeScale();
+                this.dash.settings.fontSize = size;
+                this.dash.applyFontSize?.();
+            };
+            const revert = () => {
+                const previous = this._fontSizeBeforePreview;
+                this._fontSizeBeforePreview = null;
+                this.releaseConfigTypeScale();
+                if (previous == null) return;
+                this.dash.settings.fontSize = previous;
+                this.dash.applyFontSize?.();
+            };
+            btn.addEventListener('pointerenter', preview);
+            btn.addEventListener('focus', preview);
+            btn.addEventListener('pointerleave', revert);
+            btn.addEventListener('blur', revert);
+            btn.addEventListener('click', () => {
+                // Taken, so there is nothing to put back — and the panel takes
+                // the new size with everything else.
+                this._fontSizeBeforePreview = null;
+                this.releaseConfigTypeScale();
+                this.setFontSize(size);
+            });
+        });
+        container.querySelectorAll('[data-appearance-weight]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setFontWeight(btn.getAttribute('data-appearance-weight')));
+        });
+        container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
+            input.addEventListener('change', () => {
+                const field = input.getAttribute('data-appearance-toggle');
+                const host = container.querySelector(`[data-appearance-art="${CSS.escape(field)}"]`);
+                if (host) {
+                    host.innerHTML = window.SettingArt?.render?.(
+                        host.getAttribute('data-art-kind') || '', input.checked) || '';
+                }
+                return this.setToggle(field, input.checked);
+            });
+        });
+        // `select` only: the theme picker shares the data-appearance-select hook
+        // so search and the changed-filter still find it, but it is a button with
+        // its own listbox and no change event to listen for.
+        container.querySelectorAll('select[data-appearance-select]').forEach((select) => {
+            select.addEventListener('change', () => this.setAppearanceSelect(select.getAttribute('data-appearance-select'), select.value));
+        });
+        // Favicon harmonisation: the on/off and style buttons repaint (they change
+        // which controls are shown); the slider updates live so it keeps the pointer.
+        container.querySelectorAll('[data-appearance-toggle-icons]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.setIconStyling({ enabled: btn.getAttribute('data-appearance-toggle-icons') === 'on' });
+            });
+        });
+        container.querySelectorAll('[data-appearance-iconstyle]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.setIconStyling({ style: btn.getAttribute('data-appearance-iconstyle') });
+            });
+        });
+        const iconRange = container.querySelector('[data-appearance-icon-intensity]');
+        if (iconRange) {
+            iconRange.addEventListener('input', () => {
+                const val = Number(iconRange.value);
+                const out = iconRange.parentElement?.querySelector('.config-range-value');
+                if (out) out.textContent = `${Math.round(val * 100)}%`;
+                iconRange.parentElement?.querySelectorAll('.config-icon-preview-dot').forEach((dot) => {
+                    dot.style.setProperty('--icon-theme-intensity', String(val));
+                });
+                const nextEntry = { ...this.iconStylingEntry(), intensity: val };
+                const map = { ...(this.dash.settings.themeIconStyling || {}) };
+                for (const key of this.iconStylingThemeKeysForWrite()) {
+                    map[key] = { ...nextEntry };
+                }
+                this.dash.settings.themeIconStyling = map;
+                window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(this.dash.settings);
+            });
+            iconRange.addEventListener('change', () => {
+                void this.setIconStyling({ intensity: Number(iconRange.value) }, { repaint: false });
+            });
+        }
     }
 
     /** Wait for any in-flight settings write before swapping appearance tabs. */

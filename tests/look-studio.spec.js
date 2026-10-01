@@ -248,7 +248,7 @@ test.describe('the look studio', () => {
         await page.locator('[data-studio-tab="looks"]').click();
         await page.locator('[data-studio-use-look="homepage-boxed"]').click();
         await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe('boxed');
-        await expect.poll(() => dirtyTabs(page)).toEqual(['backdrop', 'surface', 'heads']);
+        await expect.poll(() => dirtyTabs(page)).toEqual(['backdrop', 'surface', 'heads', 'layout']);
 
         await page.keyboard.press(process.platform === 'darwin' ? 'Meta+Enter' : 'Control+Enter');
         await expect(studio(page)).toHaveCount(0);
@@ -266,9 +266,11 @@ test.describe('the look studio', () => {
         // it is not sent, so deleting one would leave this test's look behind.
         await page.evaluate(async (prev) => {
             const d = window.dashboardInstance;
-            const empty = { themeSurfacePrefs: {}, cardGlass: {}, themeBackdrop: 'follow', themeDepth: 'follow' };
+            const empty = { themeSurfacePrefs: {}, cardGlass: {}, themeBackdrop: 'follow', themeDepth: 'follow',
+                fontPreset: 'source-code-pro', densityMode: 'comfortable', categorySpacing: 'balanced' };
             ['categoryHeaderStyle', 'showCategoryIcon', 'showCategoryCount', 'themeSurfacePrefs',
-                'backdropTuning', 'themeBackdrop', 'cardGlass', 'themeDepth'].forEach((key) => {
+                'backdropTuning', 'themeBackdrop', 'cardGlass', 'themeDepth',
+                'fontPreset', 'densityMode', 'categorySpacing'].forEach((key) => {
                 if (prev[key] !== undefined) d.settings[key] = prev[key];
                 else if (key in empty) d.settings[key] = empty[key];
                 else delete d.settings[key];
@@ -320,14 +322,15 @@ test.describe('the look studio', () => {
         await expect(studio(page)).toHaveCount(0);
 
         // The layout dropdown redraws the grid at once, as a preview: dotted
-        // on Surface, nothing stored, and Cancel draws the old layout again.
+        // on Layout, where the preset lives, nothing stored, and Cancel draws
+        // the old layout again.
         await openStudio(page);
         await page.locator('[data-studio-tab="surface"]').click();
         await page.selectOption('[data-glass-panel] [data-glass-layout]', 'cards');
         const gridClass = () => page.locator('.dashboard-grid').getAttribute('class');
         await expect.poll(gridClass).toContain('layout-cards');
         await expect(page.locator('[data-glass-panel] [data-glass-layout-hint]')).toHaveCount(0);
-        await expect.poll(() => dirtyTabs(page)).toContain('surface');
+        await expect.poll(() => dirtyTabs(page)).toContain('layout');
         expect((await stored(page)).layoutPreset, 'the previewed layout was stored').toBe('default');
         await page.keyboard.press('Escape');
         await expect(studio(page)).toHaveCount(0);
@@ -396,6 +399,80 @@ test.describe('the look studio', () => {
         expect(await page.evaluate(() => window.scrollY), 'a wheel over the footer moved the dashboard').toBe(0);
 
         await page.keyboard.press('Escape');
+    });
+
+    test('the Layout tab changes type and grid at once, and Compare and Cancel put them back', async ({ page }) => {
+        await openDashboard(page);
+        const before = await stored(page);
+        await openStudio(page);
+        await page.locator('[data-studio-tab="layout"]').click();
+
+        // Applies to speaks for backdrop and surface only.
+        await expect(page.locator('[data-studio-scope="global"]')).toBeDisabled();
+
+        const font = () => page.evaluate(() => document.documentElement.getAttribute('data-font-preset'));
+        const density = () => bodyAttr(page, 'data-density-mode');
+        const fontWas = await font();
+        const densityWas = await density();
+        const fontTo = fontWas === 'inter' ? 'system' : 'inter';
+        const densityTo = densityWas === 'dense' ? 'comfortable' : 'dense';
+
+        await page.selectOption('[data-look-studio] select[data-appearance-select="fontPreset"]', fontTo);
+        await expect.poll(font).toBe(fontTo);
+        await page.selectOption('[data-look-studio] select[data-behavior-field="densityMode"]', densityTo);
+        await expect.poll(density).toBe(densityTo);
+        await expect.poll(() => dirtyTabs(page)).toEqual(['layout']);
+        const kept = await stored(page);
+        expect(kept.fontPreset, 'the font was stored before Apply').toBe(before.fontPreset);
+        expect(kept.densityMode, 'the density was stored before Apply').toBe(before.densityMode);
+
+        await page.locator('[data-studio-compare]').click();
+        await expect.poll(font).toBe(fontWas);
+        await expect.poll(density).toBe(densityWas);
+        await page.locator('[data-studio-compare]').click();
+        await expect.poll(font).toBe(fontTo);
+        await expect.poll(density).toBe(densityTo);
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(font).toBe(fontWas);
+        await expect.poll(density).toBe(densityWas);
+        expect((await stored(page)).fontPreset).toBe(before.fontPreset);
+    });
+
+    test('Headers carries the header bar: its button style is shown at once and put back on Cancel', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        await page.locator('[data-studio-tab="heads"]').click();
+
+        const was = await bodyAttr(page, 'data-header-buttons');
+        const to = was === 'plated' ? 'plain' : 'plated';
+        await page.selectOption('[data-look-studio] select[data-behavior-field="headerButtonStyle"]', to);
+        await expect.poll(() => bodyAttr(page, 'data-header-buttons')).toBe(to);
+        await expect.poll(() => dirtyTabs(page)).toEqual(['heads']);
+
+        await page.keyboard.press('Escape');
+        await expect.poll(() => bodyAttr(page, 'data-header-buttons')).toBe(was);
+    });
+
+    test('a look brings its own font, density and spacing', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        const font = () => page.evaluate(() => document.documentElement.getAttribute('data-font-preset'));
+        const fontWas = await font();
+        const densityWas = await bodyAttr(page, 'data-density-mode');
+
+        await page.locator('[data-studio-tab="looks"]').click();
+        await expect(page.locator('[data-studio-look="terminal"]')).toContainText('JetBrains Mono');
+        await page.locator('[data-studio-use-look="terminal"]').click();
+        await expect.poll(font).toBe('jetbrains-mono');
+        await expect.poll(() => bodyAttr(page, 'data-density-mode')).toBe('dense');
+        await expect.poll(() => bodyAttr(page, 'data-category-spacing')).toBe('snug');
+        await expect.poll(() => dirtyTabs(page)).toContain('layout');
+
+        await page.keyboard.press('Escape');
+        await expect.poll(font).toBe(fontWas);
+        await expect.poll(() => bodyAttr(page, 'data-density-mode')).toBe(densityWas);
     });
 
     test('opened from Appearance, it hands the page back to Appearance on close', async ({ page }) => {

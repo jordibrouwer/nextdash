@@ -298,10 +298,13 @@
    Below 768px it is a sheet over the lower part of the screen instead.
 
    Placed with top/left and a width rather than inset or right: 0, which on a
-   page with a classic scrollbar lands a gutter short of the edge. */
+   page with a classic scrollbar lands a gutter short of the edge.
+
+   490px so the six tabs fit on one line; at 440 the Layout tab scrolled out
+   of sight. */
 
 :root {
-    --look-studio-width: min(440px, 100vw);
+    --look-studio-width: min(490px, 100vw);
 }
 
 /* The bottom-left cards sit above everything and are inert while the studio
@@ -358,6 +361,7 @@ body.look-studio-open .quickstart-card {
 }
 
 .look-studio-tab {
+    position: relative;
     flex: 0 0 auto;
     padding: 0.45rem 0.6rem;
     border: 0;
@@ -380,14 +384,16 @@ body.look-studio-open .quickstart-card {
 }
 
 /* The dot on a tab whose answers differ from when the studio opened. */
+/* In the tab's corner rather than beside its name: six tabs have no width
+   to spare for six dots that are mostly hidden. */
 .look-studio-dot {
-    display: inline-block;
+    position: absolute;
+    top: 0.3rem;
+    right: 0.15rem;
     width: 6px;
     height: 6px;
-    margin-left: 5px;
     border-radius: 50%;
     background: var(--accent-warning, #fbbf24);
-    vertical-align: middle;
     visibility: hidden;
 }
 
@@ -439,6 +445,14 @@ body.look-studio-open .quickstart-card {
     gap: var(--space-2, 0.5rem);
     width: 100%;
     font-size: 0.85em;
+}
+
+.look-studio-scope.is-off {
+    opacity: 0.4;
+}
+
+.look-studio-seg button:disabled {
+    cursor: default;
 }
 
 .look-studio-seg {

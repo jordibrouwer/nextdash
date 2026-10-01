@@ -2,10 +2,11 @@
  * The look studio: the theme browser with tabs beside the dashboard.
  *
  * theme-browser.js draws the panel, the tabs and the theme grid; this file
- * hands it the rest. The Backdrop, Surface and Headers tabs are the Appearance
- * controls themselves (renderBackdropPanel, renderCardGlassPanel, the category
- * header schema panel), bound by the same binders, so a control cannot behave
- * one way in config and another way here.
+ * hands it the rest. The Backdrop, Surface, Headers and Layout tabs are the
+ * Appearance controls themselves (renderBackdropPanel, renderCardGlassPanel,
+ * renderTypeFields, the schema panels cut down to their fields), bound by the
+ * same binders, so a control cannot behave one way in config and another way
+ * here.
  *
  * Those controls change the page live and save at once. In the studio they
  * still do both, but the save is gated: dashboard-data.js sends the look
@@ -22,14 +23,26 @@
     const HEAD_FIELDS = ['categoryHeaderStyle', 'categoryHeaderSize', 'showCategoryIcon',
         'showCategoryCount', 'categoryHeaderAccentLine'];
 
-    /**
-     * Every setting the studio previews. Only these are gated and put back.
-     * The layout is among them because the card glass panel offers it: what a
-     * pane looks like depends on whether the layout draws one.
+    /** The header bar above the categories: on the Headers tab, below them. */
+    const BAR_FIELDS = ['headerButtonStyle', 'pageSwitcherStyle'];
+
+    /** The Layout tab: type first, then how the grid and its rows are laid out. */
+    const TEXT_FIELDS = ['fontPreset', 'fontWeight', 'fontSize', 'inkGap', 'themeIconStyling'];
+    const GRID_FIELDS = ['layoutPreset', 'columnsPerRow', 'densityMode', 'categorySpacing', 'sideMargin',
+        'launcherIconSize', 'rowHighlight', 'showIcons', 'colorizeStatus'];
+
+    /*
+     * The ones the grid reads while it draws. Putting one of these back (on
+     * Compare, Cancel or Reset) needs the grid drawn again; the chrome pass
+     * alone leaves the old columns and rows standing.
      */
+    const RENDER_FIELDS = ['layoutPreset', 'columnsPerRow', 'densityMode', 'categorySpacing', 'sideMargin',
+        'showIcons', 'colorizeStatus'];
+
+    /** Every setting the studio previews. Only these are gated and put back. */
     const LOOK_FIELDS = ['theme', 'themeBackdrop', 'themeSurfacePrefs', 'themeSurfacesForceAll',
-        'backdropTuning', 'backgroundPattern', 'cardGlass', 'themeDepth', 'glowStrength', 'themeEffects', 'layoutPreset',
-        ...HEAD_FIELDS];
+        'backdropTuning', 'backgroundPattern', 'cardGlass', 'themeDepth', 'glowStrength', 'themeEffects',
+        ...HEAD_FIELDS, ...BAR_FIELDS, ...TEXT_FIELDS, ...GRID_FIELDS];
 
     /*
      * What each tab owns, for its dot and its Reset. themeSurfacePrefs holds
@@ -38,13 +51,19 @@
     const TAB_FIELDS = {
         themes: { fields: ['theme'], prefs: [] },
         backdrop: { fields: ['themeBackdrop', 'backdropTuning', 'backgroundPattern'], prefs: ['backdrop'] },
-        surface: { fields: ['themeDepth', 'glowStrength', 'themeEffects', 'cardGlass', 'layoutPreset'],
+        surface: { fields: ['themeDepth', 'glowStrength', 'themeEffects', 'cardGlass'],
             prefs: ['depth', 'glow', 'effects', 'alpha', 'blur', 'border'] },
-        heads: { fields: HEAD_FIELDS, prefs: [] },
+        heads: { fields: [...HEAD_FIELDS, ...BAR_FIELDS], prefs: [] },
+        layout: { fields: [...TEXT_FIELDS, ...GRID_FIELDS], prefs: [] },
         looks: { fields: [], prefs: [] },
     };
 
     const HEAD_STYLES = ['clean', 'underlined', 'boxed', 'label', 'group'];
+    const DENSITIES = ['comfortable', 'compact', 'dense'];
+    const SPACINGS = ['snug', 'balanced', 'airy'];
+
+    /** Which tabs the "Applies to" switch speaks for; the rest hold for every theme. */
+    const SCOPED_TABS = ['backdrop', 'surface', 'looks'];
 
     /*
      * The built-in looks. A look is a set of answers, not a theme: it sets the
@@ -54,10 +73,13 @@
      * would otherwise change nothing. Plain keeps the depth it finds.
      *
      * Each one names all five header answers, so going from one look to the
-     * next never leaves a header setting behind from the one before.
+     * next never leaves a header setting behind from the one before. The same
+     * goes for the type and the spacing: every look names a font, a density
+     * and the room between categories.
      */
-    const look = (id, label, note, backdrop, tuning, glass, depth, heads) => ({
+    const look = (id, label, note, backdrop, tuning, glass, depth, heads, [font, density, spacing]) => ({
         id, label, note, backdrop, depth,
+        text: { fontPreset: font, densityMode: density, categorySpacing: spacing },
         labelKey: `config.look.${id}`, noteKey: `config.look.${id}Note`,
         tuning: { strength: 1, blur: 0, brightness: 1, saturate: 1, tint: 0, ...tuning },
         glass: { border: null, ...glass },
@@ -68,45 +90,57 @@
     const LOOKS = [
         look('homepage', 'Homepage', 'Photo-like backdrop, glass cards, clean headers',
             'sunset', { strength: 1.2, brightness: 0.85, saturate: 1.1 },
-            { alpha: 0.55, blur: 12 }, 'glass', { categoryHeaderStyle: 'clean' }),
+            { alpha: 0.55, blur: 12 }, 'glass', { categoryHeaderStyle: 'clean' },
+            ['inter', 'comfortable', 'balanced']),
         look('homepage-boxed', 'Homepage boxed', 'Boxed headers, a little more blur',
             'mountains', { strength: 1.3, blur: 2, brightness: 0.75, saturate: 1.2 },
             { alpha: 0.6, blur: 10, border: 'on' }, 'glass',
-            { categoryHeaderStyle: 'boxed', showCategoryCount: true }),
+            { categoryHeaderStyle: 'boxed', showCategoryCount: true },
+            ['inter', 'comfortable', 'balanced']),
         look('frosted', 'Frosted', 'Lots of blur, see-through cards',
             'bokeh', { strength: 1.6, blur: 8, saturate: 1.4 },
             { alpha: 0.3, blur: 24, border: 'on' }, 'glass',
-            { categoryHeaderStyle: 'underlined', showCategoryIcon: false }),
+            { categoryHeaderStyle: 'underlined', showCategoryIcon: false },
+            ['dm-sans', 'comfortable', 'airy']),
         look('aurora', 'Aurora', 'Northern light behind clear glass',
             'aurora', { strength: 1.4, blur: 4, saturate: 1.2 },
-            { alpha: 0.45, blur: 16 }, 'glass', { categoryHeaderStyle: 'underlined' }),
+            { alpha: 0.45, blur: 16 }, 'glass', { categoryHeaderStyle: 'underlined' },
+            ['dm-sans', 'comfortable', 'balanced']),
         look('night-sky', 'Night sky', 'Stars on a darkened page, quiet labels',
             'stars', { brightness: 0.8 },
-            { alpha: 0.6, blur: 10 }, 'glass', { categoryHeaderStyle: 'label', showCategoryIcon: false }),
+            { alpha: 0.6, blur: 10 }, 'glass', { categoryHeaderStyle: 'label', showCategoryIcon: false },
+            ['ibm-plex-mono', 'compact', 'balanced']),
         look('soft', 'Soft', 'A blurred wash of colour, calm cards',
             'mesh', { strength: 0.8, blur: 6, saturate: 0.9 },
-            { alpha: 0.7, blur: 14 }, 'glass', { categoryHeaderStyle: 'clean' }),
+            { alpha: 0.7, blur: 14 }, 'glass', { categoryHeaderStyle: 'clean' },
+            ['ibm-plex-sans', 'comfortable', 'airy']),
         look('desert', 'Desert', 'Warm dunes tinted by the theme, with counts',
             'dunes', { tint: 0.2 },
-            { alpha: 0.6, blur: 12 }, 'glass', { categoryHeaderStyle: 'clean', showCategoryCount: true }),
+            { alpha: 0.6, blur: 12 }, 'glass', { categoryHeaderStyle: 'clean', showCategoryCount: true },
+            ['ibm-plex-sans', 'comfortable', 'balanced']),
         look('paper', 'Paper', 'Contour lines and near-solid cards, accent underline',
             'topo', { brightness: 1.05 },
-            { alpha: 0.85, blur: 6 }, 'glass', { categoryHeaderStyle: 'underlined', categoryHeaderAccentLine: true }),
+            { alpha: 0.85, blur: 6 }, 'glass', { categoryHeaderStyle: 'underlined', categoryHeaderAccentLine: true },
+            ['ibm-plex-sans', 'comfortable', 'airy']),
         look('blueprint', 'Blueprint', 'A drafting grid, edged cards, boxed headers',
             'blueprint', {},
             { alpha: 0.85, blur: 4, border: 'on' }, 'glass',
-            { categoryHeaderStyle: 'boxed', showCategoryCount: true }),
+            { categoryHeaderStyle: 'boxed', showCategoryCount: true },
+            ['ibm-plex-mono', 'compact', 'snug']),
         look('terminal', 'Terminal', 'Scanlines, solid cards, bare labels',
             'scanlines', {},
             { alpha: 0.9, blur: 0 }, 'glass',
-            { categoryHeaderStyle: 'label', showCategoryIcon: false, showCategoryCount: true }),
+            { categoryHeaderStyle: 'label', showCategoryIcon: false, showCategoryCount: true },
+            ['jetbrains-mono', 'dense', 'snug']),
         look('neon', 'Neon', 'Bright prisms, see-through cards, group cards',
             'prism', { strength: 1.6, saturate: 1.6 },
-            { alpha: 0.4, blur: 18, border: 'on' }, 'glass', { categoryHeaderStyle: 'group' }),
+            { alpha: 0.4, blur: 18, border: 'on' }, 'glass', { categoryHeaderStyle: 'group' },
+            ['jetbrains-mono', 'compact', 'balanced']),
         look('plain', 'Plain', 'No backdrop, solid cards, label headers',
             'off', {},
             { alpha: 1, blur: 0, border: 'on' }, null,
-            { categoryHeaderStyle: 'label', showCategoryIcon: false, showCategoryCount: true }),
+            { categoryHeaderStyle: 'label', showCategoryIcon: false, showCategoryCount: true },
+            ['system', 'comfortable', 'balanced']),
     ];
 
     const clone = (value) => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)));
@@ -121,6 +155,9 @@
         }
         return JSON.stringify(value);
     }
+
+    /** What the grid is drawn from, to tell whether putting answers back needs a redraw. */
+    const drawnFrom = (settings) => canonical(RENDER_FIELDS.map((field) => settings?.[field] ?? null));
 
     /** The part of the settings one tab owns. */
     function tabState(settings, tab) {
@@ -211,6 +248,7 @@
                 renderTab: (tab) => this.renderStudioTab(tab),
                 bindTab: (tab, host) => this.bindStudioTab(tab, host),
                 isDirty: (tab) => this.studioTabDirty(tab),
+                usesScope: (tab) => SCOPED_TABS.includes(tab),
                 scope: () => this.surfaceScope(),
                 setScope: (scope) => this.setToggle('themeSurfacesForceAll', scope === 'global'),
                 onResetTab: (tab) => this.resetStudioTab(tab),
@@ -239,8 +277,11 @@
 
         /* ── Showing a look ─────────────────────────────────────────────── */
 
-        /** Draw the page from the look fields in dash.settings, without saving. */
-        applyStudioLook({ theme = true } = {}) {
+        /**
+         * Draw the page from the look fields in dash.settings, without saving.
+         * `redraw` when an answer the grid reads while drawing was put back.
+         */
+        applyStudioLook({ theme = true, redraw = false } = {}) {
             const settings = this.dash.settings;
             if (theme) {
                 this.clearThemePreview();
@@ -254,13 +295,19 @@
             }
             this.applyBackdropTuning({ ...DEFAULT_TUNING, ...(settings.backdropTuning || {}) });
             window.ThemeLoader?.applyBackgroundPattern?.(settings.backgroundPattern || 'auto');
+            window.DashboardFont?.applyMainFont?.(settings);
+            this.dash.applyFontSize?.();
+            window.ThemeLoader?.applyInkGap?.(settings.inkGap);
+            window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(settings);
+            // Weight and icon size are body attributes written here.
+            this.dash.visual?.applyVisualSettings?.();
             this.applyChromeSettings();
             // The layout class is drawn by the grid itself, so a layout that
             // changed back needs the grid drawn again; the chrome alone does
             // not do it. Only then: a redraw on every compare would flicker.
             const preset = settings.layoutPreset || 'default';
             const grid = document.querySelector('.dashboard-grid');
-            if (grid && !grid.classList.contains(`layout-${preset}`)) {
+            if (redraw || (grid && !grid.classList.contains(`layout-${preset}`))) {
                 this.dash.renderDashboard?.({ animate: false });
             }
             void this.applyResolvedSurfaces();
@@ -313,12 +360,32 @@
                 case 'heads': {
                     const panels = this.panelsFor('appearance', 'display')
                         .filter((p) => p.controls?.some((c) => c.field === 'categoryHeaderStyle'));
-                    return this.renderControlPanels(panels, 'behavior');
+                    return this.renderControlPanels([...panels, ...this.studioPanels('header', BAR_FIELDS)], 'behavior');
                 }
+                case 'layout':
+                    return `
+                        <div class="config-panel">
+                            <h3 class="config-panel-title">${e(t('config.appearanceTypeTitle', 'Type'))}</h3>
+                            ${this.renderTypeFields()}
+                            ${this.renderInkGapField()}
+                        </div>
+                        <div class="config-panel">
+                            <h3 class="config-panel-title">${e(t('config.appearanceFaviconsTitle', 'Favicons'))}</h3>
+                            <p class="config-panel-note">${e(t('config.appearanceFaviconsNote', 'How far the icons on your bookmark rows are pulled toward the theme.'))}</p>
+                            ${this.renderIconStyling()}
+                        </div>
+                        ${this.renderControlPanels([
+                            ...this.studioPanels('layout', GRID_FIELDS),
+                            ...this.studioPanels('display', GRID_FIELDS),
+                        ], 'behavior')}
+                        <div class="config-panel">
+                            <h3 class="config-panel-title">${e(t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
+                            ${this.renderRowToggles()}
+                        </div>`;
                 case 'looks':
                     return `
                         <div class="look-studio-looks-intro">
-                            <p>${e(t('config.studioLooksIntro', 'A look is a set of answers for the other tabs: which backdrop is drawn and how strongly, how solid and blurred the cards are, and how category headers read. Your theme keeps its colours; a look only changes how they are used.'))}</p>
+                            <p>${e(t('config.studioLooksIntro', 'A look is a set of answers for the other tabs: which backdrop is drawn and how strongly, how solid and blurred the cards are, how category headers read, and which font and spacing the dashboard uses. Your theme keeps its colours; a look only changes how they are used.'))}</p>
                             <p>${e(t('config.studioLooksHow', 'Use shows it on the page straight away. Nothing is stored until Apply, and Cancel puts everything back. “Applies to” below decides whether it holds for this theme or every theme. Afterwards each part can be tuned in its own tab.'))}</p>
                         </div>
                         <div class="look-studio-looks">${LOOKS.map((item) => `
@@ -337,6 +404,22 @@
             }
         },
 
+        /**
+         * Appearance's schema panels on one tab, cut down to the given fields.
+         * Panels with none of them are left out, and a cut-down panel loses
+         * its Show all / Hide all and its note, which speak for rows that are
+         * not there.
+         */
+        studioPanels(appearanceTab, fields) {
+            return this.panelsFor('appearance', appearanceTab)
+                .map((panel) => {
+                    const controls = (panel.controls || []).filter((c) => fields.includes(c.field));
+                    const whole = controls.length === (panel.controls || []).length;
+                    return { ...panel, bulk: undefined, note: whole ? panel.note : undefined, controls };
+                })
+                .filter((panel) => panel.controls.length);
+        },
+
         bindStudioTab(tab, host) {
             if (tab === 'backdrop' || tab === 'surface') {
                 host.querySelectorAll('select[data-appearance-select]').forEach((select) => {
@@ -345,6 +428,10 @@
                 this.bindAffordances(host, null, (field, def) => this.applyAppearanceField(field, def));
                 this.bindLookControls(host);
             } else if (tab === 'heads') {
+                this.bindControlPanels(host, 'behavior');
+            } else if (tab === 'layout') {
+                this.bindAppearanceFieldControls(host);
+                this.bindAffordances(host, null, (field, def) => this.applyAppearanceField(field, def));
                 this.bindControlPanels(host, 'behavior');
             } else if (tab === 'looks') {
                 host.querySelectorAll('[data-studio-use-look]').forEach((button) => {
@@ -379,6 +466,11 @@
                     + (item.glass.border === 'on' ? t('config.lookPartEdge', ', edged') : ''),
                 t('config.lookPartHeaders', '{style} headers').replace('{style}', styleName)
                     + (item.heads.showCategoryCount ? t('config.lookPartCount', ' with counts') : ''),
+                `${this.fontPresetLabel(item.text.fontPreset)}, ${String({
+                    comfortable: t('config.densityComfortable', 'Comfortable'),
+                    compact: t('config.densityCompact', 'Compact'),
+                    dense: t('config.densityDense', 'Dense'),
+                }[item.text.densityMode] || item.text.densityMode).toLowerCase()}`,
             ];
             return parts.join(' · ');
         },
@@ -418,6 +510,7 @@
             const studio = this._lookStudio;
             const spec = TAB_FIELDS[tab];
             if (!studio || !spec) return;
+            const drawn = drawnFrom(this.dash.settings);
             this.writeLookFields(studio.before, spec.fields);
             if (spec.prefs.length) {
                 const settings = this.dash.settings;
@@ -434,7 +527,7 @@
                 if (Object.keys(prefs).length || studio.before.themeSurfacePrefs) settings.themeSurfacePrefs = prefs;
                 else delete settings.themeSurfacePrefs;
             }
-            this.applyStudioLook();
+            this.applyStudioLook({ redraw: drawnFrom(this.dash.settings) !== drawn });
         },
 
         /** The dice: a surprise within one tab. Themes are rolled by the browser itself. */
@@ -456,6 +549,14 @@
                 const pool = HEAD_STYLES.filter((style) => style !== settings.categoryHeaderStyle);
                 settings.categoryHeaderStyle = pool[Math.floor(Math.random() * pool.length)];
                 this.applyChromeSettings();
+            } else if (tab === 'layout') {
+                // A font and a spacing: the two that change the feel the most.
+                const fonts = (window.DashboardFont?.PRESET_IDS || ['source-code-pro', 'inter', 'system'])
+                    .filter((id) => id !== settings.fontPreset);
+                const pick = (list) => list[Math.floor(Math.random() * list.length)];
+                this.setAppearanceSelect('fontPreset', pick(fonts));
+                void this.setBehavior('densityMode', pick(DENSITIES), 'chromeRender');
+                void this.setBehavior('categorySpacing', pick(SPACINGS), 'chromeRender');
             } else if (tab === 'looks') {
                 this.useStudioLook(LOOKS[Math.floor(Math.random() * LOOKS.length)].id);
             }
@@ -475,6 +576,9 @@
             if (look.depth) this.setSurface('themeDepth', look.depth);
             if (look.backdrop !== 'off') this._lastBackdropPick = look.backdrop;
             this.setBackdropChoice(look.backdrop);
+            this.setAppearanceSelect('fontPreset', look.text.fontPreset);
+            void this.setBehavior('densityMode', look.text.densityMode, 'chromeRender');
+            void this.setBehavior('categorySpacing', look.text.categorySpacing, 'chromeRender');
         },
 
         /* ── Compare, Cancel, Apply ─────────────────────────────────────── */
@@ -483,6 +587,7 @@
         compareStudio(on) {
             const studio = this._lookStudio;
             if (!studio) return;
+            const drawn = drawnFrom(this.dash.settings);
             if (on) {
                 if (studio.held) return;
                 studio.held = {};
@@ -495,18 +600,19 @@
                 this.writeLookFields(studio.held);
                 studio.held = null;
             }
-            this.applyStudioLook();
+            this.applyStudioLook({ redraw: drawnFrom(this.dash.settings) !== drawn });
         },
 
         cancelLookStudio() {
             const studio = this._lookStudio;
             if (!studio) return;
+            const drawn = drawnFrom(this.dash.settings);
             this.writeLookFields(studio.before);
             this._lookStudioReturn = this.endLookStudio();
             // The theme goes back through the revert the picker always used;
             // the rest of the look is drawn again from the restored fields.
             this.revertThemePreview();
-            this.applyStudioLook({ theme: false });
+            this.applyStudioLook({ theme: false, redraw: drawnFrom(this.dash.settings) !== drawn });
         },
 
         async applyLookStudio() {
