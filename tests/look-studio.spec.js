@@ -165,6 +165,43 @@ test.describe('the look studio', () => {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(before);
     });
 
+    test('the arrow keys walk the theme cards, each one shown as focus lands on it', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        const chosen = await page.evaluate(() => window.dashboardInstance.settings.theme);
+        const shown = () => page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+        const focused = () => page.evaluate(() => document.activeElement?.getAttribute('data-theme-card') || null);
+        const cards = page.locator('[data-theme-card]');
+
+        // Down from the search field enters the grid on the card in use.
+        await page.locator('[data-theme-search]').focus();
+        await page.keyboard.press('ArrowDown');
+        const start = await focused();
+        expect(start, 'ArrowDown left the search field').not.toBeNull();
+
+        await page.keyboard.press('Home');
+        await expect.poll(focused).toBe(await cards.nth(0).getAttribute('data-theme-card'));
+        await page.keyboard.press('ArrowRight');
+        await expect.poll(focused).toBe(await cards.nth(1).getAttribute('data-theme-card'));
+        await expect.poll(shown).toBe(await cards.nth(1).getAttribute('data-theme-id'));
+        await expect(page.locator('[data-studio-tab="themes"]')).toHaveAttribute('aria-selected', 'true');
+
+        await page.keyboard.press('ArrowDown');
+        const below = await focused();
+        expect(below).not.toBe(await cards.nth(1).getAttribute('data-theme-card'));
+        await expect.poll(shown).toBe(await page.locator(`[data-theme-card="${below}"]`).getAttribute('data-theme-id'));
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowUp');
+        await expect.poll(focused).toBe(await cards.nth(0).getAttribute('data-theme-card'));
+
+        // Up from the top row goes back to the search field; nothing was chosen.
+        await page.keyboard.press('ArrowUp');
+        await expect(page.locator('[data-theme-search]')).toBeFocused();
+        expect(await page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(chosen);
+
+        await page.keyboard.press('Escape');
+    });
+
     test('Compare, held with \\, shows the look from before the studio opened', async ({ page }) => {
         await openDashboard(page);
         const headBefore = await bodyAttr(page, 'data-cat-head');

@@ -561,9 +561,18 @@
         };
 
         const bindThemes = () => {
-            pane.querySelector('[data-theme-search]')?.addEventListener('input', (event) => {
+            const search = pane.querySelector('[data-theme-search]');
+            search?.addEventListener('input', (event) => {
                 state.query = event.target.value || '';
                 repaintThemes();
+            });
+            // Down from the search field enters the grid on its roving stop.
+            search?.addEventListener('keydown', (event) => {
+                if (event.key !== 'ArrowDown') return;
+                const card = pane.querySelector('[data-theme-card][tabindex="0"]');
+                if (!card) return;
+                event.preventDefault();
+                card.focus();
             });
             pane.querySelectorAll('[data-theme-segment]').forEach((button) => {
                 button.addEventListener('click', () => {
@@ -670,20 +679,28 @@
                     select(id());
                     return;
                 }
-                // Up and down walk the grid; left and right are the tabs'.
-                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                    const cards = Array.from(pane.querySelectorAll('[data-theme-card]'));
-                    const at = cards.indexOf(card);
-                    const columns = Math.max(1, Math.round(
-                        (pane.querySelector('[data-theme-grid]')?.clientWidth || 1) / (card.offsetWidth || 1)));
-                    const next = cards[at + (event.key === 'ArrowDown' ? columns : -columns)];
-                    if (next) {
-                        event.preventDefault();
-                        card.setAttribute('tabindex', '-1');
-                        next.setAttribute('tabindex', '0');
-                        next.focus();
-                    }
+                // The arrows walk the grid, each card previewed as focus lands
+                // on it. Up from the top row goes back to the search field.
+                const cards = Array.from(pane.querySelectorAll('[data-theme-card]'));
+                const at = cards.indexOf(card);
+                // Cards sharing the first card's top edge make up one row.
+                const columns = Math.max(1, cards.filter((c) => c.offsetTop === cards[0].offsetTop).length);
+                const steps = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: columns, ArrowUp: -columns };
+                let next = null;
+                if (event.key in steps) next = cards[at + steps[event.key]];
+                else if (event.key === 'Home') next = cards[0];
+                else if (event.key === 'End') next = cards[cards.length - 1];
+                else return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (!next && event.key === 'ArrowUp') {
+                    pane.querySelector('[data-theme-search]')?.focus();
+                    return;
                 }
+                if (!next || next === card) return;
+                card.setAttribute('tabindex', '-1');
+                next.setAttribute('tabindex', '0');
+                next.focus();
             });
         };
 
@@ -916,8 +933,9 @@
                 if (!event.repeat) setComparing(true);
                 return;
             }
+            // On a theme card left and right walk the grid instead.
             if ((key === 'ArrowLeft' || key === 'ArrowRight') && !event.altKey && !event.metaKey
-                && !event.ctrlKey && !ownsKeys(target)) {
+                && !event.ctrlKey && !ownsKeys(target) && !target.matches?.('[data-theme-card]')) {
                 event.preventDefault();
                 event.stopPropagation();
                 const at = TABS.indexOf(tab);
