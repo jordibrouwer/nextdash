@@ -18732,7 +18732,15 @@ class DashboardConfig {
     };
 
     /** The formats a value may be shown in — the server accepts these and no others. */
-    static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'power', 'temperature', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
+    static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'power', 'temperature', 'percent', 'share', 'duration', 'ms', 'relativeDate', 'text'];
+
+    /*
+     * The formats that are a percentage, each saying its scale: "percent" is
+     * 0..100, "share" 0..1. "percentAuto" is the old guess a field saved before
+     * the choice keeps; offered only on such a field, so it can be kept or
+     * changed but not picked anew.
+     */
+    static PERCENT_FORMATS = ['percent', 'share', 'percentAuto'];
 
     /*
      * The units a Data figure may already be counted in.
@@ -18757,7 +18765,7 @@ class DashboardConfig {
     /** Which shapes a format can wear. */
     static shapesFor(format) {
         return DashboardConfig.CUSTOM_SHAPES.filter(
-            (shape) => shape !== 'meter' || format === 'percent');
+            (shape) => shape !== 'meter' || DashboardConfig.PERCENT_FORMATS.includes(format));
     }
 
     /*
@@ -19393,9 +19401,15 @@ class DashboardConfig {
     renderCustomWidgetFields(widget, index) {
         const esc = (v) => this.dash.escapeHtml(v);
         const fields = Array.isArray(widget?.config?.fields) ? widget.config.fields : [];
-        const formatOptions = (selected) => DashboardConfig.CUSTOM_FORMATS.map((format) =>
+        const formatLabels = {
+            percent: 'Percentage (0–100)',
+            share: 'Percentage from a share (0–1)',
+            percentAuto: 'Percentage (guessed)',
+        };
+        const formatOptions = (selected) => [...DashboardConfig.CUSTOM_FORMATS,
+            ...(selected === 'percentAuto' ? ['percentAuto'] : [])].map((format) =>
             `<option value="${esc(format)}" ${format === selected ? 'selected' : ''}>${esc(
-                this.t(`config.widgetFormat.${format}`, format))}</option>`).join('');
+                this.t(`config.widgetFormat.${format}`, formatLabels[format] || format))}</option>`).join('');
         /*
          * The shapes this format can wear, which is all of them but the meter.
          *
@@ -21100,7 +21114,7 @@ class DashboardConfig {
      */
     dropMeterOnNonPercent(index, row) {
         const field = this.widgetDraft(index)?.config?.fields?.[row];
-        if (field?.shape === 'meter' && field.format !== 'percent') {
+        if (field?.shape === 'meter' && !DashboardConfig.PERCENT_FORMATS.includes(field.format)) {
             delete field.shape;
             delete field.tone;
         }

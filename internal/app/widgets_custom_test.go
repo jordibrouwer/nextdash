@@ -58,8 +58,14 @@ func TestCustomWidgetFormatting(t *testing.T) {
 	}{
 		{float64(4210), "count", "4 210"},
 		{float64(1536), "bytes", "1.5 KB"},
-		{float64(0.42), "percent", "42%"},
+		// Each format says its scale: a share is 0..1, a percentage 0..100.
+		// 0.8% as 0.8 read as a share was the 80% this replaced.
+		{float64(0.42), "share", "42%"},
 		{float64(87), "percent", "87%"},
+		{float64(0.8), "percent", "0.8%"},
+		// The old guess, kept for fields saved before the choice.
+		{float64(0.42), "percentAuto", "42%"},
+		{float64(87), "percentAuto", "87%"},
 		{float64(3600), "duration", "1h"},
 		{float64(90), "duration", "1m"},
 		// Seconds in, whole milliseconds out — AdGuard reports 0.0051589999999999995.
@@ -137,7 +143,8 @@ func TestCustomWidgetShapes(t *testing.T) {
 	}
 }
 
-// A bar's fill, from either of the two ways a service states a percentage.
+// A bar's fill, from either of the two ways a service states a percentage,
+// under the old guess a field saved before the scale choice keeps.
 func TestCustomWidgetMeterShare(t *testing.T) {
 	cases := []struct {
 		raw  float64
@@ -152,7 +159,7 @@ func TestCustomWidgetMeterShare(t *testing.T) {
 		{-5, 0},
 	}
 	for _, c := range cases {
-		if got := meterShare(c.raw); math.Abs(got-c.want) > 0.0001 {
+		if got := meterShare(c.raw, "percentAuto"); math.Abs(got-c.want) > 0.0001 {
 			t.Errorf("meterShare(%v) = %v, want %v", c.raw, got, c.want)
 		}
 	}
@@ -978,5 +985,34 @@ func TestTheLongestNameWins(t *testing.T) {
 	}
 	if got, ok := customWidgetLookup(document, "a.b.state"); !ok || got != "long" {
 		t.Errorf("a.b.state = %v (ok=%v), want the longer name", got, ok)
+	}
+}
+
+// A custom widget saved before the scale choice keeps the old reading: its
+// "percent" fields become "percentAuto", once.
+func TestCustomPercentFieldsKeepTheOldReading(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	fs := NewStore().(*FileStore)
+	widget := Widget{ID: "w1", Type: WidgetTypeCustom, Config: map[string]any{
+		"url":    "https://pi.example/api",
+		"fields": []any{map[string]any{"path": "ads", "format": "percent"}},
+	}}
+	if err := fs.SavePageBlocks(1, []Widget{widget}, []string{"w1"}); err != nil {
+		t.Fatal(err)
+	}
+	// As an install updated from before the choice: the migration has not run.
+	if raw, err := os.ReadFile(fs.settingsFile); err == nil {
+		var m map[string]any
+		_ = json.Unmarshal(raw, &m)
+		delete(m, "customPercentGuessMigrated")
+		out, _ := json.Marshal(m)
+		_ = os.WriteFile(fs.settingsFile, out, 0o644)
+	}
+	fs.migrateCustomPercentToGuess()
+	widgets, _ := fs.GetPageBlocks(1)
+	fields, _ := widgets[0].Config["fields"].([]any)
+	if got := fields[0].(map[string]any)["format"]; got != "percentAuto" {
+		t.Fatalf("format = %v, want percentAuto", got)
 	}
 }

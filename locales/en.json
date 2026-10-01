@@ -3157,7 +3157,7 @@
     "widgetDataUnit.mb": "MB",
     "widgetDataUnit.gb": "GB",
     "widgetDataUnit.tb": "TB",
-    "widgetFormat.percent": "Percentage",
+    "widgetFormat.percent": "Percentage (0–100)",
     "widgetFormat.duration": "Duration",
     "widgetFormat.ms": "Milliseconds",
     "widgetFormat.relativeDate": "Time ago",
