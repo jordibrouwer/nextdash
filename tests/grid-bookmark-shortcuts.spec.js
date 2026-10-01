@@ -82,6 +82,15 @@ test('with nothing selected, the same letter starts a search', async ({ page }) 
     await openDashboard(page);
     await seedShortcut(page, 'q');
     await watchOpens(page);
+    // With "Enter opens": in instant mode the search the letter starts opens
+    // the matching bookmark at once and closes again, which is that mode's
+    // point. This passed there only because the search reopened itself 50 ms
+    // after the open, which was a bug.
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        d.settings.shortcutOpenMode = 'enter';
+        d.searchComponent.settings = d.settings;
+    });
 
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('Escape');

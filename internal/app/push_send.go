@@ -37,6 +37,11 @@ const (
 	// pushDeliveryGone means the push service says this subscription is dead and
 	// it should be removed.
 	pushDeliveryGone
+	// pushDeliveryUnreachable is this server not reaching the push service at
+	// all: no DNS, no route, a cancelled request. It says nothing about the
+	// subscription, so it does not count towards removing it. Counted, one
+	// burst of alerts during a WAN outage removed every device.
+	pushDeliveryUnreachable
 )
 
 func logPushError(format string, args ...any) {
@@ -207,7 +212,7 @@ func deliverWebPush(ctx context.Context, client *http.Client, keys vapidKeys, su
 	resp, err := client.Do(req)
 	if err != nil {
 		logPushError("delivery failed for %s: %v", sub.ID, err)
-		return pushDeliveryFailed
+		return pushDeliveryUnreachable
 	}
 	defer drainAndCloseResponse(resp)
 

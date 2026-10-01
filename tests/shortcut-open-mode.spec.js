@@ -87,6 +87,10 @@ test.describe('typing a bookmark shortcut', () => {
         await page.keyboard.type('me', { delay: 60 });
         await expect.poll(() => opened(page), { timeout: 5_000 })
             .toEqual([expect.stringContaining('meteor.example.com')]);
+        // And the search stays closed: an update scheduled after the open
+        // reopened the overlay on its empty state 50 ms later.
+        await page.waitForTimeout(300);
+        expect(await page.evaluate(() => window.dashboardInstance.searchComponent.searchActive)).toBe(false);
     });
 
     test('delay: it waits, and a word typed past the shortcut is left alone', async ({ page }) => {

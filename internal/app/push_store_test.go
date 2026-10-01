@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -316,5 +318,31 @@ func TestSanitizeDeviceLabel(t *testing.T) {
 	long := strings.Repeat("x", 200)
 	if got := sanitizeDeviceLabel(long); len([]rune(got)) != 60 {
 		t.Errorf("label length = %d, want it capped at 60", len([]rune(got)))
+	}
+}
+
+// A push service this server cannot reach at all says nothing about the
+// subscription: counted as a failure, one burst of alerts during a WAN outage
+// removed every device.
+func TestAnUnreachablePushServiceDoesNotCountAgainstTheSubscription(t *testing.T) {
+	withTempPushData(t)
+	keys, err := generateVAPIDKeys()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sub := testSubscription(t, "http://127.0.0.1:1/push")
+	if err := savePushSubscription(sub); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	outcome := deliverWebPush(context.Background(), &http.Client{Timeout: 2 * time.Second}, keys, "mailto:test@example.com", sub, []byte(`{}`))
+	if outcome != pushDeliveryUnreachable {
+		t.Fatalf("outcome = %v, want unreachable", outcome)
+	}
+	id := pushSubscriptionID(sub.Endpoint)
+	for i := 0; i < maxPushDeliveryFailures+1; i++ {
+		recordPushDeliveryResults(map[string]pushDeliveryOutcome{id: outcome})
+	}
+	if stored := listPushSubscriptions(); len(stored) != 1 || stored[0].FailureCount != 0 {
+		t.Fatalf("stored = %+v, want the subscription kept with no failures", stored)
 	}
 }
