@@ -25,6 +25,11 @@ swatch already shows, and no superlatives -- 121 themes cannot all be
 striking.
 */
 var themeDescriptions = map[string]string{
+	"slate":                 "Blue-grey stone behind a pane of glass, a cool light above",
+	"zinc":                  "Soft grey clouds drifting behind frosted glass",
+	"gray":                  "Hills in blue-grey haze seen through a clean pane",
+	"stone":                 "Warm grey sand and rock under a thin sheet of glass",
+	"neutral":               "Plain grey with out-of-focus lights glowing behind the glass",
 	"tidepool-lens":         "Looking down through still water at what lives on the rocks",
 	"champagne-flute":       "Pale gold through a tall glass, the bubbles still rising",
 	"prism-veil":            "White light split into its colours by the edge of a pane",

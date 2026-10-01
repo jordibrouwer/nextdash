@@ -50,3 +50,8 @@ var themeNewFamilies = map[string]bool{
 func themeIsNew(themeID string) bool {
 	return themeNewFamilies[themeFamilyOf(themeID)]
 }
+
+// themeCollectionOrder is the order the browser lists collections in. A theme
+// names its own in ThemeColors.Collection; one that is not listed here still
+// filters, but after these.
+var themeCollectionOrder = []string{"homepage"}

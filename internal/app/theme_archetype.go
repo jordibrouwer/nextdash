@@ -434,6 +434,8 @@ type themeMeta struct {
 	Effects     string `json:"effects"`
 	// New marks the latest collection, for the browser's badge and search.
 	New bool `json:"new,omitempty"`
+	// Collection is the set the theme belongs to, or empty for none.
+	Collection string `json:"collection,omitempty"`
 	// Backdrop is the recipe the theme is drawn with when nothing overrides it,
 	// and SurfaceAlpha and SurfaceBlur are its card glass: what "follow the
 	// theme" means in Appearance, said in numbers.
@@ -455,6 +457,7 @@ func themeMetaFor(themeID string, tc ThemeColors) themeMeta {
 		Glow:         themeIdealGlow(tc),
 		Effects:      themeIdealEffects(tc),
 		New:          themeIsNew(themeID),
+		Collection:   strings.ToLower(strings.TrimSpace(tc.Collection)),
 		Backdrop:     themeBackdropRecipes[themeBackdropRecipeFor(themeBackdropHashID(themeID), tc)],
 		SurfaceAlpha: themeSurfaceAlpha(tc),
 		SurfaceBlur:  themeSurfaceBlur(tc),

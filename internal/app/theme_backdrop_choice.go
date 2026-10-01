@@ -20,6 +20,11 @@ holds the map to that, and to there being an entry for every built-in theme and
 none for a theme that is gone.
 */
 var themeBackdropChoice = map[string]string{
+	"neutral-light":               "bokeh",       // lichtpunten uit focus
+	"stone-light":                 "dunes",       // zand en steen
+	"gray-light":                  "mountains",   // verre heuvels in blauwgrijs
+	"zinc-light":                  "mesh",        // zachte wolken in neutraal grijs
+	"slate-light":                 "aurora",      // glas onder een zacht lichtgordijn
 	"absinthe-light":              "crosshatch",  // gegraveerd papier, absintprent
 	"aluminium-deck-light":        "pinstripe",   // geborsteld metaal, fijne lijnen
 	"andromeda-drift-light":       "nebula",      // sterrenstelsel

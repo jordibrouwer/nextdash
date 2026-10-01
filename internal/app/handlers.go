@@ -2669,8 +2669,9 @@ func (h *Handlers) ThemeMeta(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"archetypes": themeArchetypeOrder,
-		"themes":     meta,
+		"archetypes":  themeArchetypeOrder,
+		"collections": themeCollectionOrder,
+		"themes":      meta,
 	})
 }
 
