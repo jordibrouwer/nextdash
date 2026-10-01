@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -216,5 +217,30 @@ func TestParseICSAllDayWithoutEndLastsItsDay(t *testing.T) {
 	}
 	if events[0].End != events[0].Start+24*60*60*1000 {
 		t.Errorf("end = %d, want start + one day", events[0].End)
+	}
+}
+
+// Google puts an e-mail reminder inside the event, with a SUMMARY of its own.
+// Read at the same level, it became the event's title.
+func TestParseICSIgnoresAReminderInsideTheEvent(t *testing.T) {
+	now := time.Date(2026, 9, 8, 12, 0, 0, 0, time.UTC)
+	ics := strings.Join([]string{
+		"BEGIN:VCALENDAR",
+		"BEGIN:VEVENT",
+		"DTSTART:20260908T150000Z",
+		"DTEND:20260908T160000Z",
+		"SUMMARY:Dentist",
+		"BEGIN:VALARM",
+		"ACTION:EMAIL",
+		"DESCRIPTION:This is an event reminder",
+		"SUMMARY:Alarm notification",
+		"TRIGGER:-P0DT0H30M0S",
+		"END:VALARM",
+		"END:VEVENT",
+		"END:VCALENDAR",
+	}, "\r\n")
+	events := parseICS([]byte(ics), now)
+	if len(events) != 1 || events[0].Title != "Dentist" {
+		t.Fatalf("events = %+v, want one called Dentist", events)
 	}
 }

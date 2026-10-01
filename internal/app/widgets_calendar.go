@@ -205,10 +205,15 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 		}
 	}
 
+	// Components nested in an event (VALARM above all) carry properties of
+	// their own: an e-mail reminder's SUMMARY, "Alarm notification" from
+	// Google, replaced the event's title. Only depth 0 is the event's.
+	nested := 0
 	for _, line := range lines {
 		switch {
 		case line == "BEGIN:VEVENT":
 			inEvent = true
+			nested = 0
 			summary, start, end = "", 0, 0
 			allDay, haveStart = false, false
 			continue
@@ -220,6 +225,19 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 			continue
 		}
 		if !inEvent {
+			continue
+		}
+		if strings.HasPrefix(line, "BEGIN:") {
+			nested++
+			continue
+		}
+		if strings.HasPrefix(line, "END:") {
+			if nested > 0 {
+				nested--
+			}
+			continue
+		}
+		if nested > 0 {
 			continue
 		}
 

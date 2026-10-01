@@ -291,3 +291,50 @@ func TestPreviewMediaWantedFollowsWhatTheReaderAskedFor(t *testing.T) {
 		t.Error("Image is ticked, so pictures are wanted")
 	}
 }
+
+// The job carries the entry as it was when queued. Written back whole it undid
+// "Clear suggested words"; only its media fields land on the entry as it is.
+func TestAMediaJobKeepsWhatChangedSinceItWasQueued(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	h := &Handlers{store: NewStore()}
+	key := "https://example.com"
+	queued := BookmarkPreview{URL: key, FetchedAt: time.Now().UnixMilli(), ImageSource: "https://example.com/og.png", Keywords: []string{"old"}}
+	cleared := queued
+	cleared.Keywords = nil
+	if err := h.mergePreviewCacheUpdates(map[string]BookmarkPreview{key: cleared}); err != nil {
+		t.Fatal(err)
+	}
+	done := queued
+	done.Image = "/data/preview-images/x.png"
+	done.ImageFetchedAt = time.Now().UnixMilli()
+	h.applyPreviewMedia(key, done)
+
+	got, _ := h.storedPreview(key)
+	if len(got.Keywords) != 0 {
+		t.Fatalf("keywords = %v: the job brought back what was cleared", got.Keywords)
+	}
+	if got.Image != done.Image {
+		t.Fatalf("image = %q, want the job's", got.Image)
+	}
+}
+
+// A batch merges previews parsed minutes ago, before the worker stored the
+// picture; a re-parse has no picture of its own. The stored one stands.
+func TestABatchMergeKeepsAStoredPicture(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	h := &Handlers{store: NewStore()}
+	key := "https://example.com"
+	withPicture := BookmarkPreview{URL: key, FetchedAt: time.Now().UnixMilli(), ImageSource: "https://example.com/og.png",
+		Image: "/data/preview-images/x.png", ImageFetchedAt: 5}
+	if err := h.mergePreviewCacheUpdates(map[string]BookmarkPreview{key: withPicture}); err != nil {
+		t.Fatal(err)
+	}
+	reparsed := BookmarkPreview{URL: key, FetchedAt: time.Now().UnixMilli(), ImageSource: "https://example.com/og.png", Title: "New"}
+	if err := h.mergePreviewCacheUpdates(map[string]BookmarkPreview{key: reparsed}); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := h.storedPreview(key)
+	if got.Image != withPicture.Image || got.Title != "New" {
+		t.Fatalf("stored = %+v, want the new title and the old picture", got)
+	}
+}

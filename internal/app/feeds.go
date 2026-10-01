@@ -386,6 +386,9 @@ type feedDocument struct {
 	XMLName xml.Name    `xml:"-"`
 	Items   []feedEntry `xml:"channel>item"`
 	Entries []feedEntry `xml:"entry"`
+	// RSS 1.0 (RDF) items sit beside the channel; without them such a feed
+	// counted no entries and Fresh retired it after five polls.
+	RDFItems []feedEntry `xml:"item"`
 }
 
 type feedEntry struct {
@@ -406,7 +409,7 @@ func feedEntryTimestamps(body []byte) []int64 {
 	if err := decodeFeedXML(body, &doc); err != nil {
 		return nil
 	}
-	entries := append(append([]feedEntry{}, doc.Items...), doc.Entries...)
+	entries := append(append(append([]feedEntry{}, doc.Items...), doc.Entries...), doc.RDFItems...)
 	times := make([]int64, 0, len(entries))
 	for _, entry := range entries {
 		for _, raw := range []string{entry.PubDate, entry.Published, entry.Updated, entry.Date} {

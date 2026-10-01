@@ -3797,17 +3797,25 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	 * Only when the address is unchanged: a page that now advertises a
 	 * different og:image gets that one, immediately.
 	 */
+	// Every caller hands in an empty or nil cache, so the stored entry is read
+	// as well: looked up in the caller's map alone, this never found anything
+	// and every re-parse dropped the pictures.
+	previous, hadPrevious := BookmarkPreview{}, false
 	if cache != nil {
-		if previous, ok := cache.Cache[cacheKey]; ok {
-			if previous.ImageSource == preview.ImageSource {
-				preview.Image = previous.Image
+		previous, hadPrevious = cache.Cache[cacheKey]
+	}
+	if !hadPrevious {
+		previous, hadPrevious = h.storedPreview(cacheKey)
+	}
+	if hadPrevious {
+		if previous.ImageSource == preview.ImageSource {
+			preview.Image = previous.Image
+			preview.ImageFetchedAt = previous.ImageFetchedAt
+		}
+		if previous.IconSource == preview.IconSource {
+			preview.Icon = previous.Icon
+			if preview.ImageFetchedAt == 0 {
 				preview.ImageFetchedAt = previous.ImageFetchedAt
-			}
-			if previous.IconSource == preview.IconSource {
-				preview.Icon = previous.Icon
-				if preview.ImageFetchedAt == 0 {
-					preview.ImageFetchedAt = previous.ImageFetchedAt
-				}
 			}
 		}
 	}
@@ -3858,8 +3866,8 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 			applyOEmbed(&preview, data)
 			// The same carry-over as og:image above, for a thumbnail that is
 			// the page's only image: unchanged, its local copy stands.
-			if cache != nil && preview.Image == "" && preview.ImageSource != "" {
-				if previous, ok := cache.Cache[cacheKey]; ok && previous.ImageSource == preview.ImageSource {
+			if preview.Image == "" && preview.ImageSource != "" {
+				if hadPrevious && previous.ImageSource == preview.ImageSource {
 					preview.Image = previous.Image
 					preview.ImageFetchedAt = previous.ImageFetchedAt
 				}

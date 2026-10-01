@@ -193,6 +193,38 @@ func (h *Handlers) runPreviewMediaJob(job previewMediaJob) {
 	// Stamped even when both failed: that is what stops the retry loop.
 	entry.ImageFetchedAt = time.Now().UnixMilli()
 
-	_ = h.mergePreviewCacheUpdates(map[string]BookmarkPreview{job.key: entry})
+	h.applyPreviewMedia(job.key, entry)
 	_, _ = evictPreviewImages(h.previewImageCapBytes())
+}
+
+// applyPreviewMedia writes a job's media fields onto the entry as it is now.
+// The job carries a copy taken when it was queued; written back whole, it
+// undid what happened in between -- "Clear suggested words", a refresh's new
+// title -- and the copy with no picture won over one that had it.
+func (h *Handlers) applyPreviewMedia(key string, done BookmarkPreview) {
+	h.previewCacheMu.Lock()
+	defer h.previewCacheMu.Unlock()
+	h.ensurePreviewCacheLoadedLocked()
+	current, ok := h.previewCache.Cache[key]
+	if !ok {
+		// Nothing stored to be overtaken: the job's copy is all there is.
+		h.previewCache.Cache[key] = done
+		h.previewCacheDirty = true
+		return
+	}
+	changed := false
+	if current.ImageSource == done.ImageSource {
+		current.Image = done.Image
+		changed = true
+	}
+	if current.IconSource == done.IconSource {
+		current.Icon = done.Icon
+		changed = true
+	}
+	if !changed {
+		return
+	}
+	current.ImageFetchedAt = done.ImageFetchedAt
+	h.previewCache.Cache[key] = current
+	h.previewCacheDirty = true
 }

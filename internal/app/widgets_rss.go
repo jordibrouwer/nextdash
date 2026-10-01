@@ -197,10 +197,7 @@ func parseRSSItems(raw []byte) ([]RSSItem, string) {
 		source = strings.TrimSpace(doc.AtomTitle)
 	}
 
-	entries := doc.Items
-	if len(entries) == 0 {
-		entries = doc.Entries
-	}
+	entries := doc.entries()
 
 	items := make([]RSSItem, 0, len(entries))
 	seen := map[string]struct{}{}

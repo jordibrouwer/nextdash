@@ -48,6 +48,21 @@ type feedSourceDoc struct {
 	AtomTitle string            `xml:"title"`
 	Items     []feedSourceEntry `xml:"channel>item"`
 	Entries   []feedSourceEntry `xml:"entry"`
+	// RSS 1.0 (RDF) puts its items beside the channel, not in it: read as
+	// RSS 2.0 alone, such a feed had no items at all.
+	RDFItems []feedSourceEntry `xml:"item"`
+}
+
+// entries are the feed's items in whichever of the three shapes it uses.
+func (d feedSourceDoc) entries() []feedSourceEntry {
+	switch {
+	case len(d.Items) > 0:
+		return d.Items
+	case len(d.RDFItems) > 0:
+		return d.RDFItems
+	default:
+		return d.Entries
+	}
 }
 
 type feedSourceEntry struct {
@@ -66,6 +81,8 @@ type feedSourceEntry struct {
 	PubDate     string           `xml:"pubDate"`
 	Published   string           `xml:"published"`
 	Updated     string           `xml:"updated"`
+	// dc:date: the only date RSS 1.0 carries, and some RSS 2.0 feeds' too.
+	Date string `xml:"date"`
 }
 
 // feedSourceLink is a <link>, as RSS and Atom each write one.
@@ -99,7 +116,7 @@ func (e feedSourceEntry) url() string {
 }
 
 func (e feedSourceEntry) publishedAt() int64 {
-	for _, raw := range []string{e.Published, e.PubDate, e.Updated} {
+	for _, raw := range []string{e.Published, e.PubDate, e.Updated, e.Date} {
 		if at := parseFeedTime(raw); at > 0 {
 			return at
 		}
@@ -163,10 +180,7 @@ func (h *Handlers) fetchFeedSource(ctx context.Context, feedURL, since, category
 		out.Title = strings.TrimSpace(doc.AtomTitle)
 	}
 
-	entries := doc.Items
-	if len(entries) == 0 {
-		entries = doc.Entries
-	}
+	entries := doc.entries()
 
 	sinceAt := int64(0)
 	if parsed := parseFeedTime(since); parsed > 0 {
