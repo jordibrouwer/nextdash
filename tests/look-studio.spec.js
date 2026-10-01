@@ -475,6 +475,43 @@ test.describe('the look studio', () => {
         await expect.poll(() => bodyAttr(page, 'data-density-mode')).toBe(densityWas);
     });
 
+    test('the settings carry an ℹ, and its explanation opens over the panel without closing it', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        const dialog = page.locator('#app-modal.show');
+
+        const expected = {
+            backdrop: ['backdropStrength', 'backdropSeed', 'backdropTint'],
+            surface: ['cardGlassMode', 'cardGlassAlpha', 'cardGlassBlur', 'cardGlassBorder', 'cardGlassContrast'],
+            heads: ['categoryHeaderStyle', 'categoryHeaderSize', 'showCategoryCount', 'headerButtonStyle'],
+            layout: ['fontSize', 'fontPreset', 'columnsPerRow', 'rowHighlight'],
+        };
+        for (const [tab, fields] of Object.entries(expected)) {
+            await page.locator(`[data-studio-tab="${tab}"]`).click();
+            for (const field of fields) {
+                await expect(page.locator(`[data-look-studio] [data-info-field="${field}"]`), `${tab}: ${field} has no ℹ`).toHaveCount(1);
+            }
+        }
+
+        // Pressed, it explains; Escape closes the explanation and leaves the studio.
+        await page.locator('[data-look-studio] [data-info-field="rowHighlight"]').click();
+        await expect(dialog).toBeVisible();
+        await expect(dialog).toContainText('How a row lights up');
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+        await expect(studio(page)).toBeVisible();
+
+        await page.locator('[data-studio-tab="heads"]').click();
+        await page.locator('[data-look-studio] [data-info-field="categoryHeaderStyle"]').click();
+        await expect(dialog).toBeVisible();
+        await dialog.getByRole('button', { name: /Got it/ }).click();
+        await expect(dialog).toHaveCount(0);
+        await expect(studio(page)).toBeVisible();
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+    });
+
     test('opened from Appearance, it hands the page back to Appearance on close', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));

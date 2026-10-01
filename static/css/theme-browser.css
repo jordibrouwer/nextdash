@@ -313,6 +313,12 @@ body.look-studio-open .quickstart-card {
     display: none;
 }
 
+/* The dialog an ℹ in the panel opens: over the panel, which is added to the
+   page later at the same z-index. */
+body.look-studio-open #app-modal {
+    z-index: 2001;
+}
+
 .look-studio {
     position: fixed;
     top: 0;

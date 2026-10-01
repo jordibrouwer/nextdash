@@ -249,6 +249,7 @@
                     <input type="range" class="config-range" data-backdrop-tuning="${key}" min="${min}" max="${max}" step="${step}" value="${tuning[key]}">
                     <span class="config-range-value" data-tuning-out="${key}">${e(formatTuning(key, tuning[key]))}</span>
                     ${key === 'seed' ? `<button type="button" class="config-btn config-btn--small" data-backdrop-roll aria-label="${e(t('config.backdropRoll', 'Roll a new variant'))}" title="${e(t('config.backdropRoll', 'Roll a new variant'))}">🎲</button>` : ''}
+                    ${this.infoAff(`backdrop${key[0].toUpperCase()}${key.slice(1)}`)}
                 </div>`).join('');
             return `
                 <div class="config-panel" data-backdrop-tuning-panel>
@@ -381,26 +382,31 @@
                     ${this.renderCardGlassLayoutHint(isOwn)}
                     <div class="config-field">
                         <div class="config-choices" role="group">${seg}</div>
+                        ${this.infoAff('cardGlassMode')}
                     </div>
                     <div class="config-field config-field--slider">
                         <span class="config-field-label">${e(t('config.cardGlassAlpha', 'Opacity'))}</span>
                         <input type="range" class="config-range" data-glass-range="alpha" min="0.2" max="1" step="0.05" value="${alpha}">
                         <span class="config-range-value" data-glass-out="alpha">${Math.round(alpha * 100)}%</span>
+                        ${this.infoAff('cardGlassAlpha')}
                     </div>
                     <div class="config-field config-field--slider">
                         <span class="config-field-label">${e(t('config.cardGlassBlur', 'Blur'))}</span>
                         <input type="range" class="config-range" data-glass-range="blur" min="0" max="30" step="1" value="${blur}">
                         <span class="config-range-value" data-glass-out="blur">${Math.round(blur)}px</span>
+                        ${this.infoAff('cardGlassBlur')}
                     </div>
                     <div class="config-field-row">
                         <label class="config-toggle">
                             <input type="checkbox" data-glass-border${entry.border === 'on' ? ' checked' : ''}>
                             <span>${e(t('config.cardGlassBorder', 'A thin edge round the panes'))}</span>
                         </label>
+                        ${this.infoAff('cardGlassBorder')}
                     </div>
                     <div class="config-field">
                         <span class="config-field-label">${e(t('config.cardGlassContrast', 'Text on a pane'))}</span>
                         <span class="config-glass-badge" data-glass-contrast></span>
+                        ${this.infoAff('cardGlassContrast')}
                     </div>
                 </div>`;
         },
@@ -437,6 +443,7 @@
                     <select class="config-select" data-glass-layout>
                         ${presets.map((p) => `<option value="${e(p)}"${p === preset ? ' selected' : ''}>${e(name(p))}</option>`).join('')}
                     </select>
+                    ${this.infoAff('layoutPreset')}
                 </div>`;
         },
 

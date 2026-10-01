@@ -9152,6 +9152,7 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.appearanceFontSize', 'Font size'))}</span>
                     <div class="config-choices" role="group">${fontOptions}</div>
+                    ${this.appearanceAff('fontSize')}
                 </div>`;
     }
 
@@ -11275,6 +11276,11 @@ class DashboardConfig {
      * the difference was.
      */
     surfaceAff(field) {
+        return this.infoAff(field);
+    }
+
+    /** Just the ℹ, for rows whose reset is a button of the panel's own. */
+    infoAff(field) {
         const esc = (v) => this.dash.escapeHtml(v);
         const meta = this.fieldMeta(field);
         const info = meta?.info && this.hasInfoText(meta.info)
@@ -11419,6 +11425,7 @@ class DashboardConfig {
         switch (field) {
             case 'fontPreset': this.setAppearanceSelect('fontPreset', value); break;
             case 'fontWeight': this.setFontWeight(value); break;
+            case 'fontSize': this.setFontSize(value); break;
             case 'backgroundType': this.setBackgroundType(value); break;
             case 'backgroundOpacity':
                 this.dash.settings.backgroundOpacity = window.VisualSettings?.clampBackgroundOpacity
@@ -12046,7 +12053,9 @@ class DashboardConfig {
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
         shortcutDisplay: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: 'always' },
-        rowHighlight: { hint: 'rowHighlightHint', def: 'subtle' },
+        rowHighlight: { info: ['rowHighlightInfoTitle', 'rowHighlightInfoMessage',
+            'How a row lights up', 'Subtle lets the accent reach a little way in from the left edge of the row you are on. Strong carries it much further across, which is easier to pick out at a glance or from a distance.'],
+            hint: 'rowHighlightHint', def: 'subtle' },
         showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
@@ -12188,13 +12197,48 @@ class DashboardConfig {
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
         inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.47 },
         themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'follow' },
-        categoryHeaderStyle: { def: 'theme' },
-        categoryHeaderSize: { def: 'm' },
-        showCategoryIcon: { def: true },
-        showCategoryCount: { def: false },
-        categoryHeaderAccentLine: { def: false },
+        categoryHeaderStyle: { info: ['categoryHeaderStyleInfoTitle', 'categoryHeaderStyleInfoMessage',
+            'Category header style', 'How the name above each category is drawn: clean, underlined, in a box, as a small label, or as the head of a card round the whole group. Follow the theme leaves it as the theme and the layout draw it.'], def: 'theme' },
+        categoryHeaderSize: { info: ['categoryHeaderSizeInfoTitle', 'categoryHeaderSizeInfoMessage',
+            'Header size', 'How large the category names are drawn, from a small label to a heading.'], def: 'm' },
+        showCategoryIcon: { info: ['showCategoryIconInfoTitle', 'showCategoryIconInfoMessage',
+            'Category icon', 'Shows the icon a category was given in front of its name. The icon is chosen per category, from its menu.'], def: true },
+        showCategoryCount: { info: ['showCategoryCountInfoTitle', 'showCategoryCountInfoMessage',
+            'Bookmark count', 'Shows how many bookmarks a category holds beside its name.'], def: false },
+        categoryHeaderAccentLine: { info: ['categoryHeaderAccentLineInfoTitle', 'categoryHeaderAccentLineInfoMessage',
+            'Accent underline', 'Draws the line under a category name in the theme\'s accent colour rather than a neutral one.'], def: false },
         backgroundPattern: { info: ['backgroundPatternInfoTitle', 'backgroundPatternInfoMessage'], def: 'auto' },
-        fontSize: { def: 'm' },
+        fontSize: { info: ['fontSizeInfoTitle', 'fontSizeInfoMessage',
+            'Font size', 'The size of all text on the dashboard. Pointing at a size shows it before you choose one.'], def: 'm' },
+        /*
+         * Not settings fields of their own: the backdrop sliders are keys of
+         * backdropTuning and the card glass rows are parts of one entry. They
+         * are named here only so their ℹ has something to open.
+         */
+        backdropStrength: { info: ['backdropStrengthInfoTitle', 'backdropStrengthInfoMessage',
+            'Intensity', 'How strongly the theme\'s backdrop is drawn. Lower lets it fade into the page colour; higher makes its colours and shapes stand out.'] },
+        backdropScale: { info: ['backdropScaleInfoTitle', 'backdropScaleInfoMessage',
+            'Scale', 'How large the backdrop\'s shapes are. Smaller repeats them more often across the page; larger spreads them out.'] },
+        backdropSeed: { info: ['backdropSeedInfoTitle', 'backdropSeedInfoMessage',
+            'Variant', 'Each number arranges the same backdrop differently: where its shapes sit and how they overlap. The dice picks one at random.'] },
+        backdropBlur: { info: ['backdropBlurInfoTitle', 'backdropBlurInfoMessage',
+            'Blur', 'Softens the backdrop, or your own background image, behind the dashboard. Useful when a busy backdrop competes with the bookmarks.'] },
+        backdropBrightness: { info: ['backdropBrightnessInfoTitle', 'backdropBrightnessInfoMessage',
+            'Brightness', 'Darkens or lightens the backdrop and your background image, without changing the theme\'s colours.'] },
+        backdropSaturate: { info: ['backdropSaturateInfoTitle', 'backdropSaturateInfoMessage',
+            'Saturation', 'How vivid the backdrop\'s colours are. At 0 it turns grey; above 1 it gets more colourful.'] },
+        backdropTint: { info: ['backdropTintInfoTitle', 'backdropTintInfoMessage',
+            'Theme tint', 'Lays the theme\'s page colour over the backdrop, so a photo or a bright backdrop takes on the colour of the theme.'] },
+        cardGlassMode: { info: ['cardGlassModeInfoTitle', 'cardGlassModeInfoMessage',
+            'Card glass', 'Follow the theme keeps the opacity and blur the theme comes with. Own lets you set them with the sliders below. Panes are only drawn at depth Glass.'] },
+        cardGlassAlpha: { info: ['cardGlassAlphaInfoTitle', 'cardGlassAlphaInfoMessage',
+            'Opacity', 'How solid a pane is. At 100% nothing behind it shows through; lower lets the backdrop show.'] },
+        cardGlassBlur: { info: ['cardGlassBlurInfoTitle', 'cardGlassBlurInfoMessage',
+            'Blur', 'How far the page behind a pane is blurred. More blur keeps the text on a pane readable over a busy backdrop.'] },
+        cardGlassBorder: { info: ['cardGlassBorderInfoTitle', 'cardGlassBorderInfoMessage',
+            'Edge', 'Draws a thin line round each pane, so panes stay apart on a light or busy backdrop.'] },
+        cardGlassContrast: { info: ['cardGlassContrastInfoTitle', 'cardGlassContrastInfoMessage',
+            'Text on a pane', 'The contrast between the text and the pane under it, worked out for the theme on screen and the backdrop behind it. AA is enough to read comfortably, AAA is better. If it says low, raise the opacity or turn the backdrop down.'] },
         customTitle: { def: '' },
         monitorNotifyRetries: { info: ['monitorNotifyRetriesInfoTitle', 'monitorNotifyRetriesInfoMessage'], def: 3 },
         pushNotifyEnabled: { info: ['pushNotifyInfoTitle', 'pushNotifyInfoMessage'], def: false },
@@ -12351,10 +12395,10 @@ class DashboardConfig {
     openFieldInfo(field) {
         const meta = this.fieldMeta(field);
         if (!meta?.info || !window.AppModal?.alert) return;
-        const [titleKey, msgKey] = meta.info;
+        const [titleKey, msgKey, titleFallback = '', msgFallback = ''] = meta.info;
         window.AppModal.alert({
-            title: this.t(`config.${titleKey}`, ''),
-            htmlMessage: this.dash.escapeHtml(this.t(`config.${msgKey}`, '')).replace(/\n/g, '<br>'),
+            title: this.t(`config.${titleKey}`, titleFallback),
+            htmlMessage: this.dash.escapeHtml(this.t(`config.${msgKey}`, msgFallback)).replace(/\n/g, '<br>'),
             confirmText: this.t('config.gotIt', 'Got it'),
         });
     }
@@ -13667,22 +13711,26 @@ class DashboardConfig {
         }
         const messageKey = Array.isArray(meta.info) ? meta.info[1] : null;
         if (!messageKey) return '';
-        const message = this.t(`config.${messageKey}`, '');
+        const message = this.t(`config.${messageKey}`, meta.info[3] || '');
         if (!message || message === `config.${messageKey}`) return '';
         const para = String(message).split(/\n\s*\n|\n•|\n-/)[0].replace(/\s+/g, ' ').trim();
         const sentence = para.match(/^.+?[.!?。！？](?=\s|$)/);
         return (sentence ? sentence[0] : para).trim();
     }
 
-    /** Whether an [titleKey, messageKey] pair resolves to real text. */
+    /**
+     * Whether an [titleKey, messageKey] pair resolves to real text. Two more
+     * entries, when given, are the English the keys fall back to: a new ℹ is
+     * written in English first and translated in a docs round.
+     */
     hasInfoText(info) {
-        const [titleKey, messageKey] = Array.isArray(info) ? info : [];
-        const resolved = (key) => {
+        const [titleKey, messageKey, titleFallback = '', messageFallback = ''] = Array.isArray(info) ? info : [];
+        const resolved = (key, fallback) => {
             if (!key) return '';
-            const value = this.t(`config.${key}`, '');
+            const value = this.t(`config.${key}`, fallback);
             return value && value !== `config.${key}` ? value : '';
         };
-        return Boolean(resolved(titleKey) || resolved(messageKey));
+        return Boolean(resolved(titleKey, titleFallback) || resolved(messageKey, messageFallback));
     }
 
     /** Render a schema of panels into HTML, keyed by a data-<prefix>-field. */

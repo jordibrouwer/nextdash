@@ -506,7 +506,8 @@
         Array.from(document.body.children).forEach((el) => {
             if (el === root || el.inert || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
             // The notices say whether a save went through; leave them readable.
-            if (el.matches?.('#app-notification, #config-save-state, .theme-backdrop-layer')) return;
+            // The dialog is where an ℹ in the panel opens its explanation.
+            if (el.matches?.('#app-notification, #config-save-state, .theme-backdrop-layer, #app-modal')) return;
             el.inert = true;
             madeInert.push(el);
         });
@@ -875,7 +876,11 @@
         // is only a preview. Stopped on the way back up, after the control has
         // had it, so a field still types and a select still opens. The
         // dashboard's capture-phase handlers bow out through isModalOpen.
-        root.addEventListener('keydown', (event) => event.stopPropagation());
+        // Not while a dialog from the panel is open: its Escape listens on the
+        // document, and the focus can still be on the ℹ that opened it.
+        root.addEventListener('keydown', (event) => {
+            if (!dialogOpen()) event.stopPropagation();
+        });
 
         /*
          * The wheel stays in the panel.
@@ -909,8 +914,17 @@
 
         /* ── Keyboard ── */
 
+        /*
+         * A dialog opened from the panel (an ℹ) has the keys and the focus
+         * until it closes: Escape closes it rather than the studio, and Tab
+         * moves through its buttons. Asked of the page, not of the key's
+         * target: a key pressed before the dialog has taken the focus still
+         * belongs to it.
+         */
+        const dialogOpen = () => Boolean(document.querySelector('#app-modal.show'));
+
         const onDocumentKey = (event) => {
-            if (closed) return;
+            if (closed || dialogOpen()) return;
             const target = event.target;
             const inside = root.contains(target);
             if (!inside) {
@@ -970,7 +984,7 @@
             if (event.key === '\\') setComparing(false);
         };
         const onFocusIn = (event) => {
-            if (closed || root.contains(event.target)) return;
+            if (closed || root.contains(event.target) || dialogOpen()) return;
             root.querySelector('[data-studio-tab][aria-selected="true"]')?.focus();
         };
         const onWindowBlur = () => setComparing(false);

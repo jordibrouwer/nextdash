@@ -7700,8 +7700,8 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 /* Card glass and the backdrop sliders: the control starts in the control
    column, where every other row in config puts it -- 200px of label and the
    14px gap of .config-field. The Follow / Own pair has no label, so it is put
-   in that column on its own. */
-[data-glass-panel] .config-field > .config-choices:only-child {
+   in that column on its own, with its ℹ after it. */
+[data-glass-panel] .config-field > .config-choices:first-child {
     grid-column: 2;
 }
 
@@ -7731,7 +7731,7 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 
 /* In the theme browser the panel is narrow and has no control column to line
    up with: the controls go to the right edge instead. */
-.look-studio-pane [data-glass-panel] .config-field:has(> .config-choices:only-child) {
+.look-studio-pane [data-glass-panel] .config-field:has(> .config-choices:first-child) {
     display: flex;
     justify-content: flex-end;
 }
