@@ -14,6 +14,18 @@ func (h *Handlers) GetTrash(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	items := h.store.GetTrashItems()
+	// A deleted page keeps its widgets, and the blocks route withholds a
+	// custom widget's address and credential without the token; the trash
+	// handed them out in full. Restore is server-side and needs neither.
+	if !hasWriteAccess(r) {
+		for i := range items {
+			if page := items[i].TrashedPage; page != nil && len(page.Widgets) > 0 {
+				copied := *page
+				copied.Widgets = redactWidgetAddresses(page.Widgets)
+				items[i].TrashedPage = &copied
+			}
+		}
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
 		"items":         items,

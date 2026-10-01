@@ -76,7 +76,12 @@ async function seedPage(page, name, bookmarkNames) {
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const listRes = await api('/api/pages');
         const pages = listRes.ok ? await listRes.json() : [];
-        const id = pages.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1;
+        // Past the ids in the trash too, as the app's own new-page id is: a
+        // page list naming a page that sits in the trash is refused.
+        const trash = (await (await api('/api/trash')).json()).items || [];
+        const id = [...pages.map((p) => Number(p.id) || 0), ...trash.map((t) => Number(t.pageId) || 0)]
+            .filter((n) => n < 999999)
+            .reduce((max, n) => Math.max(max, n), 0) + 1;
         await api('/api/pages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

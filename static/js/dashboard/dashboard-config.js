@@ -17751,53 +17751,29 @@ class DashboardConfig {
         if (Number(id) === 1) return;
         if (!await this.confirmAction(this.t('config.pageDeleteConfirm', 'Delete this page and its bookmarks?'))) return;
 
-        // Snapshot everything the page owns *now*, not from this.dash.allBookmarks:
-        // that mirror can lag behind a write from another view, and restoring a
-        // stale copy would silently drop whatever was added since. A snapshot we
-        // could not take is left null, and then no undo is offered rather than a
-        // partial one.
-        const pagesBefore = [...(this.dash.pages || [])];
-        let bookmarksBefore = null;
-        let categoriesBefore = null;
-        try {
-            const [bmRes, catRes] = await Promise.all([
-                fetch(`/api/bookmarks?page=${encodeURIComponent(id)}`),
-                fetch(`/api/categories?page=${encodeURIComponent(id)}`),
-            ]);
-            if (bmRes.ok) bookmarksBefore = await bmRes.json();
-            if (catRes.ok) categoriesBefore = await catRes.json();
-        } catch { /* offer the delete without an undo rather than blocking it */ }
-
         try {
             const res = await this.writeFetch(`/api/pages/${encodeURIComponent(id)}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.dash.pages = (this.dash.pages || []).filter((p) => Number(p.id) !== Number(id));
             this.dash.pageNav?.renderPageNavigation?.();
 
-            // The server also drops the page's bookmarks into the trash, so this
-            // toast is the fast path and the trash is the long one.
-            const undoCallback = bookmarksBefore ? async () => {
+            // The server puts the whole page in the trash -- bookmarks,
+            // categories and widgets -- and the undo restores that entry. It
+            // used to post the old page list and lists back, which the server
+            // now refuses for a page in the trash: that is exactly what a tab
+            // that missed the delete would send.
+            const undoCallback = async () => {
                 try {
-                    await this.restoreList('/api/pages', pagesBefore);
-                    await this.restoreList(
-                        `/api/bookmarks?page=${encodeURIComponent(id)}`,
-                        bookmarksBefore
-                    );
-                    if (categoriesBefore) {
-                        await this.restoreList(
-                            `/api/categories?page=${encodeURIComponent(id)}`,
-                            categoriesBefore
-                        );
-                    }
-                    this.dash.pages = pagesBefore;
+                    const items = (await window.DashboardTrash?.list?.())?.items || [];
+                    const entry = items.find((item) => item.kind === 'page' && Number(item.pageId) === Number(id));
+                    if (!entry) throw new Error('no trash entry');
+                    await window.DashboardTrash.restore(entry.id);
+                    const pages = await (await fetch('/api/pages', { cache: 'no-store' })).json();
+                    if (Array.isArray(pages)) this.dash.pages = pages;
                     this.dash.pageNav?.renderPageNavigation?.();
                     this.invalidateBookmarkCategoriesCache(id);
                     await this.refreshBookmarksAfterWrite();
                     this.repaintPtBody();
-                    // The page is back through the write endpoints, so its trash
-                    // entry is now a duplicate of a live page.
-                    await this.dropTrashEntry((item) => item.kind === 'page'
-                        && Number(item.pageId) === Number(id));
                     await this.refreshTrashIfVisible();
                     this.notify(this.t('config.pageDeleteUndone', 'Page restored.'), 'success');
                 } catch {
@@ -17806,7 +17782,7 @@ class DashboardConfig {
                         'error'
                     );
                 }
-            } : null;
+            };
 
             this.notify(this.t('config.pageDeleted', 'Page deleted.'), 'success', {
                 undoCallback,

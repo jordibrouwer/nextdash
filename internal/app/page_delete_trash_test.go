@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -375,5 +376,104 @@ func TestRestoreTrashedPageBringsItsWidgetsBack(t *testing.T) {
 	}
 	if strings.Join(gotOrder, ",") != strings.Join(order, ",") {
 		t.Errorf("restored order = %v, want %v", gotOrder, order)
+	}
+}
+
+// A tab that has not heard of a delete still saves the page: its rows, or the
+// page list with it in. Both brought the page back as an empty "Page N", and
+// Restore of the real one then answered 409. A second delete of a gone page
+// filled the trash with an empty entry that blocked the restore the same way.
+func TestADeletedPageStaysDeleted(t *testing.T) {
+	h, dir := newPageDeleteFixture(t, `{"page":{"id":2,"name":"Work"},"bookmarks":[{"name":"A","url":"https://a.example"}]}`)
+	if rec := deletePageViaRouter(t, h, "2"); rec.Code != http.StatusOK {
+		t.Fatalf("delete: %d", rec.Code)
+	}
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/bookmarks?page=2", strings.NewReader(`[{"name":"A","url":"https://a.example"}]`))
+	h.SaveBookmarks(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("save to the deleted page: %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/api/pages", strings.NewReader(`[{"id":1,"name":"Main"},{"id":2,"name":"Work"},{"id":3,"name":"New"}]`))
+	h.SavePages(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("save pages: %d %s", rec.Code, rec.Body.String())
+	}
+	if _, err := os.Stat(filepath.Join(dir, "bookmarks-2.json")); !os.IsNotExist(err) {
+		t.Fatalf("the deleted page came back from a stale page list (err %v)", err)
+	}
+	if !h.pageExists(3) {
+		t.Fatal("a new page in the same list was not saved")
+	}
+
+	if rec := deletePageViaRouter(t, h, "2"); rec.Code != http.StatusNotFound {
+		t.Fatalf("second delete of a gone page: %d", rec.Code)
+	}
+	if n := len(h.store.GetTrashItems()); n != 1 {
+		t.Fatalf("trash items = %d, want the one real page", n)
+	}
+}
+
+// A deleted page's custom widget keeps its address in the trash; without the
+// token the listing must withhold it, as the blocks route does.
+func TestTrashListingWithholdsWidgetAddressesWithoutTheToken(t *testing.T) {
+	h, _ := newPageDeleteFixture(t, `{"page":{"id":2,"name":"Work"},"bookmarks":[]}`)
+	if err := h.store.AddTrashedBookmarks([]TrashedBookmark{{
+		Kind: TrashKindPage, PageID: 2,
+		TrashedPage: &TrashedPage{Page: Page{ID: 2, Name: "Work"}, Widgets: []Widget{{
+			Type: WidgetTypeCustom, Config: map[string]any{"url": "https://api.example/?key=secret", "credentialId": "c1", "title": "Stats"},
+		}}},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
+	rec := httptest.NewRecorder()
+	h.GetTrash(rec, httptest.NewRequest(http.MethodGet, "/api/trash", nil))
+	if body := rec.Body.String(); strings.Contains(body, "secret") || strings.Contains(body, `"c1"`) || !strings.Contains(body, "Stats") {
+		t.Fatalf("tokenless trash listing = %s", body)
+	}
+	rec = httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/trash", nil)
+	req.Header.Set("X-NextDash-Token", "tok")
+	h.GetTrash(rec, req)
+	if !strings.Contains(rec.Body.String(), "secret") {
+		t.Fatalf("with the token the address must be there: %s", rec.Body.String())
+	}
+	if !strings.Contains(fmt.Sprint(h.store.GetTrashItems()[0].TrashedPage.Widgets[0].Config), "secret") {
+		t.Fatal("the redaction reached the stored trash")
+	}
+}
+
+// An exported CSV brought back onto another page carries the same shortcuts.
+// Kept, the key was on two pages and both refused every save after; it is let
+// go instead. Rows for a page that does not exist are refused.
+func TestImportRowsLetsATakenShortcutGo(t *testing.T) {
+	h, _ := newPageDeleteFixture(t, `{"page":{"id":2,"name":"Work"},"bookmarks":[]}`)
+	if err := h.store.SaveBookmarksByPage(1, []Bookmark{{Name: "GitHub", URL: "https://github.com/", Shortcut: "G"}}); err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	h.importRows(rec, httptest.NewRequest(http.MethodPost, "/", nil), 2, []ImportedRow{
+		{Name: "GitLab", URL: "https://gitlab.com/", Shortcut: "g"},
+		{Name: "Mail", URL: "https://mail.example/", Shortcut: "M"},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("import: %d %s", rec.Code, rec.Body.String())
+	}
+	got := map[string]string{}
+	for _, b := range h.store.GetBookmarksByPage(2) {
+		got[b.Name] = b.Shortcut
+	}
+	if got["GitLab"] != "" || got["Mail"] != "M" {
+		t.Fatalf("shortcuts = %v, want G let go and M kept", got)
+	}
+
+	rec = httptest.NewRecorder()
+	h.importRows(rec, httptest.NewRequest(http.MethodPost, "/", nil), 9, []ImportedRow{{Name: "X", URL: "https://x.example/"}})
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("import to a missing page: %d", rec.Code)
 	}
 }

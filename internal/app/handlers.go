@@ -88,6 +88,17 @@ func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	return false
 }
 
+// trashedPageIDs names the pages that sit in the trash as a whole page.
+func (h *Handlers) trashedPageIDs() map[int]bool {
+	ids := map[int]bool{}
+	for _, item := range h.store.GetTrashItems() {
+		if item.Kind == TrashKindPage && item.TrashedPage != nil {
+			ids[item.PageID] = true
+		}
+	}
+	return ids
+}
+
 func (h *Handlers) pageExists(pageID int) bool {
 	for _, page := range h.store.GetPages() {
 		if page.ID == pageID {
@@ -1389,6 +1400,12 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
 		return
 	}
+	// A tab still showing a page deleted elsewhere saved its rows back into a
+	// new "Page N", and the real page in the trash could then not be restored.
+	if !h.pageExists(pageID) && pageID != unsortedPageID {
+		http.Error(w, "Page not found", http.StatusNotFound)
+		return
+	}
 
 	// Reject duplicate URLs within the submitted page payload.
 	seenURLKeys := make(map[string]struct{}, len(bookmarks))
@@ -2194,6 +2211,20 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// A list from a tab that has not heard of a delete still names that page.
+	// Saved, it came back as an empty page with default categories, and the
+	// real one in the trash answered 409 on Restore. A deleted page is left
+	// out; a new page has no trash entry and is saved as before.
+	deleted := h.trashedPageIDs()
+	kept := pages[:0]
+	for _, page := range pages {
+		if deleted[page.ID] && !h.pageExists(page.ID) {
+			continue
+		}
+		kept = append(kept, page)
+	}
+	pages = kept
+
 	// Extract page order (array of IDs)
 	order := make([]int, len(pages))
 	for i, page := range pages {
@@ -2238,6 +2269,12 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 	}
 	if pageID == unsortedPageID {
 		http.Error(w, "Cannot delete the unsorted page", http.StatusBadRequest)
+		return
+	}
+	// A page already gone (deleted in another tab) left an empty page entry in
+	// the trash, which then blocked restoring the real one.
+	if !h.pageExists(pageID) {
+		http.Error(w, "Page not found", http.StatusNotFound)
 		return
 	}
 

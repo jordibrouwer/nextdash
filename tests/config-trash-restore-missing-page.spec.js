@@ -125,7 +125,7 @@ test.describe('restoring onto a page that no longer exists', () => {
         expect(errors[0].msg).toBe('Could not complete that action.');
     });
 
-    test('recreating the page makes the restore work', async ({ page }) => {
+    test('bringing the page back makes the restore work', async ({ page }) => {
         await openTrashTab(page);
 
         // Seed the trash entry against a page id that exists, delete the page,
@@ -169,23 +169,17 @@ test.describe('restoring onto a page that no longer exists', () => {
         });
         expect(refused.status()).toBe(409);
 
-        // Recreate the page — the remedy the message tells the user to apply.
-        // Writing its (empty) bookmark list is what recreates the storage the
-        // restore reads; the /api/pages entry alone only puts the tab back.
-        await page.evaluate(async ({ pid, name }) => {
-            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-            const pages = await (await api('/api/pages')).json();
-            await api('/api/pages', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify([...pages, { id: pid, name }]),
-            });
-            await api(`/api/bookmarks?page=${pid}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify([]),
-            });
-        }, { pid: pageId, name: marker });
+        // Bring the page back. It is in the trash itself, and that is how it
+        // returns: a page list or a bookmark list posted for a page that sits
+        // in the trash is refused, because it is what a tab that missed the
+        // delete would send, and it used to bring the page back empty.
+        const pageEntry = (await trashEntries(page)).find((i) => i.kind === 'page' && Number(i.pageId) === pageId);
+        expect(pageEntry, 'the deleted page is in the trash').toBeTruthy();
+        const pageBack = await page.request.post('/api/trash/restore', {
+            data: { id: pageEntry.id },
+            headers: writeHeaders,
+        });
+        expect(pageBack.ok()).toBe(true);
 
         entry = (await trashEntries(page)).find((i) => i.bookmark?.name === marker);
         const ok = await page.request.post('/api/trash/restore', {
