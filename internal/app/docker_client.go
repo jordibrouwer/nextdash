@@ -464,7 +464,10 @@ func (d *dockerAPI) logsTail(ctx context.Context, id string, tail int) ([]string
 		return nil, err
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+	// The daemon sends the tail oldest first. Cut at 2 MiB on the way in, long
+	// lines lost the newest ones -- the reason the tab was opened. Read more,
+	// then keep the last 2 MiB of text.
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 16<<20))
 	if err != nil {
 		return nil, err
 	}
@@ -482,7 +485,15 @@ func (d *dockerAPI) logsTail(ctx context.Context, id string, tail int) ([]string
 	} else {
 		text.Write(body)
 	}
-	lines := strings.Split(strings.TrimRight(text.String(), "\n"), "\n")
+	out := text.Bytes()
+	if len(out) > 2<<20 {
+		out = out[len(out)-2<<20:]
+		// From the first whole line on.
+		if i := bytes.IndexByte(out, '\n'); i >= 0 {
+			out = out[i+1:]
+		}
+	}
+	lines := strings.Split(strings.TrimRight(string(out), "\n"), "\n")
 	if len(lines) == 1 && lines[0] == "" {
 		return []string{}, nil
 	}

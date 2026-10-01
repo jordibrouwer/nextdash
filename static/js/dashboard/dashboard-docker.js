@@ -414,7 +414,9 @@ class DashboardDocker {
             const plainKey = actionKey && !typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey;
             // With containers ticked, remove means the ticked ones, as Delete
             // does for a selection in the Bookmarks view.
-            if (plainKey && actionKey === 'remove' && this.multi.size && this.status?.control === true) {
+            // On the Containers tab only: on Disk the ticks are out of sight,
+            // and Backspace there asked to remove rows nobody could see.
+            if (plainKey && actionKey === 'remove' && this.tab === 'containers' && this.multi.size && this.status?.control === true) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 void this.runBulkAction('remove');

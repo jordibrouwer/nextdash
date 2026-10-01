@@ -70,6 +70,12 @@ func normalizeDockerSettings(s *Settings) {
 	if !dockerAutoHourChoices[s.DockerAutoUpdateTo] {
 		s.DockerAutoUpdateTo = 5
 	}
+	// The same hour twice is an empty window: stored as it was, opted-in
+	// containers were never updated and nothing said so. Two hours from the
+	// start, like the default.
+	if s.DockerAutoUpdateFrom == s.DockerAutoUpdateTo {
+		s.DockerAutoUpdateTo = (s.DockerAutoUpdateFrom + 2) % 24
+	}
 	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
 	s.DockerBookmarkLinks = normalizeDockerBookmarkLinks(s.DockerBookmarkLinks)
 	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)

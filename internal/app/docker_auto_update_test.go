@@ -226,3 +226,33 @@ func TestAutoUpdateFailureDetailCountsARollback(t *testing.T) {
 		t.Fatalf("detail = %q", got)
 	}
 }
+
+// A window past midnight is one night: an update that failed at 23:10 was
+// tried again at 00:10 because the calendar day had changed.
+func TestDockerAutoUpdateTriesOncePerNightAcrossMidnight(t *testing.T) {
+	f, h, _, _ := autoUpdateTestSetup(t)
+	settings := h.store.GetSettings()
+	settings.DockerAutoUpdateFrom, settings.DockerAutoUpdateTo = 23, 3
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	f.failCreate = true
+	creates := func() int {
+		n := 0
+		for _, c := range f.calls {
+			if strings.HasPrefix(c, "POST /containers/create") {
+				n++
+			}
+		}
+		return n
+	}
+	h.runDockerAutoUpdates(time.Date(2026, 9, 30, 23, 10, 0, 0, time.Local))
+	first := creates()
+	if first == 0 {
+		t.Fatal("the update was not tried at all")
+	}
+	h.runDockerAutoUpdates(time.Date(2026, 10, 1, 0, 10, 0, 0, time.Local))
+	if creates() != first {
+		t.Fatalf("tried again after midnight: %d creates, want %d", creates(), first)
+	}
+}
