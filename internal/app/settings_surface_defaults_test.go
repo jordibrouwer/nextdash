@@ -46,7 +46,7 @@ func TestFreshInstallFollowsTheTheme(t *testing.T) {
 
 	settings := NewStore().GetSettings()
 
-	if settings.ThemeBackdrop != "on" {
+	if settings.ThemeBackdrop != "follow" {
 		t.Fatalf("fresh install: themeBackdrop is %q", settings.ThemeBackdrop)
 	}
 	// A fresh install asks the theme rather than carrying an answer of its
@@ -86,7 +86,7 @@ func TestAnIncompleteSettingsFileGetsTheFreshLook(t *testing.T) {
 	if settings.ThemeDepth != surfaceFollow || settings.GlowStrength != surfaceFollow {
 		t.Fatalf("incomplete file: depth %q glow %q", settings.ThemeDepth, settings.GlowStrength)
 	}
-	if settings.ThemeBackdrop != "on" || settings.BackgroundPattern != "auto" {
+	if settings.ThemeBackdrop != "follow" || settings.BackgroundPattern != "auto" {
 		t.Fatalf("incomplete file: backdrop %q pattern %q", settings.ThemeBackdrop, settings.BackgroundPattern)
 	}
 }
@@ -161,7 +161,7 @@ func TestExistingInstallIsMovedOntoTheSameThree(t *testing.T) {
 
 	settings := NewStore().GetSettings()
 
-	if settings.ThemeBackdrop != "on" {
+	if settings.ThemeBackdrop != "follow" {
 		t.Fatalf("migration: themeBackdrop is %q", settings.ThemeBackdrop)
 	}
 	// Glow and depth are on follow: this pass still runs and still writes its

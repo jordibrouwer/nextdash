@@ -1217,8 +1217,11 @@ type htmlPageData struct {
 	ThemePoolCSV      string `json:"-"`
 	CustomThemeIDsCSV string `json:"-"`
 	ThemeColorMeta    string `json:"-"`
-	WriteToken        string `json:"-"`
-	AppVersion        string
+	// BackdropRecipe is the recipe the reader put behind this theme, written
+	// to <body> for the first paint. Empty when the theme's own stands.
+	BackdropRecipe string `json:"-"`
+	WriteToken     string `json:"-"`
+	AppVersion     string
 	// ReleaseTag is the published version ("v2026.07.23.6"), reported with the
 	// analytics settings snapshot so adoption can be read per release. Empty
 	// when the What's new index cannot be read.
@@ -1284,6 +1287,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	settings.ThemeBackdrop = surfaces.Backdrop
 	return htmlPageData{
 		Settings:               settings,
+		BackdropRecipe:         surfaces.Recipe,
 		ThemePoolCSV:           themePoolCSV(colors),
 		CustomThemeIDsCSV:      customThemeIDsCSV(colors),
 		ThemeColorMeta:         themeBackgroundPrimary(themeID, colors),
@@ -2555,6 +2559,9 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.SavedSearches = normalizeSavedSearches(settings.SavedSearches)
 	clampBookmarkSettings(&settings)
 	clampCategoryLayoutSettings(&settings)
+	settings.ThemeBackdrop = normalizeThemeBackdrop(settings.ThemeBackdrop)
+	settings.BackdropTuning = normalizeBackdropTuning(settings.BackdropTuning)
+	settings.ThemeSurfacePrefs = sanitizeSurfacePrefs(settings.ThemeSurfacePrefs, nil)
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
@@ -3753,6 +3760,13 @@ func hexLuminance(color string) (float64, bool) {
 }
 
 func renderThemeCSSBlock(selector string, tc ThemeColors) string {
+	return renderThemeCSSBlockSeeded(selector, tc, 0)
+}
+
+// renderThemeCSSBlockSeeded is renderThemeCSSBlock with the reader's roll of
+// the backdrop: the same recipe, drawn with other positions. Seed 0 is the
+// roll the theme's id has always had.
+func renderThemeCSSBlockSeeded(selector string, tc ThemeColors, seed int) string {
 	s := sanitizeThemeColors(tc)
 	/*
 	 * The theme's own colour, or the success colour when it has none.
@@ -3770,7 +3784,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
 	// once per theme and the block stays a list of tokens.
 	labelTransform, labelSpacing, labelWeight := archetypeLabel(tc)
 	grainAngle, grainScale := archetypeGrain(tc)
-	backdrop := themeBackdropImage(selector, s)
+	backdrop := themeBackdropSeeded(selector, s, seed)
 	return `html[data-theme="` + selector + `"] {
     --text-primary: ` + s.TextPrimary + `;
     --text-secondary: ` + s.TextSecondary + `;
@@ -3820,6 +3834,7 @@ func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 // must not depend on a page render.
 func (h *Handlers) customThemeCSS() string {
 	colors := h.store.GetColors()
+	seed := normalizeBackdropTuning(h.store.GetSettings().BackdropTuning).Seed
 
 	// Built with a Builder: this renders ~150 theme blocks and the += version
 	// reallocated and copied the whole (76 KB) string on every one of them, on
@@ -3828,10 +3843,10 @@ func (h *Handlers) customThemeCSS() string {
 	b.Grow(96 << 10)
 	b.WriteString("/* Custom Theme Variables - Loaded from colors.json */\n\n")
 	b.WriteString("/* Light Theme Variables */\n")
-	b.WriteString(renderThemeCSSBlock("light", colors.Light))
+	b.WriteString(renderThemeCSSBlockSeeded("light", colors.Light, seed))
 	b.WriteString("\n")
 	b.WriteString("/* Dark Theme Variables */\n")
-	b.WriteString(renderThemeCSSBlock("dark", colors.Dark))
+	b.WriteString(renderThemeCSSBlockSeeded("dark", colors.Dark, seed))
 	b.WriteString("\n")
 
 	// Add custom themes CSS
@@ -3843,7 +3858,7 @@ func (h *Handlers) customThemeCSS() string {
 		b.WriteString("/* Custom Theme: ")
 		b.WriteString(safeID)
 		b.WriteString(" */\n")
-		b.WriteString(renderThemeCSSBlock(safeID, themeColors))
+		b.WriteString(renderThemeCSSBlockSeeded(safeID, themeColors, seed))
 		b.WriteString("\n")
 	}
 
@@ -3861,10 +3876,40 @@ func (h *Handlers) customThemeCSS() string {
 		b.WriteString("/* Built-in Theme: ")
 		b.WriteString(safeID)
 		b.WriteString(" */\n")
-		b.WriteString(renderThemeCSSBlock(safeID, colors.BuiltIn[themeID]))
+		b.WriteString(renderThemeCSSBlockSeeded(safeID, colors.BuiltIn[themeID], seed))
 		b.WriteString("\n")
 	}
 
+	b.WriteString("/* Backdrop recipes a reader put behind a theme */\n")
+	b.WriteString(themeBackdropOverrideCSS(seed))
+
+	return b.String()
+}
+
+/*
+themeBackdropOverrideCSS is one rule per recipe, for the reader who chose a
+shape instead of the one the theme brings.
+
+The theme blocks above are all rendered at once and the page switches between
+them without a reload, so the choice cannot be baked into one of them. It is a
+rule on <body> instead, selected by data-backdrop-recipe, which wins over the
+value <body> inherits from <html>. That works because a recipe does not know
+which theme it is on: it is written in var(--accent-primary) and
+var(--background-primary), which the active theme block fills in. The roll comes
+from the recipe's own name, so a theme's seed and a chosen recipe's seed are
+the same dial.
+*/
+func themeBackdropOverrideCSS(seed int) string {
+	var b strings.Builder
+	for _, name := range themeBackdropRecipes {
+		look := themeBackdropSeeded("recipe:"+name, ThemeColors{Backdrop: name, AccentPrimary: "var"}, seed)
+		b.WriteString(`html body[data-backdrop-recipe="` + name + `"] {
+    --theme-backdrop: ` + look.Image + `;
+    --theme-backdrop-size: ` + look.Size + `;
+    --theme-backdrop-position: ` + look.Position + `;
+}
+`)
+	}
 	return b.String()
 }
 

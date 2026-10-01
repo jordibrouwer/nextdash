@@ -394,10 +394,10 @@ html[data-theme="graphite-prism-light"] body {
 /*
  * Two accent washes behind the page.
  *
- * On the body itself rather than on a pseudo-element: ::before already draws
- * the dot grid and switches off with it, and ::after belongs to the custom
- * background. Painting here means the glow survives both, and costs no extra
- * layer to composite.
+ * Only defined here. They are drawn by .theme-backdrop-layer
+ * (theme-backdrop.css), together with the theme's own backdrop: ::before draws
+ * the dot grid and ::after belongs to the custom background, so the washes
+ * have a layer of their own that survives both.
  *
  * Large, soft and low: at 7% and 5% this is not a visible gradient, it is the
  * page no longer being one flat rectangle. The warning colour in the second
@@ -406,13 +406,9 @@ html[data-theme="graphite-prism-light"] body {
  */
 html[data-theme] body:not([data-depth="flat"]) {
     /*
-     * Als variabele en niet direct als background-image, omdat body er
-     * inmiddels nog een achtergrond bij heeft: die van het theme zelf
-     * (theme-backdrop.css). Twee regels die allebei background-image zetten
-     * vervangen elkaar in plaats van te stapelen, en de winnaar is degene die
-     * het laatst laadt -- wat betekende dat deze twee wolken stilletjes
-     * verdwenen zodra de theme-achtergrond erbij kwam. Nu zet één regel de
-     * hele stapel en staat hier alleen nog waar hij uit bestaat.
+     * Een variabele en geen background-image: de laag zet de hele stapel
+     * (wolken onder, theme-achtergrond erboven) in één regel, en staat hier
+     * alleen nog waar hij uit bestaat.
      */
     --depth-wash:
         radial-gradient(65rem 45rem at 12% -12%,
@@ -422,17 +418,6 @@ html[data-theme] body:not([data-depth="flat"]) {
             color-mix(in srgb, var(--accent-warning) calc(5% * var(--theme-depth)), transparent),
             transparent 70%);
 
-    background-image: var(--depth-wash);
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-}
-
-/*
- * A reader who chose their own background chose it instead of this, not on top
- * of it. Two sets of colour fighting over the same pixels is worse than either.
- */
-html[data-theme] body.has-custom-background {
-    background-image: none;
 }
 
 /*

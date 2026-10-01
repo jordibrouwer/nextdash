@@ -2522,10 +2522,10 @@ class SearchCommandsComponent {
             prefix: 'backdrop',
             shortcut: ':BACKDROP',
             options: [
-                { value: 'on', label: t('config.themeBackdropOn', 'On') },
+                { value: 'follow', label: t('config.themeBackdropOn', 'On') },
                 { value: 'off', label: t('config.themeBackdropOff', 'Off') },
             ],
-            current: (d) => (d.settings.themeBackdrop === 'off' ? 'off' : 'on'),
+            current: (d) => (d.settings.themeBackdrop === 'off' ? 'off' : 'follow'),
             apply: (value) => this._applyAppearance(window.dashboardInstance, 'themeBackdrop', value,
                 (v) => window.ThemeLoader?.applyThemeBackdrop?.(v), `backdrop:${value}`),
         }, args);

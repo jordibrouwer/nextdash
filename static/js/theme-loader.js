@@ -346,16 +346,22 @@
     }
 
     /**
-     * Turns the theme's own backdrop on or off.
+     * Sets what the page is drawn behind: "off", a recipe name, or anything
+     * else for the theme's own backdrop ("follow", and the old "on").
      *
-     * Anything that is not the word "off" is on: the backdrop is part of what a
-     * theme looks like, so an unknown value should leave it showing rather than
-     * quietly strip a theme back to a flat colour.
+     * Anything that is not "off" leaves the backdrop showing: it is part of what
+     * a theme looks like, so an unknown value should not quietly strip a theme
+     * back to a flat colour. A recipe name goes to data-backdrop-recipe, which
+     * the stylesheet from /api/theme.css has a rule for; a word it has no rule
+     * for matches nothing and so also lands on the theme's own.
      */
     function applyThemeBackdrop(mode) {
-        const value = String(mode).toLowerCase() === 'off' ? 'off' : 'on';
+        const word = String(mode || '').trim().toLowerCase();
+        const value = word === 'off' ? 'off' : 'on';
+        const recipe = word === 'off' || word === 'on' || word === 'follow' ? '' : word;
         if (document.body) {
             document.body.setAttribute('data-theme-backdrop', value);
+            document.body.setAttribute('data-backdrop-recipe', recipe);
         }
         return value;
     }
@@ -502,11 +508,15 @@
             if (o) return o;
             return fallback;
         };
+        // "on" is what "follow" was called before recipes could be chosen.
+        const backdropWord = (v) => (String(v || '').trim().toLowerCase() === 'on' ? '' : v);
+        const backdrop = pick(backdropWord(s.themeBackdrop), backdropWord(prefs.backdrop), 'follow');
         return {
             depth: pick(s.themeDepth, prefs.depth, ideal.depth || 'soft'),
             glow: pick(s.glowStrength, prefs.glow, ideal.glow || 'off'),
             effects: pick(s.themeEffects, prefs.effects, ideal.effects || 'held'),
-            backdrop: pick(s.themeBackdrop, prefs.backdrop, ideal.backdrop || 'on'),
+            backdrop: backdrop === 'off' ? 'off' : 'on',
+            backdropRecipe: backdrop === 'off' || backdrop === 'follow' ? '' : backdrop,
         };
     }
 
@@ -517,6 +527,7 @@
             applyThemeDepth(resolved.depth);
             applyGlowStrength(resolved.glow);
             applyThemeEffects(resolved.effects);
+            applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
             return resolved;
         });
     }

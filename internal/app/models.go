@@ -617,18 +617,28 @@ type Settings struct {
 	InkGap float64 `json:"inkGap,omitempty"`
 
 	/*
-	 * ThemeBackdrop switches the per-theme backdrop on or off ("on" | "off").
+	 * ThemeBackdrop is what the page is drawn behind: follow | off | <recipe>.
 	 *
-	 * Every theme has one: it is derived from that theme's own accent and
-	 * background by themeBackdropImage (handlers.go), so all of them differ
-	 * from each other without anybody drawing 214 backgrounds. A reader who
-	 * wants the flat surface back turns it off; a reader with their own
-	 * background image gets that instead, since a custom background wins.
+	 * Every theme has a backdrop: it is derived from that theme's own accent
+	 * and background by themeBackdropImage (handlers.go), so all of them
+	 * differ from each other without anybody drawing 300 backgrounds. "follow"
+	 * is that one. A recipe name (themeBackdropRecipes) puts that shape behind
+	 * every theme instead, and "off" gives the flat surface back. A reader
+	 * with their own background image gets that over it, since a custom
+	 * background wins.
 	 *
-	 * Empty means "on" — this arrives switched on for everybody who already
-	 * has a settings file.
+	 * This used to be "on" | "off". "on" is "follow" and is read as such, so
+	 * a settings file written before recipes could be chosen keeps working.
+	 * Empty means follow.
 	 */
 	ThemeBackdrop string `json:"themeBackdrop,omitempty"`
+
+	/*
+	 * BackdropTuning is the sliders on the backdrop; see backdrop_tuning.go.
+	 * Its zero value is not the default, so GetSettings fills in what a file
+	 * without it should read as.
+	 */
+	BackdropTuning BackdropTuning `json:"backdropTuning"`
 	/*
 	 * BackgroundPattern is the shape of the backdrop texture: dots, grid,
 	 * lines, hatch or none.
@@ -1657,7 +1667,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			TagCloudDefaultMigrated:         true,
 			RowHighlight:                    "subtle",
 			InkGap:                          defaultInkGap,
-			ThemeBackdrop:                   "on",
+			ThemeBackdrop:                   surfaceFollow,
+			BackdropTuning:                  defaultBackdropTuning(),
 			BackgroundPattern:               "auto",
 			BackgroundOpacity:               1,
 			FontWeight:                      "normal",
@@ -4118,7 +4129,8 @@ func (fs *FileStore) GetSettings() Settings {
 			TagCloudDefaultMigrated:         true,
 			RowHighlight:                    "subtle",
 			InkGap:                          defaultInkGap,
-			ThemeBackdrop:                   "on",
+			ThemeBackdrop:                   surfaceFollow,
+			BackdropTuning:                  defaultBackdropTuning(),
 			BackgroundPattern:               "auto",
 			DensityMode:                     "compact",
 			CategorySpacing:                 "balanced",
@@ -4220,8 +4232,11 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.GlowStrength = defaultGlowStrength
 		}
 		if _, ok := rawSettings["themeBackdrop"]; !ok {
-			settings.ThemeBackdrop = "on"
+			settings.ThemeBackdrop = surfaceFollow
 		}
+		// A missing object is the default tuning; a partial one keeps what it
+		// has and takes the default for the rest. See fillMissingBackdropTuning.
+		fillMissingBackdropTuning(&settings.BackdropTuning, rawSettings["backdropTuning"])
 
 		if _, ok := rawSettings["backgroundPattern"]; !ok {
 			settings.BackgroundPattern = "auto"
@@ -4545,6 +4560,7 @@ func (fs *FileStore) GetSettings() Settings {
 		 */
 		settings.InkGap = normalizeInkGap(settings.InkGap)
 		settings.ThemeBackdrop = normalizeThemeBackdrop(settings.ThemeBackdrop)
+		settings.BackdropTuning = normalizeBackdropTuning(settings.BackdropTuning)
 		switch settings.ThemeDepth {
 		case "flat", "soft", "rich", "vivid", "glass", surfaceFollow:
 		default:
@@ -4577,7 +4593,7 @@ func (fs *FileStore) GetSettings() Settings {
 		 * changes one keeps it.
 		 */
 		if !settings.SurfaceDefaultsMigrated {
-			settings.ThemeBackdrop = "on"
+			settings.ThemeBackdrop = surfaceFollow
 			settings.GlowStrength = "off"
 			settings.ThemeDepth = "flat"
 			settings.SurfaceDefaultsMigrated = true
@@ -5080,13 +5096,17 @@ func normalizeInkGap(gap float64) float64 {
 	return math.Round(gap*100) / 100
 }
 
-// normalizeThemeBackdrop defaults to "on": the backdrop is part of what a theme
-// looks like, and an install that never heard of the setting should see it.
+// normalizeThemeBackdrop defaults to follow: the backdrop is part of what a
+// theme looks like, and an install that never heard of the setting should see
+// it. The old "on" lands there too, which is the whole migration -- nothing
+// has to be rewritten on disk, because "on" and "follow" were always the same
+// answer.
 func normalizeThemeBackdrop(value string) string {
-	if strings.EqualFold(strings.TrimSpace(value), "off") {
-		return "off"
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "off" || themeBackdropRecipeIndex(value) >= 0 {
+		return value
 	}
-	return "on"
+	return surfaceFollow
 }
 
 func normalizeFavoriteThemes(ids []string) []string {

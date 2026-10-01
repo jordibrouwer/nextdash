@@ -91,7 +91,7 @@ test('a fresh install follows the theme, and the theme decides the surfaces', as
         return (await api('/api/settings')).json();
     });
 
-    expect(stored.themeBackdrop).toBe('on');
+    expect(stored.themeBackdrop).toBe('follow');
     // The exact words the three settings hold on a genuinely fresh install are
     // pinned in Go (TestFreshInstallFollowsTheTheme): the store here is shared
     // with the tests above, so what can honestly be asserted is the marker and
@@ -236,7 +236,7 @@ test('the lit edge has a direction now', async ({ page }) => {
 test('the backdrop survives flat, and the setting still switches it', async ({ page }) => {
     await openDashboard(page);
     const painted = () => page.evaluate(
-        () => window.getComputedStyle(document.body).backgroundImage,
+        () => window.getComputedStyle(document.querySelector('.theme-backdrop-layer')).backgroundImage,
     );
 
     await page.evaluate(() => window.ThemeLoader.applyThemeBackdrop('on'));

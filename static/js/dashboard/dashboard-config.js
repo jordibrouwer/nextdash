@@ -9359,7 +9359,7 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeBackdropLabel', 'Theme backdrop'))}</span>
                     <select class="config-select" data-appearance-select="themeBackdrop">
-                        ${[['on', 'On'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${(s.themeBackdrop || 'on') === option ? ' selected' : ''}>${esc(this.t('config.themeBackdrop' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
+                        ${[['follow', 'On'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${(s.themeBackdrop === 'off' ? 'off' : 'follow') === option ? ' selected' : ''}>${esc(this.t('config.themeBackdrop' + (option === 'follow' ? 'On' : 'Off'), label))}</option>`).join('')}
                     </select>
                     ${this.appearanceAff('themeBackdrop')}
                     <p class="config-panel-note">${esc(this.t('config.themeBackdropNote', 'Every theme brings its own backdrop, built from its own colours, so no two look alike. Turn it off for a flat surface. Your own background image, if you set one, is drawn over it either way.'))}</p>
@@ -11901,7 +11901,7 @@ class DashboardConfig {
             return;
         }
         if (name === 'themeBackdrop') {
-            const mode = value === 'off' ? 'off' : 'on';
+            const mode = value === 'off' ? 'off' : 'follow';
             this.dash.settings.themeBackdrop = mode;
             window.ThemeLoader?.applyThemeBackdrop?.(mode);
             this.persistAppearance();
@@ -12267,7 +12267,7 @@ class DashboardConfig {
         themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
         inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.47 },
-        themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'on' },
+        themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'follow' },
         backgroundPattern: { info: ['backgroundPatternInfoTitle', 'backgroundPatternInfoMessage'], def: 'auto' },
         fontSize: { def: 'm' },
         customTitle: { def: '' },
