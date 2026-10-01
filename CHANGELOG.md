@@ -134,7 +134,7 @@ The documentation puts the self-hosting half up front: how the Containers view, 
 
 ### Containers
 
-- **new — the Disk tab shows the progress overlay while it measures.** A measurement is one `/system/df` read and can take a long time on a large host. The first load and **Refresh** now use the shared `ProgressOverlay.begin` (`dockerDiskMeasuringTitle`, new in all six locales and still in English), which appears after 300 ms and closes when the answer arrives.
+- **new — the Disk tab shows the progress overlay while it measures.** A measurement is one `/system/df` read and can take a long time on a large host. The first load and **Refresh** now use the shared `ProgressOverlay.begin` (`dockerDiskMeasuringTitle`, new in all six locales), which appears after 300 ms and closes when the answer arrives.
 - **fix — nextDash could miss its own container and stop itself mid-update.** With a set hostname or host networking on cgroup v2, it took the first 64-hex string in `/proc/self/mountinfo`, which on overlay2, btrfs (Unraid's docker.img) and zfs is a storage layer; now only Docker's `/containers/<id>/` paths count.
 - **fix — Remove stopped took containers that stopped after the Disk tab measured.** The request now names the containers the question showed, and only those go.
 - **fix — an automatic update that failed and put the old container back was logged as a success with no notice.** It now sends "could not be updated automatically" with the step it failed at.
@@ -191,6 +191,7 @@ The documentation puts the self-hosting half up front: how the Containers view, 
 - **docs — MANUAL §7.1 no longer says the Containers view has no key of its own**: `Shift + Y` opens it.
 - **docs — Config → Help → Containers gains "Containers, bookmarks and health together"** (`helpContainersTogetherTitle`/`Body`), after the set-up panel, with *Continues in* links to Alerts & notifications and Availability & health, and an entry in `HELP_JUMP_PANELS`.
 - **docs — Tips gain a group, "Your self-hosted setup"** (`tipsGroupSelfHosted`, after Keeping it healthy, in `config-help-tips.js`): the seven container tips move there from Data in and out and Making it yours, and six are new — monitoring a web UI's bookmark, *Runs in*, container notices on your phone, holding databases, `:docker <name> logs` and a homelab page. The nine new strings are in all six languages. `go generate` refreshed `asset_hashes_gen.go`.
+- **i18n — the strings this round added are translated.** In Dutch, German, French, Spanish and Chinese: the Disk tab's "Measuring disk use…", the custom widget's *Percentage (0–100)*, *Percentage from a share (0–1)* and *Percentage (guessed)*, the remove command's "removed" and "could not remove" notices and the failed undo of a multi-select tag change. Those last five keys were only fallbacks in the code until now and are in `en.json` too.
 
 ### Tests
 
