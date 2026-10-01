@@ -3398,13 +3398,27 @@ func themeBackdropImage(themeID string, tc ThemeColors) backdropLook {
 	return themeBackdropSeeded(themeID, tc, 0)
 }
 
+// themeBackdropRecipeFor is the index of the recipe a theme is drawn with, for
+// an id already passed through themeBackdropHashID: what the theme names
+// itself, then the choice made for its pair (themeBackdropChoice), then what its
+// archetype binds, then the hash of the id.
+func themeBackdropRecipeFor(hashID string, tc ThemeColors) int {
+	if chosen := themeBackdropRecipeIndex(tc.Backdrop); chosen >= 0 {
+		return chosen
+	}
+	if chosen := themeBackdropRecipeIndex(themeBackdropChoice[hashID]); chosen >= 0 {
+		return chosen
+	}
+	if chosen := themeBackdropRecipeIndex(archetypeBackdrop(tc)); chosen >= 0 {
+		return chosen
+	}
+	return pick23(fnv32(hashID))
+}
+
 func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook {
 	id := themeBackdropHashID(themeID)
 	h := fnv32(id)
-	recipe := pick23(h)
-	if chosen := themeBackdropRecipeIndex(archetypeBackdrop(tc)); chosen >= 0 {
-		recipe = chosen
-	}
+	recipe := themeBackdropRecipeFor(id, tc)
 	// The recipe is settled; the seed only moves the numbers it draws with.
 	if seed != 0 {
 		h = fnv32(id + ":" + strconv.Itoa(seed))
