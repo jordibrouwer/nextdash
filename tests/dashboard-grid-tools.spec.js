@@ -121,9 +121,12 @@ test.describe('grid filter reads the address and the tags', () => {
         await dashboard(page);
         await page.keyboard.press('Shift+F');
         await expect(page.locator('#grid-filter-bar')).toBeVisible();
+        // Counted outside the smart collections: Today ranks by the hour, and
+        // in daytime the new row made its top eight and was shown twice.
+        const rows = page.locator('.category:not([data-smart-collection="true"]) .bookmark-link:not(.grid-filter-hidden)');
         for (const term of ['urlonlyqwx', 'tagonlyqwy']) {
             await page.locator('.grid-filter-input').fill(term);
-            await expect(page.locator('.bookmark-link:not(.grid-filter-hidden)')).toHaveCount(1);
+            await expect(rows).toHaveCount(1);
         }
     });
 });
