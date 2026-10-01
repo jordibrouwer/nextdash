@@ -124,9 +124,13 @@
                 window.ThemeBrowser.open();
                 return;
             }
+            // The tabs are Appearance's own controls, and their styles ride in
+            // the views bundle, which nothing on the dashboard has asked for
+            // yet when the studio is opened from there.
             const [colors, meta] = await Promise.all([
                 this.loadColorsData(), this.loadThemeMeta(), this.loadThemeList(),
                 window.ThemeLoader?.loadSurfaceMeta?.(),
+                window.ViewStyles?.ensureViewStyles?.(),
             ]).then(([c, m]) => [c, m]);
             const palettes = {
                 light: colors?.light || {},
