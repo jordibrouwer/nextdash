@@ -46,6 +46,51 @@
             });
             this.bindBmHealthModal();
             this.fitBmHealthModal();
+            void this.mountBmTrendChart();
+        },
+
+        /*
+         * The course over time with uPlot (shared/nd-chart.js): a cursor and a
+         * tooltip on every day, a drag to zoom into a week, the arrow keys with
+         * the day read out under the chart, and a table for a screen reader.
+         * Mounted over the plain chart once the library is there; if it never
+         * is, the plain chart stays.
+         */
+        async mountBmTrendChart() {
+            const health = this._bmHealthModule;
+            const host = document.querySelector('#app-modal.show [data-bm-trend-plot]');
+            if (!health || !host) return;
+            try {
+                if (!global.NdChart) {
+                    await global.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart',
+                        () => typeof global.NdChart !== 'undefined');
+                }
+                await global.NdChart.load();
+            } catch {
+                return;
+            }
+            // Gone, or replaced by another series, while the library arrived.
+            if (!host.isConnected) return;
+            const allSeries = global.DashboardHealth?.TREND_SERIES || [];
+            const active = allSeries.find((s) => s.id === (this._bmTrendSeries || 'healthy')) || allSeries[0];
+            if (!active) return;
+            const points = health.trendPoints();
+            const values = points.map((p) => health.trendPercent(p, active));
+            const known = values.filter((v) => v !== null);
+            if (known.length < 2) return;
+            const unit = active.mode === 'percent' ? '%' : '';
+            const label = health.t(`dashboard.${active.labelKey}`, active.fallback);
+            const format = (v) => `${Math.round(v * 10) / 10}${unit}`;
+            this._bmTrendChart?.destroy();
+            this._bmTrendChart = global.NdChart.chart(host, {
+                x: points.map((p) => p.t / 1000),
+                series: [{ label, values, color: '--accent-primary', format }],
+                format: { x: 'date', y: format, tick: (v) => `${Math.round(v)}${unit}` },
+                scales: { y: { range: (u, min, max) => (active.mode === 'percent'
+                    ? [0, 100] : [0, Math.max(1, max) * 1.1]) } },
+                summary: `${label}: ${known[0]}${unit} → ${known[known.length - 1]}${unit}`,
+                height: 170,
+            });
         },
 
         /**
@@ -178,7 +223,9 @@
                     data-tip="${esc(`${new Date(points[i].t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}: ${v}${unit}`)}"><title>${esc(`${new Date(points[i].t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}: ${v}${unit}`)}</title></circle>`)).join('');
                 const first = points[0]?.t ? new Date(points[0].t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
                 const last = points[points.length - 1]?.t ? new Date(points[points.length - 1].t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
-                chart = `<svg class="bm-health-modal-trend-chart" viewBox="0 0 ${w} ${h + 16}" role="img"
+                // The plain chart, until uPlot has arrived and is mounted over it
+                // (mountBmTrendChart) -- and for good when it cannot be.
+                chart = `<div class="bm-health-modal-trend-plot" data-bm-trend-plot><svg class="bm-health-modal-trend-chart" viewBox="0 0 ${w} ${h + 16}" role="img"
                         aria-label="${esc(`${health.t(`dashboard.${active.labelKey}`, active.fallback)}: ${known[0]}${unit} → ${known[known.length - 1]}${unit}`)}">
                     <line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" class="is-axis"></line>
                     ${segments.map((pts) => `<polyline points="${pts.join(' ')}" class="is-line"></polyline>`).join('')}
@@ -186,7 +233,7 @@
                     <text x="${pad}" y="${h + 12}" class="is-label">${esc(first)}</text>
                     <text x="${w - pad}" y="${h + 12}" text-anchor="end" class="is-label">${esc(last)}</text>
                     <text x="${w - pad}" y="${pad + 2}" text-anchor="end" class="is-label">${esc(`${Math.round(max)}${unit}`)}</text>
-                </svg>`;
+                </svg></div>`;
             }
             const title = this.t('config.bmHealthModalTrendTitle', 'Over time ({days} days)').replace('{days}', String(points.length || 0));
             return `<section class="bm-health-modal-card is-wide" data-bm-health-modal-card="trend">
@@ -695,7 +742,10 @@
                     this._bmTrendSeries = seriesEl.getAttribute('data-bm-health-trend-series');
                     const card = root.querySelector('[data-bm-health-modal-card="trend"]');
                     const health = this._bmHealthModule;
-                    if (card && health) card.outerHTML = this.renderBmHealthModalTrendCard(health);
+                    if (card && health) {
+                        card.outerHTML = this.renderBmHealthModalTrendCard(health);
+                        void this.mountBmTrendChart();
+                    }
                     return;
                 }
                 const filterEl = e.target.closest('[data-bm-health-modal-filter]');

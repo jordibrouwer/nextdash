@@ -239,9 +239,10 @@ test('Monitors & trend: the course in any series, every monitor together, rememb
   await expect(modal.locator('[data-bm-health-modal-card="score"]')).toBeHidden();
   const trend = modal.locator('[data-bm-health-modal-card="trend"]');
   await expect(trend).toBeVisible();
-  await expect(trend.locator('svg')).toHaveAttribute('aria-label', /80% → 100%/);
+  // Drawn with uPlot (NdChart): the chart names its course.
+  await expect(trend.locator('.nd-chart')).toHaveAttribute('aria-label', /80% → 100%/);
   await trend.locator('[data-bm-health-trend-series="broken"]').click();
-  await expect(modal.locator('[data-bm-health-modal-card="trend"] svg')).toHaveAttribute('aria-label', /2 → 0/);
+  await expect(modal.locator('[data-bm-health-modal-card="trend"] .nd-chart')).toHaveAttribute('aria-label', /2 → 0/);
   await expect(modal.locator('[data-bm-health-trend-series="broken"]')).toHaveAttribute('aria-pressed', 'true');
 
   await expect(modal.locator('[data-bm-health-modal-card="fleet-uptime"]')).toContainText('all 2 monitors');
@@ -299,4 +300,78 @@ test('at 1000x620 the Monitors card gives way, and nothing spills out of a card'
   expect(spills).toEqual([]);
   await body.locator('[data-bm-health-modal-tab="monitors"]').click();
   await expect(body.locator('[data-bm-health-modal-card="fleet-uptime"]')).toBeVisible();
+});
+
+/*
+ * The course over time can be read, not only seen: a tooltip on the day under
+ * the pointer, the arrow keys with the day read out under the chart, a table
+ * for a screen reader -- and the plain chart when uPlot cannot be loaded.
+ */
+async function openTrend(page) {
+  const day = 86400000;
+  const now = Date.now();
+  await openBookmarksWithHealth(page, (issues) => issues, {
+    view: 'library',
+    report: (issues) => ({
+      summary: fullSummary(issues),
+      trend: [0, 1, 2, 3, 4].map((k) => ({ t: now - (4 - k) * day, n: 10, h: 6 + k, c: 80, b: 4 - k })),
+    }),
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
+  const modal = page.locator('#app-modal.show');
+  await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+  return modal.locator('[data-bm-health-modal-card="trend"]');
+}
+
+test.describe('the course over time, drawn with uPlot', () => {
+  test('a tooltip on the pointed day, and the arrow keys read the days out', async ({ page }) => {
+    const trend = await openTrend(page);
+    const chart = trend.locator('.nd-chart');
+    await expect(chart.locator('canvas')).toHaveCount(1);
+    await chart.locator('.u-over').hover();
+    await expect(chart.locator('.nd-chart-tip')).toContainText('%');
+
+    await chart.focus();
+    await page.keyboard.press('End');
+    const last = await chart.locator('.nd-chart-readout').textContent();
+    expect(last).toContain('100%');
+    await page.keyboard.press('Home');
+    await expect(chart.locator('.nd-chart-readout')).toContainText('60%');
+    await expect(chart.locator('table.nd-chart-table tbody tr')).toHaveCount(5);
+  });
+
+  // The screen-reader table is out of sight; it must not stretch the dialog
+  // into a long empty scroll below the footer.
+  test('the hidden table adds no empty scroll to the dialog', async ({ page }) => {
+    const day = 86400000;
+    const now = Date.now();
+    await openBookmarksWithHealth(page, (issues) => issues, {
+      view: 'library',
+      report: (issues) => ({
+        summary: fullSummary(issues),
+        trend: Array.from({ length: 60 }, (_, k) => ({ t: now - (59 - k) * day, n: 10, h: 6, c: 80, b: 4 })),
+      }),
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('h');
+    const modal = page.locator('#app-modal.show');
+    await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+    await expect(modal.locator('[data-bm-health-modal-card="trend"] table.nd-chart-table tbody tr')).toHaveCount(60);
+    const overrun = await modal.locator('.modal-body').evaluate((body) => {
+      const foot = body.querySelector('.bm-health-modal-footer');
+      const end = foot.getBoundingClientRect().bottom - body.getBoundingClientRect().top + body.scrollTop;
+      return body.scrollHeight - end;
+    });
+    expect(overrun).toBeLessThan(24);
+  });
+
+  test('without uPlot the plain chart stays', async ({ page }) => {
+    await page.route('**/vendor/uplot/**', (route) => route.abort());
+    const trend = await openTrend(page);
+    await expect(trend.locator('svg.bm-health-modal-trend-chart')).toHaveAttribute('aria-label', /60% → 100%/);
+    await page.waitForTimeout(500);
+    await expect(trend.locator('.nd-chart')).toHaveCount(0);
+  });
 });
