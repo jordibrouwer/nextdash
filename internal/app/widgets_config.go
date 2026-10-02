@@ -80,6 +80,19 @@ type widgetField struct {
 	MaxLen int
 }
 
+// unraidWidgetFields: the floor is the server's own poll floor (unraid_poll.go);
+// asking faster would only redraw the same cached answer.
+func unraidWidgetFields(rows bool) []widgetField {
+	f := []widgetField{
+		{Key: "refreshSeconds", Kind: "int", Min: 30, Max: 3600},
+		{Key: "click", Kind: "string", Allowed: []string{"unraid", "none"}},
+	}
+	if rows {
+		f = append(f, widgetField{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows})
+	}
+	return f
+}
+
 // widgetFields is what each type accepts. A type absent from here accepts
 // nothing, which is the safe default for a type added without its settings.
 var widgetFields = map[WidgetType][]widgetField{
@@ -257,6 +270,13 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "ttl", Kind: "int", Min: customWidgetMinTTL, Max: customWidgetMaxTTL},
 		{Key: "itemsPath", Kind: "string", MaxLen: widgetMaxPathLen},
 	},
+	WidgetTypeUnraid:              unraidWidgetFields(false),
+	WidgetTypeUnraidArray:         unraidWidgetFields(false),
+	WidgetTypeUnraidParity:        unraidWidgetFields(false),
+	WidgetTypeUnraidShares:        unraidWidgetFields(true),
+	WidgetTypeUnraidVMs:           unraidWidgetFields(true),
+	WidgetTypeUnraidUPS:           unraidWidgetFields(false),
+	WidgetTypeUnraidNotifications: unraidWidgetFields(true),
 	WidgetTypeNeglected: {
 		{Key: "pageId", Kind: "int", Min: 0, Max: 1 << 20},
 		{Key: "tags", Kind: "list"},
@@ -530,6 +550,8 @@ func widgetTypeNames() []string {
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker, WidgetTypeContainers,
 		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS,
+		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
+		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

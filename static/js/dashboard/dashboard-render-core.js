@@ -30,6 +30,13 @@ class DashboardRenderCore {
         // than that would only ever redraw the same cached answer.
         calendar: { configKey: '', floor: 300, fallback: 900 },
         rss: { configKey: '', floor: 300, fallback: 900 },
+        unraid: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
+        unraidArray: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
+        unraidParity: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
+        unraidShares: { configKey: 'refreshSeconds', floor: 30, fallback: 300 },
+        unraidVms: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
+        unraidUps: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
+        unraidNotifications: { configKey: 'refreshSeconds', floor: 30, fallback: 120 },
     };
 
     constructor(dashboard) {
@@ -908,7 +915,16 @@ class DashboardRenderCore {
     }
 
     /** Names in English for the types whose name is not translated yet. */
-    static WIDGET_TYPE_NAMES = { containers: 'Container list' };
+    static WIDGET_TYPE_NAMES = {
+        containers: 'Container list',
+        unraid: 'Unraid',
+        unraidArray: 'Unraid array',
+        unraidParity: 'Parity',
+        unraidShares: 'Shares',
+        unraidVms: 'VMs',
+        unraidUps: 'UPS',
+        unraidNotifications: 'Unraid notifications',
+    };
 
     /*
      * Put the blocks in the order the reader arranged them.

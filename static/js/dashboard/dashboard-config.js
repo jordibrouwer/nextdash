@@ -16157,6 +16157,7 @@ class DashboardConfig {
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
+        ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss']],
     ];
 
@@ -16165,6 +16166,7 @@ class DashboardConfig {
             links: ['config.widgetGroupLinks', 'Are the links still good?'],
             incoming: ['config.widgetGroupIncoming', 'What is arriving?'],
             system: ['config.widgetGroupSystem', 'How is this machine doing?'],
+            unraid: ['config.widgetGroupUnraid', 'How is the Unraid server doing?'],
             ambient: ['config.widgetGroupAmbient', "What's happening around you?"],
             // Custom widgets, and anything registered but not yet catalogued,
             // land here rather than dropping out of the list entirely.
@@ -18473,7 +18475,8 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'custom'];
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'custom',
+        'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -18748,6 +18751,80 @@ class DashboardConfig {
             { key: 'itemsPath', kind: 'text', maxlength: 200,
               label: ['config.widgetCustomItemsPath', 'List from (path, optional)'],
               placeholder: ['config.widgetCustomPathPlaceholder', 'server.recent[0].name'] },
+        ],
+        // The server itself is set once, under Config -> Containers; a widget only says how it draws.
+        unraid: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidArray: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidParity: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidShares: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidVms: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidUps: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidNotifications: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
         ],
     };
 
@@ -20648,6 +20725,13 @@ class DashboardConfig {
             weather: 'Current conditions beside a forecast, for the location the header already reads.',
             calendar: 'What is coming up, from the ICS feed set in Appearance → Date & weather.',
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
+            unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
+            unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
+            unraidParity: 'The last parity check, or the one running now, with its history when wide.',
+            unraidShares: 'The Unraid shares, fullest first.',
+            unraidVms: 'Which virtual machines on the Unraid server run, and which are stopped or paused.',
+            unraidUps: 'The UPS behind the Unraid server: charge, runtime and load.',
+            unraidNotifications: "Unraid's unread notifications, newest first.",
         };
         const label = this.dash.language?.t?.(key);
         return label && label !== key ? label : (fallbacks[type] || '');
