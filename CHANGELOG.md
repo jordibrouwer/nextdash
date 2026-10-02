@@ -117,6 +117,10 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **new — the set icon wins over a favicon.** When the sets know the address, no favicon is fetched: not by the form, the `:new` modal, the browser extension (`bookmark-preview-service.js`, synced) or the background fill, which no longer counts such a bookmark as missing an icon. `/api/bookmark-preview` says so in `setIcon`, worked out per answer and never stored in the preview cache. Fetch again and Refresh all icons drop the favicon a known app had. An icon you chose or uploaded is never replaced.
 - **new — suggestions in the bookmark form.** Up to three app icons appear under the address, one click to choose; the card shows the set icon while the bookmark has none of its own; Choose app icon… heads the pencil menu. The inbox keeps fetching favicons: it does not draw set icons.
 
+### Widgets
+
+- **new — counting in a figure's path** (`customWidgetLookup`). `list#` is the length of a list (or the keys of an object), `list[key=value]#` the number of entries that match, and `[-1]` the last entry. A selector key may be a short path (`[results.0.success=false]`). Still one value per path; a count is the last step.
+
 ### Tests
 
 - **tests — Go:** the index (rounds, aliases, variants, search), the 62 containers and the bookmark hosts, refresh with ETag, stale copy and back-off, the cache route (unknown names, traversal, one fetch, sanitising, wrapped PNG, the hour of misses), adopt, the API handlers, the container override and the background fill.
