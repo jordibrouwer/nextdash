@@ -15275,7 +15275,7 @@ class DashboardConfig {
         }
         // The dashboard tour is about the whole dashboard, not a view that
         // could be opened later: like What has changed, it plays now.
-        if (tour.id === 'dashboardTutorialV1') {
+        if (tour.id === 'dashboardTutorialV2') {
             this.render();
             await this.dash.promos?.openDashboardTour?.();
             return;
@@ -18445,7 +18445,7 @@ class DashboardConfig {
           whereKey: 'config.tourWhereNow', where: 'right away' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
-        { id: 'dashboardTutorialV1', labelKey: 'config.tourDashboard', label: 'The dashboard',
+        { id: 'dashboardTutorialV2', labelKey: 'config.tourDashboard', label: 'The dashboard',
           whereKey: 'config.tourWhereNow', where: 'right away' },
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },

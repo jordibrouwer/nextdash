@@ -11,8 +11,8 @@ const { markWhatsNewSeen } = require('./e2e-helpers');
  * the one that decides whether it opens.
  */
 
-const STEPS = 13;
-const TIP = 'dashboardTutorialV1';
+const STEPS = 16;
+const TIP = 'dashboardTutorialV2';
 const modal = (page) => page.locator('#app-modal.show .dashboard-tutorial-modal');
 const next = (page) => page.locator('.modal-actions .modal-button').first();
 
@@ -58,6 +58,15 @@ test.describe('dashboard tour', () => {
         await expect(modal(page)).toBeVisible({ timeout: 10_000 });
     });
 
+    test('a reader who saw the earlier tour gets this one once, opening on the theme browser', async ({ page }) => {
+        await page.addInitScript(() => { window.__e2eSeenTips = ['dashboardTutorialV1']; });
+        await loadWithTourPending(page);
+        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('dashboardTutorialV1'))).toBe(true);
+        await expect(modal(page)).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('.dashboard-tutorial-step-title'))
+            .toHaveText('New: the theme browser opens beside your dashboard');
+    });
+
     test('Next walks every step, and finishing marks it seen', async ({ page }) => {
         await loadWithTourPending(page);
         await expect(modal(page)).toBeVisible({ timeout: 10_000 });
@@ -70,6 +79,9 @@ test.describe('dashboard tour', () => {
             }
         }
         expect(titles).toEqual([
+            'New: the theme browser opens beside your dashboard',
+            'Every theme has a backdrop of its own',
+            'Looks, card glass and category headers',
             'Pages, categories, bookmarks',
             'Start typing',
             'Shortcuts open a bookmark in two keys',
@@ -154,7 +166,7 @@ test.describe('dashboard tour', () => {
             await d.promos.loadDashboardTour();
             const lang = d.language;
             const orig = lang.t.bind(lang);
-            lang.t = (k) => (/^(config\.(section|tour|bmHealth)|dashboard\.(dashTour|inbox|docker|healthFilter))/.test(k) ? 'XX' : orig(k));
+            lang.t = (k) => (/^(config\.(section|tour|bmHealth|look|categoryHeader)|dashboard\.(dashTour|inbox|docker|healthFilter))/.test(k) ? 'XX' : orig(k));
             window.DashboardTutorial.open();
         });
         const words = new Set();
@@ -167,7 +179,7 @@ test.describe('dashboard tour', () => {
         }
         // A command is typed as it is, in every language: :config help is a key, not a label.
         const english = [...words].filter((w) => !w.startsWith(':')).filter((w) =>
-            /\b(development|media|home lab|search|commands|finders|edit|move|tags|tick|delete|bookmark|inbox|containers|pages|add|config|recent|back|cheat|weather|unsorted|broken|stale|duplicates|never|promote|keep|triage|tours|guide|saved|default|opens)\b/i.test(w));
+            /\b(development|media|home lab|search|commands|finders|edit|move|tags|tick|delete|bookmark|inbox|containers|pages|add|config|recent|back|cheat|weather|unsorted|broken|stale|duplicates|never|promote|keep|triage|tours|guide|saved|default|opens|themes|backdrop|looks|cancel|apply|aurora|dunes|hexagons|glass|frosted|paper|plain|clean|underlined|boxed|neutrals)\b/i.test(w));
         expect(english).toEqual([]);
     });
 });

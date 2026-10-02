@@ -16,7 +16,7 @@
 
     // Also named in DashboardPromos (which checks it before fetching this file)
     // and in the replay list in config and search. All must agree.
-    const TIP_ID = 'dashboardTutorialV1';
+    const TIP_ID = 'dashboardTutorialV2';
 
     function t(key, fallback, params) {
         const lang = global.dashboardInstance?.language;
@@ -111,6 +111,11 @@
         .dtv-swatch { fill: var(--accent-primary); }
         .dtv-tile { fill: var(--text-primary); font-size: 10px; }
         .dtv-value { fill: var(--text-primary); font-size: 14px; font-weight: 700; }
+        .dtv-bd { fill: var(--accent-primary); fill-opacity: 0.22; }
+        .dtv-bd.is-second { fill: var(--accent-error, var(--accent-primary)); fill-opacity: 0.16; }
+        .dtv-bd-line { fill: none; stroke: var(--accent-primary); stroke-opacity: 0.45; stroke-width: 1; }
+        .dtv-glass { fill: var(--background-primary); fill-opacity: 0.55; stroke: var(--text-secondary); stroke-opacity: 0.4; stroke-width: 1; }
+        .dtv-underline { stroke: var(--accent-primary); stroke-width: 1.5; }
         .dtv-pill.is-warn .dtv-pill-box { stroke: var(--accent-warning, var(--accent-primary)); stroke-opacity: 1; stroke-width: 1.5; }
 
         .dtv-anim { transform-box: fill-box; transform-origin: center;
@@ -296,9 +301,110 @@
         </g>`;
     }
 
+    /** A small hexagon grid, for the hexagons backdrop. */
+    function hexagons(x, y, cols, rows, r) {
+        const w = r * Math.sqrt(3);
+        const out = [];
+        for (let row = 0; row < rows; row += 1) {
+            for (let col = 0; col < cols; col += 1) {
+                const cx = x + w / 2 + col * w + (row % 2 ? w / 2 : 0);
+                const cy = y + r + row * r * 1.5;
+                const pts = [0, 1, 2, 3, 4, 5].map((i) => {
+                    const a = (Math.PI / 3) * i + Math.PI / 6;
+                    return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
+                }).join(' ');
+                out.push(`<polygon points="${pts}" class="dtv-bd-line"/>`);
+            }
+        }
+        return out.join('');
+    }
+
     function steps() {
         const f = (key, fallback) => t(key, fallback);
         return [
+            // New in v1.16: the theme browser, the backdrops, the looks. First,
+            // because the tour is shown again to every reader for them.
+            {
+                title: f('dashTourStudioTitle', 'New: the theme browser opens beside your dashboard'),
+                visual: svg(`
+                    ${keycap(12, 10, 'Shift+A', anim('press', 0))}
+                    ${label(76, 24, f('dashTourStudioKey', 'from anywhere'), 'dtv-label')}
+                    ${category(12, 44, 110, f('dashTourCatMedia', 'Media'), [['Plex', 'ok', ''], ['Sonarr', 'ok', '']])}
+                    ${category(128, 44, 110, f('dashTourCatHome', 'Home lab'), [['Grafana', 'ok', ''], ['Proxmox', 'ok', '']])}
+                    <g class="dtv-anim dtv-a-panel">
+                        <rect x="250" y="6" width="222" height="138" rx="10" class="dtv-panel"/>
+                        ${label(262, 24, f('dashTourStudioPanel', 'Themes'), 'dtv-heading')}
+                        ${label(462, 24, '×', 'dtv-heading', 'end')}
+                        ${pillFlow(262, 32, 200, [[f('dashTourStudioTabThemes', 'Themes'), 'active'], [f('dashTourStudioTabBackdrop', 'Backdrop'), 'plain'], [f('dashTourStudioTabLooks', 'Looks'), 'plain']], { gap: 4 })}
+                        <rect x="262" y="58" width="198" height="16" rx="4" class="dtv-box"/>
+                        ${label(268, 70, f('dashTourStudioInUse', 'In use: your theme'), 'dtv-sub')}
+                        <g class="dtv-row is-accent">
+                            <rect x="262" y="80" width="96" height="32" rx="5" class="dtv-box"/>
+                        </g>
+                        <rect x="270" y="88" width="80" height="6" rx="2" class="dtv-swatch dtv-anim dtv-a-hue"/>
+                        <rect x="270" y="100" width="56" height="5" rx="2" class="dtv-bar-track"/>
+                        <rect x="364" y="80" width="96" height="32" rx="5" class="dtv-box"/>
+                        <rect x="372" y="88" width="80" height="6" rx="2" class="dtv-swatch"/>
+                        <rect x="372" y="100" width="56" height="5" rx="2" class="dtv-bar-track"/>
+                        ${pill(262, 118, f('dashTourStudioCancel', 'Cancel'))}
+                        ${pill(334, 118, f('dashTourStudioApply', 'Apply'), { kind: 'active' })}
+                    </g>
+                `, f('dashTourStudioAlt', 'The dashboard on the left, and the theme browser opened beside it with its tabs, the theme in use, theme cards, Cancel and Apply')),
+                body: `<p>${esc(f('dashTourStudioBody1',
+                    'Shift+A opens the theme browser as a panel beside your dashboard, so every change shows on your own page. Point at a theme to see it, click to pick it; a line above the grid names the theme in use.'))}</p>
+                    <p>${esc(f('dashTourStudioBody2',
+                    'Its tabs change the backdrop, the cards, the category headers and the type as well. Nothing is saved until Apply — Cancel, Esc, the × or a click beside the panel puts everything back, and Compare shows what you had.'))}</p>`,
+            },
+            {
+                title: f('dashTourBackdropTitle', 'Every theme has a backdrop of its own'),
+                visual: (() => {
+                    const tile = (x, inner, name, delay) => `
+                        <g class="dtv-anim dtv-a-drop" style="animation-delay:${delay}s">
+                            <rect x="${x}" y="8" width="146" height="104" rx="8" class="dtv-panel"/>
+                            ${inner}
+                            ${label(x + 73, 128, name, 'dtv-label', 'middle')}
+                        </g>`;
+                    return svg(`
+                        ${tile(10, `<circle cx="52" cy="44" r="32" class="dtv-bd"/>
+                            <circle cx="112" cy="72" r="30" class="dtv-bd is-second"/>`, f('dashTourBackdropAurora', 'aurora'), 0)}
+                        ${tile(167, `<path d="M167,88 Q207,58 247,80 T313,74 L313,112 L167,112 Z" class="dtv-bd"/>
+                            <path d="M167,100 Q217,78 263,96 T313,92 L313,112 L167,112 Z" class="dtv-bd is-second"/>`, f('dashTourBackdropDunes', 'dunes'), 0.15)}
+                        ${tile(324, hexagons(330, 14, 6, 6, 9), f('dashTourBackdropHexagons', 'hexagons'), 0.3)}
+                        ${label(240, 146, f('dashTourBackdropCaption', 'three of 26, drawn in the theme’s own colours'), 'dtv-caption', 'middle')}
+                    `, f('dashTourBackdropAlt', 'Three backdrops side by side: aurora, dunes and hexagons'));
+                })(),
+                body: `<p>${esc(f('dashTourBackdropBody1',
+                    'Behind the bookmarks every theme now draws a backdrop of its own, in its own colours — one of 26, from aurora and dunes to stars, mountains and hexagons — picked to suit that theme.'))}</p>
+                    <p>${esc(f('dashTourBackdropBody2',
+                    'Appearance → Background lets you choose another, roll a new variant with 🎲, or soften it with blur, brightness and a theme tint. Only the backdrop blurs, never your bookmarks.'))}</p>`,
+            },
+            {
+                title: f('dashTourLooksTitle', 'Looks, card glass and category headers'),
+                visual: svg(`
+                    ${[f('config.look.glass', 'Glass'), f('config.look.frosted', 'Frosted'), f('config.look.paper', 'Paper'), f('config.look.terminal', 'Terminal'), f('config.look.plain', 'Plain')]
+                        .map((name, i) => pill(10, 8 + i * 26, name, { w: 96, kind: i === 0 ? 'active' : 'plain', motion: anim('drop', i * 0.1) })).join('')}
+                    <circle cx="160" cy="40" r="30" class="dtv-bd"/>
+                    <circle cx="262" cy="70" r="28" class="dtv-bd is-second"/>
+                    <rect x="138" y="22" width="146" height="62" rx="8" class="dtv-glass dtv-anim dtv-a-zoom"/>
+                    ${row(146, 30, 130, 'Plex', { dot: 'ok' })}
+                    ${row(146, 56, 130, 'Sonarr', { dot: 'ok' })}
+                    ${label(211, 102, f('dashTourLooksGlass', 'card glass'), 'dtv-caption', 'middle')}
+                    ${[0.25, 0.4, 0.55, 0.7, 0.85].map((o, i) => `<rect x="${150 + i * 24}" y="114" width="20" height="14" rx="3" class="dtv-swatch" style="fill: var(--text-secondary); fill-opacity:${o}"/>`).join('')}
+                    ${label(211, 144, f('dashTourLooksNeutrals', 'Neutrals: five grey themes'), 'dtv-label', 'middle')}
+                    ${label(312, 22, f('dashTourCatMedia', 'Media'), 'dtv-heading')}
+                    ${label(470, 22, f('config.categoryHeaderClean', 'Clean'), 'dtv-sub', 'end')}
+                    ${label(312, 62, f('dashTourCatMedia', 'Media'), 'dtv-heading')}
+                    <line x1="312" y1="68" x2="470" y2="68" class="dtv-underline dtv-anim dtv-a-grow"/>
+                    ${label(470, 62, f('config.categoryHeaderUnderlined', 'Underlined'), 'dtv-sub', 'end')}
+                    <rect x="306" y="90" width="166" height="26" rx="6" class="dtv-panel"/>
+                    ${label(316, 107, f('dashTourCatMedia', 'Media'), 'dtv-heading')}
+                    ${label(462, 107, f('config.categoryHeaderBoxed', 'Boxed') + ' · 3', 'dtv-sub', 'end')}
+                `, f('dashTourLooksAlt', 'A list of looks, a glass card over a backdrop, five grey swatches, and three styles of category header')),
+                body: `<p>${esc(f('dashTourLooksBody1',
+                    'The Looks tab sets backdrop, cards, headers and type in one click — twelve of them, from Glass and Frosted to Paper, Terminal and Plain — and leaves your theme’s colours alone.'))}</p>
+                    <p>${esc(f('dashTourLooksBody2',
+                    'Card glass on the Surface tab sets how see-through the cards are; category headers can be clean, underlined, boxed, a label or a card around the category. The Neutrals collection adds five calm grey themes.'))}</p>`,
+            },
             // 1 — pages, categories, bookmarks
             {
                 title: f('dashTourS1Title', 'Pages, categories, bookmarks'),
@@ -558,7 +664,7 @@
                     `, f('dashTourConfigAlt', 'The sections of Config, and a preview that follows every change'));
                 })(),
                 body: `<p>${esc(f('dashTourConfigBody1',
-                    'Appearance sets the theme, fonts, background, grid, header and action bar, with a preview that follows each change. Behavior covers keys and search, link checking and alerts, and privacy and sync. Structure holds pages, categories, finders and collections.'))}</p>
+                    'Appearance sets the theme and its backdrop, the card glass and category headers, fonts, grid, header and action bar, with a preview that follows each change. Behavior covers keys and search, link checking and alerts, and privacy and sync. Structure holds pages, categories, finders and collections.'))}</p>
                     <p>${esc(f('dashTourConfigBody2',
                     'Bookmarks, Inbox, Widgets and Containers each have their own section, and Data & backups keeps imports, backups and the trash. Every change saves at once, and ↺ puts a setting back.'))}</p>`,
             },
