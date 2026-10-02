@@ -1979,7 +1979,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Behavior** | General · Keyboard & search · Fresh · Status & alerts · Privacy & sync ([§17.5](#175-behavior)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
 | **Widgets** | Widgets · Types ([§15](#15-widgets)) |
-| **Containers** | Connection · View · Updates · Safety · Notifications · Muted containers · Hidden containers · GitHub token ([§17.7](#177-config-containers)) |
+| **Containers** | Connection · View · Updates · Alerts · Unraid ([§17.7](#177-config-containers)) |
 | **Statistics** | Overview · Activity · Content · Inbox · Health ([§18](#18-statistics)) |
 | **Help** | The in-app guide |
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
@@ -2055,19 +2055,15 @@ Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config →
 
 ### 17.7 Config → Containers
 
-No tabs — one page of panels:
+Five tabs, with the same strip, keys and memory as Config → Inbox. It opens on the one you looked at last, `#config/containers/<tab>` opens a tab by address, and a setting found with search opens the tab it is on.
 
-| Panel | Shows |
+| Tab | Panels |
 |---|---|
-| **Connection** | The Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable |
-| **View** | Show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden |
-| **Updates** | Check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§14.5](#145-actions-and-updates)) |
-| **Safety** | Also confirm stop and restart (update and remove always ask first) |
-| **Notifications** | Notify about containers — on by default; also when one uses too much CPU or memory, with the CPU line (50–95 %), the memory line (70–95 %) and how long (5–30 minutes) ([§14.9](#149-notices)) |
-| **Muted containers** | Where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
-| **Hidden containers** | Containers kept out of the view, search and the widget count — they keep running |
-| **GitHub token** | Raises the rate limit for images hosted on GHCR |
-| **Unraid** | The one Unraid server the Unraid widgets read: address, API key, a self-signed certificate, reading it and sending its alerts ([§15.6](#156-unraid-widgets)) |
+| **Connection** | **Connection**: the Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable. **Safety**: also confirm stop and restart (update and remove always ask first) |
+| **View** | **View**: show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden. **Links**: the Docker host address that port and web UI links point at. **Hidden containers**: kept out of the view, search and the widget count — they keep running |
+| **Updates** | **Updates**: check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§14.5](#145-actions-and-updates)). **GitHub**: a token that raises the rate limit for release notes and for images hosted on GHCR |
+| **Alerts** | **Notifications**: notify about containers — on by default; also when one uses too much CPU or memory, with the CPU line (50–95 %), the memory line (70–95 %) and how long (5–30 minutes) ([§14.9](#149-notices)). **Muted containers**: where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
+| **Unraid** | The one Unraid server the Unraid widgets read: address, API key, a self-signed certificate, reading it and sending its alerts ([§15.6](#156-unraid-widgets)). The widgets' "Set up Unraid" row opens this tab |
 
 ### 17.8 Overview, Help and About
 

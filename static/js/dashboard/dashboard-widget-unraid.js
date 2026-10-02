@@ -93,7 +93,7 @@
             u.say(panel, 'dashboard-widget-empty', why);
             if (result?.status === 'not-configured') {
                 const link = u.row(label(dash, 'dashboard.widgetUnraidSetUp', 'Set up Unraid'), '', null,
-                    () => u.openConfigTab(dash, 'containers'), { dash });
+                    () => u.openConfigTab(dash, 'containers', 'unraid'), { dash });
                 panel.appendChild(link);
             }
             return null;

@@ -189,6 +189,8 @@ class DashboardConfig {
         this._behaviorTab = DashboardConfig.readRememberedTab('behavior') || 'general';
         // Inbox sub-tab, remembered the same way.
         this._inboxTab = DashboardConfig.readRememberedTab('inbox') || 'collecting';
+        // Containers sub-tab, remembered the same way.
+        this._containersTab = DashboardConfig.readRememberedTab('containers') || 'connection';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -496,6 +498,7 @@ class DashboardConfig {
             // the address bar never follows it.
             widgets: DashboardConfig.WIDGETS_TABS,
             inbox: DashboardConfig.INBOX_TABS,
+            containers: DashboardConfig.CONTAINERS_TABS,
         };
     }
 
@@ -553,6 +556,7 @@ class DashboardConfig {
         bookmarks: 'bmTab',
         widgets: 'widgetsTab',
         inbox: 'inboxTab',
+        containers: 'containersTab',
     };
 
     /**
@@ -572,6 +576,7 @@ class DashboardConfig {
         'data-bm-tab': 'bookmarks',
         'data-widgets-tab': 'widgets',
         'data-inbox-tab': 'inbox',
+        'data-containers-tab': 'containers',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -586,6 +591,7 @@ class DashboardConfig {
         bookmarks: 'data-bm-tab',
         widgets: 'data-widgets-tab',
         inbox: 'data-inbox-tab',
+        containers: 'data-containers-tab',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -719,7 +725,8 @@ class DashboardConfig {
         // Appearance and Behavior open on the tab last looked at, so a bare
         // link to them lands differently for everyone: their first tab is
         // named too, or the address bar would not be a link to what is shown.
-        const remembers = section === 'appearance' || section === 'behavior' || section === 'inbox';
+        const remembers = section === 'appearance' || section === 'behavior' || section === 'inbox'
+            || section === 'containers';
         if (tab && tabs && tabs.includes(tab) && (tab !== tabs[0] || remembers)) {
             return `config/${section}/${tab}`;
         }
@@ -1740,6 +1747,14 @@ class DashboardConfig {
                 this.repaintInboxBody?.();
                 break;
             }
+            case 'containers': {
+                if (!document.getElementById('config-containers-body')) {
+                    this.render();
+                    break;
+                }
+                this.repaintContainersBody?.();
+                break;
+            }
             case 'widgets':
                 this.repaintWidgetsBody();
                 break;
@@ -1912,6 +1927,7 @@ class DashboardConfig {
             case 'data-backups': return this.dbTabLabel?.(tab) || tab;
             case 'help': return this.helpTabLabel?.(tab) || tab;
             case 'logs': return this.logsTabLabel?.(tab) || tab;
+            case 'containers': return this.containersTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -3224,6 +3240,7 @@ class DashboardConfig {
             case 'help': return this.helpTabLabel(tab);
             case 'logs': return this.logsTabLabel(tab);
             case 'inbox': return this.inboxTabLabel?.(tab) || tab;
+            case 'containers': return this.containersTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -12515,7 +12532,7 @@ class DashboardConfig {
             // the GitHub token are hand-built beside these (config-containers).
             {
                 section: 'containers',
-                tab: null,
+                tab: 'view',
                 title: t('config.containersGroupView', 'View'),
                 note: t('config.containersGroupViewNote', 'The Containers view, its button in the header and its rows in search.'),
                 controls: [
@@ -12540,7 +12557,7 @@ class DashboardConfig {
             },
             {
                 section: 'containers',
-                tab: null,
+                tab: 'view',
                 title: t('config.containersGroupLinks', 'Links'),
                 note: t('config.containersGroupLinksNote', 'Where ports and web UI links point. Enter the server’s LAN address or name only, without http:// or a port — for example 192.168.1.10 or tower.local; port 8080 then opens http://192.168.1.10:8080. Empty uses the address this dashboard is open on. A container with its own LAN address (macvlan, br0) always links to that.'),
                 controls: [
@@ -12552,7 +12569,7 @@ class DashboardConfig {
             },
             {
                 section: 'containers',
-                tab: null,
+                tab: 'updates',
                 title: t('config.containersGroupUpdates', 'Updates'),
                 note: t('config.containersGroupUpdatesNote', 'Asks the registries whether a newer image is waiting. Off by default because it makes outbound requests. Containers you set to update automatically (in their side panel) are updated in the window below, and rolled back if they stop, restart or turn unhealthy within 5 minutes.'),
                 controls: [
@@ -12572,7 +12589,7 @@ class DashboardConfig {
             },
             {
                 section: 'containers',
-                tab: null,
+                tab: 'connection',
                 title: t('config.containersGroupSafety', 'Safety'),
                 note: t('config.containersGroupSafetyNote', 'Update and remove always ask first. This adds stop and restart.'),
                 controls: [
@@ -12581,7 +12598,7 @@ class DashboardConfig {
             },
             {
                 section: 'containers',
-                tab: null,
+                tab: 'alerts',
                 title: t('config.containersGroupNotify', 'Notifications'),
                 note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on. CPU is a share of every core, memory of the container’s limit (the host’s memory when it has none); those notices need Keep the last hour of CPU and memory on.'),
                 controls: [
@@ -15516,6 +15533,13 @@ class DashboardConfig {
         DashboardConfig.rememberTab('inbox', tab);
     }
 
+    get containersTab() { return this._containersTab; }
+
+    set containersTab(tab) {
+        this._containersTab = tab;
+        DashboardConfig.rememberTab('containers', tab);
+    }
+
     set behaviorTab(tab) {
         this._behaviorTab = tab;
         DashboardConfig.rememberTab('behavior', tab);
@@ -18432,6 +18456,9 @@ class DashboardConfig {
 
     /** Config → Inbox: what is collected, the list, the side panel and clicks, the header icon. */
     static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];
+
+    /** Config → Containers: where the socket is, how it looks, updates, alerts, Unraid. */
+    static CONTAINERS_TABS = ['connection', 'view', 'updates', 'alerts', 'unraid'];
 
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.

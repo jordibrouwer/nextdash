@@ -7,7 +7,7 @@ const { test, expect } = require('./fixtures');
  * to its host before it is saved rather than dropped without a word.
  */
 async function open(page) {
-    await page.goto('/#config/containers');
+    await page.goto('/#config/containers/view');
     await page.waitForFunction(() => window.dashboardInstance?._configRefreshReady === true);
     return page.locator('[data-behavior-field="dockerHostAddress"]');
 }

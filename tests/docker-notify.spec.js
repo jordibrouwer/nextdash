@@ -65,7 +65,7 @@ test.describe('docker notifications', () => {
     await page.locator('#docker-row-menu [data-docker-menu-action="mute"]').click();
     await expect.poll(() => saved.at(-1)?.dockerNotifyMuted).toEqual(['jellyfin']);
 
-    await page.goto('/#config/containers');
+    await page.goto('/#config/containers/alerts');
     const panel = page.locator('[data-docker-muted-panel]');
     await expect(panel).toBeVisible();
     // Where notices go -- or that nothing receives them yet.

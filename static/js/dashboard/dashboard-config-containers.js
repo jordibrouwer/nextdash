@@ -46,20 +46,64 @@
 
     renderContainersSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const tabs = global.DashboardConfig.CONTAINERS_TABS.map((tab) => {
+            const active = tab === this.containersTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-containers-body" data-containers-tab="${esc(tab)}">${esc(this.containersTabLabel(tab))}</button>`;
+        }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.containersIntro',
                 'The Containers view: what it can reach, how often it looks, and what it leaves out. Every change applies immediately and is saved.'))}</p>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
             <div class="config-tabpage">
-                <div class="config-tabpage-main" id="config-containers-body">
-                    ${this.renderContainersStatusPanel()}
-                    ${this.renderControlPanels(this.panelsFor('containers', 'general'), 'behavior')}
-                    ${this.renderContainersMutedPanel()}
-                    ${this.renderContainersHiddenPanel()}
-                    ${this.renderContainersTokenPanel()}
-                    ${this.renderContainersUnraidPanel()}
+                <div class="config-tabpage-main" id="config-containers-body" role="tabpanel" tabindex="0">
+                    ${this.renderContainersBody()}
                 </div>
             </div>
         `;
+    },
+
+    containersTabLabel(tab) {
+        const map = {
+            connection: ['config.containersTabConnection', 'Connection'],
+            view: ['config.containersTabView', 'View'],
+            updates: ['config.containersTabUpdates', 'Updates'],
+            alerts: ['config.containersTabAlerts', 'Alerts'],
+            unraid: ['config.containersTabUnraid', 'Unraid'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    },
+
+    /**
+     * One tab's panels. The schema panels carry their tab; the hand-built
+     * ones (socket status, hidden and muted lists, the GitHub token, Unraid)
+     * are placed here, in the order each tab reads best.
+     */
+    renderContainersBody() {
+        const tab = this.containersTab;
+        const schema = () => this.renderControlPanels(this.panelsFor('containers', tab), 'behavior');
+        switch (tab) {
+            case 'view':
+                return `${schema()}${this.renderContainersHiddenPanel()}`;
+            case 'updates':
+                return `${schema()}${this.renderContainersTokenPanel()}`;
+            case 'alerts':
+                return `${schema()}${this.renderContainersMutedPanel()}`;
+            case 'unraid':
+                return this.renderContainersUnraidPanel();
+            default:
+                return `${this.renderContainersStatusPanel()}${schema()}`;
+        }
+    },
+
+    /** Redraw the body for the tab now chosen, the strip left as it is. */
+    repaintContainersBody() {
+        const body = document.getElementById('config-containers-body');
+        if (!body) return;
+        body.innerHTML = this.renderContainersBody();
+        this.bindControlPanels(body, 'behavior');
+        this.bindContainersPanels(body);
+        this.labelSettingsControls?.();
     },
 
     /** Filled from /api/docker/status once the section is on screen. */
@@ -187,7 +231,26 @@
     },
 
     bindContainersSection(container) {
-        void this.fillContainersStatus(container);
+        // The strip is outside the body: bound when the whole section is, not
+        // again on every repaint of the body.
+        if (container.querySelector('[data-containers-tab]')) {
+            this.bindSubTabStrip(container, 'data-containers-tab', (tab) => {
+                if (tab === this.containersTab) return;
+                this.containersTab = tab;
+                this.restoreConfigHash();
+                this.repaintContainersBody();
+                this.syncSubTabStrip('data-containers-tab', this.containersTab);
+            });
+        }
+        this.bindContainersPanels(container);
+    },
+
+    /** Each panel binds only when it is on screen; the others are absent on this tab. */
+    bindContainersPanels(container) {
+        // The socket answer also colours the switch on the View tab.
+        if (container.querySelector('[data-docker-status-panel], [data-behavior-field="dockerViewEnabled"]')) {
+            void this.fillContainersStatus(container);
+        }
         this.bindContainersHostCheck(container);
         this.bindContainersHidden(container);
         this.bindContainersMuted(container);
@@ -246,6 +309,11 @@
         } catch {
             status = null;
         }
+        if (!container.isConnected) return;
+        const t = (k, f) => this.t(k, f);
+        const socket = status?.socket === true;
+        const denied = status?.reason === 'docker-socket-denied';
+        this.markDockerViewSwitch(container, socket, denied);
         const panel = container.querySelector('[data-docker-status-panel]');
         if (!panel || !panel.isConnected) return;
         const set = (key, text, tone) => {
@@ -254,10 +322,6 @@
             el.textContent = text;
             el.setAttribute('data-tone', tone);
         };
-        const t = (k, f) => this.t(k, f);
-        const socket = status?.socket === true;
-        const denied = status?.reason === 'docker-socket-denied';
-        this.markDockerViewSwitch(container, socket, denied);
         if (socket) set('socket', t('config.dockerStatusConnected', 'Connected'), 'good');
         else if (denied) set('socket', t('config.dockerStatusDenied', 'No access to the socket'), 'bad');
         else set('socket', t('config.dockerStatusMissing', 'Not connected'), 'bad');

@@ -19,10 +19,12 @@ async function openSection(page, settings) {
             body: JSON.stringify({ server: { ...page.__saved.server, id: 'u_1' }, keySet: true }) });
     });
     await markWhatsNewSeen(page);
-    await page.goto('/#config/containers');
+    await page.goto('/#config/containers/unraid');
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForSelector('[data-unraid-field="baseUrl"]', { timeout: 20_000 });
+    // A load draws config twice; text typed before the second draw is lost.
+    await page.waitForFunction(() => window.dashboardInstance?._configRefreshReady === true);
 }
 
 const SAVED = { id: 'u_1', name: 'tower', baseUrl: 'http://192.168.1.10', enabled: true, insecureTls: false, notify: true };
@@ -75,6 +77,8 @@ test.describe('Unraid connection', () => {
 
     test('Save with a typed key sends it, and the field is cleared', async ({ page }) => {
         await openSection(page, { server: SAVED, keySet: true, suggestedBaseUrl: '' });
+        // The saved server is read first: Save is shut until it is known.
+        await expect(page.locator('[data-unraid-save]')).toBeEnabled();
         await page.locator('[data-unraid-field="key"]').fill('secret-key');
         await page.locator('[data-unraid-save]').click();
         await expect.poll(() => page.__saved?.key).toBe('secret-key');
