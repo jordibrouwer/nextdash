@@ -14,8 +14,9 @@ var generatedIconName = regexp.MustCompile(`^icon-[0-9a-f]{16}\.[a-zA-Z0-9]+$`)
  * Serving files out of the data directory, and nothing else.
  *
  * Narrowed to what the UI actually links: data/icons/*, data/preview-images/*,
- * and the uploaded favicon/font at the data root. A bare FileServer over the
- * whole data directory also served settings.json, every bookmarks-N.json,
+ * data/icon-sets/<set>/*, and the uploaded favicon/font at the data root. A
+ * bare FileServer over the whole data directory also served settings.json,
+ * every bookmarks-N.json,
  * inbox.json, trash.json and the auto-backup ZIPs -- ungated and with directory
  * listings, while /api/backup returns the same content only behind
  * requireWriteAccess.
@@ -60,6 +61,11 @@ func dataFileHandler(dataDir string) http.HandlerFunc {
 			// That rules out `immutable`: it has to revalidate, the way the
 			// uploaded favicon below does.
 			w.Header().Set("Cache-Control", "public, max-age=300")
+		case strings.HasPrefix(rel, iconSetsDirName+"/"):
+			// App icons from the two sets, fetched on first use; see
+			// icon_sets_cache.go. Only names the index knows are served.
+			serveIconSetFile(w, req, rel)
+			return
 		case strings.HasPrefix(rel, "favicon.") || strings.HasPrefix(rel, "font."):
 			// Overwritten in place by the upload handlers, so it must revalidate.
 			w.Header().Set("Cache-Control", "public, max-age=300")

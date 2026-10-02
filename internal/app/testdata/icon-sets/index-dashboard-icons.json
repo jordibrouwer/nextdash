@@ -1,0 +1,812 @@
+{
+ "adguard-home": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 15933,
+    "name": "fabricionaweb"
+   },
+   "timestamp": "2022-09-09T09:57:51Z"
+  }
+ },
+ "bazarr": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "colors": {
+   "dark": "bazarr-dark",
+   "light": "bazarr"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "beszel": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "colors": {
+   "dark": "beszel",
+   "light": "beszel-light"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "calibre": {
+  "aliases": [
+   "ebook-library",
+   "book-converter"
+  ],
+  "base": "svg",
+  "categories": [
+   "Media-Servers"
+  ],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2023-04-13T20:27:58"
+  }
+ },
+ "calibre-web": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2023-05-02T14:59:58Z"
+  }
+ },
+ "cloudflare": {
+  "aliases": [
+   "content-delivery-network",
+   "ddos-protection"
+  ],
+  "base": "svg",
+  "categories": [
+   "Cloud-Computing",
+   "Networking-Tools",
+   "Security"
+  ],
+  "update": {
+   "author": {
+    "id": 15933,
+    "name": "fabricionaweb"
+   },
+   "timestamp": "2022-09-01T17:06:45Z"
+  }
+ },
+ "cloudflared": {
+  "aliases": [
+   "cloudflare-tunnel",
+   "argo-tunnel",
+   "cloudflare"
+  ],
+  "base": "svg",
+  "categories": [
+   "network",
+   "security",
+   "tools"
+  ],
+  "colors": {
+   "dark": "cloudflared-dark",
+   "light": "cloudflared-light"
+  },
+  "update": {
+   "author": {
+    "id": "65iz5jsxx5jc2yw",
+    "name": "browser-agent-robot"
+   },
+   "timestamp": "2026-05-01T19:52:28.146Z"
+  }
+ },
+ "crosswatch": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [
+   "media"
+  ],
+  "update": {
+   "author": {
+    "id": "wp3i3blorbl7ums",
+    "name": "ValleBL"
+   },
+   "timestamp": "2026-02-10T18:42:20.581Z"
+  }
+ },
+ "dashy": {
+  "aliases": [],
+  "base": "png",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2025-01-07T17:54:03Z"
+  }
+ },
+ "duplicati": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2022-08-16T17:22:56Z"
+  }
+ },
+ "github": {
+  "aliases": [
+   "git-hosting",
+   "code-repository"
+  ],
+  "base": "svg",
+  "categories": [
+   "Version-Control-Systems",
+   "Developer-Tools"
+  ],
+  "colors": {
+   "dark": "github",
+   "light": "github-light"
+  },
+  "update": {
+   "author": {
+    "id": 15933,
+    "name": "fabricionaweb"
+   },
+   "timestamp": "2022-10-03T09:35:40Z"
+  }
+ },
+ "homarr": {
+  "aliases": [
+   "best-dashboard",
+   "homer",
+   "dashy",
+   "homepage",
+   "glance",
+   "dashboard"
+  ],
+  "base": "svg",
+  "categories": [
+   "automation",
+   "development",
+   "home-automation",
+   "media",
+   "monitoring",
+   "security",
+   "tools",
+   "utility"
+  ],
+  "update": {
+   "author": {
+    "id": 49837342,
+    "login": "ajnart"
+   },
+   "timestamp": "2026-06-10T08:31:01.877Z"
+  },
+  "wordmark": {
+   "light": "homarr-wordmark-light"
+  }
+ },
+ "home-assistant": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2022-08-16T17:22:56Z"
+  }
+ },
+ "houndarr": {
+  "aliases": [
+   "arr-stack"
+  ],
+  "base": "png",
+  "categories": [
+   "monitoring"
+  ],
+  "update": {
+   "author": {
+    "id": 10246822,
+    "login": "robinvoor"
+   },
+   "timestamp": "2026-04-27T14:29:24.793Z"
+  }
+ },
+ "immich": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 72495210,
+    "name": "v3DJG6GL"
+   },
+   "timestamp": "2024-03-21T21:59:39Z"
+  }
+ },
+ "it-tools": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "colors": {
+   "dark": "it-tools",
+   "light": "it-tools-light"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "jellyfin": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2022-08-16T17:22:56Z"
+  }
+ },
+ "jellyseerr": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 99378252,
+    "name": "realSZ27"
+   },
+   "timestamp": "2024-06-01T17:33:50Z"
+  }
+ },
+ "jellystat": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "colors": {
+   "dark": "jellystat-dark",
+   "light": "jellystat"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "login": "lammersbjorn"
+   },
+   "timestamp": "2025-04-28T18:59:35.544514"
+  }
+ },
+ "kometa": {
+  "aliases": [],
+  "base": "png",
+  "categories": [
+   "Media"
+  ],
+  "update": {
+   "author": {
+    "id": 70608840,
+    "login": "Freestyler589"
+   },
+   "timestamp": "2025-04-09T11:28:49.884507"
+  }
+ },
+ "komga": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2023-04-13T13:56:18Z"
+  }
+ },
+ "lazylibrarian": {
+  "aliases": [],
+  "base": "png",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2025-01-07T17:54:03Z"
+  }
+ },
+ "mariadb": {
+  "aliases": [
+   "Database"
+  ],
+  "base": "svg",
+  "categories": [
+   "Databases"
+  ],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2022-08-16T17:22:56"
+  }
+ },
+ "mediathekarr": {
+  "aliases": [
+   "mediathek",
+   "arr",
+   "servarr",
+   "sonarr",
+   "radarr",
+   "ard",
+   "zdf"
+  ],
+  "base": "png",
+  "categories": [
+   "automation",
+   "entertainment",
+   "media",
+   "tools",
+   "utility"
+  ],
+  "update": {
+   "author": {
+    "id": 71935902,
+    "login": "BLACK4585"
+   },
+   "timestamp": "2026-02-10T18:42:44.423Z"
+  }
+ },
+ "mylar-3": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [
+   "entertainment",
+   "home-automation",
+   "tools"
+  ],
+  "update": {
+   "author": {
+    "id": "ldwi8loixpf1mrd",
+    "name": "ishalioh"
+   },
+   "timestamp": "2026-09-29T07:31:48.454Z"
+  }
+ },
+ "nextcloud": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2022-08-16T17:22:56Z"
+  }
+ },
+ "nginx": {
+  "aliases": [
+   "Web Server"
+  ],
+  "base": "svg",
+  "categories": [
+   "Web-Browsers",
+   "Server-Panels",
+   "Networking-Tools"
+  ],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2023-04-13T13:56:18Z"
+  }
+ },
+ "nginx-proxy-manager": {
+  "aliases": [
+   "Reverse Proxy UI"
+  ],
+  "base": "svg",
+  "categories": [
+   "Networking-Tools",
+   "Server-Panels"
+  ],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2023-04-13T13:56:18Z"
+  }
+ },
+ "nzbhydra2": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "colors": {
+   "dark": "nzbhydra2",
+   "light": "nzbhydra2-light"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "photoprism": {
+  "aliases": [
+   "Photo Management"
+  ],
+  "base": "svg",
+  "categories": [
+   "Media-Servers",
+   "File-Sharing-&-Sync"
+  ],
+  "colors": {
+   "dark": "photoprism",
+   "light": "photoprism-light"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "phpmyadmin": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 112093608,
+    "name": "enter-a-random-username"
+   },
+   "timestamp": "2023-02-01T13:14:17Z"
+  }
+ },
+ "pingvin-share": {
+  "aliases": [
+   "File Sharing"
+  ],
+  "base": "svg",
+  "categories": [
+   "File-Sharing-&-Sync"
+  ],
+  "colors": {
+   "dark": "pingvin-share-dark",
+   "light": "pingvin-share"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "plex": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "colors": {
+   "dark": "plex",
+   "light": "plex-light"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "posterizarr": {
+  "aliases": [],
+  "base": "png",
+  "categories": [
+   "Media"
+  ],
+  "update": {
+   "author": {
+    "id": 7331857,
+    "login": "Solidusty"
+   },
+   "timestamp": "2025-08-17T20:09:48.017499"
+  }
+ },
+ "postgres": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 15933,
+    "name": "fabricionaweb"
+   },
+   "timestamp": "2022-10-03T09:35:58Z"
+  }
+ },
+ "postgresql": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "prowlarr": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2022-08-16T17:22:56Z"
+  }
+ },
+ "qbittorrent": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2022-08-16T17:22:56Z"
+  }
+ },
+ "radarr": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2022-08-16T17:22:56Z"
+  }
+ },
+ "redis": {
+  "aliases": [
+   "In-Memory Database"
+  ],
+  "base": "svg",
+  "categories": [
+   "Databases",
+   "Developer-Tools"
+  ],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2023-04-13T13:56:18Z"
+  }
+ },
+ "sabnzbd": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "colors": {
+   "dark": "sabnzbd",
+   "light": "sabnzbd-light"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "searxng": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2022-08-16T17:22:56Z"
+  }
+ },
+ "seerr": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [
+   "media",
+   "tools"
+  ],
+  "update": {
+   "author": {
+    "id": "wp3i3blorbl7ums",
+    "name": "ValleBL"
+   },
+   "timestamp": "2026-02-18T14:40:56.772Z"
+  }
+ },
+ "shelfmark": {
+  "aliases": [],
+  "base": "png",
+  "categories": [
+   "media"
+  ],
+  "update": {
+   "author": {
+    "id": 1775017,
+    "login": "cocco3"
+   },
+   "timestamp": "2026-02-10T18:41:43.412Z"
+  }
+ },
+ "sonarr": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "colors": {
+   "dark": "sonarr-dark",
+   "light": "sonarr"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "speedtest-tracker": {
+  "aliases": [],
+  "base": "png",
+  "categories": [
+   "network",
+   "automation",
+   "monitoring",
+   "tools"
+  ],
+  "update": {
+   "author": {
+    "id": 101796404,
+    "login": "Spajki001"
+   },
+   "timestamp": "2026-03-02T13:18:20.866Z"
+  }
+ },
+ "suggest-arr": {
+  "aliases": [],
+  "base": "png",
+  "categories": [
+   "Media"
+  ],
+  "update": {
+   "author": {
+    "id": 134445945,
+    "login": "Pantanet96"
+   },
+   "timestamp": "2025-08-03T10:53:22.599917"
+  }
+ },
+ "swiparr": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [
+   "media"
+  ],
+  "update": {
+   "author": {
+    "id": 7321259,
+    "login": "michaelkrieger"
+   },
+   "timestamp": "2026-02-24T17:52:35.411Z"
+  }
+ },
+ "tailscale": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "colors": {
+   "dark": "tailscale",
+   "light": "tailscale-light"
+  },
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2024-10-20T17:24:03Z"
+  }
+ },
+ "themepark": {
+  "aliases": [],
+  "base": "png",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 71191962,
+    "name": "walkxcode"
+   },
+   "timestamp": "2025-01-07T17:54:03Z"
+  }
+ },
+ "tracearr": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [
+   "Media"
+  ],
+  "update": {
+   "author": {
+    "id": 10216384,
+    "login": "memesalot"
+   },
+   "timestamp": "2025-12-20T17:58:49.047941"
+  }
+ },
+ "unpackerr": {
+  "aliases": [],
+  "base": "png",
+  "categories": [
+   "media",
+   "automation",
+   "self-hosted"
+  ],
+  "update": {
+   "author": {
+    "id": "65iz5jsxx5jc2yw",
+    "name": "browser-agent-robot"
+   },
+   "timestamp": "2026-05-01T19:52:36.793Z"
+  }
+ },
+ "whisparr": {
+  "aliases": [],
+  "base": "svg",
+  "categories": [],
+  "update": {
+   "author": {
+    "id": 15933,
+    "name": "fabricionaweb"
+   },
+   "timestamp": "2022-09-09T09:55:44Z"
+  }
+ }
+}

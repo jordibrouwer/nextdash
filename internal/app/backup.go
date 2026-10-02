@@ -824,6 +824,11 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 			if info.Name() == previewImageDirName && filepath.Dir(path) == dataDir {
 				return filepath.SkipDir
 			}
+			// The app-icon set mirrors and their cached icons: all of it comes
+			// back from the CDN, the same as cached previews.
+			if info.Name() == iconSetsDirName && filepath.Dir(path) == dataDir {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 

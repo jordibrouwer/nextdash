@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.17.0 — not yet released](#v1170--not-yet-released)
 - [v1.16.0 — 2 October 2026](#v1160--2-october-2026)
 - [v1.15.8 — 1 October 2026](#v1158--1-october-2026)
 - [v1.15.7 — 30 September 2026](#v1157--30-september-2026)
@@ -91,6 +92,20 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [How releases are numbered](#how-releases-are-numbered)
 
 ---
+
+## v1.17.0 — not yet released
+
+Containers and bookmarks to self-hosted apps get real app icons from two open icon sets, dashboard-icons and selfh.st/icons. A container is matched by its image and name, a bookmark by its host, and the icon follows the theme between its light and dark variant. An icon picker with suggestions sits behind the pencil in the bookmark form and in the container drawer. Nothing is bundled: the server fetches the indexes and the icons, and the browser never talks to the CDN.
+
+### App icons
+
+- **new — two icon sets, read by the server.** `icon_sets.go` fetches dashboard-icons' `metadata.json` and selfh.st's `index.json` from jsDelivr once a week with a conditional GET, keeps the mirrors in `data/icon-sets/` and keeps the old copy when a fetch fails or reads as nothing. `icon_sets_index.go` merges them into one lookup: names first, then display names, then aliases, dashboard-icons before selfh.st in each round, and a variant always from the entry's own set. `DISABLE_ICON_SETS=1` switches it all off; `NEXTDASH_ICON_SETS_FIXTURE` reads a directory instead, for the tests.
+- **new — icons served from a cache of their own.** `/data/icon-sets/<set>/<file>` (`icon_sets_cache.go`, a new case in `dataFileHandler`) fetches a file the index names on first use, through the icon guards (2 MiB, magic bytes, SVG sanitised), and serves it from disk after that. A name the index does not know never leaves the server; a failed fetch is remembered for an hour; an SVG that wraps a PNG is refused, since sanitising leaves it empty. `data/icon-sets/` stays out of backups, like cached previews.
+- **new — matching by name** (`icon_match.go`): the image's repository name, the container name, both with packaging words taken off (`binhex-`, `-docker`, `vpn`, `-agent`, …), without trailing digits, then shorter prefixes (`jellyfin-newsletter` → `jellyfin`). A container whose tag moved on reports an image ID and matches on its name. Bookmarks match on the leftmost label of a host with three or more labels or on a one-label host; `github.com` and IP addresses keep their favicon, unless the bookmark is linked to a container. `icon_match_test.go` runs 62 containers from a real Unraid server.
+
+### Tests
+
+- **tests — Go:** the index (rounds, aliases, variants, search), the 62 containers and the bookmark hosts, refresh with ETag, stale copy and back-off, the cache route (unknown names, traversal, one fetch, sanitising, wrapped PNG, the hour of misses), adopt, the API handlers, the container override and the background fill.
 
 ## v1.16.0 — 2 October 2026
 

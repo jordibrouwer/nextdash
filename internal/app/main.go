@@ -162,6 +162,10 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/font", handlers.UploadFont).Methods("POST")
 	r.HandleFunc("/api/icon", handlers.UploadIcon).Methods("POST")
 	r.HandleFunc("/api/icon/from-url", handlers.UploadIconFromURL).Methods("POST")
+	r.HandleFunc("/api/icon-sets/match", handlers.IconSetsMatchHandler).Methods("POST")
+	r.HandleFunc("/api/icon-sets/search", handlers.IconSetsSearchHandler).Methods("GET")
+	r.HandleFunc("/api/icon-sets/suggest", handlers.IconSetsSuggestHandler).Methods("GET")
+	r.HandleFunc("/api/icon-sets/adopt", handlers.IconSetsAdoptHandler).Methods("POST")
 	r.HandleFunc("/api/colors", handlers.GetColors).Methods("GET")
 	r.HandleFunc("/api/colors", handlers.SaveColors).Methods("POST")
 	r.HandleFunc("/api/colors/reset", handlers.ResetColors).Methods("POST")
@@ -383,6 +387,7 @@ func Run(files assetFS) {
 	// been gone for years rather than only that it broke here on Tuesday.
 	handlers.StartArchiveBackfillScheduler(schedulerStop)
 	handlers.StartUpdateCheckScheduler(schedulerStop)
+	handlers.StartIconSetsScheduler(schedulerStop)
 	// Writes the preview cache out periodically. Beside the others rather than
 	// buried in NewHandlers, so it stops when they do.
 	handlers.StartPreviewCacheFlushScheduler(schedulerStop)
