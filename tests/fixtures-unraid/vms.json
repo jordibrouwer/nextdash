@@ -1,0 +1,1 @@
+{"area":"vms","status":"ok","data":[{"name":"home-assistant","state":"running","tone":"good"},{"name":"ubuntu-dev","state":"paused","tone":"warn"},{"name":"win11","state":"stopped","tone":"off"}],"fetchedAt":1790978870798,"lastOkAt":1790978870798}

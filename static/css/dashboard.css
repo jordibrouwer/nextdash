@@ -6399,6 +6399,12 @@ button.dashboard-widget-row.keyboard-selected {
     color: var(--accent-warning);
 }
 
+/* Off is not a problem: a sleeping disk, a stopped VM. Grey, name and all. */
+.dashboard-widget-row--off .dashboard-widget-row-name,
+.dashboard-widget-row--off .dashboard-widget-row-detail {
+    color: var(--text-tertiary);
+}
+
 /* A figure with its qualifier beside it — the inbox count and how old the
    oldest is, the neglected count and the threshold that produced it. The
    qualifier is load-bearing: "eleven neglected" is a different claim at thirty
@@ -7147,6 +7153,57 @@ button.dashboard-widget-stat.keyboard-selected {
         grid-column: 1 / -1;
     }
 }
+
+/*
+ * Unraid: rows that read down, not across.
+ *
+ * The overview and the disk list are sequences -- parity, then the array in
+ * disk order, then cache -- and pairing them row by row would read disk1 beside
+ * disk2. Wide, they flow down two columns instead, each group head staying
+ * with the disk under it.
+ */
+@container (min-width: 28rem) {
+    .dashboard-widget-panel .unraid-columns {
+        display: block;
+        column-count: 2;
+        column-gap: var(--space-5, 1.4rem);
+    }
+
+    .dashboard-widget-panel .unraid-columns > * {
+        break-inside: avoid;
+    }
+
+    .dashboard-widget-panel .unraid-columns > .dashboard-widget-group {
+        break-after: avoid;
+    }
+}
+
+/* Unraid array rows: a fill bar between the disk name and its reading. */
+.unraid-disk-row { gap: var(--space-2, 0.5rem); }
+/* Wide enough for "58% · 3 errors", so the bars line up down the column. */
+.unraid-disk-row .dashboard-widget-row-detail { min-width: 7.5rem; }
+.unraid-disk-bar {
+    flex: none;
+    align-self: center;
+    width: 4rem;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent-primary) var(--fill), var(--border-secondary) var(--fill));
+}
+.unraid-disk-bar--warn {
+    background: linear-gradient(90deg, var(--accent-warning) var(--fill), var(--border-secondary) var(--fill));
+}
+.dashboard-widget-group {
+    margin: var(--space-2, 0.5rem) 0 var(--space-1, 0.25rem);
+    /* The rows' own inset, so a group head starts where its disk names do. */
+    padding: 0 var(--space-2, 0.45rem) 2px;
+    border-bottom: 1px solid var(--border-secondary);
+    color: var(--text-tertiary);
+    font-size: var(--text-xs, 0.7rem);
+    text-transform: lowercase;
+    letter-spacing: 0.06em;
+}
+.dashboard-widget-group:first-child { margin-top: 0; }
 
 /*
  * A figure older than the interval it refreshes on.
