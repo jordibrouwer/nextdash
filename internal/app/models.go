@@ -850,6 +850,12 @@ type Settings struct {
 	DockerAutoUpdate     []string `json:"dockerAutoUpdate,omitempty"`
 	DockerAutoUpdateFrom int      `json:"dockerAutoUpdateFrom"`
 	DockerAutoUpdateTo   int      `json:"dockerAutoUpdateTo"`
+	// WebSearchEngine is the engine behind Shift+Enter in the search panel
+	// (web_search.go): "off", "searxng" or "brave". Off by default -- it is the
+	// one search that leaves this server.
+	WebSearchEngine string `json:"webSearchEngine"`
+	// WebSearchSearxngURL is the base address of the reader's own SearXNG.
+	WebSearchSearxngURL string `json:"webSearchSearxngUrl,omitempty"`
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
 	// feed can then say when it has published something since you last opened
 	// it. Off by default because it is the only thing here that reaches out to
@@ -4951,6 +4957,7 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.DockerUpdateInterval = "off"
 	}
 	normalizeDockerSettings(&settings)
+	normalizeWebSearchSettings(&settings)
 	// 0 stays 0 — it means "the built-in default" — and anything else is held
 	// inside the range a bounded sweep can afford.
 	if settings.HealthCheckTimeoutSeconds != 0 {

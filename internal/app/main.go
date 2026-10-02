@@ -225,6 +225,10 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/containers/{id}/changelog", handlers.DockerChangelogHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates", handlers.DockerUpdatesHandler).Methods("GET")
 	r.HandleFunc("/api/docker/github-token", handlers.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")
+	r.HandleFunc("/api/web-search/brave-key", handlers.WebSearchBraveKeyHandler).Methods("GET", "PUT", "DELETE")
+	// Web search through the reader's chosen engine; see web_search.go.
+	r.HandleFunc("/api/web-search", handlers.WebSearchHandler).Methods("GET")
+	r.HandleFunc("/api/web-search/status", handlers.WebSearchStatusHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates/check", handlers.DockerUpdatesCheckHandler).Methods("POST")
 	r.HandleFunc("/api/docker/updates/choice", handlers.DockerUpdateChoiceHandler).Methods("POST")
 	r.HandleFunc("/api/docker/disk", handlers.DockerDiskHandler).Methods("GET")

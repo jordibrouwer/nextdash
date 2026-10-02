@@ -184,6 +184,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"health-credentials.json": dataSecret,
 	"webhooks.json":           dataSecret,
 	"docker-secrets.json":     dataSecret,
+	"web-search-secrets.json": dataSecret,
 
 	"preview-cache.json": dataCache,
 	"health-cache.json":  dataCache,
