@@ -11,6 +11,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
 async function openSection(page, settings) {
     await page.route('**/api/unraid/settings', async (route) => {
         if (route.request().method() === 'GET') {
+            if (settings.__status) return route.fulfill({ status: settings.__status, contentType: 'text/plain', body: 'boom' });
             return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(settings) });
         }
         page.__saved = JSON.parse(route.request().postData() || '{}');
@@ -79,5 +80,38 @@ test.describe('Unraid connection', () => {
         await expect.poll(() => page.__saved?.key).toBe('secret-key');
         await expect(page.locator('[data-unraid-field="key"]')).toHaveValue('');
         await expect(page.locator('[data-unraid-result]')).toContainText('Saved');
+    });
+
+    test('a settings answer that fails keeps Save and Test shut', async ({ page }) => {
+        await openSection(page, { __status: 500 });
+        await expect(page.locator('[data-unraid-result]')).toContainText('Could not read the Unraid settings');
+        await expect(page.locator('[data-unraid-save]')).toBeDisabled();
+        await expect(page.locator('[data-unraid-test]')).toBeDisabled();
+    });
+
+    test('the eye shows what is typed, and hides it again', async ({ page }) => {
+        await openSection(page, { server: SAVED, keySet: true, suggestedBaseUrl: '' });
+        const key = page.locator('[data-unraid-field="key"]');
+        await key.fill('abc');
+        await expect(key).toHaveAttribute('type', 'password');
+        await page.locator('[data-unraid-reveal]').click();
+        await expect(key).toHaveAttribute('type', 'text');
+        await page.locator('[data-unraid-reveal]').click();
+        await expect(key).toHaveAttribute('type', 'password');
+    });
+
+    test('a refused write token is named, and the buttons rest while a request is out', async ({ page }) => {
+        let release;
+        const held = new Promise((r) => { release = r; });
+        await openSection(page, { server: SAVED, keySet: true, suggestedBaseUrl: '' });
+        await page.route('**/api/unraid/test', async (route) => {
+            await held;
+            return route.fulfill({ status: 401, contentType: 'text/plain', body: 'no token' });
+        });
+        await page.locator('[data-unraid-test]').click();
+        await expect(page.locator('[data-unraid-save]')).toBeDisabled();
+        release();
+        await expect(page.locator('[data-unraid-result]')).toContainText('Not allowed: the write token');
+        await expect(page.locator('[data-unraid-save]')).toBeEnabled();
     });
 });

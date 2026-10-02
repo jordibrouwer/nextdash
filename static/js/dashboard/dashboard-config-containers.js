@@ -475,8 +475,13 @@
                 <p class="config-field-hint" data-unraid-address-hint>${t('unraidAddressHint', 'A new address needs the key again.')}</p>
                 <div class="config-field">
                     <label class="config-field-label" for="config-unraid-key">${t('unraidKey', 'API key')}</label>
-                    <input type="password" id="config-unraid-key" class="config-text" data-unraid-field="key"
-                           autocomplete="off" spellcheck="false">
+                    <span class="config-secret-field">
+                        <input type="password" id="config-unraid-key" class="config-text" data-unraid-field="key"
+                               autocomplete="off" spellcheck="false">
+                        <button type="button" class="config-secret-eye" data-unraid-reveal aria-pressed="false"
+                                aria-controls="config-unraid-key" title="${t('unraidKeyShow', 'Show what is typed')}"
+                                aria-label="${t('unraidKeyShow', 'Show what is typed')}">${this.secretEyeIcon(false)}</button>
+                    </span>
                 </div>
                 <p class="config-field-check" data-state="fixable" data-unraid-key-warning hidden>${t('unraidKeyWarning',
                     'The address changed and no key is typed: the saved key is dropped, so type it again.')}</p>
@@ -528,6 +533,17 @@
         const buttons = section.querySelectorAll('[data-unraid-test], [data-unraid-save]');
         buttons.forEach((btn) => { btn.disabled = true; });
 
+        const eye = section.querySelector('[data-unraid-reveal]');
+        eye.addEventListener('click', () => {
+            const on = eye.getAttribute('aria-pressed') !== 'true';
+            field('key').type = on ? 'text' : 'password';
+            eye.setAttribute('aria-pressed', on ? 'true' : 'false');
+            eye.innerHTML = this.secretEyeIcon(on);
+            const label = on ? t('unraidKeyHide', 'Hide it again') : t('unraidKeyShow', 'Show what is typed');
+            eye.setAttribute('aria-label', label);
+            eye.setAttribute('title', label);
+        });
+
         const payload = () => {
             const out = {
                 server: {
@@ -548,6 +564,26 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload()),
         });
+        // What went wrong, in a line: a refused write token is told apart, the
+        // rest says its status or what the server wrote.
+        const failure = async (res, fallback) => {
+            if (res.status === 401 || res.status === 403) {
+                return t('unraidNotAllowed', 'Not allowed: the write token is missing or wrong.');
+            }
+            const text = String(await res.text().catch(() => '')).trim();
+            const reason = text && text.length <= 200 && !text.startsWith('<') ? text : String(res.status);
+            return `${fallback} (${reason})`;
+        };
+        // One request at a time: both buttons rest until it is answered.
+        let loaded = false;
+        let busy = false;
+        const paintButtons = () => buttons.forEach((btn) => { btn.disabled = !loaded || busy; });
+        const run = async (work) => {
+            if (busy) return;
+            busy = true;
+            paintButtons();
+            try { await work(); } finally { busy = false; paintButtons(); }
+        };
         const areaName = { array: 'Array', parity: 'Parity', shares: 'Shares', vms: 'VMs', ups: 'UPS', notifications: 'Notifications' };
         const areaState = {
             ok: t('unraidAreaOk', 'yes'),
@@ -555,11 +591,19 @@
             unsupported: t('unraidAreaUnsupported', 'not in this version'),
         };
 
-        section.querySelector('[data-unraid-test]').addEventListener('click', async () => {
+        section.querySelector('[data-unraid-test]').addEventListener('click', () => run(async () => {
             result.textContent = t('unraidTesting', 'Asking…');
             try {
                 const res = await send('/api/unraid/test', 'POST');
-                const body = await res.json().catch(() => ({ ok: false }));
+                if (res.status === 401 || res.status === 403) {
+                    result.textContent = await failure(res, '');
+                    return;
+                }
+                const body = await res.json().catch(() => null);
+                if (!body) {
+                    result.textContent = await failure(res, t('unraidTestFailed', 'The server did not answer.'));
+                    return;
+                }
                 if (!body.ok) {
                     result.textContent = body.error || t('unraidTestFailed', 'The server did not answer.');
                     return;
@@ -572,12 +616,15 @@
             } catch {
                 result.textContent = t('unraidTestFailed', 'The server did not answer.');
             }
-        });
+        }));
 
-        section.querySelector('[data-unraid-save]').addEventListener('click', async () => {
+        section.querySelector('[data-unraid-save]').addEventListener('click', () => run(async () => {
             try {
                 const res = await send('/api/unraid/settings', 'PUT');
-                if (!res.ok) throw new Error(String(res.status));
+                if (!res.ok) {
+                    result.textContent = await failure(res, t('unraidSaveFailed', 'Could not save'));
+                    return;
+                }
                 const body = await res.json();
                 current = body.server || null;
                 keySet = body.keySet === true;
@@ -586,13 +633,15 @@
                 result.textContent = t('unraidSaved', 'Saved. The Unraid widgets read this server now.');
                 delete this.dash._unraidBaseUrl; // the tiles learn the new address on their next beat
             } catch {
-                result.textContent = t('unraidSaveFailed', 'Could not save.');
+                result.textContent = t('unraidSaveFailed', 'Could not save') + '.';
             }
-        });
+        }));
 
         try {
             const res = await fetch('/api/unraid/settings', { cache: 'no-store' });
+            if (!res.ok) throw new Error(String(res.status));
             const body = await res.json();
+            if (!body || typeof body !== 'object') throw new Error('shape');
             if (!section.isConnected) return;
             current = body.server || null;
             keySet = body.keySet === true;
@@ -602,8 +651,12 @@
             field('insecureTls').checked = !!current?.insecureTls;
             field('enabled').checked = current ? current.enabled !== false : true;
             field('notify').checked = current ? current.notify !== false : true;
-        } catch { /* the fields stay empty */ }
-        buttons.forEach((btn) => { btn.disabled = false; });
+            loaded = true;
+        } catch {
+            // Saving now would overwrite what is stored with blanks: stay shut.
+            if (section.isConnected) result.textContent = t('unraidLoadFailed', 'Could not read the Unraid settings. Reload to try again.');
+        }
+        paintButtons();
         paintKey();
     },
 
