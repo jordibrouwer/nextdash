@@ -114,7 +114,7 @@ test.describe('config info + reset affordances', () => {
             // only sensible default and the label already says which service
             // it belongs to; there is nothing an ℹ could add.
             'monitorNotifyPreset', 'monitorNotifyDashboardUrl', 'monitorNotifyTelegramChatId',
-            'monitorNotifyPushoverToken', 'monitorNotifyPushoverUserKey',
+            'monitorNotifyPushoverToken', 'monitorNotifyPushoverUserKey', 'monitorNotifyAppriseTag',
             // "Tokens and passwords" / "Saved page copies" — the label is the
             // explanation, like the toolbar toggles above.
             'backupExcludeSecrets', 'backupExcludeArchives',

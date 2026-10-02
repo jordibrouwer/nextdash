@@ -50,6 +50,7 @@
         'monitorNotifyTelegramChatId',
         'monitorNotifyPushoverToken',
         'monitorNotifyPushoverUserKey',
+        'monitorNotifyAppriseTag',
         'monitorNotifyDashboardUrl',
         'pushNotifyEnabled',
         'pushNotifySubject',

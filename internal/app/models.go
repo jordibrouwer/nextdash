@@ -897,7 +897,7 @@ type Settings struct {
 	// MonitorNotifyPreset shapes the webhook body for a specific service instead
 	// of nextDash's own raw JSON. Empty keeps today's exact behaviour, so an
 	// existing webhook receiver built against the raw shape needs no migration.
-	MonitorNotifyPreset string `json:"monitorNotifyPreset,omitempty"` // "", "slack", "discord", "telegram", "gotify", "ntfy", "pushover"
+	MonitorNotifyPreset string `json:"monitorNotifyPreset,omitempty"` // "", "slack", "discord", "telegram", "gotify", "ntfy", "pushover", "apprise"
 	// MonitorNotifyTelegramChatID is only read when MonitorNotifyPreset is
 	// "telegram" — the bot API needs a chat to post into, separate from the
 	// bot-token URL, and getting it wrong is otherwise a silent failure.
@@ -906,6 +906,9 @@ type Settings struct {
 	// (api.pushover.net) and delivery is keyed on these two values instead.
 	MonitorNotifyPushoverToken   string `json:"monitorNotifyPushoverToken,omitempty"`
 	MonitorNotifyPushoverUserKey string `json:"monitorNotifyPushoverUserKey,omitempty"`
+	// MonitorNotifyAppriseTag picks which of an Apprise key's destinations an
+	// alert goes to; empty sends to all of them. Read only for "apprise".
+	MonitorNotifyAppriseTag string `json:"monitorNotifyAppriseTag,omitempty"`
 	/*
 	 * MonitorNotifyDashboardURL is where this install can be reached from a
 	 * phone, for the buttons an ntfy notification carries.
@@ -4997,6 +5000,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
 	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
 	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
+	settings.MonitorNotifyAppriseTag = normalizeMonitorNotifyCredential(settings.MonitorNotifyAppriseTag)
 	// Through the same normaliser as every other credential, so a pasted key
 	// with a stray newline is the same key.
 	settings.ArchiveSaveAccessKey = normalizeMonitorNotifyCredential(settings.ArchiveSaveAccessKey)

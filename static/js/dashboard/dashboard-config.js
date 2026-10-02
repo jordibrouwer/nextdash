@@ -12302,6 +12302,7 @@ class DashboardConfig {
         monitorNotifyPushoverToken: { def: '' },
         monitorNotifyPushoverUserKey: { def: '' },
         monitorNotifyTelegramChatId: { def: '' },
+        monitorNotifyAppriseTag: { def: '' },
         backupExcludeArchives: { def: false },
         backupExcludeSecrets: { def: false },
         healthCheckTimeoutSeconds: { hint: 'healthCheckTimeoutHint', def: 0 },
@@ -12448,6 +12449,7 @@ class DashboardConfig {
                 opt('gotify', 'Gotify'),
                 opt('ntfy', 'ntfy'),
                 opt('pushover', 'Pushover'),
+                opt('apprise', 'Apprise'),
             ] },
         ];
         // forIndex: the settings jump has to find monitorNotifyTelegramChatId
@@ -12465,6 +12467,9 @@ class DashboardConfig {
         if (forIndex || preset !== 'pushover') {
             const urlLabelByPreset = {
                 telegram: t('config.monitorNotifyUrlLabelTelegram', 'Bot API URL (https://api.telegram.org/bot<token>/sendMessage)'),
+                // A configuration key on your own apprise-api: the mail,
+                // Matrix or Signal details stay there.
+                apprise: t('config.monitorNotifyUrlLabelApprise', 'Apprise notify URL (http://apprise:8000/notify/<key>)'),
             };
             controls.push({
                 field: 'monitorNotifyUrl', type: 'text',
@@ -12475,6 +12480,10 @@ class DashboardConfig {
             // Only ntfy carries buttons, and a button has to lead somewhere.
             controls.push({ field: 'monitorNotifyDashboardUrl', type: 'text',
                 label: t('config.monitorNotifyDashboardUrlLabel', 'Address of this dashboard (for notification buttons)') });
+        }
+        if (forIndex || preset === 'apprise') {
+            controls.push({ field: 'monitorNotifyAppriseTag', type: 'text',
+                label: t('config.monitorNotifyAppriseTagLabel', 'Tag (optional — only the destinations with this tag)') });
         }
         if (forIndex || preset === 'telegram') {
             controls.push({ field: 'monitorNotifyTelegramChatId', type: 'text', label: t('config.monitorNotifyTelegramChatIdLabel', 'Chat ID') });

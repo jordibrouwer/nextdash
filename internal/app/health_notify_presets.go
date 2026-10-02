@@ -34,6 +34,7 @@ var monitorNotifyPresets = map[string]bool{
 	"gotify":   true,
 	"ntfy":     true,
 	"pushover": true,
+	"apprise":  true,
 }
 
 // normalizeMonitorNotifyPreset keeps only a recognised preset; anything else
@@ -119,9 +120,57 @@ func formatMonitorNotification(preset string, n monitorNotification, telegramCha
 		return formatNtfyNotification(n)
 	case "pushover":
 		return formatPushoverNotification(n, pushoverToken, pushoverUserKey)
+	case "apprise":
+		return formatAppriseNotification(n, "")
 	default:
 		return formatRawJSONNotification(n)
 	}
+}
+
+/*
+appriseNotifyPayload is apprise-api's notify body.
+
+Apprise is one channel with everything it can reach behind it -- mail, Matrix,
+Signal, Teams and a hundred more. The address is a configuration key on the
+reader's own apprise-api (http://apprise:8000/notify/<key>), so the passwords
+and tokens of those services live there and never in nextDash. Tag, when set,
+picks which of the key's destinations this goes to.
+*/
+type appriseNotifyPayload struct {
+	Title  string `json:"title"`
+	Body   string `json:"body"`
+	Type   string `json:"type"`
+	Format string `json:"format"`
+	Tag    string `json:"tag,omitempty"`
+}
+
+// appriseType maps an event onto Apprise's four kinds, which every service
+// behind it renders in its own way (an icon, a colour, a priority).
+func appriseType(event string) string {
+	switch event {
+	case "down":
+		return "failure"
+	case "up":
+		return "success"
+	}
+	return "warning"
+}
+
+func formatAppriseNotification(n monitorNotification, tag string) (notificationPayload, error) {
+	title := monitorNotificationTitle(n)
+	message := n.Error
+	if message == "" {
+		message = title
+	}
+	payload := appriseNotifyPayload{
+		Title: title, Body: message, Type: appriseType(n.Event), Format: "text",
+		Tag: strings.TrimSpace(tag),
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return notificationPayload{}, err
+	}
+	return notificationPayload{body: body, contentType: "application/json"}, nil
 }
 
 // formatRawJSONNotification is today's exact behaviour: the notification's own

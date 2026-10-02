@@ -417,7 +417,11 @@ func buildMonitorNotificationRequest(ctx context.Context, target string, setting
 			}
 		}
 	}
-	if payload.body == nil {
+	// Apprise's tag is a setting of its own, read only for this preset.
+	if settings.MonitorNotifyPreset == "apprise" {
+		payload, err = formatAppriseNotification(n, settings.MonitorNotifyAppriseTag)
+	}
+	if payload.body == nil && err == nil {
 		payload, err = formatMonitorNotification(
 			settings.MonitorNotifyPreset, n,
 			settings.MonitorNotifyTelegramChatID,
@@ -663,12 +667,31 @@ func (h *Handlers) TestMonitorNotification(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if code >= 400 {
-		http.Error(w, fmt.Sprintf("The service rejected the test alert (HTTP %d)", code), http.StatusBadGateway)
+		http.Error(w, testAlertRejection(settings.MonitorNotifyPreset, code), http.StatusBadGateway)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, `{"status":"sent"}`)
+}
+
+/*
+testAlertRejection says what a refusal means where the service's own codes say
+more than a number. Apprise answers 424 when it took the message but could not
+pass it on -- to at least one destination, or to none because the tag matched
+nothing -- and 404 when the key has no configuration at all: two different
+things to go and fix, in Apprise rather than here.
+*/
+func testAlertRejection(preset string, code int) string {
+	if preset == "apprise" {
+		switch code {
+		case http.StatusFailedDependency:
+			return "Apprise could not deliver to at least one destination, or no destination matched the tag (HTTP 424)"
+		case http.StatusNotFound:
+			return "Apprise has no configuration under that key (HTTP 404)"
+		}
+	}
+	return fmt.Sprintf("The service rejected the test alert (HTTP %d)", code)
 }
 
 // sendTestMonitorNotification mirrors postMonitorNotification but returns the

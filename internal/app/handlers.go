@@ -2580,6 +2580,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
 	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
 	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
+	settings.MonitorNotifyAppriseTag = normalizeMonitorNotifyCredential(settings.MonitorNotifyAppriseTag)
 
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
 		return
