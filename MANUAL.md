@@ -1598,6 +1598,20 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | **Containers** | Running and total containers, failing healthchecks and recent restarts; opens the Containers view, and its update figure links to `#docker?filter=updates`. The figures you tick can add **updates waiting** (a skipped or held one does not count), **reclaimable** disk space — what the Disk tab last measured, measured again in the background once it is six hours old, a dash before the first — and **incidents** in the last 24 hours (crashes and turns unhealthy, from the timeline). **Name the three busiest by CPU** lists them under the figures. Nothing ticked means every figure. |
 | **Container list** | The containers themselves, one row each: one column on a narrow tile, two on a wide one. Its settings choose **running only** or **all**, the order (**problems first**, name, longest or shortest uptime, CPU or memory — busiest first), what stands on the right of a row (uptime, the image tag, CPU and memory, or nothing) and where a click goes: the container in the Containers view, or its web UI. A problem — unhealthy, stopped, an update — replaces the uptime on its row. |
 
+*How is the Unraid server doing?*
+
+| Kind | Shows |
+|---|---|
+| **Unraid** | The server at a glance, a line each: array, used, parity, disks, alerts, VMs and the UPS, with the worst problem in colour; wide, it adds the newest alert and the fullest share |
+| **Unraid array** | The array's disks by group (parity, array, cache), each with its fill and temperature or its problem; a sleeping disk is grey. Narrow, only the disks with a problem, or *N disks fine* |
+| **Parity** | The last parity check, or the running one with progress, speed and time left; wide, its history |
+| **Shares** | The shares, fullest first, with a bar each; its settings choose how many rows |
+| **VMs** | How many virtual machines run, and which are paused, stopped or crashed; its settings choose how many rows |
+| **UPS** | Charge, runtime and load; amber when the server runs on battery |
+| **Unraid notifications** | Unraid's unread notifications, newest first, the alerts in red; its settings choose how many rows |
+
+These read one server, set once under Config → Containers ([§15.6](#156-unraid-widgets)).
+
 *What is happening around you?*
 
 | Kind | Shows |
@@ -1719,6 +1733,20 @@ An answer has eight seconds to arrive and is read up to one megabyte. There is n
 | **Apps** | Nextcloud, Paperless-ngx, Home Assistant, Grafana, ntfy |
 
 A preset fills in a sample address, the useful path, the figures with labels and shapes, and the sign-in type, and says where to find the key. Where a header needs a word before the token (`Bearer `, `Token `), the preset puts it in the box. Everything stays editable.
+
+### 15.6 Unraid widgets
+
+Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array**, **Parity**, **Shares**, **VMs**, **UPS** and **Unraid notifications**. They are read-only — nextDash never starts or stops anything on the server.
+
+**What they need.** Unraid 7.2, or an older Unraid with the Unraid Connect plugin, and an API key with the role **Viewer** (in Unraid: Settings → Management Access → API Keys). A key that can do more than read is accepted, but Config says Viewer is enough.
+
+**One connection for all seven.** Config → Containers → Unraid holds it: the **Address**, the **API key** (a saved key shows as *Set*; the eye button reveals what you type), **Accept a self-signed certificate**, **Read this server** and **Send Unraid alerts through the alert channels**. When nextDash runs in a container, the Docker bridge gateway is suggested as the address. **Test connection** names the server, its Unraid and API versions and what the key may read — *yes*, *not allowed* or *not in this version* per area. A new address needs the key again: change the address without typing a key and the saved key is dropped. The key is stored apart in `data/unraid-secrets.json`, is never sent back to the browser, and travels in a backup only with **Tokens and passwords**.
+
+**On the tile.** A widget has only how it draws: **Refresh every** (30 seconds at the least; one answer per area is shared by everyone viewing the dashboard), **Rows** where it lists (Shares, VMs, Unraid notifications), and **A click** — *Opens the page in Unraid* or *Does nothing*. An area the key may not read, or an Unraid version that lacks it, is named on the tile instead of showing zero; a server that stops answering keeps the last reading, with its age. Nothing is shown until the connection is saved.
+
+**Alerts.** With **Send Unraid alerts through the alert channels** ticked, four things go through the channels that carry downtime and container alerts ([§12.4](#124-alerts)): Unraid's own ALERT notifications, the array stopping, a parity check that finished with errors, and a disk whose error count went up. The first look after a start, or after the server was changed, only remembers what is there. Four or more at once become one message, *N Unraid alerts*.
+
+**Local addresses.** The server is asked from nextDash, so a LAN address needs **Allow localhost & private-network bookmarks** (Behavior → General, on by default) — the same rule as other outgoing requests ([§23.3](#233-local-addresses-and-outgoing-requests)). Unraid usually answers with a certificate of its own; tick **Accept a self-signed certificate** for that, or use an address with a certificate nextDash trusts.
 
 ---
 <a id="16-appearance"></a>
@@ -2039,6 +2067,7 @@ No tabs — one page of panels:
 | **Muted containers** | Where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
 | **Hidden containers** | Containers kept out of the view, search and the widget count — they keep running |
 | **GitHub token** | Raises the rate limit for images hosted on GHCR |
+| **Unraid** | The one Unraid server the Unraid widgets read: address, API key, a self-signed certificate, reading it and sending its alerts ([§15.6](#156-unraid-widgets)) |
 
 ### 17.8 Overview, Help and About
 

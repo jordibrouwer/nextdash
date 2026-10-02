@@ -41,7 +41,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
 
 **Keeping it current and tidy.** Image update checks run on an interval and show the release notes behind an update. Skip a version, hold a container, or let nextDash update it in a nightly window: each update is watched for five minutes and rolled back when the container stops, loops or turns unhealthy. The **Disk** tab shows what images, volumes, build cache and bind mounts take up, and clears it after naming what goes.
 
-**On the dashboard.** A homelab page can carry the **Containers** and **Container list** widgets, **Uptime**, **Certificates**, **Health**, **Processor**, **Memory** and **Disks**, and a **Custom widget** that reads Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and 23 more services — next to the bookmarks for all of them.
+**On the dashboard.** A homelab page can carry the **Containers** and **Container list** widgets, **Uptime**, **Certificates**, **Health**, **Processor**, **Memory** and **Disks**, seven **Unraid** widgets (array, parity, shares, VMs, UPS and notifications) that read the server through its API, and a **Custom widget** that reads Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and 23 more services — next to the bookmarks for all of them.
 
 <table border="0" width="100%">
   <tr>
