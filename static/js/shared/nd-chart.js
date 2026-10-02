@@ -51,12 +51,19 @@
     function timeText(seconds, kind) {
         const d = new Date(seconds * 1000);
         if (kind === 'date') return d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+        // On an axis the weekday makes every label too wide for its slot.
+        if (kind === 'day') return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
         if (kind === 'datetime') return d.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
         return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    /** One line for a point: when, then each series' value. Tooltip, readout and table say the same. */
+    /**
+     * One line for a point: when, then each series' value. Tooltip, readout and
+     * table say the same. A place whose series are one value split by colour
+     * (bars by tone) says it in its own words through spec.text.
+     */
     function pointText(spec, i) {
+        if (typeof spec.text === 'function') return spec.text(i);
         const when = timeText(spec.x[i], spec.format?.x || 'time');
         const values = spec.series.map((s) => {
             const v = s.values[i];
@@ -104,8 +111,9 @@
 
     /**
      * Draws a chart into host and returns { update(spec), destroy(), plot }.
-     * spec: { x: [seconds], series: [{ label, values, color: '--var', fill, dash, scale, bars, format }],
-     *         format: { x: 'time'|'date'|'datetime', y: fn }, scales, sync, summary, height }
+     * spec: { x: [seconds], series: [{ label, values, color: '--var', fill, dash, width, scale, bars, format }],
+     *         format: { x: 'time'|'date'|'datetime', y: fn, tick: fn }, text: (i) => string,
+     *         scales, sync, summary, height, axisWidth }
      */
     function chart(host, spec) {
         const uPlot = global.uPlot;
@@ -144,7 +152,7 @@
                 grid: { stroke: grid, width: 1 }, ticks: { show: true, stroke: axisLine, width: 1, size: 4 },
                 border: { show: true, stroke: axisLine, width: 1 },
             };
-            const scales = { x: { time: true }, ...(current.scales || {}) };
+            const scales = { ...(current.scales || {}), x: { time: true, ...(current.scales?.x || {}) } };
             const extraScales = [...new Set(current.series.map((s) => s.scale).filter((s) => s && s !== 'y'))];
             return {
                 width: Math.max(80, plotHost.clientWidth || host.clientWidth || 300),
@@ -159,10 +167,10 @@
                 axes: [
                     // Time labels take one line, not uPlot's roomy default:
                     // in a 96px drawer chart that default left five for the line.
-                    { ...axis, grid: { show: false }, size: 22, gap: 3,
+                    { ...axis, grid: { show: false }, size: 22, gap: 3, space: 56,
                       // A label equal to the one before it says nothing: a
                       // few minutes of 30 s samples read 20:51, 20:51, 20:52.
-                      values: (u, vals) => vals.map((v) => timeText(v, current.format?.x === 'date' ? 'date' : 'time'))
+                      values: (u, vals) => vals.map((v) => timeText(v, current.format?.x === 'time' ? 'time' : 'day'))
                           .map((label, i, all) => (i > 0 && label === all[i - 1] ? '' : label)),
                       show: current.axisX !== false },
                     { ...axis, size: current.axisWidth || 46,
@@ -252,7 +260,10 @@
             if (n < 2) return;
             const full = [current.x[0], current.x[n - 1]];
             if (!factor) {
-                plot.setScale('x', { min: full[0], max: full[1] });
+                // Back to the chart's own range: bars keep the half slot either side.
+                const range = current.scales?.x?.range;
+                const [min, max] = typeof range === 'function' ? range(plot, full[0], full[1]) : full;
+                plot.setScale('x', { min, max });
                 return;
             }
             const mid = current.x[index >= 0 ? index : n - 1];

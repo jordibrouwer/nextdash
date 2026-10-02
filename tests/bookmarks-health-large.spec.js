@@ -88,7 +88,7 @@ test.describe('bookmark health, in large', () => {
     expect(codes).toEqual([['2xx', '2'], ['3xx', '1'], ['4xx', '0'], ['5xx', '1'], ['no answer', '1']]);
     // It opens on the last 30 days: a bar a day.
     await expect(modal(page).locator('[data-bm-large-range]')).toHaveValue('30');
-    await expect(card(page, 'days').locator('rect[data-tone]')).toHaveCount(30);
+    await expect(card(page, 'days').locator('table.nd-chart-table tbody tr')).toHaveCount(30);
     await expect(card(page, 'hours').locator('rect')).toHaveCount(720);
     await expect(card(page, 'hours').locator('rect[data-tone="bad"]')).not.toHaveCount(0);
     await expect(card(page, 'checks').locator('.bm-health-large-ticks i')).toHaveCount(4);
@@ -109,13 +109,16 @@ test.describe('bookmark health, in large', () => {
     await expect(modal(page)).toHaveAttribute('data-loading', '0');
     // Within one percent: a card that settles a few pixels after the last
     // measurement is not a stretch anyone sees; 320 drawn at 578 was.
-    const ratios = () => modal(page).locator('svg.bm-health-large-line, svg.bm-health-large-days, svg.bm-health-large-heat')
+    // Response time and uptime are uPlot canvases, sized to their card.
+    const canvases = () => modal(page).locator('[data-bm-large-plot] .nd-chart-plot').evaluateAll((plots) =>
+      plots.map((p) => Math.abs(p.querySelector('canvas').getBoundingClientRect().width / p.getBoundingClientRect().width - 1)));
+    await expect.poll(async () => (await canvases()).length).toBe(2);
+    await expect.poll(async () => Math.max(...(await canvases()))).toBeLessThanOrEqual(0.01);
+    const ratios = () => modal(page).locator('svg.bm-health-large-heat')
       .evaluateAll((svgs) => svgs.map((svg) => Math.abs(svg.getBoundingClientRect().width / svg.viewBox.baseVal.width - 1)));
-    await expect.poll(async () => Math.max(...(await ratios()).slice(0, 2))).toBeLessThanOrEqual(0.01);
     // The hours chart waits on the Checks tab, measured once it is shown.
     await tab(page, 'checks').click();
-    await expect.poll(async () => Math.abs((await ratios())[2])).toBeLessThanOrEqual(0.01);
-    expect((await ratios()).length).toBe(3);
+    await expect.poll(async () => Math.abs((await ratios())[0])).toBeLessThanOrEqual(0.01);
   });
 
   test('the period is chosen from a list, and every chart follows it', async ({ page }) => {
@@ -130,20 +133,20 @@ test.describe('bookmark health, in large', () => {
 
     await range.selectOption('7');
     await expect(modal(page)).toHaveAttribute('data-range', '7');
-    await expect(card(page, 'days').locator('rect[data-tone]')).toHaveCount(7);
+    await expect(card(page, 'days').locator('table.nd-chart-table tbody tr')).toHaveCount(7);
     await expect(card(page, 'hours').locator('rect')).toHaveCount(7 * 24);
     // The check five days ago is in; nothing older.
     await expect(card(page, 'codes')).toContainText('3xx');
 
     await range.selectOption('today');
-    await expect(card(page, 'days').locator('rect[data-tone]')).toHaveCount(24);
+    await expect(card(page, 'days').locator('table.nd-chart-table tbody tr')).toHaveCount(24);
     await expect(card(page, 'hours').locator('rect')).toHaveCount(24);
     const codesToday = await card(page, 'codes').locator('.bm-health-large-codes > div').evaluateAll((rows) =>
       rows.map((r) => r.lastElementChild.textContent.trim()));
     expect(codesToday[1]).toBe('0'); // the 3xx was five days ago
 
     await range.selectOption('90');
-    await expect(card(page, 'days').locator('rect[data-tone]')).toHaveCount(90);
+    await expect(card(page, 'days').locator('table.nd-chart-table tbody tr')).toHaveCount(90);
     // Past the 30 days of single checks, the chart says how far they reach.
     await expect(card(page, 'codes')).toContainText('last 30 days');
 
@@ -187,8 +190,60 @@ test.describe('bookmark health, in large', () => {
     await tab(page, 'overview').click();
     await card(page, 'codes').locator('.bm-health-large-codes > div').first().hover();
     await expect(tip).toContainText(/^2xx: 2/);
-    await card(page, 'response').locator('.is-point').first().hover({ force: true });
-    await expect(tip).toContainText(/ms$/);
+    await card(page, 'response').locator('.u-over').hover();
+    await expect(card(page, 'response').locator('.nd-chart-tip')).toContainText(/ms/);
+  });
+
+  /*
+   * Response time and uptime are drawn with uPlot: the keys walk the points
+   * (and leave ← and → to the chart while it has focus), the p95 reads out
+   * beside each point, a bar says its share and its checks, and without the
+   * library the plain charts stay.
+   */
+  test('response time with uPlot: the points read out with the p95, ← and → stay in the chart', async ({ page }) => {
+    await stubHistory(page);
+    const { bookmarks } = await open(page);
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    await expect(modal(page)).toHaveAttribute('data-loading', '0');
+    const chart = card(page, 'response').locator('.nd-chart');
+    await expect(chart).toHaveAttribute('aria-label', /p95 180 ms/);
+    await chart.focus();
+    await page.keyboard.press('End');
+    // The two checks two and three hours ago share a bucket: 150 ms.
+    await expect(chart.locator('.nd-chart-readout')).toContainText(/150 ms · p95 180 ms/);
+    const key = await page.evaluate(() => window.dashboardInstance.config._bmLargeKey);
+    await page.keyboard.press('ArrowLeft');
+    await expect(chart.locator('.nd-chart-readout')).toContainText(/90 ms/);
+    expect(await page.evaluate(() => window.dashboardInstance.config._bmLargeKey)).toBe(key);
+  });
+
+  test('uptime bars with uPlot: a bar says its share and its checks', async ({ page }) => {
+    await stubHistory(page);
+    const { bookmarks } = await open(page);
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    await expect(modal(page)).toHaveAttribute('data-loading', '0');
+    const chart = card(page, 'days').locator('.nd-chart');
+    await expect(chart.locator('canvas')).toHaveCount(1);
+    await chart.focus();
+    await page.keyboard.press('Home');
+    await expect(chart.locator('.nd-chart-readout')).toContainText('no checks');
+    await page.keyboard.press('End');
+    await expect(chart.locator('.nd-chart-readout')).toContainText(/\d+(\.\d)?% · \d+ checks/);
+  });
+
+  test('without uPlot the plain response and uptime charts stay', async ({ page }) => {
+    await page.route('**/vendor/uplot/**', (route) => route.abort());
+    await stubHistory(page);
+    const { bookmarks } = await open(page);
+    await row(page, bookmarks[0].name).click({ button: 'right' });
+    await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
+    await expect(modal(page)).toHaveAttribute('data-loading', '0');
+    await expect(card(page, 'days').locator('rect[data-tone]')).toHaveCount(30);
+    await expect(card(page, 'response').locator('svg.bm-health-large-line .is-point')).not.toHaveCount(0);
+    await page.waitForTimeout(500);
+    await expect(modal(page).locator('.nd-chart')).toHaveCount(0);
   });
 
   test('the row menu and Shift+H open it too; → goes to the next bookmark', async ({ page }) => {
