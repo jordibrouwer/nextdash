@@ -111,7 +111,7 @@
 
     /**
      * Draws a chart into host and returns { update(spec), destroy(), plot }.
-     * spec: { x: [seconds], series: [{ label, values, color: '--var', fill, dash, width, scale, bars, format }],
+     * spec: { x: [seconds], series: [{ label, values, color: '--var', fill, dash, width, scale, bars, points, format }],
      *         format: { x: 'time'|'date'|'datetime', y: fn, tick: fn }, text: (i) => string,
      *         scales, axes: { [scale]: { format, width } }, sync, summary, height, axisWidth }
      */
@@ -194,7 +194,11 @@
                         dash: s.dash || undefined,
                         fill: s.bars ? withAlpha(color, 0.75) : (s.fill === false ? undefined : withAlpha(color, 0.16)),
                         paths: s.bars ? uPlot.paths.bars({ size: [0.7, 40] }) : undefined,
-                        points: { show: false },
+                        // A series of marks (a low point, say) shows its points
+                        // and draws no line between them.
+                        points: s.points
+                            ? { show: true, size: 7, width: 0, fill: color, stroke: color }
+                            : { show: false },
                     };
                 })],
                 hooks: {

@@ -462,6 +462,54 @@ async function openFleetDays(page) {
   return { modal, card: modal.locator('[data-bm-health-modal-card="fleet-days"]') };
 }
 
+// The overview's score over time, with uPlot: the lowest day marked and read
+// out, and the plain chart when the library is blocked.
+test.describe('the score over time, drawn with uPlot', () => {
+  async function openScore(page) {
+    const day = 86400000;
+    const now = Date.now();
+    await openBookmarksWithHealth(page, (issues) => issues, {
+      view: 'library',
+      report: (issues) => ({
+        summary: fullSummary(issues),
+        trend: [0, 1, 2, 3, 4].map((k) => ({ t: now - (4 - k) * day, n: 10, h: [8, 6, 7, 9, 10][k], c: 80, b: 0 })),
+      }),
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('h');
+    return page.locator('#app-modal.show [data-bm-health-modal-card="score"]');
+  }
+
+  test('the lowest day is marked and read out', async ({ page }) => {
+    const card = await openScore(page);
+    const chart = card.locator('[data-bm-score-plot] .nd-chart');
+    await expect(chart.locator('canvas')).toHaveCount(1);
+    await expect(chart).toHaveAttribute('aria-label', /from 80% to 100%/);
+    await chart.focus();
+    await page.keyboard.press('Home');
+    await page.keyboard.press('ArrowRight');
+    await expect(chart.locator('.nd-chart-readout')).toContainText(/60% · lowest/);
+    await page.keyboard.press('End');
+    await expect(chart.locator('.nd-chart-readout')).toContainText('100%');
+    await expect(chart.locator('.nd-chart-readout')).not.toContainText('lowest');
+    // The low point is a mark of its own on the chart, not only in the words.
+    const mark = await page.evaluate(() => {
+      const plot = window.dashboardInstance.config._bmScoreChart.plot;
+      return { size: plot.series[2].points.size, values: plot.data[2].filter((v) => v !== null) };
+    });
+    expect(mark).toEqual({ size: 7, values: [60] });
+  });
+
+  test('without uPlot the plain score chart stays', async ({ page }) => {
+    await page.route('**/vendor/uplot/**', (route) => route.abort());
+    const card = await openScore(page);
+    await expect(card.locator('svg.bm-health-modal-score-chart polyline')).toHaveCount(1);
+    await page.waitForTimeout(500);
+    await expect(card.locator('.nd-chart')).toHaveCount(0);
+  });
+});
+
 test.describe('every monitor, per day', () => {
   test('a bar a day with the response beside it, read out by the keys', async ({ page }) => {
     const { card } = await openFleetDays(page);

@@ -48,6 +48,52 @@
             this.fitBmHealthModal();
             void this.mountBmTrendChart();
             void this.mountBmFleetDaysChart();
+            void this.mountBmScoreChart();
+        },
+
+        /*
+         * The overview's score over time with uPlot: a date axis and a 0-100
+         * axis, the lowest day marked, and each day read out by the pointer or
+         * the keys. Kept compact, so the overview still fits on one screen.
+         */
+        async mountBmScoreChart() {
+            const host = document.querySelector('#app-modal.show [data-bm-score-plot]');
+            const data = this._bmScoreChartData;
+            if (!host || !data) return;
+            try {
+                if (!global.NdChart) {
+                    await global.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart',
+                        () => typeof global.NdChart !== 'undefined');
+                }
+                await global.NdChart.load();
+            } catch {
+                return;
+            }
+            if (!host.isConnected) return;
+            const pct = (v) => `${Math.round(v)}%`;
+            const lowLabel = this.t('config.bmHealthModalLowest', 'lowest');
+            this._bmScoreChart?.destroy();
+            this._bmScoreChart = global.NdChart.chart(host, {
+                x: data.points.map((p) => p.t / 1000),
+                series: [
+                    { label: this.t('config.bmHealthModalScoreTitle', 'Score over time'), values: data.values, color: '--accent-primary', format: pct },
+                    { label: lowLabel, values: data.values.map((v, i) => (i === data.lowest ? v : null)),
+                        color: '--accent-error', fill: false, points: true, format: pct },
+                ],
+                text: (i) => {
+                    const when = global.NdChart.timeText(data.points[i].t / 1000, 'date');
+                    const v = data.values[i];
+                    if (v == null) return `${when} · —`;
+                    return `${when} · ${pct(v)}${i === data.lowest ? ` · ${lowLabel}` : ''}`;
+                },
+                format: { x: 'date', tick: pct },
+                scales: { y: { range: () => [0, 100] } },
+                summary: data.label,
+                height: 96,
+                axisWidth: 38,
+            });
+            // Measured again with the chart in: the overview's fit depends on it.
+            this.fitBmHealthModal();
         },
 
         /*
@@ -586,8 +632,10 @@
                 .replace('{days}', String(points.length))
                 .replace('{first}', String(known[0].v))
                 .replace('{last}', String(last.v));
-            const svg = `<svg class="bm-health-modal-score-chart" viewBox="0 0 ${w} ${h}"
-                preserveAspectRatio="none" role="img" aria-label="${esc(chartLabel)}">${path}${lowDot}${endDot}</svg>`;
+            // The plain chart, until mountBmScoreChart draws it with uPlot.
+            const svg = `<div class="bm-health-modal-score-plot" data-bm-score-plot><svg class="bm-health-modal-score-chart" viewBox="0 0 ${w} ${h}"
+                preserveAspectRatio="none" role="img" aria-label="${esc(chartLabel)}">${path}${lowDot}${endDot}</svg></div>`;
+            this._bmScoreChartData = { points, values, lowest: lowest.i, label: chartLabel };
 
             const deltaText = (d) => (d > 0 ? `▲ ${d}` : (d < 0 ? `▼ ${Math.abs(d)}` : '–'));
             const deltaClass = (d) => (d < 0 ? 'is-down' : (d > 0 ? 'is-up' : ''));
