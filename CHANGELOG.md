@@ -148,6 +148,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 ### Unraid
 
 - **new — an Unraid server to read, set once.** `Settings.UnraidServers` holds one server (address, self-signed switch, read and alert switches); its API key lives apart in `data/unraid-secrets.json` at 0600 and travels in a backup only with "Tokens and passwords" (`unraid_settings.go`, `backup.go`). Test answers recorded by hand under `internal/app/testdata/unraid/`.
+- **new — the Unraid API, asked without a library.** `unraid_client.go` posts one GraphQL query with the key in `x-api-key`, through the same guarded transport as other outgoing requests, 8 seconds and 1 MB at most, no redirects; a refused field (FORBIDDEN) keeps the rest of the answer, a query the schema refuses is told apart, and the key never appears in an error. `NEXTDASH_UNRAID_FIXTURE` answers from files, for the tests.
 
 ### Tests
 
