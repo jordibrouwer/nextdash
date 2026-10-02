@@ -1,0 +1,8 @@
+{
+  "_source": "ntfy server/types.go apiStatsResponse",
+  "auth": {},
+  "body": {
+    "messages": 120345,
+    "messages_rate": 0.42
+  }
+}

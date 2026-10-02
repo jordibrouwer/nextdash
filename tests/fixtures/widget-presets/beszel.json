@@ -1,0 +1,50 @@
+{
+  "_source": "beszel internal/entities/system/system.go + PocketBase list",
+  "auth": {
+    "header": "Authorization",
+    "value": "%TOKEN%"
+  },
+  "login": {
+    "body": {
+      "token": "%TOKEN%",
+      "record": {
+        "id": "u1",
+        "email": "me@example.com"
+      }
+    },
+    "_source": "PocketBase auth-with-password",
+    "path": "/api/collections/users/auth-with-password",
+    "format": "json",
+    "userField": "identity",
+    "passField": "password"
+  },
+  "body": {
+    "page": 1,
+    "perPage": 200,
+    "totalItems": 3,
+    "totalPages": 1,
+    "items": [
+      {
+        "id": "a1",
+        "name": "nas",
+        "status": "up",
+        "info": {
+          "cpu": 12.4,
+          "mp": 41.2
+        }
+      },
+      {
+        "id": "b2",
+        "name": "vps",
+        "status": "down",
+        "info": {}
+      },
+      {
+        "id": "c3",
+        "name": "pi",
+        "status": "paused",
+        "info": {}
+      }
+    ]
+  }
+}

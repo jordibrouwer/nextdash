@@ -95,7 +95,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.17.0 — not yet released
 
-Containers and bookmarks to self-hosted apps get real app icons from two open icon sets, dashboard-icons and selfh.st/icons. A container is matched by its image and name, a bookmark by its host, and the icon follows the theme between its light and dark variant. An icon picker with suggestions sits behind the pencil in the bookmark form and in the container drawer. Nothing is bundled: the server fetches the indexes and the icons, and the browser never talks to the CDN.
+Containers and bookmarks to self-hosted apps get real app icons from two open icon sets, dashboard-icons and selfh.st/icons. A container is matched by its image and name, a bookmark by its host, and the icon follows the theme between its light and dark variant. An icon picker with suggestions sits behind the pencil in the bookmark form and in the container drawer. Nothing is bundled: the server fetches the indexes and the icons, and the browser never talks to the CDN. The Custom widget knows sixteen more services, signs in for a token where a service hands one out, can count entries in an answer, and every preset is now tested against its service's recorded answer.
 
 ### App icons
 
@@ -119,12 +119,19 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 
 ### Widgets
 
+- **new — sixteen more services for the Custom widget**: Whisparr, LazyLibrarian, NZBHydra2, Komga, PhotoPrism, Jellystat and Mylar3 under Media; Nginx Proxy Manager and Tailscale under Network; Duplicati under System; and a Monitoring group with Beszel, Netdata, Gatus, Uptime Kuma, Scrutiny and Healthchecks (`dashboard-widget-presets.js`). qBittorrent 5.2 gets a preset for its API key beside the sign-in one.
 - **new — services that sign in for a token** (`health_credentials.go`). A sign-in can post JSON and read a token out of the answer: `CredentialSession` gains `format`, `tokenPath`, `tokenHeader`, `tokenPrefix` and `extra`. The token travels in the header the preset names, with or without a prefix, and is kept and renewed like the cookie (once more after a 401 or 403). An answer without a token -- a wrong password that said 200, a two-factor account -- reads "could not sign in" and is not retried in a loop. Nginx Proxy Manager, Pi-hole v6, Duplicati and Beszel use it; a password-only sign-in asks for no username.
 - **new — counting in a figure's path** (`customWidgetLookup`). `list#` is the length of a list (or the keys of an object), `list[key=value]#` the number of entries that match, and `[-1]` the last entry. A selector key may be a short path (`[results.0.success=false]`). Still one value per path; a count is the last step.
+- **fix — Proxmox's CPU read as about 0%.** `data.cpu` is a share from 0 to 1 and is now read as one.
+- **fix — the *arr queue's second figure is "matched"**, not "downloading": Sonarr, Radarr and Lidarr count queue items matched to the library there.
+- **fix — Pi-hole v6 signs in itself.** It took a pasted session id that lapsed after half an hour; it now signs in with the password and keeps the id.
+- **new — the presets follow their services.** Overseerr/Jellyseerr is Seerr (same API, same id). Tautulli takes its key in a header instead of the address, Nextcloud reads with its monitoring token (`NC-Token`, with the OCS header sent for you), Bazarr counts wanted episodes and films and throttled providers (`/api/badges`), ntfy shows its message count (`/v1/stats`). Speedtest Tracker shows whether the last test was healthy and when it ran; SABnzbd its time left; Traefik its middlewares; Glances its load; Paperless its tags; Seerr its total. The Immich note says the key must be an admin's.
+- **new — retired presets.** Readarr (stopped upstream), Pi-hole v5 (API removed in v6) and TrueNAS (REST API removed in 26) are no longer offered; a widget already started from one keeps working and still shows its choice.
 
 ### Tests
 
 - **tests — Go:** the index (rounds, aliases, variants, search), the 62 containers and the bookmark hosts, refresh with ETag, stale copy and back-off, the cache route (unknown names, traversal, one fetch, sanitising, wrapped PNG, the hour of misses), adopt, the API handlers, the container override and the background fill.
+- **tests — presets against recorded answers:** `widget-presets-recorded.spec.js` points every preset still offered at a local stub that answers with its service's documented response (`tests/fixtures/widget-presets/`, source in each), through the route Ask now uses, and fails on a figure that finds nothing or finds a whole object. The fixture holds the service's side of the sign-in, so a wrong header or prefix in a preset fails too. Through the panel itself: retired presets are not offered, and Pi-hole v6 asks for a password only and signs in on Ask now. Go: counting and the last entry, and the token sign-in (prefix, no prefix, password only, renewal, no token).
 - **tests — Playwright:** `icon-set-picker.spec.js` (a suggestion, the picker by keyboard, Escape, offline, Fetch again, dashboard rows), `docker-icons.spec.js` (row icons, Use letter across a reload, Automatic, the picker, the theme switch) and a credits test in `config-about.spec.js`.
 
 ## v1.16.0 — 2 October 2026

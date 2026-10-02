@@ -19383,7 +19383,9 @@ class DashboardConfig {
             || widget?.config?.presetId || '');
         const groups = catalogue.GROUPS.map(([group, title]) => {
             const options = catalogue.PRESETS
-                .filter((preset) => preset.group === group)
+                // A retired service is not offered for a new widget, but a
+                // widget already started from it still shows its choice.
+                .filter((preset) => preset.group === group && (!preset.retired || preset.id === chosen))
                 .map((preset) => `<option value="${esc(preset.id)}"${
                     preset.id === chosen ? ' selected' : ''}>${esc(preset.name)}</option>`)
                 .join('');

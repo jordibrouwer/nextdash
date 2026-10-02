@@ -1,0 +1,9 @@
+{
+  "_source": "grafana pkg/api/http_server.go apiHealthHandler",
+  "auth": {},
+  "body": {
+    "commit": "abc123",
+    "database": "ok",
+    "version": "12.2.0"
+  }
+}

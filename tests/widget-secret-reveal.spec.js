@@ -341,7 +341,8 @@ test.describe('every preset that needs a credential asks for one', () => {
         const row = `[data-widget-row="${index}"]`;
 
         const presets = await page.evaluate(() =>
-            (window.DashboardWidgetPresets?.PRESETS || [])
+            // Retired presets are not offered, so there is nothing to select.
+            (window.DashboardWidgetPresets?.PRESETS || []).filter((p) => !p.retired)
                 .map((p) => ({ id: p.id, name: p.name, auth: p.auth || 'none' })));
         expect(presets.length).toBeGreaterThan(20);
 
@@ -368,7 +369,7 @@ test.describe('every preset that needs a credential asks for one', () => {
         const url = page.locator(`${row} [data-widget-setting="url"]`);
 
         const ids = await page.evaluate(() =>
-            (window.DashboardWidgetPresets?.PRESETS || []).map((p) => p.id));
+            (window.DashboardWidgetPresets?.PRESETS || []).filter((p) => !p.retired).map((p) => p.id));
 
         const leaking = [];
         for (const id of ids) {
