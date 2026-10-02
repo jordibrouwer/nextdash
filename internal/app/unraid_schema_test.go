@@ -76,3 +76,53 @@ func TestLoadUnraidSchemaFromFixture(t *testing.T) {
 		t.Fatal("schema should have ArrayDisk.numErrors from fixture")
 	}
 }
+
+func TestBuildUnraidQueryNoEmptySelections(t *testing.T) {
+	s := fixtureSchema(t)
+	// Empty out types that make selections optional or test fallback
+	s["UPSBattery"] = []string{}
+	s["UPSPower"] = []string{}
+	s["InfoOs"] = []string{}
+	delete(s, "ParityCheck")
+
+	for _, area := range []string{"array", "parity", "shares", "vms", "ups", "notifications", "info"} {
+		q, ok := buildUnraidQuery(area, s)
+
+		// array, info and parity should fail (parityCheckStatus, os are essential)
+		if area == "array" || area == "info" || area == "parity" {
+			if ok {
+				t.Fatalf("%s should return ok=false when essential fields are missing, got: %s", area, q)
+			}
+			continue
+		}
+
+		// Others should pass
+		if !ok {
+			t.Fatalf("%s returned ok=false unexpectedly: %s", area, q)
+		}
+
+		// No empty selections in any query
+		if strings.Contains(q, "{ }") || strings.Contains(q, "{  }") {
+			t.Fatalf("%s has empty selection set: %s", area, q)
+		}
+	}
+}
+
+func TestBuildUnraidQueryNotificationFilter(t *testing.T) {
+	s := fixtureSchema(t)
+	// Test with only limit
+	s["NotificationFilter"] = []string{"limit"}
+	q, ok := buildUnraidQuery("notifications", s)
+	if !ok {
+		t.Fatalf("notifications with limit should work")
+	}
+	if !strings.Contains(q, "limit: 20") {
+		t.Fatalf("query should have limit: 20, got %s", q)
+	}
+	if strings.Contains(q, "type:") {
+		t.Fatalf("query should not have type: when NotificationFilter lacks it, got %s", q)
+	}
+	if strings.Contains(q, "offset:") {
+		t.Fatalf("query should not have offset: when NotificationFilter lacks it, got %s", q)
+	}
+}

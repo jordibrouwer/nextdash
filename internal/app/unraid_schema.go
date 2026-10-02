@@ -123,6 +123,14 @@ func (s unraidSchema) pick(typ string, wanted ...string) string {
 	return strings.Join(got, " ")
 }
 
+// sel wraps a selection with a name and braces, or returns empty if fields is empty.
+func sel(name, fields string) string {
+	if strings.TrimSpace(fields) == "" {
+		return ""
+	}
+	return name + " { " + fields + " }"
+}
+
 func (s unraidSchema) diskFields() string {
 	return s.pick("ArrayDisk", "name", "status", "temp", "numErrors", "fsSize", "fsUsed", "fsFree", "isSpinning", "type")
 }
@@ -138,6 +146,20 @@ func (s unraidSchema) capacityFields() string {
 	return "" // summed from the data disks in unraid_model.go
 }
 
+func (s unraidSchema) buildNotificationFilter() string {
+	var parts []string
+	if s.has("NotificationFilter", "type") {
+		parts = append(parts, "type: UNREAD")
+	}
+	if s.has("NotificationFilter", "offset") {
+		parts = append(parts, "offset: 0")
+	}
+	if s.has("NotificationFilter", "limit") {
+		parts = append(parts, "limit: 20")
+	}
+	return strings.Join(parts, ", ")
+}
+
 func buildUnraidQuery(area string, s unraidSchema) (string, bool) {
 	q := func(body string) (string, bool) { return "# area: " + area + "\n{ " + body + " }", true }
 	switch area {
@@ -146,54 +168,110 @@ func buildUnraidQuery(area string, s unraidSchema) (string, bool) {
 			return "", false
 		}
 		d := s.diskFields()
-		return q(fmt.Sprintf("array { %s %s parities { %s } disks { %s } caches { %s } parityCheckStatus { %s } }",
-			s.pick("UnraidArray", "state"), s.capacityFields(), d, d, d, s.parityFields()))
+		if d == "" {
+			return "", false // disks are essential
+		}
+		pf := s.parityFields()
+		if pf == "" {
+			return "", false // parityCheckStatus is essential
+		}
+		var parts []string
+		parts = append(parts, s.pick("UnraidArray", "state"))
+		if cap := s.capacityFields(); cap != "" {
+			parts = append(parts, cap)
+		}
+		parts = append(parts, sel("parities", pf))
+		parts = append(parts, sel("disks", d))
+		parts = append(parts, sel("caches", d))
+		parts = append(parts, sel("parityCheckStatus", pf))
+		body := sel("array", strings.TrimSpace(strings.Join(parts, " ")))
+		return q(body)
 	case "parity":
 		if !s.has("UnraidArray", "parityCheckStatus") {
 			return "", false
 		}
-		body := fmt.Sprintf("array { parityCheckStatus { %s } }", s.parityFields())
-		if s.has("Query", "parityHistory") {
-			body += fmt.Sprintf(" parityHistory { %s }", s.pick("ParityCheck", "date", "duration", "speed", "status", "errors"))
+		pf := s.parityFields()
+		if pf == "" {
+			return "", false // parityCheckStatus is essential
 		}
+		var parts []string
+		parts = append(parts, sel("parityCheckStatus", pf))
+		if s.has("Query", "parityHistory") {
+			if ph := s.pick("ParityCheck", "date", "duration", "speed", "status", "errors"); ph != "" {
+				parts = append(parts, sel("parityHistory", ph))
+			}
+		}
+		body := sel("array", strings.TrimSpace(strings.Join(parts, " ")))
 		return q(body)
 	case "shares":
 		if !s.has("Query", "shares") {
 			return "", false
 		}
-		return q("shares { " + s.pick("Share", "name", "used", "free", "size", "cache") + " }")
+		sh := s.pick("Share", "name", "used", "free", "size", "cache")
+		if sh == "" {
+			return "", false // shares are essential
+		}
+		return q(sel("shares", sh))
 	case "vms":
 		if !s.has("Query", "vms") || !s.has("VmDomain", "state") {
 			return "", false
 		}
-		return q("vms { domains { " + s.pick("VmDomain", "name", "state") + " } }")
+		vd := s.pick("VmDomain", "name", "state")
+		if vd == "" {
+			return "", false // domains are essential
+		}
+		return q(sel("vms", sel("domains", vd)))
 	case "ups":
 		if !s.has("Query", "upsDevices") {
 			return "", false
 		}
-		return q(fmt.Sprintf("upsDevices { %s battery { %s } power { %s } }",
-			s.pick("UPSDevice", "name", "model", "status"),
-			s.pick("UPSBattery", "chargeLevel", "estimatedRuntime"),
-			s.pick("UPSPower", "loadPercentage", "currentPower")))
+		ud := s.pick("UPSDevice", "name", "model", "status")
+		ub := s.pick("UPSBattery", "chargeLevel", "estimatedRuntime")
+		up := s.pick("UPSPower", "loadPercentage", "currentPower")
+		if ud == "" && ub == "" && up == "" {
+			return "", false // need at least something
+		}
+		var parts []string
+		if ud != "" {
+			parts = append(parts, ud)
+		}
+		if ub != "" {
+			parts = append(parts, sel("battery", ub))
+		}
+		if up != "" {
+			parts = append(parts, sel("power", up))
+		}
+		return q(sel("upsDevices", strings.TrimSpace(strings.Join(parts, " "))))
 	case "notifications":
-		if !s.has("Query", "notifications") || !s.has("NotificationFilter", "limit") {
+		if !s.has("Query", "notifications") {
 			return "", false
 		}
-		return q("notifications { overview { unread { info warning alert total } } list(filter: { type: UNREAD, offset: 0, limit: 20 }) { " +
-			s.pick("Notification", "id", "title", "subject", "description", "importance", "link", "timestamp") + " } }")
+		filt := s.buildNotificationFilter()
+		if filt == "" {
+			return "", false // need at least limit
+		}
+		nf := s.pick("Notification", "id", "title", "subject", "description", "importance", "link", "timestamp")
+		if nf == "" {
+			return "", false // notification fields are essential
+		}
+		return q("notifications { overview { unread { info warning alert total } } list(filter: { " + filt + " }) { " + nf + " } }")
 	case "info":
-		versions := ""
+		iof := s.pick("InfoOs", "hostname", "release", "uptime")
+		if iof == "" {
+			return "", false // os is essential
+		}
+		var infoParts []string
+		infoParts = append(infoParts, sel("os", iof))
 		switch {
 		case s.has("InfoVersions", "core"):
-			versions = "versions { core { unraid api } }"
+			infoParts = append(infoParts, "versions { core { unraid api } }")
 		case s.has("InfoVersions", "unraid"):
-			versions = "versions { unraid api }"
+			infoParts = append(infoParts, "versions { unraid api }")
 		}
-		body := fmt.Sprintf("info { os { %s } %s }", s.pick("InfoOs", "hostname", "release", "uptime"), versions)
 		if s.has("Query", "me") && s.has("UserAccount", "roles") {
-			body += " me { roles }"
+			infoParts = append(infoParts, "me { roles }")
 		}
-		return q(body)
+		return q(sel("info", strings.TrimSpace(strings.Join(infoParts, " "))))
 	}
 	return "", false
 }
