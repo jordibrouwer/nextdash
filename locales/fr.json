@@ -7842,7 +7842,7 @@
     "tipTuneCategoryHeader": "Apparence → Lignes → En-tête de catégorie dessine le nom d’une catégorie épuré, souligné, encadré, en étiquette ou en carte de groupe, en trois tailles — avec son icône et le nombre de favoris si vous le souhaitez.",
     "overviewNewFeatureLookStudioTitle": "Le navigateur de thèmes devient un studio de looks",
     "overviewNewFeatureLookStudioWhat": "Un thème décidait des couleurs, et tout le reste était un réglage quelque part dans Apparence — essayé un par un, pendant que la configuration couvrait la page sur laquelle vous l’essayiez.",
-    "overviewNewFeatureLookStudioHow": "Shift+A ouvre le navigateur de thèmes à côté du tableau de bord. Ses onglets changent le thème, son fond — 26 motifs dans les couleurs du thème —, le verre des cartes, les en-têtes de catégorie et la typographie, en direct sur votre propre page. Douze looks règlent tout d’un coup. Comparer montre ce que vous aviez, Annuler le remet, et rien n’est enregistré avant Appliquer.",
+    "overviewNewFeatureLookStudioHow": "Shift+A ouvre le navigateur de thèmes à côté du tableau de bord. Ses onglets changent le thème, son fond — 26 motifs dans les couleurs du thème —, le verre des cartes, les en-têtes de catégorie et la typographie, en direct sur votre propre page. Douze looks règlent tout d’un coup. Comparer montre ce que vous aviez ; Annuler, le × ou un clic à côté du panneau le remet, et rien n’est enregistré avant Appliquer.",
     "overviewNewFeatureLookStudioEnable": "Rien à activer. Chaque thème apporte désormais son propre fond ; Apparence → Arrière-plan permet d’en choisir un autre ou de le désactiver.",
     "overviewNewFeatureLookStudioCta": "Ouvrir Arrière-plan →",
     "studioClose": "Fermer sans enregistrer",

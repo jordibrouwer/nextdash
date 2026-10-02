@@ -7842,7 +7842,7 @@
     "tipTuneCategoryHeader": "Apariencia → Filas → Encabezado de categoría dibuja el nombre de una categoría limpio, subrayado, enmarcado, como etiqueta o como tarjeta de grupo, en tres tamaños — con su icono y el número de marcadores, si quieres.",
     "overviewNewFeatureLookStudioTitle": "El explorador de temas es un estudio de looks",
     "overviewNewFeatureLookStudioWhat": "Un tema decidía los colores, y todo lo demás era un ajuste en algún lugar de Apariencia — probado de uno en uno, mientras la configuración tapaba la página en la que lo probabas.",
-    "overviewNewFeatureLookStudioHow": "Shift+A abre el explorador de temas junto al panel. Sus pestañas cambian el tema, su fondo — 26 patrones en los colores del propio tema —, el cristal de las tarjetas, los encabezados de categoría y la tipografía, en directo en tu propia página. Doce looks lo fijan todo a la vez. Comparar muestra lo que tenías, Cancelar lo devuelve y no se guarda nada hasta Aplicar.",
+    "overviewNewFeatureLookStudioHow": "Shift+A abre el explorador de temas junto al panel. Sus pestañas cambian el tema, su fondo — 26 patrones en los colores del propio tema —, el cristal de las tarjetas, los encabezados de categoría y la tipografía, en directo en tu propia página. Doce looks lo fijan todo a la vez. Comparar muestra lo que tenías; Cancelar, la × o un clic junto al panel lo devuelve y no se guarda nada hasta Aplicar.",
     "overviewNewFeatureLookStudioEnable": "No hay nada que activar. Cada tema trae ahora un fondo propio; en Apariencia → Fondo puedes elegir otro o desactivarlo.",
     "overviewNewFeatureLookStudioCta": "Abrir Fondo →",
     "studioClose": "Cerrar sin guardar",

@@ -9,19 +9,23 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>The theme browser opens beside the dashboard</strong>, so you see every change on your own page. Its tabs — Themes, Backdrop, Surface, Headers, Layout and Looks — each change one part, and a dot marks the tabs you touched."
+          "text": "<strong>The theme browser opens beside the dashboard.</strong> You see every change on your own page. Its tabs — Themes, Backdrop, Surface, Headers, Layout and Looks — each change one part, and a dot marks the tabs you touched."
         },
         {
           "badge": "new",
-          "text": "<strong>Nothing is saved until Apply.</strong> Cancel, the × or a click beside the panel puts everything back, Compare shows what you had, and Reset tab undoes one tab."
+          "text": "<strong>Nothing is saved until Apply.</strong> Cancel, the × in the corner or a click beside the panel puts everything back. Compare shows what you had, and Reset tab undoes one tab."
         },
         {
           "badge": "new",
-          "text": "<strong>Twelve looks</strong> — Glass, Frosted, Aurora, Night sky, Paper, Terminal, Plain and more — set the backdrop, the cards, the headers and the type in one click, and keep your theme's colours."
+          "text": "<strong>The theme in use is named above the grid.</strong> Once you pick another, it says which one stays until Apply, and Show finds its card."
         },
         {
           "badge": "new",
-          "text": "<strong>A Neutrals collection</strong>: five calm grey themes — Slate, Zinc, Gray, Stone and Neutral — under glass, each in light and dark."
+          "text": "<strong>Twelve looks set everything in one click.</strong> Glass, Frosted, Aurora, Night sky, Paper, Terminal, Plain and more set the backdrop, the cards, the headers and the type, and keep your theme's colours."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A Neutrals collection.</strong> Five calm grey themes — Slate, Zinc, Gray, Stone and Neutral — under glass, each in light and dark."
         }
       ]
     },
@@ -30,15 +34,15 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>26 backdrops</strong>, from aurora and dunes to stars, mountains and hexagons, drawn in your theme's colours. Every theme now has one picked for it; on the new <strong>Background</strong> tab you can choose another, roll a new variant, or soften it with blur, brightness and a theme tint."
+          "text": "<strong>26 backdrops, drawn in your theme's colours.</strong> From aurora and dunes to stars, mountains and hexagons, every theme now has one picked for it. On the new Background tab you can choose another, roll a new variant, or soften it with blur, brightness and a theme tint."
         },
         {
           "badge": "new",
-          "text": "<strong>Card glass</strong> on the new <strong>Surface</strong> tab sets how see-through and blurred the cards are, with a badge that says whether text on them stays readable."
+          "text": "<strong>Card glass on the new Surface tab.</strong> It sets how see-through and blurred the cards are, with a badge that says whether text on them stays readable."
         },
         {
           "badge": "new",
-          "text": "<strong>Category headers</strong> can be clean, underlined, boxed, a label or a card around the whole category, in three sizes, with the category's icon and how many bookmarks it holds."
+          "text": "<strong>Category headers in five styles.</strong> Clean, underlined, boxed, a label or a card around the whole category, in three sizes, with the category's icon and how many bookmarks it holds."
         }
       ]
     },
@@ -47,7 +51,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Widgets in the Launcher layout show their content again</strong> instead of looking empty."
+          "text": "<strong>Widgets in the Launcher layout show their content again.</strong> They no longer look empty."
         }
       ]
     }

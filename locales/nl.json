@@ -7842,7 +7842,7 @@
     "tipTuneCategoryHeader": "Uiterlijk → Rijen → Categoriekop tekent de naam van een categorie strak, onderstreept, in een kader, als label of als groepskaart, in drie groottes — als je wilt met icoon en het aantal bladwijzers.",
     "overviewNewFeatureLookStudioTitle": "De themabrowser is een look-studio",
     "overviewNewFeatureLookStudioWhat": "Een thema bepaalde de kleuren, en al het andere was een instelling ergens in Uiterlijk — één voor één uitgeprobeerd, terwijl config de pagina bedekte waarop je het probeerde.",
-    "overviewNewFeatureLookStudioHow": "Shift+A opent de themabrowser naast het dashboard. De tabbladen veranderen het thema, de achtergrond — 26 patronen in de eigen kleuren van het thema — het glas van de kaarten, de categoriekoppen en de letters, live op je eigen pagina. Twaalf looks zetten ze allemaal tegelijk. Vergelijk toont wat je had, Annuleren zet het terug, en er wordt niets opgeslagen tot Toepassen.",
+    "overviewNewFeatureLookStudioHow": "Shift+A opent de themabrowser naast het dashboard. De tabbladen veranderen het thema, de achtergrond — 26 patronen in de eigen kleuren van het thema — het glas van de kaarten, de categoriekoppen en de letters, live op je eigen pagina. Twaalf looks zetten ze allemaal tegelijk. Vergelijk toont wat je had; Annuleren, het × of een klik naast het paneel zet het terug, en er wordt niets opgeslagen tot Toepassen.",
     "overviewNewFeatureLookStudioEnable": "Niets aan te zetten. Elk thema heeft nu een eigen achtergrond; onder Uiterlijk → Achtergrond kies je een andere of zet je hem uit.",
     "overviewNewFeatureLookStudioCta": "Open Achtergrond →",
     "studioClose": "Sluiten zonder opslaan",

@@ -7,7 +7,7 @@
       "whatKey": "config.overviewNewFeatureLookStudioWhat",
       "whatFallback": "A theme decided the colours, and everything else was a setting somewhere in Appearance — tried one at a time, with config covering the page you were trying it on.",
       "howKey": "config.overviewNewFeatureLookStudioHow",
-      "howFallback": "Shift+A opens the theme browser beside the dashboard. Its tabs change the theme, its backdrop — 26 patterns in the theme's own colours — the glass of the cards, the category headers and the type, live on your own page. Twelve looks set them all at once. Compare shows what you had, Cancel puts it back, and nothing is saved until Apply.",
+      "howFallback": "Shift+A opens the theme browser beside the dashboard. Its tabs change the theme, its backdrop — 26 patterns in the theme's own colours — the glass of the cards, the category headers and the type, live on your own page. Twelve looks set them all at once. Compare shows what you had; Cancel, the × or a click beside the panel puts it back, and nothing is saved until Apply.",
       "enableKey": "config.overviewNewFeatureLookStudioEnable",
       "enableFallback": "Nothing to switch on. Every theme now brings a backdrop of its own; Appearance → Background lets you choose another or switch it off.",
       "ctaKey": "config.overviewNewFeatureLookStudioCta",

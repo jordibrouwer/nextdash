@@ -7842,7 +7842,7 @@
     "tipTuneCategoryHeader": "外观 → 行 → 分类标题 可以把分类名称显示为简洁、下划线、方框、标签或分组卡片，三种大小——还可以显示图标和书签数量。",
     "overviewNewFeatureLookStudioTitle": "主题浏览器变成了外观工作室",
     "overviewNewFeatureLookStudioWhat": "以前主题只决定颜色，其他一切都是外观里的某个设置——只能一项项尝试，而配置界面还挡住了你正在试的页面。",
-    "overviewNewFeatureLookStudioHow": "按 Shift+A 会在仪表盘旁边打开主题浏览器。它的标签可以实时在你自己的页面上更改主题、背景（26 种以主题颜色绘制的图案）、卡片玻璃、分类标题和字体。十二种外观可一次全部设置。“对比”显示原来的样子，“取消”恢复原样，点击“应用”之前不会保存任何内容。",
+    "overviewNewFeatureLookStudioHow": "按 Shift+A 会在仪表盘旁边打开主题浏览器。它的标签可以实时在你自己的页面上更改主题、背景（26 种以主题颜色绘制的图案）、卡片玻璃、分类标题和字体。十二种外观可一次全部设置。“对比”显示原来的样子；“取消”、× 或点击面板外部都会恢复原样，点击“应用”之前不会保存任何内容。",
     "overviewNewFeatureLookStudioEnable": "无需开启。现在每个主题都自带背景；在 外观 → 背景 中可以换一种或将其关闭。",
     "overviewNewFeatureLookStudioCta": "打开背景 →",
     "studioClose": "关闭且不保存",

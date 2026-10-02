@@ -131,7 +131,7 @@ The theme browser becomes a look studio: a panel beside the dashboard whose tabs
 
 ### Docs
 
-- **docs — `static/data/whats-new/v1.16.0.json` and its index entry**, leading the What's new window; `whats-new-stub.js` moves `DASHBOARD_RELEASE` to v1.16.0 and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v313`. Config → Overview names the look studio (`overview-features.json`, `since: "v1.16.0"`).
+- **docs — `static/data/whats-new/v1.16.0.json` and its index entry**, leading the What's new window; `whats-new-stub.js` moves `DASHBOARD_RELEASE` to v1.16.0 and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v314`. Config → Overview names the look studio (`overview-features.json`, `since: "v1.16.0"`).
 - **docs — MANUAL §16** has eight Appearance tabs, a new *The theme browser* part with its tabs and the twelve looks, card glass under Surfaces, the backdrop layers and all 26 backdrops under §16.4, and the category header in the Rows table. README names the look studio and the backdrops, and counts 160 families.
 - **docs — Config → Help → Appearance and Tips follow the look studio**, in all six languages: eight tabs, the browser as a panel with Apply and Cancel, its tabs and looks, backdrops, card glass and the Neutrals collection; four new tips (looks, backdrop, card glass, category header). The theme browser's corner notice says nothing is saved until Apply.
 - **i18n — the strings of the look studio are translated**: 110 new keys and 10 changed English ones, in Dutch, German, French, Spanish and Chinese.
