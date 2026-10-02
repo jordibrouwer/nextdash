@@ -104,6 +104,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **new — matching by name** (`icon_match.go`): the image's repository name, the container name, both with packaging words taken off (`binhex-`, `-docker`, `vpn`, `-agent`, …), without trailing digits, then shorter prefixes (`jellyfin-newsletter` → `jellyfin`). A container whose tag moved on reports an image ID and matches on its name. Bookmarks match on the leftmost label of a host with three or more labels or on a one-label host; `github.com` and IP addresses keep their favicon, unless the bookmark is linked to a container. `icon_match_test.go` runs 62 containers from a real Unraid server.
 - **new — the icon follows the theme.** `icon-set-auto.js` picks the variant for a dark background on a dark theme and the one for a light background on a light theme, from `--ink-dir`, and swaps it on `theme-changed` without a reload.
 - **new — an icon picker** (`icon-set-picker.js`, lazy): a search over both sets in a grid, with the variants of the chosen icon underneath. ↓ goes into the grid, the arrows move, Alt+←/→ picks the variant, Enter chooses, Escape closes and gives focus back. Choosing adopts the icon: `POST /api/icon-sets/adopt` copies it into `data/icons/` (`sonarr.svg`, `sonarr-2.svg` when the name is taken by other bytes), behind the write token, and from then on it is an ordinary icon of yours. `GET /api/icon-sets/search`, `/suggest` and `POST /api/icon-sets/match` answer the page.
+- **new — credits in About → Colophon** for dashboard-icons (Apache-2.0) and selfh.st/icons (CC BY 4.0), with links to both and to the licence.
 
 ### Containers
 
@@ -119,6 +120,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 ### Tests
 
 - **tests — Go:** the index (rounds, aliases, variants, search), the 62 containers and the bookmark hosts, refresh with ETag, stale copy and back-off, the cache route (unknown names, traversal, one fetch, sanitising, wrapped PNG, the hour of misses), adopt, the API handlers, the container override and the background fill.
+- **tests — Playwright:** `icon-set-picker.spec.js` (a suggestion, the picker by keyboard, Escape, offline, Fetch again, dashboard rows), `docker-icons.spec.js` (row icons, Use letter across a reload, Automatic, the picker, the theme switch) and a credits test in `config-about.spec.js`.
 
 ## v1.16.0 — 2 October 2026
 

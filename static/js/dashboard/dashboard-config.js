@@ -29840,8 +29840,28 @@ class DashboardConfig {
                     <a class="config-btn" href="https://nextdash.cc" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpSiteProject', 'nextdash.cc'))}</a>
                     <a class="config-btn" href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpSiteAuthor', 'jordibrw.nl'))}</a>
                 </div>
+                ${this.renderIconCredits()}
                 ${this.renderKofiSupport()}
             </div>`;
+    }
+
+    /**
+     * Where the app icons come from. selfh.st/icons is CC BY 4.0, which asks
+     * for the credit and a link to the licence; dashboard-icons is
+     * Apache-2.0, named beside it.
+     */
+    renderIconCredits() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`;
+        const parts = {
+            di: link('https://github.com/homarr-labs/dashboard-icons', 'dashboard-icons'),
+            sh: link('https://github.com/selfhst/icons', 'selfh.st/icons'),
+            apache: link('https://www.apache.org/licenses/LICENSE-2.0', 'Apache-2.0'),
+            ccby: link('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0'),
+        };
+        const text = esc(this.t('config.aboutIconCredits', 'App icons: {di} ({apache}) · {sh} ({ccby})'))
+            .replace(/\{(di|sh|apache|ccby)\}/g, (_, k) => parts[k]);
+        return `<p class="help-about-credits" data-about-icon-credits>${text}</p>`;
     }
 
     /**

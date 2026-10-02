@@ -4600,6 +4600,14 @@ body.no-animations .config-new-features-panel-star {
 /* The button itself is the shared .wn-kofi-* set from modal.css; only this
    surrounding block lived in a config-only stylesheet the dashboard does not
    load, so it is ported here rather than pulling in the whole file. */
+/* Where the app icons come from: a licence asks for the credit. */
+.help-about-credits {
+    margin: var(--space-3, 0.75rem) 0 0;
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary);
+}
+.help-about-credits a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
 .help-support-block {
     display: flex;
     flex-direction: column;
