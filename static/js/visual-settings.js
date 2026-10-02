@@ -348,24 +348,32 @@
         document.body.classList.toggle('no-animations', enabled === false);
     }
 
-    function reloadThemeCSS() {
+    /*
+     * Fetch the generated theme stylesheet again.
+     *
+     * `seed` asks for a backdrop roll that is not saved yet: the theme browser
+     * previews one before Apply, and the roll lives in this file rather than in
+     * a variable. Left out, the server uses the stored one.
+     */
+    function reloadThemeCSS(options) {
+        const seed = Number.isInteger(options?.seed) ? `&seed=${options.seed}` : '';
+        const url = `/api/theme.css?t=${Date.now()}${seed}`;
         // The page carries the generated theme inline now, so a refresh replaces
         // that block; the link form is still handled for a page rendered before
         // this change and left open in another tab.
         const inline = document.getElementById('nextdash-theme-css');
         if (inline) {
-            fetch(`/api/theme.css?t=${Date.now()}`)
+            return fetch(url)
                 .then((res) => (res.ok ? res.text() : null))
                 .then((css) => { if (css) inline.textContent = css; })
                 .catch(() => { /* the old variables stay, which is the safe half */ });
-            return;
         }
         const link = document.querySelector('link[href^="/api/theme.css"]');
         if (!link || !link.parentNode) {
             return;
         }
         const newLink = link.cloneNode(true);
-        newLink.href = `/api/theme.css?t=${Date.now()}`;
+        newLink.href = url;
         // Keep the old sheet until the new one has loaded so CSS variables never
         // disappear for a frame (avoids a white flash during theme.css refresh).
         newLink.addEventListener('load', () => {

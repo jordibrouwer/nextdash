@@ -68,7 +68,7 @@
         const body = el.querySelector('.notice-card-text');
         if (body) {
             body.textContent = t('dashboard.themeBrowserNoticeOpenedBody',
-                'The browser lives under Config → Appearance → Browse, and every theme comes as a light and a dark half. Nothing is saved until you pick one.');
+                'The browser lives under Config → Appearance → Browse, and every theme comes as a light and a dark half. Nothing is saved until you press Apply.');
         }
         const actions = el.querySelector('.notice-card-actions');
         if (actions) {
@@ -122,7 +122,7 @@
         showDelayMs: SHOW_DELAY_MS,
         title: () => t('dashboard.themeBrowserNoticeTitle', 'Your dashboard can look like anything'),
         body: () => t('dashboard.themeBrowserNoticeBody',
-            'Over two hundred themes, as a grid you can search rather than a list you have to scroll. Each one previews on this page while you look at it, and nothing is saved until you choose — so it costs nothing to find out.'),
+            'Over three hundred themes, as a grid you can search rather than a list you have to scroll. The browser opens beside this page, each theme previews on it while you point at it, and nothing is saved until you press Apply — so it costs nothing to find out.'),
         dismissLabel: () => t('dashboard.themeBrowserNoticeDismiss', 'Dismiss'),
         // The × and "No thanks" are the same answer here, as on the side-rail
         // card, so both reach it through one selector.

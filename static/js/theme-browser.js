@@ -12,10 +12,15 @@
  * what getPairedThemeVariant swaps between.
  *
  * What it deliberately does NOT reimplement is the preview. The config view
- * already previews a theme on the real dashboard while you move through the
- * list, and puts the old one back if you leave without choosing. That logic is
- * handed in as callbacks: this file decides what you are looking at, not what
- * gets applied.
+ * already previews a theme on the real dashboard and puts the old one back if
+ * you leave without choosing. That logic is handed in as callbacks: this file
+ * decides what you are looking at, not what gets applied.
+ *
+ * Since the look studio it is a panel docked beside the dashboard, with tabs
+ * for the backdrop, the surfaces, the category headers and whole looks. The
+ * config view draws those tabs from the Appearance controls it already has, so
+ * the two cannot drift apart; everything changes live, and Apply stores it in
+ * one save.
  */
 (function (global) {
     'use strict';
@@ -33,6 +38,8 @@
      * stays the only place the list is written down.
      */
     let ARCHETYPES = [];
+    // The collections, in the order the server lists them. A theme names its own.
+    let COLLECTIONS = [];
     const FAVORITE_LIMIT = 24;
 
     /* ── Reading a palette ─────────────────────────────────────────────── */
@@ -129,6 +136,17 @@
     /** The archetype a theme belongs to, or '' for one that names none. */
     function characterOf(id) {
         return String(metaFor(id).character || '');
+    }
+
+    /** The collection a theme belongs to, or '' for one in none. */
+    function collectionOf(id) {
+        return String(metaFor(id).collection || '');
+    }
+
+    /** The name a collection goes by on screen, capitalised when no locale says it. */
+    function collectionLabel(name, t) {
+        const fallback = name.charAt(0).toUpperCase() + name.slice(1);
+        return t(`config.themeCollection.${name}`, fallback);
     }
 
     /* ── Grouping ──────────────────────────────────────────────────────── */
@@ -255,6 +273,10 @@
             && !Object.values(family.variants).some((v) => characterOf(v.id) === state.archetype)) {
             return false;
         }
+        if (state.collection
+            && !Object.values(family.variants).some((v) => collectionOf(v.id) === state.collection)) {
+            return false;
+        }
         const query = state.query.trim().toLowerCase();
         if (!query) return true;
         // The archetype goes in twice, as its own word and as its translated
@@ -274,6 +296,27 @@
         return query.split(/\s+/).every((word) => haystack.includes(word));
     }
 
+    /**
+     * Which theme is in use, above the grid, where it stays in view however far
+     * the grid is scrolled or filtered. Once another card is chosen it says so,
+     * and names the stored theme that stays until Apply.
+     */
+    function renderInUse(state, t) {
+        const current = state.current;
+        const chosen = current !== state.opened;
+        const name = `<strong>${escapeHtml(state.nameOf(current))}</strong>`;
+        const line = chosen
+            ? escapeHtml(t('config.themeChosenLine', 'Chosen: {name} · {saved} stays until Apply'))
+                .replace('{name}', name)
+                .replace('{saved}', escapeHtml(state.nameOf(state.opened)))
+            : escapeHtml(t('config.themeInUseLine', 'In use: {name}')).replace('{name}', name);
+        return `
+                <div class="theme-browser-inuse${chosen ? ' is-chosen' : ''}" data-theme-inuse>
+                    <span class="theme-browser-inuse-text">${line}</span>
+                    <button type="button" class="theme-browser-chip" data-theme-show-current>${escapeHtml(t('config.themeShowCurrent', 'Show'))}</button>
+                </div>`;
+    }
+
     function renderBody(families, state, t) {
         const visible = families.filter((f) => matches(f, state, t));
         const cards = visible.map((f) => renderCard(f, state, t)).join('');
@@ -281,6 +324,10 @@
             `<button type="button" class="theme-browser-chip${st.archetype === name ? ' is-on' : ''}"
                      data-theme-character="${escapeHtml(name)}"
                      aria-pressed="${st.archetype === name}">${escapeHtml(label)}</button>`;
+        const collectionButton = (name, label, st) =>
+            `<button type="button" class="theme-browser-chip${st.collection === name ? ' is-on' : ''}"
+                     data-theme-collection="${escapeHtml(name)}"
+                     aria-pressed="${st.collection === name}">${escapeHtml(label)}</button>`;
         const segmentButton = (key, label) =>
             `<button type="button" class="theme-browser-segment${state.segment === key ? ' is-on' : ''}"
                      data-theme-segment="${key}" aria-pressed="${state.segment === key}">${escapeHtml(label)}</button>`;
@@ -305,12 +352,19 @@
                     ${chipButton('', t('config.themeSegmentAll', 'All'), state)}
                     ${ARCHETYPES.map((name) => chipButton(name, archetypeLabel(name, t), state)).join('')}
                 </div>` : ''}
+                ${COLLECTIONS.length ? `
+                <div class="theme-browser-characters" role="group" data-theme-collections
+                     aria-label="${escapeHtml(t('config.themeCollectionFilter', 'Collection'))}">
+                    ${collectionButton('', t('config.themeSegmentAll', 'All'), state)}
+                    ${COLLECTIONS.map((name) => collectionButton(name, collectionLabel(name, t), state)).join('')}
+                </div>` : ''}
                 <p class="theme-browser-count">${escapeHtml(
                     t('config.themeBrowserCount', '{shown} of {total} themes · {favorites} favourites')
                         .replace('{shown}', String(visible.length))
                         .replace('{total}', String(families.length))
                         .replace('{favorites}', String(state.favorites.length))
                 )}</p>
+                ${renderInUse(state, t)}
                 <div class="theme-browser-grid" role="listbox"
                      aria-label="${escapeHtml(t('config.themeLabel', 'Theme'))}"
                      data-theme-grid>${cards || `<p class="theme-browser-empty">${escapeHtml(
@@ -318,10 +372,90 @@
             </div>`;
     }
 
-    /* ── The modal ─────────────────────────────────────────────────────── */
+    /* ── The studio ─────────────────────────────────────────────────────
+
+       A panel docked beside the dashboard rather than a modal over it: what
+       is being chosen is how the page looks, so the page stays in view. The
+       tabs beyond Themes are drawn and bound by the config view, which owns
+       the controls they reuse from Appearance; this file owns the shell, the
+       keyboard and the theme grid. */
+
+    const TABS = ['themes', 'backdrop', 'surface', 'heads', 'layout', 'looks'];
+
+    function tabLabel(tab, t) {
+        return {
+            themes: t('config.studioTabThemes', 'Themes'),
+            backdrop: t('config.studioTabBackdrop', 'Backdrop'),
+            surface: t('config.studioTabSurface', 'Surface'),
+            heads: t('config.studioTabHeads', 'Headers'),
+            layout: t('config.studioTabLayout', 'Layout'),
+            looks: t('config.studioTabLooks', 'Looks'),
+        }[tab] || tab;
+    }
+
+    function renderShell(t) {
+        const tabs = TABS.map((tab) => `
+            <button type="button" role="tab" class="look-studio-tab" id="look-studio-tab-${tab}"
+                    data-studio-tab="${tab}" aria-controls="look-studio-pane" aria-selected="false"
+                    tabindex="-1">${escapeHtml(tabLabel(tab, t))}<span class="look-studio-dot" aria-hidden="true"></span></button>`).join('');
+        return `
+            <aside class="look-studio" data-look-studio role="dialog"
+                   aria-labelledby="look-studio-title">
+                <header class="look-studio-head">
+                    <div class="look-studio-title">
+                        <h2 id="look-studio-title">${escapeHtml(t('config.themeBrowserTitle', 'Themes'))}</h2>
+                        <span class="look-studio-keys">${escapeHtml(t('config.studioKeys', '←/→ tabs · ⌘/Ctrl+Enter apply · Esc cancel'))}</span>
+                        <button type="button" class="look-studio-close" data-studio-close
+                                aria-label="${escapeHtml(t('config.studioClose', 'Close without saving'))}"
+                                title="${escapeHtml(t('config.studioClose', 'Close without saving'))}">×</button>
+                    </div>
+                    <div class="look-studio-tabs" role="tablist"
+                         aria-label="${escapeHtml(t('config.studioTabsLabel', 'What to change'))}">${tabs}</div>
+                </header>
+                <div class="look-studio-pane" id="look-studio-pane" role="tabpanel" data-studio-pane tabindex="-1"></div>
+                <footer class="look-studio-foot">
+                    <div class="look-studio-scope">
+                        <span>${escapeHtml(t('config.studioScopeLabel', 'Applies to'))}</span>
+                        <span class="look-studio-seg" role="group"
+                              aria-label="${escapeHtml(t('config.studioScopeLabel', 'Applies to'))}">
+                            <button type="button" data-studio-scope="theme" aria-pressed="false">${escapeHtml(t('config.studioScopeTheme', 'This theme'))}</button>
+                            <button type="button" data-studio-scope="global" aria-pressed="false">${escapeHtml(t('config.studioScopeAll', 'All themes'))}</button>
+                        </span>
+                    </div>
+                    <button type="button" class="look-studio-btn" data-studio-compare aria-pressed="false"
+                            title="${escapeHtml(t('config.studioCompareHint', 'Show the look from before you opened this, until you press it again (or hold \\)'))}">${escapeHtml(t('config.studioCompare', 'Compare'))}</button>
+                    <button type="button" class="look-studio-btn" data-studio-reset>${escapeHtml(t('config.studioResetTab', 'Reset tab'))}</button>
+                    <button type="button" class="look-studio-btn" data-studio-dice
+                            aria-label="${escapeHtml(t('config.studioDice', 'Surprise me'))}"
+                            title="${escapeHtml(t('config.studioDice', 'Surprise me'))}">🎲</button>
+                    <span class="look-studio-spacer"></span>
+                    <button type="button" class="look-studio-btn" data-studio-cancel>${escapeHtml(t('config.studioCancel', 'Cancel'))}</button>
+                    <button type="button" class="look-studio-btn look-studio-btn--primary" data-studio-apply>${escapeHtml(t('config.studioApply', 'Apply'))}</button>
+                </footer>
+            </aside>`;
+    }
+
+    const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    /** True for a field that wants the arrow keys, Enter or a backslash itself. */
+    function ownsKeys(el) {
+        if (!el) return false;
+        if (el.matches?.('textarea, select, [contenteditable="true"]')) return true;
+        if (el.matches?.('input')) {
+            const type = (el.getAttribute('type') || 'text').toLowerCase();
+            return !['checkbox', 'radio', 'button', 'submit', 'reset'].includes(type);
+        }
+        return false;
+    }
+
+    let ACTIVE = null;
 
     function open(options) {
         const opts = options || {};
+        if (ACTIVE) {
+            ACTIVE.focus();
+            return ACTIVE;
+        }
         const t = typeof opts.t === 'function' ? opts.t : (key, fallback) => fallback;
         const displayName = typeof opts.displayName === 'function'
             ? opts.displayName
@@ -329,10 +463,12 @@
         const palettes = opts.palettes || {};
         META = opts.meta && opts.meta.themes ? opts.meta : { themes: {} };
         ARCHETYPES = Array.isArray(opts.meta?.archetypes) ? opts.meta.archetypes : [];
-        if (!global.AppModal?.show) return;
+        COLLECTIONS = Array.isArray(opts.meta?.collections) ? opts.meta.collections : [];
 
         const families = buildFamilies(palettes, displayName);
-        if (!families.length) return;
+        if (!families.length) return null;
+
+        const currentTheme = () => (typeof opts.current === 'function' ? opts.current() : opts.current) || 'dark';
 
         const state = {
             query: '',
@@ -342,7 +478,13 @@
             // family you are looking at, an archetype is what kind of thing it
             // is, and wanting "dark velvet" is an ordinary thing to want.
             archetype: '',
-            current: opts.current || 'dark',
+            // Empty means every collection; a second axis beside the archetype.
+            collection: '',
+            get current() { return currentTheme(); },
+            // What was on screen and stored when the browser opened, so the
+            // line above the grid can say what Apply would change.
+            opened: currentTheme(),
+            nameOf: (id) => displayName(id, palettes[id]?.name) || id,
             favorites: Array.isArray(opts.favorites) ? opts.favorites.slice() : [],
             // Which half of a family the card is showing. Starts at whichever
             // half is currently applied, so the card for the theme in use opens
@@ -353,152 +495,172 @@
                 const family = families.find((f) => f.key === key);
                 if (!family) return 'dark';
                 // Light and Dark say which half you are looking at, not only
-                // which families have one: under Light every card shows, and
-                // previews, its light half -- whatever half is in use now.
+                // which families have one: under Light every card shows its
+                // light half -- whatever half is in use now.
                 if ((this.segment === 'light' || this.segment === 'dark') && family.variants[this.segment]) {
                     return this.segment;
                 }
-                const currentVariant = variantOf(this.current);
+                const current = this.current;
+                const currentVariant = variantOf(current);
                 if (currentVariant && family.variants[currentVariant]
-                    && Object.values(family.variants).some((v) => v.id === this.current)) {
+                    && Object.values(family.variants).some((v) => v.id === current)) {
                     return currentVariant;
                 }
                 return family.variants.dark ? 'dark' : 'light';
             },
         };
 
-        // Set once a card is chosen. Until then, closing the modal by any route
-        // has to put back what was on screen — and a modal with a search field
-        // and four filter buttons has a lot of routes.
-        let picked = false;
+        let tab = TABS.includes(opts.tab) ? opts.tab : 'themes';
+        let comparing = false;
+        let closed = false;
+
+        const host = document.createElement('div');
+        host.innerHTML = renderShell(t).trim();
+        const root = host.firstElementChild;
+        document.body.appendChild(root);
+        const pane = root.querySelector('[data-studio-pane]');
 
         /*
-         * Show a theme on the real dashboard, but never after one was chosen.
+         * The rest of the page is inert while the studio is open.
          *
-         * Choosing is not instant: it posts the settings and only then paints,
-         * and the modal is torn down without waiting for that. Focus and the
-         * pointer both land somewhere during the teardown, and whatever card
-         * they land on used to fire its own preview -- which arrived while the
-         * choice was still in flight and won. Choose Moss & Stone, get
-         * Marigold Dusk, until the page is reloaded.
-         *
-         * Gated here rather than at the three call sites, so a preview added
-         * later cannot reintroduce it.
+         * Focus has to stay in the panel, and a click on the dashboard would
+         * otherwise act on a page whose look is only a preview. Inert takes
+         * neither the wheel nor the trackpad: the page still scrolls under the
+         * pointer, which is what you want when judging a backdrop. That is
+         * also why the panel is not aria-modal: scroll-lock.js locks the page
+         * for anything that is, and inert already keeps assistive technology
+         * inside the panel.
          */
-        /*
-         * While the browser is open, a theme is shown the way it was drawn.
-         *
-         * The reader may have forced a depth, or changed one for a particular
-         * theme; neither belongs here. Comparing a hundred themes only works
-         * if they are all shown at their own intended surfaces -- otherwise
-         * half the grid is being judged through somebody else's settings.
-         * What the reader chose comes straight back when the modal closes,
-         * whether they picked a theme or not.
-         */
-        const surfacesBefore = {
-            depth: document.body?.getAttribute('data-depth'),
-            glow: document.body?.getAttribute('data-glow'),
-            effects: document.body?.getAttribute('data-effects'),
-        };
+        const madeInert = [];
+        Array.from(document.body.children).forEach((el) => {
+            if (el === root || el.inert || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
+            // The notices say whether a save went through; leave them readable.
+            // The dialog is where an ℹ in the panel opens its explanation.
+            if (el.matches?.('#app-notification, #config-save-state, .theme-backdrop-layer, #app-modal')) return;
+            el.inert = true;
+            madeInert.push(el);
+        });
+        document.body.classList.add('look-studio-open');
+        const returnFocus = document.activeElement;
 
-        const showIdealSurfaces = (id) => {
-            const ideal = metaFor(id);
-            if (!ideal.depth) return;
-            global.ThemeLoader?.applyThemeDepth?.(ideal.depth);
-            global.ThemeLoader?.applyGlowStrength?.(ideal.glow);
-            global.ThemeLoader?.applyThemeEffects?.(ideal.effects);
-        };
+        /* ── Themes tab ── */
 
-        const restoreSurfaces = () => {
-            if (!surfacesBefore.depth) return;
-            global.ThemeLoader?.applyThemeDepth?.(surfacesBefore.depth);
-            global.ThemeLoader?.applyGlowStrength?.(surfacesBefore.glow);
-            global.ThemeLoader?.applyThemeEffects?.(surfacesBefore.effects);
-        };
-
-        const preview = (id) => {
-            if (picked || !id) return;
-            opts.onPreview?.(id);
-            showIdealSurfaces(id);
-        };
-
-        // The theme already on screen gets the same treatment, so the grid is
-        // consistent from the moment it opens rather than from the first hover.
-        showIdealSurfaces(state.current);
-
-        const repaint = () => {
-            const root = document.querySelector('[data-theme-browser]');
-            if (!root) return;
+        const repaintThemes = () => {
+            const grid = pane.querySelector('[data-theme-grid]');
+            const scroll = grid?.scrollTop ?? 0;
             const active = document.activeElement;
             const hadSearch = active && active.hasAttribute?.('data-theme-search');
             const caret = hadSearch ? active.selectionStart : null;
-            // Rebuilding the grid resets its scroll to the top, which throws
-            // away where you were in a list of a hundred cards.
-            const scroll = root.querySelector('[data-theme-grid]')?.scrollTop ?? 0;
-            root.outerHTML = renderBody(families, state, t);
-            bind();
-            const grid = document.querySelector('[data-theme-grid]');
-            if (grid) grid.scrollTop = scroll;
+            const focusedCard = active?.closest?.('[data-theme-card]')?.getAttribute('data-theme-card');
+            pane.innerHTML = renderBody(families, state, t);
+            bindThemes();
+            const fresh = pane.querySelector('[data-theme-grid]');
+            if (fresh) fresh.scrollTop = scroll;
             if (hadSearch) {
-                const field = document.querySelector('[data-theme-search]');
+                const field = pane.querySelector('[data-theme-search]');
                 if (field) {
                     field.focus();
                     if (caret !== null) field.setSelectionRange(caret, caret);
                 }
+            } else if (focusedCard) {
+                pane.querySelector(`[data-theme-card="${CSS.escape(focusedCard)}"]`)?.focus();
             }
         };
 
-        const bind = () => {
-            const root = document.querySelector('[data-theme-browser]');
-            if (!root) return;
+        /*
+         * Pointing at a card, or moving focus onto it, shows that theme on the
+         * page; leaving the grid shows the chosen one again. Only a click or
+         * Enter chooses. `previewing` is the theme shown that way, if any.
+         */
+        let previewing = null;
+        const preview = (id) => {
+            if (!id || comparing || id === previewing) return;
+            previewing = id;
+            opts.onPreview?.(id);
+        };
+        const endPreview = () => {
+            if (!previewing) return;
+            previewing = null;
+            opts.onPreviewEnd?.();
+        };
 
-            root.querySelector('[data-theme-search]')?.addEventListener('input', (event) => {
-                state.query = event.target.value || '';
-                repaint();
+        const select = (id) => {
+            if (!id) return;
+            previewing = null;
+            opts.onSelect?.(id);
+            refresh();
+        };
+
+        // Show clears what hides the card in use, then brings it into view.
+        const bindShowCurrent = () => {
+            pane.querySelector('[data-theme-show-current]')?.addEventListener('click', () => {
+                const find = () => pane.querySelector('.theme-browser-card.is-current');
+                if (!find()) {
+                    Object.assign(state, { query: '', segment: 'all', archetype: '', collection: '' });
+                    repaintThemes();
+                }
+                const card = find();
+                if (!card) return;
+                card.scrollIntoView({ block: 'center' });
+                card.focus({ preventScroll: true });
             });
+        };
 
-            root.querySelectorAll('[data-theme-segment]').forEach((button) => {
+        const bindThemes = () => {
+            bindShowCurrent();
+            const search = pane.querySelector('[data-theme-search]');
+            search?.addEventListener('input', (event) => {
+                state.query = event.target.value || '';
+                repaintThemes();
+            });
+            // Down from the search field enters the grid on its roving stop.
+            search?.addEventListener('keydown', (event) => {
+                if (event.key !== 'ArrowDown') return;
+                const card = pane.querySelector('[data-theme-card][tabindex="0"]');
+                if (!card) return;
+                event.preventDefault();
+                card.focus();
+            });
+            pane.querySelectorAll('[data-theme-segment]').forEach((button) => {
                 button.addEventListener('click', () => {
                     const segment = button.getAttribute('data-theme-segment');
                     state.segment = SEGMENTS.includes(segment) ? segment : 'all';
                     // A card switched by hand earlier answered the question
-                    // before this press asked it again; the segment wins, and
-                    // a card can still be switched by hand afterwards.
+                    // before this press asked it again; the segment wins.
                     if (segment === 'light' || segment === 'dark') state.variants = {};
-                    repaint();
+                    repaintThemes();
                 });
             });
-
-            root.querySelectorAll('[data-theme-character]').forEach((button) => {
+            pane.querySelectorAll('[data-theme-character]').forEach((button) => {
                 button.addEventListener('click', () => {
                     const name = button.getAttribute('data-theme-character') || '';
-                    // Clicking the chip that is already on turns it off, which
-                    // is the only way back to everything without hunting for
-                    // the All chip at the far end of a twelve-chip row.
+                    // Clicking the chip that is already on turns it off.
                     state.archetype = state.archetype === name ? '' : name;
-                    repaint();
+                    repaintThemes();
                 });
             });
-
-            root.querySelectorAll('[data-theme-card]').forEach(bindCard);
-        };
-
-        /*
-         * Rebuild one card, in place.
-         *
-         * Switching a family between its light and dark half changes that card
-         * and nothing else, so repainting the grid for it would move a hundred
-         * other cards — and move this one out from under the pointer that just
-         * clicked it. Same reasoning as starring: touch what changed.
-         */
-        const refreshCard = (key) => {
-            const card = document.querySelector(`[data-theme-card="${CSS.escape(key)}"]`);
-            const family = families.find((f) => f.key === key);
-            if (!card || !family) return;
-            card.outerHTML = renderCard(family, state, t);
-            const replacement = document.querySelector(`[data-theme-card="${CSS.escape(key)}"]`);
-            if (replacement) bindCard(replacement);
-            return replacement;
+            pane.querySelectorAll('[data-theme-collection]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const name = button.getAttribute('data-theme-collection') || '';
+                    state.collection = state.collection === name ? '' : name;
+                    repaintThemes();
+                });
+            });
+            pane.querySelectorAll('[data-theme-card]').forEach(bindCard);
+            const grid = pane.querySelector('[data-theme-grid]');
+            grid?.addEventListener('mouseleave', () => {
+                // Keyboard focus still on a card keeps that card's preview. A
+                // card focused by the click that chose it does not count: it
+                // left the last card pointed at on screen after the pointer went.
+                const active = document.activeElement;
+                if (!(grid.contains(active) && active.matches(':focus-visible'))) endPreview();
+            });
+            grid?.addEventListener('focusout', (event) => {
+                if (!grid.contains(event.relatedTarget) && !grid.matches(':hover')) endPreview();
+            });
+            // The card in use gets the roving stop, so Tab lands on it.
+            const cards = Array.from(pane.querySelectorAll('[data-theme-card]'));
+            (cards.find((c) => c.classList.contains('is-current')) || cards[0])?.setAttribute('tabindex', '0');
         };
 
         const bindCard = (card) => {
@@ -509,15 +671,14 @@
                     event.stopPropagation();
                     const key = button.getAttribute('data-theme-family');
                     state.variants[key] = button.getAttribute('data-theme-variant');
-                    const replacement = refreshCard(key);
-                    // Show the half that was just switched to, without choosing
-                    // it — and keep the keyboard where the click left it.
+                    // Switching the half of the theme in use switches the
+                    // theme; on any other card it only changes what it shows.
                     const family = families.find((f) => f.key === key);
                     const shown = family?.variants[state.variantFor(key)];
-                    if (shown) preview(shown.id);
-                    const sameButton = replacement?.querySelector(
-                        `[data-theme-variant="${button.getAttribute('data-theme-variant')}"]`);
-                    if (sameButton && document.activeElement === document.body) sameButton.focus();
+                    const inUse = family && Object.values(family.variants).some((v) => v.id === state.current);
+                    if (shown && inUse) select(shown.id);
+                    else repaintThemes();
+                    pane.querySelector(`[data-theme-card="${CSS.escape(key)}"] [data-theme-variant="${button.getAttribute('data-theme-variant')}"]`)?.focus();
                 });
             });
 
@@ -533,69 +694,407 @@
                         state.favorites.push(favoriteId);
                     }
                     opts.onFavorites?.(state.favorites.slice());
-                    /*
-                     * Updated in place rather than by repainting.
-                     *
-                     * Starring is something you do while browsing, often
-                     * several in a row, and a rebuild would move the grid and
-                     * the card out from under the pointer. Only two things
-                     * changed on screen — this star and the count — so only
-                     * those two are touched.
-                     *
-                     * The exception is the Favourites filter, where unstarring
-                     * removes the card you are looking at: leaving it there
-                     * would show something the filter says is not in the list.
-                     */
+                    // In place rather than by repainting: starring is done
+                    // while browsing, often several in a row, and a rebuild
+                    // would move the grid out from under the pointer. The
+                    // Favourites filter is the exception, where unstarring
+                    // removes the card you are looking at.
                     const on = state.favorites.includes(favoriteId);
                     button.classList.toggle('is-on', on);
                     button.setAttribute('aria-pressed', String(on));
-                    const count = document.querySelector('.theme-browser-count');
+                    const count = pane.querySelector('.theme-browser-count');
                     if (count) {
                         count.textContent = t('config.themeBrowserCount', '{shown} of {total} themes · {favorites} favourites')
-                            .replace('{shown}', String(document.querySelectorAll('[data-theme-card]').length))
+                            .replace('{shown}', String(pane.querySelectorAll('[data-theme-card]').length))
                             .replace('{total}', String(families.length))
                             .replace('{favorites}', String(state.favorites.length));
                     }
-                    if (state.segment === 'favorites' && !on) {
-                        repaint();
-                    }
+                    if (state.segment === 'favorites' && !on) repaintThemes();
                 });
             });
 
+            // Hover and focus preview; a click chooses. Nothing is stored
+            // until Apply either way.
             card.addEventListener('mouseenter', () => preview(id()));
             card.addEventListener('focus', () => preview(id()));
-            card.addEventListener('click', () => {
-                picked = true;
-                opts.onPick?.(id());
-                global.AppModal.hide();
-            });
+            card.addEventListener('click', () => select(id()));
             card.addEventListener('keydown', (event) => {
+                if (event.target !== card) return;
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
-                    card.click();
+                    event.stopPropagation();
+                    select(id());
+                    return;
                 }
+                // The arrows walk the grid, each card previewed as focus lands
+                // on it. Up from the top row goes back to the search field.
+                const cards = Array.from(pane.querySelectorAll('[data-theme-card]'));
+                const at = cards.indexOf(card);
+                // Cards sharing the first card's top edge make up one row.
+                const columns = Math.max(1, cards.filter((c) => c.offsetTop === cards[0].offsetTop).length);
+                const steps = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: columns, ArrowUp: -columns };
+                let next = null;
+                if (event.key in steps) next = cards[at + steps[event.key]];
+                else if (event.key === 'Home') next = cards[0];
+                else if (event.key === 'End') next = cards[cards.length - 1];
+                else return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (!next && event.key === 'ArrowUp') {
+                    pane.querySelector('[data-theme-search]')?.focus();
+                    return;
+                }
+                if (!next || next === card) return;
+                card.setAttribute('tabindex', '-1');
+                next.setAttribute('tabindex', '0');
+                next.focus();
             });
         };
 
-        global.AppModal.show({
-            title: t('config.themeBrowserTitle', 'Themes'),
-            htmlMessage: renderBody(families, state, t),
-            showCancel: false,
-            confirmText: t('dashboard.close', 'Close'),
-            modalClass: 'modal--theme-browser',
-            modalMaxWidth: '64rem',
-            initialFocusSelector: '[data-theme-search]',
-            onHide: () => {
-                if (!picked) opts.onRevert?.();
-                // Picked or not: the ideal surfaces were this modal's doing.
-                // On a pick, the settings save that follows resolves them
-                // again through whatever the reader has chosen.
-                restoreSurfaces();
-            },
+        /* ── Tabs, dots and the footer ── */
+
+        const paintTab = () => {
+            root.querySelectorAll('[data-studio-tab]').forEach((button) => {
+                const on = button.getAttribute('data-studio-tab') === tab;
+                button.setAttribute('aria-selected', String(on));
+                button.setAttribute('tabindex', on ? '0' : '-1');
+                button.classList.toggle('is-on', on);
+            });
+            pane.setAttribute('aria-labelledby', `look-studio-tab-${tab}`);
+            pane.setAttribute('data-studio-pane', tab);
+            if (tab === 'themes') {
+                repaintThemes();
+            } else {
+                pane.innerHTML = opts.renderTab?.(tab) || '';
+                opts.bindTab?.(tab, pane);
+            }
+            root.querySelector('[data-studio-reset]').disabled = tab === 'looks';
+            refresh();
+        };
+
+        /** Repaint what depends on the look: the dots, the scope, the grid's "in use". */
+        const refresh = () => {
+            if (closed) return;
+            root.querySelectorAll('[data-studio-tab]').forEach((button) => {
+                const name = button.getAttribute('data-studio-tab');
+                const dirty = Boolean(opts.isDirty?.(name));
+                button.classList.toggle('is-dirty', dirty);
+                button.querySelector('.look-studio-dot')?.setAttribute('title', dirty ? t('config.studioChanged', 'Changed') : '');
+            });
+            const scope = opts.scope?.() || 'theme';
+            // Greyed where it decides nothing: a tab whose settings it does
+            // not route to a theme.
+            const scoped = opts.usesScope ? opts.usesScope(tab) !== false : true;
+            const scopeBox = root.querySelector('.look-studio-scope');
+            scopeBox?.classList.toggle('is-off', !scoped);
+            scopeBox?.setAttribute('title', scoped ? '' : t('config.studioScopeNotHere', 'Applies to is for the backdrop and the surface; this tab does not use it'));
+            root.querySelectorAll('[data-studio-scope]').forEach((button) => {
+                button.setAttribute('aria-pressed', String(button.getAttribute('data-studio-scope') === scope));
+                button.disabled = !scoped;
+            });
+            if (tab === 'themes') {
+                pane.querySelectorAll('[data-theme-card]').forEach((card) => {
+                    const on = card.getAttribute('data-theme-id') === state.current;
+                    if (on === card.classList.contains('is-current')) return;
+                    const key = card.getAttribute('data-theme-card');
+                    const family = families.find((f) => f.key === key);
+                    if (!family) return;
+                    const hadFocus = card.contains(document.activeElement);
+                    card.outerHTML = renderCard(family, state, t);
+                    const fresh = pane.querySelector(`[data-theme-card="${CSS.escape(key)}"]`);
+                    if (fresh) {
+                        bindCard(fresh);
+                        if (on) fresh.setAttribute('tabindex', '0');
+                        if (hadFocus) fresh.focus();
+                    }
+                });
+                const inUse = pane.querySelector('[data-theme-inuse]');
+                if (inUse) {
+                    inUse.outerHTML = renderInUse(state, t);
+                    bindShowCurrent();
+                }
+            }
+        };
+
+        const switchTab = (next) => {
+            if (!TABS.includes(next) || next === tab) return;
+            tab = next;
+            paintTab();
+            root.querySelector(`[data-studio-tab="${tab}"]`)?.focus();
+        };
+
+        const setComparing = (on) => {
+            if (on === comparing || closed) return;
+            if (on) endPreview();
+            comparing = on;
+            root.classList.toggle('is-comparing', on);
+            const button = root.querySelector('[data-studio-compare]');
+            if (button) {
+                button.setAttribute('aria-pressed', String(on));
+                button.textContent = on ? t('config.studioCompareOn', 'Before') : t('config.studioCompare', 'Compare');
+            }
+            opts.onCompare?.(on);
+        };
+
+        const close = () => {
+            if (closed) return;
+            previewing = null;
+            setComparing(false);
+            closed = true;
+            ACTIVE = null;
+            document.removeEventListener('keydown', onDocumentKey, true);
+            document.removeEventListener('pointerdown', onPointerDown, true);
+            document.removeEventListener('click', onOutsideClick, true);
+            document.removeEventListener('keyup', onKeyUp, true);
+            document.removeEventListener('focusin', onFocusIn, true);
+            window.removeEventListener('blur', onWindowBlur);
+            madeInert.forEach((el) => { el.inert = false; });
+            document.body.classList.remove('look-studio-open');
+            root.remove();
+            if (returnFocus && returnFocus.isConnected && typeof returnFocus.focus === 'function') {
+                returnFocus.focus();
+            }
+        };
+
+        const cancel = async () => {
+            if (closed) return;
+            setComparing(false);
+            endPreview();
+            await opts.onCancel?.();
+            close();
+            opts.onClose?.();
+        };
+
+        const apply = async () => {
+            if (closed) return;
+            setComparing(false);
+            // What is stored is the chosen theme, so that is what stays drawn.
+            endPreview();
+            const ok = await opts.onApply?.();
+            if (ok === false) return;
+            close();
+            opts.onClose?.();
+        };
+
+        root.querySelectorAll('[data-studio-tab]').forEach((button) => {
+            button.addEventListener('click', () => switchTab(button.getAttribute('data-studio-tab')));
+        });
+        root.querySelectorAll('[data-studio-scope]').forEach((button) => {
+            button.addEventListener('click', () => {
+                opts.setScope?.(button.getAttribute('data-studio-scope'));
+                if (tab === 'themes') refresh(); else paintTab();
+            });
+        });
+        root.querySelector('[data-studio-reset]').addEventListener('click', () => {
+            opts.onResetTab?.(tab);
+            if (tab === 'themes') repaintThemes();
+            paintTab();
+        });
+        root.querySelector('[data-studio-dice]').addEventListener('click', () => {
+            if (tab === 'themes') {
+                // From what the grid shows, so a filter narrows the roll too.
+                const visible = families.filter((f) => matches(f, state, t));
+                const family = visible[Math.floor(Math.random() * visible.length)];
+                if (!family) return;
+                const halves = Object.values(family.variants);
+                const pick = halves[Math.floor(Math.random() * halves.length)];
+                select(pick.id);
+                pane.querySelector(`[data-theme-card="${CSS.escape(family.key)}"]`)?.scrollIntoView({ block: 'nearest' });
+                return;
+            }
+            opts.onDice?.(tab);
+            paintTab();
+        });
+        root.querySelector('[data-studio-cancel]').addEventListener('click', () => { void cancel(); });
+        // The ×, like every other panel's: closing without Apply is Cancel.
+        root.querySelector('[data-studio-close]').addEventListener('click', () => { void cancel(); });
+        root.querySelector('[data-studio-apply]').addEventListener('click', () => { void apply(); });
+
+        /*
+         * Compare is a switch: on shows the look from before the studio
+         * opened, off brings the changes back. Holding \ does the same for as
+         * long as it is held.
+         *
+         * Anything else done in the panel switches it off first. While it is
+         * on, the settings hold the old look, and a change made then would
+         * land on that and be thrown away when it went off again.
+         */
+        const compareButton = root.querySelector('[data-studio-compare]');
+        compareButton.addEventListener('click', () => setComparing(!comparing));
+        root.addEventListener('pointerdown', (event) => {
+            if (comparing && !compareButton.contains(event.target)) setComparing(false);
+        }, true);
+
+        // Whatever the studio did not take is the focused control's, and never
+        // the dashboard's: its single-letter shortcuts would act on a page that
+        // is only a preview. Stopped on the way back up, after the control has
+        // had it, so a field still types and a select still opens. The
+        // dashboard's capture-phase handlers bow out through isModalOpen.
+        // Not while a dialog from the panel is open: its Escape listens on the
+        // document, and the focus can still be on the ℹ that opened it.
+        root.addEventListener('keydown', (event) => {
+            if (!dialogOpen()) event.stopPropagation();
         });
 
-        bind();
+        /*
+         * The wheel stays in the panel.
+         *
+         * At the bottom of the grid the browser hands the rest of a scroll to
+         * the page, and the dashboard moved under a panel that was being read.
+         * A scroll the panel can still take is left alone; one it cannot -- at
+         * an end, or over the header and footer, which do not scroll -- is
+         * dropped rather than passed on. The page beside the panel still
+         * scrolls under its own pointer.
+         */
+        root.addEventListener('wheel', (event) => {
+            if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+            for (let el = event.target; el && el !== root; el = el.parentElement) {
+                if (el.scrollHeight <= el.clientHeight) continue;
+                if (!/(auto|scroll)/.test(getComputedStyle(el).overflowY)) continue;
+                const atEnd = event.deltaY > 0
+                    ? el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+                    : el.scrollTop <= 0;
+                if (!atEnd) return;
+                break;
+            }
+            event.preventDefault();
+        }, { passive: false });
+
+        // Any change in a tab may have changed what is dirty.
+        const later = () => requestAnimationFrame(refresh);
+        pane.addEventListener('input', later);
+        pane.addEventListener('change', later);
+        pane.addEventListener('click', later);
+
+        /* ── Keyboard ── */
+
+        /*
+         * A dialog opened from the panel (an ℹ) has the keys and the focus
+         * until it closes: Escape closes it rather than the studio, and Tab
+         * moves through its buttons. Asked of the page, not of the key's
+         * target: a key pressed before the dialog has taken the focus still
+         * belongs to it.
+         */
+        const dialogOpen = () => Boolean(document.querySelector('#app-modal.show'));
+
+        const onDocumentKey = (event) => {
+            if (closed || dialogOpen()) return;
+            const target = event.target;
+            const inside = root.contains(target);
+            if (!inside) {
+                // Focus slipped out (to <body>, after a click on the inert
+                // page): the key is the studio's all the same.
+                root.querySelector('[data-studio-tab][aria-selected="true"]')?.focus();
+            }
+            const key = event.key;
+            if (comparing && key !== '\\' && !compareButton.contains(target)
+                && !['Shift', 'Control', 'Alt', 'Meta', 'Tab'].includes(key)) {
+                setComparing(false);
+            }
+            if (key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                void cancel();
+                return;
+            }
+            if (key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                event.preventDefault();
+                event.stopPropagation();
+                void apply();
+                return;
+            }
+            if (key === '\\' && !ownsKeys(target)) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!event.repeat) setComparing(true);
+                return;
+            }
+            // On a theme card left and right walk the grid instead.
+            if ((key === 'ArrowLeft' || key === 'ArrowRight') && !event.altKey && !event.metaKey
+                && !event.ctrlKey && !ownsKeys(target) && !target.matches?.('[data-theme-card]')) {
+                event.preventDefault();
+                event.stopPropagation();
+                const at = TABS.indexOf(tab);
+                switchTab(TABS[(at + (key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length]);
+                return;
+            }
+            if (key === 'Tab') {
+                const items = Array.from(root.querySelectorAll(FOCUSABLE))
+                    .filter((el) => el.offsetParent !== null || el === document.activeElement);
+                if (!items.length) return;
+                const first = items[0];
+                const last = items[items.length - 1];
+                if (event.shiftKey && (document.activeElement === first || !inside)) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && (document.activeElement === last || !inside)) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            }
+            if (!inside) event.stopPropagation();
+        };
+        const onKeyUp = (event) => {
+            if (event.key === '\\') setComparing(false);
+        };
+        const onFocusIn = (event) => {
+            if (closed || root.contains(event.target) || dialogOpen()) return;
+            root.querySelector('[data-studio-tab][aria-selected="true"]')?.focus();
+        };
+        const onWindowBlur = () => setComparing(false);
+
+        /*
+         * A click on the page beside the panel closes it, as Cancel.
+         *
+         * Only a click that both starts and ends outside: a slider dragged
+         * past the panel's edge and let go over the dashboard is still a
+         * change made in the panel, and its click lands on <body>. The page's
+         * own scrollbar is left alone, as are the notices and an ℹ dialog,
+         * which sit outside the panel but belong to it.
+         */
+        const outsidePanel = (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return false;
+            if (root.contains(target)) return false;
+            if (target.closest('#app-modal, #app-notification, #config-save-state')) return false;
+            if (target === document.documentElement && event.clientX >= document.documentElement.clientWidth) return false;
+            return true;
+        };
+        let pressedOutside = false;
+        const onPointerDown = (event) => {
+            pressedOutside = !closed && !dialogOpen() && outsidePanel(event);
+        };
+        const onOutsideClick = (event) => {
+            const wasOutside = pressedOutside;
+            pressedOutside = false;
+            if (closed || dialogOpen() || !wasOutside || !outsidePanel(event)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            void cancel();
+        };
+
+        document.addEventListener('keydown', onDocumentKey, true);
+        document.addEventListener('pointerdown', onPointerDown, true);
+        document.addEventListener('click', onOutsideClick, true);
+        document.addEventListener('keyup', onKeyUp, true);
+        document.addEventListener('focusin', onFocusIn, true);
+        window.addEventListener('blur', onWindowBlur);
+
+        paintTab();
+        const first = tab === 'themes' ? pane.querySelector('[data-theme-search]') : root.querySelector(`[data-studio-tab="${tab}"]`);
+        first?.focus();
+
+        ACTIVE = {
+            /** Draw the open tab again, from the settings as they are now. */
+            repaint: () => { if (!closed) paintTab(); },
+            refresh,
+            focus: () => root.querySelector('[data-studio-tab][aria-selected="true"]')?.focus(),
+            close,
+            get tab() { return tab; },
+            get open() { return !closed; },
+        };
+        return ACTIVE;
     }
 
-    global.ThemeBrowser = { open };
+    global.ThemeBrowser = { open, contrastRatio, isOpen: () => Boolean(ACTIVE) };
 })(typeof window !== 'undefined' ? window : globalThis);

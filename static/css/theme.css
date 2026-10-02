@@ -49,11 +49,21 @@ body.no-background-dots::before {
 body.has-custom-background::after {
     content: "";
     position: fixed;
-    inset: 0;
+    /* A blurred edge fades to transparent, which shows as a frame. Reaching
+       past the viewport by twice the blur radius keeps the frame off screen. */
+    inset: calc(var(--bd-blur, 0px) * -2);
     z-index: -1;
     pointer-events: none;
-    background-image: var(--custom-background-image);
+    /* The tint is the theme's own page colour laid over the picture, so it
+       reads as the theme turning the picture down rather than as a grey film.
+       Backdrop tuning (Settings.BackdropTuning) sets the four --bd- values. */
+    background-image:
+        linear-gradient(
+            color-mix(in srgb, var(--background-primary) calc(var(--bd-tint, 0) * 100%), transparent),
+            color-mix(in srgb, var(--background-primary) calc(var(--bd-tint, 0) * 100%), transparent)),
+        var(--custom-background-image);
     background-size: cover;
+    filter: blur(var(--bd-blur, 0px)) brightness(var(--bd-brightness, 1)) saturate(var(--bd-saturate, 1));
     opacity: var(--dashboard-bg-opacity, 1);
 }
 

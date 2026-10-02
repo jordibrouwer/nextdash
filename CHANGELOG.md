@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.16.0 — 2 October 2026](#v1160--2-october-2026)
 - [v1.15.8 — 1 October 2026](#v1158--1-october-2026)
 - [v1.15.7 — 30 September 2026](#v1157--30-september-2026)
 - [v1.15.6 — 30 September 2026](#v1156--30-september-2026)
@@ -91,6 +92,57 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
+## v1.16.0 — 2 October 2026
+
+The theme browser becomes a look studio: a panel beside the dashboard whose tabs change the theme, its backdrop, the card glass, the category headers and the type live, with twelve ready-made looks and nothing stored until Apply. Backdrops grow from 9 to 26, and every built-in theme pair now has one chosen for it rather than hashed, so most themes show a different backdrop after the update. Appearance gains a Background and a Surface tab, card glass and category header styles, and a Neutrals collection adds ten glass themes.
+
+### Backdrops
+
+- **new — 26 backdrop recipes instead of 9.** `themeBackdropImage` (`handlers.go`) adds mesh, aurora, bokeh, nebula, stars, sunset, dunes, mountains, waves, topo, perspective, blueprint, pinstripe, hexagons, halftone, prism and chevron, all built from the theme's own `--accent-primary`, `--accent-error` and `--background-primary`. Recipes that need it carry a per-layer `background-size` and `-position`, emitted as `--theme-backdrop-size` and `--theme-backdrop-position` beside `--theme-backdrop`; `theme_backdrop_recipes_test.go` checks every recipe for an image, no bare colour layer, and lists as long as its layers.
+- **new — every built-in theme pair has a backdrop chosen for it.** `theme_backdrop_choice.go` maps all 160 pairs (light and dark share one) to a recipe picked from name, palette and archetype; each recipe is used 3 to 10 times. Lookup order in `themeBackdropRecipeFor`: the theme's `Backdrop` field, the choice map, the archetype, then the hash, which now only reaches custom themes. The 28 `Backdrop` fields on built-ins moved into the map. Visible change: most themes draw a different backdrop than in v1.15.8. `theme_backdrop_choice_test.go` pins coverage, pairing, the 3–10 spread and that no entry names a theme that does not exist.
+- **new — choose and tune the backdrop.** `themeBackdrop` (and `ThemeSurfacePref.Backdrop`) is now `follow`, `off` or a recipe name; a stored `on` reads as `follow`. A chosen recipe is drawn through one rule per recipe in `/api/theme.css` (`themeBackdropOverrideCSS`, `body[data-backdrop-recipe]`). `Settings.BackdropTuning` (`backdrop_tuning.go`, clamped) holds intensity, scale, variant, blur, brightness, saturation and theme tint; all but the variant are live `--bd-*` variables, the variant reloads `/api/theme.css?seed=N` (`no-store`). `GET /api/themes/backdrops` serves the thumbnails.
+- **new — the backdrop is drawn on a layer of its own**, `.theme-backdrop-layer` as the first child of `<body>`, so blur, brightness and saturation filter the backdrop and never the bookmarks. A background image of your own (`body::after`) gets the same values separately. The stacking is unchanged: theme colour, backdrop, pattern, your own background, content.
+- **fix — a theme's dot pattern no longer covers its backdrop.** With the pattern left to the theme, there is none while a backdrop is shown.
+
+### Appearance
+
+- **new — Background and Surface tabs** between Look and Grid (`dashboard-config-look.js`). Background holds the source (Auto, None, Gradient, Image), its opacity, the backdrop picker and settings, and the pattern; Surface holds depth, glow, effects, "Use these for every theme" and card glass. Look keeps theme, favicons, type, text contrast and animations. "Only changed" and Find settings know the new tabs.
+- **new — card glass.** `ThemeSurfacePref.Alpha`, `Blur` and `Border` per theme, or `Settings.CardGlass` with "Use these for every theme"; written as `--theme-surface-alpha` and `--theme-surface-blur` on `<html>` and `data-card-border` on `<body>`. It works at depth Glass, and the panel says so with a button to switch. In layouts without cards (Default, Compact, Masonry) *Own* gives each category a pane (`data-card-glass="own"`); the layout preset is repeated in the panel. A badge shows the contrast of text on a pane (`ThemeBrowser.contrastRatio`).
+- **new — category header styles** on the Rows tab: `CategoryHeaderStyle` (theme, clean, underlined, boxed, label, group), `CategoryHeaderSize`, `ShowCategoryIcon` (on by default, with a missing-key entry), `ShowCategoryCount` and `CategoryHeaderAccentLine`, as `data-cat-*` on `<body>`, drawn by `category-header.css`. `category_header_test.go` covers defaults and sanitising.
+
+### Theme browser
+
+- **new — the theme browser is a look studio.** `theme-browser.js` drops `AppModal` for a panel over the right of the dashboard (a sheet below 768 px), with tabs Themes, Backdrop, Surface, Headers, Layout and Looks; the other tabs reuse the Appearance controls through `dashboard-config-studio.js`. A dot marks a tab that differs from the look at opening. Shift+A, Browse…, the corner notice and the changes tour all open it.
+- **new — preview without saving.** While the studio is open, `saveSettings` sends the look fields as they were at opening and everything else as usual; Apply sends one save; Cancel, Esc, the × in the corner and a click on the dashboard beside the panel restore the snapshot (only a click that starts and ends outside, so a drag from the panel does not count). Compare is a switch (and `\` held) that shows the look from before. Applies to (this theme or all themes), Reset tab and 🎲 per tab. The rest of `<body>` is `inert`, without `aria-modal`, so the dashboard still scrolls; `⌘/Ctrl + Enter` applies, the arrow keys walk the cards and Enter picks one. No "Saved" toast during a preview.
+- **new — twelve looks**: Glass, Glass boxed, Frosted, Aurora, Night sky, Soft, Desert, Paper, Blueprint, Terminal, Neon and Plain, each setting backdrop, tuning, card glass, depth, all five header fields, font, density and spacing, with a line saying what it sets.
+- **new — the layout preset is part of the preview**, and the Layout tab holds type, text contrast and favicons. Every setting in the studio has an ℹ, whose dialog opens over the panel.
+- **new — a collection chip** beside the archetype chips, from `collections` in `/api/themes/meta`.
+- **new — the dashboard tour opens on what is new, and every reader sees it once more.** Three steps come first, each with a moving drawing: the theme browser beside the dashboard, the 26 backdrops, and the looks, card glass, category headers and Neutrals (`dashboard-tutorial.js`); the Config step names the backdrop, card glass and headers. Sixteen steps in all, in six languages. The tip id moves to `dashboardTutorialV2` everywhere it is named (the tour, `DashboardPromos`, the Onboarding list in config and search, the test fixtures), so a reader who finished V1 is offered it again, after What's new. `dashboard-tutorial.spec.js` checks the sixteen titles, that a reader who saw V1 gets it opening on the theme browser, and that the new scenes carry no English.
+- **new — the theme in use is named above the grid** (`renderInUse` in `theme-browser.js`): "In use: …", or once another card is picked "Chosen: … · … stays until Apply", with **Show**, which clears the search and filters if they hide the card and scrolls it into view. The × in the corner stays in the corner on the phone sheet, where the key line is hidden.
+
+### Themes
+
+- **new — the Neutrals collection**: Slate, Zinc, Gray, Stone and Neutral, each light and dark, under glass (`SurfaceAlpha` 0.55, `SurfaceBlur` 12), with backdrops aurora, mesh, mountains, dunes and bokeh. `ThemeColors.Collection` names a theme's collection.
+
+### Dashboard
+
+- **fix — with the Launcher layout preset, widgets looked empty.** Widgets are `.category` blocks too, so `.layout-launcher .category`'s `align-items: flex-start` shrank their body to the width of its widest word. `.layout-launcher .category.dashboard-widget` stretches them to the full row again (`dashboard.css`).
+- **fix — a widget inside a category that is already a pane drew a second card.** It now sits flat in the pane.
+- **fix — Dark Reader recoloured the page on top of the theme.** The page now asks it to leave nextDash alone.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.16.0.json` and its index entry**, leading the What's new window; `whats-new-stub.js` moves `DASHBOARD_RELEASE` to v1.16.0 and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v314`. Config → Overview names the look studio (`overview-features.json`, `since: "v1.16.0"`).
+- **docs — MANUAL §16** has eight Appearance tabs, a new *The theme browser* part with its tabs and the twelve looks, card glass under Surfaces, the backdrop layers and all 26 backdrops under §16.4, and the category header in the Rows table. README names the look studio and the backdrops, and counts 160 families.
+- **docs — Config → Help → Appearance and Tips follow the look studio**, in all six languages: eight tabs, the browser as a panel with Apply and Cancel, its tabs and looks, backdrops, card glass and the Neutrals collection; four new tips (looks, backdrop, card glass, category header). The theme browser's corner notice says nothing is saved until Apply.
+- **i18n — the strings of the look studio are translated**: 110 new keys and 10 changed English ones, in Dutch, German, French, Spanish and Chinese.
+
+### Tests
+
+- **tests — `look-studio.spec.js`** (serial: overlay without moving the columns, scrolling, Cancel, saves of other settings during a preview, hover, Enter, Compare, Apply, card glass and layout, back to Appearance), **`appearance-background-surface.spec.js`**, and Go tests for recipes, choices, tuning, category headers and `TestThemeCSSTakesSeedFromQuery`. Specs that drove the old theme modal or the moved controls are updated: the eight Appearance tabs, Apply before a reload, and the theme pattern measured with the backdrop off.
+- **tests — the row-width check failed on a slow runner.** By the time it measured, the docked action bar had slid away after its default two seconds and lay past the right edge; it is inert while away, and the check now skips inert elements.
+
+---
 
 ## v1.15.8 — 1 October 2026
 

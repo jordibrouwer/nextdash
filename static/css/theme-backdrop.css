@@ -5,51 +5,74 @@
    dat theme, en zet het resultaat in --theme-backdrop. Hier wordt het alleen
    nog opgehangen.
 
-   Op body zelf, niet op een pseudo-element, want die zijn allebei al vergeven:
-   ::before tekent het stippenraster (theme.css) en ::after is van de eigen
-   achtergrond van de gebruiker en van de dieptewas (theme-depth.css). Als
-   background-image van body komt de achtergrond precies waar hij hoort -- boven
-   de vlakke themekleur, onder alles wat daarna nog geschilderd wordt, want een
-   kind met een negatieve z-index staat boven de achtergrond van zijn ouder maar
-   onder de inhoud.
+   Op een eigen element, .theme-backdrop-layer, het eerste kind van body. Niet op
+   body zelf en niet op een pseudo-element: ::before tekent het stippenraster
+   (theme.css), ::after is van de eigen achtergrond van de gebruiker en van de
+   dieptewas (theme-depth.css), en een filter op body zou de inhoud meenemen. De
+   laag is vast ten opzichte van het venster, dus de achtergrond blijft staan
+   terwijl de bookmarks eroverheen scrollen -- een achtergrond die meescrolt
+   verandert van een sfeer in een plaatje.
 
    De stapeling van onder naar boven:
 
-     background-color   de vlakke themekleur
-     background-image   deze achtergrond
+     background-color   de vlakke themekleur (body)
+     laag, z-index -2   deze achtergrond, met de dieptewolken eronder
      ::before           het stippen- of rasterpatroon
      ::after            de eigen achtergrond van de gebruiker, of de dieptewas
      inhoud
 
    Een eigen achtergrond wint dus altijd: die ligt er letterlijk overheen. */
 
-html[data-theme] body[data-theme-backdrop="on"] {
-    /*
-     * De theme-achtergrond bovenop, de twee accentwolken van theme-depth.css
-     * eronder. Allebei, en in die volgorde: de wolken zijn de diepte van de
-     * pagina en de achtergrond is het karakter van het theme, en het een is
-     * geen vervanging van het ander.
-     *
-     * Dit stond eerst als background-image zonder --depth-wash erachter. Die
-     * regel heeft dezelfde specificiteit als die in theme-depth.css en laadt
-     * erna, dus hij won -- en nam de gloed mee die daar al jaren stond.
-     */
-    background-image: var(--theme-backdrop, none), var(--depth-wash, none);
-    background-repeat: repeat;
-    background-size: cover;
-
-    /*
-     * Vast ten opzichte van het venster, zodat de achtergrond blijft staan
-     * terwijl de bookmarks eroverheen scrollen. Een achtergrond die meescrolt
-     * verandert van een sfeer in een plaatje.
-     */
-    background-attachment: fixed;
+.theme-backdrop-layer {
+    display: none;
 }
 
-/* Uit is uit: terug naar de vlakke themekleur, zonder overgang die je op het
-   moment van omschakelen als een flits ziet. */
-html[data-theme] body[data-theme-backdrop="off"] {
-    background-image: var(--depth-wash, none);
+html[data-theme] body > .theme-backdrop-layer {
+    display: block;
+    position: fixed;
+
+    /*
+     * Een vervaagde rand loopt uit naar doorzichtig en staat als een lijst om
+     * het venster. Twee keer de blurstraal voorbij het venster houdt die rand
+     * buiten beeld.
+     */
+    inset: calc(var(--bd-blur, 0px) * -2);
+    z-index: -2;
+    pointer-events: none;
+
+    /* De themekleur die de gebruiker er met Tint overheen legt (BackdropTuning). */
+    --bd-tint-fill: color-mix(in srgb, var(--background-primary) calc(var(--bd-tint, 0) * 100%), transparent);
+
+    /*
+     * Van boven naar onder: tint, de theme-achtergrond, de twee accentwolken van
+     * theme-depth.css. Allemaal, en in die volgorde: de wolken zijn de diepte van
+     * de pagina en de achtergrond is het karakter van het theme, en het een is
+     * geen vervanging van het ander.
+     *
+     * De lijsten voor size en position zijn even lang als de lagen
+     * (themeBackdropImage zet ze zo): per laag een eigen tegel en plek.
+     */
+    background-image:
+        linear-gradient(var(--bd-tint-fill), var(--bd-tint-fill)),
+        var(--theme-backdrop, none),
+        var(--depth-wash, none);
+    background-repeat: repeat;
+    background-size: auto, var(--theme-backdrop-size, cover), auto, auto;
+    background-position: 0 0, var(--theme-backdrop-position, 0 0), 0 0, 0 0;
+
+    /* Blur, helderheid en verzadiging gelden voor alles wat de laag tekent. De
+       eigen afbeelding van de gebruiker (theme.css) krijgt dezelfde waarden. */
+    filter: blur(var(--bd-blur, 0px)) brightness(var(--bd-brightness, 1)) saturate(var(--bd-saturate, 1));
+}
+
+/* Uit is uit: alleen de dieptewolken, zonder overgang die je op het moment van
+   omschakelen als een flits ziet. */
+html[data-theme] body[data-theme-backdrop="off"] > .theme-backdrop-layer {
+    background-image:
+        linear-gradient(var(--bd-tint-fill), var(--bd-tint-fill)),
+        var(--depth-wash, none);
+    background-size: auto, auto, auto;
+    background-position: 0 0, 0 0, 0 0;
 }
 
 /*
@@ -57,19 +80,24 @@ html[data-theme] body[data-theme-backdrop="off"] {
  * lagen wil. De achtergrond blijft: hij hoort bij het theme, en flat gaat over
  * diepte, niet over kleur.
  *
- * Deze regel zette hem op `none`, wat betekende dat de keuze hierboven in flat
- * niets meer deed -- aan en uit gaven dezelfde vlakke kleur, dus de dropdown
- * leek stuk. Wat hier wél weg mag is de dieptewas: dat zijn de lagen waar flat
- * over gaat. Bij depth 0 rekenen die wolken zich toch al tot volledig
- * doorzichtig uit, dus dit is de bedoeling opgeschreven, niet een tweede knop.
+ * Wat hier wél weg mag is de dieptewas: dat zijn de lagen waar flat over gaat.
+ * Bij depth 0 rekenen die wolken zich toch al tot volledig doorzichtig uit, dus
+ * dit is de bedoeling opgeschreven, niet een tweede knop.
  */
+html[data-theme] body[data-theme-backdrop="on"][data-depth="flat"] > .theme-backdrop-layer {
+    background-image:
+        linear-gradient(var(--bd-tint-fill), var(--bd-tint-fill)),
+        var(--theme-backdrop, none);
+    background-size: auto, var(--theme-backdrop-size, cover);
+    background-position: 0 0, var(--theme-backdrop-position, 0 0);
+}
+
 html[data-theme] body[data-theme-backdrop="on"][data-depth="flat"] {
-    background-image: var(--theme-backdrop, none);
     background-color: var(--background-primary);
 }
 
 @media (prefers-reduced-transparency: reduce) {
-    html[data-theme] body[data-theme-backdrop="on"] {
-        background-image: none;
+    html[data-theme] body > .theme-backdrop-layer {
+        display: none;
     }
 }

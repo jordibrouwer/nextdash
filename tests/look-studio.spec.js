@@ -1,0 +1,634 @@
+// @ts-check
+const { test, expect } = require('./fixtures');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+
+/**
+ * The theme browser as a look studio: a panel docked beside the dashboard
+ * with tabs for themes, backdrop, surface, headers and looks.
+ *
+ * Behaviour only, through the controls and keys a reader uses: everything
+ * changes the page at once, nothing is stored until Apply, Cancel puts it all
+ * back, and Compare shows the look from before the studio opened.
+ */
+async function openDashboard(page, { height = 900 } = {}) {
+    await page.setViewportSize({ width: 1500, height });
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await waitForConfigReady(page);
+}
+
+const studio = (page) => page.locator('[data-look-studio]');
+
+async function openStudio(page) {
+    await page.locator('body').click({ position: { x: 5, y: 5 } }).catch(() => {});
+    await page.keyboard.press('Shift+A');
+    await expect(studio(page)).toBeVisible({ timeout: 15_000 });
+}
+
+const stored = (page) => page.evaluate(async () => {
+    const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+    return (await api('/api/settings')).json();
+});
+
+const bodyAttr = (page, name) => page.evaluate((n) => document.body.getAttribute(n), name);
+
+const dirtyTabs = (page) => page.locator('.look-studio-tab.is-dirty').evaluateAll(
+    (els) => els.map((el) => el.getAttribute('data-studio-tab')));
+
+test.describe('the look studio', () => {
+    // Each save writes the whole settings object: these take turns.
+    test.describe.configure({ mode: 'serial' });
+
+    test('lies over the dashboard without moving it; ←/→ walk the tabs and the page still scrolls', async ({ page }) => {
+        await openDashboard(page, { height: 420 });
+        // Where the columns are, as a reader sees them.
+        const columns = () => page.locator('.category').evaluateAll(
+            (els) => els.slice(0, 6).map((el) => {
+                const r = el.getBoundingClientRect();
+                return [Math.round(r.left), Math.round(r.width)];
+            }));
+        const before = await columns();
+        expect(before.length, 'no columns to measure').toBeGreaterThan(0);
+        await openStudio(page);
+
+        const box = await studio(page).boundingBox();
+        expect(box?.x, 'the panel is not on the right').toBeGreaterThan(900);
+        expect(await columns(), 'opening the studio moved the columns').toEqual(before);
+
+        const selected = () => page.locator('.look-studio-tab[aria-selected="true"]').getAttribute('data-studio-tab');
+        await page.locator('[data-studio-tab="themes"]').focus();
+        await page.keyboard.press('ArrowRight');
+        expect(await selected()).toBe('backdrop');
+        await page.keyboard.press('ArrowRight');
+        expect(await selected()).toBe('surface');
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowLeft');
+        expect(await selected(), 'left from the first tab should wrap to the last').toBe('looks');
+
+        // The page beside it is inert, but the wheel still scrolls it.
+        expect(await page.evaluate(() => document.getElementById('dashboard-layout')?.closest('[inert]') !== null)).toBe(true);
+        await page.mouse.move(300, 250);
+        await page.mouse.wheel(0, 600);
+        await expect.poll(() => page.evaluate(() => window.scrollY),
+            { message: 'the dashboard did not scroll under the studio' }).toBeGreaterThan(0);
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+        expect(await page.evaluate(() => document.querySelector('[inert]'))).toBeNull();
+        await page.evaluate(() => window.scrollTo(0, 0));
+        expect(await columns(), 'closing the studio left the columns moved').toEqual(before);
+    });
+
+    test('a change is live and dotted, and Cancel puts it back without storing it', async ({ page }) => {
+        await openDashboard(page);
+        const before = await stored(page);
+        const recipeBefore = await bodyAttr(page, 'data-backdrop-recipe');
+        await openStudio(page);
+
+        await page.locator('[data-studio-tab="backdrop"]').click();
+        await page.locator('[data-backdrop-mode="pick"]').click();
+        await page.locator('[data-backdrop-recipe="waves"]').click();
+        await expect.poll(() => bodyAttr(page, 'data-backdrop-recipe')).toBe('waves');
+        await expect.poll(() => dirtyTabs(page)).toEqual(['backdrop']);
+
+        // A new roll of the seed asks the stylesheet for it, unsaved.
+        const seeded = page.waitForRequest((req) => /\/api\/theme\.css\?.*seed=\d+/.test(req.url()));
+        await page.locator('[data-backdrop-roll]').click();
+        await seeded;
+
+        const during = await stored(page);
+        expect(during.themeBackdrop).toBe(before.themeBackdrop);
+        expect(during.themeSurfacePrefs || {}).toEqual(before.themeSurfacePrefs || {});
+        expect(during.backdropTuning?.seed || 0).toBe(before.backdropTuning?.seed || 0);
+
+        await page.locator('[data-studio-cancel]').click();
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(() => bodyAttr(page, 'data-backdrop-recipe')).toBe(recipeBefore);
+        const after = await stored(page);
+        expect(after.themeSurfacePrefs || {}).toEqual(before.themeSurfacePrefs || {});
+        expect(after.backdropTuning?.seed || 0).toBe(before.backdropTuning?.seed || 0);
+    });
+
+    test('the × and a click beside the panel both close it as Cancel', async ({ page }) => {
+        await openDashboard(page);
+        const before = await stored(page);
+        const recipeBefore = await bodyAttr(page, 'data-backdrop-recipe');
+        const pickWaves = async () => {
+            await page.locator('[data-studio-tab="backdrop"]').click();
+            await studio(page).locator('[data-backdrop-mode="pick"]').click();
+            await studio(page).locator('[data-backdrop-recipe="waves"]').click();
+            await expect.poll(() => bodyAttr(page, 'data-backdrop-recipe')).toBe('waves');
+        };
+
+        await openStudio(page);
+        await pickWaves();
+        await page.locator('[data-studio-close]').click();
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(() => bodyAttr(page, 'data-backdrop-recipe')).toBe(recipeBefore);
+
+        // A press that starts in the panel and is let go over the dashboard --
+        // selecting the heading, say -- is not a click beside it, though the
+        // browser sends its click to <body>.
+        await openStudio(page);
+        await pickWaves();
+        const box = await studio(page).locator('#look-studio-title').boundingBox();
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(300, 450, { steps: 5 });
+        await page.mouse.up();
+        await expect(studio(page)).toBeVisible();
+
+        // A click on the dashboard beside the panel closes it, and the
+        // preview goes with it.
+        await page.mouse.click(300, 450);
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(() => bodyAttr(page, 'data-backdrop-recipe')).toBe(recipeBefore);
+        const after = await stored(page);
+        expect(after.themeBackdrop).toBe(before.themeBackdrop);
+        expect(after.themeSurfacePrefs || {}).toEqual(before.themeSurfacePrefs || {});
+        expect(after.backdropTuning || {}).toEqual(before.backdropTuning || {});
+    });
+
+    test('the theme in use is named above the grid, and Show finds its card', async ({ page }) => {
+        await openDashboard(page);
+        const inUse = await page.evaluate(() => window.dashboardInstance.settings.theme);
+        await openStudio(page);
+        const line = studio(page).locator('[data-theme-inuse]');
+        const nameOf = (id) => page.evaluate((theme) => window.dashboardInstance.config.themeById(theme)?.name || theme, id);
+        await expect(line).toContainText(await nameOf(inUse));
+        await expect(line).not.toHaveClass(/is-chosen/);
+
+        // Choosing another card says so, and names the stored theme that
+        // stays until Apply.
+        const other = studio(page).locator(`[data-theme-id]:not([data-theme-id="${inUse}"])`).first();
+        const otherId = await other.getAttribute('data-theme-id');
+        await other.click();
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(otherId);
+        await expect(line).toHaveClass(/is-chosen/);
+        await expect(line).toContainText(await nameOf(otherId));
+        await expect(line).toContainText(await nameOf(inUse));
+
+        // A search that hides the chosen card: Show clears it and brings the
+        // card into view.
+        await studio(page).locator('[data-theme-search]').fill('zzzz-no-such-theme');
+        await expect(studio(page).locator('.theme-browser-card.is-current')).toHaveCount(0);
+        await studio(page).locator('[data-theme-show-current]').click();
+        const card = studio(page).locator('.theme-browser-card.is-current');
+        await expect(card).toBeInViewport();
+        await expect(card).toHaveAttribute('data-theme-id', otherId);
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(inUse);
+    });
+
+    test('a setting outside the look still saves while the studio is open, and Cancel leaves it', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        const star = page.locator('[data-theme-favorite]').first();
+        const id = await star.getAttribute('data-theme-favorite');
+        const wasOn = (await star.getAttribute('aria-pressed')) === 'true';
+        await star.click();
+        await expect.poll(async () => ((await stored(page)).favoriteThemes || []).includes(id)).toBe(!wasOn);
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+        expect(((await stored(page)).favoriteThemes || []).includes(id)).toBe(!wasOn);
+    });
+
+    test('pointing at a theme shows it, and leaving the grid shows the chosen one again', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        const chosen = await page.evaluate(() => window.dashboardInstance.settings.theme);
+        const shown = () => page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+
+        const card = page.locator('[data-theme-card]:not(.is-current)').first();
+        const id = await card.getAttribute('data-theme-id');
+        await card.hover();
+        await expect.poll(shown).toBe(id);
+        expect(await page.evaluate(() => window.dashboardInstance.settings.theme), 'hovering chose the theme').toBe(chosen);
+        await expect.poll(() => dirtyTabs(page)).toEqual([]);
+
+        // Out of the grid, onto the footer.
+        await page.locator('[data-studio-compare]').hover();
+        await expect.poll(shown).toBe(chosen);
+
+        await page.keyboard.press('Escape');
+    });
+
+    test('Enter on a theme card shows that theme and keeps the studio open', async ({ page }) => {
+        await openDashboard(page);
+        const before = (await stored(page)).theme;
+        await openStudio(page);
+
+        const card = page.locator('[data-theme-card]:not(.is-current)').first();
+        const id = await card.getAttribute('data-theme-id');
+        await card.focus();
+        await page.keyboard.press('Enter');
+        await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe(id);
+        await expect(studio(page)).toBeVisible();
+        await expect.poll(() => dirtyTabs(page)).toContain('themes');
+        expect((await stored(page)).theme).toBe(before);
+
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(before);
+    });
+
+    test('the arrow keys walk the theme cards, each one shown as focus lands on it', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        const chosen = await page.evaluate(() => window.dashboardInstance.settings.theme);
+        const shown = () => page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+        const focused = () => page.evaluate(() => document.activeElement?.getAttribute('data-theme-card') || null);
+        const cards = page.locator('[data-theme-card]');
+
+        // Down from the search field enters the grid on the card in use.
+        await page.locator('[data-theme-search]').focus();
+        await page.keyboard.press('ArrowDown');
+        const start = await focused();
+        expect(start, 'ArrowDown left the search field').not.toBeNull();
+
+        await page.keyboard.press('Home');
+        await expect.poll(focused).toBe(await cards.nth(0).getAttribute('data-theme-card'));
+        await page.keyboard.press('ArrowRight');
+        await expect.poll(focused).toBe(await cards.nth(1).getAttribute('data-theme-card'));
+        await expect.poll(shown).toBe(await cards.nth(1).getAttribute('data-theme-id'));
+        await expect(page.locator('[data-studio-tab="themes"]')).toHaveAttribute('aria-selected', 'true');
+
+        await page.keyboard.press('ArrowDown');
+        const below = await focused();
+        expect(below).not.toBe(await cards.nth(1).getAttribute('data-theme-card'));
+        await expect.poll(shown).toBe(await page.locator(`[data-theme-card="${below}"]`).getAttribute('data-theme-id'));
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowUp');
+        await expect.poll(focused).toBe(await cards.nth(0).getAttribute('data-theme-card'));
+
+        // Up from the top row goes back to the search field; nothing was chosen.
+        await page.keyboard.press('ArrowUp');
+        await expect(page.locator('[data-theme-search]')).toBeFocused();
+        expect(await page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(chosen);
+
+        await page.keyboard.press('Escape');
+    });
+
+    test('Compare, held with \\, shows the look from before the studio opened', async ({ page }) => {
+        await openDashboard(page);
+        const headBefore = await bodyAttr(page, 'data-cat-head');
+        await openStudio(page);
+
+        await page.locator('[data-studio-tab="heads"]').click();
+        const style = headBefore === 'label' ? 'boxed' : 'label';
+        await page.selectOption('[data-behavior-field="categoryHeaderStyle"]', style);
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(style);
+
+        await page.locator('[data-studio-tab="heads"]').focus();
+        await page.keyboard.down('\\');
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(headBefore);
+        await page.keyboard.up('\\');
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(style);
+
+        // The button is a switch: on until pressed again.
+        const compare = page.locator('[data-studio-compare]');
+        await compare.click();
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(headBefore);
+        await expect(compare).toHaveAttribute('aria-pressed', 'true');
+        await page.waitForTimeout(300);
+        expect(await bodyAttr(page, 'data-cat-head'), 'Compare let go on its own').toBe(headBefore);
+        await compare.click();
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(style);
+
+        // Touching anything else first puts the changes back, so nothing is
+        // changed on top of the old look.
+        await compare.click();
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(headBefore);
+        await page.locator('[data-studio-tab="looks"]').click();
+        await expect(compare).toHaveAttribute('aria-pressed', 'false');
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(style);
+
+        await page.keyboard.press('Escape');
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(headBefore);
+    });
+
+    test('Apply stores everything in one go and it is still there after a reload', async ({ page }) => {
+        await openDashboard(page);
+        const before = await stored(page);
+        await openStudio(page);
+
+        await page.locator('[data-studio-tab="looks"]').click();
+        await page.locator('[data-studio-use-look="glass-boxed"]').click();
+        await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe('boxed');
+        await expect.poll(() => dirtyTabs(page)).toEqual(['backdrop', 'surface', 'heads', 'layout']);
+
+        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+Enter' : 'Control+Enter');
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(async () => (await stored(page)).categoryHeaderStyle).toBe('boxed');
+
+        await page.reload();
+        await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+        expect(await bodyAttr(page, 'data-cat-head')).toBe('boxed');
+        expect(await bodyAttr(page, 'data-backdrop-recipe')).toBe('mountains');
+        expect(await bodyAttr(page, 'data-depth')).toBe('glass');
+
+        // Put back what this moved, for the specs after it.
+        await page.waitForFunction(() => window.dashboardInstance?.settings, null, { timeout: 20_000 });
+        // Absent fields are written as their empty value: a save keeps a field
+        // it is not sent, so deleting one would leave this test's look behind.
+        await page.evaluate(async (prev) => {
+            const d = window.dashboardInstance;
+            const empty = { themeSurfacePrefs: {}, cardGlass: {}, themeBackdrop: 'follow', themeDepth: 'follow',
+                fontPreset: 'source-code-pro', densityMode: 'comfortable', categorySpacing: 'balanced' };
+            ['categoryHeaderStyle', 'showCategoryIcon', 'showCategoryCount', 'themeSurfacePrefs',
+                'backdropTuning', 'themeBackdrop', 'cardGlass', 'themeDepth',
+                'fontPreset', 'densityMode', 'categorySpacing'].forEach((key) => {
+                if (prev[key] !== undefined) d.settings[key] = prev[key];
+                else if (key in empty) d.settings[key] = empty[key];
+                else delete d.settings[key];
+            });
+            await d.saveSettings();
+        }, before);
+    });
+
+    test('card glass says why nothing changes, and gives a layout without cards its panes', async ({ page }) => {
+        await openDashboard(page);
+        const before = await stored(page);
+        // A layout that draws no card round a category, on a theme not at
+        // Glass, and no card glass of the reader's own. Written as empty
+        // values rather than left out: a save keeps a field it is not sent.
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            Object.assign(d.settings, {
+                layoutPreset: 'default', themeDepth: 'flat', themeSurfacesForceAll: false,
+                themeSurfacePrefs: {}, cardGlass: {},
+            });
+            await d.saveSettings();
+        });
+        await page.reload();
+        await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+        await waitForConfigReady(page);
+        await openStudio(page);
+        await page.locator('[data-studio-tab="surface"]').click();
+
+        const panel = page.locator('[data-glass-panel]');
+        await expect(panel.locator('[data-glass-depth-hint]')).toBeVisible();
+        await expect(panel.locator('[data-glass-layout-hint]')).toBeVisible();
+
+        await panel.locator('[data-glass-action="depth"]').click();
+        await expect.poll(() => bodyAttr(page, 'data-depth')).toBe('glass');
+        await expect(page.locator('[data-glass-panel] [data-glass-depth-hint]')).toHaveCount(0);
+
+        const categoryAlpha = () => page.locator('.dashboard-grid .category').first().evaluate(
+            (el) => getComputedStyle(el).backgroundColor);
+        expect(await categoryAlpha(), 'a default-layout category had a pane before Own').toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+
+        await page.locator('[data-glass-panel] [data-glass-mode="own"]').click();
+        await expect(page.locator('[data-glass-panel] [data-glass-layout-hint]')).toHaveCount(0);
+        await expect.poll(categoryAlpha, { message: 'Own gave the category no pane' }).not.toMatch(/rgba\(0, 0, 0, 0\)/);
+        const first = await categoryAlpha();
+        await page.locator('[data-glass-range="alpha"]').fill('0.3');
+        await expect.poll(categoryAlpha, { message: 'the opacity slider did not reach the pane' }).not.toBe(first);
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+
+        // The layout dropdown redraws the grid at once, as a preview: dotted
+        // on Layout, where the preset lives, nothing stored, and Cancel draws
+        // the old layout again.
+        await openStudio(page);
+        await page.locator('[data-studio-tab="surface"]').click();
+        await page.selectOption('[data-glass-panel] [data-glass-layout]', 'cards');
+        const gridClass = () => page.locator('.dashboard-grid').getAttribute('class');
+        await expect.poll(gridClass).toContain('layout-cards');
+        await expect(page.locator('[data-glass-panel] [data-glass-layout-hint]')).toHaveCount(0);
+        await expect.poll(() => dirtyTabs(page)).toContain('layout');
+        expect((await stored(page)).layoutPreset, 'the previewed layout was stored').toBe('default');
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(gridClass, { message: 'Cancel left the previewed layout' }).toContain('layout-default');
+        expect((await stored(page)).layoutPreset).toBe('default');
+
+        await page.evaluate(async (prev) => {
+            const d = window.dashboardInstance;
+            ['layoutPreset', 'themeDepth'].forEach((key) => {
+                if (prev[key] === undefined) delete d.settings[key]; else d.settings[key] = prev[key];
+            });
+            await d.saveSettings();
+        }, before);
+    });
+
+    test('a pattern left to the theme steps aside for a backdrop, and one picked here is previewed', async ({ page }) => {
+        await openDashboard(page);
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            Object.assign(d.settings, { backgroundPattern: 'auto', themeBackdrop: 'follow', themeSurfacePrefs: {} });
+            await d.saveSettings();
+        });
+        await page.reload();
+        await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+        await waitForConfigReady(page);
+        const texture = () => page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage);
+
+        // Backdrop on, pattern on auto: no dots over it.
+        expect(await bodyAttr(page, 'data-theme-backdrop')).toBe('on');
+        expect(await texture(), 'the theme pattern was drawn over the backdrop').toBe('none');
+
+        await openStudio(page);
+        await page.locator('[data-studio-tab="backdrop"]').click();
+        await page.selectOption('[data-look-studio] [data-appearance-select="backgroundPattern"]', 'dots');
+        await expect.poll(() => bodyAttr(page, 'data-pattern')).toBe('dots');
+        await expect.poll(texture, { message: 'a picked pattern did not draw over the backdrop' }).toContain('radial-gradient');
+        await expect.poll(() => dirtyTabs(page)).toContain('backdrop');
+        expect((await stored(page)).backgroundPattern || 'auto', 'the previewed pattern was stored').toBe('auto');
+
+        // Backdrop off: the theme's own pattern comes back on auto.
+        await page.selectOption('[data-look-studio] [data-appearance-select="backgroundPattern"]', 'auto');
+        await page.locator('[data-backdrop-mode="off"]').click();
+        await expect.poll(() => bodyAttr(page, 'data-theme-backdrop')).toBe('off');
+        await expect.poll(texture, { message: 'with the backdrop off the theme pattern stayed away' }).not.toBe('none');
+
+        await page.keyboard.press('Escape');
+        await expect.poll(() => bodyAttr(page, 'data-theme-backdrop')).toBe('on');
+        await expect.poll(texture).toBe('none');
+    });
+
+    test('scrolling past the end of the panel does not move the dashboard', async ({ page }) => {
+        await openDashboard(page, { height: 420 });
+        await openStudio(page);
+        const pane = page.locator('[data-studio-pane]');
+        const box = await pane.boundingBox();
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        for (let i = 0; i < 40; i += 1) await page.mouse.wheel(0, 800);
+        await expect.poll(() => pane.evaluate((el) => el.scrollTop), { message: 'the panel did not scroll' }).toBeGreaterThan(0);
+        expect(await page.evaluate(() => window.scrollY), 'the scroll ran on into the dashboard').toBe(0);
+
+        // Over the footer, which does not scroll at all.
+        const foot = await page.locator('.look-studio-foot').boundingBox();
+        await page.mouse.move(foot.x + 10, foot.y + 10);
+        await page.mouse.wheel(0, 800);
+        await page.waitForTimeout(200);
+        expect(await page.evaluate(() => window.scrollY), 'a wheel over the footer moved the dashboard').toBe(0);
+
+        await page.keyboard.press('Escape');
+    });
+
+    test('the Layout tab changes type and grid at once, and Compare and Cancel put them back', async ({ page }) => {
+        await openDashboard(page);
+        const before = await stored(page);
+        await openStudio(page);
+        await page.locator('[data-studio-tab="layout"]').click();
+
+        // Applies to speaks for backdrop and surface only.
+        await expect(page.locator('[data-studio-scope="global"]')).toBeDisabled();
+
+        const font = () => page.evaluate(() => document.documentElement.getAttribute('data-font-preset'));
+        const density = () => bodyAttr(page, 'data-density-mode');
+        const fontWas = await font();
+        const densityWas = await density();
+        const fontTo = fontWas === 'inter' ? 'system' : 'inter';
+        const densityTo = densityWas === 'dense' ? 'comfortable' : 'dense';
+
+        await page.selectOption('[data-look-studio] select[data-appearance-select="fontPreset"]', fontTo);
+        await expect.poll(font).toBe(fontTo);
+        await page.selectOption('[data-look-studio] select[data-behavior-field="densityMode"]', densityTo);
+        await expect.poll(density).toBe(densityTo);
+        await expect.poll(() => dirtyTabs(page)).toEqual(['layout']);
+        const kept = await stored(page);
+        expect(kept.fontPreset, 'the font was stored before Apply').toBe(before.fontPreset);
+        expect(kept.densityMode, 'the density was stored before Apply').toBe(before.densityMode);
+
+        await page.locator('[data-studio-compare]').click();
+        await expect.poll(font).toBe(fontWas);
+        await expect.poll(density).toBe(densityWas);
+        await page.locator('[data-studio-compare]').click();
+        await expect.poll(font).toBe(fontTo);
+        await expect.poll(density).toBe(densityTo);
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(font).toBe(fontWas);
+        await expect.poll(density).toBe(densityWas);
+        expect((await stored(page)).fontPreset).toBe(before.fontPreset);
+    });
+
+    test('Headers carries the header bar: its button style is shown at once and put back on Cancel', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        await page.locator('[data-studio-tab="heads"]').click();
+
+        const was = await bodyAttr(page, 'data-header-buttons');
+        const to = was === 'plated' ? 'plain' : 'plated';
+        await page.selectOption('[data-look-studio] select[data-behavior-field="headerButtonStyle"]', to);
+        await expect.poll(() => bodyAttr(page, 'data-header-buttons')).toBe(to);
+        await expect.poll(() => dirtyTabs(page)).toEqual(['heads']);
+
+        await page.keyboard.press('Escape');
+        await expect.poll(() => bodyAttr(page, 'data-header-buttons')).toBe(was);
+    });
+
+    test('a look brings its own font, density and spacing', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        const font = () => page.evaluate(() => document.documentElement.getAttribute('data-font-preset'));
+        const fontWas = await font();
+        const densityWas = await bodyAttr(page, 'data-density-mode');
+
+        await page.locator('[data-studio-tab="looks"]').click();
+        await expect(page.locator('[data-studio-look="terminal"]')).toContainText('JetBrains Mono');
+        await page.locator('[data-studio-use-look="terminal"]').click();
+        await expect.poll(font).toBe('jetbrains-mono');
+        await expect.poll(() => bodyAttr(page, 'data-density-mode')).toBe('dense');
+        await expect.poll(() => bodyAttr(page, 'data-category-spacing')).toBe('snug');
+        await expect.poll(() => dirtyTabs(page)).toContain('layout');
+
+        await page.keyboard.press('Escape');
+        await expect.poll(font).toBe(fontWas);
+        await expect.poll(() => bodyAttr(page, 'data-density-mode')).toBe(densityWas);
+    });
+
+    test('the settings carry an ℹ, and its explanation opens over the panel without closing it', async ({ page }) => {
+        await openDashboard(page);
+        await openStudio(page);
+        const dialog = page.locator('#app-modal.show');
+
+        const expected = {
+            backdrop: ['backdropStrength', 'backdropSeed', 'backdropTint'],
+            surface: ['cardGlassMode', 'cardGlassAlpha', 'cardGlassBlur', 'cardGlassBorder', 'cardGlassContrast'],
+            heads: ['categoryHeaderStyle', 'categoryHeaderSize', 'showCategoryCount', 'headerButtonStyle'],
+            layout: ['fontSize', 'fontPreset', 'columnsPerRow', 'rowHighlight'],
+        };
+        for (const [tab, fields] of Object.entries(expected)) {
+            await page.locator(`[data-studio-tab="${tab}"]`).click();
+            for (const field of fields) {
+                await expect(page.locator(`[data-look-studio] [data-info-field="${field}"]`), `${tab}: ${field} has no ℹ`).toHaveCount(1);
+            }
+        }
+
+        // Pressed, it explains; Escape closes the explanation and leaves the studio.
+        await page.locator('[data-look-studio] [data-info-field="rowHighlight"]').click();
+        await expect(dialog).toBeVisible();
+        await expect(dialog).toContainText('How a row lights up');
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+        await expect(studio(page)).toBeVisible();
+
+        await page.locator('[data-studio-tab="heads"]').click();
+        await page.locator('[data-look-studio] [data-info-field="categoryHeaderStyle"]').click();
+        await expect(dialog).toBeVisible();
+        await dialog.getByRole('button', { name: /Got it/ }).click();
+        await expect(dialog).toHaveCount(0);
+        await expect(studio(page)).toBeVisible();
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+    });
+
+    test('a widget in a category that is already a pane draws no card of its own', async ({ page }) => {
+        await openDashboard(page);
+        await expect(page.locator('.dashboard-widget').first()).toBeAttached({ timeout: 15_000 });
+        const before = await stored(page);
+        // The widget's own surface: its background and its edge.
+        const surface = () => page.locator('.dashboard-grid .dashboard-widget .dashboard-widget-body').first().evaluate((el) => {
+            const cs = getComputedStyle(el);
+            const clear = /rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor) && cs.backgroundImage === 'none';
+            return clear && cs.borderTopWidth === '0px' ? 'none' : 'card';
+        });
+        await openStudio(page);
+        await page.locator('[data-studio-tab="layout"]').click();
+        const layout = '[data-look-studio] select[data-behavior-field="layoutPreset"]';
+
+        await page.selectOption(layout, 'widgets');
+        await expect.poll(surface, { message: 'a widget kept its card inside a Widgets pane' }).toBe('none');
+        await page.selectOption(layout, 'cards');
+        await expect.poll(surface).toBe('none');
+
+        // No pane round the category: the widget is the only surface there.
+        await page.selectOption(layout, 'default');
+        await expect.poll(surface, { message: 'a widget lost its card where nothing else draws one' }).toBe('card');
+
+        // Own card glass gives the category a pane, so the widget steps back.
+        await page.locator('[data-studio-tab="surface"]').click();
+        const useGlass = page.locator('[data-glass-panel] [data-glass-action="depth"]');
+        if (await useGlass.count()) await useGlass.click();
+        await expect.poll(() => bodyAttr(page, 'data-depth')).toBe('glass');
+        await page.locator('[data-glass-panel] [data-glass-mode="own"]').click();
+        await expect.poll(surface, { message: 'a widget kept its card inside an own glass pane' }).toBe('none');
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+        expect((await stored(page)).layoutPreset).toBe(before.layoutPreset);
+    });
+
+    test('opened from Appearance, it hands the page back to Appearance on close', async ({ page }) => {
+        await openDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.locator('[data-appearance-action="browse-themes"]').first().click();
+        await expect(studio(page)).toBeVisible({ timeout: 15_000 });
+        expect(await page.evaluate(() => window.dashboardInstance.activeView)).not.toBe('config');
+
+        await page.locator('[data-studio-cancel]').click();
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('config');
+    });
+});

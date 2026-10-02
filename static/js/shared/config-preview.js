@@ -22,6 +22,8 @@
     /** Which part of the drawing each Appearance tab is about. */
     const FOCUS = {
         general: 'all',
+        background: 'all',
+        surface: 'all',
         layout: 'grid',
         display: 'rows',
         header: 'head',
@@ -100,7 +102,10 @@
                  data-preview-switcher="${esc(switcher)}" data-preview-density="${esc(density)}"
                  data-preview-buttons="${s.headerButtonStyle === 'plated' ? 'plated' : 'plain'}"
                  data-preview-clock="${esc(clockPlace)}"
-                 data-preview-highlight="${esc(s.rowHighlight || 'subtle')}">
+                 data-preview-highlight="${esc(s.rowHighlight || 'subtle')}"
+                 data-preview-cathead="${esc(s.categoryHeaderStyle || 'theme')}" data-preview-catsize="${esc(s.categoryHeaderSize || 'm')}"
+                 data-preview-caticon="${s.showCategoryIcon === false ? 'off' : 'on'}" data-preview-catcount="${s.showCategoryCount === true ? 'on' : 'off'}"
+                 data-preview-cataccent="${s.categoryHeaderAccentLine === true ? 'on' : 'off'}">
                 <div class="config-pv-head" data-pv-part="head">
                     <span class="config-pv-name-block">
                         ${s.showTitle === false ? '' : `<span class="config-pv-title">${esc(title)}</span>`}
@@ -110,6 +115,7 @@
                     <span class="config-pv-dest" data-pv-part="actions">${place === 'header' ? '<b></b><b></b>' : (place === 'menu' ? '<b></b>' : '')}<em></em><em></em></span>
                 </div>
                 <div class="config-pv-grid" data-pv-part="grid" style="--pv-cols:${cols}">${cells}</div>
+                <div class="config-pv-cat" data-pv-part="rows"><span class="config-pv-cat-icon">▣</span><span class="config-pv-cat-name">media</span><span class="config-pv-cat-count">${SAMPLE_ROWS.length}</span></div>
                 <div class="config-pv-rows" data-pv-part="rows">${rows}</div>
                 <div class="config-pv-dock" data-pv-part="actions"></div>
             </div>`;

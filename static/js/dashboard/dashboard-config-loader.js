@@ -199,6 +199,23 @@ class DashboardConfigLoader {
             'dashboardConfig',
             () => typeof window.DashboardConfig === 'function'
         ).then(() => (
+            // Appearance's Background and Surface tabs. Not optional, unlike the
+            // two below: the Appearance renderer calls into it, so config
+            // without it would throw on the first tab it drew.
+            window.LazyScript.loadScriptOnce(
+                'js/dashboard/dashboard-config-look.js',
+                'dashboardConfigLook',
+                () => window.DashboardConfigLookReady === true
+            )
+        )).then(() => (
+            // The theme browser's tabs, drawn from those same controls.
+            // Required for the same reason: openThemeBrowser is the studio.
+            window.LazyScript.loadScriptOnce(
+                'js/dashboard/dashboard-config-studio.js',
+                'dashboardConfigStudio',
+                () => window.DashboardConfigStudioReady === true
+            )
+        )).then(() => (
             // The Bookmarks row menu, fetched with config rather than on the
             // dashboard's critical path: nothing outside config uses it. Its
             // failure is not fatal — config without a right-click menu is worse

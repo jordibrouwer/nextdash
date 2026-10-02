@@ -2020,7 +2020,7 @@ class DashboardConfig {
      */
     _changedFilterContext() {
         if (this.section === 'appearance') {
-            const tab = ['general', 'layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)
+            const tab = ['general', 'background', 'surface', 'layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)
                 ? this.appearanceTab
                 : null;
             return tab ? { section: 'appearance', tab } : null;
@@ -3255,10 +3255,17 @@ class DashboardConfig {
         { field: 'fontPreset', labelKey: 'fontPresetLabel', fallback: 'Font', section: 'appearance', subTab: 'general' },
         { field: 'fontWeight', labelKey: 'fontWeightLabel', fallback: 'Weight', section: 'appearance', subTab: 'general' },
         { field: 'fontSize', labelKey: 'appearanceFontSize', fallback: 'Font size', section: 'appearance', subTab: 'general' },
-        { field: 'backgroundType', labelKey: 'backgroundLabel', fallback: 'Background', section: 'appearance', subTab: 'general' },
-        { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
+        { field: 'backgroundType', labelKey: 'backgroundLabel', fallback: 'Background', section: 'appearance', subTab: 'background' },
+        { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'background' },
         { field: 'inkGap', labelKey: 'inkGapLabel', fallback: 'Text contrast', section: 'appearance', subTab: 'general' },
-        { field: 'themeBackdrop', labelKey: 'themeBackdropLabel', fallback: 'Theme backdrop', section: 'appearance', subTab: 'general' },
+        { field: 'themeBackdrop', labelKey: 'themeBackdropLabel', fallback: 'Theme backdrop', section: 'appearance', subTab: 'background' },
+        { field: 'backdropTuning', labelKey: 'backdropTuningTitle', fallback: 'Backdrop settings', section: 'appearance', subTab: 'background' },
+        { field: 'backgroundPattern', labelKey: 'backgroundPatternLabel', fallback: 'Pattern over it', section: 'appearance', subTab: 'background' },
+        { field: 'cardGlass', labelKey: 'cardGlassTitle', fallback: 'Card glass', section: 'appearance', subTab: 'surface' },
+        { field: 'themeDepth', labelKey: 'themeDepthLabel', fallback: 'Depth', section: 'appearance', subTab: 'surface' },
+        { field: 'glowStrength', labelKey: 'glowStrengthLabel', fallback: 'Glow', section: 'appearance', subTab: 'surface' },
+        { field: 'themeEffects', labelKey: 'themeEffectsLabel', fallback: 'Effects', section: 'appearance', subTab: 'surface' },
+        { field: 'themeSurfacesForceAll', labelKey: 'themeSurfacesForceAllLabel', fallback: 'Use these for every theme', section: 'appearance', subTab: 'surface' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
         { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'general' },
@@ -3349,7 +3356,14 @@ class DashboardConfig {
         backgroundType: ['background', 'wallpaper', 'gradient', 'image'],
         backgroundOpacity: ['background', 'opacity', 'transparency', 'fade'],
         inkGap: ['contrast', 'readability', 'text', 'legibility', 'faint', 'ink', 'accessibility'],
-        themeBackdrop: ['backdrop', 'background', 'gradient', 'atmosphere', 'theme'],
+        themeBackdrop: ['backdrop', 'background', 'gradient', 'atmosphere', 'theme', 'recipe', 'mesh', 'aurora', 'bokeh', 'nebula', 'stars', 'sunset', 'dunes', 'mountains', 'waves', 'topo', 'blueprint', 'hexagons', 'halftone'],
+        backdropTuning: ['backdrop', 'intensity', 'scale', 'variant', 'seed', 'blur', 'brightness', 'saturation', 'tint', 'dice'],
+        cardGlass: ['glass', 'card', 'pane', 'opacity', 'alpha', 'blur', 'border', 'frosted', 'transparent', 'contrast'],
+        categoryHeaderStyle: ['category', 'header', 'heading', 'title', 'underline', 'boxed', 'label', 'group', 'clean'],
+        categoryHeaderSize: ['category', 'header', 'heading', 'title', 'size', 'small', 'large'],
+        showCategoryIcon: ['category', 'header', 'icon', 'emoji'],
+        showCategoryCount: ['category', 'header', 'count', 'number', 'bookmarks'],
+        categoryHeaderAccentLine: ['category', 'header', 'underline', 'accent', 'line', 'colour', 'color'],
         showIcons: ['favicon', 'icon', 'image'],
         faviconRefreshPolicy: ['favicon', 'icon', 'refresh', 'cache'],
         autoBackupEnabled: ['backup', 'automatic', 'snapshot'],
@@ -9097,16 +9111,10 @@ class DashboardConfig {
         return DashboardConfig.FONT_SIZES.includes(size) ? size : 'm';
     }
 
-    renderAppearance() {
+    /** Font, weight and size: on General, and on the studio's Layout tab. */
+    renderTypeFields() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const apIntro = `<p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>`;
-        // Which half of the current family is showing, so Quick mode marks the
-        // right button whatever theme is picked. Reading s.theme directly only
-        // ever matched the two legacy ids, leaving both buttons unlit on every
-        // other theme.
-        const theme = String(s.theme || 'dark').endsWith('-light') || s.theme === 'light' ? 'light' : 'dark';
-
         // Small / Medium / Large names a size without showing one, so each
         // button carries the letters at the size it sets. Hovering still applies
         // the real thing to the dashboard behind the panel; this is what the
@@ -9130,14 +9138,28 @@ class DashboardConfig {
             `<button type="button" class="config-choice${weight === val ? ' is-active' : ''}" data-appearance-weight="${esc(val)}" aria-pressed="${weight === val}">${esc(label)}</button>`
         ).join('');
 
-        const bgType = s.backgroundType || 'none';
-        const bgTypes = [['auto', this.t('config.backgroundAuto', 'Auto')], ['none', this.t('config.backgroundNone', 'None')], ['gradient', this.t('config.backgroundGradient', 'Gradient')], ['image', this.t('config.backgroundImage', 'Image')]];
-        const bgChoices = bgTypes.map(([val, label]) =>
-            `<button type="button" class="config-choice${bgType === val ? ' is-active' : ''}" data-appearance-bg="${esc(val)}" aria-pressed="${bgType === val}">${esc(label)}</button>`
-        ).join('');
-        const opacity = window.VisualSettings?.clampBackgroundOpacity
-            ? window.VisualSettings.clampBackgroundOpacity(s.backgroundOpacity)
-            : (Number.isFinite(Number(s.backgroundOpacity)) ? Number(s.backgroundOpacity) : 1);
+        return `
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.fontPresetLabel', 'Font'))}</span>
+                    <select class="config-select" data-appearance-select="fontPreset">${fontPresetOptions}</select>
+                    ${this.appearanceAff('fontPreset')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.fontWeightLabel', 'Weight'))}</span>
+                    <div class="config-choices" role="group">${weightChoices}</div>
+                    ${this.appearanceAff('fontWeight')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.appearanceFontSize', 'Font size'))}</span>
+                    <div class="config-choices" role="group">${fontOptions}</div>
+                    ${this.appearanceAff('fontSize')}
+                </div>`;
+    }
+
+    /** Text contrast: on General, and on the studio's Layout tab. */
+    renderInkGapField() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
         // The ink gap is a lightness distance, not a percentage of anything, so
         // it is shown as the contrast it buys rather than as its own number:
         // "0.44" means nothing to a reader, "normal" and the ends of the range
@@ -9145,6 +9167,27 @@ class DashboardConfig {
         const inkGap = Number.isFinite(Number(s.inkGap)) && Number(s.inkGap) > 0
             ? Math.min(0.58, Math.max(0.30, Number(s.inkGap)))
             : 0.47;
+        return `
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
+                    <select class="config-select" data-appearance-select="inkGap">
+                        ${DashboardConfig.INK_GAP_STEPS.map(([value, key, fallback]) => `<option value="${value}"${DashboardConfig.inkGapStepFor(inkGap) === value ? ' selected' : ''}>${esc(this.t(`config.${key}`, fallback))}</option>`).join('')}
+                    </select>
+                    ${this.appearanceAff('inkGap')}
+                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
+                </div>`;
+    }
+
+    renderAppearance() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const apIntro = `<p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>`;
+        // Which half of the current family is showing, so Quick mode marks the
+        // right button whatever theme is picked. Reading s.theme directly only
+        // ever matched the two legacy ids, leaving both buttons unlit on every
+        // other theme.
+        const theme = String(s.theme || 'dark').endsWith('-light') || s.theme === 'light' ? 'light' : 'dark';
+
         const randomMode = window.ThemeUtils?.normalizeRandomThemeMode?.(s) ?? s.randomThemeMode ?? 'off';
         const showingThemeId = randomMode !== 'off'
             ? (document.documentElement.getAttribute('data-theme')
@@ -9155,33 +9198,6 @@ class DashboardConfig {
         const randomShowingHint = randomMode !== 'off'
             ? `<p class="config-field-hint">${esc(this.t('config.randomThemeShowingHint', 'Currently showing: {theme}').replace('{theme}', this.themeDisplayName(showingThemeId, this._themeList?.[showingThemeId])))}</p>`
             : '';
-
-        // Picking "Gradient" or "Image" only sets the type; these sub-sections
-        // are what actually choose one, so the type buttons do not dead-end.
-        const bgPresets = window.VisualSettings?.BACKGROUND_PRESETS || {};
-        const activeGradient = s.backgroundGradient || '';
-        const gradientSwatches = Object.entries(bgPresets).map(([name, css]) =>
-            `<button type="button" class="config-bg-swatch${activeGradient === name ? ' is-active' : ''}"
-                     data-appearance-gradient="${esc(name)}" style="background:${esc(css)}"
-                     aria-pressed="${activeGradient === name}"
-                     aria-label="${esc(this.t(`config.backgroundPreset.${name}`, name))}"
-                     title="${esc(this.t(`config.backgroundPreset.${name}`, name))}"></button>`).join('');
-        const bgDetail = bgType === 'auto'
-            ? `<p class="config-field-hint">${esc(this.t('config.backgroundAutoHint', 'A gradient matched to your active theme.'))}</p>`
-            : bgType === 'gradient'
-            ? `<div class="config-field">
-                   <span class="config-field-label">${esc(this.t('config.backgroundGradientLabel', 'Gradient'))}</span>
-                   <div class="config-bg-swatches" role="group">${gradientSwatches}</div>
-                   <p class="config-field-hint">${esc(this.t('config.backgroundGradientHint', 'Thirteen presets, from dark to light. Pair a light gradient with a light theme.'))}</p>
-               </div>`
-            : bgType === 'image'
-                ? `<div class="config-field">
-                       <span class="config-field-label">${esc(this.t('config.backgroundImageUrlLabel', 'Image URL'))}</span>
-                       <input type="url" class="config-text" data-appearance-text="backgroundImageUrl"
-                              value="${esc(s.backgroundImageUrl || '')}" placeholder="https://example.com/image.jpg">
-                       <p class="config-field-hint">${esc(this.t('config.backgroundImageUrlHint', 'A direct link to an image file. Lower the opacity below if it makes the bookmarks hard to read.'))}</p>
-                   </div>`
-                : '';
 
         /*
          * One column of settings with the live preview beside it.
@@ -9216,6 +9232,12 @@ class DashboardConfig {
 
         if (this.appearanceTab === 'custom-themes') {
             return shell(this.renderCustomThemes());
+        }
+        if (this.appearanceTab === 'background') {
+            return shell(this.renderAppearanceBackgroundBody());
+        }
+        if (this.appearanceTab === 'surface') {
+            return shell(this.renderAppearanceSurfaceBody());
         }
         if (this.appearanceTab === 'layout') {
             return shell(this.renderAppearanceLayoutBody());
@@ -9284,93 +9306,14 @@ class DashboardConfig {
             </div>
 
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceSurfacesTitle', 'Surfaces'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceSurfacesNote', 'How a theme is drawn, rather than which theme it is. Both apply to whichever one is on.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.themeDepthLabel', 'Depth'))}</span>
-                    <select class="config-select" data-appearance-select="themeDepth">
-                        <option value="follow"${this.surfaceSelectValue('themeDepth') === 'follow' ? ' selected' : ''}>${esc(this.t('config.themeSurfacesFollow', 'Follow the theme'))}</option>
-                        ${['flat', 'soft', 'rich', 'vivid', 'glass'].map((option) => `<option value="${option}"${this.surfaceSelectValue('themeDepth') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
-                    </select>
-                    ${this.surfaceAff('themeDepth')}
-                    <p class="config-panel-note">${esc(this.t('config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Follow the theme lets each theme bring the depth it was drawn for; pick a value instead and it holds for the theme you are on.'))}</p>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.glowStrengthLabel', 'Glow'))}</span>
-                    <select class="config-select" data-appearance-select="glowStrength">
-                        <option value="follow"${this.surfaceSelectValue('glowStrength') === 'follow' ? ' selected' : ''}>${esc(this.t('config.themeSurfacesFollow', 'Follow the theme'))}</option>
-                        ${[['soft', 'Soft'], ['full', 'Full'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${this.surfaceSelectValue('glowStrength') === option ? ' selected' : ''}>${esc(this.t('config.glowStrength' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
-                    </select>
-                    ${this.surfaceAff('glowStrength')}
-                    <p class="config-panel-note">${esc(this.t('config.glowStrengthNote', 'How far the theme\'s own colour carries around a surface and around what you are acting on. Follow the theme lets each theme bring its own; Full is what earlier versions drew, and Soft is the middle. Depth decides whether there is a glow at all — flat has none.'))}</p>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.themeEffectsLabel', 'Effects'))}</span>
-                    <select class="config-select" data-appearance-select="themeEffects">
-                        <option value="follow"${this.surfaceSelectValue('themeEffects') === 'follow' ? ' selected' : ''}>${esc(this.t('config.themeSurfacesFollow', 'Follow the theme'))}</option>
-                        ${[['full', 'Full'], ['held', 'Held back'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${this.surfaceSelectValue('themeEffects') === option ? ' selected' : ''}>${esc(this.t('config.themeEffects' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
-                    </select>
-                    ${this.surfaceAff('themeEffects')}
-                    <p class="config-panel-note">${esc(this.t('config.themeEffectsNote', 'How loudly a theme\'s character is drawn: the shine on a lacquered surface, the glow around a neon one, the grain on a brushed one, and how round its corners are. Off leaves the palette and nothing else. Depth is a different question — it decides how much of the theme is drawn behind the content.'))}</p>
-                </div>
-
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
-                    <select class="config-select" data-appearance-select="inkGap">
-                        ${DashboardConfig.INK_GAP_STEPS.map(([value, key, fallback]) => `<option value="${value}"${DashboardConfig.inkGapStepFor(inkGap) === value ? ' selected' : ''}>${esc(this.t(`config.${key}`, fallback))}</option>`).join('')}
-                    </select>
-                    ${this.appearanceAff('inkGap')}
-                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
-                </div>
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceTextMotionTitle', 'Text and motion'))}</h3>
+                ${this.renderInkGapField()}
                 <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="animationsEnabled" ${s.animationsEnabled !== false ? 'checked' : ''}>
                         <span>${esc(this.t('config.enableAnimations', 'Enable animations'))}</span>
                     </label>
                     ${this.appearanceAff('animationsEnabled')}
-                </div>
-            </div>
-
-            <!-- Whose the three above are. Its own panel rather than two more
-                 rows in Surfaces: they are not settings about how a theme is
-                 drawn, they are about who answers, and Surfaces was seven
-                 fields deep with them in it. -->
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceSurfaceScopeTitle', 'Whose surfaces these are'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceSurfaceScopeNote', 'Depth, Glow and Effects can belong to the theme you are on, or to every theme.'))}</p>
-                <div class="config-field-row">
-                    <label class="config-toggle">
-                        <input type="checkbox" data-appearance-toggle="themeSurfacesForceAll"${s.themeSurfacesForceAll ? ' checked' : ''}>
-                        <span>${esc(this.t('config.themeSurfacesForceAllLabel', 'Use these for every theme'))}</span>
-                    </label>
-                    ${this.appearanceAff('themeSurfacesForceAll')}
-                </div>
-                <p class="config-panel-note">${esc(this.t('config.themeSurfacesForceAllNote', 'Off, the three above belong to the theme you are on and each theme keeps its own. On, they hold for every theme and a theme brings nothing of its own.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.themeResetLabel', 'This theme'))}</span>
-                    <button type="button" class="config-btn config-btn--field" data-appearance-action="reset-theme-surfaces">${esc(this.t('config.themeResetToIdeal', 'Back to the theme\'s own'))}</button>
-                    <p class="config-panel-note">${esc(this.t('config.themeResetNote', 'Changes you make while Follow the theme is on belong to the theme you are on, so switching away and back finds them again. This puts the theme you are on back to what it ships with.'))}</p>
-                </div>
-            </div>
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceBackdropTitle', 'Backdrop'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceBackdropNote', 'What is behind the content, under your own background image.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.themeBackdropLabel', 'Theme backdrop'))}</span>
-                    <select class="config-select" data-appearance-select="themeBackdrop">
-                        ${[['on', 'On'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${(s.themeBackdrop || 'on') === option ? ' selected' : ''}>${esc(this.t('config.themeBackdrop' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
-                    </select>
-                    ${this.appearanceAff('themeBackdrop')}
-                    <p class="config-panel-note">${esc(this.t('config.themeBackdropNote', 'Every theme brings its own backdrop, built from its own colours, so no two look alike. Turn it off for a flat surface. Your own background image, if you set one, is drawn over it either way.'))}</p>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.backgroundPatternLabel', 'Backdrop'))}</span>
-                    <select class="config-select" data-appearance-select="backgroundPattern">
-                        ${[['auto', 'Follow the theme'], ['dots', 'Dots'], ['grid', 'Grid'], ['lines', 'Lines'], ['hatch', 'Hatch'], ['none', 'None']].map(([option, label]) => `<option value="${option}"${(s.backgroundPattern || 'auto') === option ? ' selected' : ''}>${esc(this.t('config.backgroundPattern' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
-                    </select>
-                    ${this.appearanceAff('backgroundPattern')}
-                    <p class="config-panel-note">${esc(this.t('config.backgroundPatternNote', 'The texture behind the dashboard. Left to the theme, most ask for dots and a few ask for something that suits them. Lines and hatch cover more of the page than dots do, so they read heavier on a light theme.'))}</p>
                 </div>
             </div>
 
@@ -9383,43 +9326,14 @@ class DashboardConfig {
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceTypeTitle', 'Type'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceTypeNote', 'The typeface, weight, and size used across the dashboard. Upload a font file to use one that is not listed.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.fontPresetLabel', 'Font'))}</span>
-                    <select class="config-select" data-appearance-select="fontPreset">${fontPresetOptions}</select>
-                    ${this.appearanceAff('fontPreset')}
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.fontWeightLabel', 'Weight'))}</span>
-                    <div class="config-choices" role="group">${weightChoices}</div>
-                    ${this.appearanceAff('fontWeight')}
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.appearanceFontSize', 'Font size'))}</span>
-                    <div class="config-choices" role="group">${fontOptions}</div>
-                </div>
+                ${this.renderTypeFields()}
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.uploadFontLabel', 'Custom font'))}</span>
                     <button type="button" class="config-btn config-btn--small" data-appearance-action="upload-font">${esc(this.t('config.detailUploadIconBtn', 'Upload…'))}</button>
                     <input type="file" id="config-font-input" accept=".woff,.woff2,.ttf,.otf" hidden>
                 </div>
             </div>
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceBackgroundTitle', 'Background'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceBackgroundNote', 'What sits behind the bookmarks. Auto follows your theme; Gradient and Image let you choose your own, and opacity fades it back so the text stays readable.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.backgroundLabel', 'Background'))}</span>
-                    <div class="config-choices" role="group">${bgChoices}</div>
-                    ${this.appearanceAff('backgroundType')}
-                </div>
-                ${bgDetail}
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.backgroundOpacityLabel', 'Opacity'))}</span>
-                    <input type="range" class="config-range" data-appearance-range="backgroundOpacity" min="0.65" max="1" step="0.05" value="${opacity}">
-                    <span class="config-range-value">${Math.round(opacity * 100)}%</span>
-                    ${this.appearanceAff('backgroundOpacity')}
-                </div>
-            </div>`);
+`);
     }
 
     /**
@@ -9497,6 +9411,16 @@ class DashboardConfig {
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live on their own tab.'))}</p>
+                ${this.renderRowToggles()}
+            </div>
+            ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}`;
+    }
+
+    /** Icons and status colour on bookmark rows: on Display, and in the studio. */
+    renderRowToggles() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        return `
                 <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="showIcons" ${s.showIcons !== false ? 'checked' : ''}>
@@ -9510,9 +9434,7 @@ class DashboardConfig {
                         <span>${esc(this.t('config.colorizeStatus', 'Colour status on bookmark rows'))}</span>
                     </label>
                     ${this.appearanceAff('colorizeStatus')}
-                </div>
-            </div>
-            ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}`;
+                </div>`;
     }
 
     /** Friendly name for a theme id, matching the old config's labels. */
@@ -9539,47 +9461,14 @@ class DashboardConfig {
     }
 
     /**
-     * The theme browser, over the config view.
+     * The theme browser, docked beside the dashboard.
      *
-     * Preview and revert are the config view's own — the same pair the inline
-     * picker uses — so browsing here can no more strand a theme than browsing
-     * there can. _themePickerPrevious is what revert restores to, and it has to
-     * be set before the first preview rather than by the browser itself.
+     * The studio itself lives in dashboard-config-studio.js; this is the name
+     * Shift+A, the notice card, the changes tour and Appearance's Browse button
+     * all call.
      */
-    async openThemeBrowser() {
-        if (!window.ThemeBrowser?.open) return;
-        const [colors, meta] = await Promise.all([
-            this.loadColorsData(), this.loadThemeMeta(), this.loadThemeList(),
-        ]).then(([c, m]) => [c, m]);
-        const palettes = {
-            light: colors?.light || {},
-            dark: colors?.dark || {},
-            ...(colors?.builtIn || {}),
-            ...(colors?.custom || {}),
-        };
-        this._themePickerPrevious = this.dash.settings?.theme || 'dark';
-        window.ThemeBrowser.open({
-            palettes,
-            meta,
-            current: this.dash.settings?.theme || 'dark',
-            favorites: Array.isArray(this.dash.settings?.favoriteThemes)
-                ? this.dash.settings.favoriteThemes
-                : [],
-            t: (key, fallback) => this.t(key, fallback),
-            displayName: (id, name) => this.themeDisplayName(id, name),
-            onPreview: (id) => this.previewThemeChoice(id),
-            onRevert: () => this.revertThemePreview(),
-            onFavorites: (favorites) => {
-                this.dash.settings.favoriteThemes = favorites;
-                this.persistAppearance();
-            },
-            onPick: async (id) => {
-                this.clearThemePreview();
-                this._themePickerPrevious = null;
-                await this.applyThemeChoice(id);
-                this.repaintAppearanceBody();
-            },
-        });
+    async openThemeBrowser(options) {
+        return this.openLookStudio?.(options);
     }
 
     renderThemeOptions() {
@@ -9946,44 +9835,7 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-theme]').forEach((btn) => {
             btn.addEventListener('click', () => this.setQuickMode(btn.getAttribute('data-appearance-theme')));
         });
-        container.querySelectorAll('[data-appearance-font]').forEach((btn) => {
-            // Small/Medium/Large says nothing about what the grid will look
-            // like, so pointing at one shows it and leaving puts it back. The
-            // theme picker already works this way; type is the other choice you
-            // cannot judge from its label.
-            const size = btn.getAttribute('data-appearance-font');
-            const preview = () => {
-                if (this._fontSizeBeforePreview == null) {
-                    this._fontSizeBeforePreview = this.currentFontSize();
-                }
-                // Before the class changes: the panel must keep the size it has.
-                this.holdConfigTypeScale();
-                this.dash.settings.fontSize = size;
-                this.dash.applyFontSize?.();
-            };
-            const revert = () => {
-                const previous = this._fontSizeBeforePreview;
-                this._fontSizeBeforePreview = null;
-                this.releaseConfigTypeScale();
-                if (previous == null) return;
-                this.dash.settings.fontSize = previous;
-                this.dash.applyFontSize?.();
-            };
-            btn.addEventListener('pointerenter', preview);
-            btn.addEventListener('focus', preview);
-            btn.addEventListener('pointerleave', revert);
-            btn.addEventListener('blur', revert);
-            btn.addEventListener('click', () => {
-                // Taken, so there is nothing to put back — and the panel takes
-                // the new size with everything else.
-                this._fontSizeBeforePreview = null;
-                this.releaseConfigTypeScale();
-                this.setFontSize(size);
-            });
-        });
-        container.querySelectorAll('[data-appearance-weight]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setFontWeight(btn.getAttribute('data-appearance-weight')));
-        });
+        this.bindAppearanceFieldControls(container);
         container.querySelectorAll('[data-appearance-randommode]').forEach((btn) => {
             btn.addEventListener('click', () => this.setAppearanceSelect('randomThemeMode', btn.getAttribute('data-appearance-randommode')));
         });
@@ -9998,23 +9850,6 @@ class DashboardConfig {
         if (bgUrl) {
             bgUrl.addEventListener('change', () => this.setBackgroundImageUrl(bgUrl.value));
         }
-        container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
-            input.addEventListener('change', () => {
-                const field = input.getAttribute('data-appearance-toggle');
-                const host = container.querySelector(`[data-appearance-art="${CSS.escape(field)}"]`);
-                if (host) {
-                    host.innerHTML = window.SettingArt?.render?.(
-                        host.getAttribute('data-art-kind') || '', input.checked) || '';
-                }
-                return this.setToggle(field, input.checked);
-            });
-        });
-        // `select` only: the theme picker shares the data-appearance-select hook
-        // so search and the changed-filter still find it, but it is a button with
-        // its own listbox and no change event to listen for.
-        container.querySelectorAll('select[data-appearance-select]').forEach((select) => {
-            select.addEventListener('change', () => this.setAppearanceSelect(select.getAttribute('data-appearance-select'), select.value));
-        });
         this.bindThemePicker(container);
         // Range and text update live without a full repaint so the control keeps focus.
         const range = container.querySelector('[data-appearance-range="backgroundOpacity"]');
@@ -10041,39 +9876,6 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleAppearanceAction(btn.getAttribute('data-appearance-action')));
         });
-        // Favicon harmonisation: the on/off and style buttons repaint (they change
-        // which controls are shown); the slider updates live so it keeps the pointer.
-        container.querySelectorAll('[data-appearance-toggle-icons]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                void this.setIconStyling({ enabled: btn.getAttribute('data-appearance-toggle-icons') === 'on' });
-            });
-        });
-        container.querySelectorAll('[data-appearance-iconstyle]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                void this.setIconStyling({ style: btn.getAttribute('data-appearance-iconstyle') });
-            });
-        });
-        const iconRange = container.querySelector('[data-appearance-icon-intensity]');
-        if (iconRange) {
-            iconRange.addEventListener('input', () => {
-                const val = Number(iconRange.value);
-                const out = iconRange.parentElement?.querySelector('.config-range-value');
-                if (out) out.textContent = `${Math.round(val * 100)}%`;
-                iconRange.parentElement?.querySelectorAll('.config-icon-preview-dot').forEach((dot) => {
-                    dot.style.setProperty('--icon-theme-intensity', String(val));
-                });
-                const nextEntry = { ...this.iconStylingEntry(), intensity: val };
-                const map = { ...(this.dash.settings.themeIconStyling || {}) };
-                for (const key of this.iconStylingThemeKeysForWrite()) {
-                    map[key] = { ...nextEntry };
-                }
-                this.dash.settings.themeIconStyling = map;
-                window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(this.dash.settings);
-            });
-            iconRange.addEventListener('change', () => {
-                void this.setIconStyling({ intensity: Number(iconRange.value) }, { repaint: false });
-            });
-        }
         const fontInput = container.querySelector('#config-font-input');
         if (fontInput) {
             fontInput.addEventListener('change', () => {
@@ -10112,6 +9914,105 @@ class DashboardConfig {
             : container.querySelector('#config-appearance-body');
         this.applyAppearanceChangedFilter(body);
         this.bindFormKeyboard(container);
+        // The Background and Surface tabs bind what is new on them.
+        this.bindLookControls?.(container);
+    }
+
+    /**
+     * The binders for Appearance's own field controls -- font, weight, size,
+     * the selects, the toggles and favicon styling. Shared with the look
+     * studio, which shows some of these controls and must not bind the rest of
+     * the config view (the shell head, the tab strip, the filter).
+     */
+    bindAppearanceFieldControls(container) {
+        container.querySelectorAll('[data-appearance-font]').forEach((btn) => {
+            // Small/Medium/Large says nothing about what the grid will look
+            // like, so pointing at one shows it and leaving puts it back. The
+            // theme picker already works this way; type is the other choice you
+            // cannot judge from its label.
+            const size = btn.getAttribute('data-appearance-font');
+            const preview = () => {
+                if (this._fontSizeBeforePreview == null) {
+                    this._fontSizeBeforePreview = this.currentFontSize();
+                }
+                // Before the class changes: the panel must keep the size it has.
+                this.holdConfigTypeScale();
+                this.dash.settings.fontSize = size;
+                this.dash.applyFontSize?.();
+            };
+            const revert = () => {
+                const previous = this._fontSizeBeforePreview;
+                this._fontSizeBeforePreview = null;
+                this.releaseConfigTypeScale();
+                if (previous == null) return;
+                this.dash.settings.fontSize = previous;
+                this.dash.applyFontSize?.();
+            };
+            btn.addEventListener('pointerenter', preview);
+            btn.addEventListener('focus', preview);
+            btn.addEventListener('pointerleave', revert);
+            btn.addEventListener('blur', revert);
+            btn.addEventListener('click', () => {
+                // Taken, so there is nothing to put back — and the panel takes
+                // the new size with everything else.
+                this._fontSizeBeforePreview = null;
+                this.releaseConfigTypeScale();
+                this.setFontSize(size);
+            });
+        });
+        container.querySelectorAll('[data-appearance-weight]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setFontWeight(btn.getAttribute('data-appearance-weight')));
+        });
+        container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
+            input.addEventListener('change', () => {
+                const field = input.getAttribute('data-appearance-toggle');
+                const host = container.querySelector(`[data-appearance-art="${CSS.escape(field)}"]`);
+                if (host) {
+                    host.innerHTML = window.SettingArt?.render?.(
+                        host.getAttribute('data-art-kind') || '', input.checked) || '';
+                }
+                return this.setToggle(field, input.checked);
+            });
+        });
+        // `select` only: the theme picker shares the data-appearance-select hook
+        // so search and the changed-filter still find it, but it is a button with
+        // its own listbox and no change event to listen for.
+        container.querySelectorAll('select[data-appearance-select]').forEach((select) => {
+            select.addEventListener('change', () => this.setAppearanceSelect(select.getAttribute('data-appearance-select'), select.value));
+        });
+        // Favicon harmonisation: the on/off and style buttons repaint (they change
+        // which controls are shown); the slider updates live so it keeps the pointer.
+        container.querySelectorAll('[data-appearance-toggle-icons]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.setIconStyling({ enabled: btn.getAttribute('data-appearance-toggle-icons') === 'on' });
+            });
+        });
+        container.querySelectorAll('[data-appearance-iconstyle]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.setIconStyling({ style: btn.getAttribute('data-appearance-iconstyle') });
+            });
+        });
+        const iconRange = container.querySelector('[data-appearance-icon-intensity]');
+        if (iconRange) {
+            iconRange.addEventListener('input', () => {
+                const val = Number(iconRange.value);
+                const out = iconRange.parentElement?.querySelector('.config-range-value');
+                if (out) out.textContent = `${Math.round(val * 100)}%`;
+                iconRange.parentElement?.querySelectorAll('.config-icon-preview-dot').forEach((dot) => {
+                    dot.style.setProperty('--icon-theme-intensity', String(val));
+                });
+                const nextEntry = { ...this.iconStylingEntry(), intensity: val };
+                const map = { ...(this.dash.settings.themeIconStyling || {}) };
+                for (const key of this.iconStylingThemeKeysForWrite()) {
+                    map[key] = { ...nextEntry };
+                }
+                this.dash.settings.themeIconStyling = map;
+                window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(this.dash.settings);
+            });
+            iconRange.addEventListener('change', () => {
+                void this.setIconStyling({ intensity: Number(iconRange.value) }, { repaint: false });
+            });
+        }
     }
 
     /** Wait for any in-flight settings write before swapping appearance tabs. */
@@ -10149,6 +10050,12 @@ class DashboardConfig {
     /** Persist a settings change and repaint the appearance section. */
     persistAppearance() {
         const savePromise = this.saveSettingsWithFeedback();
+        // In the theme browser the tab that changed draws itself again; the
+        // config body is not on screen.
+        if (this._lookStudio) {
+            this._lookStudio.ui?.repaint();
+            return savePromise;
+        }
         if (this.isActiveView() && this.section === 'appearance') {
             /*
              * Capture before the save, restore after the repaint.
@@ -10235,6 +10142,8 @@ class DashboardConfig {
     appearanceTabLabel(tab) {
         const map = {
             general: ['config.appearanceTabLook', 'Look'],
+            background: ['config.appearanceTabBackground', 'Background'],
+            surface: ['config.appearanceTabSurface', 'Surface'],
             layout: ['config.appearanceTabGrid', 'Grid'],
             display: ['config.appearanceTabRows', 'Rows'],
             header: ['config.appearanceTabHeader', 'Header'],
@@ -10677,6 +10586,10 @@ class DashboardConfig {
      * to patch in place.
      */
     repaintAppearanceBody() {
+        if (this._lookStudio) {
+            this._lookStudio.ui?.repaint();
+            return;
+        }
         // The theme browser can be opened from the dashboard now, and its
         // onPick lands here. Without this the fallback below would render the
         // whole config view over the bookmarks someone is looking at, because
@@ -11363,6 +11276,11 @@ class DashboardConfig {
      * the difference was.
      */
     surfaceAff(field) {
+        return this.infoAff(field);
+    }
+
+    /** Just the ℹ, for rows whose reset is a button of the panel's own. */
+    infoAff(field) {
         const esc = (v) => this.dash.escapeHtml(v);
         const meta = this.fieldMeta(field);
         const info = meta?.info && this.hasInfoText(meta.info)
@@ -11507,6 +11425,7 @@ class DashboardConfig {
         switch (field) {
             case 'fontPreset': this.setAppearanceSelect('fontPreset', value); break;
             case 'fontWeight': this.setFontWeight(value); break;
+            case 'fontSize': this.setFontSize(value); break;
             case 'backgroundType': this.setBackgroundType(value); break;
             case 'backgroundOpacity':
                 this.dash.settings.backgroundOpacity = window.VisualSettings?.clampBackgroundOpacity
@@ -11901,7 +11820,7 @@ class DashboardConfig {
             return;
         }
         if (name === 'themeBackdrop') {
-            const mode = value === 'off' ? 'off' : 'on';
+            const mode = value === 'off' ? 'off' : 'follow';
             this.dash.settings.themeBackdrop = mode;
             window.ThemeLoader?.applyThemeBackdrop?.(mode);
             this.persistAppearance();
@@ -12016,6 +11935,14 @@ class DashboardConfig {
 
     /** Reload the server-rendered theme stylesheet so a theme change takes effect. */
     reloadThemeCSS() {
+        // The theme browser previews a backdrop roll before it is saved, and
+        // the roll is in this stylesheet, so it asks for the one on screen.
+        if (this._lookStudio) {
+            const seed = Number(this.dash.settings?.backdropTuning?.seed) || 0;
+            this._lookStudio.loadedSeed = seed;
+            window.VisualSettings?.reloadThemeCSS?.({ seed });
+            return;
+        }
         window.VisualSettings?.reloadThemeCSS?.();
     }
 
@@ -12126,7 +12053,9 @@ class DashboardConfig {
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
         shortcutDisplay: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: 'always' },
-        rowHighlight: { hint: 'rowHighlightHint', def: 'subtle' },
+        rowHighlight: { info: ['rowHighlightInfoTitle', 'rowHighlightInfoMessage',
+            'How a row lights up', 'Subtle lets the accent reach a little way in from the left edge of the row you are on. Strong carries it much further across, which is easier to pick out at a glance or from a distance.'],
+            hint: 'rowHighlightHint', def: 'subtle' },
         showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
@@ -12267,9 +12196,49 @@ class DashboardConfig {
         themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
         inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.47 },
-        themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'on' },
+        themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'follow' },
+        categoryHeaderStyle: { info: ['categoryHeaderStyleInfoTitle', 'categoryHeaderStyleInfoMessage',
+            'Category header style', 'How the name above each category is drawn: clean, underlined, in a box, as a small label, or as the head of a card round the whole group. Follow the theme leaves it as the theme and the layout draw it.'], def: 'theme' },
+        categoryHeaderSize: { info: ['categoryHeaderSizeInfoTitle', 'categoryHeaderSizeInfoMessage',
+            'Header size', 'How large the category names are drawn, from a small label to a heading.'], def: 'm' },
+        showCategoryIcon: { info: ['showCategoryIconInfoTitle', 'showCategoryIconInfoMessage',
+            'Category icon', 'Shows the icon a category was given in front of its name. The icon is chosen per category, from its menu.'], def: true },
+        showCategoryCount: { info: ['showCategoryCountInfoTitle', 'showCategoryCountInfoMessage',
+            'Bookmark count', 'Shows how many bookmarks a category holds beside its name.'], def: false },
+        categoryHeaderAccentLine: { info: ['categoryHeaderAccentLineInfoTitle', 'categoryHeaderAccentLineInfoMessage',
+            'Accent underline', 'Draws the line under a category name in the theme\'s accent colour rather than a neutral one.'], def: false },
         backgroundPattern: { info: ['backgroundPatternInfoTitle', 'backgroundPatternInfoMessage'], def: 'auto' },
-        fontSize: { def: 'm' },
+        fontSize: { info: ['fontSizeInfoTitle', 'fontSizeInfoMessage',
+            'Font size', 'The size of all text on the dashboard. Pointing at a size shows it before you choose one.'], def: 'm' },
+        /*
+         * Not settings fields of their own: the backdrop sliders are keys of
+         * backdropTuning and the card glass rows are parts of one entry. They
+         * are named here only so their ℹ has something to open.
+         */
+        backdropStrength: { info: ['backdropStrengthInfoTitle', 'backdropStrengthInfoMessage',
+            'Intensity', 'How strongly the theme\'s backdrop is drawn. Lower lets it fade into the page colour; higher makes its colours and shapes stand out.'] },
+        backdropScale: { info: ['backdropScaleInfoTitle', 'backdropScaleInfoMessage',
+            'Scale', 'How large the backdrop\'s shapes are. Smaller repeats them more often across the page; larger spreads them out.'] },
+        backdropSeed: { info: ['backdropSeedInfoTitle', 'backdropSeedInfoMessage',
+            'Variant', 'Each number arranges the same backdrop differently: where its shapes sit and how they overlap. The dice picks one at random.'] },
+        backdropBlur: { info: ['backdropBlurInfoTitle', 'backdropBlurInfoMessage',
+            'Blur', 'Softens the backdrop, or your own background image, behind the dashboard. Useful when a busy backdrop competes with the bookmarks.'] },
+        backdropBrightness: { info: ['backdropBrightnessInfoTitle', 'backdropBrightnessInfoMessage',
+            'Brightness', 'Darkens or lightens the backdrop and your background image, without changing the theme\'s colours.'] },
+        backdropSaturate: { info: ['backdropSaturateInfoTitle', 'backdropSaturateInfoMessage',
+            'Saturation', 'How vivid the backdrop\'s colours are. At 0 it turns grey; above 1 it gets more colourful.'] },
+        backdropTint: { info: ['backdropTintInfoTitle', 'backdropTintInfoMessage',
+            'Theme tint', 'Lays the theme\'s page colour over the backdrop, so a photo or a bright backdrop takes on the colour of the theme.'] },
+        cardGlassMode: { info: ['cardGlassModeInfoTitle', 'cardGlassModeInfoMessage',
+            'Card glass', 'Follow the theme keeps the opacity and blur the theme comes with. Own lets you set them with the sliders below. Panes are only drawn at depth Glass.'] },
+        cardGlassAlpha: { info: ['cardGlassAlphaInfoTitle', 'cardGlassAlphaInfoMessage',
+            'Opacity', 'How solid a pane is. At 100% nothing behind it shows through; lower lets the backdrop show.'] },
+        cardGlassBlur: { info: ['cardGlassBlurInfoTitle', 'cardGlassBlurInfoMessage',
+            'Blur', 'How far the page behind a pane is blurred. More blur keeps the text on a pane readable over a busy backdrop.'] },
+        cardGlassBorder: { info: ['cardGlassBorderInfoTitle', 'cardGlassBorderInfoMessage',
+            'Edge', 'Draws a thin line round each pane, so panes stay apart on a light or busy backdrop.'] },
+        cardGlassContrast: { info: ['cardGlassContrastInfoTitle', 'cardGlassContrastInfoMessage',
+            'Text on a pane', 'The contrast between the text and the pane under it, worked out for the theme on screen and the backdrop behind it. AA is enough to read comfortably, AAA is better. If it says low, raise the opacity or turn the backdrop down.'] },
         customTitle: { def: '' },
         monitorNotifyRetries: { info: ['monitorNotifyRetriesInfoTitle', 'monitorNotifyRetriesInfoMessage'], def: 3 },
         pushNotifyEnabled: { info: ['pushNotifyInfoTitle', 'pushNotifyInfoMessage'], def: false },
@@ -12426,10 +12395,10 @@ class DashboardConfig {
     openFieldInfo(field) {
         const meta = this.fieldMeta(field);
         if (!meta?.info || !window.AppModal?.alert) return;
-        const [titleKey, msgKey] = meta.info;
+        const [titleKey, msgKey, titleFallback = '', msgFallback = ''] = meta.info;
         window.AppModal.alert({
-            title: this.t(`config.${titleKey}`, ''),
-            htmlMessage: this.dash.escapeHtml(this.t(`config.${msgKey}`, '')).replace(/\n/g, '<br>'),
+            title: this.t(`config.${titleKey}`, titleFallback),
+            htmlMessage: this.dash.escapeHtml(this.t(`config.${msgKey}`, msgFallback)).replace(/\n/g, '<br>'),
             confirmText: this.t('config.gotIt', 'Got it'),
         });
     }
@@ -13120,6 +13089,38 @@ class DashboardConfig {
                 ],
             },
             {
+                // What a category is called above its bookmarks. First on the
+                // tab: it is the one setting here that changes how the whole
+                // page reads, and the rest are about a single row.
+                section: 'appearance',
+                tab: 'display',
+                order: -10,
+                title: t('config.categoryHeaderGroup', 'Category header'),
+                note: t('config.categoryHeaderNote', 'What a category is called above its bookmarks. Follow the theme leaves it as the theme and layout draw it. The icon is chosen per category, from its menu.'),
+                controls: [
+                    { field: 'categoryHeaderStyle', type: 'select', special: 'chrome',
+                        label: t('config.categoryHeaderStyleLabel', 'Style'),
+                        options: [
+                            opt('theme', t('config.categoryHeaderTheme', 'Follow the theme')),
+                            opt('clean', t('config.categoryHeaderClean', 'Clean')),
+                            opt('underlined', t('config.categoryHeaderUnderlined', 'Underlined')),
+                            opt('boxed', t('config.categoryHeaderBoxed', 'Boxed')),
+                            opt('label', t('config.categoryHeaderLabel', 'Label')),
+                            opt('group', t('config.categoryHeaderGroupCard', 'Group card')),
+                        ] },
+                    { field: 'categoryHeaderSize', type: 'select', special: 'chrome',
+                        label: t('config.categoryHeaderSizeLabel', 'Size'),
+                        options: [
+                            opt('s', t('config.categoryHeaderSmall', 'Small')),
+                            opt('m', t('config.categoryHeaderMedium', 'Medium')),
+                            opt('l', t('config.categoryHeaderLarge', 'Large')),
+                        ] },
+                    chrome('showCategoryIcon', 'config.showCategoryIconLabel', 'Show the category icon'),
+                    chrome('showCategoryCount', 'config.showCategoryCountLabel', 'Show how many bookmarks it holds'),
+                    chrome('categoryHeaderAccentLine', 'config.categoryHeaderAccentLabel', 'Underline in the accent colour'),
+                ],
+            },
+            {
                 section: 'appearance',
                 tab: 'display',
                 title: t('config.linkPreviewGroup', 'Link preview cards'),
@@ -13710,22 +13711,26 @@ class DashboardConfig {
         }
         const messageKey = Array.isArray(meta.info) ? meta.info[1] : null;
         if (!messageKey) return '';
-        const message = this.t(`config.${messageKey}`, '');
+        const message = this.t(`config.${messageKey}`, meta.info[3] || '');
         if (!message || message === `config.${messageKey}`) return '';
         const para = String(message).split(/\n\s*\n|\n•|\n-/)[0].replace(/\s+/g, ' ').trim();
         const sentence = para.match(/^.+?[.!?。！？](?=\s|$)/);
         return (sentence ? sentence[0] : para).trim();
     }
 
-    /** Whether an [titleKey, messageKey] pair resolves to real text. */
+    /**
+     * Whether an [titleKey, messageKey] pair resolves to real text. Two more
+     * entries, when given, are the English the keys fall back to: a new ℹ is
+     * written in English first and translated in a docs round.
+     */
     hasInfoText(info) {
-        const [titleKey, messageKey] = Array.isArray(info) ? info : [];
-        const resolved = (key) => {
+        const [titleKey, messageKey, titleFallback = '', messageFallback = ''] = Array.isArray(info) ? info : [];
+        const resolved = (key, fallback) => {
             if (!key) return '';
-            const value = this.t(`config.${key}`, '');
+            const value = this.t(`config.${key}`, fallback);
             return value && value !== `config.${key}` ? value : '';
         };
-        return Boolean(resolved(titleKey) || resolved(messageKey));
+        return Boolean(resolved(titleKey, titleFallback) || resolved(messageKey, messageFallback));
     }
 
     /** Render a schema of panels into HTML, keyed by a data-<prefix>-field. */
@@ -15270,7 +15275,7 @@ class DashboardConfig {
         }
         // The dashboard tour is about the whole dashboard, not a view that
         // could be opened later: like What has changed, it plays now.
-        if (tour.id === 'dashboardTutorialV1') {
+        if (tour.id === 'dashboardTutorialV2') {
             this.render();
             await this.dash.promos?.openDashboardTour?.();
             return;
@@ -15758,6 +15763,9 @@ class DashboardConfig {
     }
 
     setSaveState(state) {
+        // In the theme browser a change is a preview until Apply: "Saved"
+        // there said the opposite of what had happened. A failure still shows.
+        if (this._lookStudio && state !== 'error') return;
         const el = this.ensureSaveStateHost();
         if (!el) return;
         clearTimeout(this._saveStateTimer);
@@ -15912,6 +15920,8 @@ class DashboardConfig {
             const body = document.getElementById('config-appearance-body');
             const render = {
                 header: () => this.renderAppearanceToolbarBody(),
+                background: () => this.renderAppearanceBackgroundBody(),
+                surface: () => this.renderAppearanceSurfaceBody(),
                 layout: () => this.renderAppearanceLayoutBody(),
                 buttonbar: () => this.renderAppearanceActionBarBody(),
                 display: () => this.renderAppearanceDisplayBody(),
@@ -16041,7 +16051,7 @@ class DashboardConfig {
     // on the strip are Look, Grid, Rows, Header, Action bar and Date & weather.
     // Custom themes is last and is not on the strip: it is a page inside Look,
     // reached from Look's own button, with a way back to it.
-    static APPEARANCE_TABS = ['general', 'layout', 'display', 'header', 'buttonbar', 'datetime', 'custom-themes'];
+    static APPEARANCE_TABS = ['general', 'background', 'surface', 'layout', 'display', 'header', 'buttonbar', 'datetime', 'custom-themes'];
 
     /** Tabs a section keeps addressable but does not draw on its strip. */
     static APPEARANCE_SUBPAGES = { 'custom-themes': 'general' };
@@ -18435,7 +18445,7 @@ class DashboardConfig {
           whereKey: 'config.tourWhereNow', where: 'right away' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
-        { id: 'dashboardTutorialV1', labelKey: 'config.tourDashboard', label: 'The dashboard',
+        { id: 'dashboardTutorialV2', labelKey: 'config.tourDashboard', label: 'The dashboard',
           whereKey: 'config.tourWhereNow', where: 'right away' },
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },

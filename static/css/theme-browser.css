@@ -120,6 +120,27 @@
     font-size: 0.85em;
 }
 
+/* The theme in use, kept above the grid however far it scrolls. */
+.theme-browser-inuse {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-1, 0.35rem) var(--space-2, 0.6rem);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    font-size: 0.85em;
+}
+
+.theme-browser-inuse-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.theme-browser-inuse.is-chosen {
+    border-style: dashed;
+}
+
 .theme-browser-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
@@ -288,4 +309,336 @@
 
 .theme-browser-card-name {
     margin-right: auto;
+}
+
+/* ── The look studio ──────────────────────────────────────────────────
+   The browser as a panel docked on the right rather than a modal in the
+   middle: what is being chosen is how the page looks, so most of the page
+   stays in view. It lies over the dashboard and the page keeps its layout:
+   squeezing the columns to make room changed the very thing being judged.
+   Below 768px it is a sheet over the lower part of the screen instead.
+
+   Placed with top/left and a width rather than inset or right: 0, which on a
+   page with a classic scrollbar lands a gutter short of the edge.
+
+   490px so the six tabs fit on one line; at 440 the Layout tab scrolled out
+   of sight. */
+
+:root {
+    --look-studio-width: min(490px, 100vw);
+}
+
+/* The bottom-left cards sit above everything and are inert while the studio
+   is open; on a phone they covered the sheet. They come back on close. */
+body.look-studio-open .quickstart-card {
+    display: none;
+}
+
+/* The dialog an ℹ in the panel opens: over the panel, which is added to the
+   page later at the same z-index. */
+body.look-studio-open #app-modal {
+    z-index: 2001;
+}
+
+.look-studio {
+    position: fixed;
+    top: 0;
+    left: calc(100vw - var(--look-studio-width));
+    width: var(--look-studio-width);
+    height: 100vh;
+    height: 100dvh;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    box-sizing: border-box;
+    background: var(--surface-1, var(--background-secondary));
+    color: var(--text-primary);
+    border-left: 1px solid var(--hairline-strong, var(--border-primary));
+    box-shadow: -8px 0 28px rgba(0, 0, 0, 0.18);
+}
+
+.look-studio-head {
+    padding: var(--space-3, 0.75rem) var(--space-3, 0.9rem) 0;
+}
+
+.look-studio-title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+}
+
+.look-studio-title h2 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* The title takes the free space, so the × stays in the corner also where the
+   key line is hidden (the sheet on a phone). */
+.look-studio-title h2 {
+    margin-right: auto;
+}
+
+.look-studio-title .look-studio-keys {
+    margin-left: 0;
+}
+
+/* The ×, drawn like the bookmark form's. */
+.look-studio-close {
+    flex-shrink: 0;
+    align-self: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--radius-5, 8px);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.look-studio-close:hover,
+.look-studio-close:focus-visible {
+    background: var(--background-secondary, rgba(128, 128, 128, 0.12));
+}
+
+.look-studio-keys {
+    margin-left: auto;
+    color: var(--text-tertiary);
+    font-size: 0.75em;
+}
+
+.look-studio-tabs {
+    display: flex;
+    gap: 2px;
+    margin-top: var(--space-2, 0.6rem);
+    border-bottom: 1px solid var(--hairline-strong, var(--border-primary));
+    overflow-x: auto;
+}
+
+.look-studio-tab {
+    position: relative;
+    flex: 0 0 auto;
+    padding: 0.45rem 0.6rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.look-studio-tab.is-on {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-primary);
+}
+
+.look-studio-tab:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: -2px;
+}
+
+/* The dot on a tab whose answers differ from when the studio opened. */
+/* In the tab's corner rather than beside its name: six tabs have no width
+   to spare for six dots that are mostly hidden. */
+.look-studio-dot {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.15rem;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-warning, #fbbf24);
+    visibility: hidden;
+}
+
+.look-studio-tab.is-dirty .look-studio-dot {
+    visibility: visible;
+}
+
+.look-studio-pane {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    /* A touch scroll that reaches the end stops there instead of moving the
+       page; theme-browser.js does the same for the wheel. */
+    overscroll-behavior: contain;
+    padding: var(--space-3, 0.75rem) var(--space-3, 0.9rem);
+}
+
+.look-studio-pane:focus {
+    outline: none;
+}
+
+/* The theme grid scrolls with the pane rather than inside it. */
+.look-studio .theme-browser {
+    max-height: none;
+}
+
+.look-studio .theme-browser-grid {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    overflow: visible;
+}
+
+/* Appearance's panels, without the page's spacing around them. */
+.look-studio-pane .config-panel {
+    margin: 0 0 var(--space-3, 0.75rem);
+}
+
+.look-studio-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.6rem) var(--space-3, 0.9rem);
+    border-top: 1px solid var(--hairline-strong, var(--border-primary));
+}
+
+.look-studio-scope {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    font-size: 0.85em;
+}
+
+.look-studio-scope.is-off {
+    opacity: 0.4;
+}
+
+.look-studio-seg button:disabled {
+    cursor: default;
+}
+
+.look-studio-seg {
+    display: inline-flex;
+    border: 1px solid var(--hairline-strong, var(--border-primary));
+    border-radius: var(--layout-radius-sm, 8px);
+    overflow: hidden;
+}
+
+.look-studio-seg button {
+    padding: 0.3rem 0.65rem;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.look-studio-seg button[aria-pressed="true"] {
+    background: var(--accent-wash, color-mix(in srgb, var(--accent-primary) 18%, transparent));
+    color: var(--accent-primary);
+}
+
+.look-studio-spacer {
+    flex: 1 1 auto;
+}
+
+.look-studio-btn {
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--layout-radius-sm, 8px);
+    border: 1px solid var(--hairline-strong, var(--border-primary));
+    background: var(--surface-2, var(--background-primary));
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.look-studio-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.look-studio-btn--primary {
+    border-color: transparent;
+    background: var(--accent-primary);
+    color: var(--background-primary);
+    font-weight: 700;
+}
+
+.look-studio-btn:focus-visible,
+.look-studio-seg button:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
+}
+
+.look-studio-btn[data-studio-compare][aria-pressed="true"] {
+    background: var(--accent-warning, #fbbf24);
+    color: #000;
+}
+
+/* While Compare is held the panel steps back, so the page is what you see. */
+.look-studio.is-comparing .look-studio-pane {
+    opacity: 0.35;
+}
+
+.look-studio-looks {
+    display: grid;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.look-studio-look {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--hairline-strong, var(--border-primary));
+    border-radius: var(--layout-radius-md, 10px);
+}
+
+.look-studio-look-sw {
+    height: 44px;
+    border-radius: var(--layout-radius-sm, 6px);
+    background-color: var(--background-primary);
+    --bd-scale: 0.5;
+    --bd-strength: 1;
+}
+
+.look-studio-look-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    font-size: 0.85em;
+}
+
+.look-studio-look-text span {
+    color: var(--text-tertiary);
+}
+
+/* What the look sets, smaller and quieter than what it is for. */
+.look-studio-look-text .look-studio-look-parts {
+    margin-top: 2px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.look-studio-looks-intro p {
+    margin: 0 0 var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    line-height: 1.45;
+}
+
+@media (max-width: 767px) {
+    .look-studio {
+        top: 45vh;
+        left: 0;
+        width: 100vw;
+        height: 55vh;
+        border-left: 0;
+        border-top: 1px solid var(--hairline-strong, var(--border-primary));
+        border-radius: 14px 14px 0 0;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.2);
+    }
+
+    .look-studio-keys {
+        display: none;
+    }
 }

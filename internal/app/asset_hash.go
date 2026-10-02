@@ -159,6 +159,10 @@ func assetURL(rel string) string {
 var lazyLoadedAssets = []string{
 	"js/whats-new-modal.js",
 	"js/dashboard/dashboard-config.js",
+	// Appearance's Background and Surface tabs, and the theme browser's tabs
+	// built from them: both are required by the config loader.
+	"js/dashboard/dashboard-config-look.js",
+	"js/dashboard/dashboard-config-studio.js",
 	// The config sections split out of dashboard-config.js (SECTION_MODULES).
 	// Missing here, one loaded under its bare path, so a browser kept the copy
 	// it had from before a deploy and ran old code against new markup.

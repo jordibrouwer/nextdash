@@ -7,7 +7,7 @@ class DashboardPromos {
      * so the script is only fetched while the tour is still to come. Both must
      * agree.
      */
-    static DASHBOARD_TOUR_TIP_ID = 'dashboardTutorialV1';
+    static DASHBOARD_TOUR_TIP_ID = 'dashboardTutorialV2';
 
     constructor(dashboard) {
         this.dash = dashboard;

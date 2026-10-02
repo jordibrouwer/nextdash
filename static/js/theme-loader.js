@@ -346,16 +346,22 @@
     }
 
     /**
-     * Turns the theme's own backdrop on or off.
+     * Sets what the page is drawn behind: "off", a recipe name, or anything
+     * else for the theme's own backdrop ("follow", and the old "on").
      *
-     * Anything that is not the word "off" is on: the backdrop is part of what a
-     * theme looks like, so an unknown value should leave it showing rather than
-     * quietly strip a theme back to a flat colour.
+     * Anything that is not "off" leaves the backdrop showing: it is part of what
+     * a theme looks like, so an unknown value should not quietly strip a theme
+     * back to a flat colour. A recipe name goes to data-backdrop-recipe, which
+     * the stylesheet from /api/theme.css has a rule for; a word it has no rule
+     * for matches nothing and so also lands on the theme's own.
      */
     function applyThemeBackdrop(mode) {
-        const value = String(mode).toLowerCase() === 'off' ? 'off' : 'on';
+        const word = String(mode || '').trim().toLowerCase();
+        const value = word === 'off' ? 'off' : 'on';
+        const recipe = word === 'off' || word === 'on' || word === 'follow' ? '' : word;
         if (document.body) {
             document.body.setAttribute('data-theme-backdrop', value);
+            document.body.setAttribute('data-backdrop-recipe', recipe);
         }
         return value;
     }
@@ -480,6 +486,11 @@
         return surfaceMetaPromise;
     }
 
+    /** What the theme answers when nothing overrides it, once the meta is in; else null. */
+    function surfaceMetaFor(theme) {
+        return (surfaceMeta && surfaceMeta.themes && surfaceMeta.themes[theme]) || null;
+    }
+
     /** Forget the cache, for when a theme's character has just been edited. */
     function refreshSurfaceMeta() {
         surfaceMeta = null;
@@ -502,12 +513,43 @@
             if (o) return o;
             return fallback;
         };
+        // "on" is what "follow" was called before recipes could be chosen.
+        const backdropWord = (v) => (String(v || '').trim().toLowerCase() === 'on' ? '' : v);
+        const backdrop = pick(backdropWord(s.themeBackdrop), backdropWord(prefs.backdrop), 'follow');
+        // The card glass lives per theme, or install-wide when every theme is
+        // forced to one answer. A number is an answer; anything else is the
+        // theme's own.
+        const glassSource = s.themeSurfacesForceAll ? (s.cardGlass || {}) : prefs;
+        const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
         return {
+            glass: { alpha: num(glassSource.alpha), blur: num(glassSource.blur), border: glassSource.border === 'on' },
             depth: pick(s.themeDepth, prefs.depth, ideal.depth || 'soft'),
             glow: pick(s.glowStrength, prefs.glow, ideal.glow || 'off'),
             effects: pick(s.themeEffects, prefs.effects, ideal.effects || 'held'),
-            backdrop: pick(s.themeBackdrop, prefs.backdrop, ideal.backdrop || 'on'),
+            backdrop: backdrop === 'off' ? 'off' : 'on',
+            backdropRecipe: backdrop === 'off' || backdrop === 'follow' ? '' : backdrop,
         };
+    }
+
+    /**
+     * Writes the card glass for the theme on screen: alpha and blur as the two
+     * variables the glass surfaces read, on <html> where they outrank the
+     * theme's own block, and the border switch on <body>. Null is the theme's
+     * own, so the inline value is taken away rather than set to a default.
+     */
+    function applyCardGlass(glass) {
+        const root = document.documentElement;
+        const g = glass || {};
+        if (typeof g.alpha === 'number') root.style.setProperty('--theme-surface-alpha', String(g.alpha));
+        else root.style.removeProperty('--theme-surface-alpha');
+        if (typeof g.blur === 'number') root.style.setProperty('--theme-surface-blur', `${g.blur}px`);
+        else root.style.removeProperty('--theme-surface-blur');
+        if (document.body) {
+            document.body.setAttribute('data-card-border', g.border ? 'on' : '');
+            // Own numbers also give a layout without cards its glass panes.
+            const own = typeof g.alpha === 'number' || typeof g.blur === 'number';
+            document.body.setAttribute('data-card-glass', own ? 'own' : '');
+        }
     }
 
     /** Resolve and write all three attributes for a theme. */
@@ -517,6 +559,8 @@
             applyThemeDepth(resolved.depth);
             applyGlowStrength(resolved.glow);
             applyThemeEffects(resolved.effects);
+            applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
+            applyCardGlass(resolved.glass);
             return resolved;
         });
     }
@@ -711,8 +755,11 @@
         applySurfacesForTheme: applySurfacesForTheme,
         resolveSurfacesFor: resolveSurfacesFor,
         refreshSurfaceMeta: refreshSurfaceMeta,
+        loadSurfaceMeta: loadSurfaceMeta,
+        surfaceMetaFor: surfaceMetaFor,
         applyInkGap: applyInkGap,
         applyThemeBackdrop: applyThemeBackdrop,
+        applyCardGlass: applyCardGlass,
         applyBackgroundPattern: applyBackgroundPattern,
         syncBackgroundDots: syncBackgroundDots,
         syncThemeColorMeta: syncThemeColorMeta,

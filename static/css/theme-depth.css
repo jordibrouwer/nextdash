@@ -394,10 +394,10 @@ html[data-theme="graphite-prism-light"] body {
 /*
  * Two accent washes behind the page.
  *
- * On the body itself rather than on a pseudo-element: ::before already draws
- * the dot grid and switches off with it, and ::after belongs to the custom
- * background. Painting here means the glow survives both, and costs no extra
- * layer to composite.
+ * Only defined here. They are drawn by .theme-backdrop-layer
+ * (theme-backdrop.css), together with the theme's own backdrop: ::before draws
+ * the dot grid and ::after belongs to the custom background, so the washes
+ * have a layer of their own that survives both.
  *
  * Large, soft and low: at 7% and 5% this is not a visible gradient, it is the
  * page no longer being one flat rectangle. The warning colour in the second
@@ -406,13 +406,9 @@ html[data-theme="graphite-prism-light"] body {
  */
 html[data-theme] body:not([data-depth="flat"]) {
     /*
-     * Als variabele en niet direct als background-image, omdat body er
-     * inmiddels nog een achtergrond bij heeft: die van het theme zelf
-     * (theme-backdrop.css). Twee regels die allebei background-image zetten
-     * vervangen elkaar in plaats van te stapelen, en de winnaar is degene die
-     * het laatst laadt -- wat betekende dat deze twee wolken stilletjes
-     * verdwenen zodra de theme-achtergrond erbij kwam. Nu zet één regel de
-     * hele stapel en staat hier alleen nog waar hij uit bestaat.
+     * Een variabele en geen background-image: de laag zet de hele stapel
+     * (wolken onder, theme-achtergrond erboven) in één regel, en staat hier
+     * alleen nog waar hij uit bestaat.
      */
     --depth-wash:
         radial-gradient(65rem 45rem at 12% -12%,
@@ -422,17 +418,6 @@ html[data-theme] body:not([data-depth="flat"]) {
             color-mix(in srgb, var(--accent-warning) calc(5% * var(--theme-depth)), transparent),
             transparent 70%);
 
-    background-image: var(--depth-wash);
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-}
-
-/*
- * A reader who chose their own background chose it instead of this, not on top
- * of it. Two sets of colour fighting over the same pixels is worse than either.
- */
-html[data-theme] body.has-custom-background {
-    background-image: none;
 }
 
 /*
@@ -953,6 +938,24 @@ html[data-theme] body[data-pattern="hatch"] {
 /* Nothing at all, without touching the dots toggle's other behaviour. */
 html[data-theme] body[data-pattern="none"]::before {
     background-image: none;
+}
+
+/* ── A backdrop is texture enough ──────────────────────────────────────────
+   The pattern was the only texture once; now every theme draws a backdrop,
+   and dots on top of bokeh or mountains read as a screen door. Left to the
+   theme ("auto"), the pattern steps aside while a backdrop is on screen and
+   comes back when it is switched off. A pattern the reader picked still
+   draws, over anything. */
+html[data-theme] body[data-pattern="auto"][data-theme-backdrop="on"]::before {
+    background-image: none;
+}
+
+/* Reduced transparency hides the backdrop layer, so the theme's own pattern
+   is all the texture left and comes back. */
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-pattern="auto"][data-theme-backdrop="on"]:not(.no-background-dots)::before {
+        background-image: var(--theme-pattern-image);
+    }
 }
 
 /* ── Status colours as a family ────────────────────────────────────────────

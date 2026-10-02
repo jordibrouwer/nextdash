@@ -271,7 +271,7 @@ Bookmarks are grouped by **page** (Work, Home) and **category** (Dev, News). Aro
 | **Add** | One-line quick add, the full form, paste a URL, browser extension, share sheet, bookmarklet, imports |
 | **Watch** | Broken links, uptime monitoring, certificate expiry, page drift, alerts |
 | **Show** | Widgets for health, inbox, feeds, weather, calendar, your machine, your containers and your own services |
-| **Customise** | 155 theme families, surfaces, layout, header and action buttons, six languages |
+| **Customise** | 160 theme families, backdrops, surfaces, layout, header and action buttons, six languages |
 | **Keep** | Automatic backups, a 30-day trash, local copies of pages, HTML and CSV export |
 
 <a id="what-nextdash-is-not"></a>
@@ -1725,22 +1725,61 @@ A preset fills in a sample address, the useful path, the figures with labels and
 
 ## 16. 🎨 Appearance
 
-**Config → Appearance** opens straight on its settings, on the tab you used last. Six tabs: **Look**, **Grid**, **Rows**, **Header**, **Action bar** and **Date & weather**. Every setting of a tab is on it, with a short line under each saying what it does.
+**Config → Appearance** opens straight on its settings, on the tab you used last. Eight tabs: **Look**, **Background**, **Surface**, **Grid**, **Rows**, **Header**, **Action bar** and **Date & weather**. Every setting of a tab is on it, with a short line under each saying what it does.
 
 **The preview.** Beside the settings stands a small drawing of your dashboard — header, grid, a few rows and the action dock. It follows every change as you make it, in your own theme and font, and marks the part the open tab is about: the grid on Grid, the rows on Rows, the header on Header, the clock on Date & weather, the buttons on Action bar. On a narrow window it moves above the settings.
 
 ### 16.1 Themes
 
-nextDash ships **155 theme families**, each with a light and a dark half — 310 themes in all. A fresh install starts on **Matrix Bluepill**, cyan code on deep blue, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made.
+nextDash ships **160 theme families**, each with a light and a dark half — 320 themes in all. A fresh install starts on **Matrix Bluepill**, cyan code on deep blue, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made.
 
 **Theme** on the Look tab lists every theme by name. Beside it:
 
-- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. One card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, and a row of **character chips** ([§16.2](#162-character)). *Light* and *Dark* turn every card to that half, so moving through the grid previews light or dark themes only; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 34 newest families wear a **new** badge, and searching `new` finds them. A star keeps up to 24 families under *Favourites*. Moving through the grid previews each theme on the real dashboard, at the surfaces that theme was drawn for; nothing is saved until you pick one, and **Esc** puts back what you had.
+- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, a row of **character chips** ([§16.2](#162-character)) and a **collection** chip. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 34 newest families wear a **new** badge, and searching `new` finds them. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
+- **Collections** — the **Neutrals** collection holds five calm grey palettes — Slate, Zinc, Gray, Stone and Neutral — drawn under glass, each with a backdrop of its own.
 - **Quick mode** — switches between the light and dark half of the family you are on.
 - **Follow system dark mode** — shows the light half by day and the dark half by night, following the operating system, also in a background tab.
 - **Random theme** — **Off**, **On page refresh**, or **On view change** (switching between the dashboard grid, config, the inbox, the Bookmarks view, Containers or pages). Your saved theme stays underneath and comes back when you turn it off. With follow-system on, only halves that match the current mode are picked.
 - **Theme editor** — **Open the theme editor…** recolours any theme, or builds one of your own ([§16.5](#165-custom-themes)).
 - **`:theme <name>`** and **`:dark`** switch from the command palette.
+
+<a id="the-theme-browser"></a>
+
+#### 🪟 The theme browser
+
+The theme browser lies over the right of the dashboard, so every change shows on the real page while you make it. Nothing is stored until **Apply**; **Cancel**, the **×** at the top right, **Esc** or a click on the dashboard beside the panel puts everything back, in every tab. On a narrow window it becomes a sheet along the bottom.
+
+| Tab | What it changes |
+|---|---|
+| **Themes** | The theme itself ([above](#161-themes)) |
+| **Backdrop** | Which backdrop is drawn and its settings ([§16.4](#164-type-and-background)) |
+| **Surface** | Depth, glow, effects and card glass ([§16.3](#163-surfaces)), and the layout preset |
+| **Headers** | How category names read above their bookmarks ([§16.6](#166-grid-and-rows)) |
+| **Layout** | Type, text contrast and favicon harmonization |
+| **Looks** | Ready-made combinations of the tabs above |
+
+- A **dot** on a tab marks what you changed there since opening.
+- **Applies to** — *This theme* or *All themes*: whether the backdrop and the surface belong to the theme on screen or hold for every theme (the same switch as **Use these for every theme**).
+- **Compare** shows the look from before you opened the browser until you press it again; holding **`\`** does the same for as long as you hold it.
+- **Reset tab** undoes the open tab; **🎲** tries something at random in it.
+- **`←` / `→`** move between tabs, **`⌘/Ctrl + Enter`** applies, and **Enter** on a theme card picks it.
+
+**Looks** set backdrop, surface, headers and type in one go, and leave the theme's colours alone. After using one, every part can still be tuned in its own tab.
+
+| Look | What it draws |
+|---|---|
+| **Glass** | A photo-like sunset backdrop, glass cards, clean headers |
+| **Glass boxed** | Mountains, boxed headers, a little more blur |
+| **Frosted** | Bokeh, lots of blur, see-through cards |
+| **Aurora** | Northern light behind clear glass |
+| **Night sky** | Stars on a darkened page, quiet labels |
+| **Soft** | A blurred wash of colour, calm cards |
+| **Desert** | Warm dunes tinted by the theme, with counts |
+| **Paper** | Contour lines and near-solid cards, accent underline |
+| **Blueprint** | A drafting grid, edged cards, boxed headers |
+| **Terminal** | Scanlines, solid cards, bare labels |
+| **Neon** | Bright prisms, see-through cards, group cards |
+| **Plain** | No backdrop, solid cards, label headers |
 
 <a id="themes-that-catch-the-light"></a>
 
@@ -1779,9 +1818,10 @@ roundness, and the surfaces the theme asks to be drawn at.
 
 ### 16.3 Surfaces
 
-These change how any theme is drawn. The first three start on **Follow the
-theme**: each theme states what it was drawn for, and picking a theme brings
-its answer with it.
+These change how any theme is drawn. Depth, Glow, Effects and Card glass are on
+the **Surface** tab; Text contrast, animations and favicon harmonization on
+**Look**. The first three start on **Follow the theme**: each theme states what
+it was drawn for, and picking a theme brings its answer with it.
 
 | Setting | Choices |
 |---|---|
@@ -1789,16 +1829,15 @@ its answer with it.
 | **Glow** | **Follow the theme** (default) · Off · Soft · Full — how far the theme's colour carries around a surface. Flat has no glow. |
 | **Effects** | **Follow the theme** (default) · Off · Held back · Full — how loudly the character is drawn: the shine, the glow, the grain, and how round the corners are. Off leaves the palette and nothing else. |
 | **Enable animations** | On · Off — off stills the motion across the app |
-| **Use these for every theme** | Off (default), the three above belong to the theme you are on and each theme keeps its own; on, they hold across the whole install and a theme brings nothing of its own. |
-| **This theme** | **Back to the theme's own** puts the three back to what the theme asks for. |
+| **Card glass** | **Follow the theme** (default) · Own — at depth Glass, how solid the panes are (**Opacity**) and how far the page blurs behind them (**Blur**), with **A thin edge round the panes** if you like. **Text on a pane** shows the contrast that is left, and warns when it gets low. With a layout that draws no cards (Default, Compact, Masonry, List), *Own* gives every category a pane of its own; the **Layout preset** is repeated here for that reason. When the theme on screen is not at depth Glass, a button offers to switch to it. |
+| **Use these for every theme** | Off (default), depth, glow, effects, the backdrop and the card glass belong to the theme you are on and each theme keeps its own; on, they hold across the whole install and a theme brings nothing of its own. |
+| **This theme** | **Back to the theme's own** puts them back to what the theme asks for. |
 | **Text contrast** | Soft · Normal · High · Maximum — how far the fainter text sits from its surface |
-| **Theme backdrop** | On · Off — the backdrop each theme builds from its own colours |
-| **Backdrop** | Follow the theme · Dots · Grid · Lines · Hatch · None |
 | **Favicon harmonization** | Off · On, with **Muted**, **Tinted** or **Overlay** and an intensity. Stored per theme, so the light and dark halves are set separately. |
 
 While Depth, Glow and Effects say *Follow the theme*, changing one belongs to
 the theme on screen: switch away and back and it is still there, and every
-other theme keeps its own.
+other theme keeps its own. The backdrop and the card glass work the same way.
 
 `:depth`, `:glow`, `:contrast`, `:backdrop`, `:pattern` and `:harmonize` change these from the command palette.
 
@@ -1806,7 +1845,22 @@ other theme keeps its own.
 
 - **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**.
 - **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL; pointing at a size previews it.
-- **Background** — **Auto** (follows the theme), **None**, **Gradient** or **Image URL**. **Opacity** (65–100%) fades it so the bookmarks stay readable. A background of your own is drawn over the theme backdrop.
+
+Type is on the **Look** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
+
+- **Source** — **Auto** (follows the theme), **None**, **Gradient** or **Image**. **Opacity** (65–100%) fades it so the bookmarks stay readable. A background of your own is drawn over the theme backdrop.
+- **Theme backdrop** — **Follow the theme** (default), **Choose one** or **Off**. Every theme draws a backdrop of its own, in its own colours; each light and dark half share one. *Follow the theme* names the one it draws, and *Choose one* opens a grid of all 26, previewed in your theme's colours:
+
+  | Group | Backdrops |
+  |---|---|
+  | Soft | blooms, glow, sweep, mesh, aurora, bokeh, nebula, stars |
+  | Landscape | horizon, band, sunset, dunes, mountains, waves |
+  | Lines | wireframe, scanlines, crosshatch, topo, perspective, blueprint, pinstripe |
+  | Geometric | rings, hexagons, halftone, prism, chevron |
+
+  Like depth and glow, the choice belongs to the theme you are on unless **Use these for every theme** is on ([§16.3](#163-surfaces)). `:backdrop` turns it on or off from the command palette.
+- **Backdrop settings** — **Intensity**, **Scale** and **Variant** (with **🎲** for a new one) change the theme's backdrop; **Blur**, **Brightness**, **Saturation** and **Theme tint** soften it and your own background image alike. Only the backdrop blurs, never the bookmarks. **Back to the defaults** resets all seven.
+- **Pattern over it** — **Follow the theme**, **Dots**, **Grid**, **Lines**, **Hatch** or **None**: a texture drawn over the backdrop. Left to the theme, there is none while a backdrop is shown; with the backdrop off, most themes ask for dots.
 
 ### 16.5 Custom themes
 
@@ -1849,6 +1903,7 @@ Small drawings beside the shape settings show what a value looks like.
 | **How a row lights up** | **Subtle** (default) or **Strong** — how far the accent carries across the row you are on |
 | **Show online/offline status** | Status colours on the rows; with it, **Show a loading state while checking** and **Show ping times** |
 | **Show tags on bookmark rows** | And **Tags shown before "+N"** |
+| **Category header** | How a category's name reads above its bookmarks. **Style**: Follow the theme (default), Clean, Underlined (optionally in the accent colour), Boxed, Label or Group card, which wraps the category and its bookmarks in one pane. **Size**: Small, Medium or Large. **Show the category icon** — the icon is chosen per category, from its menu. **Show how many bookmarks it holds** puts the count on the right |
 | **Link preview cards** | Off · On hover (default) · Keyboard only, a hover delay (Fast, Balanced, Calm) and **What the card shows**: image, site, author & date, video player, description, your note, tags, status & uptime, opens, Fresh count, shortcut & location ([§4](#4-the-dashboard)) |
 
 ### 16.7 Header and action buttons
@@ -1889,7 +1944,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | Section | What lives there |
 |---------|------------------|
 | **Overview** | The figures of your collection (bookmarks, pages, categories, tags, monitored, with shortcut, pinned, last edited), **Needs attention** with a button per item, **How you use this collection**, the **cleanup score**, and **Health at a glance**. The running version is at the foot. |
-| **Appearance** | Look · Grid · Rows · Header · Action bar · Date & weather ([§16](#16-appearance)) |
+| **Appearance** | Look · Background · Surface · Grid · Rows · Header · Action bar · Date & weather ([§16](#16-appearance)) |
 | **Bookmarks** | View · Tags · Tag suggestions · Your rules · Settings · Local copies ([§17.4](#174-config-bookmarks)) |
 | **Inbox** | Collecting · List · Panel & clicks · Header icon ([§17.6](#176-config-inbox)) |
 | **Structure** | Categories · Pages · Finders · Collections ([§9](#9-pages-categories-and-collections)) |
@@ -1992,6 +2047,8 @@ No tabs — one page of panels:
 **Help** covers Getting started, Tips, Configuring, Appearance, Structure & bookmarks, the **Bookmarks view**, Widgets, Search & keyboard, **Checks & health**, Monitoring, Inbox, **Containers**, Statistics, Data & hosting and Logs. The search above the tabs covers every tab and About. Each topic has a 🔗 button that copies a link to it. A topic about something that can be switched off says whether it is on for you, with a button to the setting. **Tips** lists every keyboard tip, grouped, with its own filter. **Saving a link from anywhere** (Inbox tab) builds a bookmarklet for this install.
 
 **Guided tours.** Six walkthroughs run over the real page rather than a picture of it: *What has changed*, *First steps*, *Inbox*, *Fresh*, *Widgets* and *Spreading a category*. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
+
+**The dashboard tour.** Sixteen steps with moving drawings, offered once after the quick-start card: it opens on the theme browser, the backdrops and the looks, then walks pages and categories, search, shortcuts, the cursor, adding, link checks, the Bookmarks view, the inbox, Containers, widgets, the first keys to learn, Config and the cheat sheet. After an update to a version that changed it, every reader is offered it once more, after the release notes have been read. Replay it from the same Onboarding list or with `:tour`.
 
 **About** has two tabs: **About nextDash** (what the project is, and links to nextdash.cc, GitHub, jordibrw.nl and Ko-fi) and **News & features** (every post from nextdash.cc, every release and every setting worth switching on, with source filters, and a button that bookmarks nextdash.cc so Fresh counts its posts).
 

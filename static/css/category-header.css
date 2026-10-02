@@ -1,0 +1,142 @@
+/* De categoriekop.
+
+   Vijf manieren om te tekenen wat er boven de bookmarks van een categorie
+   staat, gekozen in Appearance → Weergave en gelezen van <body>:
+
+     data-cat-head    theme | clean | underlined | boxed | label | group
+     data-cat-size    s | m | l
+     data-cat-icon    on | off
+     data-cat-count   on | off
+     data-cat-accent  on | off      (de lijn onder "underlined")
+
+   "theme" doet niets: de kop blijft zoals het theme en de layout hem tekenen,
+   en alles hieronder staat achter een andere waarde. Omdat de regels op <body>
+   hangen is wisselen een herschildering en geen nieuwe render.
+
+   De "//" voor de naam is ook de greep waarmee je een categorie versleept. Bij
+   de andere stijlen verdwijnt het teken maar de greep niet: hij wordt een rijtje
+   puntjes dat verschijnt als je de kop aanwijst. */
+
+/* ---- grootte ---- */
+body[data-cat-size="s"] { --cat-head-scale: 0.85; }
+body[data-cat-size="l"] { --cat-head-scale: 1.2; }
+
+body[data-cat-size="s"] .dashboard-grid .category-title,
+body[data-cat-size="l"] .dashboard-grid .category-title {
+    font-size: calc(var(--font-size-category) * var(--cat-head-scale, 1));
+}
+
+/* ---- icoon ---- */
+body[data-cat-icon="off"] .dashboard-grid .category-title-icon,
+body[data-cat-icon="off"] .dashboard-grid .category-title-label .bookmark-icon {
+    display: none;
+}
+
+/* ---- aantal bookmarks, rechts van de naam ---- */
+.category-title-count {
+    display: none;
+}
+
+body[data-cat-count="on"] .dashboard-grid .category-title-count {
+    display: inline;
+    margin-left: 0.7em;
+    font-size: 0.75em;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 0.65;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- alles behalve de eigen stijl van het theme ---- */
+body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle,
+body:not([data-cat-head="theme"]) .dashboard-grid .category-title-prefix {
+    display: inline-block;
+    width: 0.9em;
+    font-size: 0;
+    opacity: 1;
+}
+
+body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle::before {
+    content: "\22EE\22EE";
+    font-size: 0.8rem;
+    letter-spacing: -0.25em;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+body:not([data-cat-head="theme"]) .dashboard-grid .category-title:hover .category-reorder-handle::before {
+    opacity: 0.55;
+}
+
+body:not([data-cat-head="theme"]) .dashboard-grid .category-title-prefix {
+    width: 0;
+}
+
+body:not([data-cat-head="theme"]) .dashboard-grid.layout-terminal .category-title-label::before {
+    content: none;
+}
+
+/* ---- clean: alleen de naam ---- */
+body[data-cat-head="clean"] .dashboard-grid .category-title {
+    letter-spacing: 0;
+    font-weight: 600;
+}
+
+/* ---- underlined: een lijn onder de naam ---- */
+body[data-cat-head="underlined"] .dashboard-grid .category-title {
+    padding-bottom: 0.4em;
+    margin-bottom: 0.4em;
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid color-mix(in srgb, var(--text-tertiary) 45%, transparent);
+}
+
+body[data-cat-head="underlined"][data-cat-accent="on"] .dashboard-grid .category-title {
+    border-bottom: 2px solid var(--accent-primary);
+}
+
+/* ---- boxed: de naam op een eigen vlak ---- */
+body[data-cat-head="boxed"] .dashboard-grid .category-title {
+    padding: 0.4em 0.85em;
+    margin-bottom: 0.5em;
+    letter-spacing: 0.02em;
+    font-size: calc(var(--font-size-category) * 0.9 * var(--cat-head-scale, 1));
+    border-radius: calc(8px * var(--theme-radius-scale, 1));
+    background: color-mix(in srgb, var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
+    backdrop-filter: blur(var(--theme-surface-blur, 0px));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px));
+}
+
+/* ---- label: kleine hoofdletters, ruim gespatieerd ---- */
+body[data-cat-head="label"] .dashboard-grid .category-title {
+    font-size: calc(0.72rem * var(--cat-head-scale, 1));
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    color: var(--text-tertiary);
+}
+
+/* ---- group: de hele categorie op een vlak, de naam boven een lijn ---- */
+body[data-cat-head="group"] .dashboard-grid .category {
+    padding: 0.75em 0.85em 0.85em;
+    border-radius: calc(10px * var(--theme-radius-scale, 1));
+    background: color-mix(in srgb, var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 55%), transparent);
+    backdrop-filter: blur(var(--theme-surface-blur, 0px));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px));
+}
+
+body[data-cat-head="group"] .dashboard-grid .category-title {
+    padding-bottom: 0.5em;
+    margin-bottom: 0.5em;
+    letter-spacing: 0.02em;
+    font-size: calc(var(--font-size-category) * 0.9 * var(--cat-head-scale, 1));
+    border-bottom: 1px solid color-mix(in srgb, var(--text-tertiary) 25%, transparent);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    body[data-cat-head="boxed"] .dashboard-grid .category-title,
+    body[data-cat-head="group"] .dashboard-grid .category {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}

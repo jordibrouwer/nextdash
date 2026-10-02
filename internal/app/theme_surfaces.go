@@ -1,6 +1,9 @@
 package app
 
-import "strings"
+import (
+	"math"
+	"strings"
+)
 
 /*
 Whose answer the surfaces are.
@@ -33,18 +36,70 @@ stands, so a reader who only ever changes the depth of one theme stores one
 field and keeps the rest of that theme's intent.
 */
 type ThemeSurfacePref struct {
-	Depth    string `json:"depth,omitempty"`
-	Glow     string `json:"glow,omitempty"`
-	Effects  string `json:"effects,omitempty"`
+	Depth   string `json:"depth,omitempty"`
+	Glow    string `json:"glow,omitempty"`
+	Effects string `json:"effects,omitempty"`
+
+	// Backdrop is "off" or the name of a recipe. Empty is the theme's own.
 	Backdrop string `json:"backdrop,omitempty"`
+
+	// Alpha and Blur are the card glass: how solid a pane is and how far the
+	// page is blurred behind it. A pointer because 0 is an answer for Blur
+	// and nil is "the theme's own". Border is "on" for a thin edge round the
+	// panes, or empty. They only show at depth Glass, which is where panes are
+	// panes; see theme-character.css.
+	Alpha  *float64 `json:"alpha,omitempty"`
+	Blur   *float64 `json:"blur,omitempty"`
+	Border string   `json:"border,omitempty"`
+}
+
+// The ranges the card glass sliders offer.
+const (
+	glassAlphaMin = 0.2
+	glassAlphaMax = 1.0
+	glassBlurMax  = 30.0
+)
+
+// cleanGlass clamps the glass part of a pref to its sliders and rounds it to
+// the step they offer. Anything that is not a number is the theme's own.
+func cleanGlass(pref ThemeSurfacePref) (alpha, blur *float64, border string) {
+	clamp := func(v *float64, lo, hi float64) *float64 {
+		if v == nil || math.IsNaN(*v) || math.IsInf(*v, 0) {
+			return nil
+		}
+		out := math.Round(math.Min(hi, math.Max(lo, *v))*100) / 100
+		return &out
+	}
+	if strings.EqualFold(strings.TrimSpace(pref.Border), "on") {
+		border = "on"
+	}
+	return clamp(pref.Alpha, glassAlphaMin, glassAlphaMax), clamp(pref.Blur, 0, glassBlurMax), border
+}
+
+// sanitizeCardGlass is cleanGlass for the install-wide answer, which lives in
+// Settings.CardGlass and holds when every theme is forced to the same one.
+func sanitizeCardGlass(pref ThemeSurfacePref) ThemeSurfacePref {
+	alpha, blur, border := cleanGlass(pref)
+	return ThemeSurfacePref{Alpha: alpha, Blur: blur, Border: border}
 }
 
 // ResolvedSurfaces is what a page is actually drawn with.
+//
+// Backdrop is the word the stylesheet switches on, "on" or "off". Recipe is the
+// shape the reader chose to put there instead of the theme's own, or empty when
+// the theme's own stands.
 type ResolvedSurfaces struct {
 	Depth    string
 	Glow     string
 	Effects  string
 	Backdrop string
+	Recipe   string
+
+	// The card glass as the stylesheet wants it: a number as text, or empty for
+	// the theme's own. Border is "on" or empty.
+	GlassAlpha  string
+	GlassBlur   string
+	GlassBorder string
 }
 
 /*
@@ -69,15 +124,45 @@ func resolveSurfaces(settings Settings, themeID string, tc ThemeColors) Resolved
 		return ideal
 	}
 
-	return ResolvedSurfaces{
-		Depth:   pick(settings.ThemeDepth, pref.Depth, themeIdealDepth(tc)),
-		Glow:    pick(settings.GlowStrength, pref.Glow, themeIdealGlow(tc)),
-		Effects: pick(settings.ThemeEffects, pref.Effects, themeIdealEffects(tc)),
-		// The backdrop is on or off rather than a shape; a theme that wants a
-		// particular recipe says so in its Backdrop field, which is a
-		// different question and is resolved in themeBackdropImage.
-		Backdrop: pick(settings.ThemeBackdrop, pref.Backdrop, "on"),
+	// The backdrop answers in three kinds of word: "off", a recipe, or
+	// "follow". "on" is what "follow" was called before recipes could be
+	// chosen, and still means it.
+	backdrop := pick(legacyBackdropWord(settings.ThemeBackdrop), legacyBackdropWord(pref.Backdrop), surfaceFollow)
+	resolved := ResolvedSurfaces{
+		Depth:    pick(settings.ThemeDepth, pref.Depth, themeIdealDepth(tc)),
+		Glow:     pick(settings.GlowStrength, pref.Glow, themeIdealGlow(tc)),
+		Effects:  pick(settings.ThemeEffects, pref.Effects, themeIdealEffects(tc)),
+		Backdrop: "on",
 	}
+	switch {
+	case backdrop == "off":
+		resolved.Backdrop = "off"
+	case themeBackdropRecipeIndex(backdrop) >= 0:
+		resolved.Recipe = backdrop
+	}
+	// The glass belongs to the theme on screen, or to every theme when the
+	// reader forced one answer; there is no third place for it to come from.
+	glass := pref
+	if settings.ThemeSurfacesForceAll {
+		glass = settings.CardGlass
+	}
+	alpha, blur, border := cleanGlass(glass)
+	if alpha != nil {
+		resolved.GlassAlpha = formatFloat(*alpha)
+	}
+	if blur != nil {
+		resolved.GlassBlur = formatFloat(*blur)
+	}
+	resolved.GlassBorder = border
+	return resolved
+}
+
+// legacyBackdropWord reads the old "on" as the empty answer it has become.
+func legacyBackdropWord(value string) string {
+	if strings.EqualFold(strings.TrimSpace(value), "on") {
+		return ""
+	}
+	return value
 }
 
 /*
@@ -95,11 +180,19 @@ func sanitizeSurfacePrefs(prefs map[string]ThemeSurfacePref, known map[string]bo
 	depths := map[string]bool{"flat": true, "soft": true, "rich": true, "vivid": true, "glass": true}
 	glows := map[string]bool{"off": true, "soft": true, "full": true}
 	effects := map[string]bool{"off": true, "held": true, "full": true}
-	backdrops := map[string]bool{"on": true, "off": true}
 
 	keep := func(value string, allowed map[string]bool) string {
 		value = strings.ToLower(strings.TrimSpace(value))
 		if allowed[value] {
+			return value
+		}
+		return ""
+	}
+	// "off", or one of the recipes. Anything else, including the old "on", is
+	// the theme's own answer and so stores nothing.
+	keepBackdrop := func(value string) string {
+		value = strings.ToLower(strings.TrimSpace(value))
+		if value == "off" || themeBackdropRecipeIndex(value) >= 0 {
 			return value
 		}
 		return ""
@@ -111,11 +204,15 @@ func sanitizeSurfacePrefs(prefs map[string]ThemeSurfacePref, known map[string]bo
 		if id == "" || (known != nil && !known[id]) {
 			continue
 		}
+		alpha, blur, border := cleanGlass(pref)
 		clean := ThemeSurfacePref{
 			Depth:    keep(pref.Depth, depths),
 			Glow:     keep(pref.Glow, glows),
 			Effects:  keep(pref.Effects, effects),
-			Backdrop: keep(pref.Backdrop, backdrops),
+			Backdrop: keepBackdrop(pref.Backdrop),
+			Alpha:    alpha,
+			Blur:     blur,
+			Border:   border,
 		}
 		// An entry with nothing left in it is not a preference.
 		if clean == (ThemeSurfacePref{}) {

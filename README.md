@@ -140,7 +140,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-themes.jpg" alt="Theme browser" width="100%" />
       <br />
-      <sub><b>Themes</b> <i>(Frosted Juniper, light)</i> — 155 theme families, each with a light and a dark half, searchable and filtered by character: lacquer, glass, velvet, terminal and eight more; the newest wear a <i>new</i> badge. <kbd>Shift</kbd>+<kbd>A</kbd> opens the browser from anywhere.</sub>
+      <sub><b>Themes</b> <i>(Frosted Juniper, light)</i> — 160 theme families, each with a light and a dark half, searchable and filtered by character: lacquer, glass, velvet, terminal and eight more; the newest wear a <i>new</i> badge. <kbd>Shift</kbd>+<kbd>A</kbd> opens the browser from anywhere.</sub>
     </td>
   </tr>
   <tr>
@@ -398,8 +398,10 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Appearance**
 
-- 155 theme families in light and dark, each with a character that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — in a browser with live preview — the newest wear a **new** badge — plus an editor for your own. *[Manual §12](MANUAL.md#16-appearance)*
-- Character, depth, glow, effects and contrast for any theme; layout presets, columns, density, fonts and backdrops. *[Manual §12.3](MANUAL.md#163-surfaces)*
+- 160 theme families in light and dark, each with a character that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — plus an editor for your own. *[Manual §16](MANUAL.md#16-appearance)*
+- **A theme browser that is a look studio.** It opens beside the dashboard and changes the page live: the theme, its backdrop, depth and card glass, the category headers and the type. Twelve ready-made looks set them in one go; Compare shows what you had, and nothing is saved until Apply. *[Theme browser](MANUAL.md#the-theme-browser)*
+- 26 backdrops drawn in each theme's own colours, from aurora and dunes to stars and hexagons, each theme with one picked for it — or choose your own and tune it with intensity, scale, blur and tint. *[Manual §16.4](MANUAL.md#164-type-and-background)*
+- Character, depth, glow, effects, card glass and contrast for any theme; category header styles, layout presets, columns, density and fonts. *[Manual §16.3](MANUAL.md#163-surfaces)*
 - A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu. *[Manual §4](MANUAL.md#4-the-dashboard)*
 - Six languages: English, Dutch, German, French, Spanish and Chinese. *[Manual §15](MANUAL.md#17-config)*
 

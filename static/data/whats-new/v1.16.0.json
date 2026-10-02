@@ -1,0 +1,59 @@
+{
+  "tag": "v1.16.0",
+  "date": "2 October 2026",
+  "releasedAt": "2026-10-02",
+  "modalLead": "The theme browser becomes a <strong>look studio</strong>: it opens beside your dashboard and changes the backdrop, the glass of the cards and the category headers live — with twelve ready-made looks and 26 new backdrops.",
+  "sections": [
+    {
+      "title": "Theme browser",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The theme browser opens beside the dashboard.</strong> You see every change on your own page. Its tabs — Themes, Backdrop, Surface, Headers, Layout and Looks — each change one part, and a dot marks the tabs you touched."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Nothing is saved until Apply.</strong> Cancel, the × in the corner or a click beside the panel puts everything back. Compare shows what you had, and Reset tab undoes one tab."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The theme in use is named above the grid.</strong> Once you pick another, it says which one stays until Apply, and Show finds its card."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Twelve looks set everything in one click.</strong> Glass, Frosted, Aurora, Night sky, Paper, Terminal, Plain and more set the backdrop, the cards, the headers and the type, and keep your theme's colours."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A Neutrals collection.</strong> Five calm grey themes — Slate, Zinc, Gray, Stone and Neutral — under glass, each in light and dark."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>26 backdrops, drawn in your theme's colours.</strong> From aurora and dunes to stars, mountains and hexagons, every theme now has one picked for it. On the new Background tab you can choose another, roll a new variant, or soften it with blur, brightness and a theme tint."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Card glass on the new Surface tab.</strong> It sets how see-through and blurred the cards are, with a badge that says whether text on them stays readable."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Category headers in five styles.</strong> Clean, underlined, boxed, a label or a card around the whole category, in three sizes, with the category's icon and how many bookmarks it holds."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Widgets in the Launcher layout show their content again.</strong> They no longer look empty."
+        }
+      ]
+    }
+  ]
+}
