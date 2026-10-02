@@ -296,6 +296,27 @@
         return query.split(/\s+/).every((word) => haystack.includes(word));
     }
 
+    /**
+     * Which theme is in use, above the grid, where it stays in view however far
+     * the grid is scrolled or filtered. Once another card is chosen it says so,
+     * and names the stored theme that stays until Apply.
+     */
+    function renderInUse(state, t) {
+        const current = state.current;
+        const chosen = current !== state.opened;
+        const name = `<strong>${escapeHtml(state.nameOf(current))}</strong>`;
+        const line = chosen
+            ? escapeHtml(t('config.themeChosenLine', 'Chosen: {name} · {saved} stays until Apply'))
+                .replace('{name}', name)
+                .replace('{saved}', escapeHtml(state.nameOf(state.opened)))
+            : escapeHtml(t('config.themeInUseLine', 'In use: {name}')).replace('{name}', name);
+        return `
+                <div class="theme-browser-inuse${chosen ? ' is-chosen' : ''}" data-theme-inuse>
+                    <span class="theme-browser-inuse-text">${line}</span>
+                    <button type="button" class="theme-browser-chip" data-theme-show-current>${escapeHtml(t('config.themeShowCurrent', 'Show'))}</button>
+                </div>`;
+    }
+
     function renderBody(families, state, t) {
         const visible = families.filter((f) => matches(f, state, t));
         const cards = visible.map((f) => renderCard(f, state, t)).join('');
@@ -343,6 +364,7 @@
                         .replace('{total}', String(families.length))
                         .replace('{favorites}', String(state.favorites.length))
                 )}</p>
+                ${renderInUse(state, t)}
                 <div class="theme-browser-grid" role="listbox"
                      aria-label="${escapeHtml(t('config.themeLabel', 'Theme'))}"
                      data-theme-grid>${cards || `<p class="theme-browser-empty">${escapeHtml(
@@ -459,6 +481,10 @@
             // Empty means every collection; a second axis beside the archetype.
             collection: '',
             get current() { return currentTheme(); },
+            // What was on screen and stored when the browser opened, so the
+            // line above the grid can say what Apply would change.
+            opened: currentTheme(),
+            nameOf: (id) => displayName(id, palettes[id]?.name) || id,
             favorites: Array.isArray(opts.favorites) ? opts.favorites.slice() : [],
             // Which half of a family the card is showing. Starts at whichever
             // half is currently applied, so the card for the theme in use opens
@@ -565,7 +591,23 @@
             refresh();
         };
 
+        // Show clears what hides the card in use, then brings it into view.
+        const bindShowCurrent = () => {
+            pane.querySelector('[data-theme-show-current]')?.addEventListener('click', () => {
+                const find = () => pane.querySelector('.theme-browser-card.is-current');
+                if (!find()) {
+                    Object.assign(state, { query: '', segment: 'all', archetype: '', collection: '' });
+                    repaintThemes();
+                }
+                const card = find();
+                if (!card) return;
+                card.scrollIntoView({ block: 'center' });
+                card.focus({ preventScroll: true });
+            });
+        };
+
         const bindThemes = () => {
+            bindShowCurrent();
             const search = pane.querySelector('[data-theme-search]');
             search?.addEventListener('input', (event) => {
                 state.query = event.target.value || '';
@@ -766,6 +808,11 @@
                         if (hadFocus) fresh.focus();
                     }
                 });
+                const inUse = pane.querySelector('[data-theme-inuse]');
+                if (inUse) {
+                    inUse.outerHTML = renderInUse(state, t);
+                    bindShowCurrent();
+                }
             }
         };
 

@@ -120,6 +120,27 @@
     font-size: 0.85em;
 }
 
+/* The theme in use, kept above the grid however far it scrolls. */
+.theme-browser-inuse {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-1, 0.35rem) var(--space-2, 0.6rem);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    font-size: 0.85em;
+}
+
+.theme-browser-inuse-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.theme-browser-inuse.is-chosen {
+    border-style: dashed;
+}
+
 .theme-browser-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));

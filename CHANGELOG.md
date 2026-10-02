@@ -117,6 +117,7 @@ The theme browser becomes a look studio: a panel beside the dashboard whose tabs
 - **new — twelve looks**: Glass, Glass boxed, Frosted, Aurora, Night sky, Soft, Desert, Paper, Blueprint, Terminal, Neon and Plain, each setting backdrop, tuning, card glass, depth, all five header fields, font, density and spacing, with a line saying what it sets.
 - **new — the layout preset is part of the preview**, and the Layout tab holds type, text contrast and favicons. Every setting in the studio has an ℹ, whose dialog opens over the panel.
 - **new — a collection chip** beside the archetype chips, from `collections` in `/api/themes/meta`.
+- **new — the theme in use is named above the grid** (`renderInUse` in `theme-browser.js`): "In use: …", or once another card is picked "Chosen: … · … stays until Apply", with **Show**, which clears the search and filters if they hide the card and scrolls it into view. The × in the corner stays in the corner on the phone sheet, where the key line is hidden.
 
 ### Themes
 

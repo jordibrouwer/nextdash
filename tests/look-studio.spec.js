@@ -153,6 +153,39 @@ test.describe('the look studio', () => {
         expect(after.backdropTuning || {}).toEqual(before.backdropTuning || {});
     });
 
+    test('the theme in use is named above the grid, and Show finds its card', async ({ page }) => {
+        await openDashboard(page);
+        const inUse = await page.evaluate(() => window.dashboardInstance.settings.theme);
+        await openStudio(page);
+        const line = studio(page).locator('[data-theme-inuse]');
+        const nameOf = (id) => page.evaluate((theme) => window.dashboardInstance.config.themeById(theme)?.name || theme, id);
+        await expect(line).toContainText(await nameOf(inUse));
+        await expect(line).not.toHaveClass(/is-chosen/);
+
+        // Choosing another card says so, and names the stored theme that
+        // stays until Apply.
+        const other = studio(page).locator(`[data-theme-id]:not([data-theme-id="${inUse}"])`).first();
+        const otherId = await other.getAttribute('data-theme-id');
+        await other.click();
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(otherId);
+        await expect(line).toHaveClass(/is-chosen/);
+        await expect(line).toContainText(await nameOf(otherId));
+        await expect(line).toContainText(await nameOf(inUse));
+
+        // A search that hides the chosen card: Show clears it and brings the
+        // card into view.
+        await studio(page).locator('[data-theme-search]').fill('zzzz-no-such-theme');
+        await expect(studio(page).locator('.theme-browser-card.is-current')).toHaveCount(0);
+        await studio(page).locator('[data-theme-show-current]').click();
+        const card = studio(page).locator('.theme-browser-card.is-current');
+        await expect(card).toBeInViewport();
+        await expect(card).toHaveAttribute('data-theme-id', otherId);
+
+        await page.keyboard.press('Escape');
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(inUse);
+    });
+
     test('a setting outside the look still saves while the studio is open, and Cancel leaves it', async ({ page }) => {
         await openDashboard(page);
         await openStudio(page);
