@@ -29912,7 +29912,13 @@ class DashboardConfig {
         };
         const text = esc(this.t('config.aboutIconCredits', 'App icons: {di} ({apache}) · {sh} ({ccby})'))
             .replace(/\{(di|sh|apache|ccby)\}/g, (_, k) => parts[k]);
-        return `<p class="help-about-credits" data-about-icon-credits>${text}</p>`;
+        // The charts' library, MIT: its licence travels with it in
+        // static/vendor/uplot, and the credit is said here as well.
+        const charts = esc(this.t('config.aboutChartCredits', 'Charts: {uplot} ({mit})'))
+            .replace('{uplot}', link('https://github.com/leeoniya/uPlot', 'uPlot'))
+            .replace('{mit}', link('https://github.com/leeoniya/uPlot/blob/master/LICENSE', 'MIT'));
+        return `<p class="help-about-credits" data-about-icon-credits>${text}</p>
+            <p class="help-about-credits" data-about-chart-credits>${charts}</p>`;
     }
 
     /**

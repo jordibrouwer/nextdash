@@ -42,6 +42,15 @@ function dockerFormatBytes(bytes) {
     return `${(mib / 1024).toFixed(1)} GiB`;
 }
 
+/** An axis label: short, so four of them fit beside a narrow chart. */
+function dockerShortFigure(value) {
+    const v = Number(value) || 0;
+    if (v >= 1024 ** 3) return `${(v / 1024 ** 3).toFixed(1)}G`;
+    if (v >= 1024 ** 2) return `${Math.round(v / 1024 ** 2)}M`;
+    if (v >= 1024) return `${Math.round(v / 1024)}K`;
+    return String(Math.round(v * 10) / 10);
+}
+
 function dockerFormatCpu(pct) {
     return Number.isFinite(pct) ? `${pct.toFixed(1)} %` : '—';
 }
@@ -129,6 +138,7 @@ class DockerDrawer {
         const name = typeof container === 'string' ? container : container?.name;
         if (!name) return;
         this._stopResourcePolling();
+        this._destroyCharts();
         this._name = name;
         this._detail = null;
         this._logsLoaded = false;
@@ -158,6 +168,7 @@ class DockerDrawer {
 
     close() {
         this._stopResourcePolling();
+        this._destroyCharts();
         this._name = null;
         this._detail = null;
         this._els = null;
@@ -168,6 +179,7 @@ class DockerDrawer {
     /** The panel's own close button: the view drops its selection as well. */
     _onBaseClosed() {
         this._stopResourcePolling();
+        this._destroyCharts();
         this._name = null;
         this._detail = null;
         this._els = null;
@@ -482,7 +494,12 @@ class DockerDrawer {
             void this._loadChanges();
         }
         if (key === 'resources') {
-            if (open && this.isOpen()) this._startResourcePolling();
+            if (open && this.isOpen()) {
+                // Fetched while the first figures are asked for, so the hour
+                // is drawn with uPlot from the first answer on.
+                this._ensureCharts();
+                this._startResourcePolling();
+            }
             else this._stopResourcePolling();
         }
     }
@@ -1024,13 +1041,21 @@ class DockerDrawer {
         }
     }
 
-    /* Two charts of the last hour: the sampler's points, then the figure now. */
+    /*
+     * The last hour, under the figures: four charts sharing one cursor.
+     *
+     * Drawn with uPlot through NdChart (shared/nd-chart.js), which brings the
+     * hover, a drag to zoom, the arrow keys and a table for a screen reader.
+     * Both are fetched the first time the tab is opened; until they are there
+     * -- or if they cannot be -- the charts are the plain SVG they always were.
+     */
     _renderCharts(now) {
         const host = this._els?.chartsEl;
         if (!host) return;
-        host.replaceChildren();
         const { enabled, points } = this._history;
         const note = (text) => {
+            this._destroyCharts();
+            host.replaceChildren();
             const p = document.createElement('p');
             p.className = 'docker-chart-note';
             p.setAttribute('data-docker-chart-note', '');
@@ -1047,19 +1072,92 @@ class DockerDrawer {
             note(this.t('dockerChartsCollecting', 'Collecting — the chart fills in over the next minutes.'));
             return;
         }
-        host.append(
-            this._chart('cpu', this.t('dockerChartCpu', 'CPU · last hour'), series, (p) => p.cpu,
-                (v) => dockerFormatCpu(v), nowMs),
-            this._chart('mem', this.t('dockerChartMemory', 'Memory · last hour'), series, (p) => p.mem,
-                (v) => dockerFormatBytes(v), nowMs),
+        const defs = [
+            ['cpu', this.t('dockerChartCpu', 'CPU · last hour'), series, (p) => p.cpu, (v) => dockerFormatCpu(v)],
+            ['mem', this.t('dockerChartMemory', 'Memory · last hour'), series, (p) => p.mem, (v) => dockerFormatBytes(v)],
             // In and out together, read and written together: one line each,
             // the split is in the figures above. Sampled points only -- the
             // figure "now" has no rate of its own.
-            this._chart('net', this.t('dockerChartNetwork', 'Network · last hour'), points, (p) => (p.netIn || 0) + (p.netOut || 0),
-                (v) => `${dockerFormatBytes(v)}/s`, nowMs),
-            this._chart('disk', this.t('dockerChartDiskIO', 'Disk I/O · last hour'), points, (p) => (p.diskRead || 0) + (p.diskWrite || 0),
-                (v) => `${dockerFormatBytes(v)}/s`, nowMs),
-        );
+            ['net', this.t('dockerChartNetwork', 'Network · last hour'), points,
+                (p) => (p.netIn || 0) + (p.netOut || 0), (v) => `${dockerFormatBytes(v)}/s`],
+            ['disk', this.t('dockerChartDiskIO', 'Disk I/O · last hour'), points,
+                (p) => (p.diskRead || 0) + (p.diskWrite || 0), (v) => `${dockerFormatBytes(v)}/s`],
+        ];
+        if (!(window.NdChart?.chart && window.uPlot) && !this._chartsFailed) {
+            // Still arriving: drawn when it has, rather than as SVG first and
+            // then again a moment later.
+            this._ensureCharts();
+            const name = this._name;
+            this._chartsLoading?.then(() => {
+                if (this._name === name && this._els && this._history) this._renderCharts(now);
+            });
+            return;
+        }
+        if (this._chartsFailed) {
+            this._destroyCharts();
+            host.replaceChildren(...defs.map(([key, title, list, valueOf, format]) =>
+                this._chart(key, title, list, valueOf, format, nowMs)));
+            return;
+        }
+        // Another container, or the plain charts from before uPlot arrived:
+        // start the four over rather than updating someone else's.
+        if (this._chartsFor !== this._name || !host.querySelector('[data-nd-chart]')) {
+            this._destroyCharts();
+            host.replaceChildren();
+            this._chartsFor = this._name;
+        }
+        this._charts = this._charts || {};
+        for (const [key, title, list, valueOf, format] of defs) {
+            const values = list.map(valueOf);
+            const peak = this.t('dockerChartPeak', 'peak {value}', { value: format(Math.max(...values, 0)) });
+            const spec = {
+                x: list.map((p) => p.t / 1000),
+                series: [{ label: title, values, color: '--accent-primary', format }],
+                format: { x: 'time', y: format, tick: (v) => dockerShortFigure(v) },
+                scales: { y: { range: (u, min, max) => [0, max > 0 ? max * 1.15 : 1] } },
+                sync: 'docker-drawer',
+                summary: `${title}, ${peak}`,
+                height: 96,
+                axisWidth: 40,
+            };
+            let entry = this._charts[key];
+            if (!entry) {
+                const fig = document.createElement('figure');
+                fig.className = 'docker-chart';
+                fig.setAttribute('data-docker-chart', key);
+                fig.setAttribute('data-nd-chart', '');
+                const head = document.createElement('figcaption');
+                head.className = 'docker-chart-head';
+                const name = document.createElement('span');
+                name.textContent = title;
+                const top = document.createElement('span');
+                top.className = 'docker-chart-peak';
+                head.append(name, top);
+                const plot = document.createElement('div');
+                fig.append(head, plot);
+                host.appendChild(fig);
+                entry = { top, handle: window.NdChart.chart(plot, spec) };
+                this._charts[key] = entry;
+            } else {
+                entry.handle.update(spec);
+            }
+            entry.top.textContent = peak;
+        }
+    }
+
+    /** NdChart and uPlot, fetched once; a failure leaves the plain charts. */
+    _ensureCharts() {
+        if (this._chartsLoading || this._chartsFailed) return;
+        this._chartsLoading = window.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart',
+            () => typeof window.NdChart !== 'undefined')
+            .then(() => window.NdChart.load())
+            .catch(() => { this._chartsFailed = true; });
+    }
+
+    _destroyCharts() {
+        Object.values(this._charts || {}).forEach((entry) => entry.handle.destroy());
+        this._charts = {};
+        this._chartsFor = null;
     }
 
     _chart(key, title, series, valueOf, format, nowMs) {

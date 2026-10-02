@@ -189,6 +189,10 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-health-multi-select.js",
 	"js/dashboard/dashboard-health-focus.js",
 	"js/dashboard/dashboard-docker.js",
+	// Charts over time: the wrapper and uPlot itself (MIT, vendored), fetched
+	// where a chart is drawn.
+	"js/shared/nd-chart.js",
+	"vendor/uplot/1.6.32/uPlot.iife.min.js",
 	// The app-icon picker, for the bookmark form and the container drawer.
 	"js/shared/icon-set-picker.js",
 	"js/dashboard/dashboard-docker-drawer.js",

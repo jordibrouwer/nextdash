@@ -81,4 +81,11 @@ test.describe('config about', () => {
         await expect(credits.locator('a[href="https://github.com/selfhst/icons"]')).toBeVisible();
         await expect(credits.locator('a[href="https://creativecommons.org/licenses/by/4.0/"]')).toHaveText('CC BY 4.0');
     });
+
+    test('credits uPlot, the charts\' library, with its licence', async ({ page }) => {
+        await openAbout(page);
+        const credits = page.locator('[data-about-chart-credits]');
+        await expect(credits.locator('a[href="https://github.com/leeoniya/uPlot"]')).toHaveText('uPlot');
+        await expect(credits).toContainText('MIT');
+    });
 });
