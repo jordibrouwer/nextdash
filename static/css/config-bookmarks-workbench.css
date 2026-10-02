@@ -3335,3 +3335,127 @@ body[data-density-mode="dense"] .config-bm-workbench {
 .config-bm-selbar[hidden] {
     display: none;
 }
+
+/* Outages, per monitor (renderBmHealthModalOutagesCard): who, how often, how
+   long in all; a lane per monitor over 30 days; and the list behind a toggle. */
+.bm-health-outage-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 3px var(--space-3, 0.75rem);
+    align-items: baseline;
+    font-size: var(--text-xs, 0.78rem);
+}
+.bm-health-outage-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.bm-health-outage-count {
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+.bm-health-outage-dur {
+    justify-self: end;
+    padding: 0 6px;
+    border-radius: 4px;
+    font-size: var(--text-2xs, 0.7rem);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.bm-health-outage-dur[data-tone="warn"] {
+    color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 14%, transparent);
+}
+.bm-health-outage-dur[data-tone="bad"] {
+    color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 14%, transparent);
+}
+.bm-health-outage-timeline {
+    margin-top: var(--space-3, 0.75rem);
+    display: grid;
+    gap: 3px;
+}
+.bm-health-outage-lane {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: var(--space-2, 0.5rem);
+    align-items: center;
+}
+.bm-health-outage-lane-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-secondary);
+}
+.bm-health-outage-track {
+    position: relative;
+    height: 10px;
+    border-left: 1px solid var(--text-muted, var(--text-secondary));
+    background: color-mix(in srgb, var(--border-secondary) 40%, transparent);
+    border-radius: 0 2px 2px 0;
+}
+.bm-health-outage-track i {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    min-width: 3px;
+    border-radius: 2px;
+    background: var(--accent-error);
+}
+.bm-health-outage-track i[data-tone="warn"] {
+    background: var(--accent-warning);
+}
+.bm-health-outage-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-left: calc(5.5rem + var(--space-2, 0.5rem));
+    padding-top: 2px;
+    border-top: 1px solid var(--text-muted, var(--text-secondary));
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-muted, var(--text-secondary));
+}
+.bm-health-outage-details {
+    margin-top: var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.78rem);
+}
+.bm-health-outage-details summary {
+    cursor: pointer;
+    color: var(--accent-primary);
+    font-size: var(--text-2xs, 0.72rem);
+}
+.bm-health-outage-list {
+    list-style: none;
+    margin: var(--space-2, 0.5rem) 0 0;
+    padding: 0;
+    max-height: 14rem;
+    overflow: auto;
+}
+.bm-health-outage-day {
+    margin: 6px 0 2px;
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-muted, var(--text-secondary));
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.bm-health-outage-day:first-child {
+    margin-top: 0;
+}
+.bm-health-outage-row {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) auto;
+    gap: var(--space-2, 0.5rem);
+    align-items: baseline;
+    padding: 1px 0;
+}
+.bm-health-outage-time {
+    color: var(--text-muted, var(--text-secondary));
+    font-variant-numeric: tabular-nums;
+}
+.bm-health-outage-reason {
+    margin-left: 6px;
+    color: var(--text-muted, var(--text-secondary));
+    font-size: var(--text-2xs, 0.7rem);
+}

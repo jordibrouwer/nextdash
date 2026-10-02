@@ -375,3 +375,56 @@ test.describe('the course over time, drawn with uPlot', () => {
     await expect(trend.locator('.nd-chart')).toHaveCount(0);
   });
 });
+
+/*
+ * Outages read per monitor: how often and how long in all, a lane per monitor
+ * over the 30 days, and the list by day behind "Show list".
+ */
+test('outages: per monitor, on a timeline, and the list on request', async ({ page }) => {
+  const hour = 3600000;
+  const now = Date.now();
+  const incident = (name, ago, hours, reason = 'Timeout') => ({
+    url: `https://${name}.example.com`, name, start: now - ago, durationMs: hours * hour, reason,
+  });
+  await openBookmarksWithHealth(page, (issues) => issues, {
+    view: 'library',
+    report: (issues) => ({
+      summary: fullSummary(issues),
+      fleet: {
+        monitors: 3,
+        uptime24h: { ratio: 0.9, samples: 10 }, uptime7d: { ratio: 0.95, samples: 50 }, uptime30d: { ratio: 0.99, samples: 200 },
+        incidents: [
+          incident('prowlarr', 2 * hour, 3),
+          incident('tower', 2 * hour, 1),
+          incident('prowlarr', 5 * 24 * hour, 5),
+          incident('seerr', 9 * 24 * hour, 1, 'HTTP 502'),
+        ],
+        totalIncidents: 4,
+      },
+    }),
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
+  const modal = page.locator('#app-modal.show');
+  await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+  const card = modal.locator('[data-bm-health-modal-card="fleet-outages"]');
+
+  // Who first, worst first: prowlarr twice and eight hours in all.
+  const summary = card.locator('.bm-health-outage-summary');
+  await expect(summary).toBeVisible();
+  await expect(summary.locator('.bm-health-outage-name').first()).toHaveText('prowlarr');
+  await expect(summary).toContainText('2×');
+  await expect(summary).toContainText('8h');
+
+  // One lane per monitor, one bar per outage.
+  await expect(card.locator('.bm-health-outage-lane')).toHaveCount(3);
+  await expect(card.locator('.bm-health-outage-lane').first().locator('.bm-health-outage-track i')).toHaveCount(2);
+
+  // The list is there on request, by day.
+  const list = card.locator('.bm-health-outage-list');
+  await expect(list).toBeHidden();
+  await card.locator('[data-bm-health-outage-list] summary').click();
+  await expect(list).toBeVisible();
+  await expect(list.locator('.bm-health-outage-row')).toHaveCount(4);
+  await expect(list).toContainText('HTTP 502');
+});

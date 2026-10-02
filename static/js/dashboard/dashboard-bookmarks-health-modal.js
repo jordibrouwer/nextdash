@@ -282,22 +282,101 @@
                 slowerRows ? `<ul class="bm-health-modal-monitor-list is-three">${slowerRows}</ul>`
                     : `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalFleetNoneSlower', 'Nothing has slowed down.'))}</p>`);
 
-            const incidents = Array.isArray(fleet.incidents) ? fleet.incidents : [];
-            const total = Number(fleet.totalIncidents) || incidents.length;
-            const incidentRows = incidents.slice(0, 8).map((i) => `<li><span title="${esc(i.url || '')}">${esc(i.name || health.formatUrlDisplay(i.url))}</span>
-                <span>${esc([i.start ? new Date(i.start).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '',
-                    i.ongoing ? health.t('dashboard.healthFleetOngoing', 'ongoing') : health.formatDuration(i.durationMs),
-                    i.reason || ''].filter(Boolean).join(' · '))}</span></li>`).join('');
-            const more = total > incidents.slice(0, 8).length
-                ? `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalFleetMoreOutages', '{n} more in the last 30 days').replace('{n}', String(total - incidents.slice(0, 8).length)))}</p>` : '';
-            const outages = this.bmHealthModalCard('fleet-outages',
-                this.t('config.bmHealthModalFleetOutages', 'Outages ({count})').replace('{count}', String(total)),
-                incidentRows ? `<ul class="bm-health-modal-monitor-list">${incidentRows}</ul>${more}`
-                    : `<p class="bm-health-modal-empty">${esc(health.t('dashboard.healthStatsNoIncidents', 'No outages recorded.'))}</p>`);
+            const outages = this.renderBmHealthModalOutagesCard(health, fleet);
             return `${uptime}${least}${slowing}${outages}`;
         },
 
-        /** Show one tab, in place, and remember it for the next opening. */
+        /*
+         * Outages of the last 30 days, read per monitor.
+         *
+         * A list of twenty-six lines, each a name and a run of date, duration
+         * and reason, said one thing badly: which monitors keep going down,
+         * and whether they go down together. So the card says that first --
+         * per monitor how often and for how long in all -- and then shows it:
+         * one lane per monitor across the thirty days, an outage as a bar as
+         * long as it lasted, so two that fall at once line up. The list is
+         * still there, by day, behind "Show list".
+         */
+        renderBmHealthModalOutagesCard(health, fleet) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const incidents = Array.isArray(fleet.incidents) ? fleet.incidents : [];
+            const total = Number(fleet.totalIncidents) || incidents.length;
+            const title = this.t('config.bmHealthModalFleetOutages', 'Outages ({count})').replace('{count}', String(total));
+            if (!incidents.length) {
+                return this.bmHealthModalCard('fleet-outages', title,
+                    `<p class="bm-health-modal-empty">${esc(health.t('dashboard.healthStatsNoIncidents', 'No outages recorded.'))}</p>`);
+            }
+            const now = Date.now();
+            const span = 30 * 86400000;
+            const start = now - span;
+            const lasted = (i) => (i.ongoing ? Math.max(0, now - (Number(i.start) || now)) : Number(i.durationMs) || 0);
+            const tone = (ms) => (ms >= 2 * 3600000 ? 'bad' : 'warn');
+            const nameOf = (i) => i.name || health.formatUrlDisplay(i.url);
+
+            const byMonitor = new Map();
+            incidents.forEach((i) => {
+                const key = i.url || nameOf(i);
+                const entry = byMonitor.get(key) || { name: nameOf(i), url: i.url || '', count: 0, down: 0, list: [] };
+                entry.count += 1;
+                entry.down += lasted(i);
+                entry.list.push(i);
+                byMonitor.set(key, entry);
+            });
+            const monitors = [...byMonitor.values()].sort((a, b) => b.down - a.down || b.count - a.count);
+            const LANES = 6;
+
+            const summary = monitors.map((m) => `<span class="bm-health-outage-name" title="${esc(m.url)}">${esc(m.name)}</span>
+                <span class="bm-health-outage-count">${esc(`${m.count}×`)}</span>
+                <span class="bm-health-outage-dur" data-tone="${tone(m.down)}">${esc(health.formatDuration(m.down))}</span>`).join('');
+
+            const pct = (t) => Math.max(0, Math.min(100, ((t - start) / span) * 100));
+            const lanes = monitors.slice(0, LANES).map((m) => `<div class="bm-health-outage-lane">
+                <span class="bm-health-outage-lane-name" title="${esc(m.url)}">${esc(m.name)}</span>
+                <span class="bm-health-outage-track">${m.list.map((i) => {
+                    const from = Number(i.start) || now;
+                    const left = pct(from);
+                    const width = Math.max(0.6, pct(from + lasted(i)) - left);
+                    const when = new Date(from).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                    const what = [when, i.ongoing ? health.t('dashboard.healthFleetOngoing', 'ongoing') : health.formatDuration(lasted(i)), i.reason || '']
+                        .filter(Boolean).join(' · ');
+                    return `<i style="left:${left.toFixed(2)}%;width:${width.toFixed(2)}%" data-tone="${tone(lasted(i))}" title="${esc(what)}"></i>`;
+                }).join('')}</span>
+            </div>`).join('');
+            const day = (t) => new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+            const timeline = `<div class="bm-health-outage-timeline" role="img"
+                    aria-label="${esc(this.t('config.bmHealthModalOutageTimeline', 'Outages per monitor over the last 30 days'))}">
+                    ${lanes}
+                    <div class="bm-health-outage-axis"><span>${esc(day(start))}</span><span>${esc(day(now))}</span></div>
+                </div>`;
+            const otherLanes = monitors.length > LANES
+                ? `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalOutageMoreMonitors', '{n} more monitors in the list').replace('{n}', String(monitors.length - LANES)))}</p>` : '';
+
+            // The list, newest first and by day: when, which, how long, why.
+            let lastDay = '';
+            const rows = incidents.map((i) => {
+                const from = Number(i.start) || now;
+                const label = new Date(from).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+                const head = label !== lastDay ? `<li class="bm-health-outage-day">${esc(label)}</li>` : '';
+                lastDay = label;
+                return `${head}<li class="bm-health-outage-row">
+                    <span class="bm-health-outage-time">${esc(new Date(from).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))}</span>
+                    <span class="bm-health-outage-name" title="${esc(i.url || '')}">${esc(nameOf(i))}<span class="bm-health-outage-reason">${esc(i.reason || '')}</span></span>
+                    <span class="bm-health-outage-dur" data-tone="${tone(lasted(i))}">${esc(i.ongoing
+                        ? health.t('dashboard.healthFleetOngoing', 'ongoing') : health.formatDuration(lasted(i)))}</span>
+                </li>`;
+            }).join('');
+            const more = total > incidents.length
+                ? `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalFleetMoreOutages', '{n} more in the last 30 days').replace('{n}', String(total - incidents.length)))}</p>` : '';
+            const list = `<details class="bm-health-outage-details" data-bm-health-outage-list>
+                <summary>${esc(this.t('config.bmHealthModalOutageShowList', 'Show list ({count})').replace('{count}', String(incidents.length)))}</summary>
+                <ul class="bm-health-outage-list">${rows}</ul>${more}
+            </details>`;
+
+            return this.bmHealthModalCard('fleet-outages', title,
+                `<div class="bm-health-outage-summary">${summary}</div>${timeline}${otherLanes}${list}`);
+        },
+
+        /** Show one tab, in place, and remember it for the next opening. */        /** Show one tab, in place, and remember it for the next opening. */
         setBmHealthModalTab(tab) {
             const root = document.getElementById('modal-text');
             if (!root) return;
