@@ -1,0 +1,6 @@
+{"data":{"notifications":{
+ "overview":{"unread":{"info":0,"warning":2,"alert":1,"total":3}},
+ "list":[
+  {"id":"n1","title":"Unraid Disk Error","subject":"Disk 5 has read errors","description":"disk5 (WDC_WD120) has 3 read errors","importance":"ALERT","link":"/Main","timestamp":"2026-10-02T20:41:00Z"},
+  {"id":"n2","title":"Docker","subject":"Docker image disk 82% full","description":"","importance":"WARNING","link":null,"timestamp":"2026-10-01T22:00:00Z"},
+  {"id":"n3","title":"Unraid OS","subject":"Unraid OS 7.2.2 available","description":"","importance":"WARNING","link":"/Tools/Update","timestamp":"2026-09-30T09:00:00Z"}]}}}

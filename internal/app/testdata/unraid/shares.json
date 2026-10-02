@@ -1,0 +1,6 @@
+{"data":{"shares":[
+ {"name":"media","used":"82000000000","free":"5233373440","size":"87233373440","cache":false},
+ {"name":"backups","used":"9600000000","free":"3550000000","size":"13150000000","cache":false},
+ {"name":"appdata","used":"468846040","free":"507916544","size":"976762584","cache":true},
+ {"name":"isos","used":"150000000","free":"1100000000","size":"1250000000","cache":false},
+ {"name":"system","used":"60000000","free":"507916544","size":"567916544","cache":true}]}}
