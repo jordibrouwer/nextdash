@@ -90,12 +90,14 @@ func unraidStatusOf(err error) string {
 }
 
 func (h *Handlers) unraidArea(ctx context.Context, area string) unraidAreaResult {
+	// The cache first: a save between here and the fetch then lands old-server
+	// data in the cache the save just threw away, not in the new one.
+	cache := currentUnraidAnswers()
 	srv, ok := activeUnraidServer(h.store.GetSettings())
 	if !ok {
 		return unraidAreaResult{Area: area, Status: "not-configured"}
 	}
 	key := unraidAPIKey(srv.ID)
-	cache := currentUnraidAnswers()
 	if area == "overview" {
 		return cache.get(ctx, area, unraidFloor, func(ctx context.Context) (any, string, error) {
 			return h.composeUnraidOverview(ctx), "ok", nil
@@ -185,8 +187,12 @@ func (h *Handlers) UnraidSettingsHandler(w http.ResponseWriter, r *http.Request)
 	}
 	h.settingsMu.Lock()
 	s := h.store.GetSettings()
-	if len(s.UnraidServers) > 0 && body.Server.ID == "" {
-		body.Server.ID = s.UnraidServers[0].ID
+	oldBaseURL := ""
+	if len(s.UnraidServers) > 0 {
+		oldBaseURL = s.UnraidServers[0].BaseURL
+		if body.Server.ID == "" {
+			body.Server.ID = s.UnraidServers[0].ID
+		}
 	}
 	s.UnraidServers = []UnraidServer{body.Server}
 	normalizeUnraidSettings(&s)
@@ -197,8 +203,17 @@ func (h *Handlers) UnraidSettingsHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Could not save", http.StatusInternalServerError)
 		return
 	}
-	if body.Key != nil {
-		if err := saveUnraidAPIKey(saved.ID, strings.TrimSpace(*body.Key)); err != nil {
+	// A stored key belongs to the address it was typed for: pointed at a new
+	// host without a new key, it is dropped rather than sent there.
+	newKey := ""
+	setKey := body.Key != nil
+	if setKey {
+		newKey = strings.TrimSpace(*body.Key)
+	} else if oldBaseURL != "" && oldBaseURL != saved.BaseURL {
+		setKey = true
+	}
+	if setKey {
+		if err := saveUnraidAPIKey(saved.ID, newKey); err != nil {
 			http.Error(w, "Could not store the key", http.StatusInternalServerError)
 			return
 		}
@@ -232,7 +247,8 @@ func (h *Handlers) UnraidTestHandler(w http.ResponseWriter, r *http.Request) {
 	key := ""
 	if body.Key != nil {
 		key = strings.TrimSpace(*body.Key)
-	} else if len(saved.UnraidServers) > 0 {
+	} else if len(saved.UnraidServers) > 0 && saved.UnraidServers[0].BaseURL == srv.BaseURL {
+		// The saved key goes only to the address it was saved for.
 		key = unraidAPIKey(saved.UnraidServers[0].ID)
 	}
 	srv.ID = "test-" + newUnraidServerID() // never reuse the saved schema cache for a typed address

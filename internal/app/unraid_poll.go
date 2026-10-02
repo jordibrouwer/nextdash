@@ -18,9 +18,10 @@ before it asks again.
 */
 
 const (
-	unraidFloor      = 30 * time.Second
-	unraidBackoffMin = 30 * time.Second
-	unraidBackoffMax = 10 * time.Minute
+	unraidFloor        = 30 * time.Second
+	unraidBackoffMin   = 30 * time.Second
+	unraidBackoffMax   = 10 * time.Minute
+	unraidFetchTimeout = 15 * time.Second
 )
 
 type unraidAreaResult struct {
@@ -93,10 +94,16 @@ func (c *unraidCache) get(ctx context.Context, area string, floor time.Duration,
 	e.inflight = wg
 	c.mu.Unlock()
 
-	data, status, err := fetch(ctx)
+	// The leader fetches for everyone: its own tab closing must not turn the
+	// shared answer into a failure for every other viewer.
+	data, status, err := runUnraidFetch(ctx, fetch)
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	defer func() {
+		e.inflight = nil
+		wg.Done()
+	}()
 	e.at = time.Now()
 	e.result.Area = area
 	e.result.Status = status
@@ -125,7 +132,21 @@ func (c *unraidCache) get(ctx context.Context, area string, floor time.Duration,
 			e.result.Data = data
 		}
 	}
-	e.inflight = nil
-	wg.Done()
 	return e.result
+}
+
+var errUnraidUnreadable = errors.New("unraid: the answer could not be read")
+
+// runUnraidFetch runs fetch detached from the caller's cancellation, with its
+// own deadline, and turns a panic into an answer so the area never wedges.
+func runUnraidFetch(ctx context.Context, fetch unraidFetch) (data any, status string, err error) {
+	fctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), unraidFetchTimeout)
+	defer cancel()
+	defer func() {
+		if r := recover(); r != nil {
+			logWarn("unraid", "reading an area panicked: %v", r)
+			data, status, err = nil, "unsupported", errUnraidUnreadable
+		}
+	}()
+	return fetch(fctx)
 }
