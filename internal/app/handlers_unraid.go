@@ -1,0 +1,263 @@
+package app
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/gorilla/mux"
+)
+
+var unraidAreas = []string{"overview", "array", "parity", "shares", "vms", "ups", "notifications", "info"}
+
+type UnraidOverviewView struct {
+	Info          UnraidInfoView           `json:"info"`
+	Array         *UnraidArrayView         `json:"array,omitempty"`
+	Parity        *UnraidParityView        `json:"parity,omitempty"`
+	Notifications *UnraidNotificationsView `json:"notifications,omitempty"`
+	VMs           []UnraidVMView           `json:"vms,omitempty"`
+	FullestShare  *UnraidShareView         `json:"fullestShare,omitempty"`
+	UPS           *UnraidUPSView           `json:"ups,omitempty"`
+	Missing       []string                 `json:"missing,omitempty"`
+}
+
+func registerUnraidRoutes(r *mux.Router, h *Handlers) {
+	r.HandleFunc("/api/unraid/area/{area}", h.UnraidAreaHandler).Methods("GET")
+	r.HandleFunc("/api/unraid/settings", h.UnraidSettingsHandler).Methods("GET", "PUT")
+	r.HandleFunc("/api/unraid/test", h.UnraidTestHandler).Methods("POST")
+}
+
+// fetchUnraidArea reads one area from one server with one key: no cache. The
+// test button uses it with what was typed; the cache uses it with what is saved.
+func (h *Handlers) fetchUnraidArea(ctx context.Context, srv UnraidServer, key, area string) (any, string, error) {
+	allowLocal := h.allowLocalBookmarks()
+	schema, err := loadUnraidSchema(ctx, srv, key, allowLocal)
+	if err != nil {
+		return nil, unraidStatusOf(err), err
+	}
+	query, ok := buildUnraidQuery(area, schema)
+	if !ok {
+		return nil, "unsupported", nil
+	}
+	data, fieldErrs, err := unraidQuery(ctx, srv, key, query, allowLocal)
+	if err != nil {
+		var v unraidValidationError
+		if errors.As(err, &v) {
+			forgetUnraidSchema(srv.ID) // the schema moved on; ask again next time
+			return nil, "unsupported", err
+		}
+		return nil, unraidStatusOf(err), err
+	}
+	for _, fe := range fieldErrs {
+		if fe.Forbidden() {
+			return nil, "forbidden", nil
+		}
+	}
+	var view any
+	switch area {
+	case "array":
+		view, err = toUnraidArray(data)
+	case "parity":
+		view, err = toUnraidParity(data)
+	case "shares":
+		view, err = toUnraidShares(data)
+	case "vms":
+		view, err = toUnraidVMs(data)
+	case "ups":
+		view, err = toUnraidUPS(data)
+	case "notifications":
+		view, err = toUnraidNotifications(data)
+	case "info":
+		view, err = toUnraidInfo(data)
+	}
+	if err != nil {
+		return nil, "unsupported", err
+	}
+	return view, "ok", nil
+}
+
+func unraidStatusOf(err error) string {
+	switch {
+	case errors.Is(err, errUnraidUnauthorized):
+		return "unauthorized"
+	case errors.Is(err, errUnraidNoAPI):
+		return "unsupported"
+	}
+	return "unreachable"
+}
+
+func (h *Handlers) unraidArea(ctx context.Context, area string) unraidAreaResult {
+	srv, ok := activeUnraidServer(h.store.GetSettings())
+	if !ok {
+		return unraidAreaResult{Area: area, Status: "not-configured"}
+	}
+	key := unraidAPIKey(srv.ID)
+	cache := currentUnraidAnswers()
+	if area == "overview" {
+		return cache.get(ctx, area, unraidFloor, func(ctx context.Context) (any, string, error) {
+			return h.composeUnraidOverview(ctx), "ok", nil
+		})
+	}
+	return cache.get(ctx, area, unraidFloor, func(ctx context.Context) (any, string, error) {
+		return h.fetchUnraidArea(ctx, srv, key, area)
+	})
+}
+
+// composeUnraidOverview reads through the per-area cache, so the overview and
+// the area tiles share their requests.
+func (h *Handlers) composeUnraidOverview(ctx context.Context) UnraidOverviewView {
+	var o UnraidOverviewView
+	take := func(area string) any {
+		r := h.unraidArea(ctx, area)
+		if r.Status != "ok" && r.Data == nil {
+			o.Missing = append(o.Missing, area)
+			return nil
+		}
+		return r.Data
+	}
+	if v, ok := take("info").(UnraidInfoView); ok {
+		o.Info = v
+	}
+	if v, ok := take("array").(UnraidArrayView); ok {
+		o.Array = &v
+	}
+	if v, ok := take("parity").(UnraidParityView); ok {
+		o.Parity = &v
+	}
+	if v, ok := take("notifications").(UnraidNotificationsView); ok {
+		o.Notifications = &v
+	}
+	if v, ok := take("vms").([]UnraidVMView); ok {
+		o.VMs = v
+	}
+	if v, ok := take("shares").([]UnraidShareView); ok && len(v) > 0 {
+		o.FullestShare = &v[0]
+	}
+	if v, ok := take("ups").(UnraidUPSView); ok {
+		o.UPS = &v
+	}
+	return o
+}
+
+func (h *Handlers) UnraidAreaHandler(w http.ResponseWriter, r *http.Request) {
+	area := mux.Vars(r)["area"]
+	known := false
+	for _, a := range unraidAreas {
+		known = known || a == area
+	}
+	if !known {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, h.unraidArea(r.Context(), area))
+}
+
+func (h *Handlers) UnraidSettingsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if r.Method == http.MethodGet {
+		s := h.store.GetSettings()
+		var srv *UnraidServer
+		if len(s.UnraidServers) > 0 {
+			srv = &s.UnraidServers[0]
+		}
+		keySet := srv != nil && unraidAPIKey(srv.ID) != ""
+		writeJSON(w, map[string]any{"server": srv, "keySet": keySet, "suggestedBaseUrl": suggestUnraidBaseURL()})
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	var body struct {
+		Server UnraidServer `json:"server"`
+		Key    *string      `json:"key"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	if body.Key != nil && strings.ContainsAny(strings.TrimSpace(*body.Key), " \t\r\n") {
+		http.Error(w, "An API key has no spaces", http.StatusBadRequest)
+		return
+	}
+	h.settingsMu.Lock()
+	s := h.store.GetSettings()
+	if len(s.UnraidServers) > 0 && body.Server.ID == "" {
+		body.Server.ID = s.UnraidServers[0].ID
+	}
+	s.UnraidServers = []UnraidServer{body.Server}
+	normalizeUnraidSettings(&s)
+	saved := s.UnraidServers[0]
+	err := h.store.SaveSettings(s)
+	h.settingsMu.Unlock()
+	if err != nil {
+		http.Error(w, "Could not save", http.StatusInternalServerError)
+		return
+	}
+	if body.Key != nil {
+		if err := saveUnraidAPIKey(saved.ID, strings.TrimSpace(*body.Key)); err != nil {
+			http.Error(w, "Could not store the key", http.StatusInternalServerError)
+			return
+		}
+	}
+	forgetUnraidSchema(saved.ID)
+	resetUnraidAnswers()
+	logActivity(activityCategoryMutate, "unraid.settings", map[string]any{"enabled": saved.Enabled}, "Unraid connection saved")
+	writeJSON(w, map[string]any{"server": saved, "keySet": unraidAPIKey(saved.ID) != ""})
+}
+
+func (h *Handlers) UnraidTestHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	var body struct {
+		Server UnraidServer `json:"server"`
+		Key    *string      `json:"key"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	srv := body.Server
+	srv.BaseURL = normalizeUnraidBaseURL(srv.BaseURL)
+	if srv.BaseURL == "" {
+		writeJSON(w, map[string]any{"ok": false, "error": "Give an address like http://192.168.1.10"})
+		return
+	}
+	saved := h.store.GetSettings()
+	key := ""
+	if body.Key != nil {
+		key = strings.TrimSpace(*body.Key)
+	} else if len(saved.UnraidServers) > 0 {
+		key = unraidAPIKey(saved.UnraidServers[0].ID)
+	}
+	srv.ID = "test-" + newUnraidServerID() // never reuse the saved schema cache for a typed address
+	defer forgetUnraidSchema(srv.ID)
+	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+	defer cancel()
+
+	infoAny, status, err := h.fetchUnraidArea(ctx, srv, key, "info")
+	if status != "ok" {
+		msg := "The server did not answer"
+		if err != nil {
+			msg = err.Error()
+		}
+		writeJSON(w, map[string]any{"ok": false, "status": status, "error": msg})
+		return
+	}
+	info := infoAny.(UnraidInfoView)
+	areas := map[string]string{}
+	for _, area := range []string{"array", "parity", "shares", "vms", "ups", "notifications"} {
+		_, st, _ := h.fetchUnraidArea(ctx, srv, key, area)
+		areas[area] = st
+	}
+	broader := false
+	for _, role := range info.Roles {
+		broader = broader || (role != "VIEWER" && role != "GUEST")
+	}
+	writeJSON(w, map[string]any{"ok": true, "info": info, "areas": areas, "viewerIsEnough": broader})
+}

@@ -229,6 +229,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/containers/{id}/changelog", handlers.DockerChangelogHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates", handlers.DockerUpdatesHandler).Methods("GET")
 	r.HandleFunc("/api/docker/github-token", handlers.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")
+	registerUnraidRoutes(r, handlers)
 	r.HandleFunc("/api/docker/updates/check", handlers.DockerUpdatesCheckHandler).Methods("POST")
 	r.HandleFunc("/api/docker/updates/choice", handlers.DockerUpdateChoiceHandler).Methods("POST")
 	r.HandleFunc("/api/docker/disk", handlers.DockerDiskHandler).Methods("GET")
