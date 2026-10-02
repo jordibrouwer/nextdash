@@ -42,9 +42,18 @@ type unraidSchemaEntry struct {
 	at     time.Time
 }
 
+// unraidSchemaLoad is one introspection in flight; the areas that want the
+// same server's schema meanwhile wait for it instead of asking again.
+type unraidSchemaLoad struct {
+	done   chan struct{}
+	schema unraidSchema
+	err    error
+}
+
 var (
-	unraidSchemaMu    sync.Mutex
-	unraidSchemaCache = map[string]unraidSchemaEntry{}
+	unraidSchemaMu      sync.Mutex
+	unraidSchemaCache   = map[string]unraidSchemaEntry{}
+	unraidSchemaLoading = map[string]*unraidSchemaLoad{}
 )
 
 func forgetUnraidSchema(serverID string) {
@@ -59,8 +68,35 @@ func loadUnraidSchema(ctx context.Context, srv UnraidServer, key string, allowLo
 		unraidSchemaMu.Unlock()
 		return e.schema, nil
 	}
+	if l, ok := unraidSchemaLoading[srv.ID]; ok {
+		unraidSchemaMu.Unlock()
+		select {
+		case <-l.done:
+			return l.schema, l.err
+		case <-ctx.Done():
+			return nil, fmt.Errorf("unraid: %s", unraidTransportReason(ctx.Err()))
+		}
+	}
+	l := &unraidSchemaLoad{done: make(chan struct{})}
+	unraidSchemaLoading[srv.ID] = l
 	unraidSchemaMu.Unlock()
 
+	// Deferred, so a panic in the asking still lets the waiters go.
+	l.err = errUnraidUnreadable
+	defer func() {
+		unraidSchemaMu.Lock()
+		delete(unraidSchemaLoading, srv.ID)
+		if l.err == nil {
+			unraidSchemaCache[srv.ID] = unraidSchemaEntry{schema: l.schema, at: time.Now()}
+		}
+		unraidSchemaMu.Unlock()
+		close(l.done)
+	}()
+	l.schema, l.err = askUnraidSchema(ctx, srv, key, allowLocal)
+	return l.schema, l.err
+}
+
+func askUnraidSchema(ctx context.Context, srv UnraidServer, key string, allowLocal bool) (unraidSchema, error) {
 	var b strings.Builder
 	b.WriteString("# area: introspection\n{\n")
 	for i, typ := range unraidSchemaTypes {
@@ -72,14 +108,7 @@ func loadUnraidSchema(ctx context.Context, srv UnraidServer, key string, allowLo
 	if err != nil {
 		return nil, err
 	}
-	schema, err := parseUnraidIntrospection(data)
-	if err != nil {
-		return nil, err
-	}
-	unraidSchemaMu.Lock()
-	unraidSchemaCache[srv.ID] = unraidSchemaEntry{schema: schema, at: time.Now()}
-	unraidSchemaMu.Unlock()
-	return schema, nil
+	return parseUnraidIntrospection(data)
 }
 
 // parseUnraidIntrospection accepts the live aliased answer, and the fixture

@@ -67,6 +67,18 @@ test.describe('Unraid widgets', () => {
         expect(out.rows.some((r) => r.startsWith('VMs'))).toBe(false);
     });
 
+    test('the overview says when the server is out of reach, and when the key is refused', async ({ page }) => {
+        await openDashboard(page);
+        const gone = A('overview');
+        Object.assign(gone, { status: 'unreachable', error: 'unraid: no answer within 8 seconds', lastOkAt: Date.now() - 5 * 60_000 });
+        const stale = await render(page, 'unraid', { overview: gone });
+        expect(stale.text).toContain('did not answer — last reading 5 min ago');
+        expect(stale.rows[0]).toContain('array');
+        const refused = await render(page, 'unraid', { overview: { area: 'overview', status: 'unauthorized', error: 'unraid: the API key was refused' } });
+        expect(refused.text).toContain('Unraid refused the API key');
+        expect(refused.rows.length).toBe(0);
+    });
+
     test('the array narrow shows only the problems', async ({ page }) => {
         await openDashboard(page);
         const out = await render(page, 'unraidArray', { array: A('array') }, 320);

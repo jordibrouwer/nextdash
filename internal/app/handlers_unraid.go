@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -102,51 +103,113 @@ func (h *Handlers) unraidArea(ctx context.Context, area string) unraidAreaResult
 	if !ok {
 		return unraidAreaResult{Area: area, Status: "not-configured"}
 	}
-	key := unraidAPIKey(srv.ID)
 	if area == "overview" {
-		return cache.get(ctx, area, unraidFloor, func(ctx context.Context) (any, string, error) {
-			return h.composeUnraidOverview(ctx), "ok", nil
-		})
+		return h.composeUnraidOverview(ctx)
 	}
+	key := unraidAPIKey(srv.ID)
 	return cache.get(ctx, area, unraidFloor, func(ctx context.Context) (any, string, error) {
 		return h.fetchUnraidArea(ctx, srv, key, area)
 	})
 }
 
-// composeUnraidOverview reads through the per-area cache, so the overview and
-// the area tiles share their requests.
-func (h *Handlers) composeUnraidOverview(ctx context.Context) UnraidOverviewView {
+var unraidOverviewAreas = []string{"info", "array", "parity", "notifications", "vms", "shares", "ups"}
+
+// composeUnraidOverview reads every area through its own cache entry, so the
+// overview and the area tiles share their requests. The areas are asked side
+// by side: each has its own 15-second bound, and so has the overview.
+func (h *Handlers) composeUnraidOverview(ctx context.Context) unraidAreaResult {
+	results := make([]unraidAreaResult, len(unraidOverviewAreas))
+	var wg sync.WaitGroup
+	for i, area := range unraidOverviewAreas {
+		wg.Add(1)
+		go func(i int, area string) {
+			defer wg.Done()
+			results[i] = h.unraidArea(ctx, area)
+		}(i, area)
+	}
+	wg.Wait()
+	return composeUnraidOverviewFrom(results)
+}
+
+// composeUnraidOverviewFrom builds the overview from its areas' answers, and
+// says what they say together: an "ok" over seven failures hid a refused key
+// and a server that was gone. One area answering is enough to draw; none
+// answering is the server out of reach (with the last readings and the age of
+// the oldest), or the key refused; none the key may read is unsupported.
+func composeUnraidOverviewFrom(results []unraidAreaResult) unraidAreaResult {
 	var o UnraidOverviewView
-	take := func(area string) any {
-		r := h.unraidArea(ctx, area)
-		if r.Status != "ok" && r.Data == nil {
-			o.Missing = append(o.Missing, area)
-			return nil
+	out := unraidAreaResult{Area: "overview"}
+	used, answered, refused, relevant, notConfigured := 0, 0, 0, 0, 0
+	for _, r := range results {
+		switch r.Status {
+		case "ok":
+			answered++
+		case "unauthorized":
+			refused++
+		case "not-configured":
+			notConfigured++
 		}
-		return r.Data
+		if r.Status != "forbidden" && r.Status != "unsupported" && r.Status != "not-configured" {
+			relevant++
+			if r.Status != "ok" && out.Error == "" {
+				out.Error = r.Error
+			}
+		}
+		if r.Data == nil {
+			o.Missing = append(o.Missing, r.Area)
+			continue
+		}
+		took := true
+		switch v := r.Data.(type) {
+		case UnraidInfoView:
+			o.Info = v
+		case UnraidArrayView:
+			o.Array = &v
+		case UnraidParityView:
+			o.Parity = &v
+		case UnraidNotificationsView:
+			o.Notifications = &v
+		case []UnraidVMView:
+			o.VMs = v
+		case []UnraidShareView:
+			if len(v) > 0 {
+				o.FullestShare = &v[0]
+			}
+		case UnraidUPSView:
+			o.UPS = &v
+		default:
+			took = false
+		}
+		if !took {
+			continue
+		}
+		used++
+		if r.LastOkAt > 0 && (out.LastOkAt == 0 || r.LastOkAt < out.LastOkAt) {
+			out.LastOkAt = r.LastOkAt
+		}
+		if r.FetchedAt > 0 && (out.FetchedAt == 0 || r.FetchedAt < out.FetchedAt) {
+			out.FetchedAt = r.FetchedAt
+		}
 	}
-	if v, ok := take("info").(UnraidInfoView); ok {
-		o.Info = v
+	switch {
+	case notConfigured == len(results):
+		out.Status = "not-configured"
+	case answered > 0:
+		out.Status = "ok"
+	case relevant == 0:
+		out.Status = "unsupported"
+	case refused > 0:
+		out.Status = "unauthorized"
+	default:
+		out.Status = "unreachable"
 	}
-	if v, ok := take("array").(UnraidArrayView); ok {
-		o.Array = &v
+	if out.Status == "ok" {
+		out.Error = ""
 	}
-	if v, ok := take("parity").(UnraidParityView); ok {
-		o.Parity = &v
+	if used > 0 {
+		out.Data = o
 	}
-	if v, ok := take("notifications").(UnraidNotificationsView); ok {
-		o.Notifications = &v
-	}
-	if v, ok := take("vms").([]UnraidVMView); ok {
-		o.VMs = v
-	}
-	if v, ok := take("shares").([]UnraidShareView); ok && len(v) > 0 {
-		o.FullestShare = &v[0]
-	}
-	if v, ok := take("ups").(UnraidUPSView); ok {
-		o.UPS = &v
-	}
-	return o
+	return out
 }
 
 func (h *Handlers) UnraidAreaHandler(w http.ResponseWriter, r *http.Request) {
