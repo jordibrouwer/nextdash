@@ -3326,6 +3326,8 @@ class DashboardConfig {
         dockerNotify: ['docker', 'containers', 'notify', 'notification', 'alert', 'crash', 'restart', 'unhealthy', 'webhook'],
         dockerUsageAlerts: ['docker', 'containers', 'notify', 'alert', 'cpu', 'memory', 'ram', 'usage', 'threshold', 'hot'],
         dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
+        webSearchEngine: ['web', 'search', 'searxng', 'brave', 'internet', 'engine', 'privacy'],
+        webSearchSearxngUrl: ['searxng', 'web', 'search', 'address', 'url', 'instance'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
         statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
         statusOfflineRetryDelayMs: ['offline', 'retry', 'delay', 'status'],
@@ -12085,6 +12087,8 @@ class DashboardConfig {
         certWarnDays: { info: ['certWarnDaysInfoTitle', 'certWarnDaysInfoMessage'], def: 0 },
         includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'], def: true },
         searchUnsorted: { info: ['searchUnsortedInfoTitle', 'searchUnsortedInfoMessage'], def: true },
+        webSearchEngine: { info: ['webSearchEngineInfoTitle', 'webSearchEngineInfoMessage'], def: 'off' },
+        webSearchSearxngUrl: { info: ['webSearchEngineInfoTitle', 'webSearchEngineInfoMessage'], def: '' },
         enableFuzzySuggestions: { info: ['fuzzySuggestionsInfoTitle', 'fuzzySuggestionsInfoMessage'], def: false },
         fuzzySuggestionsStartWith: { info: ['fuzzySuggestionsStartWithInfoTitle', 'fuzzySuggestionsStartWithInfoMessage'], def: false },
         keepSearchOpenWhenEmpty: { info: ['keepSearchOpenWhenEmptyInfoTitle', 'keepSearchOpenWhenEmptyInfoMessage'], def: false },
@@ -13317,6 +13321,23 @@ class DashboardConfig {
                         special: 'search' },
                     bool('enableFuzzySuggestions', 'config.enableFuzzySuggestions', 'Fuzzy search suggestions'),
                     bool('fuzzySuggestionsStartWith', 'config.fuzzySuggestionsStartWith', 'Prefer matches that start with the query'),
+                ],
+            },
+            {
+                // The one search that leaves this server, so it has its own
+                // panel and starts switched off.
+                section: 'behavior',
+                tab: 'search',
+                title: t('config.generalGroupWebSearch', 'Web search'),
+                note: t('config.generalGroupWebSearchNote', 'Search the web from the search panel with Shift+Enter. This dashboard\'s server asks the engine, so the engine never sees your browser. Nothing is sent while you type.'),
+                controls: [
+                    { field: 'webSearchEngine', type: 'select', special: 'search', label: t('config.webSearchEngineLabel', 'Engine'), options: [
+                        opt('off', t('config.webSearchEngineOff', 'Off')),
+                        opt('searxng', 'SearXNG'),
+                        opt('brave', t('config.webSearchEngineBrave', 'Brave Search API')),
+                    ] },
+                    { field: 'webSearchSearxngUrl', type: 'text', special: 'search', label: t('config.webSearchSearxngUrlLabel', 'SearXNG address'),
+                        placeholder: 'http://192.168.1.10:8888' },
                 ],
             },
             {
@@ -14972,8 +14993,11 @@ class DashboardConfig {
         // Privacy & sync so the whole of onboarding sits together.
         const trailing = (this.behaviorTab === 'privacy' && !this.changedOnly && !String(this.settingsFilter || '').trim())
             ? this.renderOnboardingActions() : '';
+        const webPanel = (this.behaviorTab === 'search' && !this.changedOnly && !String(this.settingsFilter || '').trim())
+            ? this.renderWebSearchPanel() : '';
         return lead
             + this.renderControlPanels(panels, 'behavior')
+            + webPanel
             + trailing;
     }
 
@@ -15108,6 +15132,87 @@ class DashboardConfig {
         return parts.filter(Boolean).some((part) => String(part).toLowerCase().includes(query));
     }
 
+    /** The Brave key and a connection test; neither fits the settings schema. */
+    renderWebSearchPanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <div class="config-panel" data-web-search-panel>
+                <h3 class="config-panel-title">${esc(this.t('config.webSearchBraveKeyTitle', 'Brave Search API key'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.webSearchBraveKeyNote', 'Only needed with Brave as the engine. Stored on this server and never shown again.'))}</p>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-web-search-brave-key">${esc(this.t('config.webSearchBraveKeyLabel', 'API key'))}</label>
+                    <input type="password" id="config-web-search-brave-key" class="config-text" autocomplete="off" spellcheck="false" placeholder="BSA…">
+                </div>
+                <p class="config-field-hint" data-web-search-key-state></p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-web-search-action="save-key">${esc(this.t('config.webSearchBraveKeySave', 'Save key'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-web-search-action="remove-key" hidden>${esc(this.t('config.webSearchBraveKeyRemove', 'Remove key'))}</button>
+                    <button type="button" class="config-btn" data-web-search-action="test">${esc(this.t('config.webSearchTest', 'Test connection'))}</button>
+                </div>
+                <p class="config-field-hint" data-web-search-state role="status"></p>
+            </div>`;
+    }
+
+    bindWebSearchPanel(container) {
+        const panel = container.querySelector('[data-web-search-panel]');
+        if (!panel || panel.dataset.bound === 'true') return;
+        panel.dataset.bound = 'true';
+        const input = panel.querySelector('#config-web-search-brave-key');
+        const keyState = panel.querySelector('[data-web-search-key-state]');
+        const removeBtn = panel.querySelector('[data-web-search-action="remove-key"]');
+        const state = panel.querySelector('[data-web-search-state]');
+        const showKey = (isSet) => {
+            if (keyState) {
+                keyState.textContent = isSet
+                    ? this.t('config.webSearchBraveKeyIsSet', 'A key is saved.')
+                    : this.t('config.webSearchBraveKeyNotSet', 'No key saved.');
+            }
+            if (removeBtn) removeBtn.hidden = !isSet;
+        };
+        void fetch('/api/web-search/brave-key').then((r) => (r.ok ? r.json() : null))
+            .then((body) => { if (panel.isConnected) showKey(body?.set === true); }).catch(() => {});
+
+        const sendKey = async (method, key) => {
+            const res = await window.nextDashFetch('/api/web-search/brave-key', {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: method === 'PUT' ? JSON.stringify({ key }) : undefined,
+            });
+            if (!res.ok) throw new Error((await res.text().catch(() => '')).trim() || String(res.status));
+            window.SearchWeb?.resetStatus?.();
+            return res.json();
+        };
+        panel.querySelector('[data-web-search-action="save-key"]')?.addEventListener('click', async () => {
+            const key = String(input?.value || '').trim();
+            if (!key) { input?.focus(); return; }
+            try {
+                const body = await sendKey('PUT', key);
+                if (input) input.value = '';
+                showKey(body?.set === true);
+                this.notify(this.t('config.webSearchBraveKeySaved', 'Key saved.'), 'success');
+            } catch (err) {
+                this.notify(this.t('config.webSearchBraveKeyFailed', 'The key could not be saved: {reason}').replace('{reason}', err.message), 'error');
+            }
+        });
+        removeBtn?.addEventListener('click', async () => {
+            try { showKey((await sendKey('DELETE'))?.set === true); } catch (_e) { /* the state line stays as it was */ }
+        });
+        panel.querySelector('[data-web-search-action="test"]')?.addEventListener('click', async () => {
+            if (!state) return;
+            state.textContent = '…';
+            try {
+                const res = await fetch('/api/web-search?q=test&cat=web', { cache: 'no-store' });
+                const body = await res.json().catch(() => ({}));
+                const reasonText = (reason) => this.t(`dashboard.webSearchError_${reason}`, reason);
+                state.textContent = res.ok
+                    ? this.t('config.webSearchTestOk', 'Working — {count} results for “test”.').replace('{count}', String(body.results?.length || 0))
+                    : this.t('config.webSearchTestFailed', 'Not working: {reason}').replace('{reason}', reasonText(body.reason || String(res.status)));
+            } catch (err) {
+                state.textContent = this.t('config.webSearchTestFailed', 'Not working: {reason}').replace('{reason}', err.message);
+            }
+        });
+    }
+
     renderOnboardingActions() {
         const esc = (v) => this.dash.escapeHtml(v);
         return `
@@ -15218,6 +15323,7 @@ class DashboardConfig {
      * handlers attached to the previous markup are gone with it.
      */
     bindBehaviorActions(container) {
+        this.bindWebSearchPanel(container);
         container.querySelectorAll('[data-behavior-action]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const action = btn.getAttribute('data-behavior-action');
@@ -15465,6 +15571,8 @@ class DashboardConfig {
                 // that pool has to hand it a new one, or it takes effect on the
                 // next reload and looks like it did nothing.
                 d.updateSearchComponent?.();
+                // The engine may have changed: forget the status read for the old one.
+                window.SearchWeb?.resetStatus?.();
                 d.renderDashboard?.({ animate: false });
                 break;
             case 'render':
@@ -15911,6 +16019,8 @@ class DashboardConfig {
             if (body) {
                 body.innerHTML = this.renderBehaviorBody();
                 this.bindControlPanels(container, 'behavior');
+                // The body was replaced, so the key panel's handlers went with it.
+                this.bindWebSearchPanel(container);
                 this.labelSettingsControls();
                 restoreFocus();
             }

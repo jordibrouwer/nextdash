@@ -82,6 +82,10 @@ class SearchComponent {
         this.shortcuts = new Map();
         this.currentQuery = '';
         this.searchActive = false;
+        // Web search (search-web.js): the section's state, and whether this
+        // session asked the web (closeSearch keeps it out of the activity log).
+        this._web = null;
+        this._webSearchRanThisSession = false;
         this.searchMatches = [];
         this.selectedMatchIndex = 0;
         this.selectedChipIndex = 0;
@@ -314,7 +318,12 @@ class SearchComponent {
             // the chord never reached handleKeyPress at all.
             const forceNewTab = (e.ctrlKey || e.metaKey) && !e.altKey && e.key === 'Enter'
                 && (this.searchActive || this.currentQuery.length > 0);
-            if (!forceNewTab && (e.ctrlKey || e.altKey || e.metaKey)) {
+            // Alt+Enter on a web result from a site you keep opens your own
+            // bookmark (handleKeyPress); that one chord is let through too.
+            const selected = this.searchActive ? this.selectableMatches[this.selectedMatchIndex] : null;
+            const webBookmark = e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Enter'
+                && selected?.type === 'web-result' && Boolean(selected.bookmark);
+            if (!forceNewTab && !webBookmark && (e.ctrlKey || e.altKey || e.metaKey)) {
                 return;
             }
 
@@ -410,6 +419,8 @@ class SearchComponent {
      * rather than as a fourth place to be.
      */
     static MODE_ENTRY = { '>': '', ':': ':', '?': '?', '/': 'tag:', '*': '*' };
+
+    static WEB_RECENT_KEY = 'nextdash.webSearchRecent';
 
     /*
      * The two modes that used to be buttons in the header.
@@ -911,7 +922,29 @@ class SearchComponent {
                 return;
             }
         }
-        
+
+        // Alt+Enter on a web result from a site you already keep: open yours.
+        if (key === 'ENTER' && this.searchActive && e.altKey && !e.shiftKey) {
+            const selected = this.selectableMatches[this.selectedMatchIndex];
+            if (selected?.type === 'web-result' && selected.bookmark) {
+                e.preventDefault();
+                this._activateWebMatch(selected, { alt: true });
+                return;
+            }
+        }
+
+        // Shift+Enter asks the web; nothing before this key does.
+        if (key === 'ENTER' && this.searchActive && e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey
+                && this._webSearchEnabled() && this._webQuery()) {
+            e.preventDefault();
+            // The Enter branch's housekeeping: a delayed shortcut open must not
+            // fire mid-search, and a pending keystroke belongs to this query.
+            this.cancelPendingShortcutOpen();
+            this._flushSearchUpdate();
+            void this.runWebSearch();
+            return;
+        }
+
         if (key === 'ENTER' && (this.searchActive || this.currentQuery.length > 0)) {
             e.preventDefault();
             this._flushSearchUpdate();
@@ -922,13 +955,37 @@ class SearchComponent {
         if (key === 'ARROWUP' && this.searchActive) {
             e.preventDefault();
             this.navigateMatches(-1);
+            window.SearchWeb?.syncPreview?.(this);
             return;
         }
         
         if (key === 'ARROWDOWN' && this.searchActive) {
             e.preventDefault();
             this.navigateMatches(1);
+            window.SearchWeb?.syncPreview?.(this);
             return;
+        }
+
+        // Web results: Shift+←/→ walks the category tabs (Ctrl+arrows belong to
+        // macOS), →/← open and close the preview of the selected result.
+        // Only while the shown results are for the query in the panel: after
+        // an edit the web has not been asked yet, and an arrow must not ask it.
+        if ((key === 'ARROWLEFT' || key === 'ARROWRIGHT') && this.searchActive && this._web?.status === 'done'
+                && this._web.query === this._webQuery()
+                && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const direction = key === 'ARROWRIGHT' ? 1 : -1;
+            if (e.shiftKey) {
+                e.preventDefault();
+                this._stepWebCategory(direction);
+                return;
+            }
+            const selected = this.selectableMatches[this.selectedMatchIndex];
+            if (selected?.type === 'web-result' && window.SearchWeb) {
+                e.preventDefault();
+                if (direction > 0) window.SearchWeb.showPreview(this, selected);
+                else window.SearchWeb.closePreview(this);
+                return;
+            }
         }
 
         // The tile band is a row, so it answers to the keys that walk a row.
@@ -1443,6 +1500,18 @@ class SearchComponent {
             if (e.key === ' ' && this._queryTakesSpace()) {
                 return;
             }
+            // Shift+Enter is the web's key whichever row has focus: left to
+            // the document handler, or it opened the focused bookmark.
+            if (e.key === 'Enter' && e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey
+                    && this.searchActive && this._webSearchEnabled() && this._webQuery()) {
+                return;
+            }
+            // Alt+Enter on a web result you keep opens your bookmark: also the
+            // document handler's, or the focused row opened the web page.
+            if (e.key === 'Enter' && e.altKey && !e.shiftKey && this.searchActive) {
+                const match = this.selectableMatches[index];
+                if (match?.type === 'web-result' && match.bookmark) return;
+            }
             e.preventDefault();
             e.stopPropagation();
             // Ctrl/Cmd+Enter forces a new tab, as on the grid. The focused row
@@ -1713,6 +1782,8 @@ class SearchComponent {
      * @param {{url: string}} bookmark
      */
     recordSearchPick(bookmark) {
+        // A query sent to the web is kept off the server, as closeSearch() keeps it out of the activity log.
+        if (this._webSearchRanThisSession) return;
         const url = bookmark && bookmark.url;
         const q = this.normalizePickQuery(this.currentQuery);
         if (!url || !q) return;
@@ -2956,9 +3027,16 @@ class SearchComponent {
         // reader is typing, and "did it end in an open" cannot be known until
         // now anyway.
         const query = String(this.currentQuery || '').trim();
-        if (query) {
+        // A session that asked the web is left out: that query went to the
+        // engine on purpose, and to nowhere else.
+        if (query && !this._webSearchRanThisSession) {
             window.nextdashTrackSearch?.(query, this._lastSearchResultCount || 0, Boolean(this._searchOpened));
         }
+        this._webSearchRanThisSession = false;
+        this._webAbort?.abort();
+        this._webAbort = null;
+        this._web = null;
+        window.SearchWeb?.closePreview?.(this);
         this._searchOpened = false;
         // The row ':' was pressed on belongs to this session only.
         if (this.commandsComponent) this.commandsComponent.contextBookmark = null;
@@ -3185,7 +3263,43 @@ class SearchComponent {
         });
     }
 
+    /*
+     * The list, then the web section under it.
+     *
+     * The core has half a dozen early returns (no matches, no finders, …) and
+     * the web section belongs under every one of them -- a query nothing on the
+     * dashboard matches is the one most worth asking the web about.
+     */
     renderSearchMatches() {
+        this._renderSearchMatchesCore();
+        this._appendWebSection();
+        // A render can drop the selected row -- the entry row gives way to the
+        // loading state -- and an index past the end made Enter throw.
+        if (this.selectedMatchIndex >= this.selectableMatches.length) {
+            this.selectedMatchIndex = this.selectableMatches.length - 1;
+        }
+        // No selection belongs to a web search still loading for this query.
+        // Once the query is edited, that search is not what the list shows, so
+        // the list gets its first row back -- or Enter would do nothing.
+        const loadingThisQuery = this._web?.status === 'loading' && this._web.query === this._webQuery();
+        if (this.selectedMatchIndex < 0 && !loadingThisQuery && this.selectableMatches.length > 0) {
+            this.selectedMatchIndex = 0;
+        }
+        this.updateSelectionHighlight();
+        // An open preview follows the list it sits beside, or goes.
+        window.SearchWeb?.syncPreview?.(this);
+        // With no row left to select, the focused row was removed and focus
+        // fell to the body; the web section holds it until results arrive.
+        const section = document.querySelector('#search-matches .search-web');
+        if (section && this.searchActive && this.selectedMatchIndex < 0
+                && window.MobileExperience?.isMobileLayout?.() !== true
+                && (!document.activeElement || document.activeElement === document.body)) {
+            section.setAttribute('tabindex', '-1');
+            section.focus({ preventScroll: true });
+        }
+    }
+
+    _renderSearchMatchesCore() {
         // Captured here rather than recomputed at flush time: this is the one
         // place every branch of updateSearch() converges on before painting,
         // so it is the count the reader actually saw.
@@ -3681,6 +3795,8 @@ class SearchComponent {
                 } else if (match.type === 'whats-new') {
                     this.closeSearch();
                     window.openWhatsNewModal?.({ force: true });
+                } else if (String(match.type || '').startsWith('web-')) {
+                    this._activateWebMatch(match, {});
                 } else {
                     this.openBookmark(match.bookmark, {
                         resultRank: mySelectableIndex, queryLength: String(this.currentQuery || '').length,
@@ -3770,6 +3886,10 @@ class SearchComponent {
     selectCurrentMatch({ newTab = false } = {}) {
         if (this.selectableMatches.length > 0 && this.selectedMatchIndex >= 0) {
             const selectedMatch = this.selectableMatches[this.selectedMatchIndex];
+            if (String(selectedMatch?.type || '').startsWith('web-')) {
+                this._activateWebMatch(selectedMatch, {});
+                return;
+            }
             if (selectedMatch.type === 'command-group-header') {
                 if (selectedMatch._emptyStateGroup) {
                     this.toggleEmptyStateGroup(selectedMatch._emptyStateGroup);
@@ -3993,7 +4113,7 @@ class SearchComponent {
      * a bookmark of a search they run often. Same three steps, because the
      * palette does not care where a query came from.
      */
-    openSearchWithQuery(query) {
+    openSearchWithQuery(query, { web = false } = {}) {
         const text = String(query || '').trim();
         if (!text) {
             // An address with no term still means "open search", which is what
@@ -4009,6 +4129,191 @@ class SearchComponent {
         this._widenArrivedQueryToNames(text);
         if (!this.searchActive) {
             this.showSearch();
+        }
+        if (web) void this.runWebSearch();
+    }
+
+    /* ---- Web search: see search-web.js and web_search.go ---- */
+
+    _webSearchEnabled() {
+        const engine = String(this.settings?.webSearchEngine || 'off');
+        return engine === 'searxng' || engine === 'brave';
+    }
+
+    /** The query as the web would get it, or '' where the panel is not searching. */
+    _webQuery() {
+        const raw = String(this.currentQuery || '').trim();
+        if (!raw || raw.startsWith(':') || raw.startsWith('?')) return '';
+        const text = raw.replace(/^[/>*@]+/, '').trim();
+        // A filter (tag mode's "tag:", "status:dead", a half-typed
+        // "category:") is a question for this dashboard, not for the web.
+        // parseSearchFilters takes every filter token out of the query, the
+        // empty and the negated ones included, so fewer words left means one
+        // was a filter.
+        const words = text.split(/\s+/).filter(Boolean);
+        const left = this.parseSearchFilters(text).query.split(/\s+/).filter(Boolean);
+        if (left.length !== words.length) return '';
+        return text.slice(0, 500);
+    }
+
+    _loadWebModule() {
+        if (window.SearchWeb) return Promise.resolve(window.SearchWeb);
+        return window.LazyScript.loadScriptOnce('js/search-web.js', 'searchWebModule', () => Boolean(window.SearchWeb))
+            .then(() => window.SearchWeb);
+    }
+
+    async runWebSearch(category = null) {
+        const query = this._webQuery();
+        if (!query || !this._webSearchEnabled()) return;
+        window.SearchWeb?.closePreview?.(this);
+        this._webAbort?.abort();
+        const controller = new AbortController();
+        this._webAbort = controller;
+        // Checked by closeSearch(): a query sent to the web is not also
+        // written to this dashboard's activity log.
+        this._webSearchRanThisSession = true;
+        const previous = this._web;
+        const cat = category || (previous?.query === query ? previous.category : 'web');
+        this._web = { query, category: cat, status: 'loading', response: null, reason: '', categories: previous?.categories || [] };
+        // No selection while loading: the render's clamp would otherwise land an
+        // impatient Enter on the last list row. The answer selects a row below.
+        this.selectedMatchIndex = -1;
+        let mod;
+        try {
+            mod = await this._loadWebModule();
+        } catch (_e) {
+            if (controller.signal.aborted) return;
+            this._web = { ...this._web, status: 'error', reason: 'engine_unreachable' };
+            this.renderSearchMatches();
+            this._selectFirstWebRow();
+            return;
+        }
+        this.renderSearchMatches();
+        const status = await mod.loadStatus();
+        if (controller.signal.aborted) return;
+        this._web.categories = status.categories || [];
+        this._recordWebRecent(query);
+        try {
+            const response = await mod.fetchResults(query, cat, controller.signal);
+            if (controller.signal.aborted) return;
+            this._web = { ...this._web, status: 'done', response };
+        } catch (err) {
+            if (controller.signal.aborted) return;
+            this._web = { ...this._web, status: 'error', reason: err?.reason || 'engine_unreachable' };
+        }
+        this.renderSearchMatches();
+        this._selectFirstWebRow();
+    }
+
+    /** The first web result, or the engine fallback row: -1 never outlives the answer. */
+    _selectFirstWebRow() {
+        const first = this.selectableMatches.findIndex((m) => m.type === 'web-result' || m.type === 'web-fallback');
+        if (first >= 0) {
+            this.selectedMatchIndex = first;
+            this.updateSelectionHighlight();
+        }
+    }
+
+    /*
+     * The last eight web queries, in this browser only.
+     *
+     * Never sent anywhere: the server keeps no record of a web search, and
+     * this list exists so a repeat is one click rather than retyping.
+     */
+    _loadWebRecent() {
+        try {
+            const list = JSON.parse(localStorage.getItem(SearchComponent.WEB_RECENT_KEY) || '[]');
+            return Array.isArray(list) ? list.filter((q) => typeof q === 'string' && q).slice(0, 8) : [];
+        } catch (_e) {
+            return [];
+        }
+    }
+
+    _recordWebRecent(query) {
+        try {
+            const list = [query, ...this._loadWebRecent().filter((q) => q !== query)].slice(0, 8);
+            localStorage.setItem(SearchComponent.WEB_RECENT_KEY, JSON.stringify(list));
+        } catch (_e) {
+            // Storage off or full: the search itself still works.
+        }
+    }
+
+    _clearWebRecent() {
+        try { localStorage.removeItem(SearchComponent.WEB_RECENT_KEY); } catch (_e) { /* nothing to clear */ }
+    }
+
+    getWebRecentMatches() {
+        if (!this._webSearchEnabled()) return [];
+        const list = this._loadWebRecent();
+        if (list.length === 0) return [];
+        return [
+            ...list.map((query) => ({ type: 'web-recent', shortcut: '↗', name: query, query })),
+            { type: 'web-recent-clear', shortcut: '×', name: this.dashboardLabel('webSearchClearRecent', 'Clear recent web searches'), _chipCount: 0 },
+        ];
+    }
+
+    _stepWebCategory(direction) {
+        const cats = this._web?.categories || [];
+        if (cats.length < 2) return;
+        const at = Math.max(0, cats.indexOf(this._web.category));
+        void this.runWebSearch(cats[(at + direction + cats.length) % cats.length]);
+    }
+
+    _appendWebSection() {
+        if (!this._webSearchEnabled()) return;
+        const container = document.getElementById('search-matches');
+        const query = this._webQuery();
+        if (!container || !query) return;
+        const section = document.createElement('div');
+        section.className = 'search-web';
+        container.appendChild(section);
+        if (this._web?.query === query && window.SearchWeb) {
+            window.SearchWeb.renderSection(this, section);
+            return;
+        }
+        const engine = this.settings?.webSearchEngine === 'brave' ? 'Brave' : 'SearXNG';
+        const row = document.createElement('div');
+        row.className = 'search-match search-web-entry';
+        row.innerHTML = `
+            <span class="search-match-shortcut search-hint-shortcut">⇧↵</span>
+            <span class="search-match-name">${this._escHtml(this.dashboardLabel('webSearchRow', 'Search the web: {query}', { query: query.slice(0, 60) }))}</span>
+            <span class="search-web-engine">${this._escHtml(engine)}</span>`;
+        // Fetching our own script is not a search; it only saves the wait.
+        row.addEventListener('pointerenter', () => { void this._loadWebModule().catch(() => {}); }, { once: true });
+        row.addEventListener('click', () => { void this.runWebSearch(); });
+        this._bindMatchKeyboardActivate(row, this.selectableMatches.length);
+        this.matchElements.push(row);
+        this.selectableMatches.push({ type: 'web-entry' });
+        section.appendChild(row);
+    }
+
+    _activateWebMatch(match, { alt = false } = {}) {
+        switch (match?.type) {
+        case 'web-entry':
+            void this.runWebSearch();
+            return;
+        case 'web-result':
+            if (alt && match.bookmark) {
+                this.openBookmark(match.bookmark);
+                return;
+            }
+            window.open(match.result.url, '_blank', 'noopener,noreferrer');
+            this.closeSearch();
+            return;
+        case 'web-fallback':
+            window.open(match.url, '_blank', 'noopener,noreferrer');
+            this.closeSearch();
+            return;
+        case 'web-recent':
+            this.currentQuery = match.query;
+            this.updateSearch();
+            void this.runWebSearch();
+            return;
+        case 'web-recent-clear':
+            this._clearWebRecent();
+            this.updateSearch();
+            return;
+        default:
         }
     }
 
@@ -4262,6 +4567,7 @@ class SearchComponent {
             { id: 'recent', label: t('emptyStateRecentLabel', 'Recent'), items: historyMatches, defaultOpen: true },
             { id: 'recent-commands', label: t('emptyStateRecentCommandsLabel', 'Recent commands'), items: recentCommandMatches, defaultOpen: false },
             { id: 'saved', label: t('emptyStateSavedLabel', 'Saved searches'), items: savedMatches, defaultOpen: false },
+            { id: 'web-recent', label: t('webSearchRecentLabel', 'Recent on the web'), items: this.getWebRecentMatches(), defaultOpen: false },
             { id: 'commands', label: t('emptyStateCommandsGroupLabel', 'Commands'), items: commandItems, defaultOpen: false },
             { id: 'filters', label: t('filtersGroupLabel', 'Filters'), items: filterItems, defaultOpen: false },
             { id: 'finders', label: t('emptyStateFindersLabel', 'Finders'), items: finderItems, defaultOpen: false }

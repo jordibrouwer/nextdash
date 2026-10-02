@@ -1552,3 +1552,50 @@ body:not([data-depth="flat"]) .button-container:has(> *:not(.search-flow-hint)) 
         display: none;
     }
 }
+
+/* Web search: the section under the list (search-web.js). */
+.search-web { border-top: 1px solid var(--border-primary); margin-top: 6px; padding-top: 6px; }
+/* Holds focus while results load (renderSearchMatches); a container, not a control. */
+.search-web:focus { outline: none; }
+.search-web-header { font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; padding: 4px 12px; }
+.search-web-engine { margin-left: auto; font-size: 0.75em; opacity: 0.7; }
+.search-web-result { align-items: flex-start; }
+.search-web-letter {
+    flex: 0 0 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.8em; font-weight: 600; background: var(--background-secondary); margin-right: 8px;
+}
+.search-web-text { display: flex; flex-direction: column; min-width: 0; }
+.search-web-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-web-domain { font-size: 0.8em; opacity: 0.7; }
+.search-web-snippet { font-size: 0.85em; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-web-message { padding: 8px 12px; opacity: 0.8; }
+.search-web-loading { display: flex; flex-direction: column; gap: 6px; padding: 6px 12px; }
+.search-web-skeleton { display: block; height: 14px; border-radius: 4px; background: var(--background-secondary); opacity: 0.6; }
+.search-web-badge {
+    margin-left: auto; flex: 0 0 auto; font-size: 0.75em; padding: 2px 6px; border-radius: 999px;
+    background: var(--background-secondary); white-space: nowrap; max-width: 40%; overflow: hidden; text-overflow: ellipsis;
+}
+.search-web-tabs { display: flex; gap: 4px; padding: 2px 12px 6px; overflow-x: auto; scrollbar-width: none; }
+.search-web-tab {
+    border: 1px solid var(--border-primary); background: transparent; color: inherit; border-radius: 999px;
+    padding: 2px 10px; font-family: inherit; font-size: 0.8em; cursor: pointer; white-space: nowrap;
+}
+.search-web-tab[aria-selected="true"] { background: var(--background-secondary); font-weight: 600; }
+.search-web-infobox { margin: 4px 12px 8px; padding: 8px 10px; border-radius: 8px; background: var(--background-secondary); }
+.search-web-infobox summary { cursor: pointer; font-weight: 600; }
+.search-web-infobox p { margin: 6px 0; font-size: 0.9em; }
+/* The preview is a third column of the body (search-web.js showPreview): the
+   panel clips anything hung outside its edge. */
+.search-body:has(> .search-web-preview) { grid-template-columns: 10.5rem minmax(0, 1fr) minmax(0, 18rem); }
+.search-web-preview {
+    min-width: 0; min-height: 0; overflow: auto; padding: 14px;
+    border-left: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
+}
+.search-web-preview-title { margin: 0 0 6px; font-size: 1em; }
+.search-web-preview-url, .search-web-preview-date { margin: 0 0 6px; font-size: 0.8em; opacity: 0.7; word-break: break-all; }
+@media (max-width: 780px) {
+    .search-body:has(> .search-web-preview) { grid-template-columns: minmax(0, 1fr); }
+    .search-web-preview { border-left: 0; border-top: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent); }
+}
+/* On a phone the entry row is the button: there is no Shift+Enter there. */
+body[data-mobile-layout="true"] .search-web-entry { min-height: 48px; font-size: 1.05em; }
