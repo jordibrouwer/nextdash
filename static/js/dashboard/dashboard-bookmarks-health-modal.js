@@ -47,6 +47,7 @@
             this.bindBmHealthModal();
             this.fitBmHealthModal();
             void this.mountBmTrendChart();
+            void this.mountBmFleetDaysChart();
         },
 
         /*
@@ -89,7 +90,8 @@
                 scales: { y: { range: (u, min, max) => (active.mode === 'percent'
                     ? [0, 100] : [0, Math.max(1, max) * 1.1]) } },
                 summary: `${label}: ${known[0]}${unit} → ${known[known.length - 1]}${unit}`,
-                height: 170,
+                // Low enough that the per-day chart below fits beside it on one screen.
+                height: 116,
             });
         },
 
@@ -283,7 +285,121 @@
                     : `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalFleetNoneSlower', 'Nothing has slowed down.'))}</p>`);
 
             const outages = this.renderBmHealthModalOutagesCard(health, fleet);
-            return `${uptime}${least}${slowing}${outages}`;
+            return `${uptime}${least}${slowing}${outages}${this.renderBmHealthModalFleetDaysCard(health, fleet)}`;
+        },
+
+        /*
+         * Every monitor, per day: the course behind the 24h/7d/30d figures above.
+         * The day's uptime as a bar in the colour of its share, the day's mean
+         * response as a line on its own axis. Drawn plain here and with uPlot by
+         * mountBmFleetDaysChart; the series is kept for that in _bmFleetDays.
+         */
+        renderBmHealthModalFleetDaysCard(health, fleet) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const DAY = 86400000;
+            const byDay = new Map((Array.isArray(fleet.days) ? fleet.days : [])
+                .map((d) => [Number(d.d), { n: Number(d.n) || 0, u: Number(d.u) || 0, p: Number(d.p) || 0 }]));
+            const first = new Date(Date.now() - 29 * DAY);
+            first.setUTCHours(0, 0, 0, 0);
+            const days = Array.from({ length: 30 }, (_, i) => {
+                const at = first.getTime() + i * DAY;
+                const d = byDay.get(at);
+                return { at, n: d?.n || 0, ratio: d?.n ? d.u / d.n : null, ms: d?.p || null,
+                    label: new Date(at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' }) };
+            });
+            this._bmFleetDays = days;
+            const title = this.t('config.bmHealthModalFleetDays', 'Every monitor, per day (30 days)');
+            const known = days.filter((d) => d.ratio != null);
+            if (known.length < 2) {
+                return `<section class="bm-health-modal-card is-wide" data-bm-health-modal-card="fleet-days">
+                    <h3 class="bm-health-modal-card-title">${esc(title)}</h3>
+                    <p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalFleetDaysNone', 'Not enough days of checks yet.'))}</p>
+                </section>`;
+            }
+            const w = 600;
+            const h = 60;
+            const step = w / days.length;
+            const bars = days.map((d, i) => {
+                if (d.ratio == null) return '';
+                const tone = d.ratio >= 0.999 ? 'good' : d.ratio >= 0.95 ? 'warn' : 'bad';
+                const height = Math.max(2, Math.round(d.ratio * h));
+                return `<rect x="${(i * step + step * 0.15).toFixed(1)}" y="${h - height}" width="${(step * 0.7).toFixed(1)}" height="${height}"
+                    data-tone="${tone}" data-tip="${esc(this.bmFleetDayText(d))}"></rect>`;
+            }).join('');
+            const summary = this.bmFleetDaysSummary(days);
+            return `<section class="bm-health-modal-card is-wide" data-bm-health-modal-card="fleet-days">
+                <h3 class="bm-health-modal-card-title">${esc(title)}</h3>
+                <div class="bm-health-modal-fleet-days-plot" data-bm-fleet-days-plot>
+                    <svg class="bm-health-modal-fleet-days" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(summary)}">${bars}</svg>
+                </div>
+            </section>`;
+        },
+
+        /** A day as the tooltip, the readout and the table say it. */
+        bmFleetDayText(d) {
+            if (d.ratio == null) return `${d.label}: ${this.t('config.bmLargeTipNoChecks', 'no checks')}`;
+            return [`${d.label}: ${Math.round(d.ratio * 1000) / 10}%`, d.ms ? `${d.ms} ms` : '',
+                `${d.n.toLocaleString()} ${this.t('config.bmLargeTipChecks', 'checks')}`].filter(Boolean).join(' · ');
+        },
+
+        bmFleetDaysSummary(days) {
+            const checked = days.filter((d) => d.ratio != null);
+            const n = checked.reduce((a, d) => a + d.n, 0);
+            const up = checked.reduce((a, d) => a + d.ratio * d.n, 0);
+            const timed = checked.filter((d) => d.ms);
+            const ms = timed.length ? Math.round(timed.reduce((a, d) => a + d.ms, 0) / timed.length) : 0;
+            const worst = checked.reduce((a, d) => (!a || d.ratio < a.ratio ? d : a), null);
+            return this.t('config.bmHealthModalFleetDaysSummary', 'Every monitor per day: {up} uptime, {ms} ms on average; lowest {worst} on {day}')
+                .replace('{up}', `${n ? Math.round((up / n) * 1000) / 10 : 0}%`)
+                .replace('{ms}', String(ms))
+                .replace('{worst}', `${Math.round((worst?.ratio || 0) * 1000) / 10}%`)
+                .replace('{day}', worst?.label || '');
+        },
+
+        /** The per-day chart with uPlot, over the plain bars; they stay if it cannot load. */
+        async mountBmFleetDaysChart() {
+            const host = document.querySelector('#app-modal.show [data-bm-fleet-days-plot]');
+            const days = this._bmFleetDays;
+            if (!host || !days) return;
+            try {
+                if (!global.NdChart) {
+                    await global.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart',
+                        () => typeof global.NdChart !== 'undefined');
+                }
+                await global.NdChart.load();
+            } catch {
+                return;
+            }
+            if (!host.isConnected) return;
+            const low = Math.min(...days.filter((d) => d.ratio != null).map((d) => d.ratio * 100));
+            // 90-100% unless a day fell below it: the differences that matter are
+            // a few tenths, which a 0-100 axis flattens into one height.
+            const floor = low >= 90 ? 90 : Math.max(0, Math.floor(low / 10) * 10);
+            const toneOf = (d) => (d.ratio == null ? null : d.ratio >= 0.999 ? 'good' : d.ratio >= 0.95 ? 'warn' : 'bad');
+            const tones = [['good', '--accent-success'], ['warn', '--accent-warning'], ['bad', '--accent-error']];
+            const maxMs = Math.max(1, ...days.map((d) => d.ms || 0));
+            const half = 43200;
+            this._bmFleetDaysChart?.destroy();
+            this._bmFleetDaysChart = global.NdChart.chart(host, {
+                x: days.map((d) => (d.at + 43200000) / 1000),
+                series: [
+                    ...tones.map(([name, color]) => ({ label: name, bars: true, color,
+                        values: days.map((d) => (toneOf(d) === name ? Math.max(floor + 0.4, d.ratio * 100) : null)) })),
+                    { label: this.t('config.bmHealthModalFleetDaysResponse', 'response'), values: days.map((d) => d.ms),
+                        color: '--accent-primary', fill: false, scale: 'ms' },
+                ],
+                text: (i) => this.bmFleetDayText(days[i]),
+                format: { x: 'date', tick: (v) => `${Math.round(v * 10) / 10}%` },
+                scales: {
+                    x: { range: (u, min, max) => [min - half, max + half] },
+                    y: { range: () => [floor, 100] },
+                    ms: { range: () => [0, maxMs * 1.15] },
+                },
+                axes: { ms: { format: (v) => `${Math.round(v)} ms`, width: 58 } },
+                summary: this.bmFleetDaysSummary(days),
+                height: 100,
+                axisWidth: 50,
+            });
         },
 
         /*

@@ -195,3 +195,40 @@ func TestResponseShiftNeedsEnoughSamples(t *testing.T) {
 		t.Errorf("a sparse monitor reported a shift: %+v", got)
 	}
 }
+
+// The per-day course pools every monitor by sample, per UTC day, oldest first:
+// maintenance is left out, a failed check counts but has no time, and a day
+// past the retention is not there.
+func TestFleetDaysPoolPerUTCDay(t *testing.T) {
+	now := time.Date(2026, 10, 2, 12, 0, 0, 0, time.UTC)
+	day := func(d int, h int) int64 { return time.Date(2026, 10, d, h, 0, 0, 0, time.UTC).UnixMilli() }
+	inputs := []fleetMonitorInput{
+		{name: "A", url: "https://a.example", samples: []HealthSample{
+			{T: day(1, 1), Up: true, PingMs: 100},
+			{T: day(1, 23), Up: false},
+			{T: day(2, 1), Up: true, PingMs: 300},
+			{T: day(2, 2), Up: false, Maint: true},
+			{T: now.Add(-31 * 24 * time.Hour).UnixMilli(), Up: true, PingMs: 999},
+		}},
+		{name: "B", url: "https://b.example", samples: []HealthSample{
+			{T: day(1, 5), Up: true, PingMs: 200},
+			{T: day(2, 3), Up: true},
+		}},
+	}
+	got := fleetDays(inputs, now)
+	want := []FleetDay{
+		{Day: day(1, 0), Checks: 3, Up: 2, AvgMs: 150},
+		{Day: day(2, 0), Checks: 2, Up: 2, AvgMs: 300},
+	}
+	if len(got) != len(want) {
+		t.Fatalf("days = %+v, want %+v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("day %d = %+v, want %+v", i, got[i], want[i])
+		}
+	}
+	if stats := buildFleetStats(inputs, now); stats == nil || len(stats.Days) != 2 {
+		t.Errorf("buildFleetStats did not carry the days: %+v", stats)
+	}
+}

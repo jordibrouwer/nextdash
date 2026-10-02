@@ -113,7 +113,7 @@
      * Draws a chart into host and returns { update(spec), destroy(), plot }.
      * spec: { x: [seconds], series: [{ label, values, color: '--var', fill, dash, width, scale, bars, format }],
      *         format: { x: 'time'|'date'|'datetime', y: fn, tick: fn }, text: (i) => string,
-     *         scales, sync, summary, height, axisWidth }
+     *         scales, axes: { [scale]: { format, width } }, sync, summary, height, axisWidth }
      */
     function chart(host, spec) {
         const uPlot = global.uPlot;
@@ -175,7 +175,14 @@
                       show: current.axisX !== false },
                     { ...axis, size: current.axisWidth || 46,
                       values: (u, vals) => vals.map((v) => (current.format?.tick || current.format?.y || String)(v)) },
-                    ...extraScales.map((scale) => ({ scale, show: false })),
+                    // A second scale gets an axis on the right when the place asks
+                    // for one (spec.axes[scale]); otherwise it stays unlabelled.
+                    ...extraScales.map((scale) => {
+                        const own = current.axes?.[scale];
+                        if (!own) return { scale, show: false };
+                        return { ...axis, scale, side: 1, grid: { show: false }, size: own.width || 54,
+                            values: (u, vals) => vals.map((v) => (own.format || String)(v)) };
+                    }),
                 ],
                 series: [{}, ...current.series.map((s) => {
                     const color = s.color?.startsWith('--') ? cssVar(box, s.color) : (s.color || cssVar(box, '--accent-primary'));

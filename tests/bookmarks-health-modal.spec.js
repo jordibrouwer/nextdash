@@ -428,3 +428,63 @@ test('outages: per monitor, on a timeline, and the list on request', async ({ pa
   await expect(list.locator('.bm-health-outage-row')).toHaveCount(4);
   await expect(list).toContainText('HTTP 502');
 });
+
+/*
+ * Every monitor, per day: the course behind the uptime figures, a bar a day in
+ * the colour of its share and the mean response as a line, read out by the
+ * keys.
+ */
+async function openFleetDays(page) {
+  const day = 86400000;
+  const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+  const at = (ago) => today.getTime() - ago * day;
+  await openBookmarksWithHealth(page, (issues) => issues, {
+    view: 'library',
+    report: (issues) => ({
+      summary: fullSummary(issues),
+      fleet: {
+        monitors: 2,
+        uptime24h: { ratio: 1, samples: 10 }, uptime7d: { ratio: 0.98, samples: 50 }, uptime30d: { ratio: 0.99, samples: 200 },
+        days: [
+          { d: at(3), n: 400, u: 400, p: 120 },
+          { d: at(2), n: 400, u: 350, p: 300 },
+          { d: at(1), n: 400, u: 396, p: 150 },
+          { d: at(0), n: 200, u: 200, p: 110 },
+        ],
+      },
+    }),
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press('h');
+  const modal = page.locator('#app-modal.show');
+  await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+  return { modal, card: modal.locator('[data-bm-health-modal-card="fleet-days"]') };
+}
+
+test.describe('every monitor, per day', () => {
+  test('a bar a day with the response beside it, read out by the keys', async ({ page }) => {
+    const { card } = await openFleetDays(page);
+    const chart = card.locator('.nd-chart');
+    await expect(chart.locator('canvas')).toHaveCount(1);
+    await expect(chart).toHaveAttribute('aria-label', /lowest 87\.5%/);
+    await expect(chart.locator('table.nd-chart-table tbody tr')).toHaveCount(30);
+    await chart.focus();
+    await page.keyboard.press('End');
+    await expect(chart.locator('.nd-chart-readout')).toContainText(/100% · 110 ms · 200 checks/);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await expect(chart.locator('.nd-chart-readout')).toContainText(/87\.5% · 300 ms · 400 checks/);
+    await page.keyboard.press('Home');
+    await expect(chart.locator('.nd-chart-readout')).toContainText('no checks');
+  });
+
+  test('without uPlot the plain bars stay', async ({ page }) => {
+    await page.route('**/vendor/uplot/**', (route) => route.abort());
+    const { card } = await openFleetDays(page);
+    await expect(card.locator('svg.bm-health-modal-fleet-days rect')).toHaveCount(4);
+    await expect(card.locator('svg.bm-health-modal-fleet-days rect[data-tone="bad"]')).toHaveCount(1);
+    await page.waitForTimeout(500);
+    await expect(card.locator('.nd-chart')).toHaveCount(0);
+  });
+});

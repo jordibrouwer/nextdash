@@ -85,6 +85,61 @@ type FleetStats struct {
 	// Slower lists monitors whose recent response time rose meaningfully against
 	// the previous week.
 	Slower []FleetResponseShift `json:"slower,omitempty"`
+	// Days is the retained history per UTC day, every monitor pooled: the course
+	// behind the 24h/7d/30d figures, drawn as a chart in Collection health.
+	Days []FleetDay `json:"days,omitempty"`
+}
+
+// FleetDay is one UTC day across every monitor. Pooled by sample, like the
+// uptime windows, so a monitor checked every minute weighs as much as its checks.
+type FleetDay struct {
+	// Day is midnight UTC in Unix milliseconds.
+	Day int64 `json:"d"`
+	// Checks and Up count the samples outside maintenance; Up the ones answered.
+	Checks int `json:"n"`
+	Up     int `json:"u"`
+	// AvgMs is the mean response of the answered checks with a time, 0 without.
+	AvgMs int `json:"p,omitempty"`
+}
+
+// fleetDays folds every monitor's samples into one entry per UTC day, oldest
+// first, leaving out days without a check.
+func fleetDays(inputs []fleetMonitorInput, now time.Time) []FleetDay {
+	cutoff := now.Add(-healthHistoryRetention).UnixMilli()
+	const dayMs = int64(24 * time.Hour / time.Millisecond)
+	type acc struct{ n, up, ms, pinged int }
+	byDay := map[int64]*acc{}
+	for _, in := range inputs {
+		for _, s := range in.samples {
+			if s.T < cutoff || s.Maint {
+				continue
+			}
+			day := s.T - s.T%dayMs
+			a := byDay[day]
+			if a == nil {
+				a = &acc{}
+				byDay[day] = a
+			}
+			a.n++
+			if s.Up {
+				a.up++
+				if s.PingMs > 0 {
+					a.ms += s.PingMs
+					a.pinged++
+				}
+			}
+		}
+	}
+	days := make([]FleetDay, 0, len(byDay))
+	for day, a := range byDay {
+		d := FleetDay{Day: day, Checks: a.n, Up: a.up}
+		if a.pinged > 0 {
+			d.AvgMs = a.ms / a.pinged
+		}
+		days = append(days, d)
+	}
+	sort.Slice(days, func(i, j int) bool { return days[i].Day < days[j].Day })
+	return days
 }
 
 // fleetMonitorInput is one monitored bookmark plus the samples it owns.
@@ -293,6 +348,7 @@ func buildFleetStats(inputs []fleetMonitorInput, now time.Time) *FleetStats {
 	stats.Incidents = incidents
 
 	stats.Slower = deriveResponseShifts(withSamples, now)
+	stats.Days = fleetDays(withSamples, now)
 
 	return stats
 }
