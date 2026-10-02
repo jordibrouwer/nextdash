@@ -145,6 +145,10 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **new — the bar charts in Statistics with uPlot** (bookmarks used and opens over time, the collection's growth, the inbox flow per day, and the small one on the Overview). A bar per period with the period's name on the axis, spaced by the widest label so weekly ranges do not run together; the inbox's added and triaged side by side; a running total (the collection's size, the inbox backlog) as a line on an axis of its own on the right. A tooltip with every series at once, a drag to zoom, the arrow keys with the period read out, and the chart's own table for a screen reader. The axis names beside and under each chart stay, and the plain charts stay when uPlot cannot be loaded.
 - **new — `NdChart`** (`static/js/shared/nd-chart.js`): one wrapper around uPlot for charts over time, so every chart gets the same hover, zoom, keys, table and theme handling. uPlot 1.6.32 (MIT) ships in `static/vendor/uplot/1.6.32/` with its licence, fetched only where a chart is drawn (`lazyLoadedAssets`); its stylesheet and `nd-chart.css` are in the views bundle. No CDN, no CSP change. When it cannot be loaded, the drawer draws the plain charts it always did. About → Colophon credits uPlot. The screen-reader table sits in a hidden wrapper, because a table ignores the 1px height and would otherwise stretch Collection health into a long empty scroll.
 
+### Unraid
+
+- **new — an Unraid server to read, set once.** `Settings.UnraidServers` holds one server (address, self-signed switch, read and alert switches); its API key lives apart in `data/unraid-secrets.json` at 0600 and travels in a backup only with "Tokens and passwords" (`unraid_settings.go`, `backup.go`). Test answers recorded by hand under `internal/app/testdata/unraid/`.
+
 ### Tests
 
 - **tests — Go:** the index (rounds, aliases, variants, search), the 62 containers and the bookmark hosts, refresh with ETag, stale copy and back-off, the cache route (unknown names, traversal, one fetch, sanitising, wrapped PNG, the hour of misses), adopt, the API handlers, the container override and the background fill.

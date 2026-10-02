@@ -396,6 +396,15 @@ type PageOrder struct {
 	Order []int `json:"order"` // Array of page IDs in display order
 }
 
+type UnraidServer struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	BaseURL     string `json:"baseUrl"`
+	InsecureTLS bool   `json:"insecureTls"`
+	Enabled     bool   `json:"enabled"`
+	Notify      bool   `json:"notify"`
+}
+
 type Settings struct {
 	CurrentPage                     int    `json:"currentPage"` // Numeric ID of the current page
 	Theme                           string `json:"theme"`       // "light" or "dark"
@@ -843,6 +852,10 @@ type Settings struct {
 	// push (docker_notify.go); DockerNotifyMuted names the containers left out.
 	DockerNotify      bool     `json:"dockerNotify"`
 	DockerNotifyMuted []string `json:"dockerNotifyMuted,omitempty"`
+	// UnraidServers is the Unraid server the Unraid widgets read (unraid_settings.go).
+	// A list holding at most one, so a second server later is not a migration.
+	// Its API key is kept apart, in unraid-secrets.json.
+	UnraidServers []UnraidServer `json:"unraidServers,omitempty"`
 	// DockerUsageAlerts tells when a container stays above a CPU or memory
 	// line for a while (docker_usage_alerts.go); it reads the stats history.
 	DockerUsageAlerts       bool `json:"dockerUsageAlerts"`
@@ -4972,6 +4985,7 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.DockerUpdateInterval = "off"
 	}
 	normalizeDockerSettings(&settings)
+	normalizeUnraidSettings(&settings)
 	// 0 stays 0 — it means "the built-in default" — and anything else is held
 	// inside the range a bounded sweep can afford.
 	if settings.HealthCheckTimeoutSeconds != 0 {
