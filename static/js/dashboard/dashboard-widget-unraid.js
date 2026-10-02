@@ -292,8 +292,165 @@
         return `${Math.round(s / 60)} min`;
     }
 
+    /* ── Parity, shares, VMs, UPS, notifications ─────────────────────────── */
+
+    async function renderParity(body, widget, dash) {
+        await knowBase(dash);
+        const result = await fetchArea('parity');
+        const panel = begin(body, widget, dash, result);
+        if (!panel) return;
+        const p = result.data || {};
+        const u = U();
+        const L = (key, fallback) => label(dash, key, fallback);
+        const open = openUnraid(widget, dash, '/Main');
+        const action = rowAction(dash, open);
+        const errorsText = (n) => L('dashboard.widgetUnraidErrors', '{n} errors').replace('{n}', n);
+        if (p.running) {
+            panel.appendChild(u.headline(`${p.progress}%`,
+                (p.paused ? L('dashboard.widgetUnraidParityPaused', 'check paused') : L('dashboard.widgetUnraidParityCheck', 'check running'))
+                + (p.speed ? ` · ${p.speed}` : '')));
+            panel.appendChild(u.meter(p.progress, 100, p.paused ? 'warn' : 'good'));
+            panel.appendChild(u.statGrid([
+                { value: durationText(p.leftSec), label: L('dashboard.widgetUnraidLeft', 'left') },
+                { value: String(p.errors), label: L('dashboard.widgetUnraidErrorsSoFar', 'errors so far'), tone: p.errors ? 'bad' : 'good' },
+            ]));
+        } else if (p.last) {
+            panel.appendChild(u.headline(errorsText(p.last.errors),
+                L('dashboard.widgetUnraidLastCheck', 'last check {age}').replace('{age}', ageText(dash, p.last.date))));
+            panel.appendChild(u.statGrid([
+                { value: durationText(p.last.durationSec), label: L('dashboard.widgetUnraidTook', 'took') },
+                { value: p.last.speed || '—', label: L('dashboard.widgetUnraidAverage', 'average') },
+            ]));
+        } else {
+            u.say(panel, 'dashboard-widget-empty', L('dashboard.widgetUnraidParityNeverLong', 'No parity check has run yet.'));
+        }
+        if ((p.history || []).length) {
+            // Wide only: the narrow tile has no room for a history under the figures.
+            const list = u.rowList(false);
+            list.classList.add('dashboard-widget-wide-only');
+            p.history.forEach((h) => {
+                const when = new Date(h.date).toLocaleDateString([], { day: 'numeric', month: 'short' });
+                list.appendChild(u.row(when,
+                    [durationText(h.durationSec), h.speed, errorsText(h.errors)].filter(Boolean).join(' · '),
+                    h.errors > 0 ? 'bad' : 'good', open, action));
+            });
+            panel.appendChild(list);
+        }
+        end(panel, widget, dash, result);
+    }
+
+    async function renderShares(body, widget, dash) {
+        await knowBase(dash);
+        const result = await fetchArea('shares');
+        const panel = begin(body, widget, dash, result);
+        if (!panel) return;
+        const u = U();
+        const shares = result.data || [];
+        const limit = u.rowLimit(widget, 5);
+        const open = openUnraid(widget, dash, '/Shares');
+        const action = rowAction(dash, open);
+        const list = u.rowList(false);
+        shares.slice(0, limit).forEach((s) => {
+            const row = u.row(s.name, `${Math.round(s.usedPct)}%`, s.tone, open, action);
+            // Wide adds what the percentage alone leaves out.
+            const extra = document.createElement('span');
+            extra.className = 'dashboard-widget-wide-only dashboard-widget-row-extra';
+            extra.textContent = ` · ${bytes(s.freeBytes)} ${label(dash, 'dashboard.widgetUnraidFree', 'free')}${s.cache ? ` · ${label(dash, 'dashboard.widgetUnraidCache', 'cache')}` : ''}`;
+            row.querySelector('.dashboard-widget-row-detail')?.appendChild(extra);
+            list.appendChild(row);
+        });
+        u.appendOverflowRow(list, dash, Math.max(0, shares.length - limit), open);
+        panel.appendChild(list);
+        end(panel, widget, dash, result);
+    }
+
+    async function renderVMs(body, widget, dash) {
+        await knowBase(dash);
+        const result = await fetchArea('vms');
+        const panel = begin(body, widget, dash, result);
+        if (!panel) return;
+        const u = U();
+        const vms = result.data || [];
+        const running = vms.filter((v) => v.state === 'running').length;
+        panel.appendChild(u.headline(String(running),
+            label(dash, 'dashboard.widgetUnraidOfTotalRunning', 'of {total} running').replace('{total}', vms.length)));
+        const limit = u.rowLimit(widget, 6);
+        const open = openUnraid(widget, dash, '/VMs');
+        const action = rowAction(dash, open);
+        const list = u.rowList(true);
+        vms.slice(0, limit).forEach((v) => {
+            list.appendChild(u.row(v.name, label(dash, `dashboard.widgetUnraidVmState.${v.state}`, v.state), v.tone, open, action));
+        });
+        u.appendOverflowRow(list, dash, Math.max(0, vms.length - limit), open);
+        panel.appendChild(list);
+        end(panel, widget, dash, result);
+    }
+
+    async function renderUPS(body, widget, dash) {
+        await knowBase(dash);
+        const result = await fetchArea('ups');
+        const panel = begin(body, widget, dash, result);
+        if (!panel) return;
+        const u = U();
+        const L = (key, fallback) => label(dash, key, fallback);
+        const ups = result.data || {};
+        panel.appendChild(u.headline(`${ups.charge}%`,
+            ups.onBattery ? L('dashboard.widgetUnraidOnBattery', 'on battery') : L('dashboard.widgetUnraidOnLine', 'on line power')));
+        panel.appendChild(u.meter(ups.charge, 100, ups.tone));
+        panel.appendChild(u.statGrid([
+            { value: durationText(ups.runtimeSec), label: L('dashboard.widgetUnraidRuntime', 'runtime'), tone: ups.onBattery ? 'warn' : undefined },
+            { value: `${ups.loadPct}%`, label: L('dashboard.widgetUnraidLoad', 'load · {w} W').replace('{w}', ups.watts) },
+        ]));
+        if (ups.model) panel.appendChild(u.footnote(ups.model));
+        end(panel, widget, dash, result);
+    }
+
+    async function renderNotifications(body, widget, dash) {
+        await knowBase(dash);
+        const result = await fetchArea('notifications');
+        const panel = begin(body, widget, dash, result);
+        if (!panel) return;
+        const u = U();
+        const L = (key, fallback) => label(dash, key, fallback);
+        const n = result.data || {};
+        const items = n.items || [];
+        const limit = u.rowLimit(widget, 5);
+        const tone = { alert: 'bad', warning: 'warn', info: 'good' };
+        if (!items.length) {
+            u.say(panel, 'dashboard-widget-empty', L('dashboard.widgetUnraidNoNotifications', 'Nothing unread.'));
+        } else {
+            const list = u.rowList(false);
+            items.slice(0, limit).forEach((item) => {
+                const link = String(item.link || '/Tools/Notifications');
+                const open = openUnraid(widget, dash, link.startsWith('/') ? link : `/${link}`);
+                list.appendChild(u.row(item.subject, item.at ? agoText(dash, item.at) : '',
+                    tone[item.importance] || '', open, rowAction(dash, open)));
+            });
+            u.appendOverflowRow(list, dash, Math.max(0, items.length - limit),
+                openUnraid(widget, dash, '/Tools/Notifications'));
+            panel.appendChild(list);
+        }
+        panel.appendChild(u.footnote(L('dashboard.widgetUnraidNotifCounts', '{a} alert · {w} warnings unread')
+            .replace('{a}', n.alerts || 0).replace('{w}', n.warnings || 0)));
+        end(panel, widget, dash, result);
+    }
+
+    /** How long ago a moment in ms was: minutes, hours, then days. */
+    function agoText(dash, ms) {
+        const mins = Math.round((Date.now() - ms) / 60000);
+        const L = (key, fallback) => label(dash, key, fallback);
+        if (mins < 60) return L('dashboard.widgetUnraidMinutes', '{n} min').replace('{n}', Math.max(1, mins));
+        if (mins < 1440) return L('dashboard.widgetUnraidHours', '{n} h').replace('{n}', Math.round(mins / 60));
+        return L('dashboard.widgetUnraidDays', '{n} d').replace('{n}', Math.round(mins / 1440));
+    }
+
     window.DashboardUnraid = { fetchArea, unavailable, openUnraid, rowAction, begin, end, knowBase, problemText, ageText, durationText };
     window.DashboardWidgets = window.DashboardWidgets || {};
     window.DashboardWidgets.unraid = renderOverview;
     window.DashboardWidgets.unraidArray = renderArray;
+    window.DashboardWidgets.unraidParity = renderParity;
+    window.DashboardWidgets.unraidShares = renderShares;
+    window.DashboardWidgets.unraidVms = renderVMs;
+    window.DashboardWidgets.unraidUps = renderUPS;
+    window.DashboardWidgets.unraidNotifications = renderNotifications;
 }());

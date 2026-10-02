@@ -87,4 +87,90 @@ test.describe('Unraid widgets', () => {
         const out = await render(page, 'unraidArray', { array: { area: 'array', status: 'not-configured' } });
         expect(out.text).toContain('Config → Containers');
     });
+
+    test('parity while running: progress and time left; history when wide', async ({ page }) => {
+        await openDashboard(page);
+        const narrow = await render(page, 'unraidParity', { parity: A('parity') }, 320);
+        expect(narrow.text).toContain('43%');
+        expect(narrow.text).toMatch(/left/);
+        const wide = await render(page, 'unraidParity', { parity: A('parity') }, 700);
+        expect(wide.rows.length).toBe(4);
+        expect(wide.tones[2]).toBe('bad'); // the run with 12 errors
+    });
+
+    test('shares fullest first, cut at the row count', async ({ page }) => {
+        await openDashboard(page);
+        const out = await render(page, 'unraidShares', { shares: A('shares') });
+        expect(out.rows[0]).toMatch(/^media/);
+        expect(out.tones[0]).toBe('bad');
+    });
+
+    test('VMs: running of total and a row each', async ({ page }) => {
+        await openDashboard(page);
+        const out = await render(page, 'unraidVms', { vms: A('vms') });
+        expect(out.text).toContain('1 of 3 running');
+        expect(out.tones).toEqual(['good', 'warn', 'off']);
+    });
+
+    test('UPS on battery turns amber and says so', async ({ page }) => {
+        await openDashboard(page);
+        const ups = A('ups');
+        Object.assign(ups.data, { onBattery: true, charge: 87, runtimeSec: 2460, tone: 'warn' });
+        const out = await render(page, 'unraidUps', { ups });
+        expect(out.text).toContain('on battery');
+        expect(out.text).toContain('87%');
+    });
+
+    test('notifications newest first, the alert red', async ({ page }) => {
+        await openDashboard(page);
+        const out = await render(page, 'unraidNotifications', { notifications: A('notifications') });
+        expect(out.rows[0]).toContain('Disk 5 has read errors');
+        expect(out.tones[0]).toBe('bad');
+        expect(out.text).toContain('1 alert · 2 warnings');
+    });
+
+    test('a forbidden area explains itself', async ({ page }) => {
+        await openDashboard(page);
+        const out = await render(page, 'unraidVms', { vms: { area: 'vms', status: 'forbidden' } });
+        expect(out.text).toContain('may not read');
+    });
+
+    test('a row opens its page in Unraid when the server address is known', async ({ page }) => {
+        await page.route('**/api/unraid/settings', (route) => route.fulfill({
+            status: 200, contentType: 'application/json',
+            body: JSON.stringify({ server: { baseUrl: 'http://tower', enabled: true }, keySet: true }),
+        }));
+        await openDashboard(page);
+        await page.evaluate(() => { window.dashboardInstance._unraidBaseUrl = undefined; });
+        await render(page, 'unraid', { overview: A('overview') });
+        const hrefs = await page.evaluate(() => [...document.querySelectorAll('.unraid-probe .dashboard-widget-row')]
+            .map((r) => r.dataset.widgetHref || ''));
+        expect(hrefs[0]).toBe('http://tower/Main');
+    });
+
+    test('click none: no row carries an address and none is a button', async ({ page }) => {
+        await page.route('**/api/unraid/settings', (route) => route.fulfill({
+            status: 200, contentType: 'application/json',
+            body: JSON.stringify({ server: { baseUrl: 'http://tower', enabled: true }, keySet: true }),
+        }));
+        await openDashboard(page);
+        await page.route('**/api/unraid/area/**', (route) => route.fulfill({
+            status: 200, contentType: 'application/json', body: JSON.stringify(A('overview')),
+        }));
+        const out = await page.evaluate(async () => {
+            window.dashboardInstance._unraidBaseUrl = undefined;
+            const body = document.createElement('div');
+            document.body.appendChild(body);
+            await window.DashboardWidgets.unraid(body, { id: 'probe', type: 'unraid', config: { click: 'none' } }, window.dashboardInstance);
+            const rows = [...body.querySelectorAll('.dashboard-widget-row')];
+            return {
+                count: rows.length,
+                hrefs: rows.filter((r) => r.dataset.widgetHref).length,
+                buttons: rows.filter((r) => r.tagName === 'BUTTON').length,
+            };
+        });
+        expect(out.count).toBeGreaterThan(0);
+        expect(out.hrefs).toBe(0);
+        expect(out.buttons).toBe(0);
+    });
 });
