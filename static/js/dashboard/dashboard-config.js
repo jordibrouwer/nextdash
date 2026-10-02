@@ -18803,6 +18803,26 @@ class DashboardConfig {
      * means basic auth. Enough to draw the right form with the right box
      * already labelled, and to say that something is set without showing it.
      */
+    /*
+     * The preset a widget was started from, if any.
+     *
+     * A sign-in's shape -- where to post, what the fields are called, which
+     * header carries a token -- is preset knowledge with no box on screen, and
+     * the stored credential never comes back to the browser. A panel opened
+     * again therefore reads it from the preset, or a retyped password would
+     * be filed without anywhere to sign in.
+     */
+    widgetPresetOf(widget, index) {
+        const draft = index === undefined ? null : this.widgetDraft(index, { create: false });
+        const id = String(draft?.config?.presetId || widget?.config?.presetId || '');
+        return id ? window.DashboardWidgetPresets?.byId?.(id) || null : null;
+    }
+
+    /** A sign-in that asks for a password only (Pi-hole v6, Duplicati). */
+    sessionIsPasswordOnly(session) {
+        return Boolean(session) && session.format === 'json' && !session.userField;
+    }
+
     storedCredentialState(widget) {
         const own = this.widgetCredentialId(widget);
         const chosen = String(widget?.config?.credentialId || '');
@@ -18819,7 +18839,13 @@ class DashboardConfig {
             return { kind: 'query', queryName: stored.query[0], saved: true };
         }
         if (stored.headers?.length) {
-            return { kind: 'header', headerName: stored.headers[0], saved: true };
+            // A header the preset always sends (Nextcloud's OCS-APIRequest) is
+            // not the key; the one the reader typed is whichever is left.
+            const fixed = Object.keys(this.widgetPresetOf(widget)?.fixedHeaders || {})
+                .map((name) => name.toLowerCase());
+            const own = stored.headers.find((name) => !fixed.includes(String(name).toLowerCase()))
+                || stored.headers[0];
+            return { kind: 'header', headerName: own, saved: true };
         }
         if (stored.basic) return { kind: 'basic', basicUser: stored.basicUser || '', saved: true };
         return { kind: 'none' };
@@ -19254,13 +19280,17 @@ class DashboardConfig {
          * sent on every request -- is the server's business rather than the
          * reader's.
          */
-        const session = state.kind !== 'session' ? '' : `
+        const passwordOnly = this.sessionIsPasswordOnly(
+            this.widgetDraft(index, { create: false })?.auth?.session || this.widgetPresetOf(widget, index)?.session);
+        // A service that signs in with a password alone (Pi-hole v6,
+        // Duplicati) gets no username box: there is nothing to put in it.
+        const session = state.kind !== 'session' ? '' : `${passwordOnly ? '' : `
             <div class="config-widget-field">
                 <label for="${id}-suser">${esc(this.t('config.widgetAuthUser', 'Username'))}</label>
                 <input type="text" id="${id}-suser" class="config-text" data-widget-auth="basicUser"
                     data-widget-index="${index}" maxlength="128" spellcheck="false" autocomplete="off"
                     value="${esc(state.basicUser || '')}">
-            </div>
+            </div>`}
             <div class="config-widget-field">
                 <label for="${id}-spass">${esc(this.t('config.widgetAuthPassword', 'Password'))}</label>
                 ${this.renderSecretInput({
@@ -19808,19 +19838,24 @@ class DashboardConfig {
         if (secret && !this.isSchemeOnly(secret)) {
             const kind = draft.auth.kind;
             if (kind === 'header' && draft.auth.headerName) {
-                config.draftCredential = { headers: { [draft.auth.headerName]: secret } };
+                config.draftCredential = {
+                    headers: { ...(draft.auth.fixedHeaders || {}), [draft.auth.headerName]: secret },
+                };
             } else if (kind === 'query' && draft.auth.queryName) {
                 config.draftCredential = {
                     query: { [draft.auth.queryName]: secret },
                     ...(draft.auth.fixedHeaders ? { headers: { ...draft.auth.fixedHeaders } } : {}),
                 };
-            } else if (kind === 'session' && draft.auth.basicUser && draft.auth.session) {
-                config.draftCredential = {
-                    session: {
-                        ...draft.auth.session,
-                        user: draft.auth.basicUser, password: secret,
-                    },
-                };
+            } else if (kind === 'session') {
+                const sessionShape = draft.auth.session || this.widgetPresetOf(block, index)?.session;
+                if (sessionShape && (draft.auth.basicUser || this.sessionIsPasswordOnly(sessionShape))) {
+                    config.draftCredential = {
+                        session: {
+                            ...sessionShape,
+                            user: draft.auth.basicUser || '', password: secret,
+                        },
+                    };
+                }
             } else if (kind === 'basic' && draft.auth.basicUser) {
                 config.draftCredential = {
                     basicUser: draft.auth.basicUser, basicPassword: secret,
@@ -21610,6 +21645,9 @@ class DashboardConfig {
             draft.auth = {
                 kind: 'header', headerName: preset.authName || '', basicUser: '',
                 seed: preset.scheme || '',
+                // Sent with the key and never asked for: Nextcloud wants
+                // OCS-APIRequest beside its NC-Token.
+                fixedHeaders: preset.fixedHeaders || null,
             };
         } else if (preset.auth === 'basic') {
             draft.auth = { kind: 'basic', headerName: '', basicUser: '' };
@@ -21740,7 +21778,9 @@ class DashboardConfig {
             const payload = { id: own, label: block.title || block.type || own };
             if (auth.kind === 'session') {
                 const user = String(auth.basicUser || '').trim();
-                if (!user) { say(this.t('config.widgetAuthNeedsUser', 'Fill in the username first.')); return; }
+                const sessionShape = auth.session || this.widgetPresetOf(block, index)?.session || null;
+                const passwordOnly = this.sessionIsPasswordOnly(sessionShape);
+                if (!user && !passwordOnly) { say(this.t('config.widgetAuthNeedsUser', 'Fill in the username first.')); return; }
                 if (!secret && !(stored.kind === 'session' && stored.basicUser === user)) {
                     say(this.t('config.widgetAuthNeedsPassword', 'Fill in the password as well.'));
                     return;
@@ -21750,7 +21790,7 @@ class DashboardConfig {
                     // post and what to call the fields is knowledge, not a
                     // preference, and a box for it would be a box nobody can
                     // answer.
-                    payload.session = { ...(auth.session || {}), user, password: secret };
+                    payload.session = { ...(sessionShape || {}), user, password: secret };
                 }
             } else if (auth.kind === 'query') {
                 const name = String(auth.queryName || '').trim();
@@ -21785,7 +21825,7 @@ class DashboardConfig {
                     say(this.t('config.widgetAuthNeedsKey', 'Paste the key as well.'));
                     return;
                 }
-                if (secret) payload.headers = { [name]: secret };
+                if (secret) payload.headers = { ...(auth.fixedHeaders || {}), [name]: secret };
             } else {
                 const user = String(auth.basicUser || '').trim();
                 if (!user) { say(this.t('config.widgetAuthNeedsUser', 'Fill in the username first.')); return; }

@@ -1,10 +1,12 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -103,6 +105,22 @@ type CredentialSession struct {
 	// Referer is sent when the service insists on one. qBittorrent rejects a
 	// login without it, which reads as a wrong password.
 	Referer bool `json:"referer,omitempty"`
+	/*
+	 * A sign-in that answers with a token rather than a cookie.
+	 *
+	 * Format "json" posts a JSON object instead of a form; TokenPath then
+	 * names the token in the answer (in the figures' own path syntax) and it
+	 * travels as TokenHeader: TokenPrefix+token. Nginx Proxy Manager, Pi-hole
+	 * v6, Duplicati and every PocketBase app (Beszel) work this way, and none
+	 * of them sets a cookie worth keeping. Same cache, same sign-in again on a
+	 * refusal, as the cookie. An empty UserField in this form means the
+	 * service asks for a password only.
+	 */
+	Format      string         `json:"format,omitempty"`
+	TokenPath   string         `json:"tokenPath,omitempty"`
+	TokenHeader string         `json:"tokenHeader,omitempty"`
+	TokenPrefix string         `json:"tokenPrefix,omitempty"`
+	Extra       map[string]any `json:"extra,omitempty"`
 }
 
 // HealthCredentialFile is the whole set on disk.
@@ -232,7 +250,7 @@ func sanitizeCredentialSession(in *CredentialSession) *CredentialSession {
 	if in.User == "" && in.Password == "" {
 		return nil
 	}
-	return &CredentialSession{
+	out := &CredentialSession{
 		LoginPath: trimToLength(path, healthCredentialMaxValueLen),
 		UserField: trimToLength(strings.TrimSpace(in.UserField), healthCredentialMaxNameLen),
 		PassField: trimToLength(strings.TrimSpace(in.PassField), healthCredentialMaxNameLen),
@@ -240,6 +258,52 @@ func sanitizeCredentialSession(in *CredentialSession) *CredentialSession {
 		Password:  trimToLength(in.Password, healthCredentialMaxValueLen),
 		Referer:   in.Referer,
 	}
+	if strings.TrimSpace(in.Format) != "json" {
+		return out
+	}
+	out.Format = "json"
+	out.TokenPath = trimToLength(strings.TrimSpace(in.TokenPath), healthCredentialMaxNameLen)
+	// The header a token travels in is a name the preset chose, so anything
+	// that is not a plain header name -- or one the transport owns -- is
+	// refused rather than sent.
+	header := strings.TrimSpace(in.TokenHeader)
+	if header == "" {
+		header = "Authorization"
+	}
+	switch http.CanonicalHeaderKey(header) {
+	case "Host", "Content-Length", "Transfer-Encoding", "Connection", "Cookie":
+		header = "Authorization"
+	}
+	if !validHeaderFieldName(header) {
+		header = "Authorization"
+	}
+	out.TokenHeader = header
+	// "Bearer " ends in the space that separates it from the token, so it is
+	// checked for what it may not hold -- control characters -- rather than
+	// trimmed like a header value.
+	if printableASCII(in.TokenPrefix) {
+		out.TokenPrefix = truncateRunes(in.TokenPrefix, healthCredentialMaxNameLen)
+	}
+	// Extra login fields are constants a preset adds ("RememberMe": false):
+	// a few, short, and only plain values.
+	for name, value := range in.Extra {
+		name = strings.TrimSpace(name)
+		if name == "" || len(name) > healthCredentialMaxNameLen || len(out.Extra) >= healthCredentialMaxHeaders {
+			continue
+		}
+		switch v := value.(type) {
+		case bool, float64:
+		case string:
+			value = trimToLength(v, healthCredentialMaxNameLen)
+		default:
+			continue
+		}
+		if out.Extra == nil {
+			out.Extra = map[string]any{}
+		}
+		out.Extra[name] = value
+	}
+	return out
 }
 
 /*
@@ -796,6 +860,9 @@ func (h *Handlers) signInForCookie(ctx context.Context, base *url.URL, session *
 	target := *base
 	target.Path = session.LoginPath
 	target.RawQuery = ""
+	if session.Format == "json" {
+		return h.signInForToken(ctx, base, target, session)
+	}
 
 	form := url.Values{}
 	userField := session.UserField
@@ -835,4 +902,91 @@ func (h *Handlers) signInForCookie(ctx context.Context, base *url.URL, session *
 		}
 	}
 	return "", fmt.Errorf("signing in answered %d without a session", resp.StatusCode)
+}
+
+func printableASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] < 0x20 || s[i] > 0x7e {
+			return false
+		}
+	}
+	return true
+}
+
+// sessionHeaderName is where what signing in gave back travels: the cookie,
+// or the header the token-login names.
+func sessionHeaderName(session *CredentialSession) string {
+	if session != nil && session.Format == "json" && session.TokenPath != "" {
+		return session.TokenHeader
+	}
+	return "Cookie"
+}
+
+/*
+signInForToken posts a JSON sign-in and reads the token out of the answer.
+
+The answer is read rather than its headers: these services hand the token back
+in the body (NPM's "token", Duplicati's "AccessToken", Pi-hole's
+"session.sid"). An answer without one -- a wrong password that still said 200,
+or NPM asking a 2FA account for its second factor -- is a failed sign-in, said
+so, and not tried again in a loop. Without a TokenPath the form is JSON but
+the session is still a cookie.
+*/
+func (h *Handlers) signInForToken(ctx context.Context, base *url.URL, target url.URL, session *CredentialSession) (string, error) {
+	body := map[string]any{}
+	for name, value := range session.Extra {
+		body[name] = value
+	}
+	if session.UserField != "" {
+		body[session.UserField] = session.User
+	}
+	passField := session.PassField
+	if passField == "" {
+		passField = "password"
+	}
+	body[passField] = session.Password
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return "", err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target.String(), bytes.NewReader(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "nextDash Widget/1.0")
+	if session.Referer {
+		req.Header.Set("Referer", base.Scheme+"://"+base.Host)
+	}
+	resp, err := h.outboundHTTPClient(customWidgetTimeout, 0).Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer drainAndCloseResponse(resp)
+	if session.TokenPath == "" {
+		for _, cookie := range resp.Cookies() {
+			if cookie.Value != "" {
+				return cookie.Name + "=" + cookie.Value, nil
+			}
+		}
+		return "", fmt.Errorf("signing in answered %d without a session", resp.StatusCode)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("signing in answered %d", resp.StatusCode)
+	}
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+	if err != nil {
+		return "", err
+	}
+	var document any
+	if err := json.Unmarshal(raw, &document); err != nil {
+		return "", errors.New("signing in did not answer JSON")
+	}
+	value, ok := customWidgetLookup(document, session.TokenPath)
+	token, isText := value.(string)
+	if !ok || !isText || strings.TrimSpace(token) == "" {
+		return "", errors.New("signing in answered without a token")
+	}
+	return session.TokenPrefix + strings.TrimSpace(token), nil
 }

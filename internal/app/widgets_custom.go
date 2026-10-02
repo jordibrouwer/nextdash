@@ -308,6 +308,13 @@ func draftCredentialFrom(raw any) *HealthCredential {
 			User:        stringOr(session["user"]),
 			Password:    stringOr(session["password"]),
 			Referer:     session["referer"] == true,
+			Format:      stringOr(session["format"]),
+			TokenPath:   stringOr(session["tokenPath"]),
+			TokenHeader: stringOr(session["tokenHeader"]),
+			TokenPrefix: stringOr(session["tokenPrefix"]),
+		}
+		if extra, ok := session["extra"].(map[string]any); ok {
+			credential.Session.Extra = extra
 		}
 	}
 	clean := sanitizeHealthCredential(credential)
@@ -1246,7 +1253,7 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 			storeCredentialSession(key, fresh)
 			cookie = fresh
 		}
-		req.Header.Set("Cookie", cookie)
+		req.Header.Set(sessionHeaderName(credential.Session), cookie)
 		answer.SignedIn = true
 	}
 
@@ -1276,7 +1283,7 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 		}
 		storeCredentialSession(sessionKey, fresh)
 		retry := req.Clone(ctx)
-		retry.Header.Set("Cookie", fresh)
+		retry.Header.Set(sessionHeaderName(credential.Session), fresh)
 		if retried, err := client.Do(retry); err == nil {
 			resp = retried
 		} else {

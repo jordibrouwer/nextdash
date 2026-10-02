@@ -119,6 +119,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 
 ### Widgets
 
+- **new — services that sign in for a token** (`health_credentials.go`). A sign-in can post JSON and read a token out of the answer: `CredentialSession` gains `format`, `tokenPath`, `tokenHeader`, `tokenPrefix` and `extra`. The token travels in the header the preset names, with or without a prefix, and is kept and renewed like the cookie (once more after a 401 or 403). An answer without a token -- a wrong password that said 200, a two-factor account -- reads "could not sign in" and is not retried in a loop. Nginx Proxy Manager, Pi-hole v6, Duplicati and Beszel use it; a password-only sign-in asks for no username.
 - **new — counting in a figure's path** (`customWidgetLookup`). `list#` is the length of a list (or the keys of an object), `list[key=value]#` the number of entries that match, and `[-1]` the last entry. A selector key may be a short path (`[results.0.success=false]`). Still one value per path; a count is the last step.
 
 ### Tests
