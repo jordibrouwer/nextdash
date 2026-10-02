@@ -124,7 +124,8 @@ test.describe('statistics panels', () => {
             inboxItems: [],
             inboxAgg: { dailyBuckets: { [day(1)]: { added: 2 }, [day(20)]: { added: 3, promoted: 1 } } },
         });
-        const bars = page.locator('#config-stats-inbox-flow .config-chart-bar');
+        // A day per row of the chart's table (uPlot draws the bars).
+        const bars = page.locator('#config-stats-inbox-flow .nd-chart table.nd-chart-table tbody tr');
         await expect(bars).toHaveCount(30);
         // The usage range moving does not move this chart.
         await page.evaluate(() => { window.dashboardInstance.config.statsRange = 7; window.dashboardInstance.config.repaintStatsBody(); });
@@ -160,7 +161,10 @@ test.describe('statistics panels', () => {
         await expect(summary).toContainText('down 2 points');
         await expect(summary).not.toContainText('up 70');
         await expect(summary).toContainText('1 days without a report');
-        await expect(page.locator('#config-stats-health polyline.config-stats-line')).toHaveCount(2);
+        // The day without a report is a gap in the line: no value, not a zero.
+        const rows = page.locator('#config-stats-health .config-stats-healthline-host .nd-chart table.nd-chart-table tbody tr');
+        await expect(rows).toHaveCount(4);
+        await expect(rows.nth(2)).toContainText('—');
     });
 
     test('health shows outages, worst monitors and certificates by host, and no settings panel', async ({ page }) => {

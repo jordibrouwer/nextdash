@@ -271,8 +271,14 @@
                     : ''}</div>`
                 : '';
 
+            // Kept for mountStatsColumns, which draws the bars with uPlot over
+            // the plain chart and its table once the library is there.
+            this._statsColumnSpecs = this._statsColumnSpecs || new Map();
+            const key = String((this._statsColumnSeq = (this._statsColumnSeq || 0) + 1));
+            this._statsColumnSpecs.set(key, { series, dates, labels, aria, line: lineSvg ? line : null, lineLabel, height });
             return `
                 ${legend}
+                <div class="config-stats-columns-host" data-stats-columns="${key}">
                 <div class="config-chart">
                     <div class="config-chart-plot">
                         <span class="config-chart-axis-y" aria-hidden="true">
@@ -291,7 +297,74 @@
                     <caption>${esc(aria)}</caption>
                     <thead><tr>${srHead}</tr></thead>
                     <tbody>${srRows}</tbody>
-                </table>`;
+                </table>
+                </div>`;
+        },
+
+        /*
+         * The bar charts with uPlot (shared/nd-chart.js), in place of the plain
+         * chart and its table: a bar per period (two side by side for the
+         * inbox's added and triaged), a running total as a line on its own axis
+         * on the right, a tooltip, a drag to zoom, and the arrow keys with the
+         * period read out. The plain chart stays when uPlot cannot be loaded.
+         * Called from bindStats after every paint.
+         */
+        async mountStatsColumns(root) {
+            const hosts = [...(root || document).querySelectorAll('[data-stats-columns]')]
+                .filter((host) => !host.querySelector('.nd-chart'));
+            if (!hosts.length) return;
+            try {
+                if (!global.NdChart) {
+                    await global.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart',
+                        () => typeof global.NdChart !== 'undefined');
+                }
+                await global.NdChart.load();
+            } catch {
+                return;
+            }
+            this._statsColumnCharts = (this._statsColumnCharts || []).filter((c) => {
+                if (c.plot && document.contains(c.plot.root)) return true;
+                c.destroy();
+                return false;
+            });
+            const num = (v) => this.statsNumber(Math.round(v));
+            hosts.forEach((host) => {
+                const spec = this._statsColumnSpecs?.get(host.getAttribute('data-stats-columns'));
+                if (!host.isConnected || !spec || host.querySelector('.nd-chart')) return;
+                const two = spec.series.length > 1;
+                const max = Math.max(1, ...spec.series.flatMap((s) => s.values.map((v) => Number(v) || 0)));
+                const lineNums = spec.line ? spec.line.map((v) => Number(v) || 0) : null;
+                const series = spec.series.map((s, k) => ({
+                    label: s.label, values: s.values.map((v) => Number(v) || 0), bars: true,
+                    color: k ? '--text-muted' : '--accent-primary', format: num,
+                    ...(two ? { align: k ? 1 : -1, barSize: 0.4 } : {}),
+                }));
+                if (lineNums) {
+                    series.push({ label: spec.lineLabel, values: lineNums, color: '--accent-warning',
+                        fill: false, width: 2, scale: 'line', format: num });
+                }
+                const lo = lineNums ? Math.min(0, ...lineNums) : 0;
+                const hi = lineNums ? Math.max(1, ...lineNums) : 1;
+                // The chart takes the plot area only: the axis names (the y
+                // title beside it, the period under it) stay. Its own ticks,
+                // tooltip and table replace the plain chart's.
+                const area = host.querySelector('.config-chart-plot-area');
+                if (!area) return;
+                host.querySelector('.config-chart-axis-ticks')?.remove();
+                host.querySelector('.config-chart-tip')?.remove();
+                host.querySelector(':scope > table.config-sr-only')?.remove();
+                this._statsColumnCharts.push(global.NdChart.chart(area, {
+                    x: spec.dates.map((_, i) => i),
+                    labels: spec.dates,
+                    series,
+                    format: { tick: num },
+                    scales: { y: { range: () => [0, max * 1.1] }, ...(lineNums ? { line: { range: () => [lo, hi * 1.05] } } : {}) },
+                    ...(lineNums ? { axes: { line: { format: num, width: 50 } } } : {}),
+                    summary: spec.aria,
+                    height: spec.height + 24,
+                    axisWidth: 40,
+                }));
+            });
         },
 
         statsRangeLabel(days) {

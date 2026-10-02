@@ -64,7 +64,7 @@
      */
     function pointText(spec, i) {
         if (typeof spec.text === 'function') return spec.text(i);
-        const when = timeText(spec.x[i], spec.format?.x || 'time');
+        const when = Array.isArray(spec.labels) ? (spec.labels[i] ?? '') : timeText(spec.x[i], spec.format?.x || 'time');
         const values = spec.series.map((s) => {
             const v = s.values[i];
             const shown = v == null ? '—' : (s.format || spec.format?.y || String)(v);
@@ -113,6 +113,7 @@
      * Draws a chart into host and returns { update(spec), destroy(), plot }.
      * spec: { x: [seconds], series: [{ label, values, color: '--var', fill, dash, width, scale, bars, points, format }],
      *         format: { x: 'time'|'date'|'datetime', y: fn, tick: fn }, text: (i) => string,
+     *         labels: [string] (x is then each slot's index), series[].align / barSize for bars side by side,
      *         scales, axes: { [scale]: { format, width } }, sync, summary, height, axisWidth }
      */
     function chart(host, spec) {
@@ -136,6 +137,18 @@
 
         let current = spec;
         let plot = null;
+        // Half a slot either side, so the first and last bar are whole.
+        const slotRange = (u, min, max) => [min - 0.5, max + 0.5];
+        // 11px monospace: about 6.6px a character.
+        const CHAR = 6.6;
+        const labelSpace = () => Math.max(80, Math.max(0, ...current.labels.map((l) => String(l).length)) * CHAR + 16);
+        const labelAt = (u, v) => {
+            const label = Number.isInteger(v) ? String(current.labels[v] ?? '') : '';
+            if (!label) return '';
+            const half = (label.length * CHAR) / 2;
+            const at = u.bbox.left / (global.uPlot.pxRatio || devicePixelRatio) + u.valToPos(v, 'x');
+            return at - half < 0 || at + half > u.width ? '' : label;
+        };
         let index = -1;
         let zoomed = null;
 
@@ -152,7 +165,12 @@
                 grid: { stroke: grid, width: 1 }, ticks: { show: true, stroke: axisLine, width: 1, size: 4 },
                 border: { show: true, stroke: axisLine, width: 1 },
             };
-            const scales = { ...(current.scales || {}), x: { time: true, ...(current.scales?.x || {}) } };
+            // Labelled slots (spec.labels: "Jan", "wk 12") rather than time:
+            // x is then the slot's index, and the axis writes the label.
+            const categorical = Array.isArray(current.labels);
+            const scales = { ...(current.scales || {}),
+                x: categorical ? { time: false, range: slotRange, ...(current.scales?.x || {}) }
+                    : { time: true, ...(current.scales?.x || {}) } };
             const extraScales = [...new Set(current.series.map((s) => s.scale).filter((s) => s && s !== 'y'))];
             return {
                 width: Math.max(80, plotHost.clientWidth || host.clientWidth || 300),
@@ -170,7 +188,13 @@
                     { ...axis, grid: { show: false }, size: 22, gap: 3, space: 56,
                       // A label equal to the one before it says nothing: a
                       // few minutes of 30 s samples read 20:51, 20:51, 20:52.
-                      values: (u, vals) => vals.map((v) => timeText(v, current.format?.x === 'time' ? 'time' : 'day'))
+                      // Labels are as wide as they are ("29 Jul – 4 Aug"): the
+                      // spacing follows the widest, and one that would run past
+                      // either edge of the canvas is left out.
+                      ...(categorical ? { incrs: [1, 2, 3, 4, 5, 6, 7, 10, 12, 15, 20, 25, 30, 50, 100], space: labelSpace() } : {}),
+                      values: (u, vals) => vals.map((v) => (categorical
+                          ? labelAt(u, v)
+                          : timeText(v, current.format?.x === 'time' ? 'time' : 'day')))
                           .map((label, i, all) => (i > 0 && label === all[i - 1] ? '' : label)),
                       show: current.axisX !== false },
                     { ...axis, size: current.axisWidth || 46,
@@ -193,7 +217,8 @@
                         width: s.bars ? 0 : (s.width || 1.5),
                         dash: s.dash || undefined,
                         fill: s.bars ? withAlpha(color, 0.75) : (s.fill === false ? undefined : withAlpha(color, 0.16)),
-                        paths: s.bars ? uPlot.paths.bars({ size: [0.7, 40] }) : undefined,
+                        // Two bar series share a slot side by side (align -1 and 1).
+                        paths: s.bars ? uPlot.paths.bars({ size: [s.barSize || 0.7, 40], align: s.align || 0 }) : undefined,
                         // A series of marks (a low point, say) shows its points
                         // and draws no line between them.
                         points: s.points
@@ -272,7 +297,7 @@
             const full = [current.x[0], current.x[n - 1]];
             if (!factor) {
                 // Back to the chart's own range: bars keep the half slot either side.
-                const range = current.scales?.x?.range;
+                const range = current.scales?.x?.range || (Array.isArray(current.labels) ? slotRange : null);
                 const [min, max] = typeof range === 'function' ? range(plot, full[0], full[1]) : full;
                 plot.setScale('x', { min, max });
                 return;
