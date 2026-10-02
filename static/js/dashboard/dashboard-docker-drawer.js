@@ -193,6 +193,7 @@ class DockerDrawer {
                 // The layout carries its own name, as in the Bookmarks view.
                 ctx.heading.hidden = true;
                 panel.insertAdjacentHTML('beforeend', this._layout(summary));
+                this._fillIcon(panel, summary);
                 this._fillActions(panel, summary);
                 panel.querySelectorAll('[data-docker-body]').forEach((body) => {
                     els.sections[body.getAttribute('data-docker-body')] = body;
@@ -213,6 +214,120 @@ class DockerDrawer {
         this._wireTimeline(els);
         // The tab on show loads what it needs now, as a click on it would.
         this._onTab(window.SidePanelLayout.activeTab('docker', this._tabs()));
+    }
+
+    /**
+     * The head's icon, with a pencil for choosing another: an app icon from
+     * the picker, the plain letter, or back to the automatic one.
+     */
+    _fillIcon(panel, summary) {
+        const host = panel.querySelector('[data-docker-drawer-icon]');
+        if (!host) return;
+        host.replaceChildren(this.view.containerIconEl(summary, 'docker-drawer-icon-img'));
+        if (summary.self) return;
+
+        const pencil = document.createElement('button');
+        pencil.type = 'button';
+        pencil.className = 'docker-drawer-icon-pencil';
+        pencil.setAttribute('data-docker-icon-menu', '');
+        pencil.setAttribute('aria-haspopup', 'menu');
+        pencil.setAttribute('aria-expanded', 'false');
+        pencil.setAttribute('aria-label', this.t('dockerIconMenu', 'Change icon'));
+        pencil.textContent = '✎';
+
+        const menu = document.createElement('div');
+        menu.className = 'config-bm-more-menu docker-drawer-icon-menu';
+        menu.setAttribute('role', 'menu');
+        menu.hidden = true;
+        const close = (focus = true) => {
+            menu.hidden = true;
+            pencil.setAttribute('aria-expanded', 'false');
+            if (focus) pencil.focus();
+        };
+        const item = (label, attr, fn) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'config-btn config-btn--small';
+            b.setAttribute('role', 'menuitem');
+            b.setAttribute(attr, '');
+            b.textContent = label;
+            b.addEventListener('click', (e) => {
+                e.preventDefault();
+                close(false);
+                fn();
+            });
+            menu.appendChild(b);
+        };
+        item(this.t('iconSetChoose', 'Choose app icon…'), 'data-docker-icon-choose', () => void this._chooseContainerIcon(summary, pencil));
+        item(this.t('dockerIconLetter', 'Use letter'), 'data-docker-icon-letter', () => void this._saveContainerIcon('letter'));
+        item(this.t('dockerIconAutomatic', 'Automatic'), 'data-docker-icon-auto', () => void this._saveContainerIcon(''));
+
+        pencil.addEventListener('click', (e) => {
+            e.preventDefault();
+            const open = menu.hidden;
+            menu.hidden = !open;
+            pencil.setAttribute('aria-expanded', String(open));
+            if (open) menu.querySelector('button')?.focus();
+        });
+        menu.addEventListener('keydown', (e) => {
+            const items = [...menu.querySelectorAll('button')];
+            const i = items.indexOf(document.activeElement);
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const step = e.key === 'ArrowDown' ? 1 : -1;
+                items[(i + step + items.length) % items.length]?.focus();
+            } else if (e.key === 'Escape') {
+                // The innermost thing open: the drawer stays.
+                e.preventDefault();
+                e.stopPropagation();
+                close();
+            }
+        });
+        menu.addEventListener('focusout', (e) => {
+            if (!host.contains(e.relatedTarget)) close(false);
+        });
+        host.append(pencil, menu);
+    }
+
+    async _chooseContainerIcon(summary, anchor) {
+        let picker = null;
+        try {
+            picker = await window.IconSetAuto?.loadPicker();
+        } catch {
+            picker = null;
+        }
+        picker?.open(anchor, {
+            query: summary.icon?.name || summary.name || '',
+            container: document.body,
+            t: (key, fallback, vars) => this.t(key, fallback, vars),
+            notify: (msg, kind) => this.view.dash?.showNotification?.(msg, kind),
+            onPick: (icon) => void this._saveContainerIcon(icon),
+        });
+    }
+
+    /** 'letter', a file in data/icons/, or '' for the automatic icon. */
+    async _saveContainerIcon(value) {
+        const name = this._name;
+        const d = this.view.dash;
+        if (!name || !d) return;
+        const all = { ...(d.settings?.dockerContainerIcons || {}) };
+        if (value) all[name] = value;
+        else delete all[name];
+        const before = d.settings.dockerContainerIcons;
+        // The whole map, {} included: a key left out of a save keeps the
+        // server's old value.
+        d.settings.dockerContainerIcons = all;
+        try {
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
+        } catch {
+            d.settings.dockerContainerIcons = before;
+            d.showNotification?.(this.t('dockerIconSaveFailed', 'Could not save the icon.'), 'error');
+            return;
+        }
+        await this.view.loadAndRender?.();
+        if (name !== this._name) return;
+        const fresh = (this.view.containers || []).find((c) => c.name === name);
+        if (fresh) this.open(fresh);
     }
 
     _tabs() {
@@ -236,7 +351,7 @@ class DockerDrawer {
         const webui = window.DockerSearchIndex.webuiHref(summary.webui, summary);
         L.moreLabel = this.t('dockerMoreActions', 'More actions');
         const head = L.head(esc, {
-            icon: `<span class="docker-drawer-icon" aria-hidden="true">${esc(String(summary.name || '?').charAt(0).toUpperCase())}</span>`,
+            icon: '<span class="docker-drawer-icon" data-docker-drawer-icon></span>',
             title: summary.name,
             badge: { text: summary.state || '', tone },
             more: [

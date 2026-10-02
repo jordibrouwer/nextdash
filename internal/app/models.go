@@ -826,6 +826,10 @@ type Settings struct {
 	// web UI ("<pageId>::<url>"), or to none ("-"), over the automatic match
 	// the Containers view makes (docker-search-index.js).
 	DockerBookmarkLinks map[string]string `json:"dockerBookmarkLinks,omitempty"`
+	// DockerContainerIcons overrides the automatic app icon, by container
+	// name: "letter" for the plain letter, or a file in data/icons/ chosen
+	// with the icon picker. Absent means automatic (icon_match.go).
+	DockerContainerIcons map[string]string `json:"dockerContainerIcons,omitempty"`
 	// DockerHostAddress is the host the Containers view links ports and [IP]
 	// to, for when the dashboard is opened under a name that is not the Docker
 	// host's (a reverse proxy, a tunnel). Empty uses the browser's host.

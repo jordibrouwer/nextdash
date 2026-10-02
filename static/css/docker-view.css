@@ -1580,3 +1580,68 @@
     color: var(--text-secondary);
     font-size: var(--text-xs, 0.72rem);
 }
+
+/* The app icon ahead of the name (icon_match.go), or its letter; the cell
+   keeps icon and name on one line when the drawer narrows the table. */
+.docker-cell--name { white-space: nowrap; }
+.docker-row-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: var(--space-2, 0.5rem);
+    vertical-align: middle;
+    object-fit: contain;
+    flex: none;
+}
+.docker-row-icon.docker-icon-letter,
+.docker-drawer-icon-img.docker-icon-letter {
+    border-radius: var(--layout-radius-xs, 4px);
+    background: var(--background-secondary, rgba(128, 128, 128, 0.15));
+    color: var(--text-tertiary, currentColor);
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+/* The drawer's head: the icon, and a pencil for choosing another. */
+.docker-drawer-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.docker-drawer-icon-img {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+.docker-drawer-icon-pencil {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: 50%;
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+}
+.docker-drawer-icon-pencil:hover,
+.docker-drawer-icon-pencil:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+.docker-drawer-icon-menu.config-bm-more-menu {
+    left: 0;
+    right: auto;
+    min-width: 11rem;
+}

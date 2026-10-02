@@ -307,6 +307,8 @@ class DashboardDocker {
             // The row menu owns the keyboard while it is open; its own handler
             // closes it, and Escape must not also close the view underneath.
             if (document.getElementById('docker-row-menu')) return;
+            // The same for the drawer's icon menu and the icon picker.
+            if (window.IconSetPicker?.isOpen?.() || document.querySelector('.docker-drawer-icon-menu:not([hidden])')) return;
             const active = document.activeElement;
             const tag = active?.tagName;
             const isSearch = active?.matches?.('[data-docker-search]');
@@ -1788,6 +1790,38 @@ class DashboardDocker {
         cell.append(more, pop);
     }
 
+    /**
+     * The container's icon: the drawer's choice (a letter or a file under
+     * /data/icons/), else the app icon the sets matched, else its letter --
+     * also what any icon that fails to load falls back to.
+     */
+    containerIconEl(c, className) {
+        const letter = () => {
+            const s = document.createElement('span');
+            s.className = `${className} docker-icon-letter`;
+            s.setAttribute('data-docker-icon', 'letter');
+            s.setAttribute('aria-hidden', 'true');
+            s.textContent = String(c.name || '?').charAt(0).toUpperCase();
+            return s;
+        };
+        if (c.iconOverride === 'letter') return letter();
+        let img = null;
+        if (c.iconOverride) {
+            img = document.createElement('img');
+            img.alt = '';
+            img.className = className;
+            img.decoding = 'async';
+            img.src = `/data/icons/${encodeURIComponent(c.iconOverride)}`;
+            img.addEventListener('error', () => img.isConnected && img.replaceWith(letter()), { once: true });
+        } else if (c.icon && window.IconSetAuto) {
+            img = window.IconSetAuto.makeImg(c.icon, { className, onFail: letter });
+        }
+        if (!img) return letter();
+        img.setAttribute('data-docker-icon', c.iconOverride ? 'chosen' : 'set');
+        img.setAttribute('aria-hidden', 'true');
+        return img;
+    }
+
     buildRow(c) {
         const tr = document.createElement('tr');
         tr.className = 'docker-row';
@@ -1828,6 +1862,7 @@ class DashboardDocker {
             badge.setAttribute('aria-label', label);
             nameCell.appendChild(badge);
         }
+        nameCell.appendChild(this.containerIconEl(c, 'docker-row-icon'));
         const nameText = document.createElement('span');
         nameText.className = 'docker-name';
         nameText.textContent = c.name;

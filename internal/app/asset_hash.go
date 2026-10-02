@@ -189,6 +189,8 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-health-multi-select.js",
 	"js/dashboard/dashboard-health-focus.js",
 	"js/dashboard/dashboard-docker.js",
+	// The app-icon picker, for the bookmark form and the container drawer.
+	"js/shared/icon-set-picker.js",
 	"js/dashboard/dashboard-docker-drawer.js",
 	"js/dashboard/dashboard-docker-logs.js",
 	"js/dashboard/dashboard-docker-disk.js",
