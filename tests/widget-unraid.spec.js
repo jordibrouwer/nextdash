@@ -93,6 +93,9 @@ test.describe('Unraid widgets', () => {
         const narrow = await render(page, 'unraidParity', { parity: A('parity') }, 320);
         expect(narrow.text).toContain('43%');
         expect(narrow.text).toMatch(/left/);
+        const paused = A('parity');
+        paused.data.paused = true;
+        expect((await render(page, 'unraidParity', { parity: paused }, 320)).text).toContain('— left');
         const wide = await render(page, 'unraidParity', { parity: A('parity') }, 700);
         expect(wide.rows.length).toBe(4);
         expect(wide.tones[2]).toBe('bad'); // the run with 12 errors
@@ -103,6 +106,13 @@ test.describe('Unraid widgets', () => {
         const out = await render(page, 'unraidShares', { shares: A('shares') });
         expect(out.rows[0]).toMatch(/^media/);
         expect(out.tones[0]).toBe('bad');
+        const bars = await page.evaluate(() => [...document.querySelectorAll('.unraid-probe .dashboard-widget-row')]
+            .map((r) => {
+                const bar = r.querySelector('.unraid-disk-bar');
+                return bar ? [bar.style.getPropertyValue('--fill'), bar.className.includes('--warn')] : null;
+            }));
+        expect(bars).toEqual([['94%', true], ['73%', false], ['48%', false], ['12%', false], ['11%', false]]);
+        expect(out.rows[0]).toMatch(/^media 94%/);
     });
 
     test('VMs: running of total and a row each', async ({ page }) => {
@@ -119,6 +129,11 @@ test.describe('Unraid widgets', () => {
         const out = await render(page, 'unraidUps', { ups });
         expect(out.text).toContain('on battery');
         expect(out.text).toContain('87%');
+        const amber = await page.evaluate(() => !!document.querySelector('.unraid-probe .dashboard-widget-headline-value--warn'));
+        expect(amber).toBe(true);
+        const line = await render(page, 'unraidUps', { ups: A('ups') });
+        expect(line.text).toContain('on line power');
+        expect(await page.evaluate(() => !!document.querySelector('.unraid-probe .dashboard-widget-headline-value--warn'))).toBe(false);
     });
 
     test('notifications newest first, the alert red', async ({ page }) => {
@@ -126,7 +141,17 @@ test.describe('Unraid widgets', () => {
         const out = await render(page, 'unraidNotifications', { notifications: A('notifications') });
         expect(out.rows[0]).toContain('Disk 5 has read errors');
         expect(out.tones[0]).toBe('bad');
-        expect(out.text).toContain('1 alert · 2 warnings');
+        expect(out.text).toContain('alerts 1 · warnings 2 unread');
+    });
+
+    test('notifications: no foot when nothing is unread', async ({ page }) => {
+        await openDashboard(page);
+        const n = A('notifications');
+        Object.assign(n.data, { alerts: 0, warnings: 0, items: [] });
+        const out = await render(page, 'unraidNotifications', { notifications: n });
+        expect(out.text).toContain('Nothing unread.');
+        expect(out.text).not.toContain('unread alerts');
+        expect(out.text).not.toMatch(/alerts \d/);
     });
 
     test('a forbidden area explains itself', async ({ page }) => {

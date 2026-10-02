@@ -311,7 +311,7 @@
                 + (p.speed ? ` · ${p.speed}` : '')));
             panel.appendChild(u.meter(p.progress, 100, p.paused ? 'warn' : 'good'));
             panel.appendChild(u.statGrid([
-                { value: durationText(p.leftSec), label: L('dashboard.widgetUnraidLeft', 'left') },
+                { value: p.paused || !p.leftSec ? '—' : durationText(p.leftSec), label: L('dashboard.widgetUnraidLeft', 'left') },
                 { value: String(p.errors), label: L('dashboard.widgetUnraidErrorsSoFar', 'errors so far'), tone: p.errors ? 'bad' : 'good' },
             ]));
         } else if (p.last) {
@@ -357,6 +357,12 @@
             extra.className = 'dashboard-widget-wide-only dashboard-widget-row-extra';
             extra.textContent = ` · ${bytes(s.freeBytes)} ${label(dash, 'dashboard.widgetUnraidFree', 'free')}${s.cache ? ` · ${label(dash, 'dashboard.widgetUnraidCache', 'cache')}` : ''}`;
             row.querySelector('.dashboard-widget-row-detail')?.appendChild(extra);
+            // The same bar the array rows carry, between the name and the reading.
+            const meter = document.createElement('span');
+            meter.className = `unraid-disk-bar unraid-disk-bar--${s.usedPct >= 90 ? 'warn' : 'good'}`;
+            meter.style.setProperty('--fill', `${Math.round(s.usedPct)}%`);
+            row.classList.add('unraid-disk-row');
+            row.insertBefore(meter, row.lastChild);
             list.appendChild(row);
         });
         u.appendOverflowRow(list, dash, Math.max(0, shares.length - limit), open);
@@ -394,8 +400,10 @@
         const u = U();
         const L = (key, fallback) => label(dash, key, fallback);
         const ups = result.data || {};
-        panel.appendChild(u.headline(`${ups.charge}%`,
-            ups.onBattery ? L('dashboard.widgetUnraidOnBattery', 'on battery') : L('dashboard.widgetUnraidOnLine', 'on line power')));
+        const head = u.headline(`${ups.charge}%`,
+            ups.onBattery ? L('dashboard.widgetUnraidOnBattery', 'on battery') : L('dashboard.widgetUnraidOnLine', 'on line power'));
+        if (ups.onBattery) head.querySelector('.dashboard-widget-headline-value')?.classList.add('dashboard-widget-headline-value--warn');
+        panel.appendChild(head);
         panel.appendChild(u.meter(ups.charge, 100, ups.tone));
         panel.appendChild(u.statGrid([
             { value: durationText(ups.runtimeSec), label: L('dashboard.widgetUnraidRuntime', 'runtime'), tone: ups.onBattery ? 'warn' : undefined },
@@ -430,8 +438,10 @@
                 openUnraid(widget, dash, '/Tools/Notifications'));
             panel.appendChild(list);
         }
-        panel.appendChild(u.footnote(L('dashboard.widgetUnraidNotifCounts', '{a} alert · {w} warnings unread')
-            .replace('{a}', n.alerts || 0).replace('{w}', n.warnings || 0)));
+        if (n.alerts || n.warnings) {
+            panel.appendChild(u.footnote(L('dashboard.widgetUnraidNotifCounts', 'alerts {a} · warnings {w} unread')
+                .replace('{a}', n.alerts || 0).replace('{w}', n.warnings || 0)));
+        }
         end(panel, widget, dash, result);
     }
 

@@ -7193,6 +7193,8 @@ button.dashboard-widget-stat.keyboard-selected {
 .unraid-disk-bar--warn {
     background: linear-gradient(90deg, var(--accent-warning) var(--fill), var(--border-secondary) var(--fill));
 }
+/* The UPS figure on battery: amber, as the bar under it is. */
+.dashboard-widget-headline-value--warn { color: var(--accent-warning); }
 .dashboard-widget-group {
     margin: var(--space-2, 0.5rem) 0 var(--space-1, 0.25rem);
     /* The rows' own inset, so a group head starts where its disk names do. */

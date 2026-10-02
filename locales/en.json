@@ -2918,7 +2918,7 @@
     "widgetUnraidRuntime": "runtime",
     "widgetUnraidLoad": "load · {w} W",
     "widgetUnraidNoNotifications": "Nothing unread.",
-    "widgetUnraidNotifCounts": "{a} alert · {w} warnings unread",
+    "widgetUnraidNotifCounts": "alerts {a} · warnings {w} unread",
     "widgetUnraidMinutes": "{n} min",
     "widgetUnraidHours": "{n} h",
     "widgetUnraidDays": "{n} d",
