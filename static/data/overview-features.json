@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureLookStudioTitle",
+      "titleFallback": "The theme browser is a look studio",
+      "whatKey": "config.overviewNewFeatureLookStudioWhat",
+      "whatFallback": "A theme decided the colours, and everything else was a setting somewhere in Appearance — tried one at a time, with config covering the page you were trying it on.",
+      "howKey": "config.overviewNewFeatureLookStudioHow",
+      "howFallback": "Shift+A opens the theme browser beside the dashboard. Its tabs change the theme, its backdrop — 26 patterns in the theme's own colours — the glass of the cards, the category headers and the type, live on your own page. Twelve looks set them all at once. Compare shows what you had, Cancel puts it back, and nothing is saved until Apply.",
+      "enableKey": "config.overviewNewFeatureLookStudioEnable",
+      "enableFallback": "Nothing to switch on. Every theme now brings a backdrop of its own; Appearance → Background lets you choose another or switch it off.",
+      "ctaKey": "config.overviewNewFeatureLookStudioCta",
+      "ctaFallback": "Open Background →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "background"
+      },
+      "since": "v1.16.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureSelfHostedGuideTitle",
       "titleFallback": "Containers, bookmarks and health, together",
       "whatKey": "config.overviewNewFeatureSelfHostedGuideWhat",

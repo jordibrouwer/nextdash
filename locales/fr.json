@@ -1951,12 +1951,12 @@
     "widgetsTutorialBack": "Retour",
     "renameWidgetAria": "Renommer le widget",
     "themeBrowserNoticeTitle": "Votre tableau de bord peut avoir une tout autre allure",
-    "themeBrowserNoticeBody": "Plus de deux cents thèmes, sous forme de grille que l’on peut chercher plutôt que de liste à faire défiler. Chacun s’affiche sur cette page pendant que vous le regardez, et rien n’est enregistré tant que vous n’avez pas choisi — regarder ne coûte donc rien.",
+    "themeBrowserNoticeBody": "Plus de trois cents thèmes, sous forme de grille que l’on peut chercher plutôt que de liste à faire défiler. Le navigateur s’ouvre à côté de cette page, chaque thème s’y affiche dès que vous le survolez, et rien n’est enregistré avant d’appuyer sur Appliquer — regarder ne coûte donc rien.",
     "themeBrowserNoticeTry": "Parcourir les thèmes",
     "themeBrowserNoticeNoThanks": "Non merci",
     "themeBrowserNoticeDismiss": "Fermer",
     "themeBrowserNoticeOpenedTitle": "Changez quand vous voulez",
-    "themeBrowserNoticeOpenedBody": "Le navigateur se trouve sous Config → Apparence → Parcourir, et chaque thème existe en moitié claire et moitié sombre. Rien n’est enregistré tant que vous n’en choisissez pas un.",
+    "themeBrowserNoticeOpenedBody": "Le navigateur se trouve sous Config → Apparence → Parcourir, et chaque thème existe en moitié claire et moitié sombre. Rien n’est enregistré avant d’appuyer sur Appliquer.",
     "themeBrowserNoticeCommandHint": "Ou changez de thème sans quitter la page avec",
     "themeBrowserNoticeOpenAppearance": "Ouvrir les réglages d’apparence",
     "themeBrowserNoticeDone": "Compris",
@@ -7839,7 +7839,12 @@
     "tipTuneLooks": "L’onglet <em>Looks</em> du navigateur de thèmes règle fond, verre des cartes, en-têtes et typographie d’un coup — <em>Verre</em>, <em>Givré</em>, <em>Papier</em>, <em>Terminal</em> et huit autres — en gardant les couleurs de votre thème. Maintenez <code>\\</code> pour comparer avec l’état précédent.",
     "tipTuneBackdrop": "Chaque thème dessine son propre fond : l’un des 26 motifs, de l’aurore et des dunes aux étoiles et aux hexagones. Apparence → Arrière-plan permet d’en choisir un autre, de tirer une nouvelle variante avec 🎲 ou de l’adoucir avec du flou et une teinte du thème.",
     "tipTuneCardGlass": "En profondeur <em>Verre</em>, Apparence → Surface → Verre des cartes règle l’opacité des panneaux et l’intensité du flou derrière eux. Le badge à côté indique si le texte sur un panneau reste lisible.",
-    "tipTuneCategoryHeader": "Apparence → Lignes → En-tête de catégorie dessine le nom d’une catégorie épuré, souligné, encadré, en étiquette ou en carte de groupe, en trois tailles — avec son icône et le nombre de favoris si vous le souhaitez."
+    "tipTuneCategoryHeader": "Apparence → Lignes → En-tête de catégorie dessine le nom d’une catégorie épuré, souligné, encadré, en étiquette ou en carte de groupe, en trois tailles — avec son icône et le nombre de favoris si vous le souhaitez.",
+    "overviewNewFeatureLookStudioTitle": "Le navigateur de thèmes devient un studio de looks",
+    "overviewNewFeatureLookStudioWhat": "Un thème décidait des couleurs, et tout le reste était un réglage quelque part dans Apparence — essayé un par un, pendant que la configuration couvrait la page sur laquelle vous l’essayiez.",
+    "overviewNewFeatureLookStudioHow": "Shift+A ouvre le navigateur de thèmes à côté du tableau de bord. Ses onglets changent le thème, son fond — 26 motifs dans les couleurs du thème —, le verre des cartes, les en-têtes de catégorie et la typographie, en direct sur votre propre page. Douze looks règlent tout d’un coup. Comparer montre ce que vous aviez, Annuler le remet, et rien n’est enregistré avant Appliquer.",
+    "overviewNewFeatureLookStudioEnable": "Rien à activer. Chaque thème apporte désormais son propre fond ; Apparence → Arrière-plan permet d’en choisir un autre ou de le désactiver.",
+    "overviewNewFeatureLookStudioCta": "Ouvrir Arrière-plan →"
   },
   "colors": {
     "title": "personnalisation du thème",

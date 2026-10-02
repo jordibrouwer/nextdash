@@ -1992,12 +1992,12 @@
     "widgetsTutorialBack": "Back",
     "renameWidgetAria": "Rename widget",
     "themeBrowserNoticeTitle": "Your dashboard can look like anything",
-    "themeBrowserNoticeBody": "Over two hundred themes, as a grid you can search rather than a list you have to scroll. Each one previews on this page while you look at it, and nothing is saved until you choose — so it costs nothing to find out.",
+    "themeBrowserNoticeBody": "Over three hundred themes, as a grid you can search rather than a list you have to scroll. The browser opens beside this page, each theme previews on it while you point at it, and nothing is saved until you press Apply — so it costs nothing to find out.",
     "themeBrowserNoticeTry": "Browse themes",
     "themeBrowserNoticeNoThanks": "No thanks",
     "themeBrowserNoticeDismiss": "Dismiss",
     "themeBrowserNoticeOpenedTitle": "Change it whenever you like",
-    "themeBrowserNoticeOpenedBody": "The browser lives under Config → Appearance → Browse, and every theme comes as a light and a dark half. Nothing is saved until you pick one.",
+    "themeBrowserNoticeOpenedBody": "The browser lives under Config → Appearance → Browse, and every theme comes as a light and a dark half. Nothing is saved until you press Apply.",
     "themeBrowserNoticeCommandHint": "Or switch theme without leaving the page with",
     "themeBrowserNoticeOpenAppearance": "Open appearance settings",
     "themeBrowserNoticeDone": "Got it",
@@ -7839,7 +7839,12 @@
     "tipTuneLooks": "The <em>Looks</em> tab of the theme browser sets backdrop, card glass, headers and type in one go — <em>Glass</em>, <em>Frosted</em>, <em>Paper</em>, <em>Terminal</em> and eight more — and keeps your theme's colours. Hold <code>\\</code> to compare with what you had.",
     "tipTuneBackdrop": "Every theme draws a backdrop of its own: one of 26 patterns, from aurora and dunes to stars and hexagons. Appearance → Background lets you pick another, roll a new variant with 🎲, or soften it with blur and a theme tint.",
     "tipTuneCardGlass": "At depth <em>Glass</em>, Appearance → Surface → Card glass sets how solid the panes are and how far the page blurs behind them. The badge beside it says whether text on a pane stays readable.",
-    "tipTuneCategoryHeader": "Appearance → Rows → Category header draws a category's name clean, underlined, boxed, as a label or as a group card, in three sizes — with its icon and how many bookmarks it holds, if you like."
+    "tipTuneCategoryHeader": "Appearance → Rows → Category header draws a category's name clean, underlined, boxed, as a label or as a group card, in three sizes — with its icon and how many bookmarks it holds, if you like.",
+    "overviewNewFeatureLookStudioTitle": "The theme browser is a look studio",
+    "overviewNewFeatureLookStudioWhat": "A theme decided the colours, and everything else was a setting somewhere in Appearance — tried one at a time, with config covering the page you were trying it on.",
+    "overviewNewFeatureLookStudioHow": "Shift+A opens the theme browser beside the dashboard. Its tabs change the theme, its backdrop — 26 patterns in the theme's own colours — the glass of the cards, the category headers and the type, live on your own page. Twelve looks set them all at once. Compare shows what you had, Cancel puts it back, and nothing is saved until Apply.",
+    "overviewNewFeatureLookStudioEnable": "Nothing to switch on. Every theme now brings a backdrop of its own; Appearance → Background lets you choose another or switch it off.",
+    "overviewNewFeatureLookStudioCta": "Open Background →"
   },
   "colors": {
     "title": "theme customization",

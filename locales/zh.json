@@ -1951,12 +1951,12 @@
     "widgetsTutorialBack": "上一步",
     "renameWidgetAria": "重命名小组件",
     "themeBrowserNoticeTitle": "你的仪表板可以是任何样子",
-    "themeBrowserNoticeBody": "两百多个主题，做成可以搜索的网格，而不是要一直往下滚的列表。你看着哪个，它就在这个页面上预览哪个，选定之前什么都不保存——所以试一试不花任何代价。",
+    "themeBrowserNoticeBody": "三百多个主题，做成可以搜索的网格，而不是要一直往下滚的列表。浏览器在这个页面旁边打开，指向哪个主题，页面就预览哪个，点击“应用”之前什么都不保存——所以试一试不花任何代价。",
     "themeBrowserNoticeTry": "浏览主题",
     "themeBrowserNoticeNoThanks": "不用了",
     "themeBrowserNoticeDismiss": "关闭",
     "themeBrowserNoticeOpenedTitle": "想换随时都能换",
-    "themeBrowserNoticeOpenedBody": "浏览器在 配置 → 外观 → 浏览 里，每个主题都有浅色和深色两半。选定之前什么都不保存。",
+    "themeBrowserNoticeOpenedBody": "浏览器在 配置 → 外观 → 浏览 里，每个主题都有浅色和深色两半。点击“应用”之前什么都不保存。",
     "themeBrowserNoticeCommandHint": "也可以不离开页面，用这个命令换主题",
     "themeBrowserNoticeOpenAppearance": "打开外观设置",
     "themeBrowserNoticeDone": "知道了",
@@ -7839,7 +7839,12 @@
     "tipTuneLooks": "主题浏览器的 <em>外观</em> 标签一次设置背景、卡片玻璃、标题和字体——<em>玻璃</em>、<em>磨砂</em>、<em>纸张</em>、<em>终端</em> 等十二种——并保留主题的颜色。按住 <code>\\</code> 可与之前的样子对比。",
     "tipTuneBackdrop": "每个主题都会绘制自己的背景：26 种图案之一，从极光、沙丘到星空和六边形。在 外观 → 背景 中可以换一种图案、用 🎲 随机新变体，或用模糊和主题色调让它更柔和。",
     "tipTuneCardGlass": "在 <em>玻璃</em> 深度下，外观 → 表面 → 卡片玻璃 可设置面板的不透明程度以及其后页面的模糊程度。旁边的徽标会显示面板上的文字是否清晰可读。",
-    "tipTuneCategoryHeader": "外观 → 行 → 分类标题 可以把分类名称显示为简洁、下划线、方框、标签或分组卡片，三种大小——还可以显示图标和书签数量。"
+    "tipTuneCategoryHeader": "外观 → 行 → 分类标题 可以把分类名称显示为简洁、下划线、方框、标签或分组卡片，三种大小——还可以显示图标和书签数量。",
+    "overviewNewFeatureLookStudioTitle": "主题浏览器变成了外观工作室",
+    "overviewNewFeatureLookStudioWhat": "以前主题只决定颜色，其他一切都是外观里的某个设置——只能一项项尝试，而配置界面还挡住了你正在试的页面。",
+    "overviewNewFeatureLookStudioHow": "按 Shift+A 会在仪表盘旁边打开主题浏览器。它的标签可以实时在你自己的页面上更改主题、背景（26 种以主题颜色绘制的图案）、卡片玻璃、分类标题和字体。十二种外观可一次全部设置。“对比”显示原来的样子，“取消”恢复原样，点击“应用”之前不会保存任何内容。",
+    "overviewNewFeatureLookStudioEnable": "无需开启。现在每个主题都自带背景；在 外观 → 背景 中可以换一种或将其关闭。",
+    "overviewNewFeatureLookStudioCta": "打开背景 →"
   },
   "colors": {
     "title": "主题自定义",

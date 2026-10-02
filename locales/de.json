@@ -1951,12 +1951,12 @@
     "widgetsTutorialBack": "Zurück",
     "renameWidgetAria": "Widget umbenennen",
     "themeBrowserNoticeTitle": "Dein Dashboard kann ganz anders aussehen",
-    "themeBrowserNoticeBody": "Über zweihundert Themen, als durchsuchbares Raster statt als Liste zum Scrollen. Jedes wird auf dieser Seite gezeigt, während du es ansiehst, und nichts wird gespeichert, bevor du wählst — Nachsehen kostet also nichts.",
+    "themeBrowserNoticeBody": "Über dreihundert Designs, als durchsuchbares Raster statt als Liste zum Scrollen. Der Browser öffnet sich neben dieser Seite, jedes Design wird darauf gezeigt, sobald du darauf zeigst, und gespeichert wird erst, wenn du Anwenden drückst — Nachsehen kostet also nichts.",
     "themeBrowserNoticeTry": "Themen ansehen",
     "themeBrowserNoticeNoThanks": "Nein, danke",
     "themeBrowserNoticeDismiss": "Schließen",
     "themeBrowserNoticeOpenedTitle": "Jederzeit wechselbar",
-    "themeBrowserNoticeOpenedBody": "Der Browser liegt unter Config → Darstellung → Ansehen, und jedes Thema kommt als helle und dunkle Hälfte. Nichts wird gespeichert, bevor du eines wählst.",
+    "themeBrowserNoticeOpenedBody": "Der Browser liegt unter Config → Darstellung → Ansehen, und jedes Thema kommt als helle und dunkle Hälfte. Gespeichert wird erst, wenn du Anwenden drückst.",
     "themeBrowserNoticeCommandHint": "Oder wechsle das Thema, ohne die Seite zu verlassen, mit",
     "themeBrowserNoticeOpenAppearance": "Darstellungseinstellungen öffnen",
     "themeBrowserNoticeDone": "Verstanden",
@@ -7839,7 +7839,12 @@
     "tipTuneLooks": "Der Tab <em>Looks</em> im Design-Browser setzt Hintergrund, Kartenglas, Überschriften und Schrift in einem Zug — <em>Glas</em>, <em>Milchglas</em>, <em>Papier</em>, <em>Terminal</em> und acht weitere — und behält die Farben deines Designs. Halte <code>\\</code> gedrückt, um mit dem Vorherigen zu vergleichen.",
     "tipTuneBackdrop": "Jedes Design zeichnet einen eigenen Hintergrund: eines von 26 Mustern, von Polarlicht und Dünen bis zu Sternen und Sechsecken. Unter Erscheinungsbild → Hintergrund wählst du ein anderes, würfelst mit 🎲 eine neue Variante oder milderst es mit Unschärfe und einer Design-Tönung.",
     "tipTuneCardGlass": "Bei Tiefe <em>Glas</em> legt Erscheinungsbild → Oberfläche → Kartenglas fest, wie massiv die Flächen sind und wie stark die Seite dahinter verschwimmt. Das Badge daneben zeigt, ob Text auf einer Fläche lesbar bleibt.",
-    "tipTuneCategoryHeader": "Erscheinungsbild → Zeilen → Kategorie-Überschrift zeichnet den Namen einer Kategorie schlicht, unterstrichen, umrahmt, als Label oder als Gruppenkarte, in drei Größen — auf Wunsch mit Symbol und Anzahl der Lesezeichen."
+    "tipTuneCategoryHeader": "Erscheinungsbild → Zeilen → Kategorie-Überschrift zeichnet den Namen einer Kategorie schlicht, unterstrichen, umrahmt, als Label oder als Gruppenkarte, in drei Größen — auf Wunsch mit Symbol und Anzahl der Lesezeichen.",
+    "overviewNewFeatureLookStudioTitle": "Der Design-Browser ist ein Look-Studio",
+    "overviewNewFeatureLookStudioWhat": "Ein Design bestimmte die Farben, und alles andere war eine Einstellung irgendwo im Erscheinungsbild — eine nach der anderen ausprobiert, während Config die Seite verdeckte, auf der du es probiertest.",
+    "overviewNewFeatureLookStudioHow": "Shift+A öffnet den Design-Browser neben dem Dashboard. Seine Tabs ändern das Design, den Hintergrund — 26 Muster in den eigenen Farben des Designs —, das Glas der Karten, die Kategorie-Überschriften und die Schrift, live auf deiner eigenen Seite. Zwölf Looks setzen alles auf einmal. Vergleichen zeigt, was du hattest, Abbrechen stellt es wieder her, und gespeichert wird erst mit Anwenden.",
+    "overviewNewFeatureLookStudioEnable": "Nichts einzuschalten. Jedes Design bringt jetzt einen eigenen Hintergrund mit; unter Erscheinungsbild → Hintergrund wählst du einen anderen oder schaltest ihn aus.",
+    "overviewNewFeatureLookStudioCta": "Hintergrund öffnen →"
   },
   "colors": {
     "title": "themenanpassung",

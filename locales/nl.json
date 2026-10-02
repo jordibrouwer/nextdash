@@ -1951,12 +1951,12 @@
     "widgetsTutorialBack": "Terug",
     "renameWidgetAria": "Widgetnaam wijzigen",
     "themeBrowserNoticeTitle": "Je dashboard kan er heel anders uitzien",
-    "themeBrowserNoticeBody": "Ruim tweehonderd thema’s, als een raster dat je kunt doorzoeken in plaats van een lijst die je moet doorscrollen. Elk thema wordt op deze pagina getoond terwijl je kijkt, en er wordt niets opgeslagen tot je kiest — kijken kost dus niets.",
+    "themeBrowserNoticeBody": "Ruim driehonderd thema’s, als een raster dat je kunt doorzoeken in plaats van een lijst die je moet doorscrollen. De browser opent naast deze pagina, elk thema wordt erop getoond zodra je ernaar wijst, en er wordt niets opgeslagen tot je op Toepassen drukt — kijken kost dus niets.",
     "themeBrowserNoticeTry": "Thema’s bekijken",
     "themeBrowserNoticeNoThanks": "Nee, bedankt",
     "themeBrowserNoticeDismiss": "Sluiten",
     "themeBrowserNoticeOpenedTitle": "Wissel wanneer je wilt",
-    "themeBrowserNoticeOpenedBody": "De browser staat onder Config → Weergave → Bekijken, en elk thema komt als een lichte en een donkere helft. Er wordt niets opgeslagen tot je er een kiest.",
+    "themeBrowserNoticeOpenedBody": "De browser staat onder Config → Weergave → Bekijken, en elk thema komt als een lichte en een donkere helft. Er wordt niets opgeslagen tot je op Toepassen drukt.",
     "themeBrowserNoticeCommandHint": "Of wissel van thema zonder de pagina te verlaten met",
     "themeBrowserNoticeOpenAppearance": "Weergave-instellingen openen",
     "themeBrowserNoticeDone": "Duidelijk",
@@ -7839,7 +7839,12 @@
     "tipTuneLooks": "Het tabblad <em>Looks</em> van de themabrowser zet achtergrond, kaartglas, koppen en letters in één keer — <em>Glas</em>, <em>Matglas</em>, <em>Papier</em>, <em>Terminal</em> en nog acht — en houdt de kleuren van je thema. Houd <code>\\</code> ingedrukt om te vergelijken met wat je had.",
     "tipTuneBackdrop": "Elk thema tekent een eigen achtergrond: een van 26 patronen, van aurora en duinen tot sterren en zeshoeken. Uiterlijk → Achtergrond laat je een andere kiezen, met 🎲 een nieuwe variant gooien, of hem zachter maken met blur en een theme-tint.",
     "tipTuneCardGlass": "Bij diepte <em>Glas</em> bepaalt Uiterlijk → Oppervlak → Kaartglas hoe massief de vlakken zijn en hoe sterk de pagina erachter vervaagt. De badge ernaast zegt of tekst op een vlak leesbaar blijft.",
-    "tipTuneCategoryHeader": "Uiterlijk → Rijen → Categoriekop tekent de naam van een categorie strak, onderstreept, in een kader, als label of als groepskaart, in drie groottes — als je wilt met icoon en het aantal bladwijzers."
+    "tipTuneCategoryHeader": "Uiterlijk → Rijen → Categoriekop tekent de naam van een categorie strak, onderstreept, in een kader, als label of als groepskaart, in drie groottes — als je wilt met icoon en het aantal bladwijzers.",
+    "overviewNewFeatureLookStudioTitle": "De themabrowser is een look-studio",
+    "overviewNewFeatureLookStudioWhat": "Een thema bepaalde de kleuren, en al het andere was een instelling ergens in Uiterlijk — één voor één uitgeprobeerd, terwijl config de pagina bedekte waarop je het probeerde.",
+    "overviewNewFeatureLookStudioHow": "Shift+A opent de themabrowser naast het dashboard. De tabbladen veranderen het thema, de achtergrond — 26 patronen in de eigen kleuren van het thema — het glas van de kaarten, de categoriekoppen en de letters, live op je eigen pagina. Twaalf looks zetten ze allemaal tegelijk. Vergelijk toont wat je had, Annuleren zet het terug, en er wordt niets opgeslagen tot Toepassen.",
+    "overviewNewFeatureLookStudioEnable": "Niets aan te zetten. Elk thema heeft nu een eigen achtergrond; onder Uiterlijk → Achtergrond kies je een andere of zet je hem uit.",
+    "overviewNewFeatureLookStudioCta": "Open Achtergrond →"
   },
   "colors": {
     "title": "thema-aanpassing",
