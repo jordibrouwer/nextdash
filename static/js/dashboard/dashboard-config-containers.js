@@ -56,6 +56,7 @@
                     ${this.renderContainersMutedPanel()}
                     ${this.renderContainersHiddenPanel()}
                     ${this.renderContainersTokenPanel()}
+                    ${this.renderContainersUnraidPanel()}
                 </div>
             </div>
         `;
@@ -191,6 +192,7 @@
         this.bindContainersHidden(container);
         this.bindContainersMuted(container);
         this.bindContainersToken(container);
+        void this.bindContainersUnraid(container);
     },
 
     /*
@@ -451,6 +453,158 @@
                     .replace('{reason}', err.message), 'error');
             }
         });
+    },
+
+    /**
+     * Unraid: one connection for every Unraid widget. Address, key and the
+     * certificate switch live here; a widget only says how it draws.
+     */
+    renderContainersUnraidPanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const t = (key, fallback) => esc(this.t(`config.${key}`, fallback));
+        return `
+            <div class="config-panel" data-unraid-section>
+                <h3 class="config-panel-title">${t('unraidTitle', 'Unraid')}</h3>
+                <p class="config-panel-note">${t('unraidIntro',
+                    'The Unraid widgets read this server through its API (Unraid 7.2, or the Unraid Connect plugin). Make a key under Settings → Management Access → API Keys with the role Viewer: nextDash only reads.')}</p>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-unraid-base-url">${t('unraidAddress', 'Address')}</label>
+                    <input type="url" id="config-unraid-base-url" class="config-text" data-unraid-field="baseUrl"
+                           autocomplete="off" spellcheck="false" placeholder="http://192.168.1.10">
+                </div>
+                <p class="config-field-hint" data-unraid-address-hint>${t('unraidAddressHint', 'A new address needs the key again.')}</p>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-unraid-key">${t('unraidKey', 'API key')}</label>
+                    <input type="password" id="config-unraid-key" class="config-text" data-unraid-field="key"
+                           autocomplete="off" spellcheck="false">
+                </div>
+                <p class="config-field-check" data-state="fixable" data-unraid-key-warning hidden>${t('unraidKeyWarning',
+                    'The address changed and no key is typed: the saved key is dropped, so type it again.')}</p>
+                <label class="config-toggle">
+                    <input type="checkbox" data-unraid-field="insecureTls">
+                    <span>${t('unraidInsecureTls', 'Accept a self-signed certificate')}</span>
+                </label>
+                <label class="config-toggle">
+                    <input type="checkbox" data-unraid-field="enabled" checked>
+                    <span>${t('unraidEnabled', 'Read this server')}</span>
+                </label>
+                <label class="config-toggle">
+                    <input type="checkbox" data-unraid-field="notify" checked>
+                    <span>${t('unraidNotify', 'Send Unraid alerts through the alert channels')}</span>
+                </label>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-unraid-test>${t('unraidTest', 'Test connection')}</button>
+                    <button type="button" class="config-btn config-btn--primary" data-unraid-save>${t('unraidSave', 'Save')}</button>
+                </div>
+                <p class="config-field-hint" data-unraid-result aria-live="polite" style="white-space: pre-line"></p>
+            </div>`;
+    },
+
+    async bindContainersUnraid(container) {
+        const section = container.querySelector('[data-unraid-section]');
+        if (!section) return;
+        const field = (name) => section.querySelector(`[data-unraid-field="${name}"]`);
+        const result = section.querySelector('[data-unraid-result]');
+        const warning = section.querySelector('[data-unraid-key-warning]');
+        const t = (key, fallback) => this.t(`config.${key}`, fallback);
+        let current = null;
+        let keySet = false;
+        let suggested = '';
+        // The server compares the address it keeps: scheme://host[:port].
+        const same = (a, b) => String(a || '').trim().replace(/\/+$/, '').toLowerCase()
+            === String(b || '').trim().replace(/\/+$/, '').toLowerCase();
+        const paintWarning = () => {
+            const typed = field('baseUrl').value;
+            warning.hidden = !(keySet && current?.baseUrl && typed.trim() && !same(typed, current.baseUrl)
+                && !field('key').value.trim());
+        };
+        const paintKey = () => {
+            field('key').placeholder = keySet ? t('unraidKeySet', 'Set. Type to replace.') : '';
+            paintWarning();
+        };
+        field('baseUrl').addEventListener('input', paintWarning);
+        field('key').addEventListener('input', paintWarning);
+        // Not before the saved server is known: a save then would overwrite it with blanks.
+        const buttons = section.querySelectorAll('[data-unraid-test], [data-unraid-save]');
+        buttons.forEach((btn) => { btn.disabled = true; });
+
+        const payload = () => {
+            const out = {
+                server: {
+                    id: current?.id || '',
+                    name: current?.name || '',
+                    baseUrl: field('baseUrl').value.trim() || suggested,
+                    insecureTls: field('insecureTls').checked,
+                    enabled: field('enabled').checked,
+                    notify: field('notify').checked,
+                },
+            };
+            const key = field('key').value.trim();
+            if (key) out.key = key;
+            return out;
+        };
+        const send = (url, method) => window.nextDashFetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload()),
+        });
+        const areaName = { array: 'Array', parity: 'Parity', shares: 'Shares', vms: 'VMs', ups: 'UPS', notifications: 'Notifications' };
+        const areaState = {
+            ok: t('unraidAreaOk', 'yes'),
+            forbidden: t('unraidAreaForbidden', 'not allowed'),
+            unsupported: t('unraidAreaUnsupported', 'not in this version'),
+        };
+
+        section.querySelector('[data-unraid-test]').addEventListener('click', async () => {
+            result.textContent = t('unraidTesting', 'Asking…');
+            try {
+                const res = await send('/api/unraid/test', 'POST');
+                const body = await res.json().catch(() => ({ ok: false }));
+                if (!body.ok) {
+                    result.textContent = body.error || t('unraidTestFailed', 'The server did not answer.');
+                    return;
+                }
+                const info = body.info || {};
+                const lines = [`${info.name || 'Unraid'} · Unraid ${info.unraid || '?'} · API ${info.api || '?'}`];
+                lines.push(Object.entries(body.areas || {}).map(([a, s]) => `${areaName[a] || a}: ${areaState[s] || s}`).join(' · '));
+                if (body.viewerIsEnough) lines.push(t('unraidViewerEnough', 'This key can do more than read. Viewer is enough for nextDash.'));
+                result.textContent = lines.join('\n');
+            } catch {
+                result.textContent = t('unraidTestFailed', 'The server did not answer.');
+            }
+        });
+
+        section.querySelector('[data-unraid-save]').addEventListener('click', async () => {
+            try {
+                const res = await send('/api/unraid/settings', 'PUT');
+                if (!res.ok) throw new Error(String(res.status));
+                const body = await res.json();
+                current = body.server || null;
+                keySet = body.keySet === true;
+                field('key').value = '';
+                paintKey();
+                result.textContent = t('unraidSaved', 'Saved. The Unraid widgets read this server now.');
+                delete this.dash._unraidBaseUrl; // the tiles learn the new address on their next beat
+            } catch {
+                result.textContent = t('unraidSaveFailed', 'Could not save.');
+            }
+        });
+
+        try {
+            const res = await fetch('/api/unraid/settings', { cache: 'no-store' });
+            const body = await res.json();
+            if (!section.isConnected) return;
+            current = body.server || null;
+            keySet = body.keySet === true;
+            field('baseUrl').value = current?.baseUrl || '';
+            suggested = String(body.suggestedBaseUrl || '');
+            if (suggested) field('baseUrl').placeholder = suggested;
+            field('insecureTls').checked = !!current?.insecureTls;
+            field('enabled').checked = current ? current.enabled !== false : true;
+            field('notify').checked = current ? current.notify !== false : true;
+        } catch { /* the fields stay empty */ }
+        buttons.forEach((btn) => { btn.disabled = false; });
+        paintKey();
     },
 
     });
