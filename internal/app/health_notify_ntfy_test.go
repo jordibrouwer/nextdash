@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"time"
 )
 
 /*
@@ -108,6 +109,18 @@ func TestNtfyLeavesOutButtonsItCannotPointAt(t *testing.T) {
 	bare := decodeNtfy(t, monitorNotification{Event: "down", Name: "X"}, "t", "")
 	if len(bare.Actions) != 0 {
 		t.Errorf("invented a button: %+v", bare.Actions)
+	}
+
+	// An Unraid alert is not about a bookmark: no Health button, and a tap
+	// opens the dashboard itself.
+	unraid := decodeNtfy(t, unraidNotice("unraid-alert", "Disk 5 has read errors", "", time.Now()), "t", "https://dash.example")
+	for _, a := range unraid.Actions {
+		if strings.Contains(a.URL, "#health") {
+			t.Errorf("an Unraid alert points at Health: %+v", a)
+		}
+	}
+	if unraid.Click != "https://dash.example/" {
+		t.Errorf("tapping an Unraid alert leads to %q", unraid.Click)
 	}
 }
 

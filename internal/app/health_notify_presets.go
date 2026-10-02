@@ -299,13 +299,20 @@ func formatNtfyJSONNotification(n monitorNotification, topic, dashboardURL strin
 	}
 	if dash := strings.TrimRight(strings.TrimSpace(dashboardURL), "/"); dash != "" {
 		target, label := dash+"/#health", "Health"
-		if n.Source == "container" {
+		switch n.Source {
+		case "container":
 			target, label = dash+"/#docker/"+url.PathEscape(n.Name), "Containers"
+		case "unraid":
+			// Not about a bookmark and with no view of its own: a tap opens the
+			// dashboard, and there is no button to name a place it is not.
+			target, label = dash+"/", ""
 		}
 		body.Click = target
-		body.Actions = append(body.Actions, ntfyAction{
-			Action: "view", Label: label, URL: target,
-		})
+		if label != "" {
+			body.Actions = append(body.Actions, ntfyAction{
+				Action: "view", Label: label, URL: target,
+			})
+		}
 	}
 	encoded, err := json.Marshal(body)
 	if err != nil {

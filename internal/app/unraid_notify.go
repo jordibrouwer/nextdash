@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -85,6 +86,45 @@ func (w *unraidWatcher) observe(a *UnraidArrayView, p *UnraidParityView, n *Unra
 	return out
 }
 
+// pickUnraidWatcher decides which watcher a tick uses. Anything that is not
+// "the same server, still switched on" -- another address, the alert switch
+// off, the server disabled or gone -- gets a fresh one, so the next look only
+// remembers and one server's history is never replayed as another's news.
+func pickUnraidWatcher(w *unraidWatcher, lastBase string, srv UnraidServer, ok bool) (*unraidWatcher, string, bool) {
+	if !ok || !srv.Notify {
+		return newUnraidWatcher(), "", false
+	}
+	if w == nil || srv.BaseURL != lastBase {
+		return newUnraidWatcher(), srv.BaseURL, true
+	}
+	return w, lastBase, true
+}
+
+const unraidDigestListCap = 10
+
+// collapseUnraidNotices bundles a burst the way Health does: at the digest
+// threshold the notices become one, with the titles in its body.
+func collapseUnraidNotices(notices []monitorNotification) []monitorNotification {
+	if len(notices) < monitorDigestThreshold {
+		return notices
+	}
+	titles := make([]string, 0, unraidDigestListCap)
+	for i, n := range notices {
+		if i == unraidDigestListCap {
+			break
+		}
+		titles = append(titles, n.Title)
+	}
+	body := strings.Join(titles, "; ")
+	if rest := len(notices) - len(titles); rest > 0 {
+		body += fmt.Sprintf(" and %d more", rest)
+	}
+	return []monitorNotification{{
+		Event: "unraid-digest", Name: "Unraid", Status: "warning", Error: body,
+		At: notices[0].At, Title: fmt.Sprintf("%d Unraid alerts", len(notices)), Source: "unraid",
+	}}
+}
+
 func (h *Handlers) dispatchUnraidNotices(ctx context.Context, notices []monitorNotification) {
 	if len(notices) == 0 {
 		return
@@ -99,14 +139,15 @@ func (h *Handlers) dispatchUnraidNotices(ctx context.Context, notices []monitorN
 				Tag: "nextdash-unraid-" + n.Event, At: n.At})
 		}
 	}
-	h.postMonitorTarget(ctx, collapseContainerNotices(notices))
+	h.postMonitorTarget(ctx, collapseUnraidNotices(notices))
 }
 
 // StartUnraidWatcher looks at the active server once a minute while its alert
 // switch is on, and sends what changed through the alert channels.
 func (h *Handlers) StartUnraidWatcher(stop <-chan struct{}) {
-	w := newUnraidWatcher()
 	go func() {
+		w := newUnraidWatcher()
+		lastBase := ""
 		ticker := time.NewTicker(unraidWatchEvery)
 		defer ticker.Stop()
 		for {
@@ -116,30 +157,48 @@ func (h *Handlers) StartUnraidWatcher(stop <-chan struct{}) {
 			case <-ticker.C:
 			}
 			srv, ok := activeUnraidServer(h.store.GetSettings())
-			if !ok || !srv.Notify {
+			var active bool
+			w, lastBase, active = pickUnraidWatcher(w, lastBase, srv, ok)
+			if !active {
 				continue
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			var a *UnraidArrayView
-			var p *UnraidParityView
-			var n *UnraidNotificationsView
-			if r := h.unraidArea(ctx, "array"); r.Status == "ok" {
-				if v, ok := r.Data.(UnraidArrayView); ok {
-					a = &v
-				}
-			}
-			if r := h.unraidArea(ctx, "parity"); r.Status == "ok" {
-				if v, ok := r.Data.(UnraidParityView); ok {
-					p = &v
-				}
-			}
-			if r := h.unraidArea(ctx, "notifications"); r.Status == "ok" {
-				if v, ok := r.Data.(UnraidNotificationsView); ok {
-					n = &v
-				}
-			}
-			h.dispatchUnraidNotices(ctx, w.observe(a, p, n, time.Now()))
-			cancel()
+			h.unraidWatchTick(w)
 		}
 	}()
+}
+
+// unraidWatchTick is one look. A panic in it is logged and the next tick goes
+// on: this runs for the life of the process.
+func (h *Handlers) unraidWatchTick(w *unraidWatcher) {
+	defer func() {
+		if r := recover(); r != nil {
+			logWarn(logComponentNotify, "an Unraid look failed and was skipped: %v", r)
+		}
+	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	var a *UnraidArrayView
+	var p *UnraidParityView
+	var n *UnraidNotificationsView
+	if r := h.unraidArea(ctx, "array"); r.Status == "ok" {
+		if v, ok := r.Data.(UnraidArrayView); ok {
+			a = &v
+		}
+	}
+	if r := h.unraidArea(ctx, "parity"); r.Status == "ok" {
+		if v, ok := r.Data.(UnraidParityView); ok {
+			p = &v
+		}
+	}
+	if r := h.unraidArea(ctx, "notifications"); r.Status == "ok" {
+		if v, ok := r.Data.(UnraidNotificationsView); ok {
+			n = &v
+		}
+	}
+	cancel()
+	notices := w.observe(a, p, n, time.Now())
+	// Its own budget: a slow server must not leave the alert, already
+	// remembered as seen, with nothing to be sent on.
+	dctx, dcancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer dcancel()
+	h.dispatchUnraidNotices(dctx, notices)
 }

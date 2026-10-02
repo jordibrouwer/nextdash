@@ -2,6 +2,8 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 )
@@ -53,13 +55,107 @@ func TestUnraidWatcherSignals(t *testing.T) {
 	}
 }
 
-// A section that could not be read (nil) must not look like a change.
+// A section that could not be read (nil) must not look like a change, and
+// must not use up the baseline: when it first can be read it only remembers.
 func TestUnraidWatcherMissingAreaIsNotAChange(t *testing.T) {
 	w := newUnraidWatcher()
 	now := time.Now()
-	w.observe(&UnraidArrayView{Started: true}, &UnraidParityView{Running: true}, &UnraidNotificationsView{}, now)
-	if got := w.observe(nil, nil, nil, now.Add(time.Minute)); len(got) != 0 {
-		t.Fatalf("unreadable looks sent %v", got)
+	if got := w.observe(nil, nil, nil, now); len(got) != 0 {
+		t.Fatalf("unreadable look sent %v", got)
+	}
+	got := w.observe(
+		&UnraidArrayView{Started: false, State: "STOPPED", Disks: []UnraidDiskView{{Name: "disk5", Errors: 3}}},
+		&UnraidParityView{Last: &UnraidParityRun{Errors: 12}},
+		&UnraidNotificationsView{Items: []UnraidNotificationView{{ID: "n1", Importance: "alert", Subject: "Disk 5 has read errors"}}},
+		now.Add(time.Minute))
+	if len(got) != 0 {
+		t.Fatalf("first readable look sent %v", got)
+	}
+}
+
+// Another server, a switch turned off and on, a server disabled and enabled:
+// each starts from a fresh baseline, so one server's history is never replayed.
+func TestUnraidWatcherStartsFreshPerServer(t *testing.T) {
+	on := func(base string) UnraidServer { return UnraidServer{BaseURL: base, Enabled: true, Notify: true} }
+	now := time.Now()
+	busy := func() (*UnraidArrayView, *UnraidParityView, *UnraidNotificationsView) {
+		return &UnraidArrayView{Started: true, Disks: []UnraidDiskView{{Name: "disk9", Errors: 7}}},
+			&UnraidParityView{}, &UnraidNotificationsView{Items: []UnraidNotificationView{{ID: "b1", Importance: "alert", Subject: "B is unwell"}}}
+	}
+
+	w, base, active := pickUnraidWatcher(nil, "", on("https://a"), true)
+	if !active {
+		t.Fatal("A should be watched")
+	}
+	w.observe(&UnraidArrayView{Started: true}, &UnraidParityView{}, &UnraidNotificationsView{}, now)
+	same, base2, _ := pickUnraidWatcher(w, base, on("https://a"), true)
+	if same != w || base2 != base {
+		t.Fatal("the same server must keep its watcher")
+	}
+
+	w2, base, _ := pickUnraidWatcher(w, base, on("https://b"), true)
+	if w2 == w {
+		t.Fatal("a changed address kept the old watcher")
+	}
+	if got := observeBusy(w2, busy, now); len(got) != 0 {
+		t.Fatalf("B's first tick sent %v", got)
+	}
+
+	// Switched off, then on again: fresh.
+	off, base, active := pickUnraidWatcher(w2, base, UnraidServer{BaseURL: "https://b", Enabled: true}, true)
+	if active || off == w2 || base != "" {
+		t.Fatalf("off: active=%v same=%v base=%q", active, off == w2, base)
+	}
+	w3, _, active := pickUnraidWatcher(off, base, on("https://b"), true)
+	if !active || w3 == w2 {
+		t.Fatal("back on kept the old watcher")
+	}
+	if got := observeBusy(w3, busy, now); len(got) != 0 {
+		t.Fatalf("after off/on sent %v", got)
+	}
+
+	// No server at all.
+	if gone, base, active := pickUnraidWatcher(w3, "https://b", UnraidServer{}, false); active || gone == w3 || base != "" {
+		t.Fatal("no server must reset")
+	}
+}
+
+func observeBusy(w *unraidWatcher, busy func() (*UnraidArrayView, *UnraidParityView, *UnraidNotificationsView), now time.Time) []monitorNotification {
+	a, p, n := busy()
+	return w.observe(a, p, n, now)
+}
+
+func TestUnraidDigestBundlesAFewAlertsIntoOne(t *testing.T) {
+	now := time.Now()
+	var four []monitorNotification
+	for _, d := range []string{"disk1", "disk2", "disk3", "disk4"} {
+		four = append(four, unraidNotice("disk-errors", d+" has 3 errors", "up from 0", now))
+	}
+	got := collapseUnraidNotices(four)
+	if len(got) != 1 {
+		t.Fatalf("got %d notices", len(got))
+	}
+	d := got[0]
+	if d.Title != "4 Unraid alerts" || d.Event != "unraid-digest" || d.Source != "unraid" {
+		t.Errorf("digest = %+v", d)
+	}
+	for _, name := range []string{"disk1", "disk2", "disk3", "disk4"} {
+		if !strings.Contains(d.Error, name) {
+			t.Errorf("body %q lacks %s", d.Error, name)
+		}
+	}
+
+	if got := collapseUnraidNotices(four[:3]); len(got) != 3 {
+		t.Errorf("under the threshold changed: %d", len(got))
+	}
+
+	var many []monitorNotification
+	for i := 0; i < 14; i++ {
+		many = append(many, unraidNotice("unraid-alert", fmt.Sprintf("alert %d", i), "", now))
+	}
+	body := collapseUnraidNotices(many)[0].Error
+	if !strings.Contains(body, "and 4 more") || strings.Contains(body, "alert 12") {
+		t.Errorf("body not capped: %q", body)
 	}
 }
 
