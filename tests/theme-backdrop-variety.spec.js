@@ -22,6 +22,9 @@ async function backdropsFor(page, themes) {
         const out = {};
         for (const theme of list) {
             window.ThemeLoader?.applyTheme?.(theme) ?? window.applyTheme?.(theme);
+            // The pattern steps aside while a theme backdrop is on screen, so the
+            // theme's own texture is measured with the backdrop switched off.
+            document.body.setAttribute('data-theme-backdrop', 'off');
             // The switch writes attributes and the styles resolve on the next
             // frame; reading immediately gets the previous theme's answer.
             await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 20)));
@@ -100,6 +103,8 @@ test.describe('a theme brings its own backdrop', () => {
         // what is under test is which CSS rule matches, not the switch.
         const found = await page.evaluate((list) => {
             const out = {};
+            // Measured with the backdrop off, as in backdropsFor above.
+            document.body.setAttribute('data-theme-backdrop', 'off');
             for (const theme of list) {
                 document.documentElement.setAttribute('data-theme', theme);
                 document.body.className = `${theme} font-size-m`;

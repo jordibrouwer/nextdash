@@ -42,13 +42,13 @@ const panels = (page) => page.evaluate(() =>
 
 test.describe('appearance panels', () => {
     test('the theme panel is the theme, and nothing else', async ({ page }) => {
-        await openTab(page, 'appearance', 'general');
-        const found = await panels(page);
-        const titles = found.map((p) => p.title);
-
-        // The three subjects that used to sit inside Theme now say so.
-        for (const name of ['Surfaces', 'Backdrop', 'Favicons']) {
-            expect(titles, `no panel named ${name}`).toContain(name);
+        // The three subjects that used to sit inside Theme now say so, each on
+        // the tab it belongs to: favicons on Look, the backdrop on Background,
+        // the surfaces on Surface.
+        for (const [tab, name] of [['general', 'Favicons'], ['background', 'Backdrop'], ['surface', 'Surfaces']]) {
+            await openTab(page, 'appearance', tab);
+            const titles = (await panels(page)).map((p) => p.title);
+            expect(titles, `no panel named ${name} on ${tab}`).toContain(name);
         }
     });
 

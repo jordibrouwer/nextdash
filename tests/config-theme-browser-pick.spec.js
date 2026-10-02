@@ -100,6 +100,9 @@ test.describe('choosing a theme in the browser', () => {
         await card.scrollIntoViewIfNeeded();
         await card.click();
         await expect.poll(async () => (await onScreen(page)).stored).toBe(PICK);
+        // Picking shows the theme; Apply is what stores it.
+        await page.locator('[data-studio-apply]').click();
+        await expect(page.locator('[data-look-studio]')).toHaveCount(0);
 
         await page.reload({ waitUntil: 'networkidle' });
         await expect.poll(async () => (await onScreen(page)).background).toBe(wanted);

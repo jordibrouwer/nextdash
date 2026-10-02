@@ -27,7 +27,7 @@ const hash = (page) => page.evaluate(() => window.location.hash);
 test('Appearance opens on its first tab, with the settings already there', async ({ page }) => {
     await open(page, '#config/appearance');
     await expect(page.locator('[data-appearance-tab]')).toHaveText(
-        ['Look', 'Grid', 'Rows', 'Header', 'Action bar', 'Date & weather']);
+        ['Look', 'Background', 'Surface', 'Grid', 'Rows', 'Header', 'Action bar', 'Date & weather']);
     await expect(page.locator('[data-appearance-tab="general"]')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('[data-appearance-select="fontPreset"]')).toBeVisible();
     await expect(page.locator('.config-preview')).toHaveAttribute('data-preview-focus', 'all');

@@ -53,9 +53,11 @@ test.describe('custom theme editor', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
-        // Six on the strip; Custom themes is a page of Look, reached from it.
-        await expect(page.locator('[data-appearance-tab]')).toHaveCount(6);
+        // Eight on the strip; Custom themes is a page of Look, reached from it.
+        await expect(page.locator('[data-appearance-tab]')).toHaveCount(8);
         await expect(page.locator('[data-appearance-tab="general"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-tab="background"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-tab="surface"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="layout"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="display"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="header"]')).toBeVisible();
