@@ -133,6 +133,12 @@ func (h *Handlers) fetchAndStoreBookmarkIcon(bookmarkURL string) string {
 	if err := validateHTTPURL(bookmarkURL, h.allowLocalBookmarks()); err != nil {
 		return ""
 	}
+	// An app the icon sets know: its set icon beats whatever favicon the site
+	// serves, so the icon stays empty and the page shows the set's, in the
+	// variant the theme asks for.
+	if h.bookmarkHasSetIcon(bookmarkURL) {
+		return ""
+	}
 
 	allowLocal := h.allowLocalBookmarks()
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
@@ -219,6 +225,27 @@ func collectIconCandidates(bookmarks []Bookmark, allowLocal bool, includeExistin
 	return pending
 }
 
+// setIconMatcher answers "do the icon sets know this address" for many
+// bookmarks with one matcher, so a linked container's image is read once.
+func (h *Handlers) setIconMatcher() func(string) bool {
+	x := currentIconSets()
+	if x == nil {
+		return func(string) bool { return false }
+	}
+	m := h.newBookmarkIconMatcher(context.Background(), x)
+	return func(rawURL string) bool { return m.match(rawURL) != nil }
+}
+
+func withoutSetIcons(pending []pendingIconBookmark, hasSetIcon func(string) bool) []pendingIconBookmark {
+	kept := pending[:0:0]
+	for _, p := range pending {
+		if !hasSetIcon(p.url) {
+			kept = append(kept, p)
+		}
+	}
+	return kept
+}
+
 func countBookmarksNeedingIcons(bookmarks []Bookmark, allowLocal bool) int {
 	return len(bookmarksNeedingIcons(bookmarks, allowLocal))
 }
@@ -235,7 +262,13 @@ func countBookmarksNeedingIcons(bookmarks []Bookmark, allowLocal bool) int {
 func (h *Handlers) prefetchBookmarkIconsBatch(pageID, limit int, countOnly bool, refreshAll bool, offset int) prefetchIconsBatchResult {
 	bookmarks := h.store.GetBookmarksByPage(pageID)
 	allowLocal := h.allowLocalBookmarks()
+	hasSetIcon := h.setIconMatcher()
 	pending := collectIconCandidates(bookmarks, allowLocal, refreshAll)
+	if !refreshAll {
+		// A bookmark the icon sets know already shows its set icon: it lacks
+		// nothing, and counted as missing it would never stop being missing.
+		pending = withoutSetIcons(pending, hasSetIcon)
+	}
 	total := len(pending)
 	if total == 0 {
 		return prefetchIconsBatchResult{Done: true}
@@ -264,11 +297,18 @@ func (h *Handlers) prefetchBookmarkIconsBatch(pageID, limit int, countOnly bool,
 		index  int
 		urlKey string
 		icon   string
+		clear  bool
 	}
 
 	var wg sync.WaitGroup
 	results := make(chan iconResult, len(batch))
 	for _, item := range batch {
+		// Refreshing all: an app the sets know drops the favicon it had, and
+		// shows its set icon instead -- the same rule a new bookmark follows.
+		if refreshAll && hasSetIcon(item.url) {
+			results <- iconResult{index: item.index, urlKey: item.urlKey, clear: true}
+			continue
+		}
 		wg.Add(1)
 		go func(idx int, bookmarkURL, key string) {
 			defer wg.Done()
@@ -287,6 +327,7 @@ func (h *Handlers) prefetchBookmarkIconsBatch(pageID, limit int, countOnly bool,
 			URLKey:    result.urlKey,
 			Icon:      result.icon,
 			Overwrite: refreshAll,
+			Clear:     result.clear,
 		})
 	}
 
@@ -301,7 +342,7 @@ func (h *Handlers) prefetchBookmarkIconsBatch(pageID, limit int, countOnly bool,
 			remaining = 0
 		}
 	} else {
-		remaining = countBookmarksNeedingIcons(h.store.GetBookmarksByPage(pageID), allowLocal)
+		remaining = len(withoutSetIcons(bookmarksNeedingIcons(h.store.GetBookmarksByPage(pageID), allowLocal), hasSetIcon))
 	}
 
 	return prefetchIconsBatchResult{

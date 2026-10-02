@@ -85,3 +85,41 @@ func TestPrefetchBookmarkIconsHandlerCountOnlyJSON(t *testing.T) {
 		t.Fatalf("unexpected result %+v, want total=%d", result, want)
 	}
 }
+
+// A bookmark the icon sets know shows its set icon: the background fill does
+// not count it as missing (or the batches would never run out), and Refresh
+// all drops the favicon it had so the set icon shows instead.
+func TestPrefetchBookmarkIconsLeavesSetIconsToTheSets(t *testing.T) {
+	useIconSetsFixture(t) // before the Chdir: it resolves testdata/
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
+
+	store := NewStore()
+	before := len(bookmarksNeedingIcons(store.GetBookmarksByPage(1), false))
+	for _, b := range []Bookmark{
+		{Name: "Sonarr", URL: "https://sonarr.home.example.lan"},
+		{Name: "Radarr", URL: "https://radarr.home.example.lan", Icon: "icon-0123456789abcdef.png"},
+	} {
+		if err := store.AddBookmarkToPage(1, b); err != nil {
+			t.Fatal(err)
+		}
+	}
+	h := &Handlers{store: store}
+	count := h.prefetchBookmarkIconsBatch(1, 4, true, false, 0)
+	if count.Total != before {
+		t.Fatalf("a set-icon bookmark counted as missing: total %d, want %d", count.Total, before)
+	}
+
+	// Refresh all: radarr's old favicon goes; nothing is fetched for either.
+	all := h.prefetchBookmarkIconsBatch(1, 500, true, true, 0)
+	res := h.prefetchBookmarkIconsBatch(1, all.Total, false, true, 0)
+	if res.Applied < 1 {
+		t.Fatalf("refresh all applied nothing: %+v", res)
+	}
+	for _, b := range store.GetBookmarksByPage(1) {
+		if strings.Contains(b.URL, ".home.example.lan") && b.Icon != "" {
+			t.Fatalf("%s kept icon %q", b.URL, b.Icon)
+		}
+	}
+}

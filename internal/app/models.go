@@ -1460,6 +1460,9 @@ type PrefetchIconUpdate struct {
 	// background prefetch can never clobber a user-chosen icon; the "refresh all
 	// favicons" command sets it deliberately.
 	Overwrite bool
+	// Clear empties the icon instead: the icon sets know the address, and
+	// its set icon shows in place of the favicon. Only with Overwrite.
+	Clear bool
 }
 
 type FileStore struct {
@@ -3882,6 +3885,17 @@ func (fs *FileStore) MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIc
 
 	applied := 0
 	for _, update := range updates {
+		if update.Clear {
+			if !update.Overwrite || update.Index < 0 || update.Index >= len(bookmarks) ||
+				canonicalBookmarkURLKey(bookmarks[update.Index].URL) != update.URLKey ||
+				strings.TrimSpace(bookmarks[update.Index].Icon) == "" {
+				continue
+			}
+			bookmarks[update.Index].Icon = ""
+			bookmarks[update.Index].PageID = pageID
+			applied++
+			continue
+		}
 		safeIcon := sanitizeBookmarkIcon(update.Icon)
 		if safeIcon == "" || update.Index < 0 || update.Index >= len(bookmarks) {
 			continue

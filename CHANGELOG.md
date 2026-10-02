@@ -110,6 +110,12 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **new — an app icon ahead of every container name**, from the server's `icon` field on `/api/docker/containers`; no match shows the letter, and so does an icon that fails to load. nextDash's own container shows the nextDash logo.
 - **new — choose a container's icon in the drawer.** The pencil on the drawer's icon offers Choose app icon…, Use letter and Automatic, stored per container name in `Settings.DockerContainerIcons` (`letter` or a file in `data/icons/`). `removeUnusedIconFile` keeps a file a container still uses.
 
+### Bookmarks
+
+- **new — a bookmark without an icon shows its app's set icon** on the dashboard; the rows ask in one batch per render.
+- **new — the set icon wins over a favicon.** When the sets know the address, no favicon is fetched: not by the form, the `:new` modal, the browser extension (`bookmark-preview-service.js`, synced) or the background fill, which no longer counts such a bookmark as missing an icon. `/api/bookmark-preview` says so in `setIcon`, worked out per answer and never stored in the preview cache. Fetch again and Refresh all icons drop the favicon a known app had. An icon you chose or uploaded is never replaced.
+- **new — suggestions in the bookmark form.** Up to three app icons appear under the address, one click to choose; the card shows the set icon while the bookmark has none of its own; Choose app icon… heads the pencil menu. The inbox keeps fetching favicons: it does not draw set icons.
+
 ### Tests
 
 - **tests — Go:** the index (rounds, aliases, variants, search), the 62 containers and the bookmark hosts, refresh with ETag, stale copy and back-off, the cache route (unknown names, traversal, one fetch, sanitising, wrapped PNG, the hour of misses), adopt, the API handlers, the container override and the background fill.

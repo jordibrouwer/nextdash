@@ -719,8 +719,48 @@ body.bookmark-form-modal-open .tag-ac-dropdown {
 
 /* ── App icons from the icon sets (icon-set-picker.js) ───────────────────
  * The picker opens beside the form card or the container drawer's icon,
- * fixed so no overflow cuts it off.
+ * fixed so no overflow cuts it off. Suggestions sit under the card's host.
  */
+.bookmark-form-modal-body .bookmark-form-card-menu-rule {
+    margin: 4px 0;
+    border: 0;
+    border-top: 1px solid var(--border-secondary);
+}
+
+.icon-set-suggest {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    margin-top: 6px;
+}
+.icon-set-suggest[hidden] { display: none; }
+.icon-set-suggest-label {
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-tertiary);
+}
+.icon-set-suggest-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px 2px 4px;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--text-xs, 0.75rem);
+    cursor: pointer;
+}
+.icon-set-suggest-chip img { width: 16px; height: 16px; object-fit: contain; }
+.icon-set-suggest-more { padding-left: 8px; color: var(--text-secondary); }
+.icon-set-suggest-chip:hover,
+.icon-set-suggest-chip:focus-visible {
+    border-color: var(--accent-primary);
+    outline: none;
+}
+.icon-set-suggest-chip:disabled { opacity: 0.6; cursor: progress; }
+
 .icon-set-picker {
     position: fixed;
     /* Above the container drawer's host (1405) when it opens from there. */

@@ -4305,7 +4305,7 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	if !forceRefresh {
 		if cached, ok := h.getPreviewCacheEntry(cacheKey); ok {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(cached)
+			json.NewEncoder(w).Encode(h.bookmarkPreviewAnswer(cached, rawURL))
 			return
 		}
 	}
@@ -4318,7 +4318,20 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	_ = h.mergePreviewCacheUpdates(localCache.Cache)
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(preview)
+	json.NewEncoder(w).Encode(h.bookmarkPreviewAnswer(preview, rawURL))
+}
+
+// bookmarkPreviewAnswer is a preview as the forms receive it. SetIcon says the
+// app-icon sets know this address, so the form fetches no favicon for it: the
+// set icon shows instead (icon_sets_api.go). Worked out per answer, for the
+// cached one too, and never stored in the cache.
+type bookmarkPreviewAnswer struct {
+	BookmarkPreview
+	SetIcon bool `json:"setIcon,omitempty"`
+}
+
+func (h *Handlers) bookmarkPreviewAnswer(p BookmarkPreview, rawURL string) bookmarkPreviewAnswer {
+	return bookmarkPreviewAnswer{BookmarkPreview: p, SetIcon: h.bookmarkHasSetIcon(rawURL)}
 }
 
 // ClearAllBookmarkPreviews removes stored preview metadata from every bookmark and empties the server cache.
