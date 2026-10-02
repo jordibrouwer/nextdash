@@ -5,6 +5,7 @@
  "ParityCheck": ["date","duration","speed","status","errors","progress","correcting","paused","running"],
  "Query": ["array","parityHistory","shares","vms","upsDevices","notifications","info","me"],
  "Share": ["id","name","free","used","size","cache"],
+ "Vms": ["id","domains"],
  "VmDomain": ["id","name","state"],
  "UPSDevice": ["id","name","model","status","battery","power"],
  "UPSBattery": ["chargeLevel","estimatedRuntime","health"],

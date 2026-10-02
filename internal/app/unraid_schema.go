@@ -140,7 +140,7 @@ func (s unraidSchema) parityFields() string {
 }
 
 func (s unraidSchema) capacityFields() string {
-	if s.has("ArrayCapacity", "kilobytes") {
+	if s.has("UnraidArray", "capacity") && s.has("ArrayCapacity", "kilobytes") {
 		return "capacity { kilobytes { free used total } }"
 	}
 	return "" // summed from the data disks in unraid_model.go
@@ -164,7 +164,7 @@ func buildUnraidQuery(area string, s unraidSchema) (string, bool) {
 	q := func(body string) (string, bool) { return "# area: " + area + "\n{ " + body + " }", true }
 	switch area {
 	case "array":
-		if !s.has("Query", "array") || !s.has("ArrayDisk", "name") {
+		if !s.has("Query", "array") || !s.has("UnraidArray", "disks") || !s.has("ArrayDisk", "name") {
 			return "", false
 		}
 		d := s.diskFields()
@@ -172,7 +172,7 @@ func buildUnraidQuery(area string, s unraidSchema) (string, bool) {
 			return "", false // disks are essential
 		}
 		pf := s.parityFields()
-		if pf == "" {
+		if pf == "" || !s.has("UnraidArray", "parityCheckStatus") {
 			return "", false // parityCheckStatus is essential
 		}
 		var parts []string
@@ -180,28 +180,33 @@ func buildUnraidQuery(area string, s unraidSchema) (string, bool) {
 		if cap := s.capacityFields(); cap != "" {
 			parts = append(parts, cap)
 		}
-		parts = append(parts, sel("parities", pf))
+		// Parity and cache devices are disks too; an array type without them
+		// (an older API) leaves them out rather than failing the whole query.
+		if s.has("UnraidArray", "parities") {
+			parts = append(parts, sel("parities", d))
+		}
 		parts = append(parts, sel("disks", d))
-		parts = append(parts, sel("caches", d))
+		if s.has("UnraidArray", "caches") {
+			parts = append(parts, sel("caches", d))
+		}
 		parts = append(parts, sel("parityCheckStatus", pf))
 		body := sel("array", strings.TrimSpace(strings.Join(parts, " ")))
 		return q(body)
 	case "parity":
-		if !s.has("UnraidArray", "parityCheckStatus") {
+		if !s.has("Query", "array") || !s.has("UnraidArray", "parityCheckStatus") {
 			return "", false
 		}
 		pf := s.parityFields()
 		if pf == "" {
 			return "", false // parityCheckStatus is essential
 		}
-		var parts []string
-		parts = append(parts, sel("parityCheckStatus", pf))
+		// parityHistory is a field of Query, beside array, not inside it.
+		body := sel("array", sel("parityCheckStatus", pf))
 		if s.has("Query", "parityHistory") {
 			if ph := s.pick("ParityCheck", "date", "duration", "speed", "status", "errors"); ph != "" {
-				parts = append(parts, sel("parityHistory", ph))
+				body += " " + sel("parityHistory", ph)
 			}
 		}
-		body := sel("array", strings.TrimSpace(strings.Join(parts, " ")))
 		return q(body)
 	case "shares":
 		if !s.has("Query", "shares") {
@@ -268,10 +273,12 @@ func buildUnraidQuery(area string, s unraidSchema) (string, bool) {
 		case s.has("InfoVersions", "unraid"):
 			infoParts = append(infoParts, "versions { unraid api }")
 		}
+		body := sel("info", strings.TrimSpace(strings.Join(infoParts, " ")))
+		// me is a field of Query, beside info, not inside it.
 		if s.has("Query", "me") && s.has("UserAccount", "roles") {
-			infoParts = append(infoParts, "me { roles }")
+			body += " me { roles }"
 		}
-		return q(sel("info", strings.TrimSpace(strings.Join(infoParts, " "))))
+		return q(body)
 	}
 	return "", false
 }

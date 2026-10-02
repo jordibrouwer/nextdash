@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -138,5 +139,29 @@ func TestUnraidSettingsPutDropsTheKeyForANewAddress(t *testing.T) {
 	_ = json.Unmarshal(rec.Body.Bytes(), &got)
 	if rec.Code != 200 || got.KeySet || unraidAPIKey("srv") != "" {
 		t.Fatalf("code=%d body=%s key=%q", rec.Code, rec.Body, unraidAPIKey("srv"))
+	}
+}
+
+// A key that may not read me still reads the server: the role is then
+// inferred from the areas, as the spec says, and the test does not fail.
+func TestUnraidInfoSurvivesAForbiddenMe(t *testing.T) {
+	h := unraidTestHandlers(t)
+	dir := t.TempDir()
+	intro, err := os.ReadFile("testdata/unraid/introspection.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = os.WriteFile(filepath.Join(dir, "introspection.json"), intro, 0o644)
+	_ = os.WriteFile(filepath.Join(dir, "info.json"), []byte(`{"data":{"info":{"os":{"hostname":"tower"},"versions":{"core":{"unraid":"7.2.1","api":"4.37.5"}}},"me":null},
+	  "errors":[{"message":"Forbidden resource","path":["me"],"extensions":{"code":"FORBIDDEN"}}]}`), 0o644)
+	t.Setenv("NEXTDASH_UNRAID_FIXTURE", dir)
+	forgetUnraidSchema("me-test")
+	defer forgetUnraidSchema("me-test")
+	v, status, err := h.fetchUnraidArea(context.Background(), UnraidServer{ID: "me-test", BaseURL: "http://tower"}, "k", "info")
+	if status != "ok" || err != nil {
+		t.Fatalf("status=%s err=%v", status, err)
+	}
+	if info := v.(UnraidInfoView); info.Name != "tower" || len(info.Roles) != 0 {
+		t.Fatalf("info = %+v", info)
 	}
 }

@@ -52,6 +52,11 @@ func (h *Handlers) fetchUnraidArea(ctx context.Context, srv UnraidServer, key, a
 		return nil, unraidStatusOf(err), err
 	}
 	for _, fe := range fieldErrs {
+		// me only adds the role; a key that may not read it still reads the
+		// server, and the role is then inferred from the areas.
+		if area == "info" && len(fe.Path) > 0 && fe.Path[0] == "me" {
+			continue
+		}
 		if fe.Forbidden() {
 			return nil, "forbidden", nil
 		}
