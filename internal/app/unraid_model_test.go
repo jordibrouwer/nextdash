@@ -2,6 +2,7 @@ package app
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -104,4 +105,36 @@ func TestToUnraidVMsAndUPSAndNotifications(t *testing.T) {
 	if n.Alerts != 1 || n.Warnings != 2 || n.Items[0].Importance != "alert" || n.Items[0].At == 0 {
 		t.Fatalf("n = %+v", n)
 	}
+}
+
+func TestToUnraidNotificationLinksOnly(t *testing.T) {
+	cases := []struct {
+		input    *string
+		expected string
+		name     string
+	}{
+		{ptr("/Main"), "/Main", "plain path"},
+		{ptr("//evil.com"), "", "protocol-relative dropped"},
+		{ptr("/\\evil.com"), "", "backslash-trick dropped"},
+		{ptr("https://evil.com"), "", "absolute URL dropped"},
+		{nil, "", "null link"},
+	}
+	for _, c := range cases {
+		raw := []byte(`{"notifications":{"overview":{"unread":{"alert":"0","warning":"0"}},"list":[{"id":"1","subject":"test","importance":"info","timestamp":"2026-10-02T12:00:00Z","link":` + linkJSON(c.input) + `}]}}`)
+		v, _ := toUnraidNotifications(raw)
+		if len(v.Items) > 0 && v.Items[0].Link != c.expected {
+			t.Errorf("%s: got %q, want %q", c.name, v.Items[0].Link, c.expected)
+		}
+	}
+}
+
+func ptr(s string) *string { return &s }
+
+func linkJSON(s *string) string {
+	if s == nil {
+		return "null"
+	}
+	// Escape for JSON
+	escaped := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(*s, "\\", "\\\\"), "\"", "\\\""), "/", "\\/")
+	return "\"" + escaped + "\""
 }

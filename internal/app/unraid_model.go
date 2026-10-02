@@ -381,7 +381,7 @@ func toUnraidNotifications(data json.RawMessage) (UnraidNotificationsView, error
 	v := UnraidNotificationsView{Alerts: int(unraidInt(raw.N.Overview.Unread.Alert)), Warnings: int(unraidInt(raw.N.Overview.Unread.Warning))}
 	for _, n := range raw.N.List {
 		item := UnraidNotificationView{ID: n.ID, Subject: n.Subject, Importance: strings.ToLower(n.Importance)}
-		if n.Link != nil && strings.HasPrefix(*n.Link, "/") {
+		if n.Link != nil && strings.HasPrefix(*n.Link, "/") && (len(*n.Link) < 2 || ((*n.Link)[1] != '/' && (*n.Link)[1] != '\\')) {
 			item.Link = *n.Link // only a path on the server itself; the browser prefixes the base URL
 		}
 		if t, err := time.Parse(time.RFC3339, n.Timestamp); err == nil {
