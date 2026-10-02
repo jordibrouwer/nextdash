@@ -99,6 +99,10 @@ test.describe('config: sections restored from the old config', () => {
             for (const el of Array.from(document.querySelectorAll('body *'))) {
                 const s = getComputedStyle(el);
                 if (s.display === 'none' || s.visibility === 'hidden') continue;
+                // A docked action bar slides off the edge after two seconds by
+                // default, and is inert while it is away: out of reach on
+                // purpose, not overflow. A slow runner measured it there.
+                if (el.closest('[inert]')) continue;
                 const r = el.getBoundingClientRect();
                 if (r.width === 0 || r.height === 0) continue;
                 if (r.right - limit > worst) {
