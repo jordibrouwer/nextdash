@@ -379,6 +379,7 @@ func Run(files assetFS) {
 	handlers.StartDockerStatsSampler(schedulerStop)
 	handlers.StartDockerAutoUpdater(schedulerStop)
 	handlers.StartDockerNotifier(schedulerStop)
+	handlers.StartUnraidWatcher(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence
