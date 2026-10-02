@@ -25,7 +25,7 @@ func TestUnraidWatcherSignals(t *testing.T) {
 
 	got := w.observe(
 		&UnraidArrayView{Started: false, State: "STOPPED", Disks: []UnraidDiskView{{Name: "disk5", Errors: 3}}},
-		&UnraidParityView{Running: false, Last: &UnraidParityRun{Errors: 12}},
+		&UnraidParityView{Running: false, Errors: 12, Last: &UnraidParityRun{Errors: 12}},
 		&UnraidNotificationsView{Items: []UnraidNotificationView{
 			{ID: "n1", Importance: "alert", Subject: "Disk 5 has read errors"},
 			{ID: "n2", Importance: "warning", Subject: "Docker image disk 82% full"}}},
@@ -186,5 +186,23 @@ func TestUnraidNoticeRendersThroughAppriseAndNtfy(t *testing.T) {
 	}
 	if msg.Title != "Disk 5 has read errors" || msg.Priority != 3 || len(msg.Tags) != 1 || msg.Tags[0] != "warning" {
 		t.Errorf("ntfy = %+v", msg)
+	}
+}
+
+// The run that just finished is in the check's own status; the newest history
+// entry can still be the run before it. The alert counts this run's errors.
+func TestUnraidWatcherParityCountsThisRun(t *testing.T) {
+	now := time.Now()
+	finish := func(p UnraidParityView) []monitorNotification {
+		w := newUnraidWatcher()
+		w.observe(nil, &UnraidParityView{Running: true}, nil, now)
+		return w.observe(nil, &p, nil, now.Add(time.Minute))
+	}
+	if got := finish(UnraidParityView{Errors: 0, Last: &UnraidParityRun{Errors: 12}}); len(got) != 0 {
+		t.Fatalf("a clean run alerted with the previous run's errors: %+v", got)
+	}
+	got := finish(UnraidParityView{Errors: 5, Last: &UnraidParityRun{Errors: 0}})
+	if len(got) != 1 || got[0].Event != "parity-errors" || !strings.Contains(got[0].Title, "5 errors") {
+		t.Fatalf("got %+v", got)
 	}
 }

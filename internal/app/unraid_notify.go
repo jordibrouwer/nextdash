@@ -64,9 +64,11 @@ func (w *unraidWatcher) observe(a *UnraidArrayView, p *UnraidParityView, n *Unra
 	if p != nil {
 		first := !w.seenParity
 		w.seenParity = true
-		if !first && w.parityRunning && !p.Running && p.Last != nil && p.Last.Errors > 0 {
+		// The check's own status holds the run that just finished; the newest
+		// history entry can still be the one before it.
+		if !first && w.parityRunning && !p.Running && p.Errors > 0 {
 			out = append(out, unraidNotice("parity-errors",
-				fmt.Sprintf("Parity check finished with %d errors", p.Last.Errors), "", now))
+				fmt.Sprintf("Parity check finished with %d errors", p.Errors), "", now))
 		}
 		w.parityRunning = p.Running
 	}
