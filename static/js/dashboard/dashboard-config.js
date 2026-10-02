@@ -27914,6 +27914,7 @@ class DashboardConfig {
             });
         });
         this.bindActivityChartTooltip(container);
+        void this.mountStatsHealthLines?.(container);
         container.querySelectorAll('[data-stats-action]').forEach((btn) => {
             // Guarded like the panel links below, and for a sharper reason:
             // repaintStatsBody binds the replaced foot and then binds the whole

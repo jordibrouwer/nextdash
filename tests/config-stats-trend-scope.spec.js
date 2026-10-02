@@ -56,8 +56,16 @@ test.describe('the health tab shows where the numbers came from', () => {
         await routeHealthWithTrend(page, [60, 64, 70, 72]);
         await openStats(page, 'health');
 
-        const chart = page.locator('.config-stats-trend-chart');
-        await expect(chart).toBeVisible({ timeout: 15_000 });
+        // Drawn with uPlot (NdChart): a canvas, a day per row in its table,
+        // and the days read out by the keys.
+        const chart = page.locator('#config-stats-health .config-stats-healthline-host .nd-chart');
+        await expect(chart.locator('canvas')).toHaveCount(1, { timeout: 15_000 });
+        await expect(chart.locator('table.nd-chart-table tbody tr')).toHaveCount(4);
+        await chart.focus();
+        await page.keyboard.press('Home');
+        await expect(chart.locator('.nd-chart-readout')).toContainText('60%');
+        await page.keyboard.press('End');
+        await expect(chart.locator('.nd-chart-readout')).toContainText('72%');
 
         // The line is for the eye; the sentence is the part that survives being
         // read out, printed, or looked at on a phone.
@@ -79,14 +87,28 @@ test.describe('the health tab shows where the numbers came from', () => {
         async ({ page }) => {
             await routeHealthWithTrend(page, [80, null, 84]);
             await openStats(page, 'health');
-            await expect(page.locator('.config-stats-trend-chart')).toBeVisible({ timeout: 15_000 });
-            // Two segments of one point each cannot be drawn, so a gap in the
-            // middle leaves no polyline at all — what it must not do is join 80
-            // to 84 through a day that never happened.
-            const points = await page.locator('.config-stats-trend-chart polyline')
-                .evaluateAll((els) => els.map((e) => e.getAttribute('points')));
-            expect(points.every((p) => !/\s0(\.0)?,44/.test(p || ''))).toBe(true);
+            const chart = page.locator('#config-stats-health .config-stats-healthline-host .nd-chart');
+            await expect(chart.locator('canvas')).toHaveCount(1, { timeout: 15_000 });
+            // The missing day is a gap, not a zero: it reads as no value, and
+            // uPlot leaves a null out of the line rather than joining across it.
+            await chart.focus();
+            await page.keyboard.press('Home');
+            await page.keyboard.press('ArrowRight');
+            await expect(chart.locator('.nd-chart-readout')).toContainText('—');
+            await expect(chart.locator('.nd-chart-readout')).not.toContainText('0%');
+            const gaps = await page.evaluate(() => window.dashboardInstance.config._statsHealthCharts
+                .map((c) => c.plot.data[1][1]));
+            expect(gaps).toContain(null);
         });
+
+    test('without uPlot the plain line stays', async ({ page }) => {
+        await page.route('**/vendor/uplot/**', (route) => route.abort());
+        await routeHealthWithTrend(page, [60, 64, 70, 72]);
+        await openStats(page, 'health');
+        await expect(page.locator('#config-stats-health .config-stats-trend-chart polyline')).toHaveCount(1, { timeout: 15_000 });
+        await page.waitForTimeout(500);
+        await expect(page.locator('#config-stats-health .nd-chart')).toHaveCount(0);
+    });
 
     test('one day is not a trend, and says what it is waiting for', async ({ page }) => {
         await routeHealthWithTrend(page, [70]);

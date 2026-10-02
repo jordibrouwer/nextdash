@@ -1749,10 +1749,19 @@
                 gaps ? this.t('config.statsHealthGaps', '{n} days without a report').replace('{n}', String(gaps)) : '',
             ].filter(Boolean);
             const dateLabels = series.map((p) => fmt.format(new Date(p.t)));
+            // Kept for mountStatsHealthLines, which draws the line with uPlot
+            // over the plain chart and its table once the library is there.
+            this._statsHealthLines = this._statsHealthLines || new Map();
+            const key = String((this._statsHealthLineSeq = (this._statsHealthLineSeq || 0) + 1));
+            this._statsHealthLines.set(key, {
+                series, height: H + 22,
+                summary: `${this.t('config.statsHealthTrendAria', 'Healthy share over time')}: ${summary}`,
+            });
             return `
                 <p class="config-stats-trend-summary${tone ? ` config-stats-trend-summary--${tone}` : ''}">
                     <strong>${esc(String(last))}%</strong> ${esc(this.t('config.statsHealthy', 'Healthy'))} · ${esc(summary)}${extras.length ? ` · ${esc(extras.join(' · '))}` : ''}
                 </p>
+                <div class="config-stats-healthline-host" data-stats-healthline="${key}">
                 <div class="config-chart config-stats-healthline">
                     <div class="config-chart-plot">
                         <span class="config-chart-axis-y" aria-hidden="true">
@@ -1772,7 +1781,50 @@
                     <caption>${esc(this.t('config.statsHealthTrendAria', 'Healthy share over time'))}</caption>
                     <thead><tr><th scope="col">${esc(this.t('config.statsAxisDay', 'Day'))}</th><th scope="col">%</th></tr></thead>
                     <tbody>${rows}</tbody>
-                </table>`;
+                </table>
+                </div>`;
+        },
+
+        /*
+         * The healthy share with uPlot (shared/nd-chart.js), in place of the
+         * plain chart and its table: the same fixed 0-100 axis and the same
+         * gaps, plus a date axis, a tooltip, the arrow keys with the day read
+         * out, and the chart's own table. The plain chart stays when the
+         * library cannot be loaded. Called from bindStats after every paint.
+         */
+        async mountStatsHealthLines(root) {
+            const hosts = [...(root || document).querySelectorAll('[data-stats-healthline]')]
+                .filter((host) => !host.querySelector('.nd-chart'));
+            if (!hosts.length) return;
+            try {
+                if (!global.NdChart) {
+                    await global.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart',
+                        () => typeof global.NdChart !== 'undefined');
+                }
+                await global.NdChart.load();
+            } catch {
+                return;
+            }
+            // Charts of a body since repainted are let go.
+            this._statsHealthCharts = (this._statsHealthCharts || []).filter((c) => {
+                if (c.plot && document.contains(c.plot.root)) return true;
+                c.destroy();
+                return false;
+            });
+            const pct = (v) => `${Math.round(v)}%`;
+            hosts.forEach((host) => {
+                const data = this._statsHealthLines?.get(host.getAttribute('data-stats-healthline'));
+                if (!host.isConnected || !data || host.querySelector('.nd-chart')) return;
+                this._statsHealthCharts.push(global.NdChart.chart(host, {
+                    x: data.series.map((p) => p.t / 1000),
+                    series: [{ label: this.t('config.statsHealthy', 'Healthy'), values: data.series.map((p) => p.pct), color: '--accent-primary', format: pct }],
+                    format: { x: 'date', tick: pct },
+                    scales: { y: { range: () => [0, 100] } },
+                    summary: data.summary,
+                    height: data.height,
+                    axisWidth: 40,
+                }));
+            });
         },
 
         /** Every state a bookmark can be in, as one bar, and the line under it. */
