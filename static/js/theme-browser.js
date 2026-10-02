@@ -383,6 +383,9 @@
                     <div class="look-studio-title">
                         <h2 id="look-studio-title">${escapeHtml(t('config.themeBrowserTitle', 'Themes'))}</h2>
                         <span class="look-studio-keys">${escapeHtml(t('config.studioKeys', '←/→ tabs · ⌘/Ctrl+Enter apply · Esc cancel'))}</span>
+                        <button type="button" class="look-studio-close" data-studio-close
+                                aria-label="${escapeHtml(t('config.studioClose', 'Close without saving'))}"
+                                title="${escapeHtml(t('config.studioClose', 'Close without saving'))}">×</button>
                     </div>
                     <div class="look-studio-tabs" role="tablist"
                          aria-label="${escapeHtml(t('config.studioTabsLabel', 'What to change'))}">${tabs}</div>
@@ -793,6 +796,8 @@
             closed = true;
             ACTIVE = null;
             document.removeEventListener('keydown', onDocumentKey, true);
+            document.removeEventListener('pointerdown', onPointerDown, true);
+            document.removeEventListener('click', onOutsideClick, true);
             document.removeEventListener('keyup', onKeyUp, true);
             document.removeEventListener('focusin', onFocusIn, true);
             window.removeEventListener('blur', onWindowBlur);
@@ -854,6 +859,8 @@
             paintTab();
         });
         root.querySelector('[data-studio-cancel]').addEventListener('click', () => { void cancel(); });
+        // The ×, like every other panel's: closing without Apply is Cancel.
+        root.querySelector('[data-studio-close]').addEventListener('click', () => { void cancel(); });
         root.querySelector('[data-studio-apply]').addEventListener('click', () => { void apply(); });
 
         /*
@@ -989,7 +996,39 @@
         };
         const onWindowBlur = () => setComparing(false);
 
+        /*
+         * A click on the page beside the panel closes it, as Cancel.
+         *
+         * Only a click that both starts and ends outside: a slider dragged
+         * past the panel's edge and let go over the dashboard is still a
+         * change made in the panel, and its click lands on <body>. The page's
+         * own scrollbar is left alone, as are the notices and an ℹ dialog,
+         * which sit outside the panel but belong to it.
+         */
+        const outsidePanel = (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return false;
+            if (root.contains(target)) return false;
+            if (target.closest('#app-modal, #app-notification, #config-save-state')) return false;
+            if (target === document.documentElement && event.clientX >= document.documentElement.clientWidth) return false;
+            return true;
+        };
+        let pressedOutside = false;
+        const onPointerDown = (event) => {
+            pressedOutside = !closed && !dialogOpen() && outsidePanel(event);
+        };
+        const onOutsideClick = (event) => {
+            const wasOutside = pressedOutside;
+            pressedOutside = false;
+            if (closed || dialogOpen() || !wasOutside || !outsidePanel(event)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            void cancel();
+        };
+
         document.addEventListener('keydown', onDocumentKey, true);
+        document.addEventListener('pointerdown', onPointerDown, true);
+        document.addEventListener('click', onOutsideClick, true);
         document.addEventListener('keyup', onKeyUp, true);
         document.addEventListener('focusin', onFocusIn, true);
         window.addEventListener('blur', onWindowBlur);

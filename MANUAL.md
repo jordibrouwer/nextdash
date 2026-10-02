@@ -1747,7 +1747,7 @@ nextDash ships **160 theme families**, each with a light and a dark half — 320
 
 #### 🪟 The theme browser
 
-The theme browser lies over the right of the dashboard, so every change shows on the real page while you make it. Nothing is stored until **Apply**; **Cancel** or **Esc** puts everything back, in every tab. On a narrow window it becomes a sheet along the bottom.
+The theme browser lies over the right of the dashboard, so every change shows on the real page while you make it. Nothing is stored until **Apply**; **Cancel**, the **×** at the top right, **Esc** or a click on the dashboard beside the panel puts everything back, in every tab. On a narrow window it becomes a sheet along the bottom.
 
 | Tab | What it changes |
 |---|---|

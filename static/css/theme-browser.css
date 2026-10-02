@@ -352,6 +352,37 @@ body.look-studio-open #app-modal {
     font-size: 1rem;
 }
 
+/* The title takes the free space, so the × stays in the corner also where the
+   key line is hidden (the sheet on a phone). */
+.look-studio-title h2 {
+    margin-right: auto;
+}
+
+.look-studio-title .look-studio-keys {
+    margin-left: 0;
+}
+
+/* The ×, drawn like the bookmark form's. */
+.look-studio-close {
+    flex-shrink: 0;
+    align-self: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--radius-5, 8px);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.look-studio-close:hover,
+.look-studio-close:focus-visible {
+    background: var(--background-secondary, rgba(128, 128, 128, 0.12));
+}
+
 .look-studio-keys {
     margin-left: auto;
     color: var(--text-tertiary);

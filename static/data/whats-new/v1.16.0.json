@@ -13,7 +13,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Nothing is saved until Apply.</strong> Cancel puts everything back, Compare shows what you had, and Reset tab undoes one tab."
+          "text": "<strong>Nothing is saved until Apply.</strong> Cancel, the × or a click beside the panel puts everything back, Compare shows what you had, and Reset tab undoes one tab."
         },
         {
           "badge": "new",

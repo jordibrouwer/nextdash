@@ -113,6 +113,46 @@ test.describe('the look studio', () => {
         expect(after.backdropTuning?.seed || 0).toBe(before.backdropTuning?.seed || 0);
     });
 
+    test('the × and a click beside the panel both close it as Cancel', async ({ page }) => {
+        await openDashboard(page);
+        const before = await stored(page);
+        const recipeBefore = await bodyAttr(page, 'data-backdrop-recipe');
+        const pickWaves = async () => {
+            await page.locator('[data-studio-tab="backdrop"]').click();
+            await studio(page).locator('[data-backdrop-mode="pick"]').click();
+            await studio(page).locator('[data-backdrop-recipe="waves"]').click();
+            await expect.poll(() => bodyAttr(page, 'data-backdrop-recipe')).toBe('waves');
+        };
+
+        await openStudio(page);
+        await pickWaves();
+        await page.locator('[data-studio-close]').click();
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(() => bodyAttr(page, 'data-backdrop-recipe')).toBe(recipeBefore);
+
+        // A press that starts in the panel and is let go over the dashboard --
+        // selecting the heading, say -- is not a click beside it, though the
+        // browser sends its click to <body>.
+        await openStudio(page);
+        await pickWaves();
+        const box = await studio(page).locator('#look-studio-title').boundingBox();
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(300, 450, { steps: 5 });
+        await page.mouse.up();
+        await expect(studio(page)).toBeVisible();
+
+        // A click on the dashboard beside the panel closes it, and the
+        // preview goes with it.
+        await page.mouse.click(300, 450);
+        await expect(studio(page)).toHaveCount(0);
+        await expect.poll(() => bodyAttr(page, 'data-backdrop-recipe')).toBe(recipeBefore);
+        const after = await stored(page);
+        expect(after.themeBackdrop).toBe(before.themeBackdrop);
+        expect(after.themeSurfacePrefs || {}).toEqual(before.themeSurfacePrefs || {});
+        expect(after.backdropTuning || {}).toEqual(before.backdropTuning || {});
+    });
+
     test('a setting outside the look still saves while the studio is open, and Cancel leaves it', async ({ page }) => {
         await openDashboard(page);
         await openStudio(page);
