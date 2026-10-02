@@ -96,27 +96,21 @@ func requestBaseURL(r *http.Request) string {
 	return scheme + "://" + host
 }
 
-/*
-OpenSearchDescription answers GET /opensearch.xml.
-
-The template points at the search route rather than at an API: what someone
-wants from their address bar is the dashboard, with the query already run and
-the keyboard already where they left it.
-*/
-func (h *Handlers) OpenSearchDescription(w http.ResponseWriter, r *http.Request) {
+// writeOpenSearch serves one description; the bookmark and web ones differ
+// only in name, wording and the route the template points at.
+func (h *Handlers) writeOpenSearch(w http.ResponseWriter, r *http.Request, nameSuffix, what, route string) {
 	settings := h.store.GetSettings()
 	name := manifestAppName(settings)
 	base := requestBaseURL(r)
 
 	description := openSearchDescription{
 		Namespace:   "http://a9.com/-/spec/opensearch/1.1/",
-		ShortName:   openSearchShortName(name),
-		Description: "Search your bookmarks in " + name,
+		ShortName:   openSearchShortName(name + nameSuffix),
+		Description: what + " in " + name,
 		InputEncode: "UTF-8",
 		URLs: []openSearchURL{{
-			Type: "text/html",
-			// {searchTerms} is the one placeholder every browser substitutes.
-			Template: base + "/#search?q={searchTerms}",
+			Type:     "text/html",
+			Template: base + route,
 		}},
 	}
 	/*
@@ -157,4 +151,29 @@ func (h *Handlers) OpenSearchDescription(w http.ResponseWriter, r *http.Request)
 	encoder := xml.NewEncoder(w)
 	encoder.Indent("", "  ")
 	_ = encoder.Encode(description)
+}
+
+/*
+OpenSearchDescription answers GET /opensearch.xml.
+
+The template points at the search route rather than at an API: what someone
+wants from their address bar is the dashboard, with the query already run and
+the keyboard already where they left it.
+*/
+func (h *Handlers) OpenSearchDescription(w http.ResponseWriter, r *http.Request) {
+	// {searchTerms} is the one placeholder every browser substitutes.
+	h.writeOpenSearch(w, r, "", "Search your bookmarks", "/#search?q={searchTerms}")
+}
+
+/*
+OpenSearchWebDescription answers GET /opensearch-web.xml: the same address bar,
+searching the web through this dashboard's engine instead of the bookmarks.
+Absent while no engine is switched on.
+*/
+func (h *Handlers) OpenSearchWebDescription(w http.ResponseWriter, r *http.Request) {
+	if h.store.GetSettings().WebSearchEngine == webSearchEngineOff {
+		http.NotFound(w, r)
+		return
+	}
+	h.writeOpenSearch(w, r, " Web", "Search the web", "/#search?web={searchTerms}")
 }

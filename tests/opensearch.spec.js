@@ -90,4 +90,31 @@ test.describe('searching from the address bar', () => {
             window.dashboardInstance?.searchComponent?.searchActive),
         { timeout: 15_000 }).toBe(true);
     });
+
+    /*
+     * Web search gets its own descriptor, so the browser can hold both: one
+     * keyword for bookmarks, one for the web. Only offered while an engine
+     * is switched on -- with none, the address would lead nowhere.
+     */
+    test('a second description for web search, only with an engine on', async ({ page }) => {
+        const off = await page.request.get('/opensearch-web.xml');
+        expect(off.status()).toBe(404);
+
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.settings != null, null, { timeout: 15_000 });
+        await expect(page.locator('link[rel="search"][href="/opensearch-web.xml"]')).toHaveCount(0);
+        await page.evaluate(async () => {
+            const settings = await (await fetch('/api/settings')).json();
+            settings.webSearchEngine = 'searxng';
+            settings.webSearchSearxngUrl = 'http://127.0.0.1:9';
+            const write = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await write('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
+        });
+
+        const on = await page.request.get('/opensearch-web.xml');
+        expect(on.status()).toBe(200);
+        expect(await on.text()).toMatch(/template="https?:\/\/[^"]+\/#search\?web=\{searchTerms\}"/);
+        await page.goto('/');
+        await expect(page.locator('link[rel="search"][href="/opensearch-web.xml"]')).toHaveCount(1);
+    });
 });

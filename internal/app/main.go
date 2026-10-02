@@ -102,6 +102,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/manifest.webmanifest", handlers.WebAppManifest).Methods("GET")
 	// The address bar as a search box; see opensearch.go.
 	r.HandleFunc("/opensearch.xml", handlers.OpenSearchDescription).Methods("GET")
+	r.HandleFunc("/opensearch-web.xml", handlers.OpenSearchWebDescription).Methods("GET")
 	// Served from the root because a service worker's scope cannot rise above its
 	// own path; from /static/ it could not control the dashboard.
 	r.HandleFunc("/push-service-worker.js", handlers.PushServiceWorker).Methods("GET")
