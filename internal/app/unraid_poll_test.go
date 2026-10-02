@@ -85,3 +85,14 @@ func TestUnraidCacheDoesNotWedgeOnAPanic(t *testing.T) {
 		t.Fatal("the area is wedged after a panic")
 	}
 }
+
+func TestUnraidCacheBackOffStopsAtTenMinutes(t *testing.T) {
+	c := newUnraidCache()
+	c.entries["array"] = &unraidCacheEntry{result: unraidAreaResult{Area: "array"}, backoff: 320 * time.Second}
+	c.get(context.Background(), "array", 0, func(context.Context) (any, string, error) {
+		return nil, "unreachable", errUnraidRateLimited
+	})
+	if got := c.entries["array"].backoff; got != unraidBackoffMax {
+		t.Fatalf("back-off = %v, want %v", got, unraidBackoffMax)
+	}
+}

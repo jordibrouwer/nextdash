@@ -8,7 +8,7 @@ walked: hostnames, share, VM and device names, notification titles, subjects,
 descriptions and ids, and a UPS model are replaced; sizes, states, counts and
 dates are kept. Disk names (disk1, parity, cache, ...) stay.
 """
-import json, os, re, ssl, sys, urllib.request
+import json, os, re, ssl, sys, urllib.error, urllib.request
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parents[1] / "internal/app/testdata/unraid"
@@ -72,6 +72,18 @@ def anonymise(answer):
     return Anonymiser().walk(answer)
 
 
+class RefuseRedirect(urllib.request.HTTPRedirectHandler):
+    """A redirect stops the run: followed, it would carry x-api-key to wherever it points."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise urllib.error.HTTPError(req.full_url, code,
+                                     f"redirected to {newurl}; set UNRAID_URL to that address", headers, fp)
+
+
+def opener(ctx):
+    return urllib.request.build_opener(RefuseRedirect, urllib.request.HTTPSHandler(context=ctx))
+
+
 def main():
     url = os.environ["UNRAID_URL"].rstrip("/") + "/graphql"
     key = os.environ["UNRAID_KEY"]
@@ -81,10 +93,12 @@ def main():
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
 
+    http = opener(ctx)
+
     def ask(query):
         req = urllib.request.Request(url, data=json.dumps({"query": query}).encode(),
                                      headers={"content-type": "application/json", "x-api-key": key})
-        with urllib.request.urlopen(req, timeout=15, context=ctx) as r:
+        with http.open(req, timeout=15) as r:
             return json.load(r)
 
     OUT.mkdir(parents=True, exist_ok=True)

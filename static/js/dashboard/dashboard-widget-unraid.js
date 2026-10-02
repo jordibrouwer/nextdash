@@ -400,6 +400,11 @@
         const u = U();
         const L = (key, fallback) => label(dash, key, fallback);
         const ups = result.data || {};
+        if (ups.none) {
+            u.say(panel, 'dashboard-widget-empty', L('dashboard.widgetUnraidNoUps', 'No UPS connected to this server.'));
+            end(panel, widget, dash, result);
+            return;
+        }
         const head = u.headline(`${ups.charge}%`,
             ups.onBattery ? L('dashboard.widgetUnraidOnBattery', 'on battery') : L('dashboard.widgetUnraidOnLine', 'on line power'));
         if (ups.onBattery) head.querySelector('.dashboard-widget-headline-value')?.classList.add('dashboard-widget-headline-value--warn');

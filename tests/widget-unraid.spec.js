@@ -148,6 +148,13 @@ test.describe('Unraid widgets', () => {
         expect(await page.evaluate(() => !!document.querySelector('.unraid-probe .dashboard-widget-headline-value--warn'))).toBe(false);
     });
 
+    test('UPS: a server without one says so', async ({ page }) => {
+        await openDashboard(page);
+        const out = await render(page, 'unraidUps', { ups: { area: 'ups', status: 'ok', data: { none: true, tone: 'off' }, fetchedAt: Date.now() } });
+        expect(out.text).toContain('No UPS connected to this server.');
+        expect(out.text).not.toContain('%');
+    });
+
     test('notifications newest first, the alert red', async ({ page }) => {
         await openDashboard(page);
         const out = await render(page, 'unraidNotifications', { notifications: A('notifications') });

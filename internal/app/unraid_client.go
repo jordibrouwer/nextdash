@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -95,10 +96,33 @@ func unraidQuery(ctx context.Context, srv UnraidServer, key, query string, allow
 		return nil, nil, errUnraidUnauthorized
 	case resp.StatusCode == http.StatusTooManyRequests:
 		return nil, nil, errUnraidRateLimited
-	case resp.StatusCode == http.StatusNotFound || (resp.StatusCode >= 300 && resp.StatusCode < 400):
+	case resp.StatusCode >= 300 && resp.StatusCode < 400:
+		if to := unraidRedirectTarget(req.URL, resp.Header.Get("Location")); to != "" {
+			return nil, nil, fmt.Errorf("unraid: the server redirected to %s; use that address", to)
+		}
+		return nil, nil, errUnraidNoAPI
+	case resp.StatusCode == http.StatusNotFound:
 		return nil, nil, errUnraidNoAPI
 	}
 	return decodeUnraidAnswer(resp.StatusCode, raw)
+}
+
+// unraidRedirectTarget is where a redirect from /graphql points, as scheme and
+// host only, when that is another address than the one asked (http to https,
+// or the myunraid.net name); empty for a page on the same server, such as its
+// login page. The path and query are left out: they are not the reader's to type.
+func unraidRedirectTarget(from *url.URL, location string) string {
+	if location == "" {
+		return ""
+	}
+	to, err := from.Parse(location)
+	if err != nil || to.Host == "" || (to.Scheme != "http" && to.Scheme != "https") {
+		return ""
+	}
+	if strings.EqualFold(to.Scheme, from.Scheme) && strings.EqualFold(to.Host, from.Host) {
+		return ""
+	}
+	return to.Scheme + "://" + to.Host
 }
 
 func decodeUnraidAnswer(status int, raw []byte) (json.RawMessage, []unraidFieldError, error) {

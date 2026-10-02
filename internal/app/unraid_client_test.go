@@ -81,3 +81,30 @@ func TestUnraidQueryFixtureMode(t *testing.T) {
 		t.Fatalf("err=%v data=%s", err, data)
 	}
 }
+
+// A redirect to another address (https, myunraid.net) names where it went, so
+// the reader can type that; it is not "no API here".
+func TestUnraidQueryNamesWhereARedirectWent(t *testing.T) {
+	var seen []string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = append(seen, r.Header.Get("x-api-key"))
+		if r.URL.Path == "/graphql" {
+			http.Redirect(w, r, "https://abc123.myunraid.net/graphql?x=1", http.StatusFound)
+			return
+		}
+		http.Redirect(w, r, "/login", http.StatusFound)
+	}))
+	defer ts.Close()
+	_, _, err := unraidQuery(context.Background(), UnraidServer{ID: "s", BaseURL: ts.URL}, "k", "{ x }", true)
+	if err == nil || errors.Is(err, errUnraidNoAPI) || !strings.Contains(err.Error(), "redirected to https://abc123.myunraid.net") || strings.Contains(err.Error(), "x=1") {
+		t.Fatalf("err = %v", err)
+	}
+	if len(seen) != 1 {
+		t.Fatalf("the redirect was followed: %v", seen)
+	}
+	// To a page on the same server (a login page): still no API at this address.
+	_, _, err = unraidQuery(context.Background(), UnraidServer{ID: "s", BaseURL: ts.URL + "/sub"}, "k", "{ x }", true)
+	if !errors.Is(err, errUnraidNoAPI) {
+		t.Fatalf("same-host redirect: err = %v", err)
+	}
+}

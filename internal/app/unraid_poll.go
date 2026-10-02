@@ -121,8 +121,11 @@ func (c *unraidCache) get(ctx context.Context, area string, floor time.Duration,
 		if errors.Is(err, errUnraidRateLimited) {
 			if e.backoff == 0 {
 				e.backoff = unraidBackoffMin
-			} else if e.backoff < unraidBackoffMax {
+			} else {
 				e.backoff *= 2
+			}
+			if e.backoff > unraidBackoffMax { // 30 s doubling stops at 10 min, not past it
+				e.backoff = unraidBackoffMax
 			}
 			e.retryAfter = e.at.Add(e.backoff)
 		}

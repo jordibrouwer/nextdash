@@ -95,6 +95,7 @@ type UnraidUPSView struct {
 	LoadPct    int    `json:"loadPct"`
 	Watts      int    `json:"watts"`
 	Tone       string `json:"tone"`
+	None       bool   `json:"none,omitempty"` // the server reports no UPS at all
 }
 
 type UnraidNotificationView struct {
@@ -166,10 +167,12 @@ func toUnraidDisk(r rawUnraidDisk, group string) UnraidDiskView {
 	}
 	d.Asleep = r.IsSpinning != nil && !*r.IsSpinning
 	switch {
-	case r.Status == "DISK_DSBL" || r.Status == "DISK_NP_DSBL" || r.Status == "DISK_INVALID" || r.Status == "DISK_WRONG":
-		d.Tone, d.Problem = "bad", "disabled"
 	case r.Status == "DISK_NP_MISSING":
 		d.Tone, d.Problem = "bad", "missing"
+	// Every other state but OK (disabled, emulated, invalid, wrong, new, and
+	// any Unraid adds later) needs looking at; empty is a schema without status.
+	case r.Status != "" && r.Status != "DISK_OK" && r.Status != "DISK_NP":
+		d.Tone, d.Problem = "bad", "disabled"
 	case d.Errors > 0:
 		d.Tone, d.Problem = "bad", "errors"
 	case d.TempC != nil && *d.TempC >= unraidHotC:
@@ -345,8 +348,11 @@ func toUnraidUPS(data json.RawMessage) (UnraidUPSView, error) {
 			Power               struct{ LoadPercentage, CurrentPower any }  `json:"power"`
 		} `json:"upsDevices"`
 	}
-	if err := json.Unmarshal(data, &raw); err != nil || len(raw.UPS) == 0 {
-		return UnraidUPSView{}, fmt.Errorf("unraid: no UPS")
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return UnraidUPSView{}, fmt.Errorf("unraid: UPS answer unreadable")
+	}
+	if len(raw.UPS) == 0 {
+		return UnraidUPSView{None: true, Tone: "off"}, nil
 	}
 	u := raw.UPS[0]
 	v := UnraidUPSView{Name: u.Name, Model: u.Model, Charge: int(unraidInt(u.Battery.ChargeLevel)),

@@ -176,7 +176,9 @@ func composeUnraidOverviewFrom(results []unraidAreaResult) unraidAreaResult {
 				o.FullestShare = &v[0]
 			}
 		case UnraidUPSView:
-			o.UPS = &v
+			if !v.None {
+				o.UPS = &v
+			}
 		default:
 			took = false
 		}

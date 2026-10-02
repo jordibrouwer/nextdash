@@ -2915,6 +2915,7 @@
     "widgetUnraidVmState.crashed": "crashed",
     "widgetUnraidOnBattery": "on battery",
     "widgetUnraidOnLine": "on line power",
+    "widgetUnraidNoUps": "No UPS connected to this server.",
     "widgetUnraidRuntime": "runtime",
     "widgetUnraidLoad": "load · {w} W",
     "widgetUnraidNoNotifications": "Nothing unread.",

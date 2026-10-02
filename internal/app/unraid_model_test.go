@@ -138,3 +138,40 @@ func linkJSON(s *string) string {
 	escaped := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(*s, "\\", "\\\\"), "\"", "\\\""), "/", "\\/")
 	return "\"" + escaped + "\""
 }
+
+// Any state but DISK_OK is a disk to look at: Unraid has more than the four
+// names the model knew (emulated, new, ...), and an unknown one must not pass
+// as fine. An empty slot (DISK_NP) is no disk at all.
+func TestToUnraidArrayUnknownDiskStatusIsRed(t *testing.T) {
+	raw := []byte(`{"array":{"state":"STARTED","parities":[],"caches":[],"disks":[
+	  {"name":"disk1","status":"DISK_EMULATED","temp":30,"numErrors":"0","fsSize":"10","fsUsed":"1","fsFree":"9","isSpinning":true},
+	  {"name":"disk2","status":"DISK_NP_MISSING","numErrors":"0","isSpinning":false},
+	  {"name":"disk3","status":"DISK_OK","temp":30,"numErrors":"0","fsSize":"10","fsUsed":"1","fsFree":"9","isSpinning":true},
+	  {"name":"disk4","status":"DISK_NP"}]}}`)
+	v, _ := toUnraidArray(raw)
+	if len(v.Disks) != 3 {
+		t.Fatalf("disks = %+v", v.Disks)
+	}
+	want := [][2]string{{"bad", "disabled"}, {"bad", "missing"}, {"good", ""}}
+	for i, w := range want {
+		if v.Disks[i].Tone != w[0] || v.Disks[i].Problem != w[1] {
+			t.Errorf("%s: tone=%s problem=%s, want %v", v.Disks[i].Name, v.Disks[i].Tone, v.Disks[i].Problem, w)
+		}
+	}
+	if v.ProblemDisks != 2 {
+		t.Fatalf("problem disks = %d", v.ProblemDisks)
+	}
+}
+
+// A server without a UPS reads fine: it has none, which is not "this
+// version lacks it".
+func TestToUnraidUPSWithoutADevice(t *testing.T) {
+	v, err := toUnraidUPS([]byte(`{"upsDevices":[]}`))
+	if err != nil || !v.None {
+		t.Fatalf("v=%+v err=%v", v, err)
+	}
+	r := composeUnraidOverviewFrom([]unraidAreaResult{{Area: "ups", Status: "ok", Data: v, FetchedAt: 1, LastOkAt: 1}})
+	if o, ok := r.Data.(UnraidOverviewView); !ok || o.UPS != nil {
+		t.Fatalf("the overview drew a UPS row for none: %+v", r)
+	}
+}
