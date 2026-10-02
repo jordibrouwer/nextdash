@@ -165,3 +165,28 @@ func TestUnraidInfoSurvivesAForbiddenMe(t *testing.T) {
 		t.Fatalf("info = %+v", info)
 	}
 }
+
+// The dashboard saves every setting it loaded with the page. The Unraid server
+// is owned by /api/unraid/settings, so a page loaded before it was changed
+// must not put the old one back.
+func TestGenericSettingsSaveLeavesTheUnraidServerAlone(t *testing.T) {
+	h := unraidTestHandlers(t)
+	body := `{"bookmarkStaleDays":9,"unraidServers":[{"id":"srv","name":"old","baseUrl":"http://old-tower","enabled":false}]}`
+	rec := httptest.NewRecorder()
+	h.SaveSettings(rec, httptest.NewRequest(http.MethodPost, "/api/settings", strings.NewReader(body)))
+	if rec.Code != 200 {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body)
+	}
+	got := h.store.GetSettings()
+	if got.BookmarkStaleDays != 9 {
+		t.Fatalf("the rest of the save was lost: %d", got.BookmarkStaleDays)
+	}
+	if len(got.UnraidServers) != 1 || got.UnraidServers[0].BaseURL != "http://tower" || !got.UnraidServers[0].Enabled {
+		t.Fatalf("unraid server = %+v", got.UnraidServers)
+	}
+	rec = httptest.NewRecorder()
+	h.SaveSettings(rec, httptest.NewRequest(http.MethodPost, "/api/settings", strings.NewReader(`{"unraidServers":[]}`)))
+	if got := h.store.GetSettings(); len(got.UnraidServers) != 1 {
+		t.Fatalf("an empty list removed the server: %+v", got.UnraidServers)
+	}
+}

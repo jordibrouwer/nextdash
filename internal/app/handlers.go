@@ -2522,6 +2522,10 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if updateCheckDisabledByEnv() {
 		settings.UpdateCheckEnabled = h.store.GetSettings().UpdateCheckEnabled
 	}
+	// The Unraid server is written by /api/unraid/settings alone. The page
+	// sends back every setting it loaded, so a copy from before a change there
+	// would otherwise put the old address back with the next unrelated save.
+	settings.UnraidServers = h.store.GetSettings().UnraidServers
 
 	// Validate and sanitize collections.
 	//

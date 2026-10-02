@@ -115,3 +115,35 @@ test.describe('Unraid connection', () => {
         await expect(page.locator('[data-unraid-save]')).toBeEnabled();
     });
 });
+
+// The page sends back every setting it loaded with each ordinary save. The
+// Unraid server is not one of them: a page opened before the address changed
+// must not put the old one back.
+test('an ordinary settings save leaves the Unraid server alone', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    const api = (path, init) => page.evaluate(async ({ path, init }) => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await f(path, init);
+        return res.json().catch(() => ({}));
+    }, { path, init });
+    const put = (baseUrl) => api('/api/unraid/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ server: { name: 'tower', baseUrl, enabled: true } }),
+    });
+    try {
+        await put('http://192.168.1.10');
+        // Loaded with the first address, as a page opened before the change.
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.settings != null, null, { timeout: 20_000 });
+        await put('http://192.168.1.20');
+        await page.evaluate(() => window.dashboardInstance.data.saveSettings());
+        const state = await api('/api/unraid/settings');
+        expect(state.server?.baseUrl, 'a settings save brought the old address back').toBe('http://192.168.1.20');
+    } finally {
+        await put('');
+    }
+});

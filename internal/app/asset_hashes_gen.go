@@ -224,7 +224,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/search-loader.js":                                    "24e98ba430d6",
 	"js/search.js":                                           "adf00ef66929",
 	"js/select.js":                                           "b883e444468b",
-	"js/settings-sanitize.js":                                "8c875b481304",
+	"js/settings-sanitize.js":                                "7fa808c13e0c",
 	"js/shared/bookmark-feed-row.js":                         "2a2a0a4e020e",
 	"js/shared/bookmark-predicates.js":                       "c0c20664613c",
 	"js/shared/bookmark-workbench-model.js":                  "c9973ca883a0",
