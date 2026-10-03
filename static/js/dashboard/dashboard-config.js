@@ -11323,6 +11323,8 @@ class DashboardConfig {
             if (typeof v === 'number' && Number.isFinite(v)) out[prop] = v;
             else if (typeof v === 'string' && v.trim() && !colorKeys.includes(prop)) out[prop] = v.trim();
         });
+        // A look comes along whole; the server keeps the parts it can draw.
+        if (source.look && typeof source.look === 'object' && !Array.isArray(source.look)) out.look = source.look;
         return out.name ? out : null;
     }
 

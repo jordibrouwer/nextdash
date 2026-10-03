@@ -483,7 +483,7 @@ func themeColourFields(tc ThemeColors) [14]string {
 func markThemeMetaOrigin(m *themeMeta, tc ThemeColors, shipped *ThemeColors, custom bool) {
 	if custom {
 		m.Own = true
-		m.Look = false // set from tc.Look once themes carry one
+		m.Look = tc.Look != nil
 		return
 	}
 	if shipped == nil {

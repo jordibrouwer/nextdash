@@ -132,6 +132,25 @@ test('a theme file carries the character there and back', async ({ page }) => {
     expect([imported.radiusScale, imported.backdrop]).toEqual([0.4, 'scanlines']);
 });
 
+test('a theme file carries the look along, and the server keeps it', async ({ page }) => {
+    const id = await openEditor(page);
+    const look = { backdrop: 'nebula', glass: { alpha: 0.55, blur: 14, border: 'on' }, heads: { categoryHeaderStyle: 'boxed' } };
+    await page.evaluate(async ({ themeId, value }) => {
+        const cfg = window.dashboardInstance.config;
+        cfg._colorsData.custom[themeId].look = value;
+        await cfg.saveColorsData();
+    }, { themeId: id, value: look });
+    await expect.poll(async () => (await colors(page)).custom[id].look).toEqual(look);
+
+    const download = page.waitForEvent('download');
+    await page.locator(`[data-theme-export="${id}"]`).click();
+    const file = await (await download).path();
+    await page.locator('#config-theme-import-input').setInputFiles(file);
+    await expect.poll(async () => Object.keys((await colors(page)).custom).length).toBe(2);
+    const imported = Object.entries((await colors(page)).custom).find(([key]) => key !== id)[1];
+    expect(imported.look).toEqual(look);
+});
+
 test('a light/dark pair is made, and Quick mode switches between its halves', async ({ page }) => {
     const id = await openEditor(page);
     await page.locator('[data-theme-action="apply"]').click();

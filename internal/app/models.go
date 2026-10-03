@@ -1368,6 +1368,10 @@ type ThemeColors struct {
 	Depth   string `json:"depth,omitempty"`   // flat | soft | rich | vivid | glass
 	Glow    string `json:"glow,omitempty"`    // off | soft | full
 	Effects string `json:"effects,omitempty"` // off | held | full
+
+	// Look is what a theme of the reader's own brings along when it is
+	// picked; see theme_look.go. Never kept on a built-in.
+	Look *ThemeLook `json:"look,omitempty"`
 }
 
 type Store interface {

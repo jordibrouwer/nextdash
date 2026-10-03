@@ -193,6 +193,8 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		Depth:   keepWord(tc.Depth, "flat", "soft", "rich", "vivid", "glass"),
 		Glow:    keepWord(tc.Glow, "off", "soft", "full"),
 		Effects: keepWord(tc.Effects, "off", "held", "full"),
+
+		Look: sanitizeThemeLook(tc.Look),
 	}
 }
 
@@ -279,9 +281,13 @@ func sanitizeColorTheme(c ColorTheme) ColorTheme {
 	c.Dark = sanitizeThemeColors(c.Dark)
 	if c.BuiltIn != nil {
 		for id, tc := range c.BuiltIn {
-			c.BuiltIn[id] = sanitizeThemeColors(tc)
+			tc = sanitizeThemeColors(tc)
+			// Only a theme of the reader's own carries a look.
+			tc.Look = nil
+			c.BuiltIn[id] = tc
 		}
 	}
+	c.Light.Look, c.Dark.Look = nil, nil
 	if c.Custom != nil {
 		for id, tc := range c.Custom {
 			c.Custom[id] = sanitizeThemeColors(tc)
