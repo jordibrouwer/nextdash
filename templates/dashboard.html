@@ -515,6 +515,8 @@
     <!-- Before modal.js and every other overlay: they all take scroll locks. -->
     <script src="{{asset "js/scroll-lock.js"}}" defer></script>
     <script src="{{asset "js/modal.js"}}" defer></script>
+    <!-- The QR window: reads AppModal and LazyScript when it is opened. -->
+    <script src="{{asset "js/shared/bookmark-qr.js"}}" defer></script>
     <!-- The theme browser: reads AppModal, so it loads after it. -->
     <script src="{{asset "js/theme-browser.js"}}" defer></script>
     <script src="{{asset "js/focus-trap-utils.js"}}" defer></script>

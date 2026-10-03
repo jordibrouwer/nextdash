@@ -25154,6 +25154,9 @@ class DashboardConfig {
             case 'share':
                 void this.shareBookmark(bookmark);
                 break;
+            case 'qr':
+                void window.BookmarkQR?.show?.(bookmark);
+                break;
             case 'delete':
                 void this.deleteBookmarkByKey(key);
                 break;

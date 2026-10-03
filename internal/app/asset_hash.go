@@ -193,6 +193,9 @@ var lazyLoadedAssets = []string{
 	// where a chart is drawn.
 	"js/shared/nd-chart.js",
 	"vendor/uplot/1.6.32/uPlot.iife.min.js",
+	// The QR window's encoder (MIT, vendored), fetched the first time a code
+	// is drawn.
+	"vendor/qrcode-generator/1.4.4/qrcode.js",
 	// The app-icon picker, for the bookmark form and the container drawer.
 	"js/shared/icon-set-picker.js",
 	"js/dashboard/dashboard-docker-drawer.js",
