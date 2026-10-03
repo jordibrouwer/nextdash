@@ -173,16 +173,23 @@ type rawUnraidDisk struct {
 	Rotational *bool  `json:"rotational"`
 }
 
-// hotAt is the temperature this disk warns at: its own threshold when it has
-// one, else the default for its kind.
+// hotAt is the temperature this disk warns at: the default for its kind. The
+// API's warning field is not a temperature but the disk's usage warning in
+// percent (fullAt); read as degrees, 70 % made a disk "hot" at 70 °C.
 func (r rawUnraidDisk) hotAt() int {
-	if w := unraidInt(r.Warning); w > 0 {
-		return int(w)
-	}
 	if r.Rotational != nil && !*r.Rotational {
 		return unraidHotSSDC
 	}
 	return unraidHotC
+}
+
+// fullAt is the usage this disk warns at: its own threshold when set in
+// Unraid, else the default.
+func (r rawUnraidDisk) fullAt() float64 {
+	if w := unraidInt(r.Warning); w > 0 && w <= 100 {
+		return float64(w)
+	}
+	return unraidFullPct
 }
 
 func toUnraidDisk(r rawUnraidDisk, group string) UnraidDiskView {
@@ -206,7 +213,7 @@ func toUnraidDisk(r rawUnraidDisk, group string) UnraidDiskView {
 		d.Tone, d.Problem = "bad", "errors"
 	case d.TempC != nil && *d.TempC >= r.hotAt():
 		d.Tone, d.Problem = "warn", "hot"
-	case d.UsedPct >= unraidFullPct:
+	case d.UsedPct >= r.fullAt():
 		d.Tone, d.Problem = "warn", "full"
 	case d.Asleep:
 		d.Tone = "off"

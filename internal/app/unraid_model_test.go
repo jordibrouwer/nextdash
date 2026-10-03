@@ -214,8 +214,8 @@ func TestToUnraidUPSWithoutADevice(t *testing.T) {
 	}
 }
 
-// A disk is hot at its own warning temperature, else at 45 °C when it spins
-// and 60 °C when it is an SSD or NVMe: a real server's NVMe cache sat at
+// A disk is hot at 45 °C when it spins and 60 °C when it is an SSD or NVMe
+// (the API's warning field is a usage percentage, not a temperature): a real server's NVMe cache sat at
 // 45-46 °C and was reported as a problem.
 func TestUnraidDiskHotThreshold(t *testing.T) {
 	yes, no := true, false
@@ -229,7 +229,8 @@ func TestUnraidDiskHotThreshold(t *testing.T) {
 		{"nvme at 46", 46, nil, &no, false},
 		{"nvme at 61", 61, nil, &no, true},
 		{"hdd at 46", 46, nil, &yes, true},
-		{"hdd at 48 with its own 50", 48, 50.0, &yes, false},
+		{"hdd at 48 with a usage warning of 50 %", 48, 50.0, &yes, true},
+		{"hdd at 40 with a usage warning of 30 %", 40, 30.0, &yes, false},
 		{"unknown kind at 45", 45, nil, nil, true},
 	}
 	for _, c := range cases {
@@ -253,5 +254,26 @@ func TestToUnraidArrayRecordedHealthyServer(t *testing.T) {
 	}
 	if v.TotalBytes != 36003715240*1024 {
 		t.Fatalf("total = %d", v.TotalBytes)
+	}
+}
+
+// The warning field is the disk's usage warning in percent: a disk at 75 %
+// with its own 70 % is full, one at 85 % without one is not yet.
+func TestUnraidDiskFullAtItsOwnWarning(t *testing.T) {
+	cases := []struct {
+		name    string
+		used    float64
+		warning any
+		full    bool
+	}{
+		{"75 % with its own 70", 75, 70.0, true},
+		{"85 % with the default", 85, nil, false},
+		{"92 % with the default", 92, nil, true},
+	}
+	for _, c := range cases {
+		d := toUnraidDisk(rawUnraidDisk{Name: "x", Status: "DISK_OK", FsSize: 100.0, FsUsed: c.used, FsFree: 100 - c.used, Warning: c.warning}, "disk")
+		if got := d.Problem == "full"; got != c.full {
+			t.Errorf("%s: full = %v, want %v (problem %q)", c.name, got, c.full, d.Problem)
+		}
 	}
 }

@@ -349,3 +349,19 @@ func TestUnraidFailedResolverIsUnreachable(t *testing.T) {
 		t.Fatalf("status=%s err=%v", status, err)
 	}
 }
+
+// An address without a scheme normalised to nothing: Save stored a blank
+// address, dropped the key and answered Saved. It is refused instead.
+func TestUnraidSaveRefusesAnAddressWithoutAScheme(t *testing.T) {
+	h := unraidTestHandlers(t)
+	if rec := serveUnraid(h, "PUT", "/api/unraid/settings", `{"server":{"id":"srv","name":"tower","baseUrl":"http://tower","enabled":true},"key":"abc"}`); rec.Code != 200 {
+		t.Fatalf("first save: %d %s", rec.Code, rec.Body)
+	}
+	rec := serveUnraid(h, "PUT", "/api/unraid/settings", `{"server":{"id":"srv","name":"tower","baseUrl":"192.168.1.20","enabled":true}}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("code = %d, want 400", rec.Code)
+	}
+	if unraidAPIKey("srv") != "abc" || h.store.GetSettings().UnraidServers[0].BaseURL != "http://tower" {
+		t.Fatalf("the refused save changed the server: key %q", unraidAPIKey("srv"))
+	}
+}

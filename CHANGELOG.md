@@ -174,6 +174,9 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **docs — Config → Help catches up**, in all six languages: 41 Custom-widget services with the new Monitoring group, twenty-nine widget kinds with a paragraph on the seven for Unraid, and Config → Containers' four tabs with a pointer to Config → Unraid.
 - **fix — a paused parity check is not a finished one.** The API leaves `running` null and says `PAUSED` in the status; read as done, the pause sent "Parity check finished with N errors" and the tile showed the previous run.
 - **fix — a failed resolver no longer reads as a stopped array.** The API answers it with HTTP 200 and the field null; read as an empty answer, it alerted "The Unraid array stopped" and blanked the tiles. It now counts as unreachable, and the last good answer stays.
+- **fix — a second Unraid push no longer replaces the first** without a sound: each alert has its own tag.
+- **fix — a disk's warning is its usage threshold, not a temperature.** A per-disk warning of 70 % made the disk "hot" at 70 °C; it now marks the disk full at 70 %.
+- **fix — an address without `http://` is refused.** Save stored it as blank, dropped the key and said Saved.
 
 ### Theme editor
 

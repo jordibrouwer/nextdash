@@ -270,3 +270,13 @@ func TestUnraidWatcherParityPauseIsNotTheEnd(t *testing.T) {
 		t.Fatalf("the end: got %+v", got)
 	}
 }
+
+// One tag per alert: with the kind alone a second disk-error alert replaced
+// the first on the phone without a sound.
+func TestUnraidPushTagsDifferPerAlert(t *testing.T) {
+	a := unraidPushTag(monitorNotification{Event: "disk-errors", Title: "disk1 has 3 errors"})
+	b := unraidPushTag(monitorNotification{Event: "disk-errors", Title: "disk2 has 1 errors"})
+	if a == b {
+		t.Fatalf("both alerts tagged %q", a)
+	}
+}

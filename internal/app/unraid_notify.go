@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"strings"
 	"sync"
 	"time"
@@ -181,10 +182,18 @@ func (h *Handlers) dispatchUnraidNotices(ctx context.Context, notices []monitorN
 	if settings.PushNotifyEnabled {
 		for _, n := range notices {
 			h.sendWebPushNotification(ctx, webPushMessage{Title: n.Title, Body: n.Error, Kind: "unraid",
-				Tag: "nextdash-unraid-" + n.Event, At: n.At})
+				Tag: unraidPushTag(n), At: n.At})
 		}
 	}
 	h.postMonitorTarget(ctx, collapseUnraidNotices(notices))
+}
+
+// unraidPushTag is one tag per alert, not per kind: with the kind alone a
+// second disk-error or Unraid alert silently replaced the first on the phone.
+func unraidPushTag(n monitorNotification) string {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(n.Title))
+	return fmt.Sprintf("nextdash-unraid-%s-%08x", n.Event, h.Sum32())
 }
 
 // StartUnraidWatcher looks at the active server once a minute while its alert

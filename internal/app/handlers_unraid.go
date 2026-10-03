@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -275,6 +275,12 @@ func (h *Handlers) UnraidSettingsHandler(w http.ResponseWriter, r *http.Request)
 	}
 	if body.Key != nil && strings.ContainsAny(strings.TrimSpace(*body.Key), " \t\r\n") {
 		http.Error(w, "An API key has no spaces", http.StatusBadRequest)
+		return
+	}
+	// An address normalising to nothing (192.168.1.20 without http://) was
+	// saved as blank, dropped the key and still said Saved.
+	if typed := strings.TrimSpace(body.Server.BaseURL); typed != "" && normalizeUnraidBaseURL(typed) == "" {
+		http.Error(w, "Start the address with http:// or https://", http.StatusBadRequest)
 		return
 	}
 	h.settingsMu.Lock()
