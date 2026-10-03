@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -167,5 +169,38 @@ func TestSessionExpiresAfterItsMaxAge(t *testing.T) {
 	credentialSessionMu.Unlock()
 	if _, ok := cachedCredentialSession("k"); ok {
 		t.Fatal("an old session was still used")
+	}
+}
+
+// Three widgets refused at once after a restart sign in once between them,
+// not three times: each login is a seat the service counts.
+func TestARefusedSessionSignsInOnceForAll(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Cleanup(func() { credentialSessionCache = map[string]credentialSessionEntry{} })
+	svc := newTokenService(t, "/api/tokens", `{"token":"%s"}`, "Authorization", "Bearer ")
+	h, spec, answer := askWithSession(t, svc, &CredentialSession{
+		LoginPath: "/api/tokens", Format: "json", UserField: "identity", PassField: "password",
+		User: "admin", Password: "secret", TokenPath: "token", TokenPrefix: "Bearer ",
+	})
+	if answer.Status != http.StatusOK || svc.logins != 1 {
+		t.Fatalf("first: %d, logins %d", answer.Status, svc.logins)
+	}
+	svc.valid = "expired"
+	var wg sync.WaitGroup
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); _ = h.askCustomWidget(context.Background(), spec, nil) }()
+	}
+	wg.Wait()
+	if svc.logins != 2 {
+		t.Fatalf("signed in %d times, want 2", svc.logins)
+	}
+}
+
+// A widget's session header does not follow a redirect to another host.
+func TestASessionHeaderStaysOnItsHost(t *testing.T) {
+	names := credentialHeaderNames(HealthCredential{Session: &CredentialSession{LoginPath: "/login"}})
+	if strings.Join(names, ",") != "Cookie" {
+		t.Fatalf("names = %v", names)
 	}
 }

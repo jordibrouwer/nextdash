@@ -522,6 +522,13 @@ func credentialHeaderNames(credential HealthCredential) []string {
 	if credential.BasicUser != "" {
 		names = append(names, "Authorization")
 	}
+	// A widget's session (cookie or token header) is as much a secret, and it
+	// followed a redirect to another host or port.
+	if credential.Session != nil {
+		if name := sessionHeaderName(credential.Session); name != "" {
+			names = append(names, name)
+		}
+	}
 	return names
 }
 
@@ -852,6 +859,39 @@ func cachedCredentialSession(key string) (string, bool) {
 		return "", false
 	}
 	return entry.value, true
+}
+
+var (
+	credentialSignInMu    sync.Mutex
+	credentialSignInLocks = map[string]*sync.Mutex{}
+)
+
+/*
+freshCredentialSession signs in once for every request that needs it. Three
+widgets on one Pi-hole, refused after a restart, each threw away the shared
+session and signed in again: three logins, each a seat the service counts. One
+signs in; the others take its session. stale is the session the caller was
+refused with, so one stored since is used rather than replaced.
+*/
+func (h *Handlers) freshCredentialSession(ctx context.Context, u *url.URL, session *CredentialSession, key, stale string) (string, error) {
+	credentialSignInMu.Lock()
+	mu := credentialSignInLocks[key]
+	if mu == nil {
+		mu = &sync.Mutex{}
+		credentialSignInLocks[key] = mu
+	}
+	credentialSignInMu.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
+	if cookie, ok := cachedCredentialSession(key); ok && cookie != stale {
+		return cookie, nil
+	}
+	fresh, err := h.signInForCookie(ctx, u, session)
+	if err != nil {
+		return "", err
+	}
+	storeCredentialSession(key, fresh)
+	return fresh, nil
 }
 
 func storeCredentialSession(key, cookie string) {

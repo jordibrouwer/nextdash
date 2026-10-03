@@ -1054,3 +1054,21 @@ func TestCountingNullIsZero(t *testing.T) {
 		t.Error("a key that is not there counted as 0")
 	}
 }
+
+// Places do not drop a temperature's unit or turn a duration or a date back
+// into a raw number; a date written as text by PHP or as Unix seconds in a
+// string is still a date.
+func TestDecimalsKeepTheFormatsInWords(t *testing.T) {
+	one := 1
+	if got := formatCustomValue(21.5, "temperature", &one, "", " °C"); got != "21.5 °C" {
+		t.Errorf("temperature = %q", got)
+	}
+	if got := formatCustomValue(86400.0, "duration", &one, "", " °C"); strings.Contains(got, "86400") {
+		t.Errorf("duration = %q", got)
+	}
+	for _, raw := range []any{"2024-05-01 12:00:00", "1700000000"} {
+		if _, ok := toTime(raw); !ok {
+			t.Errorf("%v not read as a date", raw)
+		}
+	}
+}

@@ -159,6 +159,10 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — counting a list that came as `null` gives 0**, not "not in the answer".
 - **fix — a tile's error is held for 30 seconds, as on the server**, not for the widget's whole refresh interval.
 - **fix — a widget's own key is deleted after the page save.** Deleted first, a failed save left the widget pointing at a key that was gone; this holds for Delete, bulk delete and switching the sign-in off.
+- **fix — places keep a temperature's unit and leave a duration or a date in words.** With decimals set, 21.5 lost its °C and a day showed as 86400.0.
+- **fix — a relative date reads `2024-05-01 12:00:00` and Unix seconds written as text.**
+- **fix — widgets refused at once sign in once between them.** Each threw the shared session away and signed in again, a seat each on Pi-hole.
+- **fix — a widget's session no longer follows a redirect to another host or port.**
 
 ### Alerts
 

@@ -797,12 +797,18 @@ func formatCustomValue(raw any, format string, decimals *int, dataUnit, tempSuff
 	// same way for every format: the reader asked for two decimals, not for two
 	// decimals of whatever this format would otherwise have done. Units stay,
 	// because "3342.65" and "3342.65 MB" are not the same figure.
-	if decimals != nil {
+	// A duration and a relative date are written in words ("1d", "3h ago"),
+	// so places do not apply to them: 86400 seconds showed as "86400.0".
+	if decimals != nil && format != "duration" && format != "relativeDate" {
 		if number, ok := toFloat(raw); ok {
 			if format == "data" {
 				number *= unit
 			}
 			scaled, suffix := scaleForFormat(number, format)
+			// The temperature keeps its unit: "21.5" lost its °C.
+			if format == "temperature" {
+				suffix = tempSuffix
+			}
 			return roundToDecimals(scaled, *decimals) + suffix
 		}
 	}
@@ -950,12 +956,13 @@ date in the year 33658.
 */
 func toTime(raw any) (time.Time, bool) {
 	if text, ok := raw.(string); ok {
-		for _, layout := range []string{time.RFC3339, "2006-01-02T15:04:05", "2006-01-02"} {
+		// Also "2024-05-01 12:00:00", as PHP and Python write it; a string of
+		// digits falls through to the number below (Unix seconds as text).
+		for _, layout := range []string{time.RFC3339, "2006-01-02T15:04:05", "2006-01-02 15:04:05", "2006-01-02"} {
 			if when, err := time.Parse(layout, strings.TrimSpace(text)); err == nil {
 				return when, true
 			}
 		}
-		return time.Time{}, false
 	}
 	number, ok := toFloat(raw)
 	if !ok || number <= 0 {
@@ -1249,6 +1256,7 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 	// cookie if the service turns it down. Cheaper than a timer, and correct
 	// where a timer would only be a guess.
 	sessionKey := ""
+	sentSession := ""
 	if draft != nil {
 		// What is on screen beats what is filed. Someone testing a key they
 		// have just typed is asking about that key, not about the one this
@@ -1271,15 +1279,15 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 		sessionKey = key
 		cookie, ok := cachedCredentialSession(key)
 		if !ok {
-			fresh, err := h.signInForCookie(ctx, req.URL, credential.Session)
+			fresh, err := h.freshCredentialSession(ctx, req.URL, credential.Session, key, "")
 			if err != nil {
 				answer.Error = "could not sign in to that service"
 				logWarn(logComponentWidgets, "%s refused the sign-in: %v", hostOf(spec.URL), err)
 				return since()
 			}
-			storeCredentialSession(key, fresh)
 			cookie = fresh
 		}
+		sentSession = cookie
 		req.Header.Set(sessionHeaderName(credential.Session), cookie)
 		answer.SignedIn = true
 	}
@@ -1301,14 +1309,12 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 	// reporting a 403 the reader cannot act on.
 	if sessionKey != "" && (resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized) {
 		drainAndCloseResponse(resp)
-		storeCredentialSession(sessionKey, "")
-		fresh, err := h.signInForCookie(ctx, req.URL, credential.Session)
+		fresh, err := h.freshCredentialSession(ctx, req.URL, credential.Session, sessionKey, sentSession)
 		if err != nil {
 			answer.Error = "could not sign in to that service"
 			logWarn(logComponentWidgets, "%s refused the sign-in: %v", hostOf(spec.URL), err)
 			return since()
 		}
-		storeCredentialSession(sessionKey, fresh)
 		retry := req.Clone(ctx)
 		retry.Header.Set(sessionHeaderName(credential.Session), fresh)
 		if retried, err := client.Do(retry); err == nil {
