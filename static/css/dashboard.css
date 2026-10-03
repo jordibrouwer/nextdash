@@ -7191,10 +7191,16 @@ button.dashboard-widget-stat.keyboard-selected {
 }
 /* Wide enough for "58% · 3 errors", so the bars line up down the column. */
 .unraid-disk-row .dashboard-widget-row-detail { min-width: 7.5rem; }
+/* A narrow tile shows the bare percentage; 7.5rem left no room for the bar. */
+@container (max-width: 27.99rem) {
+    .unraid-disk-row .dashboard-widget-row-detail { min-width: 3.5rem; }
+}
 .unraid-disk-bar {
-    flex: none;
+    /* Gives way before the figure does: on a one-column tile the figure was
+       pushed past the edge and cut off. */
+    flex: 0 10 4rem;
+    min-width: 1.5rem;
     align-self: center;
-    width: 4rem;
     height: 4px;
     border-radius: 2px;
     background: linear-gradient(90deg, var(--accent-primary) var(--fill), var(--border-secondary) var(--fill));

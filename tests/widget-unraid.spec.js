@@ -133,6 +133,22 @@ test.describe('Unraid widgets', () => {
         expect(narrow.text).not.toContain('backups');
     });
 
+    // One column on a four-column dashboard is about 290px: the figure after
+    // the bar was pushed past the tile's edge and cut off.
+    test('a narrow tile keeps every figure inside it', async ({ page }) => {
+        await openDashboard(page);
+        for (const [type, area] of [['unraidShares', 'shares'], ['unraidArray', 'array']]) {
+            await render(page, type, { [area]: A(area) }, 290);
+            const out = await page.evaluate(() => {
+                const edge = document.querySelector('.unraid-probe .dashboard-widget-body').getBoundingClientRect().right;
+                return [...document.querySelectorAll('.unraid-probe .dashboard-widget-row')].filter((r) => r.offsetParent !== null)
+                    .map((r) => ({ text: r.innerText.replace(/\s+/g, ' ').trim(), over: Math.round(r.querySelector('.dashboard-widget-row-detail').getBoundingClientRect().right - edge) }));
+            });
+            expect(out.length, type).toBeGreaterThan(0);
+            for (const row of out) expect(row.over, `${type}: ${row.text}`).toBeLessThanOrEqual(0);
+        }
+    });
+
     test('shares keep to the row count, the rest in a more row', async ({ page }) => {
         await openDashboard(page);
         const out = await render(page, 'unraidShares', { shares: A('shares') }, 700, { rows: 1 });
