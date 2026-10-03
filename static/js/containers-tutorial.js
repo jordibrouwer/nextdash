@@ -17,10 +17,13 @@
     // Also named in DashboardDocker (the view checks it before fetching this
     // file) and in the replay list in config and search. All must agree.
     // V2: the tour grew with v1.15.6 (columns, a web UI's bookmark, automatic
-    // updates, notices when a container runs hot, I/O, Disk), so everyone sees
-    // it once more. Who saw V1 is told on the first step that it is an update.
-    const TIP_ID = 'containersTutorialV2';
-    const PREVIOUS_TIP_ID = 'containersTutorialV1';
+    // updates, notices when a container runs hot, I/O, Disk). V3: with v1.17
+    // (app icons, charts you can read, Config → Containers in tabs). Each time
+    // everyone sees it once more; who saw an earlier one is told on the first
+    // step that it is an update, and the steps added since carry a mark.
+    const TIP_ID = 'containersTutorialV3';
+    // Newest first: the first one seen decides which steps are new to them.
+    const PREVIOUS_TIP_IDS = [['containersTutorialV2', 2], ['containersTutorialV1', 1]];
 
     function t(key, fallback, params) {
         const lang = global.dashboardInstance?.language;
@@ -64,6 +67,15 @@
         .ctv-row.is-accent .ctv-box { stroke: var(--accent-primary); stroke-width: 1.5; }
         .ctv-row.is-bad .ctv-box { stroke: var(--accent-error, var(--border-primary)); stroke-width: 1.5; }
         .ctv-panel { fill: var(--background-primary); stroke: var(--border-primary); stroke-width: 1; }
+        .ctv-appicon { fill: var(--accent-primary); }
+        .ctv-appicon-mark { fill: none; stroke: var(--background-primary); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
+        .ctv-letter-box { fill: var(--background-primary); stroke: var(--text-secondary); stroke-width: 1; }
+        .ctv-chart { fill: none; stroke: var(--accent-primary); stroke-width: 1.5; stroke-linejoin: round; }
+        .ctv-chart.is-warn { stroke: var(--accent-warning, var(--accent-primary)); }
+        .ctv-chart-axis { stroke: var(--border-primary); stroke-width: 1; }
+        .ctv-cursor { stroke: var(--text-secondary); stroke-width: 1; stroke-dasharray: 3 2; }
+        .ctv-zoom { fill: var(--accent-primary); fill-opacity: 0.16; stroke: var(--accent-primary); stroke-opacity: 0.6; stroke-width: 1; }
+        .ctv-tip { fill: var(--background-primary); stroke: var(--accent-primary); stroke-width: 1; }
         .ctv-title, .ctv-heading { fill: var(--text-primary); font-size: 11px; font-weight: 700; }
         .ctv-heading { font-size: 12px; }
         .ctv-big { fill: var(--text-primary); font-size: 18px; font-weight: 700; }
@@ -160,6 +172,11 @@
         .ctv-a-meter { animation-name: ctv-meter; transform-origin: left center; }
         .ctv-a-scroll { animation-name: ctv-scroll; animation-timing-function: linear; }
         .ctv-a-knob { animation-name: ctv-knob; }
+        /* Gone at rest: the letter is what the icon replaces. */
+        .ctv-a-fade { animation-name: ctv-fade; opacity: 0; }
+        .ctv-a-appear { animation-name: ctv-appear; }
+        .ctv-a-sweep { animation-name: ctv-sweep; }
+        .ctv-a-tabs { animation-name: ctv-tabs; }
 
         @keyframes ctv-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
         @keyframes ctv-shake { 0%, 40%, 64%, 100% { transform: none; } 46% { transform: translateX(-3px); }
@@ -169,6 +186,13 @@
         @keyframes ctv-spin { to { transform: rotate(360deg); } }
         @keyframes ctv-meter { 0%, 100% { transform: none; } 30% { transform: scaleX(0.55); } 62% { transform: scaleX(0.85); } }
         @keyframes ctv-scroll { from { transform: none; } to { transform: translateY(-48px); } }
+        @keyframes ctv-fade { 0%, 30% { opacity: 1; } 40%, 100% { opacity: 0; } }
+        @keyframes ctv-appear { 0%, 30% { opacity: 0; } 40%, 100% { opacity: 1; } }
+        /* The cursor walks the hour and comes back to rest where it is read. */
+        @keyframes ctv-sweep { 0%, 100% { transform: none; } 35% { transform: translateX(-96px); } 70% { transform: translateX(84px); } }
+        /* The selection walks the four tabs and settles on the first. */
+        @keyframes ctv-tabs { 0%, 12%, 88%, 100% { transform: none; } 25%, 34% { transform: translateY(32px); }
+            47%, 56% { transform: translateY(64px); } 69%, 78% { transform: translateY(96px); } }
         @keyframes ctv-knob { 0%, 100% { transform: none; } 36% { transform: translateX(-26px); } 70% { transform: translateX(24px); } }
 
         @media (prefers-reduced-motion: reduce) { .ctv-anim { animation: none !important; } }
@@ -285,6 +309,51 @@
         </g>`;
     }
 
+    /**
+     * A container row whose letter gives way to the app's icon. `mark` is what
+     * the icon draws: play, ring, wave or bars.
+     */
+    function iconRow(x, y, w, name, mark, delay, { image = '' } = {}) {
+        const cx = x + 18;
+        const cy = y + 11;
+        const marks = {
+            play: `M${cx - 3},${cy - 4} L${cx + 4},${cy} L${cx - 3},${cy + 4} Z`,
+            ring: `M${cx + 3.5},${cy} a3.5,3.5 0 1,1 -7,0 a3.5,3.5 0 1,1 7,0`,
+            wave: `M${cx - 5},${cy + 1} q2.5,-5 5,0 t5,0`,
+            bars: `M${cx - 4},${cy + 4} v-4 M${cx},${cy + 4} v-8 M${cx + 4},${cy + 4} v-6`,
+        };
+        const d = ` style="animation-delay:${delay.toFixed(2)}s"`;
+        return `<g class="ctv-row">
+            <rect x="${x}" y="${y}" width="${w}" height="22" rx="4" class="ctv-box"/>
+            <rect x="${x}" y="${y}" width="4" height="22" rx="2" class="ctv-glow is-ok"/>
+            <g class="ctv-anim ctv-a-fade"${d}>
+                <rect x="${cx - 7}" y="${cy - 7}" width="14" height="14" rx="3" class="ctv-letter-box"/>
+                <text x="${cx}" y="${cy + 4}" text-anchor="middle" class="ctv-title">${esc(name.charAt(0).toUpperCase())}</text>
+            </g>
+            <g class="ctv-anim ctv-a-appear"${d}>
+                <rect x="${cx - 7}" y="${cy - 7}" width="14" height="14" rx="3" class="ctv-appicon"/>
+                <path d="${marks[mark]}" class="ctv-appicon-mark"/>
+            </g>
+            <text x="${x + 32}" y="${y + 15}" class="ctv-title">${esc(name)}</text>
+            ${image ? `<text x="${x + w - 8}" y="${y + 15}" text-anchor="end" class="ctv-sub">${esc(image)}</text>` : ''}
+        </g>`;
+    }
+
+    /**
+     * A label held to `maxW`: a translation longer than the room it has is
+     * drawn a little narrower rather than over its neighbour.
+     */
+    function fitLabel(x, y, text, maxW, cls = 'ctv-label') {
+        const fit = String(text).length * 6.2 > maxW ? ` textLength="${maxW}" lengthAdjust="spacingAndGlyphs"` : '';
+        return `<text x="${x}" y="${y}" class="${cls}"${fit}>${esc(text)}</text>`;
+    }
+
+    /** A line over an hour of readings, `values` from 0 to 1, in the box x,y,w,h. */
+    function chartPath(x, y, w, h, values) {
+        const step = w / (values.length - 1);
+        return values.map((v, i) => `${i ? 'L' : 'M'}${(x + i * step).toFixed(1)},${(y + h - v * h).toFixed(1)}`).join(' ');
+    }
+
     /** The box icon the header carries for this view, with an optional count. */
     function boxIcon(x, y, { count = null, motion = NONE } = {}) {
         return `<g>
@@ -357,9 +426,33 @@
                     <p>${esc(f('dockerTourS2Body2',
                     'Click Name or Status to sort — again to turn the order round — or pick uptime, CPU or memory; group by project, status, network or image, and / searches by name. CPU and RAM come from a reading every 30 seconds. :docker opens the view from the command palette, Shift+Y from anywhere.'))}</p>`,
             },
+            // New in V3 — an app icon for every container
+            {
+                since: 3,
+                title: f('dockerTourIconsTitle', 'Every container with its app’s icon'),
+                visual: svg(`
+                    ${iconRow(12, 12, 200, 'plex', 'play', 0, { image: 'plex:latest' })}
+                    ${iconRow(12, 40, 200, 'jellyfin', 'ring', 0.15, { image: 'jellyfin:10.10' })}
+                    ${iconRow(12, 68, 200, 'sonarr', 'wave', 0.3, { image: 'sonarr:4' })}
+                    ${iconRow(12, 96, 200, 'grafana', 'bars', 0.45, { image: 'grafana:11' })}
+                    ${line('M220,58 L258,58', { delay: 0.5, arrow: true })}
+                    <g class="ctv-anim ctv-a-panel">
+                        <rect x="266" y="10" width="204" height="102" rx="8" class="ctv-panel"/>
+                        ${label(278, 30, '✎ ' + f('dockerTourIconsMenu', 'side panel'), 'ctv-heading')}
+                        ${pill(278, 40, f('dashboard.iconSetChoose', 'Choose app icon…'), { kind: 'active', w: 180 })}
+                        ${label(284, 80, f('dockerIconLetter', 'Use letter'))}
+                        ${label(284, 100, '✓ ' + f('dockerIconAutomatic', 'Automatic'), 'ctv-title')}
+                    </g>
+                    ${label(368, 132, f('dockerTourIconsCaption', 'matched by image and name'), 'ctv-caption', 'middle')}
+                `, f('dockerTourIconsAlt', 'Container letters turning into app icons, and the icon menu in the side panel')),
+                body: `<p>${esc(f('dockerTourIconsBody1',
+                    'Each container now shows its app’s icon ahead of its name, found by its image and its name in two open icon sets, in the variant that suits your theme. One the sets do not know keeps its letter.'))}</p>
+                    <p>${esc(f('dockerTourIconsBody2',
+                    'The ✎ on the icon in the side panel offers Choose app icon…, Use letter and Automatic. Your choice is kept per container name, so it survives an update.'))}</p>`,
+            },
             // New in V2 — columns and sorting
             {
-                isNew: true,
+                since: 2,
                 title: f('dockerTourColsTitle', 'Your columns, your order'),
                 visual: (() => {
                     const cols = [['Image', true], ['Status', true], ['CPU', true], ['RAM', true], ['Size', true],
@@ -465,9 +558,44 @@
                     <p>${esc(f('dockerTourS5Body2',
                     'Logs shows the last lines, and What’s new the release notes behind an available update. A click beside the panel closes it.'))}</p>`,
             },
+            // New in V3 — charts you can read
+            {
+                since: 3,
+                title: f('dockerTourChartsTitle', 'Charts you can read and zoom'),
+                visual: (() => {
+                    const cpu = [0.2, 0.25, 0.22, 0.4, 0.62, 0.48, 0.3, 0.34, 0.28, 0.55, 0.7, 0.42, 0.35, 0.3];
+                    const mem = [0.5, 0.52, 0.53, 0.55, 0.6, 0.62, 0.61, 0.63, 0.66, 0.7, 0.72, 0.71, 0.73, 0.74];
+                    return svg(`
+                        ${pillFlow(14, 6, 300, [[f('dockerSectionOverview', 'Overview'), 'plain'], [f('dockerSectionResources', 'Resources'), 'active'], [f('dockerSectionLogs', 'Logs'), 'plain']], { gap: 4 })}
+                        ${label(14, 42, 'CPU', 'ctv-title')}
+                        <line x1="76" y1="76" x2="320" y2="76" class="ctv-chart-axis"/>
+                        <path d="${chartPath(76, 32, 244, 44, cpu)}" pathLength="1" class="ctv-chart ctv-anim ctv-a-draw"/>
+                        ${label(14, 98, f('dockerTourMemory', 'Memory'), 'ctv-title')}
+                        <line x1="76" y1="132" x2="320" y2="132" class="ctv-chart-axis"/>
+                        <path d="${chartPath(76, 88, 244, 44, mem)}" pathLength="1" class="ctv-chart is-warn ctv-anim ctv-a-draw" style="animation-delay:0.2s"/>
+                        <rect x="250" y="88" width="50" height="44" class="ctv-zoom ctv-anim ctv-a-grow" style="animation-delay:0.6s"/>
+                        ${label(76, 146, '−60 min', 'ctv-sub')}
+                        ${label(320, 146, f('dockerTourNow', 'now'), 'ctv-sub', 'end')}
+                        <g class="ctv-anim ctv-a-sweep">
+                            <line x1="200" y1="30" x2="200" y2="134" class="ctv-cursor"/>
+                            <rect x="206" y="34" width="66" height="30" rx="4" class="ctv-tip"/>
+                            ${label(212, 47, 'CPU 34%', 'ctv-mono')}
+                            ${label(212, 59, '1.2 GB', 'ctv-mono')}
+                        </g>
+                        ${label(340, 24, f('dockerTourChartsDrag', 'drag to zoom'), 'ctv-label')}
+                        ${keycap(340, 34, '← / →')}${label(340 + keyWidth('← / →') + 6, 48, f('dockerTourChartsWalk', 'walk the points'))}
+                        ${keycap(340, 62, '+ / −')}${label(340 + keyWidth('+ / −') + 6, 76, f('dockerTourChartsZoom', 'zoom'))}
+                        ${keycap(340, 90, '0')}${label(340 + keyWidth('0') + 6, 104, f('dockerTourChartsBack', 'the whole hour'))}
+                    `, f('dockerTourChartsAlt', 'CPU and memory over the last hour, one cursor across both with its values, and a stretch dragged out to zoom'));
+                })(),
+                body: `<p>${esc(f('dockerTourChartsBody1',
+                    'Resources draws CPU, memory, network and disk I/O over the last hour as charts you can read: one cursor runs across all four, with the values under the pointer and a time axis below.'))}</p>
+                    <p>${esc(f('dockerTourChartsBody2',
+                    'Drag across a stretch to zoom in; a double-click or 0 shows the whole hour again. From the keyboard, the arrows walk the points and + and − zoom around the one you are on.'))}</p>`,
+            },
             // New in V2 — a web UI's bookmark
             {
-                isNew: true,
+                since: 2,
                 title: f('dockerTourBmTitle', 'A web UI and its bookmark'),
                 visual: svg(`
                     ${crow(14, 14, 150, 'sonarr')}
@@ -514,7 +642,7 @@
             },
             // New in V2 — updates at night
             {
-                isNew: true,
+                since: 2,
                 title: f('dockerTourAutoTitle', 'Updates at night, rolled back if they fail'),
                 visual: svg(`
                     <rect x="14" y="12" width="12" height="12" rx="3" class="ctv-dot is-accent"/>
@@ -564,7 +692,7 @@
             },
             // 8 — disk
             {
-                isNew: true,
+                since: 2,
                 title: f('dockerTourS10Title', 'What the disk holds'),
                 visual: (() => {
                     const tiles = [[f('dockerDiskUnusedImages', 'Unused images'), '4.1 GiB'], [f('dockerDiskDangling', 'Dangling images'), '1.9 GiB'],
@@ -586,34 +714,38 @@
                     <p>${esc(f('dockerTourS10Body2',
                     'Volumes hold data, so they go one at a time, from their row, and only after you type delete. New: Remove stopped clears every stopped container after naming them, and Bind mounts lists the host folders containers keep their data in — Measure counts one.'))}</p>`,
             },
-            // 7 — config
+            // 7 — config, in four tabs since V3
             {
-                isNew: true,
+                since: 3,
                 title: f('dockerTourS7Title', 'Config → Containers'),
                 visual: (() => {
-                    const status = [[f('dockerTourSocket', 'Docker socket'), 'ok'], [f('dockerTourActions', 'Actions'), 'ok'],
-                        [f('dockerTourToken', 'Write token'), 'warn'], [f('dockerTourOwn', 'Own container'), 'ok']];
+                    const tabs = [
+                        [f('config.containersTabConnection', 'Connection'), [[f('dockerTourSocket', 'Docker socket'), 'ok'], [f('dockerTourActions', 'Actions'), 'ok'], [f('dockerTourToken', 'Write token'), 'warn']]],
+                        [f('config.containersTabView', 'View'), [[f('dockerTourRefresh', 'refresh'), 'plain'], [f('dockerTourLogLines', 'log lines'), 'plain'], [f('dockerTourHidden', 'hidden'), 'plain']]],
+                        [f('config.containersTabUpdates', 'Updates'), [[f('dockerTourChecks', 'update checks'), 'ok'], ['03:00–05:00', 'plain'], [f('dockerTourGithubShort', 'GitHub token'), 'plain']]],
+                        [f('config.containersTabAlerts', 'Alerts'), [[f('dockerTourStops', 'stops'), 'bad'], [f('dockerTourHot', 'runs hot'), 'warn'], [f('dockerTourMuted', 'muted'), 'plain']]],
+                    ];
+                    // A row per tab: its name, then what it holds. Rows rather than
+                    // columns, so a long French or Spanish label has room.
                     return svg(`
-                        ${status.map(([l, k], i) => `
-                            <g class="ctv-anim ctv-a-drop" style="animation-delay:${(i * 0.12).toFixed(2)}s">
-                                <circle cx="22" cy="${22 + i * 24}" r="4" class="ctv-dot is-${k}"/>
-                                ${label(32, 26 + i * 24, l, 'ctv-title')}
-                            </g>`).join('')}
-                        ${label(216, 26, f('dockerTourRefresh', 'refresh'))}
-                        <rect x="300" y="20" width="140" height="4" rx="2" class="ctv-track"/>
-                        <circle cx="340" cy="22" r="6" class="ctv-knob ctv-anim ctv-a-knob"/>
-                        ${label(470, 26, '5s', 'ctv-title', 'end')}
-                        ${label(216, 58, f('dockerTourLogLines', 'log lines'))}
-                        ${pillFlow(300, 44, 170, [['100', 'plain'], ['500', 'active'], ['1000', 'plain']])}
-                        ${label(216, 90, f('dockerTourHidden', 'hidden'))}
-                        ${pillFlow(300, 76, 170, [['watchtower', 'dashed'], ['traefik', 'dashed']])}
-                        ${label(216, 124, f('dockerTourGithub', 'GitHub token: 60 → 5000 an hour'), 'ctv-caption')}
-                    `, f('dockerTourS7Alt', 'The connection status and the settings of Config → Containers'));
+                        ${tabs.map(([name, lines], i) => {
+                            const y = 6 + i * 32;
+                            return `<g class="ctv-anim ctv-a-drop" style="animation-delay:${(i * 0.12).toFixed(2)}s">
+                                <rect x="12" y="${y}" width="456" height="26" rx="6" class="ctv-panel"/>
+                                ${fitLabel(22, y + 17, name, 98, 'ctv-title')}
+                                ${lines.map(([l, k], j) => `
+                                    <circle cx="${130 + j * 114}" cy="${y + 13}" r="3.5" class="ctv-dot is-${k}"/>
+                                    ${fitLabel(138 + j * 114, y + 17, l, 100)}`).join('')}
+                            </g>`;
+                        }).join('')}
+                        <rect x="10" y="4" width="460" height="30" rx="7" class="ctv-select ctv-anim ctv-a-tabs"/>
+                        ${label(240, 145, f('dockerTourTabsCaption', 'four tabs, each for one question'), 'ctv-caption', 'middle')}
+                    `, f('dockerTourS7Alt', 'The four tabs of Config → Containers: Connection, View, Updates and Alerts'));
                 })(),
                 body: `<p>${esc(f('dockerTourS7Body1',
-                    'Config → Containers shows the connection as the server sees it — the socket, whether actions are on, the write token, and whether nextDash recognises its own container. Those are set by environment variables, not here.'))}</p>
+                    'Config → Containers has four tabs. Connection shows what the server sees — the socket, whether actions are on, the write token, its own container — set by environment variables, not here.'))}</p>
                     <p>${esc(f('dockerTourS7Body2',
-                    'Below: the view and its header icon, how often the list refreshes (2 to 30 seconds), how many log lines to show, update checks, confirmations, notices when a container stops, keeps restarting or turns unhealthy — sent to your alert webhook and browser notifications, with the containers you mute — the containers you hide, and an optional GitHub token for release notes. New: the window automatic updates run in, and the lines for notices when a container runs hot.'))}</p>`,
+                    'View holds the header icon, the refresh rate, log lines and the containers you hide; Updates the checks, the nightly window and a GitHub token for release notes; Alerts the notices when a container stops, restarts, turns unhealthy or runs hot, and the containers you mute.'))}</p>`,
             },
             // 8 — dashboard and keys
             {
@@ -652,13 +784,14 @@
         const progress = t('dashboard.inboxTutorialProgress', 'Step {n} of {total}', { n: state.index + 1, total });
         // For a reader who took the earlier tour: the first step says this is
         // an update, and the steps that are new or changed carry a mark.
-        const banner = state.updated && isFirst
+        const banner = state.sawVersion && isFirst
             ? `<div class="containers-tutorial-update" data-tour-update role="note">
                 <strong>${esc(t('dockerTourUpdatedTitle', 'Updated with new features'))}</strong>
-                <span>${esc(t('dockerTourUpdatedBody', 'Since your last tour: choose your columns, a web UI’s bookmark and its health, updates at night with a rollback, notices when a container runs hot, network and disk I/O, and more on Disk. Steps marked New show them.'))}</span>
+                <span>${esc(t('dockerTourUpdatedBodyV3', 'Since your last tour: an app icon for every container, charts you can read and zoom, and Config → Containers in four tabs. Steps marked New show them.'))}</span>
+                ${state.sawVersion < 2 ? `<span>${esc(t('dockerTourUpdatedBody', 'Since your last tour: choose your columns, a web UI’s bookmark and its health, updates at night with a rollback, notices when a container runs hot, network and disk I/O, and more on Disk. Steps marked New show them.'))}</span>` : ''}
             </div>`
             : '';
-        const newChip = state.updated && step.isNew
+        const newChip = state.sawVersion && step.since > state.sawVersion
             ? ` <span class="containers-tutorial-new" data-tour-new>${esc(t('dockerTourNew', 'New'))}</span>`
             : '';
 
@@ -709,9 +842,10 @@
         });
     }
 
-    /** Whether this reader saw the tour before it grew: they are told it is an update. */
-    function tookEarlierTour() {
-        return Boolean(global.DiscoverabilityState?.hasSeenTip?.(PREVIOUS_TIP_ID));
+    /** Which earlier tour this reader took, 1 or 2, or 0: they are told it is an update. */
+    function earlierTourSeen() {
+        const seen = PREVIOUS_TIP_IDS.find(([id]) => global.DiscoverabilityState?.hasSeenTip?.(id));
+        return seen ? seen[1] : 0;
     }
 
     let finished = false;
@@ -732,10 +866,10 @@
         if (d.searchComponent?.isActive?.()) return false;
         if (!global.AppModal?.show) return false;
 
-        state = { index: 0, direction: 'forward', updated: tookEarlierTour() };
+        state = { index: 0, direction: 'forward', sawVersion: earlierTourSeen() };
         finished = false;
         render();
-        global.nextdashTrack?.('containers-tutorial:shown', { updated: state.updated });
+        global.nextdashTrack?.('containers-tutorial:shown', { updated: state.sawVersion > 0 });
         return true;
     }
 
@@ -744,12 +878,12 @@
         const d = global.dashboardInstance;
         if (!global.AppModal?.show) return false;
         if (typeof d?.isModalOpen === 'function' && d.isModalOpen()) return false;
-        state = { index: 0, direction: 'forward', updated: tookEarlierTour() };
+        state = { index: 0, direction: 'forward', sawVersion: earlierTourSeen() };
         finished = false;
         render();
         global.nextdashTrack?.('containers-tutorial:opened');
         return true;
     }
 
-    global.ContainersTutorial = { TIP_ID, PREVIOUS_TIP_ID, maybeShow, open };
+    global.ContainersTutorial = { TIP_ID, PREVIOUS_TIP_IDS, maybeShow, open };
 }(typeof window !== 'undefined' ? window : globalThis));

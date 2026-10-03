@@ -10,8 +10,11 @@
     try {
         const hash = window.location.hash.substring(1);
         if (hash === 'search' || hash.startsWith('search?')) {
-            window.__nextdashBootSearch = new URLSearchParams(
-                hash.slice('search'.length).replace(/^\?/, '')).get('q') || '';
+            const params = new URLSearchParams(hash.slice('search'.length).replace(/^\?/, ''));
+            // web= is the address-bar web search (opensearch-web.xml); q= the
+            // bookmark search. Typing into the address bar is the explicit act.
+            window.__nextdashBootSearchWeb = params.has('web');
+            window.__nextdashBootSearch = params.get('web') || params.get('q') || '';
         }
     } catch (_error) {
         // An address that cannot be parsed is not a search.
@@ -432,7 +435,9 @@ class Dashboard {
              */
             if (window.__nextdashBootSearch !== undefined) {
                 const query = window.__nextdashBootSearch;
+                const web = window.__nextdashBootSearchWeb === true;
                 delete window.__nextdashBootSearch;
+                delete window.__nextdashBootSearchWeb;
                 // search.js is its own lazy bundle (see search-loader.js) --
                 // this.searchComponent is only guaranteed to exist once it has
                 // loaded and initializeSearchComponent() has run. Reaching here
@@ -446,10 +451,10 @@ class Dashboard {
                 // to whatever this.searchComponent already is.
                 if (window.SearchLoader) {
                     void window.SearchLoader.ensureReady().then((search) => {
-                        (search || this.searchComponent)?.openSearchWithQuery?.(query);
+                        (search || this.searchComponent)?.openSearchWithQuery?.(query, { web });
                     });
                 } else {
-                    this.searchComponent?.openSearchWithQuery?.(query);
+                    this.searchComponent?.openSearchWithQuery?.(query, { web });
                 }
             }
             /*
@@ -1054,15 +1059,16 @@ class Dashboard {
              * opensearch.xml.
              */
             if (hash === 'search' || hash.startsWith('search?')) {
-                const query = new URLSearchParams(hash.slice('search'.length).replace(/^\?/, ''))
-                    .get('q') || '';
+                const params = new URLSearchParams(hash.slice('search'.length).replace(/^\?/, ''));
+                const web = params.has('web');
+                const query = params.get('web') || params.get('q') || '';
                 // Same lazy-bundle race as the boot-search path above.
                 if (window.SearchLoader) {
                     void window.SearchLoader.ensureReady().then((search) => {
-                        (search || this.searchComponent)?.openSearchWithQuery?.(query);
+                        (search || this.searchComponent)?.openSearchWithQuery?.(query, { web });
                     });
                 } else {
-                    this.searchComponent?.openSearchWithQuery?.(query);
+                    this.searchComponent?.openSearchWithQuery?.(query, { web });
                 }
                 return;
             }

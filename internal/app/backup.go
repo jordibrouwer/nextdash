@@ -184,6 +184,8 @@ var dataFiles = map[string]dataFilePolicy{
 	"health-credentials.json": dataSecret,
 	"webhooks.json":           dataSecret,
 	"docker-secrets.json":     dataSecret,
+	"web-search-secrets.json": dataSecret,
+	"unraid-secrets.json":     dataSecret,
 
 	"preview-cache.json": dataCache,
 	"health-cache.json":  dataCache,
@@ -736,9 +738,17 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 		logInfo(logComponentImport, "safety backup written before the data was replaced")
 	}
 
+	before := h.store.GetSettings()
 	// Under the store lock, so no bookmark write lands between the files.
 	if err := h.store.ReplaceDataFiles(func() error { return commitPreparedImport(dataDir, prepared) }); err != nil {
 		return 0, &importError{msg: fmt.Sprintf("commit failed: %v", err), code: http.StatusInternalServerError}
+	}
+	// A backup made without its secrets has them empty; restoring it keeps the
+	// ones in use, as it keeps the secret files it does not carry.
+	if after := h.store.GetSettings(); keepSettingsSecrets(&after, before) {
+		if err := h.store.SaveSettings(after); err != nil {
+			logWarn(logComponentImport, "the alert and archive secrets could not be kept (%v); set them again in Config", err)
+		}
 	}
 
 	for pageID, categories := range importedCategoriesByPage {
@@ -749,7 +759,50 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 
 	h.invalidateHealthReportCache()
 	applyRuntimeSettings(h.store.GetSettings())
+	h.forgetUnraidAfterRestore(before, preparedHasRelPath(prepared, "unraid-secrets.json"))
 	return skippedBookmarks, nil
+}
+
+// forgetUnraidAfterRestore drops what belonged to the Unraid server before a
+// restore: the tiles served its answers and the schema cached under the same
+// id was used against the restored address. A key the backup did not carry
+// stays on disk, so when the restored address is another one it is dropped,
+// as a save in Config does, rather than sent there.
+func (h *Handlers) forgetUnraidAfterRestore(before Settings, keyRestored bool) {
+	after := h.store.GetSettings()
+	oldBase := map[string]string{}
+	for _, srv := range before.UnraidServers {
+		oldBase[srv.ID] = srv.BaseURL
+		forgetUnraidSchema(srv.ID)
+	}
+	for _, srv := range after.UnraidServers {
+		forgetUnraidSchema(srv.ID)
+		if base, ok := oldBase[srv.ID]; ok && base != srv.BaseURL && !keyRestored {
+			if err := saveUnraidAPIKey(srv.ID, ""); err != nil {
+				logWarn(logComponentImport, "the Unraid key of the previous address could not be dropped (%v)", err)
+			}
+		}
+	}
+	resetUnraidAnswers()
+}
+
+// keepSettingsSecrets fills the secrets redactSettingsSecrets empties from
+// before, where after has none. It reports whether anything was filled.
+func keepSettingsSecrets(after *Settings, before Settings) bool {
+	changed := false
+	keep := func(dst *string, src string) {
+		if *dst == "" && src != "" {
+			*dst = src
+			changed = true
+		}
+	}
+	keep(&after.ArchiveSaveAccessKey, before.ArchiveSaveAccessKey)
+	keep(&after.ArchiveSaveSecret, before.ArchiveSaveSecret)
+	keep(&after.MonitorNotifyPushoverToken, before.MonitorNotifyPushoverToken)
+	keep(&after.MonitorNotifyPushoverUserKey, before.MonitorNotifyPushoverUserKey)
+	keep(&after.MonitorNotifyURL, before.MonitorNotifyURL)
+	keep(&after.CalendarIcsUrl, before.CalendarIcsUrl)
+	return changed
 }
 
 // buildBackupZip assembles the full data-directory backup as a ZIP archive in memory.
@@ -824,6 +877,11 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 			if info.Name() == previewImageDirName && filepath.Dir(path) == dataDir {
 				return filepath.SkipDir
 			}
+			// The app-icon set mirrors and their cached icons: all of it comes
+			// back from the CDN, the same as cached previews.
+			if info.Name() == iconSetsDirName && filepath.Dir(path) == dataDir {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
@@ -852,6 +910,24 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 
 		if skips.skip(relPath) {
 			return nil
+		}
+
+		// The secrets inside settings.json (alert address, Pushover, archive
+		// keys, iCal address) left with it whole: written redacted, as the
+		// API hands them to a reader without the token.
+		if skips.secrets && relPath == "settings.json" {
+			redacted := h.store.GetSettings()
+			redactSettingsSecrets(&redacted)
+			body, err := json.MarshalIndent(redacted, "", "  ")
+			if err != nil {
+				return err
+			}
+			zipFile, err := zipWriter.Create(relPath)
+			if err != nil {
+				return err
+			}
+			_, err = zipFile.Write(body)
+			return err
 		}
 
 		zipEntryPath := strings.ReplaceAll(canonicalDataAssetPath(relPath), "\\", "/")

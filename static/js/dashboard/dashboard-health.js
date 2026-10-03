@@ -645,6 +645,7 @@ class DashboardHealth {
             if (!res.ok) return {};
             const data = await res.json();
             this.dash.healthCredentials = data?.credentials || {};
+            this.dash.healthCredentialDetails = data?.details || {};
         } catch (_error) {
             this.dash.healthCredentials = {};
         }
@@ -659,7 +660,15 @@ class DashboardHealth {
         // still the bookmark's: without its own option the select fell back to
         // "Nothing", and the next Save removed the sign-in.
         if (selected && !(selected in list)) list[selected] = selected;
-        return Object.keys(list).sort().map((id) => `
+        // A sign-in that only holds a login (a widget's qBittorrent or Pi-hole
+        // session) is never sent by a health check: picked, the monitor
+        // checked anonymously and reported down.
+        const details = this.dash.healthCredentialDetails || {};
+        const sessionOnly = (id) => {
+            const d = details[id];
+            return Boolean(d?.session) && !d.basic && !(d.headers || []).length && !(d.query || []).length;
+        };
+        return Object.keys(list).filter((id) => id === selected || !sessionOnly(id)).sort().map((id) => `
             <option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(list[id] || id)}</option>
         `).join('');
     }
@@ -3037,7 +3046,7 @@ class DashboardHealth {
         // that follows the pointer cannot be read on a touch screen and vanishes
         // the moment you look away from it.
         const chartBlock = chart
-            ? `<div class="health-monitor-chart">${chart}</div>
+            ? `<div class="health-monitor-chart" data-health-monitor-plot>${chart}</div>
                <div class="health-monitor-readout" data-health-readout aria-live="polite">
                    <span class="health-monitor-readout-hint">${this.escape(
                        this.t('dashboard.healthStatsPointHint', 'Select a point on the chart to read its response time.')
@@ -3192,6 +3201,63 @@ class DashboardHealth {
         // the value the user came to see, and it shows what the chart can do.
         const last = hits[hits.length - 1];
         if (last) select(indexOf(last));
+        void this.mountMonitorChart(issue, modalText);
+    }
+
+    /*
+     * The same chart with uPlot (shared/nd-chart.js), over the plain one bound
+     * above: response time per bucket with its average as a dashed line, a
+     * tooltip, a drag to zoom, and the arrow keys with the bucket read out under
+     * the chart -- the readout the plain chart had, now in the chart's own line.
+     * When the library cannot be loaded the plain chart stays, as it was.
+     */
+    async mountMonitorChart(issue, root) {
+        const host = root?.querySelector('[data-health-monitor-plot]');
+        const buckets = Array.isArray(issue?.monitorStats?.heartbeat) ? issue.monitorStats.heartbeat : [];
+        if (!host || buckets.length < 2) return;
+        try {
+            if (!window.NdChart) {
+                await window.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart',
+                    () => typeof window.NdChart !== 'undefined');
+            }
+            await window.NdChart.load();
+        } catch {
+            return;
+        }
+        if (!host.isConnected) return;
+        const values = buckets.map((b) => (Number(b.avgMs) > 0 ? Number(b.avgMs) : null));
+        const known = values.filter((v) => v !== null);
+        if (known.length < 2) return;
+        const avg = Math.round(known.reduce((sum, v) => sum + v, 0) / known.length);
+        const min = Math.min(...known);
+        const max = Math.max(...known);
+        const span = Number(buckets[buckets.length - 1].from) - Number(buckets[0].from);
+        const ms = (v) => `${Math.round(v)}ms`;
+        const text = (i) => {
+            const b = buckets[i];
+            const when = new Date(b.from).toLocaleString();
+            if (values[i] === null) return `${when} · ${this.heartbeatStateLabel(b.state)}`;
+            const checks = (Number(b.up) || 0) + (Number(b.down) || 0);
+            return [when, ms(values[i]),
+                checks ? this.t('dashboard.healthStatsChecks', '{count} checks', { count: checks }) : '',
+                this.heartbeatStateLabel(b.state)].filter(Boolean).join(' · ');
+        };
+        this._monitorChart?.destroy();
+        this._monitorChart = window.NdChart.chart(host, {
+            x: buckets.map((b) => Number(b.from) / 1000),
+            series: [
+                { label: this.t('dashboard.healthStatsResponse', 'Response time'), values, color: '--accent-primary', format: ms },
+                { label: 'avg', values: values.map(() => avg), color: '--text-muted', dash: [4, 4], width: 1, fill: false, format: ms },
+            ],
+            text,
+            format: { x: span > 2 * 86400000 ? 'datetime' : 'time', tick: ms },
+            scales: { y: { range: () => [0, max * 1.15] } },
+            summary: this.t('dashboard.healthSparklineLabelAvg', 'Response time {min}–{max}ms, average {avg}ms', { min, max, avg }),
+            height: 132,
+            axisWidth: 50,
+        });
+        // The chart reads its own points out; the plain chart's readout goes.
+        root.querySelector('[data-health-readout]')?.remove();
     }
 
     /** Bucket state as a word, shared by the readout and the heartbeat tooltips. */

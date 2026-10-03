@@ -53,6 +53,8 @@ type MonitorStats struct {
 	Uptime30d       UptimeWindow      `json:"uptime30d"`
 	Heartbeat       []HeartbeatBucket `json:"heartbeat,omitempty"`
 	Incidents       []HealthIncident  `json:"incidents,omitempty"`
+	// IncidentSpans is every incident as [start, durationMs], newest first.
+	IncidentSpans [][2]int64 `json:"incidentSpans,omitempty"`
 	// DownSince is the start of the current outage (0 when up or unknown).
 	DownSince   int64 `json:"downSince,omitempty"`
 	LastSample  int64 `json:"lastSample,omitempty"`
@@ -311,6 +313,11 @@ func buildMonitorStatsWithDays(samples []HealthSample, days []HealthDay, interva
 	}
 	if len(incidents) > 0 && incidents[0].Ongoing {
 		stats.DownSince = incidents[0].Start
+	}
+	// Every outage's start and length, for counts and downtime: summed over the
+	// five listed, the large view said "5 incidents" for twelve.
+	for _, inc := range incidents {
+		stats.IncidentSpans = append(stats.IncidentSpans, [2]int64{inc.Start, inc.Duration})
 	}
 	if len(incidents) > 5 {
 		incidents = incidents[:5]

@@ -33,6 +33,14 @@ type FleetMonitor struct {
 
 // FleetIncident is one outage, carrying which bookmark it belonged to so the list
 // reads as a timeline across the collection.
+// FleetIncidentTotal is one monitor's outages added up.
+type FleetIncidentTotal struct {
+	Name   string `json:"name"`
+	URL    string `json:"url"`
+	Count  int    `json:"count"`
+	DownMs int64  `json:"downMs"`
+}
+
 type FleetIncident struct {
 	Name     string `json:"name"`
 	URL      string `json:"url"`
@@ -82,9 +90,90 @@ type FleetStats struct {
 	// TotalIncidents is how many there were before the list was capped, so the UI
 	// can say "showing 25 of 40" rather than implying the month had 25.
 	TotalIncidents int `json:"totalIncidents,omitempty"`
+	// IncidentTotals is each monitor's count and downtime over every outage,
+	// counted before the list above is cut: summed from those 25, a monitor's
+	// "n×" and its downtime came up short.
+	IncidentTotals []FleetIncidentTotal `json:"incidentTotals,omitempty"`
 	// Slower lists monitors whose recent response time rose meaningfully against
 	// the previous week.
 	Slower []FleetResponseShift `json:"slower,omitempty"`
+	// Days is the retained history per UTC day, every monitor pooled: the course
+	// behind the 24h/7d/30d figures, drawn as a chart in Collection health.
+	Days []FleetDay `json:"days,omitempty"`
+}
+
+// FleetDay is one UTC day across every monitor. Pooled by sample, like the
+// uptime windows, so a monitor checked every minute weighs as much as its checks.
+type FleetDay struct {
+	// Day is midnight UTC in Unix milliseconds.
+	Day int64 `json:"d"`
+	// Checks and Up count the samples outside maintenance; Up the ones answered.
+	Checks int `json:"n"`
+	Up     int `json:"u"`
+	// AvgMs is the mean response of the answered checks with a time, 0 without.
+	AvgMs int `json:"p,omitempty"`
+}
+
+// fleetDays folds every monitor's samples into one entry per UTC day, oldest
+// first, leaving out days without a check.
+func fleetDays(inputs []fleetMonitorInput, now time.Time) []FleetDay {
+	cutoff := now.Add(-healthHistoryRetention).UnixMilli()
+	const dayMs = int64(24 * time.Hour / time.Millisecond)
+	type acc struct{ n, up, ms, pinged int }
+	byDay := map[int64]*acc{}
+	for _, in := range inputs {
+		for _, s := range in.samples {
+			if s.T < cutoff || s.Maint {
+				continue
+			}
+			day := s.T - s.T%dayMs
+			a := byDay[day]
+			if a == nil {
+				a = &acc{}
+				byDay[day] = a
+			}
+			a.n++
+			if s.Up {
+				a.up++
+				if s.PingMs > 0 {
+					a.ms += s.PingMs
+					a.pinged++
+				}
+			}
+		}
+	}
+	for _, in := range inputs {
+		rawFrom := int64(0)
+		if len(in.samples) > 0 {
+			rawFrom = dayStartMs(in.samples[0].T)
+		}
+		for _, d := range in.days {
+			if d.N <= 0 || d.D < dayStartMs(cutoff) || (rawFrom > 0 && d.D >= rawFrom) {
+				continue
+			}
+			a := byDay[d.D]
+			if a == nil {
+				a = &acc{}
+				byDay[d.D] = a
+			}
+			a.n += d.N
+			a.up += d.U
+			if d.P > 0 && d.U > 0 {
+				a.ms += d.P * d.U
+				a.pinged += d.U
+			}
+		}
+	}
+	days := make([]FleetDay, 0, len(byDay))
+	for day, a := range byDay {
+		d := FleetDay{Day: day, Checks: a.n, Up: a.up}
+		if a.pinged > 0 {
+			d.AvgMs = a.ms / a.pinged
+		}
+		days = append(days, d)
+	}
+	sort.Slice(days, func(i, j int) bool { return days[i].Day < days[j].Day })
+	return days
 }
 
 // fleetMonitorInput is one monitored bookmark plus the samples it owns.
@@ -92,6 +181,9 @@ type fleetMonitorInput struct {
 	name    string
 	url     string
 	samples []HealthSample
+	// days are the summaries of checks older than the samples kept: without
+	// them the 30-day figures covered a week at a 5-minute interval.
+	days []HealthDay
 }
 
 // meanPingSince averages response time over samples at or after cutoff, counting
@@ -132,6 +224,13 @@ func pooledUptime(inputs []fleetMonitorInput, window time.Duration, now time.Tim
 				up++
 			}
 		}
+		rawFrom := int64(0)
+		if len(in.samples) > 0 {
+			rawFrom = in.samples[0].T
+		}
+		u, n := uptimeFromDays(in.days, window, rawFrom, now)
+		up += u
+		total += n
 	}
 	if total == 0 {
 		return UptimeWindow{}
@@ -249,6 +348,13 @@ func buildFleetStats(inputs []fleetMonitorInput, now time.Time) *FleetStats {
 			})
 		}
 
+		if len(perRow) > 0 {
+			total := FleetIncidentTotal{Name: in.name, URL: in.url, Count: len(perRow)}
+			for _, inc := range perRow {
+				total.DownMs += inc.Duration
+			}
+			stats.IncidentTotals = append(stats.IncidentTotals, total)
+		}
 		for _, inc := range perRow {
 			incidents = append(incidents, FleetIncident{
 				Name: in.name, URL: in.url,
@@ -293,6 +399,7 @@ func buildFleetStats(inputs []fleetMonitorInput, now time.Time) *FleetStats {
 	stats.Incidents = incidents
 
 	stats.Slower = deriveResponseShifts(withSamples, now)
+	stats.Days = fleetDays(withSamples, now)
 
 	return stats
 }

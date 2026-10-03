@@ -163,11 +163,13 @@ var lazyLoadedAssets = []string{
 	// built from them: both are required by the config loader.
 	"js/dashboard/dashboard-config-look.js",
 	"js/dashboard/dashboard-config-studio.js",
+	"js/dashboard/dashboard-config-theme-edit.js",
 	// The config sections split out of dashboard-config.js (SECTION_MODULES).
 	// Missing here, one loaded under its bare path, so a browser kept the copy
 	// it had from before a deploy and ran old code against new markup.
 	"js/dashboard/dashboard-config-logs.js",
 	"js/dashboard/dashboard-config-containers.js",
+	"js/dashboard/dashboard-config-unraid.js",
 	"js/dashboard/dashboard-config-inbox.js",
 	"js/dashboard/dashboard-config-context-menu.js",
 	"js/dashboard/dashboard-config-stats.js",
@@ -189,6 +191,15 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-health-multi-select.js",
 	"js/dashboard/dashboard-health-focus.js",
 	"js/dashboard/dashboard-docker.js",
+	// Charts over time: the wrapper and uPlot itself (MIT, vendored), fetched
+	// where a chart is drawn.
+	"js/shared/nd-chart.js",
+	"vendor/uplot/1.6.32/uPlot.iife.min.js",
+	// The QR window's encoder (MIT, vendored), fetched the first time a code
+	// is drawn.
+	"vendor/qrcode-generator/1.4.4/qrcode.js",
+	// The app-icon picker, for the bookmark form and the container drawer.
+	"js/shared/icon-set-picker.js",
 	"js/dashboard/dashboard-docker-drawer.js",
 	"js/dashboard/dashboard-docker-logs.js",
 	"js/dashboard/dashboard-docker-disk.js",
@@ -205,6 +216,8 @@ var lazyLoadedAssets = []string{
 	"js/widgets-tutorial.js",
 	"js/dashboard/dashboard-inline-edit.js",
 	"js/dashboard/dashboard-context-menu.js",
+	// Web results in the search panel, fetched on the first web search.
+	"js/search-web.js",
 	// Not a script, but linked from Config → Help by JS all the same. Under its
 	// bare path a browser kept the sheet it had cached and showed the old
 	// design after the PDF was regenerated.

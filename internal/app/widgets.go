@@ -126,6 +126,17 @@ const (
 	 */
 	WidgetTypeRSS    WidgetType = "rss"
 	WidgetTypeCustom WidgetType = "custom"
+
+	// The Unraid widgets read the Unraid server set under Config -> Containers
+	// (unraid_settings.go). One connection for all of them: a widget only says
+	// how it draws.
+	WidgetTypeUnraid              WidgetType = "unraid"
+	WidgetTypeUnraidArray         WidgetType = "unraidArray"
+	WidgetTypeUnraidParity        WidgetType = "unraidParity"
+	WidgetTypeUnraidShares        WidgetType = "unraidShares"
+	WidgetTypeUnraidVMs           WidgetType = "unraidVms"
+	WidgetTypeUnraidUPS           WidgetType = "unraidUps"
+	WidgetTypeUnraidNotifications WidgetType = "unraidNotifications"
 )
 
 // knownWidgetTypes is the register. A type not in here is refused rather than
@@ -155,6 +166,14 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeCalendar:   {},
 	WidgetTypeRSS:        {},
 	WidgetTypeCustom:     {},
+
+	WidgetTypeUnraid:              {},
+	WidgetTypeUnraidArray:         {},
+	WidgetTypeUnraidParity:        {},
+	WidgetTypeUnraidShares:        {},
+	WidgetTypeUnraidVMs:           {},
+	WidgetTypeUnraidUPS:           {},
+	WidgetTypeUnraidNotifications: {},
 }
 
 var errUnknownWidgetType = errors.New("unknown widget type")

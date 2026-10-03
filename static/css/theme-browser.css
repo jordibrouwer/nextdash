@@ -307,6 +307,84 @@
     color: var(--background-primary);
 }
 
+/* A theme of the reader's own: filled in the info colour, so it stands apart
+   from NEW. LOOK and RECOLOURED stay outlined, as notes beside it. */
+.theme-browser-badge--yours {
+    border-color: var(--accent-info, var(--accent-primary));
+    background: var(--accent-info, var(--accent-primary));
+    color: var(--background-primary);
+}
+
+.theme-browser-badge--look,
+.theme-browser-badge--recoloured {
+    border-color: color-mix(in srgb, var(--text-secondary) 55%, transparent);
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+/* ✎ Edit / Recolour on a card: quiet until the card is pointed at. */
+.theme-browser-edit {
+    margin-left: auto;
+    padding: 1px 7px;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.78em;
+    cursor: pointer;
+}
+
+.theme-browser-card:not(:hover):not(:focus-within):not(.is-current) .theme-browser-edit {
+    opacity: 0.55;
+}
+
+.theme-browser-edit:hover,
+.theme-browser-edit:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    opacity: 1;
+}
+
+/* The editor on the Themes tab, and the way into it from the other tabs. */
+.look-studio-back {
+    margin-bottom: var(--space-2, 0.6rem);
+}
+
+.look-studio-edit-link {
+    margin: 0 0 var(--space-2, 0.6rem);
+}
+
+.config-theme-look-parts {
+    margin: 0 0 8px;
+    color: var(--text-primary);
+}
+
+/* "Use this theme's look": under the In use line, quiet until needed. */
+.theme-browser-look-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+/* "Your themes" and "Built in", across the whole grid row. */
+.theme-browser-group-head {
+    grid-column: 1 / -1;
+    margin: var(--space-2, 0.6rem) 0 0;
+    color: var(--text-tertiary);
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.theme-browser-group-head:first-child {
+    margin-top: 0;
+}
+
 .theme-browser-card-name {
     margin-right: auto;
 }
@@ -343,8 +421,8 @@ body.look-studio-open #app-modal {
 .look-studio {
     position: fixed;
     top: 0;
-    left: calc(100vw - var(--look-studio-width));
-    width: var(--look-studio-width);
+    left: calc(100vw - min(var(--look-studio-width), 100vw));
+    width: min(var(--look-studio-width), 100vw);
     height: 100vh;
     height: 100dvh;
     z-index: 2000;
@@ -356,6 +434,45 @@ body.look-studio-open #app-modal {
     color: var(--text-primary);
     border-left: 1px solid var(--hairline-strong, var(--border-primary));
     box-shadow: -8px 0 28px rgba(0, 0, 0, 0.18);
+}
+
+/* The left edge, dragged to widen the panel. Over the border, a little to
+   either side of it, so it is easy to catch. */
+.look-studio-resize {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -4px;
+    width: 8px;
+    z-index: 1;
+    cursor: ew-resize;
+    touch-action: none;
+}
+
+.look-studio-resize::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 2px;
+    background: var(--accent-primary, var(--text-primary));
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.look-studio-resize:hover::after,
+.look-studio-resize:focus-visible::after,
+.look-studio.is-resizing .look-studio-resize::after {
+    opacity: 0.6;
+}
+
+.look-studio-resize:focus-visible {
+    outline: none;
+}
+
+.look-studio.is-resizing {
+    user-select: none;
 }
 
 .look-studio-head {
@@ -499,9 +616,19 @@ body.look-studio-open #app-modal {
 
 .look-studio-scope {
     display: flex;
+    flex: 1 1 auto;
     align-items: center;
     gap: var(--space-2, 0.5rem);
-    width: 100%;
+    font-size: 0.85em;
+}
+
+/* Ends the first footer row: Applies to, and Save as theme… at its end. */
+.look-studio-break {
+    flex-basis: 100%;
+    height: 0;
+}
+
+.look-studio-btn--quiet {
     font-size: 0.85em;
 }
 
@@ -552,6 +679,56 @@ body.look-studio-open #app-modal {
 .look-studio-btn:disabled {
     opacity: 0.45;
     cursor: default;
+}
+
+/* A dialog over the panel itself: Save as theme… */
+.look-studio-dialog {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.look-studio-dialog-box {
+    width: min(380px, calc(100% - 32px));
+    padding: var(--space-4, 1rem);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    background: var(--background-modal, var(--background-secondary));
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.look-studio-dialog-box h3 {
+    margin: 0 0 var(--space-3, 0.75rem);
+    font-size: 1em;
+}
+
+.look-studio-dialog-box .config-text {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.look-studio-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: var(--space-3, 0.75rem) 0 0;
+    cursor: pointer;
+}
+
+.look-studio-check small {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-secondary);
+}
+
+.look-studio-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: var(--space-4, 1rem);
 }
 
 .look-studio-btn--primary {
@@ -636,6 +813,10 @@ body.look-studio-open #app-modal {
         border-top: 1px solid var(--hairline-strong, var(--border-primary));
         border-radius: 14px 14px 0 0;
         box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.2);
+    }
+
+    .look-studio-resize {
+        display: none;
     }
 
     .look-studio-keys {

@@ -1,0 +1,17 @@
+{
+  "_source": "Sonarr src/Sonarr.Api.V3/Queue/QueueStatusResource.cs",
+  "auth": {
+    "header": "X-Api-Key",
+    "value": "%KEY%"
+  },
+  "body": {
+    "id": 0,
+    "totalCount": 2,
+    "count": 1,
+    "unknownCount": 1,
+    "errors": false,
+    "warnings": false,
+    "unknownErrors": false,
+    "unknownWarnings": false
+  }
+}

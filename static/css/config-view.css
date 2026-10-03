@@ -903,7 +903,9 @@
 .config-stats-head {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    /* Top, not centre: the scope picker is taller than the tabs, and centred
+       the tabs sat 2px lower than on every other section's strip. */
+    align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 20px;
@@ -922,6 +924,13 @@
     align-items: center;
     gap: 8px;
     margin-left: auto;
+}
+
+/* The tabs' own height, so the rule under the strip lands where it does on
+   every other section; the 35px select put it 3px lower here. */
+.config-stats-head .config-stats-scope .config-select {
+    height: 32px;
+    padding-block: 0;
 }
 
 .config-stats-scope-label {
@@ -1909,6 +1918,33 @@
     display: none;
 }
 
+/* "Your themes" and "Built in": a quiet label over each group. */
+.config-theme-picker-group > ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-theme-picker-group + .config-theme-picker-group {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+}
+
+.config-theme-picker-group-label {
+    display: block;
+    padding: 2px 10px 4px;
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-text) * 0.8);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.config-theme-picker-note {
+    color: var(--text-tertiary);
+}
+
 .config-theme-picker-option {
     padding: 6px 10px;
     border-radius: var(--radius-4, 6px);
@@ -2293,256 +2329,348 @@
 /* ── Overview ────────────────────────────────────────────────────────────── */
 
 /*
- * The landing section: a row of figures, then four blocks.
+ * The landing section: one attention line, then two zones side by side --
+ * your install on the left as a grid of panels, nextDash on the right as a
+ * narrow column of news, features and a tip.
  *
- * The figures are the install at a glance and the blocks answer one question
- * each -- what needs you, how you use this, how tidy it is, whether the links
- * answer. Everything about nextDash itself (the release, the developer, what
- * is new, a tip) has its own address in About and Help, so this section is
- * about your own collection and nothing else.
+ * Every panel is the same material and the same shape (title, way in, body,
+ * foot), so the page reads as one set rather than eight differently framed
+ * things. Colour is kept for state: the dot in a title, a warning in a foot,
+ * a figure that needs you. Everything else is the text colours.
  */
-/* The two newest nextdash.cc posts, one line each, across the column -- a
-   tile like the figures under it (the classes come from the markup), set
-   the same gap above them as they keep between themselves. */
-.config-overview-news {
-    margin-bottom: var(--space-2, 0.5rem);
-}
-
-.config-overview-news-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+.config-overview-attention {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.25rem);
-}
-
-.config-overview-news-item {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-3, 0.75rem);
-    min-width: 0;
-}
-
-.config-overview-news-link {
-    flex: 1 1 auto;
-    min-width: 0;
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2, 0.5rem);
-    color: var(--text-primary);
-    text-decoration: none;
-    white-space: nowrap;
-    overflow: hidden;
-}
-
-.config-overview-news-title {
-    flex: 0 1 auto;
-    min-width: 0;
-    display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-4, 1rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--accent-warning, #f59e0b) 30%, transparent);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: color-mix(in srgb, var(--accent-warning, #f59e0b) 5%, transparent);
+}
+
+.config-overview-attention--clear {
+    border-color: color-mix(in srgb, var(--accent-success, #10b981) 25%, transparent);
+    background: color-mix(in srgb, var(--accent-success, #10b981) 4%, transparent);
+}
+
+.config-overview-attention-lead {
+    margin-right: var(--space-1, 0.25rem);
     font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: var(--accent-warning, #f59e0b);
 }
 
-.config-overview-news-summary {
-    flex: 1 1 0;
-    min-width: 0;
-    color: var(--text-muted, #888);
-    overflow: hidden;
-    text-overflow: ellipsis;
+.config-attention-clear {
+    color: var(--text-secondary);
 }
 
-a.config-overview-news-link:hover .config-overview-news-title,
-a.config-overview-news-link:focus-visible .config-overview-news-title {
-    color: var(--accent-primary);
-    text-decoration: underline;
+.config-attention-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 1px 9px;
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: 999px;
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.68rem);
+    cursor: pointer;
 }
 
-.config-overview-news-when {
-    flex: 0 0 auto;
-    color: var(--text-muted, #888);
-    font-size: 0.9em;
+.config-attention-chip b {
+    font-variant-numeric: tabular-nums;
 }
 
-.config-overview-tiles {
+.config-attention-chip--crit b { color: var(--accent-error, #ef4444); }
+.config-attention-chip--warn b { color: var(--accent-warning, #f59e0b); }
+
+.config-attention-chip:hover {
+    border-color: var(--accent-primary);
+}
+
+.config-attention-chip:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.config-overview-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-2, 0.5rem);
-    margin-bottom: var(--space-5, 1.5rem);
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    gap: var(--space-5, 1.5rem);
+    align-items: start;
 }
 
-.config-overview-blocks {
+/* A zone is a small word on a hairline, not another frame. */
+.config-overview-zone {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    margin: 0 0 var(--space-3, 0.75rem);
+    font-size: var(--font-size-small, 0.68rem);
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted, var(--text-secondary));
+}
+
+.config-overview-zone::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.config-overview-panels {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-4, 1rem);
+    gap: var(--space-3, 0.75rem);
 }
 
-/* One column before the blocks get too narrow to hold a sentence. */
-@media (max-width: 900px) {
-    .config-overview-tiles {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+/*
+ * Statistics comes last. When the panels before it are an even number it is
+ * alone on its row, so it takes the row; with the inbox or containers left
+ * out it fills the empty half instead.
+ */
+.config-overview-panels > .config-widget--stats:nth-child(odd) {
+    grid-column: 1 / -1;
+}
 
-    .config-overview-blocks {
+.config-overview-aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-overview-aside > .config-overview-zone {
+    margin-bottom: 0;
+}
+
+@media (max-width: 1100px) {
+    .config-overview-grid {
         grid-template-columns: minmax(0, 1fr);
     }
 }
 
-/*
- * The block is the tier-2 slab the inbox and health already use, so the three
- * views are one material rather than three descriptions of one.
- */
-.config-block {
+@media (max-width: 640px) {
+    .config-overview-panels {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* The panel. The tier-2 slab the inbox and health already use. */
+.config-widget {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2, 0.5rem);
-    padding: var(--space-4, 1rem);
+    min-width: 0;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--card-bg, color-mix(in srgb, var(--background-secondary) 55%, transparent));
 }
 
-.config-block-header {
+.config-widget-head {
     display: flex;
     align-items: baseline;
+    justify-content: space-between;
     gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
 }
 
-/* The handle marks where a block starts without spending a second type size. */
-.config-block-handle {
-    color: var(--accent-primary);
-    opacity: 0.55;
-}
-
-.config-block-title {
-    margin: 0;
-    font-size: calc(var(--font-size-text) * 1.07);
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-/* What the block is for. Two steps down, so it explains without competing. */
-.config-block-what {
-    margin: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-}
-
-.config-block-body {
-    margin-top: var(--space-1, 0.25rem);
-}
-
-/* The one accented block: a tint here means "this wants something from you". */
-.config-block--attention {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 6%, var(--card-bg, transparent));
-}
-
-.config-attention-sentences {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-/*
- * A problem is a line you can read, with the way out beside it. The count used
- * to sit in a column of its own, which made every problem a figure to
- * interpret rather than a sentence to act on.
- */
-.config-attention-sentence {
+.config-widget-title {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3, 0.75rem);
-    padding: var(--space-1-5, 0.35rem) 0;
-    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
-}
-
-.config-attention-sentence:last-child {
-    border-bottom: 0;
-}
-
-.config-attention-text {
-    min-width: 0;
-    font-size: var(--font-size-text);
-    color: var(--text-primary);
-}
-
-.config-attention-sentence--crit .config-attention-text {
-    color: var(--accent-error, #ef4444);
-}
-
-.config-attention-sentence--warn .config-attention-text {
-    color: var(--accent-warning, #f59e0b);
-}
-
-.config-attention-chip {
-    flex: 0 0 auto;
-    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-pill, 999px);
-    background: transparent;
+    gap: 7px;
+    margin: 0;
+    font-size: var(--font-size-small, 0.68rem);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
     color: var(--text-secondary);
+}
+
+.config-widget-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border-primary);
+    flex: none;
+}
+
+.config-widget-dot--good { background: var(--accent-success, #10b981); }
+.config-widget-dot--warn { background: var(--accent-warning, #f59e0b); }
+.config-widget-dot--crit { background: var(--accent-error, #ef4444); }
+
+.config-widget-go,
+.config-widget-link,
+.config-widget-step {
+    padding: 0;
+    border: 0;
+    background: none;
     font: inherit;
     font-size: var(--font-size-small, 0.68rem);
+    color: var(--text-muted, var(--text-secondary));
     cursor: pointer;
-    transition: background 0.12s ease, color 0.12s ease;
 }
 
-.config-attention-chip:hover {
-    background: var(--background-secondary);
+.config-widget-go:hover,
+.config-widget-link:hover,
+.config-widget-go:focus-visible,
+.config-widget-link:focus-visible {
     color: var(--accent-primary);
 }
 
-.config-attention-chip:focus-visible {
-    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
-    outline-offset: 2px;
-}
-
-/* Prose, so it is set to be read rather than scanned. */
-.config-habits {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 0.75rem);
-    font-size: var(--font-size-controls);
-    line-height: 1.6;
-    color: var(--text-secondary);
-}
-
-.config-habits p {
-    margin: 0;
-}
-
-.config-cleanup {
-    display: flex;
-    align-items: center;
-    gap: var(--space-5, 1.5rem);
-}
-
-.config-cleanup-score {
-    font-size: calc(var(--font-size-text) * 2.6);
-    font-weight: 700;
-    line-height: 1;
-    color: var(--accent-primary);
-}
-
-.config-cleanup-score--warn { color: var(--accent-warning, #f59e0b); }
-.config-cleanup-score--crit { color: var(--accent-error, #ef4444); }
-
-.config-cleanup-meter {
+.config-widget-body {
     flex: 1 1 auto;
     min-width: 0;
 }
 
+.config-widget-foot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-3, 0.75rem);
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    font-size: var(--font-size-small, 0.68rem);
+    color: var(--text-muted, var(--text-secondary));
+}
+
+.config-widget-note {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.config-widget-alert {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+}
+
+.config-widget-alert--warn { color: var(--accent-warning, #f59e0b); }
+.config-widget-alert--crit { color: var(--accent-error, #ef4444); }
+
+.config-widget-figure {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    margin: 0;
+}
+
+.config-widget-value {
+    font-size: calc(var(--font-size-text) * 2);
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.config-widget-unit {
+    font-size: var(--font-size-controls);
+    color: var(--text-muted, var(--text-secondary));
+}
+
+.config-widget-rows {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px var(--space-3, 0.75rem);
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--font-size-controls);
+}
+
+.config-widget-rows dt {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.config-widget-rows dd {
+    margin: 0;
+    min-width: 0;
+    max-width: 22ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.config-widget-tone--good { color: var(--accent-success, #10b981) !important; }
+.config-widget-tone--warn { color: var(--accent-warning, #f59e0b) !important; }
+.config-widget-tone--crit { color: var(--accent-error, #ef4444) !important; }
+
+/* Daily bars. Height is data, set inline; the newest day is on the right. */
+.config-widget-spark {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 28px;
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.config-widget-spark i {
+    flex: 1 1 0;
+    min-width: 2px;
+    border-radius: 2px 2px 0 0;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+.config-widget-spark i.is-on {
+    background: color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+/* Statistics: the week on the left, what it adds up to on the right. */
+.config-widget-split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5, 1.5rem);
+}
+
+.config-widget--stats:not(:nth-child(odd)) .config-widget-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-widget-split .config-widget-rows {
+    margin-top: 0;
+}
+
+.config-cleanup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 2px var(--space-3, 0.75rem);
+    margin-top: var(--space-2, 0.5rem);
+    font-size: var(--font-size-controls);
+}
+
+.config-cleanup-label {
+    color: var(--text-secondary);
+}
+
+.config-cleanup-score {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.config-cleanup-score--good { color: var(--accent-success, #10b981); }
+.config-cleanup-score--warn { color: var(--accent-warning, #f59e0b); }
+.config-cleanup-score--crit { color: var(--accent-error, #ef4444); }
+
 .config-cleanup-bar {
-    height: 6px;
-    border-radius: var(--radius-pill, 999px);
-    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    grid-column: 1 / -1;
+    height: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
     overflow: hidden;
 }
 
@@ -2550,46 +2678,51 @@ a.config-overview-news-link:focus-visible .config-overview-news-title {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: var(--accent-primary);
 }
 
+.config-cleanup-bar-fill--good { background: var(--accent-success, #10b981); }
 .config-cleanup-bar-fill--warn { background: var(--accent-warning, #f59e0b); }
 .config-cleanup-bar-fill--crit { background: var(--accent-error, #ef4444); }
 
 .config-cleanup-reason {
-    margin: var(--space-2, 0.5rem) 0 0;
+    margin: var(--space-1, 0.25rem) 0 0;
     font-size: var(--font-size-small, 0.68rem);
-    color: var(--text-secondary);
-}
-
-.config-health-glance {
-    display: flex;
-    align-items: center;
-    gap: var(--space-5, 1.5rem);
+    color: var(--text-muted, var(--text-secondary));
 }
 
 /*
- * The share that answers, as a ring. --config-health-pct is set inline because
- * it is data, not style: the number comes from the report every repaint.
+ * Health: the share that answers, as a ring, beside the four states.
+ * --config-health-pct is set inline because it is data, not style.
  */
+.config-health-glance {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 1rem);
+}
+
+.config-health-glance .config-widget-rows {
+    flex: 1 1 auto;
+    margin: 0;
+}
+
 .config-health-ring {
     display: grid;
     place-items: center;
     flex: 0 0 auto;
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background: conic-gradient(
-        var(--accent-primary) calc(var(--config-health-pct, 0) * 1%),
-        color-mix(in srgb, var(--text-primary) 8%, transparent) 0
+        var(--accent-success, #10b981) calc(var(--config-health-pct, 0) * 1%),
+        color-mix(in srgb, var(--text-primary) 10%, transparent) 0
     );
 }
 
 .config-health-ring::after {
     content: "";
     grid-area: 1 / 1;
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: var(--background-primary);
 }
@@ -2602,38 +2735,136 @@ a.config-overview-news-link:focus-visible .config-overview-news-title {
     color: var(--text-primary);
 }
 
-.config-health-counts {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-1-5, 0.35rem) var(--space-4, 1rem);
-    flex: 1 1 auto;
+/* News and features: a title per row, its date or version on the right. */
+.config-overview-news-list,
+.config-overview-features {
+    list-style: none;
     margin: 0;
     padding: 0;
-    list-style: none;
 }
 
-.config-health-state {
+.config-overview-news-item,
+.config-overview-feature {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3, 0.75rem);
+    min-width: 0;
+    padding: var(--space-2, 0.5rem) 0;
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.config-overview-news-item:first-child,
+.config-overview-feature:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.config-overview-news-item:last-child,
+.config-overview-feature:last-child {
+    padding-bottom: 0;
+}
+
+.config-overview-news-link {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Two lines before a title is clipped: the column is narrow, and a headline
+   cut after three words says less than none. */
+.config-overview-news-title,
+.config-overview-feature-link {
+    display: -webkit-box;
+    min-width: 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: var(--font-size-controls);
+    color: var(--text-primary);
+}
+
+.config-overview-news-summary {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--font-size-small, 0.68rem);
+    color: var(--text-muted, var(--text-secondary));
+}
+
+a.config-overview-news-link:hover .config-overview-news-title,
+a.config-overview-news-link:focus-visible .config-overview-news-title,
+.config-overview-feature-link:hover,
+.config-overview-feature-link:focus-visible {
+    color: var(--accent-primary);
+}
+
+.config-overview-feature-link {
+    flex: 1 1 auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: var(--font-size-controls);
+    text-align: left;
+    cursor: pointer;
+}
+
+span.config-overview-feature-link {
+    cursor: default;
+}
+
+.config-overview-news-when,
+.config-overview-feature-since {
+    flex: none;
+    font-size: var(--font-size-small, 0.68rem);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted, var(--text-secondary));
+}
+
+.config-overview-feature-since {
+    padding: 0 6px;
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: 999px;
+    color: var(--accent-primary);
+}
+
+.config-overview-footnote {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: var(--space-2, 0.5rem);
+    width: 100%;
 }
 
-.config-health-label {
-    font-size: var(--font-size-small, 0.68rem);
-    color: var(--text-secondary);
-}
-
-.config-health-count {
-    font-size: var(--font-size-text);
-    font-weight: 700;
+/* The tip: the help tip's own text style, without its list bullet spacing. */
+.config-overview-tip.config-help-tip {
+    margin: 0;
+    font-size: var(--font-size-controls);
     color: var(--text-primary);
 }
 
-.config-health-count--healthy { color: var(--accent-success, #10b981); }
-.config-health-count--content { color: var(--accent-warning, #f59e0b); }
-.config-health-count--down { color: var(--accent-error, #ef4444); }
-.config-health-count--broken { color: var(--accent-error, #ef4444); }
+.config-overview-tip-nav {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.config-widget-step {
+    padding: 0 7px;
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--radius-3, 4px);
+    line-height: 1.4;
+}
+
+.config-widget-step:hover,
+.config-widget-step:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
 
 /*
  * The update line. Absent on a current install -- the bar it replaces spent a
@@ -2656,21 +2887,6 @@ a.config-overview-news-link:focus-visible .config-overview-news-title {
     margin: 0;
     font-size: var(--font-size-text);
     color: var(--text-primary);
-}
-
-/*
- * The colophon line: which release is running, with its notes a button away.
- * Quiet on purpose -- it is the last thing on the page, not an announcement.
- */
-.config-overview-footnote {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.5rem);
-    margin: var(--space-5, 1.5rem) 0 0;
-    padding-top: var(--space-3, 0.75rem);
-    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
-    font-size: var(--font-size-small, 0.68rem);
-    color: var(--text-secondary);
 }
 
 .config-update-notice-actions {
@@ -3563,14 +3779,32 @@ body.no-animations .config-new-features-panel-star {
     margin: 0;
 }
 
+/*
+ * One line, always there, so the band is the same height in every section.
+ *
+ * Wrapped, a long line (Bookmarks) made the band a line taller, and a section
+ * without one (none rendered yet) made it a line shorter -- the rail and the
+ * sub-tab strip below jumped up and down as you walked the sections. Cut to
+ * one line instead; the whole sentence is the line's title.
+ */
+.config-view-head .lvs-header-text {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
 .config-view-head-breadcrumb {
     margin: 2px 0 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
+    min-height: 1lh;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .config-view-head-breadcrumb[hidden] {
-    display: none;
+    display: block;
+    visibility: hidden;
 }
 
 /*
@@ -3603,10 +3837,6 @@ body.no-animations .config-new-features-panel-star {
     .config-view-head .lvs-header-actions .config-changed-count {
         display: none;
     }
-}
-
-.config-view-head-breadcrumb[hidden] {
-    display: none;
 }
 
 /*
@@ -4600,6 +4830,14 @@ body.no-animations .config-new-features-panel-star {
 /* The button itself is the shared .wn-kofi-* set from modal.css; only this
    surrounding block lived in a config-only stylesheet the dashboard does not
    load, so it is ported here rather than pulling in the whole file. */
+/* Where the app icons come from: a licence asks for the credit. */
+.help-about-credits {
+    margin: var(--space-3, 0.75rem) 0 0;
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary);
+}
+.help-about-credits a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
 .help-support-block {
     display: flex;
     flex-direction: column;
@@ -4854,6 +5092,17 @@ body.no-animations .config-new-features-panel-star {
 
 .config-theme-char > [hidden] {
     display: none;
+}
+
+/* The backdrop row: the label above, the tiles across the full width. */
+.config-theme-char--tiles > .config-field-label {
+    flex-basis: 100%;
+}
+
+.config-theme-backdrops {
+    flex: 1 1 100%;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    margin-top: 0;
 }
 
 .config-theme-group-title {
@@ -7809,3 +8058,228 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .config-glass-hint .config-btn {
     flex: 0 0 auto;
 }
+
+/* ─── Config → Unraid: how it works, and what you get ────────────────────────
+   Two boxes and a line, with dots running from the server to the dashboard:
+   nextDash asks, Unraid answers. The dots move by transform on a runner as wide
+   as the line, so nothing is laid out again per frame. The seven tiles in
+   miniature fill their bars once as the section opens; the VM dot breathes.
+   Reduced motion (the OS or the in-app switch) keeps the drawing and stops it. */
+
+.unraid-flow {
+    display: grid;
+    grid-template-columns: auto minmax(4rem, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    margin: var(--space-2, 0.5rem) 0 var(--space-3, 0.75rem);
+}
+.unraid-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+}
+.unraid-node-box {
+    display: grid;
+    place-items: center;
+    min-width: 5.5rem;
+    min-height: 3.2rem;
+    padding: 0 var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary);
+    font-weight: var(--font-weight-semibold, 600);
+}
+.unraid-node--server .unraid-node-box {
+    border-color: color-mix(in srgb, var(--accent-warning) 55%, var(--border-primary));
+}
+.unraid-explain.is-connected .unraid-node--server .unraid-node-box {
+    border-color: color-mix(in srgb, var(--accent-success) 60%, var(--border-primary));
+}
+.unraid-node-label {
+    color: var(--text-tertiary);
+    font-size: var(--text-xs, 0.72rem);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.unraid-wire {
+    position: relative;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--border-primary);
+}
+.unraid-wire-tag {
+    position: absolute;
+    left: 50%;
+    bottom: 0.6rem;
+    translate: -50% 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-tertiary);
+    font-size: var(--text-xs, 0.7rem);
+}
+/* A runner as wide as the line; its dot rides its left edge from the server
+   (right) to the dashboard (left). */
+.unraid-wire-run {
+    position: absolute;
+    inset: 0;
+    animation: unraid-wire-run 2.7s linear infinite;
+}
+.unraid-wire-run:nth-of-type(2) { animation-delay: 0.9s; }
+.unraid-wire-run:nth-of-type(3) { animation-delay: 1.8s; }
+.unraid-wire-run i {
+    position: absolute;
+    top: -3px;
+    left: -4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    box-shadow: 0 0 8px var(--accent-primary);
+}
+.unraid-wire-run:nth-of-type(2) i {
+    background: var(--accent-success);
+    box-shadow: 0 0 8px var(--accent-success);
+}
+@keyframes unraid-wire-run {
+    0% { transform: translateX(100%); opacity: 0; }
+    12% { opacity: 1; }
+    88% { opacity: 1; }
+    100% { transform: translateX(0); opacity: 0; }
+}
+
+.unraid-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin: var(--space-3, 0.75rem) 0 0;
+    padding: 0;
+    list-style: none;
+}
+.unraid-step {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--layout-radius-xs, 6px);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.76rem);
+    line-height: 1.5;
+}
+.unraid-step-n {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    font-weight: var(--font-weight-bold, 700);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+.unraid-step.is-done .unraid-step-n {
+    background: color-mix(in srgb, var(--accent-success) 22%, transparent);
+    color: var(--accent-success);
+}
+.unraid-step.is-done .unraid-step-n::before { content: '✓'; }
+.unraid-step.is-done .unraid-step-n { font-size: 0; }
+.unraid-step.is-done .unraid-step-n::before { font-size: var(--text-xs, 0.76rem); }
+
+.config-link-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+.config-link-btn:hover,
+.config-link-btn:focus-visible { color: var(--text-primary); }
+
+.unraid-minis {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+.unraid-mini {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+    min-height: 6.2rem;
+    padding: var(--space-2, 0.55rem) var(--space-2, 0.6rem);
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--layout-radius-xs, 6px);
+    background: var(--background-secondary);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+.unraid-mini-title {
+    color: var(--text-tertiary);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.unraid-mini-title::before { content: '// '; color: var(--accent-primary); letter-spacing: 0; }
+.unraid-mini-body { display: flex; flex-direction: column; gap: var(--space-1, 0.3rem); }
+.unraid-mini-row { display: flex; justify-content: space-between; gap: var(--space-1, 0.3rem); }
+.unraid-mini-good { color: var(--accent-success); }
+.unraid-mini-warn { color: var(--accent-warning); }
+.unraid-mini-bar {
+    display: block;
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--border-primary);
+}
+.unraid-mini-bar i {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent-primary);
+    transform-origin: left center;
+    transform: scaleX(var(--fill, 0.5));
+    animation: unraid-mini-fill 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.unraid-mini-bar--good i { background: var(--accent-success); }
+@keyframes unraid-mini-fill { from { transform: scaleX(0); } }
+.unraid-mini-pulse {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 0.35rem;
+    border-radius: 50%;
+    background: var(--accent-success);
+    animation: unraid-mini-pulse 1.8s ease-in-out infinite;
+}
+@keyframes unraid-mini-pulse {
+    0%, 100% { opacity: 0.35; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.1); }
+}
+.unraid-mini-add { margin-top: auto; align-self: flex-start; }
+.unraid-preview-foot { margin: var(--space-3, 0.75rem) 0 0; }
+
+/* Widgets -> Types, arrived at from Config -> Unraid: the kind asked for. */
+.config-widget-type-row.is-pointed {
+    outline: 1px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: var(--layout-radius-xs, 6px);
+}
+
+/* Still, for whoever asked for stillness: the dots wait mid-line. */
+@media (prefers-reduced-motion: reduce) {
+    .unraid-wire-run,
+    .unraid-mini-pulse { animation-name: none !important; }
+    .unraid-wire-run { transform: translateX(50%); }
+}
+body.no-animations .unraid-wire-run,
+body.no-animations .unraid-mini-pulse,
+body.no-animations .unraid-mini-bar i { animation: none !important; }
+body.no-animations .unraid-wire-run { transform: translateX(50%); }

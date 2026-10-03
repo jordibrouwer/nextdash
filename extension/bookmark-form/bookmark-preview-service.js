@@ -59,18 +59,40 @@
             description: data.description || '',
             image: data.image || '',
             icon: data.icon || '',
+            // The page's own <link rel=icon>, remote. icon is empty on a fresh
+            // fetch and a local /data/preview-images path once cached, so
+            // uploading it always fell back to /favicon.ico.
+            iconSource: data.iconSource || '',
             domain: data.domain || global.BookmarkUrlUtils?.extractDomainFromUrl(safeUrl) || '',
+            // The app-icon sets know this address: its set icon shows, so no
+            // favicon is fetched for it.
+            setIcon: data.setIcon === true,
         };
     }
 
     async function fetchAndUploadFavicon(bookmarkUrl, apiBase = '') {
+        return (await fetchFaviconOutcome(bookmarkUrl, apiBase)).icon;
+    }
+
+    /**
+     * The favicon, and whether none was fetched because the app shows its set
+     * icon. Read as '' alone, that counted as a failure: "No favicon found",
+     * and every such row "failed" in a bulk fetch.
+     */
+    async function fetchFaviconOutcome(bookmarkUrl, apiBase = '') {
+        const icon = await fetchFaviconInner(bookmarkUrl, apiBase);
+        return typeof icon === 'object' ? icon : { icon: icon || '', setIcon: false };
+    }
+
+    async function fetchFaviconInner(bookmarkUrl, apiBase = '') {
         const utils = global.BookmarkUrlUtils;
         const safeUrl = utils ? utils.ensureHttpUrl(bookmarkUrl) : String(bookmarkUrl || '').trim();
         if (!safeUrl) return '';
 
         try {
             const preview = await fetchLinkPreview(safeUrl, apiBase);
-            const iconUrl = String(preview?.icon || '').trim();
+            if (preview.setIcon) return { icon: '', setIcon: true };
+            const iconUrl = String(preview?.iconSource || '').trim();
             if (iconUrl) {
                 const icon = await uploadIconFromUrl(iconUrl, apiBase);
                 if (icon) return icon;
@@ -91,5 +113,6 @@
         uploadIconFromUrl,
         fetchLinkPreview,
         fetchAndUploadFavicon,
+        fetchFaviconOutcome,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

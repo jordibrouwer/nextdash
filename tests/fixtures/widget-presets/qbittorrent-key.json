@@ -1,0 +1,17 @@
+{
+  "_source": "qBittorrent WebUI API transfer/info",
+  "auth": {
+    "header": "Authorization",
+    "value": "Bearer %KEY%"
+  },
+  "body": {
+    "dl_info_speed": 1048576,
+    "dl_info_data": 5368709120,
+    "up_info_speed": 262144,
+    "up_info_data": 1073741824,
+    "dl_rate_limit": 0,
+    "up_rate_limit": 0,
+    "dht_nodes": 312,
+    "connection_status": "connected"
+  }
+}

@@ -632,6 +632,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// Gathered while walking the bookmarks so the collection-wide view is built
 	// from the same samples, in the same pass.
 	var fleetInputs []fleetMonitorInput
+	// One fleet input per URL: a URL monitored on two pages shares one history,
+	// and counted per bookmark every monitor, outage and day of it was doubled.
+	fleetSeen := map[string]bool{}
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
@@ -1036,11 +1039,15 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 					// Collected here rather than re-read later: this loop already
 					// resolved the canonical key and the samples are in hand, so
 					// the collection-wide view costs no extra history read.
-					fleetInputs = append(fleetInputs, fleetMonitorInput{
-						name:    bm.Name,
-						url:     bm.URL,
-						samples: samples,
-					})
+					if !fleetSeen[key] {
+						fleetSeen[key] = true
+						fleetInputs = append(fleetInputs, fleetMonitorInput{
+							name:    bm.Name,
+							url:     bm.URL,
+							samples: samples,
+							days:    monitorDays[key],
+						})
+					}
 				}
 			}
 
@@ -1643,6 +1650,16 @@ func trimBookmarkTextFields(b *Bookmark) {
 	b.Name = strings.TrimSpace(b.Name)
 	b.Category = strings.TrimSpace(b.Category)
 	b.Note = strings.TrimSpace(b.Note)
+	normalizeBookmarkIconMode(b)
+}
+
+// normalizeBookmarkIconMode keeps IconMode to the one value it has, and drops
+// it once the bookmark has an icon of its own: choosing or uploading an icon
+// is the newer choice, and a mode left behind would come back on Clear.
+func normalizeBookmarkIconMode(b *Bookmark) {
+	if b.IconMode != "letter" || strings.TrimSpace(b.Icon) != "" {
+		b.IconMode = ""
+	}
 }
 
 // normalizeTags trims, lowercases, deduplicates, and removes empty tag values.
@@ -2522,6 +2539,10 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if updateCheckDisabledByEnv() {
 		settings.UpdateCheckEnabled = h.store.GetSettings().UpdateCheckEnabled
 	}
+	// The Unraid server is written by /api/unraid/settings alone. The page
+	// sends back every setting it loaded, so a copy from before a change there
+	// would otherwise put the old address back with the next unrelated save.
+	settings.UnraidServers = h.store.GetSettings().UnraidServers
 
 	// Validate and sanitize collections.
 	//
@@ -2580,6 +2601,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
 	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
 	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
+	settings.MonitorNotifyAppriseTag = normalizeMonitorNotifyCredential(settings.MonitorNotifyAppriseTag)
 
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
 		return
@@ -2658,18 +2680,26 @@ not have to pull every palette to get them.
 func (h *Handlers) ThemeMeta(w http.ResponseWriter, r *http.Request) {
 	colors := h.store.GetColors()
 	meta := make(map[string]themeMeta, len(colors.BuiltIn)+len(colors.Custom))
+	defaults := getDefaultBuiltInThemes()
 	for id, tc := range colors.BuiltIn {
-		meta[id] = themeMetaFor(id, tc)
+		m := themeMetaFor(id, tc)
+		if d, ok := defaults[id]; ok {
+			markThemeMetaOrigin(&m, tc, &d, false)
+		}
+		meta[id] = m
 	}
 	// A custom theme has no description written for it, and may well have no
 	// archetype either; it still gets an entry, so the browser does not have
 	// to treat it as a special case.
 	for id, tc := range colors.Custom {
-		meta[id] = themeMetaFor(id, tc)
+		m := themeMetaFor(id, tc)
+		markThemeMetaOrigin(&m, tc, nil, true)
+		meta[id] = m
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
 		"archetypes":  themeArchetypeOrder,
+		"backdrops":   themeBackdropRecipes,
 		"collections": themeCollectionOrder,
 		"themes":      meta,
 	})
@@ -4305,7 +4335,7 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	if !forceRefresh {
 		if cached, ok := h.getPreviewCacheEntry(cacheKey); ok {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(cached)
+			json.NewEncoder(w).Encode(h.bookmarkPreviewAnswer(cached, rawURL))
 			return
 		}
 	}
@@ -4318,7 +4348,20 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	_ = h.mergePreviewCacheUpdates(localCache.Cache)
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(preview)
+	json.NewEncoder(w).Encode(h.bookmarkPreviewAnswer(preview, rawURL))
+}
+
+// bookmarkPreviewAnswer is a preview as the forms receive it. SetIcon says the
+// app-icon sets know this address, so the form fetches no favicon for it: the
+// set icon shows instead (icon_sets_api.go). Worked out per answer, for the
+// cached one too, and never stored in the cache.
+type bookmarkPreviewAnswer struct {
+	BookmarkPreview
+	SetIcon bool `json:"setIcon,omitempty"`
+}
+
+func (h *Handlers) bookmarkPreviewAnswer(p BookmarkPreview, rawURL string) bookmarkPreviewAnswer {
+	return bookmarkPreviewAnswer{BookmarkPreview: p, SetIcon: h.bookmarkHasSetIcon(rawURL)}
 }
 
 // ClearAllBookmarkPreviews removes stored preview metadata from every bookmark and empties the server cache.
@@ -4998,6 +5041,9 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	var res healthRetestResult
 	healthUpdates := make(map[string]HealthScanCache)
 	historyUpdates := make(map[string][]HealthSample)
+	// One sample per URL, from its first monitored copy as the monitor takes
+	// it: one per copy counted every retest twice and mixed the copies' rules.
+	recorded := map[string]bool{}
 	driftResults := make(map[string]PingResult)
 
 	for _, page := range pages {
@@ -5064,7 +5110,8 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				// the uptime and heartbeat view instead of only the scan cache.
 				// Collected here and written once at the end: one history write per
 				// run rather than one per bookmark.
-				if bm.Monitor {
+				if bm.Monitor && !recorded[key] {
+					recorded[key] = true
 					// Marked like the monitor's own samples: a failure inside a
 					// maintenance window dented uptime, opened an incident and
 					// could send a lone "back online" afterwards.
@@ -5126,6 +5173,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	}
 	// Best-effort: losing a sample costs a gap in the heartbeat, which is not
 	// worth failing a retest that already pinged everything successfully.
+	h.announceRecoveries(historyUpdates)
 	if err := h.appendHealthSamples(historyUpdates); err != nil {
 		logWarn(logComponentHealth, "the results of this re-check could not be added to the history (%v); the graph will show a gap", err)
 	}

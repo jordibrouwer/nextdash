@@ -558,18 +558,17 @@
         return `
             <header class="config-bm-panel-head config-bm-panel-head--single">
                 <div class="config-bm-panel-heading">
-                    <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
+                    <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}
+                        <button type="button" class="config-bm-icon-pencil" data-bm-icon-toggle aria-haspopup="menu" aria-expanded="false"
+                                aria-label="${esc(this.t('dashboard.dockerIconMenu', 'Change icon'))}">✎</button>
+                        <div class="config-bm-more-menu config-bm-icon-menu" role="menu" data-bm-icon-menu hidden>${this.renderBmIconModeItems(b)}</div>
+                    </span>
                     <span class="config-bm-panel-title" title="${esc(b.name || b.url || '')}">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
                     ${score == null ? '' : `<span class="config-bm-score" data-tone="${scoreTone}">${esc(String(score))}</span>`}
                     <span class="config-bm-more">
                         <button type="button" class="config-btn config-btn--small" data-bm-more-toggle aria-haspopup="menu" aria-expanded="false"
                                 aria-label="${esc(this.t('config.bmMoreActions', 'More actions'))}">⋯</button>
-                        <div class="config-bm-more-menu" role="menu" data-bm-more-menu hidden>
-                            ${this.renderBmHealthActions?.(b, { skip: ['recheck'] }) || ''}
-                            <button type="button" class="config-btn config-btn--small" data-bm-panel-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>
-                            <button type="button" class="config-btn config-btn--small" data-bm-panel-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>
-                            <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.delete', 'Delete'))}</button>
-                        </div>
+                        <div class="config-bm-more-menu" role="menu" data-bm-more-menu hidden>${this.renderBmMoreMenuItems(b)}</div>
                     </span>
                 </div>
                 ${/^https?:\/\//i.test(String(b.url || '')) ? `<a class="config-bm-panel-url" href="${esc(b.url)}" title="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(this.formatBookmarkUrlDisplay(b.url))}</a>` : ''}
@@ -698,13 +697,59 @@
         return true;
     },
 
+    /**
+     * The ⋯ menu, under headings as the Collection menu has them: what the
+     * checks found, what can be fetched again, the copies kept of the page,
+     * and where else it goes. Delete stands apart at the foot. Health's own
+     * actions appear only while the bookmark has a finding; a group with
+     * nothing in it is left out, heading and all.
+     */
+    renderBmMoreMenuItems(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const health = (only) => this.renderBmHealthActions?.(b, { only }) || '';
+        const panel = (action, label, extra = '') => `<button type="button" class="config-btn config-btn--small${extra}" data-bm-panel-action="${action}">${esc(label)}</button>`;
+        const heading = (label) => `<div class="config-bm-header-menu-h" role="presentation">${esc(label)}</div>`;
+        const groups = [
+            [this.t('config.bmMenuChecks', 'Checks'), health(['redirect', 'ignore', 'snooze', 'merge'])],
+            [this.t('config.bmMenuRefresh', 'Refresh'),
+                (health(['title']) || panel('title', this.t('dashboard.healthRefreshTitle', 'Refresh title')))
+                + panel('favicon', this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))],
+            [this.t('config.bmMenuCopies', 'Copies'), health(['archive', 'local-copy'])],
+            [this.t('config.bmMenuElsewhere', 'Elsewhere'),
+                health(['share']) + panel('dashboard', this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))],
+        ].filter(([, body]) => body);
+        return `${groups.map(([label, body]) => heading(label) + body).join('<hr>')}<hr>${
+            panel('delete', this.t('config.delete', 'Delete'), ' config-btn--danger')}`;
+    },
+
+    /**
+     * The icon's three choices, behind a pencil on the panel's icon as the
+     * container drawer and the bookmark form have them: an app icon, the
+     * letter, or automatic. The one in force is marked; an icon of the
+     * bookmark's own counts as neither of the other two.
+     */
+    renderBmIconModeItems(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const own = Boolean(String(b.icon || '').trim());
+        const letter = !own && b.iconMode === 'letter';
+        const item = (action, label, on) => `
+            <button type="button" class="config-btn config-btn--small" data-bm-panel-action="${action}"
+                    role="menuitemradio" aria-checked="${on ? 'true' : 'false'}">${on ? '✓ ' : ''}${esc(label)}</button>`;
+        return [
+            item('icon-choose', this.t('dashboard.iconSetChoose', 'Choose app icon…'), false),
+            item('icon-letter', this.t('dashboard.dockerIconLetter', 'Use letter'), letter),
+            item('icon-auto', this.t('dashboard.dockerIconAutomatic', 'Automatic'), !own && !letter),
+        ].join('');
+    },
+
     /** Close the ⋯ menu, if it is open; true when there was one to close. */
     closeWorkbenchMoreMenu() {
         const panel = this._libPanel || document.getElementById('config-bm-panel');
-        const menu = panel?.querySelector('[data-bm-more-menu]:not([hidden])');
-        if (!menu) return false;
-        menu.hidden = true;
-        panel.querySelector('[data-bm-more-toggle]')?.setAttribute('aria-expanded', 'false');
+        const menus = [...(panel?.querySelectorAll('[data-bm-more-menu]:not([hidden]), [data-bm-icon-menu]:not([hidden])') || [])];
+        if (!menus.length) return false;
+        menus.forEach((menu) => { menu.hidden = true; });
+        panel.querySelectorAll('[data-bm-more-toggle], [data-bm-icon-toggle]')
+            .forEach((btn) => btn.setAttribute('aria-expanded', 'false'));
         return true;
     },
 
@@ -1220,9 +1265,13 @@
                 this.setWorkbenchPanelTab(tabBtn.dataset.bmTabPanel);
                 return;
             }
-            const more = e.target.closest('[data-bm-more-toggle]');
+            const more = e.target.closest('[data-bm-more-toggle], [data-bm-icon-toggle]');
             if (more) {
-                const menu = panel.querySelector('[data-bm-more-menu]');
+                const icon = more.hasAttribute('data-bm-icon-toggle');
+                const menu = panel.querySelector(icon ? '[data-bm-icon-menu]' : '[data-bm-more-menu]');
+                // One menu at a time: opening one takes the other down.
+                panel.querySelector(icon ? '[data-bm-more-menu]' : '[data-bm-icon-menu]')?.setAttribute('hidden', '');
+                panel.querySelector(icon ? '[data-bm-more-toggle]' : '[data-bm-icon-toggle]')?.setAttribute('aria-expanded', 'false');
                 if (menu) {
                     menu.hidden = !menu.hidden;
                     more.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
@@ -1242,6 +1291,8 @@
             const key = panel.dataset.bmPanelKey;
             if (!action || !key) return;
             if (action === 'open') this.openBookmarkByKey(key);
+            // The menu has closed by now, so the picker hangs off the pencil.
+            else if (action === 'icon-choose') void this.chooseBookmarkAppIcon(key, panel.querySelector('[data-bm-icon-toggle]'));
             else if (action === 'edit-dialog') void this.openBookmarkEditModal(key);
             else if (action === 'promote') void this.openBookmarkEditModal(key, { promote: true });
             else if (action === 'delete') void this.deleteBookmarkByKey(key);

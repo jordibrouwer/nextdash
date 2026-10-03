@@ -110,6 +110,7 @@
                     ${button('open-new-tab', t('bmDetailsOpenNewTab', 'Open in new tab'))}
                     ${button('copy-url', this.t('dashboard.contextMenuCopyUrl', 'Copy URL'))}
                     ${button('share', this.shareBookmarkActionLabel?.() || t('bmDetailsShare', 'Share link'))}
+                    ${button('qr', this.t('dashboard.contextMenuQrCode', 'QR code'))}
                     ${button('redirect', this.t('dashboard.healthMenuRedirect', 'Detect redirect'))}
                     ${button('dashboard', this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}
                 </div>`;

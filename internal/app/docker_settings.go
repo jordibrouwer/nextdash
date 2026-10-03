@@ -78,6 +78,7 @@ func normalizeDockerSettings(s *Settings) {
 	}
 	s.DockerWebUIs = normalizeDockerWebUIs(s.DockerWebUIs)
 	s.DockerBookmarkLinks = normalizeDockerBookmarkLinks(s.DockerBookmarkLinks)
+	s.DockerContainerIcons = normalizeDockerContainerIcons(s.DockerContainerIcons)
 	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)
 }
 
@@ -155,6 +156,37 @@ func normalizeDockerBookmarkLinks(in map[string]string) map[string]string {
 	return out
 }
 
+// normalizeDockerContainerIcons keeps "letter" and bare icon file names, per
+// container name.
+func normalizeDockerContainerIcons(in map[string]string) map[string]string {
+	out := map[string]string{}
+	for rawName, rawIcon := range in {
+		name := strings.TrimPrefix(strings.TrimSpace(rawName), "/")
+		icon := strings.TrimSpace(rawIcon)
+		if name == "" || len(name) > dockerMaxHiddenNameLen {
+			continue
+		}
+		if icon != dockerIconLetter {
+			icon = sanitizeBookmarkIcon(icon)
+			// A bare word is not a file: a name the picker wrote always has
+			// an extension.
+			if icon == "" || !strings.Contains(icon, ".") {
+				continue
+			}
+		}
+		out[name] = icon
+		if len(out) == dockerMaxHidden {
+			break
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+const dockerIconLetter = "letter"
+
 // normalizeDockerWebUIs keeps only web addresses. [IP] is Unraid's stand-in
 // for the host the dashboard was opened on, so it is allowed where a host goes.
 func normalizeDockerWebUIs(in map[string]string) map[string]string {
@@ -192,6 +224,7 @@ var dockerSettingsFrom atomic.Pointer[dockerSettingsSource]
 type dockerSettingsSource struct {
 	hidden func() []string
 	webUIs func() map[string]string
+	icons  func() map[string]string
 }
 
 // wireDockerSettings points dockerSettingsFrom at this store.
@@ -200,6 +233,7 @@ func (h *Handlers) wireDockerSettings() {
 	dockerSettingsFrom.Store(&dockerSettingsSource{
 		hidden: func() []string { return store.GetSettings().DockerHiddenContainers },
 		webUIs: func() map[string]string { return store.GetSettings().DockerWebUIs },
+		icons:  func() map[string]string { return store.GetSettings().DockerContainerIcons },
 	})
 }
 
@@ -209,6 +243,14 @@ func dockerCustomWebUI(name string) string {
 		return ""
 	}
 	return src.webUIs()[name]
+}
+
+func dockerIconOverride(name string) string {
+	src := dockerSettingsFrom.Load()
+	if src == nil || src.icons == nil {
+		return ""
+	}
+	return src.icons()[name]
 }
 
 func dockerHiddenSet() map[string]bool {

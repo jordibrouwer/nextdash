@@ -139,12 +139,15 @@ class SearchCommandRemove {
         // that happened to be here.
         const currentPageId = Number(bookmark?.pageId ?? (dash ? dash.currentPageId : 1));
 
-        // Snapshot the full bookmark list before deleting so undo can restore it.
-        let snapshotBeforeDelete = null;
+        // Where the row sat, so the trash can put it back in its place.
+        let deletedIndex = -1;
         try {
             const snapRes = await fetch(`/api/bookmarks?page=${currentPageId}`);
-            if (snapRes.ok) snapshotBeforeDelete = await snapRes.json();
-        } catch (_) { /* proceed without snapshot */ }
+            if (snapRes.ok) {
+                const rows = await snapRes.json();
+                deletedIndex = Array.isArray(rows) ? rows.findIndex((row) => row?.url === bookmark?.url) : -1;
+            }
+        } catch (_) { /* the trash then appends it */ }
 
         try {
             const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmarks', {
@@ -165,14 +168,17 @@ class SearchCommandRemove {
                 await dash.loadPageBookmarks(dash.currentPageId);
             }
 
-            const undoCallback = snapshotBeforeDelete ? async () => {
+            // Into the trash like every other delete: without it the bookmark
+            // was gone for good once the toast closed. The undo restores that
+            // one entry; posting the page as it was before overwrote every
+            // change made to the page in the meantime.
+            await window.DashboardTrash?.record(
+                [{ pageId: currentPageId, index: deletedIndex, bookmark }],
+                'command'
+            );
+            const undoCallback = window.DashboardTrash ? async () => {
                 try {
-                    const restoreRes = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/bookmarks?page=${currentPageId}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(snapshotBeforeDelete)
-                    });
-                    if (restoreRes.ok && dash) {
+                    if (await window.DashboardTrash.restoreEntries([{ pageId: currentPageId, bookmark }]) && dash) {
                         await dash.loadAllBookmarks();
                         await dash.loadPageBookmarks(dash.currentPageId);
                         dash.showNotification(
@@ -180,7 +186,7 @@ class SearchCommandRemove {
                             'success'
                         );
                     }
-                } catch (_) { /* silent */ }
+                } catch (_) { /* still in the trash, to restore by hand */ }
             } : null;
 
             const deletedName = bookmark.name || bookmark.url || 'Bookmark';

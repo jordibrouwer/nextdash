@@ -10,10 +10,10 @@ class SearchCommandsComponent {
     static GUIDED_TOURS = [
         { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps' },
-        { id: 'dashboardTutorialV2', labelKey: 'config.tourDashboard', label: 'The dashboard' },
+        { id: 'dashboardTutorialV3', labelKey: 'config.tourDashboard', label: 'The dashboard' },
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox' },
         { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view' },
-        { id: 'containersTutorialV2', labelKey: 'config.tourContainers', label: 'Containers' },
+        { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers' },
         { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
         { id: 'spreadTutorialV1', labelKey: 'config.tourSpread', label: 'Spreading a category' },
@@ -322,6 +322,7 @@ class SearchCommandsComponent {
         { id: 'data-backups', labelKey: 'commands.configDataBackups', fallback: 'Data & backups' },
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
         { id: 'containers', labelKey: 'commands.configContainers', fallback: 'Containers' },
+        { id: 'unraid', labelKey: 'commands.configUnraid', fallback: 'Unraid' },
         { id: 'stats', labelKey: 'commands.configStats', fallback: 'Statistics' },
         { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help' },
         { id: 'logs', labelKey: 'commands.configLogs', fallback: 'Logs' },
@@ -2051,7 +2052,10 @@ class SearchCommandsComponent {
             if (!res.ok) return revert(failedLabel);
             const bookmarks = await res.json();
             const idx = bookmarks.findIndex(b => b.url === bookmark.url && b.name === bookmark.name);
-            if (idx >= 0) Object.assign(bookmarks[idx], updates);
+            // Not on that page (moved or renamed elsewhere): posting the page
+            // back unchanged answered ok, and the pin or tag was gone on reload.
+            if (idx < 0) return revert(failedLabel);
+            Object.assign(bookmarks[idx], updates);
             const write = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -3211,7 +3215,7 @@ class SearchCommandsComponent {
                     window.ChangesTour.open();
                     return;
                 }
-                if (id === 'dashboardTutorialV2' && dashboard.promos?.openDashboardTour) {
+                if (id === 'dashboardTutorialV3' && dashboard.promos?.openDashboardTour) {
                     void dashboard.promos.openDashboardTour();
                     return;
                 }

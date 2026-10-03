@@ -887,11 +887,77 @@ class DashboardInlineEdit {
         // The icon URL is no longer something to type: the input stays as the
         // value the save reads, and the card (below) is what the reader sees.
         iconUrlInput.hidden = true;
+        // The picker's strings live under dashboard., as the drawer's do; a
+        // key not translated yet reads its English fallback, not its name.
+        const iconSetT = (key, fallback, vars) => {
+            const full = `dashboard.${key}`;
+            const said = d.language?.t(full);
+            const text = said && said !== full ? said : String(fallback);
+            return text.replace(/\{(\w+)\}/g, (_, k) => (vars && k in vars ? vars[k] : `{${k}}`));
+        };
+        const takeSetIcon = (icon) => {
+            pendingIcon = icon;
+            iconIsFetched = false;
+            iconUrlInput.value = `/data/icons/${icon}`;
+            syncIconState();
+            void refreshIconSuggestions();
+        };
+        const openIconPicker = async (anchor, query) => {
+            let picker = null;
+            try {
+                picker = await window.IconSetAuto?.loadPicker();
+            } catch {
+                picker = null;
+            }
+            picker?.open(anchor, {
+                query: query || iconSetAutoName,
+                t: iconSetT,
+                notify: (msg, kind) => d.showNotification?.(msg, kind),
+                onPick: takeSetIcon,
+            });
+        };
+        // The app the sets match for the address, named for the picker's
+        // search; and the suggestions under the address, refreshed with it.
+        let iconSetAutoName = '';
+        let suggestSeq = 0;
+        const refreshIconSuggestions = async () => {
+            const urlValue = (urlInput.value || '').trim();
+            const mine = ++suggestSeq;
+            let picker = null;
+            try {
+                picker = urlValue ? await window.IconSetAuto?.loadPicker() : null;
+            } catch {
+                picker = null;
+            }
+            if (mine !== suggestSeq || !card) return;
+            if (!picker) {
+                card.suggestionsHost.hidden = true;
+                card.setAutoIcon(null);
+                return;
+            }
+            const results = await picker.renderSuggestions(card.suggestionsHost, {
+                url: urlValue,
+                currentIcon: pendingIcon,
+                t: iconSetT,
+                notify: (msg, kind) => d.showNotification?.(msg, kind),
+                onPick: takeSetIcon,
+                onMore: (btn, name) => void openIconPicker(btn, name),
+            });
+            if (mine !== suggestSeq || results === null) return;
+            iconSetAutoName = results?.[0]?.name || '';
+            // The letter, chosen on purpose, is what the card shows too; the
+            // suggestions stay, one click from changing it.
+            card.setAutoIcon(bookmark.iconMode === 'letter' && !pendingIcon ? null : (results?.[0] || null));
+        };
         card = window.BookmarkFormCard.mount(cardHost, {
-            t: (key, fallback) => d.language?.t(key) || fallback,
+            t: (key, fallback) => {
+                if (key.startsWith('iconSet')) return iconSetT(key, fallback);
+                return d.language?.t(key) || fallback;
+            },
+            onChooseAppIcon: (anchor) => void openIconPicker(anchor),
             onUpload: () => iconFileInput.click(),
             onFetchAgain: () => { void runPreviewFetch({ force: true }); },
-            onClear: () => { pendingIcon = ''; iconUrlInput.value = ''; syncIconState(); },
+            onClear: () => { pendingIcon = ''; iconUrlInput.value = ''; syncIconState(); void refreshIconSuggestions(); },
             onRetry: () => { void runPreviewFetch({ force: true }); },
         });
         // The old icon block stays in the form as the value the save reads --
@@ -901,6 +967,7 @@ class DashboardInlineEdit {
         cardHost.appendChild(iconWrap);
         syncIconState();
         if (isCreate && !String(bookmark.url || '').trim()) card.setIdle();
+        if (String(bookmark.url || '').trim()) void refreshIconSuggestions();
         if (!isCreate) {
             card.setLoading(bookmark.url || '');
             card.setPreview({
@@ -912,6 +979,7 @@ class DashboardInlineEdit {
         let lastFetchedUrl = isCreate ? '' : String(bookmark.url || '').trim();
         const onPreview = (preview) => {
             card.setPreview(preview || { url: urlInput.value.trim() });
+            void refreshIconSuggestions();
             title.offer(preview?.title, urlInput.value.trim());
             void refreshSuggestions(Array.isArray(preview?.keywords) ? preview.keywords : []);
         };
@@ -938,7 +1006,9 @@ class DashboardInlineEdit {
             card.setLoading(urlValue);
             title.fetching(urlValue);
             draftKeywords = [];
-            const replaceIcon = force || !pendingIcon || iconIsFetched;
+            // A bookmark set to its letter gets no fetched icon unless asked
+            // for with Fetch again.
+            const replaceIcon = force || ((!pendingIcon || iconIsFetched) && bookmark.iconMode !== 'letter');
             // The last address's icon is not this one's: the letter stands in
             // until the new page answers.
             if (iconIsFetched) card.setIcon('');
@@ -950,8 +1020,10 @@ class DashboardInlineEdit {
                     pendingIcon = icon;
                     iconUrlInput.value = `/data/icons/${icon}`;
                     iconIsFetched = true;
-                } else if (iconIsFetched) {
-                    // The old address's icon is not this one's.
+                } else if (iconIsFetched || (force && preview?.setIcon)) {
+                    // The old address's icon is not this one's -- and on Fetch
+                    // again, an app the icon sets know gives up its favicon
+                    // for the set icon, as a new bookmark would.
                     pendingIcon = '';
                     iconUrlInput.value = '';
                     iconIsFetched = false;
@@ -1925,6 +1997,12 @@ class DashboardInlineEdit {
             // The tag dropdown closes itself on Escape, on the input's own
             // listener, which runs after this one; leave the key to it.
             if (document.querySelector('.tag-ac-dropdown')) return;
+            if (window.IconSetPicker?.isOpen()) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.IconSetPicker.close();
+                return;
+            }
             const cardMenu = form.querySelector('.bookmark-form-card-menu:not([hidden])');
             if (cardMenu) {
                 e.preventDefault();
@@ -2135,6 +2213,9 @@ class DashboardInlineEdit {
             name,
             url,
             icon: typeof fields.getPendingIcon === 'function' ? fields.getPendingIcon() : bookmark.icon,
+            // Carried along so a move to another page keeps the letter; the
+            // server drops it when the bookmark has an icon of its own.
+            iconMode: bookmark.iconMode || '',
             shortcut,
             category,
             pinned: fields.pinInput ? fields.pinInput.checked : Boolean(bookmark.pinned),
@@ -2549,8 +2630,12 @@ class DashboardInlineEdit {
         let icon = '';
         // An icon already chosen is not replaced, so it is not downloaded
         // either: every download is a file in data/icons.
-        if (!withIcon) return { icon, preview: preview ? { ...preview, url: preview.url || safeUrl } : null };
-        const previewIconUrl = String(preview?.icon || '').trim();
+        // An app the icon sets know shows its set icon; its favicon is not
+        // fetched at all (the server says so in setIcon).
+        if (!withIcon || preview?.setIcon) return { icon, preview: preview ? { ...preview, url: preview.url || safeUrl } : null };
+        // The remote address of the page's own icon; icon itself is a local
+        // cached path, or empty on a fresh fetch.
+        const previewIconUrl = String(preview?.iconSource || '').trim();
         if (previewIconUrl) icon = await this.uploadBookmarkIconFromUrl(previewIconUrl);
         if (!icon) {
             const fallbackUrl = this.deriveFaviconFromBookmarkUrl(safeUrl);
@@ -2786,6 +2871,8 @@ class DashboardInlineEdit {
             this.finishInlineEditCommit(d._inlineEditContext?.row);
             d.data?.invalidatePageDataCache?.(sourcePageId);
             await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
+            // Into the trash like a delete on the page itself; it was gone for good.
+            await window.DashboardTrash?.record([{ pageId: sourcePageId, index: -1, bookmark }], 'dashboard');
 
             const deletedLabel = String(bookmark.name || bookmark.url).slice(0, 40);
             d.showNotification(

@@ -169,8 +169,11 @@ class DashboardHealthMultiSelect {
                 const url = String(issue?.url || '').trim();
                 const pageId = Number(issue?.pageId ?? issue?.pageID ?? 0);
                 if (!url || !(pageId > 0)) return 'failed';
-                const iconPath = await fetchIcon(url);
-                if (!iconPath) return 'failed';
+                const outcome = await (window.BookmarkPreviewService?.fetchFaviconOutcome?.(url)
+                    ?? fetchIcon(url).then((icon) => ({ icon, setIcon: false })));
+                const iconPath = outcome.icon;
+                // An app that shows its set icon needs none: not a failure.
+                if (!iconPath) return outcome.setIcon ? 'skipped' : 'failed';
                 if (!icons.has(pageId)) icons.set(pageId, []);
                 icons.get(pageId).push({ url, icon: iconPath });
                 return 'ok';

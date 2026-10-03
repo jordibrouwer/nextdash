@@ -1805,7 +1805,8 @@ body:not([data-depth="flat"]) .wn-earlier {
  * carries the name, the key that opens the sheet and the way out; the foot
  * says how much is in it.
  */
-.modal.keyboard-cheat-sheet-modal .modal-header {
+.modal.keyboard-cheat-sheet-modal .modal-header,
+.modal.bookmark-qr-modal .modal-header {
     display: flex;
     align-items: center;
     gap: var(--space-3, 0.75rem);
@@ -1813,13 +1814,15 @@ body:not([data-depth="flat"]) .wn-earlier {
     border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
 }
 
-.modal.keyboard-cheat-sheet-modal .modal-title {
+.modal.keyboard-cheat-sheet-modal .modal-title,
+.modal.bookmark-qr-modal .modal-title {
     text-transform: lowercase;
     font-size: var(--font-size-text);
     font-weight: var(--font-weight-semibold, 600);
 }
 
-.cheat-sheet-modal-key {
+.cheat-sheet-modal-key,
+.bookmark-qr-modal-key {
     flex-shrink: 0;
     padding: 0.15rem 0.4rem;
     border-radius: var(--radius-3, 4px);
@@ -1829,7 +1832,8 @@ body:not([data-depth="flat"]) .wn-earlier {
     font-weight: 700;
 }
 
-.cheat-sheet-modal-close {
+.cheat-sheet-modal-close,
+.bookmark-qr-modal-close {
     margin-left: auto;
     flex-shrink: 0;
     border: none;
@@ -1842,12 +1846,16 @@ body:not([data-depth="flat"]) .wn-earlier {
 }
 
 .cheat-sheet-modal-close:hover,
-.cheat-sheet-modal-close:focus-visible {
+.cheat-sheet-modal-close:focus-visible,
+.bookmark-qr-modal-close:hover,
+.bookmark-qr-modal-close:focus-visible {
     opacity: 1;
 }
 
 .modal.keyboard-cheat-sheet-modal .modal-actions,
-#app-modal:has(.keyboard-cheat-sheet-modal) .modal-esc-hint {
+#app-modal:has(.keyboard-cheat-sheet-modal) .modal-esc-hint,
+.modal.bookmark-qr-modal .modal-actions,
+#app-modal:has(.bookmark-qr-modal) .modal-esc-hint {
     display: none;
 }
 
@@ -1890,7 +1898,8 @@ body:not([data-depth="flat"]) .wn-earlier {
     }
 }
 
-.cheat-sheet-foot-key {
+.cheat-sheet-foot-key,
+.bookmark-qr-foot-key {
     padding: 0.1rem 0.35rem;
     border-radius: 2px;
     background: color-mix(in srgb, var(--text-primary) 12%, transparent);
@@ -2412,3 +2421,75 @@ html body #app-modal .modal.whats-new-modal {
 /* Support and Esc sit in the header's top-right corner: Esc's right edge on
    the same line as the footer's "Esc to close" below it. */
 .wn-head-tools .wn-modal-close { padding-right: 0; }
+
+/* The QR window (bookmark-qr.js), in the cheat sheet's chrome: the header,
+   key chip, Esc x and foot share its rules above. The bookmark is named like a
+   section of the sheet. The code keeps its own white field in every theme -- a
+   camera reads black on white, not the theme's colours -- so only the frame
+   around it follows the theme. Large enough to scan from a metre, never wider
+   than a phone screen. */
+.modal.bookmark-qr-modal {
+    width: min(24rem, calc(100vw - 2rem));
+    max-width: min(24rem, calc(100vw - 2rem));
+}
+/* No actions row under it, so no gap kept for one. */
+.modal.bookmark-qr-modal .modal-body {
+    margin-bottom: 0;
+}
+.bookmark-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3, 0.75rem);
+}
+.bookmark-qr-name {
+    padding: var(--space-1, 0.25rem) 0;
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    font-size: var(--text-xs, 0.7rem);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.06em;
+    text-transform: lowercase;
+    color: var(--text-tertiary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.bookmark-qr-frame {
+    align-self: center;
+    width: min(16rem, 70vw);
+    aspect-ratio: 1;
+    padding: var(--space-1, 0.25rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-xs, 6px);
+    background: #fff;
+}
+.bookmark-qr-code {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.bookmark-qr-url {
+    overflow-wrap: anywhere;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.72rem);
+    user-select: all;
+}
+.bookmark-qr-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.65rem);
+}
+.bookmark-qr-foot > span {
+    opacity: 0.6;
+}
+.bookmark-qr-foot .modal-button {
+    flex: none;
+    width: auto;
+    margin: 0;
+}

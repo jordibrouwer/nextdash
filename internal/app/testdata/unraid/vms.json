@@ -1,0 +1,4 @@
+{"data":{"vms":{"domains":[
+ {"name":"home-assistant","state":"RUNNING"},
+ {"name":"ubuntu-dev","state":"PAUSED"},
+ {"name":"win11","state":"SHUTOFF"}]}}}

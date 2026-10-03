@@ -12,6 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
+| 🎨 | **320 themes, one look studio** | 160 theme families in light and dark, twelve characters, 26 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16 Appearance](#16-appearance) and [the theme browser](#the-theme-browser) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 
 This manual describes nextDash as it is now. It follows the same topics as Config → Help and goes into more detail. What changed in which release is in the [changelog](CHANGELOG.md).
@@ -197,6 +198,16 @@ Because the bookmark is monitored too, an update that leaves the container runni
 
 <a id="sh-homelab-page"></a>
 
+### Unraid
+
+nextDash reads an Unraid server through its own API — Unraid 7.2, or an older Unraid with the Unraid Connect plugin. Set it up once under **Config → Unraid**: the address, an API key with the role **Viewer** (Settings → Management Access → API Keys in Unraid), and a test. From then on:
+
+- **Seven widgets** show the server on a page: an overview, the array with every disk, parity, shares by where they live, VMs, the UPS and Unraid's notifications ([§15.6](#156-unraid-widgets)).
+- **Alerts** reach you through the channels downtime and container alerts use: Unraid's own ALERT notifications, the array stopping, a parity check that finished with errors, a disk whose error count went up.
+- **Read only.** nextDash never starts, stops or changes anything on the server.
+
+More is on the way: further Unraid integration is being worked on for future versions of nextDash.
+
 ### A homelab page
 
 Give your services their own page — *Homelab*, *Server* — and put the bookmarks for every web UI on it, grouped the way you think of them: *Media*, *Network*, *Home*, *Tools*. Then add widgets beside them ([§15](#15-widgets)):
@@ -209,7 +220,7 @@ Give your services their own page — *Homelab*, *Server* — and put the bookma
 | **Certificates** | The ones that run out soon |
 | **Health** | Broken, down and changed bookmarks on this page; each figure opens its filter |
 | **Processor**, **Memory**, **Disks** | The machine itself — name `/mnt/user` and `/mnt/cache` on Unraid |
-| **Custom** | Figures from the services themselves — the queue in Sonarr, blocked queries in Pi-hole, a sensor in Home Assistant, CPU and memory in Proxmox — 28 services filled in ([§15.5](#155-the-custom-widget)) |
+| **Custom** | Figures from the services themselves — the queue in Sonarr, blocked queries in Pi-hole, a sensor in Home Assistant, CPU and memory in Proxmox — 41 services filled in ([§15.5](#155-the-custom-widget)) |
 
 Set a widget to two columns and it says more, not the same thing larger: the container failing by name, the expiry date of a certificate, the load behind the processor's percentage.
 
@@ -604,6 +615,7 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 | Open in new tab | `Ctrl/Cmd + Enter` | Opens it in the background |
 | Copy URL | `Ctrl + C` | Copies the address |
 | Share… / Copy name + URL | `Shift + L` | The system share sheet where the browser offers one (HTTPS only); otherwise copies name and address |
+| QR code | `Shift + J` | Shows the address as a QR code, to open it on a phone; drawn in the browser, so the address goes nowhere. **Copy URL** in the window copies it |
 | Edit | `Shift + E` | Edit in place |
 | Pin / Unpin | `Shift + P` | |
 | Tags… | `Shift + T` | The quick tag picker |
@@ -614,6 +626,9 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 | Delete | `Shift + D` | Asks first; undo in the toast; the trash keeps it 30 days |
 
 The menu also opens with **`Shift + F10`** or the **Menu** key, beside the row.
+
+> [!TIP]
+> **A link on your phone.** Select the bookmark and press **`Shift + J`**, or pick **QR code** in this menu, then scan the code with the phone's camera. On an inbox row the code holds the item's own link, as Share does. The code is drawn in the browser, so the address is not sent anywhere.
 
 <a id="editing-in-place"></a>
 
@@ -704,6 +719,7 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 | `Shift + P` | Pin or unpin |
 | `Shift + C` | Availability checking — `o` off, `p` periodic, `m` monitor |
 | `Shift + L` | Share, or copy name and URL |
+| `Shift + J` | The bookmark as a QR code, to open it on a phone |
 | `Shift + R` | Open the bookmark in the Bookmarks view, on its Health tab |
 | `Ctrl + C` | Copy the URL |
 | `Ctrl/Cmd + Enter` | Open in a new tab |
@@ -760,6 +776,7 @@ Search, commands and finders are three modes of one panel.
 :  commands   — actions: :theme, :open last 5, …
 ?  finders    — ?g query → another site
 @  everywhere — search all pages at once
+⇧↵ the web    — the same words, asked of a search engine
 ```
 
 ### 8.1 Just type
@@ -800,6 +817,19 @@ Filters combine with each other and with plain words: `tag:dev -status:pinned ap
 - **`Shift + F`** is the opposite: a bar above the grid that hides non-matching rows on this page and keeps the layout and cursor. `Escape` clears it, a second `Escape` closes it.
 - **`:find text`** does the same from the command palette.
 
+#### 🌐 Searching the web
+
+With an engine set, the search panel also searches the web. Nothing leaves the server while you type: the last row, **Search the web: …**, waits for **`Shift + Enter`** (or a click). Then the results appear under **From the web**, below your own bookmarks.
+
+- **The engine** — Behavior → Keyboard & search → **Web search**: **Off** (the default), **SearXNG** with the address of your own instance, or the **Brave Search API** with a key from api.search.brave.com. SearXNG must have `json` under `search.formats` in its `settings.yml`. **Test connection** runs a search for *test* and says how many results came back, or why not.
+- **Private by design** — the server asks the engine, so the engine sees your server and never your browser. A result loads nothing until you open it: no favicons, no thumbnails. Web searches are not written to the activity log, and the server keeps no record of them.
+- **Categories** — Web, News, Video, and IT with SearXNG. **`Shift + ←`/`→`** steps between them.
+- **A site you already keep** — a result from a host you have a bookmark for shows *In your bookmarks: ‹name›*. **`Alt + Enter`** opens your bookmark instead of the result.
+- **Reading before opening** — **`→`** on a result shows its title, address, date and text in a column beside the list; **`←`** closes it. Not on a phone.
+- **Nothing found** — the panel says why (no results, an engine that did not answer, a rejected key, SearXNG refusing JSON) and offers **Open in ‹engine›** to search on the engine's own page.
+- **Recent on the web** — the last eight web searches, in this browser only, as a folded group in the empty panel, with a row to clear them.
+- An answer is kept for a minute, so the same search again is instant; the engine has five seconds to answer. At most 20 results per search.
+
 ### 8.4 From the browser's address bar
 
 nextDash describes itself to your browser as a search engine (`/opensearch.xml`).
@@ -809,6 +839,8 @@ nextDash describes itself to your browser as a search engine (`/opensearch.xml`)
 - **Safari** — not supported.
 
 Then type the keyword, `Tab`, a term and `Enter`. A search also has an address of its own, `#search?q=your+terms`, which can be bookmarked or opened from a script. Behind a reverse proxy, `X-Forwarded-Proto` and `X-Forwarded-Host` are honoured.
+
+With web search on ([§8.3](#83-beyond-the-current-page)), nextDash offers a second engine, **‹title› Web** (`/opensearch-web.xml`), which opens the dashboard with the web results already asked: `#search?web=your+terms`.
 
 <a id="85-commands"></a>
 
@@ -1020,11 +1052,16 @@ Rows show icon, name, host, tags, open count and last opened, plus a score colum
 
 Focusing a row opens the side panel: **Details**, **Health** and **Usage**, switched with **`1`/`2`/`3`** or **`[`/`]`**, or **`i`** to open or close the panel itself.
 
-- **Details** edits the bookmark in place — name, URL, page, category, tags (with autocomplete and suggestions), shortcut, note, pin, availability checking and interval. Lists and checkboxes save on change, text fields when you leave them; `Escape` puts the old value back. It also offers **Open**, **Edit in dialog** (`Shift + E`), **Show on dashboard**, **Refresh favicon** and **Delete**. An **Unsorted** bookmark shows a primary **Promote** button here instead of a page and category ([§11.11](#1111-unsorted-and-promote)).
+- **Details** edits the bookmark in place — name, URL, page, category, tags (with autocomplete and suggestions), shortcut, note, pin, availability checking and interval. Lists and checkboxes save on change, text fields when you leave them; `Escape` puts the old value back. It also offers **Open** and **Edit in dialog** (`Shift + E`). An **Unsorted** bookmark shows a primary **Promote** button here instead of a page and category ([§11.11](#1111-unsorted-and-promote)).
 - **Health** shows the availability mode and interval, **Expected response** ([§12.2](#122-expected-response)), and the reasons a bookmark is flagged, each with the score it costs.
 - **Usage** shows opens, last opened and the same activity the dashboard counts.
 
-Closed with the mouse — **×** or a click beside it — the row lets go as well, so the arrow keys and `Space` scroll the page again; closed with `Esc` or `i`, the row stays the cursor for the keys. A bookmark that is a container's web UI says so under **Details → Address → Runs in**, with a link to that container ([§14.2](#142-the-list)).
+The panel's head carries two menus:
+
+- **✎ on the icon** — **Choose app icon…**, **Use letter** and **Automatic**, the same three a container has, with the one in force ticked. **Automatic** is no icon of the bookmark's own: the app's icon where the icon sets know the address, else the favicon. **Use letter** keeps the letter tile on the dashboard and stops nextDash fetching an icon for it — the background fill and **Refresh all favicons** pass it by. Choosing or uploading an icon later ends it ([§19.4](#194-icons--previews)).
+- **⋯ beside the score** — the rest, under headings: **Checks** (detect redirect, reporting, snooze 30 days, merge a duplicate group — while the bookmark has a finding), **Refresh** (title, favicon), **Copies** (open the archived copy, save a local one), **Elsewhere** (share link, show on dashboard), and **Delete** at the foot.
+
+Closed with the mouse — **×** or a click beside it — the row lets go as well, so the arrow keys and `Space` scroll the page again; closed with `Esc` or `i`, the row stays the cursor for the keys. **Details → Address** also offers **Open in new tab**, **Copy URL**, **Share** and **QR code** (`Shift + J` on the dashboard opens the same). A bookmark that is a container's web UI says so under **Details → Address → Runs in**, with a link to that container ([§14.2](#142-the-list)).
 
 On a narrow window the rail becomes a drawer and the side panel a sheet. What you filtered to is kept in the address, so a filtered list is a link.
 
@@ -1109,7 +1146,9 @@ An **ⓘ** beside the menu explains the view.
 **`h`**, or **Collection health** in the menu, opens a modal over the list with two tabs:
 
 - **Overview** — the score over time, where bookmarks stand, what is wrong by kind, the score distribution, health by page, checking coverage, monitors and certificates.
-- **Monitors & trend** — a trend chart over 90 days with series pills (healthy %, score, broken, monitors down, stale, unchecked), and fleet cards: uptime across all monitors, the least available over 7 days, what got slower than last week, and outages.
+- **Monitors & trend** — a trend chart over 90 days with series pills (healthy %, score, broken, monitors down, stale, unchecked), and fleet cards: uptime across all monitors, the least available over 7 days, what got slower than last week, and outages — which monitors went down, how often and for how long, drawn as a 30-day lane per monitor (the full list behind **Show list**). Under them, **Every monitor, per day**: a bar a day for the uptime of all monitors together and the day's mean response as a line.
+
+The charts here, in Statistics and in a bookmark's health in large have a time axis and a value axis, a tooltip, a drag to zoom, and the arrow keys with the point read out under the chart; a screen reader gets each chart as a table.
 
 It fits one screen, and steps its cards down on a small window.
 
@@ -1224,8 +1263,10 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 | **Telegram** | Bot URL and chat ID |
 | **Gotify**, **ntfy** | URL |
 | **Pushover** | Application token and user key |
+| **Apprise** | The notify URL of a configuration key on your apprise-api (`http://apprise:8000/notify/<key>`), and optionally a **Tag** |
 | **Raw JSON** | Your own receiver's URL |
 
+- **Apprise** passes an alert on to everything it reaches — mail, Matrix, Signal, Teams and a hundred more — and keeps those services' passwords itself. A **Tag** sends only to the destinations that carry it. **Send test alert** explains Apprise's refusals: 424, it could not deliver or no destination had the tag; 404, there is no configuration under that key.
 - **Alert after** — failures in a row before a bookmark counts as down (default 3, 1–10).
 - **Send test alert** — sends one made-up failure the same way a real one goes.
 - **ntfy** alerts carry **Open link** and **Health** buttons, and a failure is sent at a higher priority than a recovery. Fill in **Address of this dashboard** for the Health button; it links to `/#health`, which redirects into the Bookmarks view.
@@ -1423,7 +1464,7 @@ The bookmark's own side panel says it back: **Details → Address → Runs in** 
 Selecting a container opens its side panel, with four tabs. Its head shows the container's web UI address under the name, tagged **Custom** when it is one you set; the tag opens the Custom section. A click beside the panel closes it, one on another row moves it there (**Config → Containers → Close on a click beside it**).
 
 - **Overview** — an accordion of **Details**, **Health**, **Updates**, **Timeline**, **Network**, **Custom**, **Bookmark**, **Volumes** and **Environment**. **Health**, for a container with a healthcheck, shows its status, how many checks failed in a row, the check it runs, and the last five checks — each a mark and a time, a failed one with its exit code and output. **Volumes** lists each mount by where it appears in the container, with where it comes from under it and a tag for its kind (bind, volume) and for read-only. **Updates** is [§14.5](#145-actions-and-updates). **Timeline** is what happened to the container, newest first: starts and stops (by you or by nextDash), crashes with their exit code, out-of-memory kills, a run of crashes as one *Kept restarting* line, health changes, pauses, updates and rollbacks. nextDash writes these down from Docker's own events, whatever the notices are set to — a hundred per container, for thirty days, from the moment this version runs. **Details** also gives its size (written, and with its image) and says whether its notices are on, muted or off. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it. **Bookmark** shows the bookmark of its web UI — name, address, what its checks say and how it was found — with **Open in Bookmarks**, and **Linked bookmark** to choose: *Automatic* (naming what it found), *No bookmark*, or any bookmark by hand.
-- **Resources** — CPU, memory, size, **Network** (in and out) and **Disk I/O** (read and written), with four charts under them: CPU, memory, network and disk I/O over the last hour. Network and disk are rates between two samples, so they show a dash until there are two. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
+- **Resources** — CPU, memory, size, **Network** (in and out) and **Disk I/O** (read and written), with four charts under them: CPU, memory, network and disk I/O over the last hour — one cursor across the four, a tooltip, a drag to zoom (double-click or `0` back), and the arrow keys to walk the points with the value read out. Network and disk are rates between two samples, so they show a dash until there are two. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
 - **Logs** — the last lines, with **Refresh** and **Open logs window** ([§14.8](#148-the-logs-window)).
 - **What’s new** — the release notes behind an available update.
 
@@ -1598,6 +1639,20 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | **Containers** | Running and total containers, failing healthchecks and recent restarts; opens the Containers view, and its update figure links to `#docker?filter=updates`. The figures you tick can add **updates waiting** (a skipped or held one does not count), **reclaimable** disk space — what the Disk tab last measured, measured again in the background once it is six hours old, a dash before the first — and **incidents** in the last 24 hours (crashes and turns unhealthy, from the timeline). **Name the three busiest by CPU** lists them under the figures. Nothing ticked means every figure. |
 | **Container list** | The containers themselves, one row each: one column on a narrow tile, two on a wide one. Its settings choose **running only** or **all**, the order (**problems first**, name, longest or shortest uptime, CPU or memory — busiest first), what stands on the right of a row (uptime, the image tag, CPU and memory, or nothing) and where a click goes: the container in the Containers view, or its web UI. A problem — unhealthy, stopped, an update — replaces the uptime on its row. |
 
+*How is the Unraid server doing?*
+
+| Kind | Shows |
+|---|---|
+| **Unraid** | The server at a glance, a line each: array, used, parity, disks, alerts, VMs and the UPS, with the worst problem in colour; wide, it adds the newest alert |
+| **Unraid array** | The array's disks by group (parity, array, cache), each with its fill and temperature or its problem; a sleeping disk is grey. A disk is hot at 45 °C when it spins and at 60 °C when it is an SSD or NVMe, and full at the usage warning set for it in Unraid, else at 90 %. Narrow, only the disks with a problem, or *N disks fine* |
+| **Parity** | The last parity check, or the running one with progress, speed and time left; wide, its history |
+| **Shares** | Where the shares live — the array, each cache pool, or both when a share overflows from one to the other — each place with its fill and free space, and the shares on it: their names when wide, how many when narrow. Unraid reports a share's space as that of its place, not its own, so this is the honest view. Its settings choose how many places |
+| **VMs** | How many virtual machines run, and which are paused, stopped or crashed; its settings choose how many rows |
+| **UPS** | Charge, runtime and load; amber when the server runs on battery |
+| **Unraid notifications** | Unraid's unread notifications, newest first, the alerts in red; its settings choose how many rows |
+
+These read one server, set once under Config → Containers ([§15.6](#156-unraid-widgets)).
+
 *What is happening around you?*
 
 | Kind | Shows |
@@ -1695,8 +1750,8 @@ Then name `/mnt/user` and `/mnt/cache` in the Disks widget. A user share reports
 The Custom widget reads figures from any service that answers with JSON.
 
 - **Address and method** — any `http`/`https` endpoint, `GET` or `POST`. Your server makes the request, so a machine on your network is reachable and no key reaches the browser. The widget only reads.
-- **Sign-in** — an API key in a header, a key in the address (the stored address keeps a `YOUR_KEY` placeholder), a username and password, or a session sign-in for services such as qBittorrent. Secrets are stored in their own file and left out of backups unless you include stored tokens. A saved key shows as *Set*; the eye button reveals it. Stored sign-ins can also be used by health checks ([§12.1](#121-availability-modes)).
-- **Paths** — `server.disk[0].used` walks objects and arrays; `sensor.p1_meter` finds a list entry by its own name; `[entity_id=sensor.p1_meter].state` is the explicit form. Up to eight figures. A path that stops matching is marked, not shown as zero.
+- **Sign-in** — an API key in a header, a key in the address (the stored address keeps a `YOUR_KEY` placeholder), a username and password, a session sign-in for services such as qBittorrent, or a sign-in that hands out a token (Nginx Proxy Manager, Pi-hole v6, Duplicati, Beszel), which nextDash keeps and renews; a password-only sign-in asks for no username. Secrets are stored in their own file and left out of backups unless you include stored tokens. A saved key shows as *Set*; the eye button reveals it. Stored sign-ins can also be used by health checks ([§12.1](#121-availability-modes)).
+- **Paths** — `server.disk[0].used` walks objects and arrays; `sensor.p1_meter` finds a list entry by its own name; `[entity_id=sensor.p1_meter].state` is the explicit form. A `#` at the end counts: `list#` is the length of a list, `list[state=failed]#` the entries that match; `[-1]` is the last entry. Up to eight figures. A path that stops matching is marked, not shown as zero.
 - **Shape** — *Count*, *Size* (bytes), *Data size* (with the unit the service counts in), *Speed* (bits per second, `1.046 Gbps`), *Power* (`4.5 kW`), *Temperature* (in the unit set for the weather; not converted), *Percentage (0–100)*, *Percentage from a share (0–1)* (a service that reports 43% as `0.43`), *Duration*, *Milliseconds*, *Time ago* or *Text*.
 - **Decimals** — *Auto* or 0–3, also for numbers the service sends as text.
 - **Size** — *Normal*, *Large*, *Small*, or *Bar* for a percentage.
@@ -1709,16 +1764,33 @@ The Custom widget reads figures from any service that answers with JSON.
 
 An answer has eight seconds to arrive and is read up to one megabyte. There is no arithmetic.
 
-**Twenty-eight services come filled in:**
+**Forty-one services come filled in** (qBittorrent twice: with its sign-in, and with the API key of 5.2 and later):
 
 | Group | Services |
 |---|---|
-| **Media & downloads** | Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Bazarr, Overseerr / Jellyseerr, Tautulli, Jellyfin / Emby, Plex, Immich, qBittorrent, SABnzbd, NZBGet |
-| **Network** | Pi-hole (v6 and v5), AdGuard Home, Traefik, Speedtest Tracker |
-| **System** | Proxmox VE, TrueNAS, Glances, Syncthing |
+| **Media & downloads** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr (Overseerr / Jellyseerr), Tautulli, Jellyfin / Emby, Plex, Immich, qBittorrent (login), qBittorrent (5.2+, API key), SABnzbd, NZBGet, Whisparr, LazyLibrarian, NZBHydra2, Komga, PhotoPrism, Jellystat, Mylar3 |
+| **Network** | Pi-hole (v6), AdGuard Home, Traefik, Speedtest Tracker, Nginx Proxy Manager, Tailscale |
+| **System** | Proxmox VE, Glances, Syncthing, Duplicati |
+| **Monitoring** | Beszel, Netdata, Gatus, Uptime Kuma, Scrutiny, Healthchecks |
 | **Apps** | Nextcloud, Paperless-ngx, Home Assistant, Grafana, ntfy |
 
+Retired presets — Readarr, Pi-hole v5 and TrueNAS, whose APIs are gone — are no longer offered; a widget started from one keeps working. Every preset is tested against its service's recorded answer.
+
 A preset fills in a sample address, the useful path, the figures with labels and shapes, and the sign-in type, and says where to find the key. Where a header needs a word before the token (`Bearer `, `Token `), the preset puts it in the box. Everything stays editable.
+
+### 15.6 Unraid widgets
+
+Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array**, **Parity**, **Shares**, **VMs**, **UPS** and **Unraid notifications**. They are read-only — nextDash never starts or stops anything on the server.
+
+**What they need.** Unraid 7.2, or an older Unraid with the Unraid Connect plugin, and an API key with the role **Viewer** (in Unraid: Settings → Management Access → API Keys). A key that can do more than read is accepted, but Config says Viewer is enough.
+
+**One connection for all seven.** Config → Unraid holds it: the **Address**, the **API key** (a saved key shows as *Set*; the eye button reveals what you type), **Accept a self-signed certificate**, **Read this server** and **Send Unraid alerts through the alert channels**. When nextDash runs in a container, the Docker bridge gateway is suggested as the address. The address starts with `http://` or `https://`; one without is refused. **Test connection** names the server, its Unraid and API versions and what the key may read — *yes*, *not allowed* or *not in this version* per area. When the server answers but the key may not read its info, or its Unraid lacks what nextDash reads, the test says that rather than *The server did not answer*. A new address needs the key again: change the address without typing a key and the saved key is dropped. The key is stored apart in `data/unraid-secrets.json`, is never sent back to the browser, and travels in a backup only with **Tokens and passwords**.
+
+**On the tile.** A widget has only how it draws: **Refresh every (seconds)** (30 at the least; one answer per area is shared by everyone viewing the dashboard), **Rows to show** where it lists (Shares, VMs, Unraid notifications), and **A click** — *Opens the page in Unraid* or *Does nothing*. An area the key may not read, or an Unraid version that lacks it, is named on the tile instead of showing zero; a server that stops answering keeps the last reading, with its age. Nothing is shown until the connection is saved.
+
+**Alerts.** With **Send Unraid alerts through the alert channels** ticked, four things go through the channels that carry downtime and container alerts ([§12.4](#124-alerts)): Unraid's own ALERT notifications, the array stopping, a parity check that finished with errors, and a disk whose error count went up. The first look after a start only remembers what is there, and so does the first look after the address changes or **Read this server** or the alert switch is turned off and on again. Four or more at once become one message, *N Unraid alerts*.
+
+**Local addresses.** The server is asked from nextDash, so a LAN address needs **Allow localhost & private-network bookmarks** (Behavior → General, on by default) — the same rule as other outgoing requests ([§23.3](#233-local-addresses-and-outgoing-requests)). Unraid usually answers with a certificate of its own; tick **Accept a self-signed certificate** for that, or use an address with a certificate nextDash trusts.
 
 ---
 <a id="16-appearance"></a>
@@ -1735,7 +1807,7 @@ nextDash ships **160 theme families**, each with a light and a dark half — 320
 
 **Theme** on the Look tab lists every theme by name. Beside it:
 
-- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, a row of **character chips** ([§16.2](#162-character)) and a **collection** chip. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 34 newest families wear a **new** badge, and searching `new` finds them. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
+- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, a row of **character chips** ([§16.2](#162-character)) and a **collection** chip. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 34 newest families wear a **new** badge, and searching `new` finds them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
 - **Collections** — the **Neutrals** collection holds five calm grey palettes — Slate, Zinc, Gray, Stone and Neutral — drawn under glass, each with a backdrop of its own.
 - **Quick mode** — switches between the light and dark half of the family you are on.
 - **Follow system dark mode** — shows the light half by day and the dark half by night, following the operating system, also in a background tab.
@@ -1748,6 +1820,8 @@ nextDash ships **160 theme families**, each with a light and a dark half — 320
 #### 🪟 The theme browser
 
 The theme browser lies over the right of the dashboard, so every change shows on the real page while you make it. Nothing is stored until **Apply**; **Cancel**, the **×** at the top right, **Esc** or a click on the dashboard beside the panel puts everything back, in every tab. On a narrow window it becomes a sheet along the bottom.
+
+**Wider.** Drag the panel's left edge to widen it, or focus the edge and use **`←`** / **`→`** (with **`Shift`** for bigger steps); a double-click gives the default width back. It never goes narrower than the default, where the six tabs fit, and always leaves 240 px of the page beside it. The width is kept per browser.
 
 | Tab | What it changes |
 |---|---|
@@ -1763,6 +1837,9 @@ The theme browser lies over the right of the dashboard, so every change shows on
 - **Compare** shows the look from before you opened the browser until you press it again; holding **`\`** does the same for as long as you hold it.
 - **Reset tab** undoes the open tab; **🎲** tries something at random in it.
 - **`←` / `→`** move between tabs, **`⌘/Ctrl + Enter`** applies, and **Enter** on a theme card picks it.
+- **✎ Edit** on a card of your own, **✎ Recolour** on a packaged one, or **`e`** on a focused card opens the theme editor ([§16.5](#165-custom-themes)) in place of the grid; **← Themes** goes back. The other tabs have a link **✎ Edit ‹theme›** at the top. Colour changes show on the page and are kept on **Apply** like everything else; **Cancel** and **Compare** include them, and **Reset tab** in the editor puts the colours back.
+- **Use this theme's look**, above the grid, appears once a theme of your own carries a look. Off, picking such a theme leaves the look on screen as it is.
+- **Save as theme…** turns what is on screen into a new theme of your own: a name (it suggests "‹theme› — mine"), **Bring this look along**, and **Make the light/dark half too** when the theme has two. It is saved at once and opens in the editor; picking it still waits for **Apply**, so **Cancel** keeps the new theme and puts the old one back on screen.
 
 **Looks** set backdrop, surface, headers and type in one go, and leave the theme's colours alone. After using one, every part can still be tuned in its own tab.
 
@@ -1867,7 +1944,9 @@ Type is on the **Look** tab; everything behind the bookmarks is on the **Backgro
 **Open the theme editor…** on the Look tab opens the editor as a page of its own; **← Look** above it goes back. A link to `/#config/appearance/custom-themes` opens it directly.
 
 - **Your themes** — **Add custom theme**, edit, reorder (↑ ↓), delete, **⤓** export to a JSON file, and **Import theme…**. A theme you make appears in the theme list beside the packaged ones.
-- A custom theme can set everything a packaged theme can: its colours, and under **Shape & character** its character, corner roundness, surface opacity, blur, glow, the **Gloss** slider (how much light a surface catches), the grain's direction and strength, the category titles, the backdrop pattern, and the depth and effects it asks to be drawn at. It has a light and a dark half, like the built-in themes.
+- A custom theme can set everything a packaged theme can: its colours, and under **Shape & character** its character, corner roundness, surface opacity, blur, glow, the **Gloss** slider (how much light a surface catches), the grain's direction and strength, the category titles, the backdrop — **Automatic** or any of the 26 patterns, shown as tiles in the theme's own colours — and the depth and effects it asks to be drawn at. It has a light and a dark half, like the built-in themes.
+- **This theme's look** (in the theme browser's editor) — a theme of your own can bring a look along: backdrop and its sliders, card glass, depth, headers, type and spacing. **Take the look on screen** stores what you see, **Clear** removes it, and both halves of a pair share it. Picking the theme — a card, the Theme picker or `:theme` — applies the look; switching halves with Quick mode or the system's dark mode does not, and neither does Random theme. A theme file carries its look.
+- In the **Theme** picker your themes come first, in a group of their own, and the closed picker says **· yours**; a recoloured packaged theme says **· recoloured**.
 - A contrast check warns when text is too faint against its background.
 - **Packaged themes** — recolour any theme that ships, or the base light and dark palettes. **Reset defaults** puts a theme back.
 - Changes preview live on the dashboard behind config; leaving the tab drops an unsaved preview. On a phone the editor is read-only.
@@ -1943,7 +2022,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 
 | Section | What lives there |
 |---------|------------------|
-| **Overview** | The figures of your collection (bookmarks, pages, categories, tags, monitored, with shortcut, pinned, last edited), **Needs attention** with a button per item, **How you use this collection**, the **cleanup score**, and **Health at a glance**. The running version is at the foot. |
+| **Overview** | One line of what needs you, then **Your install** — panels for bookmarks, the inbox, containers, health and statistics — beside **From nextDash**: the newest posts, the newest features with the running version, and a tip of the day ([§17.8](#178-overview-help-and-about)). |
 | **Appearance** | Look · Background · Surface · Grid · Rows · Header · Action bar · Date & weather ([§16](#16-appearance)) |
 | **Bookmarks** | View · Tags · Tag suggestions · Your rules · Settings · Local copies ([§17.4](#174-config-bookmarks)) |
 | **Inbox** | Collecting · List · Panel & clicks · Header icon ([§17.6](#176-config-inbox)) |
@@ -1951,7 +2030,8 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Behavior** | General · Keyboard & search · Fresh · Status & alerts · Privacy & sync ([§17.5](#175-behavior)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
 | **Widgets** | Widgets · Types ([§15](#15-widgets)) |
-| **Containers** | Connection · View · Updates · Safety · Notifications · Muted containers · Hidden containers · GitHub token ([§17.7](#177-config-containers)) |
+| **Containers** | Connection · View · Updates · Alerts ([§17.7](#177-config-containers)) |
+| **Unraid** | The one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
 | **Statistics** | Overview · Activity · Content · Inbox · Health ([§18](#18-statistics)) |
 | **Help** | The in-app guide |
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
@@ -1973,7 +2053,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 **`Ctrl/Cmd + Shift + K`** — or **Find settings** below the section rail — searches every section, tab, setting and help topic. It also finds settings by related words (*uptime*, *wallpaper*, *hotkey*) and by their current value (*8099*, *Monitor*), and shows that value beside the result.
 
-**Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → Privacy & sync) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections and the action bar position — carry an **all devices** mark.
+**Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → Privacy & sync) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections, the action bar position, web search and container icons — carry an **all devices** mark.
 
 <a id="174-config-bookmarks"></a>
 
@@ -2005,7 +2085,7 @@ The other tabs:
 | Tab | Settings |
 |---|---|
 | **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode** |
-| **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
+| **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
 | **Fresh** | Show what is new since you last looked, mark rows that publish, find feeds now ([§12.6](#126-fresh)) |
 | **Status & alerts** | [§12.1](#121-availability-modes) |
 | **Privacy & sync** | Analytics, the daily release check, posts from nextdash.cc; **Keep settings on this device only**; onboarding (keyboard tips, review cards, tours, *Show quick-start card again*) |
@@ -2027,28 +2107,29 @@ Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config →
 
 ### 17.7 Config → Containers
 
-No tabs — one page of panels:
+Four tabs, with the same strip, keys and memory as Config → Inbox. It opens on the one you looked at last, `#config/containers/<tab>` opens a tab by address, and a setting found with search opens the tab it is on.
 
-| Panel | Shows |
+| Tab | Panels |
 |---|---|
-| **Connection** | The Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable |
-| **View** | Show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden |
-| **Updates** | Check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§14.5](#145-actions-and-updates)) |
-| **Safety** | Also confirm stop and restart (update and remove always ask first) |
-| **Notifications** | Notify about containers — on by default; also when one uses too much CPU or memory, with the CPU line (50–95 %), the memory line (70–95 %) and how long (5–30 minutes) ([§14.9](#149-notices)) |
-| **Muted containers** | Where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
-| **Hidden containers** | Containers kept out of the view, search and the widget count — they keep running |
-| **GitHub token** | Raises the rate limit for images hosted on GHCR |
+| **Connection** | **Connection**: the Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable. **Safety**: also confirm stop and restart (update and remove always ask first) |
+| **View** | **View**: show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden. **Links**: the Docker host address that port and web UI links point at. **Hidden containers**: kept out of the view, search and the widget count — they keep running |
+| **Updates** | **Updates**: check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§14.5](#145-actions-and-updates)). **GitHub**: a token that raises the rate limit for release notes and for images hosted on GHCR |
+| **Alerts** | **Notifications**: notify about containers — on by default; also when one uses too much CPU or memory, with the CPU line (50–95 %), the memory line (70–95 %) and how long (5–30 minutes) ([§14.9](#149-notices)). **Muted containers**: where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
+
+The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It opens with **How it works** — nextDash and the server drawn as two boxes with data running between them, and three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done — and **What you get**: the seven widgets in miniature with example figures, each with an **Add…** that opens Widgets → Types on that kind.
 
 ### 17.8 Overview, Help and About
 
-**Overview** is about your collection: its figures, what needs attention, how you use it, how tidy it is and whether the links answer.
+**Overview** is the page config opens on. At the top, one line says what needs you — broken links, monitors that are down, unread inbox items, duplicates, shortcut conflicts, links never checked, containers with an update — as chips that each go where the problem is fixed; with nothing to do it says so. Below it, two columns:
+
+- **Your install** — a panel per part of the app, each with a way in (**Open →**) and its own warning in the foot. **Bookmarks**: the count, pages, categories, tags, shortcuts, pins and when you last edited one. **Inbox**: unread, the links added per day over two weeks, how many wait and how long the oldest has. **Containers**: running, stopped, unhealthy and updates available, and which ones — shown only when nextDash can see Docker. **Health**: the healthy share as a ring and the four states (healthy, broken, monitor down, wrong content). **Statistics**: opens this week with two weeks of bars, the most-opened link, the busiest page and the **cleanup score** with what lowers it most. A panel for something switched off — the inbox, Containers — is left out.
+- **From nextDash** — the three newest posts on nextdash.cc (off with **Behavior → Privacy**), the three newest features with the release you run and **Show what's new**, and a **tip of the day** from Help → Tips, with ‹ › to step through the others.
 
 **Help** covers Getting started, Tips, Configuring, Appearance, Structure & bookmarks, the **Bookmarks view**, Widgets, Search & keyboard, **Checks & health**, Monitoring, Inbox, **Containers**, Statistics, Data & hosting and Logs. The search above the tabs covers every tab and About. Each topic has a 🔗 button that copies a link to it. A topic about something that can be switched off says whether it is on for you, with a button to the setting. **Tips** lists every keyboard tip, grouped, with its own filter. **Saving a link from anywhere** (Inbox tab) builds a bookmarklet for this install.
 
 **Guided tours.** Six walkthroughs run over the real page rather than a picture of it: *What has changed*, *First steps*, *Inbox*, *Fresh*, *Widgets* and *Spreading a category*. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
 
-**The dashboard tour.** Sixteen steps with moving drawings, offered once after the quick-start card: it opens on the theme browser, the backdrops and the looks, then walks pages and categories, search, shortcuts, the cursor, adding, link checks, the Bookmarks view, the inbox, Containers, widgets, the first keys to learn, Config and the cheat sheet. After an update to a version that changed it, every reader is offered it once more, after the release notes have been read. Replay it from the same Onboarding list or with `:tour`.
+**The dashboard tour.** Twenty steps with moving drawings, offered once after the quick-start card: it opens on what is new — web search, app icons, the theme editor and the Unraid widgets — then the theme browser, the backdrops and the looks, then walks pages and categories, search, shortcuts, the cursor, adding, link checks, the Bookmarks view, the inbox, Containers, widgets, the first keys to learn, Config and the cheat sheet. After an update to a version that changed it, every reader is offered it once more, after the release notes have been read. Replay it from the same Onboarding list or with `:tour`.
 
 **About** has two tabs: **About nextDash** (what the project is, and links to nextdash.cc, GitHub, jordibrw.nl and Ko-fi) and **News & features** (every post from nextdash.cc, every release and every setting worth switching on, with source filters, and a button that bookmarks nextdash.cc so Fresh counts its posts).
 
@@ -2118,7 +2199,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 - **Create a backup automatically** and **How often** — every day, week (default), two weeks or month. A run happens whenever the newest backup is older than that, so frequent restarts do not skip it. The newest **three** are kept; `NEXTDASH_AUTO_BACKUP_KEEP` (1–50) changes that and `NEXTDASH_AUTO_BACKUP_DIR` (an absolute path) stores them elsewhere. The default place is `data/auto-backups/`, which is left out of backups. **The panel names the directory it is actually using**, and warns when that is inside the data directory — backups kept there are lost with the thing they back up.
 - **What a backup carries** — a backup holds the whole data directory: bookmarks, pages, categories, finders, the inbox, settings, custom themes, check history, icons and uploads, and the images held or skipped in the Containers view. Two switches decide the rest:
   - **Local copies of pages** — the largest part of a backup.
-  - **Tokens and passwords** — source tokens, stored sign-ins, webhook keys and the Containers view's GitHub token. With them in, a restore needs nothing typed again, and the ZIP itself becomes a secret. They are written back with owner-only permissions.
+  - **Tokens and passwords** — source tokens, stored sign-ins, webhook keys, the Containers view's GitHub token, the Unraid and Brave keys, and the secrets in the alert settings (the alert address with its bot token, Pushover's keys, the archive keys and the iCal address). Without them, those settings go into the backup blanked, and restoring it keeps the ones in use. With them in, a restore needs nothing typed again, and the ZIP itself becomes a secret. They are written back with owner-only permissions.
 - Left out on purpose: cached previews and pictures, the health cache, and browser push subscriptions — all rebuilt or re-registered after a restore. The Containers view's timeline, update history, disk sizes and logs stay out too: they belong to the Docker host, not to the data.
 - **Stored backups** — each with its age, size and contents (*1.7 MB · 412 bookmarks on 5 pages*), and **Download**, **Restore** and **Delete**. **Download all** saves them all.
 - **Full backup (zip)** → **Import backup…** — restores a ZIP.
@@ -2136,7 +2217,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 | **Export bookmarks (CSV)** | Name, URL, category, page, shortcut, tags and notes, with translated headers |
 | **Import bookmarks (CSV)** | Reads that file back onto the current page. Columns are matched by name; rows without a URL and existing URLs are skipped. |
 
-**Settings** exports or imports `settings.json` alone.
+**Settings** exports or imports `settings.json` alone. The Unraid server is left out of an import: it is set only under Config → Unraid, so an imported file can never point the saved key at another address.
 
 | Situation | Use |
 |---|---|
@@ -2198,9 +2279,14 @@ The MCP endpoint is switched on from this tab as well — see [§23.6](#236-the-
 - **Refresh all link previews** / **Clear all link previews** — the stored titles, descriptions and images. Refreshing is one request per bookmark, shows progress, waits out a rate limit and can be stopped.
 - **Forget the scanned keywords** — what *Read their pages* kept for tag suggestions.
 
+**App icons.** Containers and bookmarks to self-hosted apps get the app's own icon from two open icon sets, [dashboard-icons](https://github.com/homarr-labs/dashboard-icons) and [selfh.st/icons](https://selfh.st/icons/). A container is matched by its image and name, a bookmark by its host — a private name such as `sonarr.lan` or `plex.local` included; the icon follows the theme between its light and dark variant. When the sets know an app, its icon is used instead of the site's favicon — an icon you chose or uploaded is never replaced. When the sets know the app but cannot deliver its file, the favicon is fetched after all.
+
+- **Choosing one** — the pencil on a bookmark's icon in the form offers **Choose app icon…** (and up to three suggestions appear under the address); the pencil on the icon in a container's drawer and in the Bookmarks view's side panel offers **Choose app icon…**, **Use letter** and **Automatic**. A chosen icon is copied into `data/icons/` and is then an ordinary icon of yours.
+- **Where they come from** — the server fetches the sets' indexes from jsDelivr once a week and each icon on first use, asks for an icon again after a week, keeps at most 3000 per set in `data/icon-sets/` (left out of backups, like cached previews) and serves them itself; the browser never contacts the icon sets. `DISABLE_ICON_SETS=1` switches all of it off. The sets are credited under About.
+
 ### 19.5 Trash
 
-Deleted **bookmarks, pages and categories** stay in the trash for **30 days** (at most 500 entries). `:trash` opens it. Every route into the trash — the dashboard, the Bookmarks view, single or bulk — lands here.
+Deleted **bookmarks, pages and categories** stay in the trash for **30 days** (at most 500 entries). `:trash` opens it. Every route into the trash — the dashboard, the Bookmarks view, `:remove`, single or bulk — lands here.
 
 - **Search** by name, URL, tag, category or page.
 - **Restore** puts a bookmark back on its page, at its old position.
@@ -2521,6 +2607,7 @@ Every count is rounded into a band. **Never recorded:** bookmark names, URLs, se
 - `GET /api/data-revision` — a hash of the bookmark data; open dashboard tabs poll it and refresh when something changes elsewhere.
 - Preview data is kept in memory and written to disk every 30 seconds and on shutdown.
 - `NEXTDASH_DATA_DIR` sets the data directory; `NEXTDASH_DISABLE_PREFETCH=1` skips the icon prefetch at start-up.
+- For the test suite only: `NEXTDASH_ICON_SETS_FIXTURE` and `NEXTDASH_UNRAID_FIXTURE` name a directory the app icon sets and the Unraid API answer from instead of the network. A real install leaves them unset.
 
 ---
 
@@ -2653,8 +2740,10 @@ Escape              close, then leave
 | `/#inbox` | The inbox |
 | `/#docker`, `/#docker/<name>`, `/#docker?filter=updates` | The Containers view |
 | `/#search?q=…` | A search |
+| `/#search?web=…` | A web search ([§8.3](#83-beyond-the-current-page)) |
 | `/add?url=…` | Save to the inbox |
 | `/opensearch.xml` | The browser search engine description |
+| `/opensearch-web.xml` | The same for web search, while an engine is on |
 | `/manifest.webmanifest` | The installed app |
 
 ### Data location

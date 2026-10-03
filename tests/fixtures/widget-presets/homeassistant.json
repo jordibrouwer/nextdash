@@ -1,0 +1,18 @@
+{
+  "_source": "developers.home-assistant.io REST /api/states",
+  "auth": {
+    "header": "Authorization",
+    "value": "Bearer %KEY%"
+  },
+  "fillIn": "living_temp",
+  "body": [
+    {
+      "entity_id": "sensor.living_temp",
+      "state": "21.4",
+      "attributes": {
+        "friendly_name": "Living room"
+      },
+      "last_updated": "2026-10-02T09:30:00Z"
+    }
+  ]
+}

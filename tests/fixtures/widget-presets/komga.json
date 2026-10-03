@@ -1,0 +1,24 @@
+{
+  "_source": "komga SeriesController (Spring Page)",
+  "auth": {
+    "header": "X-API-Key",
+    "value": "%KEY%"
+  },
+  "body": {
+    "content": [
+      {
+        "id": "0A1B2C",
+        "name": "Berserk",
+        "booksCount": 41
+      }
+    ],
+    "totalElements": 318,
+    "totalPages": 318,
+    "size": 1,
+    "number": 0,
+    "numberOfElements": 1,
+    "first": true,
+    "last": false,
+    "empty": false
+  }
+}

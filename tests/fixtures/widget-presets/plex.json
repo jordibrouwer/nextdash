@@ -1,0 +1,17 @@
+{
+  "_source": "Plex /status/sessions",
+  "auth": {
+    "query": "X-Plex-Token"
+  },
+  "body": {
+    "MediaContainer": {
+      "size": 1,
+      "Metadata": [
+        {
+          "title": "Pilot",
+          "type": "episode"
+        }
+      ]
+    }
+  }
+}

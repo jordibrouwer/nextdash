@@ -113,8 +113,14 @@ class SearchCommandNote {
                 const textarea = document.getElementById('note-cmd-textarea');
                 const newNote = textarea ? textarea.value : '';
                 bookmark.note = newNote;
-                await this._persistBookmark(bookmark);
+                const saved = await this._persistBookmark(bookmark);
                 const dash = window.dashboardInstance;
+                // Said only when the note was written: the toast came from a
+                // separate save of the page in view, and showed either way.
+                if (!saved) {
+                    dash?.showErrorNotification?.(this._t('commands.bookmarkUpdateFailed', 'Could not save the change'));
+                    return;
+                }
                 if (dash && typeof dash.scheduleBookmarkOrderSave === 'function') {
                     dash.scheduleBookmarkOrderSave({
                         successMessage: this._t('commands.noteSavedToast', 'Note saved.')
@@ -137,32 +143,34 @@ class SearchCommandNote {
         }, 120);
     }
 
+    /** Writes the note to the bookmark's page; false when nothing was written. */
     async _persistBookmark(bookmark) {
         const dash = window.dashboardInstance;
-        if (!dash) return;
+        if (!dash) return false;
 
         const pageId = Number(bookmark.pageId || bookmark.pageID || dash.currentPageId);
-        if (!pageId) return;
+        if (!pageId) return false;
 
         try {
             const res = await fetch(`/api/bookmarks?page=${pageId}`);
-            if (!res.ok) return;
+            if (!res.ok) return false;
             const bookmarks = await res.json();
             const idx = bookmarks.findIndex(b => b.url === bookmark.url && b.name === bookmark.name);
-            if (idx >= 0) {
-                bookmarks[idx].note = bookmark.note;
-            }
-            await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/bookmarks?page=${pageId}`, {
+            if (idx < 0) return false;
+            bookmarks[idx].note = bookmark.note;
+            const write = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookmarks)
             });
+            if (!write?.ok) return false;
             if (dash.bookmarks && Number(dash.currentPageId) === pageId) {
                 const localIdx = dash.bookmarks.findIndex(b => b.url === bookmark.url && b.name === bookmark.name);
                 if (localIdx >= 0) dash.bookmarks[localIdx].note = bookmark.note;
             }
+            return true;
         } catch {
-            // ignore
+            return false;
         }
     }
 }

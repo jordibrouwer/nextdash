@@ -2,6 +2,22 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureUnraidTitle",
+      "titleFallback": "Your Unraid server on the dashboard",
+      "whatKey": "config.overviewNewFeatureUnraidWhat",
+      "whatFallback": "How the array, parity and the UPS were doing meant opening Unraid's own web interface, and its alerts reached you only through Unraid.",
+      "howKey": "config.overviewNewFeatureUnraidHow",
+      "howFallback": "Seven widgets in the catalogue read an Unraid server: an overview, the array, parity, shares, VMs, the UPS and Unraid's notifications. Its alerts — a stopped array, disk errors, a parity check with errors — can go through the same channels as your other alerts.",
+      "enableKey": "config.overviewNewFeatureUnraidEnable",
+      "enableFallback": "Create an API key in Unraid, then connect the server under Config → Unraid.",
+      "ctaKey": "config.overviewNewFeatureUnraidCta",
+      "ctaFallback": "Open Unraid →",
+      "go": {
+        "section": "unraid"
+      },
+      "since": "v1.17.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureLookStudioTitle",
       "titleFallback": "The theme browser is a look studio",
       "whatKey": "config.overviewNewFeatureLookStudioWhat",

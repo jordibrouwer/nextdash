@@ -36,16 +36,32 @@
         iconBox.append(iconImg, letter, blank);
         let currentHost = '';
         let currentIcon = '';
-        // A stored icon that no longer loads is no icon at all.
+        // The set icon the dashboard would draw for an address with no icon
+        // of its own; shown in the same place, below a chosen one.
+        let autoRef = null;
+        // A stored icon that no longer loads is no icon at all; a set icon
+        // that does not load is no suggestion either.
         iconImg.addEventListener('error', () => {
-            currentIcon = '';
+            if (iconImg.hasAttribute('data-icon-set-auto')) autoRef = null;
+            else currentIcon = '';
             iconImg.hidden = true;
             syncLetter();
         });
         const syncLetter = () => {
             const bare = currentHost.replace(/^www\./, '');
-            letter.hidden = Boolean(currentIcon) || !bare;
-            blank.hidden = Boolean(currentIcon) || Boolean(bare);
+            // No icon of its own: the set icon the dashboard would draw, in
+            // the same <img>, marked so the reader's own icon never mixes in.
+            const auto = Boolean(!currentIcon && autoRef && bare);
+            iconImg.toggleAttribute('data-icon-set-auto', auto);
+            if (auto) {
+                const src = window.IconSetAuto?.pickVariant(autoRef) || autoRef.base;
+                if (iconImg.getAttribute('src') !== src) iconImg.src = src;
+                iconImg.hidden = false;
+            } else if (!currentIcon && iconImg.hasAttribute('src') && iconImg.getAttribute('src') !== '') {
+                iconImg.hidden = true;
+            }
+            letter.hidden = Boolean(currentIcon) || Boolean(auto) || !bare;
+            blank.hidden = Boolean(currentIcon) || Boolean(auto) || Boolean(bare);
             letter.textContent = bare.charAt(0).toUpperCase();
             // Nothing to change on a card with no address yet.
             pencil.hidden = !bare && !currentIcon;
@@ -75,6 +91,13 @@
             });
             menu.appendChild(b);
         };
+        if (typeof options.onChooseAppIcon === 'function') {
+            item(t('iconSetChoose', 'Choose app icon…'), () => options.onChooseAppIcon(pencil));
+            menu.lastChild.setAttribute('data-icon-set-choose', '');
+            const rule = document.createElement('hr');
+            rule.className = 'bookmark-form-card-menu-rule';
+            menu.appendChild(rule);
+        }
         item(t('config.detailUploadIconBtn', 'Upload…'), options.onUpload);
         item(t('config.bookmarkIconFetchAgain', 'Fetch again'), options.onFetchAgain);
         item(t('config.detailClearIconBtn', 'Clear'), options.onClear);
@@ -114,7 +137,13 @@
             e.preventDefault();
             options.onRetry?.();
         });
-        text.append(hostLine, desc, retry);
+        // Up to three app icons for this address, filled by the form
+        // (IconSetPicker.renderSuggestions); hidden while there are none.
+        const suggest = document.createElement('div');
+        suggest.className = 'icon-set-suggest';
+        suggest.setAttribute('data-icon-set-suggest', '');
+        suggest.hidden = true;
+        text.append(hostLine, desc, suggest, retry);
 
         const image = document.createElement('img');
         image.className = 'bookmark-form-card-image';
@@ -124,6 +153,12 @@
         host.append(iconBox, text, image);
 
         return {
+            suggestionsHost: suggest,
+            /** The set icon shown while the bookmark has no icon of its own; null for none. */
+            setAutoIcon(ref) {
+                autoRef = ref || null;
+                syncLetter();
+            },
             setIcon(filename) {
                 const name = String(filename || '').trim();
                 currentIcon = name;

@@ -114,7 +114,28 @@
         if (!match) {
             return { title: raw, body: '' };
         }
-        return { title: match[1].trim(), body: match[2].trim() };
+        let title = match[1].trim();
+        let body = match[2].trim();
+        /*
+         * Many items carry on after the bold part rather than starting a new
+         * sentence ("<strong>X</strong>, and Y." or "<strong>X</strong> — Y.").
+         * Split there, the explanation opened with ", and" or "— " on a line
+         * of its own. A dash or colon is a separator: dropped, and what follows
+         * starts with a capital. A comma, a semicolon or a lower-case word
+         * continue the sentence: it joins the title up to its full stop.
+         */
+        const separator = body.match(/^(?:[—–-]|:)\s*/);
+        if (separator) {
+            body = body.slice(separator[0].length);
+            body = body.replace(/^((?:<[^>]+>)*)([a-z])/, (_, tags, ch) => tags + ch.toUpperCase());
+        } else if (/^(?:[,;)]|(?:<[^>]+>)*[a-z])/.test(body)) {
+            const end = body.search(/[.!?](?=\s|$)/);
+            const cut = end < 0 ? body.length : end + 1;
+            const glue = /^[,;)]/.test(body) ? '' : ' ';
+            title = `${title}${glue}${body.slice(0, cut)}`;
+            body = body.slice(cut).trim();
+        }
+        return { title, body };
     }
 
     /**

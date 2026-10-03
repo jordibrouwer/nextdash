@@ -206,6 +206,7 @@ class DashboardContextMenu {
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: this.shareActionLabel(), icon: '↪' },
+            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦' },
             { id: 'inbox-promote', label: this.t('dashboard.inboxPromote', 'Promote'), icon: '★' },
             // Keep's own entry: the same silent promote-to-Unsorted the triage
             // "r" key runs, reachable now without starting a triage run first.
@@ -271,6 +272,7 @@ class DashboardContextMenu {
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗', key: `${mod}+Enter` },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${mod}+C` },
             { id: 'share', label: this.shareActionLabel(), icon: '↪', key: 'Shift+L' },
+            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦', key: 'Shift+J' },
             { id: 'edit', label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎', key: 'Shift+E' },
             // Pin had no pointer route at all from the grid — not a row button,
             // not an entry here — while every other one-bit row action did.
@@ -921,6 +923,12 @@ class DashboardContextMenu {
                     }
                 }
                 void this.shareBookmark(shareTarget, row);
+                break;
+            }
+            case 'qr': {
+                // The saved page itself, to open on a phone. Share's deep link
+                // into this dashboard's inbox is no use off the LAN.
+                void window.BookmarkQR?.show?.({ name: bookmark.name, url: bookmark.url });
                 break;
             }
             // The inbox row's own actions. Each defers to the method the row

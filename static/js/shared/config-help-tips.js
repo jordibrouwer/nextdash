@@ -65,6 +65,7 @@
                 'tipEditRenamePage',
                 'tipEditPageTabDot',
                 'tipEditCopyUrl',
+                'tipEditQrCode',
                 'tipEditCategorySpread',
                 'tipEditPromote',
                 'tipEditPanel',
@@ -84,6 +85,7 @@
                 'tipFindTagCloud',
                 'tipFindRecent',
                 'tipFindAddressBar',
+                'tipFindWeb',
             ],
         },
         {
@@ -141,6 +143,7 @@
                 'tipTuneInfo',
                 'tipTuneTheme',
                 'tipTuneThemeBrowser',
+                'tipTuneThemeBrowserWidth',
                 'tipTuneGloss',
                 'tipTuneLooks',
                 'tipTuneBackdrop',

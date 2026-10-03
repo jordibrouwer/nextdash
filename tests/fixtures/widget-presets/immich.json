@@ -1,0 +1,15 @@
+{
+  "_source": "immich server.dto.ts ServerStatsResponseDto",
+  "auth": {
+    "header": "x-api-key",
+    "value": "%KEY%"
+  },
+  "body": {
+    "photos": 24310,
+    "videos": 1370,
+    "usage": 412339200000,
+    "usagePhotos": 380000000000,
+    "usageVideos": 32339200000,
+    "usageByUser": []
+  }
+}

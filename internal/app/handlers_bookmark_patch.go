@@ -307,6 +307,7 @@ func applyBookmarkPatch(bookmark *Bookmark, update bookmarkPatch) {
 	}
 	if update.Icon != nil {
 		bookmark.Icon = sanitizeBookmarkIcon(*update.Icon)
+		normalizeBookmarkIconMode(bookmark)
 	}
 	if update.Name != nil {
 		bookmark.Name = strings.TrimSpace(*update.Name)

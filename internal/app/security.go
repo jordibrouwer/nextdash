@@ -184,7 +184,10 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		// dropped rather than kept: it would reach the browser as a class and
 		// as a filter chip, and a theme file from elsewhere does not get to
 		// invent either.
-		Character:  keepArchetype(tc.Character),
+		Character: keepArchetype(tc.Character),
+		// The collection a built-in belongs to ("neutrals"): dropped here, one
+		// colours save emptied the Neutrals chip for good.
+		Collection: keepWord(strings.ToLower(tc.Collection), "neutrals"),
 		GrainAngle: keepInRange(tc.GrainAngle, 0, 360),
 		GrainScale: keepInRange(tc.GrainScale, 0, 1),
 
@@ -193,6 +196,8 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		Depth:   keepWord(tc.Depth, "flat", "soft", "rich", "vivid", "glass"),
 		Glow:    keepWord(tc.Glow, "off", "soft", "full"),
 		Effects: keepWord(tc.Effects, "off", "held", "full"),
+
+		Look: sanitizeThemeLook(tc.Look),
 	}
 }
 
@@ -279,9 +284,13 @@ func sanitizeColorTheme(c ColorTheme) ColorTheme {
 	c.Dark = sanitizeThemeColors(c.Dark)
 	if c.BuiltIn != nil {
 		for id, tc := range c.BuiltIn {
-			c.BuiltIn[id] = sanitizeThemeColors(tc)
+			tc = sanitizeThemeColors(tc)
+			// Only a theme of the reader's own carries a look.
+			tc.Look = nil
+			c.BuiltIn[id] = tc
 		}
 	}
+	c.Light.Look, c.Dark.Look = nil, nil
 	if c.Custom != nil {
 		for id, tc := range c.Custom {
 			c.Custom[id] = sanitizeThemeColors(tc)

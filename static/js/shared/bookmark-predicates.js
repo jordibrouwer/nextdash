@@ -51,7 +51,11 @@
         never: (b) => !opens(b) && !Number(b?.lastOpened || 0),
         once: (b) => opens(b) === 1,
         insecure: (b) => /^http:\/\//i.test(String(b?.url || '')),
-        noicon: (b) => !String(b?.icon || '').trim(),
+        // Not a letter chosen on purpose, nor an app that shows its set icon
+        // (known once the rows have asked): listed as falling back to a
+        // letter, they did not.
+        noicon: (b) => !String(b?.icon || '').trim() && b?.iconMode !== 'letter'
+            && !(typeof window !== 'undefined' && window.IconSetAuto?.known?.(b?.url)),
         /** Added or edited recently; `days` is the caller's idea of recent. */
         changed: (b, ctx = {}) => {
             const at = Number(b?.updatedAt || 0) || Number(b?.createdAt || 0);

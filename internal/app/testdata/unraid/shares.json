@@ -1,0 +1,8 @@
+{"data":{"shares":[
+ {"name":"media","used":"93952409600","free":"37580963840"},
+ {"name":"backups","used":"93952409600","free":"37580963840"},
+ {"name":"appdata","used":"468846040","free":"507916544"},
+ {"name":"system","used":"468846040","free":"507916544"},
+ {"name":"isos","used":"94421255640","free":"38088880384"}],
+ "array":{"capacity":{"kilobytes":{"free":"37580963840","used":"93952409600","total":"131533373440"}},
+  "caches":[{"name":"cache","fsUsed":"468846040","fsFree":"507916544"}]}}}

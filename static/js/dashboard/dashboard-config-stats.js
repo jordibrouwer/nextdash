@@ -271,8 +271,14 @@
                     : ''}</div>`
                 : '';
 
+            // Kept for mountStatsColumns, which draws the bars with uPlot over
+            // the plain chart and its table once the library is there.
+            this._statsColumnSpecs = this._statsColumnSpecs || new Map();
+            const key = String((this._statsColumnSeq = (this._statsColumnSeq || 0) + 1));
+            this._statsColumnSpecs.set(key, { series, dates, labels, aria, line: lineSvg ? line : null, lineLabel, height });
             return `
                 ${legend}
+                <div class="config-stats-columns-host" data-stats-columns="${key}">
                 <div class="config-chart">
                     <div class="config-chart-plot">
                         <span class="config-chart-axis-y" aria-hidden="true">
@@ -291,7 +297,81 @@
                     <caption>${esc(aria)}</caption>
                     <thead><tr>${srHead}</tr></thead>
                     <tbody>${srRows}</tbody>
-                </table>`;
+                </table>
+                </div>`;
+        },
+
+        /*
+         * The bar charts with uPlot (shared/nd-chart.js), in place of the plain
+         * chart and its table: a bar per period (two side by side for the
+         * inbox's added and triaged), a running total as a line on its own axis
+         * on the right, a tooltip, a drag to zoom, and the arrow keys with the
+         * period read out. The plain chart stays when uPlot cannot be loaded.
+         * Called from bindStats after every paint.
+         */
+        async mountStatsColumns(root) {
+            const hosts = [...(root || document).querySelectorAll('[data-stats-columns]')]
+                .filter((host) => !host.querySelector('.nd-chart'));
+            if (!hosts.length) return;
+            try {
+                if (!global.NdChart) {
+                    await global.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart',
+                        () => typeof global.NdChart !== 'undefined');
+                }
+                await global.NdChart.load();
+            } catch {
+                return;
+            }
+            this._statsColumnCharts = (this._statsColumnCharts || []).filter((c) => {
+                if (c.plot && document.contains(c.plot.root)) return true;
+                c.destroy();
+                return false;
+            });
+            const num = (v) => this.statsNumber(Math.round(v));
+            hosts.forEach((host) => {
+                // Specs of a body repainted before it was drawn go too.
+                for (const k of [...(this._statsColumnSpecs?.keys() || [])]) {
+                    if (!document.querySelector(`[data-stats-columns="${k}"]`)) this._statsColumnSpecs.delete(k);
+                }
+                const specKey = host.getAttribute('data-stats-columns');
+                const spec = this._statsColumnSpecs?.get(specKey);
+                // Used once: every repaint added a spec and none left.
+                if (host.isConnected) this._statsColumnSpecs?.delete(specKey);
+                if (!host.isConnected || !spec || host.querySelector('.nd-chart')) return;
+                const two = spec.series.length > 1;
+                const max = Math.max(1, ...spec.series.flatMap((s) => s.values.map((v) => Number(v) || 0)));
+                const lineNums = spec.line ? spec.line.map((v) => Number(v) || 0) : null;
+                const series = spec.series.map((s, k) => ({
+                    label: s.label, values: s.values.map((v) => Number(v) || 0), bars: true,
+                    color: k ? '--text-muted' : '--accent-primary', format: num,
+                    ...(two ? { align: k ? 1 : -1, barSize: 0.4 } : {}),
+                }));
+                if (lineNums) {
+                    series.push({ label: spec.lineLabel, values: lineNums, color: '--accent-warning',
+                        fill: false, width: 2, scale: 'line', format: num });
+                }
+                const lo = lineNums ? Math.min(0, ...lineNums) : 0;
+                const hi = lineNums ? Math.max(1, ...lineNums) : 1;
+                // The chart takes the plot area only: the axis names (the y
+                // title beside it, the period under it) stay. Its own ticks,
+                // tooltip and table replace the plain chart's.
+                const area = host.querySelector('.config-chart-plot-area');
+                if (!area) return;
+                host.querySelector('.config-chart-axis-ticks')?.remove();
+                host.querySelector('.config-chart-tip')?.remove();
+                host.querySelector(':scope > table.config-sr-only')?.remove();
+                this._statsColumnCharts.push(global.NdChart.chart(area, {
+                    x: spec.dates.map((_, i) => i),
+                    labels: spec.dates,
+                    series,
+                    format: { tick: num },
+                    scales: { y: { range: () => [0, max * 1.1] }, ...(lineNums ? { line: { range: () => [lo, hi * 1.05] } } : {}) },
+                    ...(lineNums ? { axes: { line: { format: num, width: 50 } } } : {}),
+                    summary: spec.aria,
+                    height: spec.height + 24,
+                    axisWidth: 40,
+                }));
+            });
         },
 
         statsRangeLabel(days) {
@@ -1749,10 +1829,19 @@
                 gaps ? this.t('config.statsHealthGaps', '{n} days without a report').replace('{n}', String(gaps)) : '',
             ].filter(Boolean);
             const dateLabels = series.map((p) => fmt.format(new Date(p.t)));
+            // Kept for mountStatsHealthLines, which draws the line with uPlot
+            // over the plain chart and its table once the library is there.
+            this._statsHealthLines = this._statsHealthLines || new Map();
+            const key = String((this._statsHealthLineSeq = (this._statsHealthLineSeq || 0) + 1));
+            this._statsHealthLines.set(key, {
+                series, height: H + 22,
+                summary: `${this.t('config.statsHealthTrendAria', 'Healthy share over time')}: ${summary}`,
+            });
             return `
                 <p class="config-stats-trend-summary${tone ? ` config-stats-trend-summary--${tone}` : ''}">
                     <strong>${esc(String(last))}%</strong> ${esc(this.t('config.statsHealthy', 'Healthy'))} · ${esc(summary)}${extras.length ? ` · ${esc(extras.join(' · '))}` : ''}
                 </p>
+                <div class="config-stats-healthline-host" data-stats-healthline="${key}">
                 <div class="config-chart config-stats-healthline">
                     <div class="config-chart-plot">
                         <span class="config-chart-axis-y" aria-hidden="true">
@@ -1772,7 +1861,55 @@
                     <caption>${esc(this.t('config.statsHealthTrendAria', 'Healthy share over time'))}</caption>
                     <thead><tr><th scope="col">${esc(this.t('config.statsAxisDay', 'Day'))}</th><th scope="col">%</th></tr></thead>
                     <tbody>${rows}</tbody>
-                </table>`;
+                </table>
+                </div>`;
+        },
+
+        /*
+         * The healthy share with uPlot (shared/nd-chart.js), in place of the
+         * plain chart and its table: the same fixed 0-100 axis and the same
+         * gaps, plus a date axis, a tooltip, the arrow keys with the day read
+         * out, and the chart's own table. The plain chart stays when the
+         * library cannot be loaded. Called from bindStats after every paint.
+         */
+        async mountStatsHealthLines(root) {
+            const hosts = [...(root || document).querySelectorAll('[data-stats-healthline]')]
+                .filter((host) => !host.querySelector('.nd-chart'));
+            if (!hosts.length) return;
+            try {
+                if (!global.NdChart) {
+                    await global.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart',
+                        () => typeof global.NdChart !== 'undefined');
+                }
+                await global.NdChart.load();
+            } catch {
+                return;
+            }
+            // Charts of a body since repainted are let go.
+            this._statsHealthCharts = (this._statsHealthCharts || []).filter((c) => {
+                if (c.plot && document.contains(c.plot.root)) return true;
+                c.destroy();
+                return false;
+            });
+            const pct = (v) => `${Math.round(v)}%`;
+            hosts.forEach((host) => {
+                for (const k of [...(this._statsHealthLines?.keys() || [])]) {
+                    if (!document.querySelector(`[data-stats-healthline="${k}"]`)) this._statsHealthLines.delete(k);
+                }
+                const lineKey = host.getAttribute('data-stats-healthline');
+                const data = this._statsHealthLines?.get(lineKey);
+                if (host.isConnected) this._statsHealthLines?.delete(lineKey);
+                if (!host.isConnected || !data || host.querySelector('.nd-chart')) return;
+                this._statsHealthCharts.push(global.NdChart.chart(host, {
+                    x: data.series.map((p) => p.t / 1000),
+                    series: [{ label: this.t('config.statsHealthy', 'Healthy'), values: data.series.map((p) => p.pct), color: '--accent-primary', format: pct }],
+                    format: { x: 'date', tick: pct },
+                    scales: { y: { range: () => [0, 100] } },
+                    summary: data.summary,
+                    height: data.height,
+                    axisWidth: 40,
+                }));
+            });
         },
 
         /** Every state a bookmark can be in, as one bar, and the line under it. */

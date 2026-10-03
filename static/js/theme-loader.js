@@ -502,9 +502,12 @@
      * a forced setting first, then the reader's change for this theme, then
      * the theme's own answer.
      */
-    function resolveSurfacesFor(theme, settings) {
+    function resolveSurfacesFor(theme, settings, prefsId) {
         const s = settings || {};
-        const prefs = (s.themeSurfacePrefs || {})[theme] || {};
+        // The reader's changes are kept under the chosen theme, as the server
+        // reads them; with Follow system or a random theme the one on screen
+        // is another, and changes made here drew nothing until a reload.
+        const prefs = (s.themeSurfacePrefs || {})[prefsId || s.theme || theme] || {};
         const ideal = (surfaceMeta && surfaceMeta.themes && surfaceMeta.themes[theme]) || {};
         const pick = (global, own, fallback) => {
             const g = String(global || '').trim().toLowerCase();
@@ -553,9 +556,9 @@
     }
 
     /** Resolve and write all three attributes for a theme. */
-    function applySurfacesForTheme(theme, settings) {
+    function applySurfacesForTheme(theme, settings, prefsId) {
         return loadSurfaceMeta().then(() => {
-            const resolved = resolveSurfacesFor(theme, settings);
+            const resolved = resolveSurfacesFor(theme, settings, prefsId);
             applyThemeDepth(resolved.depth);
             applyGlowStrength(resolved.glow);
             applyThemeEffects(resolved.effects);
@@ -770,4 +773,17 @@
             return () => document.removeEventListener('theme-changed', handler);
         }
     };
+
+    /*
+     * Every theme change brings its surfaces, whoever made it: :theme, the
+     * random theme on a view change and an OS light/dark switch only called
+     * applyTheme, and kept the previous theme's depth, glow, effects, backdrop
+     * and card glass until a reload. Before the dashboard's settings are in,
+     * the server-rendered page already has them.
+     */
+    document.addEventListener('theme-changed', (e) => {
+        const settings = window.dashboardInstance?.settings;
+        const theme = e?.detail?.theme;
+        if (settings && theme) void applySurfacesForTheme(theme, settings);
+    });
 })();

@@ -1,0 +1,18 @@
+{
+  "_source": "speedtest-tracker 1.x ResultResource.php",
+  "auth": {
+    "header": "Authorization",
+    "value": "Bearer %KEY%"
+  },
+  "body": {
+    "data": {
+      "id": 812,
+      "ping": 12.4,
+      "download_bits": 512000000,
+      "upload_bits": 48000000,
+      "healthy": true,
+      "status": "completed",
+      "created_at": "2026-10-02T06:00:00Z"
+    }
+  }
+}

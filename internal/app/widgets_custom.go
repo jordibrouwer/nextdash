@@ -302,12 +302,19 @@ func draftCredentialFrom(raw any) *HealthCredential {
 	}
 	if session, ok := entry["session"].(map[string]any); ok {
 		credential.Session = &CredentialSession{
-			LoginPath: stringOr(session["loginPath"]),
-			UserField: stringOr(session["userField"]),
-			PassField: stringOr(session["passField"]),
-			User:      stringOr(session["user"]),
-			Password:  stringOr(session["password"]),
-			Referer:   session["referer"] == true,
+			LoginPath:   stringOr(session["loginPath"]),
+			UserField:   stringOr(session["userField"]),
+			PassField:   stringOr(session["passField"]),
+			User:        stringOr(session["user"]),
+			Password:    stringOr(session["password"]),
+			Referer:     session["referer"] == true,
+			Format:      stringOr(session["format"]),
+			TokenPath:   stringOr(session["tokenPath"]),
+			TokenHeader: stringOr(session["tokenHeader"]),
+			TokenPrefix: stringOr(session["tokenPrefix"]),
+		}
+		if extra, ok := session["extra"].(map[string]any); ok {
+			credential.Session.Extra = extra
 		}
 	}
 	clean := sanitizeHealthCredential(credential)
@@ -515,7 +522,7 @@ func listEntryNamed(list []any, name string) (any, bool) {
 			if !ok {
 				continue
 			}
-			if value, has := object[key]; has && fmt.Sprint(value) == name {
+			if value, has := object[key]; has && jsonText(value) == name {
 				return entry, true
 			}
 		}
@@ -573,18 +580,34 @@ func customWidgetLookup(document any, path string) (any, bool) {
 		return value, true
 	}
 	current := document
-	for _, segment := range splitCustomPath(path) {
+	segments := splitCustomPath(path)
+	for at, segment := range segments {
 		segment = strings.TrimSpace(segment)
-		if segment == "" {
+		/*
+		 * "#" at the end counts instead of naming: a list's length, an
+		 * object's keys, or -- after a [key=value] -- how many entries match.
+		 * Monitoring answers in lists ("which endpoints are down") and the
+		 * figure worth a tile is how many. Still one value per path, and only
+		 * as the last step: a count has nothing further to walk into.
+		 */
+		count := strings.HasSuffix(segment, "#")
+		if count {
+			if at != len(segments)-1 {
+				return nil, false
+			}
+			segment = strings.TrimSuffix(segment, "#")
+		}
+		if segment == "" && !count {
 			continue
 		}
 		name := segment
 		// Each bracket is either a position or a match; they are kept in order
 		// because "rows[2][id=x]" is a different question from the reverse.
 		type selector struct {
-			index int
-			key   string
-			value string
+			index    int
+			hasIndex bool
+			key      string
+			value    string
 		}
 		var selectors []selector
 		if open := strings.Index(segment, "["); open >= 0 {
@@ -602,13 +625,15 @@ func customWidgetLookup(document any, path string) (any, bool) {
 					if key == "" || value == "" {
 						return nil, false
 					}
-					selectors = append(selectors, selector{index: -1, key: key, value: value})
+					selectors = append(selectors, selector{key: key, value: value})
 				} else {
+					// A negative index counts from the end: [-1] is the last
+					// entry, which is where a list that grows keeps its newest.
 					index, err := strconv.Atoi(inner)
-					if err != nil || index < 0 {
+					if err != nil {
 						return nil, false
 					}
-					selectors = append(selectors, selector{index: index})
+					selectors = append(selectors, selector{index: index, hasIndex: true})
 				}
 				rest = rest[closeAt+1:]
 			}
@@ -645,28 +670,41 @@ func customWidgetLookup(document any, path string) (any, bool) {
 				}
 			}
 		}
-		for _, sel := range selectors {
+		for i, sel := range selectors {
+			// An empty list marshalled as null by a Go service: counted, it
+			// holds nothing, where "not in the answer" showed a dash.
+			if count && current == nil && !sel.hasIndex {
+				return 0.0, true
+			}
 			list, ok := current.([]any)
 			if !ok {
 				return nil, false
 			}
-			if sel.index >= 0 {
-				if sel.index >= len(list) {
+			if sel.hasIndex {
+				index := sel.index
+				if index < 0 {
+					index += len(list)
+				}
+				if index < 0 || index >= len(list) {
 					return nil, false
 				}
-				current = list[sel.index]
+				current = list[index]
 				continue
+			}
+			// The last match before a count is a filter, not a pick: how many
+			// entries say this, rather than the first that does.
+			if count && i == len(selectors)-1 {
+				matches := 0
+				for _, entry := range list {
+					if selectorMatches(entry, sel.key, sel.value) {
+						matches++
+					}
+				}
+				return float64(matches), true
 			}
 			found := false
 			for _, entry := range list {
-				object, ok := entry.(map[string]any)
-				if !ok {
-					continue
-				}
-				// Compared as text, because the value came out of an address
-				// bar and everything there is text: a number in the document
-				// and "42" in the path are the same answer to the reader.
-				if fmt.Sprint(object[sel.key]) == sel.value {
+				if selectorMatches(entry, sel.key, sel.value) {
 					current = entry
 					found = true
 					break
@@ -676,8 +714,71 @@ func customWidgetLookup(document any, path string) (any, bool) {
 				return nil, false
 			}
 		}
+		if count {
+			// A count after an index would count inside one entry, which is
+			// never what [0]# was meant to say.
+			if len(selectors) > 0 && selectors[len(selectors)-1].hasIndex {
+				return nil, false
+			}
+			switch value := current.(type) {
+			case []any:
+				return float64(len(value)), true
+			case map[string]any:
+				return float64(len(value)), true
+			case nil:
+				return 0.0, true
+			}
+			return nil, false
+		}
 	}
 	return current, true
+}
+
+/*
+selectorMatches: does this entry say value at key?
+
+The key may itself be a short path -- "results.0.success" -- because a status
+often sits one level down, in the newest of a list of results. A number in it
+is a position, negative from the end, as in the brackets outside.
+
+Compared as text, because the value came out of an address bar and everything
+there is text: a number in the document and "42" in the path are the same
+answer to the reader.
+*/
+func selectorMatches(entry any, key, value string) bool {
+	// A key that is itself dotted is still matched whole first, as it was
+	// before a dot could mean a step.
+	if object, ok := entry.(map[string]any); ok {
+		if literal, has := object[key]; has {
+			return jsonText(literal) == value
+		}
+	}
+	current := entry
+	for _, part := range strings.Split(key, ".") {
+		switch node := current.(type) {
+		case map[string]any:
+			next, ok := node[part]
+			if !ok {
+				return false
+			}
+			current = next
+		case []any:
+			index, err := strconv.Atoi(part)
+			if err != nil {
+				return false
+			}
+			if index < 0 {
+				index += len(node)
+			}
+			if index < 0 || index >= len(node) {
+				return false
+			}
+			current = node[index]
+		default:
+			return false
+		}
+	}
+	return jsonText(current) == value
 }
 
 /*
@@ -696,12 +797,18 @@ func formatCustomValue(raw any, format string, decimals *int, dataUnit, tempSuff
 	// same way for every format: the reader asked for two decimals, not for two
 	// decimals of whatever this format would otherwise have done. Units stay,
 	// because "3342.65" and "3342.65 MB" are not the same figure.
-	if decimals != nil {
+	// A duration and a relative date are written in words ("1d", "3h ago"),
+	// so places do not apply to them: 86400 seconds showed as "86400.0".
+	if decimals != nil && format != "duration" && format != "relativeDate" {
 		if number, ok := toFloat(raw); ok {
 			if format == "data" {
 				number *= unit
 			}
 			scaled, suffix := scaleForFormat(number, format)
+			// The temperature keeps its unit: "21.5" lost its °C.
+			if format == "temperature" {
+				suffix = tempSuffix
+			}
 			return roundToDecimals(scaled, *decimals) + suffix
 		}
 	}
@@ -759,7 +866,7 @@ func formatCustomValue(raw any, format string, decimals *int, dataUnit, tempSuff
 			return formatRelativeSince(when, time.Now())
 		}
 	}
-	return trimToLength(fmt.Sprint(raw), 120)
+	return trimToLength(jsonText(raw), 120)
 }
 
 /*
@@ -814,10 +921,30 @@ func toFloat(raw any) (float64, bool) {
 	case int64:
 		return float64(value), true
 	case string:
+		// Not NaN or Inf: ParseFloat takes them, JSON cannot carry NaN, and the
+		// tile's answer then encoded as an empty 200 cached for its TTL.
 		parsed, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
-		return parsed, err == nil
+		if err != nil || math.IsNaN(parsed) || math.IsInf(parsed, 0) {
+			return 0, false
+		}
+		return parsed, true
 	}
 	return 0, false
+}
+
+// jsonText is a JSON value as text. Numbers arrive as float64 and fmt.Sprint
+// prints a million as 1e+06, so "[id=1234567]" matched nothing; objects and
+// lists print as JSON rather than Go's map[...].
+func jsonText(v any) string {
+	switch value := v.(type) {
+	case float64:
+		return strconv.FormatFloat(value, 'f', -1, 64)
+	case map[string]any, []any:
+		if b, err := json.Marshal(value); err == nil {
+			return string(b)
+		}
+	}
+	return fmt.Sprint(v)
 }
 
 /*
@@ -829,12 +956,13 @@ date in the year 33658.
 */
 func toTime(raw any) (time.Time, bool) {
 	if text, ok := raw.(string); ok {
-		for _, layout := range []string{time.RFC3339, "2006-01-02T15:04:05", "2006-01-02"} {
+		// Also "2024-05-01 12:00:00", as PHP and Python write it; a string of
+		// digits falls through to the number below (Unix seconds as text).
+		for _, layout := range []string{time.RFC3339, "2006-01-02T15:04:05", "2006-01-02 15:04:05", "2006-01-02"} {
 			if when, err := time.Parse(layout, strings.TrimSpace(text)); err == nil {
 				return when, true
 			}
 		}
-		return time.Time{}, false
 	}
 	number, ok := toFloat(raw)
 	if !ok || number <= 0 {
@@ -1128,6 +1256,7 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 	// cookie if the service turns it down. Cheaper than a timer, and correct
 	// where a timer would only be a guess.
 	sessionKey := ""
+	sentSession := ""
 	if draft != nil {
 		// What is on screen beats what is filed. Someone testing a key they
 		// have just typed is asking about that key, not about the one this
@@ -1150,16 +1279,16 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 		sessionKey = key
 		cookie, ok := cachedCredentialSession(key)
 		if !ok {
-			fresh, err := h.signInForCookie(ctx, req.URL, credential.Session)
+			fresh, err := h.freshCredentialSession(ctx, req.URL, credential.Session, key, "")
 			if err != nil {
 				answer.Error = "could not sign in to that service"
 				logWarn(logComponentWidgets, "%s refused the sign-in: %v", hostOf(spec.URL), err)
 				return since()
 			}
-			storeCredentialSession(key, fresh)
 			cookie = fresh
 		}
-		req.Header.Set("Cookie", cookie)
+		sentSession = cookie
+		req.Header.Set(sessionHeaderName(credential.Session), cookie)
 		answer.SignedIn = true
 	}
 
@@ -1180,16 +1309,14 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 	// reporting a 403 the reader cannot act on.
 	if sessionKey != "" && (resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized) {
 		drainAndCloseResponse(resp)
-		storeCredentialSession(sessionKey, "")
-		fresh, err := h.signInForCookie(ctx, req.URL, credential.Session)
+		fresh, err := h.freshCredentialSession(ctx, req.URL, credential.Session, sessionKey, sentSession)
 		if err != nil {
 			answer.Error = "could not sign in to that service"
 			logWarn(logComponentWidgets, "%s refused the sign-in: %v", hostOf(spec.URL), err)
 			return since()
 		}
-		storeCredentialSession(sessionKey, fresh)
 		retry := req.Clone(ctx)
-		retry.Header.Set("Cookie", fresh)
+		retry.Header.Set(sessionHeaderName(credential.Session), fresh)
 		if retried, err := client.Do(retry); err == nil {
 			resp = retried
 		} else {
@@ -1279,7 +1406,7 @@ func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetch
 					if len(result.Items) >= customWidgetMaxItems {
 						break
 					}
-					result.Items = append(result.Items, trimToLength(fmt.Sprint(item), 200))
+					result.Items = append(result.Items, trimToLength(jsonText(item), 200))
 				}
 			}
 		}

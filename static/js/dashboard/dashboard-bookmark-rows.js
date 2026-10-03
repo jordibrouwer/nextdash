@@ -588,7 +588,19 @@ class DashboardBookmarkRows {
                     window.ThemeIconStyling.applyThemeIconStylingToElement(iconSlot, entry);
                 }
             } else {
-                iconSlot.appendChild(createLetterAvatar());
+                const letter = createLetterAvatar();
+                iconSlot.appendChild(letter);
+                // No icon of its own: the app's set icon, where the sets know
+                // the address (icon-set-auto.js swaps the letter) -- unless the
+                // letter was chosen on purpose.
+                if (bookmark.url && window.IconSetAuto && bookmark.iconMode !== 'letter') {
+                    letter.setAttribute('data-icon-auto-url', bookmark.url);
+                    window.IconSetAuto.queue(letter);
+                    const entry = window.ThemeIconStyling.getThemeIconStylingEntry(d.settings);
+                    if (entry.enabled) {
+                        window.ThemeIconStyling.applyThemeIconStylingToElement(iconSlot, entry);
+                    }
+                }
             }
         }
         row.appendChild(lead);

@@ -143,6 +143,17 @@
             ['system', 'comfortable', 'balanced']),
     ];
 
+    /*
+     * Every palette by id, for the grid. The objects are the colour document's
+     * own, so an edit in the studio's editor shows on its card at once.
+     */
+    const studioPalettes = (colors) => ({
+        light: colors?.light || {},
+        dark: colors?.dark || {},
+        ...(colors?.builtIn || {}),
+        ...(colors?.custom || {}),
+    });
+
     const clone = (value) => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)));
 
     /** JSON with sorted keys and no undefined, so two equal answers compare equal. */
@@ -200,12 +211,7 @@
                 window.ThemeLoader?.loadSurfaceMeta?.(),
                 window.ViewStyles?.ensureViewStyles?.(),
             ]).then(([c, m]) => [c, m]);
-            const palettes = {
-                light: colors?.light || {},
-                dark: colors?.dark || {},
-                ...(colors?.builtIn || {}),
-                ...(colors?.custom || {}),
-            };
+            const palettes = studioPalettes(colors);
 
             // The studio docks beside the dashboard, so config steps aside
             // while it is open and comes back where it was when it closes.
@@ -225,6 +231,10 @@
                 ui: null,
             };
             this.dash._lookStudioCommitted = { keys: LOOK_FIELDS, values: clone(before) };
+            // The colours as they were, for Cancel, Compare and Reset: an edit
+            // made in the studio is held until Apply (saveColorsData).
+            this._lookStudio.colorsBefore = clone(colors || this._colorsData || null);
+            this._lookStudio.colorsHeld = false;
             // What the existing revert puts back on Cancel.
             this._themePickerPrevious = settings.theme || 'dark';
             void this.loadStudioBackdrops();
@@ -238,6 +248,14 @@
                 t: (key, fallback) => this.t(key, fallback),
                 displayName: (id, name) => this.themeDisplayName(id, name),
                 onSelect: (id) => this.studioSelectTheme(id),
+                renderEditor: (id) => this.renderStudioThemeEditor?.(id) || '',
+                bindEditor: (id, host) => this.bindStudioThemeEditor?.(id, host),
+                onEditStart: (id) => this.studioSelectTheme(id),
+                onSaveAsTheme: this.openSaveAsThemeDialog ? () => this.openSaveAsThemeDialog() : undefined,
+                lookSwitch: {
+                    get: () => this.studioUsesThemeLook(),
+                    set: (on) => this.setStudioUsesThemeLook(on),
+                },
                 onPreview: (id) => this.studioPreviewTheme(id),
                 onPreviewEnd: () => this.studioEndPreview(),
                 onFavorites: (favorites) => {
@@ -251,7 +269,7 @@
                 usesScope: (tab) => SCOPED_TABS.includes(tab),
                 scope: () => this.surfaceScope(),
                 setScope: (scope) => this.setToggle('themeSurfacesForceAll', scope === 'global'),
-                onResetTab: (tab) => this.resetStudioTab(tab),
+                onResetTab: (tab, editing) => this.resetStudioTab(tab, editing),
                 onDice: (tab) => this.rollStudioTab(tab),
                 onCompare: (on) => this.compareStudio(on),
                 onCancel: () => this.cancelLookStudio(),
@@ -259,6 +277,18 @@
                 onClose: () => this.afterLookStudio(),
             });
             if (!this._lookStudio.ui) this.endLookStudio();
+        },
+
+        /** Colour edits made in the studio, undone: the snapshot from when it opened. */
+        restoreStudioColors() {
+            const studio = this._lookStudio;
+            if (!studio?.colorsHeld || !studio.colorsBefore) return;
+            this._colorsData = clone(studio.colorsBefore);
+            studio.colorsHeld = false;
+            studio.colorsNow = null;
+            this.syncCustomThemeIds?.();
+            this.clearThemePreview();
+            studio.ui?.setPalettes?.(studioPalettes(this._colorsData));
         },
 
         /** Drop the gate and the studio's state, whichever way it closed. */
@@ -290,7 +320,9 @@
             // A theme of the reader's own that only lives in this browser has
             // no block in /api/theme.css yet: show it from its palette.
             const shown = this.displayTheme();
-            if (theme && window.ThemeUtils?.isUserCustomThemeId?.(shown) && this.themeById(shown)) {
+            // Colours edited here and not applied yet are not in it either.
+            if (theme && (window.ThemeUtils?.isUserCustomThemeId?.(shown) || this._lookStudio?.colorsHeld)
+                && this.themeById(shown)) {
                 this.previewThemeChoice(shown);
             }
             this.applyBackdropTuning({ ...DEFAULT_TUNING, ...(settings.backdropTuning || {}) });
@@ -330,7 +362,7 @@
         studioPreviewTheme(id) {
             if (!id || !this._lookStudio || this._lookStudio.held) return;
             this.previewThemeChoice(id);
-            void window.ThemeLoader?.applySurfacesForTheme?.(id, this.dash.settings);
+            void window.ThemeLoader?.applySurfacesForTheme?.(id, this.dash.settings, id);
         },
 
         /** Back to the chosen theme once the pointer leaves the grid. */
@@ -338,12 +370,20 @@
             if (!this._lookStudio) return;
             this.clearThemePreview();
             window.ThemeLoader?.applyTheme?.(this.displayTheme(), this.currentFontSize());
+            if (this._lookStudio.colorsHeld) this.previewThemeChoice(this.displayTheme());
             void this.applyResolvedSurfaces();
         },
 
         studioSelectTheme(id) {
             if (!id || !this._lookStudio) return;
+            const pairOf = (themeId) => window.ThemeUtils?.getPairedThemeVariant?.(themeId, true) || themeId;
+            const sameFamily = pairOf(this.dash.settings.theme || 'dark') === pairOf(id);
             this.dash.settings.theme = id;
+            // A look comes with the theme, not with its other half: switching
+            // halves of one pair keeps whatever look is on screen. Set after
+            // the theme, so answers kept per theme land on the new one.
+            const look = this.themeLookOf(id);
+            if (look && !sameFamily && this.studioUsesThemeLook()) this.applyLookAnswers(look);
             this.applyStudioLook();
         },
 
@@ -502,14 +542,23 @@
         studioTabDirty(tab) {
             const studio = this._lookStudio;
             if (!studio || !TAB_FIELDS[tab]) return false;
+            if (tab === 'themes' && studio.colorsHeld) return true;
             return canonical(tabState(this.dash.settings, tab)) !== canonical(tabState(studio.before, tab));
         },
 
         /** Put one tab's answers back to what they were when the studio opened. */
-        resetStudioTab(tab) {
+        resetStudioTab(tab, editing) {
             const studio = this._lookStudio;
             const spec = TAB_FIELDS[tab];
             if (!studio || !spec) return;
+            // In the editor, Reset is the colours: back to the snapshot, and
+            // the theme stays the one being edited.
+            if (tab === 'themes' && editing) {
+                this.restoreStudioColors();
+                this.applyStudioLook();
+                return;
+            }
+            if (tab === 'themes') this.restoreStudioColors();
             const drawn = drawnFrom(this.dash.settings);
             this.writeLookFields(studio.before, spec.fields);
             if (spec.prefs.length) {
@@ -562,23 +611,69 @@
             }
         },
 
-        /** Set every answer a built-in look gives, through the controls' own setters. */
         useStudioLook(id) {
-            const look = LOOKS.find((l) => l.id === id);
+            this.applyLookAnswers(LOOKS.find((l) => l.id === id));
+        },
+
+        /**
+         * Set every answer a look gives, built in or a theme's own, through
+         * the controls' own setters. One path for both, so the two cannot
+         * drift apart. A part the look does not have is left as it is.
+         */
+        applyLookAnswers(look) {
             const settings = this.dash.settings;
             if (!look || !settings) return;
-            const tuning = { ...DEFAULT_TUNING, ...(settings.backdropTuning || {}), ...look.tuning };
-            settings.backdropTuning = tuning;
-            this.applyBackdropTuning(tuning);
-            Object.assign(settings, look.heads);
-            this.applyChromeSettings();
-            this.setCardGlass(look.glass);
+            if (look.tuning) {
+                const tuning = { ...DEFAULT_TUNING, ...(settings.backdropTuning || {}), ...look.tuning };
+                settings.backdropTuning = tuning;
+                this.applyBackdropTuning(tuning);
+            }
+            if (look.heads) {
+                Object.assign(settings, look.heads);
+                this.applyChromeSettings();
+            }
+            if (look.glass) this.setCardGlass(look.glass);
             if (look.depth) this.setSurface('themeDepth', look.depth);
-            if (look.backdrop !== 'off') this._lastBackdropPick = look.backdrop;
-            this.setBackdropChoice(look.backdrop);
-            this.setAppearanceSelect('fontPreset', look.text.fontPreset);
-            void this.setBehavior('densityMode', look.text.densityMode, 'chromeRender');
-            void this.setBehavior('categorySpacing', look.text.categorySpacing, 'chromeRender');
+            if (look.backdrop) {
+                if (look.backdrop !== 'off') this._lastBackdropPick = look.backdrop;
+                this.setBackdropChoice(look.backdrop);
+            }
+            if (look.text?.fontPreset) this.setAppearanceSelect('fontPreset', look.text.fontPreset);
+            if (look.text?.densityMode) void this.setBehavior('densityMode', look.text.densityMode, 'chromeRender');
+            if (look.text?.categorySpacing) void this.setBehavior('categorySpacing', look.text.categorySpacing, 'chromeRender');
+        },
+
+        /** The look a theme of the reader's own brings along, or null. */
+        themeLookOf(id) {
+            return this._colorsData?.custom?.[id]?.look || null;
+        },
+
+        /** "Use this theme's look", remembered per browser; on unless turned off. */
+        studioUsesThemeLook() {
+            try { return localStorage.getItem('nextdash:studio-use-theme-look') !== '0'; } catch (_) { return true; }
+        },
+
+        setStudioUsesThemeLook(on) {
+            try { localStorage.setItem('nextdash:studio-use-theme-look', on ? '1' : '0'); } catch (_) { /* private mode */ }
+        },
+
+        /**
+         * A theme picked outside the studio (the Appearance picker, `:theme`)
+         * brings its look at once, and it is saved at once. Not on switching
+         * halves of the same pair.
+         */
+        async applyThemeLookAndSave(id, previous) {
+            const pairOf = (themeId) => window.ThemeUtils?.getPairedThemeVariant?.(themeId, true) || themeId;
+            if (previous && pairOf(previous) === pairOf(id)) return;
+            await this.loadColorsData();
+            const look = this.themeLookOf(id);
+            if (!look || this.dash.settings?.theme !== id) return;
+            const seedBefore = this.dash.settings.backdropTuning?.seed;
+            this.applyLookAnswers(look);
+            await this.saveSettingsWithFeedback();
+            // The seed is drawn into theme.css, which was fetched before the
+            // look set it: the old variant showed until a reload.
+            if (this.dash.settings.backdropTuning?.seed !== seedBefore) this.reloadThemeCSS?.();
         },
 
         /* ── Compare, Cancel, Apply ─────────────────────────────────────── */
@@ -590,6 +685,10 @@
             const drawn = drawnFrom(this.dash.settings);
             if (on) {
                 if (studio.held) return;
+                if (studio.colorsHeld) {
+                    studio.colorsNow = this._colorsData;
+                    this._colorsData = clone(studio.colorsBefore);
+                }
                 studio.held = {};
                 LOOK_FIELDS.forEach((field) => {
                     if (this.dash.settings[field] !== undefined) studio.held[field] = clone(this.dash.settings[field]);
@@ -599,6 +698,10 @@
                 if (!studio.held) return;
                 this.writeLookFields(studio.held);
                 studio.held = null;
+                if (studio.colorsNow) {
+                    this._colorsData = studio.colorsNow;
+                    studio.colorsNow = null;
+                }
             }
             this.applyStudioLook({ redraw: drawnFrom(this.dash.settings) !== drawn });
         },
@@ -608,6 +711,7 @@
             if (!studio) return;
             const drawn = drawnFrom(this.dash.settings);
             this.writeLookFields(studio.before);
+            this.restoreStudioColors();
             this._lookStudioReturn = this.endLookStudio();
             // The theme goes back through the revert the picker always used;
             // the rest of the look is drawn again from the restored fields.
@@ -618,6 +722,16 @@
         async applyLookStudio() {
             const studio = this._lookStudio;
             if (!studio) return true;
+            // The colours first: a theme picked here may be one whose palette
+            // only this save puts on the server.
+            if (studio.colorsHeld) {
+                studio.colorsPosting = true;
+                const posted = await this.saveColorsData();
+                studio.colorsPosting = false;
+                if (!posted) return false;
+                studio.colorsHeld = false;
+                studio.colorsBefore = clone(this._colorsData);
+            }
             const gate = this.dash._lookStudioCommitted;
             delete this.dash._lookStudioCommitted;
             const ok = await this.saveSettingsWithFeedback();
