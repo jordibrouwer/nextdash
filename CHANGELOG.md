@@ -162,6 +162,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **new — a script to record the API.** `scripts/unraid-record.py` asks a real Unraid server for each area with a Viewer key and writes anonymised answers to `internal/app/testdata/unraid/recorded-<area>.json`: hostname, share and VM names, notification texts and the UPS model replaced; disk names (disk1, parity, cache), sizes, states and counts kept. It stops at a redirect rather than send the key on.
 - **new — the Unraid server is set in one place only.** A settings import, and the dashboard's own settings save, leave it as it is; only Config → Unraid changes it, so no file can point the saved key at another address. An overview the key may read nothing of now says so, instead of "not in this version"; a server name is cut by characters, not bytes; a server without virtual machines says so on the VMs tile.
 - **docs — a short Unraid section in the README and the manual**: what nextDash reads, the seven widgets, the alerts and the one read-only connection, and that deeper Unraid integration is planned. The README shows it with two screenshots from demo data: the seven widgets on a homelab page (Tarnished Brass) and Config → Unraid (Nordic Frost).
+- **docs — Config → Help catches up**, in all six languages: 41 Custom-widget services with the new Monitoring group, twenty-nine widget kinds with a paragraph on the seven for Unraid, and Config → Containers' four tabs with a pointer to Config → Unraid.
 
 ### Translations
 

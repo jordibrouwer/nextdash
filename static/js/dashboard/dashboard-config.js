@@ -28921,7 +28921,7 @@ class DashboardConfig {
                     { k: 'config.helpArtWidgetFilled', d: 'Address and figures filled in' },
                     { k: 'config.helpArtWidgetYours', d: 'Edit anything' },
                 ],
-                captionKey: 'config.helpArtWidgetPresets', caption: 'Twenty-eight already known',
+                captionKey: 'config.helpArtWidgetPresets', caption: 'Forty-one already known',
             },
         ],
         'config.helpSourcesTitle': [
