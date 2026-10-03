@@ -296,6 +296,24 @@
             ],
         },
         {
+            // The theme browser (Shift + A) is a panel over any view, so it
+            // has no context of its own to lead with.
+            id: 'sectionThemeBrowser',
+            titleKey: 'sectionThemeBrowser',
+            titleFallback: 'Theme browser',
+            when: (ctx) => ctx.configEnabled,
+            print: true,
+            rows: [
+                { keys: '← / →', cheatKey: 'tbTabs', fallback: 'Previous / next tab — Themes, Backdrop, Surface, Headers, Layout, Looks', print: true, printFallback: 'Previous / next tab' },
+                { keys: '↑ ↓ ← → (theme card)', cheatKey: 'tbWalk', fallback: 'Walk the grid of theme cards, each previewed on the page as focus lands on it; ↑ from the top row goes back to the search field', printKeys: '↑ ↓ ← →', printFallback: 'Walk the theme cards, previewing each' },
+                { keys: 'Enter / Space (theme card)', cheatKey: 'tbPick', fallback: 'Choose the focused theme; nothing is stored until Apply', print: true, printKeys: 'Enter', printFallback: 'Choose the focused theme' },
+                { keys: 'e (theme card)', cheatKey: 'tbEdit', fallback: 'Edit the focused theme, or recolour a packaged one, in the panel', print: true, printKeys: 'e', printFallback: 'Edit or recolour the focused theme' },
+                { keys: '\\ (hold)', cheatKey: 'tbCompare', fallback: 'Show the look from before the browser opened, for as long as you hold it', print: true, printKeys: '\\', printFallback: 'Compare with before (hold)' },
+                { keys: '⌘/Ctrl + Enter', cheatKey: 'tbApply', fallback: 'Apply: keep the theme, the look and any colour changes', print: true, printFallback: 'Apply' },
+                { keys: 'Esc', cheatKey: 'tbEsc', fallback: 'Cancel: put back everything changed in the browser and close it', print: true, printFallback: 'Cancel and close' },
+            ],
+        },
+        {
             id: 'sectionSearchModes',
             titleKey: 'sectionSearchModes',
             titleFallback: 'Search modes',

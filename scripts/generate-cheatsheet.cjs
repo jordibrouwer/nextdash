@@ -125,7 +125,11 @@ const logoAscii = String.raw`                 _   ____            _
 | | | |  __/>  <| |_| |_| | (_| \__ \ | | |
 |_| |_|\___/_/\_\\__|____/ \__,_|___/_| |_|`;
 
-const fontLatin = path.join(root, 'static/fonts/source-code-pro-latin.woff2').replace(/\\/g, '/');
+// Relative to the HTML, which sits at the repo root and is opened from there to
+// print the PDF. An absolute file:// URL wrote this checkout's path into the
+// committed sheet, so the HTML changed with every checkout it was made in and
+// lost its font when opened anywhere else.
+const fontLatin = 'static/fonts/source-code-pro-latin.woff2';
 const generated = new Date().toISOString().slice(0, 10);
 
 const html = `<!DOCTYPE html>
@@ -138,7 +142,7 @@ const html = `<!DOCTYPE html>
     font-family: 'Source Code Pro';
     font-style: normal;
     font-weight: 400 700;
-    src: url('file://${fontLatin}') format('woff2');
+    src: url('${fontLatin}') format('woff2');
   }
 
   /* Made to be printed. White paper, black ink, and only two fills — the
