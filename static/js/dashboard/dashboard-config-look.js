@@ -285,6 +285,29 @@
             }).join('');
         },
 
+        /**
+         * The theme editor's backdrop row: Automatic and every recipe. The
+         * theme being edited is previewed on the page, so the tiles are drawn
+         * in its own colours.
+         */
+        async paintThemeBackdropTiles(container, theme) {
+            const grid = container.querySelector('[data-theme-backdrops]');
+            if (!grid) return;
+            let data = null;
+            try {
+                const res = await fetch('/api/themes/backdrops');
+                data = res.ok ? await res.json() : null;
+            } catch (_) { /* the row stays empty */ }
+            if (!data || !grid.isConnected) return;
+            const current = String(theme?.backdrop || '');
+            const tile = (name, label, look) => `<button type="button" class="config-backdrop-thumb${current === name ? ' is-active' : ''}" data-theme-backdrop-tile="${esc(this, name)}" aria-pressed="${current === name}">
+                    <span class="config-backdrop-sw"${look ? ` style="--bd-scale:0.5;--bd-strength:1;background-image:${look.image};background-size:${look.size};background-position:${look.position}"` : ''}></span>
+                    <span class="config-backdrop-name">${esc(this, label)}</span>
+                </button>`;
+            grid.innerHTML = tile('', this.t('config.themeCharAuto', 'Automatic'), null)
+                + data.recipes.map((name) => tile(name, name, data.looks[name])).join('');
+        },
+
         /* ------------------------------------------------------------------ */
         /* Surface tab                                                        */
         /* ------------------------------------------------------------------ */

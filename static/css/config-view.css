@@ -4864,6 +4864,17 @@ body.no-animations .config-new-features-panel-star {
     display: none;
 }
 
+/* The backdrop row: the label above, the tiles across the full width. */
+.config-theme-char--tiles > .config-field-label {
+    flex-basis: 100%;
+}
+
+.config-theme-backdrops {
+    flex: 1 1 100%;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    margin-top: 0;
+}
+
 .config-theme-group-title {
     margin: 0 0 8px;
     font-size: calc(var(--font-size-text) * 0.9);

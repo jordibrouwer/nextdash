@@ -10222,7 +10222,7 @@ class DashboardConfig {
         { prop: 'sheen', kind: 'range', min: 0.05, max: 1, step: 0.05, key: 'themeCharSheen', label: 'Gloss' },
         { prop: 'grainAngle', kind: 'range', min: 0, max: 180, step: 5, unit: 'deg', key: 'themeCharGrainAngle', label: 'Grain direction' },
         { prop: 'grainScale', kind: 'range', min: 0.05, max: 1, step: 0.05, key: 'themeCharGrainScale', label: 'Grain strength' },
-        { prop: 'backdrop', kind: 'select', options: ['blooms', 'sweep', 'wireframe', 'glow', 'band', 'rings', 'scanlines', 'crosshatch', 'horizon'], key: 'themeCharBackdrop', label: 'Backdrop pattern' },
+        { prop: 'backdrop', kind: 'tiles', key: 'themeCharBackdrop', label: 'Backdrop pattern' },
         /*
          * The surfaces this theme is drawn for.
          *
@@ -10446,6 +10446,14 @@ class DashboardConfig {
             .map((f) => {
             const label = this.t(`config.${f.key}`, f.label);
             const raw = theme[f.prop];
+            // Every recipe the server knows, as tiles; Automatic clears it.
+            if (f.kind === 'tiles') {
+                return `
+                <div class="config-field config-theme-char config-theme-char--tiles" data-theme-char-row="${esc(f.prop)}">
+                    <span class="config-field-label">${esc(label)}</span>
+                    <div class="config-theme-backdrops config-backdrop-grid" data-theme-backdrops role="group" aria-label="${esc(label)}"></div>
+                </div>`;
+            }
             let control;
             if (f.kind === 'range' || f.kind === 'glow') {
                 const numeric = f.unit === 'em' ? parseFloat(raw) : Number(raw);
@@ -10471,9 +10479,6 @@ class DashboardConfig {
             } else {
                 const current = raw ? String(raw) : '';
                 const optionLabel = (o) => {
-                    if (f.prop === 'backdrop') {
-                        return this.t(`config.themeBackdrop_${o}`, o.charAt(0).toUpperCase() + o.slice(1));
-                    }
                     if (f.prop === 'character') {
                         return this.t(`config.themeArchetype.${o}`, o.charAt(0).toUpperCase() + o.slice(1));
                     }
@@ -11127,6 +11132,21 @@ class DashboardConfig {
                 setValue(prop, value, { save: true });
             });
         });
+
+        const tiles = container.querySelector('[data-theme-backdrops]');
+        if (tiles) {
+            tiles.addEventListener('click', (event) => {
+                const btn = event.target.closest('[data-theme-backdrop-tile]');
+                if (!btn) return;
+                tiles.querySelectorAll('[data-theme-backdrop-tile]').forEach((b) => {
+                    const on = b === btn;
+                    b.classList.toggle('is-active', on);
+                    b.setAttribute('aria-pressed', String(on));
+                });
+                setValue('backdrop', btn.getAttribute('data-theme-backdrop-tile') || undefined, { save: true });
+            });
+            void this.paintThemeBackdropTiles(container, theme);
+        }
 
         container.querySelectorAll('[data-theme-char-reset]').forEach((btn) => {
             btn.addEventListener('click', () => {
