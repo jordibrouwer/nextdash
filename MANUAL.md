@@ -197,6 +197,16 @@ Because the bookmark is monitored too, an update that leaves the container runni
 
 <a id="sh-homelab-page"></a>
 
+### Unraid
+
+nextDash reads an Unraid server through its own API — Unraid 7.2, or an older Unraid with the Unraid Connect plugin. Set it up once under **Config → Unraid**: the address, an API key with the role **Viewer** (Settings → Management Access → API Keys in Unraid), and a test. From then on:
+
+- **Seven widgets** show the server on a page: an overview, the array with every disk, parity, shares by where they live, VMs, the UPS and Unraid's notifications ([§15.6](#156-unraid-widgets)).
+- **Alerts** reach you through the channels downtime and container alerts use: Unraid's own ALERT notifications, the array stopping, a parity check that finished with errors, a disk whose error count went up.
+- **Read only.** nextDash never starts, stops or changes anything on the server.
+
+More is on the way: further Unraid integration is being worked on for future versions of nextDash.
+
 ### A homelab page
 
 Give your services their own page — *Homelab*, *Server* — and put the bookmarks for every web UI on it, grouped the way you think of them: *Media*, *Network*, *Home*, *Tools*. Then add widgets beside them ([§15](#15-widgets)):

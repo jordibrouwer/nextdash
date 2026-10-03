@@ -248,6 +248,32 @@ The **Processor**, **Memory**, **Disks**, **Containers** and **Container list** 
 
 Once it runs, the `#docker` view lists every container with a status glow, CPU and RAM and a link to its web UI, a side panel with health, a timeline, logs, an hour of CPU and memory charts and release notes, a logs window, a Disk tab, and a badge for images with an update waiting. **Config → Containers** shows the connection as the server sees it — socket, actions, write token, its own container — and holds the update checks and an optional GitHub token. The [manual](MANUAL.md#146-what-it-needs) has the details, including Synology and QNAP.
 
+
+### Unraid
+
+nextDash reads an Unraid server through its own API (Unraid 7.2, or an older Unraid with the Unraid Connect plugin):
+
+- **Seven widgets** — an overview, the array (every disk with its fill and temperature or its problem), parity, shares by where they live, VMs, the UPS and Unraid's notifications.
+- **Alerts** — Unraid's own ALERT notifications, the array stopping, a parity check that finished with errors and a disk whose error count went up, through the same channels as downtime and container alerts.
+- **One connection** — set once under **Config → Unraid** with an API key that has the role **Viewer**. nextDash only reads: it never starts, stops or changes anything on the server.
+
+More is on the way: deeper Unraid integration is being worked on for future versions of nextDash. *[Manual: Unraid](MANUAL.md#unraid)*
+
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-unraid-dashboard.jpg" alt="Unraid widgets on a homelab page" width="100%" />
+      <br />
+      <sub><b>Unraid on the dashboard</b> <i>(Tarnished Brass)</i> — All seven widgets beside the homelab bookmarks. Disk 5 has read errors, so the overview, the array and the notifications all name it in red; parity is 43% through a check, and the UPS is on line power with 54 minutes in reserve.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-unraid-config.jpg" alt="Config: Unraid" width="100%" />
+      <br />
+      <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid explains itself: nextDash and the server with data running between them, three steps ticked off as they are done, and the seven widgets in miniature, each with an Add that opens it in Widgets → Types.</sub>
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## Security
