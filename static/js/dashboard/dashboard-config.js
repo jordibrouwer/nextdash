@@ -4596,7 +4596,15 @@ class DashboardConfig {
     stepOverviewTip(delta) {
         this._overviewTipIx = (Number(this._overviewTipIx) || 0) + delta;
         const el = document.querySelector('#config-view-body .config-widget--tip');
-        if (el) el.outerHTML = this.renderOverviewTipWidget();
+        if (!el) return;
+        // The button pressed goes with the panel it sits in: put focus back on
+        // its successor, or the next Enter did nothing.
+        const which = el.contains(document.activeElement)
+            ? document.activeElement.getAttribute('data-overview-action') : null;
+        el.outerHTML = this.renderOverviewTipWidget();
+        if (which) {
+            document.querySelector(`#config-view-body .config-widget--tip [data-overview-action="${which}"]`)?.focus();
+        }
     }
 
     /**
@@ -5312,6 +5320,13 @@ class DashboardConfig {
         // that is about to be replaced, so Escape must not go looking for it.
         this._logSettingsPopoverClose = null;
         this.section = section;
+        // "Only changed" and the settings filter have a bar only where the
+        // band draws one; carried into Containers they hid settings with no
+        // way to turn them off there.
+        if (!this._changedFilterContext()) {
+            this.changedOnly = false;
+            this.settingsFilter = '';
+        }
         this._trackAction('section', { section, via });
         // The bookmark list's renderers arrive on demand. Waiting for them is
         // better than drawing a placeholder and repainting over it: the second

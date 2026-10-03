@@ -259,6 +259,15 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — a row picked while web results load keeps the selection.** The answer moved it to the first web result, and Enter opened a web page.
 - **fix — one failed status check no longer removes the web search tabs** until a reload.
 - **fix — Config → Unraid can be reached from the command palette** (`:config unraid`).
+- **fix — SearXNG engines that could not answer are a failure**, not "Nothing found" cached for a minute.
+- **fix — Shift+←/→ also leaves a web category that failed.**
+- **fix — no "Open in SearXNG" row without a SearXNG address**; it opened Brave.
+- **fix — the two OpenSearch engines keep different names under a long title.**
+- **fix — the cheat sheet lists the web search keys** (Shift+Enter, Shift+←/→, Alt+Enter) when an engine is on.
+- **fix — clearing the cheat sheet filter opens the section of the view it came from again.**
+- **fix — the search keys try again after the search bundle failed to load**, instead of staying dead until a reload.
+- **fix — Only changed and the settings filter stay in sections with a bar for them**; carried into Containers they hid settings with no way back.
+- **fix — the Overview tip buttons keep keyboard focus.**
 
 ### Translations
 
@@ -281,6 +290,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **tests — the P1s of bug hunt round 3**: a paused parity check, a failed resolver, a recovery seen by a Re-check, an alias match, `:remove` through the trash, and a widget key kept across Save after Health and after a re-picked Plex preset.
 - **tests — the P2s of bug hunt round 3**, each one failing without its fix; `config-docker-usage-alerts` opens the Alerts tab since Containers has tabs.
 - **tests — a selection of the P3s of bug hunt round 3**, each one failing without its fix.
+- **tests — the remaining P3s of bug hunt round 3**: `config-carried-state.spec.js`, and Go tests for the Unraid, icon, widget, web search and look fixes.
 
 
 ## v1.16.0 — 2 October 2026

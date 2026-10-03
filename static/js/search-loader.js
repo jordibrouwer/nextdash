@@ -53,7 +53,9 @@
             // still a working dashboard, and a promise that never settles would
             // wedge every key that waits on it.
             script.addEventListener('load', () => { ready = true; resolve(); }, { once: true });
-            script.addEventListener('error', () => { ready = true; resolve(); }, { once: true });
+            // A failed load is tried again on the next key: marked ready, the
+            // search keys stayed dead until a reload.
+            script.addEventListener('error', () => { script.remove(); pending = null; ready = false; resolve(); }, { once: true });
             document.head.appendChild(script);
         });
         return pending;

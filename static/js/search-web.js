@@ -132,6 +132,8 @@
                 ? t(`webSearchError_${state.reason}`, t('webSearchError_engine_unreachable', 'The search engine did not answer.'))
                 : t('webSearchNoResults', 'Nothing found on the web.');
             container.appendChild(message);
+            // No SearXNG address to open: the row went to Brave under SearXNG's name.
+            if (search.settings?.webSearchEngine === 'searxng' && !search.settings?.webSearchSearxngUrl) return;
             const row = document.createElement('div');
             row.className = 'search-match search-web-fallback';
             row.innerHTML = `<span class="search-match-shortcut search-hint-shortcut">↗</span>

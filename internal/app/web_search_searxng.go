@@ -42,6 +42,9 @@ type searxngBody struct {
 			URL string `json:"url"`
 		} `json:"urls"`
 	} `json:"infoboxes"`
+	// The engines SearXNG could not ask: with no results, the search failed
+	// rather than found nothing.
+	Unresponsive [][]any `json:"unresponsive_engines"`
 }
 
 func (p *searxngProvider) Search(ctx context.Context, query, category string) (WebSearchResponse, error) {
@@ -82,6 +85,9 @@ func (p *searxngProvider) Search(ctx context.Context, query, category string) (W
 			Title: plainSnippet(r.Title), URL: r.URL, Snippet: plainSnippet(r.Content),
 			Domain: resultDomain(r.URL), Published: r.PublishedDate,
 		})
+	}
+	if len(out.Results) == 0 && len(body.Unresponsive) > 0 {
+		return WebSearchResponse{}, errWebSearchUnreachable
 	}
 	if len(body.Infoboxes) > 0 {
 		ib := body.Infoboxes[0]

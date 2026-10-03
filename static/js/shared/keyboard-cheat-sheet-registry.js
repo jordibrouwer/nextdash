@@ -333,6 +333,10 @@
                     printFallback: 'Open the top result',
                 },
                 { keys: '>', cheatKey: 'smRegularSearch', fallback: 'Regular search — filter bookmarks on current page by name', print: true, printFallback: 'Search' },
+                // Web search: only listed with an engine on, where the keys do something.
+                { keys: 'Shift + Enter', cheatKey: 'smWebSearch', fallback: 'Search the web for what you typed, in the panel', when: (ctx) => ctx.webSearchOn },
+                { keys: 'Shift + ← / →', cheatKey: 'smWebCategory', fallback: 'Web results: the previous or next category (Web, News, Video…)', when: (ctx) => ctx.webSearchOn },
+                { keys: 'Alt + Enter', cheatKey: 'smWebOpenBookmark', fallback: 'Web results: open your own bookmark for that site instead', when: (ctx) => ctx.webSearchOn },
                 {
                     keys: 'Shift + Q',
                     cheatKey: 'smToggleSearchMode',
@@ -470,6 +474,7 @@
             healthEnabled: Boolean(d.health?.isEnabled?.()),
             dockerEnabled: Boolean(d.docker?.isEnabled?.()),
             configEnabled: Boolean(d.config?.isEnabled?.()),
+            webSearchOn: ['searxng', 'brave'].includes(d.settings?.webSearchEngine),
             tagCloudShortcutVisible: Boolean(d.isTagCloudDesktopShortcutVisible?.()),
             triageOpen: Boolean(d.inbox?.triage?.isOpen?.()),
         };

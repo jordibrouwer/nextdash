@@ -433,3 +433,23 @@ func TestWebSearchCacheFollowsTheAddress(t *testing.T) {
 		t.Fatalf("new address: %d, asked %d times", rec.Code, *newHits)
 	}
 }
+
+// SearXNG answers 200 with nothing when its engines are blocked; that is a
+// failure, not "Nothing found" cached for a minute.
+func TestWebSearchUnresponsiveEnginesAreAFailure(t *testing.T) {
+	srv, _, _ := fakeSearxng(t, http.StatusOK, `{"results":[],"unresponsive_engines":[["google","CAPTCHA"]]}`)
+	h := webSearchTestHandlers(t, "searxng", srv.URL)
+	if rec := getWebSearch(h, "/api/web-search?q=x"); rec.Code != http.StatusBadGateway {
+		t.Fatalf("code = %d, want 502", rec.Code)
+	}
+}
+
+// With a long title both engines were cut to the same 16 characters, and the
+// browser refused the second one.
+func TestOpenSearchNamesStayApartOnALongTitle(t *testing.T) {
+	a := openSearchShortName("Jordi's Homelab Dashboard")
+	b := openSearchShortName("Jordi's Homelab Dashboard", " Web")
+	if a == b || len([]rune(b)) > 16 || !strings.HasSuffix(b, " Web") {
+		t.Fatalf("names %q and %q", a, b)
+	}
+}

@@ -279,7 +279,8 @@ class DashboardUiHelpers {
                     }
                 } else {
                     group.hidden = false;
-                    group.open = i === 0;
+                    // Back as it opened: the view's own section, not Navigation.
+                    group.open = contextIndex >= 0 ? i === contextIndex : i === 0;
                     anyVisible = true;
                 }
             });

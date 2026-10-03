@@ -52,12 +52,15 @@ Sixteen characters is the practical ceiling: Firefox and Chrome both truncate
 past roughly that, and a name cut mid-word reads as a bug in the dashboard
 rather than in the browser.
 */
-func openSearchShortName(name string) string {
+func openSearchShortName(name string, suffix ...string) string {
 	trimmed := strings.TrimSpace(name)
 	if trimmed == "" {
-		return "nextDash"
+		trimmed = "nextDash"
 	}
-	return trimToLength(trimmed, 16)
+	// The suffix is kept whole: cut together with a long title, both engines
+	// got the same name and the browser refused the second.
+	tail := strings.Join(suffix, "")
+	return strings.TrimSpace(trimToLength(trimmed, 16-len([]rune(tail)))) + tail
 }
 
 /*
@@ -105,7 +108,7 @@ func (h *Handlers) writeOpenSearch(w http.ResponseWriter, r *http.Request, nameS
 
 	description := openSearchDescription{
 		Namespace:   "http://a9.com/-/spec/opensearch/1.1/",
-		ShortName:   openSearchShortName(name + nameSuffix),
+		ShortName:   openSearchShortName(name, nameSuffix),
 		Description: what + " in " + name,
 		InputEncode: "UTF-8",
 		URLs: []openSearchURL{{

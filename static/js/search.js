@@ -970,7 +970,10 @@ class SearchComponent {
         // macOS), →/← open and close the preview of the selected result.
         // Only while the shown results are for the query in the panel: after
         // an edit the web has not been asked yet, and an arrow must not ask it.
-        if ((key === 'ARROWLEFT' || key === 'ARROWRIGHT') && this.searchActive && this._web?.status === 'done'
+        // The tabs also after a category failed (Brave's 429 on News): only
+        // the mouse led back to Web.
+        if ((key === 'ARROWLEFT' || key === 'ARROWRIGHT') && this.searchActive && this._web
+                && this._web.status !== 'loading' && (e.shiftKey || this._web.status === 'done')
                 && this._web.query === this._webQuery()
                 && !e.ctrlKey && !e.metaKey && !e.altKey) {
             const direction = key === 'ARROWRIGHT' ? 1 : -1;
