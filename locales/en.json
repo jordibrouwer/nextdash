@@ -3145,7 +3145,8 @@
     "widgetUnraidPlaceOther": "elsewhere",
     "widgetUnraidPlaceBoth": "array + {pool}",
     "widgetUnraidOneShare": "1 share",
-    "widgetUnraidShareCount": "{n} shares"
+    "widgetUnraidShareCount": "{n} shares",
+    "widgetUnraidNoVMs": "No virtual machines on this server."
   },
   "health": {
     "reloadPage": "Reload page",

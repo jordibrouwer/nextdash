@@ -32,8 +32,10 @@ func normalizeUnraidSettings(s *Settings) {
 			srv.ID = newUnraidServerID()
 		}
 		srv.Name = strings.TrimSpace(srv.Name)
-		if len(srv.Name) > 64 {
-			srv.Name = srv.Name[:64]
+		// By characters, not bytes: a cut through a multi-byte character left
+		// invalid UTF-8 in settings.json.
+		if r := []rune(srv.Name); len(r) > 64 {
+			srv.Name = string(r[:64])
 		}
 		srv.BaseURL = normalizeUnraidBaseURL(srv.BaseURL)
 	}

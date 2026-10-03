@@ -402,6 +402,12 @@
         if (!panel) return;
         const u = U();
         const vms = result.data || [];
+        if (!vms.length) {
+            u.say(panel, 'dashboard-widget-empty',
+                label(dash, 'dashboard.widgetUnraidNoVMs', 'No virtual machines on this server.'));
+            end(panel, widget, dash, result);
+            return;
+        }
         const running = vms.filter((v) => v.state === 'running').length;
         panel.appendChild(u.headline(String(running),
             label(dash, 'dashboard.widgetUnraidOfTotalRunning', 'of {total} running').replace('{total}', vms.length)));

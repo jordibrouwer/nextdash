@@ -227,8 +227,14 @@ func TestUnraidOverviewStatusFollowsItsAreas(t *testing.T) {
 			t.Fatalf("r = %+v", r)
 		}
 	})
-	t.Run("every area missing", func(t *testing.T) {
+	t.Run("nothing the key may read says so", func(t *testing.T) {
 		r := composeUnraidOverviewFrom([]unraidAreaResult{{Area: "info", Status: "forbidden"}, {Area: "array", Status: "unsupported"}})
+		if r.Status != "forbidden" || r.Data != nil {
+			t.Fatalf("r = %+v", r)
+		}
+	})
+	t.Run("nothing this version has", func(t *testing.T) {
+		r := composeUnraidOverviewFrom([]unraidAreaResult{{Area: "info", Status: "unsupported"}, {Area: "array", Status: "unsupported"}})
 		if r.Status != "unsupported" || r.Data != nil {
 			t.Fatalf("r = %+v", r)
 		}

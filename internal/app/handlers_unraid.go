@@ -138,7 +138,7 @@ func (h *Handlers) composeUnraidOverview(ctx context.Context) unraidAreaResult {
 func composeUnraidOverviewFrom(results []unraidAreaResult) unraidAreaResult {
 	var o UnraidOverviewView
 	out := unraidAreaResult{Area: "overview"}
-	used, answered, refused, relevant, notConfigured := 0, 0, 0, 0, 0
+	used, answered, refused, relevant, notConfigured, forbidden := 0, 0, 0, 0, 0, 0
 	for _, r := range results {
 		switch r.Status {
 		case "ok":
@@ -147,6 +147,8 @@ func composeUnraidOverviewFrom(results []unraidAreaResult) unraidAreaResult {
 			refused++
 		case "not-configured":
 			notConfigured++
+		case "forbidden":
+			forbidden++
 		}
 		if r.Status != "forbidden" && r.Status != "unsupported" && r.Status != "not-configured" {
 			relevant++
@@ -193,6 +195,10 @@ func composeUnraidOverviewFrom(results []unraidAreaResult) unraidAreaResult {
 		out.Status = "not-configured"
 	case answered > 0:
 		out.Status = "ok"
+	case relevant == 0 && forbidden > 0:
+		// Nothing readable because the key may read none of it: say that,
+		// not that this Unraid version lacks it.
+		out.Status = "forbidden"
 	case relevant == 0:
 		out.Status = "unsupported"
 	case refused > 0:

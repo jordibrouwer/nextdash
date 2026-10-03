@@ -3,7 +3,9 @@ package app
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 func TestNormalizeUnraidSettingsKeepsOneCleanServer(t *testing.T) {
@@ -53,5 +55,15 @@ func TestUnraidKeyLivesInItsOwnFileAt0600(t *testing.T) {
 func TestUnraidSecretsAreABackupSecret(t *testing.T) {
 	if p, ok := dataFilePolicyOf("unraid-secrets.json"); !ok || p != dataSecret {
 		t.Fatalf("policy = %v, %v", p, ok)
+	}
+}
+
+func TestNormalizeUnraidSettingsCutsANameByCharacters(t *testing.T) {
+	name := strings.Repeat("é", 70) // two bytes each
+	s := Settings{UnraidServers: []UnraidServer{{ID: "a", Name: name, BaseURL: "http://tower", Enabled: true}}}
+	normalizeUnraidSettings(&s)
+	got := s.UnraidServers[0].Name
+	if !utf8.ValidString(got) || utf8.RuneCountInString(got) != 64 {
+		t.Fatalf("name = %q (%d runes, valid %v)", got, utf8.RuneCountInString(got), utf8.ValidString(got))
 	}
 }

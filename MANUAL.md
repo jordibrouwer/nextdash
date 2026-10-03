@@ -2163,7 +2163,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 | **Export bookmarks (CSV)** | Name, URL, category, page, shortcut, tags and notes, with translated headers |
 | **Import bookmarks (CSV)** | Reads that file back onto the current page. Columns are matched by name; rows without a URL and existing URLs are skipped. |
 
-**Settings** exports or imports `settings.json` alone.
+**Settings** exports or imports `settings.json` alone. The Unraid server is left out of an import: it is set only under Config → Containers → Unraid, so an imported file can never point the saved key at another address.
 
 | Situation | Use |
 |---|---|

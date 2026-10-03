@@ -21,12 +21,12 @@ async function openDashboard(page) {
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
 }
 
-async function render(page, type, answers, width = 320) {
+async function render(page, type, answers, width = 320, config = {}) {
     await page.route('**/api/unraid/area/**', (route) => {
         const area = route.request().url().split('/').pop();
         return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(answers[area] || { area, status: 'unsupported' }) });
     });
-    return page.evaluate(async ({ t, w }) => {
+    return page.evaluate(async ({ t, w, cfg }) => {
         document.querySelectorAll('.unraid-probe').forEach((n) => n.remove());
         const host = document.createElement('div');
         host.className = 'dashboard-widget unraid-probe';
@@ -35,14 +35,14 @@ async function render(page, type, answers, width = 320) {
         body.className = 'dashboard-widget-body';
         host.appendChild(body);
         document.body.appendChild(host);
-        await window.DashboardWidgets[t](body, { id: 'probe', type: t, config: {} }, window.dashboardInstance);
+        await window.DashboardWidgets[t](body, { id: 'probe', type: t, config: cfg }, window.dashboardInstance);
         const shown = (el) => el && el.offsetParent !== null;
         return {
             text: body.innerText.replace(/\s+/g, ' ').trim(),
             rows: [...body.querySelectorAll('.dashboard-widget-row')].filter(shown).map((r) => r.innerText.replace(/\s+/g, ' ').trim()),
             tones: [...body.querySelectorAll('.dashboard-widget-row')].filter(shown).map((r) => (r.className.match(/--(good|warn|bad|off)/) || [])[1] || ''),
         };
-    }, { t: type, w: width });
+    }, { t: type, w: width, cfg: config });
 }
 
 test.describe('Unraid widgets', () => {
@@ -131,6 +131,20 @@ test.describe('Unraid widgets', () => {
         expect(narrow.text).toContain('2 shares');
         expect(narrow.text).toContain('1 share');
         expect(narrow.text).not.toContain('backups');
+    });
+
+    test('shares keep to the row count, the rest in a more row', async ({ page }) => {
+        await openDashboard(page);
+        const out = await render(page, 'unraidShares', { shares: A('shares') }, 700, { rows: 1 });
+        expect(out.rows.map((r) => r.split(' ')[0])).toEqual(['array', '2']);
+        expect(out.rows[1]).toMatch(/more/);
+    });
+
+    test('a server without VMs says so', async ({ page }) => {
+        await openDashboard(page);
+        const out = await render(page, 'unraidVms', { vms: { area: 'vms', status: 'ok', data: [], fetchedAt: Date.now(), lastOkAt: Date.now() } });
+        expect(out.text).toContain('No virtual machines on this server.');
+        expect(out.text).not.toContain('of 0 running');
     });
 
     test('VMs: running of total and a row each', async ({ page }) => {
