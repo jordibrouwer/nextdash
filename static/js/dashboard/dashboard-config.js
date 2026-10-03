@@ -62,6 +62,7 @@ class DashboardConfig {
         'data-backups',
         'widgets',
         'containers',
+        'unraid',
         'stats',
         'help',
         'logs',
@@ -87,6 +88,11 @@ class DashboardConfig {
             file: 'js/dashboard/dashboard-config-containers.js',
             datasetKey: 'dashboardConfigContainers',
             ready: () => window.DashboardConfigContainersReady === true,
+        },
+        unraid: {
+            file: 'js/dashboard/dashboard-config-unraid.js',
+            datasetKey: 'dashboardConfigUnraid',
+            ready: () => window.DashboardConfigUnraidReady === true,
         },
         logs: {
             file: 'js/dashboard/dashboard-config-logs.js',
@@ -1888,6 +1894,7 @@ class DashboardConfig {
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
             widgets: ['config.sectionWidgets', 'Widgets'],
             containers: ['config.sectionContainers', 'Containers'],
+            unraid: ['config.sectionUnraid', 'Unraid'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],
@@ -2143,6 +2150,8 @@ class DashboardConfig {
         } else if (this.section === 'containers') {
             this.bindControlPanels(container, 'behavior');
             this.bindContainersSection(container);
+        } else if (this.section === 'unraid') {
+            void this.bindUnraidSection?.(container);
         } else if (this.section === 'inbox') {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
@@ -4050,6 +4059,9 @@ class DashboardConfig {
         }
         if (this.section === 'containers') {
             return this.renderContainersSection();
+        }
+        if (this.section === 'unraid') {
+            return this.renderUnraidSection();
         }
         if (this.section === 'inbox') {
             return this.renderInboxSection();
@@ -18458,7 +18470,7 @@ class DashboardConfig {
     static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];
 
     /** Config → Containers: where the socket is, how it looks, updates, alerts, Unraid. */
-    static CONTAINERS_TABS = ['connection', 'view', 'updates', 'alerts', 'unraid'];
+    static CONTAINERS_TABS = ['connection', 'view', 'updates', 'alerts'];
 
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.

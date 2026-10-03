@@ -28,6 +28,7 @@ class DashboardConfigLoader {
         'data-backups',
         'widgets',
         'containers',
+        'unraid',
         'stats',
         'help',
         'logs',

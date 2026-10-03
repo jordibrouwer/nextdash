@@ -97,7 +97,7 @@ test.describe('Unraid widgets', () => {
     test('not connected says where to set it up', async ({ page }) => {
         await openDashboard(page);
         const out = await render(page, 'unraidArray', { array: { area: 'array', status: 'not-configured' } });
-        expect(out.text).toContain('Config → Containers');
+        expect(out.text).toContain('Config → Unraid');
     });
 
     test('parity while running: progress and time left; history when wide', async ({ page }) => {

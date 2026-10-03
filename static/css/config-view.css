@@ -7817,3 +7817,228 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .config-glass-hint .config-btn {
     flex: 0 0 auto;
 }
+
+/* ─── Config → Unraid: how it works, and what you get ────────────────────────
+   Two boxes and a line, with dots running from the server to the dashboard:
+   nextDash asks, Unraid answers. The dots move by transform on a runner as wide
+   as the line, so nothing is laid out again per frame. The seven tiles in
+   miniature fill their bars once as the section opens; the VM dot breathes.
+   Reduced motion (the OS or the in-app switch) keeps the drawing and stops it. */
+
+.unraid-flow {
+    display: grid;
+    grid-template-columns: auto minmax(4rem, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    margin: var(--space-2, 0.5rem) 0 var(--space-3, 0.75rem);
+}
+.unraid-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+}
+.unraid-node-box {
+    display: grid;
+    place-items: center;
+    min-width: 5.5rem;
+    min-height: 3.2rem;
+    padding: 0 var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary);
+    font-weight: var(--font-weight-semibold, 600);
+}
+.unraid-node--server .unraid-node-box {
+    border-color: color-mix(in srgb, var(--accent-warning) 55%, var(--border-primary));
+}
+.unraid-explain.is-connected .unraid-node--server .unraid-node-box {
+    border-color: color-mix(in srgb, var(--accent-success) 60%, var(--border-primary));
+}
+.unraid-node-label {
+    color: var(--text-tertiary);
+    font-size: var(--text-xs, 0.72rem);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.unraid-wire {
+    position: relative;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--border-primary);
+}
+.unraid-wire-tag {
+    position: absolute;
+    left: 50%;
+    bottom: 0.6rem;
+    translate: -50% 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-tertiary);
+    font-size: var(--text-xs, 0.7rem);
+}
+/* A runner as wide as the line; its dot rides its left edge from the server
+   (right) to the dashboard (left). */
+.unraid-wire-run {
+    position: absolute;
+    inset: 0;
+    animation: unraid-wire-run 2.7s linear infinite;
+}
+.unraid-wire-run:nth-of-type(2) { animation-delay: 0.9s; }
+.unraid-wire-run:nth-of-type(3) { animation-delay: 1.8s; }
+.unraid-wire-run i {
+    position: absolute;
+    top: -3px;
+    left: -4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    box-shadow: 0 0 8px var(--accent-primary);
+}
+.unraid-wire-run:nth-of-type(2) i {
+    background: var(--accent-success);
+    box-shadow: 0 0 8px var(--accent-success);
+}
+@keyframes unraid-wire-run {
+    0% { transform: translateX(100%); opacity: 0; }
+    12% { opacity: 1; }
+    88% { opacity: 1; }
+    100% { transform: translateX(0); opacity: 0; }
+}
+
+.unraid-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin: var(--space-3, 0.75rem) 0 0;
+    padding: 0;
+    list-style: none;
+}
+.unraid-step {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--layout-radius-xs, 6px);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.76rem);
+    line-height: 1.5;
+}
+.unraid-step-n {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    font-weight: var(--font-weight-bold, 700);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+.unraid-step.is-done .unraid-step-n {
+    background: color-mix(in srgb, var(--accent-success) 22%, transparent);
+    color: var(--accent-success);
+}
+.unraid-step.is-done .unraid-step-n::before { content: '✓'; }
+.unraid-step.is-done .unraid-step-n { font-size: 0; }
+.unraid-step.is-done .unraid-step-n::before { font-size: var(--text-xs, 0.76rem); }
+
+.config-link-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+.config-link-btn:hover,
+.config-link-btn:focus-visible { color: var(--text-primary); }
+
+.unraid-minis {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+.unraid-mini {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+    min-height: 6.2rem;
+    padding: var(--space-2, 0.55rem) var(--space-2, 0.6rem);
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--layout-radius-xs, 6px);
+    background: var(--background-secondary);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+.unraid-mini-title {
+    color: var(--text-tertiary);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.unraid-mini-title::before { content: '// '; color: var(--accent-primary); letter-spacing: 0; }
+.unraid-mini-body { display: flex; flex-direction: column; gap: var(--space-1, 0.3rem); }
+.unraid-mini-row { display: flex; justify-content: space-between; gap: var(--space-1, 0.3rem); }
+.unraid-mini-good { color: var(--accent-success); }
+.unraid-mini-warn { color: var(--accent-warning); }
+.unraid-mini-bar {
+    display: block;
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--border-primary);
+}
+.unraid-mini-bar i {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent-primary);
+    transform-origin: left center;
+    transform: scaleX(var(--fill, 0.5));
+    animation: unraid-mini-fill 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.unraid-mini-bar--good i { background: var(--accent-success); }
+@keyframes unraid-mini-fill { from { transform: scaleX(0); } }
+.unraid-mini-pulse {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 0.35rem;
+    border-radius: 50%;
+    background: var(--accent-success);
+    animation: unraid-mini-pulse 1.8s ease-in-out infinite;
+}
+@keyframes unraid-mini-pulse {
+    0%, 100% { opacity: 0.35; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.1); }
+}
+.unraid-mini-add { margin-top: auto; align-self: flex-start; }
+.unraid-preview-foot { margin: var(--space-3, 0.75rem) 0 0; }
+
+/* Widgets -> Types, arrived at from Config -> Unraid: the kind asked for. */
+.config-widget-type-row.is-pointed {
+    outline: 1px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: var(--layout-radius-xs, 6px);
+}
+
+/* Still, for whoever asked for stillness: the dots wait mid-line. */
+@media (prefers-reduced-motion: reduce) {
+    .unraid-wire-run,
+    .unraid-mini-pulse { animation-name: none !important; }
+    .unraid-wire-run { transform: translateX(50%); }
+}
+body.no-animations .unraid-wire-run,
+body.no-animations .unraid-mini-pulse,
+body.no-animations .unraid-mini-bar i { animation: none !important; }
+body.no-animations .unraid-wire-run { transform: translateX(50%); }

@@ -1,5 +1,5 @@
 /**
- * The Unraid widgets: the server set under Config → Containers → Unraid, read
+ * The Unraid widgets: the server set under Config → Unraid, read
  * through /api/unraid/area/*. One connection for all of them; a widget only
  * says how it draws.
  *
@@ -28,10 +28,10 @@
     /** The sentence a tile shows instead of its figures, or null when it can draw. */
     function unavailable(dash, result) {
         const map = {
-            'not-configured': ['dashboard.widgetUnraidNotConnected', 'Not connected. Add the server under Config → Containers → Unraid.'],
+            'not-configured': ['dashboard.widgetUnraidNotConnected', 'Not connected. Add the server under Config → Unraid.'],
             forbidden: ['dashboard.widgetUnraidForbidden', 'This API key may not read this. Give it the permission in Unraid, or hide this widget.'],
             unsupported: ['dashboard.widgetUnraidUnsupported', 'This Unraid version does not offer this in its API.'],
-            unauthorized: ['dashboard.widgetUnraidUnauthorized', 'Unraid refused the API key. Check it under Config → Containers → Unraid.'],
+            unauthorized: ['dashboard.widgetUnraidUnauthorized', 'Unraid refused the API key. Check it under Config → Unraid.'],
         };
         if (result?.status === 'ok') return null;
         if (result?.status === 'unreachable' && result.data) return null; // drawn stale, with a note
@@ -93,7 +93,7 @@
             u.say(panel, 'dashboard-widget-empty', why);
             if (result?.status === 'not-configured') {
                 const link = u.row(label(dash, 'dashboard.widgetUnraidSetUp', 'Set up Unraid'), '', null,
-                    () => u.openConfigTab(dash, 'containers', 'unraid'), { dash });
+                    () => u.openConfigTab(dash, 'unraid'), { dash });
                 panel.appendChild(link);
             }
             return null;

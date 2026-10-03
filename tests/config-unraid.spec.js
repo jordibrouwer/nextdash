@@ -3,7 +3,7 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * Config -> Containers -> Unraid: one connection for every Unraid widget. The
+ * Config -> Unraid: one connection for every Unraid widget. The
  * server side is intercepted; what is under test is what the section sends and
  * what it says back.
  */
@@ -19,7 +19,7 @@ async function openSection(page, settings) {
             body: JSON.stringify({ server: { ...page.__saved.server, id: 'u_1' }, keySet: true }) });
     });
     await markWhatsNewSeen(page);
-    await page.goto('/#config/containers/unraid');
+    await page.goto('/#config/unraid');
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForSelector('[data-unraid-field="baseUrl"]', { timeout: 20_000 });
@@ -150,4 +150,46 @@ test('an ordinary settings save leaves the Unraid server alone', async ({ page }
     } finally {
         await put('');
     }
+
+});
+
+test.describe('Config -> Unraid explains itself', () => {
+    // How it works: three steps, each ticked off from what the server says.
+    test('the steps tick off: key saved, server answering, a widget on a page', async ({ page }) => {
+        await page.route('**/api/unraid/area/info', (route) => route.fulfill({ status: 200, contentType: 'application/json',
+            body: JSON.stringify({ area: 'info', status: 'ok', data: { name: 'tower' } }) }));
+        await page.route('**/api/pages/*/blocks', (route) => route.fulfill({ status: 200, contentType: 'application/json',
+            body: JSON.stringify({ pageId: 1, widgets: [{ id: 'w_1', type: 'unraidArray' }], order: ['w_1'] }) }));
+        await openSection(page, { server: SAVED, keySet: true, suggestedBaseUrl: '' });
+        for (const id of ['key', 'connect', 'widgets']) {
+            await expect(page.locator(`[data-unraid-step="${id}"]`)).toHaveClass(/is-done/);
+        }
+        await expect(page.locator('[data-unraid-flow-address]')).toHaveText('192.168.1.10');
+    });
+
+    test('nothing set up: no step is ticked', async ({ page }) => {
+        await page.route('**/api/pages/*/blocks', (route) => route.fulfill({ status: 200, contentType: 'application/json',
+            body: JSON.stringify({ pageId: 1, widgets: [], order: [] }) }));
+        await openSection(page, { server: null, keySet: false, suggestedBaseUrl: '' });
+        await expect(page.locator('[data-unraid-step="widgets"]')).not.toHaveClass(/is-done/);
+        await expect(page.locator('.unraid-step.is-done')).toHaveCount(0);
+    });
+
+    // What you get: each kind's Add leads to that kind in Widgets -> Types,
+    // with its own Add focused -- one Enter from a widget on the page.
+    test('Add on a kind opens Widgets -> Types on that kind', async ({ page }) => {
+        await openSection(page, { server: SAVED, keySet: true, suggestedBaseUrl: '' });
+        await expect(page.locator('[data-unraid-preview] .unraid-mini')).toHaveCount(7);
+        await page.locator('[data-unraid-add="unraidParity"]').click();
+        await expect(page.locator('#config-section-widgets')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('[data-widgets-tab="types"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('#config-widgets-body [data-widget-add="unraidParity"]')).toBeFocused();
+    });
+
+    test('Open Widgets -> Types lands on the Unraid group', async ({ page }) => {
+        await openSection(page, { server: null, keySet: false, suggestedBaseUrl: '' });
+        await page.locator('[data-unraid-explain] [data-unraid-goto-widgets]').click();
+        await expect(page.locator('[data-widgets-tab="types"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('#config-widgets-body [data-widget-add="unraid"]')).toBeInViewport();
+    });
 });

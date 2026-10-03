@@ -1742,7 +1742,7 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 
 **What they need.** Unraid 7.2, or an older Unraid with the Unraid Connect plugin, and an API key with the role **Viewer** (in Unraid: Settings → Management Access → API Keys). A key that can do more than read is accepted, but Config says Viewer is enough.
 
-**One connection for all seven.** Config → Containers → Unraid holds it: the **Address**, the **API key** (a saved key shows as *Set*; the eye button reveals what you type), **Accept a self-signed certificate**, **Read this server** and **Send Unraid alerts through the alert channels**. When nextDash runs in a container, the Docker bridge gateway is suggested as the address. **Test connection** names the server, its Unraid and API versions and what the key may read — *yes*, *not allowed* or *not in this version* per area. A new address needs the key again: change the address without typing a key and the saved key is dropped. The key is stored apart in `data/unraid-secrets.json`, is never sent back to the browser, and travels in a backup only with **Tokens and passwords**.
+**One connection for all seven.** Config → Unraid holds it: the **Address**, the **API key** (a saved key shows as *Set*; the eye button reveals what you type), **Accept a self-signed certificate**, **Read this server** and **Send Unraid alerts through the alert channels**. When nextDash runs in a container, the Docker bridge gateway is suggested as the address. **Test connection** names the server, its Unraid and API versions and what the key may read — *yes*, *not allowed* or *not in this version* per area. A new address needs the key again: change the address without typing a key and the saved key is dropped. The key is stored apart in `data/unraid-secrets.json`, is never sent back to the browser, and travels in a backup only with **Tokens and passwords**.
 
 **On the tile.** A widget has only how it draws: **Refresh every (seconds)** (30 at the least; one answer per area is shared by everyone viewing the dashboard), **Rows to show** where it lists (Shares, VMs, Unraid notifications), and **A click** — *Opens the page in Unraid* or *Does nothing*. An area the key may not read, or an Unraid version that lacks it, is named on the tile instead of showing zero; a server that stops answering keeps the last reading, with its age. Nothing is shown until the connection is saved.
 
@@ -1981,7 +1981,8 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Behavior** | General · Keyboard & search · Fresh · Status & alerts · Privacy & sync ([§17.5](#175-behavior)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
 | **Widgets** | Widgets · Types ([§15](#15-widgets)) |
-| **Containers** | Connection · View · Updates · Alerts · Unraid ([§17.7](#177-config-containers)) |
+| **Containers** | Connection · View · Updates · Alerts ([§17.7](#177-config-containers)) |
+| **Unraid** | The one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
 | **Statistics** | Overview · Activity · Content · Inbox · Health ([§18](#18-statistics)) |
 | **Help** | The in-app guide |
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
@@ -2057,7 +2058,7 @@ Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config →
 
 ### 17.7 Config → Containers
 
-Five tabs, with the same strip, keys and memory as Config → Inbox. It opens on the one you looked at last, `#config/containers/<tab>` opens a tab by address, and a setting found with search opens the tab it is on.
+Four tabs, with the same strip, keys and memory as Config → Inbox. It opens on the one you looked at last, `#config/containers/<tab>` opens a tab by address, and a setting found with search opens the tab it is on.
 
 | Tab | Panels |
 |---|---|
@@ -2065,7 +2066,8 @@ Five tabs, with the same strip, keys and memory as Config → Inbox. It opens on
 | **View** | **View**: show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden. **Links**: the Docker host address that port and web UI links point at. **Hidden containers**: kept out of the view, search and the widget count — they keep running |
 | **Updates** | **Updates**: check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§14.5](#145-actions-and-updates)). **GitHub**: a token that raises the rate limit for release notes and for images hosted on GHCR |
 | **Alerts** | **Notifications**: notify about containers — on by default; also when one uses too much CPU or memory, with the CPU line (50–95 %), the memory line (70–95 %) and how long (5–30 minutes) ([§14.9](#149-notices)). **Muted containers**: where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
-| **Unraid** | The one Unraid server the Unraid widgets read: address, API key, a self-signed certificate, reading it and sending its alerts ([§15.6](#156-unraid-widgets)). The widgets' "Set up Unraid" row opens this tab |
+
+The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It opens with **How it works** — nextDash and the server drawn as two boxes with data running between them, and three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done — and **What you get**: the seven widgets in miniature with example figures, each with an **Add…** that opens Widgets → Types on that kind.
 
 ### 17.8 Overview, Help and About
 
@@ -2163,7 +2165,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 | **Export bookmarks (CSV)** | Name, URL, category, page, shortcut, tags and notes, with translated headers |
 | **Import bookmarks (CSV)** | Reads that file back onto the current page. Columns are matched by name; rows without a URL and existing URLs are skipped. |
 
-**Settings** exports or imports `settings.json` alone. The Unraid server is left out of an import: it is set only under Config → Containers → Unraid, so an imported file can never point the saved key at another address.
+**Settings** exports or imports `settings.json` alone. The Unraid server is left out of an import: it is set only under Config → Unraid, so an imported file can never point the saved key at another address.
 
 | Situation | Use |
 |---|---|

@@ -4,12 +4,12 @@ const { mockDocker } = require('./helpers/docker-mock');
 const { markWhatsNewSeen, markConfigSettingPromosSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * Config -> Containers is five tabs, wired the way Config -> Inbox is: one
+ * Config -> Containers is four tabs, wired the way Config -> Inbox is: one
  * strip, the arrow keys, a remembered tab, a deep link, and a setting found by
  * search opening its own tab.
  */
 
-const TABS = ['connection', 'view', 'updates', 'alerts', 'unraid'];
+const TABS = ['connection', 'view', 'updates', 'alerts'];
 
 // What each tab shows, in order.
 const TITLES = {
@@ -17,7 +17,6 @@ const TITLES = {
     view: ['View', 'Links', 'Hidden containers'],
     updates: ['Updates', 'GitHub'],
     alerts: ['Notifications', 'Muted containers'],
-    unraid: ['Unraid'],
 };
 
 async function open(page, hash = '#config/containers') {
@@ -37,10 +36,10 @@ const tab = (page, id) => page.locator(`[data-containers-tab="${id}"]`);
 const titles = (page) => page.locator('#config-containers-body .config-panel-title');
 
 test.describe('Config -> Containers tabs', () => {
-    test('five tabs, Connection first, each with exactly its panels', async ({ page }) => {
+    test('four tabs, Connection first, each with exactly its panels', async ({ page }) => {
         await open(page);
-        await expect(page.locator('[data-containers-tab]')).toHaveCount(5);
-        await expect(page.locator('[data-containers-tab]')).toHaveText(['Connection', 'View', 'Updates', 'Alerts', 'Unraid']);
+        await expect(page.locator('[data-containers-tab]')).toHaveCount(4);
+        await expect(page.locator('[data-containers-tab]')).toHaveText(['Connection', 'View', 'Updates', 'Alerts']);
         await expect(tab(page, 'connection')).toHaveAttribute('aria-selected', 'true');
         for (const id of TABS) {
             await tab(page, id).click();
@@ -50,8 +49,8 @@ test.describe('Config -> Containers tabs', () => {
         // The panels that moved still do their work on their new tab.
         await tab(page, 'view').click();
         await expect(page.locator('[data-behavior-field="dockerRefreshSeconds"]')).toBeVisible();
-        await tab(page, 'unraid').click();
-        await expect(page.locator('[data-unraid-field="baseUrl"]')).toBeVisible();
+        // Unraid is a section of its own, not a tab here.
+        await expect(page.locator('[data-unraid-field]')).toHaveCount(0);
     });
 
     test('the arrow keys move between tabs', async ({ page }) => {
@@ -61,12 +60,12 @@ test.describe('Config -> Containers tabs', () => {
         await expect(tab(page, 'view')).toHaveAttribute('aria-selected', 'true');
         await expect(titles(page)).toHaveText(TITLES.view);
         await page.keyboard.press('End');
-        await expect(tab(page, 'unraid')).toHaveAttribute('aria-selected', 'true');
+        await expect(tab(page, 'alerts')).toHaveAttribute('aria-selected', 'true');
         await page.keyboard.press('ArrowRight');
         await expect(tab(page, 'connection')).toHaveAttribute('aria-selected', 'true');
         await page.keyboard.press('ArrowLeft');
-        await expect(tab(page, 'unraid')).toHaveAttribute('aria-selected', 'true');
-        await expect(tab(page, 'unraid')).toBeFocused();
+        await expect(tab(page, 'alerts')).toHaveAttribute('aria-selected', 'true');
+        await expect(tab(page, 'alerts')).toBeFocused();
     });
 
     test('the chosen tab is there after a reload', async ({ page }) => {
@@ -81,11 +80,14 @@ test.describe('Config -> Containers tabs', () => {
         await expect(titles(page)).toHaveText(TITLES.alerts);
     });
 
-    test('#config/containers/unraid opens the Unraid tab', async ({ page }) => {
-        await open(page, '#config/containers/unraid');
-        await expect(tab(page, 'unraid')).toHaveAttribute('aria-selected', 'true');
+    test('#config/unraid opens the Unraid section, beside Containers in the menu', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await markConfigSettingPromosSeen(page);
+        await page.goto('/#config/unraid');
+        await expect(page.locator('#config-section-unraid')).toHaveAttribute('aria-selected', 'true');
         await expect(page.locator('[data-unraid-field="baseUrl"]')).toBeVisible();
-        await expect(titles(page)).toHaveText(TITLES.unraid);
+        const order = await page.locator('[data-config-section]').evaluateAll((els) => els.map((e) => e.dataset.configSection));
+        expect(order.indexOf('unraid')).toBe(order.indexOf('containers') + 1);
     });
 
     test('a setting found by search opens its tab', async ({ page }) => {
@@ -102,7 +104,7 @@ test.describe('Config -> Containers tabs', () => {
         await expect(page.locator('[data-behavior-field="dockerUpdateInterval"]')).toBeVisible();
     });
 
-    test('"Set up Unraid" on a widget lands on the Unraid tab', async ({ page }) => {
+    test('"Set up Unraid" on a widget lands on Config -> Unraid', async ({ page }) => {
         await page.setViewportSize({ width: 1400, height: 900 });
         await markWhatsNewSeen(page);
         await markConfigSettingPromosSeen(page);
@@ -126,8 +128,7 @@ test.describe('Config -> Containers tabs', () => {
             await window.DashboardWidgets.unraidArray(body, { id: 'probe', type: 'unraidArray', config: {} }, window.dashboardInstance);
         });
         await page.locator('.unraid-probe').getByText('Set up Unraid').click();
-        await page.waitForSelector('[data-containers-tab]', { timeout: 20_000 });
-        await expect(tab(page, 'unraid')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('#config-section-unraid')).toHaveAttribute('aria-selected', 'true');
         await expect(page.locator('[data-unraid-field="baseUrl"]')).toBeVisible();
     });
 });
