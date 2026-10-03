@@ -414,3 +414,34 @@ test('a key typed again keeps the preset header', async ({ page }) => {
     expect(body.query && Object.values(body.query)).toContain('second-token');
     expect(Object.keys(body.headers || {}).join(',')).toMatch(/accept/i);
 });
+
+// The widget's own key was deleted before the page save: when that save
+// failed, the widget stayed and its key was gone.
+test('a failed delete keeps the widget its key', async ({ page }) => {
+    await openWidgets(page);
+    const index = await addWidget(page, 'custom');
+    const row = page.locator(`[data-widget-row="${index}"]`);
+    await row.locator('[data-widget-preset]').selectOption('sonarr');
+    await row.locator('[data-widget-auth="secret"]').fill('the-key');
+    await row.locator('[data-widget-save]').click();
+    const keyId = async () => page.evaluate(async () => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const blocks = await (await f('/api/pages/1/blocks')).json();
+        return (blocks.widgets || []).at(-1)?.config?.credentialId || '';
+    });
+    await expect.poll(keyId).toMatch(/^widget:/);
+    const id = await keyId();
+
+    await page.evaluate(() => { window.dashboardInstance.config.confirmAction = async () => true; });
+    await page.route('**/api/pages/*/blocks', (route) => (route.request().method() === 'GET'
+        ? route.fallback() : route.fulfill({ status: 500, body: 'no' })));
+    await page.locator(`[data-widget-delete="${index}"]`).click();
+    await page.waitForTimeout(1500);
+    await page.unroute('**/api/pages/*/blocks');
+    const filed = await page.evaluate(async (wanted) => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const creds = await (await f('/api/health/credentials')).json();
+        return Boolean(creds?.credentials?.[wanted]);
+    }, id);
+    expect(filed).toBe(true);
+});

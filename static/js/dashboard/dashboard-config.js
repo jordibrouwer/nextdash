@@ -18640,13 +18640,9 @@ class DashboardConfig {
             if (!ok) return;
 
             // The credential a widget minted for itself goes with it, exactly
-            // as it does when one is deleted on its own.
-            for (const block of (this._widgetBlocks || [])) {
-                if (block.isWidget && picked.has(block.id)) {
-                    await this.forgetWidgetCredential(block);
-                    delete (this._widgetDrafts || {})[block.id];
-                }
-            }
+            // as it does when one is deleted on its own -- after the save.
+            const removedBlocks = (this._widgetBlocks || []).filter((block) => block.isWidget && picked.has(block.id));
+            for (const block of removedBlocks) delete (this._widgetDrafts || {})[block.id];
             // Which page each one lived on, read before they are dropped.
             const byPage = new Map();
             (this._widgetBlocks || []).forEach((block) => {
@@ -18667,6 +18663,7 @@ class DashboardConfig {
             } else if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) {
                 return;
             }
+            for (const block of removedBlocks) await this.forgetWidgetCredential(block);
 
             this.widgetSelection.clear();
             this.notify(this.t('config.widgetsBulkDeleted', '{n} widgets removed.')
@@ -22310,6 +22307,7 @@ class DashboardConfig {
         const secret = String(auth.secret || '').trim();
         const stored = this.storedCredentialState(block);
         const config = { ...draft.config };
+        let dropOwnKey = false;
 
         if (auth.kind === 'header' || auth.kind === 'basic' || auth.kind === 'query'
             || auth.kind === 'session') {
@@ -22400,7 +22398,7 @@ class DashboardConfig {
             config.credentialId = auth.shared || undefined;
         } else {
             delete config.credentialId;
-            await this.forgetWidgetCredential(block);
+            dropOwnKey = true;
         }
 
         const blocks = [...(this._widgetBlocks || [])];
@@ -22410,6 +22408,8 @@ class DashboardConfig {
             say(this.t('config.widgetsSaveError', 'Could not save the widgets.'));
             return;
         }
+        // Only once the widget no longer names it.
+        if (dropOwnKey) await this.forgetWidgetCredential(block);
 
         delete (this._widgetDrafts || {})[block.id];
         this._widgetJustSaved = index;
@@ -22477,9 +22477,6 @@ class DashboardConfig {
             { confirmLabel: this.t('config.backupDelete', 'Delete'), danger: true });
         if (!ok) return;
 
-        // Before the block goes: the id is derived from it, and without it
-        // there is no way to name the entry this widget minted for itself.
-        await this.forgetWidgetCredential(block);
         delete (this._widgetDrafts || {})[block.id];
 
         // The page is read off the block before it goes: saveWidgetRow would
@@ -22490,6 +22487,9 @@ class DashboardConfig {
             ? await this.savePageWidgetsAfterRemoval(fromPage, block.id)
             : await this.saveWidgetBlocks(this.widgetPayloadFromBlocks());
         if (!wrote) return;
+        // After the page save, from the block held above: forgotten first, a
+        // failed save left the widget pointing at a key that was gone.
+        await this.forgetWidgetCredential(block);
         this.notify(this.t('config.widgetsDeleted', 'Widget removed.'), 'success');
         this._widgetLoadedFor = null;
         await this.loadWidgetsEditor();

@@ -671,6 +671,11 @@ func customWidgetLookup(document any, path string) (any, bool) {
 			}
 		}
 		for i, sel := range selectors {
+			// An empty list marshalled as null by a Go service: counted, it
+			// holds nothing, where "not in the answer" showed a dash.
+			if count && current == nil && !sel.hasIndex {
+				return 0.0, true
+			}
 			list, ok := current.([]any)
 			if !ok {
 				return nil, false
@@ -720,6 +725,8 @@ func customWidgetLookup(document any, path string) (any, bool) {
 				return float64(len(value)), true
 			case map[string]any:
 				return float64(len(value)), true
+			case nil:
+				return 0.0, true
 			}
 			return nil, false
 		}

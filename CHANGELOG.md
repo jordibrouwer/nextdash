@@ -144,6 +144,9 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — Ask now with a wrong password fails.** The draft reused the session signed in with the stored password; the password is now part of the session key.
 - **fix — a sign-in session is renewed after an hour.** Beszel (PocketBase) answers an expired token with an empty list rather than a refusal, and the tile showed "0 systems" for good.
 - **fix — a million reads as 1000000, not 1e+06**, in text figures, in `[key=value]` matches and in lists, which now print objects as JSON.
+- **fix — counting a list that came as `null` gives 0**, not "not in the answer".
+- **fix — a tile's error is held for 30 seconds, as on the server**, not for the widget's whole refresh interval.
+- **fix — a widget's own key is deleted after the page save.** Deleted first, a failed save left the widget pointing at a key that was gone; this holds for Delete, bulk delete and switching the sign-in off.
 
 ### Alerts
 

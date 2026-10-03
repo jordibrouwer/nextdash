@@ -33,7 +33,10 @@
                 + `&id=${encodeURIComponent(widget.id)}`);
             if (!res.ok) return null;
             const result = await res.json();
-            const ttl = Math.max(Number(widget?.config?.ttl) || 300, 30) * 1000;
+            // An error is held as long as the server holds it, 30 s: kept for
+            // the widget's TTL, a service that was restarting read as down for
+            // up to a day.
+            const ttl = result?.error ? 30000 : Math.max(Number(widget?.config?.ttl) || 300, 30) * 1000;
             dash._widgetCustom[key] = { result, until: Date.now() + ttl };
             return result;
         } catch (_error) {

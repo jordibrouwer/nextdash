@@ -1039,3 +1039,18 @@ func TestLargeNumbersReadAsWritten(t *testing.T) {
 		t.Fatalf("text = %q", got)
 	}
 }
+
+// A list marshalled as null holds nothing: counted, it is 0, not "not in the
+// answer".
+func TestCountingNullIsZero(t *testing.T) {
+	var doc any
+	_ = json.Unmarshal([]byte(`{"data":null}`), &doc)
+	for _, path := range []string{"data#", "data[status=down]#"} {
+		if got, ok := customWidgetLookup(doc, path); !ok || got != 0.0 {
+			t.Errorf("%s = %v %v, want 0", path, got, ok)
+		}
+	}
+	if _, ok := customWidgetLookup(doc, "missing#"); ok {
+		t.Error("a key that is not there counted as 0")
+	}
+}
