@@ -322,6 +322,7 @@ class SearchCommandsComponent {
         { id: 'data-backups', labelKey: 'commands.configDataBackups', fallback: 'Data & backups' },
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
         { id: 'containers', labelKey: 'commands.configContainers', fallback: 'Containers' },
+        { id: 'unraid', labelKey: 'commands.configUnraid', fallback: 'Unraid' },
         { id: 'stats', labelKey: 'commands.configStats', fallback: 'Statistics' },
         { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help' },
         { id: 'logs', labelKey: 'commands.configLogs', fallback: 'Logs' },

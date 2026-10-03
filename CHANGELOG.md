@@ -225,6 +225,8 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — a new or edited theme shows its depth, glow and effects at once**, not after a reload: the cache of `/api/themes/meta` is refreshed after a colours save.
 - **fix — `:theme`, the random theme and an OS light/dark switch bring the theme's surfaces**, not the previous theme's depth, glow, backdrop and card glass.
 - **fix — surface changes for "this theme" show under Follow system and a random theme.** They were stored under the chosen theme and drawn from the one on screen.
+- **fix — Save as theme gives a typed name a number when it is taken**, and caps it, as a rename does.
+- **fix — `:theme` lists themes made or deleted since the page loaded.**
 
 ### Config
 
@@ -234,6 +236,8 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — Keep settings on this device only leaves web search and container icons to the server.** An old device copy turned web search off for every browser or put old icons back; the Docker keys not yet on the list are added too.
 - **fix — Web search answers follow the SearXNG address.** The cache ignored it, so Test said Working for a broken new address and the panel showed the old instance's results.
 - **fix — a row picked while web results load keeps the selection.** The answer moved it to the first web result, and Enter opened a web page.
+- **fix — one failed status check no longer removes the web search tabs** until a reload.
+- **fix — Config → Unraid can be reached from the command palette** (`:config unraid`).
 
 ### Translations
 
@@ -255,6 +259,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **tests — Playwright:** `icon-set-picker.spec.js` (a suggestion, the picker by keyboard, Escape, offline, Fetch again, dashboard rows), `docker-icons.spec.js` (row icons, Use letter across a reload, Automatic, the picker, the theme switch) and a credits test in `config-about.spec.js`.
 - **tests — the P1s of bug hunt round 3**: a paused parity check, a failed resolver, a recovery seen by a Re-check, an alias match, `:remove` through the trash, and a widget key kept across Save after Health and after a re-picked Plex preset.
 - **tests — the P2s of bug hunt round 3**, each one failing without its fix; `config-docker-usage-alerts` opens the Alerts tab since Containers has tabs.
+- **tests — a selection of the P3s of bug hunt round 3**, each one failing without its fix.
 
 
 ## v1.16.0 — 2 October 2026

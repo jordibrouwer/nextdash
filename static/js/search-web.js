@@ -17,7 +17,12 @@
             statusPromise = fetch('/api/web-search/status', { cache: 'no-store' })
                 .then((r) => (r.ok ? r.json() : null))
                 .catch(() => null)
-                .then((body) => body || { engine: 'off', configured: false, categories: [] });
+                // A failure is not remembered: kept like an answer, one restart
+                // of the server took the category tabs away until a reload.
+                .then((body) => {
+                    if (!body) statusPromise = null;
+                    return body || { engine: 'off', configured: false, categories: [] };
+                });
         }
         return statusPromise;
     }

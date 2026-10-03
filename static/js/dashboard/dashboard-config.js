@@ -10924,6 +10924,9 @@ class DashboardConfig {
                 // until the view was rebuilt from scratch.
                 this._themeList = null;
                 void this.loadThemeList();
+                // :theme keeps its own list from page load: a new theme was
+                // missing, and a deleted one could still be picked.
+                void this.dash.searchComponent?.commandsComponent?.themeCommandHandler?.loadThemes?.();
                 // colors.json is hashed into the settings fingerprint too, so
                 // adopt what this save produced -- otherwise the revision poll
                 // reads our own theme change as another device's and runs a full
@@ -27124,7 +27127,9 @@ class DashboardConfig {
     /** Of a selection, the rows a sweep would actually ask about. */
     bulkFetchTargets(picked, kind) {
         return (picked || []).filter((bookmark) => (kind === 'icons'
-            ? !String(bookmark?.icon || '').trim()
+            // "Use letter" is a choice, not a missing icon: fetched over, the
+            // server cleared it. Its own prefetch skips these rows too.
+            ? !String(bookmark?.icon || '').trim() && bookmark?.iconMode !== 'letter'
             : !this.bookmarkHasPreview(bookmark)));
     }
 

@@ -202,7 +202,11 @@
             submit.addEventListener('click', async () => {
                 submit.disabled = true;
                 const id = await this.saveCurrentAsTheme({
-                    name: dialog.querySelector('[data-save-theme-name]').value.trim() || name,
+                    // Unique and capped, as a rename in the editor is: a typed
+                    // name was saved as a second theme of the same name.
+                    name: global.DashboardConfig.uniqueNameFrom(
+                        (dialog.querySelector('[data-save-theme-name]').value.trim() || name)
+                            .slice(0, global.DashboardConfig.NAME_MAX_LENGTH || 60), taken),
                     withLook: dialog.querySelector('[data-save-theme-look]').checked,
                     withPair: dialog.querySelector('[data-save-theme-pair]').checked,
                 });
