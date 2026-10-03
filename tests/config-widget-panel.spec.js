@@ -321,3 +321,62 @@ test.describe('a figure already on a custom widget can be edited', () => {
         await expect(row.locator('[data-widget-save]')).toBeDisabled();
     });
 });
+
+/*
+ * Health loads the credential names without their details. With those cached,
+ * the widget's own key read as "none" in this panel, and the next Save deleted
+ * it. Plex's fixed Accept header did the same when the preset was picked again
+ * and saved without a key typed.
+ */
+test.describe('a stored widget key survives a save', () => {
+    for (const [service, repick] of [['sonarr', false], ['plex', true]]) {
+        test(`${service}: Health first, then Save keeps the key`, async ({ page }) => {
+            await openWidgets(page);
+            const index = await addWidget(page, 'custom');
+            const row = page.locator(`[data-widget-row="${index}"]`);
+            await row.locator('[data-widget-preset]').selectOption(service);
+            await row.locator('[data-widget-auth="secret"]').fill('the-key');
+            await row.locator('[data-widget-save]').click();
+            await expect.poll(async () => page.evaluate(async () => {
+                const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                const blocks = await (await f('/api/pages/1/blocks')).json();
+                return (blocks.widgets || []).at(-1)?.config?.credentialId || '';
+            })).toMatch(/^widget:/);
+
+            await page.reload({ waitUntil: 'networkidle' });
+            await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+            // What opening Health does: its loader caches the names alone.
+            await page.evaluate(async () => {
+                const mod = await window.dashboardInstance.health.load();
+                await mod.loadHealthCredentials();
+            });
+            // Opened in place: openWidgets reloads, and the reload took the
+            // cache Health had just filled with it.
+            await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
+            await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('widgets'); });
+            await expect(page.locator('[data-widget-catalogue]')).toBeVisible();
+            const toggle = page.locator(`[data-widget-settings="${index}"]`);
+            if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+            const again = page.locator(`[data-widget-row="${index}"]`);
+            if (repick) await again.locator('[data-widget-preset]').selectOption(service);
+            const label = again.locator('[data-custom-field="label"]').first();
+            await label.fill(`${service} figure`);
+            await label.blur();
+            await again.locator('[data-widget-save]').click();
+            await page.waitForTimeout(1500);
+
+            const left = await page.evaluate(async () => {
+                const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                const blocks = await (await f('/api/pages/1/blocks')).json();
+                const id = (blocks.widgets || []).at(-1)?.config?.credentialId || '';
+                const creds = await (await f('/api/health/credentials')).json();
+                return { id, filed: !!creds?.credentials?.[id], details: creds?.details?.[id] || null };
+            });
+            expect(left.id).toMatch(/^widget:/);
+            expect(left.filed).toBe(true);
+            // The key itself, not only a header that rides along with it.
+            if (service === 'plex') expect(left.details?.query || []).not.toHaveLength(0);
+            else expect((left.details?.headers || []).join(' ')).toMatch(/api-key/i);
+        });
+    }
+});

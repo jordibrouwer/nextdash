@@ -212,6 +212,8 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **tests — Apprise:** `notify-apprise.spec.js` picks Apprise in the panel, fills in the URL and a tag and presses Send test alert against a stub apprise-api, checking the body that arrives and the sentence shown for a 424; Go tables cover the type per event, the tag and the refusals.
 - **tests — presets against recorded answers:** `widget-presets-recorded.spec.js` points every preset still offered at a local stub that answers with its service's documented response (`tests/fixtures/widget-presets/`, source in each), through the route Ask now uses, and fails on a figure that finds nothing or finds a whole object. The fixture holds the service's side of the sign-in, so a wrong header or prefix in a preset fails too. Through the panel itself: retired presets are not offered, and Pi-hole v6 asks for a password only and signs in on Ask now. Go: counting and the last entry, and the token sign-in (prefix, no prefix, password only, renewal, no token).
 - **tests — Playwright:** `icon-set-picker.spec.js` (a suggestion, the picker by keyboard, Escape, offline, Fetch again, dashboard rows), `docker-icons.spec.js` (row icons, Use letter across a reload, Automatic, the picker, the theme switch) and a credits test in `config-about.spec.js`.
+- **tests — the P1s of bug hunt round 3**: a paused parity check, a failed resolver, a recovery seen by a Re-check, an alias match, `:remove` through the trash, and a widget key kept across Save after Health and after a re-picked Plex preset.
+
 
 ## v1.16.0 — 2 October 2026
 

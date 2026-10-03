@@ -645,6 +645,7 @@ class DashboardHealth {
             if (!res.ok) return {};
             const data = await res.json();
             this.dash.healthCredentials = data?.credentials || {};
+            this.dash.healthCredentialDetails = data?.details || {};
         } catch (_error) {
             this.dash.healthCredentials = {};
         }

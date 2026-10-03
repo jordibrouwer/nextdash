@@ -20560,9 +20560,12 @@ class DashboardConfig {
 
     /** Fetch the credential names once, so a picker can offer them. */
     async loadCredentialNames() {
-        if (this.dash.healthCredentials) return this.dash.healthCredentials;
+        // Details too: Health loads the names alone, and with those cached a
+        // widget's own key read as "none" here and Save deleted it.
+        if (this.dash.healthCredentials && this.dash.healthCredentialDetails) return this.dash.healthCredentials;
         try {
-            const res = await fetch('/api/health/credentials');
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await api('/api/health/credentials');
             if (!res.ok) return {};
             const data = await res.json();
             this.dash.healthCredentials = data?.credentials || {};
@@ -22320,7 +22323,9 @@ class DashboardConfig {
                 // Plex answers XML unless asked otherwise, and that Accept
                 // header is not a secret anyone should be asked to type: it
                 // rides along with the key rather than being a second question.
-                if (auth.fixedHeaders) payload.headers = { ...auth.fixedHeaders };
+                // Only with a key: the PUT replaces the whole entry, and the
+                // header alone filed over a stored key deleted it.
+                if (secret && auth.fixedHeaders) payload.headers = { ...auth.fixedHeaders };
             } else if (auth.kind === 'header') {
                 const name = String(auth.headerName || '').trim();
                 if (!name) { say(this.t('config.widgetAuthNeedsHeader', 'Name the header first.')); return; }
