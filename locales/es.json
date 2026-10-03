@@ -4736,6 +4736,7 @@
     "tipEditRenamePage": "Haz doble clic en una pestaña de página para renombrarla y darle un emoji y un color.",
     "tipEditPageTabDot": "Haz doble clic en una pestaña de página y elige un color: aparece un punto de color en la pestaña para distinguir las páginas de un vistazo.",
     "tipEditCopyUrl": "<code>Ctrl+C</code> copia la URL del marcador seleccionado.",
+    "tipEditQrCode": "¿Quieres un enlace en el móvil? Selecciona un marcador y pulsa <code>Shift+J</code>, o elige <em>Código QR</em> en su menú contextual, y escanea el código. Se dibuja en tu navegador, así que la dirección no va a ninguna parte.",
     "tipFindAddressBar": "La barra de direcciones de tu navegador es un cuadro de búsqueda de nextDash: tras una visita, escribe la palabra clave, <code>Tab</code>, un término y <code>Enter</code>. Dale una palabra clave corta en los ajustes del propio navegador.",
     "tipFindWeb": "Con la búsqueda web activada (Comportamiento → Teclado y búsqueda), <code>Shift+Enter</code> en el panel de búsqueda pregunta a la web a través de tu propio servidor. <code>Alt+Enter</code> sobre un resultado abre tu propio marcador de ese sitio.",
     "tipTuneWidgets": "Una página puede tener widgets además de categorías — disponibilidad, una tendencia de treinta días, la bandeja, lo que nunca abriste, los enlaces que esperan en Sin ordenar, los contenedores de esta máquina, y las fuentes, feeds y certificados que requieren atención. <strong>Configuración → Widgets</strong>, y luego arrástralos a su sitio.",

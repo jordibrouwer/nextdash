@@ -4736,6 +4736,7 @@
     "tipEditRenamePage": "双击页面标签就能重命名，并给它配一个 emoji 和颜色。",
     "tipEditPageTabDot": "双击页面标签再挑一个色块——标签上会出现一个颜色圆点，一眼就能分清页面。",
     "tipEditCopyUrl": "<code>Ctrl+C</code> 复制选中书签的网址。",
+    "tipEditQrCode": "想在手机上打开链接？选中一个书签后按 <code>Shift+J</code>，或在右键菜单中选择<em>二维码</em>，然后扫码即可。二维码在你的浏览器中绘制，地址不会发送到任何地方。",
     "tipFindAddressBar": "浏览器的地址栏就是一个 nextDash 搜索框：访问过一次之后，输入关键词、按 <code>Tab</code>、输入词、<code>Enter</code>。在浏览器自己的设置里给它配一个短关键词。",
     "tipFindWeb": "开启网络搜索后（行为 → 键盘与搜索），在搜索面板中按 <code>Shift+Enter</code> 会通过你自己的服务器搜索网络。在结果上按 <code>Alt+Enter</code> 会打开你为该网站保存的书签。",
     "tipTuneWidgets": "页面除了分类还可以放小组件——在线率、三十天趋势、收件箱、从未打开的书签、在未整理中等待的链接、这台机器的容器，以及需要关注的来源、订阅源和证书。打开<strong>配置 → 小组件</strong>，再把它们拖到位。",

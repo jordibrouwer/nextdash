@@ -4753,6 +4753,7 @@
     "tipEditRenamePage": "Double-click a page tab to rename it and give it an emoji and colour.",
     "tipEditPageTabDot": "Double-click a page tab and pick a colour swatch — a colour dot appears on the tab so you can tell pages apart at a glance.",
     "tipEditCopyUrl": "<code>Ctrl+C</code> copies the selected bookmark's URL.",
+    "tipEditQrCode": "Want a link on your phone? Select a bookmark and press <code>Shift+J</code>, or pick <em>QR code</em> in its right-click menu, and scan the code. It is drawn in your browser, so the address goes nowhere.",
     "tipFindAddressBar": "Your browser's address bar is a nextDash search box: after one visit, type the keyword, <code>Tab</code>, a term, <code>Enter</code>. Give it a short keyword in the browser's own settings.",
     "tipFindWeb": "With web search on (Behavior → Keyboard &amp; search), <code>Shift+Enter</code> in the search panel asks the web through your own server. <code>Alt+Enter</code> on a result opens your own bookmark for that site.",
     "tipTuneWidgets": "A page can hold widgets as well as categories — uptime, a thirty-day trend, the inbox, what you never opened, the links waiting in Unsorted, this machine’s containers, and the sources, feeds and certificates that need attention. <strong>Config → Widgets</strong>, then drag them into place.",

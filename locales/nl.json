@@ -4736,6 +4736,7 @@
     "tipEditRenamePage": "Dubbelklik op een paginatab om hem te hernoemen en een emoji en kleur te geven.",
     "tipEditPageTabDot": "Dubbelklik op een paginatab en kies een kleur — er verschijnt een kleur stip op het tabblad zodat je pagina's in één oogopslag uit elkaar houdt.",
     "tipEditCopyUrl": "<code>Ctrl+C</code> kopieert de URL van de geselecteerde bookmark.",
+    "tipEditQrCode": "Een link op je telefoon nodig? Selecteer een bladwijzer en druk op <code>Shift+J</code>, of kies <em>QR-code</em> in het rechtsklikmenu, en scan de code. Hij wordt in je browser getekend, dus het adres gaat nergens heen.",
     "tipFindAddressBar": "De adresbalk van je browser is een nextDash-zoekvak: na één bezoek typ je het trefwoord, <code>Tab</code>, een term, <code>Enter</code>. Geef het een kort trefwoord in de instellingen van de browser zelf.",
     "tipFindWeb": "Met zoeken op het web aan (Gedrag → Toetsenbord &amp; zoeken) vraagt <code>Shift+Enter</code> in het zoekpaneel het web, via je eigen server. <code>Alt+Enter</code> op een resultaat opent je eigen bladwijzer voor die site.",
     "tipTuneWidgets": "Een pagina kan naast categorieën ook widgets bevatten — uptime, een trend over dertig dagen, de inbox, wat je nooit opende, de links die in Unsorted wachten, de containers van deze machine, en de bronnen, feeds en certificaten die aandacht nodig hebben. <strong>Config → Widgets</strong>, en sleep ze dan op hun plek.",

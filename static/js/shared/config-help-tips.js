@@ -65,6 +65,7 @@
                 'tipEditRenamePage',
                 'tipEditPageTabDot',
                 'tipEditCopyUrl',
+                'tipEditQrCode',
                 'tipEditCategorySpread',
                 'tipEditPromote',
                 'tipEditPanel',

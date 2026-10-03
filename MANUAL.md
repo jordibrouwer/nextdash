@@ -627,6 +627,9 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 
 The menu also opens with **`Shift + F10`** or the **Menu** key, beside the row.
 
+> [!TIP]
+> **A link on your phone.** Select the bookmark and press **`Shift + J`**, or pick **QR code** in this menu, then scan the code with the phone's camera. On an inbox row the code holds the item's own link, as Share does. The code is drawn in the browser, so the address is not sent anywhere.
+
 <a id="editing-in-place"></a>
 
 ### ✏️ Editing in place

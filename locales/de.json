@@ -4736,6 +4736,7 @@
     "tipEditRenamePage": "Doppelklicke einen Seiten-Tab, um ihn umzubenennen und Emoji und Farbe zu geben.",
     "tipEditPageTabDot": "Doppelklicke einen Seiten-Tab und wähle eine Farbe — ein Farbpunkt erscheint auf dem Tab, damit du Seiten auf einen Blick unterscheidest.",
     "tipEditCopyUrl": "<code>Ctrl+C</code> kopiert die URL des ausgewählten Lesezeichens.",
+    "tipEditQrCode": "Einen Link aufs Handy? Wähle ein Lesezeichen und drück <code>Shift+J</code>, oder nimm <em>QR-Code</em> im Rechtsklickmenü, und scanne den Code. Er wird in deinem Browser gezeichnet, die Adresse geht also nirgendwohin.",
     "tipFindAddressBar": "Die Adresszeile deines Browsers ist ein nextDash-Suchfeld: nach einem Besuch tippst du das Stichwort, <code>Tab</code>, einen Begriff, <code>Enter</code>. Ein kurzes Stichwort vergibst du in den Einstellungen des Browsers.",
     "tipFindWeb": "Mit eingeschalteter Websuche (Verhalten → Tastatur &amp; Suche) fragt <code>Shift+Enter</code> im Suchpanel das Web, über deinen eigenen Server. <code>Alt+Enter</code> auf einem Ergebnis öffnet dein eigenes Lesezeichen für diese Seite.",
     "tipTuneWidgets": "Eine Seite kann neben Kategorien auch Widgets enthalten — Uptime, einen Dreißig-Tage-Trend, den Posteingang, was du nie geöffnet hast, die Links, die in Unsortiert warten, die Container dieses Rechners, und die Quellen, Feeds und Zertifikate, die Aufmerksamkeit brauchen. <strong>Config → Widgets</strong>, dann an ihren Platz ziehen.",

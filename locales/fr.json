@@ -4736,6 +4736,7 @@
     "tipEditRenamePage": "Double-cliquez sur un onglet de page pour le renommer et lui donner un emoji et une couleur.",
     "tipEditPageTabDot": "Double-cliquez sur un onglet de page et choisissez une couleur — une pastille apparaît sur l'onglet pour distinguer vos pages d'un coup d'œil.",
     "tipEditCopyUrl": "<code>Ctrl+C</code> copie l'URL du favori sélectionné.",
+    "tipEditQrCode": "Un lien à ouvrir sur votre téléphone ? Sélectionnez un favori et appuyez sur <code>Shift+J</code>, ou choisissez <em>Code QR</em> dans son menu contextuel, puis scannez le code. Il est dessiné dans votre navigateur : l’adresse ne va nulle part.",
     "tipFindAddressBar": "La barre d'adresse de ton navigateur est un champ de recherche nextDash : après une visite, tape le mot-clé, <code>Tab</code>, un terme, <code>Entrée</code>. Donne-lui un mot-clé court dans les réglages du navigateur.",
     "tipFindWeb": "Avec la recherche web activée (Comportement → Clavier &amp; recherche), <code>Shift+Enter</code> dans le panneau de recherche interroge le web via votre propre serveur. <code>Alt+Enter</code> sur un résultat ouvre votre propre favori pour ce site.",
     "tipTuneWidgets": "Une page peut contenir des widgets en plus des catégories — la disponibilité, une tendance sur trente jours, la boîte de réception, ce que vous n’avez jamais ouvert, les liens en attente dans Non classés, les conteneurs de cette machine, et les sources, flux et certificats qui demandent attention. <strong>Config → Widgets</strong>, puis faites-les glisser à leur place.",
