@@ -50,12 +50,12 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-containers-health.jpg" alt="Containers view with health" width="100%" />
       <br />
-      <sub><b>Containers and health</b> <i>(Gloss Chrome)</i> — Grouped by compose project, each web UI with its bookmark's mark: green where the monitor finds it up, red for Immich. Its side panel shows why — three failed healthchecks, out of memory, a restart loop since the update two hours ago.</sub>
+      <sub><b>Containers and health</b> <i>(Deep Lagoon)</i> — Grouped by compose project, each container with its app icon and each web UI with its bookmark's mark: green where the monitor finds it up, red for Immich. The side panel says why — three failed healthchecks, an out-of-memory crash and a restart loop since this afternoon's update.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-containers-updates.jpg" alt="Automatic update rolled back" width="100%" />
       <br />
-      <sub><b>Updates with a way back</b> <i>(Cosmic Editor)</i> — Paperless updates itself between 03:00 and 05:00. Last night's version turned unhealthy within two minutes, so it was rolled back and skipped; History and Timeline say what happened, and a notice said so on your phone.</sub>
+      <sub><b>Updates with a way back</b> <i>(Smoked Plum)</i> — Paperless updates itself between 03:00 and 05:00. Last night's version turned unhealthy within two minutes, so it was rolled back and that version skipped; History and Timeline say what happened, and a notice reached your phone.</sub>
     </td>
   </tr>
 </table>
@@ -70,24 +70,24 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard.jpg" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> <i>(Gloss Chrome)</i> — Categories in columns with a live response time on every monitored link, and widgets between them: health, uptime with a heartbeat per site and the weather across two columns, the inbox and an RSS feed. The header is one row — clock and weather, page tabs, destinations with their badges.</sub>
+      <sub><b>Dashboard</b> <i>(Aurora Glass)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather across two columns, the inbox and an RSS feed. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-bookmarks-view.jpg" alt="Bookmarks view" width="100%" />
       <br />
-      <sub><b>Bookmarks view</b> <i>(Cosmic Editor)</i> — The whole collection in one place: a rail of views, health filters, pages, categories and tags; one-line rows with tags, shortcut, opens and when each was last used; a side panel with Details, Health and Usage that saves as you type.</sub>
+      <sub><b>Bookmarks view</b> <i>(Rose Pine)</i> — The whole collection in one place: a rail with the health score, views, health filters, pages and categories; one row per bookmark with its tags, shortcut, a month of use and when it was last opened; a side panel with Details, Health and Usage that saves as you type.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-search.jpg" alt="Search" width="100%" />
       <br />
-      <sub><b>Search</b> <i>(Frosted Juniper, light)</i> — One panel for bookmarks, commands and finders. Type a word and <kbd>/</kbd> turns it into a name search: best matches first, a tag to filter on, and the commands that fit. <kbd>Tab</kbd> switches between the modes on the left.</sub>
+      <sub><b>Search</b> <i>(Porcelain Blue, light)</i> — One panel for bookmarks, commands, finders, tags and containers. <kbd>/</kbd> turns a word into a name search: a tag to filter on, the best match, what matched in a tag, note or address, and the container by that name. <kbd>Tab</kbd> switches between the modes on the left.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-inbox.jpg" alt="Inbox view" width="100%" />
       <br />
-      <sub><b>Inbox</b> <i>(Desert Sand, light)</i> — Links saved before you knew where they belong, grouped by when they arrived. The side panel holds the note and tags; open, promote or keep a link without leaving the list.</sub>
+      <sub><b>Inbox</b> <i>(Paper Ink, light)</i> — Links saved before you knew where they belong, grouped by when they arrived, with the keys for every action under the list. The side panel holds the note and the tags; open, promote or keep a link without leaving the list.</sub>
     </td>
   </tr>
 </table>
@@ -101,60 +101,60 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard-homelab.jpg" alt="Homelab dashboard" width="100%" />
       <br />
-      <sub><b>A second page</b> <i>(Matrix Rain)</i> — A homelab page: the container count and the Container list widget two columns wide, uptime for this page, certificates close to expiry and the health trend over 30 days, beside self-hosted services with their own icons.</sub>
+      <sub><b>A second page</b> <i>(Terminal Amber)</i> — A homelab page: the container count, the Container list two columns wide with the failing one first, uptime for this page, certificates close to expiry and the health trend over 30 days, beside the self-hosted services with their own icons.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-triage.jpg" alt="Inbox triage" width="100%" />
       <br />
-      <sub><b>Triage</b> <i>(Matrix Rain)</i> — <kbd>t</kbd> in the inbox takes the links pile by pile — waiting longest, new this week, with a note — one at a time, each saying where it came from, with Promote as the one clear next step.</sub>
+      <sub><b>Triage</b> <i>(Royal Amethyst)</i> — <kbd>t</kbd> in the inbox takes the links pile by pile — waiting longest, new this week, with a note — one at a time, each saying where it came from and how long it has waited, with Promote as the clear next step.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-bookmarks-health.jpg" alt="Broken bookmarks" width="100%" />
       <br />
-      <sub><b>Broken links</b> <i>(Gloss Amber)</i> — The Bookmarks view on its Broken filter: what does not answer and why, a score per bookmark, and Work through to clear them one at a time.</sub>
+      <sub><b>Broken links</b> <i>(Oxblood Leather)</i> — The Bookmarks view on its Broken filter: what does not answer and why, a score for each, and Work through to clear them one at a time. The rail counts every other health filter beside it.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-collection-health.jpg" alt="Collection health" width="100%" />
       <br />
-      <sub><b>Collection health</b> <i>(Desert Sand, light)</i> — Score over time, what is wrong and by what kind, health per page, checking coverage, monitor uptime and certificates on one screen; every number opens its filter.</sub>
+      <sub><b>Collection health</b> <i>(Salt Flat, light)</i> — <kbd>h</kbd> in the Bookmarks view: the score over time, what is wrong and of what kind, health per page, checking coverage, monitor uptime with the least reliable named, and certificates running out. Every number opens its filter.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-search-tags.jpg" alt="Tag search" width="100%" />
       <br />
-      <sub><b>Search by tag</b> <i>(ThinkDashboard)</i> — <code>tag:self-hosted</code> narrows search to one tag across every page, each result with its shortcut.</sub>
+      <sub><b>Search by tag</b> <i>(Neon Grid)</i> — <code>tag:self-hosted</code> narrows search to one tag across every page, each result with its icon and shortcut.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-commands.jpg" alt="Command palette" width="100%" />
       <br />
-      <sub><b>Command palette</b> <i>(Gloss Chrome)</i> — <code>:docker jellyfin</code> offers what can be done to that container — stop, restart, pause, update, open its web UI or read its logs.</sub>
+      <sub><b>Command palette</b> <i>(Midnight Firefly)</i> — <code>:docker</code> lists every container with its state; pick one to start, stop, restart or update it, open its web UI or read its logs.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-containers.jpg" alt="Containers view" width="100%" />
       <br />
-      <sub><b>Containers</b> <i>(ThinkDashboard)</i> — Every container on the host with a status glow, its ports and a web UI column. The side panel shows CPU, memory, network and disk over the last hour, and a web UI's bookmark carries its health. Start, stop and update are one key away when you turn control on — or updates run at night, rolled back if they fail.</sub>
+      <sub><b>Containers</b> <i>(Harbour Fog)</i> — Every container on the host with its app icon, a status glow, CPU, memory and a web UI column. The side panel draws CPU, memory, network and disk over the last hour, and a web UI's bookmark carries its health. Start, stop and update are one key away once control is on.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-themes.jpg" alt="Theme browser" width="100%" />
+      <img src="screenshots/nextdash-themes.jpg" alt="Look studio" width="100%" />
       <br />
-      <sub><b>Themes</b> <i>(Frosted Juniper, light)</i> — 160 theme families, each with a light and a dark half, searchable and filtered by character: lacquer, glass, velvet, terminal and eight more; the newest wear a <i>new</i> badge. <kbd>Shift</kbd>+<kbd>A</kbd> opens the browser from anywhere.</sub>
+      <sub><b>The look studio</b> <i>(Mulberry Silk)</i> — <kbd>Shift</kbd>+<kbd>A</kbd> opens it beside the dashboard: 160 theme families with a light and a dark half, filtered by character, and tabs for the backdrop, card surface, headers, layout and ready-made looks. Every change shows on your own page, and nothing is saved until Apply.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-config-appearance.jpg" alt="Config: Appearance" width="100%" />
       <br />
-      <sub><b>Config → Appearance</b> <i>(Gloss Amber)</i> — Appearance in tabs — Look, Grid, Rows, Header, Action bar, Date &amp; weather — with a small live preview of your dashboard beside it. Every change applies and saves at once.</sub>
+      <sub><b>Config → Appearance</b> <i>(Sea Glass, light)</i> — Eight tabs — Look, Background, Surface, Grid, Rows, Header, Action bar, Date &amp; weather — with a small live preview of your dashboard beside them. Every change applies and saves at once.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-config-statistics.jpg" alt="Config: Statistics" width="100%" />
       <br />
-      <sub><b>Config → Statistics</b> <i>(Cosmic Editor)</i> — Six figures per tab, what needs attention with a button for each, the cleanup score and the charts behind them — across Overview, Usage, Collection, Inbox and Health.</sub>
+      <sub><b>Config → Statistics</b> <i>(Copper Circuit)</i> — Six figures per tab, what needs attention with a button for each, the cleanup score, and charts you can point at — across Overview, Usage, Collection, Inbox and Health.</sub>
     </td>
   </tr>
 </table>
