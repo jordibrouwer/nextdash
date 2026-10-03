@@ -11651,7 +11651,10 @@ class DashboardConfig {
     }
 
     setTheme(theme) {
-        void this.applyThemeChoice(theme);
+        // A theme of the reader's own may bring a look; Quick mode switches
+        // halves through applyThemeChoice directly and so never reaches this.
+        const previous = this.dash.settings?.theme;
+        void this.applyThemeChoice(theme).then(() => this.applyThemeLookAndSave?.(theme, previous));
     }
 
     /**

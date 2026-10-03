@@ -330,7 +330,7 @@
                 </div>`;
     }
 
-    function renderBody(families, state, t) {
+    function renderBody(families, state, t, lookSwitch) {
         const visible = families.filter((f) => matches(f, state, t));
         // Under All, with nothing typed, the reader's own themes come first
         // under a heading of their own; they would otherwise be lost among
@@ -343,6 +343,8 @@
                 + visible.filter((f) => !isOwnFamily(f)).map((f) => renderCard(f, state, t)).join('')
             : visible.map((f) => renderCard(f, state, t)).join('');
         const hasOwn = families.some(isOwnFamily);
+        // The switch only means something once a theme brings a look along.
+        const hasLook = families.some((f) => Object.values(f.variants).some((v) => metaFor(v.id).look === true));
         const chipButton = (name, label, st) =>
             `<button type="button" class="theme-browser-chip${st.archetype === name ? ' is-on' : ''}"
                      data-theme-character="${escapeHtml(name)}"
@@ -389,6 +391,11 @@
                         .replace('{favorites}', String(state.favorites.length))
                 )}</p>
                 ${renderInUse(state, t)}
+                ${lookSwitch && hasLook ? `
+                <label class="theme-browser-look-switch">
+                    <input type="checkbox" data-studio-theme-look ${lookSwitch.get() ? 'checked' : ''}>
+                    <span>${escapeHtml(t('config.studioUseThemeLook', 'Use this theme’s look'))}</span>
+                </label>` : ''}
                 <div class="theme-browser-grid" role="listbox"
                      aria-label="${escapeHtml(t('config.themeLabel', 'Theme'))}"
                      data-theme-grid>${cards || `<p class="theme-browser-empty">${escapeHtml(
@@ -576,7 +583,7 @@
             const hadSearch = active && active.hasAttribute?.('data-theme-search');
             const caret = hadSearch ? active.selectionStart : null;
             const focusedCard = active?.closest?.('[data-theme-card]')?.getAttribute('data-theme-card');
-            pane.innerHTML = renderBody(families, state, t);
+            pane.innerHTML = renderBody(families, state, t, opts.lookSwitch);
             bindThemes();
             const fresh = pane.querySelector('[data-theme-grid]');
             if (fresh) fresh.scrollTop = scroll;
@@ -632,6 +639,9 @@
 
         const bindThemes = () => {
             bindShowCurrent();
+            pane.querySelector('[data-studio-theme-look]')?.addEventListener('change', (event) => {
+                opts.lookSwitch?.set(event.target.checked);
+            });
             const search = pane.querySelector('[data-theme-search]');
             search?.addEventListener('input', (event) => {
                 state.query = event.target.value || '';

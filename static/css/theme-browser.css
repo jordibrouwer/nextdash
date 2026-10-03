@@ -322,6 +322,16 @@
     color: var(--text-secondary);
 }
 
+/* "Use this theme's look": under the In use line, quiet until needed. */
+.theme-browser-look-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
 /* "Your themes" and "Built in", across the whole grid row. */
 .theme-browser-group-head {
     grid-column: 1 / -1;

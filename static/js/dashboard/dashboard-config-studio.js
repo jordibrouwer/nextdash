@@ -238,6 +238,10 @@
                 t: (key, fallback) => this.t(key, fallback),
                 displayName: (id, name) => this.themeDisplayName(id, name),
                 onSelect: (id) => this.studioSelectTheme(id),
+                lookSwitch: {
+                    get: () => this.studioUsesThemeLook(),
+                    set: (on) => this.setStudioUsesThemeLook(on),
+                },
                 onPreview: (id) => this.studioPreviewTheme(id),
                 onPreviewEnd: () => this.studioEndPreview(),
                 onFavorites: (favorites) => {
@@ -343,7 +347,14 @@
 
         studioSelectTheme(id) {
             if (!id || !this._lookStudio) return;
+            const pairOf = (themeId) => window.ThemeUtils?.getPairedThemeVariant?.(themeId, true) || themeId;
+            const sameFamily = pairOf(this.dash.settings.theme || 'dark') === pairOf(id);
             this.dash.settings.theme = id;
+            // A look comes with the theme, not with its other half: switching
+            // halves of one pair keeps whatever look is on screen. Set after
+            // the theme, so answers kept per theme land on the new one.
+            const look = this.themeLookOf(id);
+            if (look && !sameFamily && this.studioUsesThemeLook()) this.applyLookAnswers(look);
             this.applyStudioLook();
         },
 
@@ -562,23 +573,65 @@
             }
         },
 
-        /** Set every answer a built-in look gives, through the controls' own setters. */
         useStudioLook(id) {
-            const look = LOOKS.find((l) => l.id === id);
+            this.applyLookAnswers(LOOKS.find((l) => l.id === id));
+        },
+
+        /**
+         * Set every answer a look gives, built in or a theme's own, through
+         * the controls' own setters. One path for both, so the two cannot
+         * drift apart. A part the look does not have is left as it is.
+         */
+        applyLookAnswers(look) {
             const settings = this.dash.settings;
             if (!look || !settings) return;
-            const tuning = { ...DEFAULT_TUNING, ...(settings.backdropTuning || {}), ...look.tuning };
-            settings.backdropTuning = tuning;
-            this.applyBackdropTuning(tuning);
-            Object.assign(settings, look.heads);
-            this.applyChromeSettings();
-            this.setCardGlass(look.glass);
+            if (look.tuning) {
+                const tuning = { ...DEFAULT_TUNING, ...(settings.backdropTuning || {}), ...look.tuning };
+                settings.backdropTuning = tuning;
+                this.applyBackdropTuning(tuning);
+            }
+            if (look.heads) {
+                Object.assign(settings, look.heads);
+                this.applyChromeSettings();
+            }
+            if (look.glass) this.setCardGlass(look.glass);
             if (look.depth) this.setSurface('themeDepth', look.depth);
-            if (look.backdrop !== 'off') this._lastBackdropPick = look.backdrop;
-            this.setBackdropChoice(look.backdrop);
-            this.setAppearanceSelect('fontPreset', look.text.fontPreset);
-            void this.setBehavior('densityMode', look.text.densityMode, 'chromeRender');
-            void this.setBehavior('categorySpacing', look.text.categorySpacing, 'chromeRender');
+            if (look.backdrop) {
+                if (look.backdrop !== 'off') this._lastBackdropPick = look.backdrop;
+                this.setBackdropChoice(look.backdrop);
+            }
+            if (look.text?.fontPreset) this.setAppearanceSelect('fontPreset', look.text.fontPreset);
+            if (look.text?.densityMode) void this.setBehavior('densityMode', look.text.densityMode, 'chromeRender');
+            if (look.text?.categorySpacing) void this.setBehavior('categorySpacing', look.text.categorySpacing, 'chromeRender');
+        },
+
+        /** The look a theme of the reader's own brings along, or null. */
+        themeLookOf(id) {
+            return this._colorsData?.custom?.[id]?.look || null;
+        },
+
+        /** "Use this theme's look", remembered per browser; on unless turned off. */
+        studioUsesThemeLook() {
+            try { return localStorage.getItem('nextdash:studio-use-theme-look') !== '0'; } catch (_) { return true; }
+        },
+
+        setStudioUsesThemeLook(on) {
+            try { localStorage.setItem('nextdash:studio-use-theme-look', on ? '1' : '0'); } catch (_) { /* private mode */ }
+        },
+
+        /**
+         * A theme picked outside the studio (the Appearance picker, `:theme`)
+         * brings its look at once, and it is saved at once. Not on switching
+         * halves of the same pair.
+         */
+        async applyThemeLookAndSave(id, previous) {
+            const pairOf = (themeId) => window.ThemeUtils?.getPairedThemeVariant?.(themeId, true) || themeId;
+            if (previous && pairOf(previous) === pairOf(id)) return;
+            await this.loadColorsData();
+            const look = this.themeLookOf(id);
+            if (!look || this.dash.settings?.theme !== id) return;
+            this.applyLookAnswers(look);
+            await this.saveSettingsWithFeedback();
         },
 
         /* ── Compare, Cancel, Apply ─────────────────────────────────────── */
