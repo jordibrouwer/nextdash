@@ -60,9 +60,16 @@ class SearchCommandTheme {
             shortcut: ':theme',
             stateId: `theme:${themeId}`,
             action: () => {
-                this.applyTheme(themeId);
+                const previous = window.dashboardInstance?.settings?.theme;
+                const saved = this.applyTheme(themeId);
                 if (window.dashboardInstance?.settings) {
                     window.dashboardInstance.settings.theme = themeId;
+                }
+                // A theme of the reader's own may bring a look. Only those
+                // load config for it; a packaged theme has none.
+                if (window.ThemeUtils?.isUserCustomThemeId?.(themeId)) {
+                    void Promise.resolve(saved).then(() =>
+                        window.dashboardInstance?.config?.applyThemeLookAndSave?.(themeId, previous));
                 }
                 return { stateId: `theme:${themeId}` };
             },

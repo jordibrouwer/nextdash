@@ -1981,6 +1981,8 @@ class DashboardConfig {
             description.textContent = reset ? '' : description.textContent;
             description.hidden = !description.textContent.trim();
         }
+        // The band cuts the line to one, so the whole sentence rides on hover.
+        if (description) description.title = description.textContent.trim();
 
         const actions = head.querySelector('.lvs-header-actions');
         // Rendered here from state rather than lifted out of the body.
@@ -9722,11 +9724,31 @@ class DashboardConfig {
         );
         // Make sure the saved theme is selectable even before the list loads.
         if (!themes[current]) entries.unshift([current, '']);
-        return entries.map(([id, name]) =>
+        const recoloured = (id) => this._themeMeta?.themes?.[id]?.recoloured === true;
+        const option = ([id, name]) =>
             `<li role="option" class="config-theme-picker-option" data-theme-option="${esc(id)}"
                  id="config-theme-opt-${esc(id)}" aria-selected="${id === current}"
-                 ${id === current ? 'data-theme-current' : ''}>${esc(this.themeDisplayName(id, name))}</li>`
-        ).join('');
+                 ${id === current ? 'data-theme-current' : ''}>${esc(this.themeDisplayName(id, name))}${recoloured(id)
+                    ? ` <span class="config-theme-picker-note">· ${esc(this.t('config.themeRecoloured', 'recoloured'))}</span>` : ''}</li>`;
+        // The reader's own themes first, in a group of their own.
+        const group = (key, label, list) => (list.length ? `
+            <li role="presentation" class="config-theme-picker-group" data-theme-picker-group="${key}">
+                <span class="config-theme-picker-group-label">${esc(label)}</span>
+                <ul role="group" aria-label="${esc(label)}">${list.map(option).join('')}</ul>
+            </li>` : '');
+        return group('yours', this.t('config.customThemesTitle', 'Your themes'), entries.filter(([id]) => this.isOwnTheme(id)))
+            + group('builtin', this.t('config.themeGroupBuiltIn', 'Built in'), entries.filter(([id]) => !this.isOwnTheme(id)));
+    }
+
+    /** A theme the reader made, as opposed to one that ships with nextDash. */
+    isOwnTheme(id) {
+        return this._themeMeta?.themes?.[id]?.own === true || Boolean(window.ThemeUtils?.isUserCustomThemeId?.(id));
+    }
+
+    /** The closed picker's text: the theme's name, and "· yours" for one of the reader's own. */
+    themePickerLabel(id) {
+        const name = this.themeDisplayName(id, this._themeList?.[id] || '');
+        return this.isOwnTheme(id) ? `${name} · ${this.t('config.themeYours', 'yours')}` : name;
     }
 
     /**
@@ -9745,7 +9767,14 @@ class DashboardConfig {
     renderThemePicker() {
         const esc = (v) => this.dash.escapeHtml(v);
         const current = this.dash.settings?.theme || 'dark';
-        const label = this.themeDisplayName(current, this._themeList?.[current] || '');
+        const label = this.themePickerLabel(current);
+        // "· recoloured" needs the theme meta; redraw the closed list once it lands.
+        if (!this._themeMeta) {
+            void this.loadThemeMeta().then(() => {
+                const list = document.querySelector('[data-theme-picker-list]');
+                if (list?.hidden) list.innerHTML = this.renderThemeOptions();
+            }).catch(() => {});
+        }
         return `
             <div class="config-theme-picker" data-theme-picker>
                 <button type="button" class="config-select config-theme-picker-button"
@@ -9823,7 +9852,7 @@ class DashboardConfig {
             button.setAttribute('aria-expanded', 'false');
             button.setAttribute('value', id);
             const labelEl = button.querySelector('[data-theme-picker-label]');
-            if (labelEl) labelEl.textContent = option.textContent;
+            if (labelEl) labelEl.textContent = this.themePickerLabel(id);
             options().forEach((o) => {
                 o.setAttribute('aria-selected', String(o === option));
                 o.toggleAttribute('data-theme-current', o === option);
@@ -10001,7 +10030,7 @@ class DashboardConfig {
             list.innerHTML = this.renderThemeOptions();
             const current = this.dash.settings?.theme || 'dark';
             const label = list.parentElement?.querySelector('[data-theme-picker-label]');
-            if (label) label.textContent = this.themeDisplayName(current, this._themeList?.[current] || '');
+            if (label) label.textContent = this.themePickerLabel(current);
         }
     }
 
@@ -10434,7 +10463,7 @@ class DashboardConfig {
         { prop: 'sheen', kind: 'range', min: 0.05, max: 1, step: 0.05, key: 'themeCharSheen', label: 'Gloss' },
         { prop: 'grainAngle', kind: 'range', min: 0, max: 180, step: 5, unit: 'deg', key: 'themeCharGrainAngle', label: 'Grain direction' },
         { prop: 'grainScale', kind: 'range', min: 0.05, max: 1, step: 0.05, key: 'themeCharGrainScale', label: 'Grain strength' },
-        { prop: 'backdrop', kind: 'select', options: ['blooms', 'sweep', 'wireframe', 'glow', 'band', 'rings', 'scanlines', 'crosshatch', 'horizon'], key: 'themeCharBackdrop', label: 'Backdrop pattern' },
+        { prop: 'backdrop', kind: 'tiles', key: 'themeCharBackdrop', label: 'Backdrop pattern' },
         /*
          * The surfaces this theme is drawn for.
          *
@@ -10590,7 +10619,7 @@ class DashboardConfig {
         `;
     }
 
-    renderThemeColorEditor(id) {
+    renderThemeColorEditor(id, { studio = false } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         const theme = this.themeById(id);
         if (!theme) return '';
@@ -10622,18 +10651,20 @@ class DashboardConfig {
         return `
             <div class="config-panel" id="config-theme-editor" data-theme-editing="${esc(id)}">
                 <h3 class="config-panel-title">${esc(this.t('config.themeColoursTitle', 'Colours'))} — ${esc(label)}</h3>
-                <p class="config-panel-note">${esc(this.t('config.themeColoursNote', 'Changes preview on the dashboard behind you as you type, and save when you leave the field.'))}</p>
+                <p class="config-panel-note">${esc(studio
+                    ? this.t('config.studioThemeColoursNote', 'Changes show on the page as you type. Apply keeps them, Cancel puts them back.')
+                    : this.t('config.themeColoursNote', 'Changes preview on the dashboard behind you as you type, and save when you leave the field.'))}</p>
                 <p class="config-field-warning" id="config-theme-contrast" hidden></p>
                 <div class="config-theme-groups">${groups}</div>
                 ${this.renderThemeCharacter(theme)}
-                ${isCustom ? this.renderThemePairRow(id) : ''}
-                <div class="config-actions">
+                ${isCustom && (!studio || this._colorsData?.custom?.[this.themePairOf(id).other]) ? this.renderThemePairRow(id) : ''}
+                ${studio ? '' : `<div class="config-actions">
                     <button type="button" class="config-btn" data-theme-action="apply">${esc(this.t('config.themeApply', 'Use this theme'))}</button>
                     <button type="button" class="config-btn" data-theme-action="duplicate">${esc(this.t('config.themeDuplicate', 'Duplicate'))}</button>
                     <button type="button" class="config-btn" data-theme-action="export">${esc(this.t('config.themeExport', 'Export'))}</button>
                     <button type="button" class="config-btn" data-theme-action="import">${esc(this.t('config.themeImport', 'Import'))}</button>
                     ${isCustom ? '' : `<button type="button" class="config-btn" data-theme-action="reset">${esc(this.t('config.themeResetDefaults', 'Reset to default'))}</button>`}
-                </div>
+                </div>`}
             </div>`;
     }
 
@@ -10658,6 +10689,14 @@ class DashboardConfig {
             .map((f) => {
             const label = this.t(`config.${f.key}`, f.label);
             const raw = theme[f.prop];
+            // Every recipe the server knows, as tiles; Automatic clears it.
+            if (f.kind === 'tiles') {
+                return `
+                <div class="config-field config-theme-char config-theme-char--tiles" data-theme-char-row="${esc(f.prop)}">
+                    <span class="config-field-label">${esc(label)}</span>
+                    <div class="config-theme-backdrops config-backdrop-grid" data-theme-backdrops role="group" aria-label="${esc(label)}"></div>
+                </div>`;
+            }
             let control;
             if (f.kind === 'range' || f.kind === 'glow') {
                 const numeric = f.unit === 'em' ? parseFloat(raw) : Number(raw);
@@ -10683,9 +10722,6 @@ class DashboardConfig {
             } else {
                 const current = raw ? String(raw) : '';
                 const optionLabel = (o) => {
-                    if (f.prop === 'backdrop') {
-                        return this.t(`config.themeBackdrop_${o}`, o.charAt(0).toUpperCase() + o.slice(1));
-                    }
                     if (f.prop === 'character') {
                         return this.t(`config.themeArchetype.${o}`, o.charAt(0).toUpperCase() + o.slice(1));
                     }
@@ -10853,6 +10889,13 @@ class DashboardConfig {
      * page keeps rendering the previous colours.
      */
     async saveColorsData() {
+        // In the look studio a colour edit is a preview like the rest of the
+        // look: it lands on Apply, and Cancel puts the snapshot back.
+        if (this._lookStudio?.colorsBefore && !this._lookStudio.colorsPosting) {
+            this._lookStudio.colorsHeld = true;
+            this._lookStudio.ui?.refresh?.();
+            return true;
+        }
         const run = async () => {
             try {
                 const res = await this.writeFetch('/api/colors', {
@@ -11340,6 +11383,21 @@ class DashboardConfig {
             });
         });
 
+        const tiles = container.querySelector('[data-theme-backdrops]');
+        if (tiles) {
+            tiles.addEventListener('click', (event) => {
+                const btn = event.target.closest('[data-theme-backdrop-tile]');
+                if (!btn) return;
+                tiles.querySelectorAll('[data-theme-backdrop-tile]').forEach((b) => {
+                    const on = b === btn;
+                    b.classList.toggle('is-active', on);
+                    b.setAttribute('aria-pressed', String(on));
+                });
+                setValue('backdrop', btn.getAttribute('data-theme-backdrop-tile') || undefined, { save: true });
+            });
+            void this.paintThemeBackdropTiles(container, theme);
+        }
+
         container.querySelectorAll('[data-theme-char-reset]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const prop = btn.dataset.themeCharReset;
@@ -11488,6 +11546,8 @@ class DashboardConfig {
             if (typeof v === 'number' && Number.isFinite(v)) out[prop] = v;
             else if (typeof v === 'string' && v.trim() && !colorKeys.includes(prop)) out[prop] = v.trim();
         });
+        // A look comes along whole; the server keeps the parts it can draw.
+        if (source.look && typeof source.look === 'object' && !Array.isArray(source.look)) out.look = source.look;
         return out.name ? out : null;
     }
 
@@ -11814,7 +11874,10 @@ class DashboardConfig {
     }
 
     setTheme(theme) {
-        void this.applyThemeChoice(theme);
+        // A theme of the reader's own may bring a look; Quick mode switches
+        // halves through applyThemeChoice directly and so never reaches this.
+        const previous = this.dash.settings?.theme;
+        void this.applyThemeChoice(theme).then(() => this.applyThemeLookAndSave?.(theme, previous));
     }
 
     /**

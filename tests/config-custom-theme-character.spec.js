@@ -68,12 +68,23 @@ test('titles, weight and backdrop are kept', async ({ page }) => {
     const id = await openEditor(page);
     await page.locator('[data-theme-char-choice="labelTransform"][data-value="uppercase"]').click();
     await page.locator('[data-theme-char-select="labelWeight"]').selectOption('800');
-    await page.locator('[data-theme-char-select="backdrop"]').selectOption('rings');
+    await page.locator('[data-theme-backdrop-tile="rings"]').click();
     await expect.poll(async () => {
         const t = (await colors(page)).custom[id];
         return [t.labelTransform, t.labelWeight, t.backdrop];
     }).toEqual(['uppercase', 800, 'rings']);
     await expect.poll(() => cssVar(page, '--theme-label-transform')).toBe('uppercase');
+});
+
+test('every backdrop is offered as a tile, and a late one saves', async ({ page }) => {
+    const id = await openEditor(page);
+    const tiles = page.locator('[data-theme-backdrops] [data-theme-backdrop-tile]');
+    await expect(tiles).toHaveCount(27); // Automatic + 26
+    await page.locator('[data-theme-backdrop-tile="prism"]').click();
+    await expect(page.locator('[data-theme-backdrop-tile="prism"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(async () => (await colors(page)).custom[id].backdrop).toBe('prism');
+    await page.locator('[data-theme-backdrop-tile=""]').click();
+    await expect.poll(async () => (await colors(page)).custom[id].backdrop).toBeUndefined();
 });
 
 test('the theme colour is optional: empty goes back to derived', async ({ page }) => {
@@ -108,7 +119,7 @@ test('editing a custom theme leaves the packaged themes their character', async 
 test('a theme file carries the character there and back', async ({ page }) => {
     const id = await openEditor(page);
     await page.locator('[data-theme-char="radiusScale"]').fill('0.4');
-    await page.locator('[data-theme-char-select="backdrop"]').selectOption('scanlines');
+    await page.locator('[data-theme-backdrop-tile="scanlines"]').click();
     await expect.poll(async () => (await colors(page)).custom[id].backdrop).toBe('scanlines');
 
     const download = page.waitForEvent('download');
@@ -119,6 +130,25 @@ test('a theme file carries the character there and back', async ({ page }) => {
     await expect.poll(async () => Object.keys((await colors(page)).custom).length).toBe(2);
     const imported = Object.entries((await colors(page)).custom).find(([key]) => key !== id)[1];
     expect([imported.radiusScale, imported.backdrop]).toEqual([0.4, 'scanlines']);
+});
+
+test('a theme file carries the look along, and the server keeps it', async ({ page }) => {
+    const id = await openEditor(page);
+    const look = { backdrop: 'nebula', glass: { alpha: 0.55, blur: 14, border: 'on' }, heads: { categoryHeaderStyle: 'boxed' } };
+    await page.evaluate(async ({ themeId, value }) => {
+        const cfg = window.dashboardInstance.config;
+        cfg._colorsData.custom[themeId].look = value;
+        await cfg.saveColorsData();
+    }, { themeId: id, value: look });
+    await expect.poll(async () => (await colors(page)).custom[id].look).toEqual(look);
+
+    const download = page.waitForEvent('download');
+    await page.locator(`[data-theme-export="${id}"]`).click();
+    const file = await (await download).path();
+    await page.locator('#config-theme-import-input').setInputFiles(file);
+    await expect.poll(async () => Object.keys((await colors(page)).custom).length).toBe(2);
+    const imported = Object.entries((await colors(page)).custom).find(([key]) => key !== id)[1];
+    expect(imported.look).toEqual(look);
 });
 
 test('a light/dark pair is made, and Quick mode switches between its halves', async ({ page }) => {

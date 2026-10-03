@@ -25,7 +25,7 @@
 (function (global) {
     'use strict';
 
-    const SEGMENTS = ['all', 'favorites', 'light', 'dark'];
+    const SEGMENTS = ['all', 'favorites', 'light', 'dark', 'yours'];
 
     /*
      * The archetypes, as their own row of chips.
@@ -216,6 +216,11 @@
             .join('');
     }
 
+    /** A family the reader made: either half is one of their own themes. */
+    function isOwnFamily(family) {
+        return Object.values(family.variants).some((v) => metaFor(v.id).own === true);
+    }
+
     function renderCard(family, state, t) {
         const shown = family.variants[state.variantFor(family.key)] || family.variants.dark || family.variants.light;
         const id = shown.id;
@@ -227,6 +232,8 @@
         const character = characterOf(id);
         const description = metaFor(id).description || '';
         const isNew = metaFor(id).new === true;
+        const meta = metaFor(id);
+        const own = meta.own === true;
 
         return `
             <div class="theme-browser-card${isCurrent ? ' is-current' : ''}${character ? ` is-${character}` : ''}"
@@ -239,6 +246,9 @@
                     <span class="theme-browser-card-name">${escapeHtml(family.label || id)}</span>
                     ${character ? `<span class="theme-browser-badge" data-theme-badge="${escapeHtml(character)}">${escapeHtml(archetypeLabel(character, t))}</span>` : ''}
                     ${isNew ? `<span class="theme-browser-badge theme-browser-badge--new" data-theme-new>${escapeHtml(t('config.themeNew', 'new'))}</span>` : ''}
+                    ${own ? `<span class="theme-browser-badge theme-browser-badge--yours" data-theme-yours>${escapeHtml(t('config.themeYours', 'yours'))}</span>` : ''}
+                    ${own && meta.look ? `<span class="theme-browser-badge theme-browser-badge--look" data-theme-has-look>${escapeHtml(t('config.themeHasLook', 'look'))}</span>` : ''}
+                    ${meta.recoloured ? `<span class="theme-browser-badge theme-browser-badge--recoloured" data-theme-recoloured>${escapeHtml(t('config.themeRecoloured', 'recoloured'))}</span>` : ''}
                     <button type="button" class="theme-browser-star${isFavorite ? ' is-on' : ''}"
                             data-theme-favorite="${escapeHtml(id)}"
                             aria-pressed="${isFavorite}"
@@ -256,6 +266,7 @@
                                     data-theme-variant="dark" data-theme-family="${escapeHtml(family.key)}"
                                     aria-pressed="${variant === 'dark'}">${escapeHtml(t('config.themeDark', 'Dark'))}</button>
                         </span>` : `<span class="theme-browser-single">${escapeHtml(variant)}</span>`}
+                    ${state.canEdit ? `<button type="button" class="theme-browser-edit" data-theme-edit="${escapeHtml(id)}">✎ ${escapeHtml(own ? t('config.themeEditOwn', 'Edit') : t('config.themeRecolour', 'Recolour'))}</button>` : ''}
                     ${isCurrent ? `<span class="theme-browser-current">${escapeHtml(t('config.themeInUse', 'in use'))}</span>` : ''}
                 </div>
             </div>`;
@@ -267,6 +278,7 @@
             const ids = Object.values(family.variants).map((v) => v.id);
             if (!ids.some((id) => state.favorites.includes(id))) return false;
         }
+        if (state.segment === 'yours' && !isOwnFamily(family)) return false;
         if (state.segment === 'light' && !family.variants.light) return false;
         if (state.segment === 'dark' && !family.variants.dark) return false;
         if (state.archetype
@@ -290,7 +302,8 @@
         const haystack = [family.label, family.key, deriveTraits(shown.palette, t).join(' '),
             character, character ? archetypeLabel(character, t) : '',
             metaFor(shown.id).description || '',
-            isNew ? `new ${t('config.themeNew', 'new')}` : '']
+            isNew ? `new ${t('config.themeNew', 'new')}` : '',
+            isOwnFamily(family) ? `yours ${t('config.themeYours', 'yours')}` : '']
             .join(' ')
             .toLowerCase();
         return query.split(/\s+/).every((word) => haystack.includes(word));
@@ -304,7 +317,8 @@
     function renderInUse(state, t) {
         const current = state.current;
         const chosen = current !== state.opened;
-        const name = `<strong>${escapeHtml(state.nameOf(current))}</strong>`;
+        const yours = metaFor(current).own === true ? ` · ${escapeHtml(t('config.themeYours', 'yours'))}` : '';
+        const name = `<strong>${escapeHtml(state.nameOf(current))}</strong>${yours}`;
         const line = chosen
             ? escapeHtml(t('config.themeChosenLine', 'Chosen: {name} · {saved} stays until Apply'))
                 .replace('{name}', name)
@@ -317,9 +331,21 @@
                 </div>`;
     }
 
-    function renderBody(families, state, t) {
+    function renderBody(families, state, t, lookSwitch) {
         const visible = families.filter((f) => matches(f, state, t));
-        const cards = visible.map((f) => renderCard(f, state, t)).join('');
+        // Under All, with nothing typed, the reader's own themes come first
+        // under a heading of their own; they would otherwise be lost among
+        // three hundred.
+        const groupHead = (key, label) => `<p class="theme-browser-group-head" data-theme-group="${key}">${escapeHtml(label)}</p>`;
+        const cards = state.segment === 'all' && !state.query.trim() && visible.some(isOwnFamily)
+            ? groupHead('yours', t('config.customThemesTitle', 'Your themes'))
+                + visible.filter(isOwnFamily).map((f) => renderCard(f, state, t)).join('')
+                + groupHead('builtin', t('config.themeGroupBuiltIn', 'Built in'))
+                + visible.filter((f) => !isOwnFamily(f)).map((f) => renderCard(f, state, t)).join('')
+            : visible.map((f) => renderCard(f, state, t)).join('');
+        const hasOwn = families.some(isOwnFamily);
+        // The switch only means something once a theme brings a look along.
+        const hasLook = families.some((f) => Object.values(f.variants).some((v) => metaFor(v.id).look === true));
         const chipButton = (name, label, st) =>
             `<button type="button" class="theme-browser-chip${st.archetype === name ? ' is-on' : ''}"
                      data-theme-character="${escapeHtml(name)}"
@@ -344,6 +370,7 @@
                         ${segmentButton('favorites', t('config.themeSegmentFavorites', 'Favourites'))}
                         ${segmentButton('light', t('config.themeSegmentLight', 'Light'))}
                         ${segmentButton('dark', t('config.themeSegmentDark', 'Dark'))}
+                        ${hasOwn ? segmentButton('yours', t('config.themeSegmentYours', 'Yours')) : ''}
                     </span>
                 </div>
                 ${ARCHETYPES.length ? `
@@ -365,6 +392,11 @@
                         .replace('{favorites}', String(state.favorites.length))
                 )}</p>
                 ${renderInUse(state, t)}
+                ${lookSwitch && hasLook ? `
+                <label class="theme-browser-look-switch">
+                    <input type="checkbox" data-studio-theme-look ${lookSwitch.get() ? 'checked' : ''}>
+                    <span>${escapeHtml(t('config.studioUseThemeLook', 'Use this theme’s look'))}</span>
+                </label>` : ''}
                 <div class="theme-browser-grid" role="listbox"
                      aria-label="${escapeHtml(t('config.themeLabel', 'Theme'))}"
                      data-theme-grid>${cards || `<p class="theme-browser-empty">${escapeHtml(
@@ -393,7 +425,7 @@
         }[tab] || tab;
     }
 
-    function renderShell(t) {
+    function renderShell(t, saveAs) {
         const tabs = TABS.map((tab) => `
             <button type="button" role="tab" class="look-studio-tab" id="look-studio-tab-${tab}"
                     data-studio-tab="${tab}" aria-controls="look-studio-pane" aria-selected="false"
@@ -422,6 +454,8 @@
                             <button type="button" data-studio-scope="global" aria-pressed="false">${escapeHtml(t('config.studioScopeAll', 'All themes'))}</button>
                         </span>
                     </div>
+                    ${saveAs ? `<button type="button" class="look-studio-btn look-studio-btn--quiet" data-studio-save-theme>${escapeHtml(t('config.studioSaveAsTheme', 'Save as theme…'))}</button>` : ''}
+                    <span class="look-studio-break" aria-hidden="true"></span>
                     <button type="button" class="look-studio-btn" data-studio-compare aria-pressed="false"
                             title="${escapeHtml(t('config.studioCompareHint', 'Show the look from before you opened this, until you press it again (or hold \\)'))}">${escapeHtml(t('config.studioCompare', 'Compare'))}</button>
                     <button type="button" class="look-studio-btn" data-studio-reset>${escapeHtml(t('config.studioResetTab', 'Reset tab'))}</button>
@@ -480,6 +514,10 @@
             archetype: '',
             // Empty means every collection; a second axis beside the archetype.
             collection: '',
+            // The theme open in the editor, which takes the Themes tab's place
+            // while set; null is the grid.
+            editing: null,
+            canEdit: typeof opts.renderEditor === 'function',
             get current() { return currentTheme(); },
             // What was on screen and stored when the browser opened, so the
             // line above the grid can say what Apply would change.
@@ -513,9 +551,10 @@
         let tab = TABS.includes(opts.tab) ? opts.tab : 'themes';
         let comparing = false;
         let closed = false;
+        let paintedView = '';
 
         const host = document.createElement('div');
-        host.innerHTML = renderShell(t).trim();
+        host.innerHTML = renderShell(t, typeof opts.onSaveAsTheme === 'function').trim();
         const root = host.firstElementChild;
         document.body.appendChild(root);
         const pane = root.querySelector('[data-studio-pane]');
@@ -552,7 +591,7 @@
             const hadSearch = active && active.hasAttribute?.('data-theme-search');
             const caret = hadSearch ? active.selectionStart : null;
             const focusedCard = active?.closest?.('[data-theme-card]')?.getAttribute('data-theme-card');
-            pane.innerHTML = renderBody(families, state, t);
+            pane.innerHTML = renderBody(families, state, t, opts.lookSwitch);
             bindThemes();
             const fresh = pane.querySelector('[data-theme-grid]');
             if (fresh) fresh.scrollTop = scroll;
@@ -591,6 +630,19 @@
             refresh();
         };
 
+        // The editor opens on the Themes tab, on a theme that is chosen first:
+        // what it shows on the page is the theme being edited.
+        const startEdit = (id) => {
+            if (!id || !state.canEdit || closed) return;
+            setComparing(false);
+            endPreview();
+            opts.onEditStart?.(id);
+            state.editing = id;
+            tab = 'themes';
+            paintTab();
+            pane.querySelector('[data-studio-edit-back]')?.focus();
+        };
+
         // Show clears what hides the card in use, then brings it into view.
         const bindShowCurrent = () => {
             pane.querySelector('[data-theme-show-current]')?.addEventListener('click', () => {
@@ -608,6 +660,9 @@
 
         const bindThemes = () => {
             bindShowCurrent();
+            pane.querySelector('[data-studio-theme-look]')?.addEventListener('change', (event) => {
+                opts.lookSwitch?.set(event.target.checked);
+            });
             const search = pane.querySelector('[data-theme-search]');
             search?.addEventListener('input', (event) => {
                 state.query = event.target.value || '';
@@ -713,6 +768,11 @@
                 });
             });
 
+            card.querySelector('[data-theme-edit]')?.addEventListener('click', (event) => {
+                event.stopPropagation();
+                startEdit(id());
+            });
+
             // Hover and focus preview; a click chooses. Nothing is stored
             // until Apply either way.
             card.addEventListener('mouseenter', () => preview(id()));
@@ -724,6 +784,12 @@
                     event.preventDefault();
                     event.stopPropagation();
                     select(id());
+                    return;
+                }
+                if (event.key === 'e' && state.canEdit && !event.metaKey && !event.ctrlKey && !event.altKey) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    startEdit(id());
                     return;
                 }
                 // The arrows walk the grid, each card previewed as focus lands
@@ -762,12 +828,33 @@
             });
             pane.setAttribute('aria-labelledby', `look-studio-tab-${tab}`);
             pane.setAttribute('data-studio-pane', tab);
-            if (tab === 'themes') {
+            // A new view starts at the top; a repaint of the same one stays put.
+            const view = `${tab}:${tab === 'themes' ? state.editing || '' : ''}`;
+            const keepScroll = view === paintedView ? pane.scrollTop : 0;
+            paintedView = view;
+            if (tab === 'themes' && state.editing) {
+                pane.innerHTML = opts.renderEditor(state.editing);
+                pane.querySelector('[data-studio-edit-back]')?.addEventListener('click', () => {
+                    state.editing = null;
+                    paintTab();
+                    const card = pane.querySelector(`[data-theme-id="${CSS.escape(state.current)}"]`);
+                    card?.scrollIntoView({ block: 'nearest' });
+                    card?.focus();
+                });
+                opts.bindEditor?.(state.editing, pane);
+            } else if (tab === 'themes') {
                 repaintThemes();
             } else {
-                pane.innerHTML = opts.renderTab?.(tab) || '';
+                // A way back to the colours from every other tab.
+                const link = state.canEdit
+                    ? `<p class="look-studio-edit-link"><button type="button" class="theme-browser-chip" data-studio-edit-link>✎ ${escapeHtml(
+                        t('config.studioEditTheme', 'Edit {name}').replace('{name}', state.nameOf(state.current)))}</button></p>`
+                    : '';
+                pane.innerHTML = link + (opts.renderTab?.(tab) || '');
+                pane.querySelector('[data-studio-edit-link]')?.addEventListener('click', () => startEdit(state.current));
                 opts.bindTab?.(tab, pane);
             }
+            pane.scrollTop = keepScroll;
             root.querySelector('[data-studio-reset]').disabled = tab === 'looks';
             refresh();
         };
@@ -886,12 +973,15 @@
             });
         });
         root.querySelector('[data-studio-reset]').addEventListener('click', () => {
-            opts.onResetTab?.(tab);
-            if (tab === 'themes') repaintThemes();
+            opts.onResetTab?.(tab, tab === 'themes' ? state.editing : null);
             paintTab();
         });
         root.querySelector('[data-studio-dice]').addEventListener('click', () => {
             if (tab === 'themes') {
+                if (state.editing) {
+                    state.editing = null;
+                    paintTab();
+                }
                 // From what the grid shows, so a filter narrows the roll too.
                 const visible = families.filter((f) => matches(f, state, t));
                 const family = visible[Math.floor(Math.random() * visible.length)];
@@ -921,6 +1011,11 @@
          */
         const compareButton = root.querySelector('[data-studio-compare]');
         compareButton.addEventListener('click', () => setComparing(!comparing));
+        root.querySelector('[data-studio-save-theme]')?.addEventListener('click', () => {
+            setComparing(false);
+            endPreview();
+            opts.onSaveAsTheme?.();
+        });
         root.addEventListener('pointerdown', (event) => {
             if (comparing && !compareButton.contains(event.target)) setComparing(false);
         }, true);
@@ -975,7 +1070,8 @@
          * target: a key pressed before the dialog has taken the focus still
          * belongs to it.
          */
-        const dialogOpen = () => Boolean(document.querySelector('#app-modal.show'));
+        // The app's modal, or a dialog the studio opened over its own panel.
+        const dialogOpen = () => Boolean(document.querySelector('#app-modal.show') || root.querySelector('[data-studio-dialog]'));
 
         const onDocumentKey = (event) => {
             if (closed || dialogOpen()) return;
@@ -1092,6 +1188,17 @@
             close,
             get tab() { return tab; },
             get open() { return !closed; },
+            get editing() { return state.editing; },
+            /** Open the editor on a theme, from outside the panel. */
+            edit: (id) => startEdit(id),
+            /** New or changed palettes: rebuild the families the grid is drawn from. */
+            setPalettes: (next, meta) => {
+                if (closed) return;
+                Object.assign(palettes, next || {});
+                if (meta?.themes) META = meta;
+                families.splice(0, families.length, ...buildFamilies(palettes, displayName));
+                if (tab === 'themes' && !state.editing) repaintThemes();
+            },
         };
         return ACTIVE;
     }

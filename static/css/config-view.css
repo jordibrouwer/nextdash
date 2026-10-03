@@ -903,7 +903,9 @@
 .config-stats-head {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    /* Top, not centre: the scope picker is taller than the tabs, and centred
+       the tabs sat 2px lower than on every other section's strip. */
+    align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 20px;
@@ -922,6 +924,13 @@
     align-items: center;
     gap: 8px;
     margin-left: auto;
+}
+
+/* The tabs' own height, so the rule under the strip lands where it does on
+   every other section; the 35px select put it 3px lower here. */
+.config-stats-head .config-stats-scope .config-select {
+    height: 32px;
+    padding-block: 0;
 }
 
 .config-stats-scope-label {
@@ -1907,6 +1916,33 @@
 
 .config-theme-picker-list[hidden] {
     display: none;
+}
+
+/* "Your themes" and "Built in": a quiet label over each group. */
+.config-theme-picker-group > ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-theme-picker-group + .config-theme-picker-group {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+}
+
+.config-theme-picker-group-label {
+    display: block;
+    padding: 2px 10px 4px;
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-text) * 0.8);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.config-theme-picker-note {
+    color: var(--text-tertiary);
 }
 
 .config-theme-picker-option {
@@ -3743,14 +3779,32 @@ body.no-animations .config-new-features-panel-star {
     margin: 0;
 }
 
+/*
+ * One line, always there, so the band is the same height in every section.
+ *
+ * Wrapped, a long line (Bookmarks) made the band a line taller, and a section
+ * without one (none rendered yet) made it a line shorter -- the rail and the
+ * sub-tab strip below jumped up and down as you walked the sections. Cut to
+ * one line instead; the whole sentence is the line's title.
+ */
+.config-view-head .lvs-header-text {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
 .config-view-head-breadcrumb {
     margin: 2px 0 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
+    min-height: 1lh;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .config-view-head-breadcrumb[hidden] {
-    display: none;
+    display: block;
+    visibility: hidden;
 }
 
 /*
@@ -3783,10 +3837,6 @@ body.no-animations .config-new-features-panel-star {
     .config-view-head .lvs-header-actions .config-changed-count {
         display: none;
     }
-}
-
-.config-view-head-breadcrumb[hidden] {
-    display: none;
 }
 
 /*
@@ -5042,6 +5092,17 @@ body.no-animations .config-new-features-panel-star {
 
 .config-theme-char > [hidden] {
     display: none;
+}
+
+/* The backdrop row: the label above, the tiles across the full width. */
+.config-theme-char--tiles > .config-field-label {
+    flex-basis: 100%;
+}
+
+.config-theme-backdrops {
+    flex: 1 1 100%;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    margin-top: 0;
 }
 
 .config-theme-group-title {
