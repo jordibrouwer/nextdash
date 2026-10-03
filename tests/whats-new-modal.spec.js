@@ -134,6 +134,22 @@ test.describe("what's new modal", () => {
      * The biggest release carries 110 items; unfolded they are a wall. Folded,
      * the scroll is a list of headlines with the detail on request.
      */
+    // An item's bold part often carries on ("<strong>X</strong>, and Y."):
+    // split at the bold, the explanation opened with a comma, a dash or a
+    // lower-case word on a line of its own.
+    test('no explanation starts in the middle of a sentence', async ({ page }) => {
+        await loadDashboard(page);
+        await openWhatsNew(page);
+        const rows = page.locator('.whats-new-modal [data-wn-earlier]');
+        const count = Math.min(await rows.count(), 12);
+        for (let i = 0; i < count; i += 1) await rows.nth(i).click();
+        await page.waitForTimeout(500);
+        const starts = await page.$$eval('.whats-new-modal [data-wn-entry-body]',
+            // A key name (<kbd>m</kbd>) may start a sentence; a word may not.
+            (els) => els.map((el) => el.innerHTML.trim()).filter((t) => /^[,;:)\-—–]|^[a-z]/.test(t)));
+        expect(starts).toEqual([]);
+    });
+
     test('a long explanation folds behind a button', async ({ page }) => {
         await loadDashboard(page);
         await openWhatsNew(page);
