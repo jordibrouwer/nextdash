@@ -146,7 +146,7 @@ async function markBookmarksTutorialSeen(page) {
     await page.evaluate(() => {
         window.DiscoverabilityState?.markTipSeen?.('bookmarksTutorialV1', { persist: false });
         window.DiscoverabilityState?.markTipSeen?.('containersTutorialV2', { persist: false });
-        window.DiscoverabilityState?.markTipSeen?.('dashboardTutorialV2', { persist: false });
+        window.DiscoverabilityState?.markTipSeen?.('dashboardTutorialV3', { persist: false });
     });
 }
 

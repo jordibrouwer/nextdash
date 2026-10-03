@@ -16,7 +16,7 @@
 
     // Also named in DashboardPromos (which checks it before fetching this file)
     // and in the replay list in config and search. All must agree.
-    const TIP_ID = 'dashboardTutorialV2';
+    const TIP_ID = 'dashboardTutorialV3';
 
     function t(key, fallback, params) {
         const lang = global.dashboardInstance?.language;
@@ -117,6 +117,10 @@
         .dtv-glass { fill: var(--background-primary); fill-opacity: 0.55; stroke: var(--text-secondary); stroke-opacity: 0.4; stroke-width: 1; }
         .dtv-underline { stroke: var(--accent-primary); stroke-width: 1.5; }
         .dtv-pill.is-warn .dtv-pill-box { stroke: var(--accent-warning, var(--accent-primary)); stroke-opacity: 1; stroke-width: 1.5; }
+        .dtv-appicon { fill: var(--accent-primary); }
+        .dtv-appicon-glyph { fill: var(--background-primary); }
+        .dtv-letter-box { fill: var(--background-primary); stroke: var(--text-secondary); stroke-width: 1; }
+        .dtv-edge { stroke: var(--accent-primary); stroke-width: 3; stroke-linecap: round; }
 
         .dtv-anim { transform-box: fill-box; transform-origin: center;
             animation-duration: 4.8s; animation-iteration-count: infinite;
@@ -158,6 +162,9 @@
         .dtv-a-rail { animation-name: dtv-rail; }
         .dtv-a-glow { animation-name: dtv-glow; }
         .dtv-a-hue { animation-name: dtv-hue; }
+        /* Gone at rest: the letter is what the icon replaces. */
+        .dtv-a-fade { animation-name: dtv-fade; opacity: 0; }
+        .dtv-a-widen { animation-name: dtv-widen; }
 
         /* The letters are typed in; at rest the word is simply there. */
         @keyframes dtv-type { 0%, 10% { clip-path: inset(0 100% 0 0); } 40%, 100% { clip-path: inset(0 0 0 0); } }
@@ -169,6 +176,9 @@
         @keyframes dtv-rail { 0%, 100% { transform: none; } 33% { transform: translateY(22px); } 66% { transform: translateY(44px); } }
         @keyframes dtv-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         /* The theme changes under the preview, and comes back. */
+        @keyframes dtv-fade { 0%, 30% { opacity: 1; } 40%, 100% { opacity: 0; } }
+        /* The panel's left edge is dragged out, and the panel follows. */
+        @keyframes dtv-widen { 0%, 18% { transform: translateX(44px); } 46%, 100% { transform: none; } }
         @keyframes dtv-hue { 0%, 100% { filter: none; } 33% { filter: hue-rotate(120deg); } 66% { filter: hue-rotate(240deg); } }
 
         @media (prefers-reduced-motion: reduce) { .dtv-anim { animation: none !important; } }
@@ -301,6 +311,34 @@
         </g>`;
     }
 
+    /**
+     * A bookmark row whose letter gives way to the app's icon. `glyph` is the
+     * mark drawn on the icon: play, wave, ring or bars.
+     */
+    function appRow(x, y, w, name, glyph, delay) {
+        const cx = x + 13;
+        const cy = y + 11;
+        const marks = {
+            play: `<path d="M${cx - 3},${cy - 4} L${cx + 4},${cy} L${cx - 3},${cy + 4} Z" class="dtv-appicon-glyph"/>`,
+            wave: `<path d="M${cx - 5},${cy + 1} q2.5,-5 5,0 t5,0" class="dtv-icon" style="stroke: var(--background-primary)"/>`,
+            ring: `<circle cx="${cx}" cy="${cy}" r="3.5" class="dtv-icon" style="stroke: var(--background-primary)"/>`,
+            bars: `<path d="M${cx - 4},${cy + 4} v-4 M${cx},${cy + 4} v-8 M${cx + 4},${cy + 4} v-6" class="dtv-icon" style="stroke: var(--background-primary)"/>`,
+        };
+        const d = (n) => ` style="animation-delay:${(delay + n).toFixed(2)}s"`;
+        return `<g>
+            <rect x="${x}" y="${y}" width="${w}" height="22" rx="4" class="dtv-box"/>
+            <g class="dtv-anim dtv-a-fade"${d(0)}>
+                <rect x="${cx - 7}" y="${cy - 7}" width="14" height="14" rx="3" class="dtv-letter-box"/>
+                <text x="${cx}" y="${cy + 4}" text-anchor="middle" class="dtv-title">${esc(name.charAt(0))}</text>
+            </g>
+            <g class="dtv-anim dtv-a-appear"${d(0)}>
+                <rect x="${cx - 7}" y="${cy - 7}" width="14" height="14" rx="3" class="dtv-appicon"/>
+                ${marks[glyph]}
+            </g>
+            <text x="${x + 26}" y="${y + 15}" class="dtv-title">${esc(name)}</text>
+        </g>`;
+    }
+
     /** A small hexagon grid, for the hexagons backdrop. */
     function hexagons(x, y, cols, rows, r) {
         const w = r * Math.sqrt(3);
@@ -322,10 +360,113 @@
     function steps() {
         const f = (key, fallback) => t(key, fallback);
         return [
-            // New in v1.16: the theme browser, the backdrops, the looks. First,
-            // because the tour is shown again to every reader for them.
+            // New in v1.17, first because the tour is shown again to every
+            // reader for them: web search, app icons, the theme editor, Unraid.
             {
-                title: f('dashTourStudioTitle', 'New: the theme browser opens beside your dashboard'),
+                title: f('dashTourWebTitle', 'New: search the web from the search panel'),
+                visual: svg(`
+                    <rect x="12" y="8" width="300" height="26" rx="7" class="dtv-search"/>
+                    <text x="24" y="26" class="dtv-mono dtv-anim dtv-a-type">jellyfin hdr</text>
+                    ${row(12, 40, 300, 'Jellyfin', { dot: 'ok', site: f('dashTourWebYours', 'your bookmark') })}
+                    <g class="dtv-anim dtv-a-appear" style="animation-delay:0.2s">
+                        ${label(12, 82, f('dashboard.webSearchSection', 'From the web'), 'dtv-heading')}
+                        ${pillFlow(132, 68, 180, [[f('dashboard.webSearchTabWeb', 'Web'), 'active'], [f('dashboard.webSearchTabNews', 'News'), 'plain'], [f('dashboard.webSearchTabVideo', 'Video'), 'plain']], { gap: 4 })}
+                        ${row(12, 94, 300, 'Jellyfin docs', { site: 'jellyfin.org', kind: 'accent' })}
+                        ${row(12, 120, 300, f('dashTourWebResult', 'HDR tone mapping'), { site: 'forum.example.org' })}
+                    </g>
+                    ${keycap(330, 10, 'Shift+Enter', anim('press', 0))}
+                    ${label(330, 46, f('dashTourWebAsk', 'asks the web'), 'dtv-label')}
+                    ${keycap(330, 60, 'Shift+←/→')}
+                    ${label(330, 96, f('dashTourWebTabs', 'Web, News, Video'), 'dtv-label')}
+                    ${keycap(330, 106, 'Alt+Enter')}
+                    ${label(330, 142, f('dashTourWebOwn', 'opens your own bookmark'), 'dtv-label')}
+                `, f('dashTourWebAlt', 'A search for jellyfin: your own bookmark first, then results from the web with their categories, and the keys for them')),
+                body: `<p>${esc(f('dashTourWebBody1',
+                    'With an engine set under Behavior → Keyboard & search — your own SearXNG or the Brave Search API — Shift+Enter asks the web for what you typed. Your server asks the engine, so it never sees your browser, and nothing is sent while you type.'))}</p>
+                    <p>${esc(f('dashTourWebBody2',
+                    'The results appear below your bookmarks. Shift+←/→ switches between Web, News and Video, and on a site you already keep, Alt+Enter opens your own bookmark.'))}</p>`,
+            },
+            {
+                title: f('dashTourIconsTitle', 'New: every app gets its own icon'),
+                visual: svg(`
+                    <rect x="12" y="8" width="190" height="132" rx="7" class="dtv-panel"/>
+                    ${label(22, 25, f('dashTourCatMedia', 'Media'), 'dtv-title')}
+                    ${appRow(18, 32, 178, 'Plex', 'play', 0)}
+                    ${appRow(18, 58, 178, 'Jellyfin', 'ring', 0.15)}
+                    ${appRow(18, 84, 178, 'Sonarr', 'wave', 0.3)}
+                    ${appRow(18, 110, 178, 'Grafana', 'bars', 0.45)}
+                    ${line('M210,74 L250,74', { delay: 0.5, arrow: true })}
+                    <g class="dtv-anim dtv-a-panel">
+                        <rect x="258" y="20" width="212" height="96" rx="8" class="dtv-panel"/>
+                        ${label(270, 40, '✎ ' + f('dashTourIconsMenu', 'the icon'), 'dtv-heading')}
+                        ${pill(270, 48, f('dashboard.iconSetChoose', 'Choose app icon…'), { kind: 'active', w: 188 })}
+                        ${label(276, 88, f('dashboard.dockerIconLetter', 'Use letter'), 'dtv-label')}
+                        ${label(276, 106, '✓ ' + f('dashboard.dockerIconAutomatic', 'Automatic'), 'dtv-title')}
+                    </g>
+                    ${label(364, 136, f('dashTourIconsCaption', 'light or dark, to suit your theme'), 'dtv-caption', 'middle')}
+                `, f('dashTourIconsAlt', 'Bookmark letters turning into app icons, and the icon menu with Choose app icon, Use letter and Automatic')),
+                body: `<p>${esc(f('dashTourIconsBody1',
+                    'Bookmarks and containers for self-hosted apps now show the app’s own icon, from two open icon sets, in the variant that suits your theme. An icon you chose or uploaded is never replaced.'))}</p>
+                    <p>${esc(f('dashTourIconsBody2',
+                    'The ✎ on an icon offers Choose app icon…, Use letter and Automatic — in the bookmark form, the Bookmarks view and a container’s drawer.'))}</p>`,
+            },
+            {
+                title: f('dashTourEditorTitle', 'New: recolour a theme, or save what is on screen'),
+                visual: svg(`
+                    ${category(12, 20, 150, f('dashTourCatHome', 'Home lab'), [['Grafana', 'ok', ''], ['Proxmox', 'ok', ''], ['Router', 'ok', '']])}
+                    <g class="dtv-anim dtv-a-widen">
+                        <rect x="190" y="6" width="284" height="138" rx="10" class="dtv-panel"/>
+                        <line x1="190" y1="58" x2="190" y2="92" class="dtv-edge"/>
+                        ${label(204, 26, '← ' + f('config.themeRecolour', 'Recolour') + ': Nord', 'dtv-heading')}
+                        ${[0, 1, 2, 3, 4].map((i) => `<circle cx="${214 + i * 30}" cy="48" r="10" class="dtv-swatch${i === 1 ? ' dtv-anim dtv-a-hue' : ''}" style="fill-opacity:${(1 - i * 0.16).toFixed(2)}"/>`).join('')}
+                        ${row(204, 66, 150, f('dashTourEditorAccent', 'Accent'), { dot: 'accent', kind: 'accent' })}
+                        ${pill(204, 98, f('config.studioSaveAsTheme', 'Save as theme…'), { kind: 'active', motion: anim('bump', 0.4) })}
+                        ${pill(204, 120, f('config.studioApply', 'Apply'))}
+                    </g>
+                    ${label(176, 112, '↔', 'dtv-heading', 'middle')}
+                `, f('dashTourEditorAlt', 'The theme browser widened from its left edge, recolouring a theme, with Save as theme and Apply')),
+                body: `<p>${esc(f('dashTourEditorBody1',
+                    '✎ Edit on a theme of your own, or ✎ Recolour on a packaged one, opens its colours right in the theme browser. Save as theme… keeps what is on screen as a theme of your own — its look too, if you like.'))}</p>
+                    <p>${esc(f('dashTourEditorBody2',
+                    'Need more room? Drag the panel’s left edge; a double-click puts it back.'))}</p>`,
+            },
+            {
+                title: f('dashTourUnraidTitle', 'New: your Unraid server on the dashboard'),
+                visual: (() => {
+                    const disks = [['parity', 0.82, 'ok', '31 °C'], ['disk1', 0.71, 'ok', '34 °C'], ['disk2', 0.93, 'warn', '36 °C'], ['cache', 0.38, 'ok', '41 °C']];
+                    return svg(`
+                        <g class="dtv-anim dtv-a-drop">
+                            <rect x="10" y="8" width="200" height="134" rx="9" class="dtv-panel"/>
+                            ${label(22, 28, f('dashboard.widgetType.unraidArray', 'Unraid array'), 'dtv-title')}
+                            ${disks.map(([n, v, k, temp], i) => `
+                                ${label(22, 52 + i * 24, n, 'dtv-label')}
+                                <rect x="70" y="${44 + i * 24}" width="90" height="8" rx="3" class="dtv-bar-track"/>
+                                <rect x="70" y="${44 + i * 24}" width="${Math.round(90 * v)}" height="8" rx="3" class="dtv-bar is-${k} dtv-anim dtv-a-grow" style="animation-delay:${(0.2 + i * 0.12).toFixed(2)}s"/>
+                                ${label(200, 52 + i * 24, temp, 'dtv-sub', 'end')}`).join('')}
+                        </g>
+                        <g class="dtv-anim dtv-a-drop" style="animation-delay:0.15s">
+                            <rect x="218" y="8" width="120" height="134" rx="9" class="dtv-panel"/>
+                            ${label(230, 28, f('dashboard.widgetType.unraidParity', 'Parity'), 'dtv-title')}
+                            ${ring(278, 82, 30, 0.62, '62%', { sub: f('dashTourUnraidRunning', 'running') })}
+                        </g>
+                        <g class="dtv-anim dtv-a-drop" style="animation-delay:0.3s">
+                            <rect x="346" y="8" width="126" height="134" rx="9" class="dtv-panel"/>
+                            ${label(358, 28, f('dashboard.widgetType.unraidShares', 'Shares'), 'dtv-title')}
+                            ${label(358, 56, 'array', 'dtv-label')}
+                            ${label(358, 76, '8.1 TB', 'dtv-value')}
+                            ${label(358, 104, 'cache', 'dtv-label')}
+                            ${label(358, 124, '410 GB', 'dtv-value')}
+                        </g>
+                    `, f('dashTourUnraidAlt', 'Three Unraid widgets: the array with each disk’s fill and temperature, a running parity check, and the free space of the shares'));
+                })(),
+                body: `<p>${esc(f('dashTourUnraidBody1',
+                    'Seven widgets read an Unraid server: an overview, the array and its disks, parity, shares, VMs, the UPS and Unraid’s own notifications. They only read, and share one connection, set under Config → Unraid.'))}</p>
+                    <p>${esc(f('dashTourUnraidBody2',
+                    'With alerts on, a stopped array, a parity check with errors or a disk with new errors reaches you through the same channels as downtime alerts.'))}</p>`,
+            },
+            // From v1.16: the theme browser, the backdrops, the looks.
+            {
+                title: f('dashTourStudioTitle', 'The theme browser opens beside your dashboard'),
                 visual: svg(`
                     ${keycap(12, 10, 'Shift+A', anim('press', 0))}
                     ${label(76, 24, f('dashTourStudioKey', 'from anywhere'), 'dtv-label')}

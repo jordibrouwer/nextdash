@@ -11,8 +11,8 @@ const { markWhatsNewSeen } = require('./e2e-helpers');
  * the one that decides whether it opens.
  */
 
-const STEPS = 16;
-const TIP = 'dashboardTutorialV2';
+const STEPS = 20;
+const TIP = 'dashboardTutorialV3';
 const modal = (page) => page.locator('#app-modal.show .dashboard-tutorial-modal');
 const next = (page) => page.locator('.modal-actions .modal-button').first();
 
@@ -58,13 +58,13 @@ test.describe('dashboard tour', () => {
         await expect(modal(page)).toBeVisible({ timeout: 10_000 });
     });
 
-    test('a reader who saw the earlier tour gets this one once, opening on the theme browser', async ({ page }) => {
-        await page.addInitScript(() => { window.__e2eSeenTips = ['dashboardTutorialV1']; });
+    test('a reader who saw the earlier tour gets this one once, opening on what is new', async ({ page }) => {
+        await page.addInitScript(() => { window.__e2eSeenTips = ['dashboardTutorialV2']; });
         await loadWithTourPending(page);
-        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('dashboardTutorialV1'))).toBe(true);
+        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('dashboardTutorialV2'))).toBe(true);
         await expect(modal(page)).toBeVisible({ timeout: 10_000 });
         await expect(page.locator('.dashboard-tutorial-step-title'))
-            .toHaveText('New: the theme browser opens beside your dashboard');
+            .toHaveText('New: search the web from the search panel');
     });
 
     test('Next walks every step, and finishing marks it seen', async ({ page }) => {
@@ -79,7 +79,11 @@ test.describe('dashboard tour', () => {
             }
         }
         expect(titles).toEqual([
-            'New: the theme browser opens beside your dashboard',
+            'New: search the web from the search panel',
+            'New: every app gets its own icon',
+            'New: recolour a theme, or save what is on screen',
+            'New: your Unraid server on the dashboard',
+            'The theme browser opens beside your dashboard',
             'Every theme has a backdrop of its own',
             'Looks, card glass and category headers',
             'Pages, categories, bookmarks',
@@ -166,7 +170,7 @@ test.describe('dashboard tour', () => {
             await d.promos.loadDashboardTour();
             const lang = d.language;
             const orig = lang.t.bind(lang);
-            lang.t = (k) => (/^(config\.(section|tour|bmHealth|look|categoryHeader)|dashboard\.(dashTour|inbox|docker|healthFilter))/.test(k) ? 'XX' : orig(k));
+            lang.t = (k) => (/^(config\.(section|tour|bmHealth|look|categoryHeader|studio|themeRecolour)|dashboard\.(dashTour|inbox|docker|healthFilter|webSearch|iconSet|widgetType))/.test(k) ? 'XX' : orig(k));
             window.DashboardTutorial.open();
         });
         const words = new Set();
@@ -178,8 +182,10 @@ test.describe('dashboard tour', () => {
             }
         }
         // A command is typed as it is, in every language: :config help is a key, not a label.
+        // Unraid's own names for its disks and places (parity, disk1, array, cache) are
+        // written as Unraid shows them, like a container name.
         const english = [...words].filter((w) => !w.startsWith(':')).filter((w) =>
-            /\b(development|media|home lab|search|commands|finders|edit|move|tags|tick|delete|bookmark|inbox|containers|pages|add|config|recent|back|cheat|weather|unsorted|broken|stale|duplicates|never|promote|keep|triage|tours|guide|saved|default|opens|themes|backdrop|looks|cancel|apply|aurora|dunes|hexagons|glass|frosted|paper|plain|clean|underlined|boxed|neutrals)\b/i.test(w));
+            /\b(development|media|home lab|search|commands|finders|edit|move|tags|tick|delete|bookmark|inbox|containers|pages|add|config|recent|back|cheat|weather|unsorted|broken|stale|duplicates|never|promote|keep|triage|tours|guide|saved|default|opens|themes|backdrop|looks|cancel|apply|aurora|dunes|hexagons|glass|frosted|paper|plain|clean|underlined|boxed|neutrals|web|news|video|choose|letter|automatic|recolour|accent|running|shares|asks)\b/i.test(w));
         expect(english).toEqual([]);
     });
 });
