@@ -251,6 +251,7 @@
                 renderEditor: (id) => this.renderStudioThemeEditor?.(id) || '',
                 bindEditor: (id, host) => this.bindStudioThemeEditor?.(id, host),
                 onEditStart: (id) => this.studioSelectTheme(id),
+                onSaveAsTheme: this.openSaveAsThemeDialog ? () => this.openSaveAsThemeDialog() : undefined,
                 lookSwitch: {
                     get: () => this.studioUsesThemeLook(),
                     set: (on) => this.setStudioUsesThemeLook(on),

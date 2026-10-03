@@ -577,9 +577,19 @@ body.look-studio-open #app-modal {
 
 .look-studio-scope {
     display: flex;
+    flex: 1 1 auto;
     align-items: center;
     gap: var(--space-2, 0.5rem);
-    width: 100%;
+    font-size: 0.85em;
+}
+
+/* Ends the first footer row: Applies to, and Save as theme… at its end. */
+.look-studio-break {
+    flex-basis: 100%;
+    height: 0;
+}
+
+.look-studio-btn--quiet {
     font-size: 0.85em;
 }
 
@@ -630,6 +640,56 @@ body.look-studio-open #app-modal {
 .look-studio-btn:disabled {
     opacity: 0.45;
     cursor: default;
+}
+
+/* A dialog over the panel itself: Save as theme… */
+.look-studio-dialog {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.look-studio-dialog-box {
+    width: min(380px, calc(100% - 32px));
+    padding: var(--space-4, 1rem);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    background: var(--background-modal, var(--background-secondary));
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.look-studio-dialog-box h3 {
+    margin: 0 0 var(--space-3, 0.75rem);
+    font-size: 1em;
+}
+
+.look-studio-dialog-box .config-text {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.look-studio-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: var(--space-3, 0.75rem) 0 0;
+    cursor: pointer;
+}
+
+.look-studio-check small {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-secondary);
+}
+
+.look-studio-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: var(--space-4, 1rem);
 }
 
 .look-studio-btn--primary {

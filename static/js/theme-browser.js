@@ -425,7 +425,7 @@
         }[tab] || tab;
     }
 
-    function renderShell(t) {
+    function renderShell(t, saveAs) {
         const tabs = TABS.map((tab) => `
             <button type="button" role="tab" class="look-studio-tab" id="look-studio-tab-${tab}"
                     data-studio-tab="${tab}" aria-controls="look-studio-pane" aria-selected="false"
@@ -454,6 +454,8 @@
                             <button type="button" data-studio-scope="global" aria-pressed="false">${escapeHtml(t('config.studioScopeAll', 'All themes'))}</button>
                         </span>
                     </div>
+                    ${saveAs ? `<button type="button" class="look-studio-btn look-studio-btn--quiet" data-studio-save-theme>${escapeHtml(t('config.studioSaveAsTheme', 'Save as theme…'))}</button>` : ''}
+                    <span class="look-studio-break" aria-hidden="true"></span>
                     <button type="button" class="look-studio-btn" data-studio-compare aria-pressed="false"
                             title="${escapeHtml(t('config.studioCompareHint', 'Show the look from before you opened this, until you press it again (or hold \\)'))}">${escapeHtml(t('config.studioCompare', 'Compare'))}</button>
                     <button type="button" class="look-studio-btn" data-studio-reset>${escapeHtml(t('config.studioResetTab', 'Reset tab'))}</button>
@@ -552,7 +554,7 @@
         let paintedView = '';
 
         const host = document.createElement('div');
-        host.innerHTML = renderShell(t).trim();
+        host.innerHTML = renderShell(t, typeof opts.onSaveAsTheme === 'function').trim();
         const root = host.firstElementChild;
         document.body.appendChild(root);
         const pane = root.querySelector('[data-studio-pane]');
@@ -1009,6 +1011,11 @@
          */
         const compareButton = root.querySelector('[data-studio-compare]');
         compareButton.addEventListener('click', () => setComparing(!comparing));
+        root.querySelector('[data-studio-save-theme]')?.addEventListener('click', () => {
+            setComparing(false);
+            endPreview();
+            opts.onSaveAsTheme?.();
+        });
         root.addEventListener('pointerdown', (event) => {
             if (comparing && !compareButton.contains(event.target)) setComparing(false);
         }, true);
@@ -1063,7 +1070,8 @@
          * target: a key pressed before the dialog has taken the focus still
          * belongs to it.
          */
-        const dialogOpen = () => Boolean(document.querySelector('#app-modal.show'));
+        // The app's modal, or a dialog the studio opened over its own panel.
+        const dialogOpen = () => Boolean(document.querySelector('#app-modal.show') || root.querySelector('[data-studio-dialog]'));
 
         const onDocumentKey = (event) => {
             if (closed || dialogOpen()) return;
