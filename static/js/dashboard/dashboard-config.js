@@ -10405,7 +10405,7 @@ class DashboardConfig {
         `;
     }
 
-    renderThemeColorEditor(id) {
+    renderThemeColorEditor(id, { studio = false } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         const theme = this.themeById(id);
         if (!theme) return '';
@@ -10437,18 +10437,20 @@ class DashboardConfig {
         return `
             <div class="config-panel" id="config-theme-editor" data-theme-editing="${esc(id)}">
                 <h3 class="config-panel-title">${esc(this.t('config.themeColoursTitle', 'Colours'))} — ${esc(label)}</h3>
-                <p class="config-panel-note">${esc(this.t('config.themeColoursNote', 'Changes preview on the dashboard behind you as you type, and save when you leave the field.'))}</p>
+                <p class="config-panel-note">${esc(studio
+                    ? this.t('config.studioThemeColoursNote', 'Changes show on the page as you type. Apply keeps them, Cancel puts them back.')
+                    : this.t('config.themeColoursNote', 'Changes preview on the dashboard behind you as you type, and save when you leave the field.'))}</p>
                 <p class="config-field-warning" id="config-theme-contrast" hidden></p>
                 <div class="config-theme-groups">${groups}</div>
                 ${this.renderThemeCharacter(theme)}
-                ${isCustom ? this.renderThemePairRow(id) : ''}
-                <div class="config-actions">
+                ${isCustom && (!studio || this._colorsData?.custom?.[this.themePairOf(id).other]) ? this.renderThemePairRow(id) : ''}
+                ${studio ? '' : `<div class="config-actions">
                     <button type="button" class="config-btn" data-theme-action="apply">${esc(this.t('config.themeApply', 'Use this theme'))}</button>
                     <button type="button" class="config-btn" data-theme-action="duplicate">${esc(this.t('config.themeDuplicate', 'Duplicate'))}</button>
                     <button type="button" class="config-btn" data-theme-action="export">${esc(this.t('config.themeExport', 'Export'))}</button>
                     <button type="button" class="config-btn" data-theme-action="import">${esc(this.t('config.themeImport', 'Import'))}</button>
                     ${isCustom ? '' : `<button type="button" class="config-btn" data-theme-action="reset">${esc(this.t('config.themeResetDefaults', 'Reset to default'))}</button>`}
-                </div>
+                </div>`}
             </div>`;
     }
 
@@ -10673,6 +10675,13 @@ class DashboardConfig {
      * page keeps rendering the previous colours.
      */
     async saveColorsData() {
+        // In the look studio a colour edit is a preview like the rest of the
+        // look: it lands on Apply, and Cancel puts the snapshot back.
+        if (this._lookStudio?.colorsBefore && !this._lookStudio.colorsPosting) {
+            this._lookStudio.colorsHeld = true;
+            this._lookStudio.ui?.refresh?.();
+            return true;
+        }
         const run = async () => {
             try {
                 const res = await this.writeFetch('/api/colors', {

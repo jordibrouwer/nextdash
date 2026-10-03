@@ -322,6 +322,44 @@
     color: var(--text-secondary);
 }
 
+/* ✎ Edit / Recolour on a card: quiet until the card is pointed at. */
+.theme-browser-edit {
+    margin-left: auto;
+    padding: 1px 7px;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.78em;
+    cursor: pointer;
+}
+
+.theme-browser-card:not(:hover):not(:focus-within):not(.is-current) .theme-browser-edit {
+    opacity: 0.55;
+}
+
+.theme-browser-edit:hover,
+.theme-browser-edit:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    opacity: 1;
+}
+
+/* The editor on the Themes tab, and the way into it from the other tabs. */
+.look-studio-back {
+    margin-bottom: var(--space-2, 0.6rem);
+}
+
+.look-studio-edit-link {
+    margin: 0 0 var(--space-2, 0.6rem);
+}
+
+.config-theme-look-parts {
+    margin: 0 0 8px;
+    color: var(--text-primary);
+}
+
 /* "Use this theme's look": under the In use line, quiet until needed. */
 .theme-browser-look-switch {
     display: inline-flex;

@@ -266,6 +266,7 @@
                                     data-theme-variant="dark" data-theme-family="${escapeHtml(family.key)}"
                                     aria-pressed="${variant === 'dark'}">${escapeHtml(t('config.themeDark', 'Dark'))}</button>
                         </span>` : `<span class="theme-browser-single">${escapeHtml(variant)}</span>`}
+                    ${state.canEdit ? `<button type="button" class="theme-browser-edit" data-theme-edit="${escapeHtml(id)}">✎ ${escapeHtml(own ? t('config.themeEditOwn', 'Edit') : t('config.themeRecolour', 'Recolour'))}</button>` : ''}
                     ${isCurrent ? `<span class="theme-browser-current">${escapeHtml(t('config.themeInUse', 'in use'))}</span>` : ''}
                 </div>
             </div>`;
@@ -511,6 +512,10 @@
             archetype: '',
             // Empty means every collection; a second axis beside the archetype.
             collection: '',
+            // The theme open in the editor, which takes the Themes tab's place
+            // while set; null is the grid.
+            editing: null,
+            canEdit: typeof opts.renderEditor === 'function',
             get current() { return currentTheme(); },
             // What was on screen and stored when the browser opened, so the
             // line above the grid can say what Apply would change.
@@ -544,6 +549,7 @@
         let tab = TABS.includes(opts.tab) ? opts.tab : 'themes';
         let comparing = false;
         let closed = false;
+        let paintedView = '';
 
         const host = document.createElement('div');
         host.innerHTML = renderShell(t).trim();
@@ -620,6 +626,19 @@
             previewing = null;
             opts.onSelect?.(id);
             refresh();
+        };
+
+        // The editor opens on the Themes tab, on a theme that is chosen first:
+        // what it shows on the page is the theme being edited.
+        const startEdit = (id) => {
+            if (!id || !state.canEdit || closed) return;
+            setComparing(false);
+            endPreview();
+            opts.onEditStart?.(id);
+            state.editing = id;
+            tab = 'themes';
+            paintTab();
+            pane.querySelector('[data-studio-edit-back]')?.focus();
         };
 
         // Show clears what hides the card in use, then brings it into view.
@@ -747,6 +766,11 @@
                 });
             });
 
+            card.querySelector('[data-theme-edit]')?.addEventListener('click', (event) => {
+                event.stopPropagation();
+                startEdit(id());
+            });
+
             // Hover and focus preview; a click chooses. Nothing is stored
             // until Apply either way.
             card.addEventListener('mouseenter', () => preview(id()));
@@ -758,6 +782,12 @@
                     event.preventDefault();
                     event.stopPropagation();
                     select(id());
+                    return;
+                }
+                if (event.key === 'e' && state.canEdit && !event.metaKey && !event.ctrlKey && !event.altKey) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    startEdit(id());
                     return;
                 }
                 // The arrows walk the grid, each card previewed as focus lands
@@ -796,12 +826,33 @@
             });
             pane.setAttribute('aria-labelledby', `look-studio-tab-${tab}`);
             pane.setAttribute('data-studio-pane', tab);
-            if (tab === 'themes') {
+            // A new view starts at the top; a repaint of the same one stays put.
+            const view = `${tab}:${tab === 'themes' ? state.editing || '' : ''}`;
+            const keepScroll = view === paintedView ? pane.scrollTop : 0;
+            paintedView = view;
+            if (tab === 'themes' && state.editing) {
+                pane.innerHTML = opts.renderEditor(state.editing);
+                pane.querySelector('[data-studio-edit-back]')?.addEventListener('click', () => {
+                    state.editing = null;
+                    paintTab();
+                    const card = pane.querySelector(`[data-theme-id="${CSS.escape(state.current)}"]`);
+                    card?.scrollIntoView({ block: 'nearest' });
+                    card?.focus();
+                });
+                opts.bindEditor?.(state.editing, pane);
+            } else if (tab === 'themes') {
                 repaintThemes();
             } else {
-                pane.innerHTML = opts.renderTab?.(tab) || '';
+                // A way back to the colours from every other tab.
+                const link = state.canEdit
+                    ? `<p class="look-studio-edit-link"><button type="button" class="theme-browser-chip" data-studio-edit-link>✎ ${escapeHtml(
+                        t('config.studioEditTheme', 'Edit {name}').replace('{name}', state.nameOf(state.current)))}</button></p>`
+                    : '';
+                pane.innerHTML = link + (opts.renderTab?.(tab) || '');
+                pane.querySelector('[data-studio-edit-link]')?.addEventListener('click', () => startEdit(state.current));
                 opts.bindTab?.(tab, pane);
             }
+            pane.scrollTop = keepScroll;
             root.querySelector('[data-studio-reset]').disabled = tab === 'looks';
             refresh();
         };
@@ -920,12 +971,15 @@
             });
         });
         root.querySelector('[data-studio-reset]').addEventListener('click', () => {
-            opts.onResetTab?.(tab);
-            if (tab === 'themes') repaintThemes();
+            opts.onResetTab?.(tab, tab === 'themes' ? state.editing : null);
             paintTab();
         });
         root.querySelector('[data-studio-dice]').addEventListener('click', () => {
             if (tab === 'themes') {
+                if (state.editing) {
+                    state.editing = null;
+                    paintTab();
+                }
                 // From what the grid shows, so a filter narrows the roll too.
                 const visible = families.filter((f) => matches(f, state, t));
                 const family = visible[Math.floor(Math.random() * visible.length)];
@@ -1126,6 +1180,17 @@
             close,
             get tab() { return tab; },
             get open() { return !closed; },
+            get editing() { return state.editing; },
+            /** Open the editor on a theme, from outside the panel. */
+            edit: (id) => startEdit(id),
+            /** New or changed palettes: rebuild the families the grid is drawn from. */
+            setPalettes: (next, meta) => {
+                if (closed) return;
+                Object.assign(palettes, next || {});
+                if (meta?.themes) META = meta;
+                families.splice(0, families.length, ...buildFamilies(palettes, displayName));
+                if (tab === 'themes' && !state.editing) repaintThemes();
+            },
         };
         return ACTIVE;
     }

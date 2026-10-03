@@ -219,6 +219,14 @@ class DashboardConfigLoader {
                 () => window.DashboardConfigStudioReady === true
             )
         )).then(() => (
+            // The theme editor inside the studio. Optional: without it the
+            // studio simply has no editor, and the cards no ✎.
+            window.LazyScript.loadScriptOnce(
+                'js/dashboard/dashboard-config-theme-edit.js',
+                'dashboardConfigThemeEdit',
+                () => window.DashboardConfigThemeEditReady === true
+            ).catch(() => {})
+        )).then(() => (
             // The Bookmarks row menu, fetched with config rather than on the
             // dashboard's critical path: nothing outside config uses it. Its
             // failure is not fatal — config without a right-click menu is worse

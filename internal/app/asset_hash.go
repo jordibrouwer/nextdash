@@ -163,6 +163,7 @@ var lazyLoadedAssets = []string{
 	// built from them: both are required by the config loader.
 	"js/dashboard/dashboard-config-look.js",
 	"js/dashboard/dashboard-config-studio.js",
+	"js/dashboard/dashboard-config-theme-edit.js",
 	// The config sections split out of dashboard-config.js (SECTION_MODULES).
 	// Missing here, one loaded under its bare path, so a browser kept the copy
 	// it had from before a deploy and ran old code against new markup.
