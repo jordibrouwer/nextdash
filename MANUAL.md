@@ -209,7 +209,7 @@ Give your services their own page — *Homelab*, *Server* — and put the bookma
 | **Certificates** | The ones that run out soon |
 | **Health** | Broken, down and changed bookmarks on this page; each figure opens its filter |
 | **Processor**, **Memory**, **Disks** | The machine itself — name `/mnt/user` and `/mnt/cache` on Unraid |
-| **Custom** | Figures from the services themselves — the queue in Sonarr, blocked queries in Pi-hole, a sensor in Home Assistant, CPU and memory in Proxmox — 28 services filled in ([§15.5](#155-the-custom-widget)) |
+| **Custom** | Figures from the services themselves — the queue in Sonarr, blocked queries in Pi-hole, a sensor in Home Assistant, CPU and memory in Proxmox — 41 services filled in ([§15.5](#155-the-custom-widget)) |
 
 Set a widget to two columns and it says more, not the same thing larger: the container failing by name, the expiry date of a certificate, the load behind the processor's percentage.
 
@@ -1111,7 +1111,9 @@ An **ⓘ** beside the menu explains the view.
 **`h`**, or **Collection health** in the menu, opens a modal over the list with two tabs:
 
 - **Overview** — the score over time, where bookmarks stand, what is wrong by kind, the score distribution, health by page, checking coverage, monitors and certificates.
-- **Monitors & trend** — a trend chart over 90 days with series pills (healthy %, score, broken, monitors down, stale, unchecked), and fleet cards: uptime across all monitors, the least available over 7 days, what got slower than last week, and outages.
+- **Monitors & trend** — a trend chart over 90 days with series pills (healthy %, score, broken, monitors down, stale, unchecked), and fleet cards: uptime across all monitors, the least available over 7 days, what got slower than last week, and outages — which monitors went down, how often and for how long, drawn as a 30-day lane per monitor (the full list behind **Show list**). Under them, **Every monitor, per day**: a bar a day for the uptime of all monitors together and the day's mean response as a line.
+
+The charts here, in Statistics and in a bookmark's health in large have a time axis and a value axis, a tooltip, a drag to zoom, and the arrow keys with the point read out under the chart; a screen reader gets each chart as a table.
 
 It fits one screen, and steps its cards down on a small window.
 
@@ -1226,8 +1228,10 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 | **Telegram** | Bot URL and chat ID |
 | **Gotify**, **ntfy** | URL |
 | **Pushover** | Application token and user key |
+| **Apprise** | The notify URL of a configuration key on your apprise-api (`http://apprise:8000/notify/<key>`), and optionally a **Tag** |
 | **Raw JSON** | Your own receiver's URL |
 
+- **Apprise** passes an alert on to everything it reaches — mail, Matrix, Signal, Teams and a hundred more — and keeps those services' passwords itself. A **Tag** sends only to the destinations that carry it. **Send test alert** explains Apprise's refusals: 424, it could not deliver or no destination had the tag; 404, there is no configuration under that key.
 - **Alert after** — failures in a row before a bookmark counts as down (default 3, 1–10).
 - **Send test alert** — sends one made-up failure the same way a real one goes.
 - **ntfy** alerts carry **Open link** and **Health** buttons, and a failure is sent at a higher priority than a recovery. Fill in **Address of this dashboard** for the Health button; it links to `/#health`, which redirects into the Bookmarks view.
@@ -1425,7 +1429,7 @@ The bookmark's own side panel says it back: **Details → Address → Runs in** 
 Selecting a container opens its side panel, with four tabs. Its head shows the container's web UI address under the name, tagged **Custom** when it is one you set; the tag opens the Custom section. A click beside the panel closes it, one on another row moves it there (**Config → Containers → Close on a click beside it**).
 
 - **Overview** — an accordion of **Details**, **Health**, **Updates**, **Timeline**, **Network**, **Custom**, **Bookmark**, **Volumes** and **Environment**. **Health**, for a container with a healthcheck, shows its status, how many checks failed in a row, the check it runs, and the last five checks — each a mark and a time, a failed one with its exit code and output. **Volumes** lists each mount by where it appears in the container, with where it comes from under it and a tag for its kind (bind, volume) and for read-only. **Updates** is [§14.5](#145-actions-and-updates). **Timeline** is what happened to the container, newest first: starts and stops (by you or by nextDash), crashes with their exit code, out-of-memory kills, a run of crashes as one *Kept restarting* line, health changes, pauses, updates and rollbacks. nextDash writes these down from Docker's own events, whatever the notices are set to — a hundred per container, for thirty days, from the moment this version runs. **Details** also gives its size (written, and with its image) and says whether its notices are on, muted or off. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it. **Bookmark** shows the bookmark of its web UI — name, address, what its checks say and how it was found — with **Open in Bookmarks**, and **Linked bookmark** to choose: *Automatic* (naming what it found), *No bookmark*, or any bookmark by hand.
-- **Resources** — CPU, memory, size, **Network** (in and out) and **Disk I/O** (read and written), with four charts under them: CPU, memory, network and disk I/O over the last hour. Network and disk are rates between two samples, so they show a dash until there are two. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
+- **Resources** — CPU, memory, size, **Network** (in and out) and **Disk I/O** (read and written), with four charts under them: CPU, memory, network and disk I/O over the last hour — one cursor across the four, a tooltip, a drag to zoom (double-click or `0` back), and the arrow keys to walk the points with the value read out. Network and disk are rates between two samples, so they show a dash until there are two. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
 - **Logs** — the last lines, with **Refresh** and **Open logs window** ([§14.8](#148-the-logs-window)).
 - **What’s new** — the release notes behind an available update.
 
@@ -1711,8 +1715,8 @@ Then name `/mnt/user` and `/mnt/cache` in the Disks widget. A user share reports
 The Custom widget reads figures from any service that answers with JSON.
 
 - **Address and method** — any `http`/`https` endpoint, `GET` or `POST`. Your server makes the request, so a machine on your network is reachable and no key reaches the browser. The widget only reads.
-- **Sign-in** — an API key in a header, a key in the address (the stored address keeps a `YOUR_KEY` placeholder), a username and password, or a session sign-in for services such as qBittorrent. Secrets are stored in their own file and left out of backups unless you include stored tokens. A saved key shows as *Set*; the eye button reveals it. Stored sign-ins can also be used by health checks ([§12.1](#121-availability-modes)).
-- **Paths** — `server.disk[0].used` walks objects and arrays; `sensor.p1_meter` finds a list entry by its own name; `[entity_id=sensor.p1_meter].state` is the explicit form. Up to eight figures. A path that stops matching is marked, not shown as zero.
+- **Sign-in** — an API key in a header, a key in the address (the stored address keeps a `YOUR_KEY` placeholder), a username and password, a session sign-in for services such as qBittorrent, or a sign-in that hands out a token (Nginx Proxy Manager, Pi-hole v6, Duplicati, Beszel), which nextDash keeps and renews; a password-only sign-in asks for no username. Secrets are stored in their own file and left out of backups unless you include stored tokens. A saved key shows as *Set*; the eye button reveals it. Stored sign-ins can also be used by health checks ([§12.1](#121-availability-modes)).
+- **Paths** — `server.disk[0].used` walks objects and arrays; `sensor.p1_meter` finds a list entry by its own name; `[entity_id=sensor.p1_meter].state` is the explicit form. A `#` at the end counts: `list#` is the length of a list, `list[state=failed]#` the entries that match; `[-1]` is the last entry. Up to eight figures. A path that stops matching is marked, not shown as zero.
 - **Shape** — *Count*, *Size* (bytes), *Data size* (with the unit the service counts in), *Speed* (bits per second, `1.046 Gbps`), *Power* (`4.5 kW`), *Temperature* (in the unit set for the weather; not converted), *Percentage (0–100)*, *Percentage from a share (0–1)* (a service that reports 43% as `0.43`), *Duration*, *Milliseconds*, *Time ago* or *Text*.
 - **Decimals** — *Auto* or 0–3, also for numbers the service sends as text.
 - **Size** — *Normal*, *Large*, *Small*, or *Bar* for a percentage.
@@ -1725,14 +1729,17 @@ The Custom widget reads figures from any service that answers with JSON.
 
 An answer has eight seconds to arrive and is read up to one megabyte. There is no arithmetic.
 
-**Twenty-eight services come filled in:**
+**Forty-one services come filled in** (qBittorrent twice: with its sign-in, and with the API key of 5.2 and later):
 
 | Group | Services |
 |---|---|
-| **Media & downloads** | Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Bazarr, Overseerr / Jellyseerr, Tautulli, Jellyfin / Emby, Plex, Immich, qBittorrent, SABnzbd, NZBGet |
-| **Network** | Pi-hole (v6 and v5), AdGuard Home, Traefik, Speedtest Tracker |
-| **System** | Proxmox VE, TrueNAS, Glances, Syncthing |
+| **Media & downloads** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr (Overseerr / Jellyseerr), Tautulli, Jellyfin / Emby, Plex, Immich, qBittorrent (login), qBittorrent (5.2+, API key), SABnzbd, NZBGet, Whisparr, LazyLibrarian, NZBHydra2, Komga, PhotoPrism, Jellystat, Mylar3 |
+| **Network** | Pi-hole (v6), AdGuard Home, Traefik, Speedtest Tracker, Nginx Proxy Manager, Tailscale |
+| **System** | Proxmox VE, Glances, Syncthing, Duplicati |
+| **Monitoring** | Beszel, Netdata, Gatus, Uptime Kuma, Scrutiny, Healthchecks |
 | **Apps** | Nextcloud, Paperless-ngx, Home Assistant, Grafana, ntfy |
+
+Retired presets — Readarr, Pi-hole v5 and TrueNAS, whose APIs are gone — are no longer offered; a widget started from one keeps working. Every preset is tested against its service's recorded answer.
 
 A preset fills in a sample address, the useful path, the figures with labels and shapes, and the sign-in type, and says where to find the key. Where a header needs a word before the token (`Bearer `, `Token `), the preset puts it in the box. Everything stays editable.
 
@@ -2227,6 +2234,11 @@ The MCP endpoint is switched on from this tab as well — see [§23.6](#236-the-
 - **Refresh all link previews** / **Clear all link previews** — the stored titles, descriptions and images. Refreshing is one request per bookmark, shows progress, waits out a rate limit and can be stopped.
 - **Forget the scanned keywords** — what *Read their pages* kept for tag suggestions.
 
+**App icons.** Containers and bookmarks to self-hosted apps get the app's own icon from two open icon sets, [dashboard-icons](https://github.com/homarr-labs/dashboard-icons) and [selfh.st/icons](https://selfh.st/icons/). A container is matched by its image and name, a bookmark by its host; the icon follows the theme between its light and dark variant. When the sets know an app, its icon is used instead of the site's favicon — an icon you chose or uploaded is never replaced.
+
+- **Choosing one** — the pencil on a bookmark's icon in the form offers **Choose app icon…** (and up to three suggestions appear under the address); the pencil in a container's drawer offers **Choose app icon…**, **Use letter** and **Automatic**. A chosen icon is copied into `data/icons/` and is then an ordinary icon of yours.
+- **Where they come from** — the server fetches the sets' indexes from jsDelivr once a week and each icon on first use, keeps them in `data/icon-sets/` (left out of backups, like cached previews) and serves them itself; the browser never contacts the icon sets. `DISABLE_ICON_SETS=1` switches all of it off. The sets are credited under About.
+
 ### 19.5 Trash
 
 Deleted **bookmarks, pages and categories** stay in the trash for **30 days** (at most 500 entries). `:trash` opens it. Every route into the trash — the dashboard, the Bookmarks view, single or bulk — lands here.
@@ -2550,6 +2562,7 @@ Every count is rounded into a band. **Never recorded:** bookmark names, URLs, se
 - `GET /api/data-revision` — a hash of the bookmark data; open dashboard tabs poll it and refresh when something changes elsewhere.
 - Preview data is kept in memory and written to disk every 30 seconds and on shutdown.
 - `NEXTDASH_DATA_DIR` sets the data directory; `NEXTDASH_DISABLE_PREFETCH=1` skips the icon prefetch at start-up.
+- For the test suite only: `NEXTDASH_ICON_SETS_FIXTURE` and `NEXTDASH_UNRAID_FIXTURE` name a directory the app icon sets and the Unraid API answer from instead of the network. A real install leaves them unset.
 
 ---
 
