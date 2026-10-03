@@ -318,6 +318,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **tests — the P2s of bug hunt round 3**, each one failing without its fix; `config-docker-usage-alerts` opens the Alerts tab since Containers has tabs.
 - **tests — a selection of the P3s of bug hunt round 3**, each one failing without its fix.
 - **tests — the remaining P3s of bug hunt round 3**: `config-carried-state.spec.js`, and Go tests for the Unraid, icon, widget, web search and look fixes.
+- **tests — CI follows the release**: Containers tabs in `docker-auto-update` and `docker-drawer-charts`, twenty tour steps in `dashboard-tutorial-contrast`, Unraid in `dashboard-command-palette-config`, the backdrop switched off through the setting in `theme-backdrop-variety`, the favicon outcome stubbed in `health-bulk-fetching`, and `config-subtab-keyboard` waits for the focus before the next key.
 
 ---
 

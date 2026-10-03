@@ -98,6 +98,8 @@ test.describe('resource charts', () => {
         await dismissBlockingOverlays(page);
         await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
         await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('containers'); });
+        // Containers is in tabs since the rework; this setting is on its own.
+        await page.locator('[data-containers-tab="view"]').click();
         await expect(page.getByLabel('Keep the last hour of CPU and memory')).toBeChecked();
     });
 });

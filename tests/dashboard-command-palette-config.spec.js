@@ -90,7 +90,7 @@ test.describe('the config commands name the config that exists', () => {
             overview: 'Overview', bookmarks: 'Bookmarks', inbox: 'Inbox', appearance: 'Appearance',
             structure: 'Structure', behavior: 'Behavior',
             'data-backups': 'Data & backups', widgets: 'Widgets', containers: 'Containers',
-            stats: 'Statistics',
+            unraid: 'Unraid', stats: 'Statistics',
             help: 'Help', logs: 'Logs', about: 'About',
         };
         for (const id of sections) {

@@ -106,8 +106,11 @@ test.describe('health bulk: the three that fetch a page', () => {
             const original = window.fetch;
             window.BookmarkPreviewService = window.BookmarkPreviewService || {};
             const originalIcon = window.BookmarkPreviewService.fetchAndUploadFavicon;
+            const originalOutcome = window.BookmarkPreviewService.fetchFaviconOutcome;
             let n = 0;
             window.BookmarkPreviewService.fetchAndUploadFavicon = async () => `bulk-${n += 1}.png`;
+            // The sweep asks for the outcome (icon, or "shows its set icon").
+            window.BookmarkPreviewService.fetchFaviconOutcome = async () => ({ icon: `bulk-${n += 1}.png`, setIcon: false });
             window.fetch = function (input, init) {
                 const url = typeof input === 'string' ? input : input?.url || '';
                 if (url.includes('/api/bookmarks') && ['POST', 'PATCH'].includes(init?.method)
@@ -120,6 +123,7 @@ test.describe('health bulk: the three that fetch a page', () => {
             await window.__runner.bulkRefreshFavicons();
             window.fetch = original;
             window.BookmarkPreviewService.fetchAndUploadFavicon = originalIcon;
+            window.BookmarkPreviewService.fetchFaviconOutcome = originalOutcome;
             return { writes, picked };
         });
         expect(result.writes.length).toBe(1);

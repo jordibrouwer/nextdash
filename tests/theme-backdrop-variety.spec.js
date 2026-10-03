@@ -20,6 +20,10 @@ const { prepareDashboardInteraction } = require('./e2e-helpers');
 async function backdropsFor(page, themes) {
     return page.evaluate(async (list) => {
         const out = {};
+        // Off through the setting too: a theme change now brings its surfaces
+        // (backdrop included) a moment after applyTheme, and that put the
+        // backdrop back over the attribute set below.
+        if (window.dashboardInstance?.settings) window.dashboardInstance.settings.themeBackdrop = 'off';
         for (const theme of list) {
             window.ThemeLoader?.applyTheme?.(theme) ?? window.applyTheme?.(theme);
             // The pattern steps aside while a theme backdrop is on screen, so the

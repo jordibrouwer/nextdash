@@ -56,6 +56,8 @@ test('Config sets the window, 03:00 to 05:00 until changed', async ({ page }) =>
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('containers'); });
+    // Containers is in tabs since the rework; this setting is on its own.
+    await page.locator('[data-containers-tab="updates"]').click();
     await expect(page.getByLabel('Automatic updates from')).toHaveValue('3');
     await expect(page.getByLabel('until', { exact: true })).toHaveValue('5');
 });
