@@ -156,6 +156,8 @@ var themeBackdropChoice = map[string]string{
 	"solar-flats-light":           "horizon",     // vlak land
 	"solar-wind-light":            "sweep",       // bestaande keuze
 	"squid-ink-light":             "rings",       // inktwolk, ringen
+	"unraid-black-light":          "wireframe",   // serverkast
+	"unraid-azure-light":          "band",        // statusbalk
 	"static-noise-light":          "halftone",    // ruis
 	"steel-dawn-light":            "band",        // ochtendlicht op staal
 	"storm-petrel-light":          "waves",       // zeevogel

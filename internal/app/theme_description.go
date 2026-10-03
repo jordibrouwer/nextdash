@@ -63,6 +63,8 @@ var themeDescriptions = map[string]string{
 	"indigo-letterpress":    "Indigo pressed into thick cotton paper, a bite you can feel",
 	"iron-gall":             "The brown-black ink of old letters, faded at the edges",
 	"squid-ink":             "Black with a deep sea-blue in it when the light catches it",
+	"unraid-black":          "Flat black panels, small uppercase labels and the orange of a server that is up",
+	"unraid-azure":          "Cool grey panels and steel blue, the quieter way to watch a rack",
 	"vermilion-seal":        "Brush ink on white with one red seal stamped in the corner",
 	"absinthe":              "Bitter green on bone, like a café table at closing time",
 	"andromeda-drift":       "Deep space with the accent drifting across it",
