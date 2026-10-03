@@ -30,7 +30,8 @@
         }
         if (vars) {
             Object.keys(vars).forEach((name) => {
-                text = text.replace(`{${name}}`, vars[name]);
+                // A function, so a "$&" in the address is not read as a pattern.
+                text = text.replace(`{${name}}`, () => String(vars[name]));
             });
         }
         return text;

@@ -926,15 +926,9 @@ class DashboardContextMenu {
                 break;
             }
             case 'qr': {
-                // The inbox row's link is the item's own address, as Share uses.
-                let qrTarget = bookmark;
-                if (bookmarkRef.scope === 'inbox') {
-                    const shareUrl = d.inbox?.buildItemShareUrl?.(row.getAttribute('data-inbox-id'));
-                    if (shareUrl) {
-                        qrTarget = { name: bookmark.name, url: shareUrl };
-                    }
-                }
-                void window.BookmarkQR?.show?.(qrTarget);
+                // The saved page itself, to open on a phone. Share's deep link
+                // into this dashboard's inbox is no use off the LAN.
+                void window.BookmarkQR?.show?.({ name: bookmark.name, url: bookmark.url });
                 break;
             }
             // The inbox row's own actions. Each defers to the method the row

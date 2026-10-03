@@ -150,3 +150,21 @@ test(':remove goes through the trash, and its undo keeps later changes', async (
     }, { url: `https://palette-trash-${stamp}.example/`, later: `https://palette-later-${stamp}.example/` });
     expect(result).toEqual({ inTrash: true, back: true, later: true });
 });
+
+// :note said "Note saved." when nothing was written: a bookmark renamed
+// elsewhere was not found, the page went back unchanged, and the toast came
+// from another save.
+test(':note reports a note it could not write', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    const saved = await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        const handler = d.searchComponent.commandsComponent.noteCommandHandler;
+        return handler._persistBookmark({ name: 'Not here', url: `https://not-here-${Date.now()}.example/`, pageId: d.currentPageId, note: 'x' });
+    });
+    expect(saved).toBe(false);
+});

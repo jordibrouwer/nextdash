@@ -2051,7 +2051,10 @@ class SearchCommandsComponent {
             if (!res.ok) return revert(failedLabel);
             const bookmarks = await res.json();
             const idx = bookmarks.findIndex(b => b.url === bookmark.url && b.name === bookmark.name);
-            if (idx >= 0) Object.assign(bookmarks[idx], updates);
+            // Not on that page (moved or renamed elsewhere): posting the page
+            // back unchanged answered ok, and the pin or tag was gone on reload.
+            if (idx < 0) return revert(failedLabel);
+            Object.assign(bookmarks[idx], updates);
             const write = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

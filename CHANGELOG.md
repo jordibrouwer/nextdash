@@ -127,6 +127,10 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **new — a bookmark's icon has a container's three choices.** A pencil on the icon in the Bookmarks view's side panel opens Choose app icon…, Use letter and Automatic, the one in force ticked — the same pencil and menu as the container drawer's head. Automatic is no icon of its own, as before: the app's set icon, else the favicon. Use letter is a new field, `Bookmark.IconMode` (`"letter"`, else empty): the dashboard row keeps the letter instead of asking for a set icon, the favicon fill and Refresh all skip it (`collectIconCandidates`), and the bookmark form shows the letter and fetches no icon unless Fetch again is pressed. An icon of its own always wins: the server drops the mode whenever one is set (`normalizeBookmarkIconMode`, on every save and patch path). `bookmark_icon_mode_test.go`, `tests/bookmark-icon-mode.spec.js`.
 - **new — the side panel's ⋯ menu under headings**, as the Collection menu has them: Checks (detect redirect, reporting, snooze, merge), Refresh (title, favicon), Copies (archived, local) and Elsewhere (share, show on dashboard), with Delete apart at the foot. A group with nothing in it is left out; Refresh title is there for a bookmark without a finding too (`renderBmMoreMenuItems`, `renderBmHealthActions` takes `only`).
 - **fix — `:remove` puts the bookmark in the trash.** The command palette deleted it for good once the toast closed, and its undo posted the page as it was before, so a bookmark added in those seconds vanished. It is now recorded in the trash and undone from there, as a delete on the page is; the remote delete from the inline editor is recorded too.
+- **fix — `:pin`, `:tag` and `:note` say so when nothing was written.** A bookmark not found on its page was posted back unchanged and reported done; `:note` showed "Note saved." from another save.
+- **fix — an inbox item's QR code opens the saved page**, not this dashboard's inbox link.
+- **fix — the QR window's label keeps a `$&` in the address as written.**
+- **fix — bulk Fetch icons leaves a chosen letter alone.**
 
 ### Widgets
 

@@ -212,3 +212,19 @@ test('the declared icon is the one downloaded', async ({ page }) => {
     await page.evaluate(() => window.BookmarkPreviewService.fetchAndUploadFavicon('https://declared.example/'));
     expect(asked[0]).toBe('https://declared.example/icon.svg');
 });
+
+// "Use letter" is a choice: bulk Fetch icons picked those rows as missing an
+// icon, and the fetched favicon cleared the letter.
+test('bulk Fetch icons leaves a chosen letter alone', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
+    await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 20_000 });
+    const n = await page.evaluate(async () => {
+        const cfg = window.dashboardInstance.config;
+        await cfg.openConfigView?.('bookmarks');
+        return cfg.bulkFetchTargets([{ name: 'L', url: 'https://l.example', icon: '', iconMode: 'letter' },
+            { name: 'E', url: 'https://e.example', icon: '' }], 'icons').map((b) => b.name);
+    });
+    expect(n).toEqual(['E']);
+});
