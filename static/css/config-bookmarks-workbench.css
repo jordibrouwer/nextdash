@@ -1503,6 +1503,46 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
     display: none;
 }
 
+/*
+ * The panel's icon, with a pencil for changing it -- the container drawer's
+ * pencil, so the two heads work the same. Its menu opens under the icon,
+ * from the left, where the ⋯ menu opens from the right.
+ */
+.config-bm-panel-icon {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+}
+
+.config-bm-icon-pencil {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: 50%;
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.config-bm-icon-pencil:hover,
+.config-bm-icon-pencil:focus-visible,
+.config-bm-icon-pencil[aria-expanded="true"] {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.config-bm-icon-menu.config-bm-more-menu {
+    left: 0;
+    right: auto;
+    min-width: 11rem;
+}
+
 html body .config-bm-more-menu .config-btn {
     justify-content: flex-start;
     text-align: left;

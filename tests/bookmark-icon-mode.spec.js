@@ -2,9 +2,10 @@ const { test, expect } = require('./fixtures');
 const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 /**
- * A bookmark's icon has the three choices a container's has, in the Bookmarks
- * view's ⋯ menu: an app icon from the sets, the letter, or automatic. The
- * letter is stored as `iconMode: 'letter'`; automatic is no icon and no mode.
+ * A bookmark's icon has the three choices a container's has, behind a pencil
+ * on the Bookmarks view panel's icon, as in the container drawer: an app icon
+ * from the sets, the letter, or automatic. The letter is stored as
+ * `iconMode: 'letter'`; automatic is no icon and no mode.
  */
 
 const drawer = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer');
@@ -14,8 +15,8 @@ async function pick(page, name) {
 }
 
 async function openMenu(page) {
-  await drawer(page).locator('[data-bm-more-toggle]').click();
-  await expect(drawer(page).locator('[data-bm-more-menu]')).toBeVisible();
+  await drawer(page).locator('[data-bm-icon-toggle]').click();
+  await expect(drawer(page).locator('[data-bm-icon-menu]')).toBeVisible();
 }
 
 /** The bookmark as the server keeps it, found by its address. */
@@ -51,6 +52,17 @@ test.describe('bookmark icon: letter or automatic', () => {
 
     await drawer(page).locator('[data-bm-panel-action="icon-auto"]').click();
     await expect.poll(async () => (await stored(page, target.pageId, target.url))?.iconMode ?? '').toBe('');
+  });
+
+  test('the choices are at the icon, not in the ⋯ menu', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await pick(page, bookmarks[1].name);
+
+    await drawer(page).locator('[data-bm-more-toggle]').click();
+    await expect(drawer(page).locator('[data-bm-more-menu] [data-bm-panel-action^="icon-"]')).toHaveCount(0);
+    // Opening one menu takes the other down.
+    await openMenu(page);
+    await expect(drawer(page).locator('[data-bm-more-menu]')).toBeHidden();
   });
 
   test('choose app icon opens the picker', async ({ page }) => {

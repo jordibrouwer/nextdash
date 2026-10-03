@@ -558,7 +558,11 @@
         return `
             <header class="config-bm-panel-head config-bm-panel-head--single">
                 <div class="config-bm-panel-heading">
-                    <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
+                    <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}
+                        <button type="button" class="config-bm-icon-pencil" data-bm-icon-toggle aria-haspopup="menu" aria-expanded="false"
+                                aria-label="${esc(this.t('dashboard.dockerIconMenu', 'Change icon'))}">✎</button>
+                        <div class="config-bm-more-menu config-bm-icon-menu" role="menu" data-bm-icon-menu hidden>${this.renderBmIconModeItems(b)}</div>
+                    </span>
                     <span class="config-bm-panel-title" title="${esc(b.name || b.url || '')}">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
                     ${score == null ? '' : `<span class="config-bm-score" data-tone="${scoreTone}">${esc(String(score))}</span>`}
                     <span class="config-bm-more">
@@ -567,7 +571,6 @@
                         <div class="config-bm-more-menu" role="menu" data-bm-more-menu hidden>
                             ${this.renderBmHealthActions?.(b, { skip: ['recheck'] }) || ''}
                             <button type="button" class="config-btn config-btn--small" data-bm-panel-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>
-                            ${this.renderBmIconModeItems(b)}
                             <button type="button" class="config-btn config-btn--small" data-bm-panel-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>
                             <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.delete', 'Delete'))}</button>
                         </div>
@@ -700,9 +703,10 @@
     },
 
     /**
-     * The icon's three choices, as the container drawer offers them: an app
-     * icon, the letter, or automatic. The one in force is marked; an icon of
-     * the bookmark's own counts as neither of the other two.
+     * The icon's three choices, behind a pencil on the panel's icon as the
+     * container drawer and the bookmark form have them: an app icon, the
+     * letter, or automatic. The one in force is marked; an icon of the
+     * bookmark's own counts as neither of the other two.
      */
     renderBmIconModeItems(b) {
         const esc = (v) => this.dash.escapeHtml(v);
@@ -721,10 +725,11 @@
     /** Close the ⋯ menu, if it is open; true when there was one to close. */
     closeWorkbenchMoreMenu() {
         const panel = this._libPanel || document.getElementById('config-bm-panel');
-        const menu = panel?.querySelector('[data-bm-more-menu]:not([hidden])');
-        if (!menu) return false;
-        menu.hidden = true;
-        panel.querySelector('[data-bm-more-toggle]')?.setAttribute('aria-expanded', 'false');
+        const menus = [...(panel?.querySelectorAll('[data-bm-more-menu]:not([hidden]), [data-bm-icon-menu]:not([hidden])') || [])];
+        if (!menus.length) return false;
+        menus.forEach((menu) => { menu.hidden = true; });
+        panel.querySelectorAll('[data-bm-more-toggle], [data-bm-icon-toggle]')
+            .forEach((btn) => btn.setAttribute('aria-expanded', 'false'));
         return true;
     },
 
@@ -1240,9 +1245,13 @@
                 this.setWorkbenchPanelTab(tabBtn.dataset.bmTabPanel);
                 return;
             }
-            const more = e.target.closest('[data-bm-more-toggle]');
+            const more = e.target.closest('[data-bm-more-toggle], [data-bm-icon-toggle]');
             if (more) {
-                const menu = panel.querySelector('[data-bm-more-menu]');
+                const icon = more.hasAttribute('data-bm-icon-toggle');
+                const menu = panel.querySelector(icon ? '[data-bm-icon-menu]' : '[data-bm-more-menu]');
+                // One menu at a time: opening one takes the other down.
+                panel.querySelector(icon ? '[data-bm-more-menu]' : '[data-bm-icon-menu]')?.setAttribute('hidden', '');
+                panel.querySelector(icon ? '[data-bm-more-toggle]' : '[data-bm-icon-toggle]')?.setAttribute('aria-expanded', 'false');
                 if (menu) {
                     menu.hidden = !menu.hidden;
                     more.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
@@ -1262,8 +1271,8 @@
             const key = panel.dataset.bmPanelKey;
             if (!action || !key) return;
             if (action === 'open') this.openBookmarkByKey(key);
-            // The menu has closed by now, so the picker hangs off the ⋯ button.
-            else if (action === 'icon-choose') void this.chooseBookmarkAppIcon(key, panel.querySelector('[data-bm-more-toggle]'));
+            // The menu has closed by now, so the picker hangs off the pencil.
+            else if (action === 'icon-choose') void this.chooseBookmarkAppIcon(key, panel.querySelector('[data-bm-icon-toggle]'));
             else if (action === 'edit-dialog') void this.openBookmarkEditModal(key);
             else if (action === 'promote') void this.openBookmarkEditModal(key, { promote: true });
             else if (action === 'delete') void this.deleteBookmarkByKey(key);
