@@ -464,3 +464,50 @@ func TestPendingNotificationsWithOnlyAWebhookEndpoint(t *testing.T) {
 		t.Fatalf("notifications = %#v, want the down event for the webhook", got)
 	}
 }
+
+// A recovery that a Re-check saw first still sends "back online": once its up
+// sample was stored, the next monitor round compared up with up and stayed
+// silent.
+func TestARecoverySeenByARecheckIsAnnounced(t *testing.T) {
+	var (
+		mu       sync.Mutex
+		received []monitorNotification
+	)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var n monitorNotification
+		_ = json.NewDecoder(r.Body).Decode(&n)
+		mu.Lock()
+		received = append(received, n)
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	h, dir := healthRecheckTestHandlers(t, `{"monitorNotifyUrl":"`+srv.URL+`","monitorNotifyRetries":1,"allowLocalBookmarks":true}`)
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[{"name":"A","url":"https://a.example","monitor":true}]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(pageJSON), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+	key := canonicalBookmarkURLKey("https://a.example")
+	now := time.Now()
+	if err := h.appendHealthSamples(map[string][]HealthSample{key: {{T: msAgo(now, 10*time.Minute), Up: false, Alerted: true}}}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+
+	h.recordManualHealthSample(key, true, 40, 200, "")
+
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		mu.Lock()
+		n := len(received)
+		mu.Unlock()
+		if n > 0 || time.Now().After(deadline) {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(received) != 1 || received[0].Event != "up" {
+		t.Fatalf("received = %#v, want one back-online", received)
+	}
+}

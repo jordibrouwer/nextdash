@@ -264,6 +264,37 @@ func (h *Handlers) pendingMonitorNotificationsAlerted(transitions []monitorTrans
 	return pending, alerted
 }
 
+// announceRecoveries sends "back online" for monitors whose recovery a
+// re-check or a retest saw first. Called before those samples are stored:
+// once the up sample was in the history, the next monitor round compared up
+// with up and the recovery was never sent.
+func (h *Handlers) announceRecoveries(updates map[string][]HealthSample) {
+	if len(updates) == 0 {
+		return
+	}
+	var transitions []monitorTransition
+	seen := map[string]bool{}
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			key := canonicalBookmarkURLKey(bm.URL)
+			samples := updates[key]
+			if !bm.Monitor || len(samples) == 0 || seen[key] {
+				continue
+			}
+			seen[key] = true
+			last := samples[len(samples)-1]
+			if !last.Up || last.Maint {
+				continue
+			}
+			transitions = append(transitions, monitorTransition{key: key, name: bm.Name, url: bm.URL,
+				up: true, at: last.T, muted: bm.NotifyMuted})
+		}
+	}
+	if pending, _ := h.pendingMonitorNotificationsAlerted(transitions); len(pending) > 0 {
+		go h.dispatchMonitorNotifications(context.Background(), pending)
+	}
+}
+
 // withoutMaintenanceSamples is samples minus the ones recorded in a window.
 func withoutMaintenanceSamples(samples []HealthSample) []HealthSample {
 	for _, s := range samples {

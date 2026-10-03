@@ -5162,6 +5162,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	}
 	// Best-effort: losing a sample costs a gap in the heartbeat, which is not
 	// worth failing a retest that already pinged everything successfully.
+	h.announceRecoveries(historyUpdates)
 	if err := h.appendHealthSamples(historyUpdates); err != nil {
 		logWarn(logComponentHealth, "the results of this re-check could not be added to the history (%v); the graph will show a gap", err)
 	}

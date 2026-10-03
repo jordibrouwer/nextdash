@@ -131,10 +131,12 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — Pi-hole v6 signs in itself.** It took a pasted session id that lapsed after half an hour; it now signs in with the password and keeps the id.
 - **new — the presets follow their services.** Overseerr/Jellyseerr is Seerr (same API, same id). Tautulli takes its key in a header instead of the address, Nextcloud reads with its monitoring token (`NC-Token`, with the OCS header sent for you), Bazarr counts wanted episodes and films and throttled providers (`/api/badges`), ntfy shows its message count (`/v1/stats`). Speedtest Tracker shows whether the last test was healthy and when it ran; SABnzbd its time left; Traefik its middlewares; Glances its load; Paperless its tags; Seerr its total. The Immich note says the key must be an admin's.
 - **new — retired presets.** Readarr (stopped upstream), Pi-hole v5 (API removed in v6) and TrueNAS (REST API removed in 26) are no longer offered; a widget already started from one keeps working and still shows its choice.
+- **fix — a widget's own key survives Save.** After Health had loaded the credential names, Config → Widgets read the widget's key as "none" and the next Save deleted it; re-picking the Plex preset and saving without a key typed replaced the stored key with its Accept header alone.
 
 ### Alerts
 
 - **new — Apprise as an alert service.** Downtime alerts, certificate warnings and container notices can go to apprise-api, and from there to everything Apprise reaches: mail, Matrix, Signal, Teams and a hundred more. Pick Apprise under Status → Downtime alerts and give the notify URL of a configuration key (`http://apprise:8000/notify/<key>`); the passwords and tokens of those services stay in Apprise. An optional tag (`Settings.MonitorNotifyAppriseTag`) sends only to the destinations that carry it. The body is Apprise's own (`title`, `body`, `type`, `format: text`), with an outage as `failure`, a recovery as `success` and the rest as `warning` (`formatAppriseNotification`, `health_notify_presets.go`). Send test alert says what Apprise's refusals mean: 424, it could not deliver to a destination or none matched the tag; 404, there is no configuration under that key.
+- **fix — "back online" after a Re-check.** When a Re-check, Retest all or the hourly re-check saw a recovery first, its up sample made the next monitor round compare up with up, and the recovery was never sent. Those paths now announce it before storing the sample (`announceRecoveries`).
 
 ### Charts
 
