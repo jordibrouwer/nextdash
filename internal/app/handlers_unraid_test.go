@@ -328,3 +328,24 @@ func TestUnraidOverviewAsksItsAreasAtOnce(t *testing.T) {
 		t.Fatalf("the schema was asked %d times", introspections)
 	}
 }
+
+// A resolver that fails on the server answers 200 with its field null. That
+// is not an empty array: read as one, it alerted "The Unraid array stopped".
+func TestUnraidFailedResolverIsUnreachable(t *testing.T) {
+	h := unraidTestHandlers(t)
+	dir := t.TempDir()
+	intro, err := os.ReadFile("testdata/unraid/introspection.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = os.WriteFile(filepath.Join(dir, "introspection.json"), intro, 0o644)
+	_ = os.WriteFile(filepath.Join(dir, "array.json"), []byte(`{"data":null,
+	  "errors":[{"message":"boom","path":["array"],"extensions":{"code":"INTERNAL_SERVER_ERROR"}}]}`), 0o644)
+	t.Setenv("NEXTDASH_UNRAID_FIXTURE", dir)
+	forgetUnraidSchema("fail-test")
+	defer forgetUnraidSchema("fail-test")
+	_, status, err := h.fetchUnraidArea(context.Background(), UnraidServer{ID: "fail-test", BaseURL: "http://tower"}, "k", "array")
+	if status != "unreachable" || err == nil {
+		t.Fatalf("status=%s err=%v", status, err)
+	}
+}

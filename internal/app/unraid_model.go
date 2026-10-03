@@ -287,7 +287,10 @@ func toUnraidParity(data json.RawMessage) (UnraidParityView, error) {
 		return UnraidParityView{}, fmt.Errorf("unraid: parity answer unreadable")
 	}
 	s := raw.Array.ParityCheckStatus
-	v := UnraidParityView{Running: s.Running || s.Status == "RUNNING", Paused: s.Paused || s.Status == "PAUSED",
+	// A paused check is still under way: the API leaves running null and
+	// says PAUSED in the status, and reading that as done sent the finished
+	// alert at the pause.
+	v := UnraidParityView{Running: s.Running || s.Status == "RUNNING" || s.Status == "PAUSED", Paused: s.Paused || s.Status == "PAUSED",
 		Progress: int(unraidInt(s.Progress)), Speed: s.Speed, Errors: unraidInt(s.Errors)}
 	if v.Running && v.Progress > 0 && v.Progress < 100 {
 		elapsed := unraidInt(s.Duration)

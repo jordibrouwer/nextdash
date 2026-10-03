@@ -247,3 +247,26 @@ func TestUnraidWatcherParityReadsTheRunFromHistory(t *testing.T) {
 		t.Fatalf("sent twice: %+v", got)
 	}
 }
+
+// The real API leaves running and paused null and says PAUSED in the status.
+// A pause is not the end of the check: no "finished" alert at the pause, and
+// one alert when the resumed check does end.
+func TestUnraidWatcherParityPauseIsNotTheEnd(t *testing.T) {
+	paused, err := toUnraidParity(json.RawMessage(`{"array":{"parityCheckStatus":{"status":"PAUSED","running":null,"paused":null,"progress":40,"errors":3}}}`))
+	if err != nil || !paused.Running || !paused.Paused {
+		t.Fatalf("paused read as %+v err=%v", paused, err)
+	}
+	now := time.Now()
+	w := newUnraidWatcher()
+	w.observe(nil, &UnraidParityView{Running: true}, nil, now)
+	if got := w.observe(nil, &paused, nil, now.Add(time.Minute)); len(got) != 0 {
+		t.Fatalf("the pause alerted: %+v", got)
+	}
+	if got := w.observe(nil, &UnraidParityView{Running: true, Errors: 3}, nil, now.Add(2*time.Hour)); len(got) != 0 {
+		t.Fatalf("the resumed check alerted: %+v", got)
+	}
+	got := w.observe(nil, &UnraidParityView{Errors: 3}, nil, now.Add(3*time.Hour))
+	if len(got) != 1 || !strings.Contains(got[0].Title, "3 errors") {
+		t.Fatalf("the end: got %+v", got)
+	}
+}

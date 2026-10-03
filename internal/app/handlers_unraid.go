@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"errors"
 	"net/http"
 	"strings"
@@ -61,6 +62,17 @@ func (h *Handlers) fetchUnraidArea(ctx context.Context, srv UnraidServer, key, a
 			return nil, "forbidden", nil
 		}
 	}
+	// A resolver that failed on the server answers 200 with its field null.
+	// Read as an empty answer it alerted "The Unraid array stopped" and
+	// blanked the tiles; as unreachable the last good answer stays. The UPS
+	// field is null without a UPS, so it is left to its own reading.
+	if area != "ups" {
+		for _, fe := range fieldErrs {
+			if len(fe.Path) > 0 && fe.Path[0] != "me" && unraidFieldMissing(data, fe.Path[0]) {
+				return nil, "unreachable", fmt.Errorf("unraid: %s: %s", fe.Path[0], fe.Message)
+			}
+		}
+	}
 	var view any
 	switch area {
 	case "array":
@@ -82,6 +94,15 @@ func (h *Handlers) fetchUnraidArea(ctx context.Context, srv UnraidServer, key, a
 		return nil, "unsupported", err
 	}
 	return view, "ok", nil
+}
+
+func unraidFieldMissing(data json.RawMessage, field string) bool {
+	var root map[string]json.RawMessage
+	if json.Unmarshal(data, &root) != nil || root == nil {
+		return true
+	}
+	v, ok := root[field]
+	return !ok || string(v) == "null"
 }
 
 func unraidStatusOf(err error) string {

@@ -168,6 +168,8 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **docs — themes up front.** README opens with what the look studio offers — 320 themes in 160 families, twelve characters, 26 backdrops, twelve looks, Compare, 🎲 and Apply, favourites and the theme editor — and the manual's table at the top points to it.
 - **docs — sixteen new README screenshots**, each in a theme of its own and none of them used before, from the same demo data: containers with their app icons, the dashboard and a homelab page, the Bookmarks view and its Broken filter, Collection health, search, tags and the command palette, the inbox and triage, the look studio, and Config → Appearance and Statistics. The captions follow what each view does now; the old screenshots are replaced.
 - **docs — Config → Help catches up**, in all six languages: 41 Custom-widget services with the new Monitoring group, twenty-nine widget kinds with a paragraph on the seven for Unraid, and Config → Containers' four tabs with a pointer to Config → Unraid.
+- **fix — a paused parity check is not a finished one.** The API leaves `running` null and says `PAUSED` in the status; read as done, the pause sent "Parity check finished with N errors" and the tile showed the previous run.
+- **fix — a failed resolver no longer reads as a stopped array.** The API answers it with HTTP 200 and the field null; read as an empty answer, it alerted "The Unraid array stopped" and blanked the tiles. It now counts as unreachable, and the last good answer stays.
 
 ### Theme editor
 

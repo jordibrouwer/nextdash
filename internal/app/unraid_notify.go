@@ -77,7 +77,7 @@ func (w *unraidWatcher) observe(a *UnraidArrayView, p *UnraidParityView, n *Unra
 			w.parityAwaiting = now
 		}
 		w.parityRunning = p.Running
-		if !w.parityAwaiting.IsZero() {
+		if !w.parityAwaiting.IsZero() && !p.Running {
 			if errs, done := parityRunErrors(p, w.parityStarted, now.Sub(w.parityAwaiting)); done {
 				w.parityAwaiting = time.Time{}
 				if errs > 0 {
