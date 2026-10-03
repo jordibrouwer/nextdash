@@ -25,7 +25,7 @@
 (function (global) {
     'use strict';
 
-    const SEGMENTS = ['all', 'favorites', 'light', 'dark'];
+    const SEGMENTS = ['all', 'favorites', 'light', 'dark', 'yours'];
 
     /*
      * The archetypes, as their own row of chips.
@@ -216,6 +216,11 @@
             .join('');
     }
 
+    /** A family the reader made: either half is one of their own themes. */
+    function isOwnFamily(family) {
+        return Object.values(family.variants).some((v) => metaFor(v.id).own === true);
+    }
+
     function renderCard(family, state, t) {
         const shown = family.variants[state.variantFor(family.key)] || family.variants.dark || family.variants.light;
         const id = shown.id;
@@ -227,6 +232,8 @@
         const character = characterOf(id);
         const description = metaFor(id).description || '';
         const isNew = metaFor(id).new === true;
+        const meta = metaFor(id);
+        const own = meta.own === true;
 
         return `
             <div class="theme-browser-card${isCurrent ? ' is-current' : ''}${character ? ` is-${character}` : ''}"
@@ -239,6 +246,9 @@
                     <span class="theme-browser-card-name">${escapeHtml(family.label || id)}</span>
                     ${character ? `<span class="theme-browser-badge" data-theme-badge="${escapeHtml(character)}">${escapeHtml(archetypeLabel(character, t))}</span>` : ''}
                     ${isNew ? `<span class="theme-browser-badge theme-browser-badge--new" data-theme-new>${escapeHtml(t('config.themeNew', 'new'))}</span>` : ''}
+                    ${own ? `<span class="theme-browser-badge theme-browser-badge--yours" data-theme-yours>${escapeHtml(t('config.themeYours', 'yours'))}</span>` : ''}
+                    ${own && meta.look ? `<span class="theme-browser-badge theme-browser-badge--look" data-theme-has-look>${escapeHtml(t('config.themeHasLook', 'look'))}</span>` : ''}
+                    ${meta.recoloured ? `<span class="theme-browser-badge theme-browser-badge--recoloured" data-theme-recoloured>${escapeHtml(t('config.themeRecoloured', 'recoloured'))}</span>` : ''}
                     <button type="button" class="theme-browser-star${isFavorite ? ' is-on' : ''}"
                             data-theme-favorite="${escapeHtml(id)}"
                             aria-pressed="${isFavorite}"
@@ -267,6 +277,7 @@
             const ids = Object.values(family.variants).map((v) => v.id);
             if (!ids.some((id) => state.favorites.includes(id))) return false;
         }
+        if (state.segment === 'yours' && !isOwnFamily(family)) return false;
         if (state.segment === 'light' && !family.variants.light) return false;
         if (state.segment === 'dark' && !family.variants.dark) return false;
         if (state.archetype
@@ -290,7 +301,8 @@
         const haystack = [family.label, family.key, deriveTraits(shown.palette, t).join(' '),
             character, character ? archetypeLabel(character, t) : '',
             metaFor(shown.id).description || '',
-            isNew ? `new ${t('config.themeNew', 'new')}` : '']
+            isNew ? `new ${t('config.themeNew', 'new')}` : '',
+            isOwnFamily(family) ? `yours ${t('config.themeYours', 'yours')}` : '']
             .join(' ')
             .toLowerCase();
         return query.split(/\s+/).every((word) => haystack.includes(word));
@@ -304,7 +316,8 @@
     function renderInUse(state, t) {
         const current = state.current;
         const chosen = current !== state.opened;
-        const name = `<strong>${escapeHtml(state.nameOf(current))}</strong>`;
+        const yours = metaFor(current).own === true ? ` · ${escapeHtml(t('config.themeYours', 'yours'))}` : '';
+        const name = `<strong>${escapeHtml(state.nameOf(current))}</strong>${yours}`;
         const line = chosen
             ? escapeHtml(t('config.themeChosenLine', 'Chosen: {name} · {saved} stays until Apply'))
                 .replace('{name}', name)
@@ -319,7 +332,17 @@
 
     function renderBody(families, state, t) {
         const visible = families.filter((f) => matches(f, state, t));
-        const cards = visible.map((f) => renderCard(f, state, t)).join('');
+        // Under All, with nothing typed, the reader's own themes come first
+        // under a heading of their own; they would otherwise be lost among
+        // three hundred.
+        const groupHead = (key, label) => `<p class="theme-browser-group-head" data-theme-group="${key}">${escapeHtml(label)}</p>`;
+        const cards = state.segment === 'all' && !state.query.trim() && visible.some(isOwnFamily)
+            ? groupHead('yours', t('config.customThemesTitle', 'Your themes'))
+                + visible.filter(isOwnFamily).map((f) => renderCard(f, state, t)).join('')
+                + groupHead('builtin', t('config.themeGroupBuiltIn', 'Built in'))
+                + visible.filter((f) => !isOwnFamily(f)).map((f) => renderCard(f, state, t)).join('')
+            : visible.map((f) => renderCard(f, state, t)).join('');
+        const hasOwn = families.some(isOwnFamily);
         const chipButton = (name, label, st) =>
             `<button type="button" class="theme-browser-chip${st.archetype === name ? ' is-on' : ''}"
                      data-theme-character="${escapeHtml(name)}"
@@ -344,6 +367,7 @@
                         ${segmentButton('favorites', t('config.themeSegmentFavorites', 'Favourites'))}
                         ${segmentButton('light', t('config.themeSegmentLight', 'Light'))}
                         ${segmentButton('dark', t('config.themeSegmentDark', 'Dark'))}
+                        ${hasOwn ? segmentButton('yours', t('config.themeSegmentYours', 'Yours')) : ''}
                     </span>
                 </div>
                 ${ARCHETYPES.length ? `

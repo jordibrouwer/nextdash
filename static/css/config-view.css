@@ -1909,6 +1909,33 @@
     display: none;
 }
 
+/* "Your themes" and "Built in": a quiet label over each group. */
+.config-theme-picker-group > ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-theme-picker-group + .config-theme-picker-group {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+}
+
+.config-theme-picker-group-label {
+    display: block;
+    padding: 2px 10px 4px;
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-text) * 0.8);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.config-theme-picker-note {
+    color: var(--text-tertiary);
+}
+
 .config-theme-picker-option {
     padding: 6px 10px;
     border-radius: var(--radius-4, 6px);

@@ -442,6 +442,11 @@ type themeMeta struct {
 	Backdrop     string `json:"backdrop"`
 	SurfaceAlpha string `json:"surfaceAlpha"`
 	SurfaceBlur  string `json:"surfaceBlur"`
+	// Own is a theme the reader made, Recoloured a built-in whose colours
+	// they changed, and Look a theme of their own that brings a look along.
+	Own        bool `json:"own,omitempty"`
+	Recoloured bool `json:"recoloured,omitempty"`
+	Look       bool `json:"look,omitempty"`
 }
 
 // themeMetaFor answers for one theme.
@@ -461,5 +466,34 @@ func themeMetaFor(themeID string, tc ThemeColors) themeMeta {
 		Backdrop:     themeBackdropRecipes[themeBackdropRecipeFor(themeBackdropHashID(themeID), tc)],
 		SurfaceAlpha: themeSurfaceAlpha(tc),
 		SurfaceBlur:  themeSurfaceBlur(tc),
+	}
+}
+
+// themeColourFields are the colours a reader can change in the editor.
+func themeColourFields(tc ThemeColors) [14]string {
+	return [14]string{tc.TextPrimary, tc.TextSecondary, tc.TextTertiary, tc.BackgroundPrimary,
+		tc.BackgroundSecondary, tc.BackgroundDots, tc.BackgroundModal, tc.BorderPrimary,
+		tc.BorderSecondary, tc.AccentPrimary, tc.AccentSuccess, tc.AccentWarning, tc.AccentError,
+		tc.AccentInfo}
+}
+
+// markThemeMetaOrigin says where a theme came from: the reader's own, or a
+// built-in whose colours differ from what this build ships. A new name alone
+// is not a recolour.
+func markThemeMetaOrigin(m *themeMeta, tc ThemeColors, shipped *ThemeColors, custom bool) {
+	if custom {
+		m.Own = true
+		m.Look = false // set from tc.Look once themes carry one
+		return
+	}
+	if shipped == nil {
+		return
+	}
+	a, b := themeColourFields(tc), themeColourFields(*shipped)
+	for i := range a {
+		if !strings.EqualFold(strings.TrimSpace(a[i]), strings.TrimSpace(b[i])) {
+			m.Recoloured = true
+			return
+		}
 	}
 }

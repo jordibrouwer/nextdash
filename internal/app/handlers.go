@@ -2663,14 +2663,21 @@ not have to pull every palette to get them.
 func (h *Handlers) ThemeMeta(w http.ResponseWriter, r *http.Request) {
 	colors := h.store.GetColors()
 	meta := make(map[string]themeMeta, len(colors.BuiltIn)+len(colors.Custom))
+	defaults := getDefaultBuiltInThemes()
 	for id, tc := range colors.BuiltIn {
-		meta[id] = themeMetaFor(id, tc)
+		m := themeMetaFor(id, tc)
+		if d, ok := defaults[id]; ok {
+			markThemeMetaOrigin(&m, tc, &d, false)
+		}
+		meta[id] = m
 	}
 	// A custom theme has no description written for it, and may well have no
 	// archetype either; it still gets an entry, so the browser does not have
 	// to treat it as a special case.
 	for id, tc := range colors.Custom {
-		meta[id] = themeMetaFor(id, tc)
+		m := themeMetaFor(id, tc)
+		markThemeMetaOrigin(&m, tc, nil, true)
+		meta[id] = m
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{

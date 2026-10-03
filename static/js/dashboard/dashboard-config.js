@@ -9510,11 +9510,31 @@ class DashboardConfig {
         );
         // Make sure the saved theme is selectable even before the list loads.
         if (!themes[current]) entries.unshift([current, '']);
-        return entries.map(([id, name]) =>
+        const recoloured = (id) => this._themeMeta?.themes?.[id]?.recoloured === true;
+        const option = ([id, name]) =>
             `<li role="option" class="config-theme-picker-option" data-theme-option="${esc(id)}"
                  id="config-theme-opt-${esc(id)}" aria-selected="${id === current}"
-                 ${id === current ? 'data-theme-current' : ''}>${esc(this.themeDisplayName(id, name))}</li>`
-        ).join('');
+                 ${id === current ? 'data-theme-current' : ''}>${esc(this.themeDisplayName(id, name))}${recoloured(id)
+                    ? ` <span class="config-theme-picker-note">· ${esc(this.t('config.themeRecoloured', 'recoloured'))}</span>` : ''}</li>`;
+        // The reader's own themes first, in a group of their own.
+        const group = (key, label, list) => (list.length ? `
+            <li role="presentation" class="config-theme-picker-group" data-theme-picker-group="${key}">
+                <span class="config-theme-picker-group-label">${esc(label)}</span>
+                <ul role="group" aria-label="${esc(label)}">${list.map(option).join('')}</ul>
+            </li>` : '');
+        return group('yours', this.t('config.customThemesTitle', 'Your themes'), entries.filter(([id]) => this.isOwnTheme(id)))
+            + group('builtin', this.t('config.themeGroupBuiltIn', 'Built in'), entries.filter(([id]) => !this.isOwnTheme(id)));
+    }
+
+    /** A theme the reader made, as opposed to one that ships with nextDash. */
+    isOwnTheme(id) {
+        return this._themeMeta?.themes?.[id]?.own === true || Boolean(window.ThemeUtils?.isUserCustomThemeId?.(id));
+    }
+
+    /** The closed picker's text: the theme's name, and "· yours" for one of the reader's own. */
+    themePickerLabel(id) {
+        const name = this.themeDisplayName(id, this._themeList?.[id] || '');
+        return this.isOwnTheme(id) ? `${name} · ${this.t('config.themeYours', 'yours')}` : name;
     }
 
     /**
@@ -9533,7 +9553,14 @@ class DashboardConfig {
     renderThemePicker() {
         const esc = (v) => this.dash.escapeHtml(v);
         const current = this.dash.settings?.theme || 'dark';
-        const label = this.themeDisplayName(current, this._themeList?.[current] || '');
+        const label = this.themePickerLabel(current);
+        // "· recoloured" needs the theme meta; redraw the closed list once it lands.
+        if (!this._themeMeta) {
+            void this.loadThemeMeta().then(() => {
+                const list = document.querySelector('[data-theme-picker-list]');
+                if (list?.hidden) list.innerHTML = this.renderThemeOptions();
+            }).catch(() => {});
+        }
         return `
             <div class="config-theme-picker" data-theme-picker>
                 <button type="button" class="config-select config-theme-picker-button"
@@ -9611,7 +9638,7 @@ class DashboardConfig {
             button.setAttribute('aria-expanded', 'false');
             button.setAttribute('value', id);
             const labelEl = button.querySelector('[data-theme-picker-label]');
-            if (labelEl) labelEl.textContent = option.textContent;
+            if (labelEl) labelEl.textContent = this.themePickerLabel(id);
             options().forEach((o) => {
                 o.setAttribute('aria-selected', String(o === option));
                 o.toggleAttribute('data-theme-current', o === option);
@@ -9789,7 +9816,7 @@ class DashboardConfig {
             list.innerHTML = this.renderThemeOptions();
             const current = this.dash.settings?.theme || 'dark';
             const label = list.parentElement?.querySelector('[data-theme-picker-label]');
-            if (label) label.textContent = this.themeDisplayName(current, this._themeList?.[current] || '');
+            if (label) label.textContent = this.themePickerLabel(current);
         }
     }
 
