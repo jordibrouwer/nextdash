@@ -65,6 +65,18 @@ test.describe('bookmark icon: letter or automatic', () => {
     await expect(drawer(page).locator('[data-bm-more-menu]')).toBeHidden();
   });
 
+  // Under headings like the Collection menu, with Delete apart at the foot.
+  test('the ⋯ menu is grouped under headings, delete last', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    // The first bookmark is the broken one: health's actions are all there.
+    await pick(page, bookmarks[0].name);
+
+    await drawer(page).locator('[data-bm-more-toggle]').click();
+    const menu = drawer(page).locator('[data-bm-more-menu]');
+    await expect(menu.locator('.config-bm-header-menu-h')).toHaveText(['Checks', 'Refresh', 'Copies', 'Elsewhere']);
+    await expect(menu.locator('button').last()).toHaveAttribute('data-bm-panel-action', 'delete');
+  });
+
   test('choose app icon opens the picker', async ({ page }) => {
     const { bookmarks } = await openBookmarksWithHealth(page, undefined, { view: 'library' });
     await pick(page, bookmarks[1].name);

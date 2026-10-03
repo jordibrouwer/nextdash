@@ -2672,7 +2672,8 @@ body[data-density-mode="dense"] .config-bm-workbench {
     color: var(--text-secondary);
 }
 
-.config-bm-header-menu hr {
+.config-bm-header-menu hr,
+.config-bm-more-menu hr {
     width: 100%;
     margin: var(--space-1, 0.25rem) 0;
     border: 0;

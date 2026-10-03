@@ -568,12 +568,7 @@
                     <span class="config-bm-more">
                         <button type="button" class="config-btn config-btn--small" data-bm-more-toggle aria-haspopup="menu" aria-expanded="false"
                                 aria-label="${esc(this.t('config.bmMoreActions', 'More actions'))}">⋯</button>
-                        <div class="config-bm-more-menu" role="menu" data-bm-more-menu hidden>
-                            ${this.renderBmHealthActions?.(b, { skip: ['recheck'] }) || ''}
-                            <button type="button" class="config-btn config-btn--small" data-bm-panel-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>
-                            <button type="button" class="config-btn config-btn--small" data-bm-panel-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>
-                            <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.delete', 'Delete'))}</button>
-                        </div>
+                        <div class="config-bm-more-menu" role="menu" data-bm-more-menu hidden>${this.renderBmMoreMenuItems(b)}</div>
                     </span>
                 </div>
                 ${/^https?:\/\//i.test(String(b.url || '')) ? `<a class="config-bm-panel-url" href="${esc(b.url)}" title="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(this.formatBookmarkUrlDisplay(b.url))}</a>` : ''}
@@ -700,6 +695,31 @@
         e.preventDefault();
         e.stopImmediatePropagation();
         return true;
+    },
+
+    /**
+     * The ⋯ menu, under headings as the Collection menu has them: what the
+     * checks found, what can be fetched again, the copies kept of the page,
+     * and where else it goes. Delete stands apart at the foot. Health's own
+     * actions appear only while the bookmark has a finding; a group with
+     * nothing in it is left out, heading and all.
+     */
+    renderBmMoreMenuItems(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const health = (only) => this.renderBmHealthActions?.(b, { only }) || '';
+        const panel = (action, label, extra = '') => `<button type="button" class="config-btn config-btn--small${extra}" data-bm-panel-action="${action}">${esc(label)}</button>`;
+        const heading = (label) => `<div class="config-bm-header-menu-h" role="presentation">${esc(label)}</div>`;
+        const groups = [
+            [this.t('config.bmMenuChecks', 'Checks'), health(['redirect', 'ignore', 'snooze', 'merge'])],
+            [this.t('config.bmMenuRefresh', 'Refresh'),
+                (health(['title']) || panel('title', this.t('dashboard.healthRefreshTitle', 'Refresh title')))
+                + panel('favicon', this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))],
+            [this.t('config.bmMenuCopies', 'Copies'), health(['archive', 'local-copy'])],
+            [this.t('config.bmMenuElsewhere', 'Elsewhere'),
+                health(['share']) + panel('dashboard', this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))],
+        ].filter(([, body]) => body);
+        return `${groups.map(([label, body]) => heading(label) + body).join('<hr>')}<hr>${
+            panel('delete', this.t('config.delete', 'Delete'), ' config-btn--danger')}`;
     },
 
     /**
