@@ -209,3 +209,15 @@ func TestSavingColoursKeepsTheCollection(t *testing.T) {
 		t.Fatalf("an invented collection was kept: %q", got.Collection)
 	}
 }
+
+// A look's tuning with numbers left out takes the defaults for them, not 0.
+func TestALookTuningFillsWhatItLeavesOut(t *testing.T) {
+	var l ThemeLook
+	if err := json.Unmarshal([]byte(`{"backdrop":"waves","tuning":{"strength":0.5}}`), &l); err != nil {
+		t.Fatal(err)
+	}
+	def := defaultBackdropTuning()
+	if l.Tuning == nil || l.Tuning.Strength != 0.5 || l.Tuning.Scale != def.Scale || l.Tuning.Brightness != def.Brightness {
+		t.Fatalf("tuning = %+v", l.Tuning)
+	}
+}

@@ -1,6 +1,9 @@
 package app
 
-import "strings"
+import (
+	"encoding/json"
+	"strings"
+)
 
 /*
 ThemeLook is a look a theme of the reader's own brings along: the answers the
@@ -21,6 +24,25 @@ type ThemeLook struct {
 	Depth    string          `json:"depth,omitempty"`
 	Heads    *ThemeLookHeads `json:"heads,omitempty"`
 	Text     *ThemeLookText  `json:"text,omitempty"`
+}
+
+// UnmarshalJSON fills what a look's tuning leaves out from the defaults: an
+// imported theme with {"strength": 0.5} or {} read the missing numbers as 0,
+// clamped to the slider minimums -- a near-black, grey backdrop at half size.
+func (l *ThemeLook) UnmarshalJSON(b []byte) error {
+	type plain ThemeLook
+	var out plain
+	if err := json.Unmarshal(b, &out); err != nil {
+		return err
+	}
+	var raw struct {
+		Tuning json.RawMessage `json:"tuning"`
+	}
+	if json.Unmarshal(b, &raw) == nil && out.Tuning != nil {
+		fillMissingBackdropTuning(out.Tuning, raw.Tuning)
+	}
+	*l = ThemeLook(out)
+	return nil
 }
 
 // ThemeLookGlass is the card glass: see ThemeSurfacePref for what each means.

@@ -10815,6 +10815,9 @@ class DashboardConfig {
             ...carried,
             name: DashboardConfig.uniqueNameFrom(`${theme.name || base} ${this.t(`config.themePairSuffix_${other}`, other)}`, names),
         };
+        // The look comes along, as both halves of a pair made in the studio
+        // get it; the new half had none.
+        if (theme.look) counterpart.look = JSON.parse(JSON.stringify(theme.look));
 
         // Rebuilt in order, with the new half straight after the old one.
         const next = {};
@@ -10848,6 +10851,12 @@ class DashboardConfig {
         if (s.themeIconStyling && s.themeIconStyling[from]) {
             s.themeIconStyling[to] = s.themeIconStyling[from];
             delete s.themeIconStyling[from];
+        }
+        // The theme's own backdrop, glass and depth: left under the old id,
+        // a pair lost them.
+        if (s.themeSurfacePrefs && s.themeSurfacePrefs[from]) {
+            s.themeSurfacePrefs[to] = s.themeSurfacePrefs[from];
+            delete s.themeSurfacePrefs[from];
         }
         if (document.documentElement.getAttribute('data-theme') === from) {
             document.documentElement.setAttribute('data-theme', to);
@@ -11083,6 +11092,15 @@ class DashboardConfig {
         delete data.custom[id];
         this.syncCustomThemeIds();
         if (this._themeSelected === id) this._themeSelected = null;
+        // Its rows in the settings go with it rather than stay for good.
+        const st = this.dash.settings || {};
+        let rowsLeft = false;
+        if (st.themeSurfacePrefs?.[id]) { delete st.themeSurfacePrefs[id]; rowsLeft = true; }
+        if (st.themeIconStyling?.[id]) { delete st.themeIconStyling[id]; rowsLeft = true; }
+        if (Array.isArray(st.favoriteThemes) && st.favoriteThemes.includes(id)) {
+            st.favoriteThemes = st.favoriteThemes.filter((t) => t !== id);
+            rowsLeft = true;
+        }
         // A deleted theme that is still selected would leave the dashboard on a
         // theme that no longer exists, so fall back to the default.
         // Also the half on screen under Follow system, which is not the
@@ -11090,8 +11108,8 @@ class DashboardConfig {
         const wasActive = this.dash.settings?.theme === id || this.displayTheme?.() === id;
         if (wasActive) {
             this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'matrix-bluepill-dark';
-            void this.saveSettingsWithFeedback();
         }
+        if (wasActive || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();
         await this.saveColorsData();
         // The page still said data-theme="<deleted id>", and the reloaded theme

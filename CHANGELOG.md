@@ -244,6 +244,10 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — surface changes for "this theme" show under Follow system and a random theme.** They were stored under the chosen theme and drawn from the one on screen.
 - **fix — Save as theme gives a typed name a number when it is taken**, and caps it, as a rename does.
 - **fix — `:theme` lists themes made or deleted since the page loaded.**
+- **fix — a light/dark pair keeps the theme's own surfaces**, and deleting a theme clears its rows in the settings.
+- **fix — a look picked outside the studio draws its backdrop variant at once**, not after a reload.
+- **fix — the other half made by Save as theme brings the look too.**
+- **fix — an imported look with part of its backdrop tuning takes the defaults for the rest**, not zero.
 
 ### Config
 

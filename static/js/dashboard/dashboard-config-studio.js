@@ -668,8 +668,12 @@
             await this.loadColorsData();
             const look = this.themeLookOf(id);
             if (!look || this.dash.settings?.theme !== id) return;
+            const seedBefore = this.dash.settings.backdropTuning?.seed;
             this.applyLookAnswers(look);
             await this.saveSettingsWithFeedback();
+            // The seed is drawn into theme.css, which was fetched before the
+            // look set it: the old variant showed until a reload.
+            if (this.dash.settings.backdropTuning?.seed !== seedBefore) this.reloadThemeCSS?.();
         },
 
         /* ── Compare, Cancel, Apply ─────────────────────────────────────── */
