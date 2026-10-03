@@ -1,10 +1,12 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -534,5 +536,19 @@ func TestFleetCountsAURLOnTwoPagesOnce(t *testing.T) {
 	report := h.buildBookmarkHealthReport()
 	if report.Fleet == nil || report.Fleet.Monitors != 1 || report.Fleet.Uptime24h.Samples != 3 {
 		t.Fatalf("fleet = %+v", report.Fleet)
+	}
+}
+
+// An unreachable alert service is logged by host: Go's error quotes the whole
+// address, and a Telegram bot token sits in its path.
+func TestAnUnreachableAlertLogsNoSecret(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	h, _ := healthRecheckTestHandlers(t, `{"monitorNotifyUrl":"http://127.0.0.1:1/botSECRET123/sendMessage","allowLocalBookmarks":true}`)
+	h.dispatchMonitorNotifications(context.Background(), []monitorNotification{{Event: "down", Name: "A", URL: "https://a.example"}})
+	out := buf.String()
+	if strings.Contains(out, "SECRET123") || !strings.Contains(out, "127.0.0.1:1") {
+		t.Fatalf("log = %s", out)
 	}
 }

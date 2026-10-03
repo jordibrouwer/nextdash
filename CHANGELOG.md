@@ -151,6 +151,10 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — "back online" after a Re-check.** When a Re-check, Retest all or the hourly re-check saw a recovery first, its up sample made the next monitor round compare up with up, and the recovery was never sent. Those paths now announce it before storing the sample (`announceRecoveries`).
 - **fix — ntfy alerts keep `?auth=`.** The button form posted to the server root without the query, and a protected topic refused it.
 - **fix — a backup without tokens and passwords leaves out the alert secrets too.** `settings.json` went into the ZIP whole, with the alert address (bot token), Pushover's keys, the archive keys and the iCal address; it is written redacted, and restoring such a backup keeps the secrets in use.
+- **fix — muting any copy of a monitored URL mutes it.** Alerts go per URL, and a mute on the second page's copy did nothing.
+- **fix — Retest all writes one sample per URL.** A URL monitored on two pages got two per retest, counted twice and with each copy's rules mixed in.
+- **fix — an unreachable alert service is logged by host.** The log quoted the whole address, Telegram bot token included.
+- **fix — the health picker leaves out sign-ins a check never sends.** A widget's session login was offered, and the monitor then checked anonymously and reported down.
 
 ### Charts
 

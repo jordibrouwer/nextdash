@@ -660,7 +660,15 @@ class DashboardHealth {
         // still the bookmark's: without its own option the select fell back to
         // "Nothing", and the next Save removed the sign-in.
         if (selected && !(selected in list)) list[selected] = selected;
-        return Object.keys(list).sort().map((id) => `
+        // A sign-in that only holds a login (a widget's qBittorrent or Pi-hole
+        // session) is never sent by a health check: picked, the monitor
+        // checked anonymously and reported down.
+        const details = this.dash.healthCredentialDetails || {};
+        const sessionOnly = (id) => {
+            const d = details[id];
+            return Boolean(d?.session) && !d.basic && !(d.headers || []).length && !(d.query || []).length;
+        };
+        return Object.keys(list).filter((id) => id === selected || !sessionOnly(id)).sort().map((id) => `
             <option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(list[id] || id)}</option>
         `).join('');
     }

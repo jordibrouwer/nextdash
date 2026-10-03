@@ -5041,6 +5041,9 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	var res healthRetestResult
 	healthUpdates := make(map[string]HealthScanCache)
 	historyUpdates := make(map[string][]HealthSample)
+	// One sample per URL, from its first monitored copy as the monitor takes
+	// it: one per copy counted every retest twice and mixed the copies' rules.
+	recorded := map[string]bool{}
 	driftResults := make(map[string]PingResult)
 
 	for _, page := range pages {
@@ -5107,7 +5110,8 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				// the uptime and heartbeat view instead of only the scan cache.
 				// Collected here and written once at the end: one history write per
 				// run rather than one per bookmark.
-				if bm.Monitor {
+				if bm.Monitor && !recorded[key] {
+					recorded[key] = true
 					// Marked like the monitor's own samples: a failure inside a
 					// maintenance window dented uptime, opened an incident and
 					// could send a lone "back online" afterwards.

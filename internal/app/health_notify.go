@@ -3,8 +3,10 @@ package app
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -497,7 +499,14 @@ func (h *Handlers) postMonitorNotification(ctx context.Context, client *http.Cli
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		logWarn(logComponentNotify, "%s could not be reached, so the alert did not arrive: %v", about, err)
+		// Without the address: Go's error quotes the whole URL, and a
+		// Telegram bot token or Apprise key sits in its path. The log is the
+		// file people attach to a bug report.
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			err = ue.Err
+		}
+		logWarn(logComponentNotify, "%s could not be reached at %s, so the alert did not arrive: %v", about, req.URL.Host, err)
 		return
 	}
 	defer drainAndCloseResponse(resp)

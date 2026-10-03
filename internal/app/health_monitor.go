@@ -190,6 +190,11 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 			// once per set of rules, that is. A copy with rules of its own is
 			// checked beside the first, in the same round, when the first is due.
 			if seen[key] {
+				// Muting any copy mutes the URL: alerts go per URL, and a mute
+				// on the second page's copy did nothing while the first alerted.
+				if bm.NotifyMuted && dueKeys[key] {
+					targets[dueIndex[key]].muted = true
+				}
 				ruleKey := key + "\x00" + rule
 				if rule != primaryRule[key] && dueKeys[key] && !seenRule[ruleKey] {
 					seenRule[ruleKey] = true

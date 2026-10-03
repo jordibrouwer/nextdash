@@ -162,3 +162,21 @@ test.describe('health checks that can sign in', () => {
         }
     });
 });
+
+// A sign-in that only holds a session (a widget's qBittorrent login) is never
+// sent by a health check: offered in the picker, the monitor checked
+// anonymously and reported down.
+test('the health picker leaves out a session-only sign-in', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
+    const ids = await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        const mod = await d.health.load();
+        d.healthCredentials = { 'widget:qb': 'qBittorrent', shared: 'Shared key' };
+        d.healthCredentialDetails = { 'widget:qb': { session: true }, shared: { headers: ['X-Api-Key'] } };
+        const box = document.createElement('select');
+        box.innerHTML = mod.renderCredentialOptions('');
+        return [...box.options].map((o) => o.value);
+    });
+    expect(ids).toEqual(['shared']);
+});

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -368,5 +369,39 @@ func TestRunDueMonitorsChecksEachCopyByItsOwnRules(t *testing.T) {
 	// History stays one series per URL, written by the first copy's check.
 	if samples := h.healthHistoryFor(canonicalBookmarkURLKey(server.URL)); len(samples) != 1 {
 		t.Fatalf("history samples = %d, want 1", len(samples))
+	}
+}
+
+// Muting the copy on another page mutes the URL: alerts go per URL, and the
+// first page's copy alerted while the second said Muted.
+func TestMutingAnyCopyMutesTheURL(t *testing.T) {
+	h, dir := healthRecheckTestHandlers(t, `{}`)
+	_ = os.WriteFile(filepath.Join(dir, "pages.json"), []byte(`[{"id":1,"name":"Page 1"},{"id":2,"name":"Page 2"}]`), 0o644)
+	_ = os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(`{"id":1,"name":"Page 1","bookmarks":[{"name":"A","url":"https://a.example","monitor":true}]}`), 0o644)
+	_ = os.WriteFile(filepath.Join(dir, "bookmarks-2.json"), []byte(`{"id":2,"name":"Page 2","bookmarks":[{"name":"A","url":"https://a.example","monitor":true,"notifyMuted":true}]}`), 0o644)
+	targets, _, _ := h.dueMonitorTargets(time.Now())
+	if len(targets) != 1 || !targets[0].muted {
+		t.Fatalf("targets = %#v, want one muted", targets)
+	}
+}
+
+// Retest all on a URL monitored on two pages writes one sample, not one per
+// copy: two counted every retest twice in uptime and in the failure run.
+func TestRetestRecordsOneSamplePerURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("<html><body>Hello there, this is a page</body></html>"))
+	}))
+	defer server.Close()
+	h, dir := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true,"detectSoftNotFound":false}`)
+	_ = os.WriteFile(filepath.Join(dir, "pages.json"), []byte(`[{"id":1,"name":"Page 1"},{"id":2,"name":"Page 2"}]`), 0o644)
+	for id := 1; id <= 2; id++ {
+		body := fmt.Sprintf(`{"id":%d,"name":"P","bookmarks":[{"name":"A","url":%q,"monitor":true,"checkStatus":true}]}`, id, server.URL)
+		_ = os.WriteFile(filepath.Join(dir, fmt.Sprintf("bookmarks-%d.json", id)), []byte(body), 0o644)
+	}
+	if _, err := h.runHealthRetest(context.Background(), false, "test"); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(readHealthHistoryFile().Samples[canonicalBookmarkURLKey(server.URL)]); got != 1 {
+		t.Fatalf("samples = %d, want 1", got)
 	}
 }
