@@ -1,6 +1,8 @@
 {"data":{"shares":[
- {"name":"media","used":"82000000000","free":"5233373440","size":"87233373440","cache":false},
- {"name":"backups","used":"9600000000","free":"3550000000","size":"13150000000","cache":false},
- {"name":"appdata","used":"468846040","free":"507916544","size":"976762584","cache":true},
- {"name":"isos","used":"150000000","free":"1100000000","size":"1250000000","cache":false},
- {"name":"system","used":"60000000","free":"507916544","size":"567916544","cache":true}]}}
+ {"name":"media","used":"93952409600","free":"37580963840"},
+ {"name":"backups","used":"93952409600","free":"37580963840"},
+ {"name":"appdata","used":"468846040","free":"507916544"},
+ {"name":"system","used":"468846040","free":"507916544"},
+ {"name":"isos","used":"94421255640","free":"38088880384"}],
+ "array":{"capacity":{"kilobytes":{"free":"37580963840","used":"93952409600","total":"131533373440"}},
+  "caches":[{"name":"cache","fsUsed":"468846040","fsFree":"507916544"}]}}}

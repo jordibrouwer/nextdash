@@ -85,10 +85,28 @@ func TestToUnraidParityRunning(t *testing.T) {
 	}
 }
 
-func TestToUnraidSharesFullestFirst(t *testing.T) {
-	v, _ := toUnraidShares(unraidFixture(t, "shares"))
-	if v[0].Name != "media" || v[0].Tone != "bad" {
-		t.Fatalf("first = %+v", v[0])
+// Shares are grouped by where they live, since Unraid reports each share's
+// used and free as those of that place.
+func TestToUnraidSharesByPlace(t *testing.T) {
+	v, err := toUnraidShares(unraidFixture(t, "shares"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string][]string{}
+	var order []string
+	for _, p := range v {
+		got[p.Name] = p.Shares
+		order = append(order, p.Name)
+	}
+	if strings.Join(order, ",") != "array,array + cache,cache" {
+		t.Fatalf("order = %v", order)
+	}
+	if strings.Join(got["array"], ",") != "backups,media" || strings.Join(got["cache"], ",") != "appdata,system" ||
+		strings.Join(got["array + cache"], ",") != "isos" {
+		t.Fatalf("pools = %v", got)
+	}
+	if v[0].UsedPct != 71.4 {
+		t.Fatalf("array used = %v", v[0].UsedPct)
 	}
 }
 
@@ -201,3 +219,4 @@ func TestUnraidDiskHotThreshold(t *testing.T) {
 		}
 	}
 }
+

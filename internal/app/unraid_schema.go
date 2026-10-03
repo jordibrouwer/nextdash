@@ -241,11 +241,25 @@ func buildUnraidQuery(area string, s unraidSchema) (string, bool) {
 		if !s.has("Query", "shares") {
 			return "", false
 		}
-		sh := s.pick("Share", "name", "used", "free", "size", "cache")
-		if sh == "" {
-			return "", false // shares are essential
+		sh := s.pick("Share", "name", "used", "free")
+		if !s.has("Share", "name") || !s.has("Share", "free") {
+			return "", false // a share's name and where its free space is are essential
 		}
-		return q(sel("shares", sh))
+		// Unraid reports a share's used and free as those of the place it
+		// lives on, not its own. The array's capacity and the cache pools'
+		// devices say which place that is (unraid_model.go groups by it).
+		body := sel("shares", sh)
+		var place []string
+		if c := s.capacityFields(); c != "" {
+			place = append(place, c)
+		}
+		if s.has("UnraidArray", "caches") {
+			place = append(place, sel("caches", s.pick("ArrayDisk", "name", "fsUsed", "fsFree")))
+		}
+		if s.has("Query", "array") && len(place) > 0 {
+			body += " " + sel("array", strings.Join(place, " "))
+		}
+		return q(body)
 	case "vms":
 		if !s.has("Query", "vms") || !s.has("VmDomain", "state") {
 			return "", false

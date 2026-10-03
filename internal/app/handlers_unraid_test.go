@@ -58,10 +58,14 @@ func TestUnraidOverviewComposesTheAreas(t *testing.T) {
 	h := unraidTestHandlers(t)
 	rec := serveUnraid(h, "GET", "/api/unraid/area/overview", "")
 	body := rec.Body.String()
-	for _, want := range []string{`"fullestShare"`, `"media"`, `"tower"`, `"alerts":1`} {
+	for _, want := range []string{`"tower"`, `"alerts":1`, `"vms"`, `"ups"`} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("missing %s in %s", want, body)
 		}
+	}
+	// No share line: Unraid gives a share only its place's figures.
+	if strings.Contains(body, `"fullestShare"`) || strings.Contains(body, `"shares"`) {
+		t.Fatalf("the overview still carries shares: %s", body)
 	}
 }
 

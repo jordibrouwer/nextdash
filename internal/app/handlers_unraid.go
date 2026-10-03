@@ -20,7 +20,6 @@ type UnraidOverviewView struct {
 	Parity        *UnraidParityView        `json:"parity,omitempty"`
 	Notifications *UnraidNotificationsView `json:"notifications,omitempty"`
 	VMs           []UnraidVMView           `json:"vms,omitempty"`
-	FullestShare  *UnraidShareView         `json:"fullestShare,omitempty"`
 	UPS           *UnraidUPSView           `json:"ups,omitempty"`
 	Missing       []string                 `json:"missing,omitempty"`
 }
@@ -112,7 +111,7 @@ func (h *Handlers) unraidArea(ctx context.Context, area string) unraidAreaResult
 	})
 }
 
-var unraidOverviewAreas = []string{"info", "array", "parity", "notifications", "vms", "shares", "ups"}
+var unraidOverviewAreas = []string{"info", "array", "parity", "notifications", "vms", "ups"}
 
 // composeUnraidOverview reads every area through its own cache entry, so the
 // overview and the area tiles share their requests. The areas are asked side
@@ -171,10 +170,6 @@ func composeUnraidOverviewFrom(results []unraidAreaResult) unraidAreaResult {
 			o.Notifications = &v
 		case []UnraidVMView:
 			o.VMs = v
-		case []UnraidShareView:
-			if len(v) > 0 {
-				o.FullestShare = &v[0]
-			}
 		case UnraidUPSView:
 			if !v.None {
 				o.UPS = &v

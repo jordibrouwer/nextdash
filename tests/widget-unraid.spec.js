@@ -113,18 +113,24 @@ test.describe('Unraid widgets', () => {
         expect(wide.tones[2]).toBe('bad'); // the run with 12 errors
     });
 
-    test('shares fullest first, cut at the row count', async ({ page }) => {
+    // Unraid gives a share only its place's figures, so the tile is a row per
+    // place -- array, array + cache, cache -- with the shares that live there.
+    test('shares by place: a row each, the shares under it', async ({ page }) => {
         await openDashboard(page);
-        const out = await render(page, 'unraidShares', { shares: A('shares') });
-        expect(out.rows[0]).toMatch(/^media/);
-        expect(out.tones[0]).toBe('bad');
-        const bars = await page.evaluate(() => [...document.querySelectorAll('.unraid-probe .dashboard-widget-row')]
-            .map((r) => {
-                const bar = r.querySelector('.unraid-disk-bar');
-                return bar ? [bar.style.getPropertyValue('--fill'), bar.className.includes('--warn')] : null;
-            }));
-        expect(bars).toEqual([['94%', true], ['73%', false], ['48%', false], ['12%', false], ['11%', false]]);
-        expect(out.rows[0]).toMatch(/^media 94%/);
+        const wide = await render(page, 'unraidShares', { shares: A('shares') }, 700);
+        expect(wide.rows.map((r) => r.split(' ')[0])).toEqual(['array', 'array', 'cache']);
+        expect(wide.rows[1]).toMatch(/^array \+ cache/);
+        const lines = await page.evaluate(() => [...document.querySelectorAll('.unraid-probe .unraid-share-names')]
+            .filter((n) => n.offsetParent !== null).map((n) => n.textContent));
+        expect(lines).toEqual(['backups, media', 'isos', 'appdata, system']);
+        const bars = await page.evaluate(() => [...document.querySelectorAll('.unraid-probe .dashboard-widget-row .unraid-disk-bar')]
+            .map((b) => b.style.getPropertyValue('--fill')));
+        expect(bars).toEqual(['71%', '71%', '48%']);
+
+        const narrow = await render(page, 'unraidShares', { shares: A('shares') }, 320);
+        expect(narrow.text).toContain('2 shares');
+        expect(narrow.text).toContain('1 share');
+        expect(narrow.text).not.toContain('backups');
     });
 
     test('VMs: running of total and a row each', async ({ page }) => {

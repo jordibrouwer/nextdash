@@ -7180,6 +7180,15 @@ button.dashboard-widget-stat.keyboard-selected {
 
 /* Unraid array rows: a fill bar between the disk name and its reading. */
 .unraid-disk-row { gap: var(--space-2, 0.5rem); }
+/* The shares that live on the place the row above names. */
+.unraid-share-names {
+    margin: 0 0 var(--space-1, 0.25rem);
+    padding: 0 var(--space-1, 0.25rem);
+    color: var(--text-tertiary);
+    font-size: var(--text-xs, 0.72rem);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
 /* Wide enough for "58% · 3 errors", so the bars line up down the column. */
 .unraid-disk-row .dashboard-widget-row-detail { min-width: 7.5rem; }
 .unraid-disk-bar {

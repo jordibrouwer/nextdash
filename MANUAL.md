@@ -1604,10 +1604,10 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 
 | Kind | Shows |
 |---|---|
-| **Unraid** | The server at a glance, a line each: array, used, parity, disks, alerts, VMs and the UPS, with the worst problem in colour; wide, it adds the newest alert and the fullest share |
+| **Unraid** | The server at a glance, a line each: array, used, parity, disks, alerts, VMs and the UPS, with the worst problem in colour; wide, it adds the newest alert |
 | **Unraid array** | The array's disks by group (parity, array, cache), each with its fill and temperature or its problem; a sleeping disk is grey. A disk is hot at the warning temperature set for it in Unraid, else at 45 °C when it spins and 60 °C when it is an SSD or NVMe. Narrow, only the disks with a problem, or *N disks fine* |
 | **Parity** | The last parity check, or the running one with progress, speed and time left; wide, its history |
-| **Shares** | The shares, fullest first, with a bar each; its settings choose how many rows |
+| **Shares** | Where the shares live — the array, each cache pool, or both when a share overflows from one to the other — each place with its fill and free space, and the shares on it: their names when wide, how many when narrow. Unraid reports a share's space as that of its place, not its own, so this is the honest view. Its settings choose how many places |
 | **VMs** | How many virtual machines run, and which are paused, stopped or crashed; its settings choose how many rows |
 | **UPS** | Charge, runtime and load; amber when the server runs on battery |
 | **Unraid notifications** | Unraid's unread notifications, newest first, the alerts in red; its settings choose how many rows |

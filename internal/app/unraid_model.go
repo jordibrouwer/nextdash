@@ -76,13 +76,23 @@ type UnraidParityView struct {
 	History  []UnraidParityRun `json:"history"`
 }
 
-type UnraidShareView struct {
-	Name       string  `json:"name"`
-	UsedPct    float64 `json:"usedPct"`
-	FreeBytes  int64   `json:"freeBytes"`
-	TotalBytes int64   `json:"totalBytes"`
-	Cache      bool    `json:"cache"`
-	Tone       string  `json:"tone"`
+/*
+UnraidSharePool is one place shares live, and the shares that live there.
+
+Unraid does not report what a share holds: a share's used and free are those
+of where it lives -- the array, a cache pool, or both when it overflows from
+one to the other. Listed per share that was the same figure eighteen times
+(44 % on a real server), so the shares are grouped by place and the place
+carries the figure.
+*/
+type UnraidSharePool struct {
+	Name       string   `json:"name"` // "array", the pool's name, "array + <pool>", or "other"
+	Kind       string   `json:"kind"` // array | pool | both | other
+	UsedPct    float64  `json:"usedPct"`
+	FreeBytes  int64    `json:"freeBytes"`
+	TotalBytes int64    `json:"totalBytes"`
+	Tone       string   `json:"tone"`
+	Shares     []string `json:"shares"`
 }
 
 type UnraidVMView struct {
@@ -301,34 +311,115 @@ func toUnraidParity(data json.RawMessage) (UnraidParityView, error) {
 	return v, nil
 }
 
-func toUnraidShares(data json.RawMessage) ([]UnraidShareView, error) {
+// unraidSamePlace says whether two used/free readings in KB are the same
+// place: the share list and the array are read a moment apart, and a busy
+// disk moves a few megabytes in between (1.2 MB on a real server).
+func unraidSamePlace(used, free, pUsed, pFree int64) bool {
+	total := pUsed + pFree
+	if total <= 0 {
+		return false
+	}
+	slack := total / 500 // 0.2 %
+	abs := func(n int64) int64 {
+		if n < 0 {
+			return -n
+		}
+		return n
+	}
+	return abs(used-pUsed) <= slack && abs(free-pFree) <= slack
+}
+
+func toUnraidShares(data json.RawMessage) ([]UnraidSharePool, error) {
 	var raw struct {
 		Shares []struct {
-			Name             string `json:"name"`
-			Used, Free, Size any
-			Cache            bool `json:"cache"`
+			Name       string `json:"name"`
+			Used, Free any
 		} `json:"shares"`
+		Array *struct {
+			Capacity *struct {
+				Kilobytes *struct{ Free, Used any } `json:"kilobytes"`
+			} `json:"capacity"`
+			Caches []struct {
+				Name           string `json:"name"`
+				FsUsed, FsFree any
+			} `json:"caches"`
+		} `json:"array"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, fmt.Errorf("unraid: shares answer unreadable")
 	}
-	out := make([]UnraidShareView, 0, len(raw.Shares))
-	for _, s := range raw.Shares {
-		used, free := kbToBytes(unraidInt(s.Used)), kbToBytes(unraidInt(s.Free))
-		total := kbToBytes(unraidInt(s.Size))
-		if total == 0 {
-			total = used + free
-		}
-		v := UnraidShareView{Name: s.Name, FreeBytes: free, TotalBytes: total, UsedPct: unraidPct(used, total), Cache: s.Cache, Tone: "good"}
-		switch {
-		case v.UsedPct >= unraidShareBadPct:
-			v.Tone = "bad"
-		case v.UsedPct >= unraidShareWarnPct:
-			v.Tone = "warn"
-		}
-		out = append(out, v)
+
+	type place struct {
+		name, kind string
+		used, free int64
 	}
-	sort.SliceStable(out, func(i, j int) bool { return out[i].UsedPct > out[j].UsedPct })
+	var places []place
+	var array *place
+	if raw.Array != nil && raw.Array.Capacity != nil && raw.Array.Capacity.Kilobytes != nil {
+		k := raw.Array.Capacity.Kilobytes
+		array = &place{name: "array", kind: "array", used: unraidInt(k.Used), free: unraidInt(k.Free)}
+		places = append(places, *array)
+	}
+	if raw.Array != nil {
+		for _, c := range raw.Array.Caches {
+			// A pool's first device carries the pool's figures; the others
+			// of a multi-device pool report none.
+			if c.FsUsed == nil || c.FsFree == nil {
+				continue
+			}
+			pool := place{name: c.Name, kind: "pool", used: unraidInt(c.FsUsed), free: unraidInt(c.FsFree)}
+			places = append(places, pool)
+			if array != nil {
+				places = append(places, place{name: "array + " + c.Name, kind: "both",
+					used: array.used + pool.used, free: array.free + pool.free})
+			}
+		}
+	}
+
+	byKey := map[string]*UnraidSharePool{}
+	var order []string
+	for _, sh := range raw.Shares {
+		used, free := unraidInt(sh.Used), unraidInt(sh.Free)
+		key, name, kind := "", "other", "other"
+		for _, p := range places {
+			if unraidSamePlace(used, free, p.used, p.free) {
+				key, name, kind = p.name, p.name, p.kind
+				break
+			}
+		}
+		if key == "" {
+			key = fmt.Sprintf("other:%d/%d", used, free)
+		}
+		pool := byKey[key]
+		if pool == nil {
+			total := kbToBytes(used + free)
+			pool = &UnraidSharePool{Name: name, Kind: kind, FreeBytes: kbToBytes(free), TotalBytes: total,
+				UsedPct: unraidPct(kbToBytes(used), total), Tone: "good"}
+			switch {
+			case pool.UsedPct >= unraidShareBadPct:
+				pool.Tone = "bad"
+			case pool.UsedPct >= unraidShareWarnPct:
+				pool.Tone = "warn"
+			}
+			byKey[key] = pool
+			order = append(order, key)
+		}
+		pool.Shares = append(pool.Shares, sh.Name)
+	}
+
+	rank := map[string]int{"array": 0, "both": 1, "pool": 2, "other": 3}
+	out := make([]UnraidSharePool, 0, len(order))
+	for _, k := range order {
+		p := byKey[k]
+		sort.Strings(p.Shares)
+		out = append(out, *p)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if rank[out[i].Kind] != rank[out[j].Kind] {
+			return rank[out[i].Kind] < rank[out[j].Kind]
+		}
+		return out[i].Name < out[j].Name
+	})
 	return out, nil
 }
 

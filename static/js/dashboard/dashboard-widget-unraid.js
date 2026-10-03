@@ -172,10 +172,6 @@
             const newest = (n.items || []).find((i) => i.importance === 'alert');
             if (newest) add(L('dashboard.widgetUnraidAlert', 'alert'), newest.subject, 'bad', newest.link || '/Tools/Notifications', true);
         }
-        if (o.fullestShare) {
-            add(L('dashboard.widgetUnraidShare', 'share'), `${o.fullestShare.name} ${Math.round(o.fullestShare.usedPct)}%`,
-                o.fullestShare.tone, '/Shares', true);
-        }
         if (o.vms) {
             const running = o.vms.filter((v) => v.state === 'running').length;
             add(L('dashboard.widgetUnraidVMs', 'VMs'),
@@ -339,33 +335,62 @@
         end(panel, widget, dash, result);
     }
 
+    /*
+     * Shares by where they live.
+     *
+     * Unraid gives a share the used and free of its place -- the array, a
+     * cache pool, or both when it overflows -- not of its own, so a list per
+     * share read the same percentage on every row. The server groups them
+     * (unraid_model.go); here each place is a row with its fill, and under it
+     * the shares that live there: their names when wide, how many when narrow.
+     */
     async function renderShares(body, widget, dash) {
         await knowBase(dash);
         const result = await fetchArea('shares');
         const panel = begin(body, widget, dash, result);
         if (!panel) return;
         const u = U();
-        const shares = result.data || [];
+        const L = (key, fallback) => label(dash, key, fallback);
+        const places = result.data || [];
         const limit = u.rowLimit(widget, 5);
         const open = openUnraid(widget, dash, '/Shares');
         const action = rowAction(dash, open);
         const list = u.rowList(false);
-        shares.slice(0, limit).forEach((s) => {
-            const row = u.row(s.name, `${Math.round(s.usedPct)}%`, s.tone, open, action);
-            // Wide adds what the percentage alone leaves out.
+        const placeName = (p) => {
+            if (p.kind === 'array') return L('dashboard.widgetUnraidPlaceArray', 'array');
+            if (p.kind === 'other') return L('dashboard.widgetUnraidPlaceOther', 'elsewhere');
+            if (p.kind === 'both') {
+                return L('dashboard.widgetUnraidPlaceBoth', 'array + {pool}')
+                    .replace('{pool}', p.name.replace(/^array \+ /, ''));
+            }
+            return p.name;
+        };
+        places.slice(0, limit).forEach((p) => {
+            const row = u.row(placeName(p), `${Math.round(p.usedPct)}%`, p.tone, open, action);
             const extra = document.createElement('span');
             extra.className = 'dashboard-widget-wide-only dashboard-widget-row-extra';
-            extra.textContent = ` · ${bytes(s.freeBytes)} ${label(dash, 'dashboard.widgetUnraidFree', 'free')}${s.cache ? ` · ${label(dash, 'dashboard.widgetUnraidCache', 'cache')}` : ''}`;
+            extra.textContent = ` · ${bytes(p.freeBytes)} ${L('dashboard.widgetUnraidFree', 'free')}`;
             row.querySelector('.dashboard-widget-row-detail')?.appendChild(extra);
-            // The same bar the array rows carry, between the name and the reading.
             const meter = document.createElement('span');
-            meter.className = `unraid-disk-bar unraid-disk-bar--${s.usedPct >= 90 ? 'warn' : 'good'}`;
-            meter.style.setProperty('--fill', `${Math.round(s.usedPct)}%`);
+            meter.className = `unraid-disk-bar unraid-disk-bar--${p.usedPct >= 90 ? 'warn' : 'good'}`;
+            meter.style.setProperty('--fill', `${Math.round(p.usedPct)}%`);
             row.classList.add('unraid-disk-row');
             row.insertBefore(meter, row.lastChild);
             list.appendChild(row);
+
+            const shares = p.shares || [];
+            const names = document.createElement('p');
+            names.className = 'unraid-share-names dashboard-widget-wide-only';
+            names.textContent = shares.join(', ');
+            list.appendChild(names);
+            const count = document.createElement('p');
+            count.className = 'unraid-share-names dashboard-widget-narrow-only';
+            count.textContent = (shares.length === 1
+                ? L('dashboard.widgetUnraidOneShare', '1 share')
+                : L('dashboard.widgetUnraidShareCount', '{n} shares')).replace('{n}', shares.length);
+            list.appendChild(count);
         });
-        u.appendOverflowRow(list, dash, Math.max(0, shares.length - limit), open);
+        u.appendOverflowRow(list, dash, Math.max(0, places.length - limit), open);
         panel.appendChild(list);
         end(panel, widget, dash, result);
     }

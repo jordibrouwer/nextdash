@@ -2885,7 +2885,6 @@
     "widgetUnraidUnread": "{n} unread",
     "widgetUnraidNone": "none",
     "widgetUnraidAlert": "alert",
-    "widgetUnraidShare": "share",
     "widgetUnraidVMs": "VMs",
     "widgetUnraidOfRunning": "{n} of {total} running",
     "widgetUnraidUPS": "UPS",
@@ -3141,7 +3140,12 @@
     "dashTourLooksNeutrals": "Neutrals: five grey themes",
     "dashTourLooksAlt": "A list of looks, a glass card over a backdrop, five grey swatches, and three styles of category header",
     "dashTourLooksBody1": "The Looks tab sets backdrop, cards, headers and type in one click — twelve of them, from Glass and Frosted to Paper, Terminal and Plain — and leaves your theme’s colours alone.",
-    "dashTourLooksBody2": "Card glass on the Surface tab sets how see-through the cards are; category headers can be clean, underlined, boxed, a label or a card around the category. The Neutrals collection adds five calm grey themes."
+    "dashTourLooksBody2": "Card glass on the Surface tab sets how see-through the cards are; category headers can be clean, underlined, boxed, a label or a card around the category. The Neutrals collection adds five calm grey themes.",
+    "widgetUnraidPlaceArray": "array",
+    "widgetUnraidPlaceOther": "elsewhere",
+    "widgetUnraidPlaceBoth": "array + {pool}",
+    "widgetUnraidOneShare": "1 share",
+    "widgetUnraidShareCount": "{n} shares"
   },
   "health": {
     "reloadPage": "Reload page",
