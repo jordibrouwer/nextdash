@@ -53,12 +53,18 @@
         img.draggable = false;
         setRef(img, ref);
         img.src = pickVariant(ref);
-        if (typeof onFail === 'function') {
-            img.addEventListener('error', () => {
-                const replacement = onFail();
-                if (replacement && img.isConnected) img.replaceWith(replacement);
-            }, { once: true });
-        }
+        // A variant that cannot be had falls back to the base drawing first,
+        // and only then to the letter.
+        const failed = () => {
+            if (ref.base && img.getAttribute('src') !== ref.base) {
+                img.src = ref.base;
+                return;
+            }
+            img.removeEventListener('error', failed);
+            const replacement = typeof onFail === 'function' ? onFail() : null;
+            if (replacement && img.isConnected) img.replaceWith(replacement);
+        };
+        img.addEventListener('error', failed);
         return img;
     }
 
@@ -72,18 +78,24 @@
 
     async function fetchMatches(urls) {
         const ask = urls.filter((u) => !matchCache.has(u));
-        if (ask.length) {
+        // In batches of 500, what the server reads per request: past that it
+        // stopped without saying, and the rest were remembered as "no app".
+        for (let i = 0; i < ask.length; i += 500) {
+            const batch = ask.slice(i, i + 500);
             try {
                 const res = await fetch('/api/icon-sets/match', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ urls: ask }),
+                    body: JSON.stringify({ urls: batch }),
                 });
-                const data = res.ok ? await res.json() : null;
+                // A refused or failed answer is not "no app": nothing is
+                // remembered, and the next render asks again.
+                if (!res.ok) return;
+                const data = await res.json();
                 const matches = data?.matches || {};
                 // An answer without the address is "no app": remembered too,
                 // so the next render does not ask again.
-                ask.forEach((u) => matchCache.set(u, matches[u] || null));
+                batch.forEach((u) => matchCache.set(u, matches[u] || null));
             } catch {
                 return; // offline: the letters stay, and the next render asks again
             }
@@ -148,5 +160,10 @@
 
     document.addEventListener('theme-changed', () => refresh(document));
 
-    global.IconSetAuto = { isDark, pickVariant, makeImg, refresh, applyToRows, queue, forget, loadPicker };
+    /** Whether the sets already answered with an app for this address. */
+    function known(url) {
+        return Boolean(url && matchCache.get(url));
+    }
+
+    global.IconSetAuto = { isDark, pickVariant, makeImg, refresh, applyToRows, queue, forget, loadPicker, known };
 })(window);

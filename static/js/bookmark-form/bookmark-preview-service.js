@@ -71,13 +71,27 @@
     }
 
     async function fetchAndUploadFavicon(bookmarkUrl, apiBase = '') {
+        return (await fetchFaviconOutcome(bookmarkUrl, apiBase)).icon;
+    }
+
+    /**
+     * The favicon, and whether none was fetched because the app shows its set
+     * icon. Read as '' alone, that counted as a failure: "No favicon found",
+     * and every such row "failed" in a bulk fetch.
+     */
+    async function fetchFaviconOutcome(bookmarkUrl, apiBase = '') {
+        const icon = await fetchFaviconInner(bookmarkUrl, apiBase);
+        return typeof icon === 'object' ? icon : { icon: icon || '', setIcon: false };
+    }
+
+    async function fetchFaviconInner(bookmarkUrl, apiBase = '') {
         const utils = global.BookmarkUrlUtils;
         const safeUrl = utils ? utils.ensureHttpUrl(bookmarkUrl) : String(bookmarkUrl || '').trim();
         if (!safeUrl) return '';
 
         try {
             const preview = await fetchLinkPreview(safeUrl, apiBase);
-            if (preview.setIcon) return '';
+            if (preview.setIcon) return { icon: '', setIcon: true };
             const iconUrl = String(preview?.iconSource || '').trim();
             if (iconUrl) {
                 const icon = await uploadIconFromUrl(iconUrl, apiBase);
@@ -99,5 +113,6 @@
         uploadIconFromUrl,
         fetchLinkPreview,
         fetchAndUploadFavicon,
+        fetchFaviconOutcome,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

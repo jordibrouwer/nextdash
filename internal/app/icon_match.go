@@ -116,6 +116,9 @@ func containerIconCandidates(image, name string) []string {
 	return iconCandidates(bases)
 }
 
+var privateHostSuffix = map[string]bool{"lan": true, "local": true, "home": true, "internal": true,
+	"localdomain": true, "intranet": true, "test": true, "box": true, "arpa": true}
+
 func bookmarkHostCandidates(rawURL string) []string {
 	u, err := url.Parse(strings.TrimSpace(rawURL))
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
@@ -130,6 +133,9 @@ func bookmarkHostCandidates(rawURL string) []string {
 	case len(labels) == 1:
 		return iconCandidates([]string{labels[0]})
 	case len(labels) >= 3 && !hostLabelStop[labels[0]]:
+		return iconCandidates([]string{labels[0]})
+	// sonarr.lan, plex.local: two labels on a name no public site has.
+	case len(labels) == 2 && privateHostSuffix[labels[1]] && !hostLabelStop[labels[0]]:
 		return iconCandidates([]string{labels[0]})
 	}
 	return nil

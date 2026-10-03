@@ -111,6 +111,12 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — Refresh all favicons keeps an icon picked in the app-icon picker.** It cleared it on a matched address and overwrote it with the site favicon on any other.
 - **fix — the picker saves the variant it shows.** In a dark theme the grid drew the light icon and saved the black one; a click also kept the previous item's variant, and an item without it failed with "Could not use this icon".
 - **fix — no crash before the icon sets are fetched.** The alias fix read the index without checking that there was one.
+- **fix — an icon the sets cannot deliver lets the favicon through.** The match alone blocked the favicon, so a file the CDN would not give left the row on a letter; a variant that fails falls back to the base drawing first.
+- **fix — `sonarr.lan` and `plex.local` match.** Two-label names on a private suffix count, as three-label ones do.
+- **fix — the icon cache is capped at 3000 files per set.** The route is open to readers without the token, and a walk over the whole index could fill the disk.
+- **fix — more than 500 rows, or a failed match request, no longer leave rows on letters** for the session: asked in batches, and a failed answer is not remembered as "no app".
+- **fix — two adopts of the same name at once each keep their own drawing.**
+- **fix — cached set icons are asked again after a week**, so a redrawn icon or a sanitiser fix arrives; the old file is served if the CDN does not answer.
 
 ### Containers
 
@@ -131,6 +137,8 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — an inbox item's QR code opens the saved page**, not this dashboard's inbox link.
 - **fix — the QR window's label keeps a `$&` in the address as written.**
 - **fix — bulk Fetch icons leaves a chosen letter alone.**
+- **fix — Refresh favicon and Fetch icons know an app that shows its set icon.** It said "No favicon found" and every such row counted as failed; the "Without an icon" filter leaves out a chosen letter and an app with its set icon.
+- **fix — Automatic in a bookmark's icon menu fetches the favicon back** for an app the sets do not know; it only cleared the icon.
 
 ### Widgets
 

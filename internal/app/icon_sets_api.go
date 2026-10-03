@@ -126,7 +126,16 @@ func (h *Handlers) bookmarkHasSetIcon(rawURL string) bool {
 	if x == nil {
 		return false
 	}
-	return h.newBookmarkIconMatcher(context.Background(), x).match(rawURL) != nil
+	e := h.newBookmarkIconMatcher(context.Background(), x).match(rawURL)
+	if e == nil {
+		return false
+	}
+	// Only when the icon can be had: a file the CDN would not give left the
+	// row on a letter, with its own favicon never fetched.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err := ensureIconSetFile(ctx, e.Set, e.variantFile("base"))
+	return err == nil
 }
 
 func (h *Handlers) IconSetsMatchHandler(w http.ResponseWriter, r *http.Request) {

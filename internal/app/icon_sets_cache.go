@@ -37,6 +37,7 @@ var (
 	iconSetFilePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*\.(svg|png)$`)
 	iconSetFetchMu     sync.Mutex // guards iconSetFileLocks
 	iconSetFileLocks   = map[string]*sync.Mutex{}
+	iconAdoptMu        sync.Mutex
 	// iconSetMisses remembers a file that could not be had, so a page that
 	// shows it does not send the server to the CDN on every load.
 	iconSetMisses sync.Map // "<set>/<file>" -> time.Time
@@ -85,7 +86,9 @@ func ensureIconSetFile(ctx context.Context, set, file string) (string, error) {
 		return "", errIconSetNotFound
 	}
 	path := filepath.Join(iconSetsDir(), set, file)
-	if _, err := os.Stat(path); err == nil {
+	info, statErr := os.Stat(path)
+	// Fresh, or no way to refresh it: served as it is.
+	if statErr == nil && (time.Since(info.ModTime()) < iconSetsTTL || iconSetsFixtureDir() != "") {
 		return path, nil
 	}
 	if iconSetsFixtureDir() != "" {
@@ -93,23 +96,46 @@ func ensureIconSetFile(ctx context.Context, set, file string) (string, error) {
 	}
 	missKey := set + "/" + file
 	if at, ok := iconSetMisses.Load(missKey); ok && time.Since(at.(time.Time)) < iconSetMissTTL {
+		if statErr == nil {
+			return path, nil // the old drawing beats none
+		}
 		return "", errIconSetNotFound
 	}
 	unlock := lockIconSetFile(missKey)
 	defer unlock()
-	if _, err := os.Stat(path); err == nil {
+	if info, err := os.Stat(path); err == nil && time.Since(info.ModTime()) < iconSetsTTL {
 		return path, nil // fetched while this one waited
+	}
+	stale := statErr == nil
+	// The route is open to readers without the token (an <img> sends none),
+	// so a walk over every name in the index could fill the disk. A cap on
+	// what is cached keeps that to a few thousand icons.
+	if !stale && iconSetCacheFull(set) {
+		return "", errIconSetNotFound
 	}
 	if at, ok := iconSetMisses.Load(missKey); ok && time.Since(at.(time.Time)) < iconSetMissTTL {
 		return "", errIconSetNotFound // missed while this one waited
 	}
 	// Not on the page's own context: a reload cancelled every queued fetch,
 	// each was stored as a miss, and those icons showed letters for an hour.
-	path, err := fetchIconSetFile(context.WithoutCancel(ctx), repo, path, file)
+	fetched, err := fetchIconSetFile(context.WithoutCancel(ctx), repo, path, file)
 	if err != nil && !errors.Is(err, context.Canceled) {
 		iconSetMisses.Store(missKey, time.Now())
 	}
-	return path, err
+	// A cached file older than a week is asked again, so a redrawn icon or
+	// a sanitiser fix arrives; failing that, the old one is still served.
+	if err != nil && stale {
+		return path, nil
+	}
+	return fetched, err
+}
+
+// iconSetCacheMax is how many files one set's cache may hold.
+const iconSetCacheMax = 3000
+
+func iconSetCacheFull(set string) bool {
+	entries, err := os.ReadDir(filepath.Join(iconSetsDir(), set))
+	return err == nil && len(entries) >= iconSetCacheMax
 }
 
 // lockIconSetFile serialises fetches of one file, so different files fetch
@@ -196,6 +222,10 @@ func adoptIconSetFile(ctx context.Context, set, file string) (string, error) {
 	}
 	ext := filepath.Ext(file)
 	stem := strings.TrimSuffix(file, ext)
+	// One adopt at a time: two at once (sonarr.svg from each set) both found
+	// the name free, and one bookmark got the other set's drawing.
+	iconAdoptMu.Lock()
+	defer iconAdoptMu.Unlock()
 	for n := 1; n < 100; n++ {
 		name := stem + ext
 		if n > 1 {

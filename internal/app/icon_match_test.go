@@ -90,6 +90,9 @@ func TestMatchBookmarkHost(t *testing.T) {
 		{"https://qbittorrent.lintgras.cc/", "qbittorrent"},
 		{"https://calibre-web-automated.tailae75e.ts.net", "calibre-web"},
 		{"http://sonarr:8989", "sonarr"},
+		// Two labels on a private name match; on a public one they do not.
+		{"http://sonarr.lan:8989", "sonarr"},
+		{"https://sonarr.com", ""},
 		{"https://github.com/foo", ""},
 		{"http://192.168.0.3", ""},
 		{"http://[::1]:8080", ""},

@@ -25413,6 +25413,7 @@ class DashboardConfig {
         this.closeBookmarkMenus();
         const ok = await this.saveBookmarkFields(key, patch);
         if (!ok) this.notify(this.t('dashboard.dockerIconSaveFailed', 'Could not save the icon.'), 'error');
+        return ok;
     }
 
     async refreshBookmarkFavicon(key) {
@@ -25430,9 +25431,13 @@ class DashboardConfig {
         this.syncBookmarkRowBusy(key, true);
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
-            const iconPath = await fetchIcon(url);
+            const outcome = await (window.BookmarkPreviewService?.fetchFaviconOutcome?.(url)
+                ?? fetchIcon(url).then((icon) => ({ icon, setIcon: false })));
+            const iconPath = outcome.icon;
             if (!iconPath) {
-                this.notify(this.t('dashboard.healthFaviconNone', 'No favicon found for this URL'), 'info');
+                this.notify(outcome.setIcon
+                    ? this.t('dashboard.healthFaviconSetIcon', 'This app shows its icon from the icon sets; no favicon is needed')
+                    : this.t('dashboard.healthFaviconNone', 'No favicon found for this URL'), 'info');
                 return;
             }
             // One field, by URL: not a read-then-write of the whole page, which
@@ -25598,7 +25603,12 @@ class DashboardConfig {
                 void this.saveBookmarkIconMode(key, { icon: '', iconMode: 'letter' });
                 break;
             case 'icon-auto':
-                void this.saveBookmarkIconMode(key, { icon: '', iconMode: '' });
+                // Automatic is the set icon, else the site's favicon. Clearing
+                // the icon alone left an app the sets do not know on its letter
+                // for good: nothing fetched the favicon back.
+                void this.saveBookmarkIconMode(key, { icon: '', iconMode: '' }).then((ok) => {
+                    if (ok && !window.IconSetAuto?.known?.(bookmark?.url)) void this.refreshBookmarkFavicon(key);
+                });
                 break;
             case 'archive':
                 this.openBookmarkArchive(bookmark);
@@ -27178,7 +27188,7 @@ class DashboardConfig {
                 if (result && result.rateLimited) result = 'failed';
             }
             if (result === 'ok' || result === true) ok += 1;
-            else failed += 1;
+            else if (result !== 'skipped') failed += 1;
             window.ProgressOverlay?.update(i + 1, total, counted(i + 1));
             if (i + 1 < total) await wait(DashboardConfig.SELECTION_SWEEP_INTERVAL_MS);
         }
@@ -27315,8 +27325,11 @@ class DashboardConfig {
             run: async (bookmark) => {
                 const url = String(bookmark?.url || '').trim();
                 if (!url) return 'failed';
-                const iconPath = await fetchIcon(url);
-                if (!iconPath) return 'failed';
+                const outcome = await (window.BookmarkPreviewService?.fetchFaviconOutcome?.(url)
+                    ?? fetchIcon(url).then((icon) => ({ icon, setIcon: false })));
+                const iconPath = outcome.icon;
+                // An app that shows its set icon needs no favicon: not a failure.
+                if (!iconPath) return outcome.setIcon ? 'skipped' : 'failed';
                 const record = await this.sweepRecordFor(bookmark);
                 if (!record) return 'failed';
                 const page = byPage.get(String(record.pageId)) || new Map();
