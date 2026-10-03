@@ -604,6 +604,7 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 | Open in new tab | `Ctrl/Cmd + Enter` | Opens it in the background |
 | Copy URL | `Ctrl + C` | Copies the address |
 | Share… / Copy name + URL | `Shift + L` | The system share sheet where the browser offers one (HTTPS only); otherwise copies name and address |
+| QR code | `Shift + J` | Shows the address as a QR code, to open it on a phone; drawn in the browser, so the address goes nowhere. **Copy URL** in the window copies it |
 | Edit | `Shift + E` | Edit in place |
 | Pin / Unpin | `Shift + P` | |
 | Tags… | `Shift + T` | The quick tag picker |
@@ -704,6 +705,7 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 | `Shift + P` | Pin or unpin |
 | `Shift + C` | Availability checking — `o` off, `p` periodic, `m` monitor |
 | `Shift + L` | Share, or copy name and URL |
+| `Shift + J` | The bookmark as a QR code, to open it on a phone |
 | `Shift + R` | Open the bookmark in the Bookmarks view, on its Health tab |
 | `Ctrl + C` | Copy the URL |
 | `Ctrl/Cmd + Enter` | Open in a new tab |
@@ -1024,7 +1026,7 @@ Focusing a row opens the side panel: **Details**, **Health** and **Usage**, swit
 - **Health** shows the availability mode and interval, **Expected response** ([§12.2](#122-expected-response)), and the reasons a bookmark is flagged, each with the score it costs.
 - **Usage** shows opens, last opened and the same activity the dashboard counts.
 
-Closed with the mouse — **×** or a click beside it — the row lets go as well, so the arrow keys and `Space` scroll the page again; closed with `Esc` or `i`, the row stays the cursor for the keys. A bookmark that is a container's web UI says so under **Details → Address → Runs in**, with a link to that container ([§14.2](#142-the-list)).
+Closed with the mouse — **×** or a click beside it — the row lets go as well, so the arrow keys and `Space` scroll the page again; closed with `Esc` or `i`, the row stays the cursor for the keys. **Details → Address** also offers **Open in new tab**, **Copy URL**, **Share** and **QR code** (`Shift + J` on the dashboard opens the same). A bookmark that is a container's web UI says so under **Details → Address → Runs in**, with a link to that container ([§14.2](#142-the-list)).
 
 On a narrow window the rail becomes a drawer and the side panel a sheet. What you filtered to is kept in the address, so a filtered list is a link.
 

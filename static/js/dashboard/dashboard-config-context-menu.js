@@ -161,6 +161,7 @@ class DashboardConfigContextMenu {
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: c.shareBookmarkActionLabel(), icon: '↪' },
+            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦' },
             ...group([
                 // Waiting on Unsorted: promote it onto a page, as the Inbox does.
                 ...(c.isUnsortedBookmark?.(bookmark)

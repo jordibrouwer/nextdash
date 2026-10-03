@@ -321,6 +321,16 @@ class KeyboardNavigation {
                     this.shareCurrent();
                     return;
                 }
+                // Shift+J — the selected bookmark as a QR code, to open it on a
+                // phone. J because it was the one Shift letter left that says
+                // nothing else: G is "to the end" in every list.
+                if (e.code === 'KeyJ') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this.qrCurrent();
+                    return;
+                }
             }
 
             // Shift+W — set the width of the block the cursor is in, category or
@@ -2561,6 +2571,13 @@ class KeyboardNavigation {
         const bookmark = this.getSelectedBookmark();
         if (!bookmark) return;
         void this.dashboard?.contextMenu?.shareBookmark?.(bookmark, row);
+    }
+
+    /** Shift+J — show the selected bookmark as a QR code. */
+    qrCurrent() {
+        const bookmark = this.getSelectedBookmark();
+        if (!bookmark) return;
+        void window.BookmarkQR?.show?.(bookmark);
     }
 
     /**
