@@ -1981,6 +1981,8 @@ class DashboardConfig {
             description.textContent = reset ? '' : description.textContent;
             description.hidden = !description.textContent.trim();
         }
+        // The band cuts the line to one, so the whole sentence rides on hover.
+        if (description) description.title = description.textContent.trim();
 
         const actions = head.querySelector('.lvs-header-actions');
         // Rendered here from state rather than lifted out of the body.
