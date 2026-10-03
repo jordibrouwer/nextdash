@@ -200,18 +200,17 @@ test.describe('config dashboard view (scaffold)', () => {
 
     /**
      * The status tile row is gone — every count it showed was already in At a
-     * glance or in Needs attention. The headline numbers still have to be there.
+     * glance or in Needs attention. The headline numbers still have to be there,
+     * and since the panels rebuild they lead the Bookmarks panel.
      */
     test('the overview section leads with the headline counts', async ({ page }) => {
         await loadDashboard(page);
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView());
 
-        // The counts are the figure row now, not the At a glance list the
-        // panel used to hold.
-        const tiles = page.locator('.config-overview-tiles .config-tile');
-        await expect(tiles.first()).toBeVisible();
-        expect((await tiles.first().innerText()).toLowerCase()).toContain('bookmarks');
+        const first = page.locator('.config-overview-panels .config-widget').first();
+        await expect(first).toBeVisible();
+        expect((await first.innerText()).toLowerCase()).toContain('bookmarks');
     });
 
     /*
@@ -226,7 +225,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
 
-        await expect(page.locator('.config-overview-blocks')).toBeVisible();
+        await expect(page.locator('.config-overview-panels')).toBeVisible();
         for (const gone of ['.config-feature-spotlight', '.config-new-features-nav',
             '.config-new-features-counter', '[data-overview-feature]']) {
             await expect(page.locator(gone)).toHaveCount(0);
@@ -261,10 +260,8 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView());
 
-        // Broken links is an attention row now, not a status tile.
-        // The row is a sentence now, and the sentence does not carry the word
-        // "broken" -- it says how many links are not answering. Found by where
-        // its chip goes instead.
+        // Broken links is a chip on the attention line, not a status tile.
+        // Found by where it goes rather than by its wording.
         const brokenRow = page.locator('.config-attention-chip[data-overview-go*="broken"]').first();
         await expect(brokenRow).toBeVisible();
         await brokenRow.click();
