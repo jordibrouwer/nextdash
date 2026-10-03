@@ -28,8 +28,14 @@ type unraidWatcher struct {
 	seenNotes     bool
 	started       bool
 	parityRunning bool
-	diskErrors    map[string]int64
-	alertIDs      map[string]bool
+	// parityStarted is when this watcher first saw the current check run;
+	// parityAwaiting is set from the moment it stopped until its result is
+	// found in the history (Unraid 7.3 clears the status's error count when
+	// a check completes, and writes the run to the history at its end).
+	parityStarted  time.Time
+	parityAwaiting time.Time
+	diskErrors     map[string]int64
+	alertIDs       map[string]bool
 }
 
 func newUnraidWatcher() *unraidWatcher {
@@ -64,13 +70,22 @@ func (w *unraidWatcher) observe(a *UnraidArrayView, p *UnraidParityView, n *Unra
 	if p != nil {
 		first := !w.seenParity
 		w.seenParity = true
-		// The check's own status holds the run that just finished; the newest
-		// history entry can still be the one before it.
-		if !first && w.parityRunning && !p.Running && p.Errors > 0 {
-			out = append(out, unraidNotice("parity-errors",
-				fmt.Sprintf("Parity check finished with %d errors", p.Errors), "", now))
+		if p.Running && !w.parityRunning {
+			w.parityStarted = now
+		}
+		if !first && w.parityRunning && !p.Running {
+			w.parityAwaiting = now
 		}
 		w.parityRunning = p.Running
+		if !w.parityAwaiting.IsZero() {
+			if errs, done := parityRunErrors(p, w.parityStarted, now.Sub(w.parityAwaiting)); done {
+				w.parityAwaiting = time.Time{}
+				if errs > 0 {
+					out = append(out, unraidNotice("parity-errors",
+						fmt.Sprintf("Parity check finished with %d errors", errs), "", now))
+				}
+			}
+		}
 	}
 	if n != nil {
 		first := !w.seenNotes
@@ -86,6 +101,34 @@ func (w *unraidWatcher) observe(a *UnraidArrayView, p *UnraidParityView, n *Unra
 		}
 	}
 	return out
+}
+
+// unraidParityResultWait is how long a finished check may take to appear in
+// the history before the status's own count is the only answer left.
+const unraidParityResultWait = 30 * time.Minute
+
+/*
+parityRunErrors finds the error count of the check that just stopped.
+
+The run is the history entry dated at or after the moment it was first seen
+running (Unraid dates an entry at its end). Until that entry appears the
+answer waits; the status's own count settles it early when it is non-zero
+(older Unraid versions keep it there), and after unraidParityResultWait it is
+all there is. done reports whether the question is settled.
+*/
+func parityRunErrors(p *UnraidParityView, started time.Time, waited time.Duration) (errs int64, done bool) {
+	if !started.IsZero() {
+		for _, run := range p.History {
+			at, err := time.Parse(time.RFC3339, run.Date)
+			if err == nil && !at.Before(started.Add(-time.Minute)) {
+				return run.Errors, true
+			}
+		}
+	}
+	if p.Errors > 0 {
+		return p.Errors, true
+	}
+	return 0, waited >= unraidParityResultWait
 }
 
 // pickUnraidWatcher decides which watcher a tick uses. Anything that is not

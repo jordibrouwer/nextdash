@@ -206,3 +206,44 @@ func TestUnraidWatcherParityCountsThisRun(t *testing.T) {
 		t.Fatalf("got %+v", got)
 	}
 }
+
+// Unraid 7.3 clears the status's error count when a check completes and
+// writes the run to the history, dated at its end (recorded from a real
+// server). The alert reads that entry -- and waits for it when it is late.
+func TestUnraidWatcherParityReadsTheRunFromHistory(t *testing.T) {
+	start := time.Date(2026, 10, 2, 4, 0, 0, 0, time.UTC)
+	before := UnraidParityRun{Date: "2026-09-03T12:22:09.000Z", Errors: 7}
+	thisRun := func(errs int64) UnraidParityRun {
+		return UnraidParityRun{Date: "2026-10-03T12:42:14.000Z", Errors: errs}
+	}
+	running := func(w *unraidWatcher) {
+		w.observe(nil, &UnraidParityView{}, nil, start.Add(-time.Hour))
+		w.observe(nil, &UnraidParityView{Running: true}, nil, start)
+	}
+
+	w := newUnraidWatcher()
+	running(w)
+	got := w.observe(nil, &UnraidParityView{History: []UnraidParityRun{thisRun(3), before}}, nil, start.Add(33*time.Hour))
+	if len(got) != 1 || !strings.Contains(got[0].Title, "3 errors") {
+		t.Fatalf("this run's 3 errors: got %+v", got)
+	}
+
+	w = newUnraidWatcher()
+	running(w)
+	if got := w.observe(nil, &UnraidParityView{History: []UnraidParityRun{thisRun(0), before}}, nil, start.Add(33*time.Hour)); len(got) != 0 {
+		t.Fatalf("a clean run alerted with an older run's errors: %+v", got)
+	}
+
+	w = newUnraidWatcher()
+	running(w)
+	if got := w.observe(nil, &UnraidParityView{History: []UnraidParityRun{before}}, nil, start.Add(33*time.Hour)); len(got) != 0 {
+		t.Fatalf("alerted before the run was in the history: %+v", got)
+	}
+	got = w.observe(nil, &UnraidParityView{History: []UnraidParityRun{thisRun(2), before}}, nil, start.Add(33*time.Hour+time.Minute))
+	if len(got) != 1 || !strings.Contains(got[0].Title, "2 errors") {
+		t.Fatalf("the late entry: got %+v", got)
+	}
+	if got := w.observe(nil, &UnraidParityView{History: []UnraidParityRun{thisRun(2), before}}, nil, start.Add(33*time.Hour+2*time.Minute)); len(got) != 0 {
+		t.Fatalf("sent twice: %+v", got)
+	}
+}
