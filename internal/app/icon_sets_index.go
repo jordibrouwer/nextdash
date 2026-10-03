@@ -47,6 +47,10 @@ type iconSetIndex struct {
 	// so a suggestion can offer the same app from the other set.
 	all   []*iconSetEntry
 	files map[string]bool // "<set>/<file.ext>"
+	// aliasKeys are the keys an alias claimed. Search and suggestions offer
+	// them; an automatic match does not, since a loose word ("maps", "music",
+	// "api") gave common sites another app's icon.
+	aliasKeys map[string]bool
 }
 
 var iconKeyStrip = regexp.MustCompile(`[^a-z0-9]`)
@@ -136,7 +140,7 @@ func iconLabelFromName(name string) string {
 }
 
 func buildIconSetIndex(di, sh []*iconSetEntry) *iconSetIndex {
-	x := &iconSetIndex{byKey: map[string]*iconSetEntry{}, files: map[string]bool{}}
+	x := &iconSetIndex{byKey: map[string]*iconSetEntry{}, files: map[string]bool{}, aliasKeys: map[string]bool{}}
 	sets := [][]*iconSetEntry{di, sh}
 	for _, list := range sets {
 		for _, e := range list {
@@ -156,20 +160,23 @@ func buildIconSetIndex(di, sh []*iconSetEntry) *iconSetIndex {
 	 * Sonarr showed another app's icon.
 	 */
 	owners := map[*iconSetEntry]bool{}
-	claim := func(e *iconSetEntry, word string) {
+	claim := func(e *iconSetEntry, word string, alias bool) {
 		if k := iconKey(word); k != "" {
 			if _, taken := x.byKey[k]; !taken {
 				x.byKey[k] = e
 				owners[e] = true
+				if alias {
+					x.aliasKeys[k] = true
+				}
 			}
 		}
 	}
 	rounds := []func(e *iconSetEntry){
-		func(e *iconSetEntry) { claim(e, e.Name) },
-		func(e *iconSetEntry) { claim(e, e.Label) },
+		func(e *iconSetEntry) { claim(e, e.Name, false) },
+		func(e *iconSetEntry) { claim(e, e.Label, false) },
 		func(e *iconSetEntry) {
 			for _, a := range e.Aliases {
-				claim(e, a)
+				claim(e, a, true)
 			}
 		},
 	}

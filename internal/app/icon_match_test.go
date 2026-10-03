@@ -116,3 +116,27 @@ func TestSuggestionsOfferTheOtherSet(t *testing.T) {
 		t.Fatalf("%+v", got)
 	}
 }
+
+// An alias is a loose word: "maps" on Apple Maps gave maps.google.com the
+// Apple Maps icon, and the container "app" got Miro. A match reads names
+// only; a suggestion still offers the alias.
+func TestAnAliasIsNotAnAutomaticMatch(t *testing.T) {
+	di := []byte(`{"apple-maps":{"aliases":["maps"],"base":"svg"},"miro":{"aliases":["app"],"base":"svg"}}`)
+	a, err := parseDashboardIconsIndex(di)
+	if err != nil {
+		t.Fatal(err)
+	}
+	x := buildIconSetIndex(a, nil)
+	if e := x.matchBookmarkHost("https://maps.google.com/"); e != nil {
+		t.Fatalf("maps.google.com matched %q", e.Name)
+	}
+	if e := x.matchContainer("ghcr.io/me/app:latest", "app"); e != nil {
+		t.Fatalf("container app matched %q", e.Name)
+	}
+	if got := x.suggestionsFor([]string{"maps"}, 3); len(got) != 1 || got[0].Name != "apple-maps" {
+		t.Fatalf("suggestion lost the alias: %+v", got)
+	}
+	if e := x.matchBookmarkHost("https://apple-maps.lan.example/"); e == nil || e.Name != "apple-maps" {
+		t.Fatalf("the name itself no longer matched: %+v", e)
+	}
+}
