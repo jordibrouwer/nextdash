@@ -205,6 +205,12 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — the printed cheat sheet named its font by this computer's path.** `generate-cheatsheet.cjs` wrote an absolute `file://` URL into `nextDash-cheatsheet.html`; it is now relative to the sheet, so the HTML is the same wherever it is generated.
 - **docs — the theme editor in the manual and in Help**, in all six languages: §16.1 and the theme browser section describe the badges, the editor in the panel, the look switch and Save as theme…; §16.5 the 26 backdrop tiles, a theme's look and the picker groups.
 - **tests — the theme editor:** Go for the meta's backdrops, `own` and `recoloured`, and `sanitizeThemeLook` (ranges, unknown words, an empty look, looks on packaged themes); Playwright in `config-custom-theme-character.spec.js` (27 tiles, a look through export and import), `config-theme-browser-yours.spec.js`, `theme-look-on-pick.spec.js`, `look-studio-theme-editor.spec.js` and `look-studio-save-as-theme.spec.js`.
+- **fix — saving the colours keeps the Neutrals collection.** One save emptied the chip for good; installs already stripped are repaired on load.
+- **fix — deleting the theme in use falls back to a real theme.** It set `default`, which is no theme id, and the page lost every colour; the half shown under Follow system counts as in use too.
+- **fix — Save as theme and Duplicate keep the backdrop on screen.** A built-in's recipe is chosen by its id, and the copy drew another.
+- **fix — a new or edited theme shows its depth, glow and effects at once**, not after a reload: the cache of `/api/themes/meta` is refreshed after a colours save.
+- **fix — `:theme`, the random theme and an OS light/dark switch bring the theme's surfaces**, not the previous theme's depth, glow, backdrop and card glass.
+- **fix — surface changes for "this theme" show under Follow system and a random theme.** They were stored under the chosen theme and drawn from the one on screen.
 
 ### Config
 

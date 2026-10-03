@@ -184,7 +184,10 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		// dropped rather than kept: it would reach the browser as a class and
 		// as a filter chip, and a theme file from elsewhere does not get to
 		// invent either.
-		Character:  keepArchetype(tc.Character),
+		Character: keepArchetype(tc.Character),
+		// The collection a built-in belongs to ("neutrals"): dropped here, one
+		// colours save emptied the Neutrals chip for good.
+		Collection: keepWord(strings.ToLower(tc.Collection), "neutrals"),
 		GrainAngle: keepInRange(tc.GrainAngle, 0, 360),
 		GrainScale: keepInRange(tc.GrainScale, 0, 1),
 

@@ -5880,6 +5880,10 @@ them until this release -- and in both cases the shipped value is the one the
 reader never chose to give up.
 */
 func fillThemeCharacter(current, defaults ThemeColors) ThemeColors {
+	// Also repairs installs whose colours file lost it to an earlier save.
+	if strings.TrimSpace(current.Collection) == "" {
+		current.Collection = defaults.Collection
+	}
 	if strings.TrimSpace(current.AccentPrimary) == "" {
 		current.AccentPrimary = defaults.AccentPrimary
 	}

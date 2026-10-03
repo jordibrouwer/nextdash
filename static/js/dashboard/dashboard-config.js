@@ -10915,6 +10915,10 @@ class DashboardConfig {
                     this._confirmedCustomThemeIds.add(id);
                 }
                 this.reloadThemeCSS();
+                // The surfaces a theme asks for (depth, glow, effects) come from
+                // a cache of /api/themes/meta: an edited character showed
+                // nothing, and a new theme drew soft and no glow, till a reload.
+                void window.ThemeLoader?.refreshSurfaceMeta?.().then(() => this.applyResolvedSurfaces());
                 // The theme picker is built from a cached /api/colors/custom-themes
                 // response; a new or renamed theme would otherwise not appear in it
                 // until the view was rebuilt from scratch.
@@ -11078,9 +11082,11 @@ class DashboardConfig {
         if (this._themeSelected === id) this._themeSelected = null;
         // A deleted theme that is still selected would leave the dashboard on a
         // theme that no longer exists, so fall back to the default.
-        const wasActive = this.dash.settings?.theme === id;
+        // Also the half on screen under Follow system, which is not the
+        // stored one. 'default' is no theme id: the page lost every colour.
+        const wasActive = this.dash.settings?.theme === id || this.displayTheme?.() === id;
         if (wasActive) {
-            this.dash.settings.theme = 'default';
+            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'matrix-bluepill-dark';
             void this.saveSettingsWithFeedback();
         }
         this.repaintAppearanceBody();
@@ -11088,6 +11094,12 @@ class DashboardConfig {
         // The page still said data-theme="<deleted id>", and the reloaded theme
         // CSS no longer had a block for it: put the default on screen too.
         if (wasActive) this.applyThemeLive();
+    }
+
+    /** The backdrop recipe a theme draws, as /api/themes/meta resolved it. */
+    themeBackdropOf(id) {
+        return this._themeMeta?.themes?.[id]?.backdrop
+            || window.ThemeLoader?.surfaceMetaFor?.(id)?.backdrop || '';
     }
 
     moveCustomTheme(id, direction) {
@@ -11429,6 +11441,7 @@ class DashboardConfig {
             const copyId = DashboardConfig.newThemeId();
             this._colorsData.custom[copyId] = {
                 ...theme,
+                backdrop: theme.backdrop || this.themeBackdropOf(id) || undefined,
                 name: DashboardConfig.uniqueNameFrom(
                     `${theme.name || id} ${this.t('config.themeCopySuffix', 'copy')}`, names),
             };

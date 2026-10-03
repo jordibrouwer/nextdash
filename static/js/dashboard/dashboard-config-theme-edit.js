@@ -261,6 +261,9 @@
                 delete theme.look;
                 theme.name = themeName;
                 if (withLook) theme.look = this.currentLookAnswers();
+                // A built-in's backdrop is mostly chosen by its id; the copy has
+                // a new one, and drew another recipe than the one on screen.
+                if (!theme.backdrop) theme.backdrop = this.themeBackdropOf?.(sourceId) || theme.backdrop;
                 return theme;
             };
             const wasHeld = studio.colorsHeld;
@@ -307,6 +310,9 @@
             this.reloadThemeCSS?.();
             this._themeList = null;
             this._themeMeta = null;
+            // ThemeLoader's copy too: the new id was missing from it, and the
+            // glass panes vanished the moment the editor opened on it.
+            await window.ThemeLoader?.refreshSurfaceMeta?.();
             const meta = await this.loadThemeMeta();
             const palettes = {};
             added.forEach((k) => { palettes[k] = data.custom[k]; });

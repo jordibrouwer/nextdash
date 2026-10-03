@@ -148,3 +148,26 @@ test.describe('appearance controls apply live', () => {
         expect(await stillLive(page), 'the page reloaded to apply the preset').toBe(true);
     });
 });
+
+// :theme, the random theme and an OS light/dark switch only called applyTheme,
+// and the page kept the previous theme's depth until a reload.
+test('a theme changed outside config brings its own depth', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.settings != null, null, { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    const target = await page.evaluate(async () => {
+        const meta = await window.ThemeLoader.loadSurfaceMeta();
+        const s = window.dashboardInstance.settings;
+        const forced = (v) => v && v !== 'follow';
+        if (forced(s.themeDepth)) return null;
+        const current = document.body.getAttribute('data-depth');
+        const prefs = s.themeSurfacePrefs || {};
+        const hit = Object.entries(meta.themes).find(([id, m]) => m.depth && m.depth !== current && !prefs[s.theme]?.depth && !m.own);
+        return hit ? { id: hit[0], depth: hit[1].depth } : null;
+    });
+    test.skip(!target, 'no theme with another depth');
+    await page.evaluate((id) => window.ThemeLoader.applyTheme(id), target.id);
+    await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-depth'))).toBe(target.depth);
+});

@@ -362,7 +362,7 @@
         studioPreviewTheme(id) {
             if (!id || !this._lookStudio || this._lookStudio.held) return;
             this.previewThemeChoice(id);
-            void window.ThemeLoader?.applySurfacesForTheme?.(id, this.dash.settings);
+            void window.ThemeLoader?.applySurfacesForTheme?.(id, this.dash.settings, id);
         },
 
         /** Back to the chosen theme once the pointer leaves the grid. */
