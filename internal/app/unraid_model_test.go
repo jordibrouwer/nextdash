@@ -175,3 +175,29 @@ func TestToUnraidUPSWithoutADevice(t *testing.T) {
 		t.Fatalf("the overview drew a UPS row for none: %+v", r)
 	}
 }
+
+// A disk is hot at its own warning temperature, else at 45 °C when it spins
+// and 60 °C when it is an SSD or NVMe: a real server's NVMe cache sat at
+// 45-46 °C and was reported as a problem.
+func TestUnraidDiskHotThreshold(t *testing.T) {
+	yes, no := true, false
+	cases := []struct {
+		name    string
+		temp    float64
+		warning any
+		rot     *bool
+		hot     bool
+	}{
+		{"nvme at 46", 46, nil, &no, false},
+		{"nvme at 61", 61, nil, &no, true},
+		{"hdd at 46", 46, nil, &yes, true},
+		{"hdd at 48 with its own 50", 48, 50.0, &yes, false},
+		{"unknown kind at 45", 45, nil, nil, true},
+	}
+	for _, c := range cases {
+		d := toUnraidDisk(rawUnraidDisk{Name: "x", Status: "DISK_OK", Temp: c.temp, Warning: c.warning, Rotational: c.rot}, "cache")
+		if got := d.Problem == "hot"; got != c.hot {
+			t.Errorf("%s: hot = %v, want %v", c.name, got, c.hot)
+		}
+	}
+}

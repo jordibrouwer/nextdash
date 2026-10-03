@@ -161,7 +161,7 @@ func sel(name, fields string) string {
 }
 
 func (s unraidSchema) diskFields() string {
-	return s.pick("ArrayDisk", "name", "status", "temp", "numErrors", "fsSize", "fsUsed", "fsFree", "isSpinning", "type")
+	return s.pick("ArrayDisk", "name", "status", "temp", "numErrors", "fsSize", "fsUsed", "fsFree", "isSpinning", "type", "warning", "rotational")
 }
 
 func (s unraidSchema) parityFields() string {

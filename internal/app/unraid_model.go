@@ -19,7 +19,12 @@ rule the watcher and the tiles must agree on. The browser does no arithmetic.
 */
 
 const (
+	// unraidHotC and unraidHotSSDC are the warning temperatures when a disk
+	// has none of its own: Unraid's 45 °C for spinning disks, and 60 °C for
+	// SSDs and NVMe, which run warmer and for which 45 °C is ordinary (an
+	// NVMe cache read 45-46 °C on a real, healthy server).
 	unraidHotC         = 45
+	unraidHotSSDC      = 60
 	unraidFullPct      = 90
 	unraidShareWarnPct = 85
 	unraidShareBadPct  = 93
@@ -154,6 +159,20 @@ type rawUnraidDisk struct {
 	FsUsed     any    `json:"fsUsed"`
 	FsFree     any    `json:"fsFree"`
 	IsSpinning *bool  `json:"isSpinning"`
+	Warning    any    `json:"warning"`
+	Rotational *bool  `json:"rotational"`
+}
+
+// hotAt is the temperature this disk warns at: its own threshold when it has
+// one, else the default for its kind.
+func (r rawUnraidDisk) hotAt() int {
+	if w := unraidInt(r.Warning); w > 0 {
+		return int(w)
+	}
+	if r.Rotational != nil && !*r.Rotational {
+		return unraidHotSSDC
+	}
+	return unraidHotC
 }
 
 func toUnraidDisk(r rawUnraidDisk, group string) UnraidDiskView {
@@ -175,7 +194,7 @@ func toUnraidDisk(r rawUnraidDisk, group string) UnraidDiskView {
 		d.Tone, d.Problem = "bad", "disabled"
 	case d.Errors > 0:
 		d.Tone, d.Problem = "bad", "errors"
-	case d.TempC != nil && *d.TempC >= unraidHotC:
+	case d.TempC != nil && *d.TempC >= r.hotAt():
 		d.Tone, d.Problem = "warn", "hot"
 	case d.UsedPct >= unraidFullPct:
 		d.Tone, d.Problem = "warn", "full"
