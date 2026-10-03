@@ -163,6 +163,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — a relative date reads `2024-05-01 12:00:00` and Unix seconds written as text.**
 - **fix — widgets refused at once sign in once between them.** Each threw the shared session away and signed in again, a seat each on Pi-hole.
 - **fix — a widget's session no longer follows a redirect to another host or port.**
+- **fix — typing a new key turns Save on.** The key alone did not count as a change, so a rotated key could not be saved without touching something else.
 
 ### Alerts
 

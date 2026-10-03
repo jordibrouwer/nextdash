@@ -404,10 +404,8 @@ test('a key typed again keeps the preset header', async ({ page }) => {
     const again = page.locator(`[data-widget-row="${index}"]`);
     await again.locator('[data-widget-auth="secret"]').fill('second-token');
     await again.locator('[data-widget-auth="secret"]').blur();
-    // A key alone does not count as an edit; a figure's label does.
-    const label = again.locator('[data-custom-field="label"]').first();
-    await label.fill('rotated');
-    await label.blur();
+    // The key alone is the edit: Save comes on for it.
+    await expect(again.locator('[data-widget-save]')).toBeEnabled();
     const put = page.waitForRequest((req) => req.url().includes('/api/health/credentials') && req.method() === 'PUT');
     await again.locator('[data-widget-save]').click();
     const body = JSON.parse((await put).postData() || '{}');

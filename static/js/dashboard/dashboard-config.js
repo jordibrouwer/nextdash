@@ -22126,6 +22126,9 @@ class DashboardConfig {
         if (!draft) return;
         draft.auth = { ...(draft.auth || {}), [field]: String(value || '') };
         if (field === 'headerName') this.syncSchemeHint(index, value);
+        // A key typed is a change on its own: Save stayed off until something
+        // else on the row moved, so a rotated key could not be saved.
+        this.refreshWidgetSaveBar(index);
     }
 
     /** Shows or hides the fill-in note as the address is typed. */
