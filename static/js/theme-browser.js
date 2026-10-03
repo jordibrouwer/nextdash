@@ -433,6 +433,10 @@
         return `
             <aside class="look-studio" data-look-studio role="dialog"
                    aria-labelledby="look-studio-title">
+                <div class="look-studio-resize" data-studio-resize role="separator" tabindex="0"
+                     aria-orientation="vertical" aria-controls="look-studio-pane"
+                     aria-label="${escapeHtml(t('config.studioResize', 'Panel width'))}"
+                     title="${escapeHtml(t('config.studioResizeHint', 'Drag to widen · double-click to reset'))}"></div>
                 <header class="look-studio-head">
                     <div class="look-studio-title">
                         <h2 id="look-studio-title">${escapeHtml(t('config.themeBrowserTitle', 'Themes'))}</h2>
@@ -474,12 +478,87 @@
     /** True for a field that wants the arrow keys, Enter or a backslash itself. */
     function ownsKeys(el) {
         if (!el) return false;
-        if (el.matches?.('textarea, select, [contenteditable="true"]')) return true;
+        if (el.matches?.('textarea, select, [contenteditable="true"], [data-studio-resize]')) return true;
         if (el.matches?.('input')) {
             const type = (el.getAttribute('type') || 'text').toLowerCase();
             return !['checkbox', 'radio', 'button', 'submit', 'reset'].includes(type);
         }
         return false;
+    }
+
+    /*
+     * The panel's left edge widens it.
+     *
+     * Never narrower than the stylesheet's width, where the six tabs still
+     * fit, and never so wide that no page is left beside it to judge the look
+     * on. The width is this browser's, kept between openings; a double-click
+     * on the edge gives the default back.
+     */
+    const WIDTH_KEY = 'nextdash-look-studio-width';
+    const KEEP_PAGE = 240;
+
+    function bindResize(root) {
+        const handle = root.querySelector('[data-studio-resize]');
+        if (!handle) return;
+        const viewport = () => document.documentElement.clientWidth;
+        const base = () => {
+            const was = root.style.getPropertyValue('--look-studio-width');
+            root.style.removeProperty('--look-studio-width');
+            const width = root.getBoundingClientRect().width;
+            if (was) root.style.setProperty('--look-studio-width', was);
+            return width;
+        };
+        const minWidth = base();
+        const clamp = (px) => Math.round(Math.max(minWidth, Math.min(px, viewport() - KEEP_PAGE)));
+        const setWidth = (px, keep) => {
+            const width = clamp(px);
+            if (width <= minWidth) root.style.removeProperty('--look-studio-width');
+            else root.style.setProperty('--look-studio-width', `${width}px`);
+            handle.setAttribute('aria-valuenow', String(width));
+            if (!keep) return;
+            try {
+                if (width <= minWidth) localStorage.removeItem(WIDTH_KEY);
+                else localStorage.setItem(WIDTH_KEY, String(width));
+            } catch (e) { /* private window: the width lasts this opening */ }
+        };
+        let stored = 0;
+        try { stored = Number(localStorage.getItem(WIDTH_KEY)) || 0; } catch (e) { /* none kept */ }
+        handle.setAttribute('aria-valuemin', String(Math.round(minWidth)));
+        setWidth(stored || minWidth, false);
+
+        handle.addEventListener('pointerdown', (event) => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            // Held, so the arrows go on from where the drag left it.
+            handle.focus({ preventScroll: true });
+            handle.setPointerCapture(event.pointerId);
+            root.classList.add('is-resizing');
+            const move = (e) => setWidth(viewport() - e.clientX, false);
+            const end = () => {
+                handle.removeEventListener('pointermove', move);
+                handle.removeEventListener('pointerup', end);
+                handle.removeEventListener('pointercancel', end);
+                root.classList.remove('is-resizing');
+                setWidth(root.getBoundingClientRect().width, true);
+            };
+            handle.addEventListener('pointermove', move);
+            handle.addEventListener('pointerup', end);
+            handle.addEventListener('pointercancel', end);
+        });
+        handle.addEventListener('dblclick', () => setWidth(minWidth, true));
+        handle.addEventListener('keydown', (event) => {
+            const step = event.shiftKey ? 120 : 30;
+            const width = root.getBoundingClientRect().width;
+            const next = {
+                ArrowLeft: width + step,
+                ArrowRight: width - step,
+                Home: minWidth,
+                End: viewport(),
+            }[event.key];
+            if (next === undefined) return;
+            event.preventDefault();
+            setWidth(next, true);
+        });
     }
 
     let ACTIVE = null;
@@ -558,6 +637,7 @@
         const root = host.firstElementChild;
         document.body.appendChild(root);
         const pane = root.querySelector('[data-studio-pane]');
+        bindResize(root);
 
         /*
          * The rest of the page is inert while the studio is open.

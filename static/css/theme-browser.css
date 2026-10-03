@@ -421,8 +421,8 @@ body.look-studio-open #app-modal {
 .look-studio {
     position: fixed;
     top: 0;
-    left: calc(100vw - var(--look-studio-width));
-    width: var(--look-studio-width);
+    left: calc(100vw - min(var(--look-studio-width), 100vw));
+    width: min(var(--look-studio-width), 100vw);
     height: 100vh;
     height: 100dvh;
     z-index: 2000;
@@ -434,6 +434,45 @@ body.look-studio-open #app-modal {
     color: var(--text-primary);
     border-left: 1px solid var(--hairline-strong, var(--border-primary));
     box-shadow: -8px 0 28px rgba(0, 0, 0, 0.18);
+}
+
+/* The left edge, dragged to widen the panel. Over the border, a little to
+   either side of it, so it is easy to catch. */
+.look-studio-resize {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -4px;
+    width: 8px;
+    z-index: 1;
+    cursor: ew-resize;
+    touch-action: none;
+}
+
+.look-studio-resize::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 2px;
+    background: var(--accent-primary, var(--text-primary));
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.look-studio-resize:hover::after,
+.look-studio-resize:focus-visible::after,
+.look-studio.is-resizing .look-studio-resize::after {
+    opacity: 0.6;
+}
+
+.look-studio-resize:focus-visible {
+    outline: none;
+}
+
+.look-studio.is-resizing {
+    user-select: none;
 }
 
 .look-studio-head {
@@ -774,6 +813,10 @@ body.look-studio-open #app-modal {
         border-top: 1px solid var(--hairline-strong, var(--border-primary));
         border-radius: 14px 14px 0 0;
         box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.2);
+    }
+
+    .look-studio-resize {
+        display: none;
     }
 
     .look-studio-keys {
