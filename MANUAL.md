@@ -773,6 +773,7 @@ Search, commands and finders are three modes of one panel.
 :  commands   — actions: :theme, :open last 5, …
 ?  finders    — ?g query → another site
 @  everywhere — search all pages at once
+⇧↵ the web    — the same words, asked of a search engine
 ```
 
 ### 8.1 Just type
@@ -813,6 +814,19 @@ Filters combine with each other and with plain words: `tag:dev -status:pinned ap
 - **`Shift + F`** is the opposite: a bar above the grid that hides non-matching rows on this page and keeps the layout and cursor. `Escape` clears it, a second `Escape` closes it.
 - **`:find text`** does the same from the command palette.
 
+#### 🌐 Searching the web
+
+With an engine set, the search panel also searches the web. Nothing leaves the server while you type: the last row, **Search the web: …**, waits for **`Shift + Enter`** (or a click). Then the results appear under **From the web**, below your own bookmarks.
+
+- **The engine** — Behavior → Keyboard & search → **Web search**: **Off** (the default), **SearXNG** with the address of your own instance, or the **Brave Search API** with a key from api.search.brave.com. SearXNG must have `json` under `search.formats` in its `settings.yml`. **Test connection** runs a search for *test* and says how many results came back, or why not.
+- **Private by design** — the server asks the engine, so the engine sees your server and never your browser. A result loads nothing until you open it: no favicons, no thumbnails. Web searches are not written to the activity log, and the server keeps no record of them.
+- **Categories** — Web, News, Video, and IT with SearXNG. **`Shift + ←`/`→`** steps between them.
+- **A site you already keep** — a result from a host you have a bookmark for shows *In your bookmarks: ‹name›*. **`Alt + Enter`** opens your bookmark instead of the result.
+- **Reading before opening** — **`→`** on a result shows its title, address, date and text in a column beside the list; **`←`** closes it. Not on a phone.
+- **Nothing found** — the panel says why (no results, an engine that did not answer, a rejected key, SearXNG refusing JSON) and offers **Open in ‹engine›** to search on the engine's own page.
+- **Recent on the web** — the last eight web searches, in this browser only, as a folded group in the empty panel, with a row to clear them.
+- An answer is kept for a minute, so the same search again is instant; the engine has five seconds to answer. At most 20 results per search.
+
 ### 8.4 From the browser's address bar
 
 nextDash describes itself to your browser as a search engine (`/opensearch.xml`).
@@ -822,6 +836,8 @@ nextDash describes itself to your browser as a search engine (`/opensearch.xml`)
 - **Safari** — not supported.
 
 Then type the keyword, `Tab`, a term and `Enter`. A search also has an address of its own, `#search?q=your+terms`, which can be bookmarked or opened from a script. Behind a reverse proxy, `X-Forwarded-Proto` and `X-Forwarded-Host` are honoured.
+
+With web search on ([§8.3](#83-beyond-the-current-page)), nextDash offers a second engine, **‹title› Web** (`/opensearch-web.xml`), which opens the dashboard with the web results already asked: `#search?web=your+terms`.
 
 <a id="85-commands"></a>
 
@@ -1625,7 +1641,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | Kind | Shows |
 |---|---|
 | **Unraid** | The server at a glance, a line each: array, used, parity, disks, alerts, VMs and the UPS, with the worst problem in colour; wide, it adds the newest alert |
-| **Unraid array** | The array's disks by group (parity, array, cache), each with its fill and temperature or its problem; a sleeping disk is grey. A disk is hot at the warning temperature set for it in Unraid, else at 45 °C when it spins and 60 °C when it is an SSD or NVMe. Narrow, only the disks with a problem, or *N disks fine* |
+| **Unraid array** | The array's disks by group (parity, array, cache), each with its fill and temperature or its problem; a sleeping disk is grey. A disk is hot at 45 °C when it spins and at 60 °C when it is an SSD or NVMe, and full at the usage warning set for it in Unraid, else at 90 %. Narrow, only the disks with a problem, or *N disks fine* |
 | **Parity** | The last parity check, or the running one with progress, speed and time left; wide, its history |
 | **Shares** | Where the shares live — the array, each cache pool, or both when a share overflows from one to the other — each place with its fill and free space, and the shares on it: their names when wide, how many when narrow. Unraid reports a share's space as that of its place, not its own, so this is the honest view. Its settings choose how many places |
 | **VMs** | How many virtual machines run, and which are paused, stopped or crashed; its settings choose how many rows |
@@ -1765,7 +1781,7 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 
 **What they need.** Unraid 7.2, or an older Unraid with the Unraid Connect plugin, and an API key with the role **Viewer** (in Unraid: Settings → Management Access → API Keys). A key that can do more than read is accepted, but Config says Viewer is enough.
 
-**One connection for all seven.** Config → Unraid holds it: the **Address**, the **API key** (a saved key shows as *Set*; the eye button reveals what you type), **Accept a self-signed certificate**, **Read this server** and **Send Unraid alerts through the alert channels**. When nextDash runs in a container, the Docker bridge gateway is suggested as the address. **Test connection** names the server, its Unraid and API versions and what the key may read — *yes*, *not allowed* or *not in this version* per area. A new address needs the key again: change the address without typing a key and the saved key is dropped. The key is stored apart in `data/unraid-secrets.json`, is never sent back to the browser, and travels in a backup only with **Tokens and passwords**.
+**One connection for all seven.** Config → Unraid holds it: the **Address**, the **API key** (a saved key shows as *Set*; the eye button reveals what you type), **Accept a self-signed certificate**, **Read this server** and **Send Unraid alerts through the alert channels**. When nextDash runs in a container, the Docker bridge gateway is suggested as the address. The address starts with `http://` or `https://`; one without is refused. **Test connection** names the server, its Unraid and API versions and what the key may read — *yes*, *not allowed* or *not in this version* per area. When the server answers but the key may not read its info, or its Unraid lacks what nextDash reads, the test says that rather than *The server did not answer*. A new address needs the key again: change the address without typing a key and the saved key is dropped. The key is stored apart in `data/unraid-secrets.json`, is never sent back to the browser, and travels in a backup only with **Tokens and passwords**.
 
 **On the tile.** A widget has only how it draws: **Refresh every (seconds)** (30 at the least; one answer per area is shared by everyone viewing the dashboard), **Rows to show** where it lists (Shares, VMs, Unraid notifications), and **A click** — *Opens the page in Unraid* or *Does nothing*. An area the key may not read, or an Unraid version that lacks it, is named on the tile instead of showing zero; a server that stops answering keeps the last reading, with its age. Nothing is shown until the connection is saved.
 
@@ -1801,6 +1817,8 @@ nextDash ships **160 theme families**, each with a light and a dark half — 320
 #### 🪟 The theme browser
 
 The theme browser lies over the right of the dashboard, so every change shows on the real page while you make it. Nothing is stored until **Apply**; **Cancel**, the **×** at the top right, **Esc** or a click on the dashboard beside the panel puts everything back, in every tab. On a narrow window it becomes a sheet along the bottom.
+
+**Wider.** Drag the panel's left edge to widen it, or focus the edge and use **`←`** / **`→`** (with **`Shift`** for bigger steps); a double-click gives the default width back. It never goes narrower than the default, where the six tabs fit, and always leaves 240 px of the page beside it. The width is kept per browser.
 
 | Tab | What it changes |
 |---|---|
@@ -2032,7 +2050,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 **`Ctrl/Cmd + Shift + K`** — or **Find settings** below the section rail — searches every section, tab, setting and help topic. It also finds settings by related words (*uptime*, *wallpaper*, *hotkey*) and by their current value (*8099*, *Monitor*), and shows that value beside the result.
 
-**Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → Privacy & sync) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections and the action bar position — carry an **all devices** mark.
+**Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → Privacy & sync) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections, the action bar position, web search and container icons — carry an **all devices** mark.
 
 <a id="174-config-bookmarks"></a>
 
@@ -2064,7 +2082,7 @@ The other tabs:
 | Tab | Settings |
 |---|---|
 | **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode** |
-| **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
+| **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
 | **Fresh** | Show what is new since you last looked, mark rows that publish, find feeds now ([§12.6](#126-fresh)) |
 | **Status & alerts** | [§12.1](#121-availability-modes) |
 | **Privacy & sync** | Analytics, the daily release check, posts from nextdash.cc; **Keep settings on this device only**; onboarding (keyboard tips, review cards, tours, *Show quick-start card again*) |
@@ -2178,7 +2196,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 - **Create a backup automatically** and **How often** — every day, week (default), two weeks or month. A run happens whenever the newest backup is older than that, so frequent restarts do not skip it. The newest **three** are kept; `NEXTDASH_AUTO_BACKUP_KEEP` (1–50) changes that and `NEXTDASH_AUTO_BACKUP_DIR` (an absolute path) stores them elsewhere. The default place is `data/auto-backups/`, which is left out of backups. **The panel names the directory it is actually using**, and warns when that is inside the data directory — backups kept there are lost with the thing they back up.
 - **What a backup carries** — a backup holds the whole data directory: bookmarks, pages, categories, finders, the inbox, settings, custom themes, check history, icons and uploads, and the images held or skipped in the Containers view. Two switches decide the rest:
   - **Local copies of pages** — the largest part of a backup.
-  - **Tokens and passwords** — source tokens, stored sign-ins, webhook keys and the Containers view's GitHub token. With them in, a restore needs nothing typed again, and the ZIP itself becomes a secret. They are written back with owner-only permissions.
+  - **Tokens and passwords** — source tokens, stored sign-ins, webhook keys, the Containers view's GitHub token, the Unraid and Brave keys, and the secrets in the alert settings (the alert address with its bot token, Pushover's keys, the archive keys and the iCal address). Without them, those settings go into the backup blanked, and restoring it keeps the ones in use. With them in, a restore needs nothing typed again, and the ZIP itself becomes a secret. They are written back with owner-only permissions.
 - Left out on purpose: cached previews and pictures, the health cache, and browser push subscriptions — all rebuilt or re-registered after a restore. The Containers view's timeline, update history, disk sizes and logs stay out too: they belong to the Docker host, not to the data.
 - **Stored backups** — each with its age, size and contents (*1.7 MB · 412 bookmarks on 5 pages*), and **Download**, **Restore** and **Delete**. **Download all** saves them all.
 - **Full backup (zip)** → **Import backup…** — restores a ZIP.
@@ -2258,14 +2276,14 @@ The MCP endpoint is switched on from this tab as well — see [§23.6](#236-the-
 - **Refresh all link previews** / **Clear all link previews** — the stored titles, descriptions and images. Refreshing is one request per bookmark, shows progress, waits out a rate limit and can be stopped.
 - **Forget the scanned keywords** — what *Read their pages* kept for tag suggestions.
 
-**App icons.** Containers and bookmarks to self-hosted apps get the app's own icon from two open icon sets, [dashboard-icons](https://github.com/homarr-labs/dashboard-icons) and [selfh.st/icons](https://selfh.st/icons/). A container is matched by its image and name, a bookmark by its host; the icon follows the theme between its light and dark variant. When the sets know an app, its icon is used instead of the site's favicon — an icon you chose or uploaded is never replaced.
+**App icons.** Containers and bookmarks to self-hosted apps get the app's own icon from two open icon sets, [dashboard-icons](https://github.com/homarr-labs/dashboard-icons) and [selfh.st/icons](https://selfh.st/icons/). A container is matched by its image and name, a bookmark by its host — a private name such as `sonarr.lan` or `plex.local` included; the icon follows the theme between its light and dark variant. When the sets know an app, its icon is used instead of the site's favicon — an icon you chose or uploaded is never replaced. When the sets know the app but cannot deliver its file, the favicon is fetched after all.
 
 - **Choosing one** — the pencil on a bookmark's icon in the form offers **Choose app icon…** (and up to three suggestions appear under the address); the pencil on the icon in a container's drawer and in the Bookmarks view's side panel offers **Choose app icon…**, **Use letter** and **Automatic**. A chosen icon is copied into `data/icons/` and is then an ordinary icon of yours.
-- **Where they come from** — the server fetches the sets' indexes from jsDelivr once a week and each icon on first use, keeps them in `data/icon-sets/` (left out of backups, like cached previews) and serves them itself; the browser never contacts the icon sets. `DISABLE_ICON_SETS=1` switches all of it off. The sets are credited under About.
+- **Where they come from** — the server fetches the sets' indexes from jsDelivr once a week and each icon on first use, asks for an icon again after a week, keeps at most 3000 per set in `data/icon-sets/` (left out of backups, like cached previews) and serves them itself; the browser never contacts the icon sets. `DISABLE_ICON_SETS=1` switches all of it off. The sets are credited under About.
 
 ### 19.5 Trash
 
-Deleted **bookmarks, pages and categories** stay in the trash for **30 days** (at most 500 entries). `:trash` opens it. Every route into the trash — the dashboard, the Bookmarks view, single or bulk — lands here.
+Deleted **bookmarks, pages and categories** stay in the trash for **30 days** (at most 500 entries). `:trash` opens it. Every route into the trash — the dashboard, the Bookmarks view, `:remove`, single or bulk — lands here.
 
 - **Search** by name, URL, tag, category or page.
 - **Restore** puts a bookmark back on its page, at its old position.
@@ -2719,8 +2737,10 @@ Escape              close, then leave
 | `/#inbox` | The inbox |
 | `/#docker`, `/#docker/<name>`, `/#docker?filter=updates` | The Containers view |
 | `/#search?q=…` | A search |
+| `/#search?web=…` | A web search ([§8.3](#83-beyond-the-current-page)) |
 | `/add?url=…` | Save to the inbox |
 | `/opensearch.xml` | The browser search engine description |
+| `/opensearch-web.xml` | The same for web search, while an engine is on |
 | `/manifest.webmanifest` | The installed app |
 
 ### Data location

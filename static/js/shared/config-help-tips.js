@@ -84,6 +84,7 @@
                 'tipFindTagCloud',
                 'tipFindRecent',
                 'tipFindAddressBar',
+                'tipFindWeb',
             ],
         },
         {
@@ -141,6 +142,7 @@
                 'tipTuneInfo',
                 'tipTuneTheme',
                 'tipTuneThemeBrowser',
+                'tipTuneThemeBrowserWidth',
                 'tipTuneGloss',
                 'tipTuneLooks',
                 'tipTuneBackdrop',
