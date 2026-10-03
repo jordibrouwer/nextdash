@@ -295,6 +295,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **docs — every new string in all six languages.** The 138 strings this release added in English only — the QR code, the Unraid widgets and Config → Unraid, and Containers' tabs — are in Dutch, German, French, Chinese and Spanish, and two that changed (the right-click menu's cheat-sheet line, the container notices' note) are brought up to date; `validate:locale-parity`, the placeholder and cheat-sheet checks pass.
 - **fix — thirty strings that never reached a locale file.** The app icon picker and the container drawer's icon menu, the Apprise fields, the charts and outage timeline in Collection health, and the chart and icon credits under About called for keys that did not exist, so they stood in English in every language. They are in `en.json` and translated.
 - **docs — README and the manual describe this release.** Twenty-nine widget kinds with the seven for Unraid, 41 Custom-widget services (table rebuilt from the presets, the retired ones named), Apprise among the alert services, app icons and `DISABLE_ICON_SETS`, the Custom widget's counting paths and token sign-ins, the charts and per-monitor outages in Collection health, and the two test-only fixture variables.
+- **i18n — Refresh favicon's "shows its set icon" message** in all six languages.
 
 ### Tests
 

@@ -956,6 +956,7 @@
     "healthRecheckFailed": "无法重新检查这个书签",
     "healthFaviconFailed": "无法刷新网站图标",
     "healthFaviconNone": "找不到这个网址的网站图标",
+    "healthFaviconSetIcon": "此应用显示来自图标集的图标，无需网站图标",
     "healthFaviconDone": "网站图标已更新",
     "healthNoRedirect": "这个书签没有发现重定向",
     "healthRedirectTitle": "应用重定向？",

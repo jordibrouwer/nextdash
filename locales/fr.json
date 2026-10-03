@@ -956,6 +956,7 @@
     "healthRecheckFailed": "Impossible de revérifier ce favori",
     "healthFaviconFailed": "Impossible d’actualiser le favicon",
     "healthFaviconNone": "Aucun favicon trouvé pour cette URL",
+    "healthFaviconSetIcon": "Cette application affiche son icône des jeux d’icônes ; aucun favicon n’est nécessaire",
     "healthFaviconDone": "Favicon mis à jour",
     "healthNoRedirect": "Aucune redirection trouvée pour ce favori",
     "healthRedirectTitle": "Appliquer la redirection ?",

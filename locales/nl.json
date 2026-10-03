@@ -956,6 +956,7 @@
     "healthRecheckFailed": "Kon deze bladwijzer niet opnieuw controleren",
     "healthFaviconFailed": "Kon de favicon niet verversen",
     "healthFaviconNone": "Geen favicon gevonden voor deze URL",
+    "healthFaviconSetIcon": "Deze app toont zijn icoon uit de icoonsets; een favicon is niet nodig",
     "healthFaviconDone": "Favicon bijgewerkt",
     "healthNoRedirect": "Geen redirect gevonden voor deze bladwijzer",
     "healthRedirectTitle": "Redirect toepassen?",

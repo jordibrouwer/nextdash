@@ -956,6 +956,7 @@
     "healthRecheckFailed": "No se pudo volver a comprobar este marcador",
     "healthFaviconFailed": "No se pudo actualizar el favicon",
     "healthFaviconNone": "No se encontró favicon para esta URL",
+    "healthFaviconSetIcon": "Esta app muestra su icono de los conjuntos de iconos; no hace falta favicon",
     "healthFaviconDone": "Favicon actualizado",
     "healthNoRedirect": "No se encontró ninguna redirección para este marcador",
     "healthRedirectTitle": "¿Aplicar la redirección?",

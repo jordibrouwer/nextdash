@@ -956,6 +956,7 @@
     "healthRecheckFailed": "Dieses Lesezeichen konnte nicht neu geprüft werden",
     "healthFaviconFailed": "Favicon konnte nicht aktualisiert werden",
     "healthFaviconNone": "Kein Favicon für diese URL gefunden",
+    "healthFaviconSetIcon": "Diese App zeigt ihr Symbol aus den Symbolsets; ein Favicon ist nicht nötig",
     "healthFaviconDone": "Favicon aktualisiert",
     "healthNoRedirect": "Keine Weiterleitung für dieses Lesezeichen gefunden",
     "healthRedirectTitle": "Weiterleitung übernehmen?",

@@ -987,6 +987,7 @@
     "healthRecheckFailed": "Could not re-check this bookmark",
     "healthFaviconFailed": "Could not refresh the favicon",
     "healthFaviconNone": "No favicon found for this URL",
+    "healthFaviconSetIcon": "This app shows its icon from the icon sets; no favicon is needed",
     "healthFaviconDone": "Favicon updated",
     "healthNoRedirect": "No redirect found for this bookmark",
     "healthRedirectTitle": "Apply redirect?",
