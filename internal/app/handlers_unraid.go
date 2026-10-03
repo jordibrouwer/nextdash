@@ -105,6 +105,10 @@ func unraidFieldMissing(data json.RawMessage, field string) bool {
 	return !ok || string(v) == "null"
 }
 
+// unraidConnMu keeps a server's address and its key together: written as one
+// in a save, read as one before a fetch.
+var unraidConnMu sync.RWMutex
+
 func unraidStatusOf(err error) string {
 	switch {
 	case errors.Is(err, errUnraidUnauthorized):
@@ -119,14 +123,19 @@ func (h *Handlers) unraidArea(ctx context.Context, area string) unraidAreaResult
 	// The cache first: a save between here and the fetch then lands old-server
 	// data in the cache the save just threw away, not in the new one.
 	cache := currentUnraidAnswers()
+	unraidConnMu.RLock()
 	srv, ok := activeUnraidServer(h.store.GetSettings())
+	key := ""
+	if ok {
+		key = unraidAPIKey(srv.ID)
+	}
+	unraidConnMu.RUnlock()
 	if !ok {
 		return unraidAreaResult{Area: area, Status: "not-configured"}
 	}
 	if area == "overview" {
 		return h.composeUnraidOverview(ctx)
 	}
-	key := unraidAPIKey(srv.ID)
 	return cache.get(ctx, area, unraidFloor, func(ctx context.Context) (any, string, error) {
 		return h.fetchUnraidArea(ctx, srv, key, area)
 	})
@@ -283,6 +292,10 @@ func (h *Handlers) UnraidSettingsHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Start the address with http:// or https://", http.StatusBadRequest)
 		return
 	}
+	// The address and its key change as one: a poll between the two writes
+	// sent the old key to the new address.
+	unraidConnMu.Lock()
+	defer unraidConnMu.Unlock()
 	h.settingsMu.Lock()
 	s := h.store.GetSettings()
 	oldBaseURL := ""
@@ -357,8 +370,15 @@ func (h *Handlers) UnraidTestHandler(w http.ResponseWriter, r *http.Request) {
 	infoAny, status, err := h.fetchUnraidArea(ctx, srv, key, "info")
 	if status != "ok" {
 		msg := "The server did not answer"
-		if err != nil {
+		switch {
+		case err != nil:
 			msg = err.Error()
+		// Reachable both: blamed on the network, the reader went looking for
+		// a problem that was not there.
+		case status == "forbidden":
+			msg = "Connected, but this key may not read the server's info"
+		case status == "unsupported":
+			msg = "Connected, but this Unraid version's API lacks what nextDash reads"
 		}
 		writeJSON(w, map[string]any{"ok": false, "status": status, "error": msg})
 		return

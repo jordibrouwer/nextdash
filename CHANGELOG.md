@@ -206,6 +206,9 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — emptying the address no longer saves the Docker gateway.** The suggestion filled the field on every save, so clearing a saved address pointed nextDash at another server and dropped the key without the warning.
 - **fix — an Unraid notice without a subject is named by its title or description**, not "Unraid is offline".
 - **fix — a restore forgets the previous Unraid server's answers and schema**, and drops a key the backup did not carry when the restored address is another one.
+- **fix — Test connection says what is wrong when the server answered**: a key that may not read the server's info, or an Unraid version whose API lacks what nextDash reads, no longer reads as "The server did not answer".
+- **fix — the schema is kept per address.** A lookup still running against the old address after a save was joined, and cached for a day, for the new one.
+- **fix — the address and its key change together.** A poll between the two writes of a save could send the old key to the new address.
 
 ### Theme editor
 

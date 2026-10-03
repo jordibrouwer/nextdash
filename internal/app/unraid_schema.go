@@ -56,19 +56,31 @@ var (
 	unraidSchemaLoading = map[string]*unraidSchemaLoad{}
 )
 
+// unraidSchemaKey is the server and the address it is read at: keyed by id
+// alone, a lookup still running against the old address after a save was
+// joined, and cached for a day, for the new one.
+func unraidSchemaKey(srv UnraidServer) string {
+	return srv.ID + "|" + srv.BaseURL
+}
+
 func forgetUnraidSchema(serverID string) {
 	unraidSchemaMu.Lock()
-	delete(unraidSchemaCache, serverID)
+	for k := range unraidSchemaCache {
+		if strings.HasPrefix(k, serverID+"|") {
+			delete(unraidSchemaCache, k)
+		}
+	}
 	unraidSchemaMu.Unlock()
 }
 
 func loadUnraidSchema(ctx context.Context, srv UnraidServer, key string, allowLocal bool) (unraidSchema, error) {
+	sk := unraidSchemaKey(srv)
 	unraidSchemaMu.Lock()
-	if e, ok := unraidSchemaCache[srv.ID]; ok && time.Since(e.at) < unraidSchemaTTL {
+	if e, ok := unraidSchemaCache[sk]; ok && time.Since(e.at) < unraidSchemaTTL {
 		unraidSchemaMu.Unlock()
 		return e.schema, nil
 	}
-	if l, ok := unraidSchemaLoading[srv.ID]; ok {
+	if l, ok := unraidSchemaLoading[sk]; ok {
 		unraidSchemaMu.Unlock()
 		select {
 		case <-l.done:
@@ -78,16 +90,16 @@ func loadUnraidSchema(ctx context.Context, srv UnraidServer, key string, allowLo
 		}
 	}
 	l := &unraidSchemaLoad{done: make(chan struct{})}
-	unraidSchemaLoading[srv.ID] = l
+	unraidSchemaLoading[sk] = l
 	unraidSchemaMu.Unlock()
 
 	// Deferred, so a panic in the asking still lets the waiters go.
 	l.err = errUnraidUnreadable
 	defer func() {
 		unraidSchemaMu.Lock()
-		delete(unraidSchemaLoading, srv.ID)
+		delete(unraidSchemaLoading, sk)
 		if l.err == nil {
-			unraidSchemaCache[srv.ID] = unraidSchemaEntry{schema: l.schema, at: time.Now()}
+			unraidSchemaCache[sk] = unraidSchemaEntry{schema: l.schema, at: time.Now()}
 		}
 		unraidSchemaMu.Unlock()
 		close(l.done)
