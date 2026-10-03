@@ -1,0 +1,100 @@
+{
+  "tag": "v1.17.0",
+  "date": "3 October 2026",
+  "releasedAt": "2026-10-03",
+  "modalLead": "Your <strong>Unraid</strong> server on the dashboard, <strong>web search</strong> in the search panel, real <strong>app icons</strong> for your self-hosted services, and a <strong>theme editor</strong> in the look studio — plus 81 fixes.",
+  "sections": [
+    {
+      "title": "Unraid",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Seven Unraid widgets.</strong> An overview, the array, parity, shares, VMs, the UPS and Unraid's notifications, from the widget catalogue. Connect your server once under Config → Unraid."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Unraid alerts reach you.</strong> A stopped array, disk errors, a parity check with errors and Unraid's own alerts go through the same channels as your other alerts."
+        }
+      ]
+    },
+    {
+      "title": "Web search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Search the web from the search panel.</strong> Type, then Shift+Enter: results from your own SearXNG or the Brave Search API appear under your bookmarks, with Web, News and Video tabs. Off until you pick an engine in Config → Behavior."
+        }
+      ]
+    },
+    {
+      "title": "App icons",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Containers and bookmarks get their app's own icon</strong> from two open icon sets, in the variant that suits your theme. Choose another with the pencil on an icon, or keep the letter."
+        }
+      ]
+    },
+    {
+      "title": "Look studio",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A theme editor.</strong> Recolour a theme in the panel, or save what is on screen as a theme of your own, look included."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Sixteen more services for the Custom widget</strong>, services that sign in for a token, and figures that count entries in an answer."
+        }
+      ]
+    },
+    {
+      "title": "Health and alerts",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Clearer charts</strong> in Health and Statistics: outages per monitor on a 30-day timeline, and every monitor per day."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Alerts through Apprise</strong>, and so to mail, Matrix, Signal and many more."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>\"Back online\" arrives after a Re-check</strong>, and a URL on two pages counts once."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A bookmark as a QR code</strong>, to open it on your phone: Shift+J on a row, or QR code in the right-click menu."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>:remove puts the bookmark in the trash</strong>, and its undo keeps what you changed in the meantime."
+        }
+      ]
+    },
+    {
+      "title": "Settings and backups",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Config → Overview as panels</strong>: your install beside news, features and a tip."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A backup without tokens and passwords leaves out the alert secrets too</strong>, and restoring it keeps the ones in use."
+        }
+      ]
+    }
+  ]
+}

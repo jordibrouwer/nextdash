@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.17.0 — not yet released](#v1170--not-yet-released)
+- [v1.17.0 — 3 October 2026](#v1170--3-october-2026)
 - [v1.16.0 — 2 October 2026](#v1160--2-october-2026)
 - [v1.15.8 — 1 October 2026](#v1158--1-october-2026)
 - [v1.15.7 — 30 September 2026](#v1157--30-september-2026)
@@ -93,9 +93,9 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.17.0 — not yet released
+## v1.17.0 — 3 October 2026
 
-Containers and bookmarks to self-hosted apps get real app icons from two open icon sets, dashboard-icons and selfh.st/icons. A container is matched by its image and name, a bookmark by its host, and the icon follows the theme between its light and dark variant. An icon picker with suggestions sits behind the pencil in the bookmark form and in the container drawer. Nothing is bundled: the server fetches the indexes and the icons, and the browser never talks to the CDN. The Custom widget knows sixteen more services, signs in for a token where a service hands one out, can count entries in an answer, and every preset is now tested against its service's recorded answer. Alerts can go through Apprise, and so to mail, Matrix, Signal and a hundred more. The container drawer's charts move to uPlot, the first of the charts to do so. Seven Unraid widgets read an Unraid server's array, parity, shares, VMs, UPS and notifications, and its alerts reach the same channels as everything else.
+Containers and bookmarks to self-hosted apps get real app icons from two open icon sets, dashboard-icons and selfh.st/icons. A container is matched by its image and name, a bookmark by its host, and the icon follows the theme between its light and dark variant. An icon picker with suggestions sits behind the pencil in the bookmark form and in the container drawer. Nothing is bundled: the server fetches the indexes and the icons, and the browser never talks to the CDN. The Custom widget knows sixteen more services, signs in for a token where a service hands one out, can count entries in an answer, and every preset is now tested against its service's recorded answer. Alerts can go through Apprise, and so to mail, Matrix, Signal and a hundred more. The container drawer's charts move to uPlot, the first of the charts to do so. Seven Unraid widgets read an Unraid server's array, parity, shares, VMs, UPS and notifications, and its alerts reach the same channels as everything else. The search panel can search the web through your own SearXNG or the Brave Search API, the look studio gains a theme editor that saves what is on screen as a theme of your own, the remaining charts in Health and Statistics move to uPlot, Config → Overview becomes panels, and a bookmark can be shown as a QR code to open it on a phone. A third bug hunt fixed 81 bugs across all of it, each with a test that fails without its fix.
 
 ### App icons
 
@@ -297,6 +297,11 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **docs — README and the manual describe this release.** Twenty-nine widget kinds with the seven for Unraid, 41 Custom-widget services (table rebuilt from the presets, the retired ones named), Apprise among the alert services, app icons and `DISABLE_ICON_SETS`, the Custom widget's counting paths and token sign-ins, the charts and per-monitor outages in Collection health, and the two test-only fixture variables.
 - **i18n — Refresh favicon's "shows its set icon" message** in all six languages.
 
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.17.0.json` and its index entry**, leading the What's new window; `whats-new-stub.js`'s `DASHBOARD_RELEASE` moved to `2026.10-dashboard-release-v1.17.0` and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v315`; `whats-new-hidden-release.spec.js` follows. An Overview spotlight for the Unraid widgets, with `since` v1.17.0, in six languages. `go generate` refreshed `asset_hashes_gen.go`.
+
 ### Tests
 
 - **tests — Go:** the index (rounds, aliases, variants, search), the 62 containers and the bookmark hosts, refresh with ETag, stale copy and back-off, the cache route (unknown names, traversal, one fetch, sanitising, wrapped PNG, the hour of misses), adopt, the API handlers, the container override and the background fill.
@@ -312,6 +317,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **tests — a selection of the P3s of bug hunt round 3**, each one failing without its fix.
 - **tests — the remaining P3s of bug hunt round 3**: `config-carried-state.spec.js`, and Go tests for the Unraid, icon, widget, web search and look fixes.
 
+---
 
 ## v1.16.0 — 2 October 2026
 
