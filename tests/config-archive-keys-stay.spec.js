@@ -60,3 +60,25 @@ test('device-only settings leave the server\'s data lists alone', async ({ page 
     expect(merged.tagRules).toEqual([{ tag: 'new' }]);
     expect(merged.savedSearches).toEqual([{ name: 'b' }]);
 });
+
+// Web search and container icons are the server's too: an old device copy
+// turned web search off for every browser, or put old icons back.
+test('device-only settings leave web search and container icons alone', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.DeviceSettingsMerge != null, null, { timeout: 20_000 });
+    const merged = await page.evaluate(() => {
+        localStorage.setItem('deviceSpecificSettings', 'true');
+        try {
+            return window.DeviceSettingsMerge.mergeServerAndDeviceSettings(
+                { webSearchEngine: 'searxng', webSearchSearxngUrl: 'http://new', dockerContainerIcons: { a: 'x.svg' } },
+                { webSearchEngine: '', webSearchSearxngUrl: 'http://old', dockerContainerIcons: {} },
+            );
+        } finally {
+            localStorage.removeItem('deviceSpecificSettings');
+        }
+    });
+    expect(merged.webSearchEngine).toBe('searxng');
+    expect(merged.webSearchSearxngUrl).toBe('http://new');
+    expect(merged.dockerContainerIcons).toEqual({ a: 'x.svg' });
+});

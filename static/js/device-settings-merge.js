@@ -68,6 +68,17 @@
         'dockerAutoUpdate',
         'dockerAutoUpdateFrom',
         'dockerAutoUpdateTo',
+        // Written by the drawer and Config like the docker keys above; missing
+        // here, an old device copy turned web search off for everyone or put
+        // old container icons back.
+        'dockerContainerIcons',
+        'dockerHostAddress',
+        'dockerNotify',
+        'dockerNotifyMuted',
+        'dockerUpdateInterval',
+        'dockerViewEnabled',
+        'webSearchEngine',
+        'webSearchSearxngUrl',
     ];
 
     function isDeviceSpecificEnabled() {

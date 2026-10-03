@@ -191,6 +191,36 @@ test.describe('web search in the search panel', () => {
         await expect(page.locator('#search-matches .search-web-result').first()).toHaveClass(/keyboard-selected/);
     });
 
+    test('a row picked while the web is loading keeps the selection', async ({ page }) => {
+        stubDelay = 1500;
+        await openWithEngine(page);
+        await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const d = window.dashboardInstance;
+            await api('/api/bookmarks/add', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: d.currentPageId, bookmark: { name: 'zzpick local', url: 'https://zzpick.example/' } }) });
+            await d.loadAllBookmarks();
+            window.open = () => null;
+        });
+        await typeQuery(page, 'zzpick');
+        await page.keyboard.press('Shift+Enter');
+        await expect(page.locator('#search-matches .search-web-loading')).toBeVisible();
+        await page.keyboard.press('ArrowDown');
+        const picked = await page.evaluate(() => {
+            const s = window.dashboardInstance.searchComponent;
+            return s.selectableMatches[s.selectedMatchIndex]?.type || null;
+        });
+        expect(picked).not.toBeNull();
+        expect(picked).not.toMatch(/^web-/);
+        await expect(page.locator('#search-matches .search-web-result').first()).toBeVisible();
+        // Moved to the first web result, the next Enter opened a web page.
+        const after = await page.evaluate(() => {
+            const s = window.dashboardInstance.searchComponent;
+            return s.selectableMatches[s.selectedMatchIndex]?.type || null;
+        });
+        expect(after).toBe(picked);
+    });
+
     test('editing the query while the web is loading gives the list its selection back', async ({ page }) => {
         stubDelay = 2000;
         await openWithEngine(page);

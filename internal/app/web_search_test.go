@@ -414,3 +414,22 @@ func TestWebSearchStatus(t *testing.T) {
 		t.Fatalf("status = %s", body)
 	}
 }
+
+// A new SearXNG address is asked, not answered from the old one's cache:
+// Test said "Working" for a broken new address.
+func TestWebSearchCacheFollowsTheAddress(t *testing.T) {
+	oldSrv, _, _ := fakeSearxng(t, http.StatusOK, searxngFixture)
+	newSrv, _, newHits := fakeSearxng(t, http.StatusForbidden, `{}`)
+	h := webSearchTestHandlers(t, "searxng", oldSrv.URL)
+	if rec := getWebSearch(h, "/api/web-search?q=go"); rec.Code != http.StatusOK {
+		t.Fatalf("old address: %d", rec.Code)
+	}
+	s := h.store.GetSettings()
+	s.WebSearchSearxngURL = newSrv.URL
+	if err := h.store.SaveSettings(s); err != nil {
+		t.Fatal(err)
+	}
+	if rec := getWebSearch(h, "/api/web-search?q=go"); rec.Code != http.StatusBadGateway || *newHits != 1 {
+		t.Fatalf("new address: %d, asked %d times", rec.Code, *newHits)
+	}
+}

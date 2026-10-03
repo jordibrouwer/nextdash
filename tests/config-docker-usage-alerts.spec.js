@@ -21,6 +21,8 @@ test('usage alerts sit under Notifications, 90 % for 10 minutes, and save', asyn
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('containers'); });
+    // Containers is in tabs since the rework; the alerts have their own.
+    await page.locator('[data-containers-tab="alerts"]').click();
     await expect(page.getByLabel('Also when one uses too much CPU or memory')).toBeChecked();
     await expect(page.getByLabel('CPU above')).toHaveValue('90');
     await expect(page.getByLabel('Memory above')).toHaveValue('90');

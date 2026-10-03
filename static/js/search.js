@@ -4184,6 +4184,7 @@ class SearchComponent {
         } catch (_e) {
             if (controller.signal.aborted) return;
             this._web = { ...this._web, status: 'error', reason: 'engine_unreachable' };
+            this._webPickedRow = this.selectedMatchIndex >= 0 ? this.selectableMatches[this.selectedMatchIndex] : null;
             this.renderSearchMatches();
             this._selectFirstWebRow();
             return;
@@ -4201,12 +4202,27 @@ class SearchComponent {
             if (controller.signal.aborted) return;
             this._web = { ...this._web, status: 'error', reason: err?.reason || 'engine_unreachable' };
         }
+        this._webPickedRow = this.selectedMatchIndex >= 0 ? this.selectableMatches[this.selectedMatchIndex] : null;
         this.renderSearchMatches();
         this._selectFirstWebRow();
     }
 
-    /** The first web result, or the engine fallback row: -1 never outlives the answer. */
+    /**
+     * The first web result, or the engine fallback row: -1 never outlives the
+     * answer. A row picked while the answer was loading keeps the selection:
+     * moved to the first web result, the next Enter opened a web page.
+     */
     _selectFirstWebRow() {
+        const picked = this._webPickedRow;
+        if (picked) {
+            const again = this.selectableMatches.findIndex((m) => m === picked
+                || (m.type === picked.type && (m.url || m.id) === (picked.url || picked.id)));
+            if (again >= 0) {
+                this.selectedMatchIndex = again;
+                this.updateSelectionHighlight();
+                return;
+            }
+        }
         const first = this.selectableMatches.findIndex((m) => m.type === 'web-result' || m.type === 'web-fallback');
         if (first >= 0) {
             this.selectedMatchIndex = first;

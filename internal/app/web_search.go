@@ -254,7 +254,9 @@ func (h *Handlers) WebSearchHandler(w http.ResponseWriter, r *http.Request) {
 	if !known {
 		category = "web"
 	}
-	key := provider.Name() + "\x00" + category + "\x00" + query
+	// The address too: answers from an old SearXNG kept coming back after the
+	// address changed, and Test said "Working" for a broken new one.
+	key := provider.Name() + "\x00" + settings.WebSearchSearxngURL + "\x00" + category + "\x00" + query
 	if cached, ok := webSearchCache.get(key, time.Now()); ok {
 		writeJSON(w, cached)
 		return
