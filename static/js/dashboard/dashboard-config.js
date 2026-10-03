@@ -12600,7 +12600,7 @@ class DashboardConfig {
                 section: 'containers',
                 tab: 'alerts',
                 title: t('config.containersGroupNotify', 'Notifications'),
-                note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on. CPU is a share of every core, memory of the container’s limit (the host’s memory when it has none); those notices need Keep the last hour of CPU and memory on.'),
+                note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on. CPU is a share of every core, memory of the container’s limit (the host’s memory when it has none); those notices need Keep the last hour of CPU and memory on, on the View tab.'),
                 controls: [
                     bool('dockerNotify', 'config.dockerNotifyLabel', 'Notify about containers'),
                     // Reads the stats history, so it says nothing while that is off.

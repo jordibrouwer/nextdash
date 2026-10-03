@@ -291,13 +291,22 @@
             }[check.state]();
         };
         input.addEventListener('input', paint);
-        // Capture, so the host is in the field before the save reads it.
-        container.addEventListener('change', (e) => {
-            if (e.target !== input) return;
-            const check = global.DashboardConfig.checkDockerHost(input.value);
-            if (check.state === 'fixable') input.value = check.host;
-            paint();
-        }, true);
+        // Capture on the section, so the host is in the field before the save
+        // reads it. The section outlives a tab switch and the field does not,
+        // so the listener is added once per section and finds today's field
+        // (and its line) through the event; added per visit to View, it piled
+        // up one listener each time.
+        input._dockerHostPaint = paint;
+        if (!container._dockerHostChangeBound) {
+            container._dockerHostChangeBound = true;
+            container.addEventListener('change', (e) => {
+                const field = e.target;
+                if (!field?.matches?.('[data-behavior-field="dockerHostAddress"]')) return;
+                const check = global.DashboardConfig.checkDockerHost(field.value);
+                if (check.state === 'fixable') field.value = check.host;
+                field._dockerHostPaint?.();
+            }, true);
+        }
         paint();
     },
 

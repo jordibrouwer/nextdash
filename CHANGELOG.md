@@ -110,7 +110,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 
 - **new — an app icon ahead of every container name**, from the server's `icon` field on `/api/docker/containers`; no match shows the letter, and so does an icon that fails to load. nextDash's own container shows the nextDash logo.
 - **new — choose a container's icon in the drawer.** The pencil on the drawer's icon offers Choose app icon…, Use letter and Automatic, stored per container name in `Settings.DockerContainerIcons` (`letter` or a file in `data/icons/`). `removeUnusedIconFile` keeps a file a container still uses.
-- **new — Config → Containers in five tabs.** Connection, View, Updates, Alerts and Unraid: the ten panels that stood in one column are grouped by what they are for, with the same strip, keys and memory as Config → Inbox; a setting found by search, a deep link (`#config/containers/<tab>`) and the buttons that lead here open the right tab.
+- **new — Config → Containers in five tabs.** Connection, View, Updates, Alerts and Unraid: the ten panels that stood in one column are grouped by what they are for, with the same strip, keys and memory as Config → Inbox; a setting found by search, a deep link (`#config/containers/<tab>`) and the buttons that lead here open the right tab. The Notifications note names the tab its CPU-and-memory switch is on, and the host-address check is bound to its field, so a visit to View no longer adds a listener.
 
 ### Bookmarks
 
