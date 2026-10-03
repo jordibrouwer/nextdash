@@ -302,24 +302,33 @@
          * Health's row actions. The panel's head carries Re-check itself, so
          * its ⋯ menu asks for the rest with `skip`.
          */
-        renderBmHealthActions(b, { skip = [] } = {}) {
+        /**
+         * Health's actions for one bookmark, as menu buttons. `only` picks
+         * some of them, in its own order, so the ⋯ menu can file them under
+         * its headings; without it they come in the order below.
+         */
+        renderBmHealthActions(b, { skip = [], only = null } = {}) {
             const health = this._bmHealthModule;
             const issue = this.bmHealthIssue(b);
             if (!health || !issue) return '';
             const esc = (v) => this.dash.escapeHtml(v);
             const t = (key, fallback) => health.t(`dashboard.${key}`, fallback);
             const button = (action, label) => `<button type="button" class="config-btn config-btn--small" data-bm-health-action="${action}">${esc(label)}</button>`;
-            return [
-                skip.includes('recheck') ? '' : button('recheck', t('healthRecheck', 'Re-check')),
-                button('redirect', t('healthMenuRedirect', 'Detect redirect')),
-                button('title', t('healthMenuTitle', 'Refresh title')),
-                button('archive', t('healthMenuArchive', 'Open archived copy')),
-                button('local-copy', t('healthMenuLocalCopy', 'Save a local copy')),
-                button('ignore', t('healthMenuIgnore', 'Ignore this condition')),
-                button('snooze', t('healthMenuSnooze', 'Snooze 30 days')),
-                button('share', t('healthMenuShare', 'Share link')),
-                this.bmHealthDuplicateGroup(b) ? button('merge', t('mergeDuplicateGroup', 'Merge duplicate group')) : '',
-            ].join('');
+            const all = {
+                recheck: () => button('recheck', t('healthRecheck', 'Re-check')),
+                redirect: () => button('redirect', t('healthMenuRedirect', 'Detect redirect')),
+                title: () => button('title', t('healthMenuTitle', 'Refresh title')),
+                archive: () => button('archive', t('healthMenuArchive', 'Open archived copy')),
+                'local-copy': () => button('local-copy', t('healthMenuLocalCopy', 'Save a local copy')),
+                ignore: () => button('ignore', t('healthMenuIgnore', 'Ignore this condition')),
+                snooze: () => button('snooze', t('healthMenuSnooze', 'Snooze 30 days')),
+                share: () => button('share', t('healthMenuShare', 'Share link')),
+                merge: () => (this.bmHealthDuplicateGroup(b) ? button('merge', t('mergeDuplicateGroup', 'Merge duplicate group')) : ''),
+            };
+            return (only || Object.keys(all))
+                .filter((key) => all[key] && !skip.includes(key))
+                .map((key) => all[key]())
+                .join('');
         },
 
         /** The report's duplicate group this bookmark belongs to, or null. */

@@ -56,12 +56,15 @@ async function seriesFills(page) {
     await expect.poll(async () => {
         try {
             fills = await trendPanel(page).evaluate((el) => {
-                const a = el.querySelector('.config-chart-bar-fill--a');
-                const b = el.querySelector('.config-chart-bar-fill--b');
-                return {
-                    a: a ? getComputedStyle(a).fill : '',
-                    b: b ? getComputedStyle(b).fill : '',
+                // Drawn with uPlot: the fill each bar series paints with.
+                const chart = window.dashboardInstance.config._statsColumnCharts
+                    .find((c) => c.plot && el.contains(c.plot.root));
+                if (!chart) return { a: '', b: '' };
+                const fill = (k) => {
+                    const f = chart.plot.series[k].fill;
+                    return String(typeof f === 'function' ? f(chart.plot, k) : f || '');
                 };
+                return { a: fill(1), b: fill(2) };
             });
         } catch {
             // The panel was mid-repaint; nothing to read this time round.
@@ -70,43 +73,6 @@ async function seriesFills(page) {
         return Boolean(fills.a && fills.b);
     }, { timeout: 10_000, message: 'the trend chart never reported a fill for both series' }).toBe(true);
     return fills;
-}
-
-/**
- * The index of a bar the pointer can actually reach, or a failure naming what
- * is in the way.
- *
- * Two different obstructions, which is why this polls rather than scanning
- * once. The floating search bar sits over the middle of the panel for the whole
- * visit, so some bars are never reachable and the scan has to look for one that
- * is. Overlays like the icon-prefetch scrim come and go, so a single pass can
- * also find nothing at a bad moment and be wrong a second later.
- *
- * @param {import('@playwright/test').Page} page
- * @param {import('@playwright/test').Locator} bars
- * @returns {Promise<number>}
- */
-async function reachableBarIndex(page, bars) {
-    let hit = -1;
-    let inTheWay = '(nothing measured)';
-    await expect.poll(async () => {
-        const count = await bars.count();
-        for (let i = count - 1; i >= 0; i--) {
-            const box = await bars.nth(i).boundingBox();
-            if (!box) continue;
-            const at = await page.evaluate((p) => {
-                const el = document.elementFromPoint(p.x, p.y);
-                return { onBar: Boolean(el?.closest('.config-chart-bar')), what: el?.className || el?.tagName || '?' };
-            }, { x: box.x + box.width / 2, y: box.y + box.height - 12 });
-            if (at.onBar) {
-                hit = i;
-                return true;
-            }
-            inTheWay = String(at.what);
-        }
-        return false;
-    }, { timeout: 10_000, message: () => `no bar was reachable by pointer; last thing in the way: ${inTheWay}` }).toBe(true);
-    return hit;
 }
 
 /** Seeds daily buckets and shows the Inbox tab. */
@@ -163,10 +129,11 @@ test.describe('statistics: the inbox trend chart', () => {
 
         const panel = trendPanel(page);
         await expect(panel).toBeVisible();
-        // Two bars per day, so a fortnight is 28 rects across 14 hit targets.
-        expect(await panel.locator('.config-chart-bar').count()).toBeGreaterThan(1);
-        expect(await panel.locator('.config-chart-bar-fill--a').count())
-            .toBe(await panel.locator('.config-chart-bar-fill--b').count());
+        // Two bars per day over the chart's 30 days: a row a day, each with
+        // both series.
+        const rows = panel.locator('.nd-chart table.nd-chart-table tbody tr');
+        await expect(rows).toHaveCount(30);
+        await expect(rows.first()).toContainText(/added.*\d.*·.*\d/i);
     });
 
     test('two series means a legend, not colour alone', async ({ page }) => {
@@ -199,7 +166,7 @@ test.describe('statistics: the inbox trend chart', () => {
         await seedTrend(page, { empty: true });
         const panel = trendPanel(page);
         await expect(panel.locator('.config-panel-empty')).toBeVisible();
-        await expect(panel.locator('svg')).toHaveCount(0);
+        await expect(panel.locator('svg, canvas')).toHaveCount(0);
     });
 
     test('no history at all hides the panel entirely', async ({ page }) => {
@@ -222,19 +189,43 @@ test.describe('statistics: the inbox trend chart', () => {
         await settleOverlays(page);
         const panel = trendPanel(page);
         // The floating search/command bar hovers over the middle of the panel,
-        // so aim at a bar it does not cover rather than at a fixed index.
-        const bars = panel.locator('.config-chart-bar');
-        const hit = await reachableBarIndex(page, bars);
-        // The scan picks which bar; hover() does the pointing. The two were one
-        // step before, and the gap between them is where anything arriving in
-        // between took the pointer instead of the bar.
-        await bars.nth(hit).hover();
+        // so aim at the right end of the plot, which it does not cover.
+        const over = panel.locator('.nd-chart .u-over');
+        const box = await over.boundingBox();
+        await over.hover({ position: { x: box.width - 6, y: box.height / 2 } });
 
-        const tip = panel.locator('.config-chart-tip');
+        const tip = panel.locator('.nd-chart-tip');
         await expect(tip).toBeVisible();
         // One tooltip lists every series, so the pointer never has to find the
-        // right bar of the pair.
-        await expect(tip.locator('.config-chart-tip-row')).toHaveCount(2);
+        // right bar of the pair: added, triaged and the running backlog.
+        await expect(tip).toHaveText(/·.*\d.*·.*\d.*·.*\d/);
+    });
+
+    // Drawn with uPlot: the backlog's running change is a line on an axis of
+    // its own on the right, and the plain bars stay when uPlot is blocked.
+    test('the running backlog is a line on its own axis', async ({ page }) => {
+        await openStats(page);
+        await seedTrend(page);
+        await expect(trendPanel(page).locator('.nd-chart canvas')).toBeVisible();
+        const shape = await trendPanel(page).evaluate((el) => {
+            const chart = window.dashboardInstance.config._statsColumnCharts.find((c) => c.plot && el.contains(c.plot.root));
+            const plot = chart.plot;
+            return {
+                scales: plot.series.slice(1).map((s) => s.scale),
+                rightAxis: plot.axes.some((a) => a.scale === 'line' && a.side === 1 && a.show !== false),
+            };
+        });
+        expect(shape).toEqual({ scales: ['y', 'y', 'line'], rightAxis: true });
+    });
+
+    test('without uPlot the plain bars stay', async ({ page }) => {
+        await page.route('**/vendor/uplot/**', (route) => route.abort());
+        await openStats(page);
+        await seedTrend(page);
+        const panel = trendPanel(page);
+        await expect(panel.locator('.config-chart-bar')).toHaveCount(30);
+        await page.waitForTimeout(500);
+        await expect(panel.locator('.nd-chart')).toHaveCount(0);
     });
 
     test('the trend chart does not steal the activity chart binding', async ({ page }) => {
@@ -258,8 +249,10 @@ test.describe('statistics: the inbox trend chart', () => {
         const activity = page.locator('.config-panel')
             .filter({ has: page.locator('.config-panel-title', { hasText: 'Bookmarks used over time' }) }).first();
         // hover(), not a measured point: same reason as the trend chart above.
-        await activity.locator('.config-chart-bar').last().hover();
-        await expect(activity.locator('.config-chart-tip')).toBeVisible();
+        const over = activity.locator('.nd-chart .u-over');
+        const box = await over.boundingBox();
+        await over.hover({ position: { x: box.width - 6, y: box.height / 2 } });
+        await expect(activity.locator('.nd-chart-tip')).toBeVisible();
     });
 });
 

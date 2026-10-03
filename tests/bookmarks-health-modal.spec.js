@@ -239,9 +239,10 @@ test('Monitors & trend: the course in any series, every monitor together, rememb
   await expect(modal.locator('[data-bm-health-modal-card="score"]')).toBeHidden();
   const trend = modal.locator('[data-bm-health-modal-card="trend"]');
   await expect(trend).toBeVisible();
-  await expect(trend.locator('svg')).toHaveAttribute('aria-label', /80% → 100%/);
+  // Drawn with uPlot (NdChart): the chart names its course.
+  await expect(trend.locator('.nd-chart')).toHaveAttribute('aria-label', /80% → 100%/);
   await trend.locator('[data-bm-health-trend-series="broken"]').click();
-  await expect(modal.locator('[data-bm-health-modal-card="trend"] svg')).toHaveAttribute('aria-label', /2 → 0/);
+  await expect(modal.locator('[data-bm-health-modal-card="trend"] .nd-chart')).toHaveAttribute('aria-label', /2 → 0/);
   await expect(modal.locator('[data-bm-health-trend-series="broken"]')).toHaveAttribute('aria-pressed', 'true');
 
   await expect(modal.locator('[data-bm-health-modal-card="fleet-uptime"]')).toContainText('all 2 monitors');
@@ -299,4 +300,239 @@ test('at 1000x620 the Monitors card gives way, and nothing spills out of a card'
   expect(spills).toEqual([]);
   await body.locator('[data-bm-health-modal-tab="monitors"]').click();
   await expect(body.locator('[data-bm-health-modal-card="fleet-uptime"]')).toBeVisible();
+});
+
+/*
+ * The course over time can be read, not only seen: a tooltip on the day under
+ * the pointer, the arrow keys with the day read out under the chart, a table
+ * for a screen reader -- and the plain chart when uPlot cannot be loaded.
+ */
+async function openTrend(page) {
+  const day = 86400000;
+  const now = Date.now();
+  await openBookmarksWithHealth(page, (issues) => issues, {
+    view: 'library',
+    report: (issues) => ({
+      summary: fullSummary(issues),
+      trend: [0, 1, 2, 3, 4].map((k) => ({ t: now - (4 - k) * day, n: 10, h: 6 + k, c: 80, b: 4 - k })),
+    }),
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
+  const modal = page.locator('#app-modal.show');
+  await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+  return modal.locator('[data-bm-health-modal-card="trend"]');
+}
+
+test.describe('the course over time, drawn with uPlot', () => {
+  test('a tooltip on the pointed day, and the arrow keys read the days out', async ({ page }) => {
+    const trend = await openTrend(page);
+    const chart = trend.locator('.nd-chart');
+    await expect(chart.locator('canvas')).toHaveCount(1);
+    await chart.locator('.u-over').hover();
+    await expect(chart.locator('.nd-chart-tip')).toContainText('%');
+
+    await chart.focus();
+    await page.keyboard.press('End');
+    const last = await chart.locator('.nd-chart-readout').textContent();
+    expect(last).toContain('100%');
+    await page.keyboard.press('Home');
+    await expect(chart.locator('.nd-chart-readout')).toContainText('60%');
+    await expect(chart.locator('table.nd-chart-table tbody tr')).toHaveCount(5);
+  });
+
+  // The screen-reader table is out of sight; it must not stretch the dialog
+  // into a long empty scroll below the footer.
+  test('the hidden table adds no empty scroll to the dialog', async ({ page }) => {
+    const day = 86400000;
+    const now = Date.now();
+    await openBookmarksWithHealth(page, (issues) => issues, {
+      view: 'library',
+      report: (issues) => ({
+        summary: fullSummary(issues),
+        trend: Array.from({ length: 60 }, (_, k) => ({ t: now - (59 - k) * day, n: 10, h: 6, c: 80, b: 4 })),
+      }),
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('h');
+    const modal = page.locator('#app-modal.show');
+    await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+    await expect(modal.locator('[data-bm-health-modal-card="trend"] table.nd-chart-table tbody tr')).toHaveCount(60);
+    const overrun = await modal.locator('.modal-body').evaluate((body) => {
+      const foot = body.querySelector('.bm-health-modal-footer');
+      const end = foot.getBoundingClientRect().bottom - body.getBoundingClientRect().top + body.scrollTop;
+      return body.scrollHeight - end;
+    });
+    expect(overrun).toBeLessThan(24);
+  });
+
+  test('without uPlot the plain chart stays', async ({ page }) => {
+    await page.route('**/vendor/uplot/**', (route) => route.abort());
+    const trend = await openTrend(page);
+    await expect(trend.locator('svg.bm-health-modal-trend-chart')).toHaveAttribute('aria-label', /60% → 100%/);
+    await page.waitForTimeout(500);
+    await expect(trend.locator('.nd-chart')).toHaveCount(0);
+  });
+});
+
+/*
+ * Outages read per monitor: how often and how long in all, a lane per monitor
+ * over the 30 days, and the list by day behind "Show list".
+ */
+test('outages: per monitor, on a timeline, and the list on request', async ({ page }) => {
+  const hour = 3600000;
+  const now = Date.now();
+  const incident = (name, ago, hours, reason = 'Timeout') => ({
+    url: `https://${name}.example.com`, name, start: now - ago, durationMs: hours * hour, reason,
+  });
+  await openBookmarksWithHealth(page, (issues) => issues, {
+    view: 'library',
+    report: (issues) => ({
+      summary: fullSummary(issues),
+      fleet: {
+        monitors: 3,
+        uptime24h: { ratio: 0.9, samples: 10 }, uptime7d: { ratio: 0.95, samples: 50 }, uptime30d: { ratio: 0.99, samples: 200 },
+        incidents: [
+          incident('prowlarr', 2 * hour, 3),
+          incident('tower', 2 * hour, 1),
+          incident('prowlarr', 5 * 24 * hour, 5),
+          incident('seerr', 9 * 24 * hour, 1, 'HTTP 502'),
+        ],
+        totalIncidents: 4,
+      },
+    }),
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
+  const modal = page.locator('#app-modal.show');
+  await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+  const card = modal.locator('[data-bm-health-modal-card="fleet-outages"]');
+
+  // Who first, worst first: prowlarr twice and eight hours in all.
+  const summary = card.locator('.bm-health-outage-summary');
+  await expect(summary).toBeVisible();
+  await expect(summary.locator('.bm-health-outage-name').first()).toHaveText('prowlarr');
+  await expect(summary).toContainText('2×');
+  await expect(summary).toContainText('8h');
+
+  // One lane per monitor, one bar per outage.
+  await expect(card.locator('.bm-health-outage-lane')).toHaveCount(3);
+  await expect(card.locator('.bm-health-outage-lane').first().locator('.bm-health-outage-track i')).toHaveCount(2);
+
+  // The list is there on request, by day.
+  const list = card.locator('.bm-health-outage-list');
+  await expect(list).toBeHidden();
+  await card.locator('[data-bm-health-outage-list] summary').click();
+  await expect(list).toBeVisible();
+  await expect(list.locator('.bm-health-outage-row')).toHaveCount(4);
+  await expect(list).toContainText('HTTP 502');
+});
+
+/*
+ * Every monitor, per day: the course behind the uptime figures, a bar a day in
+ * the colour of its share and the mean response as a line, read out by the
+ * keys.
+ */
+async function openFleetDays(page) {
+  const day = 86400000;
+  const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+  const at = (ago) => today.getTime() - ago * day;
+  await openBookmarksWithHealth(page, (issues) => issues, {
+    view: 'library',
+    report: (issues) => ({
+      summary: fullSummary(issues),
+      fleet: {
+        monitors: 2,
+        uptime24h: { ratio: 1, samples: 10 }, uptime7d: { ratio: 0.98, samples: 50 }, uptime30d: { ratio: 0.99, samples: 200 },
+        days: [
+          { d: at(3), n: 400, u: 400, p: 120 },
+          { d: at(2), n: 400, u: 350, p: 300 },
+          { d: at(1), n: 400, u: 396, p: 150 },
+          { d: at(0), n: 200, u: 200, p: 110 },
+        ],
+      },
+    }),
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press('h');
+  const modal = page.locator('#app-modal.show');
+  await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+  return { modal, card: modal.locator('[data-bm-health-modal-card="fleet-days"]') };
+}
+
+// The overview's score over time, with uPlot: the lowest day marked and read
+// out, and the plain chart when the library is blocked.
+test.describe('the score over time, drawn with uPlot', () => {
+  async function openScore(page) {
+    const day = 86400000;
+    const now = Date.now();
+    await openBookmarksWithHealth(page, (issues) => issues, {
+      view: 'library',
+      report: (issues) => ({
+        summary: fullSummary(issues),
+        trend: [0, 1, 2, 3, 4].map((k) => ({ t: now - (4 - k) * day, n: 10, h: [8, 6, 7, 9, 10][k], c: 80, b: 0 })),
+      }),
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('h');
+    return page.locator('#app-modal.show [data-bm-health-modal-card="score"]');
+  }
+
+  test('the lowest day is marked and read out', async ({ page }) => {
+    const card = await openScore(page);
+    const chart = card.locator('[data-bm-score-plot] .nd-chart');
+    await expect(chart.locator('canvas')).toHaveCount(1);
+    await expect(chart).toHaveAttribute('aria-label', /from 80% to 100%/);
+    await chart.focus();
+    await page.keyboard.press('Home');
+    await page.keyboard.press('ArrowRight');
+    await expect(chart.locator('.nd-chart-readout')).toContainText(/60% · lowest/);
+    await page.keyboard.press('End');
+    await expect(chart.locator('.nd-chart-readout')).toContainText('100%');
+    await expect(chart.locator('.nd-chart-readout')).not.toContainText('lowest');
+    // The low point is a mark of its own on the chart, not only in the words.
+    const mark = await page.evaluate(() => {
+      const plot = window.dashboardInstance.config._bmScoreChart.plot;
+      return { size: plot.series[2].points.size, values: plot.data[2].filter((v) => v !== null) };
+    });
+    expect(mark).toEqual({ size: 7, values: [60] });
+  });
+
+  test('without uPlot the plain score chart stays', async ({ page }) => {
+    await page.route('**/vendor/uplot/**', (route) => route.abort());
+    const card = await openScore(page);
+    await expect(card.locator('svg.bm-health-modal-score-chart polyline')).toHaveCount(1);
+    await page.waitForTimeout(500);
+    await expect(card.locator('.nd-chart')).toHaveCount(0);
+  });
+});
+
+test.describe('every monitor, per day', () => {
+  test('a bar a day with the response beside it, read out by the keys', async ({ page }) => {
+    const { card } = await openFleetDays(page);
+    const chart = card.locator('.nd-chart');
+    await expect(chart.locator('canvas')).toHaveCount(1);
+    await expect(chart).toHaveAttribute('aria-label', /lowest 87\.5%/);
+    await expect(chart.locator('table.nd-chart-table tbody tr')).toHaveCount(30);
+    await chart.focus();
+    await page.keyboard.press('End');
+    await expect(chart.locator('.nd-chart-readout')).toContainText(/100% · 110 ms · 200 checks/);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await expect(chart.locator('.nd-chart-readout')).toContainText(/87\.5% · 300 ms · 400 checks/);
+    await page.keyboard.press('Home');
+    await expect(chart.locator('.nd-chart-readout')).toContainText('no checks');
+  });
+
+  test('without uPlot the plain bars stay', async ({ page }) => {
+    await page.route('**/vendor/uplot/**', (route) => route.abort());
+    const { card } = await openFleetDays(page);
+    await expect(card.locator('svg.bm-health-modal-fleet-days rect')).toHaveCount(4);
+    await expect(card.locator('svg.bm-health-modal-fleet-days rect[data-tone="bad"]')).toHaveCount(1);
+    await page.waitForTimeout(500);
+    await expect(card.locator('.nd-chart')).toHaveCount(0);
+  });
 });

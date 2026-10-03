@@ -185,6 +185,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"webhooks.json":           dataSecret,
 	"docker-secrets.json":     dataSecret,
 	"web-search-secrets.json": dataSecret,
+	"unraid-secrets.json":     dataSecret,
 
 	"preview-cache.json": dataCache,
 	"health-cache.json":  dataCache,
@@ -823,6 +824,11 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 			// megabytes, and a restore heals it from the source URL the preview
 			// cache still holds.
 			if info.Name() == previewImageDirName && filepath.Dir(path) == dataDir {
+				return filepath.SkipDir
+			}
+			// The app-icon set mirrors and their cached icons: all of it comes
+			// back from the CDN, the same as cached previews.
+			if info.Name() == iconSetsDirName && filepath.Dir(path) == dataDir {
 				return filepath.SkipDir
 			}
 			return nil

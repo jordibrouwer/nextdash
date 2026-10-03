@@ -69,21 +69,26 @@ test.describe('config statistics visualisations', () => {
 
     test('the activity chart draws one bar per bucket, with a text fallback', async ({ page }) => {
         await openStatsTab(page, 'usage');
-        const chart = page.locator('.config-chart svg');
-        await expect(chart).toBeVisible();
-        expect(await chart.locator('rect').count()).toBeGreaterThan(1);
-        // Same numbers reachable without seeing the chart.
-        await expect(page.locator('.config-sr-only caption')).toHaveCount(1);
-        expect(await page.locator('.config-sr-only tbody tr').count()).toBeGreaterThan(1);
+        // Drawn with uPlot (NdChart): a bar per bucket, a row per bucket in
+        // the chart's table, so the same numbers are there without the canvas.
+        const chart = page.locator('.config-stats-columns-host .nd-chart').first();
+        await expect(chart.locator('canvas')).toBeVisible();
+        expect(await chart.locator('table.nd-chart-table tbody tr').count()).toBeGreaterThan(1);
+        await expect(chart.locator('table.nd-chart-table caption')).toHaveCount(1);
+        const bars = await page.evaluate(() => window.dashboardInstance.config._statsColumnCharts
+            .filter((c) => document.contains(c.plot.root)).map((c) => c.plot.data[0].length));
+        expect(bars[0]).toBeGreaterThan(1);
     });
 
     test('changing the range redraws the chart', async ({ page }) => {
         await openStatsTab(page, 'usage');
-        const bars = () => page.locator('.config-chart svg rect').count();
-        const before = await bars();
+        const rows = page.locator('.config-stats-columns-host .nd-chart').first().locator('table.nd-chart-table tbody tr');
+        await expect(rows.first()).toBeAttached();
+        const before = await rows.count();
         await page.locator('[data-stats-range="7"]').click();
         await expect(page.locator('[data-stats-range="7"]')).toHaveClass(/is-active/);
-        expect(await bars()).not.toBe(before);
+        await expect(rows).toHaveCount(7);
+        expect(before).not.toBe(7);
     });
 
     test('coverage bars report a count and a share of the total', async ({ page }) => {

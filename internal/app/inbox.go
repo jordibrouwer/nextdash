@@ -423,6 +423,11 @@ func (fs *FileStore) removeUnusedIconFiles(fileNames []string) {
 	for _, item := range fs.GetInboxItems() {
 		delete(candidates, strings.TrimSpace(item.Icon))
 	}
+	// A container's chosen icon (Containers view drawer) can be the same
+	// file a bookmark had.
+	for _, icon := range fs.GetSettings().DockerContainerIcons {
+		delete(candidates, strings.TrimSpace(icon))
+	}
 	for name := range candidates {
 		_ = os.Remove(filepath.Join(fs.dataDir, "icons", name))
 	}

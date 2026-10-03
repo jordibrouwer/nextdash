@@ -1,0 +1,134 @@
+{
+ "data": {
+  "UnraidArray": [
+   "id",
+   "state",
+   "capacity",
+   "boot",
+   "parities",
+   "parityCheckStatus",
+   "disks",
+   "caches"
+  ],
+  "ArrayCapacity": [
+   "kilobytes",
+   "disks"
+  ],
+  "ArrayDisk": [
+   "id",
+   "idx",
+   "name",
+   "device",
+   "size",
+   "status",
+   "rotational",
+   "temp",
+   "numReads",
+   "numWrites",
+   "numErrors",
+   "fsSize",
+   "fsFree",
+   "fsUsed",
+   "type",
+   "isSpinning",
+   "warning",
+   "critical"
+  ],
+  "ParityCheck": [
+   "date",
+   "duration",
+   "speed",
+   "status",
+   "errors",
+   "progress",
+   "correcting",
+   "paused",
+   "running"
+  ],
+  "Query": [
+   "array",
+   "parityHistory",
+   "shares",
+   "vms",
+   "upsDevices",
+   "notifications",
+   "info",
+   "me"
+  ],
+  "Share": [
+   "id",
+   "name",
+   "free",
+   "used",
+   "size",
+   "cache"
+  ],
+  "Vms": [
+   "id",
+   "domains"
+  ],
+  "VmDomain": [
+   "id",
+   "name",
+   "state"
+  ],
+  "UPSDevice": [
+   "id",
+   "name",
+   "model",
+   "status",
+   "battery",
+   "power"
+  ],
+  "UPSBattery": [
+   "chargeLevel",
+   "estimatedRuntime",
+   "health"
+  ],
+  "UPSPower": [
+   "inputVoltage",
+   "outputVoltage",
+   "loadPercentage",
+   "currentPower"
+  ],
+  "Notifications": [
+   "id",
+   "overview",
+   "list"
+  ],
+  "Notification": [
+   "id",
+   "title",
+   "subject",
+   "description",
+   "importance",
+   "link",
+   "type",
+   "timestamp"
+  ],
+  "NotificationFilter": [
+   "importance",
+   "type",
+   "offset",
+   "limit"
+  ],
+  "Info": [
+   "os",
+   "versions"
+  ],
+  "InfoOs": [
+   "hostname",
+   "release",
+   "uptime"
+  ],
+  "InfoVersions": [
+   "core",
+   "packages"
+  ],
+  "UserAccount": [
+   "id",
+   "name",
+   "roles"
+  ]
+ }
+}

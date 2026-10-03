@@ -28,6 +28,7 @@ class DashboardConfigLoader {
         'data-backups',
         'widgets',
         'containers',
+        'unraid',
         'stats',
         'help',
         'logs',
@@ -83,6 +84,7 @@ class DashboardConfigLoader {
         bookmarks: 'bmTab',
         widgets: 'widgetsTab',
         inbox: 'inboxTab',
+        containers: 'containersTab',
     };
 
     /** Mirrors DashboardConfig.loadLastConfigLocation for cold load on bare `#config`. */
@@ -134,6 +136,7 @@ class DashboardConfigLoader {
         'logsTab',
         'widgetsTab',
         'inboxTab',
+        'containersTab',
         'aboutTab',
     ];
 

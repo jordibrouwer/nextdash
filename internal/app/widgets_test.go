@@ -123,3 +123,21 @@ func TestNormalizeWidgetsDropsDuplicatesAndUnknowns(t *testing.T) {
 		t.Errorf("kept %q", got[0].ID)
 	}
 }
+
+func TestUnraidWidgetTypesAreKnownAndSanitised(t *testing.T) {
+	for _, typ := range []WidgetType{"unraid", "unraidArray", "unraidParity", "unraidShares", "unraidVms", "unraidUps", "unraidNotifications"} {
+		if _, ok := knownWidgetTypes[typ]; !ok {
+			t.Fatalf("%s not known", typ)
+		}
+		got := sanitizeWidgetConfig(typ, map[string]any{"refreshSeconds": 5.0, "click": "elsewhere", "address": "http://x"})
+		if got["refreshSeconds"] != 30 {
+			t.Errorf("%s: refresh %v not clamped to 30", typ, got["refreshSeconds"])
+		}
+		if _, ok := got["click"]; ok {
+			t.Errorf("%s: an unknown click kept", typ)
+		}
+		if _, ok := got["address"]; ok {
+			t.Errorf("%s: a widget must not store an address", typ)
+		}
+	}
+}

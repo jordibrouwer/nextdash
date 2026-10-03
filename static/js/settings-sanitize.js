@@ -14,6 +14,8 @@
         // left out, the server keeps what it has.
         delete copy.archiveSaveAccessKey;
         delete copy.archiveSaveSecret;
+        // The Unraid server likewise has its own route (/api/unraid/settings).
+        delete copy.unraidServers;
 
         return copy;
     }

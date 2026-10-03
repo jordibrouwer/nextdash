@@ -123,12 +123,15 @@ const test = base.test.extend({
                         const init = value.init;
                         value.init = function seededInit(saved, ...rest) {
                             const wanted = window.__e2eWantTours || [];
-                            const tours = ['bookmarksTutorialV1', 'containersTutorialV2', 'dashboardTutorialV1']
+                            const tours = ['bookmarksTutorialV1', 'containersTutorialV2', 'dashboardTutorialV2']
                                 .filter((id) => !wanted.includes(id));
                             const seeded = { ...(saved || {}) };
+                            // A spec can also start with a tip already seen, such as an
+                            // older version of a tour.
+                            const alsoSeen = window.__e2eSeenTips || [];
                             // A tour a spec asks for starts unseen, whatever an
                             // earlier test in the file left in the store.
-                            seeded.seenTips = [...new Set([...(seeded.seenTips || []), ...tours])]
+                            seeded.seenTips = [...new Set([...(seeded.seenTips || []), ...tours, ...alsoSeen])]
                                 .filter((id) => !wanted.includes(id));
                             return init.call(this, seeded, ...rest);
                         };

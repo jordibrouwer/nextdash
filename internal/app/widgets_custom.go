@@ -302,12 +302,19 @@ func draftCredentialFrom(raw any) *HealthCredential {
 	}
 	if session, ok := entry["session"].(map[string]any); ok {
 		credential.Session = &CredentialSession{
-			LoginPath: stringOr(session["loginPath"]),
-			UserField: stringOr(session["userField"]),
-			PassField: stringOr(session["passField"]),
-			User:      stringOr(session["user"]),
-			Password:  stringOr(session["password"]),
-			Referer:   session["referer"] == true,
+			LoginPath:   stringOr(session["loginPath"]),
+			UserField:   stringOr(session["userField"]),
+			PassField:   stringOr(session["passField"]),
+			User:        stringOr(session["user"]),
+			Password:    stringOr(session["password"]),
+			Referer:     session["referer"] == true,
+			Format:      stringOr(session["format"]),
+			TokenPath:   stringOr(session["tokenPath"]),
+			TokenHeader: stringOr(session["tokenHeader"]),
+			TokenPrefix: stringOr(session["tokenPrefix"]),
+		}
+		if extra, ok := session["extra"].(map[string]any); ok {
+			credential.Session.Extra = extra
 		}
 	}
 	clean := sanitizeHealthCredential(credential)
@@ -573,18 +580,34 @@ func customWidgetLookup(document any, path string) (any, bool) {
 		return value, true
 	}
 	current := document
-	for _, segment := range splitCustomPath(path) {
+	segments := splitCustomPath(path)
+	for at, segment := range segments {
 		segment = strings.TrimSpace(segment)
-		if segment == "" {
+		/*
+		 * "#" at the end counts instead of naming: a list's length, an
+		 * object's keys, or -- after a [key=value] -- how many entries match.
+		 * Monitoring answers in lists ("which endpoints are down") and the
+		 * figure worth a tile is how many. Still one value per path, and only
+		 * as the last step: a count has nothing further to walk into.
+		 */
+		count := strings.HasSuffix(segment, "#")
+		if count {
+			if at != len(segments)-1 {
+				return nil, false
+			}
+			segment = strings.TrimSuffix(segment, "#")
+		}
+		if segment == "" && !count {
 			continue
 		}
 		name := segment
 		// Each bracket is either a position or a match; they are kept in order
 		// because "rows[2][id=x]" is a different question from the reverse.
 		type selector struct {
-			index int
-			key   string
-			value string
+			index    int
+			hasIndex bool
+			key      string
+			value    string
 		}
 		var selectors []selector
 		if open := strings.Index(segment, "["); open >= 0 {
@@ -602,13 +625,15 @@ func customWidgetLookup(document any, path string) (any, bool) {
 					if key == "" || value == "" {
 						return nil, false
 					}
-					selectors = append(selectors, selector{index: -1, key: key, value: value})
+					selectors = append(selectors, selector{key: key, value: value})
 				} else {
+					// A negative index counts from the end: [-1] is the last
+					// entry, which is where a list that grows keeps its newest.
 					index, err := strconv.Atoi(inner)
-					if err != nil || index < 0 {
+					if err != nil {
 						return nil, false
 					}
-					selectors = append(selectors, selector{index: index})
+					selectors = append(selectors, selector{index: index, hasIndex: true})
 				}
 				rest = rest[closeAt+1:]
 			}
@@ -645,28 +670,36 @@ func customWidgetLookup(document any, path string) (any, bool) {
 				}
 			}
 		}
-		for _, sel := range selectors {
+		for i, sel := range selectors {
 			list, ok := current.([]any)
 			if !ok {
 				return nil, false
 			}
-			if sel.index >= 0 {
-				if sel.index >= len(list) {
+			if sel.hasIndex {
+				index := sel.index
+				if index < 0 {
+					index += len(list)
+				}
+				if index < 0 || index >= len(list) {
 					return nil, false
 				}
-				current = list[sel.index]
+				current = list[index]
 				continue
+			}
+			// The last match before a count is a filter, not a pick: how many
+			// entries say this, rather than the first that does.
+			if count && i == len(selectors)-1 {
+				matches := 0
+				for _, entry := range list {
+					if selectorMatches(entry, sel.key, sel.value) {
+						matches++
+					}
+				}
+				return float64(matches), true
 			}
 			found := false
 			for _, entry := range list {
-				object, ok := entry.(map[string]any)
-				if !ok {
-					continue
-				}
-				// Compared as text, because the value came out of an address
-				// bar and everything there is text: a number in the document
-				// and "42" in the path are the same answer to the reader.
-				if fmt.Sprint(object[sel.key]) == sel.value {
+				if selectorMatches(entry, sel.key, sel.value) {
 					current = entry
 					found = true
 					break
@@ -676,8 +709,69 @@ func customWidgetLookup(document any, path string) (any, bool) {
 				return nil, false
 			}
 		}
+		if count {
+			// A count after an index would count inside one entry, which is
+			// never what [0]# was meant to say.
+			if len(selectors) > 0 && selectors[len(selectors)-1].hasIndex {
+				return nil, false
+			}
+			switch value := current.(type) {
+			case []any:
+				return float64(len(value)), true
+			case map[string]any:
+				return float64(len(value)), true
+			}
+			return nil, false
+		}
 	}
 	return current, true
+}
+
+/*
+selectorMatches: does this entry say value at key?
+
+The key may itself be a short path -- "results.0.success" -- because a status
+often sits one level down, in the newest of a list of results. A number in it
+is a position, negative from the end, as in the brackets outside.
+
+Compared as text, because the value came out of an address bar and everything
+there is text: a number in the document and "42" in the path are the same
+answer to the reader.
+*/
+func selectorMatches(entry any, key, value string) bool {
+	// A key that is itself dotted is still matched whole first, as it was
+	// before a dot could mean a step.
+	if object, ok := entry.(map[string]any); ok {
+		if literal, has := object[key]; has {
+			return fmt.Sprint(literal) == value
+		}
+	}
+	current := entry
+	for _, part := range strings.Split(key, ".") {
+		switch node := current.(type) {
+		case map[string]any:
+			next, ok := node[part]
+			if !ok {
+				return false
+			}
+			current = next
+		case []any:
+			index, err := strconv.Atoi(part)
+			if err != nil {
+				return false
+			}
+			if index < 0 {
+				index += len(node)
+			}
+			if index < 0 || index >= len(node) {
+				return false
+			}
+			current = node[index]
+		default:
+			return false
+		}
+	}
+	return fmt.Sprint(current) == value
 }
 
 /*
@@ -1159,7 +1253,7 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 			storeCredentialSession(key, fresh)
 			cookie = fresh
 		}
-		req.Header.Set("Cookie", cookie)
+		req.Header.Set(sessionHeaderName(credential.Session), cookie)
 		answer.SignedIn = true
 	}
 
@@ -1189,7 +1283,7 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 		}
 		storeCredentialSession(sessionKey, fresh)
 		retry := req.Clone(ctx)
-		retry.Header.Set("Cookie", fresh)
+		retry.Header.Set(sessionHeaderName(credential.Session), fresh)
 		if retried, err := client.Do(retry); err == nil {
 			resp = retried
 		} else {

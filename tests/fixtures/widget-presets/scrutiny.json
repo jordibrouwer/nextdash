@@ -1,0 +1,23 @@
+{
+  "_source": "scrutiny pkg/models/device_summary.go",
+  "auth": {},
+  "fillIn": "0x5000c500a1b2c3d4",
+  "body": {
+    "success": true,
+    "data": {
+      "summary": {
+        "0x5000c500a1b2c3d4": {
+          "device": {
+            "wwn": "0x5000c500a1b2c3d4",
+            "device_status": 0,
+            "capacity": 4000787030016
+          },
+          "smart": {
+            "temp": 34,
+            "power_on_hours": 18230
+          }
+        }
+      }
+    }
+  }
+}

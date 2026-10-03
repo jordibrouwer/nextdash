@@ -36,6 +36,7 @@
         ['media', 'Media & downloads'],
         ['network', 'Network'],
         ['system', 'System'],
+        ['monitoring', 'Monitoring'],
         ['apps', 'Apps'],
     ];
 
@@ -49,7 +50,7 @@
             note: 'Settings → General → API Key, as an X-Api-Key header.',
             fields: [
                 { path: 'totalCount', label: 'in queue', format: 'count', shape: 'large' },
-                { path: 'count', label: 'downloading', format: 'count', shape: 'small' },
+                { path: 'count', label: 'matched', format: 'count', shape: 'small' },
                 { path: 'unknownCount', label: 'unknown', format: 'count', shape: 'small' },
             ],
         },
@@ -61,7 +62,7 @@
             note: 'Settings → General → API Key, as an X-Api-Key header.',
             fields: [
                 { path: 'totalCount', label: 'in queue', format: 'count', shape: 'large' },
-                { path: 'count', label: 'downloading', format: 'count', shape: 'small' },
+                { path: 'count', label: 'matched', format: 'count', shape: 'small' },
                 { path: 'unknownCount', label: 'unknown', format: 'count', shape: 'small' },
             ],
         },
@@ -73,18 +74,21 @@
             note: 'Settings → General → API Key, as an X-Api-Key header.',
             fields: [
                 { path: 'totalCount', label: 'in queue', format: 'count', shape: 'large' },
-                { path: 'count', label: 'downloading', format: 'count', shape: 'small' },
+                { path: 'count', label: 'matched', format: 'count', shape: 'small' },
             ],
         },
         {
             id: 'readarr', name: 'Readarr', group: 'media',
+            // Stopped upstream in June 2025: not offered any more, still read
+            // for a widget that was started from it.
+            retired: true,
             sample: 'http://readarr.local:8787',
             path: '/api/v1/queue/status',
             auth: 'header', authName: 'X-Api-Key',
             note: 'Settings → General → API Key, as an X-Api-Key header.',
             fields: [
                 { path: 'totalCount', label: 'in queue', format: 'count', shape: 'large' },
-                { path: 'count', label: 'downloading', format: 'count', shape: 'small' },
+                { path: 'count', label: 'matched', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -101,16 +105,22 @@
         {
             id: 'bazarr', name: 'Bazarr', group: 'media',
             sample: 'http://bazarr.local:6767',
-            path: '/api/episodes/wanted?start=0&length=1',
+            // The badges route counts both kinds of wanted subtitle and the
+            // providers that are throttled -- what the sidebar shows.
+            path: '/api/badges',
             auth: 'header', authName: 'X-API-KEY',
             note: 'Settings → General → API Key, as an X-API-KEY header.',
             fields: [
-                { path: 'total', label: 'subtitles wanted', format: 'count', shape: 'large' },
+                { path: 'episodes', label: 'episodes wanted', format: 'count', shape: 'large' },
+                { path: 'movies', label: 'movies wanted', format: 'count' },
+                { path: 'providers', label: 'throttled', format: 'count', shape: 'small' },
             ],
         },
         {
-            id: 'overseerr', name: 'Overseerr / Jellyseerr', group: 'media',
-            sample: 'http://overseerr.local:5055',
+            // Overseerr and Jellyseerr became Seerr; the API stayed the same,
+            // and so does the id, which widgets already started from it store.
+            id: 'overseerr', name: 'Seerr (Overseerr / Jellyseerr)', group: 'media',
+            sample: 'http://seerr.local:5055',
             path: '/api/v1/request/count',
             auth: 'header', authName: 'X-Api-Key',
             note: 'Settings → General → API Key, as an X-Api-Key header.',
@@ -118,21 +128,22 @@
                 { path: 'pending', label: 'pending', format: 'count', shape: 'large' },
                 { path: 'processing', label: 'processing', format: 'count', shape: 'small' },
                 { path: 'available', label: 'available', format: 'count', shape: 'small' },
+                { path: 'total', label: 'requests', format: 'count', shape: 'small' },
             ],
         },
         {
             id: 'tautulli', name: 'Tautulli', group: 'media',
             sample: 'http://tautulli.local:8181',
-            // Tautulli takes its key in the query string and offers no header
-            // form. That is why widget addresses are withheld from the blocks
-            // route: this URL is a credential.
+            // Tautulli reads the key from an X-Api-Key header as well as from
+            // the query string, and a header keeps it out of the address.
             path: '/api/v2?cmd=get_activity',
-            auth: 'query', queryName: 'apikey',
-            note: 'Settings → Web Interface → API key. It goes in the address, which nextDash fills in for you.',
+            auth: 'header', authName: 'X-Api-Key',
+            note: 'Settings → Web Interface → API key, as an X-Api-Key header.',
             fields: [
                 { path: 'response.data.stream_count', label: 'streams', format: 'count', shape: 'large' },
                 { path: 'response.data.stream_count_transcode', label: 'transcoding', format: 'count', shape: 'small' },
                 { path: 'response.data.total_bandwidth', label: 'kbps', format: 'count', shape: 'small' },
+                { path: 'response.data.wan_bandwidth', label: 'kbps remote', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -165,7 +176,7 @@
             sample: 'http://immich.local:2283',
             path: '/api/server/statistics',
             auth: 'header', authName: 'x-api-key',
-            note: 'Account Settings → API Keys, as an x-api-key header.',
+            note: 'Account Settings → API Keys, as an x-api-key header. The statistics are an admin\'s: the key must belong to an admin and include the server.statistics permission.',
             fields: [
                 { path: 'photos', label: 'photos', format: 'count', shape: 'large' },
                 { path: 'videos', label: 'videos', format: 'count' },
@@ -173,13 +184,13 @@
             ],
         },
         {
-            id: 'qbittorrent', name: 'qBittorrent', group: 'media',
+            id: 'qbittorrent', name: 'qBittorrent (login)', group: 'media',
             sample: 'http://qbittorrent.local:8080',
             path: '/api/v2/transfer/info',
             /*
-             * qBittorrent hands out a session rather than taking a key: there
-             * is no API key at all, only a login that answers with a SID cookie
-             * -- and that cookie expires. Asking for the cookie was the first
+             * Before 5.2 qBittorrent hands out a session rather than taking a
+             * key: there is no API key at all, only a login that answers with
+             * a SID cookie -- and that cookie expires. Asking for the cookie was the first
              * attempt and it is a widget that works for an afternoon and then
              * reads 403, so nextDash signs in itself and asks for what does not
              * expire.
@@ -201,6 +212,21 @@
             ],
         },
         {
+            // qBittorrent 5.2 (Web API 2.14.1) takes an API key, which does not
+            // expire and needs no sign-in at all.
+            id: 'qbittorrent-key', name: 'qBittorrent (5.2+, API key)', group: 'media',
+            sample: 'http://qbittorrent.local:8080',
+            path: '/api/v2/transfer/info',
+            auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
+            note: 'Tools → Options → Web UI → API key, as an Authorization header of "Bearer <key>". On an older version, choose qBittorrent (login).',
+            ttl: 60,
+            fields: [
+                { path: 'dl_info_speed', label: 'down/s', format: 'bytes', shape: 'large' },
+                { path: 'up_info_speed', label: 'up/s', format: 'bytes' },
+                { path: 'connection_status', label: 'connection', format: 'text', shape: 'small' },
+            ],
+        },
+        {
             id: 'sabnzbd', name: 'SABnzbd', group: 'media',
             sample: 'http://sabnzbd.local:8080',
             path: '/api?mode=queue&output=json',
@@ -211,6 +237,7 @@
                 { path: 'queue.noofslots_total', label: 'in queue', format: 'count', shape: 'large' },
                 { path: 'queue.speed', label: 'speed', format: 'text' },
                 { path: 'queue.mbleft', label: 'MB left', format: 'text', shape: 'small' },
+                { path: 'queue.timeleft', label: 'time left', format: 'text', shape: 'small' },
             ],
         },
         {
@@ -218,11 +245,97 @@
             sample: 'http://nzbget.local:6789',
             path: '/jsonrpc/status',
             auth: 'basic',
-            note: 'The control username and password, as basic auth.',
+            note: 'The control username and password, as basic auth. Works with the maintained nzbgetcom/nzbget as well as the original.',
             ttl: 60,
             fields: [
                 { path: 'result.DownloadRate', label: 'down/s', format: 'bytes', shape: 'large' },
                 { path: 'result.RemainingSizeMB', label: 'MB left', format: 'count', shape: 'small' },
+            ],
+        },
+        {
+            // A Sonarr fork (v2) and a Radarr fork (v3, "Eros"): both answer
+            // the same queue status.
+            id: 'whisparr', name: 'Whisparr', group: 'media',
+            sample: 'http://whisparr.local:6969',
+            path: '/api/v3/queue/status',
+            auth: 'header', authName: 'X-Api-Key',
+            note: 'Settings → General → API Key, as an X-Api-Key header.',
+            fields: [
+                { path: 'totalCount', label: 'in queue', format: 'count', shape: 'large' },
+                { path: 'count', label: 'matched', format: 'count', shape: 'small' },
+            ],
+        },
+        {
+            id: 'lazylibrarian', name: 'LazyLibrarian', group: 'media',
+            sample: 'http://lazylibrarian.local:5299',
+            // json=1, or the answer is lines of text.
+            path: '/api?cmd=showStats&json=1',
+            auth: 'query', queryName: 'apikey',
+            note: 'Config → Interface → API key (the read-only one is enough), with the API switched on. It goes in the address, which nextDash fills in for you.',
+            // Every figure here is a count query over the library.
+            ttl: 600,
+            fields: [
+                { path: 'book_stats.eBooks', label: 'books', format: 'count', shape: 'large' },
+                { path: 'book_stats.Wanted', label: 'wanted', format: 'count' },
+                { path: 'author_stats.Authors', label: 'authors', format: 'count', shape: 'small' },
+            ],
+        },
+        {
+            id: 'nzbhydra', name: 'NZBHydra2', group: 'media',
+            sample: 'http://nzbhydra.local:5076',
+            // One entry per page, so the page tells the total.
+            path: '/externalapi/v1/history/downloads?limit=1',
+            auth: 'header', authName: 'X-Api-Key',
+            note: 'Config → Main → API key, as an X-Api-Key header. A wrong key answers 404, not 401.',
+            fields: [
+                { path: 'totalElements', label: 'downloads', format: 'count', shape: 'large' },
+                { path: 'entries[0].time', label: 'last grab', format: 'relativeDate', shape: 'small' },
+            ],
+        },
+        {
+            id: 'komga', name: 'Komga', group: 'media',
+            sample: 'http://komga.local:25600',
+            path: '/api/v1/series?size=1',
+            auth: 'header', authName: 'X-API-Key',
+            note: 'Account settings → API keys, as an X-API-Key header.',
+            fields: [
+                { path: 'totalElements', label: 'series', format: 'count', shape: 'large' },
+            ],
+        },
+        {
+            id: 'photoprism', name: 'PhotoPrism', group: 'media',
+            sample: 'http://photoprism.local:2342',
+            path: '/api/v1/config',
+            auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
+            note: 'An app password (Settings → Account → Apps and Devices), as an Authorization header of "Bearer <password>". If every figure reads 0, the password was not accepted: PhotoPrism then answers with its public settings.',
+            fields: [
+                { path: 'count.photos', label: 'photos', format: 'count', shape: 'large' },
+                { path: 'count.videos', label: 'videos', format: 'count' },
+                { path: 'count.review', label: 'to review', format: 'count', shape: 'small' },
+            ],
+        },
+        {
+            id: 'jellystat', name: 'Jellystat', group: 'media',
+            sample: 'http://jellystat.local:3000',
+            // One play per page, so the number of pages is the number of plays.
+            path: '/stats/getPlaybackActivity?size=1',
+            auth: 'header', authName: 'x-api-token',
+            note: 'Settings → API Keys, as an x-api-token header. Counts the plays Jellystat has logged.',
+            fields: [
+                { path: 'pages', label: 'plays logged', format: 'count', shape: 'large' },
+                { path: 'results[0].NowPlayingItemName', label: 'last played', format: 'text', shape: 'small' },
+                { path: 'results[0].ActivityDateInserted', label: 'played', format: 'relativeDate', shape: 'small' },
+            ],
+        },
+        {
+            id: 'mylar', name: 'Mylar3', group: 'media',
+            sample: 'http://mylar.local:8090',
+            path: '/api?cmd=getIndex',
+            auth: 'query', queryName: 'apikey',
+            note: 'Settings → Web Interface → API key, with the API switched on. It goes in the address, which nextDash fills in for you.',
+            ttl: 600,
+            fields: [
+                { path: 'data#', label: 'series', format: 'count', shape: 'large' },
             ],
         },
 
@@ -231,8 +344,19 @@
             id: 'pihole6', name: 'Pi-hole (v6)', group: 'network',
             sample: 'http://pi.hole',
             path: '/api/stats/summary',
-            auth: 'header', authName: 'X-FTL-SID',
-            note: 'v6 signs in for a session id: send it as an X-FTL-SID header.',
+            /*
+             * v6 signs in for a session id that lapses after half an hour, so
+             * a pasted one was a widget that worked until lunch. nextDash signs
+             * in with the password and keeps the id, once, rather than on
+             * every refresh -- a login per poll runs out of API seats.
+             */
+            auth: 'session',
+            session: {
+                format: 'json', loginPath: '/api/auth',
+                userField: '', passField: 'password',
+                tokenPath: 'session.sid', tokenHeader: 'X-FTL-SID', tokenPrefix: '',
+            },
+            note: 'The web interface password, or an app password from Settings → Web interface / API.',
             columns: 2,
             fields: [
                 { path: 'queries.total', label: 'queries', format: 'count', shape: 'large' },
@@ -243,6 +367,8 @@
         },
         {
             id: 'pihole5', name: 'Pi-hole (v5)', group: 'network',
+            // v6 removed this API; kept for widgets started from it.
+            retired: true,
             sample: 'http://pi.hole',
             path: '/admin/api.php?summaryRaw',
             auth: 'query', queryName: 'auth',
@@ -262,6 +388,7 @@
             auth: 'basic',
             note: 'The web interface username and password, as basic auth.',
             fields: [
+                // Over the statistics period set in AdGuard, 24 hours unless changed.
                 { path: 'num_dns_queries', label: 'queries', format: 'count', shape: 'large' },
                 { path: 'num_blocked_filtering', label: 'blocked', format: 'count' },
                 { path: 'avg_processing_time', label: 'avg ms', format: 'ms', shape: 'small' },
@@ -277,6 +404,7 @@
                 { path: 'http.routers.total', label: 'routers', format: 'count' },
                 { path: 'http.services.total', label: 'services', format: 'count' },
                 { path: 'http.routers.errors', label: 'router errors', format: 'count', shape: 'small' },
+                { path: 'http.middlewares.total', label: 'middlewares', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -284,7 +412,7 @@
             sample: 'http://speedtest.local:8080',
             path: '/api/v1/results/latest',
             auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
-            note: 'A Sanctum token, as an Authorization header of "Bearer <token>".',
+            note: 'An API token with the results:read ability, as an Authorization header of "Bearer <token>".',
             ttl: 3600,
             fields: [
                 // bits, not bytes: a line is sold in bits, so this is the
@@ -292,6 +420,41 @@
                 { path: 'data.download_bits', label: 'down', format: 'rate', shape: 'large' },
                 { path: 'data.upload_bits', label: 'up', format: 'rate' },
                 { path: 'data.ping', label: 'ping ms', format: 'text', shape: 'small' },
+                { path: 'data.healthy', label: 'healthy', format: 'text', shape: 'small' },
+                { path: 'data.created_at', label: 'last test', format: 'relativeDate', shape: 'small' },
+            ],
+        },
+
+        {
+            id: 'npm', name: 'Nginx Proxy Manager', group: 'network',
+            sample: 'http://npm.local:81',
+            path: '/api/reports/hosts',
+            // A token that lasts a day, from the same sign-in the web
+            // interface uses; nextDash signs in again when it lapses.
+            auth: 'session',
+            session: {
+                format: 'json', loginPath: '/api/tokens',
+                userField: 'identity', passField: 'secret',
+                tokenPath: 'token', tokenHeader: 'Authorization', tokenPrefix: 'Bearer ',
+            },
+            note: 'The email address and password you sign in with. An account with two-factor sign-in cannot be used here.',
+            fields: [
+                { path: 'proxy', label: 'proxy hosts', format: 'count', shape: 'large' },
+                { path: 'redirection', label: 'redirects', format: 'count' },
+                { path: 'dead', label: '404 hosts', format: 'count', shape: 'small' },
+            ],
+        },
+        {
+            // Not on your own host: Tailscale's API is a cloud service, so the
+            // server needs a way out to the internet for this one.
+            id: 'tailscale', name: 'Tailscale', group: 'network',
+            sample: 'https://api.tailscale.com',
+            path: '/api/v2/tailnet/-/devices',
+            auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
+            note: 'An API access token from the admin console (Settings → Keys), as an Authorization header of "Bearer <token>". These tokens expire after at most 90 days.',
+            fields: [
+                { path: 'devices#', label: 'devices', format: 'count', shape: 'large' },
+                { path: 'devices[updateAvailable=true]#', label: 'need an update', format: 'count', shape: 'small' },
             ],
         },
 
@@ -305,12 +468,16 @@
             note: 'An API token, as an Authorization header. Replace YOUR_NODE in the address with your node\'s name — it is in the left-hand tree of the Proxmox web interface.',
             fields: [
                 { path: 'data.uptime', label: 'uptime', format: 'duration', shape: 'small' },
-                { path: 'data.cpu', label: 'cpu', format: 'percent', shape: 'meter', tone: 'bad' },
+                // A share from 0 to 1: read as a percentage it was always ~0%.
+                { path: 'data.cpu', label: 'cpu', format: 'share', shape: 'meter', tone: 'bad' },
                 { path: 'data.memory.used', label: 'ram used', format: 'bytes' },
             ],
         },
         {
             id: 'truenas', name: 'TrueNAS', group: 'system',
+            // The REST API was removed in TrueNAS 26 in favour of a websocket
+            // API a widget cannot read; kept for widgets on older versions.
+            retired: true,
             sample: 'http://truenas.local',
             path: '/api/v2.0/system/info',
             auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
@@ -326,13 +493,14 @@
             sample: 'http://glances.local:61208',
             path: '/api/4/quicklook',
             auth: 'none',
-            note: 'No credential unless the web server was started with one.',
+            note: 'No credential unless the web server was started with a password; then choose basic auth under Sign-in.',
             ttl: 60,
             columns: 2,
             fields: [
                 { path: 'cpu', label: 'cpu', format: 'percent', shape: 'meter', tone: 'bad' },
                 { path: 'mem', label: 'memory', format: 'percent', shape: 'meter', tone: 'bad' },
                 { path: 'swap', label: 'swap', format: 'percent', shape: 'meter', tone: 'bad' },
+                { path: 'load', label: 'load', format: 'percent', shape: 'meter', tone: 'bad' },
             ],
         },
         {
@@ -348,13 +516,126 @@
             ],
         },
 
+        {
+            id: 'duplicati', name: 'Duplicati', group: 'system',
+            sample: 'http://duplicati.local:8200',
+            path: '/api/v1/serverstate',
+            // Duplicati 2.1 and later: a password sign-in for a token that
+            // lasts a quarter of an hour, renewed when it is refused.
+            auth: 'session',
+            session: {
+                format: 'json', loginPath: '/api/v1/auth/login',
+                userField: '', passField: 'Password', extra: { RememberMe: false },
+                tokenPath: 'AccessToken', tokenHeader: 'Authorization', tokenPrefix: 'Bearer ',
+            },
+            note: 'The password of the Duplicati web interface.',
+            fields: [
+                { path: 'ProgramState', label: 'state', format: 'text', shape: 'large' },
+                { path: 'SuggestedStatusIcon', label: 'status', format: 'text' },
+                { path: 'HasError', label: 'error', format: 'text', shape: 'small' },
+            ],
+        },
+
+        // ── Monitoring ───────────────────────────────────────────────────
+        {
+            id: 'beszel', name: 'Beszel', group: 'monitoring',
+            sample: 'http://beszel.local:8090',
+            path: '/api/collections/systems/records?perPage=200',
+            // PocketBase: the token goes in the Authorization header as it is,
+            // with no "Bearer" in front.
+            auth: 'session',
+            session: {
+                format: 'json', loginPath: '/api/collections/users/auth-with-password',
+                userField: 'identity', passField: 'password',
+                tokenPath: 'token', tokenHeader: 'Authorization', tokenPrefix: '',
+            },
+            note: 'The email address and password of a Beszel user (a read-only one is enough) that can see the systems.',
+            fields: [
+                { path: 'totalItems', label: 'systems', format: 'count', shape: 'large' },
+                { path: 'items[status=down]#', label: 'down', format: 'count' },
+                { path: 'items[status=paused]#', label: 'paused', format: 'count', shape: 'small' },
+            ],
+        },
+        {
+            id: 'netdata', name: 'Netdata', group: 'monitoring',
+            sample: 'http://netdata.local:19999',
+            path: '/api/v1/info',
+            auth: 'none',
+            note: 'No credential on a default agent.',
+            ttl: 60,
+            fields: [
+                { path: 'alarms.critical', label: 'critical', format: 'count', shape: 'large' },
+                { path: 'alarms.warning', label: 'warning', format: 'count' },
+                { path: 'version', label: 'version', format: 'text', shape: 'small' },
+            ],
+        },
+        {
+            id: 'gatus', name: 'Gatus', group: 'monitoring',
+            sample: 'http://gatus.local:8080',
+            // pageSize=1: only the newest result per endpoint, so [0] is now.
+            path: '/api/v1/endpoints/statuses?pageSize=1',
+            auth: 'none',
+            note: 'No credential unless Gatus is set up with basic security; then choose basic auth under Sign-in.',
+            ttl: 60,
+            fields: [
+                { path: '[results.0.success=false]#', label: 'down', format: 'count', shape: 'large' },
+                { path: '#', label: 'endpoints', format: 'count', shape: 'small' },
+            ],
+        },
+        {
+            id: 'uptimekuma', name: 'Uptime Kuma', group: 'monitoring',
+            sample: 'http://uptime-kuma.local:3001',
+            path: '/api/status-page/heartbeat/YOUR_SLUG',
+            fillIn: 'YOUR_SLUG',
+            auth: 'none',
+            note: 'Reads a published status page, without a credential. Replace YOUR_SLUG in the address with its slug. One monitor\'s latest ping is heartbeatList.<id>[-1].ping, with the id from the monitor\'s own address.',
+            ttl: 60,
+            fields: [
+                { path: 'heartbeatList#', label: 'monitors', format: 'count', shape: 'large' },
+            ],
+        },
+        {
+            id: 'scrutiny', name: 'Scrutiny', group: 'monitoring',
+            sample: 'http://scrutiny.local:8080',
+            path: '/api/summary',
+            fillIn: 'YOUR_WWN',
+            auth: 'none',
+            note: 'No credential on a default install. Replace YOUR_WWN in the figures with a drive\'s WWN, shown on its detail page (0x…).',
+            ttl: 600,
+            fields: [
+                { path: 'data.summary#', label: 'drives', format: 'count', shape: 'large' },
+                // 0 is passed; anything else is a failed S.M.A.R.T. or Scrutiny check.
+                { path: 'data.summary.YOUR_WWN.device.device_status', label: 'status', format: 'text' },
+                { path: 'data.summary.YOUR_WWN.smart.temp', label: 'temp', format: 'text', shape: 'small' },
+            ],
+        },
+        {
+            id: 'healthchecks', name: 'Healthchecks', group: 'monitoring',
+            sample: 'https://healthchecks.io',
+            // The project badge in JSON: up, late and down counted for you.
+            // Its address is the secret, so it is the whole address.
+            path: '/badge/YOUR_BADGE',
+            fillIn: 'YOUR_BADGE',
+            auth: 'none',
+            note: 'Paste the JSON badge address (the json3 one, from Settings → Badges) into the address in place of the sample. The address itself is the key.',
+            fields: [
+                { path: 'status', label: 'status', format: 'text', shape: 'large' },
+                { path: 'down', label: 'down', format: 'count' },
+                { path: 'grace', label: 'late', format: 'count', shape: 'small' },
+                { path: 'total', label: 'checks', format: 'count', shape: 'small' },
+            ],
+        },
+
         // ── Apps ─────────────────────────────────────────────────────────
         {
             id: 'nextcloud', name: 'Nextcloud', group: 'apps',
             sample: 'https://nextcloud.local',
             path: '/ocs/v2.php/apps/serverinfo/api/v1/info?format=json',
-            auth: 'basic',
-            note: 'An app password as basic auth, plus an OCS-APIRequest header of "true".',
+            // The monitoring token reads the same figures without an admin's
+            // password; the OCS header goes with it unasked.
+            auth: 'header', authName: 'NC-Token',
+            fixedHeaders: { 'OCS-APIRequest': 'true' },
+            note: 'The token from Administration settings → System (Monitoring), as an NC-Token header.',
             columns: 2,
             fields: [
                 { path: 'ocs.data.nextcloud.storage.num_files', label: 'files', format: 'count', shape: 'large' },
@@ -373,6 +654,7 @@
                 { path: 'documents_total', label: 'documents', format: 'count', shape: 'large' },
                 { path: 'documents_inbox', label: 'in the inbox', format: 'count' },
                 { path: 'character_count', label: 'characters', format: 'count', shape: 'small' },
+                { path: 'tag_count', label: 'tags', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -414,11 +696,13 @@
         {
             id: 'ntfy', name: 'ntfy', group: 'apps',
             sample: 'http://ntfy.local:8080',
-            path: '/v1/health',
+            // The stats route is public as well, and says more than "healthy".
+            path: '/v1/stats',
             auth: 'none',
-            note: 'The health route answers without a credential.',
+            note: 'The stats route answers without a credential.',
             fields: [
-                { path: 'healthy', label: 'healthy', format: 'text', shape: 'large' },
+                { path: 'messages', label: 'messages', format: 'count', shape: 'large' },
+                { path: 'messages_rate', label: 'per second', format: 'text', shape: 'small' },
             ],
         },
     ];

@@ -139,6 +139,8 @@
     <link rel="stylesheet" href="{{asset "css/widgets-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/docker-view.css"}}">
+    <link rel="stylesheet" href="{{asset "vendor/uplot/1.6.32/uPlot.min.css"}}">
+    <link rel="stylesheet" href="{{asset "css/nd-chart.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-bookmarks-workbench.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-tabs.css"}}">
@@ -517,6 +519,8 @@
     <!-- Before modal.js and every other overlay: they all take scroll locks. -->
     <script src="{{asset "js/scroll-lock.js"}}" defer></script>
     <script src="{{asset "js/modal.js"}}" defer></script>
+    <!-- The QR window: reads AppModal and LazyScript when it is opened. -->
+    <script src="{{asset "js/shared/bookmark-qr.js"}}" defer></script>
     <!-- The theme browser: reads AppModal, so it loads after it. -->
     <script src="{{asset "js/theme-browser.js"}}" defer></script>
     <script src="{{asset "js/focus-trap-utils.js"}}" defer></script>
@@ -585,6 +589,8 @@
     <script src="{{asset "js/dashboard-keyboard-tip.js"}}" defer></script>
     <!-- Batch icon fetch (`:favicons fetch`); same class config uses after an import. -->
     <script src="{{asset "js/shared/config-favicon-prefetch.js"}}" defer></script>
+    <!-- App icons from the icon sets: theme variant and the rows' batch match. -->
+    <script src="{{asset "js/shared/icon-set-auto.js"}}" defer></script>
     <script src="{{asset "js/shared/bookmark-feed-row.js"}}" defer></script>
     <script src="{{asset "js/shared/inline-create-row.js"}}" defer></script>
     <script src="{{asset "js/shared/progress-overlay.js"}}" defer></script>
@@ -616,6 +622,7 @@
     <script src="{{asset "js/dashboard/dashboard-widget-cpu.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-disks.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-memory.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-unraid.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-docker.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-containers.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-weather.js"}}" defer></script>

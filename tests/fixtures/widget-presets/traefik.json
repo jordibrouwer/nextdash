@@ -1,0 +1,25 @@
+{
+  "_source": "traefik pkg/api/handler_overview.go",
+  "auth": {},
+  "body": {
+    "http": {
+      "routers": {
+        "total": 24,
+        "warnings": 0,
+        "errors": 1
+      },
+      "services": {
+        "total": 22,
+        "warnings": 0,
+        "errors": 0
+      },
+      "middlewares": {
+        "total": 9,
+        "warnings": 0,
+        "errors": 0
+      }
+    },
+    "tcp": {},
+    "udp": {}
+  }
+}

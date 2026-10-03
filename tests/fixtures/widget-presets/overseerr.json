@@ -1,0 +1,18 @@
+{
+  "_source": "seerr seerr-api.yml RequestCount",
+  "auth": {
+    "header": "X-Api-Key",
+    "value": "%KEY%"
+  },
+  "body": {
+    "total": 128,
+    "movie": 84,
+    "tv": 44,
+    "pending": 3,
+    "approved": 125,
+    "declined": 0,
+    "processing": 6,
+    "available": 119,
+    "completed": 119
+  }
+}

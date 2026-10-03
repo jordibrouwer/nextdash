@@ -50,6 +50,32 @@ async function openStatsTab(page, tab) {
 const panelByTitle = (page, title) =>
     page.locator('.config-panel').filter({ has: page.locator('.config-panel-title', { hasText: title }) }).first();
 
+/** The live activity chart's uPlot instance, read in the page. */
+const ACTIVITY_PLOT = `window.dashboardInstance.config._statsColumnCharts
+    .map((c) => c.plot).find((p) => document.contains(p.root) && p.root.closest('#config-stats-opens'))`;
+
+async function yScale(page) {
+    return page.evaluate((expr) => {
+        const plot = eval(expr);
+        return { min: plot.scales.y.min, max: plot.scales.y.max };
+    }, ACTIVITY_PLOT);
+}
+
+/** Each x tick as drawn: its label, and where it starts and ends on the canvas. */
+async function xTicks(page) {
+    return page.evaluate((expr) => {
+        const plot = eval(expr);
+        const axis = plot.axes[0];
+        const left = plot.bbox.left / (window.uPlot.pxRatio || devicePixelRatio);
+        return axis._splits.map((v, i) => {
+            const label = axis._values[i] || '';
+            const at = left + plot.valToPos(v, 'x');
+            const half = (label.length * 6.6) / 2;
+            return { label, left: at - half, right: at + half, canvas: plot.width };
+        });
+    }, ACTIVITY_PLOT);
+}
+
 test.describe('statistics: what the activity chart counts', () => {
     /**
      * A bookmark holds a cumulative openCount and one lastOpened, with no
@@ -147,10 +173,11 @@ test.describe('statistics: chart axis labels', () => {
         // y: what the bars count, plus a real top tick rather than an unlabelled
         // scale. The bars count bookmarks, not opens — the axis must say so.
         await expect(panel.locator('.config-chart-axis-title')).toHaveText(/bookmarks/i);
-        const ticks = panel.locator('.config-chart-axis-ticks span');
-        await expect(ticks).toHaveCount(2);
-        await expect(ticks.last()).toHaveText('0');
-        expect(Number(await ticks.first().innerText())).toBeGreaterThan(0);
+        // The value axis is uPlot's: from 0 to above the tallest bar.
+        await expect(panel.locator('.nd-chart canvas')).toBeVisible();
+        const y = await yScale(page);
+        expect(y.min).toBe(0);
+        expect(y.max).toBeGreaterThan(0);
 
         // x: what one bar covers.
         await expect(panel.locator('.config-chart-axis-x')).toBeVisible();
@@ -221,26 +248,22 @@ test.describe('statistics: chart axis labels', () => {
 
     test('the plot is tall enough to compare neighbouring bars', async ({ page }) => {
         await openStatsTab(page, 'usage');
-        const svg = panelByTitle(page, 'Bookmarks used over time').locator('svg');
-        const box = await svg.boundingBox();
+        const canvas = panelByTitle(page, 'Bookmarks used over time').locator('.nd-chart canvas');
+        await expect(canvas).toBeVisible();
+        const box = await canvas.boundingBox();
         // 72px was too short for a day-to-day comparison; 108 is that plus half.
         expect(box.height).toBeGreaterThanOrEqual(100);
-        // The y-axis ticks must span the plot, or max/0 stop meaning top/baseline.
-        const ticks = await panelByTitle(page, 'Bookmarks used over time')
-            .locator('.config-chart-axis-ticks').boundingBox();
-        expect(Math.abs(ticks.height - box.height)).toBeLessThanOrEqual(2);
     });
 
     test('the x-axis carries dated ticks, not just its two ends', async ({ page }) => {
         await openStatsTab(page, 'usage');
-        const ticks = panelByTitle(page, 'Bookmarks used over time').locator('.config-chart-tick');
-        const n = await ticks.count();
-        expect(n).toBeGreaterThan(2);
-        // Capped so labels cannot collide into a smear on 30 bars. The cap
-        // adapts to label width, so this is the ceiling, not a fixed count.
-        expect(n).toBeLessThanOrEqual(7);
+        await expect(panelByTitle(page, 'Bookmarks used over time').locator('.nd-chart canvas')).toBeVisible();
+        const ticks = (await xTicks(page)).filter((t) => t.label);
+        expect(ticks.length).toBeGreaterThan(2);
+        // Spaced by the widest label, so 30 bars do not smear into each other.
+        expect(ticks.length).toBeLessThanOrEqual(10);
         // Real dates, not "12d ago".
-        await expect(ticks.first()).not.toHaveText(/ago/i);
+        expect(ticks[0].label).not.toMatch(/ago/i);
     });
 
     test('no tick escapes the plot or collides, at any range', async ({ page }) => {
@@ -252,24 +275,16 @@ test.describe('statistics: chart axis labels', () => {
         for (const range of ['7', '30', '90', '365']) {
             const panel = panelByTitle(page, 'Bookmarks used over time');
             await panel.locator(`[data-stats-range="${range}"]`).click();
-            const after = panelByTitle(page, 'Bookmarks used over time');
-            await expect(after.locator('.config-chart-tick').first()).toBeVisible();
+            await expect(page.locator(`[data-stats-range="${range}"]`)).toHaveAttribute('aria-pressed', 'true');
+            await expect(panelByTitle(page, 'Bookmarks used over time').locator('.nd-chart canvas')).toBeVisible();
 
-            const geo = await after.evaluate((el) => {
-                const host = el.querySelector('.config-chart-ticks').getBoundingClientRect();
-                const ticks = [...el.querySelectorAll('.config-chart-tick')];
-                const outside = ticks.filter((t) => {
-                    const b = t.getBoundingClientRect();
-                    return b.left < host.left - 1 || b.right > host.right + 1;
-                }).map((t) => t.textContent);
-                let collide = 0;
-                for (let i = 1; i < ticks.length; i++) {
-                    const a = ticks[i - 1].getBoundingClientRect();
-                    const b = ticks[i].getBoundingClientRect();
-                    if (a.right + 4 > b.left) collide++;
-                }
-                return { outside, collide, count: ticks.length };
-            });
+            // uPlot draws the labels on the canvas; their place and width are
+            // worked out from the plot (11px monospace, 6.6px a character).
+            const ticks = (await xTicks(page)).filter((t) => t.label);
+            const outside = ticks.filter((t) => t.left < -1 || t.right > t.canvas + 1).map((t) => t.label);
+            let collide = 0;
+            for (let i = 1; i < ticks.length; i++) if (ticks[i - 1].right + 4 > ticks[i].left) collide++;
+            const geo = { outside, collide, count: ticks.length };
 
             expect(geo.outside, `${range}d: ticks outside the plot`).toEqual([]);
             expect(geo.collide, `${range}d: ticks touching`).toBe(0);
@@ -280,29 +295,23 @@ test.describe('statistics: chart axis labels', () => {
     test('hovering a bar shows its value and its date', async ({ page }) => {
         await openStatsTab(page, 'usage');
         const panel = panelByTitle(page, 'Bookmarks used over time');
-        const bars = panel.locator('.config-chart-bar');
-        expect(await bars.count()).toBeGreaterThan(0);
-
-        const tip = panel.locator('.config-chart-tip');
+        const over = panel.locator('.nd-chart .u-over');
+        const tip = panel.locator('.nd-chart-tip');
         // Clicking the tab left the pointer inside the panel, which may already
         // be over a bar — park it somewhere neutral before asserting the
         // resting state.
         await page.mouse.move(2, 2);
         await expect(tip).toBeHidden();
 
-        // hover() rather than a raw mouse.move to a measured point: it re-checks
-        // that the bar is really what the pointer lands on, and waits if
-        // something is over it. A coordinate taken once and moved to blindly
-        // cannot tell the difference between a bar and a toast in front of it,
-        // which is the shape this test kept failing in.
-        await bars.last().hover();
+        // hover() rather than a raw mouse.move: it re-checks that the plot is
+        // what the pointer lands on, and waits if something is over it.
+        const box = await over.boundingBox();
+        await over.hover({ position: { x: box.width - 4, y: box.height / 2 } });
         await expect(tip).toBeVisible();
-        // Value leads, date follows.
-        await expect(tip.locator('strong')).toHaveText(/\d+/);
-        await expect(tip.locator('span')).not.toBeEmpty();
+        // The date, then the value.
+        await expect(tip).toHaveText(/\S.* · \d+/);
 
         // Leaving the chart clears it.
-        const box = await bars.last().boundingBox();
         await page.mouse.move(box.x + box.width / 2, box.y - 200);
         await expect(tip).toBeHidden();
     });
@@ -310,26 +319,28 @@ test.describe('statistics: chart axis labels', () => {
     test('the same values are reachable by keyboard, not hover only', async ({ page }) => {
         await openStatsTab(page, 'usage');
         const panel = panelByTitle(page, 'Bookmarks used over time');
-        const bar = panel.locator('.config-chart-bar').first();
+        const chart = panel.locator('.nd-chart');
 
-        await bar.focus();
-        await expect(panel.locator('.config-chart-tip')).toBeVisible();
+        await chart.focus();
+        await page.keyboard.press('Home');
+        await expect(chart.locator('.nd-chart-readout')).toHaveText(/ · \d+/);
+        await page.keyboard.press('ArrowRight');
+        await expect(chart.locator('.nd-chart-tip')).toBeVisible();
         // And to a screen reader, which never gets a pointer at all.
-        await expect(bar).toHaveAttribute('aria-label', /\d+/);
+        await expect(chart).toHaveAttribute('aria-label', /\S/);
+        await expect(chart.locator('table.nd-chart-table tbody tr').first()).toHaveText(/\d+/);
     });
 
     test('the bar hit target is bigger than the painted bar', async ({ page }) => {
         await openStatsTab(page, 'usage');
         const panel = panelByTitle(page, 'Bookmarks used over time');
         // A one-open day paints a 2px sliver; hovering that would be a pinpoint,
-        // so the hit rect spans the full plot height and half the gap each side.
-        const sizes = await panel.locator('.config-chart-bar').first().evaluate((g) => {
-            const hit = g.querySelector('.config-chart-bar-hit').getBoundingClientRect();
-            const fill = g.querySelector('.config-chart-bar-fill').getBoundingClientRect();
-            return { hitH: hit.height, fillH: fill.height, hitW: hit.width, fillW: fill.width };
-        });
-        expect(sizes.hitH).toBeGreaterThan(sizes.fillH);
-        expect(sizes.hitW).toBeGreaterThan(sizes.fillW);
+        // so the whole column answers: the top of the plot, far above any bar,
+        // still reads out the bar under it.
+        const over = panel.locator('.nd-chart .u-over');
+        const box = await over.boundingBox();
+        await over.hover({ position: { x: box.width - 4, y: 2 } });
+        await expect(panel.locator('.nd-chart-tip')).toHaveText(/ · \d+/);
     });
 
     test('the axis header lines up with the rows it labels', async ({ page }) => {

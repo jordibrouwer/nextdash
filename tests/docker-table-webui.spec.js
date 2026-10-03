@@ -123,7 +123,7 @@ test.describe('the Docker host address', () => {
                 webui: 'http://[IP]:18989/', webuiDefault: 'http://[IP]:18989/' },
             { ...base, id: 'e'.repeat(64), name: 'plex', ports: [], lanIP: '192.168.1.50', webui: 'http://[IP]:32400/', webuiDefault: 'x' },
         ] });
-        await page.goto('/#config/containers');
+        await page.goto('/#config/containers/view');
         // A load draws config twice: once from loadData(), and again when
         // init() renders the dashboard after the language is in. The field is
         // there after the first, and text filled in before the second is
@@ -142,7 +142,7 @@ test.describe('the Docker host address', () => {
             // Its own LAN address still wins over the host address.
             await expect(webui(page, 'plex')).toHaveAttribute('href', 'http://192.168.1.50:32400/');
         } finally {
-            await page.goto('/#config/containers');
+            await page.goto('/#config/containers/view');
             await field.fill('');
             await field.press('Tab');
             await expect.poll(async () => (await (await page.request.get('/api/settings')).json()).dockerHostAddress ?? '').toBe('');

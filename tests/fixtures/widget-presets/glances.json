@@ -1,0 +1,12 @@
+{
+  "_source": "glances plugins/quicklook",
+  "auth": {},
+  "body": {
+    "cpu": 12.3,
+    "mem": 41.2,
+    "swap": 0,
+    "load": 6.1,
+    "cpu_name": "x86_64",
+    "cpu_hz": 3400000000
+  }
+}

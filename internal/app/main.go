@@ -163,6 +163,10 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/font", handlers.UploadFont).Methods("POST")
 	r.HandleFunc("/api/icon", handlers.UploadIcon).Methods("POST")
 	r.HandleFunc("/api/icon/from-url", handlers.UploadIconFromURL).Methods("POST")
+	r.HandleFunc("/api/icon-sets/match", handlers.IconSetsMatchHandler).Methods("POST")
+	r.HandleFunc("/api/icon-sets/search", handlers.IconSetsSearchHandler).Methods("GET")
+	r.HandleFunc("/api/icon-sets/suggest", handlers.IconSetsSuggestHandler).Methods("GET")
+	r.HandleFunc("/api/icon-sets/adopt", handlers.IconSetsAdoptHandler).Methods("POST")
 	r.HandleFunc("/api/colors", handlers.GetColors).Methods("GET")
 	r.HandleFunc("/api/colors", handlers.SaveColors).Methods("POST")
 	r.HandleFunc("/api/colors/reset", handlers.ResetColors).Methods("POST")
@@ -230,6 +234,7 @@ func Run(files assetFS) {
 	// Web search through the reader's chosen engine; see web_search.go.
 	r.HandleFunc("/api/web-search", handlers.WebSearchHandler).Methods("GET")
 	r.HandleFunc("/api/web-search/status", handlers.WebSearchStatusHandler).Methods("GET")
+	registerUnraidRoutes(r, handlers)
 	r.HandleFunc("/api/docker/updates/check", handlers.DockerUpdatesCheckHandler).Methods("POST")
 	r.HandleFunc("/api/docker/updates/choice", handlers.DockerUpdateChoiceHandler).Methods("POST")
 	r.HandleFunc("/api/docker/disk", handlers.DockerDiskHandler).Methods("GET")
@@ -379,6 +384,7 @@ func Run(files assetFS) {
 	handlers.StartDockerStatsSampler(schedulerStop)
 	handlers.StartDockerAutoUpdater(schedulerStop)
 	handlers.StartDockerNotifier(schedulerStop)
+	handlers.StartUnraidWatcher(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence
@@ -388,6 +394,7 @@ func Run(files assetFS) {
 	// been gone for years rather than only that it broke here on Tuesday.
 	handlers.StartArchiveBackfillScheduler(schedulerStop)
 	handlers.StartUpdateCheckScheduler(schedulerStop)
+	handlers.StartIconSetsScheduler(schedulerStop)
 	// Writes the preview cache out periodically. Beside the others rather than
 	// buried in NewHandlers, so it stops when they do.
 	handlers.StartPreviewCacheFlushScheduler(schedulerStop)

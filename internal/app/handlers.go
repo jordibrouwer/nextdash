@@ -1643,6 +1643,16 @@ func trimBookmarkTextFields(b *Bookmark) {
 	b.Name = strings.TrimSpace(b.Name)
 	b.Category = strings.TrimSpace(b.Category)
 	b.Note = strings.TrimSpace(b.Note)
+	normalizeBookmarkIconMode(b)
+}
+
+// normalizeBookmarkIconMode keeps IconMode to the one value it has, and drops
+// it once the bookmark has an icon of its own: choosing or uploading an icon
+// is the newer choice, and a mode left behind would come back on Clear.
+func normalizeBookmarkIconMode(b *Bookmark) {
+	if b.IconMode != "letter" || strings.TrimSpace(b.Icon) != "" {
+		b.IconMode = ""
+	}
 }
 
 // normalizeTags trims, lowercases, deduplicates, and removes empty tag values.
@@ -2522,6 +2532,10 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if updateCheckDisabledByEnv() {
 		settings.UpdateCheckEnabled = h.store.GetSettings().UpdateCheckEnabled
 	}
+	// The Unraid server is written by /api/unraid/settings alone. The page
+	// sends back every setting it loaded, so a copy from before a change there
+	// would otherwise put the old address back with the next unrelated save.
+	settings.UnraidServers = h.store.GetSettings().UnraidServers
 
 	// Validate and sanitize collections.
 	//
@@ -2580,6 +2594,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
 	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
 	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
+	settings.MonitorNotifyAppriseTag = normalizeMonitorNotifyCredential(settings.MonitorNotifyAppriseTag)
 
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
 		return
@@ -4305,7 +4320,7 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	if !forceRefresh {
 		if cached, ok := h.getPreviewCacheEntry(cacheKey); ok {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(cached)
+			json.NewEncoder(w).Encode(h.bookmarkPreviewAnswer(cached, rawURL))
 			return
 		}
 	}
@@ -4318,7 +4333,20 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	_ = h.mergePreviewCacheUpdates(localCache.Cache)
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(preview)
+	json.NewEncoder(w).Encode(h.bookmarkPreviewAnswer(preview, rawURL))
+}
+
+// bookmarkPreviewAnswer is a preview as the forms receive it. SetIcon says the
+// app-icon sets know this address, so the form fetches no favicon for it: the
+// set icon shows instead (icon_sets_api.go). Worked out per answer, for the
+// cached one too, and never stored in the cache.
+type bookmarkPreviewAnswer struct {
+	BookmarkPreview
+	SetIcon bool `json:"setIcon,omitempty"`
+}
+
+func (h *Handlers) bookmarkPreviewAnswer(p BookmarkPreview, rawURL string) bookmarkPreviewAnswer {
+	return bookmarkPreviewAnswer{BookmarkPreview: p, SetIcon: h.bookmarkHasSetIcon(rawURL)}
 }
 
 // ClearAllBookmarkPreviews removes stored preview metadata from every bookmark and empties the server cache.

@@ -55,7 +55,10 @@
                     confirmText: this.t('dashboard.close', 'Close'),
                     modalClass: 'view-explain-modal bm-health-modal bm-health-large',
                     modalMaxWidth: 'min(82rem, calc(100vw - 2.5rem))',
-                    onHide: () => this.unbindBmHealthLargeKeys(),
+                    onHide: () => {
+                        this.unbindBmHealthLargeKeys();
+                        this.destroyBmLargeCharts();
+                    },
                 });
                 this.bindBmHealthLarge();
                 this.bindBmHealthLargeKeys();
@@ -106,6 +109,45 @@
                 });
                 this._bmLargeResize.observe(root);
             }
+            void this.mountBmLargeCharts();
+        },
+
+        /*
+         * Response time and uptime over time with uPlot (shared/nd-chart.js):
+         * a cursor and a tooltip, a drag to zoom, the arrow keys with the point
+         * read out under the chart, and a table for a screen reader. Mounted
+         * over the plain charts the body is drawn with, after every redraw of
+         * it; when the library cannot be loaded, the plain charts stay.
+         */
+        async mountBmLargeCharts() {
+            const root = document.getElementById('modal-text');
+            const plots = this._bmLargePlots;
+            if (!root?.querySelector('[data-bm-large-plot]') || !plots) return;
+            try {
+                if (!global.NdChart) {
+                    await global.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart',
+                        () => typeof global.NdChart !== 'undefined');
+                }
+                await global.NdChart.load();
+            } catch {
+                return;
+            }
+            // Charts of a body since replaced are let go.
+            this._bmLargeCharts = (this._bmLargeCharts || []).filter((c) => {
+                if (c.plot && document.contains(c.plot.root)) return true;
+                c.destroy();
+                return false;
+            });
+            root.querySelectorAll('[data-bm-large-plot]').forEach((host) => {
+                if (host.querySelector('.nd-chart')) return;
+                const spec = this._bmLargePlots?.[host.getAttribute('data-bm-large-plot')];
+                if (spec) this._bmLargeCharts.push(global.NdChart.chart(host, spec));
+            });
+        },
+
+        destroyBmLargeCharts() {
+            (this._bmLargeCharts || []).forEach((c) => c.destroy());
+            this._bmLargeCharts = [];
         },
 
         async fetchBmHealthHistory(url) {
@@ -133,6 +175,8 @@
             this._bmLargeKeys = (e) => {
                 if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
                 if (e.target.closest?.('input, textarea, select')) return;
+                // In a chart ← and → walk its points, not the bookmarks.
+                if (e.target.closest?.('.nd-chart')) return;
                 if (!document.querySelector('#app-modal.show #modal-text [data-bm-health-large]')) return;
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -198,6 +242,7 @@
                 if (!b || !issue) return;
                 root.innerHTML = this.renderBmHealthLarge(b, issue, this._bmLargeHist, this._bmLargeRange);
                 root.querySelector('[data-bm-large-range]')?.focus();
+                void this.mountBmLargeCharts();
             });
             // The check list's search and its "only failures": the rows are
             // drawn again from the period's checks, the rest stays put.
@@ -326,6 +371,8 @@
             const interval = mode === 'monitor' ? global.CheckMode?.intervalLabel?.(global.CheckMode?.intervalOf?.(b)) || '' : '';
             const pct = (r) => (r == null || !Number.isFinite(Number(r)) ? '—' : `${Math.round(Number(r) * 1000) / 10}%`);
             const dur = (ms) => (ms > 0 ? health?.formatDuration?.(ms) || '' : '—');
+            // What mountBmLargeCharts draws with uPlot over the plain charts.
+            this._bmLargePlots = {};
 
             // The period: from midnight for today, else the last N days. The
             // checks kept one by one cover 30 days; past that, the day summaries.
@@ -438,8 +485,26 @@
             const answer = sorted.length
                 ? t('bmLargeAvgP95', 'avg {a} ms · p95 {p} ms').replace('{a}', String(avg)).replace('{p}', String(p95))
                 : (dayMean.length ? t('bmLargeAvg', 'avg {a} ms').replace('{a}', String(Math.round(dayMean.reduce((a, d) => a + d.p, 0) / dayMean.length))) : '');
-            const responseCard = card('response', `${t('bmLargeResponseTitle', 'Response time')}, ${rangeLabel}`, answer,
-                points.length >= 2 ? this.bmLargeLineChart(points, from, now, rawCovers ? p95 : 0, esc, isToday) : none(noChecks), true);
+            const responseTitle = `${t('bmLargeResponseTitle', 'Response time')}, ${rangeLabel}`;
+            const responseP95 = rawCovers ? p95 : 0;
+            if (points.length >= 2) {
+                const ms = (v) => `${Math.round(v)} ms`;
+                const top = Math.max(responseP95, ...points.map((p) => p.y)) * 1.1 || 1;
+                this._bmLargePlots.line = {
+                    x: points.map((p) => p.x / 1000),
+                    series: [
+                        { label: t('bmLargeResponseTitle', 'Response time'), values: points.map((p) => Math.round(p.y)), color: '--accent-primary', format: ms },
+                        ...(responseP95 ? [{ label: 'p95', values: points.map(() => responseP95), color: '--text-muted', dash: [4, 4], width: 1, fill: false, format: ms }] : []),
+                    ],
+                    format: { x: isToday ? 'time' : (rawCovers ? 'datetime' : 'date'), y: ms },
+                    scales: { y: { range: () => [0, top] } },
+                    summary: answer ? `${responseTitle}: ${answer}` : responseTitle,
+                    height: 112,
+                    axisWidth: 54,
+                };
+            }
+            const responseCard = card('response', responseTitle, answer,
+                points.length >= 2 ? `<div class="bm-health-large-plot" data-bm-large-plot="line">${this.bmLargeLineChart(points, from, now, responseP95, esc, isToday)}</div>` : none(noChecks), true);
 
             // 3. Uptime over time: per hour today, per day otherwise.
             let bars = [];
@@ -448,7 +513,7 @@
                     const at = midnight.getTime() + h * HOUR;
                     const inHour = inRange.filter((s) => s.t >= at && s.t < at + HOUR);
                     bars.push({ ratio: inHour.length ? inHour.filter((s) => s.up).length / inHour.length : null,
-                        n: inHour.length, label: `${String(h).padStart(2, '0')}:00` });
+                        n: inHour.length, label: `${String(h).padStart(2, '0')}:00`, at: at + HOUR / 2 });
                 }
             } else {
                 const byDay = new Map(days.map((d) => [d.d, d]));
@@ -459,13 +524,34 @@
                     bars.push({ ratio: d && d.n ? d.u / d.n : null, n: d?.n || 0,
                         // The days are UTC days (setUTCHours above); labelled in
                         // local time, west of UTC each bar named the day before.
-                        label: new Date(first.getTime() + i * DAY).toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' }) });
+                        label: new Date(first.getTime() + i * DAY).toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' }),
+                        // Midday of the UTC day, so the axis names the same day as the label.
+                        at: first.getTime() + i * DAY + DAY / 2 });
                 }
             }
             const hasBars = bars.some((x) => x.ratio != null);
-            const barsCard = card('days', isToday ? t('bmLargePerHourToday', 'Uptime per hour, today')
-                : `${t('bmLargePerDayTitle', 'Uptime per day')}, ${rangeLabel}`, allN ? pct(upN / allN) : '',
-                hasBars ? this.bmLargeBars(bars, esc) : none(noChecks), true);
+            const barsTitle = isToday ? t('bmLargePerHourToday', 'Uptime per hour, today')
+                : `${t('bmLargePerDayTitle', 'Uptime per day')}, ${rangeLabel}`;
+            if (hasBars) {
+                // One series per tone, so each bar keeps the colour it had; a
+                // bar of 0% still shows as a stub, the tooltip says the real share.
+                const toneOf = (bar) => (bar.ratio == null ? null : bar.ratio >= 0.999 ? 'good' : bar.ratio >= 0.95 ? 'warn' : 'bad');
+                const tones = [['good', '--accent-success'], ['warn', '--accent-warning'], ['bad', '--accent-error']];
+                const half = (isToday ? HOUR : DAY) / 2000;
+                this._bmLargePlots.days = {
+                    x: bars.map((bar) => bar.at / 1000),
+                    series: tones.map(([name, color]) => ({ label: name, bars: true, color,
+                        values: bars.map((bar) => (toneOf(bar) === name ? Math.max(3, bar.ratio * 100) : null)) })),
+                    text: (i) => this.bmLargeBarTip(bars[i]),
+                    format: { x: isToday ? 'time' : 'date', tick: (v) => `${Math.round(v)}%` },
+                    scales: { x: { range: (u, min, max) => [min - half, max + half] }, y: { range: () => [0, 100] } },
+                    summary: `${barsTitle}${allN ? `: ${pct(upN / allN)}` : ''}`,
+                    height: 92,
+                    axisWidth: 54,
+                };
+            }
+            const barsCard = card('days', barsTitle, allN ? pct(upN / allN) : '',
+                hasBars ? `<div class="bm-health-large-plot" data-bm-large-plot="days">${this.bmLargeBars(bars, esc)}</div>` : none(noChecks), true);
 
             // 4. HTTP answers in the period (as far as the checks kept reach).
             const classes = [
@@ -596,6 +682,10 @@
             </svg>`;
         },
 
+        bmLargeBarTip(bar) {
+            return `${bar.label}: ${bar.ratio == null ? this.t('config.bmLargeTipNoChecks', 'no checks') : `${Math.round(bar.ratio * 1000) / 10}%`}${bar.n ? ` · ${bar.n} ${this.t('config.bmLargeTipChecks', 'checks')}` : ''}`;
+        },
+
         /** One bar per hour or per day: its height the share of checks that answered. */
         bmLargeBars(bars, esc) {
             const w = this._bmLargeW?.days || 306;
@@ -604,7 +694,7 @@
             const rects = bars.map((bar, i) => {
                 const tone = bar.ratio == null ? 'muted' : bar.ratio >= 0.999 ? 'good' : bar.ratio >= 0.95 ? 'warn' : 'bad';
                 const hgt = bar.ratio == null ? 2 : Math.max(3, Math.round(bar.ratio * 40));
-                const tip = `${bar.label}: ${bar.ratio == null ? this.t('config.bmLargeTipNoChecks', 'no checks') : `${Math.round(bar.ratio * 1000) / 10}%`}${bar.n ? ` · ${bar.n} ${this.t('config.bmLargeTipChecks', 'checks')}` : ''}`;
+                const tip = this.bmLargeBarTip(bar);
                 // The whole column answers the pointer, not just the bar's height.
                 return `<rect x="${(i * step).toFixed(2)}" y="0" width="${step.toFixed(2)}" height="44" class="is-hit" data-tip="${esc(tip)}"></rect>
                     <rect x="${(i * step).toFixed(2)}" y="${42 - hgt}" width="${bw.toFixed(2)}" height="${hgt}" data-tone="${tone}" pointer-events="none"></rect>`;

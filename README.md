@@ -41,7 +41,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
 
 **Keeping it current and tidy.** Image update checks run on an interval and show the release notes behind an update. Skip a version, hold a container, or let nextDash update it in a nightly window: each update is watched for five minutes and rolled back when the container stops, loops or turns unhealthy. The **Disk** tab shows what images, volumes, build cache and bind mounts take up, and clears it after naming what goes.
 
-**On the dashboard.** A homelab page can carry the **Containers** and **Container list** widgets, **Uptime**, **Certificates**, **Health**, **Processor**, **Memory** and **Disks**, and a **Custom widget** that reads Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and 23 more services — next to the bookmarks for all of them.
+**On the dashboard.** A homelab page can carry the **Containers** and **Container list** widgets, **Uptime**, **Certificates**, **Health**, **Processor**, **Memory** and **Disks**, seven **Unraid** widgets (array, parity, shares, VMs, UPS and notifications) that read the server through its API, and a **Custom widget** that reads Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and 36 more services — next to the bookmarks for all of them.
 
 <table border="0" width="100%">
   <tr>
@@ -248,6 +248,32 @@ The **Processor**, **Memory**, **Disks**, **Containers** and **Container list** 
 
 Once it runs, the `#docker` view lists every container with a status glow, CPU and RAM and a link to its web UI, a side panel with health, a timeline, logs, an hour of CPU and memory charts and release notes, a logs window, a Disk tab, and a badge for images with an update waiting. **Config → Containers** shows the connection as the server sees it — socket, actions, write token, its own container — and holds the update checks and an optional GitHub token. The [manual](MANUAL.md#146-what-it-needs) has the details, including Synology and QNAP.
 
+
+### Unraid
+
+nextDash reads an Unraid server through its own API (Unraid 7.2, or an older Unraid with the Unraid Connect plugin):
+
+- **Seven widgets** — an overview, the array (every disk with its fill and temperature or its problem), parity, shares by where they live, VMs, the UPS and Unraid's notifications.
+- **Alerts** — Unraid's own ALERT notifications, the array stopping, a parity check that finished with errors and a disk whose error count went up, through the same channels as downtime and container alerts.
+- **One connection** — set once under **Config → Unraid** with an API key that has the role **Viewer**. nextDash only reads: it never starts, stops or changes anything on the server.
+
+More is on the way: deeper Unraid integration is being worked on for future versions of nextDash. *[Manual: Unraid](MANUAL.md#unraid)*
+
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-unraid-dashboard.jpg" alt="Unraid widgets on a homelab page" width="100%" />
+      <br />
+      <sub><b>Unraid on the dashboard</b> <i>(Tarnished Brass)</i> — All seven widgets beside the homelab bookmarks. Disk 5 has read errors, so the overview, the array and the notifications all name it in red; parity is 43% through a check, and the UPS is on line power with 54 minutes in reserve.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-unraid-config.jpg" alt="Config: Unraid" width="100%" />
+      <br />
+      <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid explains itself: nextDash and the server with data running between them, three steps ticked off as they are done, and the seven widgets in miniature, each with an Add that opens it in Widgets → Types.</sub>
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## Security
@@ -345,6 +371,7 @@ Every variable is listed in the reference table below.
 | `NEXTDASH_RUN_AS_ROOT` | off | `1` keeps the container running as root |
 | `NEXTDASH_BUNDLE` | on | `off` serves scripts and stylesheets one by one, for debugging |
 | `NEXTDASH_STATIC_MUTABLE` | off | `1` re-hashes assets on every request, for a bind-mounted `./static` |
+| `DISABLE_ICON_SETS` | off | `1` stops fetching the app icon sets (dashboard-icons, selfh.st/icons) from jsDelivr |
 | `DISABLE_TELEMETRY` | off | `true` turns analytics off for everyone |
 | `DISABLE_UPDATE_CHECK` | off | `true` turns the daily GitHub release check off for everyone |
 | `DISABLE_NEWS_FEED` | off | `true` stops fetching posts from nextdash.cc |
@@ -359,7 +386,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 - Pages and categories, each with an icon, a colour and a sort; drag to reorder, spread a category across columns. *[Manual §9](MANUAL.md#9-pages-categories-and-collections)*
 - Add a link with one key, the full form, a paste, the extension, the share sheet or a bookmarklet. *[Manual §5](MANUAL.md#5-adding-bookmarks)*
-- Tags, notes, shortcuts and pins, and a preview card that says what a page is without opening it. *[Manual §6](MANUAL.md#6-opening-and-editing-bookmarks), [§10](MANUAL.md#10-tags)*
+- Tags, notes, shortcuts and pins, a preview card that says what a page is without opening it, and a QR code (`Shift + J`) to open a bookmark on your phone. *[Manual §6](MANUAL.md#6-opening-and-editing-bookmarks), [§10](MANUAL.md#10-tags)*
 - **Tag suggestions** tag whole groups at once — from your own tags, a shipped list of 463 subjects, and rules you write. Nothing is tagged until you accept. *[Manual §10.4](MANUAL.md#104-tag-suggestions)*
 - A **Bookmarks view** for the whole collection: a rail of pages, categories and health filters, one-line rows with a score and open counts, and a side panel with Details, Health and Usage. Group, sort, work through what needs attention, export to CSV. *[Bookmarks view](MANUAL.md#11-the-bookmarks-view)*
 - An **inbox** for links you have not filed yet — snooze, promote, or triage it pile by pile: waiting longest, new this week, with a note. Keep puts a link in **Bookmarks → Unsorted** without filing it; promote it from there once it has a place. *[Manual §14](MANUAL.md#13-inbox)*
@@ -376,15 +403,15 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 - Health lives in the **Bookmarks view**: filters for broken, stale, duplicated, unchecked and changed, a Health tab in the side panel, and Work through to clear a pile — broken, changed, stale, never opened — one bookmark at a time, each with the reason it is there. **Collection health** (Overview, Monitors & trend) covers the whole collection; open one bookmark's own **Health in Large** for its uptime, response time, status codes and every check, with CSV export. *[Health and monitoring](MANUAL.md#11-the-bookmarks-view)*
 - **Uptime monitoring** with 30 days of history, response times, outages, certificate expiry, expected-response checks and drift detection. *[Manual §13.4](MANUAL.md#118-collection-health)*
-- Alerts to Slack, Discord, Telegram, Gotify, ntfy, Pushover, a JSON receiver or your browser, with maintenance windows and per-bookmark muting. *[Manual §13.7](MANUAL.md#124-alerts)*
+- Alerts to Slack, Discord, Telegram, Gotify, ntfy, Pushover, Apprise (and from there mail, Matrix, Signal and a hundred more), a JSON receiver or your browser, with maintenance windows and per-bookmark muting. *[Manual §13.7](MANUAL.md#124-alerts)*
 - **Fresh** shows which bookmarked sites published something new. *[Manual §13.9](MANUAL.md#126-fresh)*
 - Keep a copy of a page on your own disk or in the Web Archive. *[Manual §13.10](MANUAL.md#127-keeping-a-copy-of-a-page)*
 
 **Widgets**
 
-- Twenty-two kinds: health, uptime, certificates, trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, container list, weather, calendar and RSS. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §11](MANUAL.md#15-widgets)*
+- Twenty-nine kinds: health, uptime, certificates, trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, container list, weather, calendar and RSS, and seven that read an **Unraid** server through its API — an overview, the array, parity, shares, VMs, UPS and its notifications — set up once under **Config → Unraid**. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §11](MANUAL.md#15-widgets)*
 - A widget set to two columns says more rather than the same thing larger: the load behind the processor's percentage, the container failing by name, the expiry date of a certificate, what the weather feels like. One column keeps the important half. *[Manual §11.2](MANUAL.md#152-adding-and-arranging)*
-- A **Custom widget** reads any service that answers with JSON, with 28 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and more. *[Manual §11.5](MANUAL.md#155-the-custom-widget)*
+- A **Custom widget** reads any service that answers with JSON, with 41 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant, Uptime Kuma, Beszel and more — each tested against the service's recorded answer. *[Manual §11.5](MANUAL.md#155-the-custom-widget)*
 
 **Containers and your homelab**
 
@@ -392,6 +419,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Start, stop, pause, restart, update and remove — one container, a whole compose stack, or every container you tick — behind `NEXTDASH_DOCKER_CONTROL` and the write token; set it all under **Config → Containers**. *[Containers view](MANUAL.md#145-actions-and-updates)*
 - Image update checks, on request and on an interval, show what changed; skip a version, hold a container's updates, see what updates did and roll the last one back. The header icon carries a badge for how many are waiting. *[Containers view](MANUAL.md#145-actions-and-updates)*
 - A **logs window** that follows a container's log live, a **Disk** tab for what images, volumes and the build cache take up, and **notices** when a container stops, keeps restarting or turns unhealthy. *[Logs](MANUAL.md#148-the-logs-window) · [Disk](MANUAL.md#147-disk) · [Notices](MANUAL.md#149-notices)*
+- **App icons.** Containers and bookmarks to self-hosted apps get the app's own icon from dashboard-icons and selfh.st/icons, matched by image, name or address and drawn for light or dark themes; choose another in the bookmark form or the container drawer. *[Manual §19.4](MANUAL.md#194-icons-previews)*
 - **Containers and bookmarks know each other.** A container's web UI is matched to its bookmark, and the row shows that bookmark's health in colour; the bookmark names the container it runs in. Monitor the bookmark and you watch the service from the outside while the Containers view watches it from the inside. *[Self-hosted guide](MANUAL.md#self-hosted-guide)*
 - **One place for bad news.** Container notices — stopped, restarting, unhealthy, too much CPU or memory, an automatic update done or rolled back — use the same alert channels and phone push notifications as downtime and certificate alerts. Mute one container or one bookmark without muting the rest. *[Self-hosted guide](MANUAL.md#sh-get-told)*
 - **Updates at night, with a way back.** Pick containers that update themselves in a window you choose; each one is watched for five minutes and put back on its old image if it fails. *[Containers view](MANUAL.md#145-actions-and-updates)*

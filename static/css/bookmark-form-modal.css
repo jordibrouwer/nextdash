@@ -716,3 +716,164 @@ body.bookmark-form-modal-open .tag-ac-dropdown {
     vertical-align: 1px;
     cursor: help;
 }
+
+/* ── App icons from the icon sets (icon-set-picker.js) ───────────────────
+ * The picker opens beside the form card or the container drawer's icon,
+ * fixed so no overflow cuts it off. Suggestions sit under the card's host.
+ */
+.bookmark-form-modal-body .bookmark-form-card-menu-rule {
+    margin: 4px 0;
+    border: 0;
+    border-top: 1px solid var(--border-secondary);
+}
+
+.icon-set-suggest {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    margin-top: 6px;
+}
+.icon-set-suggest[hidden] { display: none; }
+.icon-set-suggest-label {
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-tertiary);
+}
+.icon-set-suggest-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px 2px 4px;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--text-xs, 0.75rem);
+    cursor: pointer;
+}
+.icon-set-suggest-chip img { width: 16px; height: 16px; object-fit: contain; }
+.icon-set-suggest-more { padding-left: 8px; color: var(--text-secondary); }
+.icon-set-suggest-chip:hover,
+.icon-set-suggest-chip:focus-visible {
+    border-color: var(--accent-primary);
+    outline: none;
+}
+.icon-set-suggest-chip:disabled { opacity: 0.6; cursor: progress; }
+
+.icon-set-picker {
+    position: fixed;
+    /* Above the container drawer's host (1405) when it opens from there. */
+    z-index: 1500;
+    width: min(440px, calc(100vw - 16px));
+    padding: 10px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-modal, var(--background-primary));
+    color: var(--text-primary);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+}
+.icon-set-picker[aria-busy="true"] { cursor: progress; }
+.icon-set-picker-search { display: flex; align-items: center; gap: 8px; }
+.icon-set-picker-search input { flex: 1; min-width: 0; }
+.icon-set-picker-count {
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+.icon-set-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+    max-height: 236px;
+    margin-top: 8px;
+    padding: 2px;
+    overflow: auto;
+    outline: none;
+}
+.icon-set-picker-grid:empty { display: none; }
+.icon-set-picker-option {
+    display: grid;
+    justify-items: center;
+    gap: 3px;
+    min-width: 0;
+    padding: 7px 3px 5px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-2, 6px);
+    background: var(--background-primary);
+    cursor: pointer;
+}
+.icon-set-picker-option img { width: 30px; height: 30px; object-fit: contain; }
+.icon-set-picker-option span {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-secondary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.icon-set-picker-option[aria-selected="true"] {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
+}
+.icon-set-picker-grid:focus-visible .icon-set-picker-option[aria-selected="true"] {
+    box-shadow: 0 0 0 1px var(--accent-primary);
+}
+.icon-set-picker-option[aria-selected="true"] span { color: var(--text-primary); }
+.icon-set-picker-message {
+    margin: 10px 4px 2px;
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary);
+}
+.icon-set-picker-message[hidden] { display: none; }
+.icon-set-picker-foot { display: flex; gap: 6px; margin-top: 8px; min-height: 0; }
+.icon-set-picker-variants { display: flex; gap: 4px; }
+.icon-set-picker-variant {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-2, 6px);
+    background: var(--background-primary);
+    cursor: pointer;
+}
+.icon-set-picker-variant img { width: 20px; height: 20px; object-fit: contain; }
+/* Each variant shown on the background it is drawn for. */
+.icon-set-picker-variant--light { background: #11151c; }
+.icon-set-picker-variant--dark { background: #eef1f5; }
+.icon-set-picker-variant[aria-checked="true"] {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 1px var(--accent-primary);
+}
+.icon-set-picker-credits {
+    margin: 8px 0 0;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-secondary);
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-tertiary);
+}
+.icon-set-picker-input {
+    width: 100%;
+    padding: 6px 9px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-2, 6px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+}
+.icon-set-picker-input:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    outline-offset: 0;
+}
+.icon-set-picker-letter {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-2, 6px);
+    background: var(--background-secondary, rgba(128, 128, 128, 0.15));
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+}

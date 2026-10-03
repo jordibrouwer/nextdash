@@ -60,6 +60,9 @@
             image: data.image || '',
             icon: data.icon || '',
             domain: data.domain || global.BookmarkUrlUtils?.extractDomainFromUrl(safeUrl) || '',
+            // The app-icon sets know this address: its set icon shows, so no
+            // favicon is fetched for it.
+            setIcon: data.setIcon === true,
         };
     }
 
@@ -70,6 +73,7 @@
 
         try {
             const preview = await fetchLinkPreview(safeUrl, apiBase);
+            if (preview.setIcon) return '';
             const iconUrl = String(preview?.icon || '').trim();
             if (iconUrl) {
                 const icon = await uploadIconFromUrl(iconUrl, apiBase);

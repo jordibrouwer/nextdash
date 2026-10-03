@@ -78,6 +78,11 @@ type dockerViewContainer struct {
 	// Usage is the stats sampler's latest reading, on the list only and only
 	// for a running container the sampler has read twice (CPU is a delta).
 	Usage *dockerViewUsage `json:"usage,omitempty"`
+	// Icon is the app icon the sets give it (icon_match.go), absent at no
+	// match or when IconOverride is set. IconOverride is the drawer's choice:
+	// "letter", or a file under /data/icons/.
+	Icon         *iconSetRef `json:"icon,omitempty"`
+	IconOverride string      `json:"iconOverride,omitempty"`
 }
 
 type dockerViewUsage struct {
@@ -274,6 +279,7 @@ func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 		v.ShortID = c.ID[:12]
 	}
 	v.Network = dockerPrimaryNetwork(c)
+	applyDockerIcon(&v, c.Image)
 	// One address for everything that opens it: the table, the palette, the
 	// widget and the drawer read webui and never choose between the two.
 	v.WebUI = v.WebUICustom
@@ -291,6 +297,24 @@ func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
 		v.Ports = append(v.Ports, dockerViewPort{Private: p.PrivatePort, Public: p.PublicPort, Type: p.Type, IP: p.IP})
 	}
 	return v
+}
+
+// dockerSelfIcon is nextDash's own logo, for its own container: it is in
+// neither set.
+var dockerSelfIcon = &iconSetRef{Name: "nextdash", Label: "nextDash", Base: "/static/nextdash-logo.png"}
+
+// applyDockerIcon: the drawer's choice wins, then nextDash's own logo, then
+// whatever the sets match.
+func applyDockerIcon(v *dockerViewContainer, image string) {
+	if o := dockerIconOverride(v.Name); o != "" {
+		v.IconOverride = o
+		return
+	}
+	if v.Self {
+		v.Icon = dockerSelfIcon
+		return
+	}
+	v.Icon = iconSetRefOf(currentIconSets().matchContainer(image, v.Name))
 }
 
 // dockerPrimaryNetwork: the network a container is grouped under. Its network

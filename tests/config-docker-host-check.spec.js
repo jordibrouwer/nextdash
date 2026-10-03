@@ -7,7 +7,7 @@ const { test, expect } = require('./fixtures');
  * to its host before it is saved rather than dropped without a word.
  */
 async function open(page) {
-    await page.goto('/#config/containers');
+    await page.goto('/#config/containers/view');
     await page.waitForFunction(() => window.dashboardInstance?._configRefreshReady === true);
     return page.locator('[data-behavior-field="dockerHostAddress"]');
 }
@@ -46,4 +46,37 @@ test('the line follows the typing, and a full address is saved as its host', asy
     }
     await field.fill('not an address');
     await expect(line).toContainText('Not an address');
+});
+
+// The View tab is drawn again on every visit; the check still cuts a full
+// address after a few, and adds one capture listener to the section, not one
+// per visit.
+test('after going back and forth between tabs the check still works, bound once', async ({ page }) => {
+    await page.addInitScript(() => {
+        const add = EventTarget.prototype.addEventListener;
+        window.__hostChangeCaptures = 0;
+        EventTarget.prototype.addEventListener = function (type, fn, opts) {
+            if (type === 'change' && (opts === true || opts?.capture) && this.id === 'config-containers-body') {
+                window.__hostChangeCaptures += 1;
+            }
+            return add.call(this, type, fn, opts);
+        };
+    });
+    let field = await open(page);
+    for (let i = 0; i < 3; i += 1) {
+        await page.locator('[data-containers-tab="connection"]').click();
+        await page.locator('[data-containers-tab="view"]').click();
+    }
+    field = page.locator('[data-behavior-field="dockerHostAddress"]');
+    await field.fill('http://tower.lan:8080/');
+    await field.press('Tab');
+    try {
+        await expect(field).toHaveValue('tower.lan');
+        await expect(page.locator('[data-docker-host-check]')).toHaveText('✓ Port 8080 opens http://tower.lan:8080.');
+    } finally {
+        await field.fill('');
+        await field.press('Tab');
+        await expect.poll(async () => (await (await page.request.get('/api/settings')).json()).dockerHostAddress ?? '').toBe('');
+    }
+    expect(await page.evaluate(() => window.__hostChangeCaptures)).toBeLessThanOrEqual(1);
 });

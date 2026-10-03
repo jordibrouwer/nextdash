@@ -70,4 +70,22 @@ test.describe('config about', () => {
         // populated.
         await expect(prose).not.toContainText('config.helpAboutBody');
     });
+
+    test('credits the app icon sets, with a link to each and to the CC BY licence', async ({ page }) => {
+        await openAbout(page);
+
+        const credits = page.locator('[data-about-icon-credits]');
+        await expect(credits).toContainText('dashboard-icons');
+        await expect(credits).toContainText('selfh.st/icons');
+        await expect(credits.locator('a[href="https://github.com/homarr-labs/dashboard-icons"]')).toBeVisible();
+        await expect(credits.locator('a[href="https://github.com/selfhst/icons"]')).toBeVisible();
+        await expect(credits.locator('a[href="https://creativecommons.org/licenses/by/4.0/"]')).toHaveText('CC BY 4.0');
+    });
+
+    test('credits uPlot, the charts\' library, with its licence', async ({ page }) => {
+        await openAbout(page);
+        const credits = page.locator('[data-about-chart-credits]');
+        await expect(credits.locator('a[href="https://github.com/leeoniya/uPlot"]')).toHaveText('uPlot');
+        await expect(credits).toContainText('MIT');
+    });
 });

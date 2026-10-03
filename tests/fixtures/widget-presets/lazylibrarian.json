@@ -1,0 +1,30 @@
+{
+  "_source": "LazyLibrarian scheduling.py show_stats(json=True)",
+  "auth": {
+    "query": "apikey"
+  },
+  "body": {
+    "cache": {
+      "hit": 120,
+      "miss": 15
+    },
+    "book_stats": {
+      "eBooks": 1520,
+      "Have": 1200,
+      "Open": 10,
+      "Wanted": 25,
+      "Ignored": 285
+    },
+    "author_stats": {
+      "Authors": 210,
+      "Active": 200,
+      "Wanted": 4,
+      "Ignored": 2,
+      "Paused": 4,
+      "Empty": 1,
+      "Blank": 0,
+      "Overdue": 0,
+      "Secondary": 15
+    }
+  }
+}

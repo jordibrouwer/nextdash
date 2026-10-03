@@ -1,0 +1,54 @@
+/*
+ * Charts drawn with uPlot (shared/nd-chart.js), in the theme's colours.
+ *
+ * uPlot's own stylesheet (vendor/uplot) lays the canvas out; this only brings
+ * it into the page: the tooltip, the zoom selection, the focus ring and the
+ * line under a chart that says the value the arrow keys are on.
+ */
+.nd-chart {
+    position: relative;
+    border-radius: var(--radius-2, 6px);
+    outline: none;
+}
+.nd-chart:focus-visible {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 60%, transparent);
+}
+.nd-chart .uplot {
+    font-family: inherit;
+}
+.nd-chart .u-legend {
+    display: none;
+}
+.nd-chart .u-select {
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+.nd-chart .u-cursor-x,
+.nd-chart .u-cursor-y {
+    border-color: var(--text-muted, var(--text-secondary));
+}
+.nd-chart-tip {
+    position: absolute;
+    z-index: 2;
+    padding: 3px 7px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-2, 6px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-size: var(--text-2xs, 0.7rem);
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-50%, calc(-100% - 8px));
+}
+.nd-chart-tip[hidden] {
+    display: none;
+}
+.nd-chart-readout {
+    min-height: 0;
+    margin: 2px 0 0;
+    color: var(--text-secondary);
+    font-size: var(--text-2xs, 0.7rem);
+    font-variant-numeric: tabular-nums;
+}
+.nd-chart-readout:empty {
+    display: none;
+}

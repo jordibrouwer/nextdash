@@ -44,6 +44,9 @@ const E2E_WEB_SERVER_ENV = {
     NEXTDASH_DISABLE_PREFETCH: '1',
     NEXTDASH_GITHUB_API_BASE: `http://127.0.0.1:${GITHUB_STUB_PORT}`,
     NEXTDASH_RAINDROP_API_BASE: `http://127.0.0.1:${RAINDROP_STUB_PORT}`,
+    // The app-icon sets from the Go tests' fixture, read from disk: a spec
+    // never reaches jsDelivr, and outbound fetches refuse a local stub.
+    NEXTDASH_ICON_SETS_FIXTURE: path.join(__dirname, '..', 'internal', 'app', 'testdata', 'icon-sets'),
     ...(process.env.NEXTDASH_DATA_DIR ? { NEXTDASH_DATA_DIR: process.env.NEXTDASH_DATA_DIR } : {}),
 };
 
@@ -143,7 +146,7 @@ async function markBookmarksTutorialSeen(page) {
     await page.evaluate(() => {
         window.DiscoverabilityState?.markTipSeen?.('bookmarksTutorialV1', { persist: false });
         window.DiscoverabilityState?.markTipSeen?.('containersTutorialV2', { persist: false });
-        window.DiscoverabilityState?.markTipSeen?.('dashboardTutorialV1', { persist: false });
+        window.DiscoverabilityState?.markTipSeen?.('dashboardTutorialV2', { persist: false });
     });
 }
 

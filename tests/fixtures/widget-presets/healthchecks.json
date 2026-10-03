@@ -1,0 +1,11 @@
+{
+  "_source": "healthchecks hc/api/tests/test_badge.py",
+  "auth": {},
+  "fillIn": "abc123/def456-3.json",
+  "body": {
+    "status": "up",
+    "total": 3,
+    "grace": 0,
+    "down": 0
+  }
+}

@@ -62,6 +62,7 @@ class DashboardConfig {
         'data-backups',
         'widgets',
         'containers',
+        'unraid',
         'stats',
         'help',
         'logs',
@@ -87,6 +88,11 @@ class DashboardConfig {
             file: 'js/dashboard/dashboard-config-containers.js',
             datasetKey: 'dashboardConfigContainers',
             ready: () => window.DashboardConfigContainersReady === true,
+        },
+        unraid: {
+            file: 'js/dashboard/dashboard-config-unraid.js',
+            datasetKey: 'dashboardConfigUnraid',
+            ready: () => window.DashboardConfigUnraidReady === true,
         },
         logs: {
             file: 'js/dashboard/dashboard-config-logs.js',
@@ -189,6 +195,8 @@ class DashboardConfig {
         this._behaviorTab = DashboardConfig.readRememberedTab('behavior') || 'general';
         // Inbox sub-tab, remembered the same way.
         this._inboxTab = DashboardConfig.readRememberedTab('inbox') || 'collecting';
+        // Containers sub-tab, remembered the same way.
+        this._containersTab = DashboardConfig.readRememberedTab('containers') || 'connection';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -496,6 +504,7 @@ class DashboardConfig {
             // the address bar never follows it.
             widgets: DashboardConfig.WIDGETS_TABS,
             inbox: DashboardConfig.INBOX_TABS,
+            containers: DashboardConfig.CONTAINERS_TABS,
         };
     }
 
@@ -553,6 +562,7 @@ class DashboardConfig {
         bookmarks: 'bmTab',
         widgets: 'widgetsTab',
         inbox: 'inboxTab',
+        containers: 'containersTab',
     };
 
     /**
@@ -572,6 +582,7 @@ class DashboardConfig {
         'data-bm-tab': 'bookmarks',
         'data-widgets-tab': 'widgets',
         'data-inbox-tab': 'inbox',
+        'data-containers-tab': 'containers',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -586,6 +597,7 @@ class DashboardConfig {
         bookmarks: 'data-bm-tab',
         widgets: 'data-widgets-tab',
         inbox: 'data-inbox-tab',
+        containers: 'data-containers-tab',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -719,7 +731,8 @@ class DashboardConfig {
         // Appearance and Behavior open on the tab last looked at, so a bare
         // link to them lands differently for everyone: their first tab is
         // named too, or the address bar would not be a link to what is shown.
-        const remembers = section === 'appearance' || section === 'behavior' || section === 'inbox';
+        const remembers = section === 'appearance' || section === 'behavior' || section === 'inbox'
+            || section === 'containers';
         if (tab && tabs && tabs.includes(tab) && (tab !== tabs[0] || remembers)) {
             return `config/${section}/${tab}`;
         }
@@ -1740,6 +1753,14 @@ class DashboardConfig {
                 this.repaintInboxBody?.();
                 break;
             }
+            case 'containers': {
+                if (!document.getElementById('config-containers-body')) {
+                    this.render();
+                    break;
+                }
+                this.repaintContainersBody?.();
+                break;
+            }
             case 'widgets':
                 this.repaintWidgetsBody();
                 break;
@@ -1873,6 +1894,7 @@ class DashboardConfig {
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
             widgets: ['config.sectionWidgets', 'Widgets'],
             containers: ['config.sectionContainers', 'Containers'],
+            unraid: ['config.sectionUnraid', 'Unraid'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],
@@ -1912,6 +1934,7 @@ class DashboardConfig {
             case 'data-backups': return this.dbTabLabel?.(tab) || tab;
             case 'help': return this.helpTabLabel?.(tab) || tab;
             case 'logs': return this.logsTabLabel?.(tab) || tab;
+            case 'containers': return this.containersTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -2127,6 +2150,8 @@ class DashboardConfig {
         } else if (this.section === 'containers') {
             this.bindControlPanels(container, 'behavior');
             this.bindContainersSection(container);
+        } else if (this.section === 'unraid') {
+            void this.bindUnraidSection?.(container);
         } else if (this.section === 'inbox') {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
@@ -3224,6 +3249,7 @@ class DashboardConfig {
             case 'help': return this.helpTabLabel(tab);
             case 'logs': return this.logsTabLabel(tab);
             case 'inbox': return this.inboxTabLabel?.(tab) || tab;
+            case 'containers': return this.containersTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -4036,6 +4062,9 @@ class DashboardConfig {
         if (this.section === 'containers') {
             return this.renderContainersSection();
         }
+        if (this.section === 'unraid') {
+            return this.renderUnraidSection();
+        }
         if (this.section === 'inbox') {
             return this.renderInboxSection();
         }
@@ -4105,256 +4134,248 @@ class DashboardConfig {
     }
 
     /**
-     * The landing section, in two zones grouped by where things come from.
+     * The landing section: your install on the left, nextDash on the right.
      *
-     *   act          — the update bar and Needs attention, the only framed
-     *                  blocks: a border here means "this wants you".
-     *   from nextDash — one dated stream of posts, releases and new settings,
-     *                  taking the wide column directly under the act zone.
-     *   your install — the side column: At a glance and what differs from the
-     *                  defaults, with About the developer signing the foot of
-     *                  it. Figures about your own library are things you look
-     *                  up rather than meet on the way in, so they sit beside
-     *                  the stream instead of above it — which is what lifts the
-     *                  stream above the fold — and the two zone rules read
-     *                  across the page as one line.
-     *   tips         — a single line, not a panel.
+     *   top          — the update notice when there is a release to name, and
+     *                  one line saying what needs you (or that nothing does).
+     *   your install — a panel per part of the app that keeps state: bookmarks,
+     *                  inbox, containers, health and statistics. Each is a few
+     *                  figures, a way in, and its own warning in the foot, so
+     *                  a problem is shown where it lives rather than in a
+     *                  separate list that repeats it.
+     *   from nextDash — the newest posts on nextdash.cc, the newest features,
+     *                  and a tip, in a narrow column beside it.
      *
-     * The zones used to be named after what the reader should do with a block
-     * — act, know, read — which worked for the first two and fell apart on the
-     * third: "read" held a colophon, release notes and, later, a news feed.
-     * Grouping on origin instead is self-explanatory, gives the feed an obvious
-     * address, and turns About from filler into the thing that signs the zone.
+     * The page it replaces was eight figure tiles, four explained blocks, a
+     * news band and a colophon line: every block was framed and titled the
+     * same, so nothing led. Panels of one shape, two zones, and one line for
+     * attention is the calmer version of the same information. The full
+     * stream stays at About → News & features, the tips at Help → Tips.
      *
-     * What went with the rebuild: a carousel that showed one of forty-nine
-     * spotlights at a time, and a Latest update panel repeating the release the
-     * bar above it already named. Both answered "what is new" — which the
-     * stream answers once, in date order, with the source on every row.
-     *
-     * The stream itself has since moved to About → News, where it was always
-     * addressable from. Measured on this page it was 655 of 816 words and 1029
-     * of 1386 pixels: four fifths of a section called Overview was a feed, and
-     * a feed is not an overview of your install. What is left of it here is
-     * four lines saying what the newest thing is and how much of it there is.
+     * A panel for a part that is switched off (the inbox) or unreachable (no
+     * Docker socket) is left out rather than drawn empty; the statistics panel
+     * then fills whatever row it lands on alone.
      */
     renderOverview() {
         const esc = (v) => this.dash.escapeHtml(v);
         const intro = esc(this.t('config.overviewIntro', 'A snapshot of your setup. Anything that needs you is at the top.'));
+        const zone = (label) => `<h3 class="config-overview-zone">${esc(label)}</h3>`;
+        const aside = [
+            this.renderOverviewNewsWidget(),
+            this.renderOverviewFeaturesWidget(),
+            this.renderOverviewTipWidget(),
+        ].join('');
 
         return `
             <p class="config-view-intro">${intro}</p>
-            ${this.renderOverviewSiteNews()}
             ${this.renderOverviewUpdateNotice()}
-            <div class="config-overview-tiles">
-                ${this.overviewSummaryTiles().map((t) => this.renderTile(t)).join('')}
+            ${this.renderOverviewAttentionLine()}
+            <div class="config-overview-grid">
+                <div class="config-overview-main">
+                    ${zone(this.t('config.overviewZoneInstall', 'Your install'))}
+                    <div class="config-overview-panels">
+                        ${this.renderOverviewBookmarksWidget()}
+                        ${this.renderOverviewInboxWidget()}
+                        ${this.renderOverviewContainersWidget()}
+                        ${this.renderOverviewHealthWidget()}
+                        ${this.renderOverviewStatsWidget()}
+                    </div>
+                </div>
+                <div class="config-overview-aside">
+                    ${zone(this.t('config.overviewZoneNextdash', 'From nextDash'))}
+                    ${aside}
+                </div>
             </div>
-            <div class="config-overview-blocks">
-                ${this.renderOverviewAttentionBlock()}
-                ${this.renderOverviewHabitsBlock()}
-                ${this.renderOverviewCleanupBlock()}
-                ${this.renderOverviewHealthBlock()}
-            </div>
-            ${this.renderOverviewFootnote()}
         `;
     }
 
     /**
-     * The two newest posts from nextdash.cc, one line each, above the tiles.
+     * The shell every overview panel wears: a title with a dot for its state,
+     * the way in, a body, and an optional foot.
      *
-     * Same stream About → News & features draws (loadNewsStream, already
-     * started by the overview's own load); only its site posts, and only the
-     * newest two. Nothing at all while it loads, when the reader switched the
-     * site's posts off, or when the feed could not be reached -- an empty
-     * band would only push the tiles down.
+     * `tone` colours the dot -- good, warn, crit, or nothing for a panel that
+     * has no state of its own. The foot holds a quiet note on the left and,
+     * when there is one, the panel's own warning on the right.
      */
-    renderOverviewSiteNews() {
+    renderOverviewWidget({ id, title, tone = '', go = null, goLabel = '', body, note = '', alert = '', alertTone = 'warn' }) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const posts = (Array.isArray(this._newsStream) ? this._newsStream : [])
-            .filter((item) => item.source === 'site' && item.title)
-            .sort((a, b) => (Number(b.at) || 0) - (Number(a.at) || 0))
-            .slice(0, 2);
-        if (!posts.length) return '';
-
-        const rows = posts.map((item) => {
-            const unread = (item.at || 0) > (this._newsSeenAt || 0);
-            const summary = String(item.summary || '').trim();
-            const title = `<span class="config-overview-news-title">${unread ? '<span class="config-news-dot" aria-hidden="true"></span>' : ''}${esc(item.title)}</span>`;
-            return `
-                <li class="config-overview-news-item">
-                    ${item.url
-                        ? `<a class="config-overview-news-link" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${title}${summary ? `<span class="config-overview-news-summary">${esc(summary)}</span>` : ''}</a>`
-                        : `<span class="config-overview-news-link">${title}${summary ? `<span class="config-overview-news-summary">${esc(summary)}</span>` : ''}</span>`}
-                    <span class="config-overview-news-when">${esc(this.formatNewsDate(item.at))}</span>
-                </li>`;
-        }).join('');
-
-        // Worn as a tile, the same card and stripe as the figures under it,
-        // with its heading in the tiles' label type.
-        const heading = esc(this.t('config.overviewSiteNewsTitle', 'Latest news'));
+        const link = go
+            ? `<button type="button" class="config-widget-go" data-overview-go='${esc(JSON.stringify(go))}'>${esc(goLabel || this.t('config.overviewWidgetOpen', 'Open'))} →</button>`
+            : '';
+        const foot = note || alert
+            ? `<div class="config-widget-foot">
+                    <span class="config-widget-note">${note}</span>
+                    ${alert ? `<span class="config-widget-alert config-widget-alert--${esc(alertTone)}">${alert}</span>` : ''}
+               </div>`
+            : '';
         return `
-            <section class="stat-tile stat-tile--md config-tile config-tile--neutral config-overview-news" aria-label="${heading}">
-                <span class="stat-tile-label config-tile-label">${heading}</span>
-                <ul class="config-overview-news-list">${rows}</ul>
-            </section>`;
-    }
-
-    /**
-     * Which release is running, and the way into its notes.
-     *
-     * The update bar that used to carry the version is a notice now, drawn only
-     * when there is a newer release -- and About has no version line by
-     * decision, because the app-version meta is an asset fingerprint rather
-     * than a release number. Without this line the number left config
-     * altogether. A colophon line, not a panel: one sentence at the foot.
-     */
-    renderOverviewFootnote() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const current = this._updateStatus?.current;
-        if (!current) return '';
-
-        return `
-            <p class="config-overview-footnote">
-                <span>${esc(this.t('config.overviewRunning', 'Running {current}.').replace('{current}', String(current)))}</span>
-                <button type="button" class="config-btn config-btn--small"
-                        data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
-            </p>`;
-    }
-
-    /**
-     * The shell every overview block wears.
-     *
-     * A block is a title, the line saying what it is for, and its body. The
-     * "what" line is not decoration: four blocks of bare figures is a page you
-     * have to already understand to read, and the section is the one a reader
-     * arrives at first.
-     */
-    renderOverviewBlock(id, title, what, body) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        return `
-            <section class="config-block config-block--${esc(id)}">
-                <div class="config-block-header">
-                    <span class="config-block-handle" aria-hidden="true">//</span>
-                    <h3 class="config-block-title">${esc(title)}</h3>
+            <section class="config-widget config-widget--${esc(id)}" aria-label="${esc(title)}">
+                <div class="config-widget-head">
+                    <h4 class="config-widget-title"><span class="config-widget-dot${tone ? ` config-widget-dot--${esc(tone)}` : ''}" aria-hidden="true"></span>${esc(title)}</h4>
+                    ${link}
                 </div>
-                <p class="config-block-what">${esc(what)}</p>
-                <div class="config-block-body">${body}</div>
+                <div class="config-widget-body">${body}</div>
+                ${foot}
             </section>`;
     }
 
-    /** The install in eight figures, drawn by the shared tile. */
-    overviewSummaryTiles() {
-        const s = this.computeStats();
-        return [
-            { key: 'total', tone: 'accent', label: this.t('config.statsBookmarks', 'Bookmarks'), value: s.total },
-            { key: 'pages', tone: 'neutral', label: this.t('config.statsPages', 'Pages'), value: s.pages },
-            { key: 'categories', tone: 'neutral', label: this.t('config.statsCategoryCount', 'Categories'), value: s.categories },
-            { key: 'tags', tone: 'neutral', label: this.t('config.statsTagCount', 'Distinct tags'), value: s.tagCount },
-            {
-                key: 'monitored',
-                tone: s.monitored > 0 ? 'accent' : 'neutral',
-                label: this.t('config.statsMonitored', 'Monitored'),
-                value: s.monitored,
-            },
-            { key: 'shortcut', tone: 'neutral', label: this.t('config.statsWithShortcut', 'With shortcut'), value: s.withShortcut },
-            { key: 'pinned', tone: 'neutral', label: this.t('config.statsPinned', 'Pinned'), value: s.pinned },
-            {
-                key: 'edited',
-                tone: 'neutral',
-                label: this.t('config.overviewTileLastEdited', 'Last edited'),
-                // A date is not a count, so the tile says when rather than how
-                // many -- the shared component prints whatever it is given.
-                value: s.lastTouched ? this.formatRelative(s.lastTouched) : '—',
-            },
-        ];
+    /** A big figure with the word that says what it counts. */
+    renderOverviewFigure(value, unit = '') {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<p class="config-widget-figure"><span class="config-widget-value">${esc(String(value))}</span>${unit ? `<span class="config-widget-unit">${esc(unit)}</span>` : ''}</p>`;
+    }
+
+    /** Label/value rows. `tone` on a row colours its value. */
+    renderOverviewRows(rows) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const items = rows.filter(Boolean).map(([label, value, tone, key]) => `
+            <dt>${esc(label)}</dt>
+            <dd class="${key ? `config-widget-v--${esc(key)}` : ''}${tone ? ` config-widget-tone--${esc(tone)}` : ''}">${esc(String(value))}</dd>`).join('');
+        return `<dl class="config-widget-rows">${items}</dl>`;
+    }
+
+    /** Bars for a short daily series; the newest bar is on the right. */
+    renderOverviewSpark(values, label) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const max = Math.max(1, ...values);
+        const bars = values.map((n) => {
+            // A floor so an empty day still reads as a day, not a gap.
+            const h = n > 0 ? Math.max(8, Math.round((n / max) * 100)) : 4;
+            return `<i class="${n > 0 ? 'is-on' : ''}" style="height:${h}%"></i>`;
+        }).join('');
+        return `<span class="config-widget-spark" role="img" aria-label="${esc(label)}">${bars}</span>`;
+    }
+
+    /** Counts per day for the last `days` days, newest last. */
+    overviewDailyCounts(timestamps, days = 14) {
+        const DAY = 86400000;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = today.getTime() - (days - 1) * DAY;
+        const out = new Array(days).fill(0);
+        timestamps.forEach((ts) => {
+            const t = Number(ts);
+            if (!Number.isFinite(t) || t < start || t > Date.now() + DAY) return;
+            out[Math.min(days - 1, Math.floor((t - start) / DAY))] += 1;
+        });
+        return out;
     }
 
     /**
-     * What is waiting for you, as sentences rather than a count column.
+     * One line for what needs you, with a chip per problem that goes there.
      *
-     * The same six checks the panel made, said as a line each with the action
-     * beside it: "4 broken links." reads as the problem it is, where a 4 in one
-     * column and "Broken links" in another reads as a figure to interpret.
+     * The six checks the Needs attention block made, plus containers with an
+     * update waiting, as chips rather than sentences: each panel below already
+     * says the same thing in its own foot, so this line only has to say how
+     * many and where. A clean install says so in one calm line.
      */
-    renderOverviewAttentionBlock() {
+    renderOverviewAttentionLine() {
         const esc = (v) => this.dash.escapeHtml(v);
         const items = this.overviewAttentionItems();
-        const what = this.t('config.overviewAttentionWhat', 'Things nextDash noticed that you may want to act on.');
-
-        const body = items.length
-            ? `<ul class="config-attention-sentences">${items.map((i) => `
-                <li class="config-attention-sentence config-attention-sentence--${esc(i.tone)}">
-                    <span class="config-attention-text">${esc(i.sentence)}</span>
-                    <button type="button" class="config-attention-chip"
-                            data-overview-go='${esc(JSON.stringify(i.action))}'>${esc(i.cta)}</button>
-                </li>`).join('')}</ul>`
-            : `<p class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</p>`;
-
-        return this.renderOverviewBlock(
-            'attention',
-            this.t('config.overviewAttentionTitle', 'Needs attention'),
-            what,
-            body
-        );
-    }
-
-    /** How you reach for this collection, from figures it already keeps. */
-    renderOverviewHabitsBlock() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const s = this.computeStats();
-        const share = (n) => (s.total ? Math.round((n / s.total) * 100) : 0);
-
-        const keys = this.t('config.overviewHabitsKeys',
-            'You reach for bookmarks by keystroke: {shortcut}% carry a shortcut, against {tagged}% carrying tags.')
-            .replace('{shortcut}', String(share(s.withShortcut)))
-            .replace('{tagged}', String(share(s.tagged)));
-
-        // The busiest page is counted by how much it holds; the top link by how
-        // often it was opened. Both are already computed for Statistics.
-        const busiest = [...(s.perPage || [])].sort((a, b) => b[1] - a[1])[0];
-        const top = (s.topOpened || [])[0];
-        const lines = [`<p>${esc(keys)}</p>`];
-        if (busiest && top) {
-            lines.push(`<p>${esc(this.t('config.overviewHabitsTop',
-                'Most of it lives on {page}; your most-opened link is “{link}” at {opens}.')
-                .replace('{page}', String(busiest[0]))
-                .replace('{link}', String(top[0]))
-                .replace('{opens}', String(top[1])))}</p>`);
+        if (!items.length) {
+            return `
+                <div class="config-overview-attention config-overview-attention--clear" role="status">
+                    <span class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</span>
+                </div>`;
         }
-
-        return this.renderOverviewBlock(
-            'habits',
-            this.t('config.overviewHabitsTitle', 'How you use this collection'),
-            this.t('config.overviewHabitsWhat', 'A quick read on your habits, drawn from your own data.'),
-            `<div class="config-habits">${lines.join('')}</div>`
-        );
+        const lead = (items.length === 1
+            ? this.t('config.overviewAttentionOne', '1 thing needs you')
+            : this.t('config.overviewAttentionMany', '{n} things need you'))
+            .replace('{n}', String(items.length));
+        return `
+            <div class="config-overview-attention" role="status">
+                <strong class="config-overview-attention-lead">${esc(lead)}</strong>
+                ${items.map((i) => `
+                    <button type="button" class="config-attention-chip config-attention-chip--${esc(i.tone)}"
+                            data-overview-go='${esc(JSON.stringify(i.action))}'
+                            title="${esc(i.sentence)}">${esc(i.label)} <b>${esc(String(i.n))}</b></button>`).join('')}
+            </div>`;
     }
 
-    /** The score, and the one deduction that cost the most. */
-    renderOverviewCleanupBlock() {
+    renderOverviewBookmarksWidget() {
+        const s = this.computeStats();
+        const sum = this.dash.health?.report?.summary || {};
+        const conflicts = Number(sum.shortcutConflictCount) || 0;
+        const pagesUnit = this.t('config.overviewBookmarksInPages', 'in {n} pages').replace('{n}', String(s.pages));
+        return this.renderOverviewWidget({
+            id: 'bookmarks',
+            title: this.t('config.statsBookmarks', 'Bookmarks'),
+            go: { section: 'bookmarks' },
+            body: this.renderOverviewFigure(s.total, pagesUnit) + this.renderOverviewRows([
+                [this.t('config.statsCategoryCount', 'Categories'), s.categories],
+                [this.t('config.statsTagCount', 'Distinct tags'), s.tagCount],
+                [this.t('config.statsWithShortcut', 'With shortcut'), s.withShortcut],
+                [this.t('config.statsPinned', 'Pinned'), s.pinned],
+            ]),
+            note: this.dash.escapeHtml(s.lastTouched
+                ? this.t('config.overviewLastEdited', 'Last edited {when}').replace('{when}', this.formatRelative(s.lastTouched))
+                : ''),
+            alert: conflicts
+                ? this.dash.escapeHtml(this.t('config.overviewSentenceConflicts', '{n} shortcuts are claimed twice.').replace('{n}', String(conflicts)))
+                : '',
+        });
+    }
+
+    /**
+     * The inbox's unread count, its last two weeks of arrivals, and how long the
+     * oldest link has waited. Read from the module the dashboard bootstraps for
+     * its badge, so opening the overview does not load the inbox view.
+     */
+    renderOverviewInboxWidget() {
+        const inbox = this.dash.inbox;
+        if (!inbox?.isEnabled?.()) return '';
+        const mod = inbox.instance;
+        const items = typeof mod?.activeItems === 'function' ? mod.activeItems() : [];
+        const unread = inbox.unreadCount?.() || 0;
+        const added = items.map((i) => Number(i.addedAt || 0)).filter((t) => t > 0);
+        const week = Date.now() - 7 * 86400000;
+        const oldest = added.length ? Math.min(...added) : 0;
+        const series = this.overviewDailyCounts(added);
+
+        return this.renderOverviewWidget({
+            id: 'inbox',
+            title: this.t('config.sectionInbox', 'Inbox'),
+            tone: unread ? 'warn' : 'good',
+            go: { view: 'inbox' },
+            body: this.renderOverviewFigure(unread, this.t('config.overviewInboxUnreadUnit', 'unread'))
+                + this.renderOverviewSpark(series, this.t('config.overviewInboxSparkAria', 'Links added per day, last 14 days'))
+                + this.renderOverviewRows([
+                    [this.t('config.overviewInboxWaiting', 'Waiting'), items.length],
+                    [this.t('config.overviewInboxThisWeek', 'Added this week'), added.filter((t) => t >= week).length],
+                    [this.t('config.overviewInboxOldest', 'Oldest waiting'), oldest ? this.formatRelative(oldest) : '—'],
+                ]),
+            note: this.dash.escapeHtml(this.t('config.overviewLast14Days', 'Last 14 days')),
+        });
+    }
+
+    /**
+     * Running, stopped and unhealthy containers, and how many have an update.
+     * Drawn from the list search keeps (thirty seconds fresh), fetched by
+     * loadOverviewData; absent until it lands, and absent for good when there
+     * is no Docker socket or the Containers view is switched off.
+     */
+    renderOverviewContainersWidget() {
+        const list = this._overviewContainers;
+        if (!Array.isArray(list) || !list.length) return '';
         const esc = (v) => this.dash.escapeHtml(v);
-        const { score, details } = this.computeStats().cleanup;
-        const tone = score >= 80 ? 'good' : (score >= 50 ? 'warn' : 'crit');
-        // The biggest penalty, not the first detail: a number without its
-        // heaviest cause is a verdict the reader cannot act on.
-        const worst = [...details].sort((a, b) => (b.penalty || 0) - (a.penalty || 0))[0];
+        const running = list.filter((c) => c.state === 'running').length;
+        const unhealthy = list.filter((c) => c.health === 'unhealthy').length;
+        const updates = list.filter((c) => c.update?.status === 'available');
+        const names = updates.slice(0, 3).map((c) => c.name).join(', ') + (updates.length > 3 ? '…' : '');
 
-        const body = `
-            <div class="config-cleanup">
-                <span class="config-cleanup-score config-cleanup-score--${tone}">${esc(String(score))}</span>
-                <div class="config-cleanup-meter">
-                    <div class="config-cleanup-bar">
-                        <span class="config-cleanup-bar-fill config-cleanup-bar-fill--${tone}" style="width:${score}%"></span>
-                    </div>
-                    <p class="config-cleanup-reason">${esc(worst ? worst.text : '')}</p>
-                </div>
-            </div>`;
-
-        return this.renderOverviewBlock(
-            'cleanup',
-            this.t('config.overviewScoreLabel', 'Cleanup score'),
-            this.t('config.overviewCleanupWhat', 'How tidy the collection is. Higher is cleaner.'),
-            body
-        );
+        return this.renderOverviewWidget({
+            id: 'containers',
+            title: this.t('config.sectionContainers', 'Containers'),
+            tone: unhealthy ? 'crit' : (updates.length ? 'warn' : 'good'),
+            go: { view: 'docker' },
+            body: this.renderOverviewFigure(running, this.t('config.overviewContainersRunning', 'running')) + this.renderOverviewRows([
+                [this.t('config.overviewContainersStopped', 'Stopped'), list.length - running],
+                [this.t('config.overviewContainersUnhealthy', 'Unhealthy'), unhealthy, unhealthy ? 'crit' : ''],
+                [this.t('config.overviewContainersUpdates', 'Updates available'), updates.length, updates.length ? 'warn' : ''],
+            ]),
+            note: esc(this.t('config.overviewContainersTotal', '{n} in total').replace('{n}', String(list.length))),
+            alert: updates.length ? esc(names) : '',
+        });
     }
 
     /**
@@ -4364,36 +4385,236 @@ class DashboardConfig {
      * bookmark is in exactly one of them, so the four add up to what was
      * checked rather than double-counting an outage as two problems.
      */
-    renderOverviewHealthBlock() {
+    renderOverviewHealthWidget() {
         const esc = (v) => this.dash.escapeHtml(v);
         const sum = this.dash.health?.report?.summary || {};
+        const n = (k) => Number(sum[k]) || 0;
         const counts = [
-            ['healthy', this.t('config.overviewHealthHealthy', 'Healthy'), Number(sum.healthyCount) || 0],
-            ['content', this.t('config.overviewHealthContent', 'Wrong content'), Number(sum.contentCount) || 0],
-            ['down', this.t('config.overviewHealthDown', 'Monitor down'), Number(sum.monitorDownCount) || 0],
-            ['broken', this.t('config.overviewHealthBroken', 'Broken'), Number(sum.brokenCount) || 0],
+            ['healthy', this.t('config.overviewHealthHealthy', 'Healthy'), n('healthyCount'), 'good'],
+            ['broken', this.t('config.overviewHealthBroken', 'Broken'), n('brokenCount'), 'crit'],
+            ['down', this.t('config.overviewHealthDown', 'Monitor down'), n('monitorDownCount'), 'crit'],
+            ['content', this.t('config.overviewHealthContent', 'Wrong content'), n('contentCount'), 'warn'],
         ];
-        const checked = counts.reduce((n, c) => n + c[2], 0);
+        const checked = counts.reduce((acc, c) => acc + c[2], 0);
         const pct = checked ? Math.round((counts[0][2] / checked) * 100) : 0;
+        const bad = n('brokenCount') + n('monitorDownCount');
 
         const body = `
             <div class="config-health-glance">
                 <span class="config-health-ring" style="--config-health-pct:${pct}">
                     <span class="config-health-ring-value">${esc(String(pct))}%</span>
                 </span>
-                <ul class="config-health-counts">${counts.map(([id, label, n]) => `
-                    <li class="config-health-state">
-                        <span class="config-health-label">${esc(label)}</span>
-                        <span class="config-health-count config-health-count--${esc(id)}">${esc(String(n))}</span>
-                    </li>`).join('')}</ul>
+                ${this.renderOverviewRows(counts.map(([key, label, count, tone]) => [label, count, count && key !== 'healthy' ? tone : (key === 'healthy' && count ? 'good' : ''), `health-${key}`]))}
             </div>`;
 
-        return this.renderOverviewBlock(
-            'health',
-            this.t('config.overviewHealthTitle', 'Health at a glance'),
-            this.t('config.overviewHealthWhat', 'Live reachability of the links you monitor.'),
-            body
-        );
+        return this.renderOverviewWidget({
+            id: 'health',
+            title: this.t('config.overviewHealthTitleShort', 'Health'),
+            tone: bad ? 'crit' : (n('contentCount') ? 'warn' : (checked ? 'good' : '')),
+            go: { view: 'health' },
+            body,
+            note: esc(this.t('config.overviewHealthMonitored', '{n} monitored').replace('{n}', String(n('monitoredCount')))),
+            alert: bad
+                ? esc(this.t('config.overviewHealthNotAnswering', '{n} not answering').replace('{n}', String(bad)))
+                : '',
+            alertTone: 'crit',
+        });
+    }
+
+    /**
+     * Opens over the last two weeks, from each bookmark's open log, with the
+     * most-opened link, the busiest page and the cleanup score under it.
+     *
+     * The score keeps its heaviest deduction as the reason: a number without
+     * its biggest cause is a verdict the reader cannot act on.
+     */
+    renderOverviewStatsWidget() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.computeStats();
+        const opens = [];
+        this.statsScopedBookmarks().forEach((b) => {
+            if (Array.isArray(b.openLog)) b.openLog.forEach((ts) => opens.push(ts));
+        });
+        const series = this.overviewDailyCounts(opens);
+        const week = series.slice(-7).reduce((a, b) => a + b, 0);
+        const busiest = [...(s.perPage || [])].sort((a, b) => b[1] - a[1])[0];
+        const top = (s.topOpened || [])[0];
+
+        const { score, details } = s.cleanup;
+        const tone = score >= 80 ? 'good' : (score >= 50 ? 'warn' : 'crit');
+        const worst = [...details].sort((a, b) => (b.penalty || 0) - (a.penalty || 0))[0];
+
+        const body = `
+            <div class="config-widget-split">
+                <div>
+                    ${this.renderOverviewFigure(week, this.t('config.overviewStatsOpensWeek', 'opens this week'))}
+                    ${this.renderOverviewSpark(series, this.t('config.overviewStatsSparkAria', 'Opens per day, last 14 days'))}
+                </div>
+                <div>
+                    ${this.renderOverviewRows([
+                        top ? [this.t('config.overviewStatsMostOpened', 'Most opened'), top[0]] : null,
+                        busiest ? [this.t('config.overviewStatsBusiestPage', 'Busiest page'), busiest[0]] : null,
+                    ])}
+                    <div class="config-cleanup">
+                        <span class="config-cleanup-label">${esc(this.t('config.overviewScoreLabel', 'Cleanup score'))}</span>
+                        <span class="config-cleanup-score config-cleanup-score--${tone}">${esc(String(score))}</span>
+                        <span class="config-cleanup-bar"><span class="config-cleanup-bar-fill config-cleanup-bar-fill--${tone}" style="width:${score}%"></span></span>
+                    </div>
+                    <p class="config-cleanup-reason">${esc(worst ? worst.text : '')}</p>
+                </div>
+            </div>`;
+
+        return this.renderOverviewWidget({
+            id: 'stats',
+            title: this.t('config.sectionStats', 'Statistics'),
+            go: { section: 'stats' },
+            body,
+        });
+    }
+
+    /**
+     * The three newest posts from nextdash.cc.
+     *
+     * Same stream About → News & features draws (loadNewsStream, started by
+     * the overview's own load); only its site posts. Nothing at all while it
+     * loads, when the reader switched the site's posts off, or when the feed
+     * could not be reached -- an empty panel would only say "no news".
+     */
+    renderOverviewNewsWidget() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const posts = (Array.isArray(this._newsStream) ? this._newsStream : [])
+            .filter((item) => item.source === 'site' && item.title)
+            .sort((a, b) => (Number(b.at) || 0) - (Number(a.at) || 0))
+            .slice(0, 3);
+        if (!posts.length) return '';
+
+        const rows = posts.map((item) => {
+            const unread = (item.at || 0) > (this._newsSeenAt || 0);
+            const summary = String(item.summary || '').trim();
+            const inner = `
+                <span class="config-overview-news-title">${unread ? '<span class="config-news-dot" aria-hidden="true"></span>' : ''}${esc(item.title)}</span>
+                ${summary ? `<span class="config-overview-news-summary">${esc(summary)}</span>` : ''}`;
+            return `
+                <li class="config-overview-news-item">
+                    ${item.url
+                        ? `<a class="config-overview-news-link" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${inner}</a>`
+                        : `<span class="config-overview-news-link">${inner}</span>`}
+                    <span class="config-overview-news-when">${esc(this.formatNewsDate(item.at))}</span>
+                </li>`;
+        }).join('');
+
+        return this.renderOverviewWidget({
+            id: 'news',
+            title: this.t('config.overviewSiteNewsTitle', 'Latest news'),
+            go: { section: 'about', aboutTab: 'news' },
+            goLabel: this.t('config.overviewAllNews', 'All news'),
+            body: `<ul class="config-overview-news-list">${rows}</ul>`,
+        });
+    }
+
+    /**
+     * The three newest features, each a way into what it changed.
+     *
+     * Only catalogue entries with a `since` -- the ones a release announced;
+     * the undated back catalogue stays in About. The foot names the running
+     * release with its notes a button away: About has no version line by
+     * decision, so this is where config says which release it is.
+     */
+    renderOverviewFeaturesWidget() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const features = this.overviewNewFeatures().filter((f) => f.since).slice(0, 3);
+        const current = this._updateStatus?.current;
+        const rows = features.map((f) => {
+            const title = esc(this.t(f.titleKey, f.titleFallback || ''));
+            const go = f.go
+                ? `<button type="button" class="config-overview-feature-link" data-overview-go='${esc(JSON.stringify(f.go))}'>${title}</button>`
+                : `<span class="config-overview-feature-link">${title}</span>`;
+            return `
+                <li class="config-overview-feature">
+                    ${go}
+                    <span class="config-overview-feature-since">${esc(f.since)}</span>
+                </li>`;
+        }).join('');
+
+        const running = current
+            ? `<span>${esc(this.t('config.overviewRunning', 'Running {current}.').replace('{current}', String(current)))}</span>`
+            : '';
+        return this.renderOverviewWidget({
+            id: 'features',
+            title: this.t('config.overviewNewFeaturesTitle', 'New in nextDash'),
+            go: { section: 'about', aboutTab: 'news' },
+            goLabel: this.t('config.overviewAllFeatures', 'All features'),
+            body: rows ? `<ul class="config-overview-features">${rows}</ul>` : '',
+            note: `<span class="config-overview-footnote">${running}<button type="button" class="config-widget-link"
+                        data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button></span>`,
+        });
+    }
+
+    /** Every tip Help → Tips lists, in its order, in the reader's language. */
+    overviewTips() {
+        const groups = window.ConfigHelpTips?.TIP_GROUPS || [];
+        return groups.flatMap((g) => g.tips || [])
+            .map((key) => this.t(`config.${key}`, ''))
+            .filter((tip) => tip && !tip.startsWith('config.'));
+    }
+
+    /**
+     * A tip of the day, with a step back and forward.
+     *
+     * The day picks it, so the overview shows the same tip all day and a
+     * different one tomorrow; stepping is for this visit only. Tips are our
+     * own markup (they carry <code> keys), never user input.
+     */
+    renderOverviewTipWidget() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const tips = this.overviewTips();
+        if (!tips.length) return '';
+        if (!Number.isInteger(this._overviewTipIx)) {
+            this._overviewTipIx = Math.floor(Date.now() / 86400000) % tips.length;
+        }
+        const ix = ((this._overviewTipIx % tips.length) + tips.length) % tips.length;
+        const count = this.t('config.helpTipsFilterCount', '{shown} of {total}')
+            .replace('{shown}', String(ix + 1)).replace('{total}', String(tips.length));
+
+        return this.renderOverviewWidget({
+            id: 'tip',
+            title: this.t('config.overviewTipTitle', 'Tip'),
+            go: { section: 'help', helpTab: 'tips' },
+            goLabel: this.t('config.overviewAllTips', 'All tips'),
+            body: `<p class="config-overview-tip config-help-tip" data-overview-tip="${ix}">${tips[ix]}</p>`,
+            note: `<span class="config-overview-tip-count">${esc(count)}</span>
+                <span class="config-overview-tip-nav">
+                    <button type="button" class="config-widget-step" data-overview-action="tip-prev" aria-label="${esc(this.t('config.overviewTipPrev', 'Previous tip'))}">‹</button>
+                    <button type="button" class="config-widget-step" data-overview-action="tip-next" aria-label="${esc(this.t('config.overviewTipNext', 'Next tip'))}">›</button>
+                </span>`,
+        });
+    }
+
+    /** Step the tip in place, without redrawing the panels around it. */
+    stepOverviewTip(delta) {
+        this._overviewTipIx = (Number(this._overviewTipIx) || 0) + delta;
+        const el = document.querySelector('#config-view-body .config-widget--tip');
+        if (el) el.outerHTML = this.renderOverviewTipWidget();
+    }
+
+    /**
+     * The container list for the overview's panel, from the cache search keeps.
+     * Repaints once when it lands; a socket that is missing or a view that is
+     * switched off leaves the panel out.
+     */
+    loadOverviewContainers() {
+        const index = window.DockerSearchIndex;
+        if (!index?.refresh || this.dash.settings?.dockerViewEnabled === false) {
+            this._overviewContainers = null;
+            return Promise.resolve(null);
+        }
+        return index.refresh().then((list) => {
+            const next = Array.isArray(list) ? list : null;
+            const changed = JSON.stringify(next) !== JSON.stringify(this._overviewContainers);
+            this._overviewContainers = next;
+            if (changed) this.repaintOverview();
+            return next;
+        }).catch(() => null);
     }
 
     /**
@@ -4426,13 +4647,16 @@ class DashboardConfig {
 
     /**
      * What is waiting for you, in one place: broken links, monitors that are
-     * down, duplicates, an unread inbox. Only problems appear — a clean install
-     * gets a single "nothing needs attention" line instead of five zeroes.
+     * down, duplicates, an unread inbox, containers with an update. Only
+     * problems appear — a clean install gets a single "nothing needs
+     * attention" line instead of seven zeroes.
      */
     overviewAttentionItems() {
         const d = this.dash;
         const sum = d.health?.report?.summary || {};
         const inboxUnread = d.inbox?.unreadCount?.() || 0;
+        const containerUpdates = (this._overviewContainers || [])
+            .filter((c) => c.update?.status === 'available').length;
         const say = (key, fallback, n) => this.t(key, fallback).replace('{n}', String(n));
 
         return [
@@ -4477,6 +4701,13 @@ class DashboardConfig {
                 sentence: say('config.overviewSentenceUnchecked', '{n} links have never been checked.', Number(sum.uncheckedCount) || 0),
                 cta: this.t('config.overviewFixInHealth', 'Open health'),
                 action: { view: 'health', filter: 'unchecked' },
+            },
+            {
+                n: containerUpdates, tone: 'warn',
+                label: this.t('config.overviewContainerUpdates', 'Container updates'),
+                sentence: say('config.overviewSentenceContainerUpdates', '{n} containers have an update waiting.', containerUpdates),
+                cta: this.t('config.overviewOpenContainers', 'Open containers'),
+                action: { view: 'docker' },
             },
         ].filter((i) => i.n > 0);
     }
@@ -4797,6 +5028,9 @@ class DashboardConfig {
         if (this._newsStream === undefined) {
             void this.loadNewsStream();
         }
+        // Also not awaited: a slow Docker daemon must not hold the page up.
+        // The panel appears when the list lands.
+        void this.loadOverviewContainers();
         if (d.settings?.updateCheckEnabled !== false && !document.querySelector('meta[name="nextdash-update-check-locked"]')) {
             jobs.push(this.loadUpdateStatus());
         } else {
@@ -4938,6 +5172,11 @@ class DashboardConfig {
             }
             if (e.target.closest('[data-overview-action="whats-new"]')) {
                 void this.openWhatsNew();
+                return;
+            }
+            const step = e.target.closest('[data-overview-action="tip-prev"], [data-overview-action="tip-next"]');
+            if (step) {
+                this.stepOverviewTip(step.getAttribute('data-overview-action') === 'tip-next' ? 1 : -1);
                 return;
             }
             if (e.target.closest('[data-overview-action="check-update"]')) {
@@ -12306,6 +12545,7 @@ class DashboardConfig {
         monitorNotifyPushoverToken: { def: '' },
         monitorNotifyPushoverUserKey: { def: '' },
         monitorNotifyTelegramChatId: { def: '' },
+        monitorNotifyAppriseTag: { def: '' },
         backupExcludeArchives: { def: false },
         backupExcludeSecrets: { def: false },
         healthCheckTimeoutSeconds: { hint: 'healthCheckTimeoutHint', def: 0 },
@@ -12452,6 +12692,7 @@ class DashboardConfig {
                 opt('gotify', 'Gotify'),
                 opt('ntfy', 'ntfy'),
                 opt('pushover', 'Pushover'),
+                opt('apprise', 'Apprise'),
             ] },
         ];
         // forIndex: the settings jump has to find monitorNotifyTelegramChatId
@@ -12469,6 +12710,9 @@ class DashboardConfig {
         if (forIndex || preset !== 'pushover') {
             const urlLabelByPreset = {
                 telegram: t('config.monitorNotifyUrlLabelTelegram', 'Bot API URL (https://api.telegram.org/bot<token>/sendMessage)'),
+                // A configuration key on your own apprise-api: the mail,
+                // Matrix or Signal details stay there.
+                apprise: t('config.monitorNotifyUrlLabelApprise', 'Apprise notify URL (http://apprise:8000/notify/<key>)'),
             };
             controls.push({
                 field: 'monitorNotifyUrl', type: 'text',
@@ -12479,6 +12723,10 @@ class DashboardConfig {
             // Only ntfy carries buttons, and a button has to lead somewhere.
             controls.push({ field: 'monitorNotifyDashboardUrl', type: 'text',
                 label: t('config.monitorNotifyDashboardUrlLabel', 'Address of this dashboard (for notification buttons)') });
+        }
+        if (forIndex || preset === 'apprise') {
+            controls.push({ field: 'monitorNotifyAppriseTag', type: 'text',
+                label: t('config.monitorNotifyAppriseTagLabel', 'Tag (optional — only the destinations with this tag)') });
         }
         if (forIndex || preset === 'telegram') {
             controls.push({ field: 'monitorNotifyTelegramChatId', type: 'text', label: t('config.monitorNotifyTelegramChatIdLabel', 'Chat ID') });
@@ -12510,7 +12758,7 @@ class DashboardConfig {
             // the GitHub token are hand-built beside these (config-containers).
             {
                 section: 'containers',
-                tab: null,
+                tab: 'view',
                 title: t('config.containersGroupView', 'View'),
                 note: t('config.containersGroupViewNote', 'The Containers view, its button in the header and its rows in search.'),
                 controls: [
@@ -12535,7 +12783,7 @@ class DashboardConfig {
             },
             {
                 section: 'containers',
-                tab: null,
+                tab: 'view',
                 title: t('config.containersGroupLinks', 'Links'),
                 note: t('config.containersGroupLinksNote', 'Where ports and web UI links point. Enter the server’s LAN address or name only, without http:// or a port — for example 192.168.1.10 or tower.local; port 8080 then opens http://192.168.1.10:8080. Empty uses the address this dashboard is open on. A container with its own LAN address (macvlan, br0) always links to that.'),
                 controls: [
@@ -12547,7 +12795,7 @@ class DashboardConfig {
             },
             {
                 section: 'containers',
-                tab: null,
+                tab: 'updates',
                 title: t('config.containersGroupUpdates', 'Updates'),
                 note: t('config.containersGroupUpdatesNote', 'Asks the registries whether a newer image is waiting. Off by default because it makes outbound requests. Containers you set to update automatically (in their side panel) are updated in the window below, and rolled back if they stop, restart or turn unhealthy within 5 minutes.'),
                 controls: [
@@ -12567,7 +12815,7 @@ class DashboardConfig {
             },
             {
                 section: 'containers',
-                tab: null,
+                tab: 'connection',
                 title: t('config.containersGroupSafety', 'Safety'),
                 note: t('config.containersGroupSafetyNote', 'Update and remove always ask first. This adds stop and restart.'),
                 controls: [
@@ -12576,9 +12824,9 @@ class DashboardConfig {
             },
             {
                 section: 'containers',
-                tab: null,
+                tab: 'alerts',
                 title: t('config.containersGroupNotify', 'Notifications'),
-                note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on. CPU is a share of every core, memory of the container’s limit (the host’s memory when it has none); those notices need Keep the last hour of CPU and memory on.'),
+                note: t('config.containersGroupNotifyNote', 'A notice when a container stops unexpectedly, keeps restarting or turns unhealthy, and when it recovers. Sent to the alert webhook set under Health and to browser notifications with Containers switched on. CPU is a share of every core, memory of the container’s limit (the host’s memory when it has none); those notices need Keep the last hour of CPU and memory on, on the View tab.'),
                 controls: [
                     bool('dockerNotify', 'config.dockerNotifyLabel', 'Notify about containers'),
                     // Reads the stats history, so it says nothing while that is off.
@@ -15381,7 +15629,7 @@ class DashboardConfig {
         }
         // The dashboard tour is about the whole dashboard, not a view that
         // could be opened later: like What has changed, it plays now.
-        if (tour.id === 'dashboardTutorialV1') {
+        if (tour.id === 'dashboardTutorialV2') {
             this.render();
             await this.dash.promos?.openDashboardTour?.();
             return;
@@ -15613,6 +15861,13 @@ class DashboardConfig {
     set inboxTab(tab) {
         this._inboxTab = tab;
         DashboardConfig.rememberTab('inbox', tab);
+    }
+
+    get containersTab() { return this._containersTab; }
+
+    set containersTab(tab) {
+        this._containersTab = tab;
+        DashboardConfig.rememberTab('containers', tab);
     }
 
     set behaviorTab(tab) {
@@ -16258,6 +16513,7 @@ class DashboardConfig {
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
+        ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss']],
     ];
 
@@ -16266,6 +16522,7 @@ class DashboardConfig {
             links: ['config.widgetGroupLinks', 'Are the links still good?'],
             incoming: ['config.widgetGroupIncoming', 'What is arriving?'],
             system: ['config.widgetGroupSystem', 'How is this machine doing?'],
+            unraid: ['config.widgetGroupUnraid', 'How is the Unraid server doing?'],
             ambient: ['config.widgetGroupAmbient', "What's happening around you?"],
             // Custom widgets, and anything registered but not yet catalogued,
             // land here rather than dropping out of the list entirely.
@@ -18532,6 +18789,9 @@ class DashboardConfig {
     /** Config → Inbox: what is collected, the list, the side panel and clicks, the header icon. */
     static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];
 
+    /** Config → Containers: where the socket is, how it looks, updates, alerts, Unraid. */
+    static CONTAINERS_TABS = ['connection', 'view', 'updates', 'alerts'];
+
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.
     static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
@@ -18555,7 +18815,7 @@ class DashboardConfig {
           whereKey: 'config.tourWhereNow', where: 'right away' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
-        { id: 'dashboardTutorialV1', labelKey: 'config.tourDashboard', label: 'The dashboard',
+        { id: 'dashboardTutorialV2', labelKey: 'config.tourDashboard', label: 'The dashboard',
           whereKey: 'config.tourWhereNow', where: 'right away' },
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },
@@ -18574,7 +18834,8 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'custom'];
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'custom',
+        'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -18850,6 +19111,80 @@ class DashboardConfig {
               label: ['config.widgetCustomItemsPath', 'List from (path, optional)'],
               placeholder: ['config.widgetCustomPathPlaceholder', 'server.recent[0].name'] },
         ],
+        // The server itself is set once, under Config -> Containers; a widget only says how it draws.
+        unraid: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidArray: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidParity: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidShares: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidVms: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidUps: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
+        unraidNotifications: [
+            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'click', kind: 'choice',
+              label: ['config.widgetUnraidClick', 'A click'],
+              options: [
+                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
+                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
+              ] },
+        ],
     };
 
     /** The formats a value may be shown in — the server accepts these and no others. */
@@ -18913,6 +19248,26 @@ class DashboardConfig {
      * means basic auth. Enough to draw the right form with the right box
      * already labelled, and to say that something is set without showing it.
      */
+    /*
+     * The preset a widget was started from, if any.
+     *
+     * A sign-in's shape -- where to post, what the fields are called, which
+     * header carries a token -- is preset knowledge with no box on screen, and
+     * the stored credential never comes back to the browser. A panel opened
+     * again therefore reads it from the preset, or a retyped password would
+     * be filed without anywhere to sign in.
+     */
+    widgetPresetOf(widget, index) {
+        const draft = index === undefined ? null : this.widgetDraft(index, { create: false });
+        const id = String(draft?.config?.presetId || widget?.config?.presetId || '');
+        return id ? window.DashboardWidgetPresets?.byId?.(id) || null : null;
+    }
+
+    /** A sign-in that asks for a password only (Pi-hole v6, Duplicati). */
+    sessionIsPasswordOnly(session) {
+        return Boolean(session) && session.format === 'json' && !session.userField;
+    }
+
     storedCredentialState(widget) {
         const own = this.widgetCredentialId(widget);
         const chosen = String(widget?.config?.credentialId || '');
@@ -18929,7 +19284,13 @@ class DashboardConfig {
             return { kind: 'query', queryName: stored.query[0], saved: true };
         }
         if (stored.headers?.length) {
-            return { kind: 'header', headerName: stored.headers[0], saved: true };
+            // A header the preset always sends (Nextcloud's OCS-APIRequest) is
+            // not the key; the one the reader typed is whichever is left.
+            const fixed = Object.keys(this.widgetPresetOf(widget)?.fixedHeaders || {})
+                .map((name) => name.toLowerCase());
+            const own = stored.headers.find((name) => !fixed.includes(String(name).toLowerCase()))
+                || stored.headers[0];
+            return { kind: 'header', headerName: own, saved: true };
         }
         if (stored.basic) return { kind: 'basic', basicUser: stored.basicUser || '', saved: true };
         return { kind: 'none' };
@@ -19364,13 +19725,17 @@ class DashboardConfig {
          * sent on every request -- is the server's business rather than the
          * reader's.
          */
-        const session = state.kind !== 'session' ? '' : `
+        const passwordOnly = this.sessionIsPasswordOnly(
+            this.widgetDraft(index, { create: false })?.auth?.session || this.widgetPresetOf(widget, index)?.session);
+        // A service that signs in with a password alone (Pi-hole v6,
+        // Duplicati) gets no username box: there is nothing to put in it.
+        const session = state.kind !== 'session' ? '' : `${passwordOnly ? '' : `
             <div class="config-widget-field">
                 <label for="${id}-suser">${esc(this.t('config.widgetAuthUser', 'Username'))}</label>
                 <input type="text" id="${id}-suser" class="config-text" data-widget-auth="basicUser"
                     data-widget-index="${index}" maxlength="128" spellcheck="false" autocomplete="off"
                     value="${esc(state.basicUser || '')}">
-            </div>
+            </div>`}
             <div class="config-widget-field">
                 <label for="${id}-spass">${esc(this.t('config.widgetAuthPassword', 'Password'))}</label>
                 ${this.renderSecretInput({
@@ -19463,7 +19828,9 @@ class DashboardConfig {
             || widget?.config?.presetId || '');
         const groups = catalogue.GROUPS.map(([group, title]) => {
             const options = catalogue.PRESETS
-                .filter((preset) => preset.group === group)
+                // A retired service is not offered for a new widget, but a
+                // widget already started from it still shows its choice.
+                .filter((preset) => preset.group === group && (!preset.retired || preset.id === chosen))
                 .map((preset) => `<option value="${esc(preset.id)}"${
                     preset.id === chosen ? ' selected' : ''}>${esc(preset.name)}</option>`)
                 .join('');
@@ -19918,19 +20285,24 @@ class DashboardConfig {
         if (secret && !this.isSchemeOnly(secret)) {
             const kind = draft.auth.kind;
             if (kind === 'header' && draft.auth.headerName) {
-                config.draftCredential = { headers: { [draft.auth.headerName]: secret } };
+                config.draftCredential = {
+                    headers: { ...(draft.auth.fixedHeaders || {}), [draft.auth.headerName]: secret },
+                };
             } else if (kind === 'query' && draft.auth.queryName) {
                 config.draftCredential = {
                     query: { [draft.auth.queryName]: secret },
                     ...(draft.auth.fixedHeaders ? { headers: { ...draft.auth.fixedHeaders } } : {}),
                 };
-            } else if (kind === 'session' && draft.auth.basicUser && draft.auth.session) {
-                config.draftCredential = {
-                    session: {
-                        ...draft.auth.session,
-                        user: draft.auth.basicUser, password: secret,
-                    },
-                };
+            } else if (kind === 'session') {
+                const sessionShape = draft.auth.session || this.widgetPresetOf(block, index)?.session;
+                if (sessionShape && (draft.auth.basicUser || this.sessionIsPasswordOnly(sessionShape))) {
+                    config.draftCredential = {
+                        session: {
+                            ...sessionShape,
+                            user: draft.auth.basicUser || '', password: secret,
+                        },
+                    };
+                }
             } else if (kind === 'basic' && draft.auth.basicUser) {
                 config.draftCredential = {
                     basicUser: draft.auth.basicUser, basicPassword: secret,
@@ -20712,6 +21084,13 @@ class DashboardConfig {
             weather: 'Current conditions beside a forecast, for the location the header already reads.',
             calendar: 'What is coming up, from the ICS feed set in Appearance → Date & weather.',
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
+            unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
+            unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
+            unraidParity: 'The last parity check, or the one running now, with its history when wide.',
+            unraidShares: 'The Unraid shares, fullest first.',
+            unraidVms: 'Which virtual machines on the Unraid server run, and which are stopped or paused.',
+            unraidUps: 'The UPS behind the Unraid server: charge, runtime and load.',
+            unraidNotifications: "Unraid's unread notifications, newest first.",
         };
         const label = this.dash.language?.t?.(key);
         return label && label !== key ? label : (fallbacks[type] || '');
@@ -21720,6 +22099,9 @@ class DashboardConfig {
             draft.auth = {
                 kind: 'header', headerName: preset.authName || '', basicUser: '',
                 seed: preset.scheme || '',
+                // Sent with the key and never asked for: Nextcloud wants
+                // OCS-APIRequest beside its NC-Token.
+                fixedHeaders: preset.fixedHeaders || null,
             };
         } else if (preset.auth === 'basic') {
             draft.auth = { kind: 'basic', headerName: '', basicUser: '' };
@@ -21850,7 +22232,9 @@ class DashboardConfig {
             const payload = { id: own, label: block.title || block.type || own };
             if (auth.kind === 'session') {
                 const user = String(auth.basicUser || '').trim();
-                if (!user) { say(this.t('config.widgetAuthNeedsUser', 'Fill in the username first.')); return; }
+                const sessionShape = auth.session || this.widgetPresetOf(block, index)?.session || null;
+                const passwordOnly = this.sessionIsPasswordOnly(sessionShape);
+                if (!user && !passwordOnly) { say(this.t('config.widgetAuthNeedsUser', 'Fill in the username first.')); return; }
                 if (!secret && !(stored.kind === 'session' && stored.basicUser === user)) {
                     say(this.t('config.widgetAuthNeedsPassword', 'Fill in the password as well.'));
                     return;
@@ -21860,7 +22244,7 @@ class DashboardConfig {
                     // post and what to call the fields is knowledge, not a
                     // preference, and a box for it would be a box nobody can
                     // answer.
-                    payload.session = { ...(auth.session || {}), user, password: secret };
+                    payload.session = { ...(sessionShape || {}), user, password: secret };
                 }
             } else if (auth.kind === 'query') {
                 const name = String(auth.queryName || '').trim();
@@ -21895,7 +22279,7 @@ class DashboardConfig {
                     say(this.t('config.widgetAuthNeedsKey', 'Paste the key as well.'));
                     return;
                 }
-                if (secret) payload.headers = { [name]: secret };
+                if (secret) payload.headers = { ...(auth.fixedHeaders || {}), [name]: secret };
             } else {
                 const user = String(auth.basicUser || '').trim();
                 if (!user) { say(this.t('config.widgetAuthNeedsUser', 'Fill in the username first.')); return; }
@@ -24897,6 +25281,51 @@ class DashboardConfig {
         window.open(template.replace('{url}', encodeURIComponent(url)), '_blank', 'noopener,noreferrer');
     }
 
+    /**
+     * The same three choices a container's icon has: an app icon from the
+     * sets, the letter, or automatic.
+     *
+     * A bookmark keeps its icon in `icon`, so automatic is simply no icon of
+     * its own: the dashboard then shows the app's set icon, else the favicon
+     * the server fills in. The letter is `iconMode: 'letter'`, which the row
+     * honours and the favicon fill skips. Choosing an icon clears the mode;
+     * the server does the same for an icon set any other way.
+     */
+    async chooseBookmarkAppIcon(key, anchor) {
+        const record = await this.findBookmarkRecord(key);
+        if (!record) return;
+        let picker = null;
+        try {
+            picker = await window.IconSetAuto?.loadPicker();
+        } catch {
+            picker = null;
+        }
+        if (!picker) {
+            this.notify(this.t('dashboard.iconSetAdoptFailed', 'Could not use this icon.'), 'error');
+            return;
+        }
+        const d = this.dash;
+        picker.open(anchor, {
+            query: record.record?.name || '',
+            container: document.body,
+            t: (k, fallback, vars) => {
+                const full = `dashboard.${k}`;
+                const said = d.language?.t(full);
+                const text = said && said !== full ? said : String(fallback);
+                return text.replace(/\{(\w+)\}/g, (_, n) => (vars && n in vars ? vars[n] : `{${n}}`));
+            },
+            notify: (msg, kind) => this.notify(msg, kind),
+            onPick: (icon) => void this.saveBookmarkIconMode(key, { icon, iconMode: '' }),
+        });
+    }
+
+    /** Write icon and mode together, and say so if the save did not land. */
+    async saveBookmarkIconMode(key, patch) {
+        this.closeBookmarkMenus();
+        const ok = await this.saveBookmarkFields(key, patch);
+        if (!ok) this.notify(this.t('dashboard.dockerIconSaveFailed', 'Could not save the icon.'), 'error');
+    }
+
     async refreshBookmarkFavicon(key) {
         if (this._bmBusyKeys.has(key)) return;
         const record = await this.findBookmarkRecord(key);
@@ -25076,6 +25505,12 @@ class DashboardConfig {
             case 'favicon':
                 void this.refreshBookmarkFavicon(key);
                 break;
+            case 'icon-letter':
+                void this.saveBookmarkIconMode(key, { icon: '', iconMode: 'letter' });
+                break;
+            case 'icon-auto':
+                void this.saveBookmarkIconMode(key, { icon: '', iconMode: '' });
+                break;
             case 'archive':
                 this.openBookmarkArchive(bookmark);
                 break;
@@ -25101,6 +25536,9 @@ class DashboardConfig {
             }
             case 'share':
                 void this.shareBookmark(bookmark);
+                break;
+            case 'qr':
+                void window.BookmarkQR?.show?.(bookmark);
                 break;
             case 'delete':
                 void this.deleteBookmarkByKey(key);
@@ -27973,6 +28411,8 @@ class DashboardConfig {
             });
         });
         this.bindActivityChartTooltip(container);
+        void this.mountStatsHealthLines?.(container);
+        void this.mountStatsColumns?.(container);
         container.querySelectorAll('[data-stats-action]').forEach((btn) => {
             // Guarded like the panel links below, and for a sharper reason:
             // repaintStatsBody binds the replaced foot and then binds the whole
@@ -28852,7 +29292,7 @@ class DashboardConfig {
                     { k: 'config.helpArtWidgetFilled', d: 'Address and figures filled in' },
                     { k: 'config.helpArtWidgetYours', d: 'Edit anything' },
                 ],
-                captionKey: 'config.helpArtWidgetPresets', caption: 'Twenty-eight already known',
+                captionKey: 'config.helpArtWidgetPresets', caption: 'Forty-one already known',
             },
         ],
         'config.helpSourcesTitle': [
@@ -29950,8 +30390,34 @@ class DashboardConfig {
                     <a class="config-btn" href="https://nextdash.cc" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpSiteProject', 'nextdash.cc'))}</a>
                     <a class="config-btn" href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpSiteAuthor', 'jordibrw.nl'))}</a>
                 </div>
+                ${this.renderIconCredits()}
                 ${this.renderKofiSupport()}
             </div>`;
+    }
+
+    /**
+     * Where the app icons come from. selfh.st/icons is CC BY 4.0, which asks
+     * for the credit and a link to the licence; dashboard-icons is
+     * Apache-2.0, named beside it.
+     */
+    renderIconCredits() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`;
+        const parts = {
+            di: link('https://github.com/homarr-labs/dashboard-icons', 'dashboard-icons'),
+            sh: link('https://github.com/selfhst/icons', 'selfh.st/icons'),
+            apache: link('https://www.apache.org/licenses/LICENSE-2.0', 'Apache-2.0'),
+            ccby: link('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0'),
+        };
+        const text = esc(this.t('config.aboutIconCredits', 'App icons: {di} ({apache}) · {sh} ({ccby})'))
+            .replace(/\{(di|sh|apache|ccby)\}/g, (_, k) => parts[k]);
+        // The charts' library, MIT: its licence travels with it in
+        // static/vendor/uplot, and the credit is said here as well.
+        const charts = esc(this.t('config.aboutChartCredits', 'Charts: {uplot} ({mit})'))
+            .replace('{uplot}', link('https://github.com/leeoniya/uPlot', 'uPlot'))
+            .replace('{mit}', link('https://github.com/leeoniya/uPlot/blob/master/LICENSE', 'MIT'));
+        return `<p class="help-about-credits" data-about-icon-credits>${text}</p>
+            <p class="help-about-credits" data-about-chart-credits>${charts}</p>`;
     }
 
     /**

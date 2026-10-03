@@ -1,0 +1,21 @@
+{
+  "_source": "pve.proxmox.com/wiki/Proxmox_VE_API nodes/{node}/status",
+  "auth": {
+    "header": "Authorization",
+    "value": "PVEAPIToken=%KEY%"
+  },
+  "body": {
+    "data": {
+      "uptime": 864000,
+      "cpu": 0.0367,
+      "memory": {
+        "used": 8589934592,
+        "total": 34359738368,
+        "free": 25769803776
+      },
+      "cpuinfo": {
+        "cpus": 8
+      }
+    }
+  }
+}

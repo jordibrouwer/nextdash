@@ -34,7 +34,12 @@ type Bookmark struct {
 	Pinned      bool   `json:"pinned,omitempty"`
 	CheckStatus bool   `json:"checkStatus"`
 	Icon        string `json:"icon"`
-	CreatedAt   int64  `json:"createdAt,omitempty"` // Timestamp when bookmark was created
+	// IconMode is how a bookmark without an icon of its own is drawn: empty
+	// for automatic (the app's set icon, else a fetched favicon), "letter" for
+	// the letter tile and nothing fetched. An icon of its own always wins, so
+	// setting one clears this (normalizeBookmarkIconMode).
+	IconMode  string `json:"iconMode,omitempty"`
+	CreatedAt int64  `json:"createdAt,omitempty"` // Timestamp when bookmark was created
 	// UpdatedAt records the last change to a bookmark's own content — name, URL,
 	// category, tags and the like. It is deliberately not touched by the health
 	// monitor or by opening a bookmark: LastChecked and LastOpened already carry
@@ -394,6 +399,15 @@ type PageWithBookmarks struct {
 
 type PageOrder struct {
 	Order []int `json:"order"` // Array of page IDs in display order
+}
+
+type UnraidServer struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	BaseURL     string `json:"baseUrl"`
+	InsecureTLS bool   `json:"insecureTls"`
+	Enabled     bool   `json:"enabled"`
+	Notify      bool   `json:"notify"`
 }
 
 type Settings struct {
@@ -826,6 +840,10 @@ type Settings struct {
 	// web UI ("<pageId>::<url>"), or to none ("-"), over the automatic match
 	// the Containers view makes (docker-search-index.js).
 	DockerBookmarkLinks map[string]string `json:"dockerBookmarkLinks,omitempty"`
+	// DockerContainerIcons overrides the automatic app icon, by container
+	// name: "letter" for the plain letter, or a file in data/icons/ chosen
+	// with the icon picker. Absent means automatic (icon_match.go).
+	DockerContainerIcons map[string]string `json:"dockerContainerIcons,omitempty"`
 	// DockerHostAddress is the host the Containers view links ports and [IP]
 	// to, for when the dashboard is opened under a name that is not the Docker
 	// host's (a reverse proxy, a tunnel). Empty uses the browser's host.
@@ -839,6 +857,10 @@ type Settings struct {
 	// push (docker_notify.go); DockerNotifyMuted names the containers left out.
 	DockerNotify      bool     `json:"dockerNotify"`
 	DockerNotifyMuted []string `json:"dockerNotifyMuted,omitempty"`
+	// UnraidServers is the Unraid server the Unraid widgets read (unraid_settings.go).
+	// A list holding at most one, so a second server later is not a migration.
+	// Its API key is kept apart, in unraid-secrets.json.
+	UnraidServers []UnraidServer `json:"unraidServers,omitempty"`
 	// DockerUsageAlerts tells when a container stays above a CPU or memory
 	// line for a while (docker_usage_alerts.go); it reads the stats history.
 	DockerUsageAlerts       bool `json:"dockerUsageAlerts"`
@@ -899,7 +921,7 @@ type Settings struct {
 	// MonitorNotifyPreset shapes the webhook body for a specific service instead
 	// of nextDash's own raw JSON. Empty keeps today's exact behaviour, so an
 	// existing webhook receiver built against the raw shape needs no migration.
-	MonitorNotifyPreset string `json:"monitorNotifyPreset,omitempty"` // "", "slack", "discord", "telegram", "gotify", "ntfy", "pushover"
+	MonitorNotifyPreset string `json:"monitorNotifyPreset,omitempty"` // "", "slack", "discord", "telegram", "gotify", "ntfy", "pushover", "apprise"
 	// MonitorNotifyTelegramChatID is only read when MonitorNotifyPreset is
 	// "telegram" — the bot API needs a chat to post into, separate from the
 	// bot-token URL, and getting it wrong is otherwise a silent failure.
@@ -908,6 +930,9 @@ type Settings struct {
 	// (api.pushover.net) and delivery is keyed on these two values instead.
 	MonitorNotifyPushoverToken   string `json:"monitorNotifyPushoverToken,omitempty"`
 	MonitorNotifyPushoverUserKey string `json:"monitorNotifyPushoverUserKey,omitempty"`
+	// MonitorNotifyAppriseTag picks which of an Apprise key's destinations an
+	// alert goes to; empty sends to all of them. Read only for "apprise".
+	MonitorNotifyAppriseTag string `json:"monitorNotifyAppriseTag,omitempty"`
 	/*
 	 * MonitorNotifyDashboardURL is where this install can be reached from a
 	 * phone, for the buttons an ntfy notification carries.
@@ -1462,6 +1487,9 @@ type PrefetchIconUpdate struct {
 	// background prefetch can never clobber a user-chosen icon; the "refresh all
 	// favicons" command sets it deliberately.
 	Overwrite bool
+	// Clear empties the icon instead: the icon sets know the address, and
+	// its set icon shows in place of the favicon. Only with Overwrite.
+	Clear bool
 }
 
 type FileStore struct {
@@ -3884,6 +3912,17 @@ func (fs *FileStore) MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIc
 
 	applied := 0
 	for _, update := range updates {
+		if update.Clear {
+			if !update.Overwrite || update.Index < 0 || update.Index >= len(bookmarks) ||
+				canonicalBookmarkURLKey(bookmarks[update.Index].URL) != update.URLKey ||
+				strings.TrimSpace(bookmarks[update.Index].Icon) == "" {
+				continue
+			}
+			bookmarks[update.Index].Icon = ""
+			bookmarks[update.Index].PageID = pageID
+			applied++
+			continue
+		}
 		safeIcon := sanitizeBookmarkIcon(update.Icon)
 		if safeIcon == "" || update.Index < 0 || update.Index >= len(bookmarks) {
 			continue
@@ -4958,6 +4997,7 @@ func (fs *FileStore) GetSettings() Settings {
 	}
 	normalizeDockerSettings(&settings)
 	normalizeWebSearchSettings(&settings)
+	normalizeUnraidSettings(&settings)
 	// 0 stays 0 — it means "the built-in default" — and anything else is held
 	// inside the range a bounded sweep can afford.
 	if settings.HealthCheckTimeoutSeconds != 0 {
@@ -4986,6 +5026,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
 	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
 	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
+	settings.MonitorNotifyAppriseTag = normalizeMonitorNotifyCredential(settings.MonitorNotifyAppriseTag)
 	// Through the same normaliser as every other credential, so a pasted key
 	// with a stray newline is the same key.
 	settings.ArchiveSaveAccessKey = normalizeMonitorNotifyCredential(settings.ArchiveSaveAccessKey)
