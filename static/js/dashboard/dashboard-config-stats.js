@@ -329,7 +329,14 @@
             });
             const num = (v) => this.statsNumber(Math.round(v));
             hosts.forEach((host) => {
-                const spec = this._statsColumnSpecs?.get(host.getAttribute('data-stats-columns'));
+                // Specs of a body repainted before it was drawn go too.
+                for (const k of [...(this._statsColumnSpecs?.keys() || [])]) {
+                    if (!document.querySelector(`[data-stats-columns="${k}"]`)) this._statsColumnSpecs.delete(k);
+                }
+                const specKey = host.getAttribute('data-stats-columns');
+                const spec = this._statsColumnSpecs?.get(specKey);
+                // Used once: every repaint added a spec and none left.
+                if (host.isConnected) this._statsColumnSpecs?.delete(specKey);
                 if (!host.isConnected || !spec || host.querySelector('.nd-chart')) return;
                 const two = spec.series.length > 1;
                 const max = Math.max(1, ...spec.series.flatMap((s) => s.values.map((v) => Number(v) || 0)));
@@ -1886,7 +1893,12 @@
             });
             const pct = (v) => `${Math.round(v)}%`;
             hosts.forEach((host) => {
-                const data = this._statsHealthLines?.get(host.getAttribute('data-stats-healthline'));
+                for (const k of [...(this._statsHealthLines?.keys() || [])]) {
+                    if (!document.querySelector(`[data-stats-healthline="${k}"]`)) this._statsHealthLines.delete(k);
+                }
+                const lineKey = host.getAttribute('data-stats-healthline');
+                const data = this._statsHealthLines?.get(lineKey);
+                if (host.isConnected) this._statsHealthLines?.delete(lineKey);
                 if (!host.isConnected || !data || host.querySelector('.nd-chart')) return;
                 this._statsHealthCharts.push(global.NdChart.chart(host, {
                     x: data.series.map((p) => p.t / 1000),

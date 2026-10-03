@@ -174,6 +174,8 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — Retest all writes one sample per URL.** A URL monitored on two pages got two per retest, counted twice and with each copy's rules mixed in.
 - **fix — an unreachable alert service is logged by host.** The log quoted the whole address, Telegram bot token included.
 - **fix — the health picker leaves out sign-ins a check never sends.** A widget's session login was offered, and the monitor then checked anonymously and reported down.
+- **fix — the large view's heatmap and Today bars follow the clock across a DST switch**; the 23:00 hour landed in the next day's column.
+- **fix — Collection health lets go of its charts when it closes**, and Statistics no longer keeps every chart it drew.
 
 ### Charts
 

@@ -520,7 +520,9 @@
             let bars = [];
             if (isToday) {
                 for (let h = 0; h < 24; h += 1) {
-                    const at = midnight.getTime() + h * HOUR;
+                    // Each bar the hour the clock shows, so a DST day still
+                    // reads 00:00 to 23:00 without a shifted hour.
+                    const at = new Date(midnight.getFullYear(), midnight.getMonth(), midnight.getDate(), h).getTime();
                     const inHour = inRange.filter((s) => s.t >= at && s.t < at + HOUR);
                     bars.push({ ratio: inHour.length ? inHour.filter((s) => s.up).length / inHour.length : null,
                         n: inHour.length, label: `${String(h).padStart(2, '0')}:00`, at: at + HOUR / 2 });
@@ -719,7 +721,10 @@
             const cells = new Map();
             samples.forEach((s) => {
                 if (s.t < start.getTime() || s.maint) return;
-                const dayIdx = Math.floor((s.t - start.getTime()) / DAY);
+                // By calendar day, not 24-hour steps: across a DST switch the
+                // 23:00 hour landed in the next day's column.
+                const at = new Date(s.t);
+                const dayIdx = Math.round((new Date(at.getFullYear(), at.getMonth(), at.getDate()) - start) / DAY);
                 const hour = new Date(s.t).getHours();
                 const k = `${dayIdx}:${hour}`;
                 const c = cells.get(k) || { up: 0, down: 0, slow: 0 };
@@ -735,7 +740,7 @@
                 for (let hr = 0; hr < 24; hr += 1) {
                     const c = cells.get(`${d}:${hr}`);
                     const tone = !c ? 'muted' : c.down ? 'bad' : c.slow ? 'warn' : 'good';
-                    const when = new Date(start.getTime() + d * DAY + hr * HOUR);
+                    const when = new Date(start.getFullYear(), start.getMonth(), start.getDate() + d, hr);
                     const tip = `${when.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} ${String(hr).padStart(2, '0')}:00 · ${c
                         ? [c.up ? `${c.up} ${this.t('config.bmLargeTipUp', 'up')}` : '', c.slow ? `${c.slow} ${this.t('config.bmLargeTipSlow', 'slow')}` : '',
                             c.down ? `${c.down} ${this.t('config.bmLargeTipDown', 'down')}` : ''].filter(Boolean).join(', ')

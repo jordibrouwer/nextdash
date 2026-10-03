@@ -43,6 +43,14 @@
                 modalClass: 'view-explain-modal bm-health-modal',
                 // Wide enough for four columns: the collection read at one glance.
                 modalMaxWidth: 'min(82rem, calc(100vw - 2.5rem))',
+                // Gone with the modal: the charts, their ResizeObservers and
+                // canvases stayed alive until the next open.
+                onHide: () => {
+                    ['_bmScoreChart', '_bmTrendChart', '_bmFleetDaysChart'].forEach((k) => {
+                        try { this[k]?.destroy?.(); } catch { /* already gone */ }
+                        this[k] = null;
+                    });
+                },
             });
             this.bindBmHealthModal();
             this.fitBmHealthModal();
