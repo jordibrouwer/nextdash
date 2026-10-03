@@ -2633,7 +2633,9 @@ class DashboardInlineEdit {
         // An app the icon sets know shows its set icon; its favicon is not
         // fetched at all (the server says so in setIcon).
         if (!withIcon || preview?.setIcon) return { icon, preview: preview ? { ...preview, url: preview.url || safeUrl } : null };
-        const previewIconUrl = String(preview?.icon || '').trim();
+        // The remote address of the page's own icon; icon itself is a local
+        // cached path, or empty on a fresh fetch.
+        const previewIconUrl = String(preview?.iconSource || '').trim();
         if (previewIconUrl) icon = await this.uploadBookmarkIconFromUrl(previewIconUrl);
         if (!icon) {
             const fallbackUrl = this.deriveFaviconFromBookmarkUrl(safeUrl);

@@ -35,7 +35,8 @@ the file that is there.
 var (
 	errIconSetNotFound = errors.New("icon not in set")
 	iconSetFilePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*\.(svg|png)$`)
-	iconSetFetchMu     sync.Mutex
+	iconSetFetchMu     sync.Mutex // guards iconSetFileLocks
+	iconSetFileLocks   = map[string]*sync.Mutex{}
 	// iconSetMisses remembers a file that could not be had, so a page that
 	// shows it does not send the server to the CDN on every load.
 	iconSetMisses sync.Map // "<set>/<file>" -> time.Time
@@ -94,16 +95,35 @@ func ensureIconSetFile(ctx context.Context, set, file string) (string, error) {
 	if at, ok := iconSetMisses.Load(missKey); ok && time.Since(at.(time.Time)) < iconSetMissTTL {
 		return "", errIconSetNotFound
 	}
-	iconSetFetchMu.Lock()
-	defer iconSetFetchMu.Unlock()
+	unlock := lockIconSetFile(missKey)
+	defer unlock()
 	if _, err := os.Stat(path); err == nil {
 		return path, nil // fetched while this one waited
 	}
-	path, err := fetchIconSetFile(ctx, repo, path, file)
-	if err != nil {
+	if at, ok := iconSetMisses.Load(missKey); ok && time.Since(at.(time.Time)) < iconSetMissTTL {
+		return "", errIconSetNotFound // missed while this one waited
+	}
+	// Not on the page's own context: a reload cancelled every queued fetch,
+	// each was stored as a miss, and those icons showed letters for an hour.
+	path, err := fetchIconSetFile(context.WithoutCancel(ctx), repo, path, file)
+	if err != nil && !errors.Is(err, context.Canceled) {
 		iconSetMisses.Store(missKey, time.Now())
 	}
 	return path, err
+}
+
+// lockIconSetFile serialises fetches of one file, so different files fetch
+// side by side instead of waiting in one line.
+func lockIconSetFile(key string) func() {
+	iconSetFetchMu.Lock()
+	mu := iconSetFileLocks[key]
+	if mu == nil {
+		mu = &sync.Mutex{}
+		iconSetFileLocks[key] = mu
+	}
+	iconSetFetchMu.Unlock()
+	mu.Lock()
+	return mu.Unlock
 }
 
 func fetchIconSetFile(ctx context.Context, repo, path, file string) (string, error) {

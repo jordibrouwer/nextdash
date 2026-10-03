@@ -117,3 +117,17 @@ func TestFetchAndStoreBookmarkIconUsesTheDeclaredIcon(t *testing.T) {
 		t.Fatal("no icon stored for a site that declares one")
 	}
 }
+
+// An icon picked in the app-icon picker keeps the set's file name; Refresh all
+// cleared or overwrote it. Fetched and uploaded icons are icon-<hex> and are
+// still refreshed.
+func TestRefreshAllLeavesAPickedIconAlone(t *testing.T) {
+	bookmarks := []Bookmark{
+		{Name: "Picked", URL: "https://sonarr.example.com/", Icon: "sonarr.svg"},
+		{Name: "Fetched", URL: "https://other.example.com/", Icon: "icon-0123456789abcdef.png"},
+	}
+	got := collectIconCandidates(bookmarks, true, true)
+	if len(got) != 1 || got[0].index != 1 {
+		t.Fatalf("candidates = %+v, want only the fetched icon", got)
+	}
+}

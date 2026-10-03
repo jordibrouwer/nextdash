@@ -195,7 +195,13 @@
                 o.append(img, label);
                 o.addEventListener('mousedown', (e) => e.preventDefault()); // keep focus where it is
                 o.addEventListener('click', () => {
-                    sel = i;
+                    // The variant the grid draws: a click kept the previous
+                    // item's variant (or 'base'), so a dark theme saved the
+                    // black icon it did not show, or one the item lacks.
+                    if (i !== sel) {
+                        sel = i;
+                        variant = themeVariant(ref);
+                    }
                     void choose(ref, variant);
                 });
                 grid.appendChild(o);
@@ -212,7 +218,7 @@
         function select(i) {
             if (!results.length) return;
             const next = Math.max(0, Math.min(results.length - 1, i));
-            if (next !== sel) variant = 'base';
+            if (next !== sel) variant = themeVariant(results[next]);
             sel = next;
             renderGrid();
         }
@@ -229,7 +235,7 @@
             if (mine !== seq || !pop.isConnected) return;
             results = Array.isArray(data?.results) ? data.results : [];
             sel = 0;
-            variant = 'base';
+            variant = results[0] ? themeVariant(results[0]) : 'base';
             renderGrid();
             const unavailable = !data || data.unavailable;
             message.hidden = results.length > 0 || !input.value.trim();

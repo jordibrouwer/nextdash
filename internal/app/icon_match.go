@@ -136,6 +136,9 @@ func bookmarkHostCandidates(rawURL string) []string {
 }
 
 func (x *iconSetIndex) firstMatch(cands []string) *iconSetEntry {
+	if x == nil {
+		return nil // the sets have not been fetched (yet)
+	}
 	for _, c := range cands {
 		if x.aliasKeys[iconKey(c)] {
 			continue

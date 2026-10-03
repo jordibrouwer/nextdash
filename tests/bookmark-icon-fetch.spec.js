@@ -32,7 +32,9 @@ async function stubIconFetch(page, { icon = 'https://example.com/favicon.ico', f
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
-            body: JSON.stringify(fail ? {} : { icon }),
+            // What the server sends: the page's icon address in iconSource,
+            // and icon as a local cached path (or empty on a fresh fetch).
+            body: JSON.stringify(fail ? {} : { icon: '/data/preview-images/cached.png', iconSource: icon }),
         });
     });
     await page.route('**/api/icon/from-url', async (route) => {
@@ -191,4 +193,22 @@ test.describe('fetching a favicon', () => {
         await expect(iconField(page), 'a failed fetch invented an icon').toHaveValue('');
         await expect(page.locator('#bookmark-form-modal .bookmark-form-card-icon img')).toBeHidden();
     });
+});
+
+
+// The page's own <link rel=icon> is what gets downloaded: the form read icon,
+// a local cached path, so every fetch fell back to /favicon.ico.
+test('the declared icon is the one downloaded', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    const asked = [];
+    await stubIconFetch(page, { icon: 'https://declared.example/icon.svg' });
+    page.on('request', (req) => {
+        if (req.url().includes('/api/icon/from-url')) asked.push(JSON.parse(req.postData() || '{}').url);
+    });
+    await page.evaluate(() => window.BookmarkPreviewService.fetchAndUploadFavicon('https://declared.example/'));
+    expect(asked[0]).toBe('https://declared.example/icon.svg');
 });

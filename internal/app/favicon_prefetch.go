@@ -214,6 +214,12 @@ func collectIconCandidates(bookmarks []Bookmark, allowLocal bool, includeExistin
 		if b.IconMode == "letter" {
 			continue
 		}
+		// Picked in the app-icon picker: it keeps the set's file name
+		// (sonarr.svg), where a fetched or uploaded icon is icon-<hex>. Refresh
+		// all cleared or overwrote that choice.
+		if icon := strings.TrimSpace(b.Icon); includeExisting && icon != "" && !generatedIconName.MatchString(icon) {
+			continue
+		}
 		urlStr := strings.TrimSpace(b.URL)
 		if urlStr == "" {
 			continue

@@ -193,3 +193,25 @@ test.describe('app icons on dashboard rows', () => {
         await expect(siteRow.locator('img.bookmark-icon--set')).toHaveCount(0);
     });
 });
+
+// The grid draws each icon in the variant for the theme; a click adopted
+// 'base' (or the previous item's variant) instead, so a dark theme saved the
+// black icon it did not show.
+test('a click adopts the variant the grid shows', async ({ page }) => {
+    await stubPreview(page);
+    const form = await openAdd(page);
+    await form.locator('[data-field="url"]').fill(`https://media.v${Date.now()}.lan`);
+    await form.locator('[data-field="url"]').blur();
+    await form.locator('.bookmark-form-card-pencil').click();
+    await form.locator('[data-icon-set-choose]').click();
+    const picker = page.locator('[data-icon-set-popover]');
+    await picker.getByRole('searchbox').fill('sonarr');
+    const option = picker.locator('[role="option"][data-icon-set-option="dashboard-icons/sonarr"]');
+    await expect(option).toBeVisible();
+    // Sonarr has both: the variant for a dark background on a dark theme.
+    const dark = await page.evaluate(() => window.IconSetAuto?.isDark?.() ?? false);
+    const adopted = page.waitForRequest((req) => req.url().includes('/api/icon-sets/adopt'));
+    await option.click();
+    const variant = JSON.parse((await adopted).postData() || '{}').variant;
+    expect(variant).toBe(dark ? 'light' : 'dark');
+});

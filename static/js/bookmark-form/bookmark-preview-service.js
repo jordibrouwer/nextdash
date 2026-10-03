@@ -59,6 +59,10 @@
             description: data.description || '',
             image: data.image || '',
             icon: data.icon || '',
+            // The page's own <link rel=icon>, remote. icon is empty on a fresh
+            // fetch and a local /data/preview-images path once cached, so
+            // uploading it always fell back to /favicon.ico.
+            iconSource: data.iconSource || '',
             domain: data.domain || global.BookmarkUrlUtils?.extractDomainFromUrl(safeUrl) || '',
             // The app-icon sets know this address: its set icon shows, so no
             // favicon is fetched for it.
@@ -74,7 +78,7 @@
         try {
             const preview = await fetchLinkPreview(safeUrl, apiBase);
             if (preview.setIcon) return '';
-            const iconUrl = String(preview?.icon || '').trim();
+            const iconUrl = String(preview?.iconSource || '').trim();
             if (iconUrl) {
                 const icon = await uploadIconFromUrl(iconUrl, apiBase);
                 if (icon) return icon;

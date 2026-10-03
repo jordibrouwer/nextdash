@@ -106,6 +106,11 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **new — an icon picker** (`icon-set-picker.js`, lazy): a search over both sets in a grid, with the variants of the chosen icon underneath. ↓ goes into the grid, the arrows move, Alt+←/→ picks the variant, Enter chooses, Escape closes and gives focus back. Choosing adopts the icon: `POST /api/icon-sets/adopt` copies it into `data/icons/` (`sonarr.svg`, `sonarr-2.svg` when the name is taken by other bytes), behind the write token, and from then on it is an ordinary icon of yours. `GET /api/icon-sets/search`, `/suggest` and `POST /api/icon-sets/match` answer the page.
 - **new — credits in About → Colophon** for dashboard-icons (Apache-2.0) and selfh.st/icons (CC BY 4.0), with links to both and to the licence.
 - **fix — a loose alias word no longer picks the icon.** An alias such as "maps" or "music" matched any host or container with that word, so maps.google.com got Apple Maps, music.youtube.com Anghami and a container called `app` Miro, and "Refresh all favicons" then cleared the favicon those bookmarks had. Matching now reads names only (`iconSetIndex.aliasKeys`); search and the form's suggestions still offer aliases.
+- **fix — the bookmark form uses the page's own icon.** It read the preview's `icon`, which is empty on a fresh fetch and a local cached path after it, so every fetch fell back to `/favicon.ico`; it reads `iconSource` now.
+- **fix — a reload no longer leaves set icons as letters for an hour.** A cancelled page load failed every queued icon fetch and stored each as a miss; fetches now run on their own, a cancelled one is not a miss, and different files fetch side by side instead of in one line.
+- **fix — Refresh all favicons keeps an icon picked in the app-icon picker.** It cleared it on a matched address and overwrote it with the site favicon on any other.
+- **fix — the picker saves the variant it shows.** In a dark theme the grid drew the light icon and saved the black one; a click also kept the previous item's variant, and an item without it failed with "Could not use this icon".
+- **fix — no crash before the icon sets are fetched.** The alias fix read the index without checking that there was one.
 
 ### Containers
 
