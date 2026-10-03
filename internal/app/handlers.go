@@ -1643,6 +1643,16 @@ func trimBookmarkTextFields(b *Bookmark) {
 	b.Name = strings.TrimSpace(b.Name)
 	b.Category = strings.TrimSpace(b.Category)
 	b.Note = strings.TrimSpace(b.Note)
+	normalizeBookmarkIconMode(b)
+}
+
+// normalizeBookmarkIconMode keeps IconMode to the one value it has, and drops
+// it once the bookmark has an icon of its own: choosing or uploading an icon
+// is the newer choice, and a mode left behind would come back on Clear.
+func normalizeBookmarkIconMode(b *Bookmark) {
+	if b.IconMode != "letter" || strings.TrimSpace(b.Icon) != "" {
+		b.IconMode = ""
+	}
 }
 
 // normalizeTags trims, lowercases, deduplicates, and removes empty tag values.

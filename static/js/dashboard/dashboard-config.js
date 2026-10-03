@@ -25171,6 +25171,51 @@ class DashboardConfig {
         window.open(template.replace('{url}', encodeURIComponent(url)), '_blank', 'noopener,noreferrer');
     }
 
+    /**
+     * The same three choices a container's icon has: an app icon from the
+     * sets, the letter, or automatic.
+     *
+     * A bookmark keeps its icon in `icon`, so automatic is simply no icon of
+     * its own: the dashboard then shows the app's set icon, else the favicon
+     * the server fills in. The letter is `iconMode: 'letter'`, which the row
+     * honours and the favicon fill skips. Choosing an icon clears the mode;
+     * the server does the same for an icon set any other way.
+     */
+    async chooseBookmarkAppIcon(key, anchor) {
+        const record = await this.findBookmarkRecord(key);
+        if (!record) return;
+        let picker = null;
+        try {
+            picker = await window.IconSetAuto?.loadPicker();
+        } catch {
+            picker = null;
+        }
+        if (!picker) {
+            this.notify(this.t('dashboard.iconSetAdoptFailed', 'Could not use this icon.'), 'error');
+            return;
+        }
+        const d = this.dash;
+        picker.open(anchor, {
+            query: record.record?.name || '',
+            container: document.body,
+            t: (k, fallback, vars) => {
+                const full = `dashboard.${k}`;
+                const said = d.language?.t(full);
+                const text = said && said !== full ? said : String(fallback);
+                return text.replace(/\{(\w+)\}/g, (_, n) => (vars && n in vars ? vars[n] : `{${n}}`));
+            },
+            notify: (msg, kind) => this.notify(msg, kind),
+            onPick: (icon) => void this.saveBookmarkIconMode(key, { icon, iconMode: '' }),
+        });
+    }
+
+    /** Write icon and mode together, and say so if the save did not land. */
+    async saveBookmarkIconMode(key, patch) {
+        this.closeBookmarkMenus();
+        const ok = await this.saveBookmarkFields(key, patch);
+        if (!ok) this.notify(this.t('dashboard.dockerIconSaveFailed', 'Could not save the icon.'), 'error');
+    }
+
     async refreshBookmarkFavicon(key) {
         if (this._bmBusyKeys.has(key)) return;
         const record = await this.findBookmarkRecord(key);
@@ -25349,6 +25394,12 @@ class DashboardConfig {
                 break;
             case 'favicon':
                 void this.refreshBookmarkFavicon(key);
+                break;
+            case 'icon-letter':
+                void this.saveBookmarkIconMode(key, { icon: '', iconMode: 'letter' });
+                break;
+            case 'icon-auto':
+                void this.saveBookmarkIconMode(key, { icon: '', iconMode: '' });
                 break;
             case 'archive':
                 this.openBookmarkArchive(bookmark);

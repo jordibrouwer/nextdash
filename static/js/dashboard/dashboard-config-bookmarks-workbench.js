@@ -567,6 +567,7 @@
                         <div class="config-bm-more-menu" role="menu" data-bm-more-menu hidden>
                             ${this.renderBmHealthActions?.(b, { skip: ['recheck'] }) || ''}
                             <button type="button" class="config-btn config-btn--small" data-bm-panel-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>
+                            ${this.renderBmIconModeItems(b)}
                             <button type="button" class="config-btn config-btn--small" data-bm-panel-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>
                             <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.delete', 'Delete'))}</button>
                         </div>
@@ -696,6 +697,25 @@
         e.preventDefault();
         e.stopImmediatePropagation();
         return true;
+    },
+
+    /**
+     * The icon's three choices, as the container drawer offers them: an app
+     * icon, the letter, or automatic. The one in force is marked; an icon of
+     * the bookmark's own counts as neither of the other two.
+     */
+    renderBmIconModeItems(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const own = Boolean(String(b.icon || '').trim());
+        const letter = !own && b.iconMode === 'letter';
+        const item = (action, label, on) => `
+            <button type="button" class="config-btn config-btn--small" data-bm-panel-action="${action}"
+                    role="menuitemradio" aria-checked="${on ? 'true' : 'false'}">${on ? '✓ ' : ''}${esc(label)}</button>`;
+        return [
+            item('icon-choose', this.t('dashboard.iconSetChoose', 'Choose app icon…'), false),
+            item('icon-letter', this.t('dashboard.dockerIconLetter', 'Use letter'), letter),
+            item('icon-auto', this.t('dashboard.dockerIconAutomatic', 'Automatic'), !own && !letter),
+        ].join('');
     },
 
     /** Close the ⋯ menu, if it is open; true when there was one to close. */
@@ -1242,6 +1262,8 @@
             const key = panel.dataset.bmPanelKey;
             if (!action || !key) return;
             if (action === 'open') this.openBookmarkByKey(key);
+            // The menu has closed by now, so the picker hangs off the ⋯ button.
+            else if (action === 'icon-choose') void this.chooseBookmarkAppIcon(key, panel.querySelector('[data-bm-more-toggle]'));
             else if (action === 'edit-dialog') void this.openBookmarkEditModal(key);
             else if (action === 'promote') void this.openBookmarkEditModal(key, { promote: true });
             else if (action === 'delete') void this.deleteBookmarkByKey(key);

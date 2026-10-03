@@ -34,7 +34,12 @@ type Bookmark struct {
 	Pinned      bool   `json:"pinned,omitempty"`
 	CheckStatus bool   `json:"checkStatus"`
 	Icon        string `json:"icon"`
-	CreatedAt   int64  `json:"createdAt,omitempty"` // Timestamp when bookmark was created
+	// IconMode is how a bookmark without an icon of its own is drawn: empty
+	// for automatic (the app's set icon, else a fetched favicon), "letter" for
+	// the letter tile and nothing fetched. An icon of its own always wins, so
+	// setting one clears this (normalizeBookmarkIconMode).
+	IconMode  string `json:"iconMode,omitempty"`
+	CreatedAt int64  `json:"createdAt,omitempty"` // Timestamp when bookmark was created
 	// UpdatedAt records the last change to a bookmark's own content — name, URL,
 	// category, tags and the like. It is deliberately not touched by the health
 	// monitor or by opening a bookmark: LastChecked and LastOpened already carry
