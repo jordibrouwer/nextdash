@@ -384,8 +384,13 @@
             const sampleDays = Number(hist?.sampleDays) || 30;
             // From the data, not the retention: the checks kept one by one reach
             // back a week at a 5-minute interval, and "30 days" read that week.
+            const rawCovers = nDays <= sampleDays;
+            // Whether the checks kept one by one actually reach back to the
+            // start of the period: at a 5-minute interval they hold a week,
+            // and "30 days" read that week. Only the uptime figure needs it;
+            // the charts draw what there is.
             const rawStart = samples.length ? Number(samples[0].t) : now;
-            const rawCovers = nDays <= sampleDays && from >= rawStart;
+            const rawReaches = rawCovers && from >= rawStart;
             const rangeLabel = isToday ? t('bmLargeToday', 'today')
                 : t('bmLargeLastDays', 'last {n} days').replace('{n}', String(nDays));
             const rawLabel = rawCovers ? rangeLabel : t('bmLargeLastDays', 'last {n} days').replace('{n}', String(sampleDays));
@@ -445,7 +450,7 @@
             // themselves, as the server's own 30-day figure counts them.
             const rawDay = (() => { const d = new Date(rawStart); d.setUTCHours(0, 0, 0, 0); return d.getTime(); })();
             const olderDays = rangeDays.filter((d) => d.d < rawDay);
-            const [upN, allN] = rawCovers
+            const [upN, allN] = rawReaches
                 ? [inRange.filter((s) => s.up).length, inRange.length]
                 : [olderDays.reduce((a, d) => a + d.u, 0) + inRange.filter((s) => s.up).length,
                     olderDays.reduce((a, d) => a + d.n, 0) + inRange.length];
