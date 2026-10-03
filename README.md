@@ -276,6 +276,21 @@ More is on the way: deeper Unraid integration is being worked on for future vers
   </tr>
 </table>
 
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-unraid-black.jpg" alt="Unraid widgets in the Unraid Black theme" width="100%" />
+      <br />
+      <sub><b>Unraid Black</b> <i>(dark)</i> — A theme for Unraid users: flat black panels, small uppercase labels and the orange of the Unraid logo, with the Unraid widgets beside the homelab bookmarks.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-unraid-azure.jpg" alt="Unraid widgets in the Unraid Azure theme" width="100%" />
+      <br />
+      <sub><b>Unraid Azure</b> <i>(light)</i> — The cooler pair: grey-blue panels and a steel-blue accent. Both themes come in a dark and a light variant.</sub>
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## Security
