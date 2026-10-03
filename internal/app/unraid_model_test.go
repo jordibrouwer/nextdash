@@ -110,6 +110,26 @@ func TestToUnraidSharesByPlace(t *testing.T) {
 	}
 }
 
+// A real Unraid 7.3.2 server: twenty-six shares, one array and two NVMe cache
+// devices (the second reports no figures of its own), read a moment apart
+// from the array's own capacity.
+func TestToUnraidSharesRecordedServer(t *testing.T) {
+	v, err := toUnraidShares(unraidFixture(t, "recorded-shares"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	total := 0
+	for _, p := range v {
+		if p.Kind == "other" {
+			t.Fatalf("a share was not placed: %+v", p)
+		}
+		total += len(p.Shares)
+	}
+	if len(v) != 3 || total != 26 {
+		t.Fatalf("%d places, %d shares: %+v", len(v), total, v)
+	}
+}
+
 func TestToUnraidVMsAndUPSAndNotifications(t *testing.T) {
 	vms, _ := toUnraidVMs(unraidFixture(t, "vms"))
 	if vms[0].State != "running" || vms[1].State != "paused" || vms[2].State != "stopped" {
@@ -220,3 +240,18 @@ func TestUnraidDiskHotThreshold(t *testing.T) {
 	}
 }
 
+// The array as a real, healthy Unraid 7.3 server answered it (recorded with
+// scripts/unraid-record.py): sizes as JSON numbers, sleeping disks without a
+// temperature, two NVMe cache devices at 45-46 °C. Nothing is a problem.
+func TestToUnraidArrayRecordedHealthyServer(t *testing.T) {
+	v, err := toUnraidArray(unraidFixture(t, "recorded-array"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !v.Started || v.ProblemDisks != 0 {
+		t.Fatalf("started=%v problemDisks=%d (%+v)", v.Started, v.ProblemDisks, v.Disks)
+	}
+	if v.TotalBytes != 36003715240*1024 {
+		t.Fatalf("total = %d", v.TotalBytes)
+	}
+}

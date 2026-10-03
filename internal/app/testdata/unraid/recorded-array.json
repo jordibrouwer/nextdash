@@ -1,0 +1,109 @@
+{
+ "data": {
+  "array": {
+   "state": "STARTED",
+   "capacity": {
+    "kilobytes": {
+     "free": "20098400477",
+     "used": "15899367120",
+     "total": "36003715240"
+    }
+   },
+   "parities": [
+    {
+     "name": "parity",
+     "status": "DISK_OK",
+     "temp": null,
+     "numErrors": 0,
+     "fsSize": null,
+     "fsUsed": null,
+     "fsFree": null,
+     "isSpinning": false,
+     "type": "PARITY",
+     "warning": null,
+     "rotational": true
+    }
+   ],
+   "disks": [
+    {
+     "name": "disk1",
+     "status": "DISK_OK",
+     "temp": 35,
+     "numErrors": 0,
+     "fsSize": 20000588902,
+     "fsUsed": 14786234941,
+     "fsFree": 5212215214,
+     "isSpinning": true,
+     "type": "DATA",
+     "warning": null,
+     "rotational": true
+    },
+    {
+     "name": "disk2",
+     "status": "DISK_OK",
+     "temp": 30,
+     "numErrors": 0,
+     "fsSize": 8001563169,
+     "fsUsed": 1113126117,
+     "fsFree": 6886837772,
+     "isSpinning": true,
+     "type": "DATA",
+     "warning": null,
+     "rotational": true
+    },
+    {
+     "name": "disk3",
+     "status": "DISK_OK",
+     "temp": null,
+     "numErrors": 0,
+     "fsSize": 8001563169,
+     "fsUsed": 6062,
+     "fsFree": 7999347491,
+     "isSpinning": false,
+     "type": "DATA",
+     "warning": null,
+     "rotational": true
+    }
+   ],
+   "caches": [
+    {
+     "name": "cache",
+     "status": "DISK_OK",
+     "temp": 45,
+     "numErrors": 0,
+     "fsSize": 4000795771,
+     "fsUsed": 522967319,
+     "fsFree": 3470268727,
+     "isSpinning": true,
+     "type": "CACHE",
+     "warning": null,
+     "rotational": false
+    },
+    {
+     "name": "cache2",
+     "status": "DISK_OK",
+     "temp": 46,
+     "numErrors": 0,
+     "fsSize": null,
+     "fsUsed": null,
+     "fsFree": null,
+     "isSpinning": true,
+     "type": "CACHE",
+     "warning": null,
+     "rotational": false
+    }
+   ],
+   "parityCheckStatus": {
+    "status": "COMPLETED",
+    "running": null,
+    "paused": null,
+    "progress": 0,
+    "speed": "0",
+    "errors": null,
+    "date": "2026-10-03T04:12:20.000Z",
+    "duration": 23394,
+    "correcting": null
+   }
+  }
+ }
+}

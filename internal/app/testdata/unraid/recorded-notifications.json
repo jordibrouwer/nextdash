@@ -1,0 +1,196 @@
+{
+ "data": {
+  "notifications": {
+   "overview": {
+    "unread": {
+     "info": 50,
+     "warning": 25,
+     "alert": 2,
+     "total": 77
+    }
+   },
+   "list": [
+    {
+     "id": "n0",
+     "title": "Notification 0",
+     "subject": "Subject 0",
+     "description": "",
+     "importance": "INFO",
+     "link": null,
+     "timestamp": "2026-10-03T10:48:08.000Z"
+    },
+    {
+     "id": "n1",
+     "title": "Notification 1",
+     "subject": "Subject 1",
+     "description": "",
+     "importance": "WARNING",
+     "link": "/Main",
+     "timestamp": "2026-10-03T10:43:01.000Z"
+    },
+    {
+     "id": "n2",
+     "title": "Notification 2",
+     "subject": "Subject 2",
+     "description": "",
+     "importance": "INFO",
+     "link": null,
+     "timestamp": "2026-10-03T06:00:02.000Z"
+    },
+    {
+     "id": "n3",
+     "title": "Notification 3",
+     "subject": "Subject 3",
+     "description": "",
+     "importance": "WARNING",
+     "link": null,
+     "timestamp": "2026-10-03T04:40:43.000Z"
+    },
+    {
+     "id": "n4",
+     "title": "Notification 0",
+     "subject": "Subject 4",
+     "description": "",
+     "importance": "INFO",
+     "link": null,
+     "timestamp": "2026-10-03T04:12:08.000Z"
+    },
+    {
+     "id": "n5",
+     "title": "Notification 4",
+     "subject": "Subject 5",
+     "description": "",
+     "importance": "INFO",
+     "link": null,
+     "timestamp": "2026-10-03T04:11:55.000Z"
+    },
+    {
+     "id": "n6",
+     "title": "Notification 4",
+     "subject": "Subject 6",
+     "description": "",
+     "importance": "WARNING",
+     "link": null,
+     "timestamp": "2026-10-03T04:07:28.000Z"
+    },
+    {
+     "id": "n7",
+     "title": "Notification 4",
+     "subject": "Subject 6",
+     "description": "",
+     "importance": "WARNING",
+     "link": null,
+     "timestamp": "2026-10-03T03:44:27.000Z"
+    },
+    {
+     "id": "n8",
+     "title": "Notification 4",
+     "subject": "Subject 6",
+     "description": "",
+     "importance": "WARNING",
+     "link": null,
+     "timestamp": "2026-10-03T03:42:29.000Z"
+    },
+    {
+     "id": "n9",
+     "title": "Notification 0",
+     "subject": "Subject 7",
+     "description": "",
+     "importance": "INFO",
+     "link": null,
+     "timestamp": "2026-10-03T02:00:09.000Z"
+    },
+    {
+     "id": "n10",
+     "title": "Notification 0",
+     "subject": "Subject 8",
+     "description": "",
+     "importance": "INFO",
+     "link": null,
+     "timestamp": "2026-10-03T00:36:06.000Z"
+    },
+    {
+     "id": "n11",
+     "title": "Notification 0",
+     "subject": "Subject 9",
+     "description": "",
+     "importance": "INFO",
+     "link": null,
+     "timestamp": "2026-10-03T00:30:09.000Z"
+    },
+    {
+     "id": "n12",
+     "title": "Notification 5",
+     "subject": "Subject 10",
+     "description": "",
+     "importance": "INFO",
+     "link": "/Docker",
+     "timestamp": "2026-10-03T00:10:39.000Z"
+    },
+    {
+     "id": "n13",
+     "title": "Notification 6",
+     "subject": "Subject 11",
+     "description": "",
+     "importance": "INFO",
+     "link": "/Docker",
+     "timestamp": "2026-10-03T00:10:39.000Z"
+    },
+    {
+     "id": "n14",
+     "title": "Notification 7",
+     "subject": "Subject 12",
+     "description": "",
+     "importance": "INFO",
+     "link": "/Docker",
+     "timestamp": "2026-10-03T00:10:39.000Z"
+    },
+    {
+     "id": "n15",
+     "title": "Notification 8",
+     "subject": "Subject 13",
+     "description": "",
+     "importance": "INFO",
+     "link": "/Docker",
+     "timestamp": "2026-10-03T00:10:39.000Z"
+    },
+    {
+     "id": "n16",
+     "title": "Notification 9",
+     "subject": "Subject 14",
+     "description": "",
+     "importance": "INFO",
+     "link": "/Docker",
+     "timestamp": "2026-10-03T00:10:39.000Z"
+    },
+    {
+     "id": "n17",
+     "title": "Notification 10",
+     "subject": "Subject 15",
+     "description": "",
+     "importance": "INFO",
+     "link": "/Docker",
+     "timestamp": "2026-10-03T00:10:39.000Z"
+    },
+    {
+     "id": "n18",
+     "title": "Notification 11",
+     "subject": "Subject 16",
+     "description": "",
+     "importance": "INFO",
+     "link": "/Docker",
+     "timestamp": "2026-10-03T00:10:39.000Z"
+    },
+    {
+     "id": "n19",
+     "title": "Notification 12",
+     "subject": "Subject 17",
+     "description": "",
+     "importance": "INFO",
+     "link": "/Plugins",
+     "timestamp": "2026-10-03T00:10:16.000Z"
+    }
+   ]
+  }
+ }
+}

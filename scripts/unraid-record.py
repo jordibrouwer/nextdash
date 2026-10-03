@@ -14,16 +14,16 @@ from pathlib import Path
 OUT = Path(__file__).resolve().parents[1] / "internal/app/testdata/unraid"
 
 QUERIES = {
-    "array": "{ array { state capacity { kilobytes { free used total } } parities { name status temp numErrors fsSize fsUsed fsFree isSpinning type } disks { name status temp numErrors fsSize fsUsed fsFree isSpinning type } caches { name status temp numErrors fsSize fsUsed fsFree isSpinning type } parityCheckStatus { status running paused progress speed errors date duration correcting } } }",
+    "array": "{ array { state capacity { kilobytes { free used total } } parities { name status temp numErrors fsSize fsUsed fsFree isSpinning type warning rotational } disks { name status temp numErrors fsSize fsUsed fsFree isSpinning type warning rotational } caches { name status temp numErrors fsSize fsUsed fsFree isSpinning type warning rotational } parityCheckStatus { status running paused progress speed errors date duration correcting } } }",
     "parity": "{ array { parityCheckStatus { status running paused progress speed errors date duration correcting } } parityHistory { date duration speed status errors } }",
-    "shares": "{ shares { name used free size cache } }",
+    "shares": "{ shares { name used free } array { capacity { kilobytes { free used } } caches { name fsUsed fsFree } } }",
     "vms": "{ vms { domains { name state } } }",
     "ups": "{ upsDevices { name model status battery { chargeLevel estimatedRuntime } power { loadPercentage currentPower } } }",
     "notifications": "{ notifications { overview { unread { info warning alert total } } list(filter: { type: UNREAD, offset: 0, limit: 20 }) { id title subject description importance link timestamp } } }",
     "info": "{ info { os { hostname release uptime } versions { core { unraid api } } } }",
 }
 
-KEEP_NAME = re.compile(r"^(disk\d+|parity\d*|cache|flash)$")
+KEEP_NAME = re.compile(r"^(disk\d+|parity\d*|cache\d*|flash)$")
 KEEP_LINK = re.compile(r"^/[A-Za-z0-9_-]+$")
 
 

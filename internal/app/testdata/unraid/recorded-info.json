@@ -1,0 +1,17 @@
+{
+ "data": {
+  "info": {
+   "os": {
+    "hostname": "tower",
+    "release": "7.3 x86_64",
+    "uptime": "2026-09-30T11:24:05.514Z"
+   },
+   "versions": {
+    "core": {
+     "unraid": "7.3.2",
+     "api": "4.37.5+d4d97336"
+    }
+   }
+  }
+ }
+}

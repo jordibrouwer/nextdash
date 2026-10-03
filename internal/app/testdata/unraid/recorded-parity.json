@@ -1,0 +1,103 @@
+{
+ "data": {
+  "array": {
+   "parityCheckStatus": {
+    "status": "COMPLETED",
+    "running": null,
+    "paused": null,
+    "progress": 0,
+    "speed": "0",
+    "errors": null,
+    "date": "2026-10-03T04:12:20.000Z",
+    "duration": 23394,
+    "correcting": null
+   }
+  },
+  "parityHistory": [
+   {
+    "date": "2026-10-03T12:42:14.000Z",
+    "duration": 114036,
+    "speed": "175.4 MB/s",
+    "status": "COMPLETED",
+    "errors": 0
+   },
+   {
+    "date": "2026-09-03T12:22:09.000Z",
+    "duration": 115800,
+    "speed": "172.7 MB/s",
+    "status": "COMPLETED",
+    "errors": 0
+   },
+   {
+    "date": "2026-07-16T16:30:38.000Z",
+    "duration": 827,
+    "speed": "24.2 GB/s",
+    "status": "CANCELLED",
+    "errors": 0
+   },
+   {
+    "date": "2026-05-01T16:11:18.000Z",
+    "duration": 99,
+    "speed": "0",
+    "status": "CANCELLED",
+    "errors": 0
+   },
+   {
+    "date": "2026-05-01T12:00:23.000Z",
+    "duration": 30243,
+    "speed": "0",
+    "status": "CANCELLED",
+    "errors": 0
+   },
+   {
+    "date": "2026-04-13T19:42:19.000Z",
+    "duration": 549,
+    "speed": "36.4 GB/s",
+    "status": "CANCELLED",
+    "errors": 0
+   },
+   {
+    "date": "2026-03-22T22:52:58.000Z",
+    "duration": 1497,
+    "speed": "13.4 GB/s",
+    "status": "CANCELLED",
+    "errors": 0
+   },
+   {
+    "date": "2026-03-03T09:46:39.000Z",
+    "duration": 116083,
+    "speed": "172.3 MB/s",
+    "status": "COMPLETED",
+    "errors": 0
+   },
+   {
+    "date": "2026-01-03T08:02:36.000Z",
+    "duration": 114148,
+    "speed": "175.2 MB/s",
+    "status": "COMPLETED",
+    "errors": 0
+   },
+   {
+    "date": "2025-12-03T07:09:39.000Z",
+    "duration": 113141,
+    "speed": "176.8 MB/s",
+    "status": "COMPLETED",
+    "errors": 0
+   },
+   {
+    "date": "2025-08-02T23:54:08.000Z",
+    "duration": 11079,
+    "speed": "1.8 GB/s",
+    "status": "CANCELLED",
+    "errors": 0
+   },
+   {
+    "date": "2025-08-02T03:06:48.000Z",
+    "duration": 1448,
+    "speed": "13.8 GB/s",
+    "status": "CANCELLED",
+    "errors": 88
+   }
+  ]
+ }
+}
