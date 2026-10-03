@@ -162,6 +162,10 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **new — a script to record the API.** `scripts/unraid-record.py` asks a real Unraid server for each area with a Viewer key and writes anonymised answers to `internal/app/testdata/unraid/recorded-<area>.json`: hostname, share and VM names, notification texts and the UPS model replaced; disk names (disk1, parity, cache), sizes, states and counts kept. It stops at a redirect rather than send the key on.
 - **new — the Unraid server is set in one place only.** A settings import, and the dashboard's own settings save, leave it as it is; only Config → Unraid changes it, so no file can point the saved key at another address. An overview the key may read nothing of now says so, instead of "not in this version"; a server name is cut by characters, not bytes; a server without virtual machines says so on the VMs tile.
 
+### Translations
+
+- **docs — every new string in all six languages.** The 138 strings this release added in English only — the QR code, the Unraid widgets and Config → Unraid, and Containers' tabs — are in Dutch, German, French, Chinese and Spanish, and two that changed (the right-click menu's cheat-sheet line, the container notices' note) are brought up to date; `validate:locale-parity`, the placeholder and cheat-sheet checks pass.
+
 ### Tests
 
 - **tests — Go:** the index (rounds, aliases, variants, search), the 62 containers and the bookmark hosts, refresh with ETag, stale copy and back-off, the cache route (unknown names, traversal, one fetch, sanitising, wrapped PNG, the hour of misses), adopt, the API handlers, the container override and the background fill.
