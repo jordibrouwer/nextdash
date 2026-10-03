@@ -12,6 +12,8 @@ My bookmark bar had become a graveyard, so I built a self-hosted dashboard that 
 
 Run it on any machine or container, open it in your browser, organise bookmarks across pages, and reach everything from the keyboard. Beside your bookmarks, **widgets** show what is going on: uptime of the services you watch, what waits in the inbox, which certificate runs out, the weather, your calendar, your feeds, your machine — and any self-hosted service that answers with JSON.
 
+🎨 **320 themes and a look studio.** 160 theme families, each with a light and a dark half, in twelve characters — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed, carbon, paper, terminal and ink — that decide how the surfaces are drawn, not only their colours. **`Shift + A`** opens the look studio beside your dashboard and changes the real page as you go: the theme, 26 backdrops drawn in its colours, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or character, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: Appearance](MANUAL.md#16-appearance)*
+
 Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
 📖 **[User manual (MANUAL.md)](MANUAL.md)** — how everything works, from the first launch to self-hosting.
