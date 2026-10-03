@@ -380,3 +380,37 @@ test.describe('a stored widget key survives a save', () => {
         });
     }
 });
+
+// A key typed again after a reload went out without the preset's fixed header,
+// and the PUT replaced the entry: Plex lost its Accept and answered XML.
+test('a key typed again keeps the preset header', async ({ page }) => {
+    await openWidgets(page);
+    const index = await addWidget(page, 'custom');
+    const row = page.locator(`[data-widget-row="${index}"]`);
+    await row.locator('[data-widget-preset]').selectOption('plex');
+    await row.locator('[data-widget-auth="secret"]').fill('first-token');
+    await row.locator('[data-widget-save]').click();
+    await expect.poll(async () => page.evaluate(async () => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const blocks = await (await f('/api/pages/1/blocks')).json();
+        return (blocks.widgets || []).at(-1)?.config?.credentialId || '';
+    })).toMatch(/^widget:/);
+
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
+    await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('widgets'); });
+    const toggle = page.locator(`[data-widget-settings="${index}"]`);
+    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+    const again = page.locator(`[data-widget-row="${index}"]`);
+    await again.locator('[data-widget-auth="secret"]').fill('second-token');
+    await again.locator('[data-widget-auth="secret"]').blur();
+    // A key alone does not count as an edit; a figure's label does.
+    const label = again.locator('[data-custom-field="label"]').first();
+    await label.fill('rotated');
+    await label.blur();
+    const put = page.waitForRequest((req) => req.url().includes('/api/health/credentials') && req.method() === 'PUT');
+    await again.locator('[data-widget-save]').click();
+    const body = JSON.parse((await put).postData() || '{}');
+    expect(body.query && Object.values(body.query)).toContain('second-token');
+    expect(Object.keys(body.headers || {}).join(',')).toMatch(/accept/i);
+});

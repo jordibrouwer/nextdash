@@ -812,7 +812,7 @@ is stored is the username and password and the session is fetched.
 // The whole round trip: sign in, keep the cookie, use it.
 func TestASessionCredentialSignsInAndUsesTheCookie(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
-	t.Cleanup(func() { credentialSessionCache = map[string]string{} })
+	t.Cleanup(func() { credentialSessionCache = map[string]credentialSessionEntry{} })
 
 	var logins int
 	var sawReferer, sawCookie string
@@ -888,7 +888,7 @@ func TestASessionCredentialSignsInAndUsesTheCookie(t *testing.T) {
 // in again rather than reporting a 403 nobody can act on.
 func TestAnExpiredSessionIsRenewedRatherThanReported(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
-	t.Cleanup(func() { credentialSessionCache = map[string]string{} })
+	t.Cleanup(func() { credentialSessionCache = map[string]credentialSessionEntry{} })
 
 	var logins int
 	valid := ""

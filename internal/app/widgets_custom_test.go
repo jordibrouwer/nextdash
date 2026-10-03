@@ -1016,3 +1016,26 @@ func TestCustomPercentFieldsKeepTheOldReading(t *testing.T) {
 		t.Fatalf("format = %v, want percentAuto", got)
 	}
 }
+
+// "NaN" and "Infinity" are not numbers a tile can show: NaN made the answer
+// fail to encode, an empty 200 cached for the whole TTL.
+func TestToFloatRefusesNaNAndInf(t *testing.T) {
+	for _, in := range []string{"NaN", "Infinity", "-Inf"} {
+		if _, ok := toFloat(in); ok {
+			t.Errorf("%s read as a number", in)
+		}
+	}
+}
+
+// JSON numbers are float64: printed with fmt.Sprint a million read 1.234567e+06
+// on the tile, and [id=1234567] matched nothing.
+func TestLargeNumbersReadAsWritten(t *testing.T) {
+	var doc any
+	_ = json.Unmarshal([]byte(`{"rows":[{"id":1234567,"v":"yes"}]}`), &doc)
+	if got, ok := customWidgetLookup(doc, "rows[id=1234567].v"); !ok || got != "yes" {
+		t.Fatalf("match = %v %v", got, ok)
+	}
+	if got := jsonText(1234567.0); got != "1234567" {
+		t.Fatalf("text = %q", got)
+	}
+}

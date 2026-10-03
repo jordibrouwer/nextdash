@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"net/http"
 	"net/url"
@@ -14,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 /*
@@ -818,21 +820,38 @@ restart costs one login.
 */
 var (
 	credentialSessionMu    sync.Mutex
-	credentialSessionCache = map[string]string{}
+	credentialSessionCache = map[string]credentialSessionEntry{}
 )
 
-// credentialSessionKey identifies a session by who it belongs to and where it
-// signs in, so two widgets on the same host with different accounts do not share
-// a cookie.
+type credentialSessionEntry struct {
+	value string
+	at    time.Time
+}
+
+// credentialSessionMaxAge is how long a session is reused before signing in
+// again. Not every service refuses an expired token: PocketBase (Beszel)
+// treats one as a guest and answers 200 with an empty list, and the tile then
+// read "0 systems" for good.
+const credentialSessionMaxAge = time.Hour
+
+// credentialSessionKey identifies a session by who it belongs to, where it
+// signs in and the password it signed in with: two widgets on the same host
+// with different accounts do not share a cookie, and a draft with a wrong
+// password is not answered with the stored one's session.
 func credentialSessionKey(host string, session *CredentialSession) string {
-	return host + "|" + session.LoginPath + "|" + session.User
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(session.Password))
+	return fmt.Sprintf("%s|%s|%s|%x", host, session.LoginPath, session.User, h.Sum64())
 }
 
 func cachedCredentialSession(key string) (string, bool) {
 	credentialSessionMu.Lock()
 	defer credentialSessionMu.Unlock()
-	cookie, ok := credentialSessionCache[key]
-	return cookie, ok
+	entry, ok := credentialSessionCache[key]
+	if !ok || time.Since(entry.at) > credentialSessionMaxAge {
+		return "", false
+	}
+	return entry.value, true
 }
 
 func storeCredentialSession(key, cookie string) {
@@ -842,7 +861,7 @@ func storeCredentialSession(key, cookie string) {
 		delete(credentialSessionCache, key)
 		return
 	}
-	credentialSessionCache[key] = cookie
+	credentialSessionCache[key] = credentialSessionEntry{value: cookie, at: time.Now()}
 }
 
 /*

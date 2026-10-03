@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 /*
@@ -62,7 +63,7 @@ func askWithSession(t *testing.T, svc *tokenService, session *CredentialSession)
 
 func TestATokenLoginSendsTheTokenWithItsPrefix(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
-	t.Cleanup(func() { credentialSessionCache = map[string]string{} })
+	t.Cleanup(func() { credentialSessionCache = map[string]credentialSessionEntry{} })
 	// Nginx Proxy Manager's shape: identity and secret in, "token" out, Bearer.
 	svc := newTokenService(t, "/api/tokens", `{"expires":"2026-10-03T00:00:00Z","token":"%s"}`, "Authorization", "Bearer ")
 	h, spec, answer := askWithSession(t, svc, &CredentialSession{
@@ -91,7 +92,7 @@ func TestATokenLoginSendsTheTokenWithItsPrefix(t *testing.T) {
 
 func TestATokenLoginWithoutPrefixAndPasswordOnly(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
-	t.Cleanup(func() { credentialSessionCache = map[string]string{} })
+	t.Cleanup(func() { credentialSessionCache = map[string]credentialSessionEntry{} })
 	// Pi-hole v6: a password only, the token one level down, in its own header.
 	svc := newTokenService(t, "/api/auth", `{"session":{"valid":true,"sid":"%s","validity":1800}}`, "X-FTL-SID", "")
 	_, _, answer := askWithSession(t, svc, &CredentialSession{
@@ -112,7 +113,7 @@ func TestATokenLoginWithoutPrefixAndPasswordOnly(t *testing.T) {
 
 func TestATokenLoginThatAnswersNoTokenFails(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
-	t.Cleanup(func() { credentialSessionCache = map[string]string{} })
+	t.Cleanup(func() { credentialSessionCache = map[string]credentialSessionEntry{} })
 	// A 2FA account on Nginx Proxy Manager answers 200 with a challenge.
 	svc := newTokenService(t, "/api/tokens", `{"requires_2fa":true,"challenge_token":"%s"}`, "Authorization", "Bearer ")
 	_, _, answer := askWithSession(t, svc, &CredentialSession{
@@ -140,5 +141,31 @@ func TestATokenLoginHeaderIsSanitised(t *testing.T) {
 	}
 	if plain := sanitizeCredentialSession(&CredentialSession{LoginPath: "/l", Password: "p", Format: "xml", TokenPath: "t"}); plain.Format != "" || plain.TokenPath != "" {
 		t.Errorf("an unknown format kept token fields: %+v", plain)
+	}
+}
+
+// A draft with a wrong password was answered with the stored password's
+// session, so "Ask now" passed; the password is part of the key.
+func TestSessionKeyFollowsThePassword(t *testing.T) {
+	right := credentialSessionKey("qb.lan", &CredentialSession{LoginPath: "/api/v2/auth/login", User: "admin", Password: "right"})
+	wrong := credentialSessionKey("qb.lan", &CredentialSession{LoginPath: "/api/v2/auth/login", User: "admin", Password: "wrong"})
+	if right == wrong {
+		t.Fatal("a wrong password shares the session of the right one")
+	}
+}
+
+// A session is not reused forever: PocketBase answers an expired token with
+// 200 and an empty list rather than refusing it.
+func TestSessionExpiresAfterItsMaxAge(t *testing.T) {
+	t.Cleanup(func() { credentialSessionCache = map[string]credentialSessionEntry{} })
+	storeCredentialSession("k", "cookie")
+	if _, ok := cachedCredentialSession("k"); !ok {
+		t.Fatal("a fresh session was not kept")
+	}
+	credentialSessionMu.Lock()
+	credentialSessionCache["k"] = credentialSessionEntry{value: "cookie", at: time.Now().Add(-2 * credentialSessionMaxAge)}
+	credentialSessionMu.Unlock()
+	if _, ok := cachedCredentialSession("k"); ok {
+		t.Fatal("an old session was still used")
 	}
 }

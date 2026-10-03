@@ -19344,7 +19344,11 @@ class DashboardConfig {
         if (stored.query?.length) {
             // Before headers: a Plex widget has both -- its Accept header is
             // sent for it -- and the key the reader typed is the query one.
-            return { kind: 'query', queryName: stored.query[0], saved: true };
+            // With the preset's fixed headers: a key typed again after a reload
+            // went out alone, the PUT replaced the entry, and Plex's Accept
+            // (Nextcloud's OCS-APIRequest) was gone.
+            return { kind: 'query', queryName: stored.query[0], saved: true,
+                fixedHeaders: this.widgetPresetOf(widget)?.fixedHeaders || null };
         }
         if (stored.headers?.length) {
             // A header the preset always sends (Nextcloud's OCS-APIRequest) is
@@ -19353,7 +19357,8 @@ class DashboardConfig {
                 .map((name) => name.toLowerCase());
             const own = stored.headers.find((name) => !fixed.includes(String(name).toLowerCase()))
                 || stored.headers[0];
-            return { kind: 'header', headerName: own, saved: true };
+            return { kind: 'header', headerName: own, saved: true,
+                fixedHeaders: this.widgetPresetOf(widget)?.fixedHeaders || null };
         }
         if (stored.basic) return { kind: 'basic', basicUser: stored.basicUser || '', saved: true };
         return { kind: 'none' };

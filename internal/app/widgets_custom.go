@@ -522,7 +522,7 @@ func listEntryNamed(list []any, name string) (any, bool) {
 			if !ok {
 				continue
 			}
-			if value, has := object[key]; has && fmt.Sprint(value) == name {
+			if value, has := object[key]; has && jsonText(value) == name {
 				return entry, true
 			}
 		}
@@ -743,7 +743,7 @@ func selectorMatches(entry any, key, value string) bool {
 	// before a dot could mean a step.
 	if object, ok := entry.(map[string]any); ok {
 		if literal, has := object[key]; has {
-			return fmt.Sprint(literal) == value
+			return jsonText(literal) == value
 		}
 	}
 	current := entry
@@ -771,7 +771,7 @@ func selectorMatches(entry any, key, value string) bool {
 			return false
 		}
 	}
-	return fmt.Sprint(current) == value
+	return jsonText(current) == value
 }
 
 /*
@@ -853,7 +853,7 @@ func formatCustomValue(raw any, format string, decimals *int, dataUnit, tempSuff
 			return formatRelativeSince(when, time.Now())
 		}
 	}
-	return trimToLength(fmt.Sprint(raw), 120)
+	return trimToLength(jsonText(raw), 120)
 }
 
 /*
@@ -908,10 +908,30 @@ func toFloat(raw any) (float64, bool) {
 	case int64:
 		return float64(value), true
 	case string:
+		// Not NaN or Inf: ParseFloat takes them, JSON cannot carry NaN, and the
+		// tile's answer then encoded as an empty 200 cached for its TTL.
 		parsed, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
-		return parsed, err == nil
+		if err != nil || math.IsNaN(parsed) || math.IsInf(parsed, 0) {
+			return 0, false
+		}
+		return parsed, true
 	}
 	return 0, false
+}
+
+// jsonText is a JSON value as text. Numbers arrive as float64 and fmt.Sprint
+// prints a million as 1e+06, so "[id=1234567]" matched nothing; objects and
+// lists print as JSON rather than Go's map[...].
+func jsonText(v any) string {
+	switch value := v.(type) {
+	case float64:
+		return strconv.FormatFloat(value, 'f', -1, 64)
+	case map[string]any, []any:
+		if b, err := json.Marshal(value); err == nil {
+			return string(b)
+		}
+	}
+	return fmt.Sprint(v)
 }
 
 /*
@@ -1373,7 +1393,7 @@ func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetch
 					if len(result.Items) >= customWidgetMaxItems {
 						break
 					}
-					result.Items = append(result.Items, trimToLength(fmt.Sprint(item), 200))
+					result.Items = append(result.Items, trimToLength(jsonText(item), 200))
 				}
 			}
 		}

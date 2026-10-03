@@ -139,6 +139,11 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **new — the presets follow their services.** Overseerr/Jellyseerr is Seerr (same API, same id). Tautulli takes its key in a header instead of the address, Nextcloud reads with its monitoring token (`NC-Token`, with the OCS header sent for you), Bazarr counts wanted episodes and films and throttled providers (`/api/badges`), ntfy shows its message count (`/v1/stats`). Speedtest Tracker shows whether the last test was healthy and when it ran; SABnzbd its time left; Traefik its middlewares; Glances its load; Paperless its tags; Seerr its total. The Immich note says the key must be an admin's.
 - **new — retired presets.** Readarr (stopped upstream), Pi-hole v5 (API removed in v6) and TrueNAS (REST API removed in 26) are no longer offered; a widget already started from one keeps working and still shows its choice.
 - **fix — a widget's own key survives Save.** After Health had loaded the credential names, Config → Widgets read the widget's key as "none" and the next Save deleted it; re-picking the Plex preset and saving without a key typed replaced the stored key with its Accept header alone.
+- **fix — a key typed again keeps the preset's fixed header.** After a reload, a new Plex or Nextcloud key went out without `Accept` or `OCS-APIRequest`, and the stored entry lost it.
+- **fix — `"NaN"` and `"Infinity"` are not numbers.** A NaN on a meter made the whole answer fail to encode, an empty reply cached for the widget's TTL.
+- **fix — Ask now with a wrong password fails.** The draft reused the session signed in with the stored password; the password is now part of the session key.
+- **fix — a sign-in session is renewed after an hour.** Beszel (PocketBase) answers an expired token with an empty list rather than a refusal, and the tile showed "0 systems" for good.
+- **fix — a million reads as 1000000, not 1e+06**, in text figures, in `[key=value]` matches and in lists, which now print objects as JSON.
 
 ### Alerts
 
