@@ -365,3 +365,24 @@ func TestUnraidSaveRefusesAnAddressWithoutAScheme(t *testing.T) {
 		t.Fatalf("the refused save changed the server: key %q", unraidAPIKey("srv"))
 	}
 }
+
+// A restore that points the server elsewhere drops the key it did not carry,
+// as a save in Config does, rather than sending it to the restored address.
+func TestRestoreToAnotherAddressDropsTheUnraidKey(t *testing.T) {
+	for _, carried := range []bool{false, true} {
+		h := unraidTestHandlers(t)
+		if rec := serveUnraid(h, "PUT", "/api/unraid/settings", `{"server":{"id":"srv","name":"tower","baseUrl":"http://tower","enabled":true},"key":"abc"}`); rec.Code != 200 {
+			t.Fatalf("save: %d", rec.Code)
+		}
+		before := h.store.GetSettings()
+		after := before
+		after.UnraidServers = []UnraidServer{{ID: "srv", Name: "tower", BaseURL: "http://elsewhere", Enabled: true}}
+		if err := h.store.SaveSettings(after); err != nil {
+			t.Fatal(err)
+		}
+		h.forgetUnraidAfterRestore(before, carried)
+		if got := unraidAPIKey("srv") != ""; got != carried {
+			t.Fatalf("carried=%v: key kept = %v", carried, got)
+		}
+	}
+}

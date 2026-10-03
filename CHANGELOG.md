@@ -192,6 +192,9 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — a second Unraid push no longer replaces the first** without a sound: each alert has its own tag.
 - **fix — a disk's warning is its usage threshold, not a temperature.** A per-disk warning of 70 % made the disk "hot" at 70 °C; it now marks the disk full at 70 %.
 - **fix — an address without `http://` is refused.** Save stored it as blank, dropped the key and said Saved.
+- **fix — emptying the address no longer saves the Docker gateway.** The suggestion filled the field on every save, so clearing a saved address pointed nextDash at another server and dropped the key without the warning.
+- **fix — an Unraid notice without a subject is named by its title or description**, not "Unraid is offline".
+- **fix — a restore forgets the previous Unraid server's answers and schema**, and drops a key the backup did not carry when the restored address is another one.
 
 ### Theme editor
 

@@ -255,9 +255,13 @@
         // The server compares the address it keeps: scheme://host[:port].
         const same = (a, b) => String(a || '').trim().replace(/\/+$/, '').toLowerCase()
             === String(b || '').trim().replace(/\/+$/, '').toLowerCase();
+        // The address a save sends. The suggestion fills an empty field on
+        // first setup only: emptying a saved address sent the Docker gateway,
+        // which dropped the key without the warning below.
+        const effectiveBase = () => field('baseUrl').value.trim() || (current?.baseUrl ? '' : suggested);
         const paintWarning = () => {
-            const typed = field('baseUrl').value;
-            warning.hidden = !(keySet && current?.baseUrl && typed.trim() && !same(typed, current.baseUrl)
+            const typed = effectiveBase();
+            warning.hidden = !(keySet && current?.baseUrl && !same(typed, current.baseUrl)
                 && !field('key').value.trim());
         };
         const paintKey = () => {
@@ -286,7 +290,7 @@
                 server: {
                     id: current?.id || '',
                     name: current?.name || '',
-                    baseUrl: field('baseUrl').value.trim() || suggested,
+                    baseUrl: effectiveBase(),
                     insecureTls: field('insecureTls').checked,
                     enabled: field('enabled').checked,
                     notify: field('notify').checked,

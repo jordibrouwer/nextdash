@@ -497,6 +497,7 @@ func toUnraidNotifications(data json.RawMessage) (UnraidNotificationsView, error
 			} `json:"overview"`
 			List []struct {
 				ID, Subject, Importance, Timestamp string
+				Title, Description                 string
 				Link                               *string
 			} `json:"list"`
 		} `json:"notifications"`
@@ -506,7 +507,16 @@ func toUnraidNotifications(data json.RawMessage) (UnraidNotificationsView, error
 	}
 	v := UnraidNotificationsView{Alerts: int(unraidInt(raw.N.Overview.Unread.Alert)), Warnings: int(unraidInt(raw.N.Overview.Unread.Warning))}
 	for _, n := range raw.N.List {
-		item := UnraidNotificationView{ID: n.ID, Subject: n.Subject, Importance: strings.ToLower(n.Importance)}
+		// A notice raised without a subject (scripts often give only an event
+		// and a description) went out titled "Unraid is offline".
+		subject := n.Subject
+		if strings.TrimSpace(subject) == "" {
+			subject = n.Title
+		}
+		if strings.TrimSpace(subject) == "" {
+			subject = n.Description
+		}
+		item := UnraidNotificationView{ID: n.ID, Subject: subject, Importance: strings.ToLower(n.Importance)}
 		if n.Link != nil && strings.HasPrefix(*n.Link, "/") && (len(*n.Link) < 2 || ((*n.Link)[1] != '/' && (*n.Link)[1] != '\\')) {
 			item.Link = *n.Link // only a path on the server itself; the browser prefixes the base URL
 		}

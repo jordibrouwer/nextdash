@@ -759,7 +759,31 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 
 	h.invalidateHealthReportCache()
 	applyRuntimeSettings(h.store.GetSettings())
+	h.forgetUnraidAfterRestore(before, preparedHasRelPath(prepared, "unraid-secrets.json"))
 	return skippedBookmarks, nil
+}
+
+// forgetUnraidAfterRestore drops what belonged to the Unraid server before a
+// restore: the tiles served its answers and the schema cached under the same
+// id was used against the restored address. A key the backup did not carry
+// stays on disk, so when the restored address is another one it is dropped,
+// as a save in Config does, rather than sent there.
+func (h *Handlers) forgetUnraidAfterRestore(before Settings, keyRestored bool) {
+	after := h.store.GetSettings()
+	oldBase := map[string]string{}
+	for _, srv := range before.UnraidServers {
+		oldBase[srv.ID] = srv.BaseURL
+		forgetUnraidSchema(srv.ID)
+	}
+	for _, srv := range after.UnraidServers {
+		forgetUnraidSchema(srv.ID)
+		if base, ok := oldBase[srv.ID]; ok && base != srv.BaseURL && !keyRestored {
+			if err := saveUnraidAPIKey(srv.ID, ""); err != nil {
+				logWarn(logComponentImport, "the Unraid key of the previous address could not be dropped (%v)", err)
+			}
+		}
+	}
+	resetUnraidAnswers()
 }
 
 // keepSettingsSecrets fills the secrets redactSettingsSecrets empties from

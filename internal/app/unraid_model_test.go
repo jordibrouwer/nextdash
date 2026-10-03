@@ -277,3 +277,13 @@ func TestUnraidDiskFullAtItsOwnWarning(t *testing.T) {
 		}
 	}
 }
+
+// A notice without a subject is named by its title, else its description:
+// with neither it went out as "Unraid is offline".
+func TestUnraidNotificationWithoutSubject(t *testing.T) {
+	raw := []byte(`{"notifications":{"overview":{"unread":{"alert":"1","warning":"0"}},"list":[{"id":"1","subject":"","title":"Backup script","description":"rsync failed","importance":"alert","timestamp":"2026-10-02T12:00:00Z"}]}}`)
+	n, err := toUnraidNotifications(raw)
+	if err != nil || len(n.Items) != 1 || n.Items[0].Subject != "Backup script" {
+		t.Fatalf("items = %+v err=%v", n.Items, err)
+	}
+}
