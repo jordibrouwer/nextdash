@@ -945,7 +945,9 @@ class DashboardInlineEdit {
             });
             if (mine !== suggestSeq || results === null) return;
             iconSetAutoName = results?.[0]?.name || '';
-            card.setAutoIcon(results?.[0] || null);
+            // The letter, chosen on purpose, is what the card shows too; the
+            // suggestions stay, one click from changing it.
+            card.setAutoIcon(bookmark.iconMode === 'letter' && !pendingIcon ? null : (results?.[0] || null));
         };
         card = window.BookmarkFormCard.mount(cardHost, {
             t: (key, fallback) => {
@@ -1004,7 +1006,9 @@ class DashboardInlineEdit {
             card.setLoading(urlValue);
             title.fetching(urlValue);
             draftKeywords = [];
-            const replaceIcon = force || !pendingIcon || iconIsFetched;
+            // A bookmark set to its letter gets no fetched icon unless asked
+            // for with Fetch again.
+            const replaceIcon = force || ((!pendingIcon || iconIsFetched) && bookmark.iconMode !== 'letter');
             // The last address's icon is not this one's: the letter stands in
             // until the new page answers.
             if (iconIsFetched) card.setIcon('');
@@ -2209,6 +2213,9 @@ class DashboardInlineEdit {
             name,
             url,
             icon: typeof fields.getPendingIcon === 'function' ? fields.getPendingIcon() : bookmark.icon,
+            // Carried along so a move to another page keeps the letter; the
+            // server drops it when the bookmark has an icon of its own.
+            iconMode: bookmark.iconMode || '',
             shortcut,
             category,
             pinned: fields.pinInput ? fields.pinInput.checked : Boolean(bookmark.pinned),

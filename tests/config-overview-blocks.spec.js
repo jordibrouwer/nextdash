@@ -3,13 +3,13 @@ const { test, expect } = require('./fixtures');
 const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /*
- * Overview as the draft draws it: a row of figures, then four blocks.
+ * Overview as panels: one attention line, your install on the left as a panel
+ * per part of the app, nextDash on the right (news, new features, a tip).
  *
- * The section used to be five panels about nextDash itself -- the release, the
- * developer, what was new, a tip -- with two about the install wedged between
- * them. Those five all have another address (About, About > News, Help > Tips),
- * so what is left here is the install: what needs you, how you use it, how
- * tidy it is, and whether the links still answer.
+ * The section used to be a row of eight figure tiles and four explained
+ * blocks. What those said is still here -- the counts, the cleanup score and
+ * its heaviest deduction, the four health states, what needs you -- each in
+ * the panel it belongs to.
  */
 
 async function dismissConfigSettingPromoIfPresent(page) {
@@ -64,70 +64,41 @@ async function openOverview(page, health = PROBLEMS, update = null) {
         if (d?.health) d.health.report = healthPayload;
     }, health);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-    await expect(page.locator('.config-overview-blocks')).toBeVisible();
+    await expect(page.locator('.config-overview-panels')).toBeVisible();
     await dismissConfigSettingPromoIfPresent(page);
 }
 
-test.describe('Config overview — figures and blocks', () => {
-    test('the figure row counts the install', async ({ page }) => {
+test.describe('Config overview — your install', () => {
+    test('a panel per part of the install, each with a way in', async ({ page }) => {
         await openOverview(page);
 
-        const tiles = page.locator('.config-overview-tiles .config-tile');
-        await expect(tiles).toHaveCount(8);
+        const panels = page.locator('.config-overview-panels .config-widget');
+        const ids = await panels.evaluateAll((els) => els.map((el) =>
+            [...el.classList].find((c) => c.startsWith('config-widget--')).replace('config-widget--', '')));
+        // Containers only appear with a Docker socket, and the inbox only when
+        // it is switched on -- the three that are always there are asserted.
+        for (const id of ['bookmarks', 'health', 'stats']) expect(ids).toContain(id);
+        for (let i = 0; i < ids.length; i += 1) {
+            await expect(panels.nth(i).locator('.config-widget-go')).toBeVisible();
+        }
 
-        const labels = (await tiles.locator('.config-tile-label').allTextContents())
-            .map((t) => t.trim().toLowerCase());
-        expect(labels).toEqual([
-            'bookmarks', 'pages', 'categories', 'distinct tags',
-            'monitored', 'with shortcut', 'pinned', 'last edited',
-        ]);
-
-        // The figures are the install's own, not decoration: the first one is
+        // The figures are the install's own: the bookmarks panel leads with
         // what computeStats() counts.
-        const shown = (await tiles.first().locator('.config-tile-value').textContent() || '').trim();
+        const shown = (await page.locator('.config-widget--bookmarks .config-widget-value').textContent() || '').trim();
         const counted = await page.evaluate(() => String(window.dashboardInstance.config.computeStats().total));
         expect(shown).toBe(counted);
     });
 
-    test('each block says what it is for', async ({ page }) => {
+    test('what needs you is one line of chips, each going where it is fixed', async ({ page }) => {
         await openOverview(page);
 
-        const blocks = page.locator('.config-overview-blocks .config-block');
-        await expect(blocks).toHaveCount(4);
+        const line = page.locator('.config-overview-attention');
+        await expect(line).toBeVisible();
+        await expect(line.locator('.config-attention-chip').first()).toBeVisible();
 
-        const titles = (await blocks.locator('.config-block-title').allTextContents())
-            .map((t) => t.trim().toLowerCase());
-        expect(titles).toEqual([
-            'needs attention',
-            'how you use this collection',
-            'cleanup score',
-            'health at a glance',
-        ]);
-
-        // Every block carries the line that says what it is, so none of them
-        // is a heading over an unexplained figure.
-        for (let i = 0; i < 4; i += 1) {
-            await expect(blocks.nth(i).locator('.config-block-what')).not.toBeEmpty();
-        }
-    });
-
-    test('a problem is a sentence with the action beside it', async ({ page }) => {
-        await openOverview(page);
-
-        const rows = page.locator('.config-block--attention .config-attention-sentence');
-        await expect(rows.first()).toBeVisible();
-        // A sentence, not a count in one column and a label in another.
-        await expect(rows.first().locator('.config-attention-text')).toContainText(/\w+ \w+/);
-        await expect(rows.first().locator('.config-attention-chip')).toBeVisible();
-    });
-
-    test('a problem hands off to the Bookmarks view on its filter', async ({ page }) => {
-        await openOverview(page);
-
-        // Found by where the chip goes, not by the wording of the sentence:
-        // the copy is translatable, the destination is the behaviour.
-        await page.locator('.config-attention-chip[data-overview-go*="broken"]').first().click();
-
+        // Found by where the chip goes, not by its wording: the copy is
+        // translatable, the destination is the behaviour.
+        await line.locator('.config-attention-chip[data-overview-go*="broken"]').click();
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.activeView)).toBe('library');
         expect(await page.evaluate(() => window.dashboardInstance.config.instance.bmHealthFilter)).toBe('broken');
@@ -136,11 +107,11 @@ test.describe('Config overview — figures and blocks', () => {
     test('a clean install says so instead of listing zeroes', async ({ page }) => {
         await openOverview(page, CLEAN);
 
-        await expect(page.locator('.config-block--attention .config-attention-sentence')).toHaveCount(0);
-        await expect(page.locator('.config-block--attention')).toContainText(/nothing needs attention/i);
+        await expect(page.locator('.config-overview-attention .config-attention-chip')).toHaveCount(0);
+        await expect(page.locator('.config-overview-attention')).toContainText(/nothing needs attention/i);
     });
 
-    test('the cleanup block names the biggest deduction', async ({ page }) => {
+    test('the cleanup score names the biggest deduction', async ({ page }) => {
         await openOverview(page);
 
         const score = await page.evaluate(() => window.dashboardInstance.config.computeStats().cleanup);
@@ -188,29 +159,120 @@ test.describe('Config overview — figures and blocks', () => {
      * that is down, or is an ordinary dead link -- never two at once, so the
      * counts add up to what was checked.
      */
-    test('health at a glance counts what the report counts', async ({ page }) => {
+    test('the health panel counts what the report counts', async ({ page }) => {
         await openOverview(page);
 
-        await expect(page.locator('.config-health-count--healthy')).toHaveText('3');
-        await expect(page.locator('.config-health-count--content')).toHaveText('1');
-        await expect(page.locator('.config-health-count--down')).toHaveText('1');
-        await expect(page.locator('.config-health-count--broken')).toHaveText('2');
+        const health = page.locator('.config-widget--health');
+        await expect(health.locator('.config-widget-v--health-healthy')).toHaveText('3');
+        await expect(health.locator('.config-widget-v--health-content')).toHaveText('1');
+        await expect(health.locator('.config-widget-v--health-down')).toHaveText('1');
+        await expect(health.locator('.config-widget-v--health-broken')).toHaveText('2');
+        // Broken plus down, said in the panel's own foot.
+        await expect(health.locator('.config-widget-alert')).toContainText('3');
     });
 
-    test('how you use this collection states the shares it drew them from', async ({ page }) => {
+    test('the health panel opens the Bookmarks view', async ({ page }) => {
         await openOverview(page);
 
-        const stats = await page.evaluate(() => {
-            const s = window.dashboardInstance.config.computeStats();
-            return {
-                shortcut: s.total ? Math.round((s.withShortcut / s.total) * 100) : 0,
-                tagged: s.total ? Math.round((s.tagged / s.total) * 100) : 0,
-            };
-        });
+        await page.locator('.config-widget--health .config-widget-go').click();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.activeView)).toBe('library');
+    });
 
-        const habits = page.locator('.config-block--habits');
-        await expect(habits).toContainText(`${stats.shortcut}%`);
-        await expect(habits).toContainText(`${stats.tagged}%`);
+    /*
+     * The panel is drawn from the container list search keeps, so it is the
+     * route the app reads that is stubbed: a socket, and three containers --
+     * one stopped, one with an update waiting.
+     */
+    test('the containers panel counts the list and puts updates on the attention line', async ({ page }) => {
+        await page.route('**/api/docker/status', (route) => route.fulfill({
+            contentType: 'application/json', body: JSON.stringify({ socket: true, control: false }),
+        }));
+        await page.route('**/api/docker/containers', (route) => route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify({ containers: [
+                { id: 'a', name: 'alpha', state: 'running', health: 'healthy', update: { status: 'available' } },
+                { id: 'b', name: 'bravo', state: 'running', health: '' },
+                { id: 'c', name: 'charlie', state: 'exited', health: '' },
+            ] }),
+        }));
+        await openOverview(page);
+
+        const panel = page.locator('.config-widget--containers');
+        await expect(panel).toBeVisible({ timeout: 10_000 });
+        await expect(panel.locator('.config-widget-value')).toHaveText('2');
+        await expect(panel.locator('.config-widget-alert')).toHaveText('alpha');
+        await expect(page.locator('.config-attention-chip[data-overview-go*="docker"]')).toContainText('1');
+    });
+
+    test('without a Docker socket there is no containers panel', async ({ page }) => {
+        await page.route('**/api/docker/status', (route) => route.fulfill({
+            contentType: 'application/json', body: JSON.stringify({ socket: false, control: false }),
+        }));
+        await openOverview(page);
+        await page.waitForTimeout(500);
+
+        await expect(page.locator('.config-widget--containers')).toHaveCount(0);
+        // Statistics then fills the half the containers panel would have taken
+        // or the row on its own; either way the page has no hole.
+        await expect(page.locator('.config-widget--stats')).toBeVisible();
+    });
+});
+
+test.describe('Config overview — from nextDash', () => {
+    test('new features are the newest announced ones, each a way into what it changed', async ({ page }) => {
+        await openOverview(page);
+
+        const rows = page.locator('.config-widget--features .config-overview-feature');
+        await expect(rows.first()).toBeVisible({ timeout: 10_000 });
+        expect(await rows.count()).toBeLessThanOrEqual(3);
+
+        // The catalogue is newest first and only dated entries are shown, so
+        // the first row is the first entry that carries a `since`.
+        const first = await page.evaluate(() => {
+            const c = window.dashboardInstance.config;
+            const f = c.overviewNewFeatures().find((e) => e.since);
+            return { since: f.since, go: f.go };
+        });
+        await expect(rows.first().locator('.config-overview-feature-since')).toHaveText(first.since);
+
+        await rows.first().locator('.config-overview-feature-link').click();
+        if (first.go.openBookmarkForm) {
+            await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/, { timeout: 10_000 });
+        } else if (first.go.view) {
+            await expect.poll(() => page.evaluate(() =>
+                document.getElementById('dashboard-layout')?.className || ''), { timeout: 10_000 })
+                .toContain(`${first.go.view}-layout`);
+        } else {
+            await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section), { timeout: 10_000 })
+                .toBe(first.go.section);
+        }
+    });
+
+    test('the tip steps forward and back, in place', async ({ page }) => {
+        await openOverview(page);
+
+        const tip = page.locator('.config-widget--tip [data-overview-tip]');
+        await expect(tip).toBeVisible();
+        const first = await tip.innerText();
+        const ix = Number(await tip.getAttribute('data-overview-tip'));
+
+        await page.locator('[data-overview-action="tip-next"]').click();
+        await expect(tip).not.toHaveText(first);
+        await expect(page.locator('.config-widget--tip .config-overview-tip-count')).toContainText(String(ix + 2));
+
+        await page.locator('[data-overview-action="tip-prev"]').click();
+        await expect(tip).toHaveText(first);
+    });
+
+    test('all tips is Help → Tips', async ({ page }) => {
+        await openOverview(page);
+
+        await page.locator('.config-widget--tip .config-widget-go').click();
+        await expect.poll(() => page.evaluate(() => {
+            const c = window.dashboardInstance.config;
+            return `${c.section}/${c.helpTab}`;
+        })).toBe('help/tips');
     });
 });
 
@@ -224,17 +286,17 @@ test.describe('Config overview — the update notice', () => {
     test('nothing is drawn when the install is current', async ({ page }) => {
         await openOverview(page, PROBLEMS, { current: 'v1.0.0', updateAvailable: false });
 
-        await expect(page.locator('.config-overview-blocks')).toBeVisible();
+        await expect(page.locator('.config-overview-panels')).toBeVisible();
         await expect(page.locator('.config-update-notice')).toHaveCount(0);
     });
 
     /*
      * The bar that went carried the running version, and About deliberately has
      * no version line -- so without this the release number left config
-     * entirely, and with it the way into the notes. One line at the foot, where
-     * a colophon belongs, rather than the framed panel it used to be.
+     * entirely, and with it the way into the notes. It sits at the foot of the
+     * New features panel, beside what that release brought.
      */
-    test('the running release is named at the foot, with a way into its notes', async ({ page }) => {
+    test('the running release is named under the new features, with a way into its notes', async ({ page }) => {
         await openOverview(page, PROBLEMS, { current: 'v1.2.3', updateAvailable: false });
 
         const foot = page.locator('.config-overview-footnote');
@@ -249,7 +311,7 @@ test.describe('Config overview — the update notice', () => {
         await expect(page.locator('.whats-new-modal')).toBeVisible();
     });
 
-    test('an available release is named above the figures', async ({ page }) => {
+    test('an available release is named above the panels', async ({ page }) => {
         await openOverview(page, PROBLEMS, {
             current: 'v1.0.0',
             latest: 'v9.9.9',
@@ -260,12 +322,12 @@ test.describe('Config overview — the update notice', () => {
         const notice = page.locator('.config-update-notice');
         await expect(notice).toBeVisible();
         await expect(notice).toContainText('v9.9.9');
-        // Above the figures, not below them: it is the one thing on the page
-        // that is about nextDash rather than about this collection.
+        // Above the panels, not in the nextDash column: it is the one thing
+        // about nextDash that asks you to do something.
         const order = await page.evaluate(() => {
             const notice = document.querySelector('.config-update-notice');
-            const tiles = document.querySelector('.config-overview-tiles');
-            return notice.compareDocumentPosition(tiles) & Node.DOCUMENT_POSITION_FOLLOWING ? 'before' : 'after';
+            const panels = document.querySelector('.config-overview-panels');
+            return notice.compareDocumentPosition(panels) & Node.DOCUMENT_POSITION_FOLLOWING ? 'before' : 'after';
         });
         expect(order).toBe('before');
     });

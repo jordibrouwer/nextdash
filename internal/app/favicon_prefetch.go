@@ -209,6 +209,11 @@ func collectIconCandidates(bookmarks []Bookmark, allowLocal bool, includeExistin
 		if !includeExisting && strings.TrimSpace(b.Icon) != "" {
 			continue
 		}
+		// Set to the letter on purpose: nothing to fill, and Refresh all
+		// leaves it alone too.
+		if b.IconMode == "letter" {
+			continue
+		}
 		urlStr := strings.TrimSpace(b.URL)
 		if urlStr == "" {
 			continue

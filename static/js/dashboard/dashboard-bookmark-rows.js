@@ -591,8 +591,9 @@ class DashboardBookmarkRows {
                 const letter = createLetterAvatar();
                 iconSlot.appendChild(letter);
                 // No icon of its own: the app's set icon, where the sets know
-                // the address (icon-set-auto.js swaps the letter).
-                if (bookmark.url && window.IconSetAuto) {
+                // the address (icon-set-auto.js swaps the letter) -- unless the
+                // letter was chosen on purpose.
+                if (bookmark.url && window.IconSetAuto && bookmark.iconMode !== 'letter') {
                     letter.setAttribute('data-icon-auto-url', bookmark.url);
                     window.IconSetAuto.queue(letter);
                     const entry = window.ThemeIconStyling.getThemeIconStylingEntry(d.settings);

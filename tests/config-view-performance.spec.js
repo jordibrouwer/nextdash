@@ -49,7 +49,7 @@ test.describe('the spotlight catalogue is data', () => {
          * is about the catalogue being fetched data rather than 42 entries
          * compiled into the config module, which is asserted above.
          */
-        await expect(page.locator('.config-overview-blocks')).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('.config-overview-panels')).toBeVisible({ timeout: 10_000 });
     });
 });
 
