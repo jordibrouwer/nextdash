@@ -2869,6 +2869,8 @@ class DashboardInlineEdit {
             this.finishInlineEditCommit(d._inlineEditContext?.row);
             d.data?.invalidatePageDataCache?.(sourcePageId);
             await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
+            // Into the trash like a delete on the page itself; it was gone for good.
+            await window.DashboardTrash?.record([{ pageId: sourcePageId, index: -1, bookmark }], 'dashboard');
 
             const deletedLabel = String(bookmark.name || bookmark.url).slice(0, 40);
             d.showNotification(

@@ -115,3 +115,38 @@ test(':save saves on Enter, not while typing', async ({ page }) => {
     await page.keyboard.press('Enter');
     await expect.poll(names).toEqual(['my']);
 });
+
+// :remove skipped the trash, so the bookmark was gone once the toast closed,
+// and its undo posted the page as it was before: a bookmark added in the
+// meantime vanished.
+test(':remove goes through the trash, and its undo keeps later changes', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+
+    const stamp = Date.now();
+    const result = await page.evaluate(async ({ url, later }) => {
+        const d = window.dashboardInstance;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const json = { 'Content-Type': 'application/json' };
+        const pageId = d.currentPageId;
+        await api('/api/bookmarks/add', { method: 'POST', headers: json, body: JSON.stringify({ page: pageId, bookmark: { name: 'Gone', url } }) });
+        await d.loadAllBookmarks();
+        const target = d.allBookmarks.find((b) => b.url === url);
+        let undo = null;
+        const show = d.showNotification.bind(d);
+        d.showNotification = (msg, type, opts) => { if (opts?.undoCallback) undo = opts.undoCallback; return show(msg, type, opts); };
+        await d.searchComponent.commandsComponent.removeCommandHandler.removeBookmark(target);
+        d.showNotification = show;
+        const trash = await (await api('/api/trash')).json();
+        const inTrash = (trash.items || []).some((i) => i.bookmark?.url === url);
+        await api('/api/bookmarks/add', { method: 'POST', headers: json, body: JSON.stringify({ page: pageId, bookmark: { name: 'Later', url: later } }) });
+        await undo?.();
+        const rows = (await (await fetch(`/api/bookmarks?page=${pageId}`)).json()) || [];
+        return { inTrash, back: rows.some((b) => b.url === url), later: rows.some((b) => b.url === later) };
+    }, { url: `https://palette-trash-${stamp}.example/`, later: `https://palette-later-${stamp}.example/` });
+    expect(result).toEqual({ inTrash: true, back: true, later: true });
+});
