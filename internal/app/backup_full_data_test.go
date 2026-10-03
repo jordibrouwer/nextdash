@@ -3,6 +3,8 @@ package app
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -247,5 +249,49 @@ func TestExcludingArchivesDoesNotRefuseThemOnImport(t *testing.T) {
 		if !h.isValidImportFilename(name) {
 			t.Errorf("%s would be refused on import", name)
 		}
+	}
+}
+
+// "Tokens and passwords" off left the secrets inside settings.json in the ZIP:
+// the alert address with its bot token, Pushover's keys, the archive keys and
+// the iCal address. They are written redacted, and a restore of such a backup
+// keeps the ones in use.
+func TestExcludingSecretsRedactsSettings(t *testing.T) {
+	h := newTestHandlers(t)
+	settings := h.store.GetSettings()
+	settings.BackupExcludeSecrets = true
+	settings.MonitorNotifyURL = "https://api.telegram.org/botSECRET/sendMessage"
+	settings.MonitorNotifyPushoverToken = "pushover-secret"
+	settings.CalendarIcsUrl = "https://cal.example/private-secret.ics"
+	settings.BookmarkStaleDays = 17
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	data, err := h.buildBackupZip()
+	if err != nil {
+		t.Fatal(err)
+	}
+	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var body []byte
+	for _, f := range reader.File {
+		if f.Name == "settings.json" {
+			rc, _ := f.Open()
+			body, _ = io.ReadAll(rc)
+			rc.Close()
+		}
+	}
+	if len(body) == 0 || strings.Contains(string(body), "SECRET") || strings.Contains(string(body), "secret") {
+		t.Fatalf("settings.json in the backup: %s", body)
+	}
+	var restored Settings
+	if err := json.Unmarshal(body, &restored); err != nil || restored.BookmarkStaleDays != 17 {
+		t.Fatalf("the other settings went missing: %v %+v", err, restored.BookmarkStaleDays)
+	}
+	if !keepSettingsSecrets(&restored, settings) || restored.MonitorNotifyURL != settings.MonitorNotifyURL ||
+		restored.CalendarIcsUrl != settings.CalendarIcsUrl {
+		t.Fatalf("a restore lost the secrets in use: %+v", restored.MonitorNotifyURL)
 	}
 }

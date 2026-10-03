@@ -232,3 +232,43 @@ func TestFleetDaysPoolPerUTCDay(t *testing.T) {
 		t.Errorf("buildFleetStats did not carry the days: %+v", stats)
 	}
 }
+
+// The 30-day figures read the day summaries too: the samples kept reach back
+// about a week at a 5-minute interval, and the weeks before it counted as
+// "no checks".
+func TestFleetCountsTheDaySummaries(t *testing.T) {
+	now := time.Now()
+	old := dayStart(now.Add(-20 * 24 * time.Hour))
+	in := fleetMonitorInput{name: "A", url: "https://a.example",
+		samples: fleetSamples(10, time.Minute, now, alwaysUp, ping100),
+		days:    []HealthDay{{D: old, N: 90, U: 0}}}
+	got := pooledUptime([]fleetMonitorInput{in}, 30*24*time.Hour, now)
+	if got.Samples != 100 || got.Ratio > 0.2 {
+		t.Fatalf("uptime = %+v, want 100 checks at 10%%", got)
+	}
+	found := false
+	for _, d := range fleetDays([]fleetMonitorInput{in}, now) {
+		found = found || (d.Day == old && d.Checks == 90)
+	}
+	if !found {
+		t.Fatal("the summarised day is missing from the per-day chart")
+	}
+}
+
+// Every incident's span comes along, not only the five listed: the large view
+// counted and summed downtime over those five.
+func TestMonitorStatsCarryEveryIncidentSpan(t *testing.T) {
+	now := time.Now()
+	var samples []HealthSample
+	for i := 0; i < 12; i++ {
+		at := now.Add(time.Duration(-120+i*10) * time.Minute)
+		samples = append(samples, HealthSample{T: at.UnixMilli(), Up: false}, HealthSample{T: at.Add(5 * time.Minute).UnixMilli(), Up: true})
+	}
+	stats := buildMonitorStats(samples, 5, now)
+	if len(stats.Incidents) != 5 || len(stats.IncidentSpans) != 12 {
+		t.Fatalf("incidents %d, spans %d; want 5 and 12", len(stats.Incidents), len(stats.IncidentSpans))
+	}
+	if stats.IncidentSpans[0][0] < stats.IncidentSpans[11][0] {
+		t.Fatal("spans are not newest first")
+	}
+}

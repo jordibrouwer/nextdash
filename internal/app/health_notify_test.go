@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -509,5 +510,29 @@ func TestARecoverySeenByARecheckIsAnnounced(t *testing.T) {
 	defer mu.Unlock()
 	if len(received) != 1 || received[0].Event != "up" {
 		t.Fatalf("received = %#v, want one back-online", received)
+	}
+}
+
+// One URL monitored on two pages shares one history: the collection view
+// counted it as two monitors with every outage twice.
+func TestFleetCountsAURLOnTwoPagesOnce(t *testing.T) {
+	h, dir := healthRecheckTestHandlers(t, `{}`)
+	for id, name := range map[int]string{1: "Page 1", 2: "Page 2"} {
+		body := fmt.Sprintf(`{"id":%d,"name":%q,"bookmarks":[{"name":"A","url":"https://a.example","monitor":true}]}`, id, name)
+		if err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("bookmarks-%d.json", id)), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_ = os.WriteFile(filepath.Join(dir, "pages.json"), []byte(`[{"id":1,"name":"Page 1"},{"id":2,"name":"Page 2"}]`), 0o644)
+	key := canonicalBookmarkURLKey("https://a.example")
+	now := time.Now()
+	if err := h.appendHealthSamples(map[string][]HealthSample{key: {
+		{T: msAgo(now, 20*time.Minute), Up: true}, {T: msAgo(now, 10*time.Minute), Up: false}, {T: msAgo(now, 5*time.Minute), Up: true},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	report := h.buildBookmarkHealthReport()
+	if report.Fleet == nil || report.Fleet.Monitors != 1 || report.Fleet.Uptime24h.Samples != 3 {
+		t.Fatalf("fleet = %+v", report.Fleet)
 	}
 }

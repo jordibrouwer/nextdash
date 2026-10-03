@@ -738,9 +738,17 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 		logInfo(logComponentImport, "safety backup written before the data was replaced")
 	}
 
+	before := h.store.GetSettings()
 	// Under the store lock, so no bookmark write lands between the files.
 	if err := h.store.ReplaceDataFiles(func() error { return commitPreparedImport(dataDir, prepared) }); err != nil {
 		return 0, &importError{msg: fmt.Sprintf("commit failed: %v", err), code: http.StatusInternalServerError}
+	}
+	// A backup made without its secrets has them empty; restoring it keeps the
+	// ones in use, as it keeps the secret files it does not carry.
+	if after := h.store.GetSettings(); keepSettingsSecrets(&after, before) {
+		if err := h.store.SaveSettings(after); err != nil {
+			logWarn(logComponentImport, "the alert and archive secrets could not be kept (%v); set them again in Config", err)
+		}
 	}
 
 	for pageID, categories := range importedCategoriesByPage {
@@ -752,6 +760,25 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	h.invalidateHealthReportCache()
 	applyRuntimeSettings(h.store.GetSettings())
 	return skippedBookmarks, nil
+}
+
+// keepSettingsSecrets fills the secrets redactSettingsSecrets empties from
+// before, where after has none. It reports whether anything was filled.
+func keepSettingsSecrets(after *Settings, before Settings) bool {
+	changed := false
+	keep := func(dst *string, src string) {
+		if *dst == "" && src != "" {
+			*dst = src
+			changed = true
+		}
+	}
+	keep(&after.ArchiveSaveAccessKey, before.ArchiveSaveAccessKey)
+	keep(&after.ArchiveSaveSecret, before.ArchiveSaveSecret)
+	keep(&after.MonitorNotifyPushoverToken, before.MonitorNotifyPushoverToken)
+	keep(&after.MonitorNotifyPushoverUserKey, before.MonitorNotifyPushoverUserKey)
+	keep(&after.MonitorNotifyURL, before.MonitorNotifyURL)
+	keep(&after.CalendarIcsUrl, before.CalendarIcsUrl)
+	return changed
 }
 
 // buildBackupZip assembles the full data-directory backup as a ZIP archive in memory.
@@ -859,6 +886,24 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 
 		if skips.skip(relPath) {
 			return nil
+		}
+
+		// The secrets inside settings.json (alert address, Pushover, archive
+		// keys, iCal address) left with it whole: written redacted, as the
+		// API hands them to a reader without the token.
+		if skips.secrets && relPath == "settings.json" {
+			redacted := h.store.GetSettings()
+			redactSettingsSecrets(&redacted)
+			body, err := json.MarshalIndent(redacted, "", "  ")
+			if err != nil {
+				return err
+			}
+			zipFile, err := zipWriter.Create(relPath)
+			if err != nil {
+				return err
+			}
+			_, err = zipFile.Write(body)
+			return err
 		}
 
 		zipEntryPath := strings.ReplaceAll(canonicalDataAssetPath(relPath), "\\", "/")

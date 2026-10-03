@@ -21,6 +21,8 @@ func TestNtfyTopicIsTakenOutOfTheConfiguredAddress(t *testing.T) {
 		"https://ntfy.sh/my-topic":    {"https://ntfy.sh/", "my-topic"},
 		"http://nas.lan:8080/alerts":  {"http://nas.lan:8080/", "alerts"},
 		"https://ntfy.example.com/x/": {"https://ntfy.example.com/", "x"},
+		// A protected topic signs in with ?auth=; the rest of the query goes.
+		"https://ntfy.example/alerts?auth=QmFzaWM&x=1": {"https://ntfy.example/?auth=QmFzaWM", "alerts"},
 		// No topic, or a nested path that could be a proxy prefix: guessing
 		// which segment is the topic would post to the wrong place.
 		"https://ntfy.sh":                {"", ""},

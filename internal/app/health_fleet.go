@@ -130,6 +130,28 @@ func fleetDays(inputs []fleetMonitorInput, now time.Time) []FleetDay {
 			}
 		}
 	}
+	for _, in := range inputs {
+		rawFrom := int64(0)
+		if len(in.samples) > 0 {
+			rawFrom = dayStartMs(in.samples[0].T)
+		}
+		for _, d := range in.days {
+			if d.N <= 0 || d.D < dayStartMs(cutoff) || (rawFrom > 0 && d.D >= rawFrom) {
+				continue
+			}
+			a := byDay[d.D]
+			if a == nil {
+				a = &acc{}
+				byDay[d.D] = a
+			}
+			a.n += d.N
+			a.up += d.U
+			if d.P > 0 && d.U > 0 {
+				a.ms += d.P * d.U
+				a.pinged += d.U
+			}
+		}
+	}
 	days := make([]FleetDay, 0, len(byDay))
 	for day, a := range byDay {
 		d := FleetDay{Day: day, Checks: a.n, Up: a.up}
@@ -147,6 +169,9 @@ type fleetMonitorInput struct {
 	name    string
 	url     string
 	samples []HealthSample
+	// days are the summaries of checks older than the samples kept: without
+	// them the 30-day figures covered a week at a 5-minute interval.
+	days []HealthDay
 }
 
 // meanPingSince averages response time over samples at or after cutoff, counting
@@ -187,6 +212,13 @@ func pooledUptime(inputs []fleetMonitorInput, window time.Duration, now time.Tim
 				up++
 			}
 		}
+		rawFrom := int64(0)
+		if len(in.samples) > 0 {
+			rawFrom = in.samples[0].T
+		}
+		u, n := uptimeFromDays(in.days, window, rawFrom, now)
+		up += u
+		total += n
 	}
 	if total == 0 {
 		return UptimeWindow{}

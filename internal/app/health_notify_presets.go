@@ -241,7 +241,12 @@ func ntfyTopicFromURL(raw string) (root, topic string) {
 	}
 	rootURL := *parsed
 	rootURL.Path = "/"
+	// ?auth= is how a protected topic signs in here; dropped with the rest of
+	// the query, the JSON form was refused with 401.
 	rootURL.RawQuery = ""
+	if auth := parsed.Query().Get("auth"); auth != "" {
+		rootURL.RawQuery = url.Values{"auth": {auth}}.Encode()
+	}
 	rootURL.Fragment = ""
 	return rootURL.String(), parts[0]
 }

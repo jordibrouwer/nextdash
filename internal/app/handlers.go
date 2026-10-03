@@ -632,6 +632,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// Gathered while walking the bookmarks so the collection-wide view is built
 	// from the same samples, in the same pass.
 	var fleetInputs []fleetMonitorInput
+	// One fleet input per URL: a URL monitored on two pages shares one history,
+	// and counted per bookmark every monitor, outage and day of it was doubled.
+	fleetSeen := map[string]bool{}
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
@@ -1036,11 +1039,15 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 					// Collected here rather than re-read later: this loop already
 					// resolved the canonical key and the samples are in hand, so
 					// the collection-wide view costs no extra history read.
-					fleetInputs = append(fleetInputs, fleetMonitorInput{
-						name:    bm.Name,
-						url:     bm.URL,
-						samples: samples,
-					})
+					if !fleetSeen[key] {
+						fleetSeen[key] = true
+						fleetInputs = append(fleetInputs, fleetMonitorInput{
+							name:    bm.Name,
+							url:     bm.URL,
+							samples: samples,
+							days:    monitorDays[key],
+						})
+					}
 				}
 			}
 

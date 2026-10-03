@@ -382,7 +382,10 @@
             const nDays = isToday ? 1 : Number(range) || 30;
             const from = isToday ? midnight.getTime() : now - nDays * DAY;
             const sampleDays = Number(hist?.sampleDays) || 30;
-            const rawCovers = nDays <= sampleDays;
+            // From the data, not the retention: the checks kept one by one reach
+            // back a week at a 5-minute interval, and "30 days" read that week.
+            const rawStart = samples.length ? Number(samples[0].t) : now;
+            const rawCovers = nDays <= sampleDays && from >= rawStart;
             const rangeLabel = isToday ? t('bmLargeToday', 'today')
                 : t('bmLargeLastDays', 'last {n} days').replace('{n}', String(nDays));
             const rawLabel = rawCovers ? rangeLabel : t('bmLargeLastDays', 'last {n} days').replace('{n}', String(sampleDays));
@@ -438,18 +441,25 @@
             // 1. Uptime: the period's, then the fixed windows beside it.
             const dayFrom = (() => { const d = new Date(from); d.setUTCHours(0, 0, 0, 0); return d.getTime(); })();
             const rangeDays = days.filter((d) => d.d >= dayFrom);
+            // Past the checks kept, the day summaries before them plus the checks
+            // themselves, as the server's own 30-day figure counts them.
+            const rawDay = (() => { const d = new Date(rawStart); d.setUTCHours(0, 0, 0, 0); return d.getTime(); })();
+            const olderDays = rangeDays.filter((d) => d.d < rawDay);
             const [upN, allN] = rawCovers
                 ? [inRange.filter((s) => s.up).length, inRange.length]
-                : [rangeDays.reduce((a, d) => a + d.u, 0), rangeDays.reduce((a, d) => a + d.n, 0)];
+                : [olderDays.reduce((a, d) => a + d.u, 0) + inRange.filter((s) => s.up).length,
+                    olderDays.reduce((a, d) => a + d.n, 0) + inRange.length];
             const daysTotal = days.reduce((a, d) => a + d.n, 0);
             const daysUp = days.reduce((a, d) => a + d.u, 0);
             const incidents = Array.isArray(stats.incidents) ? stats.incidents : [];
             const incRange = incidents.filter((i) => Number(i.start) + (Number(i.durationMs) || 0) >= from);
-            const downRange = incRange.reduce((a, i) => {
-                const start = Math.max(from, Number(i.start));
-                const end = i.ongoing ? now : Number(i.start) + (Number(i.durationMs) || 0);
-                return a + Math.max(0, end - start);
-            }, 0);
+            // Counted and summed over every incident, not the five listed: twelve
+            // outages read "5", with five outages' downtime.
+            const spans = Array.isArray(stats.incidentSpans) && stats.incidentSpans.length
+                ? stats.incidentSpans.map(([start, ms]) => ({ start: Number(start), ms: Number(ms) || 0 }))
+                : incidents.map((i) => ({ start: Number(i.start), ms: Number(i.durationMs) || 0 }));
+            const spansInRange = spans.filter((i) => i.start + i.ms >= from);
+            const downRange = spansInRange.reduce((a, i) => a + Math.max(0, i.start + i.ms - Math.max(from, i.start)), 0);
             const uptimeCard = card('uptime', t('bmLargeUptime', 'Uptime'), rangeLabel, `
                 <div class="bm-health-large-big"><b>${esc(allN ? pct(upN / allN) : '—')}</b>
                     <span>${esc(t('bmLargeDownFor', 'down {d}').replace('{d}', dur(downRange)))}</span></div>
@@ -576,9 +586,9 @@
 
             // 6. Incidents in the period.
             const incCard = card('incidents', t('bmLargeIncidents', 'Incidents'),
-                t('bmLargeIncidentCountIn', '{n}, {range}').replace('{n}', String(incRange.length)).replace('{range}', rangeLabel),
+                t('bmLargeIncidentCountIn', '{n}, {range}').replace('{n}', String(spansInRange.length)).replace('{range}', rangeLabel),
                 incRange.length
-                    ? `<div class="bm-health-large-incidents">${incRange.slice(-5).reverse().map((i) => `
+                    ? `<div class="bm-health-large-incidents">${incRange.slice(0, 5).map((i) => `
                         <div><span>${esc(new Date(Number(i.start)).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>
                         <span>${esc(i.ongoing ? t('bmLargeOngoing', 'ongoing') : health?.formatDuration?.(Number(i.durationMs) || 0) || '')}</span>
                         <span>${esc(i.reason || '')}</span></div>`).join('')}</div>`
