@@ -70,6 +70,9 @@ test.describe('config sub-tabs follow the ARIA tabs pattern', () => {
         await tabs.first().focus();
         await page.keyboard.press('ArrowRight');
         await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
+        // The repaint restores focus after it has drawn; the next key waits
+        // for it rather than racing it.
+        await expect(tabs.nth(1)).toBeFocused();
         await page.keyboard.press('ArrowLeft');
         await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
     });

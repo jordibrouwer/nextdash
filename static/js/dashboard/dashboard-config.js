@@ -1826,8 +1826,19 @@ class DashboardConfig {
         const strip = DashboardConfig.SUB_TAB_SECTION[attr] || attr;
         const activateTracked = (tab, via) => {
             if (tab) this._trackAction('subtab', { section: strip, tab, via });
-            activate(tab);
+            return activate(tab);
         };
+        // A strip drawn again shortly after a keyboard switch takes the focus
+        // back: Appearance repaints more than once after its tab changes, and
+        // each repaint after the first left the focus on <body>.
+        const wanted = this._subTabFocusWanted;
+        if (wanted && wanted.attr === attr && Date.now() < wanted.until
+            && (!document.activeElement || document.activeElement === document.body)) {
+            const live = buttons.find((b) => b.getAttribute(attr) === wanted.tab);
+            if (live) requestAnimationFrame(() => {
+                if (live.isConnected && (!document.activeElement || document.activeElement === document.body)) live.focus();
+            });
+        }
         buttons.forEach((btn, i) => {
             // Mirror the label into data-label so CSS can lay the tab out at its
             // bold width even when it is not the active one. Without it the
@@ -1856,7 +1867,8 @@ class DashboardConfig {
                 if (!target) return;
                 const tab = target.getAttribute(attr);
                 target.focus();
-                btn._subTabActivate(tab, 'keyboard');
+                this._subTabFocusWanted = { attr, tab, until: Date.now() + 1500 };
+                const switched = btn._subTabActivate(tab, 'keyboard');
                 // Some sections repaint through render(), which replaces the
                 // strip wholesale and drops the focus set above. Re-focus the
                 // rebuilt button so a second arrow press still works.
@@ -1866,10 +1878,16 @@ class DashboardConfig {
                 // still looked attached, the branch was skipped, and focus
                 // landed on <body> once the replacement arrived — leaving the
                 // strip dead to every further arrow press.
-                requestAnimationFrame(() => {
+                //
+                // After the switch has finished, too: Appearance waits for the
+                // colours before it repaints, which landed after that frame and
+                // took the focus with it again.
+                const refocus = () => requestAnimationFrame(() => {
                     const live = document.querySelector(`[${attr}="${CSS.escape(tab)}"]`);
                     if (live && live !== document.activeElement) live.focus();
                 });
+                refocus();
+                Promise.resolve(switched).then(refocus, refocus);
             });
         });
     }
@@ -10074,9 +10092,7 @@ class DashboardConfig {
          */
         this._fillShellHeadFromSection(document.getElementById('dashboard-layout') || document);
 
-        this.bindSubTabStrip(container, 'data-appearance-tab', (tab) => {
-            void this.switchAppearanceTab(tab);
-        });
+        this.bindSubTabStrip(container, 'data-appearance-tab', (tab) => this.switchAppearanceTab(tab));
         // The filter field is rendered by the shared bar, but this section is
         // hand-written markup — so it is applied to the DOM after each render
         // rather than while the controls are built.

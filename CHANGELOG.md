@@ -280,6 +280,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — Only changed and the settings filter stay in sections with a bar for them**; carried into Containers they hid settings with no way back.
 - **fix — the Overview tip buttons keep keyboard focus.**
 - **fix — no What's new explanation starts mid-sentence.** An item whose bold part carries on ("**X**, and Y." or "**X** — Y.") was split at the bold, and the line under the title opened with a comma, a dash or a lower-case word, in 143 items across 33 releases. `splitItemText` now drops a dash or colon and capitalises what follows, and joins a comma or a lower-case continuation to the title up to its full stop.
+- **fix — the arrow keys keep walking Appearance's tabs.** Appearance repaints more than once after its tab changes, and every repaint after the first left the focus on the page: the second arrow press did nothing. A strip drawn again just after a keyboard switch now gives the focus back to the tab.
 
 ### Tours and tips
 
