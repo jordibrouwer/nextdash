@@ -176,6 +176,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 - **fix — the health picker leaves out sign-ins a check never sends.** A widget's session login was offered, and the monitor then checked anonymously and reported down.
 - **fix — the large view's heatmap and Today bars follow the clock across a DST switch**; the 23:00 hour landed in the next day's column.
 - **fix — Collection health lets go of its charts when it closes**, and Statistics no longer keeps every chart it drew.
+- **fix — the outage card's count and downtime per monitor cover every outage**, not only the 25 newest listed (`incidentTotals`).
 
 ### Charts
 

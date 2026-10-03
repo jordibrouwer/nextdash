@@ -492,6 +492,15 @@
                 entry.list.push(i);
                 byMonitor.set(key, entry);
             });
+            // Counts and downtime over every outage, from the server; the list
+            // above is the 25 newest and came up short once there were more.
+            (Array.isArray(fleet.incidentTotals) ? fleet.incidentTotals : []).forEach((tot) => {
+                const entry = byMonitor.get(tot.url || tot.name);
+                if (entry) {
+                    entry.count = Number(tot.count) || entry.count;
+                    entry.down = Math.max(entry.down, Number(tot.downMs) || 0);
+                }
+            });
             const monitors = [...byMonitor.values()].sort((a, b) => b.down - a.down || b.count - a.count);
             const LANES = 6;
 

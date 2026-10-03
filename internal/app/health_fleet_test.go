@@ -272,3 +272,16 @@ func TestMonitorStatsCarryEveryIncidentSpan(t *testing.T) {
 		t.Fatal("spans are not newest first")
 	}
 }
+
+// Each monitor's count and downtime cover every outage, not the 25 listed:
+// the outage card's "n×" for a flapping monitor stopped at the cap.
+func TestFleetTotalsCountPastTheCap(t *testing.T) {
+	now := time.Now()
+	inputs := []fleetMonitorInput{
+		{name: "Flapper", url: "https://a.example", samples: fleetSamples(300, time.Minute, now, func(i int) bool { return i%3 != 0 }, ping100)},
+	}
+	stats := buildFleetStats(inputs, now)
+	if len(stats.IncidentTotals) != 1 || stats.IncidentTotals[0].Count != stats.TotalIncidents || stats.IncidentTotals[0].Count <= maxFleetIncidents {
+		t.Fatalf("totals = %+v, total incidents %d", stats.IncidentTotals, stats.TotalIncidents)
+	}
+}

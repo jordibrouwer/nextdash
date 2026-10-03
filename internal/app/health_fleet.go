@@ -33,6 +33,14 @@ type FleetMonitor struct {
 
 // FleetIncident is one outage, carrying which bookmark it belonged to so the list
 // reads as a timeline across the collection.
+// FleetIncidentTotal is one monitor's outages added up.
+type FleetIncidentTotal struct {
+	Name   string `json:"name"`
+	URL    string `json:"url"`
+	Count  int    `json:"count"`
+	DownMs int64  `json:"downMs"`
+}
+
 type FleetIncident struct {
 	Name     string `json:"name"`
 	URL      string `json:"url"`
@@ -82,6 +90,10 @@ type FleetStats struct {
 	// TotalIncidents is how many there were before the list was capped, so the UI
 	// can say "showing 25 of 40" rather than implying the month had 25.
 	TotalIncidents int `json:"totalIncidents,omitempty"`
+	// IncidentTotals is each monitor's count and downtime over every outage,
+	// counted before the list above is cut: summed from those 25, a monitor's
+	// "n×" and its downtime came up short.
+	IncidentTotals []FleetIncidentTotal `json:"incidentTotals,omitempty"`
 	// Slower lists monitors whose recent response time rose meaningfully against
 	// the previous week.
 	Slower []FleetResponseShift `json:"slower,omitempty"`
@@ -336,6 +348,13 @@ func buildFleetStats(inputs []fleetMonitorInput, now time.Time) *FleetStats {
 			})
 		}
 
+		if len(perRow) > 0 {
+			total := FleetIncidentTotal{Name: in.name, URL: in.url, Count: len(perRow)}
+			for _, inc := range perRow {
+				total.DownMs += inc.Duration
+			}
+			stats.IncidentTotals = append(stats.IncidentTotals, total)
+		}
 		for _, inc := range perRow {
 			incidents = append(incidents, FleetIncident{
 				Name: in.name, URL: in.url,
