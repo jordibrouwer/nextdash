@@ -18930,7 +18930,7 @@ class DashboardConfig {
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },
         { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view',
           whereKey: 'config.tourWhereBookmarks', where: 'the next time you open the Bookmarks view' },
-        { id: 'containersTutorialV2', labelKey: 'config.tourContainers', label: 'Containers',
+        { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers',
           whereKey: 'config.tourWhereContainers', where: 'the next time you open the Containers view' },
         { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh',
           whereKey: 'config.tourWhereFresh', where: 'the next time you open Fresh' },

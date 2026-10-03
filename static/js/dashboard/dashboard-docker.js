@@ -25,7 +25,7 @@ class DashboardDocker {
      * The one-time tour's tip id, repeated from containers-tutorial.js so the
      * view can skip fetching the tour once it has been seen. Both must agree.
      */
-    static TUTORIAL_TIP_ID = 'containersTutorialV2';
+    static TUTORIAL_TIP_ID = 'containersTutorialV3';
 
     /**
      * The Disk tab's address, #docker/~disk: "~" cannot start a container
