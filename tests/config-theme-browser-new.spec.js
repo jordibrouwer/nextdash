@@ -1,4 +1,6 @@
 // @ts-check
+const fs = require('fs');
+const path = require('path');
 const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForFaviconPrefetch } = require('./e2e-helpers');
 
@@ -18,6 +20,12 @@ async function openBrowser(page) {
     await expect(page.locator('[data-theme-card]').first()).toBeAttached();
 }
 
+// The families the server marks new, read from its list rather than counted by
+// hand: a hard 34 broke the day the Unraid families joined it.
+const NEW_FAMILIES = [...fs.readFileSync(path.join(__dirname, '..', 'internal', 'app', 'theme_new.go'), 'utf8')
+    .match(/var themeNewFamilies = map\[string\]bool\{([\s\S]*?)\n\}/)[1]
+    .matchAll(/"([^"]+)":\s*true/g)].map((m) => m[1]).sort();
+
 test.describe('new themes in the browser', () => {
     test('a new family wears the badge, an older one does not', async ({ page }) => {
         await openBrowser(page);
@@ -33,9 +41,9 @@ test.describe('new themes in the browser', () => {
                 .filter(([, m]) => m.new).map(([id]) => id.replace(/-(dark|light)$/, '')));
             return [...families].sort();
         });
-        expect(expected.length).toBe(34);
+        expect(expected).toEqual(NEW_FAMILIES);
         await page.locator('[data-theme-search]').fill('new');
-        await expect(page.locator('[data-theme-card]')).toHaveCount(34);
+        await expect(page.locator('[data-theme-card]')).toHaveCount(NEW_FAMILIES.length);
         const shown = await page.locator('[data-theme-card]').evaluateAll((els) =>
             els.map((el) => el.getAttribute('data-theme-card')).sort());
         expect(shown).toEqual(expected);
