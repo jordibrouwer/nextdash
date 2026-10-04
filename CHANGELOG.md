@@ -124,6 +124,7 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 
 - **fix — moving a bookmark to another page from the edit form keeps everything.** The move sent only the fields the form edits, then deleted the source row: opens, created date, preview, check URL, credential, mute and health settings were lost. It now sends the whole row with the edits on top (`dashboard-inline-edit.js`).
 - **fix — health settings from the Bookmarks view are no longer undone by the next dashboard save.** Expectations, check URL, credential, mute, ignores and accepted drift did not reach the dashboard's copy of the page, and its next drag, pin or delete wrote the old values back. The writes now reload that copy, and these settings move the data revision so other tabs and devices reload too (`dashboard-health.js`, `dashboard-health-multi-select.js`, `models.go`).
+- **fix — Today no longer prints over the category below it after you open a bookmark.** Opening one repaints the smart sections as new elements, and in packed columns nothing watched them any more, so a height change (an icon arriving) left their row span behind until another category happened to resize. The grid now watches the new elements (`dashboard-smart-collections.js`).
 
 ### Backups
 
