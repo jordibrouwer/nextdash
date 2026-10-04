@@ -135,6 +135,9 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 ### Backups
 
 - **fix — a backup with a large local page copy can be restored.** A capture may be up to 52 MB, but a restore refused any file over 32 MB, so every backup taken after one big capture was unusable. The limit per file is now 64 MB, and a refused restore or import says why (`auto_backup.go`, `dashboard-config.js`).
+- **fix — a large backup can cross the wire.** Backup, download, restore and import get 15 minutes instead of the 30 s / 60 s an API call gets, and `/api/import` takes up to 1 GB (`backup.go`, `auto_backup.go`, `security.go`).
+- **fix — an upload over its limit is refused, not cut.** A 16 MB CJK font was saved as a 10 MB stump and reported applied; fonts may now be 32 MB, and the panel says why one is refused (`uploads.go`).
+- **fix — device-only settings leave what the server does alone:** analytics, local bookmarks, backup secrets, the background re-check, feeds, inbox limits and more (`device-settings-merge.js`).
 
 ### Docs
 

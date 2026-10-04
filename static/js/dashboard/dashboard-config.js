@@ -12369,7 +12369,7 @@ class DashboardConfig {
             const form = new FormData();
             form.append('font', file);
             const res = await this.writeFetch('/api/font', { method: 'POST', body: form });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw Object.assign(new Error(await this.backupFailureReason(res)), { fromServer: true });
             const body = await res.json().catch(() => ({}));
             if (body.path) this.dash.settings.customFontPath = body.path;
             this.dash.settings.fontPreset = 'custom';
@@ -12378,8 +12378,9 @@ class DashboardConfig {
             this.dash.saveSettings?.();
             this.notify(this.t('config.fontUploadSuccess', 'Custom font applied.'), 'success');
             this.persistAppearance();
-        } catch {
-            this.notify(this.t('config.fontUploadError', 'Could not upload the font.'), 'error');
+        } catch (err) {
+            // "The font is larger than 32 MB" rather than a bare failure.
+            this.notify(this.withBackupReason(this.t('config.fontUploadError', 'Could not upload the font.'), err), 'error');
         }
     }
 

@@ -82,3 +82,25 @@ test('device-only settings leave web search and container icons alone', async ({
     expect(merged.webSearchSearxngUrl).toBe('http://new');
     expect(merged.dockerContainerIcons).toEqual({ a: 'x.svg' });
 });
+
+// What the server does on its own was laid over from an old device copy too:
+// analytics, local bookmarks, backup secrets, the background re-check.
+test('device-only settings leave what the server does alone', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.DeviceSettingsMerge != null, null, { timeout: 20_000 });
+    const merged = await page.evaluate(() => {
+        localStorage.setItem('deviceSpecificSettings', 'true');
+        try {
+            return window.DeviceSettingsMerge.mergeServerAndDeviceSettings(
+                { analyticsOptIn: false, allowLocalBookmarks: true, backupExcludeSecrets: true, healthAutoRecheckEnabled: false },
+                { analyticsOptIn: true, allowLocalBookmarks: false, backupExcludeSecrets: false, healthAutoRecheckEnabled: true },
+            );
+        } finally {
+            localStorage.removeItem('deviceSpecificSettings');
+        }
+    });
+    expect(merged).toMatchObject({
+        analyticsOptIn: false, allowLocalBookmarks: true, backupExcludeSecrets: true, healthAutoRecheckEnabled: false,
+    });
+});

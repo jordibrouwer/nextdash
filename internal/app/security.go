@@ -310,6 +310,10 @@ moving 256 MB to prove a limit exists.
 */
 var multipartBodyLimit int64 = 256 << 20
 
+// backupImportBodyLimit is the ceiling for /api/import alone: a backup carries
+// local page copies of up to 52 MB each, and one off the box has to come back.
+var backupImportBodyLimit int64 = 1 << 30
+
 func contentSecurityPolicy() string {
 	if strings.EqualFold(strings.TrimSpace(os.Getenv("NEXTDASH_CSP")), "off") {
 		return ""
@@ -368,6 +372,9 @@ func securityHeaders(next http.Handler) http.Handler {
 		limit := int64(jsonBodyLimit)
 		if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/") {
 			limit = multipartBodyLimit
+			if r.URL.Path == "/api/import" {
+				limit = backupImportBodyLimit
+			}
 		} else if r.URL.Path == "/api/bookmarks/import-html" {
 			// A browser's bookmark export, posted as the raw file: its
 			// ICON="data:..." attributes put a few thousand bookmarks past the

@@ -163,3 +163,33 @@ func TestUploadFontUsesMagicBytesNotClientType(t *testing.T) {
 		t.Fatalf("png spoof status = %d, want 400", rec.Code)
 	}
 }
+
+// A font over the limit was cut at the limit, saved and reported applied; the
+// browser then rejected the stump. A 16 MB CJK font is ordinary.
+func TestUploadFontRefusesAndKeepsALargeFontWhole(t *testing.T) {
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
+	upload := func(size int) *httptest.ResponseRecorder {
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+		part, _ := writer.CreateFormFile("font", "big.otf")
+		_, _ = part.Write(append([]byte("OTTO"), make([]byte, size-4)...))
+		_ = writer.Close()
+		h := NewHandlers(NewStore(), embeddedFiles)
+		req := httptest.NewRequest(http.MethodPost, "/api/font", body)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		rec := httptest.NewRecorder()
+		h.UploadFont(rec, req)
+		return rec
+	}
+	if rec := upload(16 << 20); rec.Code != http.StatusOK {
+		t.Fatalf("a 16 MB font: status %d, %s", rec.Code, rec.Body.String())
+	}
+	if info, err := os.Stat(filepath.Join(ResolveDataDir(), "font.otf")); err != nil || info.Size() != 16<<20 {
+		t.Fatalf("the stored font is not whole: %v %v", info, err)
+	}
+	if rec := upload(maxFontUploadBytes + 1); rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("a font over the limit: status %d, want 413", rec.Code)
+	}
+}

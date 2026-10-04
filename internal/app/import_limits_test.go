@@ -41,7 +41,7 @@ func TestMultipartBodyIsBounded(t *testing.T) {
 		_, readErr = io.Copy(io.Discard, r.Body)
 	}))
 
-	req := httptest.NewRequest(http.MethodPost, "/api/import", bytes.NewReader(body.Bytes()))
+	req := httptest.NewRequest(http.MethodPost, "/api/font", bytes.NewReader(body.Bytes()))
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	handler.ServeHTTP(httptest.NewRecorder(), req)
 
@@ -163,5 +163,38 @@ func TestHTMLBookmarkImportIsNotCappedAtTheJSONLimit(t *testing.T) {
 func TestImportEntryLimitCoversALocalCapture(t *testing.T) {
 	if importEntryLimit < monolithMaxBytes {
 		t.Fatalf("importEntryLimit %d is below monolithMaxBytes %d: a kept capture makes its backups unrestorable", importEntryLimit, int64(monolithMaxBytes))
+	}
+}
+
+// A backup with local page copies passes the ordinary multipart ceiling, and
+// one taken off the box has to come back: /api/import has a ceiling of its own.
+func TestImportHasItsOwnBodyCeiling(t *testing.T) {
+	origMultipart, origImport := multipartBodyLimit, backupImportBodyLimit
+	multipartBodyLimit, backupImportBodyLimit = 4<<10, 256<<10
+	t.Cleanup(func() { multipartBodyLimit, backupImportBodyLimit = origMultipart, origImport })
+
+	send := func(path string, size int) error {
+		var body bytes.Buffer
+		writer := multipart.NewWriter(&body)
+		part, _ := writer.CreateFormFile("files", "backup.zip")
+		_, _ = part.Write(bytes.Repeat([]byte("x"), size))
+		writer.Close()
+		var readErr error
+		handler := securityHeaders(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+			_, readErr = io.Copy(io.Discard, r.Body)
+		}))
+		req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		handler.ServeHTTP(httptest.NewRecorder(), req)
+		return readErr
+	}
+	if err := send("/api/import", 64<<10); err != nil {
+		t.Fatalf("a backup over the ordinary ceiling was refused: %v", err)
+	}
+	if err := send("/api/import", 512<<10); err == nil {
+		t.Fatal("/api/import has no ceiling at all")
+	}
+	if err := send("/api/favicon", 64<<10); err == nil {
+		t.Fatal("the larger ceiling reached another upload")
 	}
 }

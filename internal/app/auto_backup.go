@@ -443,6 +443,7 @@ func (h *Handlers) DownloadAutoBackup(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	extendBackupDeadlines(w, false)
 	name := r.URL.Query().Get("name")
 	path, ok := resolveAutoBackupPath(name)
 	if !ok {
@@ -612,6 +613,7 @@ func (h *Handlers) RestoreAutoBackup(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	extendBackupDeadlines(w, false)
 	name := r.URL.Query().Get("name")
 	path, ok := resolveAutoBackupPath(name)
 	if !ok {
