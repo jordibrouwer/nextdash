@@ -93,7 +93,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
 </table>
 
 <details>
-<summary><b>More screenshots</b> — ten more views, in other themes</summary>
+<summary><b>More screenshots</b> — twelve more views, in other themes</summary>
 <br />
 
 <table border="0" width="100%">
@@ -155,6 +155,21 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
       <img src="screenshots/nextdash-config-statistics.jpg" alt="Config: Statistics" width="100%" />
       <br />
       <sub><b>Config → Statistics</b> <i>(Copper Circuit)</i> — Six figures per tab, what needs attention with a button for each, the cleanup score, and charts you can point at — across Overview, Usage, Collection, Inbox and Health.</sub>
+    </td>
+  </tr>
+</table>
+
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-unraid-black.jpg" alt="Unraid widgets in the Unraid Black theme" width="100%" />
+      <br />
+      <sub><b>Unraid Black</b> <i>(dark)</i> — A theme for Unraid users: flat black panels, small uppercase labels and the orange of the Unraid logo, with the Unraid widgets beside the homelab bookmarks.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-unraid-azure.jpg" alt="Unraid widgets in the Unraid Azure theme" width="100%" />
+      <br />
+      <sub><b>Unraid Azure</b> <i>(light)</i> — The cooler pair: grey-blue panels and a steel-blue accent. Both themes come in a dark and a light variant.</sub>
     </td>
   </tr>
 </table>
@@ -272,21 +287,6 @@ More is on the way: deeper Unraid integration is being worked on for future vers
       <img src="screenshots/nextdash-unraid-config.jpg" alt="Config: Unraid" width="100%" />
       <br />
       <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid explains itself: nextDash and the server with data running between them, three steps ticked off as they are done, and the seven widgets in miniature, each with an Add that opens it in Widgets → Types.</sub>
-    </td>
-  </tr>
-</table>
-
-<table border="0" width="100%">
-  <tr>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-unraid-black.jpg" alt="Unraid widgets in the Unraid Black theme" width="100%" />
-      <br />
-      <sub><b>Unraid Black</b> <i>(dark)</i> — A theme for Unraid users: flat black panels, small uppercase labels and the orange of the Unraid logo, with the Unraid widgets beside the homelab bookmarks.</sub>
-    </td>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-unraid-azure.jpg" alt="Unraid widgets in the Unraid Azure theme" width="100%" />
-      <br />
-      <sub><b>Unraid Azure</b> <i>(light)</i> — The cooler pair: grey-blue panels and a steel-blue accent. Both themes come in a dark and a light variant.</sub>
     </td>
   </tr>
 </table>
