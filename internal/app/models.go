@@ -958,6 +958,10 @@ type Settings struct {
 	// still run and samples are still recorded — the heartbeat stays honest — but
 	// failures inside a window raise no alert and do not count against uptime.
 	MaintenanceWindows []MaintenanceWindow `json:"maintenanceWindows,omitempty"`
+	// MaintenanceTimeZone is the zone the windows were typed in (the browser's,
+	// an IANA name). A container runs on UTC unless TZ is set, and the windows
+	// were read on that clock: hours off for anyone else. Empty: server time.
+	MaintenanceTimeZone string `json:"maintenanceTimeZone,omitempty"`
 	// The push booleans deliberately omit "omitempty": with it, a false value is
 	// dropped from the JSON entirely and the config checkbox reads `undefined`
 	// instead of unchecked, so turning a toggle off would not survive a reload.
@@ -5036,6 +5040,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ArchiveSaveAccessKey = normalizeMonitorNotifyCredential(settings.ArchiveSaveAccessKey)
 	settings.ArchiveSaveSecret = normalizeMonitorNotifyCredential(settings.ArchiveSaveSecret)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
+	settings.MaintenanceTimeZone = normalizeMaintenanceTimeZone(settings.MaintenanceTimeZone)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 	// Read as the view reads it: a setting the file never had is its default.
 	clampBookmarkViewSettings(&settings)

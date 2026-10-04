@@ -14958,12 +14958,24 @@ class DashboardConfig {
         });
     }
 
+    /**
+     * The windows with the zone they were typed in. A container runs on UTC
+     * unless TZ is set, and the server read "02:00" on that clock: hours off.
+     */
+    setMaintenanceWindows(windows) {
+        this.dash.settings.maintenanceWindows = windows;
+        try {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (tz) this.dash.settings.maintenanceTimeZone = tz;
+        } catch { /* no Intl: the server's clock */ }
+    }
+
     bindMaintenanceWindows(container) {
         const list = container.querySelector('[data-maint-list]');
         if (!list) return;
 
         const commit = ({ repaint = true } = {}) => {
-            this.dash.settings.maintenanceWindows = this.collectMaintenanceWindows(list);
+            this.setMaintenanceWindows(this.collectMaintenanceWindows(list));
             void this.saveSettingsWithFeedback();
             // The hint under a row depends on the times just typed, and adding
             // or removing changes every index below it, so the block is redrawn
@@ -14978,7 +14990,7 @@ class DashboardConfig {
             // A sensible default rather than an empty row: the overwhelmingly
             // common window is small hours, every day.
             windows.push({ days: [], start: '02:00', end: '03:00', label: '' });
-            this.dash.settings.maintenanceWindows = windows;
+            this.setMaintenanceWindows(windows);
             void this.saveSettingsWithFeedback();
             this.repaintActiveControlPanels();
         });
@@ -14991,7 +15003,7 @@ class DashboardConfig {
                     : [];
                 if (!Number.isFinite(index) || index < 0 || index >= windows.length) return;
                 windows.splice(index, 1);
-                this.dash.settings.maintenanceWindows = windows;
+                this.setMaintenanceWindows(windows);
                 void this.saveSettingsWithFeedback();
                 this.repaintActiveControlPanels();
             });

@@ -176,7 +176,7 @@ func TestPendingNotificationsRecoveryOnlyAfterAlert(t *testing.T) {
 		"https://real.example": {
 			{T: msAgo(now, 15*time.Minute), Up: false},
 			{T: msAgo(now, 10*time.Minute), Up: false},
-			{T: msAgo(now, 5*time.Minute), Up: false},
+			{T: msAgo(now, 5*time.Minute), Up: false, Alerted: true},
 		},
 	}); err != nil {
 		t.Fatalf("append: %v", err)
@@ -550,5 +550,26 @@ func TestAnUnreachableAlertLogsNoSecret(t *testing.T) {
 	out := buf.String()
 	if strings.Contains(out, "SECRET123") || !strings.Contains(out, "127.0.0.1:1") {
 		t.Fatalf("log = %s", out)
+	}
+}
+
+// A manual re-check or retest records failures without alerting. The next
+// success then sent "back online" for an outage nobody had been told about.
+func TestPendingNotificationsNoRecoveryForAnUnalertedLongOutage(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{"monitorNotifyUrl":"https://hooks.example/notify","monitorNotifyRetries":1}`)
+	now := time.Now()
+	if err := h.appendHealthSamples(map[string][]HealthSample{
+		"https://quiet.example": {
+			{T: msAgo(now, 10*time.Minute), Up: false},
+			{T: msAgo(now, 5*time.Minute), Up: false},
+		},
+	}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	got := h.pendingMonitorNotifications([]monitorTransition{
+		{key: "https://quiet.example", url: "https://quiet.example", name: "Quiet", up: true, at: now.UnixMilli()},
+	})
+	if len(got) != 0 {
+		t.Fatalf("a recovery was sent for an outage that never alerted: %#v", got)
 	}
 }

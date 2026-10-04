@@ -21,8 +21,8 @@ those samples do not raise an alert and do not count against uptime. The
 distinction matters: hiding the checks would make a genuine week-long outage
 starting inside a window invisible.
 
-Windows are weekly and local to the server's timezone, which is the one the
-person reading the dashboard shares.
+Windows are weekly, in the zone they were typed in: the browser's, stored as
+MaintenanceTimeZone beside them. Without one, the server's own clock.
 */
 
 // MaintenanceWindow is one recurring quiet period.
@@ -144,4 +144,27 @@ func inMaintenanceWindow(windows []MaintenanceWindow, t time.Time) bool {
 		}
 	}
 	return false
+}
+
+// normalizeMaintenanceTimeZone keeps a zone the server can load, else none.
+func normalizeMaintenanceTimeZone(tz string) string {
+	tz = strings.TrimSpace(tz)
+	if tz == "" {
+		return ""
+	}
+	if _, err := time.LoadLocation(tz); err != nil {
+		return ""
+	}
+	return tz
+}
+
+// maintenanceInEffect reports whether a window is open at t, read in the zone
+// the windows were typed in.
+func maintenanceInEffect(settings Settings, t time.Time) bool {
+	if tz := settings.MaintenanceTimeZone; tz != "" {
+		if loc, err := time.LoadLocation(tz); err == nil {
+			t = t.In(loc)
+		}
+	}
+	return inMaintenanceWindow(settings.MaintenanceWindows, t)
 }

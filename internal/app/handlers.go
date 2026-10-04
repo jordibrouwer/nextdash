@@ -2598,6 +2598,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
+	settings.MaintenanceTimeZone = normalizeMaintenanceTimeZone(settings.MaintenanceTimeZone)
 	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
 	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
 	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
@@ -5121,7 +5122,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 						PingMs: result.PingMs,
 						Code:   result.HTTPStatus,
 						Fail:   failureClass(result.ErrorDetail),
-						Maint:  inMaintenanceWindow(h.store.GetSettings().MaintenanceWindows, time.UnixMilli(lastChecked)),
+						Maint:  maintenanceInEffect(h.store.GetSettings(), time.UnixMilli(lastChecked)),
 					})
 				}
 			}

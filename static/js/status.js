@@ -282,7 +282,11 @@ class StatusMonitor {
 
     async pingBookmarkOnce(bookmark) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        // The server's own check budget, with room for its confirm and the
+        // soft-404 probe. A fixed 3 s gave up on a service the reader had
+        // given 10 s, and saved it as unreachable on every dashboard load.
+        const budgetMs = (Number(this.settings?.healthCheckTimeoutSeconds) || 3) * 1000;
+        const timeoutId = setTimeout(() => controller.abort(), budgetMs * 2 + 2000);
 
         try {
             const response = await statusPingFetch(`/api/ping?url=${encodeURIComponent(bookmark.url)}${this.settings.skipFastPing ? '&skipFastPing=1' : ''}`, {
@@ -327,10 +331,13 @@ class StatusMonitor {
             } else {
                 console.error('Ping error for', bookmark.url, ':', error);
             }
+            // The check never answered, so nothing is known about the
+            // bookmark: not stored as its failure, which the grid used to do
+            // while the server's own answer was still on its way.
             return {
-                status: 'offline',
+                status: 'unknown',
                 ping: null,
-                errorDetail: 'Unreachable'
+                errorDetail: ''
             };
         }
     }
@@ -542,6 +549,15 @@ class StatusMonitor {
             lastResult = await this.pingBookmarkOnce(bookmark);
             if (lastResult.status === 'rate_limited') {
                 this.setBookmarkStatus(bookmarkElement, 'checking', '', bookmark.url);
+                return null;
+            }
+            if (lastResult.status === 'unknown') {
+                // Back to what the row said before this round, if anything.
+                if (cached?.status === 'online' || cached?.status === 'offline') {
+                    this.setBookmarkStatus(bookmarkElement, cached.status, '', bookmark.url);
+                } else {
+                    this.resolveStatusRowElement(bookmarkElement, bookmark.url)?.classList.remove('status-checking');
+                }
                 return null;
             }
             if (lastResult.status === 'online') {

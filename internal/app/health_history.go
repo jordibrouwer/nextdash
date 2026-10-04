@@ -194,7 +194,7 @@ func (h *Handlers) recordManualHealthSample(key string, up bool, pingMs, code in
 	}
 	now := time.Now()
 	sample := HealthSample{T: now.UnixMilli(), Up: up, PingMs: pingMs, Code: code, Fail: failureClass(failDetail),
-		Maint: inMaintenanceWindow(h.store.GetSettings().MaintenanceWindows, now)}
+		Maint: maintenanceInEffect(h.store.GetSettings(), now)}
 	updates := map[string][]HealthSample{key: {sample}}
 	h.announceRecoveries(updates)
 	if err := h.appendHealthSamples(updates); err != nil {

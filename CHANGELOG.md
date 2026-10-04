@@ -113,6 +113,10 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 
 - **fix — turning monitoring off keeps the uptime history.** The next monitor tick swept the samples and day summaries of every URL that was not monitored, within a minute, while the dialog said the history is kept. The sweep now keeps every bookmark that still exists; retention ages out the rest (`health_monitor.go`).
 - **fix — single-page apps are no longer marked down by soft-404 detection.** An app that serves its one shell document for every path (Sonarr without auth, Uptime Kuma, any `try_files` setup) answered the not-found probe with that same document, and every page compared equal to it. The probe now also reads the front page and drops the verdict when it is that document; a site's root is never judged not found (`health_soft404_control.go`).
+- **fix — no "back online" for an outage that was never told.** A failed manual re-check or retest recorded failures without alerting, and the next success sent a lone recovery (`health_notify.go`).
+- **fix — a dashboard ping is not saved as an outage when it never answered.** The browser gave up after a fixed 3 s whatever Check timeout said, and stored "Unreachable"; it now waits for the check's own budget and stores nothing when no answer came (`status.js`).
+- **fix — alerts from a long monitor round arrive.** They were sent on the round's expired context, lost, and still marked as sent (`health_monitor.go`).
+- **fix — maintenance windows run in your time zone.** They were read on the container's clock, UTC unless TZ is set; the browser's zone is now saved with them as `maintenanceTimeZone` (`health_maintenance.go`).
 
 ### Containers
 

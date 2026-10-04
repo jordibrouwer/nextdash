@@ -338,7 +338,7 @@ func (h *Handlers) runDueMonitors() {
 
 	// One decision for the whole round: a window that opens mid-sweep should not
 	// split it into alerting and non-alerting halves.
-	inMaintenance := inMaintenanceWindow(h.store.GetSettings().MaintenanceWindows, now)
+	inMaintenance := maintenanceInEffect(h.store.GetSettings(), now)
 
 	cacheUpdates := make(map[string]HealthScanCache, len(outcomes))
 	historyUpdates := make(map[string][]HealthSample, len(outcomes))
@@ -453,7 +453,12 @@ func (h *Handlers) runDueMonitors() {
 	}
 	logCheckRound(len(outcomes), failed, time.Since(now))
 
-	h.dispatchMonitorNotifications(ctx, pending)
+	// Delivery on a context of its own: a round that ran to its limit stamped
+	// its outages alerted and then sent them on the expired one, so they were
+	// lost and never sent again.
+	dispatchCtx, cancelDispatch := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
+	defer cancelDispatch()
+	h.dispatchMonitorNotifications(dispatchCtx, pending)
 }
 
 // mirrorMonitorResultsToBookmarks copies each result onto the matching bookmarks

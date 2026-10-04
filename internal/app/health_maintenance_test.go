@@ -179,3 +179,20 @@ func TestMaintenanceWindowWithOnlyBadDaysIsDropped(t *testing.T) {
 		t.Fatalf("got %+v, want only the every-day window", got)
 	}
 }
+
+// The windows are typed in the browser's zone. A container runs on UTC, and
+// "02:00–03:00" was read on that clock: two hours off in a Dutch summer.
+func TestMaintenanceInEffectReadsTheTypedZone(t *testing.T) {
+	at := time.Date(2026, 7, 1, 0, 30, 0, 0, time.UTC) // 02:30 in Amsterdam
+	s := Settings{MaintenanceWindows: []MaintenanceWindow{{Start: "02:00", End: "03:00"}}}
+	if maintenanceInEffect(s, at) {
+		t.Fatal("without a zone the server's clock (UTC here) is used, and 00:30 is outside")
+	}
+	s.MaintenanceTimeZone = "Europe/Amsterdam"
+	if !maintenanceInEffect(s, at) {
+		t.Fatal("02:30 in Amsterdam is inside 02:00–03:00 typed there")
+	}
+	if normalizeMaintenanceTimeZone("Not/AZone") != "" {
+		t.Fatal("an unknown zone was kept")
+	}
+}
