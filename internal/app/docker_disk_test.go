@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 const mb = int64(1 << 20)
@@ -308,5 +309,29 @@ func TestParseDuBytes(t *testing.T) {
 	}
 	if _, err := parseDuBytes([]string{"sh: du: not found"}); err == nil {
 		t.Fatal("no number is no size")
+	}
+}
+
+// A measurement that times out left the cache stale, and every poll of the
+// Containers tile started another one: the daemon walked its disk back to back.
+func TestDockerReclaimableWaitsAfterAFailedMeasurement(t *testing.T) {
+	resetDockerDiskCache()
+	starts := 0
+	orig := dockerDiskRefresh
+	t.Cleanup(func() { dockerDiskRefresh = orig; resetDockerDiskCache() })
+	dockerDiskRefresh = func() {
+		starts++
+		dockerDiskCache.measuring = false // a failure clears it, as the real one's defer does
+	}
+	now := time.Now()
+	for i := 0; i < 10; i++ { // ten polls, 30 s apart
+		dockerReclaimable(now.Add(time.Duration(i) * 30 * time.Second))
+	}
+	if starts != 1 {
+		t.Fatalf("measurements started over five minutes of polls: %d, want 1", starts)
+	}
+	dockerReclaimable(now.Add(dockerDiskRetry + time.Minute))
+	if starts != 2 {
+		t.Fatalf("no new attempt after the retry interval: %d", starts)
 	}
 }

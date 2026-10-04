@@ -293,3 +293,25 @@ func TestDockerAutoUpdateSkipsAReplacedContainer(t *testing.T) {
 		t.Fatal("a replaced container was recreated")
 	}
 }
+
+// A stop from outside nextDash (Unraid's Docker tab, the CLI, a backup job)
+// during the watch was read as a failed update: rolled back, started again and
+// the new version skipped.
+func TestDockerAutoUpdateWatchLeavesAnOutsideStopAlone(t *testing.T) {
+	f, h, api, _ := autoUpdateTestSetup(t)
+	h.runDockerAutoUpdates(time.Date(2026, 9, 30, 3, 10, 0, 0, time.Local))
+	updated, _ := h.resolveDockerID(context.Background(), api, "sonarr")
+	dockerAutoUpdateSleep = func(time.Duration) {
+		ev := dockerEvent{Type: "container", Action: "stop"}
+		ev.Actor.ID = updated.ID
+		ev.Actor.Attributes = map[string]string{"name": "sonarr"}
+		// Past nextDash's own action window, as a stop made minutes later is.
+		dockerNotifications.event(ev, time.Now().Add(dockerNotifyExpectWindow+time.Minute), func(string, string) bool { return false })
+		f.containers[updated.ID].State = "exited"
+	}
+	h.watchAutoUpdate(api, "sonarr")
+	after, _ := h.resolveDockerID(context.Background(), api, "sonarr")
+	if after.ImageID != "sha256:new" || after.State == "running" {
+		t.Fatalf("an outside stop was rolled back: image %s, state %s", after.ImageID, after.State)
+	}
+}

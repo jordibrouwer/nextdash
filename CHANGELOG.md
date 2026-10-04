@@ -123,6 +123,8 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — a crash loop is one notice, not two a minute.** Docker's restart backoff grows to a minute, and past the tenth fast crash each wait outlasted the 30 s grace, so every cycle was told as "stopped unexpectedly" and "running again". The grace is now 75 s (`docker_notify.go`).
 - **fix — the nightly update reads each container at its turn.** The run's list can be an hour old by then: a container stopped meanwhile (by hand, or a backup job) was updated, watched as if running, "rolled back" and started again. The update now goes by what the recreate itself found, and a container replaced since the list is left for the next tick instead of failing with a 404 notice (`docker_auto_update.go`, `docker_recreate.go`).
 - **fix — an update keeps an anonymous volume listed without a source.** Compose's `volumes: [/data]` and `--mount type=volume,dst=…` put the volume in `HostConfig.Mounts` with no source; sent back that way, Docker gave the new container a fresh, empty volume. The source is filled in from the container's own mounts (`docker_recreate.go`).
+- **fix — a stop from outside nextDash during the watch after an automatic update is left alone.** Unraid's Docker tab, the CLI or a backup job stopping it read as a failed update: rolled back, started again and the version skipped (`docker_notify.go`, `docker_auto_update.go`).
+- **fix — a disk measurement that failed waits 30 minutes.** Every poll of the Containers tile started another, so a slow daemon walked its disk back to back (`docker_disk.go`).
 
 ### Dashboard
 

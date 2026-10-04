@@ -57,6 +57,7 @@ type dockerEvent struct {
 
 type containerWatch struct {
 	lastKill   time.Time
+	stoppedAt  time.Time // the last stop event; a start does not clear it
 	oomAt      time.Time
 	dieAt      time.Time // a die not yet explained by a start
 	dieCode    string
@@ -102,6 +103,19 @@ func (n *containerNotifier) expectedUntil(name string) time.Time {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	return n.expected[name]
+}
+
+// stoppedSince reports whether someone stopped (or restarted) the container
+// after t, outside nextDash's own action window. A crash sends a die without a
+// stop, so it does not count.
+func (n *containerNotifier) stoppedSince(name string, t time.Time) bool {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	w := n.watch[name]
+	if w == nil || !w.stoppedAt.After(t) {
+		return false
+	}
+	return w.stoppedAt.After(n.expected[name])
 }
 
 // dockerStopSignal: a kill that ends the container -- the SIGTERM of a stop,
@@ -172,6 +186,9 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 	switch action := ev.Action; {
 	case action == "stop" || (action == "kill" && dockerStopSignal(ev.Actor.Attributes["signal"])):
 		w.lastKill = now
+		if action == "stop" {
+			w.stoppedAt = now
+		}
 	case action == "oom":
 		w.oomAt = now
 	case action == "die":

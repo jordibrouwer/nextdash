@@ -271,9 +271,12 @@ func (h *Handlers) watchAutoUpdate(api *dockerAPI, name string) {
 	// restart from the view moves it later: then the change is the user's, not a
 	// failed update, and rolling back and skipping the version would be wrong.
 	ownMark := dockerNotifications.expectedUntil(name)
+	// A stop or restart from outside -- Unraid's Docker tab, the CLI, a backup
+	// job -- is the user's too: the daemon's stop event says so.
+	watchStart := time.Now()
 	for waited := time.Duration(0); waited < dockerAutoUpdateWatch; waited += dockerAutoUpdatePoll {
 		dockerAutoUpdateSleep(dockerAutoUpdatePoll)
-		if dockerNotifications.expectedUntil(name).After(ownMark) {
+		if dockerNotifications.expectedUntil(name).After(ownMark) || dockerNotifications.stoppedSince(name, watchStart) {
 			return
 		}
 		in, err := api.inspectContainer(ctx, name)
