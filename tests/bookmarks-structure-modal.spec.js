@@ -148,6 +148,37 @@ test.describe('pages and categories modal: the rest of its actions', () => {
     expect(moves[0].items.length).toBeGreaterThan(0);
   });
 
+  // Category ids are per page. Moved without one, the rows kept their own
+  // ids and showed under "Unknown category" on the target.
+  test('Move all bookmarks to… brings their categories along', async ({ page }) => {
+    await openWithSecondPage(page);
+    const posted = [];
+    await page.route('**/api/bookmarks/move', (route) => route.fulfill({
+      status: 200, contentType: 'application/json', body: JSON.stringify({ moved: [], skipped: [] }) }));
+    await page.route('**/api/categories?page=*', async (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
+      posted.push({ url: route.request().url(), body: route.request().postDataJSON() });
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    const from = await page.evaluate(() => String(window.dashboardInstance.allBookmarks[0].pageId));
+    const cats = await page.evaluate((pid) => [...new Set(window.dashboardInstance.allBookmarks
+      .filter((b) => String(b.pageId) === pid).map((b) => b.category).filter(Boolean))], from);
+    test.skip(!cats.length, 'the page has no categorised bookmarks');
+    const target = await modal(page).locator('[data-page-row]').last().getAttribute('data-page-row');
+    await rowMenu(modal(page).locator(`[data-page-row="${from}"]`)).click();
+    const menu = modal(page).locator('[data-structure-menu]');
+    await menu.locator('[data-structure-action="move-all"]').click();
+    await menu.locator('[data-structure-target]').selectOption(target);
+    await menu.locator('[data-structure-confirm]').click();
+    await expect.poll(() => posted.length, { timeout: 10_000 }).toBeGreaterThan(0);
+    expect(posted.every((p) => p.url.includes(`page=${target}`))).toBe(true);
+    // The POSTs are stubbed, so each one carries the categories made so far.
+    await expect.poll(() => new Set(posted.flatMap((p) => p.body.map((c) => String(c.id)))).size,
+      { timeout: 10_000 }).toBeGreaterThanOrEqual(cats.length);
+    const made = [...new Set(posted.flatMap((p) => p.body.map((c) => String(c.id))))];
+    expect(made).toEqual(expect.arrayContaining(cats));
+  });
+
   test('Remove all empty pages deletes the ones without bookmarks, after asking', async ({ page }) => {
     await openWithSecondPage(page);
     const emptyId = await modal(page).locator('[data-page-row]').last().getAttribute('data-page-row');

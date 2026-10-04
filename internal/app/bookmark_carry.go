@@ -89,5 +89,28 @@ func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 		if next[i].CertHost == "" {
 			next[i].CertHost = previous.CertHost
 		}
+		// Drift and archive bookkeeping is written by the checks alone. A tab
+		// loaded before a check sent the rows without it, and the finding, its
+		// baseline and the archive's dates were stored empty: the next check
+		// then took the parked page as the new normal. Each group moves whole.
+		if next[i].DriftURL == "" && next[i].DriftFingerprint == "" {
+			next[i].DriftURL = previous.DriftURL
+			next[i].DriftTitle = previous.DriftTitle
+			next[i].DriftFingerprint = previous.DriftFingerprint
+		}
+		if next[i].DriftNoticed == "" && previous.DriftNoticed != "" && previous.DriftSince >= next[i].DriftSince {
+			next[i].DriftNoticed = previous.DriftNoticed
+			next[i].DriftSince = previous.DriftSince
+			next[i].DriftReason = previous.DriftReason
+		}
+		if previous.ArchiveCheckedAt > next[i].ArchiveCheckedAt {
+			next[i].ArchiveDiedAt = previous.ArchiveDiedAt
+			next[i].ArchiveSnapshotURL = previous.ArchiveSnapshotURL
+			next[i].ArchiveCheckedAt = previous.ArchiveCheckedAt
+		}
+		if next[i].ArchiveJobID == "" {
+			next[i].ArchiveJobID = previous.ArchiveJobID
+			next[i].ArchiveJobAt = previous.ArchiveJobAt
+		}
 	}
 }

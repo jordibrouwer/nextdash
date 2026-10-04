@@ -253,7 +253,30 @@ func (h *Handlers) restoreTrashedPage(w http.ResponseWriter, r *http.Request, it
 		return
 	}
 
-	if err := h.store.RestorePage(*snapshot); err != nil {
+	// A shortcut given to another bookmark since the delete is let go, as a
+	// single bookmark's restore does: two pages holding one shortcut refused
+	// every save on both until one was renamed by hand.
+	restored := *snapshot
+	restored.Bookmarks = append([]Bookmark(nil), snapshot.Bookmarks...)
+	taken := map[string]bool{}
+	for _, b := range h.store.GetAllBookmarks() {
+		if sc := strings.ToUpper(strings.TrimSpace(b.Shortcut)); sc != "" {
+			taken[sc] = true
+		}
+	}
+	for i := range restored.Bookmarks {
+		sc := strings.ToUpper(strings.TrimSpace(restored.Bookmarks[i].Shortcut))
+		if sc == "" {
+			continue
+		}
+		if taken[sc] {
+			restored.Bookmarks[i].Shortcut = ""
+			continue
+		}
+		taken[sc] = true
+	}
+
+	if err := h.store.RestorePage(restored); err != nil {
 		_ = h.store.AddTrashedBookmarks([]TrashedBookmark{item})
 		if errors.Is(err, ErrPageExists) {
 			http.Error(w, "A page with that id already exists", http.StatusConflict)

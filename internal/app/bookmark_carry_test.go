@@ -100,3 +100,23 @@ func TestAPageSaveKeepsNewerOpensAndChecks(t *testing.T) {
 		t.Fatalf("check = %q %d %d, want the stored newer failure", next[0].LastError, next[0].BrokenSince, next[0].LastChecked)
 	}
 }
+
+// A tab loaded before a check sends its rows without the drift finding, its
+// baseline and the archive's dates; stored as sent, they were wiped.
+func TestCarryKeepsDriftAndArchiveBookkeeping(t *testing.T) {
+	stored := []Bookmark{{
+		URL: "https://shop.example", DriftURL: "https://shop.example/", DriftTitle: "Shop", DriftFingerprint: "abc",
+		DriftNoticed: "host", DriftSince: 200, DriftReason: "Now redirects to parked.example",
+		ArchiveDiedAt: 100, ArchiveSnapshotURL: "https://web.archive.org/x", ArchiveCheckedAt: 300,
+		ArchiveJobID: "job-1", ArchiveJobAt: 300,
+	}}
+	next := []Bookmark{{URL: "https://shop.example", Name: "Shop, renamed"}}
+	carryServerOwnedBookmarkFields(next, stored)
+	got := next[0]
+	if got.DriftNoticed != "host" || got.DriftURL == "" || got.DriftFingerprint != "abc" || got.DriftSince != 200 {
+		t.Fatalf("drift lost: %+v", got)
+	}
+	if got.ArchiveDiedAt != 100 || got.ArchiveSnapshotURL == "" || got.ArchiveJobID != "job-1" {
+		t.Fatalf("archive bookkeeping lost: %+v", got)
+	}
+}

@@ -26913,6 +26913,17 @@ class DashboardConfig {
         // URL already there) left them on no page at all.
         if (targetCat) {
             await this.ensureCategoryOnPage(targetPage, targetCat, picked.map((b) => String(b.pageId)));
+        } else {
+            // No category chosen: each row keeps its own, and category ids are
+            // per page, so the target needs them too -- without, the rows sat
+            // under "Unknown category" there.
+            const sources = picked.map((b) => String(b.pageId));
+            const cats = [...new Set(picked
+                .filter((b) => String(b.pageId) !== targetPage)
+                .map((b) => String(b.category || '')).filter(Boolean))];
+            for (const cat of cats) {
+                await this.ensureCategoryOnPage(targetPage, cat, sources);
+            }
         }
         let result;
         try {
