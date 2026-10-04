@@ -101,6 +101,7 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 ### Themes
 
 - **new — Unraid Black and Unraid Azure**, each light and dark (`models.go`). Black has flat black panels, small uppercase labels and the orange of the Unraid logo; Azure has cool grey panels and a steel-blue accent. Both are marked new (`theme_new.go`), carry a description (`theme_description.go`), a chosen backdrop (`theme_backdrop_choice.go`: wireframe for Black, band for Azure) and a weather scene per variant (`visual-settings.js`).
+- **new — Unraid Ember and Unraid Blaze**, each light and dark (`models.go`). Ember is the logo's orange glowing out of black glass (neon, sunset backdrop); Blaze is its red end, hard-edged lacquer on deep crimson (horizon backdrop). Both are marked new, described and given a weather scene like the other two. Also shortened the Unraid Black card description, which was over the length limit.
 
 ### Widgets
 
