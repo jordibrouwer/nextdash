@@ -19108,7 +19108,7 @@ class DashboardConfig {
               label: ['config.widgetDisksLabels', 'Names for them'],
               hint: ['config.widgetDisksLabelsHint',
                      'Written as path=name, so /mnt/user=Files. Without one a disk shows its path.'] },
-            { key: 'showMeter', kind: 'bool', label: ['config.widgetDisksMeter', 'Show a bar per disk'] },
+            { key: 'showMeter', kind: 'bool', defaultOn: true, label: ['config.widgetDisksMeter', 'Show a bar per disk'] },
             { key: 'showInodes', kind: 'bool', label: ['config.widgetDisksInodesToggle', 'Show how full the file table is'] },
         ],
         cpu: [
@@ -19131,7 +19131,7 @@ class DashboardConfig {
         ],
         uptime: [
             { key: 'downOnly', kind: 'bool', label: ['config.widgetDownOnly', 'Only what is down now'] },
-            { key: 'sparkline', kind: 'bool', label: ['config.widgetSparkline', 'Show a sparkline per row'] },
+            { key: 'sparkline', kind: 'bool', defaultOn: true, label: ['config.widgetSparkline', 'Show a sparkline per row'] },
             { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
@@ -19145,7 +19145,7 @@ class DashboardConfig {
         ],
         inbox: [
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-            { key: 'showSource', kind: 'bool', label: ['config.widgetShowSource', 'Show where each link came from'] },
+            { key: 'showSource', kind: 'bool', defaultOn: true, label: ['config.widgetShowSource', 'Show where each link came from'] },
         ],
         unsorted: [
             { key: 'sort', kind: 'choice',
@@ -19163,7 +19163,7 @@ class DashboardConfig {
         ],
         feeds: [
             { key: 'freshOnly', kind: 'bool', label: ['config.widgetFreshOnly', 'Only feeds with fresh items'] },
-            { key: 'showRetired', kind: 'bool', label: ['config.widgetShowRetired', 'Show feeds that stopped after repeated failures'] },
+            { key: 'showRetired', kind: 'bool', defaultOn: true, label: ['config.widgetShowRetired', 'Show feeds that stopped after repeated failures'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         sources: [
@@ -19173,7 +19173,7 @@ class DashboardConfig {
         neglected: [
             { key: 'sinceDays', kind: 'int', min: 7, max: 730,
               label: ['config.widgetSinceDays', 'Not opened for (days)'] },
-            { key: 'includeNeverOpened', kind: 'bool',
+            { key: 'includeNeverOpened', kind: 'bool', defaultOn: true,
               label: ['config.widgetNeverOpened', 'Count bookmarks never opened'] },
             { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
@@ -19201,7 +19201,7 @@ class DashboardConfig {
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         backups: [
-            { key: 'showList', kind: 'bool', label: ['config.widgetShowList', 'List the backups themselves'] },
+            { key: 'showList', kind: 'bool', defaultOn: true, label: ['config.widgetShowList', 'List the backups themselves'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         weather: [
@@ -20770,7 +20770,7 @@ class DashboardConfig {
                     <label class="config-toggle config-toggle--inline">
                         <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
                             data-widget-index="${index}" data-widget-kind="bool"
-                            ${config[field.key] ? 'checked' : ''}>
+                            ${(field.defaultOn ? config[field.key] !== false : Boolean(config[field.key])) ? 'checked' : ''}>
                         <span>${label}${this.widgetFieldInfoButton(field, index)}</span>
                     </label>`;
             }
@@ -22399,6 +22399,11 @@ class DashboardConfig {
         const secret = String(auth.secret || '').trim();
         const stored = this.storedCredentialState(block);
         const config = { ...draft.config };
+        // Shown belongs to the list, not the panel: the toggle writes the block
+        // directly, and the draft still held what was there when the panel
+        // opened, so Save brought a widget just hidden back.
+        if ((block.config || {}).enabled === false) config.enabled = false;
+        else delete config.enabled;
         let dropOwnKey = false;
 
         if (auth.kind === 'header' || auth.kind === 'basic' || auth.kind === 'query'

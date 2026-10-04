@@ -108,6 +108,11 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 
 - **new — Move to page… in the widget menu.** Right-click a widget's header and pick another page, the same move as Config → Widgets. The widget keeps its id, so its sign-in and folded state follow it (`dashboard-category-menu.js`).
 - **fix — Move to page… keeps a widget's feeds and address.** The dashboard reads its widgets without the write token, so an RSS widget's feeds and a custom widget's URL and credential are left out of its copy; the move built the widget from that copy and removed the full one. It now reads both pages with the token (`dashboard-category-menu.js`).
+- **fix — the Health widget shows the figures you tick.** "Down now" and "Healthy" never matched, so ticking them showed nothing (`dashboard-widget-health.js`).
+- **fix — the Unchecked widget counts monitored bookmarks as watched** (`dashboard-widget-unchecked.js`).
+- **fix — six on-by-default options draw ticked.** Disks' bar, Uptime's sparkline, Inbox's source, Feeds' retired, Neglected's never-opened and Backups' list drew unticked while the tile showed them (`dashboard-config.js`).
+- **fix — Save in a widget's settings keeps it hidden** when Shown was unticked on its row meanwhile (`dashboard-config.js`).
+- **fix — the Calendar keeps the events coming up soonest.** The 500-event cap was applied in file order, and a feed over 1 MB was cut without a word; it is now cut after sorting, and read up to 4 MB (`widgets_calendar.go`).
 
 ### Health
 

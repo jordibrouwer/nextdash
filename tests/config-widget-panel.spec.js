@@ -443,3 +443,48 @@ test('a failed delete keeps the widget its key', async ({ page }) => {
     }, id);
     expect(filed).toBe(true);
 });
+
+test.describe('bug hunt 4: widget settings say what the tile does', () => {
+    const lastStored = (page) => page.evaluate(async () => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const blocks = await (await f('/api/pages/1/blocks')).json();
+        return (blocks.widgets || []).at(-1) || null;
+    });
+
+    // The tile drew bars with the key absent, while the box drew unticked.
+    test('a default-on toggle draws ticked on a new widget', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addWidget(page, 'disks');
+        await expect(page.locator(`[data-widget-row="${index}"] [data-widget-setting="showMeter"]`)).toBeChecked();
+    });
+
+    // The draft still held what was there when the panel opened.
+    test('Save in the panel keeps a widget hidden from the row', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addWidget(page, 'health');
+        const row = page.locator(`[data-widget-row="${index}"]`);
+        await row.locator(`[data-widget-enabled="${index}"]`).uncheck();
+        await expect.poll(async () => (await lastStored(page))?.config?.enabled, { timeout: 10_000 }).toBe(false);
+        await row.locator('[data-widget-setting="show"][value="content"]').uncheck();
+        await row.locator('[data-widget-save]').click();
+        await expect.poll(async () => (await lastStored(page))?.config?.show, { timeout: 10_000 })
+            .toEqual(['broken', 'down', 'healthy']);
+        expect((await lastStored(page))?.config?.enabled).toBe(false);
+    });
+
+    // Matched on the rail filter, "down" and "healthy" never matched.
+    test('the health tile shows the figures ticked for it', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addWidget(page, 'health');
+        const row = page.locator(`[data-widget-row="${index}"]`);
+        await row.locator('[data-widget-setting="show"][value="broken"]').uncheck();
+        await row.locator('[data-widget-setting="show"][value="content"]').uncheck();
+        await row.locator('[data-widget-save]').click();
+        await expect.poll(async () => (await lastStored(page))?.config?.show, { timeout: 10_000 })
+            .toEqual(['down', 'healthy']);
+        await page.goto('/');
+        await expect(page.locator('.dashboard-widget-health-row')).toHaveCount(2, { timeout: 15_000 });
+        const filters = await page.locator('.dashboard-widget-health-row').evaluateAll((rows) => rows.map((r) => r.dataset.healthFilter));
+        expect(filters).toEqual(['monitored', 'all']);
+    });
+});

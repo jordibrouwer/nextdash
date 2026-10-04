@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -275,5 +276,26 @@ func TestParseICSReadsAWindowsZoneName(t *testing.T) {
 	want := time.Date(2026, 9, 8, 12, 0, 0, 0, time.UTC)
 	if !ok || !got.Equal(want) {
 		t.Fatalf("got %v, want %v", got.UTC(), want)
+	}
+}
+
+// The 500-event cap was applied in file order. A feed that lists far-off
+// events first lost the ones coming up tomorrow.
+func TestParseICSKeepsTheSoonestWhenCapped(t *testing.T) {
+	now := time.Date(2026, 10, 4, 12, 0, 0, 0, time.UTC)
+	var b strings.Builder
+	b.WriteString("BEGIN:VCALENDAR\r\n")
+	for i := 0; i < calendarMaxEvents+50; i++ {
+		day := now.AddDate(1, 0, i).Format("20060102")
+		b.WriteString("BEGIN:VEVENT\r\nSUMMARY:Far " + strconv.Itoa(i) + "\r\nDTSTART:" + day + "T090000Z\r\nEND:VEVENT\r\n")
+	}
+	b.WriteString("BEGIN:VEVENT\r\nSUMMARY:Tomorrow\r\nDTSTART:" + now.AddDate(0, 0, 1).Format("20060102") + "T090000Z\r\nEND:VEVENT\r\n")
+	b.WriteString("END:VCALENDAR\r\n")
+	events := parseICS([]byte(b.String()), now)
+	if len(events) != calendarMaxEvents {
+		t.Fatalf("kept %d events, want %d", len(events), calendarMaxEvents)
+	}
+	if events[0].Title != "Tomorrow" {
+		t.Fatalf("first event = %q, want the one coming up tomorrow", events[0].Title)
 	}
 }

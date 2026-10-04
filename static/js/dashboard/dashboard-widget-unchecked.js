@@ -46,7 +46,9 @@
             return;
         }
 
-        const watched = (bookmark) => bookmark?.checkStatus === true;
+        // Monitor is checking too: the modes are exclusive, and a monitored
+        // bookmark has checkStatus off (the server's report reads it this way).
+        const watched = (bookmark) => bookmark?.checkStatus === true || bookmark?.monitor === true;
         const never = scope.filter((bookmark) => watched(bookmark) && !Number(bookmark?.lastChecked));
         const stale = scope.filter((bookmark) => watched(bookmark)
             && Number(bookmark?.lastChecked) > 0

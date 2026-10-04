@@ -35,9 +35,9 @@ const (
 	// calendarFetchTimeout bounds one read of the feed.
 	calendarFetchTimeout = 8 * time.Second
 	// calendarMaxBody caps the feed read. A personal calendar's ICS export is
-	// tens of kilobytes; a megabyte is far past that and short of anything
-	// that would hurt to hold.
-	calendarMaxBody = 1 << 20
+	// tens of kilobytes, but a shared or years-old one runs to megabytes, and
+	// past the cap the newest part of the feed was cut off without a word.
+	calendarMaxBody = 4 << 20
 	// calendarCacheTTL is how long a fetched feed is trusted before the next
 	// request re-reads it. Fifteen minutes: a feed does not need to be
 	// current to the minute, and re-fetching a provider's calendar every
@@ -45,8 +45,9 @@ const (
 	calendarCacheTTL = 15 * time.Minute
 	// calendarMaxEvents bounds what one parse keeps, so a feed spanning years
 	// of history and a thousand recurring instances cannot grow the cache
-	// without limit. Sorted ascending, so what is dropped is always the
-	// furthest out.
+	// without limit. Cut after sorting, so what is dropped is always the
+	// furthest out -- cut in file order, a feed listing far-off items first
+	// lost tomorrow's.
 	calendarMaxEvents = 500
 )
 
@@ -156,9 +157,13 @@ func (h *Handlers) fetchCalendarFeed(ctx context.Context, url string) ([]Calenda
 		logWarn(logComponentWidgets, "%s answered %d; the calendar tile will show what it has", hostOf(url), resp.StatusCode)
 		return nil, "the service answered " + strconv.Itoa(resp.StatusCode)
 	}
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, calendarMaxBody))
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, calendarMaxBody+1))
 	if err != nil {
 		return nil, "the feed could not be read"
+	}
+	if len(raw) > calendarMaxBody {
+		logWarn(logComponentWidgets, "the calendar feed from %s is larger than %d MB; the tile shows what fits", hostOf(url), calendarMaxBody>>20)
+		raw = raw[:calendarMaxBody]
 	}
 	events := parseICS(raw, time.Now())
 	return events, ""
@@ -210,9 +215,7 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 		if cutoff < now.UnixMilli() {
 			return
 		}
-		if len(events) < calendarMaxEvents {
-			events = append(events, CalendarEvent{Title: summary, Start: start, End: end, AllDay: allDay})
-		}
+		events = append(events, CalendarEvent{Title: summary, Start: start, End: end, AllDay: allDay})
 	}
 
 	// Components nested in an event (VALARM above all) carry properties of
@@ -270,6 +273,9 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 	}
 
 	sort.Slice(events, func(i, j int) bool { return events[i].Start < events[j].Start })
+	if len(events) > calendarMaxEvents {
+		events = events[:calendarMaxEvents]
+	}
 	return events
 }
 
