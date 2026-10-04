@@ -8144,11 +8144,11 @@ class DashboardConfig {
         const endWait = this.beginWait(this.t('config.waitRestoreTitle', 'Restoring the backup…'), this.t('config.waitRestoreStatus', 'Replacing your data with the backup'));
         try {
             const res = await this.writeFetch(`/api/auto-backups/restore?name=${encodeURIComponent(name)}`, { method: 'POST' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw Object.assign(new Error(await this.backupFailureReason(res)), { fromServer: true });
             this.notify(this.t('config.autoBackupRestoreSuccess', 'Backup restored. Reloading…'), 'success');
             setTimeout(() => window.location.reload(), 800);
-        } catch {
-            this.notify(this.t('config.autoBackupRestoreError', 'Failed to restore backup.'), 'error');
+        } catch (err) {
+            this.notify(this.withBackupReason(this.t('config.autoBackupRestoreError', 'Failed to restore backup.'), err), 'error');
         } finally {
             endWait();
         }
@@ -8179,13 +8179,26 @@ class DashboardConfig {
                 this.t('config.backupImportTitle', 'Importing the backup…'),
                 this.t('config.backupImportStatus', 'Replacing your data'));
             const res = await this.writeFetch('/api/import', { method: 'POST', body: form });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw Object.assign(new Error(await this.backupFailureReason(res)), { fromServer: true });
             this.notify(this.t('config.backupImportSuccess', 'Backup imported. Reloading…'), 'success');
             setTimeout(() => window.location.reload(), 800);
-        } catch {
+        } catch (err) {
             this.hideProgressOverlay();
-            this.notify(this.t('config.backupImportError', 'Could not import the backup.'), 'error');
+            this.notify(this.withBackupReason(this.t('config.backupImportError', 'Could not import the backup.'), err), 'error');
         }
+    }
+
+    // The server says why a restore was refused ("… is too large to restore
+    // from this backup"); a bare "Failed" left the reader guessing.
+    async backupFailureReason(res) {
+        let text = '';
+        try { text = (await res.text()).trim(); } catch { /* no body */ }
+        return text && text.length <= 300 && !text.startsWith('<') ? text : '';
+    }
+
+    withBackupReason(message, err) {
+        const reason = err && err.fromServer ? err.message : '';
+        return reason ? `${message} ${reason}` : message;
     }
 
     async resetAllData() {

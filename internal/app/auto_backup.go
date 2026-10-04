@@ -543,11 +543,13 @@ func commonZipPrefix(files []*zip.File) string {
 /*
 importEntryLimit is how large one file inside a backup may be once unpacked.
 
-Far above anything these archives actually carry -- the largest is an icon --
-and far below the size at which one entry is a way of filling memory. A var so a
-test can lower it rather than build a gigabyte to prove the ceiling is there.
+At least the largest file nextDash writes itself -- a local capture in
+archives/, up to monolithMaxBytes -- or every backup carrying one is refused at
+restore. Still far below the size at which one entry is a way of filling
+memory. A var so a test can lower it rather than build a gigabyte to prove the
+ceiling is there.
 */
-var importEntryLimit int64 = 32 << 20
+var importEntryLimit int64 = 64 << 20
 
 func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))

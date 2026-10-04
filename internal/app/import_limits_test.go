@@ -156,3 +156,12 @@ func TestHTMLBookmarkImportIsNotCappedAtTheJSONLimit(t *testing.T) {
 		t.Fatalf("a 5 MB bookmark file was cut off: %v", readErr)
 	}
 }
+
+// A local capture may be up to monolithMaxBytes, and every backup carries it.
+// With the entry ceiling below that, every backup taken after one large
+// capture was refused at restore.
+func TestImportEntryLimitCoversALocalCapture(t *testing.T) {
+	if importEntryLimit < monolithMaxBytes {
+		t.Fatalf("importEntryLimit %d is below monolithMaxBytes %d: a kept capture makes its backups unrestorable", importEntryLimit, int64(monolithMaxBytes))
+	}
+}

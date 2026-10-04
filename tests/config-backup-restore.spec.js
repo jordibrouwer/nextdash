@@ -99,6 +99,24 @@ test.describe('backup download and restore', () => {
             { timeout: 15_000 }).toBe(false);
     });
 
+    // A refused restore said only "Failed to restore backup.", so a backup
+    // holding a file over the limit read as broken with no reason given.
+    test('a refused restore says why', async ({ page }) => {
+        await openBackups(page);
+        if (await page.locator('[data-backup-item="restore"]').count() === 0) {
+            await page.locator('[data-backup-action="run"]').click();
+            await expect.poll(() => page.locator('[data-backup-item="restore"]').count(),
+                { timeout: 15_000 }).toBeGreaterThan(0);
+        }
+        const reason = 'archives/page.html is too large to restore from this backup';
+        await page.route('**/api/auto-backups/restore**', (route) => route.fulfill({
+            status: 400, contentType: 'text/plain', body: `${reason}\n`,
+        }));
+        await page.locator('[data-backup-item="restore"]').first().click();
+        await page.locator('[data-confirm="ok"]').click();
+        await expect(page.locator('.app-notification', { hasText: reason })).toBeVisible({ timeout: 10_000 });
+    });
+
     /*
      * Making a backup builds the whole archive in one request, and with local
      * copies of pages in it that takes seconds. Without the overlay the button
