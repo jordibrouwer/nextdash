@@ -447,3 +447,38 @@ test.describe('a custom tile can be asked again now', () => {
         await expect(menu.locator('[data-action="refresh"]')).toHaveCount(0);
     });
 });
+
+test('Move to page… takes the widget, id and all, to the other page', async ({ page }) => {
+    await dashboardWithAWidget(page);
+    const target = await page.evaluate(async () => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const h = {
+            'Content-Type': 'application/json',
+            ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}),
+        };
+        const pages = [...window.dashboardInstance.pages];
+        if (!pages.some((p) => Number(p.id) !== 1)) pages.push({ id: 4401, name: 'Elsewhere' });
+        const res = await f('/api/pages', { method: 'POST', headers: h, body: JSON.stringify(pages) });
+        if (!res.ok) throw new Error(`seeding pages failed: ${res.status}`);
+        return pages.find((p) => Number(p.id) !== 1);
+    });
+    await page.reload({ waitUntil: 'networkidle' });
+    await expect(page.locator('.dashboard-widget[data-widget-type="health"]')).toBeVisible({ timeout: 15_000 });
+    const before = await storedWidget(page);
+
+    const menu = await openMenu(page);
+    await menu.locator('[data-action="move-page"]').click();
+    const picker = page.locator('#widget-context-menu');
+    await expect(picker.locator('[data-action="1"]')).toHaveCount(0);
+    await picker.locator(`[data-action="${target.id}"]`).click();
+
+    await expect(page.locator('.dashboard-widget[data-widget-type="health"]')).toHaveCount(0, { timeout: 15_000 });
+    expect(await storedWidget(page)).toBeNull();
+    const moved = await page.evaluate(async (id) => {
+        const data = await (await fetch(`/api/pages/${id}/blocks`)).json();
+        return (data.widgets || [])[0] || null;
+    }, target.id);
+    expect(moved?.type).toBe('health');
+    expect(moved?.title).toBe('Status');
+    expect(moved?.id).toBe(before.id);
+});

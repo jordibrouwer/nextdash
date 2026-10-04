@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.17.1 — 4 October 2026](#v1171--4-october-2026)
 - [v1.17.0 — 3 October 2026](#v1170--3-october-2026)
 - [v1.16.0 — 2 October 2026](#v1160--2-october-2026)
 - [v1.15.8 — 1 October 2026](#v1158--1-october-2026)
@@ -90,6 +91,24 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.17.1 — 4 October 2026
+
+Two themes for Unraid users, each in dark and light, after the webGUI's own Black and Azure themes.
+
+### Themes
+
+- **new — Unraid Black and Unraid Azure**, each light and dark (`models.go`). Black has flat black panels, small uppercase labels and the orange of the Unraid logo; Azure has cool grey panels and a steel-blue accent. Both are marked new (`theme_new.go`), carry a description (`theme_description.go`), a chosen backdrop (`theme_backdrop_choice.go`: wireframe for Black, band for Azure) and a weather scene per variant (`visual-settings.js`).
+
+### Widgets
+
+- **new — Move to page… in the widget menu.** Right-click a widget's header and pick another page, the same move as Config → Widgets. The widget keeps its id, so its sign-in and folded state follow it (`dashboard-category-menu.js`).
+
+### Docs
+
+- **docs — README:** the two Unraid themes in the Unraid section, with a screenshot of each (`screenshots/nextdash-unraid-black.jpg`, `nextdash-unraid-azure.jpg`).
 
 ---
 
