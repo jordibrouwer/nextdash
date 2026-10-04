@@ -91,6 +91,25 @@ func (h *Handlers) DeleteSourceHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// ForgetSourceTokenHandler drops a source's token and keeps the rest: its
+// page, category and the list of what it already imported. Deleting the whole
+// source (what "Forget token" did) let a new token bring back every item the
+// reader had removed since.
+func (h *Handlers) ForgetSourceTokenHandler(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w, r)
+	if r.Method == "OPTIONS" {
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	if err := ClearSourceToken(mux.Vars(r)["id"]); err != nil {
+		http.Error(w, "Invalid source id", http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // sourceImporter fetches rows for one kind of source.
 //
 // Everything a source needs is in this signature: the round is pure until the

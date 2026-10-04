@@ -46,3 +46,20 @@ func TestStoredPreviewEntitiesAreReadAsCharacters(t *testing.T) {
 		t.Errorf("cache = %q / %q", entry.Title, entry.Description)
 	}
 }
+
+// Decoded once: an inbox written since keeps its text as it is. Decoding on
+// every read turned "&amp;nbsp;" into a space and "&param=" in a URL title
+// into "¶m=".
+func TestInboxTitlesAreNotDecodedTwice(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", dir)
+	inbox := `{"version":2,"items":[{"id":"a","url":"https://x.example/?id=1&param=2","title":"https://x.example/?id=1&param=2"},` +
+		`{"id":"b","url":"https://y.example","title":"What is &nbsp;?"}]}`
+	if err := os.WriteFile(filepath.Join(dir, "inbox.json"), []byte(inbox), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	items := NewStore().(*FileStore).readInboxDataLocked().Items
+	if len(items) != 2 || items[0].Title != "https://x.example/?id=1&param=2" || items[1].Title != "What is &nbsp;?" {
+		t.Fatalf("inbox = %+v", items)
+	}
+}

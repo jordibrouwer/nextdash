@@ -69,7 +69,13 @@ function ensureHttpUrl(raw) {
   return `https://${trimmed}`;
 }
 
-async function fetchBookmarkExtras(serverUrl, url) {
+/**
+ * The icon and preview for an address. uploadIcon false leaves the favicon
+ * where it is and returns its address as iconSource: an upload stores a file
+ * in data/icons that only a saved bookmark refers to, and the popup asked for
+ * one on every open and every edit of the address.
+ */
+async function fetchBookmarkExtras(serverUrl, url, { uploadIcon = true } = {}) {
   const base = normalizeServerUrl(serverUrl);
   const safeUrl = typeof BookmarkUrlUtils !== 'undefined'
     ? BookmarkUrlUtils.ensureHttpUrl(url)
@@ -79,17 +85,26 @@ async function fetchBookmarkExtras(serverUrl, url) {
   const extras = { url: safeUrl };
   if (typeof BookmarkPreviewService === 'undefined') return extras;
 
-  try {
-    const icon = await BookmarkPreviewService.fetchAndUploadFavicon(safeUrl, base);
-    if (icon) extras.icon = icon;
-  } catch { /* optional */ }
+  if (uploadIcon) {
+    try {
+      const icon = await BookmarkPreviewService.fetchAndUploadFavicon(safeUrl, base);
+      if (icon) extras.icon = icon;
+    } catch { /* optional */ }
+  }
 
+  // An app the icon sets know shows its set icon, so no favicon is wanted.
+  let setIcon = false;
   try {
     const preview = await BookmarkPreviewService.fetchLinkPreview(safeUrl, base);
     if (preview.title) extras.previewTitle = preview.title;
     if (preview.description) extras.previewDesc = preview.description;
     if (preview.image) extras.previewImage = preview.image;
+    setIcon = preview.setIcon === true;
+    if (!uploadIcon && !setIcon) extras.iconSource = preview.iconSource || '';
   } catch { /* optional */ }
+  if (!uploadIcon && !setIcon && !extras.iconSource && typeof BookmarkUrlUtils !== 'undefined') {
+    extras.iconSource = BookmarkUrlUtils.deriveFaviconFromBookmarkUrl(safeUrl) || '';
+  }
 
   return extras;
 }

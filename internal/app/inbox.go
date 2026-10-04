@@ -17,7 +17,8 @@ import (
 
 var ErrInboxItemNotFound = errors.New("inbox item not found")
 
-const inboxDataVersion = 1
+// inboxDataVersion 2: titles stored decoded (see readInboxDataLocked).
+const inboxDataVersion = 2
 
 // InboxLink is a lightweight saved URL (not a full bookmark).
 type InboxLink struct {
@@ -117,15 +118,18 @@ func (fs *FileStore) readInboxDataLocked() InboxData {
 	if err := json.Unmarshal(data, &inbox); err != nil || inbox.Items == nil {
 		return InboxData{Version: inboxDataVersion, Items: []InboxLink{}}
 	}
-	if inbox.Version == 0 {
-		inbox.Version = inboxDataVersion
+	// Version 1 kept entities as an older fetch stored them; they are decoded
+	// once, and the next save writes version 2. Decoding on every read was not
+	// idempotent: "What is &amp;nbsp;?" lost its text, and a URL used as a
+	// title turned "&param=" into "¶m=".
+	if inbox.Version < 2 {
+		for i := range inbox.Items {
+			inbox.Items[i].Title = decodePreviewText(inbox.Items[i].Title)
+			inbox.Items[i].PreviewTitle = decodePreviewText(inbox.Items[i].PreviewTitle)
+			inbox.Items[i].PreviewDesc = decodePreviewText(inbox.Items[i].PreviewDesc)
+		}
 	}
-	// Titles taken from the page, as the bookmark files keep them.
-	for i := range inbox.Items {
-		inbox.Items[i].Title = decodePreviewText(inbox.Items[i].Title)
-		inbox.Items[i].PreviewTitle = decodePreviewText(inbox.Items[i].PreviewTitle)
-		inbox.Items[i].PreviewDesc = decodePreviewText(inbox.Items[i].PreviewDesc)
-	}
+	inbox.Version = inboxDataVersion
 	return inbox
 }
 

@@ -128,6 +128,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/sources", handlers.ListSourcesHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/sources/{id}", handlers.SaveSourceHandler).Methods("PUT", "OPTIONS")
 	r.HandleFunc("/api/sources/{id}", handlers.DeleteSourceHandler).Methods("DELETE", "OPTIONS")
+	r.HandleFunc("/api/sources/{id}/forget", handlers.ForgetSourceTokenHandler).Methods("POST", "OPTIONS")
 	// GET previews, POST imports. Two calls on purpose: a source that writes on
 	// the first click is one nobody clicks twice.
 	r.HandleFunc("/api/sources/{id}/run", handlers.RunSourceHandler).Methods("GET", "POST", "OPTIONS")

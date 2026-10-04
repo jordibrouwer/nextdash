@@ -9073,7 +9073,9 @@ class DashboardConfig {
             { confirmLabel: this.t('config.sourceForgetBtn', 'Forget token'), danger: true });
         if (!ok) return;
         try {
-            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            // The token only: the source keeps what it already imported, so a
+            // new token does not bring back what was deleted since.
+            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(id)}/forget`, { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.notify(this.t('config.sourceForgotten', 'Token forgotten.'), 'success');
             void this.loadSourceStates();

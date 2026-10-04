@@ -157,9 +157,12 @@
                 : '';
 
             const iconBase = this.iconBasePath.replace(/\/?$/, '/');
+            // A full address is a favicon not stored yet (the extension
+            // stores it on save), drawn from where it is.
+            const iconSrc = (icon) => (/^https?:\/\//i.test(icon) ? icon : iconBase + icon);
             const iconHtml = showIcons
                 ? (bookmark?.icon
-                    ? `<span class="bookmark-icon-slot"><img class="bookmark-icon" src="${escHtml(iconBase + bookmark.icon)}" alt=""></span>`
+                    ? `<span class="bookmark-icon-slot"><img class="bookmark-icon" src="${escHtml(iconSrc(bookmark.icon))}" alt=""></span>`
                     : `<span class="bookmark-icon-slot bookmark-icon-slot--empty" aria-hidden="true"></span>`)
                 : '';
 
@@ -208,7 +211,8 @@
             const iconBase = this.iconBasePath.replace(/\/?$/, '/');
             if (iconEl) {
                 if (bookmark?.icon) {
-                    iconEl.innerHTML = `<img src="${escHtml(iconBase + bookmark.icon)}" alt="">`;
+                    const src = /^https?:\/\//i.test(bookmark.icon) ? bookmark.icon : iconBase + bookmark.icon;
+                    iconEl.innerHTML = `<img src="${escHtml(src)}" alt="">`;
                 } else {
                     iconEl.innerHTML = '<span class="bookmark-form-preview-strip-icon-empty"></span>';
                 }

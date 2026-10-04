@@ -18,6 +18,7 @@ func sourcesRouter(h *Handlers) *mux.Router {
 	r.HandleFunc("/api/sources/{id}", h.SaveSourceHandler).Methods("PUT")
 	r.HandleFunc("/api/sources/{id}", h.DeleteSourceHandler).Methods("DELETE")
 	r.HandleFunc("/api/sources/{id}/run", h.RunSourceHandler).Methods("GET", "POST")
+	r.HandleFunc("/api/sources/{id}/forget", h.ForgetSourceTokenHandler).Methods("POST")
 	return r
 }
 
@@ -381,5 +382,22 @@ func TestRunSourceDoesNotBringBackADeletedRow(t *testing.T) {
 		if b.URL == "https://rd.example.com/gone" {
 			t.Fatal("the deleted row came back")
 		}
+	}
+}
+
+// Forget token drops the token and keeps the source, with its page and the
+// list of what it imported: a new token must not bring back what was deleted.
+func TestForgetSourceTokenKeepsTheSource(t *testing.T) {
+	h := newTestHandlers(t)
+	if rec := doSources(t, h, http.MethodPut, "/api/sources/github:stars",
+		`{"kind":"github-stars","token":"ghp_x"}`); rec.Code != http.StatusOK {
+		t.Fatalf("save = %d", rec.Code)
+	}
+	if rec := doSources(t, h, http.MethodPost, "/api/sources/github:stars/forget", ""); rec.Code != http.StatusNoContent {
+		t.Fatalf("forget = %d", rec.Code)
+	}
+	source, ok := GetSource("github:stars")
+	if !ok || source.Token != "" || source.Kind != "github-stars" {
+		t.Fatalf("after forget: ok=%v source=%+v", ok, source)
 	}
 }
