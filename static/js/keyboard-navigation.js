@@ -1268,6 +1268,17 @@ class KeyboardNavigation {
         if (!bookmark || !bookmark.url) {
             return false;
         }
+        // The guards search's own match makes. A longer shortcut sharing the
+        // letter ("nc" beside "n") or a finder starting with it means the
+        // typing may not be finished, and "Enter opens" or "delay" mean the
+        // letter does not open on its own: the letter starts a search instead.
+        const longer = [...(search.shortcuts?.keys?.() || [])].some((k) => k !== letter && k.startsWith(letter));
+        const finderShares = Boolean(search.settings?.includeFindersInSearch)
+            && [...(search.findersComponent?.shortcuts?.keys?.() || [])].some((f) => String(f).startsWith(letter));
+        const mode = typeof search.shortcutOpenMode === 'function' ? search.shortcutOpenMode() : 'instant';
+        if (longer || finderShares || mode !== 'instant') {
+            return false;
+        }
         // Through search's own opener: it records the open, honours Hypr mode
         // and closes anything search has on screen, which is what a shortcut
         // typed into the panel does.

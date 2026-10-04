@@ -2539,6 +2539,13 @@ class DashboardInbox {
         if (this.triage?.isOpen?.()) {
             return false;
         }
+        // A dialog over the inbox owns its keys. This handler runs in the
+        // grid's capture phase, before the dialog's own: Enter opened the
+        // drawer behind a confirm, d deleted the row it was asking about, and
+        // Escape cleared the ticks while the bulk-delete dialog stayed open.
+        if (d.isModalOpen?.()) {
+            return false;
+        }
         // An open snooze menu owns the arrow keys: this handler runs first and
         // would otherwise consume them to move the row cursor behind the menu,
         // leaving the menu's own navigation dead.

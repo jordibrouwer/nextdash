@@ -100,6 +100,29 @@
      * Escape has nothing to close. Calling the same entry point the toolbar
      * buttons call keeps one open path for every route in.
      */
+    /*
+     * What was typed after the opening key, or a shortcut typed straight away.
+     *
+     * Only the key that opens the panel used to wait for the bundle: ":dark"
+     * arrived as ":", and a shortcut typed the moment a new tab opened went
+     * nowhere at all. The rest is kept here and handed to the real handlers,
+     * as key presses, once they are in.
+     */
+    let typedAhead = '';
+    let pendingTyping = false;
+
+    function replayTypedAhead() {
+        const text = typedAhead;
+        typedAhead = '';
+        pendingTyping = false;
+        // The bundle did not arrive: handed back now, the keys would come
+        // straight here again and ask for it in a loop.
+        if (!ready) return;
+        for (const ch of text) {
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: ch, bubbles: true, cancelable: true }));
+        }
+    }
+
     function loadThenOpen(key) {
         void ensureSearch().then(() => {
             initialiseComponent();
@@ -119,6 +142,14 @@
             // way. Without it the panel is on screen while isActive() says it is
             // not, and Escape has nothing to close.
             if (!search.isActive?.()) search.showSearch?.();
+            replayTypedAhead();
+        });
+    }
+
+    function loadThenType() {
+        void ensureSearch().then(() => {
+            initialiseComponent();
+            replayTypedAhead();
         });
     }
 
@@ -137,8 +168,28 @@
         if (ready) return;
         if (event.ctrlKey || event.metaKey || event.altKey) return;
         if (isTypingTarget(event.target)) return;
-        if (!OPENING_KEYS.includes(event.key)) return;
         if (document.querySelector('[data-look-studio]')) return;
+        // Already waiting: every further character joins what was typed.
+        if (pendingTyping && event.key.length === 1) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            typedAhead += event.key;
+            return;
+        }
+        // A bare letter on the grid with no cursor starts the shortcut search,
+        // the dashboard's main use, and needs the bundle as much as ">" does.
+        const dash = global.dashboardInstance;
+        if (/^[a-z]$/i.test(event.key) && !event.shiftKey
+            && dash?.isBookmarksView?.() && !dash?.isModalOpen?.()
+            && !dash?.keyboardNavigation?._gridNavActive?.()) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            pendingTyping = true;
+            typedAhead += event.key;
+            loadThenType();
+            return;
+        }
+        if (!OPENING_KEYS.includes(event.key)) return;
         // > : ? * open the overlay from any view, as they do once the bundle
         // is in. `/` is the one key a view keeps: config, the containers view
         // and the tag cloud use it for their own search or filter.
@@ -148,6 +199,7 @@
         if (event.key === '/' && global.DashboardTagCloud?.isEligible?.()) return;
         event.preventDefault();
         event.stopImmediatePropagation();
+        pendingTyping = true;
         loadThenOpen(event.key);
     }
 

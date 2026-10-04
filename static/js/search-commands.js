@@ -1881,10 +1881,13 @@ class SearchCommandsComponent {
     _bookmarksInCategoryOnPage(dashboard, categoryQuery) {
         const q = String(categoryQuery || '').trim().toLowerCase();
         if (!q) return [];
+        const names = new Map(this._getVisiblePageCategories()
+            .map((c) => [String(c.id), String(c.name || '').toLowerCase()]));
         return (dashboard.bookmarks || []).filter((bookmark) => {
             if (!bookmark || !String(bookmark.url || '').trim()) return false;
             const category = String(bookmark.category || '').trim().toLowerCase();
-            return category === q || category.includes(q);
+            const name = names.get(String(bookmark.category || '').trim()) || '';
+            return category === q || category.includes(q) || (name && name.includes(q));
         });
     }
 
@@ -1910,12 +1913,13 @@ class SearchCommandsComponent {
             || String(category.id || '').toLowerCase() === query.toLowerCase()
         ));
         const categoryName = exactCategory?.name || query;
+        // A bookmark holds its category's id, never its name: compared with
+        // the name, every category with a generated id read as empty.
         const bookmarks = exactCategory
             ? (dashboard.bookmarks || []).filter((bookmark) => (
                 bookmark
                 && String(bookmark.url || '').trim()
-                && String(bookmark.category || '').trim().toLowerCase()
-                    === String(exactCategory.name || '').trim().toLowerCase()
+                && String(bookmark.category || '').trim() === String(exactCategory.id || '').trim()
             ))
             : this._bookmarksInCategoryOnPage(dashboard, query);
 

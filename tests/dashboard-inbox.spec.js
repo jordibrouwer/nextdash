@@ -438,6 +438,24 @@ test.describe('dashboard inbox phase 1', () => {
         await expect(page.locator('.inbox-layout')).toBeVisible();
     });
 
+    // The inbox's keys ran in the grid's capture phase, before the dialog's:
+    // Escape cleared the ticks while the bulk-delete dialog stayed open.
+    test('Escape closes the bulk-delete dialog and keeps the ticks', async ({ page }) => {
+        await seedInbox(page, ['Dialog one', 'Dialog two']);
+        await page.evaluate(() => {
+            const ib = window.dashboardInstance.inbox;
+            ib.getFilteredItems().filter((i) => i.title.startsWith('Dialog')).forEach((i) => ib.setChecked(i.id, true));
+        });
+        await expect(page.locator('.inbox-selection-bar')).toBeVisible();
+        await page.locator('[data-inbox-selection="delete"]').click();
+        await expect(page.locator('#app-modal')).toHaveClass(/show/);
+        const ticked = () => page.evaluate(() => window.dashboardInstance.inbox.checkedIds.size);
+        expect(await ticked()).toBe(2);
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#app-modal')).not.toHaveClass(/show/);
+        expect(await ticked()).toBe(2);
+    });
+
     test('a filter change clears ticks so bulk cannot touch hidden rows', async ({ page }) => {
         await seedInbox(page, ['Zebra one', 'Apple two']);
 

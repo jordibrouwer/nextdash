@@ -1,6 +1,15 @@
 // Search Component JavaScript
 class SearchComponent {
     /**
+     * A character typed into a query: printable ASCII, and any letter, digit
+     * or accent. The gates were ASCII alone, so "Météo", "Zürich" or anything
+     * in Chinese could not be typed at all.
+     */
+    static isTypedChar(ch) {
+        return typeof ch === 'string' && /^[\x20-\x7E\p{L}\p{N}\p{M}]$/u.test(ch);
+    }
+
+    /**
      * The three reasons a fuzzy result can be on screen, strongest first.
      * `key` matches the label fuzzy-search.js puts on every result.
      */
@@ -216,7 +225,7 @@ class SearchComponent {
                 const value = shouts ? raw.toUpperCase() : raw;
                 const allowedChar = (ch) => (shouts
                     ? /^[A-Z0-9: \?/#\.\-_]$/.test(ch)
-                    : /^[\x20-\x7E]$/.test(ch));
+                    : SearchComponent.isTypedChar(ch));
                 // The field's value is what was typed. A paste, a swipe-typed
                 // word or an autocorrection inserts several characters at
                 // once, and a selection deleted takes several away: only the
@@ -1073,7 +1082,7 @@ class SearchComponent {
          * existed all along; it just sat below the launchers.
          */
         if (this.currentQuery.startsWith(':') && e.key.length === 1
-                && /^[\x20-\x7E]$/.test(e.key)) {
+                && SearchComponent.isTypedChar(e.key)) {
             e.preventDefault();
             this.addToQuery(e.key);
             return;
@@ -1093,7 +1102,7 @@ class SearchComponent {
          * shortcut, and the launchers still have their say there.
          */
         if (this.currentQuery.startsWith('?') && this.currentQuery.includes(' ')
-                && e.key.length === 1 && /^[\x20-\x7E]$/.test(e.key)) {
+                && e.key.length === 1 && SearchComponent.isTypedChar(e.key)) {
             e.preventDefault();
             this.addToQuery(e.key);
             return;
@@ -1271,7 +1280,7 @@ class SearchComponent {
 
         // Normal search: allow filter syntax (category:work) alongside shortcuts
         if (this.searchActive && this._isNormalSearchMode()) {
-            if (e.key.length === 1 && /^[\x20-\x7E]$/.test(e.key)) {
+            if (e.key.length === 1 && SearchComponent.isTypedChar(e.key)) {
                 e.preventDefault();
                 this.addToQuery(e.key);
                 return;
@@ -1600,6 +1609,19 @@ class SearchComponent {
     _stripModeSwitchPrefix(query) {
         const text = String(query || '');
         return this._hasModeSwitchPrefix(text) ? text.slice(1) : text;
+    }
+
+    /** The name of a category on the current page, from its id; '' if unknown. */
+    _categoryNameFor(id) {
+        const key = String(id || '');
+        if (!key) return '';
+        const cat = (window.dashboardInstance?.categories || []).find((c) => String(c?.id) === key);
+        return String(cat?.name || '').trim();
+    }
+
+    /** A category name as one filter word: lower case, spaces as dashes. */
+    static categoryToken(name) {
+        return String(name || '').trim().toLowerCase().replace(/\s+/g, '-');
     }
 
     _isNormalSearchMode() {
@@ -2042,8 +2064,10 @@ class SearchComponent {
         pool.forEach((bookmark) => {
             const raw = String(bookmark?.category || '').trim();
             if (!raw) return;
-            const key = raw.toLowerCase();
-            if (!categoryMap.has(key)) categoryMap.set(key, raw);
+            // A category is stored by id ("cat_mrjjzqik_o2rt0"); offer its name.
+            const name = this._categoryNameFor(raw);
+            const key = name ? SearchComponent.categoryToken(name) : raw.toLowerCase();
+            if (!categoryMap.has(key)) categoryMap.set(key, name || raw);
         });
         const categories = [...categoryMap.keys()].sort();
         const pageIds = Array.from(new Set([
@@ -2243,7 +2267,14 @@ class SearchComponent {
         const wanted = String(value).toLowerCase();
 
         if (key === 'category') {
-            return String(bookmark.category || '').toLowerCase().includes(wanted);
+            // By name as well as id: ids are generated now, and "category:vps"
+            // found nothing while "category:ai" found "zoeken-ai".
+            const id = String(bookmark.category || '');
+            const name = this._categoryNameFor(id);
+            if (name) {
+                return SearchComponent.categoryToken(name).includes(wanted) || name.toLowerCase().includes(wanted);
+            }
+            return id.toLowerCase().includes(wanted);
         }
 
         if (key === 'tag') {

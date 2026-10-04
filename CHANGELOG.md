@@ -147,6 +147,14 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — an upload over its limit is refused, not cut.** A 16 MB CJK font was saved as a 10 MB stump and reported applied; fonts may now be 32 MB, and the panel says why one is refused (`uploads.go`).
 - **fix — device-only settings leave what the server does alone:** analytics, local bookmarks, backup secrets, the background re-check, feeds, inbox limits and more (`device-settings-merge.js`).
 
+### Search
+
+- **fix — accented letters can be typed, and either spelling finds a name.** Every key gate was printable ASCII, so "Météo", "Zürich" or anything in Chinese could not be typed, and the matcher did not fold accents (`search.js`, `fuzzy-search.js`).
+- **fix — the inbox's keys stay out of an open dialog.** Escape cleared the ticks while the bulk-delete dialog stayed open; Enter, Space and d acted on the rows behind a confirm (`dashboard-inbox.js`).
+- **fix — a bookmark's own letter on the grid waits for a longer shortcut,** and for "Enter opens": with "nc" beside "n", typing "nc" after a search opened the bookmark behind "n" (`keyboard-navigation.js`).
+- **fix — `category:` and `:open category` go by the category's name.** A bookmark holds its category's id, so "category:vps" found nothing and the completions read out raw ids (`search.js`, `search-commands.js`).
+- **fix — what you type before the search code has loaded arrives whole.** Only the opening key waited, so ":dark" arrived as ":" and a shortcut typed the moment a tab opened did nothing (`search-loader.js`).
+
 ### Inbox
 
 - **fix — the tag scan keeps a preview it could not read again,** and pauses when the outbound limit runs out instead of marking every page after it as read (`tag_scan.go`, `rate_limit.go`).

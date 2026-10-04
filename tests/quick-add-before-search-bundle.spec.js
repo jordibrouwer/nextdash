@@ -67,3 +67,14 @@ test.describe('adding a bookmark before the search bundle lands', () => {
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/, { timeout: 15_000 });
     });
 });
+
+// Only the key that opens the panel waited for the bundle: ":dark" arrived as
+// ":", and a shortcut typed the moment a tab opened went nowhere.
+test('what is typed before the search bundle lands arrives whole', async ({ page }) => {
+    const release = await holdBackSearchBundle(page);
+    await loadDashboard(page);
+    await page.keyboard.type(':dark');
+    release();
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.searchComponent?.currentQuery || ''),
+        { timeout: 15_000 }).toBe(':dark');
+});
