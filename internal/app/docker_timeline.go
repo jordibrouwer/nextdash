@@ -105,6 +105,23 @@ func (t *dockerTimeline) add(name string, e dockerTimelineEntry) {
 	t.dirty = true
 }
 
+// relabel changes the kind of name's entry at the given time, when it still
+// has the kind from: a die first written down as a crash that a stop event
+// then explained.
+func (t *dockerTimeline) relabel(name string, at int64, from, to string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.loadLocked()
+	entries := t.data[name]
+	for i := len(entries) - 1; i >= 0; i-- {
+		if entries[i].At == at && entries[i].Kind == from {
+			entries[i].Kind = to
+			t.dirty = true
+			return
+		}
+	}
+}
+
 // flush writes what was added since the last write, if anything was.
 func (t *dockerTimeline) flush() error {
 	t.mu.Lock()

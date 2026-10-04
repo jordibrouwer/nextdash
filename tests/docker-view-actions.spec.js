@@ -21,6 +21,15 @@ test.describe('docker view actions', () => {
     await expect(confirmDialog(page)).toBeHidden();
   });
 
+  test('s stops a restarting container, as its menu says', async ({ page }) => {
+    const state = await mockDocker(page);
+    state.containers.find((c) => c.name === 'jellyfin').state = 'restarting';
+    await page.goto('/#docker');
+    await page.locator('[data-docker-row="jellyfin"]').click();
+    await page.keyboard.press('s');
+    await expect.poll(() => state.calls).toContain('POST /containers/jellyfin/stop');
+  });
+
   test('remove asks first and says volumes stay', async ({ page }) => {
     const state = await openView(page);
     await page.locator('[data-docker-row="bazarr"]').click();

@@ -1333,7 +1333,7 @@ class DashboardDocker {
     /** s and p toggle: the same key starts a stopped container and stops a running one. */
     resolveActionKey(key, c) {
         if (!c) return null;
-        if (key === 'toggle-run') return c.state === 'running' || c.state === 'paused' ? 'stop' : 'start';
+        if (key === 'toggle-run') return ['running', 'paused', 'restarting'].includes(c.state) ? 'stop' : 'start';
         if (key === 'toggle-pause') return c.state === 'paused' ? 'unpause' : 'pause';
         return key;
     }

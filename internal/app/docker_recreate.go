@@ -245,7 +245,7 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 	joinable := dockerNetworkModeIsNetwork(mode)
 	if n, ok := networks[mode]; ok && joinable {
 		body["NetworkingConfig"] = map[string]any{"EndpointsConfig": map[string]any{
-			mode: dockerEndpointConfig(n.Aliases, n.IPAMConfig, n.MacAddress, c.ID),
+			mode: dockerEndpointConfig(n, c.ID),
 		}}
 	}
 
@@ -261,7 +261,7 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 			}
 			payload := map[string]any{
 				"Container":      newID,
-				"EndpointConfig": dockerEndpointConfig(n.Aliases, n.IPAMConfig, n.MacAddress, c.ID),
+				"EndpointConfig": dockerEndpointConfig(n, c.ID),
 			}
 			if err := api.post(ctx, "/networks/"+url.PathEscape(netName)+"/connect", payload); err != nil {
 				res.FailedStep = "connect"
@@ -350,23 +350,30 @@ func dropImageDefaults(config, image map[string]any) {
 	}
 }
 
-// dockerEndpointConfig carries a network's aliases, fixed address and MAC over
-// to the new container. Docker adds the short id to the aliases on its own;
-// the old one is dropped so the new container does not answer to it.
-func dockerEndpointConfig(aliases []string, ipam json.RawMessage, mac, oldID string) map[string]any {
+// dockerEndpointConfig carries a network's aliases, links, driver options,
+// fixed address and MAC over to the new container. Docker adds the short id
+// to the aliases on its own; the old one is dropped so the new container does
+// not answer to it.
+func dockerEndpointConfig(n dockerEndpoint, oldID string) map[string]any {
 	kept := []string{}
-	for _, alias := range aliases {
+	for _, alias := range n.Aliases {
 		if len(oldID) >= 12 && alias == oldID[:12] {
 			continue
 		}
 		kept = append(kept, alias)
 	}
 	out := map[string]any{"Aliases": kept}
-	if len(ipam) > 0 && string(ipam) != "null" {
-		out["IPAMConfig"] = ipam
+	if len(n.Links) > 0 {
+		out["Links"] = n.Links
 	}
-	if mac != "" {
-		out["MacAddress"] = mac
+	if len(n.DriverOpts) > 0 {
+		out["DriverOpts"] = n.DriverOpts
+	}
+	if len(n.IPAMConfig) > 0 && string(n.IPAMConfig) != "null" {
+		out["IPAMConfig"] = n.IPAMConfig
+	}
+	if n.MacAddress != "" {
+		out["MacAddress"] = n.MacAddress
 	}
 	return out
 }

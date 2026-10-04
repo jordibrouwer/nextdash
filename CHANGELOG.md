@@ -133,6 +133,9 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — an update keeps an anonymous volume listed without a source.** Compose's `volumes: [/data]` and `--mount type=volume,dst=…` put the volume in `HostConfig.Mounts` with no source; sent back that way, Docker gave the new container a fresh, empty volume. The source is filled in from the container's own mounts (`docker_recreate.go`).
 - **fix — a stop from outside nextDash during the watch after an automatic update is left alone.** Unraid's Docker tab, the CLI or a backup job stopping it read as a failed update: rolled back, started again and the version skipped (`docker_notify.go`, `docker_auto_update.go`).
 - **fix — a disk measurement that failed waits 30 minutes.** Every poll of the Containers tile started another, so a slow daemon walked its disk back to back (`docker_disk.go`).
+- **fix — `s` stops a container that keeps restarting,** as its menu says; it tried to start it and nothing happened (`dashboard-docker.js`).
+- **fix — stopping an image with its own stop signal is no longer told as a crash.** A `STOPSIGNAL SIGINT` container exiting 130 sent "stopped unexpectedly" and added a crash to its timeline (`docker_notify.go`, `docker_timeline.go`).
+- **fix — an update keeps per-network links and driver options,** so a compose `links:` alias still resolves in the new container (`docker_client.go`, `docker_recreate.go`).
 
 ### Dashboard
 

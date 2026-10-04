@@ -394,3 +394,23 @@ func TestDockerKeepAnonymousVolumesFillsAMissingSource(t *testing.T) {
 		t.Fatalf("source = %q, want the volume the container had", src)
 	}
 }
+
+// Per-network links and driver options are carried over, or a compose link
+// alias stops resolving after an update.
+func TestDockerEndpointConfigKeepsLinksAndDriverOpts(t *testing.T) {
+	old := strings.Repeat("a", 64)
+	got := dockerEndpointConfig(dockerEndpoint{
+		Aliases:    []string{"db", old[:12]},
+		Links:      []string{"/db:/app/database"},
+		DriverOpts: map[string]string{"com.docker.network.endpoint.ifname": "eth5"},
+	}, old)
+	if links, _ := got["Links"].([]string); len(links) != 1 || links[0] != "/db:/app/database" {
+		t.Fatalf("links = %v", got["Links"])
+	}
+	if opts, _ := got["DriverOpts"].(map[string]string); opts["com.docker.network.endpoint.ifname"] != "eth5" {
+		t.Fatalf("driver opts = %v", got["DriverOpts"])
+	}
+	if aliases, _ := got["Aliases"].([]string); len(aliases) != 1 || aliases[0] != "db" {
+		t.Fatalf("aliases = %v", got["Aliases"])
+	}
+}

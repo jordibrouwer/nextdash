@@ -331,3 +331,17 @@ func TestContainerNotifierCrashLoopUnderDockerBackoff(t *testing.T) {
 		t.Errorf("keeps restarting sent %d times, want 1", loops)
 	}
 }
+
+// An image that stops on its own STOPSIGNAL (SIGINT) and exits non-zero on it
+// was stopped, not crashed: the stop event after the die says so.
+func TestContainerNotifierOwnStopSignal(t *testing.T) {
+	r := newNotifierRun(t)
+	tl := newDockerTimeline()
+	r.n.timeline = tl
+	r.ev("kill", "app", "signal", "2").at(time.Second).ev("die", "app", "exitCode", "130").ev("stop", "app")
+	r.at(2 * time.Minute).tick()
+	r.want()
+	if got := timelineKinds(tl.forContainer("app")); got != "stop(exit code 130)" {
+		t.Fatalf("timeline = %s", got)
+	}
+}

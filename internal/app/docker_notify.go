@@ -188,6 +188,15 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 		w.lastKill = now
 		if action == "stop" {
 			w.stoppedAt = now
+			// Every stop ends with this event, after its die. A die it follows
+			// closely was the stop's, whatever signal the image stops with
+			// (STOPSIGNAL SIGINT exits 130, not a crash).
+			if !w.dieAt.IsZero() && now.Sub(w.dieAt) <= dockerNotifyExpectWindow {
+				if n.timeline != nil {
+					n.timeline.relabel(name, w.dieAt.UnixMilli(), "crash", "stop")
+				}
+				w.dieAt = time.Time{}
+			}
 		}
 	case action == "oom":
 		w.oomAt = now
