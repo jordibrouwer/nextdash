@@ -96,7 +96,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.17.1 — 4 October 2026
 
-Two themes for Unraid users, each in dark and light, after the webGUI's own Black and Azure themes.
+Two themes for Unraid users, each in dark and light, after the webGUI's own Black and Azure themes. A widget can also be moved to another page from its menu.
 
 ### Themes
 
