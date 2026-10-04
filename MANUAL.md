@@ -12,7 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
-| 🎨 | **320 themes, one look studio** | 160 theme families in light and dark, twelve characters, 26 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16 Appearance](#16-appearance) and [the theme browser](#the-theme-browser) |
+| 🎨 | **328 themes, one look studio** | 164 theme families in light and dark, twelve characters, 26 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16 Appearance](#16-appearance) and [the theme browser](#the-theme-browser) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 
 This manual describes nextDash as it is now. It follows the same topics as Config → Help and goes into more detail. What changed in which release is in the [changelog](CHANGELOG.md).
@@ -282,7 +282,7 @@ Bookmarks are grouped by **page** (Work, Home) and **category** (Dev, News). Aro
 | **Add** | One-line quick add, the full form, paste a URL, browser extension, share sheet, bookmarklet, imports |
 | **Watch** | Broken links, uptime monitoring, certificate expiry, page drift, alerts |
 | **Show** | Widgets for health, inbox, feeds, weather, calendar, your machine, your containers and your own services |
-| **Customise** | 160 theme families, backdrops, surfaces, layout, header and action buttons, six languages |
+| **Customise** | 164 theme families, backdrops, surfaces, layout, header and action buttons, six languages |
 | **Keep** | Automatic backups, a 30-day trash, local copies of pages, HTML and CSV export |
 
 <a id="what-nextdash-is-not"></a>
@@ -1803,7 +1803,7 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 
 ### 16.1 Themes
 
-nextDash ships **160 theme families**, each with a light and a dark half — 320 themes in all. A fresh install starts on **Matrix Bluepill**, cyan code on deep blue, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made.
+nextDash ships **164 theme families**, each with a light and a dark half — 328 themes in all. A fresh install starts on **Matrix Bluepill**, cyan code on deep blue, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made.
 
 **Theme** on the Look tab lists every theme by name. Beside it:
 
