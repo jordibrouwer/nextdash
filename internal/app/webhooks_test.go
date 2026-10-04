@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -565,5 +566,22 @@ func TestWebhookSigningKeyFollowsStandardWebhooks(t *testing.T) {
 	mac.Write([]byte("msg_1.1700000000.{}"))
 	if got := signWebhookPayload(legacy, "msg_1", 1700000000, []byte("{}")); got != "v1,"+base64.StdEncoding.EncodeToString(mac.Sum(nil)) {
 		t.Fatalf("a legacy hex key changed meaning")
+	}
+}
+
+// A delivery is logged by host: Home Assistant and n8n keep the webhook's
+// secret in its path.
+func TestAWebhookDeliveryLogsNoSecret(t *testing.T) {
+	var buf strings.Builder
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	defer server.Close()
+	defer webhookRetryDelayForTest(time.Millisecond)()
+	defer webhookAllowLocalForTest(true)()
+	deliverWebhook(WebhookEndpoint{URL: server.URL + "/api/webhook/SECRET123", Enabled: true}, webhookEventBookmarkAdded, map[string]any{})
+	deliverWebhook(WebhookEndpoint{URL: "http://127.0.0.1:1/api/webhook/SECRET123", Enabled: true}, webhookEventBookmarkAdded, map[string]any{})
+	if out := buf.String(); strings.Contains(out, "SECRET123") || !strings.Contains(out, "127.0.0.1:1") {
+		t.Fatalf("log = %s", out)
 	}
 }

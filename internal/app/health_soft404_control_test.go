@@ -204,3 +204,43 @@ func TestSoftNotFoundSparesASinglePageApp(t *testing.T) {
 		}
 	}
 }
+
+// The probe has its own deadline: a slow page that used up the check's budget
+// does not leave it a cancelled context, and a probe that got no answer is
+// kept for minutes, not as a day of "behaves normally".
+func TestHostSoftNotFoundProbeIsNotBoundByTheCheck(t *testing.T) {
+	resetSoftControlCache()
+	h := newTestHandlers(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			fmt.Fprint(w, "<html><body><p>"+strings.Repeat("Front page text. ", 40)+"</p></body></html>")
+			return
+		}
+		fmt.Fprint(w, "<html><body><p>Nothing here.</p></body></html>")
+	}))
+	defer server.Close()
+
+	spent, cancel := context.WithCancel(context.Background())
+	cancel()
+	if !h.hostSoftNotFound(spent, server.URL+"/page").SoftNotFound {
+		t.Fatal("the check's spent context decided the probe")
+	}
+
+	resetSoftControlCache()
+	gone := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	addr := gone.URL
+	gone.Close()
+	if v := h.hostSoftNotFound(context.Background(), addr+"/page"); !v.Unanswered {
+		t.Fatalf("verdict = %+v, want unanswered", v)
+	}
+	host := strings.TrimPrefix(addr, "http://")
+	softControlCache.Lock()
+	v := softControlCache.hosts[host]
+	v.CheckedAt = time.Now().Add(-softControlRetry - time.Minute)
+	softControlCache.hosts[host] = v
+	softControlCache.Unlock()
+	// Older than the retry, younger than a day: asked again.
+	if again := h.hostSoftNotFound(context.Background(), addr+"/page"); !again.CheckedAt.After(v.CheckedAt) {
+		t.Fatal("an unanswered probe was trusted past its retry time")
+	}
+}

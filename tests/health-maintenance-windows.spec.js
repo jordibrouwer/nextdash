@@ -75,6 +75,25 @@ test.describe('maintenance windows', () => {
         await expect(page.locator('[data-maint-row]')).toHaveCount(0);
     });
 
+    test('switching off the last day waits for the next instead of meaning every day', async ({ page }) => {
+        await openStatusTab(page);
+        await page.locator('[data-maint-add]').click();
+        await expect.poll(async () => (await storedWindows(page)).length).toBe(1);
+        for (const day of [0, 1, 2, 3, 4, 5]) await page.locator(`[data-maint-day="${day}"]`).click();
+        await expect.poll(async () => (await storedWindows(page))[0]?.days).toEqual([6]);
+
+        // Saturday off: nothing picked, so nothing is saved.
+        await page.locator('[data-maint-day="6"]').click();
+        await expect(page.locator('[data-maint-day].is-on')).toHaveCount(0);
+        await page.waitForTimeout(400);
+        expect((await storedWindows(page))[0]?.days).toEqual([6]);
+
+        // Sunday on: the window moves to Sunday alone.
+        await page.locator('[data-maint-day="0"]').click();
+        await expect.poll(async () => (await storedWindows(page))[0]?.days).toEqual([0]);
+        await expect(page.locator('[data-maint-day].is-on')).toHaveCount(1);
+    });
+
     test('a window running past midnight says so rather than looking wrong', async ({ page }) => {
         await openStatusTab(page);
         await page.locator('[data-maint-add]').click();

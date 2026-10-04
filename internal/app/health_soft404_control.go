@@ -34,6 +34,9 @@ const (
 	// softControlTTL is how long a host's behaviour is trusted. Servers change
 	// their 404 handling when they are rebuilt, which is not a daily event.
 	softControlTTL = 24 * time.Hour
+	// softControlRetry is how long a probe that got no answer is remembered.
+	// That says nothing about the host's 404s, only that this attempt failed.
+	softControlRetry = 10 * time.Minute
 	// softControlTimeout bounds the extra request. It is a courtesy check on
 	// somebody else's server, so it gives up quickly.
 	softControlTimeout = 8 * time.Second
@@ -55,6 +58,9 @@ type softControlVerdict struct {
 	// its own address, which is the ordinary not-found template.
 	Landing   string
 	CheckedAt time.Time
+	// Unanswered marks a probe that got no HTTP answer at all; it is kept for
+	// softControlRetry rather than a day.
+	Unanswered bool
 }
 
 var softControlCache = struct {
@@ -87,10 +93,13 @@ func softControlProbeURL(target string) string {
 hostSoftNotFound reports whether this host answers 200 to anything.
 
 Cached per host: the question is about the server's behaviour, so asking it once
-covers every bookmark on that site. A failure to reach the probe is remembered
-as "behaves normally" rather than retried on the next bookmark -- a host that is
-down will fail the real check anyway, and hammering it with probes while it is
-struggling is the opposite of polite.
+covers every bookmark on that site. A probe that got no answer is remembered
+as "behaves normally" for ten minutes, not a day: it is not retried on the next
+bookmark -- hammering a struggling host is the opposite of polite -- but a
+timeout says nothing about how the host treats a missing page.
+
+The probe gets its own deadline. The check's context may have little left
+after a slow page, and that leftover is our budget, not the host's behaviour.
 */
 func (h *Handlers) hostSoftNotFound(ctx context.Context, target string) softControlVerdict {
 	parsed, err := neturl.Parse(strings.TrimSpace(target))
@@ -102,7 +111,11 @@ func (h *Handlers) hostSoftNotFound(ctx context.Context, target string) softCont
 	softControlCache.Lock()
 	cached, ok := softControlCache.hosts[host]
 	softControlCache.Unlock()
-	if ok && time.Since(cached.CheckedAt) < softControlTTL {
+	ttl := softControlTTL
+	if cached.Unanswered {
+		ttl = softControlRetry
+	}
+	if ok && time.Since(cached.CheckedAt) < ttl {
 		return cached
 	}
 
@@ -112,8 +125,12 @@ func (h *Handlers) hostSoftNotFound(ctx context.Context, target string) softCont
 		return verdict
 	}
 
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), softControlTimeout)
+	defer cancel()
 	client := h.outboundHTTPClient(softControlTimeout, 3)
-	if status, length, final, ok := fetchSoftControl(ctx, client, probe); ok && status == http.StatusOK {
+	status, length, final, answered := fetchSoftControl(ctx, client, probe)
+	verdict.Unanswered = !answered
+	if answered && status == http.StatusOK {
 		verdict.SoftNotFound = true
 		verdict.Length = length
 		if landing := softControlAddress(final); landing != "" && landing != softControlAddress(probe) {

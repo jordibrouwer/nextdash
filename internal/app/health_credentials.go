@@ -636,6 +636,25 @@ func applyCredentialQuery(req *http.Request, credential HealthCredential) {
 	req.URL.RawQuery = query.Encode()
 }
 
+// withoutCredentialQuery is the address with the credential's query keys taken
+// out. The landed address becomes the drift baseline on the bookmark, and the
+// credential file exists to keep that key out of the bookmark files.
+func withoutCredentialQuery(raw string, credential HealthCredential) string {
+	if len(credential.Query) == 0 || raw == "" {
+		return raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	query := u.Query()
+	for name := range credential.Query {
+		query.Del(strings.TrimSpace(name))
+	}
+	u.RawQuery = query.Encode()
+	return u.String()
+}
+
 /*
 isCredentialPlaceholder reports the YOUR_KEY shape the presets fill an address
 with.

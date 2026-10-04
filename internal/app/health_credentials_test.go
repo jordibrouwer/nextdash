@@ -974,3 +974,22 @@ func TestASessionSummaryCarriesNoPassword(t *testing.T) {
 		t.Error("the summary carried the password")
 	}
 }
+
+// The landed address becomes the drift baseline on the bookmark, so the key a
+// credential adds to the query must not come back in it.
+func TestPingFinalURLLeavesTheCredentialKeyOut(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	h := newTestHandlers(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("apikey") != "SECRET123" {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+	}))
+	defer server.Close()
+	result := h.pingURLExpecting(context.Background(), server.URL+"/api/v2?cmd=status", expectation{
+		Credential: HealthCredential{Query: map[string]string{"apikey": "SECRET123"}},
+	})
+	if result.Status != "online" || strings.Contains(result.FinalURL, "SECRET123") || !strings.Contains(result.FinalURL, "cmd=status") {
+		t.Fatalf("result = %+v", result)
+	}
+}

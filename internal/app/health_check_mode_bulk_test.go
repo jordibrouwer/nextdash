@@ -97,3 +97,24 @@ func TestSetAllCheckModesKeepsHistory(t *testing.T) {
 		t.Errorf("history should survive turning checking off, got %#v", got)
 	}
 }
+
+// Turning everything off clears drift baselines the way one bookmark's switch
+// does, or monitoring again later shows months-old findings at once.
+func TestSetAllCheckModesClearsDrift(t *testing.T) {
+	h, dir := healthRecheckTestHandlers(t, `{}`)
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"Drifted","url":"https://d.example","monitor":true,"watchDrift":true,"driftUrl":"https://d.example","driftNoticed":"path","driftReason":"Now redirects to https://d.example/x"}
+	]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(pageJSON), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	h.SetAllCheckModes(rec, httptest.NewRequest(http.MethodPost, "/api/health/check-mode-all", strings.NewReader(`{"mode":"off"}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status %d", rec.Code)
+	}
+	bm := h.store.GetBookmarksByPage(1)[0]
+	if bm.DriftURL != "" || bm.DriftNoticed != "" || bm.DriftReason != "" {
+		t.Fatalf("drift kept: %+v", bm)
+	}
+}

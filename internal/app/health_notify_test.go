@@ -573,3 +573,23 @@ func TestPendingNotificationsNoRecoveryForAnUnalertedLongOutage(t *testing.T) {
 		t.Fatalf("a recovery was sent for an outage that never alerted: %#v", got)
 	}
 }
+
+// A retest's "up" taken before the monitor recorded a failure is old news: it
+// must not say "back online" during the outage that started after it.
+func TestAStaleUpSampleAnnouncesNoRecovery(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{"monitorNotifyUrl":"https://hooks.example/notify","monitorNotifyRetries":1}`)
+	now := time.Now()
+	key := "https://a.example"
+	if err := h.appendHealthSamples(map[string][]HealthSample{key: {{T: msAgo(now, 7*time.Minute), Up: false, Alerted: true}}}); err != nil {
+		t.Fatal(err)
+	}
+	stale := monitorTransition{key: key, url: key, name: "A", up: true, at: msAgo(now, 9*time.Minute)}
+	if got := h.pendingMonitorNotifications([]monitorTransition{stale}); len(got) != 0 {
+		t.Fatalf("stale up announced: %#v", got)
+	}
+	fresh := stale
+	fresh.at = now.UnixMilli()
+	if got := h.pendingMonitorNotifications([]monitorTransition{fresh}); len(got) != 1 || got[0].Event != "up" {
+		t.Fatalf("fresh up = %#v", got)
+	}
+}

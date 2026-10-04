@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -497,18 +498,29 @@ Only a transport error or a 5xx is retried. A 4xx is the receiver saying the
 request itself is wrong -- a bad path, a rejected signature -- and sending it
 again unchanged produces the same answer while looking like an outage.
 */
+// webhookEndpointHost is the part of a receiver's address safe to log.
+func webhookEndpointHost(raw string) string {
+	if u, err := url.Parse(raw); err == nil && u.Host != "" {
+		return u.Host
+	}
+	return "the webhook receiver"
+}
+
 func deliverWebhook(endpoint WebhookEndpoint, event string, data map[string]any) {
 	client := webhookHTTPClient()
 	// One id for every attempt: Standard Webhooks resends with the same id, and
 	// that is how a receiver that acted and then answered 502 knows the retry
 	// is a repeat. A fresh id per attempt ran its flow twice.
 	id := newWebhookMessageID()
+	// The host only: a Home Assistant or n8n webhook keeps its secret in the
+	// path, and the log is the file people attach to a bug report.
+	host := webhookEndpointHost(endpoint.URL)
 	for attempt := 1; attempt <= webhookAttempts; attempt++ {
 		ctx, cancel := context.WithTimeout(context.Background(), webhookTimeout)
 		req, err := buildWebhookRequest(ctx, endpoint, event, data, time.Now(), id)
 		if err != nil {
 			cancel()
-			logError(logComponentNotify, "the %s message for %s could not be prepared and was not sent: %v", event, endpoint.URL, err)
+			logError(logComponentNotify, "the %s message for %s could not be prepared and was not sent: %v", event, host, err)
 			return
 		}
 		resp, err := client.Do(req)
@@ -517,33 +529,38 @@ func deliverWebhook(endpoint WebhookEndpoint, event string, data map[string]any)
 			drainAndCloseResponse(resp)
 			cancel()
 			if status < 400 {
-				logInfo(logComponentNotify, "%s delivered to %s", event, endpoint.URL)
+				logInfo(logComponentNotify, "%s delivered to %s", event, host)
 				if activityEnabled(activityCategoryNotify) {
 					logActivity(activityCategoryNotify, "notify.delivered", map[string]any{
 						"event":  event,
-						"url":    endpoint.URL,
+						"host":   host,
 						"status": status,
 					}, "")
 				}
 				return
 			}
 			if status < 500 {
-				logWarn(logComponentNotify, "%s answered %d and did not accept %s", endpoint.URL, status, event)
+				logWarn(logComponentNotify, "%s answered %d and did not accept %s", host, status, event)
 				return
 			}
 			err = errors.New("HTTP " + strconv.Itoa(status))
 		} else {
 			cancel()
+			// Go's error quotes the whole address.
+			var ue *url.Error
+			if errors.As(err, &ue) {
+				err = ue.Err
+			}
 			// Over the budget: a retry 5 or 10 seconds later is still inside the
 			// same minute's window, so it could only fail again.
 			if errors.Is(err, errOutboundRateLimited) {
-				logWarn(logComponentNotify, "too many webhook deliveries this minute; %s was not sent to %s", event, endpoint.URL)
+				logWarn(logComponentNotify, "too many webhook deliveries this minute; %s was not sent to %s", event, host)
 				return
 			}
 		}
 		if attempt == webhookAttempts {
 			logError(logComponentNotify, "gave up on %s after %d attempts; %s was not delivered: %v",
-				endpoint.URL, webhookAttempts, event, err)
+				host, webhookAttempts, event, err)
 			return
 		}
 		// Growing gap: a receiver that is restarting is usually back within

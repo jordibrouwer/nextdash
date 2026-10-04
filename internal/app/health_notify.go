@@ -207,6 +207,12 @@ func (h *Handlers) pendingMonitorNotificationsAlerted(transitions []monitorTrans
 		// nightly window made the first good check after it send "back online"
 		// with no "down" before it, every night.
 		prior := withoutMaintenanceSamples(history[t.key])
+		// A long retest announces its samples at the end; an "up" taken before
+		// the latest stored sample is old news, and would say "back online"
+		// during an outage that started after it.
+		if n := len(prior); t.up && n > 0 && t.at <= prior[n-1].T {
+			continue
+		}
 		priorFailures := trailingFailures(prior)
 		prevUp, hadState := lastSampleUp(prior)
 

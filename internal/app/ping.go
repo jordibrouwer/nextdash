@@ -146,7 +146,7 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 		base := PingResult{
 			PingMs: elapsed, HTTPStatus: code,
 			CertExpiry: certExpiry, CertHost: certHost,
-			FinalURL: finalRequestURL(resp),
+			FinalURL: withoutCredentialQuery(finalRequestURL(resp), expect.Credential),
 		}
 		down := func(detail string) PingResult {
 			r := base

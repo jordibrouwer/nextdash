@@ -125,6 +125,13 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — a dashboard ping is not saved as an outage when it never answered.** The browser gave up after a fixed 3 s whatever Check timeout said, and stored "Unreachable"; it now waits for the check's own budget and stores nothing when no answer came (`status.js`).
 - **fix — alerts from a long monitor round arrive.** They were sent on the round's expired context, lost, and still marked as sent (`health_monitor.go`).
 - **fix — maintenance windows run in your time zone.** They were read on the container's clock, UTC unless TZ is set; the browser's zone is now saved with them as `maintenanceTimeZone` (`health_maintenance.go`).
+- **fix — a page title with 404 inside a longer number is not a missing page.** "Issue #14042" or "DS1404" read as "Page says it does not exist" (`health_soft404.go`).
+- **fix — switching off a window's last day no longer turns it on for every day.** An empty day list means every day, so the row now waits for the next day you pick (`dashboard-config.js`).
+- **fix — Turn off all checks clears drift findings too,** as switching one bookmark off does; monitoring again later showed months-old findings at once (`health_check_mode.go`).
+- **fix — a long retest no longer says "back online" during an outage that started after its check** (`health_notify.go`).
+- **fix — webhook deliveries are logged by host,** so a Home Assistant or n8n secret in the path stays out of the log (`webhooks.go`).
+- **fix — a credential's query key stays out of the drift baseline** on the bookmark (`ping.go`, `health_credentials.go`).
+- **fix — a soft-404 probe that got no answer is retried after 10 minutes,** not trusted as "behaves normally" for a day, and has its own deadline instead of what a slow page left over (`health_soft404_control.go`).
 
 ### Containers
 

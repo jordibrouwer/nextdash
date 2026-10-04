@@ -14964,10 +14964,14 @@ class DashboardConfig {
     /** Read the list back off the DOM, so one repaint reflects every edit. */
     collectMaintenanceWindows(container) {
         const rows = Array.from(container.querySelectorAll('[data-maint-row]'));
-        return rows.map((row) => {
-            const days = Array.from(row.querySelectorAll('[data-maint-day]'))
+        const saved = Array.isArray(this.dash.settings?.maintenanceWindows) ? this.dash.settings.maintenanceWindows : [];
+        return rows.map((row, i) => {
+            let days = Array.from(row.querySelectorAll('[data-maint-day]'))
                 .filter((b) => b.classList.contains('is-on'))
                 .map((b) => Number(b.getAttribute('data-maint-day')));
+            // No day picked is not "every day", which is what an empty list
+            // means to the server: the row keeps its saved days until one is.
+            if (days.length === 0) days = Array.isArray(saved[i]?.days) ? saved[i].days : [];
             return {
                 // Every day on is the same as none. normalizeMaintenanceWindows
                 // collapses it server-side too, so this is belt and braces —
@@ -15036,6 +15040,10 @@ class DashboardConfig {
             btn.addEventListener('click', () => {
                 btn.classList.toggle('is-on');
                 btn.setAttribute('aria-pressed', btn.classList.contains('is-on') ? 'true' : 'false');
+                // Switching off the last day waits for the next one: saved now,
+                // the empty row would mean every day.
+                const row = btn.closest('[data-maint-row]');
+                if (row && !row.querySelector('[data-maint-day].is-on')) return;
                 commit();
             });
         });
