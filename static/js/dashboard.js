@@ -945,6 +945,10 @@ class Dashboard {
         return this.setup.applyFindFilter(...arguments);
     }
 
+    reapplyFindFilter() {
+        return this.setup.reapplyFindFilter();
+    }
+
     initializeStatusMonitor() {
         return this.setup.initializeStatusMonitor(...arguments);
     }

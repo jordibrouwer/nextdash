@@ -175,6 +175,13 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — a bookmark's own letter on the grid waits for a longer shortcut,** and for "Enter opens": with "nc" beside "n", typing "nc" after a search opened the bookmark behind "n" (`keyboard-navigation.js`).
 - **fix — `category:` and `:open category` go by the category's name.** A bookmark holds its category's id, so "category:vps" found nothing and the completions read out raw ids (`search.js`, `search-commands.js`).
 - **fix — what you type before the search code has loaded arrives whole.** Only the opening key waited, so ":dark" arrived as ":" and a shortcut typed the moment a tab opened did nothing (`search-loader.js`).
+- **fix — opening a bookmark from a command's list teaches the ranking nothing.** After `:tag work`, typing "work" ranked that bookmark first for good (`search.js`).
+- **fix — Ctrl/Cmd+Enter on a name-search result opens a new tab,** as on every other row (`search.js`).
+- **fix — `:save` keeps the `/` of a name search;** recalling it ran a shortcut search instead (`search.js`).
+- **fix — Show on dashboard, `:edit` and `:move` go to the bookmark's own row,** not its copy in Pinned or another smart collection (`dashboard-page-nav.js`, `search-commands.js`).
+- **fix — container names that arrive late keep the row you moved to;** Enter opened the first result (`search.js`).
+- **fix — a tag with a space works as a filter.** Its completion is now `tag:"home lab"`, which reads as one tag instead of a tag and a search word (`search.js`).
+- **fix — `:find` stays on when the grid is drawn again,** and ends on another page (`dashboard-setup.js`, `dashboard-render-core.js`, `dashboard-render-incremental.js`).
 
 ### Inbox
 

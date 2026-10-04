@@ -1177,6 +1177,7 @@ class DashboardRenderCore {
 
         d.updateSearchComponent();
         d.syncBookmarkGridA11y();
+        d.reapplyFindFilter?.();
         d.keyboardNavigation?.scheduleUpdate?.();
         // A render replaces every row element, so the selection has to be
         // repainted onto the new nodes and any key that no longer matches a

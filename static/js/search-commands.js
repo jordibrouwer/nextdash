@@ -853,15 +853,12 @@ class SearchCommandsComponent {
             return null;
         }
 
-        const rows = document.querySelectorAll('#dashboard-layout .bookmark-link[data-bookmark-url]');
+        // Not a smart collection's copy, which comes first and cannot be
+        // edited in place.
+        const rows = document.querySelectorAll('#dashboard-layout .category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url]');
         for (const row of rows) {
             const rowUrl = String(row.getAttribute('data-bookmark-url') || '').trim();
-            if (!rowUrl) continue;
-            const sameUrl = rowUrl === url;
-            const sameName = !ctx.name || String(ctx.name) === String(
-                (dash.bookmarks || []).find((b) => String(b.url || '').trim() === rowUrl)?.name || ''
-            );
-            if (!sameUrl) continue;
+            if (!rowUrl || rowUrl !== url) continue;
             const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
             const bookmark = Number.isFinite(bookmarkIndex) && bookmarkIndex >= 0
                 ? (dash.bookmarks || [])[bookmarkIndex]
@@ -4866,7 +4863,7 @@ class SearchCommandsComponent {
 
     /**
      * Handle the :find command
-     * Filters bookmark tiles on the current page live; Escape clears the filter.
+     * Filters bookmark tiles on the current page; `:find clear` or another page ends it.
      * @param {Array} args - Arguments after 'find'
      * @returns {Array} Single action row or prompt
      */

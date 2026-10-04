@@ -1674,6 +1674,19 @@ class SearchComponent {
         return tags;
     }
 
+    /**
+     * The query in words, a quoted value kept whole: `tag:"home lab"` is one
+     * filter, where splitting on spaces made it a tag and a search word.
+     */
+    static filterTokens(text) {
+        return String(text || '').match(/(?:[^\s"]+|"[^"]*"?)+/g) || [];
+    }
+
+    /** A tag as a filter, quoted when it has a space in it. */
+    static tagFilter(tag) {
+        return /\s/.test(tag) ? `tag:"${tag}"` : `tag:${tag}`;
+    }
+
     parseSearchFilters(query) {
         const filters = {
             category: '',
@@ -1687,7 +1700,7 @@ class SearchComponent {
             not: {},
         };
 
-        const parts = (query || '').split(/\s+/).filter(Boolean);
+        const parts = SearchComponent.filterTokens(query);
         const remaining = [];
         const KEYS = ['category', 'status', 'page', 'tag', 'opened', 'added'];
 
@@ -1700,7 +1713,7 @@ class SearchComponent {
                 remaining.push(part);
                 return;
             }
-            const value = lower.slice(key.length + 1);
+            const value = lower.slice(key.length + 1).replace(/"/g, '');
             if (negated) {
                 // An empty value ("-tag:") excludes nothing rather than
                 // everything, which is what a half-typed filter should do.
@@ -1740,7 +1753,7 @@ class SearchComponent {
     }
 
     _getCurrentFilterToken(rawQuery) {
-        const parts = String(rawQuery || '').split(/\s+/).filter(Boolean);
+        const parts = SearchComponent.filterTokens(rawQuery);
         return (parts[parts.length - 1] || '').toLowerCase();
     }
 
@@ -1766,7 +1779,7 @@ class SearchComponent {
         if (parsed.query.length > 0) return false;
         if (!this._hasActiveFilters(parsed.filters)) return false;
 
-        const parts = text.split(/\s+/).filter(Boolean);
+        const parts = SearchComponent.filterTokens(text);
         return parts.every((part) => {
             const lower = part.toLowerCase();
             if (lower.startsWith('status:')) {
@@ -1809,6 +1822,10 @@ class SearchComponent {
     recordSearchPick(bookmark) {
         // A query sent to the web is kept off the server, as closeSearch() keeps it out of the activity log.
         if (this._webSearchRanThisSession) return;
+        // A command's list (`:tag work`, `:stale 30`) or the recents is not a
+        // search: kept, "work" would rank that bookmark first for good.
+        const raw = String(this.currentQuery || '').trim();
+        if (raw.startsWith(':') || raw.startsWith('?') || raw === SearchComponent.RECENT_MODE_QUERY) return;
         const url = bookmark && bookmark.url;
         const q = this.normalizePickQuery(this.currentQuery);
         if (!url || !q) return;
@@ -2054,7 +2071,7 @@ class SearchComponent {
         const t = (key, fallback, vars = {}) => this.dashboardLabel(key, fallback, vars);
 
         const query = String(rawQuery || '');
-        const parts = query.split(/\s+/).filter(Boolean);
+        const parts = SearchComponent.filterTokens(query);
         const currentToken = (parts[parts.length - 1] || '').toLowerCase();
         const basePrefix = parts.slice(0, -1).join(' ').trim();
         const prefixWithSpace = basePrefix ? `${basePrefix} ` : '';
@@ -2114,7 +2131,7 @@ class SearchComponent {
                     prefix: currentToken,
                     limit: 12,
                 }).map((tag) => toCompletion(
-                    `tag:${tag}`,
+                    SearchComponent.tagFilter(tag),
                     t('filterCompletionTag', 'Tag: {value}', { value: tag })
                 ));
                 valueHits.push(...tagHits);
@@ -2197,7 +2214,7 @@ class SearchComponent {
         }
 
         if (currentToken.startsWith('tag:')) {
-            const value = currentToken.slice('tag:'.length);
+            const value = currentToken.slice('tag:'.length).replace(/"/g, '');
             const hits = this._getTagFilterSuggestions(pool, {
                 prefix: value,
                 limit: value
@@ -2206,7 +2223,7 @@ class SearchComponent {
             });
             if (hits.length === 0) return [];
             return hits.map((tag) => toCompletion(
-                `tag:${tag}`,
+                SearchComponent.tagFilter(tag),
                 t('filterCompletionTag', 'Tag: {value}', { value: tag })
             ));
         }
@@ -2587,7 +2604,9 @@ class SearchComponent {
 
             // The last real search, for :save. Not overwritten by the empty
             // query on the way to typing ':', or there was nothing left to save.
-            if (String(query || '').trim()) this.lastNonCommandQuery = query;
+            // As typed, with its `/` or `@`: without it, recalling a name
+            // search ran a shortcut search instead.
+            if (String(query || '').trim()) this.lastNonCommandQuery = this.currentQuery;
         }
 
         if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('?') && this.currentQuery.length > 0) {
@@ -2983,7 +3002,19 @@ class SearchComponent {
         const before = index.containers().length;
         void index.refresh().then((list) => {
             if (!this.searchActive || !this.currentQuery) return;
-            if ((list?.length || 0) !== before) this.updateSearch();
+            if ((list?.length || 0) === before) return;
+            // A refresh in the background, not a new query: the row the
+            // reader moved to stays selected.
+            const picked = this.selectableMatches[this.selectedMatchIndex];
+            this.updateSearch();
+            if (!picked) return;
+            const again = this.selectableMatches.findIndex((m) => m === picked
+                || (picked.bookmark && m.bookmark === picked.bookmark)
+                || (m.type === picked.type && m.shortcut === picked.shortcut && m.name === picked.name));
+            if (again >= 0 && again !== this.selectedMatchIndex) {
+                this.selectedMatchIndex = again;
+                this.updateSelectionHighlight();
+            }
         }).catch(() => {});
     }
 
@@ -3782,7 +3813,7 @@ class SearchComponent {
                 });
             }
 
-            matchElement.addEventListener('click', () => {
+            matchElement.addEventListener('click', (e) => {
                 if (match.type === 'config') {
                     this.openConfig();
                 } else if (match.type === 'colors') {
@@ -3804,10 +3835,13 @@ class SearchComponent {
                     this.updateSearch();
                     this.selectedMatchIndex = 0; // Auto-select first match after completion
                     this.updateSelectionHighlight(); // Update visual selection
-                } else if (match.type === 'fuzzy' || match.type === 'global-search') {
+                } else if ((match.type === 'fuzzy' || match.type === 'global-search') && match.bookmark) {
                     this.recordSearchHistory(this.currentQuery);
-                    match.action();
-                    this.closeSearch();
+                    this.openBookmark(match.bookmark, {
+                        newTab: Boolean(e?.ctrlKey || e?.metaKey),
+                        resultRank: this.selectableMatches.indexOf(match),
+                        queryLength: String(this.currentQuery || '').length,
+                    });
                 } else if (match.type === 'docker-container') {
                     this.closeSearch();
                     match.action();
@@ -3969,8 +4003,11 @@ class SearchComponent {
                 this.updateSelectionHighlight(); // Update visual selection
             } else if (selectedMatch.type === 'fuzzy') {
                 this.recordSearchHistory(this.currentQuery);
-                selectedMatch.action();
-                this.closeSearch();
+                // Through openBookmark rather than the match's own action, so
+                // Ctrl/Cmd+Enter opens a new tab here as on every other row.
+                this.openBookmark(selectedMatch.bookmark, {
+                    newTab, resultRank: this.selectedMatchIndex, queryLength: String(this.currentQuery || '').length,
+                });
             } else if (selectedMatch.type === 'docker-container') {
                 this.closeSearch();
                 selectedMatch.action();
@@ -4131,7 +4168,7 @@ class SearchComponent {
         const normalized = String(tag || '').trim().toLowerCase();
         if (!normalized) return;
         this.commandsComponent.resetState();
-        this.currentQuery = `tag:${normalized}`;
+        this.currentQuery = SearchComponent.tagFilter(normalized);
         this.selectedMatchIndex = 0;
         this.updateSearch();
         if (!this.searchActive) {
