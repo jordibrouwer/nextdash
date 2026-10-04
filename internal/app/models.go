@@ -6492,6 +6492,8 @@ func (fs *FileStore) GetDataRevision() string {
 		}
 		for _, bm := range page.Bookmarks {
 			hash.Write([]byte(bookmarkContentFingerprint(bm)))
+			hash.Write([]byte("\x01"))
+			hash.Write([]byte(bookmarkSettingsFingerprint(bm)))
 			hash.Write([]byte("\x02"))
 		}
 		hash.Write([]byte(";"))

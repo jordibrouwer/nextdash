@@ -2229,7 +2229,13 @@ class DashboardInlineEdit {
         };
 
         if (isPageMove) {
-            await this._moveBookmarkToPage(bookmarkRef, nextBookmarkState, targetPageId, row);
+            // The whole row with the edits on top: nextBookmarkState holds only
+            // what the form edits, and the move adds it on the other page and
+            // deletes this row -- opens, preview, check URL, credential, mute
+            // and the health settings went with it.
+            const full = { ...(bookmarkRef.original || {}), ...bookmark, ...nextBookmarkState };
+            delete full.pageId;
+            await this._moveBookmarkToPage(bookmarkRef, full, targetPageId, row);
             return;
         }
 

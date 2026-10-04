@@ -142,3 +142,37 @@ func TestGetDataRevisionStillChangesOnContentEdit(t *testing.T) {
 		t.Fatalf("a content edit did not move the revision (before=%q after=%q)", before, after)
 	}
 }
+
+// Health settings saved in the Bookmarks view (expect text, check URL,
+// credential, mute) did not move the revision, so a dashboard kept its old copy
+// and its next whole-page save wrote them back empty.
+func TestGetDataRevisionChangesOnHealthSettings(t *testing.T) {
+	dir := t.TempDir()
+	store := &FileStore{
+		dataDir:       dir,
+		settingsFile:  filepath.Join(dir, "settings.json"),
+		colorsFile:    filepath.Join(dir, "colors.json"),
+		pageOrderFile: filepath.Join(dir, "pages.json"),
+	}
+	store.ensureDataDir()
+	if err := store.AddBookmarkToPage(1, Bookmark{Name: "Example", URL: "https://example.com"}); err != nil {
+		t.Fatalf("AddBookmarkToPage: %v", err)
+	}
+	for _, edit := range []func(*Bookmark){
+		func(b *Bookmark) { b.ExpectText = "Welcome" },
+		func(b *Bookmark) { b.CheckURL = "https://example.com/health" },
+		func(b *Bookmark) { b.CredentialID = "cred_1" },
+		func(b *Bookmark) { b.NotifyMuted = true },
+		func(b *Bookmark) { b.HealthIgnored = []HealthIgnore{{Flag: "stale"}} },
+	} {
+		before := store.GetDataRevision()
+		bookmarks := store.GetBookmarksByPage(1)
+		edit(&bookmarks[0])
+		if err := store.SaveBookmarksByPage(1, bookmarks); err != nil {
+			t.Fatalf("SaveBookmarksByPage: %v", err)
+		}
+		if after := store.GetDataRevision(); before == after {
+			t.Fatalf("a health setting did not move the revision: %+v", bookmarks[0])
+		}
+	}
+}

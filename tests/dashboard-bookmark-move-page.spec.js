@@ -184,3 +184,59 @@ test.describe('moving a bookmark whose address was edited too', () => {
         expect(target.map((b) => b.url)).toContain(newUrl);
     });
 });
+
+// The edit form's move to another page sent only the twelve fields the form
+// edits; the add on the target page stored those and the source row was
+// deleted, so opens, preview, check URL and expect text were lost.
+test('moving from the edit form keeps what the form does not show', async ({ page }) => {
+    const uniqueUrl = `https://example.com/form-move-${Date.now()}.test`;
+    const uniqueName = `Form move ${Date.now()}`;
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await prepareDashboardInteraction(page);
+    const sourcePageId = await page.evaluate(() => Number(window.dashboardInstance.currentPageId));
+    const { id: targetPageId } = await ensureSecondPage(page);
+    const catName = `Form move target ${Date.now()}`;
+    await page.evaluate(async ({ src, target, name, url, cat }) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const cats = await (await api(`/api/categories?page=${target}`)).json();
+        await api(`/api/categories?page=${target}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([...(cats || []), { id: `cat_formmove_${Date.now()}`, name: cat }]),
+        });
+        const res = await api('/api/bookmarks/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                page: src,
+                bookmark: {
+                    name, url, category: '', tags: [], createdAt: 1700000000000,
+                    openCount: 40, previewTitle: 'Kept preview', checkUrl: `${url}/health`, expectText: 'Welcome',
+                },
+            }),
+        });
+        if (!res.ok) throw new Error(`seed failed: ${res.status}`);
+    }, { src: sourcePageId, target: targetPageId, name: uniqueName, url: uniqueUrl, cat: catName });
+    await page.reload();
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await prepareDashboardInteraction(page);
+
+    const row = page.locator('.bookmark-link', { hasText: uniqueName }).first();
+    await row.scrollIntoViewIfNeeded();
+    await row.click({ button: 'right' });
+    await page.click('#bookmark-context-menu [data-action="edit"]');
+    await expect(page.locator('.bookmark-inline-form [data-field="name"]')).toBeVisible({ timeout: 5000 });
+    await page.locator('.bookmark-form-place-value').click();
+    await page.locator('.bookmark-form-place-filter').fill(catName);
+    await page.locator(`.bookmark-form-place-option[data-page-id="${targetPageId}"]`).first().click();
+    await page.locator('.bookmark-inline-form .bookmark-inline-save').click();
+
+    await expect.poll(async () => page.evaluate(async ({ target, url }) => {
+        const list = await (await fetch(`/api/bookmarks?page=${target}`)).json();
+        const bm = (list || []).find((b) => b.url === url);
+        return bm ? { openCount: bm.openCount, previewTitle: bm.previewTitle, checkUrl: bm.checkUrl, expectText: bm.expectText, createdAt: bm.createdAt } : null;
+    }, { target: targetPageId, url: uniqueUrl }), { timeout: 10_000 }).toEqual({
+        openCount: 40, previewTitle: 'Kept preview', checkUrl: `${uniqueUrl}/health`, expectText: 'Welcome', createdAt: 1700000000000,
+    });
+});

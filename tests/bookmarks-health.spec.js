@@ -131,6 +131,49 @@ test.describe('bookmarks: Health and Monitor sections in the panel', () => {
     expect(posted.url).toBe(bookmarks[0].url);
   });
 
+  // The dashboard's copy of the page is what its next whole-page save (a drag,
+  // a pin, a delete) writes back. Expectations saved here did not reach it, so
+  // that save put them back to empty.
+  test('expectations saved in the panel reach the dashboard\'s copy of the page', async ({ page }) => {
+    const { bookmarks } = await openBookmarksWithHealth(page, (issues) => issues.map((issue, i) => (i === 0
+      ? { ...issue, monitor: true, checkStatus: true } : issue)));
+    const target = bookmarks[0];
+    const copyOf = () => page.evaluate((url) => {
+      const d = window.dashboardInstance;
+      return (d.allBookmarks || []).find((b) => b.url === url)?.expectText || '';
+    }, target.url);
+    expect(await copyOf()).toBe('');
+    await pick(page, target.name);
+    const health = await open(page, 'health');
+    const marker = `Welcome ${Date.now()}`;
+    // The shared data dir: put back exactly what the bookmark had.
+    const before = await page.evaluate(async ({ url, pageId }) => {
+      const list = await (await fetch(`/api/bookmarks?page=${pageId}`)).json();
+      return (list || []).find((b) => b.url === url) || {};
+    }, { url: target.url, pageId: Number(target.pageId) });
+    try {
+      await health.locator('[data-expect-text]').fill(marker);
+      await health.locator('[data-expect-save]').click();
+      await expect.poll(copyOf, { timeout: 10_000 }).toBe(marker);
+    } finally {
+      await page.evaluate(async ({ url, pageId, b }) => {
+        const list = await (await fetch(`/api/bookmarks?page=${pageId}`)).json();
+        const index = (list || []).findIndex((x) => x.url === url);
+        if (index < 0) return;
+        await nextDashFetch('/api/health/expectations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pageId, index, url,
+            expectText: b.expectText || '', expectTextAbsent: Boolean(b.expectTextAbsent), expectStatus: b.expectStatus || '',
+            watchDrift: Boolean(b.watchDrift), notifyMuted: Boolean(b.notifyMuted),
+            checkUrl: b.checkUrl || '', credentialId: b.credentialId || '', allowInsecureTls: Boolean(b.allowInsecureTls),
+          }),
+        });
+      }, { url: target.url, pageId: Number(target.pageId), b: before });
+    }
+  });
+
   test('the Monitor section appears for a monitored bookmark only', async ({ page }) => {
     const now = Date.now();
     const { bookmarks } = await openBookmarksWithHealth(page, (issues) => issues.map((issue, i) => (i === 0 ? {

@@ -119,6 +119,11 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — the nightly update reads each container at its turn.** The run's list can be an hour old by then: a container stopped meanwhile (by hand, or a backup job) was updated, watched as if running, "rolled back" and started again. The update now goes by what the recreate itself found, and a container replaced since the list is left for the next tick instead of failing with a 404 notice (`docker_auto_update.go`, `docker_recreate.go`).
 - **fix — an update keeps an anonymous volume listed without a source.** Compose's `volumes: [/data]` and `--mount type=volume,dst=…` put the volume in `HostConfig.Mounts` with no source; sent back that way, Docker gave the new container a fresh, empty volume. The source is filled in from the container's own mounts (`docker_recreate.go`).
 
+### Dashboard
+
+- **fix — moving a bookmark to another page from the edit form keeps everything.** The move sent only the fields the form edits, then deleted the source row: opens, created date, preview, check URL, credential, mute and health settings were lost. It now sends the whole row with the edits on top (`dashboard-inline-edit.js`).
+- **fix — health settings from the Bookmarks view are no longer undone by the next dashboard save.** Expectations, check URL, credential, mute, ignores and accepted drift did not reach the dashboard's copy of the page, and its next drag, pin or delete wrote the old values back. The writes now reload that copy, and these settings move the data revision so other tabs and devices reload too (`dashboard-health.js`, `dashboard-health-multi-select.js`, `models.go`).
+
 ### Backups
 
 - **fix — a backup with a large local page copy can be restored.** A capture may be up to 52 MB, but a restore refused any file over 32 MB, so every backup taken after one big capture was unusable. The limit per file is now 64 MB, and a refused restore or import says why (`auto_backup.go`, `dashboard-config.js`).
