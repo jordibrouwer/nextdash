@@ -1214,6 +1214,9 @@ type ColorTheme struct {
 	Dark    ThemeColors            `json:"dark"`
 	BuiltIn map[string]ThemeColors `json:"builtIn"`
 	Custom  map[string]ThemeColors `json:"custom"` // Custom themes with dynamic keys
+	// CustomOrder is the order the reader put Custom in. A Go map is written
+	// with its keys sorted, so ↑/↓ in Custom themes lasted until a reload.
+	CustomOrder []string `json:"customOrder,omitempty"`
 }
 
 type ThemeColors struct {

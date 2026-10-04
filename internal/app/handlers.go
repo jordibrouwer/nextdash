@@ -2815,6 +2815,8 @@ func (h *Handlers) ResetColors(w http.ResponseWriter, r *http.Request) {
 		Dark:    getDefaultDarkTheme(),
 		BuiltIn: getDefaultBuiltInThemes(),
 		Custom:  currentColors.Custom, // Preserve existing custom themes
+		// and the order they were put in.
+		CustomOrder: currentColors.CustomOrder,
 	}
 
 	if !respondStorePersistError(w, h.store.SaveColors(defaultColors)) {

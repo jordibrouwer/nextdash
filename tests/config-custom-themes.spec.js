@@ -416,3 +416,50 @@ test('a failed colour read is never saved back over the stored themes', async ({
     const stored = await page.evaluate(async () => Object.values((await (await fetch('/api/colors')).json()).custom || {}).map((t) => t.name));
     expect(stored, 'the stored own themes after Add on a failed read').toEqual(['Keep me']);
 });
+
+// The server keeps own themes in a map it writes sorted: ↑/↓ lasted until a
+// reload.
+test('the order of your own themes survives a read back from the server', async ({ page }) => {
+    await openCustomThemes(page);
+    await page.locator('[data-theme-add]').click();
+    await expect(page.locator('[data-theme-row]')).toHaveCount(1);
+    await page.locator('[data-theme-add]').click();
+    await expect(page.locator('[data-theme-row]')).toHaveCount(2);
+    const order = () => page.locator('[data-theme-row]').evaluateAll((rows) => rows.map((r) => r.getAttribute('data-theme-row')));
+    const before = await order();
+    await page.locator(`[data-theme-move="down"][data-id="${before[0]}"]`).click();
+    await expect.poll(order).toEqual([before[1], before[0]]);
+    await page.waitForTimeout(800);
+    // Read back from the server as a fresh page would.
+    const stored = await page.evaluate(async () => {
+        const cfg = window.dashboardInstance.config;
+        cfg._colorsData = null;
+        await cfg.loadColorsData();
+        return Object.keys(cfg._colorsData.custom || {});
+    });
+    expect(stored).toEqual([before[1], before[0]]);
+});
+
+// A theme made in another tab or on another device: the settings sync noticed
+// (colors.json is in the revision) but never fetched the theme CSS again, so
+// picking it drew no colours, and this tab's stale colour document deleted it
+// on its next save.
+test('a theme made elsewhere reaches this tab with the settings sync', async ({ page }) => {
+    await openCustomThemes(page);
+    const id = `theme-elsewhere-${Date.now().toString(36)}`;
+    await page.evaluate(async (themeId) => {
+        const cfg = window.dashboardInstance.config;
+        await cfg.loadColorsData();
+        // Another tab's write, straight to the server.
+        const colors = await (await fetch('/api/colors')).json();
+        colors.custom = { ...(colors.custom || {}), [themeId]: { ...(colors.dark || {}), name: 'Elsewhere' } };
+        await cfg.writeFetch('/api/colors', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(colors),
+        });
+        await window.dashboardInstance.data.refreshIfDataRevisionChanged();
+    }, id);
+    await expect.poll(() => page.evaluate((themeId) =>
+        (document.getElementById('nextdash-theme-css')?.textContent || '').includes(themeId), id), { timeout: 10_000 }).toBe(true);
+    await expect.poll(() => page.evaluate((themeId) =>
+        Boolean(window.dashboardInstance.config._colorsData?.custom?.[themeId]), id), { timeout: 10_000 }).toBe(true);
+});

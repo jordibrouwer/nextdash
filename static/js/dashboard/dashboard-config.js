@@ -10551,7 +10551,7 @@ class DashboardConfig {
             data = res && res.ok ? await res.json() : null;
         } catch { data = null; }
         if (data && typeof data === 'object') {
-            this._colorsData = data;
+            this._colorsData = DashboardConfig.orderCustomThemes(data);
         } else if (!this._colorsData) {
             // A failed read (server restarting, a proxy's 502) leaves an empty
             // stand-in so the tab can render. It is marked: the next call reads
@@ -10965,7 +10965,9 @@ class DashboardConfig {
                 const res = await this.writeFetch('/api/colors', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this._colorsData),
+                    // The order of the own themes travels as a list: the server
+                    // keeps them in a map, which it writes sorted.
+                    body: JSON.stringify({ ...this._colorsData, customOrder: Object.keys(this._colorsData?.custom || {}) }),
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 this.syncCustomThemeIds();
@@ -11016,6 +11018,19 @@ class DashboardConfig {
                 this._colorsSavePromise = null;
             }
         }
+    }
+
+    /**
+     * Own themes in the order the reader put them: the list travels as
+     * customOrder, since the server keeps them in a map it writes sorted.
+     */
+    static orderCustomThemes(data) {
+        if (!data || !Array.isArray(data.customOrder) || !data.custom || typeof data.custom !== 'object') return data;
+        const ordered = {};
+        data.customOrder.forEach((id) => { if (data.custom[id]) ordered[id] = data.custom[id]; });
+        Object.keys(data.custom).forEach((id) => { if (!ordered[id]) ordered[id] = data.custom[id]; });
+        data.custom = ordered;
+        return data;
     }
 
     /** A theme id that cannot collide with one already stored. */
@@ -11144,6 +11159,10 @@ class DashboardConfig {
                 .replace('{name}', String(theme.name || id))
         );
         if (!ok) return;
+        // What is on screen, read before the delete: pairing reads the id list
+        // this changes, and asked afterwards it could never name the half that
+        // was just removed.
+        const shownBefore = this.displayTheme?.();
         delete data.custom[id];
         this.syncCustomThemeIds();
         if (this._themeSelected === id) this._themeSelected = null;
@@ -11160,11 +11179,14 @@ class DashboardConfig {
         // theme that no longer exists, so fall back to the default.
         // Also the half on screen under Follow system, which is not the
         // stored one. 'default' is no theme id: the page lost every colour.
-        const wasActive = this.dash.settings?.theme === id || this.displayTheme?.() === id;
-        if (wasActive) {
+        // Only the stored choice falls back; when the half on screen goes and
+        // the stored half stays, that one is drawn.
+        const storedGone = this.dash.settings?.theme === id;
+        const wasActive = storedGone || shownBefore === id;
+        if (storedGone) {
             this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'matrix-bluepill-dark';
         }
-        if (wasActive || rowsLeft) void this.saveSettingsWithFeedback();
+        if (storedGone || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();
         await this.saveColorsData();
         // The page still said data-theme="<deleted id>", and the reloaded theme
@@ -11539,7 +11561,7 @@ class DashboardConfig {
             try {
                 const res = await this.writeFetch('/api/colors/reset', { method: 'POST' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                this._colorsData = await res.json();
+                this._colorsData = DashboardConfig.orderCustomThemes(await res.json());
                 if (!this._colorsData.custom) this._colorsData.custom = {};
                 this.clearThemePreview();
                 this.reloadThemeCSS();

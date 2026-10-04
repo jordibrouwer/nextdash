@@ -296,6 +296,19 @@ func sanitizeColorTheme(c ColorTheme) ColorTheme {
 			c.Custom[id] = sanitizeThemeColors(tc)
 		}
 	}
+	// Only ids that are there, each once.
+	order := make([]string, 0, len(c.CustomOrder))
+	seen := map[string]bool{}
+	for _, id := range c.CustomOrder {
+		if _, ok := c.Custom[id]; ok && !seen[id] {
+			seen[id] = true
+			order = append(order, id)
+		}
+	}
+	c.CustomOrder = order
+	if len(c.CustomOrder) == 0 {
+		c.CustomOrder = nil
+	}
 	return c
 }
 
