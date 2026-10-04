@@ -354,6 +354,19 @@ test.describe('dashboard inbox phase 1', () => {
         await expect(page.locator('.inbox-date-group-title').first()).toBeVisible();
     });
 
+    // The row shows the page's own title first; the sort compared the tab title.
+    test('a title sort compares the title the row shows', async ({ page }) => {
+        await seedInbox(page, ['Sort probe']);
+        const order = await page.evaluate(() => {
+            const ib = window.dashboardInstance.inbox;
+            return [
+                { title: 'B tab title', previewTitle: 'A page title' },
+                { title: 'A tab title', previewTitle: 'Z page title' },
+            ].map((item) => ib.displayTitle(item));
+        });
+        expect(order).toEqual(['A page title', 'Z page title']);
+    });
+
     test('sort and filter survive a reload, and a deep link overrides them', async ({ page }) => {
         await seedInbox(page, ['Zebra one', 'Apple two']);
 
@@ -454,6 +467,41 @@ test.describe('dashboard inbox phase 1', () => {
         await page.keyboard.press('Escape');
         await expect(page.locator('#app-modal')).not.toHaveClass(/show/);
         expect(await ticked()).toBe(2);
+    });
+
+    // A promote that replaced a kept (Unsorted) copy deleted it outright, and
+    // Undo did not bring it back: its note and tags were gone for good.
+    test('undoing a bulk promote brings back the kept copy it replaced', async ({ page }) => {
+        await seedInbox(page, ['Kept twin']);
+        const { url, unsorted, pageId } = await page.evaluate(async () => {
+            const ib = window.dashboardInstance.inbox;
+            const item = ib.items.find((i) => i.title === 'Kept twin');
+            const res = await fetch('/api/unsorted');
+            const unsortedId = (await res.json()).page.id;
+            await nextDashFetch('/api/bookmarks/add', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: unsortedId, bookmark: { name: 'Kept twin', url: item.url, note: 'my note', tags: ['later'] }, allowDuplicate: true }),
+            });
+            ib.setChecked(item.id, true);
+            return { url: item.url, unsorted: unsortedId, pageId: Number(window.dashboardInstance.pages[0].id) };
+        });
+        const keptNote = () => page.evaluate(async ({ u, pid }) => {
+            const rows = await (await fetch(`/api/bookmarks?page=${pid}`)).json();
+            return (rows || []).find((b) => b.url === u)?.note ?? null;
+        }, { u: url, pid: unsorted });
+        try {
+            await page.evaluate((pid) => window.dashboardInstance.inbox.bulkPromote(pid), pageId);
+            await expect.poll(keptNote, { timeout: 10_000 }).toBe(null);
+            await page.locator('.app-notification button', { hasText: 'Undo' }).first().click();
+            await expect.poll(keptNote, { timeout: 10_000 }).toBe('my note');
+        } finally {
+            await page.evaluate(async ({ u, pid }) => {
+                await nextDashFetch('/api/bookmarks', {
+                    method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: pid, bookmark: { url: u } }),
+                });
+            }, { u: url, pid: unsorted });
+        }
     });
 
     test('a filter change clears ticks so bulk cannot touch hidden rows', async ({ page }) => {

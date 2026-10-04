@@ -44,3 +44,24 @@ func TestInboxEnrichmentStoresThePicture(t *testing.T) {
 	}
 	t.Fatal("never enriched")
 }
+
+// A refusal by the outbound limit was stamped as "this site has no icon", so
+// links restored in bulk past the limit never got one.
+func TestInboxEnrichmentDoesNotStampARefusedIcon(t *testing.T) {
+	h := newTestHandlers(t)
+	t.Setenv("NEXTDASH_DISABLE_PREFETCH", "")
+	t.Cleanup(globalOutboundLimiter.reset)
+	link, _, err := h.store.AddInboxLink(InboxLink{URL: "https://limited.example/article"}, true, 500)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for globalOutboundLimiter.allow("global") {
+	}
+	h.enrichInboxPreviewAsync(link.ID, link.URL)
+	time.Sleep(1500 * time.Millisecond)
+	for _, it := range h.store.GetInboxItems() {
+		if it.ID == link.ID && it.IconFetchedAt != 0 {
+			t.Fatal("a refused icon fetch was stamped as done")
+		}
+	}
+}

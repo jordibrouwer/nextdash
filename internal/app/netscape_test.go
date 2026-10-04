@@ -184,3 +184,38 @@ func TestParseNetscapeHandlesAnEmptyFile(t *testing.T) {
 		t.Errorf("got %d bookmarks from an empty file", len(got))
 	}
 }
+
+// A folder with a description: the <DD> closes the folder's <DT>, its <DL>
+// lands inside the <DD>, and every bookmark in it was filed one level up.
+func TestParseNetscapeKeepsTheFolderOfADescribedFolder(t *testing.T) {
+	file := `<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<DL><p>
+    <DT><H3>Recipes</H3>
+    <DD>Things to cook
+    <DL><p>
+        <DT><A HREF="https://food.example/a">Pasta</A>
+        <DD>try with basil
+        <DT><A HREF="https://food.example/b">Soup</A>
+    </DL><p>
+    <DT><H3>Work</H3>
+    <DL><p>
+        <DT><A HREF="https://work.example/x">X</A>
+    </DL><p>
+</DL><p>`
+	got, err := ParseNetscapeBookmarks(strings.NewReader(file))
+	if err != nil {
+		t.Fatal(err)
+	}
+	folders := map[string]string{}
+	notes := map[string]string{}
+	for _, b := range got {
+		folders[b.URL] = b.Folder
+		notes[b.URL] = b.Note
+	}
+	if len(got) != 3 || folders["https://food.example/a"] != "Recipes" || folders["https://food.example/b"] != "Recipes" || folders["https://work.example/x"] != "Work" {
+		t.Fatalf("folders = %v", folders)
+	}
+	if notes["https://food.example/a"] != "try with basil" {
+		t.Fatalf("a link's own note was lost: %v", notes)
+	}
+}

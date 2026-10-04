@@ -164,6 +164,11 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — the tag scan keeps a preview it could not read again,** and pauses when the outbound limit runs out instead of marking every page after it as read (`tag_scan.go`, `rate_limit.go`).
 - **fix — new inbox links get their picture,** and triage shows a local copy instead of a broken `https://data/…` (`inbox_handlers.go`, `preview_image_cache.go`, `dashboard-inbox-triage.js`).
 - **fix — one odd address in a browser export no longer refuses the whole import;** the row is left out and counted (`handlers.go`).
+- **fix — undoing a bulk Promote brings back the Unsorted copy it replaced,** with its note and tags; the copy was deleted outright and Undo left it out (`dashboard-inbox.js`).
+- **fix — a long address is kept whole or refused.** The inbox cut URLs at 2,048 characters, which stored a broken link and defeated the duplicate check; it now keeps up to 8,192 and refuses anything longer (`inbox.go`, `inbox_handlers.go`, `share_capture.go`).
+- **fix — links restored in bulk get their icons.** A refusal by the outbound limit was stamped as "this site has no icon", so the startup backfill never asked again (`inbox_handlers.go`).
+- **fix — a browser folder with a description keeps its name on import.** Its bookmarks were filed one level up (`netscape.go`).
+- **fix — sorting by Title follows the title the row shows** (`dashboard-inbox.js`).
 
 ### Docs
 

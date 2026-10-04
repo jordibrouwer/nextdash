@@ -41,3 +41,31 @@ func TestAddInboxItemKeepsTags(t *testing.T) {
 	}
 	t.Error("added item not found in the store")
 }
+
+// A URL past 2,048 characters was accepted and stored cut off: a broken link,
+// and the next save of the same address was not seen as a duplicate.
+func TestAddInboxItemKeepsALongURLWholeOrRefusesIt(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{}`)
+	post := func(url string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		h.AddInboxItem(rec, httptest.NewRequest(http.MethodPost, "/api/inbox",
+			strings.NewReader(`{"url":"`+url+`"}`)))
+		return rec
+	}
+	long := "https://maps.example/dir/" + strings.Repeat("a", 3000)
+	if rec := post(long); rec.Code != http.StatusOK && rec.Code != http.StatusCreated {
+		t.Fatalf("a 3,000-character URL: %d %s", rec.Code, rec.Body.String())
+	}
+	found := false
+	for _, it := range h.store.GetInboxItems() {
+		if it.URL == long {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("the long URL was not stored whole")
+	}
+	if rec := post("https://x.example/" + strings.Repeat("b", inboxMaxURLLen)); rec.Code != http.StatusBadRequest {
+		t.Fatalf("a URL past the limit: %d, want 400", rec.Code)
+	}
+}
