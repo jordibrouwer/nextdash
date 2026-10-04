@@ -24,11 +24,13 @@ NextDash is a lightweight, self-hosted bookmark dashboard that features a minima
 
 Key features:
 • Keyboard-driven navigation for fast access to all your bookmarks
-• Extensive theme and layout customization
+• Extensive theme and layout customization, with a look studio beside the dashboard and a theme editor
 • Inbox to collect new links fast: triage them, or keep them on a Kept tab and file whole groups later
 • Health view that finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
-• Widgets beside your bookmarks: 21 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
+• Widgets beside your bookmarks: 28 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
+• Your Unraid server on the dashboard: seven widgets for the array, parity, shares, VMs, the UPS and notifications, with alerts
+• Web search in the search panel through your own SearXNG or the Brave Search API
 • Six interface languages: English, Dutch, German, French, Spanish and Chinese
 • Lightweight and fast, no heavy dependencies
 • Actively maintained with regular releases
@@ -47,6 +49,23 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.17.0 (2026-10-03)
+- Unraid: seven widgets (overview, array, parity, shares, VMs, UPS, notifications) through one connection under Config → Unraid
+- Unraid: a stopped array, disk errors, parity errors and Unraid's own notifications go through your alert channels
+- Search: web results from your own SearXNG or the Brave Search API under your bookmarks (Shift+Enter)
+- Icons: containers and bookmarks get their app's own icon from two open icon sets, in the variant that suits the theme
+- Look studio: a theme editor, and save what is on screen as a theme of your own
+- Widgets: sixteen more Custom widget services; alerts through Apprise; a bookmark as a QR code
+- 81 fixes, among them "back online" after a Re-check and backups that leave out alert secrets
+
+### v1.16.0 (2026-10-02)
+- Themes: the theme browser is a look studio beside the dashboard; nothing is saved until Apply
+- Themes: twelve ready-made looks set backdrop, card glass, headers and type in one click
+- Appearance: 26 backdrops drawn in the theme's colours, with blur, brightness and tint
+- Appearance: card glass on a Surface tab, and category headers in five styles
+- Themes: a Neutrals collection of five grey glass themes, each light and dark
+- Dashboard: widgets in the Launcher layout show their content again
+
 ### v1.15.8 (2026-10-01)
 - Containers: nextDash no longer mistakes a storage layer for its own container and stops itself mid-update (Unraid's docker.img)
 - Containers: a failed automatic update sends a notice, and an update keeps every published port
@@ -73,22 +92,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Disk: remove stopped containers in one go, and measure a bind mount's folder (Unraid appdata) on request
 - Fixed: followed container logs stayed empty in the browser until 4 KB had piled up
 
-### v1.15.5 (2026-09-30)
-- Containers: a Size column with what each container wrote, measured in the background every half hour
-- Containers: tick several and start, stop, restart, update, remove or mute them at once; Backspace removes, running ones are stopped first after asking
-- Containers: a waiting update is an arrow before the name; names and images stay on one line, and three ports show before +N
-- Containers: Disk lists bind mounts, the appdata folders containers keep their data in, with who mounts each where
-- Config: the Docker host address is checked as you type, with an example; until it is set the view says where port links go
-
-### v1.15.0 (2026-09-28)
-- Bookmarks view: the whole collection with health filters, grouping and a side panel for details, health and usage; the Health view lives here now
-- Containers view: the Docker host nextDash runs on, with status, ports, web UI links, logs, an hour of CPU and memory, and update checks
-- Containers: start, stop, restart and update from the view when NEXTDASH_DOCKER_CONTROL=1; nextDash never stops its own container
-- Inbox: one-line rows and a side panel; triage and Work through start from a pile and say why each item is there
-- Widgets: a Container list widget; Statistics rebuilt in five tabs with a Needs attention list
-- Themes: 34 new families, each light and dark (310 themes); a fresh install starts on Matrix Bluepill
-- Setup: Docker actions and Run as root are off by default; see the README for the socket and when root is needed
-
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -96,7 +99,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-01</Date>
+  <Date>2026-10-03</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
@@ -226,11 +229,19 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-dashboard.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-dashboard-homelab.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-bookmarks-view.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-bookmarks-health.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-collection-health.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-search.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-search-tags.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-commands.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-inbox.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-triage.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-containers.jpg</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-collection-health.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-containers-health.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-containers-updates.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-unraid-dashboard.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-unraid-config.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-themes.jpg</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-config-appearance.jpg</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-config-statistics.jpg</Screenshot>
 </Container>

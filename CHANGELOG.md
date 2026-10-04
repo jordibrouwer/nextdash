@@ -303,6 +303,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 ### Docs
 
 - **docs — `static/data/whats-new/v1.17.0.json` and its index entry**, leading the What's new window; `whats-new-stub.js`'s `DASHBOARD_RELEASE` moved to `2026.10-dashboard-release-v1.17.0` and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v315`; `whats-new-hidden-release.spec.js` follows. An Overview spotlight for the Unraid widgets, with `since` v1.17.0, in six languages. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — the Unraid template**: `templates/nextdash.xml` and the live copy in `unraid_templates` carry v1.17.0 and v1.16.0 in `<Changes>` (keeping the last five releases), the date, Unraid, web search and the look studio in the overview, 28 built-in widget kinds, and all 18 README screenshots.
 
 ### Tests
 
