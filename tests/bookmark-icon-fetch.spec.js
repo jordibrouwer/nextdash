@@ -16,6 +16,11 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } 
  * bookmark stores. Counting the calls is what says whether a fetch happened,
  * because a fetch that finds the same icon looks identical in the field.
  *
+ * The form looks the icon up while it is filled and stores it on save: the
+ * card shows the favicon from where it is, and /api/icon/from-url is asked
+ * only by Save. Storing it on every address typed left a file in data/icons
+ * for each one never saved.
+ *
  * Each test states the icon it starts from. The rule turns on it: the blur
  * fetch fills an empty icon and never replaces one that is already there
  * (dashboard-inline-edit.js starts pendingIcon at the bookmark's own icon and
@@ -107,6 +112,8 @@ async function openEditor(page, { icon = '' } = {}) {
 }
 
 const urlField = (page) => page.locator('#bookmark-form-modal input[type="url"]');
+const cardIcon = (page) => page.locator('#bookmark-form-modal .bookmark-form-card-icon img');
+const save = (page) => page.locator('#bookmark-form-modal .bookmark-inline-actions .bookmark-inline-save').click();
 const iconField = (page) => page.locator('#bookmark-form-modal [data-field-block="icon"] .bookmark-inline-input');
 
 /** The auto-fetch waits 250ms after blur, then talks to two endpoints. */
@@ -125,8 +132,10 @@ test.describe('fetching a favicon', () => {
         await settle(page);
 
         expect(calls.preview, 'the Fetch button did not ask').toBeGreaterThan(0);
-        await expect(iconField(page), 'the fetched icon did not reach the field')
-            .toHaveValue(/fetched-/);
+        await expect(cardIcon(page)).toHaveAttribute('src', 'https://example.com/favicon.ico');
+        expect(calls.download, 'the icon was stored before Save').toBe(0);
+        await save(page);
+        await expect.poll(() => calls.download, { message: 'Save did not store the icon' }).toBe(1);
     });
 
     test('an empty icon and a changed URL fetch on blur', async ({ page }) => {
@@ -138,7 +147,10 @@ test.describe('fetching a favicon', () => {
         await settle(page);
 
         expect(calls.preview, 'typing a new address fetched nothing').toBeGreaterThan(0);
-        await expect(iconField(page)).toHaveValue(/fetched-/);
+        await expect(cardIcon(page)).toHaveAttribute('src', 'https://example.com/favicon.ico');
+        expect(calls.download, 'typing an address stored an icon').toBe(0);
+        await save(page);
+        await expect.poll(() => calls.download, { message: 'Save did not store the icon' }).toBe(1);
     });
 
     test('an icon already chosen survives a new address', async ({ page }) => {

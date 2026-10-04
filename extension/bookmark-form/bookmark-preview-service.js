@@ -106,8 +106,43 @@
         return uploadIconFromUrl(fallbackUrl, apiBase);
     }
 
+    /**
+     * Where a page's favicon could be, best first, without storing anything:
+     * the page's own <link rel=icon>, then /favicon.ico. A form shows these
+     * while it is being filled and stores the icon on save; storing it while
+     * typing left a file in data/icons for every address never saved.
+     */
+    async function findFaviconSources(bookmarkUrl, apiBase = '') {
+        const utils = global.BookmarkUrlUtils;
+        const safeUrl = utils ? utils.ensureHttpUrl(bookmarkUrl) : String(bookmarkUrl || '').trim();
+        if (!safeUrl) return { sources: [], setIcon: false };
+        const sources = [];
+        try {
+            const preview = await fetchLinkPreview(safeUrl, apiBase);
+            if (preview.setIcon) return { sources: [], setIcon: true };
+            const own = String(preview?.iconSource || '').trim();
+            if (own) sources.push(own);
+        } catch {
+            // The fallback below still applies.
+        }
+        const fallback = utils ? utils.deriveFaviconFromBookmarkUrl(safeUrl) : '';
+        if (fallback && !sources.includes(fallback)) sources.push(fallback);
+        return { sources, setIcon: false };
+    }
+
+    /** Store the first of these sources the server can fetch; '' when none. */
+    async function uploadFirstIcon(sources, apiBase = '') {
+        for (const source of sources || []) {
+            const icon = await uploadIconFromUrl(source, apiBase);
+            if (icon) return icon;
+        }
+        return '';
+    }
+
     global.BookmarkPreviewService = {
         apiUrl,
+        findFaviconSources,
+        uploadFirstIcon,
         scheduleDebounced,
         cancelDebounced,
         uploadIconFromUrl,

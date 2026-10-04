@@ -280,6 +280,7 @@ test('a refusal in the form makes Config → Tag suggestions read its words agai
  * still running skipped the second, or let the first answer arrive last and
  * paint over it.
  */
+// The card shows the favicon from where it is; it is stored on Save.
 test('a changed address replaces the card and the fetched icon, whatever arrives first', async ({ page }) => {
     await page.route('**/api/bookmark-preview*', async (route) => {
         const url = new URL(route.request().url()).searchParams.get('url') || '';
@@ -308,7 +309,7 @@ test('a changed address replaces the card and the fetched icon, whatever arrives
     await expect(form.locator('.bookmark-form-card-desc')).toHaveText('Said by the second page');
     await page.waitForTimeout(1800);
     await expect(form.locator('.bookmark-form-card-desc')).toHaveText('Said by the second page');
-    await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /second-icon/);
+    await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /second\.example/);
     await expect(form.locator('[data-field="name"]')).toHaveValue('Second page');
 });
 
@@ -329,10 +330,10 @@ test('a changed address replaces an icon the form fetched, but not one you uploa
     const url = form.locator('[data-field="url"]');
     await url.fill('https://one.example/a');
     await url.blur();
-    await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /one-icon/);
+    await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /one\.example/);
     await url.fill('https://two.example/b');
     await url.blur();
-    await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /two-icon/);
+    await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /two\.example/);
 });
 
 /*
@@ -394,7 +395,7 @@ test('while a new address is read, the card and the name say so', async ({ page 
     await url.fill('https://quick.example/a');
     await url.blur();
     await expect(name).toHaveValue('Quick page');
-    await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /quick-icon/);
+    await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /quick\.example/);
 
     await url.fill('https://slow.example/b');
     await url.blur();
@@ -402,7 +403,7 @@ test('while a new address is read, the card and the name say so', async ({ page 
     await expect(name).toHaveValue('');
     await expect(name).toHaveAttribute('placeholder', /fetching title/i);
     // The old address's icon is gone at once; the letter stands in.
-    await expect(form.locator('.bookmark-form-card-icon img')).not.toHaveAttribute('src', /quick-icon/);
+    await expect(form.locator('.bookmark-form-card-icon img')).not.toHaveAttribute('src', /quick\.example/);
 
     await expect(name).toHaveValue('Slow page', { timeout: 6000 });
     await expect(form.locator('.bookmark-form-card-desc')).toHaveText('Took its time');
@@ -490,7 +491,7 @@ test('after Create + New the next address is read in full, even the same one aga
     await url.blur();
     await expect(name).toHaveValue('Read 2');
     await expect(form.locator('.bookmark-form-card-desc')).toHaveText('Line 2');
-    await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /again-2/);
+    await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /again\.example/);
 });
 
 test('an address whose read gave nothing can be tried again from the card', async ({ page }) => {

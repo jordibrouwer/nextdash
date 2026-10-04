@@ -163,7 +163,8 @@
                 const name = String(filename || '').trim();
                 currentIcon = name;
                 iconImg.hidden = !name;
-                iconImg.src = name ? `/data/icons/${encodeURIComponent(name)}` : '';
+                // A full address is a favicon found but not stored yet.
+                iconImg.src = !name ? '' : (/^https?:\/\//i.test(name) ? name : `/data/icons/${encodeURIComponent(name)}`);
                 syncLetter();
             },
             setIdle() {

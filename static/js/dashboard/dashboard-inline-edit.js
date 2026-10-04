@@ -770,6 +770,10 @@ class DashboardInlineEdit {
         colWhat.appendChild(cardHost);
 
         let pendingIcon = String(bookmark.icon || '').trim();
+        // A favicon found for the address, not stored yet: its addresses, best
+        // first. Stored on save (runSave), so an address typed and never saved
+        // leaves no file in data/icons.
+        let pendingIconSources = [];
         // True while the icon is one this form fetched for the current address.
         let iconIsFetched = false;
         const iconPreview = document.createElement('div');
@@ -807,7 +811,7 @@ class DashboardInlineEdit {
 
         let card = null;
         const syncIconState = () => {
-            card?.setIcon(pendingIcon);
+            card?.setIcon(pendingIcon || pendingIconSources[0] || '');
             iconState.textContent = pendingIcon
                 ? (d.language.t('config.iconSet') || 'Icon set')
                 : (d.language.t('config.iconNone') || 'No icon');
@@ -860,7 +864,7 @@ class DashboardInlineEdit {
                 d.notifyConfig('iconUploadFailed', 'Icon upload failed.', 'error');
                 return;
             }
-            pendingIcon = uploadedIcon;
+            pendingIcon = uploadedIcon; pendingIconSources = [];
             iconIsFetched = false;
             iconUrlInput.value = `/data/icons/${uploadedIcon}`;
             syncIconState();
@@ -868,7 +872,7 @@ class DashboardInlineEdit {
         });
 
         clearIconBtn.addEventListener('click', () => {
-            pendingIcon = '';
+            pendingIcon = ''; pendingIconSources = [];
             iconUrlInput.value = '';
             syncIconState();
         });
@@ -896,7 +900,7 @@ class DashboardInlineEdit {
             return text.replace(/\{(\w+)\}/g, (_, k) => (vars && k in vars ? vars[k] : `{${k}}`));
         };
         const takeSetIcon = (icon) => {
-            pendingIcon = icon;
+            pendingIcon = icon; pendingIconSources = [];
             iconIsFetched = false;
             iconUrlInput.value = `/data/icons/${icon}`;
             syncIconState();
@@ -957,7 +961,7 @@ class DashboardInlineEdit {
             onChooseAppIcon: (anchor) => void openIconPicker(anchor),
             onUpload: () => iconFileInput.click(),
             onFetchAgain: () => { void runPreviewFetch({ force: true }); },
-            onClear: () => { pendingIcon = ''; iconUrlInput.value = ''; syncIconState(); void refreshIconSuggestions(); },
+            onClear: () => { pendingIcon = ''; pendingIconSources = []; iconUrlInput.value = ''; syncIconState(); void refreshIconSuggestions(); },
             onRetry: () => { void runPreviewFetch({ force: true }); },
         });
         // The old icon block stays in the form as the value the save reads --
@@ -1012,19 +1016,20 @@ class DashboardInlineEdit {
             // The last address's icon is not this one's: the letter stands in
             // until the new page answers.
             if (iconIsFetched) card.setIcon('');
-            const { icon, preview } = await this.fetchPreviewAndIcon(urlValue, { withIcon: replaceIcon });
+            const { sources, preview } = await this.fetchPreviewAndIcon(urlValue, { withIcon: replaceIcon });
             if (seq !== fetchSeq || !document.contains(form)) return;
             inlineAutoFetchInFlight = false;
             if (replaceIcon) {
-                if (icon) {
-                    pendingIcon = icon;
-                    iconUrlInput.value = `/data/icons/${icon}`;
+                if (sources.length) {
+                    pendingIcon = '';
+                    pendingIconSources = sources;
+                    iconUrlInput.value = '';
                     iconIsFetched = true;
                 } else if (iconIsFetched || (force && preview?.setIcon)) {
                     // The old address's icon is not this one's -- and on Fetch
                     // again, an app the icon sets know gives up its favicon
                     // for the set icon, as a new bookmark would.
-                    pendingIcon = '';
+                    pendingIcon = ''; pendingIconSources = [];
                     iconUrlInput.value = '';
                     iconIsFetched = false;
                 }
@@ -1792,6 +1797,13 @@ class DashboardInlineEdit {
             }
             saveBtn.dataset.saving = '1';
             try {
+                // The favicon found for this address is stored now that the
+                // bookmark is; one the server cannot fetch leaves no icon.
+                if (!pendingIcon && pendingIconSources.length) {
+                    const stored = await this.uploadFirstBookmarkIcon(pendingIconSources);
+                    pendingIcon = stored || ''; pendingIconSources = [];
+                    if (pendingIcon) iconUrlInput.value = `/data/icons/${pendingIcon}`;
+                }
                 if (isCreate) {
                     this._allowDuplicateOnce = guard.allowDuplicate === true;
                     await this.createBookmarkFromForm(bookmarkRef, {
@@ -1808,7 +1820,7 @@ class DashboardInlineEdit {
                         noteInput,
                         tagsInput,
                         getPendingIcon: () => pendingIcon,
-                        resetPendingIcon: () => { pendingIcon = ''; syncIconState(); },
+                        resetPendingIcon: () => { pendingIcon = ''; pendingIconSources = []; syncIconState(); },
                         // Create + New: the next bookmark starts from nothing,
                         // not from the last one's preview, name and icon.
                         resetForNext: () => {
@@ -2636,7 +2648,7 @@ class DashboardInlineEdit {
      */
     async fetchPreviewAndIcon(bookmarkUrl, { withIcon = true } = {}) {
         const safeUrl = String(bookmarkUrl || '').trim();
-        if (!safeUrl) return { icon: '', preview: null };
+        if (!safeUrl) return { sources: [], preview: null };
         let preview = null;
         try {
             const res = await dashFetch(`/api/bookmark-preview?url=${encodeURIComponent(safeUrl)}`);
@@ -2644,25 +2656,31 @@ class DashboardInlineEdit {
         } catch (_error) {
             preview = null;
         }
-        let icon = '';
-        // An icon already chosen is not replaced, so it is not downloaded
-        // either: every download is a file in data/icons.
-        // An app the icon sets know shows its set icon; its favicon is not
-        // fetched at all (the server says so in setIcon).
-        if (!withIcon || preview?.setIcon) return { icon, preview: preview ? { ...preview, url: preview.url || safeUrl } : null };
-        // The remote address of the page's own icon; icon itself is a local
-        // cached path, or empty on a fresh fetch.
-        const previewIconUrl = String(preview?.iconSource || '').trim();
-        if (previewIconUrl) icon = await this.uploadBookmarkIconFromUrl(previewIconUrl);
-        if (!icon) {
-            const fallbackUrl = this.deriveFaviconFromBookmarkUrl(safeUrl);
-            if (fallbackUrl) icon = await this.uploadBookmarkIconFromUrl(fallbackUrl);
-        }
-        return { icon, preview: preview ? { ...preview, url: preview.url || safeUrl } : null };
+        // An icon already chosen is not replaced, so it is not looked for
+        // either. An app the icon sets know shows its set icon; its favicon is
+        // not fetched at all (the server says so in setIcon).
+        const answered = preview ? { ...preview, url: preview.url || safeUrl } : null;
+        if (!withIcon || preview?.setIcon) return { sources: [], preview: answered };
+        // Where the icon is, not a stored copy: the form stores it on save.
+        // The page's own <link rel=icon> first (iconSource; icon is a local
+        // cached path, or empty on a fresh fetch), then /favicon.ico.
+        const sources = [String(preview?.iconSource || '').trim(), this.deriveFaviconFromBookmarkUrl(safeUrl)]
+            .filter((src, i, all) => src && all.indexOf(src) === i);
+        return { sources, preview: answered };
     }
 
     async fetchAndAssignFaviconForUrl(bookmarkUrl) {
-        return (await this.fetchPreviewAndIcon(bookmarkUrl)).icon;
+        const { sources } = await this.fetchPreviewAndIcon(bookmarkUrl);
+        return this.uploadFirstBookmarkIcon(sources);
+    }
+
+    /** Store the first of these icon addresses the server can fetch; '' when none. */
+    async uploadFirstBookmarkIcon(sources) {
+        for (const source of sources || []) {
+            const icon = await this.uploadBookmarkIconFromUrl(source);
+            if (icon) return icon;
+        }
+        return '';
     }
 
 

@@ -202,6 +202,7 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — a browser folder with a description keeps its name on import.** Its bookmarks were filed one level up (`netscape.go`).
 - **fix — sorting by Title follows the title the row shows** (`dashboard-inbox.js`).
 - **fix — the extension stores a page's icon only when it saves the page.** The popup stored one on every open and every edit of the address, and quick save before its duplicate check, so `data/icons` filled with files nothing refers to (`save-common.js`, `popup.js`, `background.js`, `bookmark-form-preview.js`).
+- **fix — the bookmark form stores a page's icon when you save, not while you type.** Every address typed or changed stored a favicon in `data/icons`, kept or not; the card now shows the favicon from where it is (`dashboard-inline-edit.js`, `bookmark-form-card.js`, `search-commands-new.js`, `bookmark-preview-service.js`).
 - **fix — inbox titles are decoded once.** Every read decoded entities again, so "What is &amp;nbsp;?" lost its text and a URL used as a title turned "&param=" into "¶m=" (`inbox.go`).
 - **fix — Forget token forgets the token only.** It deleted the whole source, so a new token brought back every item you had removed (`handlers_sources.go`, `dashboard-config.js`).
 
