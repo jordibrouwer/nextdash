@@ -96,7 +96,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.17.1 — 4 October 2026
 
-Four themes for Unraid users, each in dark and light. A widget can be moved to another page from its menu, and a long list of fixes across the Calendar, Health, Containers, Backups, Search, Inbox and the dashboard.
+Four themes for Unraid users, each in dark and light. A widget can be moved to another page from its menu, and a long list of fixes across the Calendar, Health, Containers, Backups, Search, Inbox and the dashboard — held back from the What's new window (`hideFromModal`) like v1.15.4 and v1.15.1, so v1.17.0 keeps leading it.
 
 ### Themes
 
@@ -212,6 +212,7 @@ Four themes for Unraid users, each in dark and light. A widget can be moved to a
 ### Docs
 
 - **docs — README:** the two Unraid themes in the Unraid section, with a screenshot of each (`screenshots/nextdash-unraid-black.jpg`, `nextdash-unraid-azure.jpg`).
+- **docs — `static/data/whats-new/v1.17.1.json` and its index entry** (`hideFromModal`, covered by `tests/whats-new-hidden-release.spec.js`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v316`. `go generate` refreshed `asset_hashes_gen.go`.
 - **docs — Manual and README:** Unraid Ember and Blaze next to Black and Azure (§16.1), **Move to page…** in the widget's right-click menu (§15.3), and the count of new themes (38).
 
 ---
