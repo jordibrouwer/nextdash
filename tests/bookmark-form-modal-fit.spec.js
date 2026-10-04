@@ -183,6 +183,16 @@ test.describe('bookmark form modal — fits without scrolling', () => {
     // The warning that used to move the form as it appeared.
     test('a clashing shortcut warns in the bubble, not in the layout', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 });
+        // The address starts a preview and a tag read against the real internet.
+        // A runner without it fails them only after a timeout, and the failure
+        // line it draws (40px) landed after the height was taken. Answered here,
+        // the form is the same on every machine.
+        await page.route('**/api/bookmark-preview**', (route) => route.fulfill({
+            status: 200, contentType: 'application/json', body: JSON.stringify({ title: 'Example' }),
+        }));
+        await page.route('**/api/tags/keywords**', (route) => route.fulfill({
+            status: 200, contentType: 'application/json', body: JSON.stringify({ keywords: [] }),
+        }));
         await openAddBookmark(page);
 
         // A filled-in form, so the only thing that can change the height is the
@@ -191,9 +201,20 @@ test.describe('bookmark form modal — fits without scrolling', () => {
             .fill('https://example.com/shortcut-warning');
         await page.locator('#bookmark-form-modal .bookmark-inline-form input[data-field="name"]')
             .fill('Shortcut warning');
-        const heightBefore = await page.evaluate(() => Math.round(
+        // Typing the address starts a preview and icon read that repaint the
+        // form; on a slow runner they landed after this was measured (610 then
+        // 650). Wait until the height has held still before taking it.
+        const dialogHeight = () => page.evaluate(() => Math.round(
             document.querySelector('.bookmark-form-modal-dialog').getBoundingClientRect().height
         ));
+        let heightBefore = await dialogHeight();
+        let steady = 0;
+        await expect.poll(async () => {
+            const now = await dialogHeight();
+            steady = now === heightBefore ? steady + 1 : 0;
+            heightBefore = now;
+            return steady;
+        }, { timeout: 10_000, intervals: [200] }).toBeGreaterThanOrEqual(5);
 
         const shortcut = page.locator('#bookmark-form-modal .bookmark-inline-form input[maxlength="5"]');
         await shortcut.click();
