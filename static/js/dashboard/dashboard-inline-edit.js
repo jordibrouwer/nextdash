@@ -2228,6 +2228,17 @@ class DashboardInlineEdit {
             tags: parsedTags
         };
 
+        // A new address starts over: the old one's check, error and drift
+        // baseline do not describe it. Kept, a drift-watched bookmark reported
+        // "Now redirects to <new host>" on its next check.
+        if (url !== previousUrl) {
+            Object.assign(nextBookmarkState, {
+                lastChecked: 0, lastError: '', brokenSince: 0,
+                driftUrl: '', driftTitle: '', driftFingerprint: '',
+                driftNoticed: '', driftSince: 0, driftReason: '',
+            });
+        }
+
         if (isPageMove) {
             // The whole row with the edits on top: nextBookmarkState holds only
             // what the form edits, and the move adds it on the other page and

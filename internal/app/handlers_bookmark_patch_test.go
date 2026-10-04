@@ -143,3 +143,24 @@ func TestPatchBookmarksPutsAURLBack(t *testing.T) {
 		t.Fatalf("bad setUrl status = %d", rec.Code)
 	}
 }
+
+// A new address kept the old one's drift baseline and error: the next check of
+// a drift-watched bookmark reported "Now redirects to <new host>".
+func TestPatchedURLStartsWithoutTheOldAddressFindings(t *testing.T) {
+	old := Bookmark{URL: "http://nas.lan:5000", WatchDrift: true, DriftURL: "http://nas.lan:5000/", DriftFingerprint: "abc",
+		DriftNoticed: "host", DriftSince: 5, LastChecked: 9, LastError: "timeout", BrokenSince: 7}
+	next, err := mergeBookmarkFields(old, map[string]json.RawMessage{"url": json.RawMessage(`"https://nas.example.com"`)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if next.DriftURL != "" || next.DriftFingerprint != "" || next.DriftNoticed != "" || next.LastError != "" || next.BrokenSince != 0 {
+		t.Fatalf("the old address's findings stayed: %+v", next)
+	}
+	if !next.WatchDrift {
+		t.Fatal("the drift watch itself was switched off")
+	}
+	same, _ := mergeBookmarkFields(old, map[string]json.RawMessage{"name": json.RawMessage(`"NAS"`)})
+	if same.DriftURL == "" || same.LastError == "" {
+		t.Fatalf("an edit that kept the address dropped its findings: %+v", same)
+	}
+}

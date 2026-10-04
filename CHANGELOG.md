@@ -142,6 +142,7 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — a page save from an older tab keeps the drift finding and the archive dates** the checks wrote meanwhile (`bookmark_carry.go`).
 - **fix — restoring a page from the trash lets go of shortcuts taken since,** as a single bookmark's restore does; both pages refused every save before (`trash_handlers.go`).
 - **fix — moving bookmarks to another page without a category brings their categories along,** instead of leaving them under "Unknown category" (`dashboard-config.js`).
+- **fix — a new address starts over.** Editing a bookmark's URL kept the old address's last check, error and drift baseline, and a drift-watched bookmark then reported "Now redirects to <new host>" until Accept drift. Both the edit form and the Bookmarks view's patch clear them (`handlers_bookmark_patch.go`, `dashboard-inline-edit.js`).
 
 ### Backups
 
