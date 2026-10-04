@@ -371,3 +371,26 @@ func TestRecreateKeepsPublishedPortsExposed(t *testing.T) {
 		t.Fatalf("exposed = %v: the container's own port went", exposed)
 	}
 }
+
+// An anonymous volume listed in HostConfig.Mounts without a source (compose's
+// `volumes: [/data]`) went back without one, and Docker gave the new
+// container a fresh, empty volume.
+func TestDockerKeepAnonymousVolumesFillsAMissingSource(t *testing.T) {
+	name := strings.Repeat("9", 64)
+	var in dockerInspect
+	if err := json.Unmarshal([]byte(`{"Mounts":[{"Type":"volume","Name":"`+name+`","Destination":"/data","RW":true}]}`), &in); err != nil {
+		t.Fatal(err)
+	}
+	var hc map[string]any
+	if err := json.Unmarshal([]byte(`{"Mounts":[{"Type":"volume","Target":"/data"}]}`), &hc); err != nil {
+		t.Fatal(err)
+	}
+	dockerKeepAnonymousVolumes(in, hc)
+	mounts, _ := hc["Mounts"].([]any)
+	if len(mounts) != 1 {
+		t.Fatalf("mounts = %v, want the one", mounts)
+	}
+	if src, _ := mounts[0].(map[string]any)["Source"].(string); src != name {
+		t.Fatalf("source = %q, want the volume the container had", src)
+	}
+}

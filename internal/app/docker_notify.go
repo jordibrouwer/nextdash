@@ -35,7 +35,11 @@ their own category.
 const (
 	dockerNotifyExpectWindow = 10 * time.Second // an own action ending this close before a die makes it deliberate
 	dockerNotifyStopWindow   = 5 * time.Minute  // a stop's kill this close before a die makes it deliberate: grace periods run long
-	dockerNotifyRestartGrace = 30 * time.Second // a start this soon after a die makes it a restart, not a stop
+	// A start this soon after a die makes it a restart, not a stop. Docker's
+	// restart backoff doubles from 100 ms up to one minute (moby's
+	// restartmanager), so the grace has to outlast that wait, or a crash loop
+	// past its tenth cycle is told as a stop and a start every minute.
+	dockerNotifyRestartGrace = 75 * time.Second
 	dockerNotifyLoopWindow   = 10 * time.Minute
 	dockerNotifyLoopCount    = 3
 	dockerNotifyTickEvery    = 5 * time.Second

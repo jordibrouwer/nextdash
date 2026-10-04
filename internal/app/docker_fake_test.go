@@ -396,7 +396,9 @@ func (f *fakeDocker) handleInspect(w http.ResponseWriter, id string) {
 	writeJSONFake(w, http.StatusOK, map[string]any{
 		"Id": c.ID, "Name": "/" + c.Name, "Image": c.ImageID, "Created": created,
 		"State": map[string]any{
-			"Status": c.State, "Running": c.State == "running", "Paused": c.State == "paused",
+			"Status": c.State, "Paused": c.State == "paused",
+			// As the Engine reports it: a paused or restarting container is running.
+			"Running":   c.State == "running" || c.State == "paused" || c.State == "restarting",
 			"StartedAt": "2024-01-01T00:00:00Z", "Health": health,
 		},
 		"Config": fakeInspectConfig(c),

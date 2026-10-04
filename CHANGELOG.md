@@ -112,6 +112,12 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — turning monitoring off keeps the uptime history.** The next monitor tick swept the samples and day summaries of every URL that was not monitored, within a minute, while the dialog said the history is kept. The sweep now keeps every bookmark that still exists; retention ages out the rest (`health_monitor.go`).
 - **fix — single-page apps are no longer marked down by soft-404 detection.** An app that serves its one shell document for every path (Sonarr without auth, Uptime Kuma, any `try_files` setup) answered the not-found probe with that same document, and every page compared equal to it. The probe now also reads the front page and drops the verdict when it is that document; a site's root is never judged not found (`health_soft404_control.go`).
 
+### Containers
+
+- **fix — a crash loop is one notice, not two a minute.** Docker's restart backoff grows to a minute, and past the tenth fast crash each wait outlasted the 30 s grace, so every cycle was told as "stopped unexpectedly" and "running again". The grace is now 75 s (`docker_notify.go`).
+- **fix — the nightly update reads each container at its turn.** The run's list can be an hour old by then: a container stopped meanwhile (by hand, or a backup job) was updated, watched as if running, "rolled back" and started again. The update now goes by what the recreate itself found, and a container replaced since the list is left for the next tick instead of failing with a 404 notice (`docker_auto_update.go`, `docker_recreate.go`).
+- **fix — an update keeps an anonymous volume listed without a source.** Compose's `volumes: [/data]` and `--mount type=volume,dst=…` put the volume in `HostConfig.Mounts` with no source; sent back that way, Docker gave the new container a fresh, empty volume. The source is filled in from the container's own mounts (`docker_recreate.go`).
+
 ### Docs
 
 - **docs — README:** the two Unraid themes in the Unraid section, with a screenshot of each (`screenshots/nextdash-unraid-black.jpg`, `nextdash-unraid-azure.jpg`).

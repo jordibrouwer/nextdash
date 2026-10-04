@@ -256,3 +256,40 @@ func TestDockerAutoUpdateTriesOncePerNightAcrossMidnight(t *testing.T) {
 		t.Fatalf("tried again after midnight: %d creates, want %d", creates(), first)
 	}
 }
+
+// The run lists its candidates once; a container stopped before its turn (by
+// hand, or a backup job) was updated, read as running from that list, watched,
+// "rolled back" and started again, and the new version skipped.
+func TestDockerAutoUpdateReadsTheStateAtItsTurn(t *testing.T) {
+	f, h, api, watched := autoUpdateTestSetup(t)
+	listed, _ := h.resolveDockerID(context.Background(), api, "sonarr")
+	for id := range f.containers {
+		f.containers[id].State = "exited"
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	h.autoUpdateOne(ctx, api, listed)
+	if len(*watched) != 0 {
+		t.Fatalf("a container stopped before its turn was watched: %v", *watched)
+	}
+	after, _ := h.resolveDockerID(context.Background(), api, "sonarr")
+	if after.ImageID != "sha256:new" || after.State == "running" {
+		t.Fatalf("after the update: image %s, state %s; want the new image, left stopped", after.ImageID, after.State)
+	}
+}
+
+// A container replaced by hand during the run is not the one listed: its old
+// id is left alone instead of failing with a 404 notice.
+func TestDockerAutoUpdateSkipsAReplacedContainer(t *testing.T) {
+	f, h, api, _ := autoUpdateTestSetup(t)
+	listed, _ := h.resolveDockerID(context.Background(), api, "sonarr")
+	listed.ID = "replaced-since"
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	if h.autoUpdateOne(ctx, api, listed) {
+		t.Fatal("a container replaced since the list was tried")
+	}
+	if f.called("POST /containers/create") {
+		t.Fatal("a replaced container was recreated")
+	}
+}

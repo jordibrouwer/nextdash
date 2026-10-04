@@ -188,6 +188,13 @@ func (h *Handlers) autoUpdateOne(ctx context.Context, api *dockerAPI, c dockerCo
 		release()
 		return false
 	}
+	// The run's list can be an hour old by this container's turn. Replaced or
+	// removed since, it is not the one that was listed: its old id would fail
+	// with a 404 notice. The next tick lists it again.
+	if in, err := api.inspectContainer(ctx, name); err != nil || in.ID != c.ID {
+		release()
+		return false
+	}
 	dockerNotifications.expect(name, time.Now().Add(dockerActionTimeout))
 	outcome, err := h.dockerRecreate(ctx, api, c)
 	dockerNotifications.expect(name, time.Now().Add(dockerNotifyExpectWindow))
@@ -215,8 +222,10 @@ func (h *Handlers) autoUpdateOne(ctx context.Context, api *dockerAPI, c dockerCo
 	// nothing to watch, and the watch read its "created" state as a failed
 	// update, rolled it back and skipped the new version, every night.
 	// Restarting counts as running: it was started again, and a crash-looping
-	// container is the one the watch exists for.
-	if c.State != "running" && c.State != "restarting" {
+	// container is the one the watch exists for. Read from the recreate, not
+	// from the run's list: a container stopped before its turn (by hand, or a
+	// backup job) was rolled back and started by the watch.
+	if !outcome.WasRunning {
 		h.dispatchContainerNotices(nctx, []monitorNotification{containerNotice("up", name,
 			name+" was updated automatically", "it was not running, and is left stopped", time.Now())})
 		return true

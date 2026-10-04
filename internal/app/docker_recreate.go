@@ -34,6 +34,10 @@ type dockerRecreateResult struct {
 	OldImageID  string `json:"oldImageId"`
 	NewImageID  string `json:"newImageId"`
 	ContainerID string `json:"containerId"`
+	// WasRunning is whether the container ran when the recreate looked at it,
+	// and so whether the new one was started: the auto-update watches only
+	// that one, and a list taken an hour earlier cannot say.
+	WasRunning bool `json:"-"`
 }
 
 // Network modes that are not a network: a container on the host's stack, on
@@ -135,11 +139,26 @@ func dockerKeepAnonymousVolumes(in dockerInspect, hostConfig map[string]any) {
 			}
 		}
 	}
+	// An anonymous volume the client listed in HostConfig.Mounts -- compose's
+	// `volumes: [/data]`, or --mount type=volume,dst=/data -- has no source
+	// there; only the container's own mounts name it. Sent back without one,
+	// Docker makes a new, empty volume.
+	named := map[string]string{}
+	for _, m := range in.Mounts {
+		if m.Type == "volume" && m.Name != "" {
+			named[m.Destination] = m.Name
+		}
+	}
 	mounts, _ := hostConfig["Mounts"].([]any)
 	for _, m := range mounts {
 		if mm, ok := m.(map[string]any); ok {
 			if target, ok := mm["Target"].(string); ok {
 				covered[target] = true
+				typ, _ := mm["Type"].(string)
+				src, _ := mm["Source"].(string)
+				if typ == "volume" && src == "" && named[target] != "" {
+					mm["Source"] = named[target]
+				}
 			}
 		}
 	}
@@ -174,6 +193,7 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 	name := c.name()
 	// Running covers paused as well; either way the reader expects it back up.
 	wasRunning := in.State.Running
+	res.WasRunning = wasRunning
 	if wasRunning {
 		if err := api.post(ctx, "/containers/"+c.ID+"/stop", nil); err != nil {
 			res.FailedStep = "stop"

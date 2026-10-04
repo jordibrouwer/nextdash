@@ -61,7 +61,7 @@ func TestContainerNotifierCrash(t *testing.T) {
 	r := newNotifierRun(t)
 	r.ev("die", "web", "exitCode", "137").at(10 * time.Second).tick()
 	r.want()
-	r.at(25 * time.Second).tick()
+	r.at(70 * time.Second).tick()
 	r.want("web stopped unexpectedly")
 	if r.out[0].Error != "exit code 137" || r.out[0].Event != "down" {
 		t.Fatalf("notice = %+v", r.out[0])
@@ -101,7 +101,7 @@ func TestContainerNotifierHealthAndOOM(t *testing.T) {
 	r := newNotifierRun(t)
 	r.ev("health_status: unhealthy", "web").ev("health_status: unhealthy", "web")
 	r.ev("health_status: healthy", "web")
-	r.ev("oom", "big").ev("die", "big", "exitCode", "137").at(time.Minute).tick()
+	r.ev("oom", "big").ev("die", "big", "exitCode", "137").at(2 * time.Minute).tick()
 	r.want("web is unhealthy", "web is healthy again", "big stopped unexpectedly")
 	if r.out[2].Error != "out of memory (exit code 137)" {
 		t.Fatalf("oom notice = %+v", r.out[2])
@@ -234,11 +234,11 @@ func TestContainerNotifierLongStopsAndFinishedJobs(t *testing.T) {
 	r.ev("die", "job", "exitCode", "0").at(time.Minute).tick()
 	r.want()
 
-	r.ev("kill", "nginx", "signal", "1").at(20*time.Second).ev("die", "nginx", "exitCode", "1").at(time.Minute).tick()
+	r.ev("kill", "nginx", "signal", "1").at(20*time.Second).ev("die", "nginx", "exitCode", "1").at(2 * time.Minute).tick()
 	r.want("nginx stopped unexpectedly")
 	// A kill before the last start belonged to an earlier stop.
 	r.ev("kill", "web", "signal", "15").ev("die", "web", "exitCode", "0").at(time.Second).ev("start", "web")
-	r.at(time.Minute).ev("die", "web", "exitCode", "1").at(time.Minute).tick()
+	r.at(time.Minute).ev("die", "web", "exitCode", "1").at(2 * time.Minute).tick()
 	r.want("nginx stopped unexpectedly", "web stopped unexpectedly")
 }
 
@@ -297,5 +297,37 @@ func TestContainerNotifierIgnoresMeasureContainers(t *testing.T) {
 	r.want()
 	if w := r.n.watch["nextdash-measure-ab12cd34"]; w != nil {
 		t.Fatalf("a measure container is being watched: %+v", w)
+	}
+}
+
+// Docker's restart backoff grows to a minute. Past the tenth fast crash the
+// wait outlasted a 30 s grace, and every cycle was told as "stopped
+// unexpectedly" and "running again", then "stable again" mid-loop.
+func TestContainerNotifierCrashLoopUnderDockerBackoff(t *testing.T) {
+	r := newNotifierRun(t)
+	delay := 100 * time.Millisecond
+	for i := 0; i < 20; i++ {
+		r.ev("die", "api", "exitCode", "1")
+		for waited := time.Duration(0); waited+5*time.Second <= delay; waited += 5 * time.Second {
+			r.at(5 * time.Second).tick()
+		}
+		r.at(delay%(5*time.Second)).ev("start", "api")
+		r.at(3 * time.Second).tick()
+		delay *= 2
+		if delay > time.Minute {
+			delay = time.Minute
+		}
+	}
+	loops := 0
+	for _, n := range r.out {
+		switch {
+		case strings.Contains(n.Title, "keeps restarting"):
+			loops++
+		case strings.Contains(n.Title, "stopped unexpectedly"), strings.Contains(n.Title, "running again"), strings.Contains(n.Title, "stable again"):
+			t.Errorf("crash loop told as %q", n.Title)
+		}
+	}
+	if loops != 1 {
+		t.Errorf("keeps restarting sent %d times, want 1", loops)
 	}
 }
