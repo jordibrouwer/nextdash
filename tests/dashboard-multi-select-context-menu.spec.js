@@ -100,7 +100,8 @@ test.describe('multi-select from the context menu', () => {
             ));
         });
 
-        const divider = order.indexOf('---divider---');
+        // The menu is in groups now; the destructive zone is behind the last divider.
+        const divider = order.lastIndexOf('---divider---');
         // Delete opens the destructive zone the divider marks; a harmless
         // "Select" below that line reads as belonging to it.
         expect(divider).toBeGreaterThan(-1);

@@ -202,11 +202,14 @@ class DashboardContextMenu {
         const inboxItem = bookmarkRef.scope === 'inbox'
             ? (d.inbox?.items || []).find((entry) => entry.id === row?.getAttribute('data-inbox-id'))
             : null;
+        // A divider opens a group: the first entry of each carries it.
+        const group = (items) => items.map((item, i) => (i === 0 ? { ...item, divider: true } : item));
         const inboxActions = [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: this.shareActionLabel(), icon: '↪' },
             { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦' },
+            ...group([
             { id: 'inbox-promote', label: this.t('dashboard.inboxPromote', 'Promote'), icon: '★' },
             // Keep's own entry: the same silent promote-to-Unsorted the triage
             // "r" key runs, reachable now without starting a triage run first.
@@ -226,12 +229,15 @@ class DashboardContextMenu {
                 ? [{ id: 'inbox-unread', label: this.t('dashboard.inboxMarkUnread', 'Mark unread'), icon: '○' }]
                 : []),
             { id: 'inbox-snooze', label: this.t('dashboard.inboxSnooze', 'Snooze'), icon: '⏰' },
+            ]),
+            ...group([
             { id: 'inbox-note', label: this.t('dashboard.inboxNoteAction', 'Note'), icon: '✎' },
             { id: 'inbox-tags', label: this.t('dashboard.inboxTagsAction', 'Tags'), icon: '#' },
             // buildItemShareUrl preserves the filter, sort, query and domain
             // alongside the item id, so the link reopens the view as the sender
             // had it. That work existed with no entry point offering it.
             { id: 'inbox-copy-link', label: this.t('dashboard.inboxCopyItemLink', 'Copy link to this item'), icon: '🔗' },
+            ]),
             { id: 'inbox-delete', label: this.t('dashboard.inboxDelete', 'Delete'), icon: '✕', danger: true },
         ];
         // Right-clicking a row that is part of a selection means "act on the
@@ -246,7 +252,7 @@ class DashboardContextMenu {
                 { id: 'multi-move', label: this.t('dashboard.contextMenuMoveSelected', 'Move {count} selected…', { count: multi.count() }), icon: '→' },
                 { id: 'multi-open', label: this.t('dashboard.contextMenuOpenSelected', 'Open {count} selected', { count: multi.count() }), icon: '↗' },
                 { id: 'multi-copy', label: this.t('dashboard.contextMenuCopySelected', 'Copy {count} links', { count: multi.count() }), icon: '⧉' },
-                { id: 'multi-clear', label: this.t('dashboard.contextMenuClearSelection', 'Clear selection'), icon: '✕', key: 'Esc' },
+                { id: 'multi-clear', divider: true, label: this.t('dashboard.contextMenuClearSelection', 'Clear selection'), icon: '✕', key: 'Esc' },
                 { id: 'multi-delete', label: this.t('dashboard.contextMenuDeleteSelected', 'Delete {count} selected', { count: multi.count() }), icon: '✕', danger: true, key: 'Delete' },
             ]
             : [];
@@ -256,10 +262,10 @@ class DashboardContextMenu {
         // by definition, and ticking the first row is the step that reveals the
         // toolbar and every action on it.
         const startSelectionActions = (multi && !multi.isActive())
-            ? [
+            ? group([
                 { id: 'multi-start', label: this.t('dashboard.contextMenuSelect', 'Select'), icon: '☑', key: 'x' },
                 { id: 'multi-start-category', label: this.t('dashboard.contextMenuSelectCategory', 'Select all in category'), icon: '☰', key: 'X' },
-            ]
+            ])
             : [];
 
         // `key` is the keyboard route to the same entry, shown as a chip. The
@@ -273,7 +279,7 @@ class DashboardContextMenu {
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${mod}+C` },
             { id: 'share', label: this.shareActionLabel(), icon: '↪', key: 'Shift+L' },
             { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦', key: 'Shift+J' },
-            { id: 'edit', label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎', key: 'Shift+E' },
+            { id: 'edit', divider: true, label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎', key: 'Shift+E' },
             // Pin had no pointer route at all from the grid — not a row button,
             // not an entry here — while every other one-bit row action did.
             {
@@ -299,6 +305,7 @@ class DashboardContextMenu {
             ...(currentMode
                 ? [{
                     id: 'check-mode',
+                    divider: true,
                     label: this.t('dashboard.contextMenuCheckMode', 'Checking ({mode})…', { mode: currentMode.badge }),
                     icon: '◉',
                     submenu: true,
@@ -311,7 +318,7 @@ class DashboardContextMenu {
             // that), and that row is where its checking gets turned on. Hiding
             // the entry made the destination unreachable from the one place
             // someone would look for it.
-            { id: 'health', label: this.t('dashboard.healthOpenInHealth', 'Show in Health'), icon: '♥', key: 'Shift+R' },
+            { id: 'health', divider: !currentMode, label: this.t('dashboard.healthOpenInHealth', 'Show in Health'), icon: '♥', key: 'Shift+R' },
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
         ]);
 
@@ -333,7 +340,7 @@ class DashboardContextMenu {
 
         const items = [];
         actions.forEach((action) => {
-            if (action.danger) {
+            if (action.danger || action.divider) {
                 const divider = document.createElement('div');
                 divider.className = 'move-popover-divider';
                 pop.appendChild(divider);
