@@ -107,6 +107,7 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 ### Widgets
 
 - **new — Move to page… in the widget menu.** Right-click a widget's header and pick another page, the same move as Config → Widgets. The widget keeps its id, so its sign-in and folded state follow it (`dashboard-category-menu.js`).
+- **fix — Move to page… keeps a widget's feeds and address.** The dashboard reads its widgets without the write token, so an RSS widget's feeds and a custom widget's URL and credential are left out of its copy; the move built the widget from that copy and removed the full one. It now reads both pages with the token (`dashboard-category-menu.js`).
 
 ### Health
 

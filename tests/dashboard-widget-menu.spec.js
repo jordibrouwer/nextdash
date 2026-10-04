@@ -482,3 +482,49 @@ test('Move to page… takes the widget, id and all, to the other page', async ({
     expect(moved?.title).toBe('Status');
     expect(moved?.id).toBe(before.id);
 });
+
+// The dashboard reads its widgets without the token, so an RSS widget's feeds
+// and a custom widget's address are left out of its copy. Move to page… built
+// the moved widget from that copy, and it arrived on the other page without
+// them while the full one was removed here.
+test('Move to page… keeps what a tokenless read leaves out', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    const target = await page.evaluate(async () => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const h = {
+            'Content-Type': 'application/json',
+            ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}),
+        };
+        const pages = [...window.dashboardInstance.pages];
+        if (!pages.some((p) => Number(p.id) !== 1)) pages.push({ id: 4401, name: 'Elsewhere' });
+        await f('/api/pages', { method: 'POST', headers: h, body: JSON.stringify(pages) });
+        await f('/api/pages/1/blocks', { method: 'PUT', headers: h, body: JSON.stringify({
+            widgets: [{ type: 'rss', title: 'News', config: { feedUrls: ['https://example.com/feed.xml'] } }] }) });
+        return pages.find((p) => Number(p.id) !== 1);
+    });
+    await page.reload({ waitUntil: 'networkidle' });
+    const rssHeader = page.locator('.dashboard-widget[data-widget-type="rss"] .category-title');
+    await expect(rssHeader).toBeVisible({ timeout: 15_000 });
+    await rssHeader.click({ button: 'right' });
+    const menu = page.locator('#widget-context-menu');
+    await menu.locator('[data-action="move-page"]').click();
+    await menu.locator(`[data-action="${target.id}"]`).click();
+    await expect(page.locator('.dashboard-widget[data-widget-type="rss"]')).toHaveCount(0, { timeout: 15_000 });
+    const moved = await page.evaluate(async (id) => {
+        const data = await (await nextDashFetch(`/api/pages/${id}/blocks`)).json();
+        return (data.widgets || []).find((w) => w.type === 'rss') || null;
+    }, target.id);
+    expect(moved?.config?.feedUrls).toEqual(['https://example.com/feed.xml']);
+    await page.evaluate(async ({ id, widgetId }) => {
+        const data = await (await nextDashFetch(`/api/pages/${id}/blocks`)).json();
+        const widgets = (data.widgets || []).filter((w) => w.id !== widgetId);
+        const order = (data.order || []).filter((x) => x !== widgetId);
+        await nextDashFetch(`/api/pages/${id}/blocks`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ widgets, order }),
+        });
+    }, { id: target.id, widgetId: moved.id });
+});

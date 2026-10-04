@@ -362,10 +362,19 @@ class DashboardCategoryMenu {
         });
         const name = this.widgetName(widget);
         try {
-            const res = await fetch(`/api/pages/${targetId}/blocks`);
+            // Both read with the token. The dashboard's own copy is read
+            // without it, and the server leaves a custom widget's address and
+            // credential and an RSS widget's feeds out of that; it puts them
+            // back on a save only for a widget already stored on the same page,
+            // so the moved one arrived without them.
+            const src = await fetcher(`/api/pages/${pageId}/blocks`);
+            if (!src.ok) throw new Error(`HTTP ${src.status}`);
+            const full = ((await src.json()).widgets || []).find((w) => String(w?.id) === String(widget.id));
+            if (!full) throw new Error('widget not found');
+            const res = await fetcher(`/api/pages/${targetId}/blocks`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const dest = await res.json();
-            const moved = { id: widget.id, type: widget.type, title: widget.title, config: widget.config || {} };
+            const moved = { id: full.id, type: full.type, title: full.title, config: full.config || {} };
             const added = await put(targetId, { widgets: (dest.widgets || []).concat(moved) });
             if (!added.ok) throw new Error(`HTTP ${added.status}`);
             const widgets = (d.widgets || []).filter((w) => String(w?.id) !== String(widget.id));
