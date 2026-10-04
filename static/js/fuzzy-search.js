@@ -155,11 +155,11 @@ class FuzzySearchComponent {
     handleFuzzy(query, bookmarks = null) {
         if (!query.trim()) return [];
 
-        const q = query.toLowerCase();
+        const q = this.fold(query);
 
         const scored = [];
         for (const bookmark of (bookmarks || this.bookmarks)) {
-            const name = (bookmark.name || '').toLowerCase();
+            const name = this.fold(bookmark.name);
             let score = this.scoreMatch(q, name);
             let meta = null;
             // Why this matched, not just how well. The score cannot be read
@@ -191,7 +191,7 @@ class FuzzySearchComponent {
                 // Secondary: tags (scores scaled to 50-250)
                 const tags = Array.isArray(bookmark.tags) ? bookmark.tags : [];
                 for (const tag of tags) {
-                    const tagScore = this.scoreMatch(q, tag.toLowerCase());
+                    const tagScore = this.scoreMatch(q, this.fold(tag));
                     if (tagScore > 0) {
                         score = Math.max(1, Math.floor(tagScore * 0.25));
                         meta = `#${tag}`;
@@ -203,7 +203,7 @@ class FuzzySearchComponent {
 
             if (score === 0) {
                 // Secondary: note substring (flat score of 40)
-                const note = (bookmark.note || '').toLowerCase();
+                const note = this.fold(bookmark.note);
                 if (note && note.includes(q)) {
                     score = 40;
                     group = 'elsewhere';
@@ -219,7 +219,7 @@ class FuzzySearchComponent {
                 // fetched for every bookmark and was searched by nothing, yet it
                 // often holds what you remember about a page whose title is
                 // unhelpful — "Untitled", "Dashboard", "Login".
-                const desc = (bookmark.previewDesc || '').toLowerCase();
+                const desc = this.fold(bookmark.previewDesc);
                 if (desc && desc.includes(q)) {
                     score = 25;
                     group = 'elsewhere';
@@ -272,10 +272,22 @@ class FuzzySearchComponent {
      * @param {string} query - The fuzzy search query
      * @returns {string} HTML string with highlighted match
      */
+    /**
+     * Lower case without accents, so "meteo" finds "Météo" and "Météo" finds
+     * "meteo". Precomposed letters keep their length, which the highlight
+     * relies on.
+     */
+    fold(value) {
+        return String(value || '').normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC').toLowerCase();
+    }
+
     highlightFuzzyMatch(name, query) {
         if (!query) return this._escHtml(name);
-        const lowerName = name.toLowerCase();
-        const lowerQuery = query.toLowerCase();
+        const folded = this.fold(name);
+        // Folded only when that keeps the positions: a decomposed name would
+        // shift every index after its first accent.
+        const lowerName = folded.length === name.length ? folded : name.toLowerCase();
+        const lowerQuery = folded.length === name.length ? this.fold(query) : query.toLowerCase();
 
         // Prefer highlighting from a word boundary
         const wordBoundaryIdx = lowerName.search(

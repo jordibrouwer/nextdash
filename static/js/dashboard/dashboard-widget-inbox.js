@@ -156,8 +156,10 @@
         if (!items) {
             body.replaceChildren();
             const waiting = document.createElement('p');
-            waiting.className = 'dashboard-widget-waiting';
-            waiting.textContent = label(dash, 'dashboard.widgetInboxWaiting', 'Loading…');
+            // A failed read: these tiles have no beat of their own, so
+            // "Loading…" here stayed until something redrew the grid.
+            waiting.className = 'dashboard-widget-empty';
+            waiting.textContent = label(dash, 'dashboard.widgetNoAnswer', 'nextDash did not answer.');
             body.appendChild(waiting);
             return;
         }

@@ -1,0 +1,51 @@
+{
+  "tag": "v1.17.1",
+  "date": "4 October 2026",
+  "releasedAt": "2026-10-04",
+  "modalLead": "Four themes for Unraid users, a widget you can move to another page from its menu, and a long round of fixes.",
+  "sections": [
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Unraid Black, Azure, Ember and Blaze</strong>, each in dark and light, after the Unraid webGUI."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Your own themes are safer.</strong> A failed read no longer wipes them, their order is kept, and a theme made in another tab shows up here."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Move to page…</strong> in a widget's right-click menu."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Calendar is more accurate</strong>: all-day events end at your midnight, cancelled events stay out, and the soonest events are kept."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The Bookmarks view shows containers.</strong> A bookmark that is a container's web UI gets a cube after its name — green running, amber paused, grey stopped — and a click opens that container."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Right-click menus are grouped</strong> with a line between open and share, edit, checking, select and delete."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Health, containers, backups, search and the inbox</strong> got dozens of fixes: lost settings, large backups, accented search, long inbox addresses and more."
+        }
+      ]
+    }
+  ]
+}

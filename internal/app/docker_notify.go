@@ -35,7 +35,11 @@ their own category.
 const (
 	dockerNotifyExpectWindow = 10 * time.Second // an own action ending this close before a die makes it deliberate
 	dockerNotifyStopWindow   = 5 * time.Minute  // a stop's kill this close before a die makes it deliberate: grace periods run long
-	dockerNotifyRestartGrace = 30 * time.Second // a start this soon after a die makes it a restart, not a stop
+	// A start this soon after a die makes it a restart, not a stop. Docker's
+	// restart backoff doubles from 100 ms up to one minute (moby's
+	// restartmanager), so the grace has to outlast that wait, or a crash loop
+	// past its tenth cycle is told as a stop and a start every minute.
+	dockerNotifyRestartGrace = 75 * time.Second
 	dockerNotifyLoopWindow   = 10 * time.Minute
 	dockerNotifyLoopCount    = 3
 	dockerNotifyTickEvery    = 5 * time.Second
@@ -53,6 +57,7 @@ type dockerEvent struct {
 
 type containerWatch struct {
 	lastKill   time.Time
+	stoppedAt  time.Time // the last stop event; a start does not clear it
 	oomAt      time.Time
 	dieAt      time.Time // a die not yet explained by a start
 	dieCode    string
@@ -98,6 +103,19 @@ func (n *containerNotifier) expectedUntil(name string) time.Time {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	return n.expected[name]
+}
+
+// stoppedSince reports whether someone stopped (or restarted) the container
+// after t, outside nextDash's own action window. A crash sends a die without a
+// stop, so it does not count.
+func (n *containerNotifier) stoppedSince(name string, t time.Time) bool {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	w := n.watch[name]
+	if w == nil || !w.stoppedAt.After(t) {
+		return false
+	}
+	return w.stoppedAt.After(n.expected[name])
 }
 
 // dockerStopSignal: a kill that ends the container -- the SIGTERM of a stop,
@@ -168,6 +186,18 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 	switch action := ev.Action; {
 	case action == "stop" || (action == "kill" && dockerStopSignal(ev.Actor.Attributes["signal"])):
 		w.lastKill = now
+		if action == "stop" {
+			w.stoppedAt = now
+			// Every stop ends with this event, after its die. A die it follows
+			// closely was the stop's, whatever signal the image stops with
+			// (STOPSIGNAL SIGINT exits 130, not a crash).
+			if !w.dieAt.IsZero() && now.Sub(w.dieAt) <= dockerNotifyExpectWindow {
+				if n.timeline != nil {
+					n.timeline.relabel(name, w.dieAt.UnixMilli(), "crash", "stop")
+				}
+				w.dieAt = time.Time{}
+			}
+		}
 	case action == "oom":
 		w.oomAt = now
 	case action == "die":

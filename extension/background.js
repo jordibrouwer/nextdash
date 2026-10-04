@@ -77,8 +77,7 @@ async function quickSaveBookmark(name, url) {
     return { ok: false, reason: 'bad_url' };
   }
 
-  const extras = await fetchBookmarkExtras(serverUrl, url);
-  const saveUrl = extras.url || url;
+  const saveUrl = (typeof BookmarkUrlUtils !== 'undefined' ? BookmarkUrlUtils.ensureHttpUrl(url) : ensureHttpUrl(url)) || url;
 
   const { lastSaveContext } = await chrome.storage.local.get('lastSaveContext');
 
@@ -106,6 +105,9 @@ async function quickSaveBookmark(name, url) {
       return { ok: false, reason: 'duplicate' };
     }
 
+    // After the duplicate check: the favicon upload stores a file only a
+    // saved bookmark refers to.
+    const extras = await fetchBookmarkExtras(serverUrl, saveUrl);
     const { icon, previewTitle, previewDesc, previewImage } = extras;
     const res = await postAddBookmark(serverUrl, pageId, name, saveUrl, category, '', [], {
       icon,

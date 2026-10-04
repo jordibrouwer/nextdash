@@ -52,6 +52,7 @@ func (h *Handlers) GetServerLog(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"entries": entries,
 		"nextSeq": nextSeq,
+		"epoch":   serverLog.Epoch(),
 		"dropped": dropped,
 		"stats": map[string]int{
 			"total": total,

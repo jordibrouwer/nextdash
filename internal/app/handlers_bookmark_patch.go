@@ -108,7 +108,20 @@ func mergeBookmarkFields(bookmark Bookmark, fields map[string]json.RawMessage) (
 	if strings.TrimSpace(next.Name) == "" {
 		next.Name = bookmark.Name
 	}
+	if canonicalBookmarkURLKey(next.URL) != canonicalBookmarkURLKey(bookmark.URL) {
+		resetURLBoundFields(&next)
+	}
 	return next, nil
+}
+
+// resetURLBoundFields clears what was learned about the old address: its last
+// check and error, and the drift baseline and finding. Kept, a drift-watched
+// bookmark compared its new address with the old one and reported "Now
+// redirects to <new host>" until Accept drift.
+func resetURLBoundFields(b *Bookmark) {
+	b.LastChecked, b.LastError, b.BrokenSince = 0, "", 0
+	b.DriftURL, b.DriftTitle, b.DriftFingerprint = "", "", ""
+	b.DriftNoticed, b.DriftSince, b.DriftReason = "", 0, ""
 }
 
 /*
@@ -319,8 +332,7 @@ func applyBookmarkPatch(bookmark *Bookmark, update bookmarkPatch) {
 		next := strings.TrimSpace(*update.SetURL)
 		if next != "" && next != bookmark.URL {
 			bookmark.URL = next
-			bookmark.LastChecked = 0
-			bookmark.LastError = ""
+			resetURLBoundFields(bookmark)
 		}
 	}
 }

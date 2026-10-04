@@ -46,8 +46,10 @@
         const feeds = await load(dash);
         if (!feeds) {
             const waiting = document.createElement('p');
-            waiting.className = 'dashboard-widget-waiting';
-            waiting.textContent = label(dash, 'dashboard.widgetFeedsWaiting', 'Loading…');
+            // A failed read: these tiles have no beat of their own, so
+            // "Loading…" here stayed until something redrew the grid.
+            waiting.className = 'dashboard-widget-empty';
+            waiting.textContent = label(dash, 'dashboard.widgetNoAnswer', 'nextDash did not answer.');
             wrap.appendChild(waiting);
             return;
         }

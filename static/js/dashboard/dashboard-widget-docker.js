@@ -101,7 +101,7 @@
 
         if (!docker || !docker.available) {
             u.say(panel, 'dashboard-widget-empty',
-                s.unavailableText(dash, docker?.reason || 'no-docker-socket'));
+                s.unavailableText(dash, !data ? 'no-answer' : docker?.reason || 'no-docker-socket'));
             return;
         }
 

@@ -322,6 +322,19 @@ class DashboardConfigSync {
                 await d.language.loadTranslations(d.settings.language);
             }
             d.applyVisualSettings();
+            // colors.json is in the settings fingerprint, so this may be a
+            // theme made or changed in another tab: its CSS block is not on
+            // the page (every colour gone), and this tab's colour document
+            // is stale -- its next save deleted the theme made elsewhere.
+            await window.VisualSettings?.reloadThemeCSS?.();
+            const cfg = d.config?.instance || d.config;
+            if (cfg && !cfg._lookStudio && !cfg._colorsSavePromise) {
+                cfg._colorsData = null;
+                cfg._themeList = null;
+                // Read again now: Follow system pairs halves by these ids.
+                void cfg.loadColorsData?.();
+            }
+            void window.ThemeLoader?.refreshSurfaceMeta?.();
             d.initializeAutoDarkMode();
             d.setupDOM();
             d.updateStatusMonitor();

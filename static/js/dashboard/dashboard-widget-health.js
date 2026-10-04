@@ -14,10 +14,10 @@
 
     /** What each figure means, and how to reach the rows behind it. */
     const FIGURES = [
-        { key: 'brokenCount', labelKey: 'dashboard.widgetHealthBroken', fallback: 'broken', filter: 'broken', tone: 'bad' },
-        { key: 'monitorDownCount', labelKey: 'dashboard.widgetHealthDown', fallback: 'down now', filter: 'monitored', tone: 'bad' },
-        { key: 'contentCount', labelKey: 'dashboard.widgetHealthContent', fallback: 'content', filter: 'content', tone: 'warn' },
-        { key: 'healthyCount', labelKey: 'dashboard.widgetHealthHealthy', fallback: 'healthy', filter: 'all', tone: 'good' },
+        { key: 'brokenCount', show: 'broken', labelKey: 'dashboard.widgetHealthBroken', fallback: 'broken', filter: 'broken', tone: 'bad' },
+        { key: 'monitorDownCount', show: 'down', labelKey: 'dashboard.widgetHealthDown', fallback: 'down now', filter: 'monitored', tone: 'bad' },
+        { key: 'contentCount', show: 'content', labelKey: 'dashboard.widgetHealthContent', fallback: 'content', filter: 'content', tone: 'warn' },
+        { key: 'healthyCount', show: 'healthy', labelKey: 'dashboard.widgetHealthHealthy', fallback: 'healthy', filter: 'all', tone: 'good' },
     ];
 
     function label(dash, key, fallback) {
@@ -73,7 +73,10 @@
             ? widget.config.show
             : null;
 
-        const shown = FIGURES.filter((figure) => !wanted || wanted.includes(figure.filter));
+        // By the names the settings store (broken, down, content, healthy).
+        // Matched on the rail filter instead, "down" and "healthy" never
+        // matched and ticking them showed nothing.
+        const shown = FIGURES.filter((figure) => !wanted || wanted.includes(figure.show));
         shown.forEach((figure, index) => {
             const count = Number(summary[figure.key]) || 0;
             // A figure of zero for a problem is good news and worth saying;

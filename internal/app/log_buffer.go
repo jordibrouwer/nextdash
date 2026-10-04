@@ -165,9 +165,20 @@ type serverLogSink struct {
 	// atomic rather than something that needs the mutex: paused means Write
 	// returns before touching the lock at all.
 	paused atomic.Bool
+	// epoch names this run of sequence numbers. A clear and a restart both
+	// begin a new one, and the viewer starts over when it changes: the
+	// numbers alone kept climbing past a clear and restarted at boot.
+	epoch string
 }
 
-var serverLog = &serverLogSink{}
+var serverLog = &serverLogSink{epoch: randomHex(4)}
+
+// Epoch is the current run of sequence numbers; see serverLogSink.epoch.
+func (s *serverLogSink) Epoch() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.epoch
+}
 
 // ServerLogPath is where the on-disk copy lives.
 func ServerLogPath() string {
@@ -691,6 +702,7 @@ func (s *serverLogSink) Clear() {
 	s.resetLocked()
 	s.dropped = 0
 	s.pending = nil
+	s.epoch = randomHex(4)
 	file := s.file
 	s.mu.Unlock()
 

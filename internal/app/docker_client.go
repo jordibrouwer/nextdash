@@ -254,12 +254,7 @@ type dockerInspect struct {
 		RW          bool   `json:"RW"`
 	} `json:"Mounts"`
 	NetworkSettings struct {
-		Networks map[string]struct {
-			IPAddress  string          `json:"IPAddress"`
-			Aliases    []string        `json:"Aliases"`
-			MacAddress string          `json:"MacAddress"`
-			IPAMConfig json.RawMessage `json:"IPAMConfig"`
-		} `json:"Networks"`
+		Networks map[string]dockerEndpoint `json:"Networks"`
 	} `json:"NetworkSettings"`
 
 	raw struct {
@@ -512,4 +507,14 @@ func splitImageTag(ref string) (string, string) {
 		return ref[:colon], ref[colon+1:]
 	}
 	return ref, "latest"
+}
+
+// dockerEndpoint is one network a container is on, as inspect reports it.
+type dockerEndpoint struct {
+	IPAddress  string            `json:"IPAddress"`
+	Aliases    []string          `json:"Aliases"`
+	Links      []string          `json:"Links"`
+	DriverOpts map[string]string `json:"DriverOpts"`
+	MacAddress string            `json:"MacAddress"`
+	IPAMConfig json.RawMessage   `json:"IPAMConfig"`
 }

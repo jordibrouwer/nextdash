@@ -103,9 +103,8 @@ func (h *Handlers) SetAllCheckModes(w http.ResponseWriter, r *http.Request) {
 
 		err := h.store.MutateBookmarksOnPage(page.ID, func(current []Bookmark) ([]Bookmark, error) {
 			for i := range current {
-				current[i].Monitor = false
-				current[i].CheckStatus = false
-				current[i].MonitorIntervalMinutes = 0
+				// The same switch as one bookmark's, so drift baselines go too.
+				applyCheckMode(&current[i], checkModeOff, 0)
 			}
 			return current, nil
 		})

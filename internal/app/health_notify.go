@@ -207,6 +207,12 @@ func (h *Handlers) pendingMonitorNotificationsAlerted(transitions []monitorTrans
 		// nightly window made the first good check after it send "back online"
 		// with no "down" before it, every night.
 		prior := withoutMaintenanceSamples(history[t.key])
+		// A long retest announces its samples at the end; an "up" taken before
+		// the latest stored sample is old news, and would say "back online"
+		// during an outage that started after it.
+		if n := len(prior); t.up && n > 0 && t.at <= prior[n-1].T {
+			continue
+		}
 		priorFailures := trailingFailures(prior)
 		prevUp, hadState := lastSampleUp(prior)
 
@@ -235,9 +241,10 @@ func (h *Handlers) pendingMonitorNotificationsAlerted(transitions []monitorTrans
 		}
 
 		// Recovery: only meaningful if the outage actually alerted, so a blip never
-		// produces a lone "back online". Older histories predate the flag, so a
-		// sufficiently long outage still counts as alerted.
-		if hadState && !prevUp && (currentOutageAlerted(prior) || priorFailures >= threshold) {
+		// produces a lone "back online". Not "enough failures were recorded":
+		// a manual re-check or retest records failures without alerting, and
+		// the outage nobody was told about then ended in a "back online".
+		if hadState && !prevUp && currentOutageAlerted(prior) {
 			// How long it was down, from the same history the failure count above
 			// was read from: the first sample of the trailing failure run is where
 			// the outage began.

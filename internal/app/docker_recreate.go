@@ -34,6 +34,10 @@ type dockerRecreateResult struct {
 	OldImageID  string `json:"oldImageId"`
 	NewImageID  string `json:"newImageId"`
 	ContainerID string `json:"containerId"`
+	// WasRunning is whether the container ran when the recreate looked at it,
+	// and so whether the new one was started: the auto-update watches only
+	// that one, and a list taken an hour earlier cannot say.
+	WasRunning bool `json:"-"`
 }
 
 // Network modes that are not a network: a container on the host's stack, on
@@ -135,11 +139,26 @@ func dockerKeepAnonymousVolumes(in dockerInspect, hostConfig map[string]any) {
 			}
 		}
 	}
+	// An anonymous volume the client listed in HostConfig.Mounts -- compose's
+	// `volumes: [/data]`, or --mount type=volume,dst=/data -- has no source
+	// there; only the container's own mounts name it. Sent back without one,
+	// Docker makes a new, empty volume.
+	named := map[string]string{}
+	for _, m := range in.Mounts {
+		if m.Type == "volume" && m.Name != "" {
+			named[m.Destination] = m.Name
+		}
+	}
 	mounts, _ := hostConfig["Mounts"].([]any)
 	for _, m := range mounts {
 		if mm, ok := m.(map[string]any); ok {
 			if target, ok := mm["Target"].(string); ok {
 				covered[target] = true
+				typ, _ := mm["Type"].(string)
+				src, _ := mm["Source"].(string)
+				if typ == "volume" && src == "" && named[target] != "" {
+					mm["Source"] = named[target]
+				}
 			}
 		}
 	}
@@ -174,6 +193,7 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 	name := c.name()
 	// Running covers paused as well; either way the reader expects it back up.
 	wasRunning := in.State.Running
+	res.WasRunning = wasRunning
 	if wasRunning {
 		if err := api.post(ctx, "/containers/"+c.ID+"/stop", nil); err != nil {
 			res.FailedStep = "stop"
@@ -225,7 +245,7 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 	joinable := dockerNetworkModeIsNetwork(mode)
 	if n, ok := networks[mode]; ok && joinable {
 		body["NetworkingConfig"] = map[string]any{"EndpointsConfig": map[string]any{
-			mode: dockerEndpointConfig(n.Aliases, n.IPAMConfig, n.MacAddress, c.ID),
+			mode: dockerEndpointConfig(n, c.ID),
 		}}
 	}
 
@@ -241,7 +261,7 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 			}
 			payload := map[string]any{
 				"Container":      newID,
-				"EndpointConfig": dockerEndpointConfig(n.Aliases, n.IPAMConfig, n.MacAddress, c.ID),
+				"EndpointConfig": dockerEndpointConfig(n, c.ID),
 			}
 			if err := api.post(ctx, "/networks/"+url.PathEscape(netName)+"/connect", payload); err != nil {
 				res.FailedStep = "connect"
@@ -330,23 +350,30 @@ func dropImageDefaults(config, image map[string]any) {
 	}
 }
 
-// dockerEndpointConfig carries a network's aliases, fixed address and MAC over
-// to the new container. Docker adds the short id to the aliases on its own;
-// the old one is dropped so the new container does not answer to it.
-func dockerEndpointConfig(aliases []string, ipam json.RawMessage, mac, oldID string) map[string]any {
+// dockerEndpointConfig carries a network's aliases, links, driver options,
+// fixed address and MAC over to the new container. Docker adds the short id
+// to the aliases on its own; the old one is dropped so the new container does
+// not answer to it.
+func dockerEndpointConfig(n dockerEndpoint, oldID string) map[string]any {
 	kept := []string{}
-	for _, alias := range aliases {
+	for _, alias := range n.Aliases {
 		if len(oldID) >= 12 && alias == oldID[:12] {
 			continue
 		}
 		kept = append(kept, alias)
 	}
 	out := map[string]any{"Aliases": kept}
-	if len(ipam) > 0 && string(ipam) != "null" {
-		out["IPAMConfig"] = ipam
+	if len(n.Links) > 0 {
+		out["Links"] = n.Links
 	}
-	if mac != "" {
-		out["MacAddress"] = mac
+	if len(n.DriverOpts) > 0 {
+		out["DriverOpts"] = n.DriverOpts
+	}
+	if len(n.IPAMConfig) > 0 && string(n.IPAMConfig) != "null" {
+		out["IPAMConfig"] = n.IPAMConfig
+	}
+	if n.MacAddress != "" {
+		out["MacAddress"] = n.MacAddress
 	}
 	return out
 }

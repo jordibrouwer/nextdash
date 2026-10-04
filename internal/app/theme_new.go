@@ -44,6 +44,10 @@ var themeNewFamilies = map[string]bool{
 	"iron-gall":          true,
 	"squid-ink":          true,
 	"vermilion-seal":     true,
+	"unraid-black":       true,
+	"unraid-azure":       true,
+	"unraid-ember":       true,
+	"unraid-blaze":       true,
 }
 
 // themeIsNew reports whether a theme belongs to the latest collection.

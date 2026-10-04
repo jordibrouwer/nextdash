@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func extractPageIDFromCategoriesFilename(filename string) (int, bool) {
@@ -596,6 +597,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	extendBackupDeadlines(w, true)
 
 	// Ensure base data directory exists before writing imported files.
 	dataDir := ResolveDataDir()
@@ -1039,6 +1041,7 @@ func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	extendBackupDeadlines(w, false)
 
 	data, err := h.buildBackupZip()
 	if err != nil {
@@ -1053,4 +1056,17 @@ func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 
 	// Write the zip content to response
 	w.Write(data)
+}
+
+// backupTransferTimeout is how long a backup may take to cross the wire. The
+// server's own 30 s read and 60 s write limits are sized for API calls: a
+// 120 MB backup over a 20 Mbit/s VPN was cut off half way.
+const backupTransferTimeout = 15 * time.Minute
+
+func extendBackupDeadlines(w http.ResponseWriter, read bool) {
+	rc := http.NewResponseController(w)
+	if read {
+		_ = rc.SetReadDeadline(time.Now().Add(backupTransferTimeout))
+	}
+	_ = rc.SetWriteDeadline(time.Now().Add(backupTransferTimeout))
 }

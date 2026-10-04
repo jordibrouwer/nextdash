@@ -34,6 +34,9 @@ const (
 	// softControlTTL is how long a host's behaviour is trusted. Servers change
 	// their 404 handling when they are rebuilt, which is not a daily event.
 	softControlTTL = 24 * time.Hour
+	// softControlRetry is how long a probe that got no answer is remembered.
+	// That says nothing about the host's 404s, only that this attempt failed.
+	softControlRetry = 10 * time.Minute
 	// softControlTimeout bounds the extra request. It is a courtesy check on
 	// somebody else's server, so it gives up quickly.
 	softControlTimeout = 8 * time.Second
@@ -55,6 +58,9 @@ type softControlVerdict struct {
 	// its own address, which is the ordinary not-found template.
 	Landing   string
 	CheckedAt time.Time
+	// Unanswered marks a probe that got no HTTP answer at all; it is kept for
+	// softControlRetry rather than a day.
+	Unanswered bool
 }
 
 var softControlCache = struct {
@@ -87,10 +93,13 @@ func softControlProbeURL(target string) string {
 hostSoftNotFound reports whether this host answers 200 to anything.
 
 Cached per host: the question is about the server's behaviour, so asking it once
-covers every bookmark on that site. A failure to reach the probe is remembered
-as "behaves normally" rather than retried on the next bookmark -- a host that is
-down will fail the real check anyway, and hammering it with probes while it is
-struggling is the opposite of polite.
+covers every bookmark on that site. A probe that got no answer is remembered
+as "behaves normally" for ten minutes, not a day: it is not retried on the next
+bookmark -- hammering a struggling host is the opposite of polite -- but a
+timeout says nothing about how the host treats a missing page.
+
+The probe gets its own deadline. The check's context may have little left
+after a slow page, and that leftover is our budget, not the host's behaviour.
 */
 func (h *Handlers) hostSoftNotFound(ctx context.Context, target string) softControlVerdict {
 	parsed, err := neturl.Parse(strings.TrimSpace(target))
@@ -102,7 +111,11 @@ func (h *Handlers) hostSoftNotFound(ctx context.Context, target string) softCont
 	softControlCache.Lock()
 	cached, ok := softControlCache.hosts[host]
 	softControlCache.Unlock()
-	if ok && time.Since(cached.CheckedAt) < softControlTTL {
+	ttl := softControlTTL
+	if cached.Unanswered {
+		ttl = softControlRetry
+	}
+	if ok && time.Since(cached.CheckedAt) < ttl {
 		return cached
 	}
 
@@ -112,20 +125,27 @@ func (h *Handlers) hostSoftNotFound(ctx context.Context, target string) softCont
 		return verdict
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, probe, nil)
-	if err == nil {
-		req.Header.Set("User-Agent", updateCheckUserAgent)
-		client := h.outboundHTTPClient(softControlTimeout, 3)
-		if resp, err := client.Do(req); err == nil {
-			body, _ := io.ReadAll(io.LimitReader(resp.Body, softControlMaxBytes))
-			resp.Body.Close()
-			if resp.StatusCode == http.StatusOK {
-				verdict.SoftNotFound = true
-				verdict.Length = readableTextLength(string(body))
-				if landing := softControlAddress(finalRequestURL(resp)); landing != "" && landing != softControlAddress(probe) {
-					verdict.Landing = landing
-				}
-			}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), softControlTimeout)
+	defer cancel()
+	client := h.outboundHTTPClient(softControlTimeout, 3)
+	status, length, final, answered := fetchSoftControl(ctx, client, probe)
+	verdict.Unanswered = !answered
+	if answered && status == http.StatusOK {
+		verdict.SoftNotFound = true
+		verdict.Length = length
+		if landing := softControlAddress(final); landing != "" && landing != softControlAddress(probe) {
+			verdict.Landing = landing
+		}
+	}
+	// A single-page app serves its one shell document for every path, the
+	// front page included, so its "not-found page" is the app itself and every
+	// page compares equal to it. When the front page is that same document,
+	// the probe proves nothing about any page on this host.
+	if verdict.SoftNotFound && verdict.Landing == "" {
+		root := *parsed
+		root.Path, root.RawPath, root.RawQuery, root.Fragment = "/", "", "", ""
+		if status, length, _, ok := fetchSoftControl(ctx, client, root.String()); ok && status == http.StatusOK && softLengthsClose(length, verdict.Length) {
+			verdict.SoftNotFound = false
 		}
 	}
 
@@ -178,11 +198,41 @@ func softNotFoundByComparison(verdict softControlVerdict, pageLength int, pageFi
 	if pageLength > 4000 {
 		return false
 	}
-	diff := pageLength - verdict.Length
+	// The front page cannot be a missing page.
+	if u, err := neturl.Parse(strings.TrimSpace(pageFinalURL)); err == nil && strings.Trim(u.Path, "/") == "" {
+		return false
+	}
+	return softLengthsClose(pageLength, verdict.Length)
+}
+
+// softLengthsClose reports whether a page's readable length is within a fifth
+// of the host's not-found page.
+func softLengthsClose(pageLength, notFoundLength int) bool {
+	if pageLength <= 0 || notFoundLength <= 0 {
+		return false
+	}
+	diff := pageLength - notFoundLength
 	if diff < 0 {
 		diff = -diff
 	}
-	return diff*5 <= verdict.Length
+	return diff*5 <= notFoundLength
+}
+
+// fetchSoftControl asks one address for the soft-404 test and returns its
+// status, readable length and the address it ended on.
+func fetchSoftControl(ctx context.Context, client *http.Client, target string) (int, int, string, bool) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return 0, 0, "", false
+	}
+	req.Header.Set("User-Agent", updateCheckUserAgent)
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, 0, "", false
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, softControlMaxBytes))
+	return resp.StatusCode, readableTextLength(string(body)), finalRequestURL(resp), true
 }
 
 // softControlAddress reduces a URL to what identifies the page it landed on:

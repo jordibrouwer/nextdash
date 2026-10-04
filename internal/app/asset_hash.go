@@ -173,6 +173,9 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-config-inbox.js",
 	"js/dashboard/dashboard-config-context-menu.js",
 	"js/dashboard/dashboard-config-stats.js",
+	// Loaded by ensureStatsRenderers, outside SECTION_MODULES: unhashed, a
+	// browser kept the old copy for a day after an update.
+	"js/dashboard/dashboard-config-stats-figures.js",
 	"js/dashboard/dashboard-config-bookmarks.js",
 	"js/dashboard/dashboard-config-bookmarks-workbench.js",
 	"js/dashboard/dashboard-config-bookmarks-health.js",

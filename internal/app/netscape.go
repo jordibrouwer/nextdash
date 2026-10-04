@@ -127,8 +127,16 @@ func ParseNetscapeBookmarks(r io.Reader) ([]NetscapeBookmark, error) {
 	// <DL> of a folder — becomes its child. So the walk carries the folder name
 	// down rather than looking for a sibling <DL>.
 	var walk func(n *html.Node, folder string)
+	// A folder's description: <DT><H3>…</H3><DD>text<DL>…. A <DD> closes the
+	// <DT>, so the folder's list lands inside the <DD>, a sibling; walked as
+	// one, its bookmarks were filed under the parent folder. Such a <DD> is
+	// walked with the folder and then skipped.
+	folderDD := map[*html.Node]bool{}
 	walk = func(n *html.Node, folder string) {
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			if folderDD[c] {
+				continue
+			}
 			switch {
 			case isElement(c, "dt"):
 				// A folder heading and a link are mutually exclusive: <H3> names
@@ -149,6 +157,10 @@ func ParseNetscapeBookmarks(r io.Reader) ([]NetscapeBookmark, error) {
 						name = folder
 					}
 					walk(c, name)
+					if dd := nextElementSibling(c); dd != nil && isElement(dd, "dd") {
+						folderDD[dd] = true
+						walk(dd, name)
+					}
 					continue
 				}
 
@@ -269,4 +281,14 @@ func WriteNetscapeBookmarks(w io.Writer, groups []NetscapeFolder) error {
 type NetscapeFolder struct {
 	Name      string
 	Bookmarks []NetscapeBookmark
+}
+
+// nextElementSibling is the next sibling that is an element, skipping text.
+func nextElementSibling(n *html.Node) *html.Node {
+	for s := n.NextSibling; s != nil; s = s.NextSibling {
+		if s.Type == html.ElementNode {
+			return s
+		}
+	}
+	return nil
 }

@@ -1625,11 +1625,13 @@ class DashboardPageNav {
     }
 
 
+    // The bookmark's own row, not its copy in a smart collection: those come
+    // first in the DOM and carry the same index and address.
     findBookmarkRowForDeepLink(link) {
         if (!link) return null;
         if (link.bookmarkIndex != null && link.bookmarkIndex >= 0) {
             const byIndex = document.querySelector(
-                `.bookmark-link[data-bookmark-index="${link.bookmarkIndex}"]`
+                `.category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-index="${link.bookmarkIndex}"]`
             );
             if (byIndex) return byIndex;
         }
@@ -1638,7 +1640,7 @@ class DashboardPageNav {
         const canonical = typeof BookmarkUrlUtils !== 'undefined'
             ? BookmarkUrlUtils.canonicalBookmarkURLKey(targetUrl)
             : targetUrl.toLowerCase();
-        const rows = document.querySelectorAll('.bookmark-link[data-bookmark-url]');
+        const rows = document.querySelectorAll('.category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url]');
         for (const row of rows) {
             const rowUrl = String(row.getAttribute('data-bookmark-url') || '').trim();
             if (!rowUrl) continue;

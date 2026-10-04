@@ -87,6 +87,9 @@ class DashboardSmartCollections {
         });
 
         d._categoryListsCache = null;
+        // The replacements are new elements: without this they have no row span
+        // and no observer, and overlap the category below in packed columns.
+        window.DashboardPackedMasonry?.observe(container);
         d.syncBookmarkGridA11y();
         d.keyboardNavigation?.scheduleUpdate?.();
     }

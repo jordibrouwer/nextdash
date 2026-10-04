@@ -1,7 +1,8 @@
 // nextDash Bookmark Saver Extension
 
 let confirmationCallback = null;
-let extDraftState = { icon: '', previewTitle: '', previewDesc: '', previewImage: '' };
+// iconSource: the favicon's own address, stored as an icon only on save.
+let extDraftState = { icon: '', iconSource: '', previewTitle: '', previewDesc: '', previewImage: '' };
 // Set once the "already saved elsewhere" message has been shown, so pressing
 // save again means "yes, a second copy". Cleared on a successful save and
 // whenever the popup's draft is reset.
@@ -17,7 +18,7 @@ function getExtDraftBookmark() {
         url: document.getElementById('bookmark-url')?.value || '',
         shortcut: document.getElementById('bookmark-shortcut')?.value || '',
         note: document.getElementById('bookmark-note')?.value || '',
-        icon: extDraftState.icon || '',
+        icon: extDraftState.icon || extDraftState.iconSource || '',
         pinned: false,
         checkStatus: false,
         previewTitle: extDraftState.previewTitle || '',
@@ -107,8 +108,10 @@ async function autoFetchExtensionUrlMeta() {
     updateUrlGuard(normalized);
 
     try {
-        const extras = await fetchBookmarkExtras(extServerUrl, normalized);
-        if (extras.icon) extDraftState.icon = extras.icon;
+        // Not stored yet: an icon file uploaded here was left behind by every
+        // popup that closed without saving.
+        const extras = await fetchBookmarkExtras(extServerUrl, normalized, { uploadIcon: false });
+        extDraftState.iconSource = extras.iconSource || '';
         if (extras.previewTitle) extDraftState.previewTitle = extras.previewTitle;
         if (extras.previewDesc) extDraftState.previewDesc = extras.previewDesc;
         if (extras.previewImage) extDraftState.previewImage = extras.previewImage;
@@ -418,7 +421,7 @@ async function loadSaveTab() {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         document.getElementById('bookmark-name').value = tab.title || '';
         document.getElementById('bookmark-url').value = tab.url || '';
-        extDraftState = { icon: '', previewTitle: '', previewDesc: '', previewImage: '' };
+        extDraftState = { icon: '', iconSource: '', previewTitle: '', previewDesc: '', previewImage: '' };
         extDuplicateAcknowledged = false;
         updateUrlGuard(tab.url || '');
         await loadPages();
@@ -764,6 +767,10 @@ async function showSaveSuccess(serverUrl, pageId, bookmarkName) {
 
 async function performSave(serverUrl, pageId, name, url, category, note, tags, shortcut = '') {
     try {
+        // The favicon is stored now, for the bookmark that refers to it.
+        if (!extDraftState.icon && extDraftState.iconSource && typeof BookmarkPreviewService !== 'undefined') {
+            extDraftState.icon = await BookmarkPreviewService.uploadIconFromUrl(extDraftState.iconSource, serverUrl);
+        }
         const extras = {
             icon: extDraftState.icon || undefined,
             previewTitle: extDraftState.previewTitle || undefined,

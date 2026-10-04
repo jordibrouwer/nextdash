@@ -1,6 +1,9 @@
 package app
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
 
 // softNotFoundEnabled reads the setting. Off leaves every check exactly as it
 // was, body read included.
@@ -23,8 +26,9 @@ func softNotFoundEnabled(s Settings) bool {
 // halfway down the page.
 
 // softNotFoundTitlePhrases are matched against the page title, lowercased.
+// "404" is matched as a number of its own instead (soft404Number), or issue
+// #14042 and a DS1404 would read as missing pages.
 var softNotFoundTitlePhrases = []string{
-	"404",
 	"not found",
 	"page not found",
 	"page doesn't exist",
@@ -65,6 +69,9 @@ var softNotFoundBodyPhrases = []string{
 // passing usually does not.
 const softNotFoundBodyWindow = 1200
 
+// soft404Number is 404 standing on its own in a title, not part of a longer number.
+var soft404Number = regexp.MustCompile(`(^|[^0-9])404([^0-9]|$)`)
+
 // softNotFoundReason returns the sentence to record, or "" when the page looks
 // like a page. Title and body are as fetched; both are matched lowercased.
 func softNotFoundReason(title, body string) string {
@@ -73,6 +80,9 @@ func softNotFoundReason(title, body string) string {
 		if lowerTitle != "" && strings.Contains(lowerTitle, phrase) {
 			return "Page says it does not exist"
 		}
+	}
+	if soft404Number.MatchString(lowerTitle) {
+		return "Page says it does not exist"
 	}
 
 	opening := body

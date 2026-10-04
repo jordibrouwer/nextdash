@@ -958,6 +958,10 @@ type Settings struct {
 	// still run and samples are still recorded — the heartbeat stays honest — but
 	// failures inside a window raise no alert and do not count against uptime.
 	MaintenanceWindows []MaintenanceWindow `json:"maintenanceWindows,omitempty"`
+	// MaintenanceTimeZone is the zone the windows were typed in (the browser's,
+	// an IANA name). A container runs on UTC unless TZ is set, and the windows
+	// were read on that clock: hours off for anyone else. Empty: server time.
+	MaintenanceTimeZone string `json:"maintenanceTimeZone,omitempty"`
 	// The push booleans deliberately omit "omitempty": with it, a false value is
 	// dropped from the JSON entirely and the config checkbox reads `undefined`
 	// instead of unchecked, so turning a toggle off would not survive a reload.
@@ -1210,6 +1214,9 @@ type ColorTheme struct {
 	Dark    ThemeColors            `json:"dark"`
 	BuiltIn map[string]ThemeColors `json:"builtIn"`
 	Custom  map[string]ThemeColors `json:"custom"` // Custom themes with dynamic keys
+	// CustomOrder is the order the reader put Custom in. A Go map is written
+	// with its keys sorted, so ↑/↓ in Custom themes lasted until a reload.
+	CustomOrder []string `json:"customOrder,omitempty"`
 }
 
 type ThemeColors struct {
@@ -5036,6 +5043,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ArchiveSaveAccessKey = normalizeMonitorNotifyCredential(settings.ArchiveSaveAccessKey)
 	settings.ArchiveSaveSecret = normalizeMonitorNotifyCredential(settings.ArchiveSaveSecret)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
+	settings.MaintenanceTimeZone = normalizeMaintenanceTimeZone(settings.MaintenanceTimeZone)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 	// Read as the view reads it: a setting the file never had is its default.
 	clampBookmarkViewSettings(&settings)
@@ -5746,6 +5754,18 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		// Squid Ink: black with a blue-green sheen
 		"squid-ink-dark":  {Name: "Squid Ink [dark]", TextPrimary: "#EAF0F4", TextSecondary: "#AEBCC6", TextTertiary: "#86969F", BackgroundPrimary: "#050709", BackgroundSecondary: "#0A0E12", BackgroundDots: "#11181E", BackgroundModal: "rgba(5, 7, 9, 0.9)", BorderPrimary: "#1C2832", BorderSecondary: "#141D25", AccentPrimary: "#4AA3B8", AccentSuccess: "#7FCFA4", AccentWarning: "#E8C272", AccentError: "#F08484", AccentInfo: "#A89CF0", RadiusScale: 0.2, LabelSpacing: "0.08em", LabelWeight: 800, Character: "ink"},
 		"squid-ink-light": {Name: "Squid Ink [light]", TextPrimary: "#0A1216", TextSecondary: "#34444C", TextTertiary: "#4F5F68", BackgroundPrimary: "#F6F8F9", BackgroundSecondary: "#ECF0F2", BackgroundDots: "#DCE3E7", BackgroundModal: "rgba(246, 248, 249, 0.92)", BorderPrimary: "#C6D1D7", BorderSecondary: "#E2E8EB", AccentPrimary: "#0F6278", AccentSuccess: "#1E6A48", AccentWarning: "#7E5400", AccentError: "#A83232", AccentInfo: "#4A40A8", RadiusScale: 0.2, LabelSpacing: "0.08em", LabelWeight: 800, Character: "ink"},
+		// Unraid Black: the webGUI's black theme, flat panels and the orange of the logo
+		"unraid-black-dark":  {Name: "Unraid Black [dark]", TextPrimary: "#F2F2F2", TextSecondary: "#C4C2C0", TextTertiary: "#928F8C", BackgroundPrimary: "#1C1B1B", BackgroundSecondary: "#262524", BackgroundDots: "#302F2D", BackgroundModal: "rgba(28, 27, 27, 0.92)", BorderPrimary: "#3A3836", BorderSecondary: "#2D2B2A", AccentPrimary: "#FF8C2F", AccentSuccess: "#6FBF73", AccentWarning: "#F2C14E", AccentError: "#E8514A", AccentInfo: "#6FA8DC", RadiusScale: 0.15, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "flat", Glow: "off", Effects: "off"},
+		"unraid-black-light": {Name: "Unraid Black [light]", TextPrimary: "#1C1B1B", TextSecondary: "#4A4745", TextTertiary: "#6B6866", BackgroundPrimary: "#F2F2F2", BackgroundSecondary: "#FFFFFF", BackgroundDots: "#E2E0DE", BackgroundModal: "rgba(242, 242, 242, 0.94)", BorderPrimary: "#CFCCC9", BorderSecondary: "#E2E0DE", AccentPrimary: "#B84F00", AccentSuccess: "#2E7D32", AccentWarning: "#8A5A00", AccentError: "#C62828", AccentInfo: "#1F5FA8", RadiusScale: 0.15, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "flat", Glow: "off", Effects: "off"},
+		// Unraid Azure: the webGUI's azure theme, cool grey panels and its steel blue
+		"unraid-azure-dark":  {Name: "Unraid Azure [dark]", TextPrimary: "#E8EDF2", TextSecondary: "#B4BFCA", TextTertiary: "#8795A3", BackgroundPrimary: "#171B20", BackgroundSecondary: "#1F252C", BackgroundDots: "#29313A", BackgroundModal: "rgba(23, 27, 32, 0.92)", BorderPrimary: "#323C47", BorderSecondary: "#262E37", AccentPrimary: "#7FA2DE", AccentSuccess: "#6FBF8E", AccentWarning: "#E3B65A", AccentError: "#EA6B6B", AccentInfo: "#9C8FE6", RadiusScale: 0.15, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "flat", Glow: "off", Effects: "off"},
+		"unraid-azure-light": {Name: "Unraid Azure [light]", TextPrimary: "#1B2229", TextSecondary: "#44505C", TextTertiary: "#677482", BackgroundPrimary: "#EBEFF2", BackgroundSecondary: "#FFFFFF", BackgroundDots: "#D9E0E6", BackgroundModal: "rgba(235, 239, 242, 0.94)", BorderPrimary: "#C3CCD5", BorderSecondary: "#DCE2E8", AccentPrimary: "#2F57A8", AccentSuccess: "#2A7A4F", AccentWarning: "#8A5A00", AccentError: "#B83232", AccentInfo: "#5A47B0", RadiusScale: 0.15, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "flat", Glow: "off", Effects: "off"},
+		// Unraid Ember: the logo's orange glowing out of black glass
+		"unraid-ember-dark":  {Name: "Unraid Ember [dark]", TextPrimary: "#FFF1E8", TextSecondary: "#E2BCA5", TextTertiary: "#B08D78", BackgroundPrimary: "#0D0706", BackgroundSecondary: "#190E0B", BackgroundDots: "#26140F", BackgroundModal: "rgba(13, 7, 6, 0.9)", BorderPrimary: "#472312", BorderSecondary: "#2F1810", AccentPrimary: "#FF8C2F", AccentSuccess: "#7BD88F", AccentWarning: "#FFC24A", AccentError: "#FF5A4D", AccentInfo: "#7FB4FF", SurfaceAlpha: 0.55, SurfaceBlur: 24, SurfaceGlow: 1, RadiusScale: 1.2, Sheen: 0.9, LabelWeight: 700, LabelSpacing: "0.06em", Character: "neon"},
+		"unraid-ember-light": {Name: "Unraid Ember [light]", TextPrimary: "#2A110A", TextSecondary: "#5C3326", TextTertiary: "#7A4D3C", BackgroundPrimary: "#FFF6EE", BackgroundSecondary: "#FFEADB", BackgroundDots: "#F7D9C4", BackgroundModal: "rgba(255, 246, 238, 0.92)", BorderPrimary: "#EBC4A8", BorderSecondary: "#F3D8C4", AccentPrimary: "#C24A00", AccentSuccess: "#1F7A3D", AccentWarning: "#8A5200", AccentError: "#B3261E", AccentInfo: "#1F5FA8", SurfaceAlpha: 0.62, SurfaceBlur: 18, SurfaceGlow: 0.6, RadiusScale: 1.2, Sheen: 0.7, LabelWeight: 700, LabelSpacing: "0.06em", Character: "neon"},
+		// Unraid Blaze: the logo's red end, hard-edged lacquer on deep crimson
+		"unraid-blaze-dark":  {Name: "Unraid Blaze [dark]", TextPrimary: "#FFF0F0", TextSecondary: "#E6BABA", TextTertiary: "#B38888", BackgroundPrimary: "#14070A", BackgroundSecondary: "#200B10", BackgroundDots: "#2E1118", BackgroundModal: "rgba(20, 7, 10, 0.9)", BorderPrimary: "#4F1A26", BorderSecondary: "#37131B", AccentPrimary: "#FF3B3B", AccentSuccess: "#6FD39B", AccentWarning: "#FFB84D", AccentError: "#FF7A8A", AccentInfo: "#8FB8FF", SurfaceAlpha: 0.6, SurfaceBlur: 16, SurfaceGlow: 0.8, RadiusScale: 0.5, Sheen: 1, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Character: "lacquer"},
+		"unraid-blaze-light": {Name: "Unraid Blaze [light]", TextPrimary: "#2B0A0C", TextSecondary: "#5E2A2D", TextTertiary: "#7C4A4C", BackgroundPrimary: "#FFF4F2", BackgroundSecondary: "#FFE6E2", BackgroundDots: "#F7CFC9", BackgroundModal: "rgba(255, 244, 242, 0.92)", BorderPrimary: "#E8B4AC", BorderSecondary: "#F2CFC9", AccentPrimary: "#C41E1E", AccentSuccess: "#1F7A4A", AccentWarning: "#8A5200", AccentError: "#8F1030", AccentInfo: "#1F5FA8", SurfaceAlpha: 0.7, SurfaceBlur: 14, SurfaceGlow: 0.4, RadiusScale: 0.5, Sheen: 0.8, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Character: "lacquer"},
 		// Vermilion Seal: sumi black, one hanko red
 		"vermilion-seal-dark":  {Name: "Vermilion Seal [dark]", TextPrimary: "#F4F1EC", TextSecondary: "#C4BDB2", TextTertiary: "#9C958A", BackgroundPrimary: "#0B0A09", BackgroundSecondary: "#141210", BackgroundDots: "#1E1B18", BackgroundModal: "rgba(11, 10, 9, 0.9)", BorderPrimary: "#302C27", BorderSecondary: "#23201C", AccentPrimary: "#E8503A", AccentSuccess: "#8FCB9A", AccentWarning: "#E6C06E", AccentError: "#FF8FA0", AccentInfo: "#9AB4E6", RadiusScale: 0.1, LabelTransform: "none", LabelSpacing: "0.02em", LabelWeight: 700, Character: "ink"},
 		"vermilion-seal-light": {Name: "Vermilion Seal [light]", TextPrimary: "#171411", TextSecondary: "#46403A", TextTertiary: "#615A52", BackgroundPrimary: "#FBFAF7", BackgroundSecondary: "#F2F0EB", BackgroundDots: "#E5E1D8", BackgroundModal: "rgba(251, 250, 247, 0.92)", BorderPrimary: "#D2CCC0", BorderSecondary: "#EAE6DE", AccentPrimary: "#B8260F", AccentSuccess: "#2A6A3C", AccentWarning: "#7E5200", AccentError: "#9A1E48", AccentInfo: "#34549E", RadiusScale: 0.1, LabelTransform: "none", LabelSpacing: "0.02em", LabelWeight: 700, Character: "ink"},
@@ -6480,6 +6500,8 @@ func (fs *FileStore) GetDataRevision() string {
 		}
 		for _, bm := range page.Bookmarks {
 			hash.Write([]byte(bookmarkContentFingerprint(bm)))
+			hash.Write([]byte("\x01"))
+			hash.Write([]byte(bookmarkSettingsFingerprint(bm)))
 			hash.Write([]byte("\x02"))
 		}
 		hash.Write([]byte(";"))

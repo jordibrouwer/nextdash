@@ -12,7 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
-| 🎨 | **320 themes, one look studio** | 160 theme families in light and dark, twelve characters, 26 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16 Appearance](#16-appearance) and [the theme browser](#the-theme-browser) |
+| 🎨 | **328 themes, one look studio** | 164 theme families in light and dark, twelve characters, 26 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16 Appearance](#16-appearance) and [the theme browser](#the-theme-browser) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 
 This manual describes nextDash as it is now. It follows the same topics as Config → Help and goes into more detail. What changed in which release is in the [changelog](CHANGELOG.md).
@@ -69,7 +69,7 @@ This guide shows how the pieces fit together. Each part links to the chapter wit
 |---|---|
 | *Is everything running?* | The **Containers view** (`Shift + Y`): every container with a status glow, CPU, RAM, healthcheck, restarts and an orange **↑** for an update waiting ([§14](#14-containers)) |
 | *Can I actually reach it?* | The bookmark of its web UI, set to **Monitor**: checked by the server, with uptime, response time and certificate ([§12](#12-checks-health)) |
-| *Which link belongs to which container?* | The bookmark mark on a container's row, in the colour of that bookmark's checks — and **Runs in** on the bookmark's own side panel ([§14.2](#142-the-list)) |
+| *Which link belongs to which container?* | The bookmark mark on a container's row, in the colour of that bookmark's checks — and the cube after the bookmark's name in the Bookmarks view, in the container's state, with **Runs in** on its side panel ([§14.2](#142-the-list)) |
 | *What went wrong, and when?* | The container's **Timeline** (crashes with exit code, out-of-memory kills, health changes, updates, rollbacks) and the bookmark's **Health in large** (every check, every outage) |
 | *Will I hear about it?* | One set of alert channels and push notifications for sites going down, certificates running out and containers stopping, restarting, turning unhealthy or running hot ([§12.4](#124-alerts), [§14.9](#149-notices)) |
 | *Is it up to date?* | Image update checks with release notes, skip and hold, a history, a rollback, and optional nightly updates that roll themselves back on failure ([§14.5](#145-actions-and-updates)) |
@@ -121,7 +121,7 @@ You probably have bookmarks for your services already. nextDash finds the one th
 3. a bookmark whose subdomain is the container's name — `sonarr.example.com`, as a reverse proxy gives it;
 4. a bookmark titled after the container.
 
-Once linked, the container's row shows a small bookmark mark: green when its checks pass, red when it is broken or down, an outline when nothing checks it. A click opens the bookmark in the Bookmarks view. The other way round, the bookmark's side panel shows **Details → Address → Runs in**, a link to the container.
+Once linked, the container's row shows a small bookmark mark: green when its checks pass, red when it is broken or down, an outline when nothing checks it. A click opens the bookmark in the Bookmarks view. The other way round, the bookmark's row in the Bookmarks view carries a cube in the container's state ([§11.2](#112-the-toolbar-and-the-list)), and its side panel shows **Details → Address → Runs in**, a link to the container.
 
 **When the guess is wrong** — two bookmarks on one port, a service behind a path rather than a subdomain — choose the bookmark by hand under the container's **Bookmark → Linked bookmark**, or *No bookmark*. A container without a bookmark at all is a hint: add one, so it shows on your dashboard and can be monitored.
 
@@ -282,7 +282,7 @@ Bookmarks are grouped by **page** (Work, Home) and **category** (Dev, News). Aro
 | **Add** | One-line quick add, the full form, paste a URL, browser extension, share sheet, bookmarklet, imports |
 | **Watch** | Broken links, uptime monitoring, certificate expiry, page drift, alerts |
 | **Show** | Widgets for health, inbox, feeds, weather, calendar, your machine, your containers and your own services |
-| **Customise** | 160 theme families, backdrops, surfaces, layout, header and action buttons, six languages |
+| **Customise** | 164 theme families, backdrops, surfaces, layout, header and action buttons, six languages |
 | **Keep** | Automatic backups, a 30-day trash, local copies of pages, HTML and CSV export |
 
 <a id="what-nextdash-is-not"></a>
@@ -1046,6 +1046,8 @@ The toolbar sits above the list: a **search** field (`/`) that matches name, URL
 
 Rows show icon, name, host, tags, open count and last opened, plus a score column and status glow once Health has joined in. Only the rows near the screen are drawn, so thousands of bookmarks stay fast.
 
+A bookmark that is a container's web UI carries a small **cube** after its title, in the container's state: green running, amber paused or restarting, grey stopped. A click opens that container in the Containers view ([§14.2](#142-the-list)). The match is the Containers view's own, and the cubes stay away when the Docker socket is not set up or the Containers view is switched off.
+
 **Column headings** name the columns View shows and stay in place while the list scrolls (not at phone width). Every heading with a value under it sorts: a click sorts by that column in its natural order — Name and Tags A to Z (by the first tag, untagged last), Shortcut the keyed ones first, Usage the most opens in the sparkline's window first, Opens, Last opened and Added highest or newest first, Pinned the pinned ones first, Score the worst first — and a second click turns it round. An arrow on the heading shows which way the list runs; **Sort** follows, and picking from **Sort** starts afresh in the natural order. `Enter` or `Space` on a focused heading does the same.
 
 ### 11.3 The side panel
@@ -1678,7 +1680,7 @@ Widgets are ordered with the categories under **Structure → Categories**, or d
 ### 15.3 On the dashboard
 
 - Click the title, or `Enter` on the header, to fold a widget. `.` folds everything. The state is kept per page.
-- Right-click the title to rename, change the width, fold, open the settings or **close** it. Closing hides it and keeps its settings; Config → Widgets switches it back on.
+- Right-click the title to rename, change the width, fold, open the settings, **move it to another page** (**Move to page…**, the same move as in Config → Widgets, keeping its sign-in and folded state) or **close** it. Closing hides it and keeps its settings; Config → Widgets switches it back on.
 - The arrow keys walk through a widget's rows; `Enter` does what a click does. See [§7.4](#74-acting-on-a-category-or-widget).
 - Widgets that read something outside refresh on their own interval, and not at all while the tab is hidden.
 
@@ -1803,12 +1805,13 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 
 ### 16.1 Themes
 
-nextDash ships **160 theme families**, each with a light and a dark half — 320 themes in all. A fresh install starts on **Matrix Bluepill**, cyan code on deep blue, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made.
+nextDash ships **164 theme families**, each with a light and a dark half — 328 themes in all. A fresh install starts on **Matrix Bluepill**, cyan code on deep blue, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made.
 
 **Theme** on the Look tab lists every theme by name. Beside it:
 
-- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, a row of **character chips** ([§16.2](#162-character)) and a **collection** chip. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 34 newest families wear a **new** badge, and searching `new` finds them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
+- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, a row of **character chips** ([§16.2](#162-character)) and a **collection** chip. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 38 newest families wear a **new** badge, and searching `new` finds them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
 - **Collections** — the **Neutrals** collection holds five calm grey palettes — Slate, Zinc, Gray, Stone and Neutral — drawn under glass, each with a backdrop of its own.
+- **For Unraid users** — four themes after the Unraid webGUI, each in light and dark: **Unraid Black** (flat black panels, small uppercase labels, the orange of the logo), **Unraid Azure** (cool grey panels, steel-blue accent), **Unraid Ember** (that orange glowing out of black glass) and **Unraid Blaze** (the red end, hard-edged lacquer on deep crimson).
 - **Quick mode** — switches between the light and dark half of the family you are on.
 - **Follow system dark mode** — shows the light half by day and the dark half by night, following the operating system, also in a background tab.
 - **Random theme** — **Off**, **On page refresh**, or **On view change** (switching between the dashboard grid, config, the inbox, the Bookmarks view, Containers or pages). Your saved theme stays underneath and comes back when you turn it off. With follow-system on, only halves that match the current mode are picked.

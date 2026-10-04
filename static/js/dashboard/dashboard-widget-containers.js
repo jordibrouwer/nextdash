@@ -111,7 +111,7 @@
 
         if (!data || !data.available) {
             u.say(panel, 'dashboard-widget-empty',
-                S().unavailableText(dash, data?.reason || 'no-docker-socket'));
+                S().unavailableText(dash, !data ? 'no-answer' : data?.reason || 'no-docker-socket'));
             return;
         }
 

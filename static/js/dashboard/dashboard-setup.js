@@ -291,6 +291,7 @@ class DashboardSetup {
     applyFindFilter(query) {
         const d = this.dash;
         d._findFilter = query || '';
+        d._findFilterPage = d.currentPageId;
         const layout = document.getElementById('dashboard-layout');
 
         if (!d._findFilter) {
@@ -306,6 +307,21 @@ class DashboardSetup {
             tile.classList.toggle('find-hidden', !name.includes(q) && !url.includes(q));
         });
         d.keyboardNavigation?.scheduleUpdate?.();
+    }
+
+    /**
+     * A render rebuilds the tiles and drops their find-hidden class, while
+     * :find still listed the filter as on. Applied again after each render;
+     * another page ends it, as the command is about "this page".
+     */
+    reapplyFindFilter() {
+        const d = this.dash;
+        if (!d._findFilter) return;
+        if (d._findFilterPage !== d.currentPageId) {
+            d._findFilter = '';
+            return;
+        }
+        this.applyFindFilter(d._findFilter);
     }
 
 

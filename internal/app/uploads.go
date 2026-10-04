@@ -32,9 +32,8 @@ func (h *Handlers) UploadFavicon(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	// Read content for magic-byte detection
-	data, err := io.ReadAll(io.LimitReader(file, 10<<20))
-	if err != nil {
-		http.Error(w, "Unable to read file", http.StatusInternalServerError)
+	data, ok := readUploadWhole(w, file, maxImageUploadBytes, "image")
+	if !ok {
 		return
 	}
 
@@ -96,9 +95,8 @@ func (h *Handlers) UploadFont(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	data, err := io.ReadAll(io.LimitReader(file, 10<<20))
-	if err != nil {
-		http.Error(w, "Unable to read file", http.StatusInternalServerError)
+	data, ok := readUploadWhole(w, file, maxFontUploadBytes, "font")
+	if !ok {
 		return
 	}
 
@@ -155,9 +153,8 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	// Read content for magic-byte detection (before trusting client Content-Type)
-	data, err := io.ReadAll(io.LimitReader(file, 10<<20))
-	if err != nil {
-		http.Error(w, "Unable to read file", http.StatusInternalServerError)
+	data, ok := readUploadWhole(w, file, maxImageUploadBytes, "image")
+	if !ok {
 		return
 	}
 
@@ -273,4 +270,26 @@ func randomHex(byteLen int) string {
 		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 	return hex.EncodeToString(b)
+}
+
+const (
+	maxImageUploadBytes = 10 << 20
+	// A full-coverage font (CJK) is 15-20 MB.
+	maxFontUploadBytes = 32 << 20
+)
+
+// readUploadWhole reads an uploaded file whole, or answers 413. A bare
+// LimitReader cut a larger file at the limit, saved the stump and reported
+// success: a 16 MB font was applied as a broken 10 MB one.
+func readUploadWhole(w http.ResponseWriter, file io.Reader, limit int64, what string) ([]byte, bool) {
+	data, err := io.ReadAll(io.LimitReader(file, limit+1))
+	if err != nil {
+		http.Error(w, "Unable to read file", http.StatusInternalServerError)
+		return nil, false
+	}
+	if int64(len(data)) > limit {
+		http.Error(w, fmt.Sprintf("The %s is larger than %d MB", what, limit>>20), http.StatusRequestEntityTooLarge)
+		return nil, false
+	}
+	return data, true
 }

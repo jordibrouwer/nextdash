@@ -194,7 +194,7 @@ func (h *Handlers) recordManualHealthSample(key string, up bool, pingMs, code in
 	}
 	now := time.Now()
 	sample := HealthSample{T: now.UnixMilli(), Up: up, PingMs: pingMs, Code: code, Fail: failureClass(failDetail),
-		Maint: inMaintenanceWindow(h.store.GetSettings().MaintenanceWindows, now)}
+		Maint: maintenanceInEffect(h.store.GetSettings(), now)}
 	updates := map[string][]HealthSample{key: {sample}}
 	h.announceRecoveries(updates)
 	if err := h.appendHealthSamples(updates); err != nil {
@@ -225,9 +225,10 @@ func (h *Handlers) appendHealthSamples(updates map[string][]HealthSample) error 
 	return writeHealthHistoryFile(history)
 }
 
-// sweepHealthHistory drops history for URLs that are no longer monitored and
-// re-applies retention. Called from the monitor scheduler so deleting or
-// un-monitoring a bookmark eventually reclaims its space without a manual step.
+// sweepHealthHistory drops history for URLs that are no longer bookmarked and
+// re-applies retention. Called from the monitor scheduler so deleting a
+// bookmark reclaims its space without a manual step; a bookmark whose
+// monitoring is off keeps its history until retention ages it out.
 func (h *Handlers) sweepHealthHistory(known map[string]bool) error {
 	h.healthHistoryMu.Lock()
 	defer h.healthHistoryMu.Unlock()

@@ -12,11 +12,13 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 var ErrInboxItemNotFound = errors.New("inbox item not found")
 
-const inboxDataVersion = 1
+// inboxDataVersion 2: titles stored decoded (see readInboxDataLocked).
+const inboxDataVersion = 2
 
 // InboxLink is a lightweight saved URL (not a full bookmark).
 type InboxLink struct {
@@ -116,15 +118,18 @@ func (fs *FileStore) readInboxDataLocked() InboxData {
 	if err := json.Unmarshal(data, &inbox); err != nil || inbox.Items == nil {
 		return InboxData{Version: inboxDataVersion, Items: []InboxLink{}}
 	}
-	if inbox.Version == 0 {
-		inbox.Version = inboxDataVersion
+	// Version 1 kept entities as an older fetch stored them; they are decoded
+	// once, and the next save writes version 2. Decoding on every read was not
+	// idempotent: "What is &amp;nbsp;?" lost its text, and a URL used as a
+	// title turned "&param=" into "¶m=".
+	if inbox.Version < 2 {
+		for i := range inbox.Items {
+			inbox.Items[i].Title = decodePreviewText(inbox.Items[i].Title)
+			inbox.Items[i].PreviewTitle = decodePreviewText(inbox.Items[i].PreviewTitle)
+			inbox.Items[i].PreviewDesc = decodePreviewText(inbox.Items[i].PreviewDesc)
+		}
 	}
-	// Titles taken from the page, as the bookmark files keep them.
-	for i := range inbox.Items {
-		inbox.Items[i].Title = decodePreviewText(inbox.Items[i].Title)
-		inbox.Items[i].PreviewTitle = decodePreviewText(inbox.Items[i].PreviewTitle)
-		inbox.Items[i].PreviewDesc = decodePreviewText(inbox.Items[i].PreviewDesc)
-	}
+	inbox.Version = inboxDataVersion
 	return inbox
 }
 
@@ -209,9 +214,12 @@ const (
 	inboxMaxNoteLen    = 2000
 	inboxMaxPreviewLen = 1000
 	inboxMaxSourceLen  = 100
-	inboxMaxURLLen     = 2048
-	inboxMaxTags       = 25
-	inboxMaxTagLen     = 50
+	// A URL is not cut but refused past this: a cut address is a broken
+	// link, and dedupe then compared against the stump. Long enough for the
+	// directions, JQL and SafeLinks addresses that pass 2,048.
+	inboxMaxURLLen = 8192
+	inboxMaxTags   = 25
+	inboxMaxTagLen = 50
 )
 
 // truncateRunes cuts to at most n runes, never splitting one in half.
@@ -250,7 +258,6 @@ func evictedInboxItems(before, after []InboxLink) []InboxLink {
 // Applied on add, patch and restore, so no write path can store more than the
 // others allow.
 func clampInboxLinkFields(link *InboxLink) {
-	link.URL = truncateRunes(link.URL, inboxMaxURLLen)
 	link.Title = truncateRunes(link.Title, inboxMaxTitleLen)
 	link.Note = truncateRunes(link.Note, inboxMaxNoteLen)
 	link.Source = truncateRunes(link.Source, inboxMaxSourceLen)
@@ -578,4 +585,10 @@ func (fs *FileStore) BatchInboxLinks(ids []string, mutate func(*InboxLink) bool)
 		return nil, nil, err
 	}
 	return before, missing, nil
+}
+
+// inboxURLTooLong reports an address past the inbox's limit. Refused at the
+// door rather than cut: a cut address opens nothing.
+func inboxURLTooLong(url string) bool {
+	return utf8.RuneCountInString(url) > inboxMaxURLLen
 }

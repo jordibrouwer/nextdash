@@ -74,8 +74,9 @@
         const disks = data?.disks;
 
         if (!disks || !disks.available) {
+            // No data is no answer, not a disk list to fill in.
             u.say(panel, 'dashboard-widget-empty',
-                s.unavailableText(dash, disks?.reason || 'no-mounts-configured'));
+                s.unavailableText(dash, !data ? 'no-answer' : disks?.reason || 'no-mounts-configured'));
             return;
         }
 

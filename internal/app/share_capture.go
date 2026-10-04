@@ -126,6 +126,9 @@ func (h *Handlers) captureToInbox(rawURL, title, source string) (InboxLink, erro
 	if err := h.validateBookmarkURL(rawURL); err != nil {
 		return InboxLink{}, fmt.Errorf("invalid URL: %w", err)
 	}
+	if inboxURLTooLong(rawURL) {
+		return InboxLink{}, fmt.Errorf("invalid URL: too long")
+	}
 	settings := h.store.GetSettings()
 	maxItems := settings.InboxMaxItems
 	if maxItems <= 0 {

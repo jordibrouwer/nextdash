@@ -948,6 +948,7 @@ class DashboardHealth {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const body = await res.json().catch(() => ({}));
             await this.loadAndRender({ refresh: true });
+            await this.refreshBookmarkCopies(list);
             return body;
         } catch {
             this.dash.showNotification(
@@ -955,6 +956,22 @@ class DashboardHealth {
                 'error');
             return null;
         }
+    }
+
+    /**
+     * Reload the dashboard's copy of the pages a health write touched. Its
+     * next whole-page save (a drag, a pin, a delete) writes that copy back, and
+     * an old one put expectations, credentials, mutes and ignores back to what
+     * they were.
+     */
+    async refreshBookmarkCopies(targets) {
+        const pageIds = [...new Set((Array.isArray(targets) ? targets : [])
+            .map((t) => Number(t?.pageId ?? t?.pageID))
+            .filter((id) => Number.isFinite(id) && id > 0))];
+        if (!pageIds.length) return;
+        try {
+            await this.dash.data?.refreshAfterBookmarkMutation?.({ pageIds, repaintActiveView: false });
+        } catch { /* the revision poll catches up */ }
     }
 
     /** The label for one condition, as the filter pills name it. */
@@ -1828,6 +1845,7 @@ class DashboardHealth {
             // what was typed.
             if (wrap.contains(document.activeElement)) document.activeElement.blur();
             await this.loadAndRender({ refresh: true });
+            await this.refreshBookmarkCopies([{ pageId }]);
             return 'changed';
         } catch {
             this.dash.showNotification?.(this.t('dashboard.healthExpectFailed', 'Could not save what to expect.'), 'error');

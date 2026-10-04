@@ -314,6 +314,7 @@ class DashboardHealthMultiSelect {
             }
             const body = await res.json().catch(() => ({}));
             await this.health.loadAndRender({ refresh: true });
+            await this.health.refreshBookmarkCopies?.(targets);
             const changed = Number(body?.changed) || 0;
             const skipped = Number(body?.skipped) || 0;
             if (skipped > 0) {
@@ -395,6 +396,7 @@ class DashboardHealthMultiSelect {
             const skipped = Number(body.skipped) || 0;
 
             await this.health.loadAndRender({ refresh: true });
+            await this.health.refreshBookmarkCopies?.(issues);
             this.dash.updateHealthBadge?.();
 
             if (skipped > 0) {

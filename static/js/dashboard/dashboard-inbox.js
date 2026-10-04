@@ -500,6 +500,7 @@ class DashboardInbox {
                 }),
             });
             let res = await add(false);
+            let keptCopy = null;
             // A copy kept in Unsorted is the link waiting to be filed, not a
             // bookmark already saved: refused over it, the promote filed
             // nothing and still took the entry. It is filed and the kept copy
@@ -511,6 +512,14 @@ class DashboardInbox {
                     && Number(body?.conflict?.pageId) === unsortedId) {
                     res = await add(true);
                     if (res.ok) {
+                        // Read whole before it goes, so an undo can put it
+                        // back with its note and tags: the delete is not a
+                        // trip to the trash.
+                        const keptUrl = body.conflict.url || item.url;
+                        keptCopy = await fetcher(`/api/bookmarks?page=${unsortedId}`)
+                            .then((r) => (r.ok ? r.json() : []))
+                            .then((rows) => (Array.isArray(rows) ? rows : []).find((b) => b.url === keptUrl) || null)
+                            .catch(() => null);
                         await fetcher('/api/bookmarks', {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
@@ -530,7 +539,7 @@ class DashboardInbox {
             // Only clear the inbox entry once its bookmark exists, so a failure
             // leaves the link here to try again rather than losing it.
             await this.completePromote(item.id, { skipRender: true });
-            return { snapshot, duplicate: false };
+            return { snapshot, duplicate: false, keptCopy };
         }));
 
         const settled = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
@@ -548,12 +557,13 @@ class DashboardInbox {
 
         if (promoted) {
             const made = settled.filter((r) => !r.duplicate).map((r) => r.snapshot);
+            const keptCopies = settled.filter((r) => !r.duplicate && r.keptCopy).map((r) => r.keptCopy);
             d.showNotification?.(
                 this.t('dashboard.inboxPromotedCount', 'Promoted {count} links', { count: promoted }),
                 'success',
                 {
                     duration: 8000,
-                    undoCallback: () => this.undoBulkPromote(made, Number(pageId)),
+                    undoCallback: () => this.undoBulkPromote(made, Number(pageId), keptCopies),
                 }
             );
         }
@@ -577,9 +587,18 @@ class DashboardInbox {
      * the inbox entries return. The entry goes back first, so a failure in
      * between leaves the link in two places rather than none.
      */
-    async undoBulkPromote(snapshots, pageId) {
+    async undoBulkPromote(snapshots, pageId, keptCopies = []) {
         const d = this.dash;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        // The kept copies a promote replaced go back to Unsorted as they were.
+        const unsortedId = Number(d._unsortedPageId) || 999999;
+        for (const copy of keptCopies) {
+            await fetcher('/api/bookmarks/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: unsortedId, bookmark: copy, allowDuplicate: true }),
+            }).catch(() => {});
+        }
         const keptEntries = d.settings?.inboxDeleteAfterPromote === false;
         let back = 0;
         for (const snap of snapshots) {
@@ -2539,6 +2558,13 @@ class DashboardInbox {
         if (this.triage?.isOpen?.()) {
             return false;
         }
+        // A dialog over the inbox owns its keys. This handler runs in the
+        // grid's capture phase, before the dialog's own: Enter opened the
+        // drawer behind a confirm, d deleted the row it was asking about, and
+        // Escape cleared the ticks while the bulk-delete dialog stayed open.
+        if (d.isModalOpen?.()) {
+            return false;
+        }
         // An open snooze menu owns the arrow keys: this handler runs first and
         // would otherwise consume them to move the row cursor behind the menu,
         // leaving the menu's own navigation dead.
@@ -3969,7 +3995,9 @@ class DashboardInbox {
 
     /** The text a title sort compares — the same string the row shows. */
     displayTitle(item) {
-        return String(item?.title || item?.previewTitle || item?.url || '').trim();
+        // The row puts the page's own title first; sorted the other way round,
+        // the list read as unsorted.
+        return String(item?.previewTitle || item?.title || item?.domain || item?.url || '').trim();
     }
 
     /** Host for domain sort, falling back to the raw URL for unparseable input. */

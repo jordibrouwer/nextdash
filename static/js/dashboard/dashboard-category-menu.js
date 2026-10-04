@@ -169,6 +169,13 @@ class DashboardCategoryMenu {
                 icon: '↻',
             }] : []),
             {
+                // Same move Config -> Widgets offers, from where the widget is.
+                id: 'move-page',
+                label: this.t('widgetMenuMoveToPage', 'Move to page…'),
+                icon: '→',
+                submenu: true,
+            },
+            {
                 // Straight to this widget's own row in Config -> Widgets, rather
                 // than opening the section and hunting for it among the others.
                 id: 'settings',
@@ -308,9 +315,86 @@ class DashboardCategoryMenu {
             await this.toggleWidgetWidth(widget);
             return;
         }
+        if (action === 'move-page') {
+            this.showWidgetPagePicker(titleEl, widget);
+            return;
+        }
         if (action === 'close') {
             await this.closeWidget(widget);
         }
+    }
+
+    /** Pages other than this one, as a second menu where the first was. */
+    showWidgetPagePicker(titleEl, widget) {
+        const d = this.dash;
+        const here = Number(d.currentPageId);
+        const pages = (Array.isArray(d.pages) ? d.pages : []).filter((page) => Number(page.id) !== here);
+        if (!pages.length) {
+            d.showNotification?.(this.t('widgetMenuMoveNoPages', 'There is no other page to move it to.'), 'info');
+            return;
+        }
+        const box = titleEl.getBoundingClientRect();
+        this._openMenu({
+            id: 'widget-context-menu',
+            ariaLabel: this.t('widgetMenuMoveToPage', 'Move to page…'),
+            hint: this.widgetName(widget),
+            entries: pages.map((page) => ({ id: String(page.id), label: String(page.name || page.id), icon: '→' })),
+            point: { x: box.left + 8, y: box.bottom },
+            onPick: (id) => { void this.moveWidgetToPage(widget, Number(id)); },
+        });
+    }
+
+    /**
+     * Written to the destination first, removed here second: a failure between
+     * the two leaves the widget in both places, never in neither. The id comes
+     * along, so its credential and folded state stay filed under it.
+     */
+    async moveWidgetToPage(widget, targetId) {
+        const d = this.dash;
+        const rc = d.renderCore;
+        const pageId = Number(d.currentPageId);
+        if (!targetId || targetId === pageId || rc?.blocksBelongElsewhere?.()) return false;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = { 'Content-Type': 'application/json' };
+        if (typeof nextDashWriteHeaders === 'function') Object.assign(headers, nextDashWriteHeaders());
+        const put = (id, body) => fetcher(`/api/pages/${id}/blocks`, {
+            method: 'PUT', headers, body: JSON.stringify(body),
+        });
+        const name = this.widgetName(widget);
+        try {
+            // Both read with the token. The dashboard's own copy is read
+            // without it, and the server leaves a custom widget's address and
+            // credential and an RSS widget's feeds out of that; it puts them
+            // back on a save only for a widget already stored on the same page,
+            // so the moved one arrived without them.
+            const src = await fetcher(`/api/pages/${pageId}/blocks`);
+            if (!src.ok) throw new Error(`HTTP ${src.status}`);
+            const full = ((await src.json()).widgets || []).find((w) => String(w?.id) === String(widget.id));
+            if (!full) throw new Error('widget not found');
+            const res = await fetcher(`/api/pages/${targetId}/blocks`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const dest = await res.json();
+            const moved = { id: full.id, type: full.type, title: full.title, config: full.config || {} };
+            const added = await put(targetId, { widgets: (dest.widgets || []).concat(moved) });
+            if (!added.ok) throw new Error(`HTTP ${added.status}`);
+            const widgets = (d.widgets || []).filter((w) => String(w?.id) !== String(widget.id));
+            const order = (d.blockOrder || []).filter((id) => String(id) !== String(widget.id));
+            const removed = await put(pageId, { widgets, order });
+            if (!removed.ok) throw new Error(`HTTP ${removed.status}`);
+            d.widgets = widgets;
+            d.blockOrder = order;
+            d.data?.updatePageDataCache?.(pageId, { blocks: { widgets, order } });
+            d._pageDataCache?.delete?.(targetId);
+        } catch (_error) {
+            d.showErrorNotification?.(this.t('widgetMenuMoveFailed', 'Could not move the widget.'));
+            return false;
+        }
+        rc?.forgetWidgetConfigCache?.();
+        rc?.redrawKeepingPlace?.();
+        const pageName = (d.pages || []).find((page) => Number(page.id) === targetId)?.name || targetId;
+        d.showNotification?.(
+            this.t('widgetMenuMoved', '“{name}” moved to {page}.', { name, page: pageName }), 'success');
+        return true;
     }
 
     /**

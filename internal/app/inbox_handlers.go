@@ -63,6 +63,10 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Invalid URL: %v", err), http.StatusBadRequest)
 		return
 	}
+	if inboxURLTooLong(url) {
+		http.Error(w, "URL is too long", http.StatusBadRequest)
+		return
+	}
 
 	settings := h.store.GetSettings()
 	dedupe := settings.InboxDedupeUrls
@@ -237,16 +241,40 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 		iconFile := ""
 		// IconSource, the page's declared icon: Icon is only ever a local copy
 		// and is empty on a fresh fetch (see fetchIconForBookmark).
+		// A refusal by the outbound limit is not "this site has no icon": an
+		// undo of a large Clear read restored a hundred links at once, the
+		// limit ran out half way, and the rest were stamped for good.
+		limited := false
 		if iconURL := strings.TrimSpace(preview.IconSource); iconURL != "" {
 			if name, err := downloadIconFromURL(iconURL, allowLocal); err == nil {
 				iconFile = name
+			} else if errors.Is(err, errOutboundRateLimited) {
+				limited = true
 			}
 		}
 		if iconFile == "" {
 			if fallback := deriveFaviconURL(url); fallback != "" {
 				if name, err := downloadIconFromURL(fallback, allowLocal); err == nil {
 					iconFile = name
+				} else if errors.Is(err, errOutboundRateLimited) {
+					limited = true
 				}
+			}
+		}
+		stampIcon := func(item *InboxLink) {
+			if iconFile != "" || !limited {
+				item.IconFetchedAt = time.Now().UnixMilli()
+			}
+		}
+
+		// The picture too. The fetch only names it (ImageSource); the local
+		// copy used to come from a media worker that writes the preview cache
+		// and never the inbox item, so a new link had no picture at all.
+		if strings.TrimSpace(preview.Image) == "" && strings.TrimSpace(preview.ImageSource) != "" {
+			if name, err := downloadPreviewImage(preview.ImageSource, allowLocal); err == nil && name != "" {
+				preview.Image = "/data/" + previewImageDirName + "/" + name
+				preview.ImageFetchedAt = time.Now().UnixMilli()
+				h.applyPreviewMedia(canonicalBookmarkURLKey(url), preview)
 			}
 		}
 
@@ -256,7 +284,7 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 		// back to the backfill.
 		if strings.TrimSpace(preview.Title) == "" && strings.TrimSpace(preview.Image) == "" && iconFile == "" {
 			_, _ = h.store.UpdateInboxLink(itemID, func(item *InboxLink) error {
-				item.IconFetchedAt = time.Now().UnixMilli()
+				stampIcon(item)
 				return nil
 			})
 			return
@@ -280,7 +308,7 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 			if iconFile != "" {
 				item.Icon = iconFile
 			}
-			item.IconFetchedAt = time.Now().UnixMilli()
+			stampIcon(item)
 			return nil
 		})
 	}()
@@ -315,6 +343,10 @@ func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := h.validateBookmarkURL(restoredURL); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid URL: %v", err), http.StatusBadRequest)
+		return
+	}
+	if inboxURLTooLong(restoredURL) {
+		http.Error(w, "URL is too long", http.StatusBadRequest)
 		return
 	}
 	request.Item.URL = restoredURL

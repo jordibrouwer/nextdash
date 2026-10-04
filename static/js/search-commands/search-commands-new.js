@@ -34,6 +34,7 @@ class SearchCommandNew {
         this.pages = [];
         this._mouseDownTarget = null;
         this.pendingIcon = '';
+        this.pendingIconSources = [];
         this.draftState = {};
         this.formPreview = null;
         this._userEditedIcon = false;
@@ -290,6 +291,7 @@ class SearchCommandNew {
             previewImage: '',
         };
         this.pendingIcon = '';
+        this.pendingIconSources = [];
         this._userEditedIcon = false;
     }
 
@@ -310,7 +312,7 @@ class SearchCommandNew {
             url: urlEl?.value || '',
             shortcut: shortcutEl?.value || '',
             note: noteEl?.value || '',
-            icon: this.pendingIcon || '',
+            icon: this.pendingIcon || this.pendingIconSources?.[0] || '',
             pinned: pinnedEl?.checked || false,
             checkStatus: modeFields.checkStatus || false,
             monitor: modeFields.monitor || false,
@@ -1012,23 +1014,59 @@ class SearchCommandNew {
 
         if (!force && (this._userEditedIcon || this._autoFetchInFlight)) return;
         if (!force && iconUrlInput && String(iconUrlInput.value || '').trim()) return;
-        if (!force && this.pendingIcon) return;
+        if (!force && (this.pendingIcon || this.pendingIconSources?.length)) return;
 
         this._autoFetchInFlight = true;
         this.setModalIconFetchState(this.t('config.iconFetching', 'Fetching...'));
-        const icon = await window.BookmarkPreviewService.fetchAndUploadFavicon(urlValue);
+        // Found, not stored: the icon is stored when the bookmark is saved
+        // (resolveIconValue). Stored here, every address typed and not saved
+        // left a file in data/icons.
+        const found = await window.BookmarkPreviewService.findFaviconSources(urlValue);
         this._autoFetchInFlight = false;
-
-        if (icon && !this._userEditedIcon) {
-            this.pendingIcon = icon;
-            if (iconUrlInput) iconUrlInput.value = `/data/icons/${icon}`;
-            this.syncIconPreview(icon);
-            this.setModalIconFetchState(this.t('config.iconFound', 'Found'));
-        } else if (!icon) {
-            this.setModalIconFetchState(this.t('config.iconNotFound', 'Not found'));
+        if (this._userEditedIcon) {
+            this.updatePreviews();
+            return;
         }
+        this.pendingIcon = '';
+        this.pendingIconSources = found.sources || [];
+        const shown = await this.syncRemoteIconPreview(this.pendingIconSources);
+        this.setModalIconFetchState(shown
+            ? this.t('config.iconFound', 'Found')
+            : (this.pendingIconSources.length ? '' : this.t('config.iconNotFound', 'Not found')));
 
         this.updatePreviews();
+    }
+
+    /**
+     * Show the first of these favicon addresses that loads, and keep the
+     * ones from there on for the save. Resolves to whether one did.
+     */
+    async syncRemoteIconPreview(sources) {
+        const previewEl = document.getElementById('new-bookmark-icon-preview');
+        const clearBtn = document.getElementById('new-bookmark-icon-clear');
+        const loads = (src) => new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(img.naturalWidth > 0);
+            img.onerror = () => resolve(false);
+            img.src = src;
+        });
+        for (let i = 0; i < sources.length; i++) {
+            if (!(await loads(sources[i]))) continue;
+            this.pendingIconSources = sources.slice(i);
+            if (previewEl) {
+                previewEl.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = sources[i];
+                img.alt = '';
+                previewEl.appendChild(img);
+            }
+            if (clearBtn) clearBtn.hidden = false;
+            return true;
+        }
+        // None loads here, which a LAN service over http behind an https
+        // dashboard also gives: the server may still reach it on save.
+        this.syncIconPreview('');
+        return false;
     }
 
     setupEventListeners() {
@@ -1138,6 +1176,7 @@ class SearchCommandNew {
         iconFileInput?.addEventListener('change', () => {
             document.getElementById('new-bookmark-icon-url').value = '';
             this.pendingIcon = '';
+            this.pendingIconSources = [];
             this._userEditedIcon = true;
             this.syncIconPreview('');
             this.setModalIconFetchState('');
@@ -1147,6 +1186,7 @@ class SearchCommandNew {
         const iconUrlInput = document.getElementById('new-bookmark-icon-url');
         iconUrlInput?.addEventListener('input', () => {
             this.pendingIcon = '';
+            this.pendingIconSources = [];
             this._userEditedIcon = true;
         });
 
@@ -1154,6 +1194,7 @@ class SearchCommandNew {
             if (iconUrlInput) iconUrlInput.value = '';
             if (iconFileInput) iconFileInput.value = '';
             this.pendingIcon = '';
+            this.pendingIconSources = [];
             this._userEditedIcon = false;
             this.syncIconPreview('');
             this.setModalIconFetchState('');
@@ -1371,6 +1412,7 @@ class SearchCommandNew {
         // Carry the stored icon rather than re-fetching a favicon: an edit must
         // not silently replace an icon the user uploaded or picked by hand.
         this.pendingIcon = bm.icon || '';
+        this.pendingIconSources = [];
         this._userEditedIcon = Boolean(bm.icon);
         this.syncIconPreview(bm.icon || '');
 
@@ -1695,6 +1737,7 @@ class SearchCommandNew {
                     }
                 }
                 this.pendingIcon = '';
+                this.pendingIconSources = [];
                 if (window.dashboardInstance?.data?.refreshAfterBookmarkAdded) {
                     await window.dashboardInstance.data.refreshAfterBookmarkAdded(pageId);
                 } else if (window.dashboardInstance) {
@@ -1839,6 +1882,12 @@ class SearchCommandNew {
             return remoteIcon;
         }
         if (this.pendingIcon) return this.pendingIcon;
+        // A favicon found while the form was filled, stored now that the
+        // bookmark is. One that cannot be fetched leaves the bookmark without
+        // an icon rather than stopping the save.
+        if (this.pendingIconSources?.length) {
+            return window.BookmarkPreviewService.uploadFirstIcon(this.pendingIconSources);
+        }
         return '';
     }
 

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -79,6 +80,27 @@ func bookmarkContentFingerprint(bm Bookmark) string {
 		strconv.FormatBool(bm.CheckStatus),
 		strings.TrimSpace(bm.Icon),
 		strings.TrimSpace(bm.Note),
+	}, "\x01")
+}
+
+// bookmarkSettingsFingerprint is what a person sets on a bookmark's health,
+// apart from its content: the data revision has to move when these change, or
+// a dashboard kept its old copy and wrote it back with the next save. Kept out
+// of bookmarkContentFingerprint, which the activity log uses as "an edit".
+func bookmarkSettingsFingerprint(bm Bookmark) string {
+	ignored, _ := json.Marshal(bm.HealthIgnored)
+	return strings.Join([]string{
+		strconv.FormatBool(bm.Monitor),
+		strconv.Itoa(bm.MonitorIntervalMinutes),
+		bm.ExpectText,
+		strconv.FormatBool(bm.ExpectTextAbsent),
+		bm.ExpectStatus,
+		bm.CheckURL,
+		bm.CredentialID,
+		strconv.FormatBool(bm.AllowInsecureTLS),
+		strconv.FormatBool(bm.WatchDrift),
+		strconv.FormatBool(bm.NotifyMuted),
+		string(ignored),
 	}, "\x01")
 }
 

@@ -371,6 +371,7 @@ class DashboardRenderIncremental {
         window.DashboardCategoryTitleFit?.scheduleFitAllCategoryTitles?.(container);
         d.updateSearchComponent?.();
         d.syncBookmarkGridA11y?.();
+        d.reapplyFindFilter?.();
         d.keyboardNavigation?.scheduleUpdate?.();
         if (d.statusMonitor) {
             if (d.statusMonitorInitialized) {

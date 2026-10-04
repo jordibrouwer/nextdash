@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.17.1 — 4 October 2026](#v1171--4-october-2026)
 - [v1.17.0 — 3 October 2026](#v1170--3-october-2026)
 - [v1.16.0 — 2 October 2026](#v1160--2-october-2026)
 - [v1.15.8 — 1 October 2026](#v1158--1-october-2026)
@@ -90,6 +91,131 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.17.1 — 4 October 2026
+
+Four themes for Unraid users, each in dark and light. A widget can be moved to another page from its menu, and a long list of fixes across the Calendar, Health, Containers, Backups, Search, Inbox and the dashboard — held back from the What's new window (`hideFromModal`) like v1.15.4 and v1.15.1, so v1.17.0 keeps leading it.
+
+### Themes
+
+- **new — Unraid Black and Unraid Azure**, each light and dark (`models.go`). Black has flat black panels, small uppercase labels and the orange of the Unraid logo; Azure has cool grey panels and a steel-blue accent. Both are marked new (`theme_new.go`), carry a description (`theme_description.go`), a chosen backdrop (`theme_backdrop_choice.go`: wireframe for Black, band for Azure) and a weather scene per variant (`visual-settings.js`).
+- **new — Unraid Ember and Unraid Blaze**, each light and dark (`models.go`). Ember is the logo's orange glowing out of black glass (neon, sunset backdrop); Blaze is its red end, hard-edged lacquer on deep crimson (horizon backdrop). Both are marked new, described and given a weather scene like the other two. Also shortened the Unraid Black card description, which was over the length limit.
+- **fix — a failed read of the colours no longer wipes your own themes.** When `/api/colors` could not be read (a server restart, a proxy's 502), `loadColorsData` kept an empty stand-in for the session, and the next Add custom theme or import posted it: every own theme deleted, both palettes emptied. The stand-in is now marked, read again on the next call, and `saveColorsData` refuses to post it (`dashboard-config.js`).
+- **fix — the order of your own themes is kept.** ↑/↓ in Custom themes lasted until a reload: the server keeps them in a map, which it writes sorted. The order now travels as `customOrder` (`models.go`, `security.go`, `dashboard-config.js`).
+- **fix — a theme made in another tab or on another device draws on this one.** The settings sync noticed the change but never fetched the theme CSS again (no colours at all on a theme picked there) and kept a stale colour document whose next save deleted the theme made elsewhere (`dashboard-config-sync.js`).
+- **fix — deleting the light/dark half that Follow system shows draws the other half.** What is on screen is read before the delete; asked afterwards it could never name the half just removed, and the page kept the deleted theme with no colours (`dashboard-config.js`).
+- **fix — Automatic on a packaged theme goes back to how it ships.** The server refills an empty field from the shipped theme, so Automatic or ↺ saved and nothing changed (`dashboard-config.js`).
+- **fix — `:theme` draws the half Follow system wants,** with the theme's own Auto background, as the Appearance picker does (`search-commands-theme.js`).
+- **fix — with Random theme on, the look studio shows the theme you pick;** the page kept the random one (`dashboard-config-studio.js`).
+- **fix — a duplicate of a packaged theme is your own,** not filed under that theme's collection (`dashboard-config.js`).
+
+### Widgets
+
+- **new — Move to page… in the widget menu.** Right-click a widget's header and pick another page, the same move as Config → Widgets. The widget keeps its id, so its sign-in and folded state follow it (`dashboard-category-menu.js`).
+- **fix — Move to page… keeps a widget's feeds and address.** The dashboard reads its widgets without the write token, so an RSS widget's feeds and a custom widget's URL and credential are left out of its copy; the move built the widget from that copy and removed the full one. It now reads both pages with the token (`dashboard-category-menu.js`).
+- **fix — the Health widget shows the figures you tick.** "Down now" and "Healthy" never matched, so ticking them showed nothing (`dashboard-widget-health.js`).
+- **fix — the Unchecked widget counts monitored bookmarks as watched** (`dashboard-widget-unchecked.js`).
+- **fix — six on-by-default options draw ticked.** Disks' bar, Uptime's sparkline, Inbox's source, Feeds' retired, Neglected's never-opened and Backups' list drew unticked while the tile showed them (`dashboard-config.js`).
+- **fix — Save in a widget's settings keeps it hidden** when Shown was unticked on its row meanwhile (`dashboard-config.js`).
+- **fix — the Calendar keeps the events coming up soonest.** The 500-event cap was applied in file order, and a feed over 1 MB was cut without a word; it is now cut after sorting, and read up to 4 MB (`widgets_calendar.go`).
+- **fix — the Calendar ends an all-day event at your midnight,** before it counts the rows. East of UTC, yesterday's all-day event took a row every morning and the tile showed one event short, or nothing (`widgets_calendar.go`, `dashboard-widget-calendar.js`).
+- **fix — the Calendar leaves out cancelled events** (`widgets_calendar.go`).
+- **fix — the Calendar reads Outlook's zone names with a colon in them,** such as "(UTC+01:00) Amsterdam, …"; those events were dropped (`widgets_calendar.go`).
+- **fix — opening a feed's bookmark clears its new count when it is bookmarked twice** (`feeds.go`).
+- **fix — a tile that got no answer says so.** While nextDash restarted, Disks and Docker asked you to set them up again, and Feeds, Sources and Inbox stayed on "Loading…" (`dashboard-widget-*.js`).
+- **fix — Disks shows how full a disk is the way `df` does,** without root's reserve; a disk full for every writer read 95% (`system_disk.go`).
+- **fix — the Weather tile calls today "Today"** after midnight, and leaves out a day that is over (`dashboard-widget-weather.js`).
+
+### Health
+
+- **fix — turning monitoring off keeps the uptime history.** The next monitor tick swept the samples and day summaries of every URL that was not monitored, within a minute, while the dialog said the history is kept. The sweep now keeps every bookmark that still exists; retention ages out the rest (`health_monitor.go`).
+- **fix — single-page apps are no longer marked down by soft-404 detection.** An app that serves its one shell document for every path (Sonarr without auth, Uptime Kuma, any `try_files` setup) answered the not-found probe with that same document, and every page compared equal to it. The probe now also reads the front page and drops the verdict when it is that document; a site's root is never judged not found (`health_soft404_control.go`).
+- **fix — no "back online" for an outage that was never told.** A failed manual re-check or retest recorded failures without alerting, and the next success sent a lone recovery (`health_notify.go`).
+- **fix — a dashboard ping is not saved as an outage when it never answered.** The browser gave up after a fixed 3 s whatever Check timeout said, and stored "Unreachable"; it now waits for the check's own budget and stores nothing when no answer came (`status.js`).
+- **fix — alerts from a long monitor round arrive.** They were sent on the round's expired context, lost, and still marked as sent (`health_monitor.go`).
+- **fix — maintenance windows run in your time zone.** They were read on the container's clock, UTC unless TZ is set; the browser's zone is now saved with them as `maintenanceTimeZone` (`health_maintenance.go`).
+- **fix — a page title with 404 inside a longer number is not a missing page.** "Issue #14042" or "DS1404" read as "Page says it does not exist" (`health_soft404.go`).
+- **fix — switching off a window's last day no longer turns it on for every day.** An empty day list means every day, so the row now waits for the next day you pick (`dashboard-config.js`).
+- **fix — Turn off all checks clears drift findings too,** as switching one bookmark off does; monitoring again later showed months-old findings at once (`health_check_mode.go`).
+- **fix — a long retest no longer says "back online" during an outage that started after its check** (`health_notify.go`).
+- **fix — webhook deliveries are logged by host,** so a Home Assistant or n8n secret in the path stays out of the log (`webhooks.go`).
+- **fix — a credential's query key stays out of the drift baseline** on the bookmark (`ping.go`, `health_credentials.go`).
+- **fix — a soft-404 probe that got no answer is retried after 10 minutes,** not trusted as "behaves normally" for a day, and has its own deadline instead of what a slow page left over (`health_soft404_control.go`).
+- **fix — Send test alert shows its outcome** when the field you just typed saves and redraws the panel; "Sent" or the error landed on the line that was replaced (`dashboard-config.js`).
+- **fix — a tour you closed stays closed** when a settings read that left before the close lands after it; the inbox tour could open again over the list (`discoverability-state.js`).
+
+### Containers
+
+- **new — the Bookmarks view shows which bookmarks run in a container.** A cube follows the title of a bookmark that is a container's web UI, in the container's state — green running, amber paused or restarting, grey stopped — and links to that container's side panel. The match is `DockerSearchIndex.containersFor`, the one the Containers view and the Details tab's "Runs in" already use; the cubes are filled once the container list is in, and stay away when Containers is switched off or has no socket (`fillWorkbenchContainers` in `dashboard-config-bookmarks-workbench.js`, called from `bindBookmarkRows`; `config-bookmarks-workbench.css`).
+- **fix — a crash loop is one notice, not two a minute.** Docker's restart backoff grows to a minute, and past the tenth fast crash each wait outlasted the 30 s grace, so every cycle was told as "stopped unexpectedly" and "running again". The grace is now 75 s (`docker_notify.go`).
+- **fix — the nightly update reads each container at its turn.** The run's list can be an hour old by then: a container stopped meanwhile (by hand, or a backup job) was updated, watched as if running, "rolled back" and started again. The update now goes by what the recreate itself found, and a container replaced since the list is left for the next tick instead of failing with a 404 notice (`docker_auto_update.go`, `docker_recreate.go`).
+- **fix — an update keeps an anonymous volume listed without a source.** Compose's `volumes: [/data]` and `--mount type=volume,dst=…` put the volume in `HostConfig.Mounts` with no source; sent back that way, Docker gave the new container a fresh, empty volume. The source is filled in from the container's own mounts (`docker_recreate.go`).
+- **fix — a stop from outside nextDash during the watch after an automatic update is left alone.** Unraid's Docker tab, the CLI or a backup job stopping it read as a failed update: rolled back, started again and the version skipped (`docker_notify.go`, `docker_auto_update.go`).
+- **fix — a disk measurement that failed waits 30 minutes.** Every poll of the Containers tile started another, so a slow daemon walked its disk back to back (`docker_disk.go`).
+- **fix — `s` stops a container that keeps restarting,** as its menu says; it tried to start it and nothing happened (`dashboard-docker.js`).
+- **fix — stopping an image with its own stop signal is no longer told as a crash.** A `STOPSIGNAL SIGINT` container exiting 130 sent "stopped unexpectedly" and added a crash to its timeline (`docker_notify.go`, `docker_timeline.go`).
+- **fix — an update keeps per-network links and driver options,** so a compose `links:` alias still resolves in the new container (`docker_client.go`, `docker_recreate.go`).
+
+### Dashboard
+
+- **fix — moving a bookmark to another page from the edit form keeps everything.** The move sent only the fields the form edits, then deleted the source row: opens, created date, preview, check URL, credential, mute and health settings were lost. It now sends the whole row with the edits on top (`dashboard-inline-edit.js`).
+- **fix — health settings from the Bookmarks view are no longer undone by the next dashboard save.** Expectations, check URL, credential, mute, ignores and accepted drift did not reach the dashboard's copy of the page, and its next drag, pin or delete wrote the old values back. The writes now reload that copy, and these settings move the data revision so other tabs and devices reload too (`dashboard-health.js`, `dashboard-health-multi-select.js`, `models.go`).
+- **fix — Today no longer prints over the category below it after you open a bookmark.** Opening one repaints the smart sections as new elements, and in packed columns nothing watched them any more, so a height change (an icon arriving) left their row span behind until another category happened to resize. The grid now watches the new elements (`dashboard-smart-collections.js`).
+- **fix — a page save from an older tab keeps the drift finding and the archive dates** the checks wrote meanwhile (`bookmark_carry.go`).
+- **fix — restoring a page from the trash lets go of shortcuts taken since,** as a single bookmark's restore does; both pages refused every save before (`trash_handlers.go`).
+- **fix — moving bookmarks to another page without a category brings their categories along,** instead of leaving them under "Unknown category" (`dashboard-config.js`).
+- **fix — a new address starts over.** Editing a bookmark's URL kept the old address's last check, error and drift baseline, and a drift-watched bookmark then reported "Now redirects to <new host>" until Accept drift. Both the edit form and the Bookmarks view's patch clear them (`handlers_bookmark_patch.go`, `dashboard-inline-edit.js`).
+- **new — the bookmark menus are grouped.** The grid's right-click menu now reads open and share, edit and file, checking and health, select, delete, with a line between each; the inbox's and the Bookmarks view's menus and both selection menus follow the same order (`dashboard-context-menu.js`, `dashboard-config-context-menu.js`).
+
+### Backups
+
+- **fix — a backup with a large local page copy can be restored.** A capture may be up to 52 MB, but a restore refused any file over 32 MB, so every backup taken after one big capture was unusable. The limit per file is now 64 MB, and a refused restore or import says why (`auto_backup.go`, `dashboard-config.js`).
+- **fix — a large backup can cross the wire.** Backup, download, restore and import get 15 minutes instead of the 30 s / 60 s an API call gets, and `/api/import` takes up to 1 GB (`backup.go`, `auto_backup.go`, `security.go`).
+- **fix — an upload over its limit is refused, not cut.** A 16 MB CJK font was saved as a 10 MB stump and reported applied; fonts may now be 32 MB, and the panel says why one is refused (`uploads.go`).
+- **fix — device-only settings leave what the server does alone:** analytics, local bookmarks, backup secrets, the background re-check, feeds, inbox limits and more (`device-settings-merge.js`).
+- **fix — a backup unzipped and zipped again on a Mac can be restored.** The `__MACOSX` folder that Compress adds counted as a second folder, and the restore found no pages (`auto_backup.go`).
+- **fix — the list of backups no longer reads every archive whole** to count its bookmarks; only the index of each ZIP is read (`auto_backup.go`).
+- **fix — Statistics loads its current figures after an update.** One of its scripts was fetched without a version and kept for a day (`asset_hash.go`).
+- **fix — the log viewer starts over after a clear in another tab or a restart,** instead of keeping cleared lines or showing replayed ones twice (`log_buffer.go`, `log_handlers.go`, `dashboard-config.js`).
+
+### Search
+
+- **fix — accented letters can be typed, and either spelling finds a name.** Every key gate was printable ASCII, so "Météo", "Zürich" or anything in Chinese could not be typed, and the matcher did not fold accents (`search.js`, `fuzzy-search.js`).
+- **fix — the inbox's keys stay out of an open dialog.** Escape cleared the ticks while the bulk-delete dialog stayed open; Enter, Space and d acted on the rows behind a confirm (`dashboard-inbox.js`).
+- **fix — a bookmark's own letter on the grid waits for a longer shortcut,** and for "Enter opens": with "nc" beside "n", typing "nc" after a search opened the bookmark behind "n" (`keyboard-navigation.js`).
+- **fix — `category:` and `:open category` go by the category's name.** A bookmark holds its category's id, so "category:vps" found nothing and the completions read out raw ids (`search.js`, `search-commands.js`).
+- **fix — what you type before the search code has loaded arrives whole.** Only the opening key waited, so ":dark" arrived as ":" and a shortcut typed the moment a tab opened did nothing (`search-loader.js`).
+- **fix — opening a bookmark from a command's list teaches the ranking nothing.** After `:tag work`, typing "work" ranked that bookmark first for good (`search.js`).
+- **fix — Ctrl/Cmd+Enter on a name-search result opens a new tab,** as on every other row (`search.js`).
+- **fix — `:save` keeps the `/` of a name search;** recalling it ran a shortcut search instead (`search.js`).
+- **fix — Show on dashboard, `:edit` and `:move` go to the bookmark's own row,** not its copy in Pinned or another smart collection (`dashboard-page-nav.js`, `search-commands.js`).
+- **fix — container names that arrive late keep the row you moved to;** Enter opened the first result (`search.js`).
+- **fix — a tag with a space works as a filter.** Its completion is now `tag:"home lab"`, which reads as one tag instead of a tag and a search word (`search.js`).
+- **fix — `:find` stays on when the grid is drawn again,** and ends on another page (`dashboard-setup.js`, `dashboard-render-core.js`, `dashboard-render-incremental.js`).
+
+### Inbox
+
+- **fix — the tag scan keeps a preview it could not read again,** and pauses when the outbound limit runs out instead of marking every page after it as read (`tag_scan.go`, `rate_limit.go`).
+- **fix — new inbox links get their picture,** and triage shows a local copy instead of a broken `https://data/…` (`inbox_handlers.go`, `preview_image_cache.go`, `dashboard-inbox-triage.js`).
+- **fix — one odd address in a browser export no longer refuses the whole import;** the row is left out and counted (`handlers.go`).
+- **fix — undoing a bulk Promote brings back the Unsorted copy it replaced,** with its note and tags; the copy was deleted outright and Undo left it out (`dashboard-inbox.js`).
+- **fix — a long address is kept whole or refused.** The inbox cut URLs at 2,048 characters, which stored a broken link and defeated the duplicate check; it now keeps up to 8,192 and refuses anything longer (`inbox.go`, `inbox_handlers.go`, `share_capture.go`).
+- **fix — links restored in bulk get their icons.** A refusal by the outbound limit was stamped as "this site has no icon", so the startup backfill never asked again (`inbox_handlers.go`).
+- **fix — a browser folder with a description keeps its name on import.** Its bookmarks were filed one level up (`netscape.go`).
+- **fix — sorting by Title follows the title the row shows** (`dashboard-inbox.js`).
+- **fix — the extension stores a page's icon only when it saves the page.** The popup stored one on every open and every edit of the address, and quick save before its duplicate check, so `data/icons` filled with files nothing refers to (`save-common.js`, `popup.js`, `background.js`, `bookmark-form-preview.js`).
+- **fix — the bookmark form stores a page's icon when you save, not while you type.** Every address typed or changed stored a favicon in `data/icons`, kept or not; the card now shows the favicon from where it is (`dashboard-inline-edit.js`, `bookmark-form-card.js`, `search-commands-new.js`, `bookmark-preview-service.js`).
+- **fix — inbox titles are decoded once.** Every read decoded entities again, so "What is &amp;nbsp;?" lost its text and a URL used as a title turned "&param=" into "¶m=" (`inbox.go`).
+- **fix — Forget token forgets the token only.** It deleted the whole source, so a new token brought back every item you had removed (`handlers_sources.go`, `dashboard-config.js`).
+
+### Docs
+
+- **docs — README:** the two Unraid themes in the Unraid section, with a screenshot of each (`screenshots/nextdash-unraid-black.jpg`, `nextdash-unraid-azure.jpg`).
+- **docs — `static/data/whats-new/v1.17.1.json` and its index entry** (`hideFromModal`, covered by `tests/whats-new-hidden-release.spec.js`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v316`. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — Config → Help:** `helpLibraryBody` describes the container cube in the Bookmarks view, in all six languages, with `bmContainerState` for its tooltip.
+- **docs — Manual and README:** Unraid Ember and Blaze next to Black and Azure (§16.1), **Move to page…** in the widget's right-click menu (§15.3), and the count of new themes (38).
 
 ---
 
@@ -303,6 +429,7 @@ Containers and bookmarks to self-hosted apps get real app icons from two open ic
 ### Docs
 
 - **docs — `static/data/whats-new/v1.17.0.json` and its index entry**, leading the What's new window; `whats-new-stub.js`'s `DASHBOARD_RELEASE` moved to `2026.10-dashboard-release-v1.17.0` and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v315`; `whats-new-hidden-release.spec.js` follows. An Overview spotlight for the Unraid widgets, with `since` v1.17.0, in six languages. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — the Unraid template**: `templates/nextdash.xml` and the live copy in `unraid_templates` carry v1.17.0 and v1.16.0 in `<Changes>` (keeping the last five releases), the date, Unraid, web search and the look studio in the overview, 28 built-in widget kinds, and all 18 README screenshots.
 
 ### Tests
 

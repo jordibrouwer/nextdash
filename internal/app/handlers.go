@@ -1951,12 +1951,19 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 		Bookmarks []ImportedRow
 	}{PageID: pageID, Bookmarks: rows}
 
+	// A row that is not a usable address is left out and counted, as a
+	// source run does. One stray `50%off` or dead domain in a browser export
+	// refused the whole file right after the dry run promised all of it.
+	valid := make([]ImportedRow, 0, len(request.Bookmarks))
+	invalid := 0
 	for _, bm := range request.Bookmarks {
 		if err := h.validateBookmarkURL(bm.URL); err != nil {
-			http.Error(w, fmt.Sprintf("Invalid URL: %v", err), http.StatusBadRequest)
-			return
+			invalid++
+			continue
 		}
+		valid = append(valid, bm)
 	}
+	request.Bookmarks = valid
 
 	// As every other write: rows for a page that does not exist were stored
 	// where nothing shows them.
@@ -2036,7 +2043,7 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 	// Both the bookmarks and the categories the report reads have changed.
 	h.invalidateHealthReportCache()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]int{"imported": imported, "skipped": skipped})
+	json.NewEncoder(w).Encode(map[string]int{"imported": imported, "skipped": skipped, "invalid": invalid})
 	logBrowserImport(request.PageID, imported, skipped, r)
 }
 
@@ -2598,6 +2605,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
+	settings.MaintenanceTimeZone = normalizeMaintenanceTimeZone(settings.MaintenanceTimeZone)
 	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
 	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
 	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
@@ -2807,6 +2815,8 @@ func (h *Handlers) ResetColors(w http.ResponseWriter, r *http.Request) {
 		Dark:    getDefaultDarkTheme(),
 		BuiltIn: getDefaultBuiltInThemes(),
 		Custom:  currentColors.Custom, // Preserve existing custom themes
+		// and the order they were put in.
+		CustomOrder: currentColors.CustomOrder,
 	}
 
 	if !respondStorePersistError(w, h.store.SaveColors(defaultColors)) {
@@ -5121,7 +5131,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 						PingMs: result.PingMs,
 						Code:   result.HTTPStatus,
 						Fail:   failureClass(result.ErrorDetail),
-						Maint:  inMaintenanceWindow(h.store.GetSettings().MaintenanceWindows, time.UnixMilli(lastChecked)),
+						Maint:  maintenanceInEffect(h.store.GetSettings(), time.UnixMilli(lastChecked)),
 					})
 				}
 			}

@@ -126,9 +126,9 @@ class DashboardConfigContextMenu {
                 { id: 'bulk-move', label: this.t('config.contextMoveSelected', 'Move {count} selected…', { count }), icon: '→' },
                 { id: 'bulk-tags', label: this.t('config.contextTagSelected', 'Tag {count} selected…', { count }), icon: '#' },
                 { id: 'bulk-pin', label: this.t('config.contextPinSelected', 'Pin or unpin {count} selected', { count }), icon: 'pin' },
-                { id: 'bulk-status', label: this.t('config.contextStatusSelected', 'Checking for {count} selected…', { count }), icon: '◉' },
+                { id: 'bulk-status', divider: true, label: this.t('config.contextStatusSelected', 'Checking for {count} selected…', { count }), icon: '◉' },
                 { id: 'bulk-export', label: this.t('config.contextExportSelected', 'Export {count} as CSV', { count }), icon: '⤓' },
-                { id: 'clear', label: this.t('config.contextClearSelection', 'Clear selection'), icon: '✕' },
+                { id: 'clear', divider: true, label: this.t('config.contextClearSelection', 'Clear selection'), icon: '✕' },
                 { id: 'bulk-delete', label: this.t('config.contextDeleteSelected', 'Delete {count} selected', { count }), icon: '✕', danger: true },
             ];
         }
@@ -167,6 +167,8 @@ class DashboardConfigContextMenu {
                 ...(c.isUnsortedBookmark?.(bookmark)
                     ? [{ id: 'promote', label: this.t('config.contextPromote', 'Promote…'), icon: '⇪' }] : []),
                 { id: 'edit', label: this.t('config.edit', 'Edit'), icon: '✎' },
+            ]),
+            ...group([
                 { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
                 // Re-checking is the Health tab's, one click from here.
                 ...healthItems.filter((item) => item.id !== 'recheck'),

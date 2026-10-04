@@ -853,15 +853,12 @@ class SearchCommandsComponent {
             return null;
         }
 
-        const rows = document.querySelectorAll('#dashboard-layout .bookmark-link[data-bookmark-url]');
+        // Not a smart collection's copy, which comes first and cannot be
+        // edited in place.
+        const rows = document.querySelectorAll('#dashboard-layout .category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url]');
         for (const row of rows) {
             const rowUrl = String(row.getAttribute('data-bookmark-url') || '').trim();
-            if (!rowUrl) continue;
-            const sameUrl = rowUrl === url;
-            const sameName = !ctx.name || String(ctx.name) === String(
-                (dash.bookmarks || []).find((b) => String(b.url || '').trim() === rowUrl)?.name || ''
-            );
-            if (!sameUrl) continue;
+            if (!rowUrl || rowUrl !== url) continue;
             const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
             const bookmark = Number.isFinite(bookmarkIndex) && bookmarkIndex >= 0
                 ? (dash.bookmarks || [])[bookmarkIndex]
@@ -1881,10 +1878,13 @@ class SearchCommandsComponent {
     _bookmarksInCategoryOnPage(dashboard, categoryQuery) {
         const q = String(categoryQuery || '').trim().toLowerCase();
         if (!q) return [];
+        const names = new Map(this._getVisiblePageCategories()
+            .map((c) => [String(c.id), String(c.name || '').toLowerCase()]));
         return (dashboard.bookmarks || []).filter((bookmark) => {
             if (!bookmark || !String(bookmark.url || '').trim()) return false;
             const category = String(bookmark.category || '').trim().toLowerCase();
-            return category === q || category.includes(q);
+            const name = names.get(String(bookmark.category || '').trim()) || '';
+            return category === q || category.includes(q) || (name && name.includes(q));
         });
     }
 
@@ -1910,12 +1910,13 @@ class SearchCommandsComponent {
             || String(category.id || '').toLowerCase() === query.toLowerCase()
         ));
         const categoryName = exactCategory?.name || query;
+        // A bookmark holds its category's id, never its name: compared with
+        // the name, every category with a generated id read as empty.
         const bookmarks = exactCategory
             ? (dashboard.bookmarks || []).filter((bookmark) => (
                 bookmark
                 && String(bookmark.url || '').trim()
-                && String(bookmark.category || '').trim().toLowerCase()
-                    === String(exactCategory.name || '').trim().toLowerCase()
+                && String(bookmark.category || '').trim() === String(exactCategory.id || '').trim()
             ))
             : this._bookmarksInCategoryOnPage(dashboard, query);
 
@@ -4862,7 +4863,7 @@ class SearchCommandsComponent {
 
     /**
      * Handle the :find command
-     * Filters bookmark tiles on the current page live; Escape clears the filter.
+     * Filters bookmark tiles on the current page; `:find clear` or another page ends it.
      * @param {Array} args - Arguments after 'find'
      * @returns {Array} Single action row or prompt
      */

@@ -12,7 +12,7 @@ My bookmark bar had become a graveyard, so I built a self-hosted dashboard that 
 
 Run it on any machine or container, open it in your browser, organise bookmarks across pages, and reach everything from the keyboard. Beside your bookmarks, **widgets** show what is going on: uptime of the services you watch, what waits in the inbox, which certificate runs out, the weather, your calendar, your feeds, your machine — and any self-hosted service that answers with JSON.
 
-🎨 **320 themes and a look studio.** 160 theme families, each with a light and a dark half, in twelve characters — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed, carbon, paper, terminal and ink — that decide how the surfaces are drawn, not only their colours. **`Shift + A`** opens the look studio beside your dashboard and changes the real page as you go: the theme, 26 backdrops drawn in its colours, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or character, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: Appearance](MANUAL.md#16-appearance)*
+🎨 **328 themes and a look studio.** 164 theme families, each with a light and a dark half, in twelve characters — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed, carbon, paper, terminal and ink — that decide how the surfaces are drawn, not only their colours. **`Shift + A`** opens the look studio beside your dashboard and changes the real page as you go: the theme, 26 backdrops drawn in its colours, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or character, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: Appearance](MANUAL.md#16-appearance)*
 
 Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
@@ -93,7 +93,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
 </table>
 
 <details>
-<summary><b>More screenshots</b> — ten more views, in other themes</summary>
+<summary><b>More screenshots</b> — twelve more views, in other themes</summary>
 <br />
 
 <table border="0" width="100%">
@@ -142,7 +142,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-themes.jpg" alt="Look studio" width="100%" />
       <br />
-      <sub><b>The look studio</b> <i>(Mulberry Silk)</i> — <kbd>Shift</kbd>+<kbd>A</kbd> opens it beside the dashboard: 160 theme families with a light and a dark half, filtered by character, and tabs for the backdrop, card surface, headers, layout and ready-made looks. Every change shows on your own page, and nothing is saved until Apply.</sub>
+      <sub><b>The look studio</b> <i>(Mulberry Silk)</i> — <kbd>Shift</kbd>+<kbd>A</kbd> opens it beside the dashboard: 164 theme families with a light and a dark half, filtered by character, and tabs for the backdrop, card surface, headers, layout and ready-made looks. Every change shows on your own page, and nothing is saved until Apply.</sub>
     </td>
   </tr>
   <tr>
@@ -155,6 +155,21 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
       <img src="screenshots/nextdash-config-statistics.jpg" alt="Config: Statistics" width="100%" />
       <br />
       <sub><b>Config → Statistics</b> <i>(Copper Circuit)</i> — Six figures per tab, what needs attention with a button for each, the cleanup score, and charts you can point at — across Overview, Usage, Collection, Inbox and Health.</sub>
+    </td>
+  </tr>
+</table>
+
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-unraid-black.jpg" alt="Unraid widgets in the Unraid Black theme" width="100%" />
+      <br />
+      <sub><b>Unraid Black</b> <i>(dark)</i> — A theme for Unraid users: flat black panels, small uppercase labels and the orange of the Unraid logo, with the Unraid widgets beside the homelab bookmarks.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-unraid-azure.jpg" alt="Unraid widgets in the Unraid Azure theme" width="100%" />
+      <br />
+      <sub><b>Unraid Azure</b> <i>(light)</i> — The cooler pair: grey-blue panels and a steel-blue accent. Both themes come in a dark and a light variant, as do **Unraid Ember** and **Unraid Blaze**, the logo's orange and red.</sub>
     </td>
   </tr>
 </table>
@@ -429,7 +444,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Appearance**
 
-- 160 theme families in light and dark, each with a character that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — plus an editor for your own. *[Manual §16](MANUAL.md#16-appearance)*
+- 164 theme families in light and dark, each with a character that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — plus an editor for your own. *[Manual §16](MANUAL.md#16-appearance)*
 - **A theme browser that is a look studio.** It opens beside the dashboard and changes the page live: the theme, its backdrop, depth and card glass, the category headers and the type. Twelve ready-made looks set them in one go; Compare shows what you had, and nothing is saved until Apply. *[Theme browser](MANUAL.md#the-theme-browser)*
 - 26 backdrops drawn in each theme's own colours, from aurora and dunes to stars and hexagons, each theme with one picked for it — or choose your own and tune it with intensity, scale, blur and tint. *[Manual §16.4](MANUAL.md#164-type-and-background)*
 - Character, depth, glow, effects, card glass and contrast for any theme; category header styles, layout presets, columns, density and fonts. *[Manual §16.3](MANUAL.md#163-surfaces)*

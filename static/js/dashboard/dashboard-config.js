@@ -6621,6 +6621,15 @@ class DashboardConfig {
             const data = await res.json();
             if (stale()) return;
 
+            // A clear (in any tab) or a restart starts a new run of sequence
+            // numbers, which the numbers alone cannot show: cleared lines
+            // stayed here, and lines replayed at boot came in twice.
+            if (data.epoch && this._logEpoch && data.epoch !== this._logEpoch) {
+                this._logEpoch = data.epoch;
+                return await this.loadServerLog({ reset: true });
+            }
+            if (data.epoch) this._logEpoch = data.epoch;
+
             const incoming = Array.isArray(data.entries) ? data.entries : [];
             this._logLines = this._logLines.concat(incoming);
             // The buffer is capped server-side; keeping the same cap here stops
@@ -8144,11 +8153,11 @@ class DashboardConfig {
         const endWait = this.beginWait(this.t('config.waitRestoreTitle', 'Restoring the backup…'), this.t('config.waitRestoreStatus', 'Replacing your data with the backup'));
         try {
             const res = await this.writeFetch(`/api/auto-backups/restore?name=${encodeURIComponent(name)}`, { method: 'POST' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw Object.assign(new Error(await this.backupFailureReason(res)), { fromServer: true });
             this.notify(this.t('config.autoBackupRestoreSuccess', 'Backup restored. Reloading…'), 'success');
             setTimeout(() => window.location.reload(), 800);
-        } catch {
-            this.notify(this.t('config.autoBackupRestoreError', 'Failed to restore backup.'), 'error');
+        } catch (err) {
+            this.notify(this.withBackupReason(this.t('config.autoBackupRestoreError', 'Failed to restore backup.'), err), 'error');
         } finally {
             endWait();
         }
@@ -8179,13 +8188,26 @@ class DashboardConfig {
                 this.t('config.backupImportTitle', 'Importing the backup…'),
                 this.t('config.backupImportStatus', 'Replacing your data'));
             const res = await this.writeFetch('/api/import', { method: 'POST', body: form });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw Object.assign(new Error(await this.backupFailureReason(res)), { fromServer: true });
             this.notify(this.t('config.backupImportSuccess', 'Backup imported. Reloading…'), 'success');
             setTimeout(() => window.location.reload(), 800);
-        } catch {
+        } catch (err) {
             this.hideProgressOverlay();
-            this.notify(this.t('config.backupImportError', 'Could not import the backup.'), 'error');
+            this.notify(this.withBackupReason(this.t('config.backupImportError', 'Could not import the backup.'), err), 'error');
         }
+    }
+
+    // The server says why a restore was refused ("… is too large to restore
+    // from this backup"); a bare "Failed" left the reader guessing.
+    async backupFailureReason(res) {
+        let text = '';
+        try { text = (await res.text()).trim(); } catch { /* no body */ }
+        return text && text.length <= 300 && !text.startsWith('<') ? text : '';
+    }
+
+    withBackupReason(message, err) {
+        const reason = err && err.fromServer ? err.message : '';
+        return reason ? `${message} ${reason}` : message;
     }
 
     async resetAllData() {
@@ -9051,7 +9073,9 @@ class DashboardConfig {
             { confirmLabel: this.t('config.sourceForgetBtn', 'Forget token'), danger: true });
         if (!ok) return;
         try {
-            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            // The token only: the source keeps what it already imported, so a
+            // new token does not bring back what was deleted since.
+            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(id)}/forget`, { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.notify(this.t('config.sourceForgotten', 'Token forgotten.'), 'success');
             void this.loadSourceStates();
@@ -10531,13 +10555,20 @@ class DashboardConfig {
 
     /** GET /api/colors once; the editor mutates this copy and POSTs it back. */
     async loadColorsData() {
-        if (this._colorsData) return this._colorsData;
+        if (this._colorsData && !this._colorsData._unloaded) return this._colorsData;
+        let data = null;
         try {
             const res = await fetch('/api/colors');
-            const data = res && res.ok ? await res.json() : null;
-            this._colorsData = data && typeof data === 'object' ? data : { light: {}, dark: {}, builtIn: {}, custom: {} };
-        } catch {
-            this._colorsData = { light: {}, dark: {}, builtIn: {}, custom: {} };
+            data = res && res.ok ? await res.json() : null;
+        } catch { data = null; }
+        if (data && typeof data === 'object') {
+            this._colorsData = DashboardConfig.orderCustomThemes(data);
+        } else if (!this._colorsData) {
+            // A failed read (server restarting, a proxy's 502) leaves an empty
+            // stand-in so the tab can render. It is marked: the next call reads
+            // again, and saveColorsData refuses to post it -- posted, it
+            // replaced every own theme and both palettes with nothing.
+            this._colorsData = { light: {}, dark: {}, builtIn: {}, custom: {}, _unloaded: true };
         }
         if (!this._colorsData.custom || typeof this._colorsData.custom !== 'object') {
             this._colorsData.custom = {};
@@ -10937,11 +10968,17 @@ class DashboardConfig {
             return true;
         }
         const run = async () => {
+            if (this._colorsData?._unloaded) {
+                this.notify(this.t('config.themeSaveError', 'Could not save the theme.'), 'error');
+                return false;
+            }
             try {
                 const res = await this.writeFetch('/api/colors', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this._colorsData),
+                    // The order of the own themes travels as a list: the server
+                    // keeps them in a map, which it writes sorted.
+                    body: JSON.stringify({ ...this._colorsData, customOrder: Object.keys(this._colorsData?.custom || {}) }),
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 this.syncCustomThemeIds();
@@ -10992,6 +11029,19 @@ class DashboardConfig {
                 this._colorsSavePromise = null;
             }
         }
+    }
+
+    /**
+     * Own themes in the order the reader put them: the list travels as
+     * customOrder, since the server keeps them in a map it writes sorted.
+     */
+    static orderCustomThemes(data) {
+        if (!data || !Array.isArray(data.customOrder) || !data.custom || typeof data.custom !== 'object') return data;
+        const ordered = {};
+        data.customOrder.forEach((id) => { if (data.custom[id]) ordered[id] = data.custom[id]; });
+        Object.keys(data.custom).forEach((id) => { if (!ordered[id]) ordered[id] = data.custom[id]; });
+        data.custom = ordered;
+        return data;
     }
 
     /** A theme id that cannot collide with one already stored. */
@@ -11120,6 +11170,10 @@ class DashboardConfig {
                 .replace('{name}', String(theme.name || id))
         );
         if (!ok) return;
+        // What is on screen, read before the delete: pairing reads the id list
+        // this changes, and asked afterwards it could never name the half that
+        // was just removed.
+        const shownBefore = this.displayTheme?.();
         delete data.custom[id];
         this.syncCustomThemeIds();
         if (this._themeSelected === id) this._themeSelected = null;
@@ -11136,11 +11190,14 @@ class DashboardConfig {
         // theme that no longer exists, so fall back to the default.
         // Also the half on screen under Follow system, which is not the
         // stored one. 'default' is no theme id: the page lost every colour.
-        const wasActive = this.dash.settings?.theme === id || this.displayTheme?.() === id;
-        if (wasActive) {
+        // Only the stored choice falls back; when the half on screen goes and
+        // the stored half stays, that one is drawn.
+        const storedGone = this.dash.settings?.theme === id;
+        const wasActive = storedGone || shownBefore === id;
+        if (storedGone) {
             this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'matrix-bluepill-dark';
         }
-        if (wasActive || rowsLeft) void this.saveSettingsWithFeedback();
+        if (storedGone || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();
         await this.saveColorsData();
         // The page still said data-theme="<deleted id>", and the reloaded theme
@@ -11394,7 +11451,19 @@ class DashboardConfig {
             this.previewThemeColors(id);
             const reset = container.querySelector(`[data-theme-char-reset="${prop}"]`);
             reset?.classList.toggle('is-visible', value !== undefined);
-            if (save) void this.saveColorsData();
+            if (!save) return;
+            // A packaged theme has no "automatic": the server fills an empty
+            // field from the shipped theme, so empty saved and came straight
+            // back. Automatic there means as shipped, written as such.
+            if (value === undefined && !this.isCustomTheme(id)) {
+                void this.shippedThemeValue(id, prop).then((shipped) => {
+                    if (shipped !== undefined && shipped !== '' && shipped !== 0) theme[prop] = shipped;
+                    this.previewThemeColors(id);
+                    void this.saveColorsData();
+                });
+                return;
+            }
+            void this.saveColorsData();
         };
         container.querySelectorAll('[data-theme-char]').forEach((range) => {
             const prop = range.dataset.themeChar;
@@ -11473,6 +11542,17 @@ class DashboardConfig {
         });
     }
 
+    /** One field of a packaged theme as it ships, or undefined. */
+    async shippedThemeValue(id, prop) {
+        try {
+            const res = await fetch(`/api/themes/defaults?id=${encodeURIComponent(id)}`);
+            if (!res.ok) return undefined;
+            return (await res.json())?.defaults?.[prop];
+        } catch (_error) {
+            return undefined;
+        }
+    }
+
     async handleThemeAction(action, id) {
         const theme = this.themeById(id);
         if (!theme) return;
@@ -11491,8 +11571,11 @@ class DashboardConfig {
         if (action === 'duplicate') {
             const names = Object.values(this._colorsData.custom).map((t) => t.name);
             const copyId = DashboardConfig.newThemeId();
+            // Without the collection: that is the set a packaged theme ships
+            // in, and the copy is one of your own (as saveCurrentAsTheme does).
+            const { collection: _collection, ...rest } = theme;
             this._colorsData.custom[copyId] = {
-                ...theme,
+                ...rest,
                 backdrop: theme.backdrop || this.themeBackdropOf(id) || undefined,
                 name: DashboardConfig.uniqueNameFrom(
                     `${theme.name || id} ${this.t('config.themeCopySuffix', 'copy')}`, names),
@@ -11515,7 +11598,7 @@ class DashboardConfig {
             try {
                 const res = await this.writeFetch('/api/colors/reset', { method: 'POST' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                this._colorsData = await res.json();
+                this._colorsData = DashboardConfig.orderCustomThemes(await res.json());
                 if (!this._colorsData.custom) this._colorsData.custom = {};
                 this.clearThemePreview();
                 this.reloadThemeCSS();
@@ -12345,7 +12428,7 @@ class DashboardConfig {
             const form = new FormData();
             form.append('font', file);
             const res = await this.writeFetch('/api/font', { method: 'POST', body: form });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw Object.assign(new Error(await this.backupFailureReason(res)), { fromServer: true });
             const body = await res.json().catch(() => ({}));
             if (body.path) this.dash.settings.customFontPath = body.path;
             this.dash.settings.fontPreset = 'custom';
@@ -12354,8 +12437,9 @@ class DashboardConfig {
             this.dash.saveSettings?.();
             this.notify(this.t('config.fontUploadSuccess', 'Custom font applied.'), 'success');
             this.persistAppearance();
-        } catch {
-            this.notify(this.t('config.fontUploadError', 'Could not upload the font.'), 'error');
+        } catch (err) {
+            // "The font is larger than 32 MB" rather than a bare failure.
+            this.notify(this.withBackupReason(this.t('config.fontUploadError', 'Could not upload the font.'), err), 'error');
         }
     }
 
@@ -14200,7 +14284,7 @@ class DashboardConfig {
                 return `
                     <div class="config-field-row">
                         <button type="button" class="config-btn" data-monitor-notify-test>${esc(this.t('config.monitorNotifyTestButton', 'Send test alert'))}</button>
-                        <span class="config-field-hint" data-monitor-notify-test-status></span>
+                        <span class="config-field-hint" data-monitor-notify-test-status>${esc(this._monitorNotifyTestStatus || '')}</span>
                     </div>`;
             }
             // A button that does something once instead of a value that is
@@ -14917,10 +15001,14 @@ class DashboardConfig {
     /** Read the list back off the DOM, so one repaint reflects every edit. */
     collectMaintenanceWindows(container) {
         const rows = Array.from(container.querySelectorAll('[data-maint-row]'));
-        return rows.map((row) => {
-            const days = Array.from(row.querySelectorAll('[data-maint-day]'))
+        const saved = Array.isArray(this.dash.settings?.maintenanceWindows) ? this.dash.settings.maintenanceWindows : [];
+        return rows.map((row, i) => {
+            let days = Array.from(row.querySelectorAll('[data-maint-day]'))
                 .filter((b) => b.classList.contains('is-on'))
                 .map((b) => Number(b.getAttribute('data-maint-day')));
+            // No day picked is not "every day", which is what an empty list
+            // means to the server: the row keeps its saved days until one is.
+            if (days.length === 0) days = Array.isArray(saved[i]?.days) ? saved[i].days : [];
             return {
                 // Every day on is the same as none. normalizeMaintenanceWindows
                 // collapses it server-side too, so this is belt and braces —
@@ -14934,12 +15022,24 @@ class DashboardConfig {
         });
     }
 
+    /**
+     * The windows with the zone they were typed in. A container runs on UTC
+     * unless TZ is set, and the server read "02:00" on that clock: hours off.
+     */
+    setMaintenanceWindows(windows) {
+        this.dash.settings.maintenanceWindows = windows;
+        try {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (tz) this.dash.settings.maintenanceTimeZone = tz;
+        } catch { /* no Intl: the server's clock */ }
+    }
+
     bindMaintenanceWindows(container) {
         const list = container.querySelector('[data-maint-list]');
         if (!list) return;
 
         const commit = ({ repaint = true } = {}) => {
-            this.dash.settings.maintenanceWindows = this.collectMaintenanceWindows(list);
+            this.setMaintenanceWindows(this.collectMaintenanceWindows(list));
             void this.saveSettingsWithFeedback();
             // The hint under a row depends on the times just typed, and adding
             // or removing changes every index below it, so the block is redrawn
@@ -14954,7 +15054,7 @@ class DashboardConfig {
             // A sensible default rather than an empty row: the overwhelmingly
             // common window is small hours, every day.
             windows.push({ days: [], start: '02:00', end: '03:00', label: '' });
-            this.dash.settings.maintenanceWindows = windows;
+            this.setMaintenanceWindows(windows);
             void this.saveSettingsWithFeedback();
             this.repaintActiveControlPanels();
         });
@@ -14967,7 +15067,7 @@ class DashboardConfig {
                     : [];
                 if (!Number.isFinite(index) || index < 0 || index >= windows.length) return;
                 windows.splice(index, 1);
-                this.dash.settings.maintenanceWindows = windows;
+                this.setMaintenanceWindows(windows);
                 void this.saveSettingsWithFeedback();
                 this.repaintActiveControlPanels();
             });
@@ -14977,6 +15077,10 @@ class DashboardConfig {
             btn.addEventListener('click', () => {
                 btn.classList.toggle('is-on');
                 btn.setAttribute('aria-pressed', btn.classList.contains('is-on') ? 'true' : 'false');
+                // Switching off the last day waits for the next one: saved now,
+                // the empty row would mean every day.
+                const row = btn.closest('[data-maint-row]');
+                if (row && !row.querySelector('[data-maint-day].is-on')) return;
                 commit();
             });
         });
@@ -15103,11 +15207,19 @@ class DashboardConfig {
     bindMonitorNotifyTest(container) {
         const btn = container.querySelector('[data-monitor-notify-test]');
         if (!btn) return;
-        const status = container.querySelector('[data-monitor-notify-test-status]');
+        // The blur that saves a field just typed can redraw this panel while
+        // the test is on its way, so the outcome is kept and written to the
+        // line that is on screen when it arrives, not to the one clicked.
+        const say = (text) => {
+            this._monitorNotifyTestStatus = text;
+            const line = document.querySelector('[data-monitor-notify-test-status]')
+                || container.querySelector('[data-monitor-notify-test-status]');
+            if (line) line.textContent = text;
+        };
 
         btn.addEventListener('click', async () => {
             btn.disabled = true;
-            if (status) status.textContent = this.t('config.monitorNotifyTestSending', 'Sending…');
+            say(this.t('config.monitorNotifyTestSending', 'Sending…'));
             try {
                 // An address typed and the button clicked at once: the field
                 // saves on blur, and the test read the stored settings before
@@ -15124,11 +15236,11 @@ class DashboardConfig {
                     const detail = (await res.text().catch(() => '')).trim();
                     throw new Error(detail || `HTTP ${res.status}`);
                 }
-                if (status) status.textContent = this.t('config.monitorNotifyTestSent', 'Sent — check your alert service.');
+                say(this.t('config.monitorNotifyTestSent', 'Sent — check your alert service.'));
                 window.AppNotification?.show?.(this.t('config.monitorNotifyTestSent', 'Sent — check your alert service.'));
             } catch (err) {
                 const message = err?.message || String(err);
-                if (status) status.textContent = message;
+                say(message);
                 window.AppNotification?.show?.(message);
             } finally {
                 btn.disabled = false;
@@ -19071,7 +19183,7 @@ class DashboardConfig {
               label: ['config.widgetDisksLabels', 'Names for them'],
               hint: ['config.widgetDisksLabelsHint',
                      'Written as path=name, so /mnt/user=Files. Without one a disk shows its path.'] },
-            { key: 'showMeter', kind: 'bool', label: ['config.widgetDisksMeter', 'Show a bar per disk'] },
+            { key: 'showMeter', kind: 'bool', defaultOn: true, label: ['config.widgetDisksMeter', 'Show a bar per disk'] },
             { key: 'showInodes', kind: 'bool', label: ['config.widgetDisksInodesToggle', 'Show how full the file table is'] },
         ],
         cpu: [
@@ -19094,7 +19206,7 @@ class DashboardConfig {
         ],
         uptime: [
             { key: 'downOnly', kind: 'bool', label: ['config.widgetDownOnly', 'Only what is down now'] },
-            { key: 'sparkline', kind: 'bool', label: ['config.widgetSparkline', 'Show a sparkline per row'] },
+            { key: 'sparkline', kind: 'bool', defaultOn: true, label: ['config.widgetSparkline', 'Show a sparkline per row'] },
             { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
@@ -19108,7 +19220,7 @@ class DashboardConfig {
         ],
         inbox: [
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-            { key: 'showSource', kind: 'bool', label: ['config.widgetShowSource', 'Show where each link came from'] },
+            { key: 'showSource', kind: 'bool', defaultOn: true, label: ['config.widgetShowSource', 'Show where each link came from'] },
         ],
         unsorted: [
             { key: 'sort', kind: 'choice',
@@ -19126,7 +19238,7 @@ class DashboardConfig {
         ],
         feeds: [
             { key: 'freshOnly', kind: 'bool', label: ['config.widgetFreshOnly', 'Only feeds with fresh items'] },
-            { key: 'showRetired', kind: 'bool', label: ['config.widgetShowRetired', 'Show feeds that stopped after repeated failures'] },
+            { key: 'showRetired', kind: 'bool', defaultOn: true, label: ['config.widgetShowRetired', 'Show feeds that stopped after repeated failures'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         sources: [
@@ -19136,7 +19248,7 @@ class DashboardConfig {
         neglected: [
             { key: 'sinceDays', kind: 'int', min: 7, max: 730,
               label: ['config.widgetSinceDays', 'Not opened for (days)'] },
-            { key: 'includeNeverOpened', kind: 'bool',
+            { key: 'includeNeverOpened', kind: 'bool', defaultOn: true,
               label: ['config.widgetNeverOpened', 'Count bookmarks never opened'] },
             { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
@@ -19164,7 +19276,7 @@ class DashboardConfig {
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         backups: [
-            { key: 'showList', kind: 'bool', label: ['config.widgetShowList', 'List the backups themselves'] },
+            { key: 'showList', kind: 'bool', defaultOn: true, label: ['config.widgetShowList', 'List the backups themselves'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         weather: [
@@ -20733,7 +20845,7 @@ class DashboardConfig {
                     <label class="config-toggle config-toggle--inline">
                         <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
                             data-widget-index="${index}" data-widget-kind="bool"
-                            ${config[field.key] ? 'checked' : ''}>
+                            ${(field.defaultOn ? config[field.key] !== false : Boolean(config[field.key])) ? 'checked' : ''}>
                         <span>${label}${this.widgetFieldInfoButton(field, index)}</span>
                     </label>`;
             }
@@ -22362,6 +22474,11 @@ class DashboardConfig {
         const secret = String(auth.secret || '').trim();
         const stored = this.storedCredentialState(block);
         const config = { ...draft.config };
+        // Shown belongs to the list, not the panel: the toggle writes the block
+        // directly, and the draft still held what was there when the panel
+        // opened, so Save brought a widget just hidden back.
+        if ((block.config || {}).enabled === false) config.enabled = false;
+        else delete config.enabled;
         let dropOwnKey = false;
 
         if (auth.kind === 'header' || auth.kind === 'basic' || auth.kind === 'query'
@@ -24185,6 +24302,14 @@ class DashboardConfig {
                 await this.refreshTagKeywords();
                 this.renderTagSuggestionsSafe();
                 this.syncTagSuggestionCount();
+
+                // The server's outbound limit ran out: the pages it could not
+                // ask are still pending. Wait it out (Stop still works) rather
+                // than burning every slice on refusals.
+                const waitSeconds = Number(data.retryAfter) || 0;
+                for (let s = 0; s < waitSeconds && this._tagScanState.running; s += 1) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                }
             }
             const stopped = this._tagScanState.pending > 0;
             this.finishProgressOverlay(stopped
@@ -26029,6 +26154,7 @@ class DashboardConfig {
             window.BookmarkFeedRow?.bindIconFallback?.(img);
         });
         this.fitWorkbenchTags?.(listRoot);
+        this.fillWorkbenchContainers?.(listRoot);
         // Delegated once per host: rows are replaced on every repaint.
         if (listRoot.dataset.bmRowsWired === '1') return;
         listRoot.dataset.bmRowsWired = '1';
@@ -26876,6 +27002,17 @@ class DashboardConfig {
         // URL already there) left them on no page at all.
         if (targetCat) {
             await this.ensureCategoryOnPage(targetPage, targetCat, picked.map((b) => String(b.pageId)));
+        } else {
+            // No category chosen: each row keeps its own, and category ids are
+            // per page, so the target needs them too -- without, the rows sat
+            // under "Unknown category" there.
+            const sources = picked.map((b) => String(b.pageId));
+            const cats = [...new Set(picked
+                .filter((b) => String(b.pageId) !== targetPage)
+                .map((b) => String(b.category || '')).filter(Boolean))];
+            for (const cat of cats) {
+                await this.ensureCategoryOnPage(targetPage, cat, sources);
+            }
         }
         let result;
         try {

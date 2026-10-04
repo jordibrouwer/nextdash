@@ -330,11 +330,17 @@ background; the tile shows the old figure meanwhile, or none before the first.
 */
 const dockerDiskStale = 6 * time.Hour
 
+// dockerDiskRetry spaces the attempts: a measurement that timed out left the
+// cache stale, and every poll of the Containers tile started another, so a slow
+// daemon walked its whole disk back to back.
+const dockerDiskRetry = 30 * time.Minute
+
 var dockerDiskCache struct {
 	mu        sync.Mutex
 	totals    *dockerDiskTotals
 	at        time.Time
 	measuring bool
+	tried     time.Time // when the last measurement was started
 }
 
 func rememberDockerDisk(t dockerDiskTotals, at time.Time) {
@@ -342,8 +348,10 @@ func rememberDockerDisk(t dockerDiskTotals, at time.Time) {
 	defer dockerDiskCache.mu.Unlock()
 	dockerDiskCache.totals = &t
 	dockerDiskCache.at = at
-	// A measurement has come in; the next stale read may start another.
+	// A measurement has come in; the next stale read may start another, with
+	// no wait: the wait is for attempts that failed.
 	dockerDiskCache.measuring = false
+	dockerDiskCache.tried = time.Time{}
 }
 
 func resetDockerDiskCache() {
@@ -352,6 +360,7 @@ func resetDockerDiskCache() {
 	dockerDiskCache.totals = nil
 	dockerDiskCache.at = time.Time{}
 	dockerDiskCache.measuring = false
+	dockerDiskCache.tried = time.Time{}
 }
 
 // dockerDiskRefresh starts a background measurement; a variable so a test can
@@ -383,8 +392,9 @@ func dockerReclaimable(now time.Time) (int64, int64) {
 	dockerDiskCache.mu.Lock()
 	defer dockerDiskCache.mu.Unlock()
 	stale := dockerDiskCache.totals == nil || now.Sub(dockerDiskCache.at) > dockerDiskStale
-	if stale && !dockerDiskCache.measuring {
+	if stale && !dockerDiskCache.measuring && now.Sub(dockerDiskCache.tried) >= dockerDiskRetry {
 		dockerDiskCache.measuring = true
+		dockerDiskCache.tried = now
 		dockerDiskRefresh()
 	}
 	if dockerDiskCache.totals == nil {
