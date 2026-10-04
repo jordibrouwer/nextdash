@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -514,11 +515,19 @@ func resolveAutoBackupPath(name string) (string, bool) {
 //
 // "icons/" is deliberately not treated as a wrapper: it is a real part of the
 // backup layout, and stripping it would flatten icons into the data directory.
+// macResourceFork is what macOS's Compress adds beside each file with
+// extended attributes: __MACOSX/<folder>/._<file>. Counted, that folder was a
+// second wrapper and a re-zipped backup was refused as having no pages.
+func macResourceFork(name string) bool {
+	name = strings.ReplaceAll(name, "\\", "/")
+	return strings.HasPrefix(name, "__MACOSX/") || strings.HasPrefix(path.Base(name), "._")
+}
+
 func commonZipPrefix(files []*zip.File) string {
 	prefix := ""
 	for _, f := range files {
 		name := normalizeImportFilename(f.Name)
-		if name == "" {
+		if name == "" || macResourceFork(f.Name) {
 			continue
 		}
 		idx := strings.Index(name, "/")
@@ -566,7 +575,7 @@ func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
 
 	staged := make([]stagedImportFile, 0, len(zr.File))
 	for _, f := range zr.File {
-		if f.FileInfo().IsDir() {
+		if f.FileInfo().IsDir() || macResourceFork(f.Name) {
 			continue
 		}
 		filename := strings.TrimPrefix(normalizeImportFilename(f.Name), prefix)
@@ -682,14 +691,13 @@ func (h *Handlers) RunAutoBackup(w http.ResponseWriter, r *http.Request) {
 // to render because one old archive is unreadable is worse than a row without
 // a count.
 func countBackupContents(path string) (bookmarks int, pages int) {
-	data, err := os.ReadFile(path)
+	// The central directory only, entries opened as needed: read whole, a
+	// listing of a few backups with local copies held hundreds of MB at once.
+	zr, err := zip.OpenReader(path)
 	if err != nil {
 		return 0, 0
 	}
-	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		return 0, 0
-	}
+	defer zr.Close()
 	for _, f := range zr.File {
 		name := filepath.Base(f.Name)
 		if !strings.HasPrefix(name, "bookmarks-") || !strings.HasSuffix(name, ".json") {

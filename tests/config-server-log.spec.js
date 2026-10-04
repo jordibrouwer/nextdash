@@ -403,3 +403,29 @@ test.describe('Logs → Server logs', () => {
         await expect(page.locator('.config-log-trail-card')).toHaveCount(3);
     });
 });
+
+// A clear in another tab, or a restart, starts a new epoch: the viewer drops
+// what it holds and reads the window again, rather than keeping cleared lines
+// or adding replayed ones twice.
+test('a new log epoch replaces the lines this tab holds', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
+    const replies = [
+        { epoch: 'a', entries: [{ seq: 0, level: 'info', msg: 'old line' }], nextSeq: 1 },
+        { epoch: 'b', entries: [], nextSeq: 1 },
+        { epoch: 'b', entries: [{ seq: 0, level: 'info', msg: 'new line' }], nextSeq: 1 },
+    ];
+    let call = 0;
+    await page.route(/\/api\/logs(\?.*)?$/, (route) => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ stats: { total: 1, warn: 0, error: 0 }, capacity: 2000, ...replies[Math.min(call++, replies.length - 1)] }),
+    }));
+    const lines = await page.evaluate(async () => {
+        const cfg = window.dashboardInstance.config;
+        await cfg.loadServerLog({ reset: true });
+        await cfg.loadServerLog();
+        return cfg._logLines.map((l) => l.msg);
+    });
+    expect(lines).toEqual(['new line']);
+});

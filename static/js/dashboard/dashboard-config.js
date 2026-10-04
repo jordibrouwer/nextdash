@@ -6621,6 +6621,15 @@ class DashboardConfig {
             const data = await res.json();
             if (stale()) return;
 
+            // A clear (in any tab) or a restart starts a new run of sequence
+            // numbers, which the numbers alone cannot show: cleared lines
+            // stayed here, and lines replayed at boot came in twice.
+            if (data.epoch && this._logEpoch && data.epoch !== this._logEpoch) {
+                this._logEpoch = data.epoch;
+                return await this.loadServerLog({ reset: true });
+            }
+            if (data.epoch) this._logEpoch = data.epoch;
+
             const incoming = Array.isArray(data.entries) ? data.entries : [];
             this._logLines = this._logLines.concat(incoming);
             // The buffer is capped server-side; keeping the same cap here stops

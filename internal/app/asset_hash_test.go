@@ -1,8 +1,10 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -254,5 +256,37 @@ func TestLazyAssetMapCarriesHashedCheatSheet(t *testing.T) {
 	got := m["nextDash-cheatsheet.pdf"]
 	if !strings.HasPrefix(got, "/static/nextDash-cheatsheet.pdf?v=") {
 		t.Fatalf("cheat sheet URL = %q; want a hashed /static/nextDash-cheatsheet.pdf?v=…", got)
+	}
+}
+
+// Every script loaded on demand by a literal path is hashed, or a browser
+// keeps the old copy for a day after an update. SECTION_MODULES has its own
+// test; this catches the loaders outside it, such as Statistics' figures.
+func TestScriptsLoadedOnDemandAreLazyAssets(t *testing.T) {
+	listed := make(map[string]bool, len(lazyLoadedAssets))
+	for _, rel := range lazyLoadedAssets {
+		listed[rel] = true
+	}
+	tpl, _ := os.ReadFile(repoFile(t, "templates", "dashboard.html"))
+	literal := regexp.MustCompile(`(?:\bload|loadScriptOnce)\('(js/[^']+\.js)'`)
+	root := repoFile(t, "static")
+	err := filepath.WalkDir(filepath.Join(root, "js"), func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || !strings.HasSuffix(p, ".js") {
+			return err
+		}
+		src, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		for _, m := range literal.FindAllSubmatch(src, -1) {
+			rel := string(m[1])
+			if !listed[rel] && !bytes.Contains(tpl, []byte(rel)) {
+				t.Errorf("%s loads %s on demand, but it is not in lazyLoadedAssets", strings.TrimPrefix(p, root+"/"), rel)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

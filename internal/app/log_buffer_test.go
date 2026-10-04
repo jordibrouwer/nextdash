@@ -592,3 +592,13 @@ func TestParseServerLogLineStillHandlesAnUnlabelledLine(t *testing.T) {
 		t.Fatalf("level = %q, want the inferred %q", entry.Level, logLevelError)
 	}
 }
+
+// A clear starts a new run of sequence numbers under a new epoch, so another
+// tab knows to drop what it holds instead of waiting for numbers past it.
+func TestServerLogClearStartsANewEpoch(t *testing.T) {
+	s := &serverLogSink{epoch: "first"}
+	s.Clear()
+	if got := s.Epoch(); got == "" || got == "first" {
+		t.Fatalf("epoch after clear = %q", got)
+	}
+}

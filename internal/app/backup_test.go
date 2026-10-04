@@ -638,6 +638,8 @@ func TestCommonZipPrefixKeepsIconsDir(t *testing.T) {
 		{"flat", []string{"settings.json", "pages.json"}, ""},
 		{"flat with icons", []string{"settings.json", "icons/a.png"}, ""},
 		{"mixed dirs", []string{"a/settings.json", "b/pages.json"}, ""},
+		// macOS Compress adds its resource forks under __MACOSX/.
+		{"re-zipped on a Mac", []string{"bk/settings.json", "bk/bookmarks-1.json", "__MACOSX/bk/._settings.json"}, "bk/"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

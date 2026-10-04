@@ -171,6 +171,10 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — a large backup can cross the wire.** Backup, download, restore and import get 15 minutes instead of the 30 s / 60 s an API call gets, and `/api/import` takes up to 1 GB (`backup.go`, `auto_backup.go`, `security.go`).
 - **fix — an upload over its limit is refused, not cut.** A 16 MB CJK font was saved as a 10 MB stump and reported applied; fonts may now be 32 MB, and the panel says why one is refused (`uploads.go`).
 - **fix — device-only settings leave what the server does alone:** analytics, local bookmarks, backup secrets, the background re-check, feeds, inbox limits and more (`device-settings-merge.js`).
+- **fix — a backup unzipped and zipped again on a Mac can be restored.** The `__MACOSX` folder that Compress adds counted as a second folder, and the restore found no pages (`auto_backup.go`).
+- **fix — the list of backups no longer reads every archive whole** to count its bookmarks; only the index of each ZIP is read (`auto_backup.go`).
+- **fix — Statistics loads its current figures after an update.** One of its scripts was fetched without a version and kept for a day (`asset_hash.go`).
+- **fix — the log viewer starts over after a clear in another tab or a restart,** instead of keeping cleared lines or showing replayed ones twice (`log_buffer.go`, `log_handlers.go`, `dashboard-config.js`).
 
 ### Search
 
