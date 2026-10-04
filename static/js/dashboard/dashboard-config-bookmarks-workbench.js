@@ -2043,6 +2043,43 @@
     },
 
     /**
+     * A cube after the title of every bookmark that is a container's web UI,
+     * in the container's state: green running, amber paused or restarting,
+     * grey stopped. A link to that container's side panel. Filled once the
+     * container list is in, the way the Details tab's "Runs in" is.
+     */
+    fillWorkbenchContainers(root) {
+        const index = global.DockerSearchIndex;
+        if (!root || !index?.enabled?.()) return;
+        void index.refresh().then(() => {
+            if (!root.isConnected) return;
+            const byKey = new Map((this.dash.allBookmarks || []).map((b) => [this.bookmarkKey(b), b]));
+            const all = this.dash.allBookmarks || [];
+            root.querySelectorAll('.config-bm-row[data-bm-key]').forEach((row) => {
+                const title = row.querySelector('.config-bm-title');
+                const b = byKey.get(row.getAttribute('data-bm-key'));
+                row.querySelectorAll('.config-bm-ctr').forEach((el) => el.remove());
+                if (!title || !b) return;
+                const hit = index.containersFor(b, all)[0];
+                if (!hit) return;
+                const tone = hit.state === 'running' ? 'good'
+                    : ['paused', 'restarting'].includes(hit.state) ? 'warn' : 'muted';
+                const a = document.createElement('a');
+                a.className = 'config-bm-ctr';
+                a.href = `#docker/${encodeURIComponent(hit.name)}`;
+                a.setAttribute('data-bm-ctr', tone);
+                a.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l5.5 3v7L8 14.5l-5.5-3v-7z M2.5 4.5L8 7.5l5.5-3 M8 7.5v7"/></svg>';
+                const label = this.t('config.bmContainerState', 'Container {name} · {state}')
+                    .replace('{name}', hit.name).replace('{state}', hit.state);
+                a.title = label;
+                a.setAttribute('aria-label', label);
+                a.addEventListener('click', (e) => e.stopPropagation());
+                title.after(a);
+            });
+        });
+    },
+
+    /**
      * Show as many whole tag chips per row as fit, then `+n` for the rest.
      *
      * Three passes over every row, so the layout is computed once: show all

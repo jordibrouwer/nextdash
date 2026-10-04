@@ -26154,6 +26154,7 @@ class DashboardConfig {
             window.BookmarkFeedRow?.bindIconFallback?.(img);
         });
         this.fitWorkbenchTags?.(listRoot);
+        this.fillWorkbenchContainers?.(listRoot);
         // Delegated once per host: rows are replaced on every repaint.
         if (listRoot.dataset.bmRowsWired === '1') return;
         listRoot.dataset.bmRowsWired = '1';
