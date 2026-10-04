@@ -35,6 +35,10 @@
       "items": [
         {
           "badge": "new",
+          "text": "<strong>The Bookmarks view shows containers.</strong> A bookmark that is a container's web UI gets a cube after its name — green running, amber paused, grey stopped — and a click opens that container."
+        },
+        {
+          "badge": "new",
           "text": "<strong>Right-click menus are grouped</strong> with a line between open and share, edit, checking, select and delete."
         },
         {

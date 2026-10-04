@@ -69,7 +69,7 @@ This guide shows how the pieces fit together. Each part links to the chapter wit
 |---|---|
 | *Is everything running?* | The **Containers view** (`Shift + Y`): every container with a status glow, CPU, RAM, healthcheck, restarts and an orange **↑** for an update waiting ([§14](#14-containers)) |
 | *Can I actually reach it?* | The bookmark of its web UI, set to **Monitor**: checked by the server, with uptime, response time and certificate ([§12](#12-checks-health)) |
-| *Which link belongs to which container?* | The bookmark mark on a container's row, in the colour of that bookmark's checks — and **Runs in** on the bookmark's own side panel ([§14.2](#142-the-list)) |
+| *Which link belongs to which container?* | The bookmark mark on a container's row, in the colour of that bookmark's checks — and the cube after the bookmark's name in the Bookmarks view, in the container's state, with **Runs in** on its side panel ([§14.2](#142-the-list)) |
 | *What went wrong, and when?* | The container's **Timeline** (crashes with exit code, out-of-memory kills, health changes, updates, rollbacks) and the bookmark's **Health in large** (every check, every outage) |
 | *Will I hear about it?* | One set of alert channels and push notifications for sites going down, certificates running out and containers stopping, restarting, turning unhealthy or running hot ([§12.4](#124-alerts), [§14.9](#149-notices)) |
 | *Is it up to date?* | Image update checks with release notes, skip and hold, a history, a rollback, and optional nightly updates that roll themselves back on failure ([§14.5](#145-actions-and-updates)) |
@@ -121,7 +121,7 @@ You probably have bookmarks for your services already. nextDash finds the one th
 3. a bookmark whose subdomain is the container's name — `sonarr.example.com`, as a reverse proxy gives it;
 4. a bookmark titled after the container.
 
-Once linked, the container's row shows a small bookmark mark: green when its checks pass, red when it is broken or down, an outline when nothing checks it. A click opens the bookmark in the Bookmarks view. The other way round, the bookmark's side panel shows **Details → Address → Runs in**, a link to the container.
+Once linked, the container's row shows a small bookmark mark: green when its checks pass, red when it is broken or down, an outline when nothing checks it. A click opens the bookmark in the Bookmarks view. The other way round, the bookmark's row in the Bookmarks view carries a cube in the container's state ([§11.2](#112-the-toolbar-and-the-list)), and its side panel shows **Details → Address → Runs in**, a link to the container.
 
 **When the guess is wrong** — two bookmarks on one port, a service behind a path rather than a subdomain — choose the bookmark by hand under the container's **Bookmark → Linked bookmark**, or *No bookmark*. A container without a bookmark at all is a hint: add one, so it shows on your dashboard and can be monitored.
 
@@ -1045,6 +1045,8 @@ Active filters show as removable tokens above the groups, with **Clear filters**
 The toolbar sits above the list: a **search** field (`/`) that matches name, URL, category, note, shortcut and tags; a count of what is shown; **Group** (No groups, Page, Category, Site, Status, Tag); **Sort** (Page order, Name A–Z, URL, Category, Recently added, Last opened, Most opened, Pinned first, Tags, Shortcut, Usage, Health score); the row-density toggle shared with the other list views; and **Add bookmark**, which opens the full form on the page the list is filtered to.
 
 Rows show icon, name, host, tags, open count and last opened, plus a score column and status glow once Health has joined in. Only the rows near the screen are drawn, so thousands of bookmarks stay fast.
+
+A bookmark that is a container's web UI carries a small **cube** after its title, in the container's state: green running, amber paused or restarting, grey stopped. A click opens that container in the Containers view ([§14.2](#142-the-list)). The match is the Containers view's own, and the cubes stay away when the Docker socket is not set up or the Containers view is switched off.
 
 **Column headings** name the columns View shows and stay in place while the list scrolls (not at phone width). Every heading with a value under it sorts: a click sorts by that column in its natural order — Name and Tags A to Z (by the first tag, untagged last), Shortcut the keyed ones first, Usage the most opens in the sparkline's window first, Opens, Last opened and Added highest or newest first, Pinned the pinned ones first, Score the worst first — and a second click turns it round. An arrow on the heading shows which way the list runs; **Sort** follows, and picking from **Sort** starts afresh in the natural order. `Enter` or `Space` on a focused heading does the same.
 

@@ -148,6 +148,7 @@ Four themes for Unraid users, each in dark and light. A widget can be moved to a
 
 ### Containers
 
+- **new — the Bookmarks view shows which bookmarks run in a container.** A cube follows the title of a bookmark that is a container's web UI, in the container's state — green running, amber paused or restarting, grey stopped — and links to that container's side panel. The match is `DockerSearchIndex.containersFor`, the one the Containers view and the Details tab's "Runs in" already use; the cubes are filled once the container list is in, and stay away when Containers is switched off or has no socket (`fillWorkbenchContainers` in `dashboard-config-bookmarks-workbench.js`, called from `bindBookmarkRows`; `config-bookmarks-workbench.css`).
 - **fix — a crash loop is one notice, not two a minute.** Docker's restart backoff grows to a minute, and past the tenth fast crash each wait outlasted the 30 s grace, so every cycle was told as "stopped unexpectedly" and "running again". The grace is now 75 s (`docker_notify.go`).
 - **fix — the nightly update reads each container at its turn.** The run's list can be an hour old by then: a container stopped meanwhile (by hand, or a backup job) was updated, watched as if running, "rolled back" and started again. The update now goes by what the recreate itself found, and a container replaced since the list is left for the next tick instead of failing with a 404 notice (`docker_auto_update.go`, `docker_recreate.go`).
 - **fix — an update keeps an anonymous volume listed without a source.** Compose's `volumes: [/data]` and `--mount type=volume,dst=…` put the volume in `HostConfig.Mounts` with no source; sent back that way, Docker gave the new container a fresh, empty volume. The source is filled in from the container's own mounts (`docker_recreate.go`).
@@ -213,6 +214,7 @@ Four themes for Unraid users, each in dark and light. A widget can be moved to a
 
 - **docs — README:** the two Unraid themes in the Unraid section, with a screenshot of each (`screenshots/nextdash-unraid-black.jpg`, `nextdash-unraid-azure.jpg`).
 - **docs — `static/data/whats-new/v1.17.1.json` and its index entry** (`hideFromModal`, covered by `tests/whats-new-hidden-release.spec.js`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v316`. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — Config → Help:** `helpLibraryBody` describes the container cube in the Bookmarks view, in all six languages, with `bmContainerState` for its tooltip.
 - **docs — Manual and README:** Unraid Ember and Blaze next to Black and Azure (§16.1), **Move to page…** in the widget's right-click menu (§15.3), and the count of new themes (38).
 
 ---
