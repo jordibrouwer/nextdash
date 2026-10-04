@@ -496,6 +496,36 @@ test.describe('packed columns carries the switch by packing tighter', () => {
         })).toEqual({ masonry: true, display: 'grid', columns: 3 });
     });
 
+    test('a smart section repainted after an open keeps its row span', async ({ page }) => {
+        await openDashboard(page, { packed: true, itemLimit: 1 });
+        const id = await page.evaluate(() => window.dashboardInstance.categories[1].id);
+        await setSpread(page, id, true);
+        await page.waitForTimeout(400);
+
+        const smart = await page.evaluate(() => document.querySelectorAll('.category[data-smart-collection="true"]').length);
+        test.skip(smart === 0, 'no smart section on this data');
+
+        // Opening a bookmark swaps the smart sections for fresh elements, and
+        // nothing watched them: whatever changed their height afterwards -- an
+        // icon arriving -- left the span behind, and they printed over the
+        // category below.
+        await page.evaluate(() => window.dashboardInstance.refreshSmartCollectionSections());
+        await page.waitForTimeout(400);
+        await page.evaluate(() => {
+            const el = document.querySelector('.category[data-smart-collection="true"]');
+            const grow = document.createElement('div');
+            grow.style.height = '200px';
+            el.appendChild(grow);
+        });
+        await page.waitForTimeout(400);
+
+        expect(await page.evaluate(() => {
+            const el = document.querySelector('.category[data-smart-collection="true"]');
+            const span = Number(el.style.getPropertyValue('--masonry-span'));
+            return span >= Math.ceil(el.getBoundingClientRect().height / 4);
+        })).toBe(true);
+    });
+
     test('the stored order survives a rearrangement in either shape', async ({ page }) => {
         await openDashboard(page, { packed: true, itemLimit: 1 });
 
