@@ -96,7 +96,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.17.1 — 4 October 2026
 
-Two themes for Unraid users, each in dark and light, after the webGUI's own Black and Azure themes. A widget can also be moved to another page from its menu.
+Four themes for Unraid users, each in dark and light. A widget can be moved to another page from its menu, and a long list of fixes across the Calendar, Health, Containers, Backups, Search, Inbox and the dashboard.
 
 ### Themes
 
@@ -212,6 +212,7 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 ### Docs
 
 - **docs — README:** the two Unraid themes in the Unraid section, with a screenshot of each (`screenshots/nextdash-unraid-black.jpg`, `nextdash-unraid-azure.jpg`).
+- **docs — Manual and README:** Unraid Ember and Blaze next to Black and Azure (§16.1), **Move to page…** in the widget's right-click menu (§15.3), and the count of new themes (38).
 
 ---
 

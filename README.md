@@ -169,7 +169,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-unraid-azure.jpg" alt="Unraid widgets in the Unraid Azure theme" width="100%" />
       <br />
-      <sub><b>Unraid Azure</b> <i>(light)</i> — The cooler pair: grey-blue panels and a steel-blue accent. Both themes come in a dark and a light variant.</sub>
+      <sub><b>Unraid Azure</b> <i>(light)</i> — The cooler pair: grey-blue panels and a steel-blue accent. Both themes come in a dark and a light variant, as do **Unraid Ember** and **Unraid Blaze**, the logo's orange and red.</sub>
     </td>
   </tr>
 </table>
