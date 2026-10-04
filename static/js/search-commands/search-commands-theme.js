@@ -182,8 +182,15 @@ class SearchCommandTheme {
             }
         }
 
-        // Apply theme using ThemeLoader
-        if (window.ThemeLoader && typeof window.ThemeLoader.applyTheme === 'function') {
+        // Drawn the way the Appearance picker draws it: paired with the OS
+        // under Follow system, and with the theme's own Auto background.
+        // ThemeLoader alone drew the half named and kept the old background.
+        if (dash?.settings) dash.settings.theme = safeTheme;
+        if (dash?.config?.applyThemeLive) {
+            dash.config.applyThemeLive();
+        } else if (dash?.initializeAutoDarkMode) {
+            dash.initializeAutoDarkMode();
+        } else if (window.ThemeLoader && typeof window.ThemeLoader.applyTheme === 'function') {
             const currentFontSize = window.ThemeLoader.getFontSize ? window.ThemeLoader.getFontSize() : 'm';
             window.ThemeLoader.applyTheme(safeTheme, currentFontSize);
         } else {

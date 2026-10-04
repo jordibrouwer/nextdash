@@ -106,6 +106,10 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — the order of your own themes is kept.** ↑/↓ in Custom themes lasted until a reload: the server keeps them in a map, which it writes sorted. The order now travels as `customOrder` (`models.go`, `security.go`, `dashboard-config.js`).
 - **fix — a theme made in another tab or on another device draws on this one.** The settings sync noticed the change but never fetched the theme CSS again (no colours at all on a theme picked there) and kept a stale colour document whose next save deleted the theme made elsewhere (`dashboard-config-sync.js`).
 - **fix — deleting the light/dark half that Follow system shows draws the other half.** What is on screen is read before the delete; asked afterwards it could never name the half just removed, and the page kept the deleted theme with no colours (`dashboard-config.js`).
+- **fix — Automatic on a packaged theme goes back to how it ships.** The server refills an empty field from the shipped theme, so Automatic or ↺ saved and nothing changed (`dashboard-config.js`).
+- **fix — `:theme` draws the half Follow system wants,** with the theme's own Auto background, as the Appearance picker does (`search-commands-theme.js`).
+- **fix — with Random theme on, the look studio shows the theme you pick;** the page kept the random one (`dashboard-config-studio.js`).
+- **fix — a duplicate of a packaged theme is your own,** not filed under that theme's collection (`dashboard-config.js`).
 
 ### Widgets
 

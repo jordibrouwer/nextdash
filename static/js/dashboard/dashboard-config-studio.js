@@ -311,15 +311,32 @@
          * Draw the page from the look fields in dash.settings, without saving.
          * `redraw` when an answer the grid reads while drawing was put back.
          */
+        /**
+         * The theme the studio draws. With Random theme on, the display keeps
+         * the session's pick, so a theme chosen here never showed and the
+         * editor opened on one that was not drawn. In the studio the choice
+         * is shown; leaving it puts the random display back.
+         */
+        studioShownTheme() {
+            const s = this.dash.settings || {};
+            if (!window.ThemeIconStyling?.isRandomThemeModeActive?.(s)) return this.displayTheme();
+            const chosen = s.theme || 'dark';
+            return window.ThemeLoader?.resolveDisplayTheme?.(chosen, s.autoDarkMode === true) || chosen;
+        },
+
         applyStudioLook({ theme = true, redraw = false } = {}) {
             const settings = this.dash.settings;
             if (theme) {
                 this.clearThemePreview();
                 this.applyThemeLive();
+                const shown = this.studioShownTheme();
+                if (this._lookStudio && shown !== this.displayTheme()) {
+                    window.ThemeLoader?.applyTheme?.(shown, this.currentFontSize());
+                }
             }
             // A theme of the reader's own that only lives in this browser has
             // no block in /api/theme.css yet: show it from its palette.
-            const shown = this.displayTheme();
+            const shown = this.studioShownTheme();
             // Colours edited here and not applied yet are not in it either.
             if (theme && (window.ThemeUtils?.isUserCustomThemeId?.(shown) || this._lookStudio?.colorsHeld)
                 && this.themeById(shown)) {
@@ -369,8 +386,8 @@
         studioEndPreview() {
             if (!this._lookStudio) return;
             this.clearThemePreview();
-            window.ThemeLoader?.applyTheme?.(this.displayTheme(), this.currentFontSize());
-            if (this._lookStudio.colorsHeld) this.previewThemeChoice(this.displayTheme());
+            window.ThemeLoader?.applyTheme?.(this.studioShownTheme(), this.currentFontSize());
+            if (this._lookStudio.colorsHeld) this.previewThemeChoice(this.studioShownTheme());
             void this.applyResolvedSurfaces();
         },
 

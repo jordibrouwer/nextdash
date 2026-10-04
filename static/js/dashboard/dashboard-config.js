@@ -11440,7 +11440,19 @@ class DashboardConfig {
             this.previewThemeColors(id);
             const reset = container.querySelector(`[data-theme-char-reset="${prop}"]`);
             reset?.classList.toggle('is-visible', value !== undefined);
-            if (save) void this.saveColorsData();
+            if (!save) return;
+            // A packaged theme has no "automatic": the server fills an empty
+            // field from the shipped theme, so empty saved and came straight
+            // back. Automatic there means as shipped, written as such.
+            if (value === undefined && !this.isCustomTheme(id)) {
+                void this.shippedThemeValue(id, prop).then((shipped) => {
+                    if (shipped !== undefined && shipped !== '' && shipped !== 0) theme[prop] = shipped;
+                    this.previewThemeColors(id);
+                    void this.saveColorsData();
+                });
+                return;
+            }
+            void this.saveColorsData();
         };
         container.querySelectorAll('[data-theme-char]').forEach((range) => {
             const prop = range.dataset.themeChar;
@@ -11519,6 +11531,17 @@ class DashboardConfig {
         });
     }
 
+    /** One field of a packaged theme as it ships, or undefined. */
+    async shippedThemeValue(id, prop) {
+        try {
+            const res = await fetch(`/api/themes/defaults?id=${encodeURIComponent(id)}`);
+            if (!res.ok) return undefined;
+            return (await res.json())?.defaults?.[prop];
+        } catch (_error) {
+            return undefined;
+        }
+    }
+
     async handleThemeAction(action, id) {
         const theme = this.themeById(id);
         if (!theme) return;
@@ -11537,8 +11560,11 @@ class DashboardConfig {
         if (action === 'duplicate') {
             const names = Object.values(this._colorsData.custom).map((t) => t.name);
             const copyId = DashboardConfig.newThemeId();
+            // Without the collection: that is the set a packaged theme ships
+            // in, and the copy is one of your own (as saveCurrentAsTheme does).
+            const { collection: _collection, ...rest } = theme;
             this._colorsData.custom[copyId] = {
-                ...theme,
+                ...rest,
                 backdrop: theme.backdrop || this.themeBackdropOf(id) || undefined,
                 name: DashboardConfig.uniqueNameFrom(
                     `${theme.name || id} ${this.t('config.themeCopySuffix', 'copy')}`, names),
