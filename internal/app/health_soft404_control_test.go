@@ -31,7 +31,12 @@ func TestHostSoftNotFoundNoticesAHostThatAlwaysAnswers(t *testing.T) {
 	var probes int
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		probes++
-		// Everything is 200, whatever was asked for.
+		// Everything is 200, whatever was asked for; only the front page is
+		// a page of its own.
+		if r.URL.Path == "/" {
+			fmt.Fprint(w, "<html><body><h1>Welcome</h1><p>"+strings.Repeat("Articles and news from this site. ", 20)+"</p></body></html>")
+			return
+		}
 		fmt.Fprint(w, "<html><body><p>Nothing here.</p></body></html>")
 	}))
 	defer server.Close()
@@ -47,8 +52,9 @@ func TestHostSoftNotFoundNoticesAHostThatAlwaysAnswers(t *testing.T) {
 	// Cached per host: a site with fifty bookmarks is asked once, not fifty
 	// times. The probe is a courtesy request on somebody else's server.
 	h.hostSoftNotFound(context.Background(), server.URL+"/another-page")
-	if probes != 1 {
-		t.Errorf("probed %d times, want one per host", probes)
+	// One probe and one look at the front page.
+	if probes != 2 {
+		t.Errorf("asked %d times, want one probe and one front page per host", probes)
 	}
 }
 
@@ -174,5 +180,27 @@ func TestSoftControlAddressDropsTheQuery(t *testing.T) {
 	}
 	if softControlAddress("not a url at all") != "" {
 		t.Error("made an address out of something that is not one")
+	}
+}
+
+/*
+A single-page app answers every path with its one shell document, the front
+page included. The probe then reads "soft 404", and every page of the app --
+the same shell -- compared equal to it: Sonarr without auth, Uptime Kuma and
+any try_files app were monitored as down for good.
+*/
+func TestSoftNotFoundSparesASinglePageApp(t *testing.T) {
+	resetSoftControlCache()
+	h := newTestHandlers(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `<!doctype html><html><head><title>Sonarr</title><script src="/app.js"></script></head><body><div id="root"></div><noscript>Please enable JavaScript</noscript></body></html>`)
+	}))
+	defer server.Close()
+
+	for _, page := range []string{server.URL + "/", server.URL + "/calendar"} {
+		expect := expectationFor(Bookmark{URL: page, Monitor: true}).withSoftNotFound(true)
+		if r := h.pingURLExpecting(context.Background(), page, expect); r.Status != "online" {
+			t.Errorf("%s: status %q (%s), want online", page, r.Status, r.ErrorDetail)
+		}
 	}
 }

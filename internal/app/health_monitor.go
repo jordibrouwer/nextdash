@@ -177,14 +177,16 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 					liveHosts[strings.ToLower(parsed.Hostname())] = struct{}{}
 				}
 			}
-			if !bm.Monitor {
-				continue
-			}
+			// Every bookmark that still exists keeps its history, monitored or
+			// not: turning monitoring off promises the history stays, and the
+			// retention already ages out a URL nobody checks any more.
 			key := canonicalBookmarkURLKey(bm.URL)
-			if key == "" {
+			if key != "" {
+				known[key] = true
+			}
+			if !bm.Monitor || key == "" {
 				continue
 			}
-			known[key] = true
 			rule := monitorRuleKey(bm)
 			// The same URL can be bookmarked on several pages; check it once --
 			// once per set of rules, that is. A copy with rules of its own is

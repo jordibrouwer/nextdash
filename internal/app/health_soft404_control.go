@@ -112,20 +112,23 @@ func (h *Handlers) hostSoftNotFound(ctx context.Context, target string) softCont
 		return verdict
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, probe, nil)
-	if err == nil {
-		req.Header.Set("User-Agent", updateCheckUserAgent)
-		client := h.outboundHTTPClient(softControlTimeout, 3)
-		if resp, err := client.Do(req); err == nil {
-			body, _ := io.ReadAll(io.LimitReader(resp.Body, softControlMaxBytes))
-			resp.Body.Close()
-			if resp.StatusCode == http.StatusOK {
-				verdict.SoftNotFound = true
-				verdict.Length = readableTextLength(string(body))
-				if landing := softControlAddress(finalRequestURL(resp)); landing != "" && landing != softControlAddress(probe) {
-					verdict.Landing = landing
-				}
-			}
+	client := h.outboundHTTPClient(softControlTimeout, 3)
+	if status, length, final, ok := fetchSoftControl(ctx, client, probe); ok && status == http.StatusOK {
+		verdict.SoftNotFound = true
+		verdict.Length = length
+		if landing := softControlAddress(final); landing != "" && landing != softControlAddress(probe) {
+			verdict.Landing = landing
+		}
+	}
+	// A single-page app serves its one shell document for every path, the
+	// front page included, so its "not-found page" is the app itself and every
+	// page compares equal to it. When the front page is that same document,
+	// the probe proves nothing about any page on this host.
+	if verdict.SoftNotFound && verdict.Landing == "" {
+		root := *parsed
+		root.Path, root.RawPath, root.RawQuery, root.Fragment = "/", "", "", ""
+		if status, length, _, ok := fetchSoftControl(ctx, client, root.String()); ok && status == http.StatusOK && softLengthsClose(length, verdict.Length) {
+			verdict.SoftNotFound = false
 		}
 	}
 
@@ -178,11 +181,41 @@ func softNotFoundByComparison(verdict softControlVerdict, pageLength int, pageFi
 	if pageLength > 4000 {
 		return false
 	}
-	diff := pageLength - verdict.Length
+	// The front page cannot be a missing page.
+	if u, err := neturl.Parse(strings.TrimSpace(pageFinalURL)); err == nil && strings.Trim(u.Path, "/") == "" {
+		return false
+	}
+	return softLengthsClose(pageLength, verdict.Length)
+}
+
+// softLengthsClose reports whether a page's readable length is within a fifth
+// of the host's not-found page.
+func softLengthsClose(pageLength, notFoundLength int) bool {
+	if pageLength <= 0 || notFoundLength <= 0 {
+		return false
+	}
+	diff := pageLength - notFoundLength
 	if diff < 0 {
 		diff = -diff
 	}
-	return diff*5 <= verdict.Length
+	return diff*5 <= notFoundLength
+}
+
+// fetchSoftControl asks one address for the soft-404 test and returns its
+// status, readable length and the address it ended on.
+func fetchSoftControl(ctx context.Context, client *http.Client, target string) (int, int, string, bool) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return 0, 0, "", false
+	}
+	req.Header.Set("User-Agent", updateCheckUserAgent)
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, 0, "", false
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, softControlMaxBytes))
+	return resp.StatusCode, readableTextLength(string(body)), finalRequestURL(resp), true
 }
 
 // softControlAddress reduces a URL to what identifies the page it landed on:

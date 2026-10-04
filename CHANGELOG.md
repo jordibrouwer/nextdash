@@ -107,6 +107,11 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 
 - **new — Move to page… in the widget menu.** Right-click a widget's header and pick another page, the same move as Config → Widgets. The widget keeps its id, so its sign-in and folded state follow it (`dashboard-category-menu.js`).
 
+### Health
+
+- **fix — turning monitoring off keeps the uptime history.** The next monitor tick swept the samples and day summaries of every URL that was not monitored, within a minute, while the dialog said the history is kept. The sweep now keeps every bookmark that still exists; retention ages out the rest (`health_monitor.go`).
+- **fix — single-page apps are no longer marked down by soft-404 detection.** An app that serves its one shell document for every path (Sonarr without auth, Uptime Kuma, any `try_files` setup) answered the not-found probe with that same document, and every page compared equal to it. The probe now also reads the front page and drops the verdict when it is that document; a site's root is never judged not found (`health_soft404_control.go`).
+
 ### Docs
 
 - **docs — README:** the two Unraid themes in the Unraid section, with a screenshot of each (`screenshots/nextdash-unraid-black.jpg`, `nextdash-unraid-azure.jpg`).

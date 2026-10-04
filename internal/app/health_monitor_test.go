@@ -34,9 +34,10 @@ func TestDueMonitorTargetsOnlyMonitoredBookmarks(t *testing.T) {
 	if targets[0].interval != 5*time.Minute {
 		t.Errorf("expected 5m interval, got %v", targets[0].interval)
 	}
-	// checkStatus-only bookmarks belong to the other tier and must not appear in
-	// the monitor's known set, or the sweep would keep history for them.
-	if len(known) != 1 || !known[canonicalBookmarkURLKey("https://mon.example")] {
+	// The known set is every bookmark that still exists, monitored or not: the
+	// sweep only drops history of deleted bookmarks, and retention ages out the
+	// rest.
+	if len(known) != 3 || !known[canonicalBookmarkURLKey("https://plain.example")] {
 		t.Errorf("unexpected known set: %#v", known)
 	}
 }
@@ -403,5 +404,26 @@ func TestRetestRecordsOneSamplePerURL(t *testing.T) {
 	}
 	if got := len(readHealthHistoryFile().Samples[canonicalBookmarkURLKey(server.URL)]); got != 1 {
 		t.Fatalf("samples = %d, want 1", got)
+	}
+}
+
+// Turning monitoring off promises the uptime history is kept. The next monitor
+// tick used to sweep every URL that was not monitored, so samples and day
+// summaries were gone within a minute.
+func TestRunDueMonitorsKeepsHistoryOfUnmonitoredBookmark(t *testing.T) {
+	h, dir := healthRecheckTestHandlers(t, `{}`)
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[{"name":"A","url":"https://a.example","monitor":false}]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(pageJSON), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	key := canonicalBookmarkURLKey("https://a.example")
+	now := time.Now()
+	if err := h.appendHealthSamples(map[string][]HealthSample{key: {
+		{T: msAgo(now, 3*24*time.Hour), Up: true}, {T: msAgo(now, 10*time.Minute), Up: true}}}); err != nil {
+		t.Fatal(err)
+	}
+	h.runDueMonitors()
+	if got := len(h.readAllHealthHistory()[key]); got != 2 {
+		t.Fatalf("history of an unmonitored bookmark: got %d samples, want 2", got)
 	}
 }
