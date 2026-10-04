@@ -1951,12 +1951,19 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 		Bookmarks []ImportedRow
 	}{PageID: pageID, Bookmarks: rows}
 
+	// A row that is not a usable address is left out and counted, as a
+	// source run does. One stray `50%off` or dead domain in a browser export
+	// refused the whole file right after the dry run promised all of it.
+	valid := make([]ImportedRow, 0, len(request.Bookmarks))
+	invalid := 0
 	for _, bm := range request.Bookmarks {
 		if err := h.validateBookmarkURL(bm.URL); err != nil {
-			http.Error(w, fmt.Sprintf("Invalid URL: %v", err), http.StatusBadRequest)
-			return
+			invalid++
+			continue
 		}
+		valid = append(valid, bm)
 	}
+	request.Bookmarks = valid
 
 	// As every other write: rows for a page that does not exist were stored
 	// where nothing shows them.
@@ -2036,7 +2043,7 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 	// Both the bookmarks and the categories the report reads have changed.
 	h.invalidateHealthReportCache()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]int{"imported": imported, "skipped": skipped})
+	json.NewEncoder(w).Encode(map[string]int{"imported": imported, "skipped": skipped, "invalid": invalid})
 	logBrowserImport(request.PageID, imported, skipped, r)
 }
 

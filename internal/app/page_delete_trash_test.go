@@ -477,3 +477,51 @@ func TestImportRowsLetsATakenShortcutGo(t *testing.T) {
 		t.Fatalf("import to a missing page: %d", rec.Code)
 	}
 }
+
+// A shortcut given to another bookmark after the page was deleted came back
+// with the page; two pages then held it and every save on both was refused.
+func TestRestoreTrashedPageLetsGoOfATakenShortcut(t *testing.T) {
+	h, _ := newPageDeleteFixture(t, `{"page":{"id":2,"name":"Work"},"bookmarks":[
+		{"name":"GitHub","url":"https://github.com","shortcut":"G"},
+		{"name":"Mail","url":"https://mail.example","shortcut":"M"}
+	]}`)
+	if rec := deletePageViaRouter(t, h, "2"); rec.Code != http.StatusOK {
+		t.Fatalf("delete status = %d", rec.Code)
+	}
+	if err := h.store.AddBookmarkToPage(1, Bookmark{Name: "Gmail", URL: "https://gmail.com", Shortcut: "G"}); err != nil {
+		t.Fatal(err)
+	}
+	id := h.store.GetTrashItems()[0].ID
+	rec := httptest.NewRecorder()
+	h.RestoreTrashItem(rec, httptest.NewRequest(http.MethodPost, "/api/trash/restore", strings.NewReader(`{"id":"`+id+`"}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("restore status = %d (%s)", rec.Code, rec.Body.String())
+	}
+	got := map[string]string{}
+	for _, b := range h.store.GetBookmarksByPage(2) {
+		got[b.Name] = b.Shortcut
+	}
+	if got["GitHub"] != "" || got["Mail"] != "M" {
+		t.Fatalf("restored shortcuts = %v, want GitHub's taken G let go and M kept", got)
+	}
+}
+
+// One row that is not a usable address (a stray `50%off`) refused the whole
+// browser export after the dry run had promised every row.
+func TestImportRowsLeavesAnInvalidRowOut(t *testing.T) {
+	h, _ := newPageDeleteFixture(t, `{"page":{"id":2,"name":"Work"},"bookmarks":[]}`)
+	rec := httptest.NewRecorder()
+	h.importRows(rec, httptest.NewRequest(http.MethodPost, "/", nil), 2, []ImportedRow{
+		{Name: "Sale", URL: "https://shop.example/50%off"},
+		{Name: "Mail", URL: "https://mail.example/"},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("import: %d %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"invalid":1`) {
+		t.Fatalf("the left-out row is not counted: %s", rec.Body.String())
+	}
+	if got := h.store.GetBookmarksByPage(2); len(got) != 1 || got[0].Name != "Mail" {
+		t.Fatalf("imported = %+v, want Mail alone", got)
+	}
+}

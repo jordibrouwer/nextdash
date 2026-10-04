@@ -293,6 +293,9 @@ func (h *Handlers) TagScan(w http.ResponseWriter, r *http.Request) {
 		key     string
 		preview BookmarkPreview
 		ok      bool
+		// limited: the outbound limit refused the fetch. The page was not
+		// asked, so it is neither stored nor stamped, and comes round again.
+		limited bool
 	}
 	results := make([]result, len(slice))
 	var wg sync.WaitGroup
@@ -324,20 +327,32 @@ func (h *Handlers) TagScan(w http.ResponseWriter, r *http.Request) {
 				// round from offering it again on the next pass.
 				ok: preview.Title != "" || len(preview.Keywords) > 0,
 			}
+			if !results[i].ok && globalOutboundLimiter.saturated("global") {
+				results[i].limited = true
+			}
 		}(i, target)
 	}
 	wg.Wait()
 
 	updates := map[string]BookmarkPreview{}
 	read, failed, found := 0, 0, 0
+	limited := false
 	for _, res := range results {
 		if res.key == "" {
 			continue
 		}
-		updates[res.key] = res.preview
+		if res.limited {
+			limited = true
+			continue
+		}
 		if res.ok {
+			updates[res.key] = res.preview
 			read++
 		} else {
+			// A page that could not be read keeps the preview it had: stored
+			// over it, the empty answer wiped a good hover card for a week.
+			// Only the stamp is new, so the round does not ask it again.
+			updates[res.key] = h.previewOrStampOnly(res.key, res.preview)
 			failed++
 		}
 		if len(res.preview.Keywords) > 0 {
@@ -356,7 +371,24 @@ func (h *Handlers) TagScan(w http.ResponseWriter, r *http.Request) {
 		"read":      read,
 		"failed":    failed,
 		"found":     found,
-		"pending":   total - len(slice),
+		"pending":   len(h.tagScanTargets()),
 		"fetchedAt": time.Now().UnixMilli(),
+		// The outbound limit ran out: the pages it refused are still pending,
+		// and the browser waits this long before the next slice.
+		"retryAfter": map[bool]int{true: 60, false: 0}[limited],
 	})
+}
+
+// previewOrStampOnly is the stored preview for key with fresh's keyword stamp,
+// or fresh when nothing was stored.
+func (h *Handlers) previewOrStampOnly(key string, fresh BookmarkPreview) BookmarkPreview {
+	h.previewCacheMu.Lock()
+	defer h.previewCacheMu.Unlock()
+	h.ensurePreviewCacheLoadedLocked()
+	stored, ok := h.previewCache.Cache[key]
+	if !ok || (stored.Title == "" && stored.Description == "" && stored.ImageSource == "") {
+		return fresh
+	}
+	stored.KeywordsAt = fresh.KeywordsAt
+	return stored
 }

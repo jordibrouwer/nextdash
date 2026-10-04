@@ -24222,6 +24222,14 @@ class DashboardConfig {
                 await this.refreshTagKeywords();
                 this.renderTagSuggestionsSafe();
                 this.syncTagSuggestionCount();
+
+                // The server's outbound limit ran out: the pages it could not
+                // ask are still pending. Wait it out (Stop still works) rather
+                // than burning every slice on refusals.
+                const waitSeconds = Number(data.retryAfter) || 0;
+                for (let s = 0; s < waitSeconds && this._tagScanState.running; s += 1) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                }
             }
             const stopped = this._tagScanState.pending > 0;
             this.finishProgressOverlay(stopped

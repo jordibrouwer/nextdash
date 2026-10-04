@@ -250,6 +250,17 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 			}
 		}
 
+		// The picture too. The fetch only names it (ImageSource); the local
+		// copy used to come from a media worker that writes the preview cache
+		// and never the inbox item, so a new link had no picture at all.
+		if strings.TrimSpace(preview.Image) == "" && strings.TrimSpace(preview.ImageSource) != "" {
+			if name, err := downloadPreviewImage(preview.ImageSource, allowLocal); err == nil && name != "" {
+				preview.Image = "/data/" + previewImageDirName + "/" + name
+				preview.ImageFetchedAt = time.Now().UnixMilli()
+				h.applyPreviewMedia(canonicalBookmarkURLKey(url), preview)
+			}
+		}
+
 		// Even when nothing was found, the icon attempt is recorded below so the
 		// startup backfill does not retry this item forever. Returning early
 		// here would leave IconFetchedAt unset and hand the retry loop straight

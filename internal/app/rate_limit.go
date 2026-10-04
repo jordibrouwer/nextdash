@@ -75,6 +75,24 @@ func (l *slidingWindowLimiter) allow(key string) bool {
 	return true
 }
 
+// saturated reports whether key has used its whole window, without counting
+// a request of its own.
+func (l *slidingWindowLimiter) saturated(key string) bool {
+	if l == nil || l.limit <= 0 {
+		return false
+	}
+	cutoff := time.Now().Add(-l.window)
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	n := 0
+	for _, ts := range l.events[key] {
+		if ts.After(cutoff) {
+			n++
+		}
+	}
+	return n >= l.limit
+}
+
 // limiterSweepThreshold is the map size above which allow() drops keys whose
 // whole window has expired. High enough that a normal instance never sweeps.
 const limiterSweepThreshold = 1024

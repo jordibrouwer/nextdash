@@ -237,6 +237,10 @@ func (h *Handlers) pruneOrphanPreviewImages() int {
 		claim(entry.Image)
 		claim(entry.Icon)
 	}
+	// Inbox items hold the path of their picture themselves.
+	for _, item := range h.store.GetInboxItems() {
+		claim(item.PreviewImage)
+	}
 
 	entries, err := os.ReadDir(previewImageDir())
 	if err != nil {

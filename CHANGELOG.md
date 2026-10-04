@@ -142,6 +142,12 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — an upload over its limit is refused, not cut.** A 16 MB CJK font was saved as a 10 MB stump and reported applied; fonts may now be 32 MB, and the panel says why one is refused (`uploads.go`).
 - **fix — device-only settings leave what the server does alone:** analytics, local bookmarks, backup secrets, the background re-check, feeds, inbox limits and more (`device-settings-merge.js`).
 
+### Inbox
+
+- **fix — the tag scan keeps a preview it could not read again,** and pauses when the outbound limit runs out instead of marking every page after it as read (`tag_scan.go`, `rate_limit.go`).
+- **fix — new inbox links get their picture,** and triage shows a local copy instead of a broken `https://data/…` (`inbox_handlers.go`, `preview_image_cache.go`, `dashboard-inbox-triage.js`).
+- **fix — one odd address in a browser export no longer refuses the whole import;** the row is left out and counted (`handlers.go`).
+
 ### Docs
 
 - **docs — README:** the two Unraid themes in the Unraid section, with a screenshot of each (`screenshots/nextdash-unraid-black.jpg`, `nextdash-unraid-azure.jpg`).

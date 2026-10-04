@@ -383,3 +383,32 @@ func TestTagScanRemembersAPageItCouldNotRead(t *testing.T) {
 		t.Errorf("an unreadable page was not remembered as asked: %+v", entry)
 	}
 }
+
+// A page that could not be read (503, a timeout) was stored over its cached
+// preview: title, description and picture gone, and the hover card empty for
+// the cache's week.
+func TestTagScanKeepsThePreviewOfAPageItCouldNotRead(t *testing.T) {
+	h := newTestHandlers(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "busy", http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+	u := srv.URL + "/post"
+	if err := h.store.AddBookmarkToPage(1, Bookmark{Name: "x", URL: u, PageID: 1}); err != nil {
+		t.Fatal(err)
+	}
+	key := canonicalBookmarkURLKey(u)
+	_ = h.mergePreviewCacheUpdates(map[string]BookmarkPreview{key: {URL: u, Title: "Good title", Description: "Good desc", ImageSource: "https://x/img.png"}})
+	rec := httptest.NewRecorder()
+	h.TagScan(rec, httptest.NewRequest(http.MethodPost, "/api/tags/scan", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("scan status %d: %s", rec.Code, rec.Body.String())
+	}
+	e, _ := h.storedPreview(key)
+	if e.Title != "Good title" || e.Description != "Good desc" {
+		t.Fatalf("the stored preview was wiped: %+v", e)
+	}
+	if e.KeywordsAt == 0 {
+		t.Fatal("the page was not stamped as asked")
+	}
+}

@@ -835,7 +835,10 @@ class DashboardInboxTriage {
     renderPreview(item) {
         const esc = (v) => this.escape(v);
         const desc = String(item.previewDesc || '').trim();
-        const image = window.BookmarkUrlUtils?.safeHttpResourceUrl?.(item.previewImage) || '';
+        // A local copy is a same-origin path; made into an http URL it became
+        // https://data/… and a broken picture.
+        const raw = String(item.previewImage || '').trim();
+        const image = raw.startsWith('/data/') ? raw : (window.BookmarkUrlUtils?.safeHttpResourceUrl?.(raw) || '');
         if (!desc && !image) return '';
         return `<div class="health-focus-preview">
             ${image ? `<div class="health-focus-preview-image"><img class="inbox-triage-thumb-img" src="${esc(image)}" alt="" loading="lazy"></div>` : ''}
