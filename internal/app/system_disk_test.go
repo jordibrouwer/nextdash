@@ -125,3 +125,17 @@ func TestReadDisksTotalsAcrossMounts(t *testing.T) {
 		t.Fatalf("readable = %d, want 1 of 2", got.Readable)
 	}
 }
+
+// The percentage is df's: over what can be written, not over a size that
+// includes root's reserve.
+func TestDiskUsedPercentLeavesTheReserveOut(t *testing.T) {
+	if got := diskUsedPercent(95, 0); got != 100 {
+		t.Fatalf("a disk with nothing free for writers = %v%%, want 100", got)
+	}
+	if got := diskUsedPercent(90, 10); got != 90 {
+		t.Fatalf("got %v, want 90", got)
+	}
+	if got := diskUsedPercent(0, 0); got != 0 {
+		t.Fatalf("empty = %v", got)
+	}
+}

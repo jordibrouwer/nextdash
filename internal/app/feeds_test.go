@@ -250,3 +250,21 @@ func TestFeedDatesInTheVariantsFeedsUse(t *testing.T) {
 		}
 	}
 }
+
+// One feed bookmarked on two pages: opening either copy clears the count, whichever
+// comes last in the list.
+func TestFreshnessTakesTheNewestOpenOfEveryCopy(t *testing.T) {
+	now := time.Now().UnixMilli()
+	hour := int64(60 * 60 * 1000)
+	key := canonicalBookmarkURLKey("https://example.com/blog")
+	state := FeedStateFile{Feeds: map[string]FeedState{key: {
+		FeedURL: "https://example.com/feed.xml", RecentItems: []int64{now - 2*hour, now - 3*hour},
+	}}}
+	fresh := freshnessForBookmarks(state, []Bookmark{
+		{URL: "https://example.com/blog", LastOpened: now - hour},
+		{URL: "https://example.com/blog"},
+	})
+	if got := fresh[key].NewCount; got != 0 {
+		t.Fatalf("newCount = %d, want 0 after opening one copy", got)
+	}
+}

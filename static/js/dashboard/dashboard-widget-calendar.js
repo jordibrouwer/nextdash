@@ -30,7 +30,10 @@
         if (held && held.until > Date.now()) return held.result;
         try {
             const res = await fetch(`/api/widgets/calendar?pageId=${encodeURIComponent(pageId)}`
-                + `&id=${encodeURIComponent(widget.id)}`);
+                + `&id=${encodeURIComponent(widget.id)}`
+                // The reader's offset, so the server ends an all-day event at
+                // local midnight before it caps the rows.
+                + `&tzOffset=${new Date().getTimezoneOffset()}`);
             if (!res.ok) return null;
             const result = await res.json();
             // Five minutes: short enough that adding an event shows up soon,
@@ -119,7 +122,13 @@
         }
 
         const events = Array.isArray(result.events) ? result.events : [];
-        if (!events.length) {
+        // An all-day event whose day is already over here is left out; the
+        // server judges it the same way when the browser sent its offset.
+        const today = new Date();
+        const localDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+        const shown = events.filter((event) => !event?.allDay
+            || Number(event.end || (Number(event.start) + 86400000)) > localDay);
+        if (!shown.length) {
             const days = Math.max(1, Number(widget?.config?.daysAhead) || 14);
             say(body, 'dashboard-widget-empty',
                 label(dash, 'dashboard.widgetCalendarNone', 'No events in the next {n} days.').replace('{n}', String(days)));
@@ -131,13 +140,6 @@
         // time beside it, which is the shape that pairs.
         const list = utils?.rowList?.() || document.createElement('div');
         if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
-        // The server keeps an all-day event for 14 hours past its UTC end, so
-        // it lasts its whole day west of UTC; here, where the reader's date is
-        // known, one whose day is already over is left out.
-        const today = new Date();
-        const localDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
-        const shown = events.filter((event) => !event?.allDay
-            || Number(event.end || (Number(event.start) + 86400000)) > localDay);
         shown.forEach((event) => {
             const row = document.createElement('div');
             row.className = 'dashboard-widget-row';

@@ -117,7 +117,7 @@ func TestFilterCalendarEventsHonoursDaysAheadAndRows(t *testing.T) {
 		{Title: "in 40 days", Start: now.Add(40 * 24 * time.Hour).UnixMilli()},
 	}
 
-	got := filterCalendarEvents(events, map[string]any{"daysAhead": 14, "rows": 20}, now)
+	got := filterCalendarEvents(events, map[string]any{"daysAhead": 14, "rows": 20}, now, calendarAllDayGraceMs)
 	titles := make([]string, len(got))
 	for i, e := range got {
 		titles[i] = e.Title
@@ -132,7 +132,7 @@ func TestFilterCalendarEventsHonoursDaysAheadAndRows(t *testing.T) {
 		}
 	}
 
-	capped := filterCalendarEvents(events, map[string]any{"daysAhead": 90, "rows": 1}, now)
+	capped := filterCalendarEvents(events, map[string]any{"daysAhead": 90, "rows": 1}, now, calendarAllDayGraceMs)
 	if len(capped) != 1 {
 		t.Fatalf("rows=1 kept %d events", len(capped))
 	}
@@ -141,7 +141,7 @@ func TestFilterCalendarEventsHonoursDaysAheadAndRows(t *testing.T) {
 func TestFilterCalendarEventsFallsBackWithNoConfig(t *testing.T) {
 	now := time.Date(2026, 9, 8, 12, 0, 0, 0, time.UTC)
 	events := []CalendarEvent{{Title: "soon", Start: now.Add(time.Hour).UnixMilli()}}
-	got := filterCalendarEvents(events, nil, now)
+	got := filterCalendarEvents(events, nil, now, calendarAllDayGraceMs)
 	if len(got) != 1 {
 		t.Fatalf("default daysAhead/rows dropped the event: %v", got)
 	}
@@ -264,7 +264,7 @@ func TestCalendarKeepsDurationAndAllDayEventsWhileTheyLast(t *testing.T) {
 	if !titles["Holiday"] || !titles["Running"] {
 		t.Fatalf("events = %+v, want both still listed", events)
 	}
-	if got := filterCalendarEvents(events, map[string]any{}, now); len(got) != 2 {
+	if got := filterCalendarEvents(events, map[string]any{}, now, calendarAllDayGraceMs); len(got) != 2 {
 		t.Fatalf("filtered = %+v, want both", got)
 	}
 }
@@ -297,5 +297,49 @@ func TestParseICSKeepsTheSoonestWhenCapped(t *testing.T) {
 	}
 	if events[0].Title != "Tomorrow" {
 		t.Fatalf("first event = %q, want the one coming up tomorrow", events[0].Title)
+	}
+}
+
+// An all-day event ends at the reader's midnight, judged before the rows are
+// capped: in Amsterdam at 09:00, yesterday's took a row the tile then hid.
+func TestFilterCalendarEventsEndsAllDayAtTheReadersMidnight(t *testing.T) {
+	now := time.Date(2026, 10, 6, 7, 0, 0, 0, time.UTC) // 09:00 in Amsterdam
+	yesterday := time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC)
+	events := []CalendarEvent{
+		{Title: "Bin day", Start: yesterday.UnixMilli(), End: yesterday.Add(24 * time.Hour).UnixMilli(), AllDay: true},
+		{Title: "a", Start: now.Add(time.Hour).UnixMilli()},
+		{Title: "b", Start: now.Add(2 * time.Hour).UnixMilli()},
+		{Title: "c", Start: now.Add(3 * time.Hour).UnixMilli()},
+	}
+	got := filterCalendarEvents(events, map[string]any{"rows": 3}, now, calendarAllDayGrace("-120"))
+	if len(got) != 3 || got[0].Title != "a" {
+		t.Fatalf("got %+v, want a b c", got)
+	}
+	// At 03:00Z it is still the 5th in New York.
+	early := time.Date(2026, 10, 6, 3, 0, 0, 0, time.UTC)
+	if got := filterCalendarEvents(events, map[string]any{"rows": 3}, early, calendarAllDayGrace("240")); got[0].Title != "Bin day" {
+		t.Fatalf("New York lost today's all-day event: %+v", got)
+	}
+	if calendarAllDayGrace("") != calendarAllDayGraceMs || calendarAllDayGrace("9999") != calendarAllDayGraceMs {
+		t.Fatal("a missing or odd offset must fall back to the widest grace")
+	}
+}
+
+// A cancelled meeting is not coming up, and Outlook's quoted display-name
+// TZID with a colon in it no longer drops the event.
+func TestParseICSCancelledAndOutlookDisplayNameZone(t *testing.T) {
+	now := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
+	ics := strings.Join([]string{
+		"BEGIN:VCALENDAR",
+		"BEGIN:VEVENT", "DTSTART:20261006T090000Z", "STATUS:CANCELLED", "SUMMARY:Team sync", "END:VEVENT",
+		"BEGIN:VEVENT", `DTSTART;TZID="(UTC+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna":20261006T090000`, "SUMMARY:Review", "END:VEVENT",
+		"END:VCALENDAR",
+	}, "\r\n")
+	events := parseICS([]byte(ics), now)
+	if len(events) != 1 || events[0].Title != "Review" {
+		t.Fatalf("events = %+v, want only Review", events)
+	}
+	if want := time.Date(2026, 10, 6, 8, 0, 0, 0, time.UTC).UnixMilli(); events[0].Start != want {
+		t.Fatalf("start = %v, want 08:00Z", time.UnixMilli(events[0].Start).UTC())
 	}
 }

@@ -717,6 +717,16 @@ type FeedFresh struct {
 // never opened counts everything the feed has, capped by what is stored — you
 // have seen none of it.
 func freshnessForBookmarks(state FeedStateFile, bookmarks []Bookmark) map[string]FeedFresh {
+	// Opens are kept per row, and one feed can be bookmarked twice (two pages,
+	// http and https): the newest open of any copy clears the count, not the
+	// one that happened to come last.
+	latest := make(map[string]int64)
+	for _, bookmark := range bookmarks {
+		key := canonicalBookmarkURLKey(bookmark.URL)
+		if bookmark.LastOpened > latest[key] {
+			latest[key] = bookmark.LastOpened
+		}
+	}
 	out := make(map[string]FeedFresh)
 	for _, bookmark := range bookmarks {
 		key := canonicalBookmarkURLKey(bookmark.URL)
@@ -727,7 +737,7 @@ func freshnessForBookmarks(state FeedStateFile, bookmarks []Bookmark) map[string
 		if !ok || feed.FeedURL == "" {
 			continue
 		}
-		lastOpened := bookmark.LastOpened
+		lastOpened := latest[key]
 		count := 0
 		for _, at := range feed.RecentItems {
 			if at > lastOpened {

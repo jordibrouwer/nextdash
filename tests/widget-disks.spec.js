@@ -333,3 +333,26 @@ test.describe('the disks widget in config', () => {
         expect(shape.note).toContain('Unraid');
     });
 });
+
+// No answer at all (nextDash restarting) is not a setup to fix: the tile must
+// not tell a configured install to name its disks, and the unpolled feeds tile
+// must not sit on "Loading…" for good.
+test('a failed read says so instead of a setup instruction', async ({ page }) => {
+    await openDashboard(page);
+    await page.route('**/api/system/metrics**', (route) => route.abort());
+    await page.route('**/api/feeds', (route) => route.abort());
+    const texts = await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d._widgetSystem = {};
+        delete d.feedFreshness;
+        delete d._widgetFeeds;
+        const disks = document.createElement('div');
+        await window.DashboardWidgets.disks(disks, { id: 'probe', type: 'disks', config: {} }, d);
+        const feeds = document.createElement('div');
+        await window.DashboardWidgets.feeds(feeds, { type: 'feeds', config: {} }, d);
+        return { disks: disks.textContent, feeds: feeds.textContent };
+    });
+    expect(texts.disks).not.toMatch(/No disks chosen/);
+    expect(texts.disks).toMatch(/did not answer/);
+    expect(texts.feeds).toMatch(/did not answer/);
+});

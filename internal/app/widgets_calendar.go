@@ -187,9 +187,11 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 	var allDay bool
 	var haveStart bool
 	var duration time.Duration
+	// A meeting its organiser called off stays in the feed as STATUS:CANCELLED.
+	var cancelled bool
 
 	flush := func() {
-		if !haveStart || summary == "" {
+		if !haveStart || summary == "" || cancelled {
 			return
 		}
 		// DURATION in place of DTEND: with no end the event was judged by its
@@ -228,7 +230,7 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 			inEvent = true
 			nested = 0
 			summary, start, end = "", 0, 0
-			allDay, haveStart = false, false
+			allDay, haveStart, cancelled = false, false, false
 			duration = 0
 			continue
 		case line == "END:VEVENT":
@@ -269,6 +271,8 @@ func parseICS(raw []byte, now time.Time) []CalendarEvent {
 			}
 		case "DURATION":
 			duration = parseICSDuration(value)
+		case "STATUS":
+			cancelled = strings.EqualFold(strings.TrimSpace(value), "CANCELLED")
 		}
 	}
 
@@ -299,10 +303,19 @@ func unfoldICSLines(raw []byte) []string {
 }
 
 // splitICSProperty reads "NAME;PARAM=VALUE;...:the value" into its three
-// parts. A value never carries an unescaped colon in the properties this
-// reads (dates and plain text), so the first one found is the split point.
+// parts. The split is the first colon outside double quotes: a quoted
+// parameter may hold one (Outlook's TZID="(UTC+01:00) Amsterdam, …"), and
+// split there the event lost its start and vanished.
 func splitICSProperty(line string) (name string, params map[string]string, value string) {
-	colon := strings.IndexByte(line, ':')
+	colon, inQuote := -1, false
+	for i := 0; i < len(line) && colon < 0; i++ {
+		switch {
+		case line[i] == '"':
+			inQuote = !inQuote
+		case line[i] == ':' && !inQuote:
+			colon = i
+		}
+	}
 	if colon < 0 {
 		return "", nil, ""
 	}
@@ -361,6 +374,8 @@ func parseICSDateTime(value string, params map[string]string) (t time.Time, allD
 		}
 		if named, err := time.LoadLocation(tzid); err == nil {
 			loc = named
+		} else if fixed, ok := icsDisplayNameZone(tzid); ok {
+			loc = fixed
 		}
 	}
 	parsed, err := time.ParseInLocation("20060102T150405", value, loc)
@@ -431,15 +446,26 @@ func (h *Handlers) CalendarWidgetHandler(w http.ResponseWriter, r *http.Request)
 	events, fetchErr := h.calendarFeed(r.Context(), url, forced)
 	result := CalendarWidgetResult{FetchedAt: now.UnixMilli(), Error: fetchErr}
 	if fetchErr == "" {
-		result.Events = filterCalendarEvents(events, found.Config, now)
+		result.Events = filterCalendarEvents(events, found.Config, now, calendarAllDayGrace(r.URL.Query().Get("tzOffset")))
 	}
 	_ = json.NewEncoder(w).Encode(result)
 }
 
+// calendarAllDayGrace is how long past its UTC end an all-day event lasts for
+// this reader: their offset from getTimezoneOffset (minutes, UTC minus local),
+// or the widest one when the browser did not say. Judged here, before the row
+// cap, so yesterday's all-day event does not take a row the tile then hides.
+func calendarAllDayGrace(raw string) int64 {
+	if offset, err := strconv.Atoi(strings.TrimSpace(raw)); err == nil && offset >= -840 && offset <= 720 {
+		return int64(offset) * 60_000
+	}
+	return calendarAllDayGraceMs
+}
+
 // filterCalendarEvents narrows the cached feed to what this widget asked for:
 // nothing already over, nothing past its look-ahead window, capped to its row
-// count.
-func filterCalendarEvents(events []CalendarEvent, config map[string]any, now time.Time) []CalendarEvent {
+// count. allDayGrace is calendarAllDayGrace's answer for the reader.
+func filterCalendarEvents(events []CalendarEvent, config map[string]any, now time.Time, allDayGrace int64) []CalendarEvent {
 	daysAhead := clampInt(widgetConfigIntOr(config["daysAhead"], 14), 1, 90)
 	rows := clampInt(widgetConfigIntOr(config["rows"], 5), widgetMinRows, widgetMaxRows)
 	cutoff := now.Add(time.Duration(daysAhead) * 24 * time.Hour).UnixMilli()
@@ -452,9 +478,9 @@ func filterCalendarEvents(events []CalendarEvent, config map[string]any, now tim
 			ended = event.End
 		}
 		if event.AllDay {
-			ended += calendarAllDayGraceMs
+			ended += allDayGrace
 		}
-		if ended < nowMs || event.Start > cutoff {
+		if ended <= nowMs || event.Start > cutoff {
 			continue
 		}
 		out = append(out, event)
@@ -476,6 +502,29 @@ func widgetConfigIntOr(raw any, fallback int) int {
 // UTC as well. Its end is midnight UTC, so judged by the instant a reader in
 // New York lost today's all-day event at 20:00; UTC-12 is the widest offset.
 const calendarAllDayGraceMs = int64(14 * time.Hour / time.Millisecond)
+
+// icsDisplayNamePattern is the offset in front of an Outlook display name,
+// "(UTC+01:00) Amsterdam, Berlin, …".
+var icsDisplayNamePattern = regexp.MustCompile(`^\(UTC(?:([+-])(\d{2}):(\d{2}))?\)`)
+
+// icsDisplayNameZone reads that offset as a fixed zone: without daylight
+// saving, but the right day and, half the year, the right hour.
+func icsDisplayNameZone(tzid string) (*time.Location, bool) {
+	m := icsDisplayNamePattern.FindStringSubmatch(tzid)
+	if m == nil {
+		return nil, false
+	}
+	if m[1] == "" {
+		return time.UTC, true
+	}
+	hours, _ := strconv.Atoi(m[2])
+	minutes, _ := strconv.Atoi(m[3])
+	offset := hours*3600 + minutes*60
+	if m[1] == "-" {
+		offset = -offset
+	}
+	return time.FixedZone(m[0], offset), true
+}
 
 var icsDurationPattern = regexp.MustCompile(`^[+]?P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$`)
 

@@ -36,6 +36,9 @@
                 'No disks chosen yet — name them in this widget’s settings.'],
             'read-failed': ['dashboard.widgetSystemReadFailed',
                 'This machine answered with something unreadable.'],
+            // No answer at all, as while nextDash restarts: not a setup to fix.
+            'no-answer': ['dashboard.widgetNoAnswer',
+                'nextDash did not answer.'],
         };
         const entry = lines[reason] || lines['read-failed'];
         return label(dash, entry[0], entry[1]);

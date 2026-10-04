@@ -25,8 +25,15 @@
         return dash?.settings?.language || document.documentElement.getAttribute('data-lang') || 'en';
     }
 
-    function dayLabel(dash, dateStr, index) {
-        if (index === 0) return label(dash, 'dashboard.widgetWeatherToday', 'Today');
+    /** Today on the reader's clock, in the forecast's YYYY-MM-DD. */
+    function localDate(now = new Date()) {
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
+    // "Today" goes by the date, not the first row: a forecast cached before
+    // midnight starts with yesterday.
+    function dayLabel(dash, dateStr) {
+        if (dateStr === localDate()) return label(dash, 'dashboard.widgetWeatherToday', 'Today');
         try {
             const date = new Date(`${dateStr}T00:00:00`);
             return new Intl.DateTimeFormat(localeOf(dash), { weekday: 'short' }).format(date);
@@ -119,12 +126,14 @@
         forecast.className = 'dashboard-widget-weather-forecast';
 
         if (Array.isArray(result.days)) {
-            result.days.forEach((day, index) => {
+            const today = localDate();
+            // A day already past is left out rather than shown as today.
+            result.days.filter((day) => !day?.date || day.date >= today).forEach((day) => {
                 const row = document.createElement('div');
                 row.className = 'dashboard-widget-weather-row';
                 const dayText = document.createElement('span');
                 dayText.className = 'dashboard-widget-weather-row-label';
-                dayText.textContent = dayLabel(dash, day.date, index);
+                dayText.textContent = dayLabel(dash, day.date);
                 const range = document.createElement('span');
                 range.className = 'dashboard-widget-weather-row-range';
                 range.textContent = `${Math.round(day.tempMax)}° / ${Math.round(day.tempMin)}°`;

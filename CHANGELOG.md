@@ -116,6 +116,13 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — six on-by-default options draw ticked.** Disks' bar, Uptime's sparkline, Inbox's source, Feeds' retired, Neglected's never-opened and Backups' list drew unticked while the tile showed them (`dashboard-config.js`).
 - **fix — Save in a widget's settings keeps it hidden** when Shown was unticked on its row meanwhile (`dashboard-config.js`).
 - **fix — the Calendar keeps the events coming up soonest.** The 500-event cap was applied in file order, and a feed over 1 MB was cut without a word; it is now cut after sorting, and read up to 4 MB (`widgets_calendar.go`).
+- **fix — the Calendar ends an all-day event at your midnight,** before it counts the rows. East of UTC, yesterday's all-day event took a row every morning and the tile showed one event short, or nothing (`widgets_calendar.go`, `dashboard-widget-calendar.js`).
+- **fix — the Calendar leaves out cancelled events** (`widgets_calendar.go`).
+- **fix — the Calendar reads Outlook's zone names with a colon in them,** such as "(UTC+01:00) Amsterdam, …"; those events were dropped (`widgets_calendar.go`).
+- **fix — opening a feed's bookmark clears its new count when it is bookmarked twice** (`feeds.go`).
+- **fix — a tile that got no answer says so.** While nextDash restarted, Disks and Docker asked you to set them up again, and Feeds, Sources and Inbox stayed on "Loading…" (`dashboard-widget-*.js`).
+- **fix — Disks shows how full a disk is the way `df` does,** without root's reserve; a disk full for every writer read 95% (`system_disk.go`).
+- **fix — the Weather tile calls today "Today"** after midnight, and leaves out a day that is over (`dashboard-widget-weather.js`).
 
 ### Health
 

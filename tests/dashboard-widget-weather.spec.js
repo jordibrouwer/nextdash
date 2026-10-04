@@ -64,7 +64,10 @@ test.describe('the weather widget', () => {
                     return new Response(JSON.stringify({
                         current: { temperature_2m: 21, weather_code: 0 },
                         daily: {
-                            time: ['2026-09-08', '2026-09-09', '2026-09-10'],
+                            time: [0, 1, 2].map((n) => {
+                                const t = new Date(); t.setDate(t.getDate() + n);
+                                return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+                            }),
                             temperature_2m_max: [22, 24, 19],
                             temperature_2m_min: [12, 13, 10],
                             weather_code: [0, 2, 61],
@@ -90,6 +93,30 @@ test.describe('the weather widget', () => {
         expect(rendered.temp).toBe('21°C');
         expect(rendered.rows).toEqual(['22° / 12°', '24° / 13°', '19° / 10°']);
         expect(rendered.location).toBe('Berlin');
+    });
+
+    test('a forecast cached before midnight does not call yesterday today', async ({ page }) => {
+        await open(page);
+        const labels = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            Object.assign(d.settings, { weatherSource: 'manual', weatherLocation: 'Berlin' });
+            const day = (n) => {
+                const t = new Date(); t.setDate(t.getDate() + n);
+                return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+            };
+            const service = Object.assign(Object.create(Object.getPrototypeOf(d.weatherService)), d.weatherService, {
+                fetchForecast: async () => ({
+                    current: { temperature: 21, weatherCode: 0, unitSymbol: 'C' },
+                    days: [-1, 0, 1].map((n, i) => ({ date: day(n), tempMax: 20 + i, tempMin: 10 + i, weatherCode: 0 })),
+                }),
+            });
+            const body = document.createElement('div');
+            await window.DashboardWidgets.weather(body, { id: 'w_y', type: 'weather', config: { forecastRange: '3day' } },
+                { ...d, weatherService: service });
+            return [...body.querySelectorAll('.dashboard-widget-weather-row-label')].map((el) => el.textContent);
+        });
+        expect(labels.length).toBe(2);
+        expect(labels[0]).toBe('Today');
     });
 
     test('the 24h range asks for hourly data and lists it in 3-hour steps', async ({ page }) => {

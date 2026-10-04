@@ -103,9 +103,7 @@ func readDisks(paths []string, labels map[string]string) DiskMetrics {
 		if st.Bfree >= st.Bavail {
 			mount.ReservedBytes = block * (st.Bfree - st.Bavail)
 		}
-		if mount.TotalBytes > 0 {
-			mount.UsedPercent = float64(mount.UsedBytes) / float64(mount.TotalBytes) * 100
-		}
+		mount.UsedPercent = diskUsedPercent(mount.UsedBytes, mount.FreeBytes)
 		mount.InodesTotal = st.Files
 		mount.InodesFree = st.Ffree
 
@@ -116,8 +114,16 @@ func readDisks(paths []string, labels map[string]string) DiskMetrics {
 		out.FreeBytes += mount.FreeBytes
 	}
 
-	if out.TotalBytes > 0 {
-		out.UsedPercent = float64(out.UsedBytes) / float64(out.TotalBytes) * 100
-	}
+	out.UsedPercent = diskUsedPercent(out.UsedBytes, out.FreeBytes)
 	return out
+}
+
+// diskUsedPercent is how full a disk is the way df says it: over what can
+// actually be written, without root's reserve. Over the whole size, a disk
+// full for every writer read 95% and turned red only after it was.
+func diskUsedPercent(used, free uint64) float64 {
+	if used+free == 0 {
+		return 0
+	}
+	return float64(used) / float64(used+free) * 100
 }
