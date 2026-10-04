@@ -40,6 +40,8 @@ async function openInboxWithoutMarkingTutorialSeen(page) {
         }
         const state = window.DiscoverabilityState;
         if (state?.exportState) {
+            // Forgotten, not only left out: a tip marked on this page outlives an init.
+            state.forgetTip?.('inboxTutorialV3', { persist: false });
             const exported = state.exportState();
             exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV3');
             state.init?.(exported);
@@ -139,6 +141,8 @@ test.describe('inbox tutorial', () => {
             window.dashboardInstance.settings.enableSessionTips = false;
             const state = window.DiscoverabilityState;
             if (state?.exportState) {
+                // Forgotten, not only left out: a tip marked on this page outlives an init.
+                state.forgetTip?.('inboxTutorialV3', { persist: false });
                 const exported = state.exportState();
                 exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV3');
                 state.init?.(exported);

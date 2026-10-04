@@ -26,6 +26,8 @@ async function openViewWithTourUnseen(page, { sawEarlier = null } = {}) {
         d.settings.enableSessionTips = true;
         window.__e2eWantTours = ['containersTutorialV3'];
         const state = window.DiscoverabilityState;
+        // Forgotten, not only left out: a tip marked on this page outlives an init.
+        state.forgetTip(tip, { persist: false });
         const exported = state.exportState();
         exported.seenTips = (exported.seenTips || []).filter((id) => id !== tip && !/^containersTutorialV[12]$/.test(id));
         if (sawEarlier) exported.seenTips.push(sawEarlier);
@@ -105,6 +107,8 @@ test.describe('containers view tutorial', () => {
             window.dashboardInstance.settings.enableSessionTips = false;
             window.__e2eWantTours = ['containersTutorialV3'];
             const state = window.DiscoverabilityState;
+            // Forgotten, not only left out: a tip marked on this page outlives an init.
+            state.forgetTip(tip, { persist: false });
             const exported = state.exportState();
             exported.seenTips = (exported.seenTips || []).filter((id) => id !== tip);
             state.init(exported);

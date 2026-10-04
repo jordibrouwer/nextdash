@@ -18,6 +18,10 @@
     };
     let persistTimer = null;
     let migrateScheduled = false;
+    // Tips marked seen on this page. A settings read that left before the mark
+    // was saved still lands afterwards, and init() took it whole: a tour just
+    // closed showed again on the next visit to its view.
+    const markedHere = new Set();
 
     function normalizeIncoming(raw) {
         if (!raw || typeof raw !== 'object') {
@@ -160,6 +164,7 @@
         const key = String(id || '').trim();
         if (!key) return;
         if (!Array.isArray(state.seenTips)) state.seenTips = [];
+        markedHere.add(key);
         if (state.seenTips.includes(key)) return;
         state.seenTips.push(key);
         if (state.seenTips.length > 200) {
@@ -182,6 +187,7 @@
      */
     function forgetTip(id, options = {}) {
         const key = String(id || '').trim();
+        markedHere.delete(key);
         if (!key || !Array.isArray(state.seenTips)) return;
         const next = state.seenTips.filter((seen) => seen !== key);
         if (next.length === state.seenTips.length) return;
@@ -206,6 +212,7 @@
      * bringing them all back would re-nag on every panel someone opens.
      */
     function clearSeenTips(options = {}) {
+        markedHere.clear();
         state.seenTips = [];
         setTipsNotBefore(0, { persist: false });
         applyToDashboardSettings();
@@ -318,6 +325,9 @@
 
     function init(serverState) {
         state = normalizeIncoming(serverState);
+        markedHere.forEach((key) => {
+            if (!state.seenTips.includes(key)) state.seenTips.push(key);
+        });
         applyToDashboardSettings();
         syncLegacyKeysFromState();
         if (!migrateScheduled) {

@@ -24,6 +24,8 @@ async function openLibraryWithTourUnseen(page) {
         d.settings.enableSessionTips = true;
         window.__e2eWantTours = ['bookmarksTutorialV1'];
         const state = window.DiscoverabilityState;
+        // Forgotten, not only left out: a tip marked on this page outlives an init.
+        state.forgetTip(tip, { persist: false });
         const exported = state.exportState();
         exported.seenTips = (exported.seenTips || []).filter((id) => id !== tip);
         state.init(exported);
@@ -96,6 +98,8 @@ test.describe('bookmarks view tutorial', () => {
             window.dashboardInstance.settings.enableSessionTips = false;
             window.__e2eWantTours = ['bookmarksTutorialV1'];
             const state = window.DiscoverabilityState;
+            // Forgotten, not only left out: a tip marked on this page outlives an init.
+            state.forgetTip(tip, { persist: false });
             const exported = state.exportState();
             exported.seenTips = (exported.seenTips || []).filter((id) => id !== tip);
             state.init(exported);

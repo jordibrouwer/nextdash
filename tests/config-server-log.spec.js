@@ -160,19 +160,20 @@ test.describe('Logs → Server logs', () => {
         // Every remaining line is an activity line — the filter reaches the
         // server, which is what makes it different from typing "activity" into
         // the search box over lines already fetched.
-        await expect.poll(async () => page.evaluate(() =>
-            [...document.querySelectorAll('.config-log-line')].length), { timeout: 10_000 })
-            .toBeGreaterThan(0);
-        const sources = await page.evaluate(() =>
-            [...document.querySelectorAll('.config-log-line')]
-                .map((el) => el.textContent || ''));
         // Trail lines carry their channel now, not the word "activity": the
         // JSON moved to the trail file and the log line became a sentence
         // under the channel it belongs to.
         const channels = ['mutate', 'status', 'open', 'security', 'health', 'sources',
             'feeds', 'archive', 'backup', 'store', 'widgets', 'notify'];
-        expect(sources.every((text) => channels.some((c) => text.includes(c)))).toBe(true);
-        expect(sources.some((text) => text.includes('GET /api/'))).toBe(false);
+        // Polled on the lines themselves: the unfiltered list stays on screen
+        // until the filtered answer arrives, and read in between it failed
+        // on the request lines it was about to drop.
+        await expect.poll(async () => {
+            const sources = await page.evaluate(() =>
+                [...document.querySelectorAll('.config-log-line')].map((el) => el.textContent || ''));
+            return sources.filter((text) => !channels.some((c) => text.includes(c)) || text.includes('GET /api/'))
+                .concat(sources.length ? [] : ['(no lines)']);
+        }, { timeout: 10_000 }).toEqual([]);
 
         // The one line of explanation appears with it, and goes away again.
         await expect(page.locator('[data-log-activity-note]')).toBeVisible();

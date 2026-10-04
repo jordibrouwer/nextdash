@@ -14284,7 +14284,7 @@ class DashboardConfig {
                 return `
                     <div class="config-field-row">
                         <button type="button" class="config-btn" data-monitor-notify-test>${esc(this.t('config.monitorNotifyTestButton', 'Send test alert'))}</button>
-                        <span class="config-field-hint" data-monitor-notify-test-status></span>
+                        <span class="config-field-hint" data-monitor-notify-test-status>${esc(this._monitorNotifyTestStatus || '')}</span>
                     </div>`;
             }
             // A button that does something once instead of a value that is
@@ -15207,11 +15207,19 @@ class DashboardConfig {
     bindMonitorNotifyTest(container) {
         const btn = container.querySelector('[data-monitor-notify-test]');
         if (!btn) return;
-        const status = container.querySelector('[data-monitor-notify-test-status]');
+        // The blur that saves a field just typed can redraw this panel while
+        // the test is on its way, so the outcome is kept and written to the
+        // line that is on screen when it arrives, not to the one clicked.
+        const say = (text) => {
+            this._monitorNotifyTestStatus = text;
+            const line = document.querySelector('[data-monitor-notify-test-status]')
+                || container.querySelector('[data-monitor-notify-test-status]');
+            if (line) line.textContent = text;
+        };
 
         btn.addEventListener('click', async () => {
             btn.disabled = true;
-            if (status) status.textContent = this.t('config.monitorNotifyTestSending', 'Sending…');
+            say(this.t('config.monitorNotifyTestSending', 'Sending…'));
             try {
                 // An address typed and the button clicked at once: the field
                 // saves on blur, and the test read the stored settings before
@@ -15228,11 +15236,11 @@ class DashboardConfig {
                     const detail = (await res.text().catch(() => '')).trim();
                     throw new Error(detail || `HTTP ${res.status}`);
                 }
-                if (status) status.textContent = this.t('config.monitorNotifyTestSent', 'Sent — check your alert service.');
+                say(this.t('config.monitorNotifyTestSent', 'Sent — check your alert service.'));
                 window.AppNotification?.show?.(this.t('config.monitorNotifyTestSent', 'Sent — check your alert service.'));
             } catch (err) {
                 const message = err?.message || String(err);
-                if (status) status.textContent = message;
+                say(message);
                 window.AppNotification?.show?.(message);
             } finally {
                 btn.disabled = false;

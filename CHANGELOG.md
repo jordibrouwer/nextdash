@@ -143,6 +143,8 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 - **fix — webhook deliveries are logged by host,** so a Home Assistant or n8n secret in the path stays out of the log (`webhooks.go`).
 - **fix — a credential's query key stays out of the drift baseline** on the bookmark (`ping.go`, `health_credentials.go`).
 - **fix — a soft-404 probe that got no answer is retried after 10 minutes,** not trusted as "behaves normally" for a day, and has its own deadline instead of what a slow page left over (`health_soft404_control.go`).
+- **fix — Send test alert shows its outcome** when the field you just typed saves and redraws the panel; "Sent" or the error landed on the line that was replaced (`dashboard-config.js`).
+- **fix — a tour you closed stays closed** when a settings read that left before the close lands after it; the inbox tour could open again over the list (`discoverability-state.js`).
 
 ### Containers
 

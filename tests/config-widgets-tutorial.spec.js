@@ -23,6 +23,8 @@ async function openDashboard(page) {
     await page.evaluate(() => {
         const state = window.DiscoverabilityState;
         if (!state?.exportState) return;
+        // Forgotten, not only left out: a tip marked on this page outlives an init.
+        state.forgetTip?.('widgetsTutorialV1', { persist: false });
         const exported = state.exportState();
         exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'widgetsTutorialV1');
         state.init?.(exported);

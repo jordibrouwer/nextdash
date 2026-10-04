@@ -1,5 +1,6 @@
 const { test, expect } = require('./fixtures');
 const { openInboxWith, stubInbox, item } = require('./helpers/inbox-report');
+const { markWhatsNewSeen, dismissBlockingOverlays } = require('./e2e-helpers');
 
 test.describe('inbox redesign: rows', () => {
   test('line one carries title, domain and when; the rest is not in the row', async ({ page }) => {
@@ -190,11 +191,18 @@ test.describe('inbox redesign: keys and phone', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     // The header's inbox link is folded away at this width; the address opens it.
     await stubInbox(page);
+    await markWhatsNewSeen(page);
     await page.goto('/#inbox');
     await page.waitForSelector('.inbox-layout .inbox-item', { timeout: 15_000 });
+    await dismissBlockingOverlays(page);
     const before = await page.evaluate(() => window.ScrollLock?.holders?.size ?? 0);
     await page.evaluate(() => document.activeElement?.blur?.());
-    await page.keyboard.press('j');
+    // The keys arrive once the list takes them: j that lands first selects a
+    // row, and only then is Enter about that row.
+    await expect(async () => {
+        await page.keyboard.press('j');
+        await expect(page.locator('.inbox-item.keyboard-selected')).toHaveCount(1, { timeout: 500 });
+    }).toPass({ timeout: 10_000 });
     await page.keyboard.press('Enter');
     const panel = page.locator('[data-lvs-drawer="inbox"] [data-lvs-drawer-panel]');
     await expect(panel).toBeVisible();
