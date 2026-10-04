@@ -389,3 +389,30 @@ test.describe('custom theme editor', () => {
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 });
+
+// A failed read of /api/colors (server restarting, a proxy's 502) used to be
+// kept as an empty colour document for the session; the next Add custom theme
+// posted it, deleting every own theme and both palettes.
+test('a failed colour read is never saved back over the stored themes', async ({ page }) => {
+    await openCustomThemes(page);
+    await page.evaluate(async () => {
+        const cfg = window.dashboardInstance.config;
+        const colors = await (await fetch('/api/colors')).json();
+        colors.custom = { 'theme-keepme-0001': { ...(colors.dark || {}), name: 'Keep me' } };
+        await cfg.writeFetch('/api/colors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(colors),
+        });
+        cfg._colorsData = null;
+    });
+    await page.route('**/api/colors', (route) => (route.request().method() === 'GET'
+        ? route.fulfill({ status: 502, body: 'Bad Gateway' })
+        : route.continue()));
+    await page.evaluate(() => window.dashboardInstance.config.openCustomThemes());
+    await page.locator('[data-theme-add]').click();
+    await page.waitForTimeout(500);
+    await page.unroute('**/api/colors');
+    const stored = await page.evaluate(async () => Object.values((await (await fetch('/api/colors')).json()).custom || {}).map((t) => t.name));
+    expect(stored, 'the stored own themes after Add on a failed read').toEqual(['Keep me']);
+});

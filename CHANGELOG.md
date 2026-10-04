@@ -102,6 +102,7 @@ Two themes for Unraid users, each in dark and light, after the webGUI's own Blac
 
 - **new — Unraid Black and Unraid Azure**, each light and dark (`models.go`). Black has flat black panels, small uppercase labels and the orange of the Unraid logo; Azure has cool grey panels and a steel-blue accent. Both are marked new (`theme_new.go`), carry a description (`theme_description.go`), a chosen backdrop (`theme_backdrop_choice.go`: wireframe for Black, band for Azure) and a weather scene per variant (`visual-settings.js`).
 - **new — Unraid Ember and Unraid Blaze**, each light and dark (`models.go`). Ember is the logo's orange glowing out of black glass (neon, sunset backdrop); Blaze is its red end, hard-edged lacquer on deep crimson (horizon backdrop). Both are marked new, described and given a weather scene like the other two. Also shortened the Unraid Black card description, which was over the length limit.
+- **fix — a failed read of the colours no longer wipes your own themes.** When `/api/colors` could not be read (a server restart, a proxy's 502), `loadColorsData` kept an empty stand-in for the session, and the next Add custom theme or import posted it: every own theme deleted, both palettes emptied. The stand-in is now marked, read again on the next call, and `saveColorsData` refuses to post it (`dashboard-config.js`).
 
 ### Widgets
 

@@ -10544,13 +10544,20 @@ class DashboardConfig {
 
     /** GET /api/colors once; the editor mutates this copy and POSTs it back. */
     async loadColorsData() {
-        if (this._colorsData) return this._colorsData;
+        if (this._colorsData && !this._colorsData._unloaded) return this._colorsData;
+        let data = null;
         try {
             const res = await fetch('/api/colors');
-            const data = res && res.ok ? await res.json() : null;
-            this._colorsData = data && typeof data === 'object' ? data : { light: {}, dark: {}, builtIn: {}, custom: {} };
-        } catch {
-            this._colorsData = { light: {}, dark: {}, builtIn: {}, custom: {} };
+            data = res && res.ok ? await res.json() : null;
+        } catch { data = null; }
+        if (data && typeof data === 'object') {
+            this._colorsData = data;
+        } else if (!this._colorsData) {
+            // A failed read (server restarting, a proxy's 502) leaves an empty
+            // stand-in so the tab can render. It is marked: the next call reads
+            // again, and saveColorsData refuses to post it -- posted, it
+            // replaced every own theme and both palettes with nothing.
+            this._colorsData = { light: {}, dark: {}, builtIn: {}, custom: {}, _unloaded: true };
         }
         if (!this._colorsData.custom || typeof this._colorsData.custom !== 'object') {
             this._colorsData.custom = {};
@@ -10950,6 +10957,10 @@ class DashboardConfig {
             return true;
         }
         const run = async () => {
+            if (this._colorsData?._unloaded) {
+                this.notify(this.t('config.themeSaveError', 'Could not save the theme.'), 'error');
+                return false;
+            }
             try {
                 const res = await this.writeFetch('/api/colors', {
                     method: 'POST',
