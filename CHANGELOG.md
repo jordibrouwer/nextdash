@@ -137,6 +137,7 @@ A Notes widget with Markdown and checkboxes, pages that can be shared as templat
 - **docs — `static/data/whats-new/v1.17.2.json` and its index entry**, with the dashboard's selection bar under Dashboard; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v318` and `DASHBOARD_RELEASE` to v1.17.2, so the window opens once. `go generate` refreshed `asset_hashes_gen.go`.
 - **docs — Config → Help:** `helpLibraryBody` describes the container cube in the Bookmarks view, `helpCollectionHealthBody` and `helpHealthStatsBody` the three tabs, `helpWidgetKindsBody` the Notes widget and Retry, `helpHealthMaintenanceBody` quiet hours, reminders and uptime badges, `helpWorkspaceBody` page templates, `helpStatsPrivacyBody` the install count, and `helpBehaviorBody` the corner cards, in all six languages; the Notes widget and the other new settings have their strings in `en.json` and the five translations.
 - **docs — Manual and README:** Notes (§15), page templates (§9.8), quiet hours, reminders and uptime badges (§12.5), corner cards and the install count, Collection health's three tabs (§11.8).
+- **docs — the Unraid theme screenshots left the repository.** `screenshots/unraid-themes/` (64 images) is removed and listed in `.gitignore`; the README keeps its two Unraid screenshots in `screenshots/`.
 
 ---
 
