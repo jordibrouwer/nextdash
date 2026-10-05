@@ -490,6 +490,8 @@
       "wgWidth": "One column or two, the same key a category uses for its width",
       "wgClose": "Close the widget — it keeps its settings, and Config → Widgets switches it back on",
       "wgRenameHold": "Rename it with the pointer, as on a category header (double-click does the same)",
+      "wgNoteSave": "Save the note you are writing in a Notes widget",
+      "wgNoteCancel": "Leave the note without saving the edit",
       "bmRenamePageTab": "Rename page tab — also set emoji icon and colour dot",
       "bmRenameCategory": "Long-press category header (~500 ms) to rename",
       "bmDragReorder": "Reorder a bookmark within or across categories",

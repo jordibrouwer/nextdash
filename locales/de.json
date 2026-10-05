@@ -409,6 +409,8 @@
       "wgWidth": "Eine Spalte oder zwei, dieselbe Taste, die eine Kategorie für ihre Breite nutzt",
       "wgClose": "Das Widget schließen — es behält seine Einstellungen, und Config → Widgets schaltet es wieder ein",
       "wgRenameHold": "Mit dem Zeiger umbenennen, wie bei einer Kategorie-Kopfzeile (Doppelklick genauso)",
+      "wgNoteSave": "Die Notiz speichern, die du in einem Notizen-Widget schreibst",
+      "wgNoteCancel": "Die Notiz verlassen, ohne die Änderung zu speichern",
       "bmRenamePageTab": "Seiten-Tab umbenennen — auch Emoji und Farbpunkt setzen",
       "bmRenameCategory": "Kategorieheader ~500 ms gedrückt halten zum Umbenennen",
       "bmDragReorder": "Ein Lesezeichen innerhalb oder zwischen Kategorien umsortieren",

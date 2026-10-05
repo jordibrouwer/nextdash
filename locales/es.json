@@ -409,6 +409,8 @@
       "wgWidth": "Una columna o dos, la misma tecla que usa una categoría para su ancho",
       "wgClose": "Cerrar el widget: conserva sus ajustes y Configuración → Widgets vuelve a activarlo",
       "wgRenameHold": "Renombrarlo con el puntero, como en la cabecera de una categoría (el doble clic hace lo mismo)",
+      "wgNoteSave": "Guardar la nota que escribes en un widget de Notas",
+      "wgNoteCancel": "Salir de la nota sin guardar el cambio",
       "bmRenamePageTab": "Renombrar la pestaña de página: también pone icono emoji y punto de color",
       "bmRenameCategory": "Mantén pulsada la cabecera de la categoría (~500 ms) para renombrarla",
       "bmDragReorder": "Reordenar un marcador dentro de su categoría o llevarlo a otra",

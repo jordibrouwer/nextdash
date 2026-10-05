@@ -409,6 +409,8 @@
       "wgWidth": "Eén kolom of twee, dezelfde toets die een categorie voor zijn breedte gebruikt",
       "wgClose": "Sluit de widget — hij houdt zijn instellingen, en Config → Widgets zet hem weer aan",
       "wgRenameHold": "Wijzig de naam met de muis, net als op een categoriekop (dubbelklik doet hetzelfde)",
+      "wgNoteSave": "Bewaar de notitie die je in een Notities-widget schrijft",
+      "wgNoteCancel": "Verlaat de notitie zonder de wijziging te bewaren",
       "bmRenamePageTab": "Hernoem paginatab — ook emoji-pictogram en kleur stip instellen",
       "bmRenameCategory": "Houd categoriekop ~500 ms ingedrukt om te hernoemen",
       "bmDragReorder": "Herschik een bookmark binnen of tussen categorieën",

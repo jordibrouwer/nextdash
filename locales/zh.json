@@ -409,6 +409,8 @@
       "wgWidth": "一列或两列，和分类设置宽度用的是同一个键",
       "wgClose": "关闭小组件——它的设置会保留，可在 配置 → 小组件 中重新打开",
       "wgRenameHold": "用指针重命名，和在分类标题上一样（双击效果相同）",
+      "wgNoteSave": "保存正在“笔记”小组件中编写的笔记",
+      "wgNoteCancel": "不保存修改，离开笔记",
       "bmRenamePageTab": "重命名页面标签——同时可设置 emoji 图标和颜色圆点",
       "bmRenameCategory": "长按分类标题（约 500 毫秒）即可重命名",
       "bmDragReorder": "在分类内或跨分类重新排列书签",
