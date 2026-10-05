@@ -49,6 +49,16 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.17.3 (2026-10-05)
+- Privacy: the daily install count now registers; it sends only a random id and the version, and has its own switch under Behavior → Privacy &amp; sync
+
+### v1.17.2 (2026-10-05)
+- Widgets: a Notes widget with Markdown, checkboxes and slash commands; Retry for a stopped feed
+- Pages: share a page as a template file and import it elsewhere
+- Alerts: quiet hours with one summary afterwards, and reminders for what is still wrong
+- Health: a Trend tab and more figures in Collection health; uptime badges for monitored addresses
+- Privacy: a daily anonymous install count (random id and version), on by default with its own switch
+
 ### v1.17.0 (2026-10-03)
 - Unraid: seven widgets (overview, array, parity, shares, VMs, UPS, notifications) through one connection under Config → Unraid
 - Unraid: a stopped array, disk errors, parity errors and Unraid's own notifications go through your alert channels
@@ -74,24 +84,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Dashboard: moves, undos and copies of one address on two pages keep bookmarks on the right page
 - Widgets: custom percentages say their scale, 0–100 or a share from 0–1
 - Docs: a self-hosted guide for Containers, health checks and alerts; more than a hundred smaller fixes
-
-### v1.15.7 (2026-09-30)
-- Bookmarks view: tick rows and a selection bar offers Edit, Re-check, Mute alerts, Export CSV and Delete
-- Containers: the tour covers the v1.15.6 features and runs once more
-- Containers: a stopped container is updated and left stopped; a rollback starts the old version; a VPN client can be updated
-- Dashboard: moving or undoing across pages no longer loses bookmarks, and Other is at the end of the page again
-- Inbox: the selection bar's Delete works, and an import stops at a full inbox instead of pushing out older links
-- Write token: settings no longer return stored keys and tokens, and the server log needs the token
-- More than a hundred smaller fixes across Health, Search, Config, widgets and feeds
-
-### v1.15.6 (2026-09-30)
-- Containers: update automatically per container in a nightly window, rolled back if it stops, restarts or turns unhealthy
-- Containers: a web UI's bookmark shows its health after the link; click it to open the bookmark
-- Containers: a notice when a container stays above a CPU or memory line (90 % for 10 minutes by default)
-- Containers: choose the columns, sort by size or restarts, group by network or image, network and disk I/O in Resources
-- Disk: remove stopped containers in one go, and measure a bind mount's folder (Unraid appdata) on request
-- Fixed: followed container logs stayed empty in the browser until 4 KB had piled up
-
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -99,7 +91,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-03</Date>
+  <Date>2026-10-05</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
