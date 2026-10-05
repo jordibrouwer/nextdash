@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -23,7 +24,9 @@ func TestInstallIDIsCreatedOnceAndReused(t *testing.T) {
 
 func TestInstallPingSendsOnlyIDAndVersion(t *testing.T) {
 	var got map[string]any
+	var ua string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ua = r.Header.Get("User-Agent")
 		raw, _ := io.ReadAll(r.Body)
 		_ = json.Unmarshal(raw, &got)
 	}))
@@ -35,13 +38,18 @@ func TestInstallPingSendsOnlyIDAndVersion(t *testing.T) {
 	if err := sendInstallPing(context.Background(), "abc", "v1.2.3"); err != nil {
 		t.Fatal(err)
 	}
+	if ua != installPingUserAgent || !strings.HasPrefix(ua, "Mozilla/5.0 (compatible;") {
+		t.Fatalf("User-Agent %q would be read as a bot by Umami", ua)
+	}
 	p := got["payload"].(map[string]any)
 	if p["id"] != "abc" || p["website"] != installPingWebsiteID {
 		t.Fatalf("payload = %v", p)
 	}
-	data := p["data"].(map[string]any)
-	if len(data) != 1 || data["version"] != "v1.2.3" {
-		t.Fatalf("data must carry only the version, got %v", data)
+	if p["url"] != "/v1.2.3" {
+		t.Fatalf("the version must be the path, got %v", p["url"])
+	}
+	if _, named := p["name"]; named || p["data"] != nil {
+		t.Fatalf("must be a plain pageview with nothing else, got %v", p)
 	}
 }
 

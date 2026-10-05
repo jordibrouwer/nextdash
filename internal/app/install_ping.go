@@ -18,6 +18,10 @@ import (
 // how many installs exist. It is on by default and has its own switch, separate
 // from the usage analytics opt-in. DISABLE_TELEMETRY stops it as well.
 //
+// It goes in as a pageview whose path is the version, not as a named event:
+// Umami counts visitors from pageviews only, so an event would leave the
+// Visitors card at zero. Pages then lists the installs per version.
+//
 // Nothing else rides along: no hostname, no address, no settings, no counts.
 // Umami sees the request's own IP, as any server does, but the id is what it
 // counts by.
@@ -25,6 +29,11 @@ var (
 	installPingURL       = "https://stats.nextdash.cc/api/send"
 	installPingWebsiteID = "4295c1a8-1013-4aae-8320-6067bb4e78fa"
 )
+
+// Umami drops any request whose User-Agent looks like a bot and still answers
+// 200 ({"beep":"boop"}), so a plain "nextDash/1.0" or one with "ping" in it is
+// never counted. The compatible-style form below passes.
+const installPingUserAgent = "Mozilla/5.0 (compatible; nextDash)"
 
 const (
 	installPingInterval = 24 * time.Hour
@@ -69,10 +78,8 @@ func sendInstallPing(ctx context.Context, id, version string) error {
 		"payload": map[string]any{
 			"website":  installPingWebsiteID,
 			"hostname": "installs.nextdash.cc",
-			"url":      "/",
-			"name":     "install-ping",
+			"url":      "/" + strings.TrimPrefix(version, "/"),
 			"id":       id,
-			"data":     map[string]any{"version": version},
 		},
 	})
 	if err != nil {
@@ -85,7 +92,7 @@ func sendInstallPing(ctx context.Context, id, version string) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "nextDash-install-ping")
+	req.Header.Set("User-Agent", installPingUserAgent)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
