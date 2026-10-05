@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.17.2 — 5 October 2026](#v1172--5-october-2026)
 - [v1.17.1 — 4 October 2026](#v1171--4-october-2026)
 - [v1.17.0 — 3 October 2026](#v1170--3-october-2026)
 - [v1.16.0 — 2 October 2026](#v1160--2-october-2026)
@@ -94,6 +95,53 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
+## v1.17.2 — 5 October 2026
+
+A Notes widget with Markdown and checkboxes, pages that can be shared as template files, quiet hours and reminders for alerts, a Trend tab and more figures in Collection health, a daily anonymous install count (with its own switch), and a corner card and a banner that point at the feature overview. Plus uptime badges, a Retry for a stopped feed, and inbox links in search.
+
+### Widgets
+
+- **new — a Notes widget** (`dashboard-widget-notes.js`, `notes-markdown.js`, `notes-slash.js`, `notes-modal.js`, `notes_markdown.go`, `notes_commands.go`). One text of up to 6,000 characters, kept in the widget and read as a small Markdown: headings, bullet and numbered lists, quotes, tables, code, bold, italic and links. A line that starts with `[ ]` is a checkbox that is ticked on the tile; ticking rewrites that one line and finds it again by its text if the note changed in another tab. **Edit** opens a plain editor with `/` commands (`date`, `time`, `uuid`, `upper`, `lower`, `title`, `todo`, `h1`, `code`, `table`); **Open large** adds a toolbar and a live preview. Drawn two columns wide the tile shows the length and the tasks done. New installs, and existing ones, get an example note with a checklist on the first page.
+- **new — where notes are processed is a setting.** Config → Behavior → General → Notes widget: **On the server** (the default, `/api/widgets/notes/render` and `/command`) or **In the browser**, which needs no request while you type. Both engines answer from the same fixtures (`tests/fixtures/notes-markdown-cases.json`, `notes-command-cases.json`). When the server cannot be reached the tile shows the plain text and says so.
+- **new — Retry on a stopped feed.** A feed that failed five times is retired until you do something; the Feeds widget now shows it with **Retry**, which tries it again now (`POST /api/feeds/retry`) instead of waiting for tomorrow (`feeds.go`, `dashboard-widget-feeds.js`).
+
+### Pages
+
+- **new — a page as a template file.** **Share this page…** in the page switcher, **Save as template…** in Structure → Pages, or the palette, writes the layout, categories, widgets and links to a file; **Import a page…** or **Start from a template…** on an empty page reads one. Addresses on your own network become names the importer fills in once per service; usage, health, sign-ins and every field not on the allowlist stay out, notes only when ticked, and importing always makes a new page (`page_template.go`, `dashboard-config.js`, `dashboard-page-nav.js`, `search-commands.js`).
+
+### Health and alerts
+
+- **new — Collection health has three tabs.** **Overview** gains a row of key figures and four cards (**Fix first**, **When last checked**, **How often opened**, **Why they fail**); **Monitors** gets a row of fleet figures; the **Trend** tab holds the 90-day chart with its figures beside it, every monitor per day with its own figures, and uptime by weekday (`dashboard-bookmarks-health-modal.js`).
+- **new — quiet hours and reminders** (`notify_quiet.go`). During a window, notices from monitors, containers, Unraid and backups are held and one summary says what still plays and what recovered when it ends; an expired certificate, a mass outage and a failed backup always pass (a container crash can be added). A monitor or container that stays down gets a reminder after 15 minutes to 4 hours, at most 1 to 5 times, never inside quiet hours. Outgoing webhooks are outside both, and a test counts the callers of the two sinks so a fifth cannot skip the gate.
+- **new — uptime badges.** `GET /badge/uptime.svg?url=…&days=7|30` returns a small SVG for monitored addresses; anything else reads *no data*. Off by default (Behavior → Status & alerts → Checks on the server), because anyone who knows a monitored address can read it (`health_badge.go`).
+- **fix — background re-checks are on by default.** The setting started off, so a fresh install's Health view only moved when a dashboard was open. It is on for new installs and for existing ones that never set it (`models.go`, with the missing-key entry in `GetSettings`).
+
+### Privacy
+
+- **new — a daily install count.** Once a day the server sends a random install id (the file `install-id` in the data folder) and the release tag to `stats.nextdash.cc`, so the project can say how many installs exist; nothing else. It has its own switch under Behavior → Privacy & sync → **Count this install**, on by default, and `DISABLE_TELEMETRY=true` stops it for the whole server (`install_ping.go`).
+- **fix — the analytics texts no longer say "no request leaves your machine".** With analytics off the install count is still sent; `usageAnalyticsHint` and the notice say so, in all six languages.
+
+### Dashboard
+
+- **new — a corner card and a banner for the feature overview.** After eight bookmarks and a short wait, one card points at nextdash.cc/features (it opens in a new tab and is asked once); Config → Overview has a slim banner with the same link (`features-notice.js`).
+- **new — Config lists the corner cards.** Behavior → Privacy & sync → Onboarding shows each card as **Answered** or **Not shown yet**, with **Show again** (`dashboard-config.js`).
+- **new — search finds links waiting in the inbox.** A name search shows matching inbox items in their own group at the end; snoozed ones stay out (`search.js`).
+- **new — the Inbox icon says how many links are kept** in its tooltip and label (`dashboard-page-nav.js`).
+- **new — a new install starts without the action buttons.** `actionBarEnabled` defaults to off for fresh data directories, so the first screen is the bookmarks; their keys work as before and **Show the action buttons** (Config → Appearance → Action bar) draws them. An install that already has settings keeps what it had (`models.go`, `settings_action_bar_test.go`).
+- **new — the Bookmarks view shows which bookmarks run in a container.** A cube follows the title of a bookmark that is a container's web UI, in the container's state — green running, amber paused or restarting, grey stopped — and links to that container's side panel. The match is `DockerSearchIndex.containersFor`, the one the Containers view and the Details tab's "Runs in" already use; the cubes are filled once the container list is in, and stay away when Containers is switched off or has no socket (`fillWorkbenchContainers` in `dashboard-config-bookmarks-workbench.js`, called from `bindBookmarkRows`; `config-bookmarks-workbench.css`).
+- **fix — the Inbox and Containers rails are as wide as the Bookmarks rail** (`list-view-shell.css`).
+- **fix — the selection bars share one list of actions.** The dashboard's bar and the Bookmarks view's drew different buttons for the same bookmarks; both now come from `bulk-actions.js`, the dashboard's bar gains **Fetch icons** and **Fetch previews**, and `bulk-sweep.js` is the one loop that walks a selection with the progress bar and rate-limit handling (`bulk-actions-parity.spec.js`).
+- **new — cheat sheet keys for writing in a Notes widget** (save and cancel).
+- **fix — the action buttons start switched off on a new install.** Appearance → **Show the action buttons** now defaults to off; their keys work either way, and an existing install keeps the bar it has (`models.go`, `dashboard-config.js`).
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.17.2.json` and its index entry**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v317` and `DASHBOARD_RELEASE` to v1.17.2, so the window opens once. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — Config → Help:** `helpLibraryBody` describes the container cube in the Bookmarks view, `helpCollectionHealthBody` and `helpHealthStatsBody` the three tabs, `helpWidgetKindsBody` the Notes widget and Retry, `helpHealthMaintenanceBody` quiet hours, reminders and uptime badges, `helpWorkspaceBody` page templates, `helpStatsPrivacyBody` the install count, `helpBehaviorBody` the corner cards and `helpAppearanceBody` the action buttons' new default, in all six languages; the Notes widget and the other new settings have their strings in `en.json` and the five translations.
+- **docs — Manual and README:** the action buttons' new default (§4), Notes (§15), page templates (§9.8), quiet hours, reminders and uptime badges (§12.5), corner cards and the install count, Collection health's three tabs (§11.8).
+
+---
+
 ## v1.17.1 — 4 October 2026
 
 Four themes for Unraid users, each in dark and light. A widget can be moved to another page from its menu, and a long list of fixes across the Calendar, Health, Containers, Backups, Search, Inbox and the dashboard — held back from the What's new window (`hideFromModal`) like v1.15.4 and v1.15.1, so v1.17.0 keeps leading it.
@@ -148,7 +196,6 @@ Four themes for Unraid users, each in dark and light. A widget can be moved to a
 
 ### Containers
 
-- **new — the Bookmarks view shows which bookmarks run in a container.** A cube follows the title of a bookmark that is a container's web UI, in the container's state — green running, amber paused or restarting, grey stopped — and links to that container's side panel. The match is `DockerSearchIndex.containersFor`, the one the Containers view and the Details tab's "Runs in" already use; the cubes are filled once the container list is in, and stay away when Containers is switched off or has no socket (`fillWorkbenchContainers` in `dashboard-config-bookmarks-workbench.js`, called from `bindBookmarkRows`; `config-bookmarks-workbench.css`).
 - **fix — a crash loop is one notice, not two a minute.** Docker's restart backoff grows to a minute, and past the tenth fast crash each wait outlasted the 30 s grace, so every cycle was told as "stopped unexpectedly" and "running again". The grace is now 75 s (`docker_notify.go`).
 - **fix — the nightly update reads each container at its turn.** The run's list can be an hour old by then: a container stopped meanwhile (by hand, or a backup job) was updated, watched as if running, "rolled back" and started again. The update now goes by what the recreate itself found, and a container replaced since the list is left for the next tick instead of failing with a 404 notice (`docker_auto_update.go`, `docker_recreate.go`).
 - **fix — an update keeps an anonymous volume listed without a source.** Compose's `volumes: [/data]` and `--mount type=volume,dst=…` put the volume in `HostConfig.Mounts` with no source; sent back that way, Docker gave the new container a fresh, empty volume. The source is filled in from the container's own mounts (`docker_recreate.go`).
@@ -214,7 +261,6 @@ Four themes for Unraid users, each in dark and light. A widget can be moved to a
 
 - **docs — README:** the two Unraid themes in the Unraid section, with a screenshot of each (`screenshots/nextdash-unraid-black.jpg`, `nextdash-unraid-azure.jpg`).
 - **docs — `static/data/whats-new/v1.17.1.json` and its index entry** (`hideFromModal`, covered by `tests/whats-new-hidden-release.spec.js`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v316`. `go generate` refreshed `asset_hashes_gen.go`.
-- **docs — Config → Help:** `helpLibraryBody` describes the container cube in the Bookmarks view, in all six languages, with `bmContainerState` for its tooltip.
 - **docs — Manual and README:** Unraid Ember and Blaze next to Black and Azure (§16.1), **Move to page…** in the widget's right-click menu (§15.3), and the count of new themes (38).
 
 ---
