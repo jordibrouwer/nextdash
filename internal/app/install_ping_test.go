@@ -35,7 +35,7 @@ func TestInstallPingSendsOnlyIDAndVersion(t *testing.T) {
 	installPingURL = srv.URL
 	defer func() { installPingURL = old }()
 
-	if err := sendInstallPing(context.Background(), "abc", "v1.2.3"); err != nil {
+	if err := sendInstallPing(context.Background(), "abc", "v1.2.3", ""); err != nil {
 		t.Fatal(err)
 	}
 	if ua != installPingUserAgent || !strings.HasPrefix(ua, "Mozilla/5.0 (compatible;") {
@@ -50,6 +50,33 @@ func TestInstallPingSendsOnlyIDAndVersion(t *testing.T) {
 	}
 	if _, named := p["name"]; named || p["data"] != nil {
 		t.Fatalf("must be a plain pageview with nothing else, got %v", p)
+	}
+}
+
+func TestInstallPingNamesUnraidOnly(t *testing.T) {
+	t.Setenv("HOST_OS", "Unraid")
+	if installPlatform() != "unraid" {
+		t.Fatal("HOST_OS=Unraid should be named")
+	}
+	t.Setenv("HOST_OS", "")
+	if installPlatform() != "" {
+		t.Fatal("any other install sends no platform")
+	}
+
+	var got map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &got)
+	}))
+	defer srv.Close()
+	old := installPingURL
+	installPingURL = srv.URL
+	defer func() { installPingURL = old }()
+	if err := sendInstallPing(context.Background(), "abc", "v1.2.3", "unraid"); err != nil {
+		t.Fatal(err)
+	}
+	if got["payload"].(map[string]any)["title"] != "unraid" {
+		t.Fatalf("payload = %v", got["payload"])
 	}
 }
 
