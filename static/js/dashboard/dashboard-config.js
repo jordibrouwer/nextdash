@@ -4200,6 +4200,7 @@ class DashboardConfig {
                     <div class="config-overview-panels">
                         ${this.renderOverviewBookmarksWidget()}
                         ${this.renderOverviewInboxWidget()}
+                        ${this.renderOverviewFeaturesBanner()}
                         ${this.renderOverviewContainersWidget()}
                         ${this.renderOverviewHealthWidget()}
                         ${this.renderOverviewStatsWidget()}
@@ -4211,6 +4212,18 @@ class DashboardConfig {
                 </div>
             </div>
         `;
+    }
+
+    /** One-line animated pointer to the feature tour on nextdash.cc. */
+    renderOverviewFeaturesBanner() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const text = this.t('config.overviewFeaturesBanner', 'There is more in nextDash than you see here. Take the tour of every feature.');
+        return `
+            <a class="config-overview-banner" href="https://nextdash.cc/features/" target="_blank" rel="noopener noreferrer">
+                <span class="config-overview-banner-star" aria-hidden="true">★</span>
+                <span class="config-overview-banner-text">${esc(text)}</span>
+                <span class="config-overview-banner-go" aria-hidden="true">→</span>
+            </a>`;
     }
 
     /**
