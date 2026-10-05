@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.17.3 — 5 October 2026](#v1173--5-october-2026)
 - [v1.17.2 — 5 October 2026](#v1172--5-october-2026)
 - [v1.17.1 — 4 October 2026](#v1171--4-october-2026)
 - [v1.17.0 — 3 October 2026](#v1170--3-october-2026)
@@ -92,6 +93,19 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.17.3 — 5 October 2026
+
+The daily install count from v1.17.2 now actually counts. Held back from the What's new window (`hideFromModal`) like v1.17.1, so v1.17.2 keeps leading it.
+
+### Privacy
+- **fix — the install count was never counted.** Umami read the request as a bot and dropped it while still answering 200, and it counts visitors from pageviews only, which the ping was not. The ping now identifies itself the way Umami accepts and goes in as a pageview with the version as its path, so installs show up as visitors and per version under Pages. What is sent is unchanged: a random install id and the release tag, once a day (`install_ping.go`). Installs on v1.17.2 start counting once they update.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.17.3.json` and its index entry**, flagged `hideFromModal`; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v319`, and `tests/whats-new-hidden-release.spec.js` lists v1.17.3 among the held-back releases. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

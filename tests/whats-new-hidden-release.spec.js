@@ -153,15 +153,15 @@ test.describe('a release flagged hideFromModal', () => {
     // The cases above prove the mechanism against a fixture. This one asserts
     // what the shipped files do with it. v1.13.1, v1.13.5 and v1.13.6 were held
     // back when they shipped; v1.13.7 brought them back in. v1.17.2 leads the
-    // modal, v1.17.0, v1.16.0, v1.15.8, v1.15.7, v1.15.6, v1.15.5, v1.15.3, v1.15.2 and v1.15.0 follow it, and v1.17.1, v1.15.1 and v1.15.4 stay held back.
+    // modal, v1.17.0, v1.16.0, v1.15.8, v1.15.7, v1.15.6, v1.15.5, v1.15.3, v1.15.2 and v1.15.0 follow it, and v1.17.3, v1.17.1, v1.15.1 and v1.15.4 stay held back.
     test('v1.17.2 leads the modal, and the releases held back before it show under it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
-        expect(index[0].tag).toBe('v1.17.2');
-        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.17.1', 'v1.15.4', 'v1.15.1']);
+        expect(index[0].tag).toBe('v1.17.3');
+        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.17.3', 'v1.17.1', 'v1.15.4', 'v1.15.1']);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -185,6 +185,7 @@ test.describe('a release flagged hideFromModal', () => {
         expect(await shownTags()).toContain('v1.15.3');
         expect(await shownTags()).toContain('v1.15.2');
         expect(await shownTags()).toContain('v1.15.0');
+        expect(await shownTags()).not.toContain('v1.17.3');
         expect(await shownTags()).not.toContain('v1.17.1');
         expect(await shownTags()).not.toContain('v1.15.1');
         expect(await shownTags()).not.toContain('v1.15.4');
@@ -215,7 +216,7 @@ test.describe('a release flagged hideFromModal', () => {
          */
         expect(src).toContain("DASHBOARD_RELEASE = '2026.10-dashboard-release-v1.17.2'");
         // The data token moves regardless: the index changed, and a browser
-        // holding its old copy would never learn v1.17.2 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v318'");
+        // holding its old copy would never learn v1.17.3 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v319'");
     });
 });
