@@ -257,6 +257,10 @@ func Run(files assetFS) {
 	// The calendar widget's feed: one address for the whole install, read by
 	// widget id so the request never carries the address itself.
 	r.HandleFunc("/api/widgets/calendar", handlers.CalendarWidgetHandler).Methods("GET", "OPTIONS")
+	// The notes widget's parsing and edits, for the default "On the server"
+	// setting. They carry text in and text out and touch no stored data.
+	r.HandleFunc("/api/widgets/notes/render", handlers.NotesRenderHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/notes/command", handlers.NotesCommandHandler).Methods("POST", "OPTIONS")
 	// The RSS tile's feeds, read by widget id for the same reason: the
 	// addresses are stored, never sent with the request.
 	r.HandleFunc("/api/widgets/rss", handlers.RSSWidgetHandler).Methods("GET", "OPTIONS")
