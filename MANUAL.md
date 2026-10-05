@@ -1145,10 +1145,11 @@ An **ⓘ** beside the menu explains the view.
 
 ### 11.8 Collection health
 
-**`h`**, or **Collection health** in the menu, opens a modal over the list with two tabs:
+**`h`**, or **Collection health** in the menu, opens a modal over the list with three tabs:
 
-- **Overview** — the score over time, where bookmarks stand, what is wrong by kind, the score distribution, health by page, checking coverage, monitors and certificates.
-- **Monitors & trend** — a trend chart over 90 days with series pills (healthy %, score, broken, monitors down, stale, unchecked), and fleet cards: uptime across all monitors, the least available over 7 days, what got slower than last week, and outages — which monitors went down, how often and for how long, drawn as a 30-day lane per monitor (the full list behind **Show list**). Under them, **Every monitor, per day**: a bar a day for the uptime of all monitors together and the day's mean response as a line.
+- **Overview** — a row of key figures (bookmarks, healthy, need attention, average score, never opened, pinned, with a shortcut, with a local copy), the score over time, where bookmarks stand, what is wrong by kind, the score distribution, health by page, checking coverage, monitors and certificates. Cards add **Fix first** (the lowest-scoring bookmarks and why), **When last checked**, **How often opened** and **Why they fail** (the broken ones, by error).
+- **Monitors** — a row of figures (down now, average response over 24 hours, outages and total downtime over 30 days, the longest outage, the monitor with the most outages), then fleet cards: uptime across all monitors, the least available over 7 days, what got slower than last week, and outages — which monitors went down, how often and for how long, drawn as a 30-day lane per monitor (the full list behind **Show list**).
+- **Trend** — a trend chart over 90 days with series pills (healthy %, score, broken, monitors down, stale, unchecked) and its figures beside it: now, change over the period, lowest, highest, average, spread, days up and down, the biggest rise and fall in a day. Under it, **Every monitor, per day**: a bar a day for the uptime of all monitors together and the day's mean response as a line, with its own figures (checks, days without a miss, lowest and slowest day, uptime over 30 days), and **Uptime by weekday**.
 
 The charts here, in Statistics and in a bookmark's health in large have a time axis and a value axis, a tooltip, a drag to zoom, and the arrow keys with the point read out under the chart; a screen reader gets each chart as a table.
 
