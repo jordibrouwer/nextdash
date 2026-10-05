@@ -1663,6 +1663,7 @@ These read one server, set once under Config → Containers ([§15.6](#156-unrai
 | **Weather** | Current conditions and a forecast (3 days, 5 days or 24 hours), from the settings under Appearance → Date & weather; wide, it adds what it feels like, the wind, the humidity and the chance of rain |
 | **Calendar** | What is coming up, from the **Calendar feed URL (.ics)** under Appearance → Date & weather |
 | **RSS** | The newest articles from up to ten feed addresses set on the widget, merged newest first |
+| **Notes** | A text of your own, read as Markdown, with checkboxes you tick on the tile; up to 6,000 characters |
 
 And the **Custom** widget, which reads any service that answers with JSON ([§15.5](#155-the-custom-widget)).
 
@@ -1688,6 +1689,8 @@ Widgets are ordered with the categories under **Structure → Categories**, or d
 **Calendar** — your server fetches the feed (the private ICS address from your calendar app, not its web page), shares one copy between widgets and refreshes it every 15 minutes. A recurring event shows its first stated occurrence. Changing the address redraws the widgets at once.
 
 **RSS** — your server fetches each feed and caches it for 15 minutes. A headline shows the feed's summary on hover or focus. Rows past the row count fold into a **more** row. A feed that fails does not empty the tile.
+
+**Notes** — headings (`#` to `###`), bullet and numbered lists, quotes, tables, code blocks, **bold**, *italic*, `code` and links are drawn as such; a line that starts with `[ ]` is a checkbox, and ticking it on the tile saves at once. **Edit** opens a plain editor (`Ctrl/Cmd + Enter` saves, `Esc` cancels); typing `/` there offers commands: `/date`, `/time`, `/uuid`, `/upper`, `/lower`, `/title`, `/todo`, `/h1`, `/code` and `/table`. **Open large** shows the text beside a preview with a toolbar (heading, bold, italic, code, link, list, task, quote, table, and `/` for the commands). A tile drawn wide adds the length and how many tasks are done. **Config → Behavior → General → Notes widget → Notes are processed** chooses where the Markdown and the commands are worked out: **On the server** (the default) or **In the browser**, which needs no request while you type. If the server cannot be reached, the tile shows the plain text.
 
 ### 15.4 System widgets and what they need
 
