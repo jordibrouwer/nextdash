@@ -488,7 +488,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 
 **Occasional tips.** Now and then the dashboard shows one keyboard tip, never the same one twice. Switch them off under Behavior → Privacy & sync → Onboarding.
 
-**Corner cards** offer things once, one card at a time: a round of link review, a round of tag suggestions, browser notifications, the theme browser, Fresh, spreading a category. Each can be dismissed, and each review card has a switch under Behavior → Privacy & sync → Onboarding.
+**Corner cards** offer things once, one card at a time: a round of link review, a round of tag suggestions, browser notifications, the theme browser, Fresh, spreading a category, and once you have eight bookmarks a pointer to the feature overview on nextdash.cc, which opens in a new tab. Each can be dismissed, and each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists every card with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
 
 <a id="the-link-preview-card"></a>
 
@@ -783,6 +783,8 @@ Search, commands and finders are three modes of one panel.
 
 The dashboard's search line is always listening. Letters narrow the list; **`Enter`** opens the top result, **`↑`/`↓`** pick another, **`Ctrl/Cmd + Enter`** opens in a new tab, **`Esc`** closes. Results are ranked by match and by how often you open them. The panel also searches notes and the description nextDash fetched from each page.
 
+Links still waiting in the inbox that match a name search appear in their own group at the end of the results; snoozed ones stay out, as they do in the inbox's own list.
+
 With the panel empty, your recent and saved searches show as chips (`←`/`→` and `Enter`).
 
 **Typing a bookmark shortcut** (Behavior → Keyboard & search) has three answers:
@@ -904,6 +906,7 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 - **Reorder** — drag a row in Structure → Pages, or `↑`/`↓` on a focused row.
 - **Delete** — the × in the pages panel (asks twice) or Structure → Pages. The page goes to the trash with its categories and bookmarks.
 - **Duplicate** — on the page row in Structure → Pages; asks whether the bookmarks come too.
+- **Share or import** — **Share this page…** and **Import a page…** in the page switcher, **Save as template…** on the page row in Structure → Pages, or the palette ([§9.8](#98-page-templates)).
 
 Page names are unique. Each row in Structure → Pages shows how many bookmarks the page holds.
 
@@ -978,6 +981,16 @@ Editing or deleting a bookmark inside a collection changes the real bookmark.
 
 <a id="10-tags"></a>
 
+
+### 9.8 Page templates
+
+A page can be saved as a **template file** and imported on another install, or kept as a starting point. The file holds the layout, the categories, the widgets and the links; it never holds when a link was opened, how it checked, stored sign-ins or other settings.
+
+- **Share.** **Share this page…** in the page switcher (or **Save as template…** in Structure → Pages, or `Share “name” as a template file` in the palette) lists the addresses on your own network — `192.168.1.10`, `nas.lan` — and turns each into a name you can change, such as `jellyfin`. The importer fills in their own address for each service once. Public addresses go as they are, and **Include the text of notes** is off until you tick it. **Download** saves the file, or copy it to paste into a post. Icons travel inside the file.
+- **Import.** **Import a page…** (or `Import a page from a template file` in the palette) takes a file or pasted text and shows what is in it — categories, widgets, links — and asks for one address per service. A link whose service is left empty is skipped, as are links with an address that is not allowed and widgets this version does not know; the result says how many. Importing always makes a **new page**; nothing on your other pages changes.
+- **Start from a template.** An empty page offers **Start from a template…**: the template fills that page instead of making another.
+
+A file is at most 2 MB.
 ## 10. 🏷️ Tags
 
 ### 10.1 Tags on a bookmark
@@ -1218,9 +1231,10 @@ Set the mode in the bookmark form, the Bookmarks view's side panel, the right-cl
 |---|---|
 | **Checks in this browser** | How often, skip fast pings, retries for offline bookmarks |
 | **Monitored bookmarks on the dashboard** | How much they stand out: only when there is a problem (default), always, or never |
-| **Checks on the server** | Re-check in the background and how often, the **check timeout** (5–30 s), **spot pages that answer 200 but say "not found"**, and when certificate warnings start |
+| **Checks on the server** | Re-check in the background (on by default) and how often, the **check timeout** (5–30 s), **spot pages that answer 200 but say "not found"**, **Serve uptime badges** and when certificate warnings start |
 | **Downtime alerts** | See [§12.4](#124-alerts) |
 | **Maintenance windows** | See [§12.5](#125-maintenance-windows) |
+| **Quiet hours** and **Reminders** | See [§12.5](#125-maintenance-windows) |
 | **Browser notifications** | See [§12.4](#124-alerts) |
 
 **What a check records.** A failure stores its cause — DNS, timeout, refused, TLS, redirect, content or an HTTP status. A failed check is tried again five seconds later and only counts if that fails too. A page that asks *are you a robot*, a rate limit or anything else unclear reads as **unknown**, not broken. Certificates are read from every HTTPS check.
@@ -1295,13 +1309,19 @@ A window is a recurring period when downtime is expected — days, a start and a
 
 Inside a window, checks still run and the heartbeat still records them, but a failure opens no incident, does not count against uptime or toward the failures an alert waits for, and sends no alert. A failure that continues after the window raises the alarm as usual.
 
+**Quiet hours.** Under **Behavior → Status & alerts → Quiet hours**, **Hold notices during quiet hours** holds alerts from monitors, containers, Unraid and backups while a window is open — the same editor as maintenance windows. When the hours end, one summary says what is still going on and what recovered by itself. Unlike a maintenance window the downtime still counts. **Always let through** lists the kinds that break the quiet: an expired certificate, a mass outage (several at once) and a failed backup by default, and a container that stops or restarts if you tick it. A line under the list says whether it is quiet now, until when, and how many notices are held. Outgoing webhooks ([§19.3](#193-webhooks)) are outside it and get every event. A muted bookmark or container never raises a notice, and a maintenance window drops it before the quiet hours would hold it.
+
+**Reminders.** **Remind me about an outage that is still going** sends another message for a monitor or container that is still down: **Remind after** 15, 30 or 60 minutes, or 2 or 4 hours, **At most** 1, 2, 3 or 5 times. Not during quiet hours; the summary that ends them says what is still down.
+
+**Uptime badges.** **Serve uptime badges** (off by default) lets `/badge/uptime.svg?url=<address>&days=7` (or `30`) return a small SVG for a README or a forum post: the uptime percentage, green from 99.9 %, amber from 99 %, red below. It answers for monitored addresses only; any other address reads *no data*, so the badge never tells whether an address is known. Anyone who knows a monitored address can read its badge, which is why it is off until you switch it on.
+
 ### 12.6 Fresh
 
 **Fresh** shows whether a bookmarked site has published something since you last opened it.
 
 - Switch it on under **Behavior → Fresh**. It reads each saved page once for an RSS or Atom feed and remembers pages without one for a month. **Find feeds now** repeats the round and says how many bookmarks publish a feed.
 - A bookmark with news carries a count on its row, and the **Fresh** collection lists them, newest first. Opening the bookmark clears the count.
-- Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped.
+- Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped; the Feeds widget shows it with **Retry**.
 - The bookmark editor shows a **Feed** line when there is one. `status:feed` / `-status:feed` search for them. **Mark rows that publish** (off by default) puts a quiet dot on those rows.
 - Fresh stores no articles, only counts. It is off by default because it contacts other servers on a schedule. A walkthrough is under Config → Help → Monitoring.
 
@@ -1334,7 +1354,7 @@ A URL already in the inbox is not added again: a toast says *Already in Inbox* a
 
 ### 13.2 The view
 
-Open it with **`Shift + I`**, the inbox icon or `:inbox`.
+Open it with **`Shift + I`**, the inbox icon or `:inbox`. The icon's tooltip says how many links are kept Unsorted.
 
 - **A rail of filters** on the left, each with its count: **All**, **Unread**, **Snoozed** and **With note** (the last two only when they hold something) — it can fold behind a **Filters** button (Config → Inbox → Panel & clicks). *This week* is a readout above them.
 - **Narrowing** — by site, by tag (click a tag chip) and by search. Every count follows what is shown, and *Mark all read* becomes *Mark shown read*.
@@ -1618,7 +1638,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 |---|---|
 | **Inbox** | How much is waiting, and how old the oldest is |
 | **Unsorted** | Links kept from the inbox without a page yet — newest first, at random, by one tag or grouped under every tag, with each address under its title. A row opens the Bookmarks view on Unsorted, with that bookmark's side panel; the overflow row reads **Open Unsorted**. |
-| **Feeds** | Feeds with news, and feeds that stopped after repeated failures |
+| **Feeds** | Feeds with news, and feeds that stopped after repeated failures; a stopped feed has a **Retry** button that tries it again now instead of tomorrow |
 | **Sources** | What each import source last did |
 
 *What needs tidying?*
@@ -2127,7 +2147,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 ### 17.8 Overview, Help and About
 
-**Overview** is the page config opens on. At the top, one line says what needs you — broken links, monitors that are down, unread inbox items, duplicates, shortcut conflicts, links never checked, containers with an update — as chips that each go where the problem is fixed; with nothing to do it says so. Below it, two columns:
+**Overview** is the page config opens on. A slim banner at the top links to the feature overview on nextdash.cc. At the top, one line says what needs you — broken links, monitors that are down, unread inbox items, duplicates, shortcut conflicts, links never checked, containers with an update — as chips that each go where the problem is fixed; with nothing to do it says so. Below it, two columns:
 
 - **Your install** — a panel per part of the app, each with a way in (**Open →**) and its own warning in the foot. **Bookmarks**: the count, pages, categories, tags, shortcuts, pins and when you last edited one. **Inbox**: unread, the links added per day over two weeks, how many wait and how long the oldest has. **Containers**: running, stopped, unhealthy and updates available, and which ones — shown only when nextDash can see Docker. **Health**: the healthy share as a ring and the four states (healthy, broken, monitor down, wrong content). **Statistics**: opens this week with two weeks of bars, the most-opened link, the busiest page and the **cleanup score** with what lowers it most. A panel for something switched off — the inbox, Containers — is left out.
 - **From nextDash** — the three newest posts on nextdash.cc (off with **Behavior → Privacy**), the three newest features with the release you run and **Show what's new**, and a **tip of the day** from Help → Tips, with ‹ › to step through the others.
