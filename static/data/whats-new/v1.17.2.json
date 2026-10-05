@@ -65,10 +65,6 @@
         {
           "badge": "new",
           "text": "<strong>Config lists the small cards</strong> in the corner, with Show again, and one of them points at the feature overview on nextdash.cc."
-        },
-        {
-          "badge": "new",
-          "text": "<strong>New installs start without the action buttons,</strong> so the first screen is just your bookmarks. Their keys still work, and Config → Appearance → Action bar draws them."
         }
       ]
     },

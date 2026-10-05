@@ -455,7 +455,7 @@ The header has three zones.
 | Fold all | `.` | Folds or unfolds every category and widget |
 | Cheat sheet | `!` | The cheat sheet |
 
-A new install starts with the action buttons **off**; **Show the action buttons** under **Config → Appearance → Action bar** draws them, and an install that already had them keeps them. Every button is on once they are shown; switch the ones you do not want off in the same tab. Hiding a button leaves its key working: `+` adds a bookmark, `>` opens search, `!` the cheat sheet. With every button off, the surround disappears too.
+Every button is on to begin with. Switch the ones you do not want off under **Config → Appearance → Action bar**. Hiding a button leaves its key working: `+` adds a bookmark, `>` opens search, `!` the cheat sheet. With every button off, the surround disappears too.
 
 **Where the fixed buttons stand.** A fresh install puts the bar in **a column on the right** that slides into the edge after **2 seconds**, so the page has it out of the way until it is wanted.
 
