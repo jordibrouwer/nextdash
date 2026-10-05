@@ -15715,7 +15715,85 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-behavior-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
                 </div>
                 ${this.renderTourReplayRow()}
+                ${this.renderNoticeCardsRow()}
             </div>`;
+    }
+
+    /**
+     * The corner cards that answer once, and a way to ask for one again.
+     *
+     * Each card remembers an answer in its own place: five in the synced list
+     * of promos, three in this browser's storage. Whichever it is, a card you
+     * waved away had no road back. Here the answered ones can be put back; the
+     * card then turns up the next time its own moment comes, not at once.
+     * Analytics is left out on purpose: it is an opt-in, not a hint.
+     */
+    static NOTICE_CARDS = [
+        { id: 'kept-pile', promo: 'kept-pile-v1', labelKey: 'config.noticeKeptPile', label: 'Kept links piling up' },
+        { id: 'clock-weather', promo: 'clock-weather-v1', labelKey: 'config.noticeClockWeather', label: 'Clock and weather' },
+        { id: 'widgets-layout', promo: 'widgets-layout-try-v1', labelKey: 'config.noticeWidgetsLayout', label: 'Widgets layout' },
+        { id: 'theme-browser', promo: 'theme-browser-try-v1', labelKey: 'config.noticeThemeBrowser', label: 'Theme browser' },
+        { id: 'fresh', promo: 'fresh-feeds-v1', labelKey: 'config.noticeFresh', label: 'Fresh feeds' },
+        { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
+          labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },
+        { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
+          labelKey: 'config.noticeHealthReview', label: 'Health review' },
+        { id: 'unchecked-bookmarks', keys: ['uncheckedBookmarksNoticeLastShownAt', 'uncheckedBookmarksNoticeDeclineCount', 'uncheckedBookmarksNoticeDismissedForever'],
+          labelKey: 'config.noticeUnchecked', label: 'Unchecked bookmarks' },
+    ];
+
+    /** Whether a card has been answered, snoozed or silenced. */
+    noticeCardAnswered(card) {
+        if (card.promo) return window.DiscoverabilityState?.hasSeenSettingPromo?.(card.promo) === true;
+        try {
+            return card.keys.some((key) => localStorage.getItem(key) !== null);
+        } catch {
+            return false;
+        }
+    }
+
+    renderNoticeCardsRow() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const rows = DashboardConfig.NOTICE_CARDS.map((card) => {
+            const answered = this.noticeCardAnswered(card);
+            const state = answered
+                ? this.t('config.noticeAnswered', 'Answered')
+                : this.t('config.noticeWaiting', 'Not shown yet');
+            return `<li class="config-notice-row">
+                <span class="config-notice-name">${esc(this.t(card.labelKey, card.label))}</span>
+                <span class="config-notice-state">${esc(state)}</span>
+                <button type="button" class="config-btn config-btn--small"
+                        data-notice-card="${esc(card.id)}" ${answered ? '' : 'disabled'}>${esc(this.t('config.noticeShowAgain', 'Show again'))}</button>
+            </li>`;
+        }).join('');
+        return `
+                <p class="config-panel-note">${esc(this.t('config.noticeCardsHint',
+                    'The small cards in the corner of the dashboard. One you answered comes back the next time its moment arrives.'))}</p>
+                <ul class="config-notice-list" data-notice-cards>${rows}</ul>`;
+    }
+
+    async replayNoticeCard(id) {
+        const card = DashboardConfig.NOTICE_CARDS.find((entry) => entry.id === id);
+        if (!card) return;
+        if (card.promo) {
+            window.DiscoverabilityState?.resetSettingPromoSeen?.(card.promo, { persist: false });
+            try {
+                await window.DiscoverabilityState?.persistNow?.();
+            } catch {
+                this.notify(this.t('config.noticeShowAgainError', 'Could not bring that card back.'), 'error');
+                return;
+            }
+        } else {
+            try {
+                card.keys.forEach((key) => localStorage.removeItem(key));
+            } catch { /* a browser refusing storage keeps what it had */ }
+        }
+        this.notify(
+            this.t('config.noticeShowAgainDone', 'The {card} card will appear when its moment comes.')
+                .replace('{card}', this.t(card.labelKey, card.label)),
+            'success',
+        );
+        this.render();
     }
 
     /*
@@ -15821,6 +15899,11 @@ class DashboardConfig {
                 const action = btn.getAttribute('data-behavior-action');
                 if (action === 'reset-onboarding') void this.resetOnboarding();
                 if (action === 'whats-new') void this.openWhatsNew();
+            });
+        });
+        container.querySelectorAll('[data-notice-card]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.replayNoticeCard(btn.getAttribute('data-notice-card'));
             });
         });
         container.querySelectorAll('[data-replay-tour]').forEach((btn) => {

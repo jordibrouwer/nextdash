@@ -7659,6 +7659,40 @@ body.no-animations .config-new-features-panel-star {
  * is a tour nobody has seen yet, which will appear on its own and has nothing
  * to put back.
  */
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1-5, 0.34rem);
+}
+
+/* The corner cards, one line each: name, what became of it, and a way back. */
+.config-notice-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    margin: var(--space-2, 0.55rem) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-notice-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.65rem);
+    min-width: 0;
+}
+
+.config-notice-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.config-notice-state {
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
 .config-actions--wrap {
     flex-wrap: wrap;
     gap: 6px;
