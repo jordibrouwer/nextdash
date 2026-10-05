@@ -341,9 +341,33 @@ class DashboardPageNav {
             inboxBtn?.classList.remove('is-inbox-new');
         }
         this._lastInboxBadgeCount = unread;
+        this.syncKeptCountLabel(inboxBtn);
         this.syncInboxTabHighlight();
     }
 
+
+    /**
+     * The kept pile, on the Inbox icon's tooltip and label.
+     *
+     * Keeping takes a link out of the queue and out of every dashboard pool, so
+     * the pile grows with no figure anywhere. A count in the tooltip costs the
+     * header nothing and is there when you wonder. Only once the kept list has
+     * actually loaded: startup can skip that load, and "0 kept" from a list that
+     * was never read would be a wrong answer.
+     */
+    syncKeptCountLabel(inboxBtn) {
+        const d = this.dash;
+        const base = inboxBtn?.dataset?.inboxName;
+        if (!base) return;
+        const kept = d._unsortedLoaded === true && d.settings?.unsortedEnabled !== false
+            ? (d.unsortedBookmarks || []).length
+            : 0;
+        const text = kept > 0
+            ? `${base} · ${d.formatDashboardLabel?.('inboxKeptCount', { count: kept }, '{count} kept') || `${kept} kept`}`
+            : base;
+        inboxBtn.title = text;
+        inboxBtn.setAttribute('aria-label', text);
+    }
 
     isInboxTabHighlightActive() {
         const d = this.dash;
@@ -888,6 +912,7 @@ class DashboardPageNav {
             inboxBtn.setAttribute('aria-label', inboxName);
             inboxBtn.setAttribute('aria-keyshortcuts', 'Shift+I');
             inboxBtn.title = inboxName;
+            inboxBtn.dataset.inboxName = inboxName;
             inboxBtn.innerHTML = `
                 <svg class="page-tab-icon page-tab-icon--svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                     <path d="M4 14h4l1.5 2.5h5L16 14h4"/>

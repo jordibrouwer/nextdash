@@ -1224,6 +1224,7 @@ class DashboardData {
             // bookmarks; readers of unsortedBookmarks (the Unsorted widget) ask
             // this flag before trusting an empty list.
             d._unsortedLoaded = true;
+            d.pageNav?.updateInboxTabBadge?.();
             this.invalidateStalePageCaches();
 
             const currentPageId = Number(d.currentPageId);
