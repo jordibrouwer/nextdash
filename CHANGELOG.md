@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.17.4 — 5 October 2026](#v1174--5-october-2026)
 - [v1.17.3 — 5 October 2026](#v1173--5-october-2026)
 - [v1.17.2 — 5 October 2026](#v1172--5-october-2026)
 - [v1.17.1 — 4 October 2026](#v1171--4-october-2026)
@@ -93,6 +94,19 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.17.4 — 5 October 2026
+
+The install count is announced once in the corner, and says when an install runs on Unraid. Held back from the What's new window (`hideFromModal`) like v1.17.3 and v1.17.1, so v1.17.2 keeps leading it.
+
+### Privacy
+- **new — a corner card announces the install count.** The count is on by default, so the card says once what leaves the server (a random id and the version) and offers **Turn it off** next to **Fine by me**; closing it counts as an answer and it does not come back. It is not shown when the count is already off or when `DISABLE_TELEMETRY` locks it off (`install-count-notice.js`, `tests/install-count-notice.spec.js`).
+- **new — the ping says when it runs on Unraid.** Unraid sets `HOST_OS=Unraid` on every container it starts; when that is present the ping adds the word `unraid` as the page title, so the project can tell how many installs run there. Other installs send nothing extra. The setting's hint and explanation, the card, Config → Help and the manual say so, in all six languages (`install_ping.go`).
+
+### Docs
+- **docs — `static/data/whats-new/v1.17.4.json` and its index entry**, flagged `hideFromModal`; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v320`, and `tests/whats-new-hidden-release.spec.js` lists v1.17.4 among the held-back releases. The Unraid CA template lists v1.17.4 under `<Changes>`. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

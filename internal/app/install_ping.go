@@ -22,6 +22,10 @@ import (
 // Umami counts visitors from pageviews only, so an event would leave the
 // Visitors card at zero. Pages then lists the installs per version.
 //
+// The one thing besides the id and version is whether the install runs on
+// Unraid, sent as the page title and only then. Unraid sets HOST_OS=Unraid on
+// every container it starts, so no template change is needed to see it.
+//
 // Nothing else rides along: no hostname, no address, no settings, no counts.
 // Umami sees the request's own IP, as any server does, but the id is what it
 // counts by.
@@ -50,6 +54,15 @@ func installPingEnabled(settings Settings) bool {
 	return settings.InstallPingEnabled
 }
 
+// installPlatform names the platform worth counting separately, or "" for any
+// other install.
+func installPlatform() string {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("HOST_OS")), "unraid") {
+		return "unraid"
+	}
+	return ""
+}
+
 // loadOrCreateInstallID returns the random id this install reports, creating
 // it on first use. Deleting the file gives the install a new identity.
 func loadOrCreateInstallID(dataDir string) (string, error) {
@@ -72,16 +85,17 @@ func loadOrCreateInstallID(dataDir string) (string, error) {
 
 // sendInstallPing posts one ping. A failure is not retried before the next
 // tick: a blocked network must cost nothing.
-func sendInstallPing(ctx context.Context, id, version string) error {
-	body, err := json.Marshal(map[string]any{
-		"type": "event",
-		"payload": map[string]any{
-			"website":  installPingWebsiteID,
-			"hostname": "installs.nextdash.cc",
-			"url":      "/" + strings.TrimPrefix(version, "/"),
-			"id":       id,
-		},
-	})
+func sendInstallPing(ctx context.Context, id, version, platform string) error {
+	payload := map[string]any{
+		"website":  installPingWebsiteID,
+		"hostname": "installs.nextdash.cc",
+		"url":      "/" + strings.TrimPrefix(version, "/"),
+		"id":       id,
+	}
+	if platform != "" {
+		payload["title"] = platform
+	}
+	body, err := json.Marshal(map[string]any{"type": "event", "payload": payload})
 	if err != nil {
 		return err
 	}
@@ -114,7 +128,7 @@ func (h *Handlers) StartInstallPingScheduler(stop <-chan struct{}) {
 			logWarn(logComponentServer, "install id could not be stored (%v); no ping this time", err)
 			return
 		}
-		_ = sendInstallPing(context.Background(), id, releaseTag())
+		_ = sendInstallPing(context.Background(), id, releaseTag(), installPlatform())
 	}
 
 	ticker := time.NewTicker(installPingInterval)
