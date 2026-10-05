@@ -27061,6 +27061,8 @@ class DashboardConfig {
 
         try {
             if (action === 'pin') await this.bulkPin(picked);
+            else if (action === 'open') this.dash.openBookmarksInNewTabs?.(picked.filter((b) => b?.url));
+            else if (action === 'copy') await this.bulkCopyLinks(picked);
             else if (action === 'favicons') await this.bulkFavicons(picked);
             else if (action === 'previews') await this.bulkPreviews(picked);
             else if (action === 'export') void this.bulkExportCsv(picked);
@@ -27719,6 +27721,31 @@ class DashboardConfig {
         const id = String(bm?.category || '');
         if (!id) return '';
         return names.get(`${bm.pageId}::${id}`) || id;
+    }
+
+    /** Every ticked row's address, one per line, as the dashboard's bar copies them. */
+    async bulkCopyLinks(picked) {
+        const text = picked.map((b) => String(b?.url || '').trim()).filter(Boolean).join('\n');
+        if (!text) return;
+        let copied = false;
+        try {
+            await navigator.clipboard.writeText(text);
+            copied = true;
+        } catch {
+            // Plain-HTTP LAN installs have no Clipboard API.
+            const area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            try { copied = document.execCommand('copy'); } catch { copied = false; }
+            area.remove();
+        }
+        this.notify(copied
+            ? this.t('dashboard.multiSelectCopied', '{count} link(s) copied').replace('{count}', String(picked.length))
+            : this.t('dashboard.multiSelectCopyFailed', 'Could not copy links to clipboard.'), copied ? 'success' : 'error');
     }
 
     async bulkExportCsv(picked) {

@@ -44,7 +44,7 @@ test.describe('multi-select — Clear restores the dimmed keyboard selection', (
         await page.evaluate(() => window.dashboardInstance.keyboardNavigation.dimKbdSelection());
         await expect(page.locator('body')).toHaveClass(/bookmark-kbd-selection-dimmed/);
 
-        await page.getByText('Clear', { exact: true }).click();
+        await page.locator('.multi-select-toolbar [data-bulk-action="clear"]').click();
 
         await expect(page.locator('body')).not.toHaveClass(/bookmark-kbd-selection-dimmed/);
     });

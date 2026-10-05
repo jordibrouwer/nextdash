@@ -350,49 +350,56 @@ class DashboardMultiSelect {
             observer.observe(document.body, { childList: true, subtree: true });
         };
 
-        const moveBtn = addButton(this.t('dashboard.multiSelectMove', 'Move'), 'multi-select-move-btn', (btn) => {
-            this.openMovePopover(btn);
-            markExpandedUntilPopoverCloses(btn, 'move-popover');
-        });
-        moveBtn.setAttribute('aria-haspopup', 'true');
-        moveBtn.setAttribute('aria-expanded', 'false');
-        // Beside Move, which already carries the category choice in its popover.
-        // Tags is the one field a cleanup wants to set in bulk that had no route
-        // here at all — the row's own Shift+T popover is single-bookmark.
-        const tagsBtn = addButton(this.t('dashboard.multiSelectTags', 'Tags'), 'multi-select-tags-btn', (btn) => {
-            this.openTagsPopover(btn);
-            markExpandedUntilPopoverCloses(btn, 'multi-select-tags-popover');
-        });
-        tagsBtn.setAttribute('aria-haspopup', 'true');
-        tagsBtn.setAttribute('aria-expanded', 'false');
+        const popup = (btn, popoverId) => {
+            btn.setAttribute('aria-haspopup', 'true');
+            btn.setAttribute('aria-expanded', 'false');
+            return () => markExpandedUntilPopoverCloses(btn, popoverId);
+        };
         // Pin and checking were per-row only, and both are what you set while
         // laying out a page: twenty rows meant twenty menus. Pin reads the
         // selection first, so a mixed set pins rather than toggling each row
         // into the opposite of what its neighbour just became.
         const allPinned = this.resolveRefs().every((ref) => ref.bookmark?.pinned);
-        addButton(allPinned
-            ? this.t('dashboard.multiSelectUnpin', 'Unpin')
-            : this.t('dashboard.multiSelectPin', 'Pin'), '', () => {
-            void this.setSelectedPinned(!allPinned);
-        });
-        const checkBtn = addButton(this.t('dashboard.multiSelectChecking', 'Checking'), 'multi-select-check-btn', (btn) => {
-            this.openCheckModePopover(btn);
-            markExpandedUntilPopoverCloses(btn, 'multi-select-check-popover');
-        });
-        checkBtn.setAttribute('aria-haspopup', 'true');
-        checkBtn.setAttribute('aria-expanded', 'false');
-        addButton(this.t('dashboard.multiSelectOpen', 'Open'), '', () => {
-            this.openSelected();
-        });
-        addButton(this.t('dashboard.multiSelectCopy', 'Copy links'), '', () => {
-            this.copySelectedLinks();
-        });
-        addButton(this.t('dashboard.multiSelectDelete', 'Delete'), 'danger', () => {
-            void this.deleteSelected();
-        });
-        addButton(this.t('dashboard.multiSelectClear', 'Clear'), '', () => {
-            this.clear();
-            this.dash.keyboardNavigation?.restoreKbdSelection?.();
+        // Tags sits beside Move, which already carries the category choice in
+        // its popover: the one field a cleanup wants to set in bulk that had
+        // no route here -- the row's own Shift+T popover is single-bookmark.
+        const handlers = {
+            move: (btn) => { this.openMovePopover(btn); },
+            tags: (btn) => { this.openTagsPopover(btn); },
+            pin: () => { void this.setSelectedPinned(!allPinned); },
+            checking: (btn) => { this.openCheckModePopover(btn); },
+            open: () => { this.openSelected(); },
+            copy: () => { this.copySelectedLinks(); },
+            recheck: () => { void this.recheckSelected(); },
+            icons: () => { void this.fetchSelected('icons'); },
+            previews: () => { void this.fetchSelected('previews'); },
+            export: () => { void this.exportSelected(); },
+            delete: () => { void this.deleteSelected(); },
+            clear: () => {
+                this.clear();
+                this.dash.keyboardNavigation?.restoreKbdSelection?.();
+            },
+        };
+        const popovers = {
+            move: ['multi-select-move-btn', 'move-popover'],
+            tags: ['multi-select-tags-btn', 'multi-select-tags-popover'],
+            checking: ['multi-select-check-btn', 'multi-select-check-popover'],
+        };
+        const BA = window.BulkActions;
+        const t = (key, fallback) => this.t(key, fallback);
+        BA.forSurface(BA.DASHBOARD).forEach((action) => {
+            if (action.id === 'recheck' && !this.healthChecksOn()) return;
+            const text = action.id === 'pin' && allPinned
+                ? BA.label('pin', t, {}, ['dashboard.multiSelectUnpin', 'Unpin'])
+                : BA.label(action.id, t, { n: count });
+            const [cls, popoverId] = popovers[action.id] || [action.danger ? 'danger' : '', null];
+            let afterOpen = null;
+            const btn = addButton(text, cls, (b) => {
+                handlers[action.id]?.(b);
+                afterOpen?.();
+            });
+            btn.dataset.bulkAction = action.id;
+            if (popoverId) afterOpen = popup(btn, popoverId);
         });
     }
 
@@ -924,6 +931,87 @@ class DashboardMultiSelect {
             d.tagFilter.getTagFilterBookmarkRefs = original;
         }
         this.clear();
+    }
+
+    /** Re-check is offered where the checks are: off with the Health view. */
+    healthChecksOn() {
+        return this.dash.settings?.healthViewEnabled !== false;
+    }
+
+    /**
+     * The selection as the stored rows the Bookmarks view's sweeps act on.
+     *
+     * Those sweeps (Config's bulkFavicons, bulkPreviews, bulkExportCsv) know a
+     * bookmark by its object in allBookmarks, which carries its page and counts
+     * copies of one URL. The grid's rows are another copy of the same list, so
+     * each is matched by URL and by which copy it is on its page. allBookmarks
+     * is read fresh: startup skips it when nothing needs other pages.
+     */
+    async storedSelection() {
+        const d = this.dash;
+        const refs = this.resolveRefs();
+        if (!refs.length) return [];
+        await d.loadAllBookmarks?.();
+        const canon = (url) => window.BookmarkUrlUtils?.canonicalBookmarkURLKey?.(String(url || '')) || String(url || '');
+        const pageId = Number(d.currentPageId);
+        const stored = (d.allBookmarks || []).filter((b) => Number(b.pageId) === pageId);
+        const grid = d.bookmarks || [];
+        return refs.map((ref) => {
+            const url = canon(ref.bookmark?.url);
+            const copy = grid.slice(0, ref.index).filter((b) => canon(b.url) === url).length;
+            return stored.filter((b) => canon(b.url) === url)[copy] || null;
+        }).filter(Boolean);
+    }
+
+    /** Fetch icons or previews for the rows that have none, as the Bookmarks view does. */
+    async fetchSelected(kind) {
+        const picked = await this.storedSelection();
+        if (!picked.length) return;
+        window.nextdashTrack?.(`multi-select:${kind}`, { count: picked.length });
+        const config = this.dash.config;
+        if (kind === 'icons') await config?.bulkFavicons?.(picked);
+        else await config?.bulkPreviews?.(picked);
+    }
+
+    /** The Bookmarks view's CSV, for the rows ticked here. */
+    async exportSelected() {
+        const picked = await this.storedSelection();
+        if (!picked.length) return;
+        await this.dash.config?.bulkExportCsv?.(picked);
+    }
+
+    /**
+     * Re-check each ticked row, one at a time.
+     *
+     * Health's own re-check, row by row behind the counting bar: each is a
+     * probe of somebody else's server, and twenty at once looks like a burst.
+     * The rows' dots repaint from the page reload at the end.
+     */
+    async recheckSelected() {
+        const d = this.dash;
+        const refs = this.resolveRefs().filter((ref) => String(ref.bookmark?.url || '').trim());
+        if (!refs.length) return;
+        window.nextdashTrack?.('multi-select:recheck', { count: refs.length });
+        const result = await window.BulkSweep.run(refs, {
+            title: this.t('dashboard.bulkRecheckTitle', 'Re-checking…'),
+            run: async (ref) => {
+                await d.health.recheckIssue({
+                    url: ref.bookmark.url,
+                    pageId: ref.pageId,
+                    index: ref.index,
+                    name: ref.bookmark.name,
+                }, { silent: true });
+                return 'ok';
+            },
+            done: (ok) => this.t('dashboard.healthBulkRecheckDone', 'Re-checked {count} bookmark(s)')
+                .replace('{count}', String(ok)),
+            t: (key, fallback) => this.t(key, fallback),
+            notify: (summary, type) => d.showNotification?.(summary, type),
+        });
+        if (result.ok) {
+            await d.refreshAfterBookmarkMutation?.({ pageId: d.currentPageId, repaintActiveView: true });
+            d.updateHealthBadge?.();
+        }
     }
 
     openSelected() {
