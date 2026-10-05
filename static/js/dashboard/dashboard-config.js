@@ -27537,57 +27537,18 @@ class DashboardConfig {
      * server through an endpoint that allows sixty a minute per client --
      * shared with the hover previews, the link checks and the icon prefetch.
      * A refusal is not a failure: the server says how long to wait, and the
-     * row is asked for again.
+     * row is asked for again. The loop is BulkSweep (shared/bulk-sweep.js),
+     * shared with Health's sweeps and the dashboard's selection bar.
      */
     async runSelectionSweep(targets, { title, run, done }) {
-        let ok = 0;
-        let failed = 0;
-        let stopped = false;
-        const total = targets.length;
-        const counted = (n) => this.t('config.bulkSweepProgress', '{done} of {total}')
-            .replace('{done}', String(n)).replace('{total}', String(total));
-        this.showProgressOverlay(title, counted(0), {
-            onCancel: () => { stopped = true; },
-            cancelLabel: this.t('config.bulkSweepStop', 'Stop'),
-            cancellingLabel: this.t('config.bulkSweepStopping', 'Stopping…'),
+        return window.BulkSweep.run(targets, {
+            title,
+            run,
+            done,
+            t: (key, fallback) => this.t(key, fallback),
+            intervalMs: DashboardConfig.SELECTION_SWEEP_INTERVAL_MS,
+            notify: (summary, type) => this.notify(summary, type),
         });
-        window.ProgressOverlay?.update(0, total, counted(0));
-        const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-        for (let i = 0; i < total; i += 1) {
-            if (stopped) break;
-            let result = 'failed';
-            try {
-                result = await run(targets[i]);
-            } catch {
-                result = 'failed';
-            }
-            if (result && result.rateLimited) {
-                window.ProgressOverlay?.update(i, total,
-                    this.t('config.bulkSweepWaiting', 'Rate limit reached — waiting {seconds}s')
-                        .replace('{seconds}', String(result.retryAfter)));
-                await wait((result.retryAfter + 1) * 1000);
-                if (stopped) break;
-                try {
-                    result = await run(targets[i]);
-                } catch {
-                    result = 'failed';
-                }
-                if (result && result.rateLimited) result = 'failed';
-            }
-            if (result === 'ok' || result === true) ok += 1;
-            else if (result !== 'skipped') failed += 1;
-            window.ProgressOverlay?.update(i + 1, total, counted(i + 1));
-            if (i + 1 < total) await wait(DashboardConfig.SELECTION_SWEEP_INTERVAL_MS);
-        }
-        const summary = stopped
-            ? this.t('config.bulkSweepStopped', 'Stopped after {done} of {total}')
-                .replace('{done}', String(ok + failed)).replace('{total}', String(total))
-            : done(ok, failed);
-        // A stopped sweep did not finish: filling the bar would say it had.
-        if (stopped) this.hideProgressOverlay();
-        else this.finishProgressOverlay(summary);
-        this.notify(summary, stopped ? 'info' : (failed && !ok ? 'warning' : 'success'));
-        return { ok, failed, stopped };
     }
 
     /**

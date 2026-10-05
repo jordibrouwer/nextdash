@@ -62,34 +62,15 @@ class DashboardHealthMultiSelect {
      * it, because forty identical refusals is not information.
      */
     async runBulkOverEach(issues, { title, status, run, done }) {
-        let ok = 0;
-        let failed = 0;
-        window.ProgressOverlay?.show(title, status);
-        try {
-            for (let i = 0; i < issues.length; i += 1) {
-                window.ProgressOverlay?.update(i, issues.length,
-                    this.t('dashboard.healthBulkProgress', '{done} of {total}', { done: i, total: issues.length }));
-                let result;
-                try {
-                    result = await run(issues[i]);
-                } catch {
-                    result = 'failed';
-                }
-                if (result === 'stop') {
-                    window.ProgressOverlay?.hide();
-                    return { ok, failed, stopped: true };
-                }
-                if (result === 'failed') {
-                    failed += 1;
-                } else {
-                    ok += 1;
-                }
-            }
-            window.ProgressOverlay?.finish(done(ok, failed));
-        } catch {
-            window.ProgressOverlay?.hide();
-        }
-        return { ok, failed, stopped: false };
+        // The Bookmarks view's loop: a Stop button, and a 429 waits instead
+        // of counting as failed. The toolbar reports the end itself.
+        return window.BulkSweep.run(issues, {
+            title,
+            status,
+            run,
+            done,
+            t: (key, fallback) => this.t(key, fallback),
+        });
     }
 
     /** What the toolbar reports when a sweep is over. */
@@ -132,6 +113,9 @@ class DashboardHealthMultiSelect {
                 // refresh=1 is the whole point: without it a cached answer comes
                 // back and the sweep changes nothing.
                 const res = await fetcher(`/api/bookmark-preview?refresh=1&url=${encodeURIComponent(url)}`);
+                if (res.status === 429) {
+                    return { rateLimited: true, retryAfter: Number(res.headers.get('Retry-After')) || 60 };
+                }
                 return res.ok ? 'ok' : 'failed';
             },
             done: (ok) => this.t('dashboard.healthBulkPreviewDone', 'Rebuilt {count}', { count: ok }),
