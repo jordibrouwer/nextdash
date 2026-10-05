@@ -447,6 +447,7 @@
             titleFallback: 'Commands — tools',
             rows: [
                 { keys: ':backup / :export', cheatKey: 'ctBackup', fallback: 'Open config backups or download a ZIP backup immediately' },
+                { keys: ':share / :import', cheatKey: 'ctSharePage', fallback: 'Share this page as a template file / import one as a new page', printFallback: 'Share or import a page template' },
                 { keys: ':trash', cheatKey: 'ctTrash', fallback: 'Open the trash — deleted bookmarks, pages and categories wait 30 days', print: true, printFallback: 'Open the trash' },
                 { keys: ':metadata', printOmit: true, cheatKey: 'ctMetadata', fallback: 'Open the Bookmarks view on missing previews, or Config → Bookmarks' },
                 { keys: ':monitor off', printOmit: true, cheatKey: 'ctMonitor', fallback: 'Turn availability checking off for every bookmark at once (asks for confirmation first)' },

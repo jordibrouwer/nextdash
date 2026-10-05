@@ -595,7 +595,8 @@
       "dkDisk": "在容器列表和磁盘之间切换",
       "dkSelect": "勾选或取消勾选所选容器，用于选择栏",
       "dkSelectRange": "勾选你移动经过的容器",
-      "dkSelectAll": "勾选筛选显示的所有容器；再按一次清除"
+      "dkSelectAll": "勾选筛选显示的所有容器；再按一次清除",
+      "ctSharePage": "将此页面分享为模板文件 / 导入模板作为新页面"
     },
     "searchPrefix": ">",
     "searchModeSearch": "搜索",
@@ -3248,7 +3249,13 @@
     "iconSetVariant": "变体",
     "iconSetVariantBase": "标准",
     "iconSetVariantDark": "用于浅色背景",
-    "iconSetVariantLight": "用于深色背景"
+    "iconSetVariantLight": "用于深色背景",
+    "bulkFetchIcons": "获取图标",
+    "bulkFetchPreviews": "获取预览",
+    "bulkRecheckTitle": "正在重新检查…",
+    "emptyStateFromTemplate": "从模板开始…",
+    "pageSwitcherSharePage": "分享此页面…",
+    "pageSwitcherImportPage": "导入页面…"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -8217,7 +8224,40 @@
     "bmHealthModalOutageShowList": "显示列表（{count}）",
     "bmHealthModalOutageTimeline": "过去 30 天每个监控的中断",
     "monitorNotifyAppriseTagLabel": "标签（可选——仅发送到带此标签的目标）",
-    "monitorNotifyUrlLabelApprise": "Apprise 通知 URL（http://apprise:8000/notify/<key>）"
+    "monitorNotifyUrlLabelApprise": "Apprise 通知 URL（http://apprise:8000/notify/<key>）",
+    "pageTemplate": "模板",
+    "pageTemplateAs": "作为",
+    "pageTemplateChooseFile": "选择模板文件",
+    "pageTemplateCreate": "创建页面",
+    "pageTemplateCreated": "已创建“{name}”",
+    "pageTemplateCreatedSkipped": "已创建“{name}”；跳过了 {count} 个没有地址的链接",
+    "pageTemplateDownload": "下载",
+    "pageTemplateExportError": "无法生成模板",
+    "pageTemplateExportIntro": "勾选的地址会变成导入者需要回答的问题：每个服务只需填写一次自己的地址。使用记录、健康状态和登录信息永远不会写入文件。",
+    "pageTemplateExportTitle": "将“{name}”导出为模板",
+    "pageTemplateFill": "填充此页面",
+    "pageTemplateFillIn": "为每个服务填写你自己的地址。留空则跳过其链接。",
+    "pageTemplateFillIntro": "模板会填充这个空白页面；你的其他页面不会有任何变化。",
+    "pageTemplateFillTitle": "用模板开始“{name}”",
+    "pageTemplateHint": "将此页面保存为他人可以导入的文件",
+    "pageTemplateImport": "导入模板",
+    "pageTemplateImportError": "无法创建页面",
+    "pageTemplateImportIntro": "模板会成为一个新页面；你的其他页面不会有任何变化。",
+    "pageTemplateImportTitle": "导入模板",
+    "pageTemplateKeyInvalid": "每个名称只能包含小写字母、数字或连字符，并且不能重复。",
+    "pageTemplateKeyLabel": "{origin} 的名称",
+    "pageTemplateLinks": "{count} 个链接",
+    "pageTemplateMenu": "另存为模板…",
+    "pageTemplateNoHosts": "此页面还没有链接。",
+    "pageTemplateNoPrivate": "没有你自己网络中的地址：所有链接按原样导出。",
+    "pageTemplateNotATemplate": "这不是页面模板",
+    "pageTemplateNotes": "包含便签的文字",
+    "pageTemplateOpen": "打开",
+    "pageTemplatePaste": "或在此粘贴模板",
+    "pageTemplatePublicCount": "{count} 个公共地址按原样导出",
+    "pageTemplateSkippedLinks": "{count} 个地址不被允许的链接已被省略",
+    "pageTemplateSkippedWidgets": "此版本不认识的小组件已被省略：{list}",
+    "pageTemplateSummary": "{categories} 个分类，{widgets} 个小组件，{bookmarks} 个链接"
   },
   "colors": {
     "title": "主题自定义",
@@ -8414,7 +8454,9 @@
     "archiveError": "无法保存该页面的副本。",
     "archiveDone": "副本已保存。",
     "darkAutoOn": "跟随系统，白天浅色、夜间深色",
-    "darkAutoOff": "保持我选的那一半，不管系统怎样"
+    "darkAutoOff": "保持我选的那一半，不管系统怎样",
+    "importPageLabel": "从模板文件导入页面",
+    "sharePageLabel": "将“{name}”分享为模板文件"
   },
   "quickstart": {
     "title": "快速开始",

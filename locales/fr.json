@@ -595,7 +595,8 @@
       "dkDisk": "Basculer entre la liste des conteneurs et Disque",
       "dkSelect": "Cocher ou décocher le conteneur sélectionné pour la barre de sélection",
       "dkSelectRange": "Cocher les conteneurs que vous parcourez",
-      "dkSelectAll": "Cocher tous les conteneurs affichés par le filtre ; à nouveau pour effacer"
+      "dkSelectAll": "Cocher tous les conteneurs affichés par le filtre ; à nouveau pour effacer",
+      "ctSharePage": "Partager cette page comme fichier modèle / en importer un comme nouvelle page"
     },
     "searchPrefix": ">",
     "searchModeSearch": "RECHERCHE",
@@ -3248,7 +3249,13 @@
     "iconSetVariant": "Variante",
     "iconSetVariantBase": "Standard",
     "iconSetVariantDark": "Pour fonds clairs",
-    "iconSetVariantLight": "Pour fonds sombres"
+    "iconSetVariantLight": "Pour fonds sombres",
+    "bulkFetchIcons": "Récupérer les icônes",
+    "bulkFetchPreviews": "Récupérer les aperçus",
+    "bulkRecheckTitle": "Nouvelle vérification…",
+    "emptyStateFromTemplate": "Partir d’un modèle…",
+    "pageSwitcherSharePage": "Partager cette page…",
+    "pageSwitcherImportPage": "Importer une page…"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -8217,7 +8224,40 @@
     "bmHealthModalOutageShowList": "Afficher la liste ({count})",
     "bmHealthModalOutageTimeline": "Pannes par moniteur sur les 30 derniers jours",
     "monitorNotifyAppriseTagLabel": "Tag (facultatif — seulement les destinations avec ce tag)",
-    "monitorNotifyUrlLabelApprise": "URL de notification Apprise (http://apprise:8000/notify/<key>)"
+    "monitorNotifyUrlLabelApprise": "URL de notification Apprise (http://apprise:8000/notify/<key>)",
+    "pageTemplate": "Modèle",
+    "pageTemplateAs": "en",
+    "pageTemplateChooseFile": "Choisir un fichier modèle",
+    "pageTemplateCreate": "Créer la page",
+    "pageTemplateCreated": "« {name} » créée",
+    "pageTemplateCreatedSkipped": "« {name} » créée ; {count} lien(s) sans adresse ignoré(s)",
+    "pageTemplateDownload": "Télécharger",
+    "pageTemplateExportError": "Impossible de créer le modèle",
+    "pageTemplateExportIntro": "Les adresses cochées deviennent une question pour la personne qui importe la page : elle saisit sa propre adresse une fois par service. L’utilisation, l’état et les identifiants ne vont jamais dans le fichier.",
+    "pageTemplateExportTitle": "Exporter « {name} » comme modèle",
+    "pageTemplateFill": "Remplir cette page",
+    "pageTemplateFillIn": "Votre propre adresse pour chaque service. Laissée vide, ses liens sont ignorés.",
+    "pageTemplateFillIntro": "Le modèle remplit cette page vide ; rien ne change sur vos autres pages.",
+    "pageTemplateFillTitle": "Démarrer « {name} » à partir d’un modèle",
+    "pageTemplateHint": "Enregistrer cette page dans un fichier qu’une autre personne peut importer",
+    "pageTemplateImport": "Importer un modèle",
+    "pageTemplateImportError": "Impossible de créer la page",
+    "pageTemplateImportIntro": "Un modèle devient une nouvelle page ; rien ne change sur vos autres pages.",
+    "pageTemplateImportTitle": "Importer un modèle",
+    "pageTemplateKeyInvalid": "Chaque nom doit contenir des minuscules, des chiffres ou des tirets, et être unique.",
+    "pageTemplateKeyLabel": "Nom pour {origin}",
+    "pageTemplateLinks": "{count} lien(s)",
+    "pageTemplateMenu": "Enregistrer comme modèle…",
+    "pageTemplateNoHosts": "Cette page n’a pas encore de liens.",
+    "pageTemplateNoPrivate": "Aucune adresse de votre propre réseau : chaque lien part tel quel.",
+    "pageTemplateNotATemplate": "Ce n’est pas un modèle de page",
+    "pageTemplateNotes": "Inclure le texte des notes",
+    "pageTemplateOpen": "Ouvrir",
+    "pageTemplatePaste": "Ou collez le modèle ici",
+    "pageTemplatePublicCount": "{count} adresse(s) publique(s) partent telles quelles",
+    "pageTemplateSkippedLinks": "{count} lien(s) avec une adresse non autorisée sont omis",
+    "pageTemplateSkippedWidgets": "Les widgets inconnus de cette version sont omis : {list}",
+    "pageTemplateSummary": "{categories} catégories, {widgets} widgets, {bookmarks} liens"
   },
   "colors": {
     "title": "personnalisation du thème",
@@ -8414,7 +8454,9 @@
     "archiveError": "Impossible d’enregistrer une copie de cette page.",
     "archiveDone": "Une copie est conservée.",
     "darkAutoOn": "Suivre le système, clair le jour et sombre la nuit",
-    "darkAutoOff": "Garder la moitié choisie, quoi que dise le système"
+    "darkAutoOff": "Garder la moitié choisie, quoi que dise le système",
+    "importPageLabel": "Importer une page depuis un fichier modèle",
+    "sharePageLabel": "Partager « {name} » comme fichier modèle"
   },
   "quickstart": {
     "title": "Démarrage rapide",

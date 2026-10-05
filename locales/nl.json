@@ -595,7 +595,8 @@
       "dkDisk": "Wisselen tussen de containerlijst en Schijf",
       "dkSelect": "De geselecteerde container aan- of afvinken voor de selectiebalk",
       "dkSelectRange": "De containers aanvinken waar je overheen gaat",
-      "dkSelectAll": "Alle containers aanvinken die het filter toont; nogmaals om te wissen"
+      "dkSelectAll": "Alle containers aanvinken die het filter toont; nogmaals om te wissen",
+      "ctSharePage": "Deze pagina delen als templatebestand / er een importeren als nieuwe pagina"
     },
     "searchPrefix": ">",
     "searchModeSearch": "ZOEKEN",
@@ -3248,7 +3249,13 @@
     "iconSetVariant": "Variant",
     "iconSetVariantBase": "Standaard",
     "iconSetVariantDark": "Voor lichte achtergronden",
-    "iconSetVariantLight": "Voor donkere achtergronden"
+    "iconSetVariantLight": "Voor donkere achtergronden",
+    "bulkFetchIcons": "Iconen ophalen",
+    "bulkFetchPreviews": "Voorbeelden ophalen",
+    "bulkRecheckTitle": "Opnieuw controleren…",
+    "emptyStateFromTemplate": "Beginnen vanuit een template…",
+    "pageSwitcherSharePage": "Deze pagina delen…",
+    "pageSwitcherImportPage": "Een pagina importeren…"
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -8217,7 +8224,40 @@
     "bmHealthModalOutageShowList": "Lijst tonen ({count})",
     "bmHealthModalOutageTimeline": "Storingen per monitor in de afgelopen 30 dagen",
     "monitorNotifyAppriseTagLabel": "Tag (optioneel — alleen de bestemmingen met deze tag)",
-    "monitorNotifyUrlLabelApprise": "Apprise notify-URL (http://apprise:8000/notify/<key>)"
+    "monitorNotifyUrlLabelApprise": "Apprise notify-URL (http://apprise:8000/notify/<key>)",
+    "pageTemplate": "Template",
+    "pageTemplateAs": "als",
+    "pageTemplateChooseFile": "Kies een templatebestand",
+    "pageTemplateCreate": "Pagina maken",
+    "pageTemplateCreated": "“{name}” gemaakt",
+    "pageTemplateCreatedSkipped": "“{name}” gemaakt; {count} link(s) zonder adres overgeslagen",
+    "pageTemplateDownload": "Downloaden",
+    "pageTemplateExportError": "Het template kon niet worden gemaakt",
+    "pageTemplateExportIntro": "Aangevinkte adressen worden een vraag voor wie de pagina importeert: die vult per dienst één keer zijn eigen adres in. Gebruik, gezondheid en inloggegevens gaan nooit mee in het bestand.",
+    "pageTemplateExportTitle": "“{name}” exporteren als template",
+    "pageTemplateFill": "Deze pagina vullen",
+    "pageTemplateFillIn": "Je eigen adres per dienst. Leeg gelaten worden de links ervan overgeslagen.",
+    "pageTemplateFillIntro": "Het template vult deze lege pagina; op je andere pagina’s verandert niets.",
+    "pageTemplateFillTitle": "“{name}” beginnen vanuit een template",
+    "pageTemplateHint": "Deze pagina opslaan als bestand dat iemand anders kan importeren",
+    "pageTemplateImport": "Template importeren",
+    "pageTemplateImportError": "De pagina kon niet worden gemaakt",
+    "pageTemplateImportIntro": "Een template wordt een nieuwe pagina; op je andere pagina’s verandert niets.",
+    "pageTemplateImportTitle": "Template importeren",
+    "pageTemplateKeyInvalid": "Elke naam bestaat uit kleine letters, cijfers of streepjes, en moet uniek zijn.",
+    "pageTemplateKeyLabel": "Naam voor {origin}",
+    "pageTemplateLinks": "{count} link(s)",
+    "pageTemplateMenu": "Opslaan als template…",
+    "pageTemplateNoHosts": "Deze pagina heeft nog geen links.",
+    "pageTemplateNoPrivate": "Geen adressen op je eigen netwerk: elke link gaat mee zoals hij is.",
+    "pageTemplateNotATemplate": "Dit is geen paginatemplate",
+    "pageTemplateNotes": "Tekst van notities meenemen",
+    "pageTemplateOpen": "Openen",
+    "pageTemplatePaste": "Of plak het template hier",
+    "pageTemplatePublicCount": "{count} openbare adres(sen) gaan mee zoals ze zijn",
+    "pageTemplateSkippedLinks": "{count} link(s) met een niet-toegestaan adres worden weggelaten",
+    "pageTemplateSkippedWidgets": "Widgets die deze versie niet kent worden weggelaten: {list}",
+    "pageTemplateSummary": "{categories} categorieën, {widgets} widgets, {bookmarks} links"
   },
   "colors": {
     "title": "thema-aanpassing",
@@ -8414,7 +8454,9 @@
     "archiveError": "Kon geen kopie van die pagina opslaan.",
     "archiveDone": "Er wordt een kopie bewaard.",
     "darkAutoOn": "Het systeem volgen, licht overdag en donker ’s nachts",
-    "darkAutoOff": "De gekozen helft houden, wat het systeem ook zegt"
+    "darkAutoOff": "De gekozen helft houden, wat het systeem ook zegt",
+    "importPageLabel": "Een pagina importeren uit een templatebestand",
+    "sharePageLabel": "“{name}” delen als templatebestand"
   },
   "quickstart": {
     "title": "Snel starten",

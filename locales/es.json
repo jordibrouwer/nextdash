@@ -595,7 +595,8 @@
       "dkDisk": "Cambiar entre la lista de contenedores y Disco",
       "dkSelect": "Marcar o desmarcar el contenedor seleccionado para la barra de selección",
       "dkSelectRange": "Marcar los contenedores por los que pasas",
-      "dkSelectAll": "Marcar todos los contenedores que muestra el filtro; otra vez para borrar"
+      "dkSelectAll": "Marcar todos los contenedores que muestra el filtro; otra vez para borrar",
+      "ctSharePage": "Compartir esta página como archivo de plantilla / importar uno como página nueva"
     },
     "searchPrefix": ">",
     "searchModeSearch": "BUSCAR",
@@ -3248,7 +3249,13 @@
     "iconSetVariant": "Variante",
     "iconSetVariantBase": "Estándar",
     "iconSetVariantDark": "Para fondos claros",
-    "iconSetVariantLight": "Para fondos oscuros"
+    "iconSetVariantLight": "Para fondos oscuros",
+    "bulkFetchIcons": "Obtener iconos",
+    "bulkFetchPreviews": "Obtener vistas previas",
+    "bulkRecheckTitle": "Volviendo a comprobar…",
+    "emptyStateFromTemplate": "Empezar desde una plantilla…",
+    "pageSwitcherSharePage": "Compartir esta página…",
+    "pageSwitcherImportPage": "Importar una página…"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -8217,7 +8224,40 @@
     "bmHealthModalOutageShowList": "Mostrar lista ({count})",
     "bmHealthModalOutageTimeline": "Caídas por monitor en los últimos 30 días",
     "monitorNotifyAppriseTagLabel": "Etiqueta (opcional — solo los destinos con esta etiqueta)",
-    "monitorNotifyUrlLabelApprise": "URL de notificación de Apprise (http://apprise:8000/notify/<key>)"
+    "monitorNotifyUrlLabelApprise": "URL de notificación de Apprise (http://apprise:8000/notify/<key>)",
+    "pageTemplate": "Plantilla",
+    "pageTemplateAs": "como",
+    "pageTemplateChooseFile": "Elegir un archivo de plantilla",
+    "pageTemplateCreate": "Crear página",
+    "pageTemplateCreated": "«{name}» creada",
+    "pageTemplateCreatedSkipped": "«{name}» creada; se omitieron {count} enlace(s) sin dirección",
+    "pageTemplateDownload": "Descargar",
+    "pageTemplateExportError": "No se pudo crear la plantilla",
+    "pageTemplateExportIntro": "Las direcciones marcadas se convierten en una pregunta para quien importe la página: escribe su propia dirección una vez por servicio. El uso, el estado y los inicios de sesión nunca van en el archivo.",
+    "pageTemplateExportTitle": "Exportar «{name}» como plantilla",
+    "pageTemplateFill": "Llenar esta página",
+    "pageTemplateFillIn": "Tu propia dirección para cada servicio. Si la dejas vacía, sus enlaces se omiten.",
+    "pageTemplateFillIntro": "La plantilla llena esta página vacía; nada cambia en tus otras páginas.",
+    "pageTemplateFillTitle": "Empezar «{name}» desde una plantilla",
+    "pageTemplateHint": "Guardar esta página como un archivo que otra persona puede importar",
+    "pageTemplateImport": "Importar plantilla",
+    "pageTemplateImportError": "No se pudo crear la página",
+    "pageTemplateImportIntro": "Una plantilla se convierte en una página nueva; nada cambia en tus otras páginas.",
+    "pageTemplateImportTitle": "Importar plantilla",
+    "pageTemplateKeyInvalid": "Cada nombre debe tener minúsculas, dígitos o guiones, y ser distinto.",
+    "pageTemplateKeyLabel": "Nombre para {origin}",
+    "pageTemplateLinks": "{count} enlace(s)",
+    "pageTemplateMenu": "Guardar como plantilla…",
+    "pageTemplateNoHosts": "Esta página aún no tiene enlaces.",
+    "pageTemplateNoPrivate": "No hay direcciones de tu propia red: cada enlace va tal cual.",
+    "pageTemplateNotATemplate": "Esto no es una plantilla de página",
+    "pageTemplateNotes": "Incluir el texto de las notas",
+    "pageTemplateOpen": "Abrir",
+    "pageTemplatePaste": "O pega la plantilla aquí",
+    "pageTemplatePublicCount": "{count} dirección(es) pública(s) van tal cual",
+    "pageTemplateSkippedLinks": "Se omiten {count} enlace(s) con una dirección no permitida",
+    "pageTemplateSkippedWidgets": "Se omiten los widgets que esta versión no conoce: {list}",
+    "pageTemplateSummary": "{categories} categorías, {widgets} widgets, {bookmarks} enlaces"
   },
   "colors": {
     "title": "personalización del tema",
@@ -8414,7 +8454,9 @@
     "archiveError": "No se pudo guardar una copia de esa página.",
     "archiveDone": "Se guarda una copia.",
     "darkAutoOn": "Seguir al sistema, claro de día y oscuro de noche",
-    "darkAutoOff": "Mantener la mitad elegida, diga lo que diga el sistema"
+    "darkAutoOff": "Mantener la mitad elegida, diga lo que diga el sistema",
+    "importPageLabel": "Importar una página desde un archivo de plantilla",
+    "sharePageLabel": "Compartir «{name}» como archivo de plantilla"
   },
   "quickstart": {
     "title": "Inicio rápido",

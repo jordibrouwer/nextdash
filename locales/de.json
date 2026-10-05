@@ -595,7 +595,8 @@
       "dkDisk": "Zwischen Container-Liste und Speicherplatz wechseln",
       "dkSelect": "Den ausgewählten Container für die Auswahlleiste an- oder abhaken",
       "dkSelectRange": "Die Container abhaken, über die du dich bewegst",
-      "dkSelectAll": "Alle Container abhaken, die der Filter zeigt; erneut zum Leeren"
+      "dkSelectAll": "Alle Container abhaken, die der Filter zeigt; erneut zum Leeren",
+      "ctSharePage": "Diese Seite als Vorlagendatei teilen / eine als neue Seite importieren"
     },
     "searchPrefix": ">",
     "searchModeSearch": "SUCHE",
@@ -3248,7 +3249,13 @@
     "iconSetVariant": "Variante",
     "iconSetVariantBase": "Standard",
     "iconSetVariantDark": "Für helle Hintergründe",
-    "iconSetVariantLight": "Für dunkle Hintergründe"
+    "iconSetVariantLight": "Für dunkle Hintergründe",
+    "bulkFetchIcons": "Icons abrufen",
+    "bulkFetchPreviews": "Vorschauen abrufen",
+    "bulkRecheckTitle": "Erneut prüfen…",
+    "emptyStateFromTemplate": "Mit einer Vorlage beginnen…",
+    "pageSwitcherSharePage": "Diese Seite teilen…",
+    "pageSwitcherImportPage": "Eine Seite importieren…"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -8217,7 +8224,40 @@
     "bmHealthModalOutageShowList": "Liste anzeigen ({count})",
     "bmHealthModalOutageTimeline": "Ausfälle pro Monitor in den letzten 30 Tagen",
     "monitorNotifyAppriseTagLabel": "Tag (optional — nur die Ziele mit diesem Tag)",
-    "monitorNotifyUrlLabelApprise": "Apprise-Notify-URL (http://apprise:8000/notify/<key>)"
+    "monitorNotifyUrlLabelApprise": "Apprise-Notify-URL (http://apprise:8000/notify/<key>)",
+    "pageTemplate": "Vorlage",
+    "pageTemplateAs": "als",
+    "pageTemplateChooseFile": "Vorlagendatei wählen",
+    "pageTemplateCreate": "Seite erstellen",
+    "pageTemplateCreated": "„{name}“ erstellt",
+    "pageTemplateCreatedSkipped": "„{name}“ erstellt; {count} Link(s) ohne Adresse übersprungen",
+    "pageTemplateDownload": "Herunterladen",
+    "pageTemplateExportError": "Die Vorlage konnte nicht erstellt werden",
+    "pageTemplateExportIntro": "Angehakte Adressen werden zur Frage an die Person, die die Seite importiert: Sie trägt pro Dienst einmal ihre eigene Adresse ein. Nutzung, Zustand und Anmeldedaten kommen nie in die Datei.",
+    "pageTemplateExportTitle": "„{name}“ als Vorlage exportieren",
+    "pageTemplateFill": "Diese Seite füllen",
+    "pageTemplateFillIn": "Deine eigene Adresse für jeden Dienst. Bleibt sie leer, werden dessen Links übersprungen.",
+    "pageTemplateFillIntro": "Die Vorlage füllt diese leere Seite; auf deinen anderen Seiten ändert sich nichts.",
+    "pageTemplateFillTitle": "„{name}“ aus einer Vorlage beginnen",
+    "pageTemplateHint": "Diese Seite als Datei speichern, die jemand anderes importieren kann",
+    "pageTemplateImport": "Vorlage importieren",
+    "pageTemplateImportError": "Die Seite konnte nicht erstellt werden",
+    "pageTemplateImportIntro": "Eine Vorlage wird zu einer neuen Seite; auf deinen anderen Seiten ändert sich nichts.",
+    "pageTemplateImportTitle": "Vorlage importieren",
+    "pageTemplateKeyInvalid": "Jeder Name braucht Kleinbuchstaben, Ziffern oder Bindestriche und muss eindeutig sein.",
+    "pageTemplateKeyLabel": "Name für {origin}",
+    "pageTemplateLinks": "{count} Link(s)",
+    "pageTemplateMenu": "Als Vorlage speichern…",
+    "pageTemplateNoHosts": "Diese Seite hat noch keine Links.",
+    "pageTemplateNoPrivate": "Keine Adressen in deinem eigenen Netzwerk: Jeder Link geht so mit, wie er ist.",
+    "pageTemplateNotATemplate": "Das ist keine Seitenvorlage",
+    "pageTemplateNotes": "Text der Notizen mitnehmen",
+    "pageTemplateOpen": "Öffnen",
+    "pageTemplatePaste": "Oder füge die Vorlage hier ein",
+    "pageTemplatePublicCount": "{count} öffentliche Adresse(n) gehen unverändert mit",
+    "pageTemplateSkippedLinks": "{count} Link(s) mit nicht erlaubter Adresse werden weggelassen",
+    "pageTemplateSkippedWidgets": "Widgets, die diese Version nicht kennt, werden weggelassen: {list}",
+    "pageTemplateSummary": "{categories} Kategorien, {widgets} Widgets, {bookmarks} Links"
   },
   "colors": {
     "title": "themenanpassung",
@@ -8414,7 +8454,9 @@
     "archiveError": "Keine Kopie dieser Seite gespeichert.",
     "archiveDone": "Eine Kopie ist gespeichert.",
     "darkAutoOn": "Dem System folgen, tagsüber hell und nachts dunkel",
-    "darkAutoOff": "Die gewählte Hälfte behalten, egal was das System sagt"
+    "darkAutoOff": "Die gewählte Hälfte behalten, egal was das System sagt",
+    "importPageLabel": "Seite aus einer Vorlagendatei importieren",
+    "sharePageLabel": "„{name}“ als Vorlagendatei teilen"
   },
   "quickstart": {
     "title": "Schnellstart",
