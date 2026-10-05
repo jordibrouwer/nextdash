@@ -30,6 +30,35 @@
         }
     }
 
+    /**
+     * Ask the server to try a stopped feed again.
+     *
+     * A stopped feed is tried once a day on its own; this is for the one you
+     * know has been fixed. The answer carries the feed map as it is after the
+     * try, so what the tile redraws from is not the stale copy.
+     */
+    async function retryFeed(dash, feedUrl) {
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const headers = { 'Content-Type': 'application/json' };
+            if (typeof nextDashWriteHeaders === 'function') Object.assign(headers, nextDashWriteHeaders());
+            const res = await fetcher('/api/feeds/retry', {
+                method: 'POST', headers, body: JSON.stringify({ feedUrl: String(feedUrl || '') }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            if (data?.feeds) {
+                dash._widgetFeeds = data.feeds;
+                if (dash.feedFreshness) dash.feedFreshness = data.feeds;
+            }
+            return true;
+        } catch (_error) {
+            dash.showErrorNotification?.(label(dash, 'dashboard.widgetFeedsRetryFailed',
+                'Could not retry that feed.'));
+            return false;
+        }
+    }
+
     function hostOf(url) {
         try {
             return new URL(String(url)).hostname.replace(/^www\./, '');
@@ -117,7 +146,21 @@
             detail.textContent = label(dash, 'dashboard.widgetFeedsRetired', 'stopped');
             detail.title = label(dash, 'dashboard.widgetFeedsRetiredHint',
                 'This feed failed repeatedly and is no longer checked.');
-            row.append(name, detail);
+            const retry = document.createElement('button');
+            retry.type = 'button';
+            retry.className = 'dashboard-widget-feeds-retry';
+            retry.textContent = label(dash, 'dashboard.widgetFeedsRetry', 'Retry');
+            retry.title = label(dash, 'dashboard.widgetFeedsRetryHint',
+                'Try this feed again now instead of waiting for tomorrow.');
+            retry.addEventListener('click', async () => {
+                retry.disabled = true;
+                if (!await retryFeed(dash, feed?.feedUrl)) {
+                    retry.disabled = false;
+                    return;
+                }
+                await render(body, widget, dash);
+            });
+            row.append(name, detail, retry);
             list.appendChild(row);
         });
 

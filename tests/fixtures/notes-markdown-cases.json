@@ -1,0 +1,73 @@
+[
+  { "name": "empty", "text": "", "blocks": [], "stats": { "chars": 0, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "heading gap paragraph", "text": "# Title\n\nplain",
+    "blocks": [
+      { "type": "heading", "level": 1, "spans": [{ "t": "text", "v": "Title" }] },
+      { "type": "gap" },
+      { "type": "para", "spans": [{ "t": "text", "v": "plain" }] }
+    ], "stats": { "chars": 14, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "tasks", "text": "[ ] a\n[x] b\n- [X] c",
+    "blocks": [
+      { "type": "task", "checked": false, "spans": [{ "t": "text", "v": "a" }], "index": 0, "raw": "[ ] a" },
+      { "type": "task", "checked": true, "spans": [{ "t": "text", "v": "b" }], "index": 1, "raw": "[x] b" },
+      { "type": "task", "checked": true, "spans": [{ "t": "text", "v": "c" }], "index": 2, "raw": "- [X] c" }
+    ], "stats": { "chars": 19, "tasksDone": 2, "tasksTotal": 3 } },
+  { "name": "lists", "text": "- one\n- two\n1. first\n2) second",
+    "blocks": [
+      { "type": "list", "ordered": false, "items": [[{ "t": "text", "v": "one" }], [{ "t": "text", "v": "two" }]] },
+      { "type": "list", "ordered": true, "items": [[{ "t": "text", "v": "first" }], [{ "t": "text", "v": "second" }]] }
+    ], "stats": { "chars": 30, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "quote", "text": "> a\n> b",
+    "blocks": [{ "type": "quote", "lines": [[{ "t": "text", "v": "a" }], [{ "t": "text", "v": "b" }]] }],
+    "stats": { "chars": 7, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "code fence", "text": "```\nx < y\n```",
+    "blocks": [{ "type": "code", "text": "x < y" }],
+    "stats": { "chars": 13, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "unclosed fence is plain text", "text": "```\nno end",
+    "blocks": [
+      { "type": "para", "spans": [{ "t": "text", "v": "```" }] },
+      { "type": "para", "spans": [{ "t": "text", "v": "no end" }] }
+    ], "stats": { "chars": 10, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "table", "text": "| a | b |\n| --- | --- |\n| 1 | 2 |",
+    "blocks": [{ "type": "table",
+      "head": [[{ "t": "text", "v": "a" }], [{ "t": "text", "v": "b" }]],
+      "rows": [[[{ "t": "text", "v": "1" }], [{ "t": "text", "v": "2" }]]] }],
+    "stats": { "chars": 33, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "inline spans", "text": "a **b** *c* `d` [e](https://x.test/p)",
+    "blocks": [{ "type": "para", "spans": [
+      { "t": "text", "v": "a " }, { "t": "bold", "v": "b" }, { "t": "text", "v": " " },
+      { "t": "italic", "v": "c" }, { "t": "text", "v": " " }, { "t": "code", "v": "d" },
+      { "t": "text", "v": " " }, { "t": "link", "v": "e", "href": "https://x.test/p" }] }],
+    "stats": { "chars": 37, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "unsafe links stay text", "text": "[bad](javascript:x) [net](//evil.test) [ok](/local)",
+    "blocks": [{ "type": "para", "spans": [
+      { "t": "text", "v": "[bad](javascript:x)" }, { "t": "text", "v": " " },
+      { "t": "text", "v": "[net](//evil.test)" }, { "t": "text", "v": " " },
+      { "t": "link", "v": "ok", "href": "/local" }] }],
+    "stats": { "chars": 51, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "html is just text", "text": "<img src=x onerror=alert(1)>",
+    "blocks": [{ "type": "para", "spans": [{ "t": "text", "v": "<img src=x onerror=alert(1)>" }] }],
+    "stats": { "chars": 28, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "crlf is normalised", "text": "a\r\nb",
+    "blocks": [
+      { "type": "para", "spans": [{ "t": "text", "v": "a" }] },
+      { "type": "para", "spans": [{ "t": "text", "v": "b" }] }
+    ], "stats": { "chars": 4, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "unicode counts code points", "text": "é **ü**",
+    "blocks": [{ "type": "para", "spans": [{ "t": "text", "v": "é " }, { "t": "bold", "v": "ü" }] }],
+    "stats": { "chars": 7, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "blank lines are gaps", "text": "a\n\n\nb",
+    "blocks": [
+      { "type": "para", "spans": [{ "t": "text", "v": "a" }] },
+      { "type": "gap" }, { "type": "gap" },
+      { "type": "para", "spans": [{ "t": "text", "v": "b" }] }
+    ], "stats": { "chars": 5, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "three hashes is a heading, four is not", "text": "### x\n#### y",
+    "blocks": [
+      { "type": "heading", "level": 3, "spans": [{ "t": "text", "v": "x" }] },
+      { "type": "para", "spans": [{ "t": "text", "v": "#### y" }] }
+    ], "stats": { "chars": 12, "tasksDone": 0, "tasksTotal": 0 } },
+  { "name": "a task inside a quote stays quoted text", "text": "> [ ] x",
+    "blocks": [{ "type": "quote", "lines": [[{ "t": "text", "v": "[ ] x" }]] }],
+    "stats": { "chars": 7, "tasksDone": 0, "tasksTotal": 0 } }
+]

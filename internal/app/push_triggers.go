@@ -60,6 +60,13 @@ func (h *Handlers) pushMonitorNotifications(ctx context.Context, notifications [
 	}
 }
 
+func backupPushTitle(err error) string {
+	if err != nil {
+		return "nextDash backup failed"
+	}
+	return "nextDash backup created"
+}
+
 // pushAutoBackupResult reports the outcome of a scheduled backup.
 //
 // Only scheduled runs call this: a manual backup from the config page already
@@ -68,6 +75,17 @@ func (h *Handlers) pushMonitorNotifications(ctx context.Context, notifications [
 func (h *Handlers) pushAutoBackupResult(ctx context.Context, err error) {
 	settings := h.store.GetSettings()
 	if !settings.PushNotifyEnabled || !settings.PushNotifyBackup {
+		return
+	}
+	// Only a failure is held and only a failure can pass the quiet hours as its
+	// own kind; a success is not worth waking anyone for and is held with the rest.
+	event, detail := "backup-ok", ""
+	if err != nil {
+		event, detail = "backup-failed", err.Error()
+	}
+	if h.quietGateBackup(monitorNotification{Event: event, Name: "nextDash backup", Error: detail,
+		At: quietClock().UnixMilli(), Source: noticeSourceBackup,
+		Title: backupPushTitle(err)}) {
 		return
 	}
 

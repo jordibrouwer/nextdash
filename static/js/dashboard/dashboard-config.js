@@ -3346,6 +3346,9 @@ class DashboardConfig {
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
         feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
+        uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
+        quietHoursEnabled: ['quiet', 'night', 'sleep', 'hold', 'mute', 'alert', 'notification', 'summary'],
+        remindersEnabled: ['remind', 'reminder', 'escalate', 'escalation', 'repeat', 'still down', 'alert'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
         inboxViewFilter: ['inbox', 'filter', 'unread', 'opens'],
         inboxViewSort: ['inbox', 'sort', 'order', 'newest', 'oldest'],
@@ -3364,6 +3367,7 @@ class DashboardConfig {
         dockerViewEnabled: ['docker', 'containers', 'view'],
         dockerRefreshSeconds: ['docker', 'containers', 'refresh', 'poll'],
         dockerLogLines: ['docker', 'containers', 'logs'],
+        notesProcessing: ['notes', 'widget', 'server', 'browser', 'markdown', 'slash'],
         dockerUpdateInterval: ['docker', 'containers', 'updates', 'registry', 'image'],
         dockerConfirmStopRestart: ['docker', 'containers', 'confirm', 'stop', 'restart'],
         dockerStatsHistory: ['docker', 'containers', 'cpu', 'memory', 'chart', 'history', 'resources'],
@@ -3381,6 +3385,7 @@ class DashboardConfig {
         monitorEmphasis: ['monitor', 'highlight', 'emphasis', 'accent'],
         analyticsOptIn: ['telemetry', 'privacy', 'tracking', 'umami'],
         updateCheckEnabled: ['update', 'github', 'release', 'version'],
+        installPingEnabled: ['count', 'install', 'ping', 'telemetry', 'privacy', 'users'],
         language: ['language', 'locale', 'translation', 'nederlands', 'deutsch', 'français'],
         deviceSpecificSettings: ['device', 'sync', 'local'],
         inboxEnabled: ['inbox', 'triage', 'later'],
@@ -4196,6 +4201,7 @@ class DashboardConfig {
                     <div class="config-overview-panels">
                         ${this.renderOverviewBookmarksWidget()}
                         ${this.renderOverviewInboxWidget()}
+                        ${this.renderOverviewFeaturesBanner()}
                         ${this.renderOverviewContainersWidget()}
                         ${this.renderOverviewHealthWidget()}
                         ${this.renderOverviewStatsWidget()}
@@ -4207,6 +4213,18 @@ class DashboardConfig {
                 </div>
             </div>
         `;
+    }
+
+    /** One-line animated pointer to the feature tour on nextdash.cc. */
+    renderOverviewFeaturesBanner() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const text = this.t('config.overviewFeaturesBanner', 'There is more in nextDash than you see here. Take the tour of every feature.');
+        return `
+            <a class="config-overview-banner" href="https://nextdash.cc/features/" target="_blank" rel="noopener noreferrer">
+                <span class="config-overview-banner-star" aria-hidden="true">★</span>
+                <span class="config-overview-banner-text">${esc(text)}</span>
+                <span class="config-overview-banner-go" aria-hidden="true">→</span>
+            </a>`;
     }
 
     /**
@@ -12566,7 +12584,7 @@ class DashboardConfig {
         inboxViewKeyLegend: { info: ['inboxViewKeyLegendInfoTitle', 'inboxViewKeyLegendInfoMessage'], def: 'below' },
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
-        healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
+        healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: true },
         feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
         feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
@@ -12574,6 +12592,7 @@ class DashboardConfig {
         dockerViewEnabled: { def: true },
         dockerRefreshSeconds: { def: 5 },
         dockerLogLines: { def: 200 },
+        notesProcessing: { def: 'server' },
         dockerUpdateInterval: { def: 'off' },
         dockerConfirmStopRestart: { def: false },
         dockerStatsHistory: { def: true },
@@ -12724,6 +12743,7 @@ class DashboardConfig {
         // Privacy
         analyticsOptIn: { info: ['usageAnalyticsInfoTitle', 'usageAnalyticsInfoMessage'], hint: 'usageAnalyticsHint', def: false },
         updateCheckEnabled: { info: ['updateCheckInfoTitle', 'updateCheckInfoMessage'], hint: 'updateCheckHint', def: true },
+        installPingEnabled: { info: ['installPingInfoTitle', 'installPingInfoMessage'], hint: 'installPingHint', def: true },
         showSiteNews: { info: ['showSiteNewsInfoTitle', 'showSiteNewsInfoMessage'], def: true },
         // Appearance
         autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'], def: false },
@@ -13312,6 +13332,18 @@ class DashboardConfig {
                 note: t('config.generalGroupHyprModeNote', 'For nextDash installed as a Progressive Web App (PWA). Clicking a bookmark opens it in a new browser tab, then closes the PWA window automatically — the behaviour of a traditional app launcher.'),
                 controls: [
                     chrome('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'general',
+                title: t('config.generalGroupNotes', 'Notes widget'),
+                note: t('config.generalGroupNotesNote', 'Where a note\'s formatting and slash commands are worked out. On the server by default; in the browser needs no requests while you type.'),
+                controls: [
+                    { field: 'notesProcessing', type: 'select', label: t('config.notesProcessingLabel', 'Notes are processed'), options: [
+                        opt('server', t('config.notesProcessingServer', 'On the server')),
+                        opt('client', t('config.notesProcessingClient', 'In the browser')),
+                    ] },
                 ],
             },
             {
@@ -13976,7 +14008,7 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'status',
                 title: t('config.statusServerChecksTitle', 'Checks on the server'),
-                note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. Off by default because it makes outbound requests.'),
+                note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. On by default; it makes outbound requests, so switch it off if you would rather it did not.'),
                 appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
                 controls: [
                     bool('healthAutoRecheckEnabled', 'config.healthRecheckLabel', 'Re-check in the background'),
@@ -14015,6 +14047,9 @@ class DashboardConfig {
                     // why it is a switch rather than always on — and why it sits
                     // beside the timeout rather than among the display options.
                     bool('detectSoftNotFound', 'config.detectSoftNotFoundLabel', 'Spot pages that answer 200 but say "not found"'),
+                    // Anyone who knows a monitored address can read its badge, so
+                    // the switch is here with the checks and off until chosen.
+                    bool('uptimeBadges', 'config.uptimeBadgesLabel', 'Serve uptime badges (/badge/uptime.svg)'),
                     // One number, not three: "warn me a fortnight out" is
                     // something people mean. The two tighter marks follow it in
                     // the same proportion the built-in ladder uses.
@@ -14068,6 +14103,43 @@ class DashboardConfig {
             {
                 section: 'behavior',
                 tab: 'status',
+                title: t('config.quietTitle', 'Quiet hours'),
+                note: t('config.quietNote', 'Notices that arrive in these hours are held, and one summary says what still plays and what recovered when they end. Unlike a maintenance window the downtime still counts. Outgoing webhooks always get every event.'),
+                appliesTo: t('config.appliesToAllNotices', 'Monitors, containers, Unraid, backups'),
+                controls: [
+                    bool('quietHoursEnabled', 'config.quietEnabledLabel', 'Hold notices during quiet hours'),
+                    { type: 'maintenanceWindows', windowsField: 'quietHours',
+                      emptyText: t('config.quietEmpty', 'No hours yet. Add a window to start holding notices.') },
+                    { type: 'quietAllow' },
+                    { type: 'quietStatus' },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'status',
+                title: t('config.remindersTitle', 'Reminders'),
+                note: t('config.remindersNote', 'A monitor or container that is still down gets another message after a while, not a second alarm. Not during quiet hours: the summary that ends them says what is still down.'),
+                appliesTo: t('config.appliesToMonitorContainer', 'Monitors, containers'),
+                controls: [
+                    bool('remindersEnabled', 'config.remindersEnabledLabel', 'Remind me about an outage that is still going'),
+                    { field: 'remindAfterMinutes', type: 'select', numeric: true, label: t('config.remindAfterLabel', 'Remind after'), options: [
+                        opt(15, t('config.remindAfterMinutes', '{n} minutes').replace('{n}', '15')),
+                        opt(30, t('config.remindAfterMinutes', '{n} minutes').replace('{n}', '30')),
+                        opt(60, t('config.remindAfterHour', '1 hour')),
+                        opt(120, t('config.remindAfterHours', '{n} hours').replace('{n}', '2')),
+                        opt(240, t('config.remindAfterHours', '{n} hours').replace('{n}', '4')),
+                    ] },
+                    { field: 'remindMax', type: 'select', numeric: true, label: t('config.remindMaxLabel', 'At most'), options: [
+                        opt(1, t('config.remindMaxTimes', '{n} times').replace('{n}', '1')),
+                        opt(2, t('config.remindMaxTimes', '{n} times').replace('{n}', '2')),
+                        opt(3, t('config.remindMaxTimes', '{n} times').replace('{n}', '3')),
+                        opt(5, t('config.remindMaxTimes', '{n} times').replace('{n}', '5')),
+                    ] },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'status',
                 title: t('config.pushNotifyTitle', 'Browser notifications'),
                 note: t('config.pushNotifyNote', 'Sends notifications to this browser, even when nextDash is closed. Requires HTTPS (or localhost) and permission per device.'),
                 controls: [
@@ -14094,6 +14166,7 @@ class DashboardConfig {
                 tab: 'privacy',
                 title: t('config.generalGroupPrivacy', 'Privacy'),
                 controls: [
+                    { field: 'installPingEnabled', type: 'checkbox', label: t('config.installPingLabel', 'Count this install'), disabled: this.dash.telemetryLockedOff === true },
                     { field: 'analyticsOptIn', type: 'checkbox', label: t('config.usageAnalyticsLabel', 'Share anonymous usage analytics'), disabled: this.dash.telemetryLockedOff === true },
                     { field: 'updateCheckEnabled', type: 'checkbox', label: t('config.updateCheckLabel', 'Check GitHub for new releases'), disabled: !!document.querySelector('meta[name="nextdash-update-check-locked"]') },
                     // Beside the other two outbound requests, because that is
@@ -14273,8 +14346,10 @@ class DashboardConfig {
                     </div>`;
             }
             if (c.type === 'maintenanceWindows') {
-                return this.renderMaintenanceWindows();
+                return this.renderMaintenanceWindows(c.windowsField || 'maintenanceWindows', c.emptyText || '');
             }
+            if (c.type === 'quietAllow') return this.renderQuietAllow();
+            if (c.type === 'quietStatus') return this.renderQuietStatus();
             // A malformed Discord embed or a wrong Telegram chat ID fails
             // silently today — the server only logs a non-2xx response, the
             // operator never sees it. This surfaces that at setup time rather
@@ -14912,10 +14987,10 @@ class DashboardConfig {
      * every change, since the list is short enough that diffing it would cost
      * more than it saves.
      */
-    renderMaintenanceWindows() {
+    renderMaintenanceWindows(field = 'maintenanceWindows', emptyText = '') {
         const esc = (v) => this.dash.escapeHtml(v);
-        const windows = Array.isArray(this.dash.settings?.maintenanceWindows)
-            ? this.dash.settings.maintenanceWindows
+        const windows = Array.isArray(this.dash.settings?.[field])
+            ? this.dash.settings[field]
             : [];
 
         const dayNames = this.maintenanceDayNames();
@@ -14952,10 +15027,10 @@ class DashboardConfig {
         }).join('');
 
         const empty = windows.length === 0
-            ? `<p class="config-panel-empty">${esc(this.t('config.maintenanceEmpty', 'No windows. Alerts fire whenever a monitored bookmark goes down.'))}</p>`
+            ? `<p class="config-panel-empty">${esc(emptyText || this.t('config.maintenanceEmpty', 'No windows. Alerts fire whenever a monitored bookmark goes down.'))}</p>`
             : '';
 
-        return `<div class="config-maint" data-maint-list>
+        return `<div class="config-maint" data-maint-list data-maint-field="${esc(field)}">
             ${empty}${rows}
             <div class="config-actions">
                 <button type="button" class="config-btn config-btn--small" data-maint-add>${esc(this.t('config.maintenanceAdd', 'Add window'))}</button>
@@ -14999,9 +15074,9 @@ class DashboardConfig {
     }
 
     /** Read the list back off the DOM, so one repaint reflects every edit. */
-    collectMaintenanceWindows(container) {
+    collectMaintenanceWindows(container, field = 'maintenanceWindows') {
         const rows = Array.from(container.querySelectorAll('[data-maint-row]'));
-        const saved = Array.isArray(this.dash.settings?.maintenanceWindows) ? this.dash.settings.maintenanceWindows : [];
+        const saved = Array.isArray(this.dash.settings?.[field]) ? this.dash.settings[field] : [];
         return rows.map((row, i) => {
             let days = Array.from(row.querySelectorAll('[data-maint-day]'))
                 .filter((b) => b.classList.contains('is-on'))
@@ -15026,8 +15101,8 @@ class DashboardConfig {
      * The windows with the zone they were typed in. A container runs on UTC
      * unless TZ is set, and the server read "02:00" on that clock: hours off.
      */
-    setMaintenanceWindows(windows) {
-        this.dash.settings.maintenanceWindows = windows;
+    setMaintenanceWindows(windows, field = 'maintenanceWindows') {
+        this.dash.settings[field] = windows;
         try {
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
             if (tz) this.dash.settings.maintenanceTimeZone = tz;
@@ -15035,11 +15110,15 @@ class DashboardConfig {
     }
 
     bindMaintenanceWindows(container) {
-        const list = container.querySelector('[data-maint-list]');
-        if (!list) return;
+        container.querySelectorAll('[data-maint-list]').forEach((list) => this.bindMaintenanceList(list));
+        this.bindQuietControls(container);
+    }
+
+    bindMaintenanceList(list) {
+        const field = list.getAttribute('data-maint-field') || 'maintenanceWindows';
 
         const commit = ({ repaint = true } = {}) => {
-            this.setMaintenanceWindows(this.collectMaintenanceWindows(list));
+            this.setMaintenanceWindows(this.collectMaintenanceWindows(list, field), field);
             void this.saveSettingsWithFeedback();
             // The hint under a row depends on the times just typed, and adding
             // or removing changes every index below it, so the block is redrawn
@@ -15048,13 +15127,13 @@ class DashboardConfig {
         };
 
         list.querySelector('[data-maint-add]')?.addEventListener('click', () => {
-            const windows = Array.isArray(this.dash.settings.maintenanceWindows)
-                ? [...this.dash.settings.maintenanceWindows]
+            const windows = Array.isArray(this.dash.settings[field])
+                ? [...this.dash.settings[field]]
                 : [];
             // A sensible default rather than an empty row: the overwhelmingly
             // common window is small hours, every day.
             windows.push({ days: [], start: '02:00', end: '03:00', label: '' });
-            this.setMaintenanceWindows(windows);
+            this.setMaintenanceWindows(windows, field);
             void this.saveSettingsWithFeedback();
             this.repaintActiveControlPanels();
         });
@@ -15062,12 +15141,12 @@ class DashboardConfig {
         list.querySelectorAll('[data-maint-remove]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const index = Number(btn.getAttribute('data-maint-remove'));
-                const windows = Array.isArray(this.dash.settings.maintenanceWindows)
-                    ? [...this.dash.settings.maintenanceWindows]
+                const windows = Array.isArray(this.dash.settings[field])
+                    ? [...this.dash.settings[field]]
                     : [];
                 if (!Number.isFinite(index) || index < 0 || index >= windows.length) return;
                 windows.splice(index, 1);
-                this.setMaintenanceWindows(windows);
+                this.setMaintenanceWindows(windows, field);
                 void this.saveSettingsWithFeedback();
                 this.repaintActiveControlPanels();
             });
@@ -15093,6 +15172,69 @@ class DashboardConfig {
         list.querySelectorAll('[data-maint-label]').forEach((input) => {
             input.addEventListener('change', () => commit({ repaint: false }));
         });
+    }
+
+    /** The kinds of notice that break the quiet hours, as checkboxes. */
+    renderQuietAllow() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const labels = {
+            'cert-expired': this.t('config.quietKindCertExpired', 'A certificate that has expired'),
+            'mass-outage': this.t('config.quietKindMassOutage', 'A mass outage (several at once)'),
+            'backup-failed': this.t('config.quietKindBackupFailed', 'A failed backup'),
+            'container-crash': this.t('config.quietKindContainerCrash', 'A container that stops or restarts'),
+        };
+        const chosen = Array.isArray(this.dash.settings?.quietHoursAllow)
+            ? this.dash.settings.quietHoursAllow
+            : ['cert-expired', 'mass-outage', 'backup-failed'];
+        const rows = Object.keys(labels).map((kind) => `
+            <label class="config-toggle config-toggle--inline">
+                <input type="checkbox" data-quiet-allow="${esc(kind)}" ${chosen.includes(kind) ? 'checked' : ''}>
+                <span>${esc(labels[kind])}</span>
+            </label>`).join('');
+        return `<div class="config-field-row config-quiet-allow" data-quiet-allow-list>
+            <span class="config-field-label">${esc(this.t('config.quietAllowLabel', 'Always let through'))}</span>
+            ${rows}
+        </div>`;
+    }
+
+    /** The line that says whether the quiet hours are open right now. */
+    renderQuietStatus() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<div class="config-field-row">
+            <span class="config-field-hint" data-quiet-status>${esc(this.t('config.quietStatusLoading', 'Checking…'))}</span>
+        </div>`;
+    }
+
+    bindQuietControls(container) {
+        container.querySelectorAll('[data-quiet-allow]').forEach((box) => {
+            box.addEventListener('change', () => {
+                const chosen = Array.from(container.querySelectorAll('[data-quiet-allow]'))
+                    .filter((el) => el.checked)
+                    .map((el) => el.getAttribute('data-quiet-allow'));
+                this.dash.settings.quietHoursAllow = chosen;
+                void this.saveSettingsWithFeedback();
+            });
+        });
+        const line = container.querySelector('[data-quiet-status]');
+        if (!line) return;
+        void (async () => {
+            try {
+                const res = await fetch('/api/notify/quiet', { cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const q = await res.json();
+                let text;
+                if (!q.enabled) text = this.t('config.quietStatusOff', 'Quiet hours are off.');
+                else if (q.quiet) {
+                    text = this.t('config.quietStatusOn', 'Quiet now, until {time} ({zone}). {held} held.')
+                        .replace('{time}', q.endsAtLocal || '?').replace('{zone}', q.zone).replace('{held}', String(q.held));
+                } else {
+                    text = this.t('config.quietStatusIdle', 'Not quiet now. Times are read in {zone}.').replace('{zone}', q.zone);
+                }
+                line.textContent = text;
+            } catch {
+                line.textContent = '';
+            }
+        })();
     }
 
     /**
@@ -15711,7 +15853,86 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-behavior-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
                 </div>
                 ${this.renderTourReplayRow()}
+                ${this.renderNoticeCardsRow()}
             </div>`;
+    }
+
+    /**
+     * The corner cards that answer once, and a way to ask for one again.
+     *
+     * Each card remembers an answer in its own place: five in the synced list
+     * of promos, three in this browser's storage. Whichever it is, a card you
+     * waved away had no road back. Here the answered ones can be put back; the
+     * card then turns up the next time its own moment comes, not at once.
+     * Analytics is left out on purpose: it is an opt-in, not a hint.
+     */
+    static NOTICE_CARDS = [
+        { id: 'kept-pile', promo: 'kept-pile-v1', labelKey: 'config.noticeKeptPile', label: 'Kept links piling up' },
+        { id: 'clock-weather', promo: 'clock-weather-v1', labelKey: 'config.noticeClockWeather', label: 'Clock and weather' },
+        { id: 'widgets-layout', promo: 'widgets-layout-try-v1', labelKey: 'config.noticeWidgetsLayout', label: 'Widgets layout' },
+        { id: 'theme-browser', promo: 'theme-browser-try-v1', labelKey: 'config.noticeThemeBrowser', label: 'Theme browser' },
+        { id: 'fresh', promo: 'fresh-feeds-v1', labelKey: 'config.noticeFresh', label: 'Fresh feeds' },
+        { id: 'features', promo: 'features-overview-v1', labelKey: 'config.noticeFeatures', label: 'Feature overview' },
+        { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
+          labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },
+        { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
+          labelKey: 'config.noticeHealthReview', label: 'Health review' },
+        { id: 'unchecked-bookmarks', keys: ['uncheckedBookmarksNoticeLastShownAt', 'uncheckedBookmarksNoticeDeclineCount', 'uncheckedBookmarksNoticeDismissedForever'],
+          labelKey: 'config.noticeUnchecked', label: 'Unchecked bookmarks' },
+    ];
+
+    /** Whether a card has been answered, snoozed or silenced. */
+    noticeCardAnswered(card) {
+        if (card.promo) return window.DiscoverabilityState?.hasSeenSettingPromo?.(card.promo) === true;
+        try {
+            return card.keys.some((key) => localStorage.getItem(key) !== null);
+        } catch {
+            return false;
+        }
+    }
+
+    renderNoticeCardsRow() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const rows = DashboardConfig.NOTICE_CARDS.map((card) => {
+            const answered = this.noticeCardAnswered(card);
+            const state = answered
+                ? this.t('config.noticeAnswered', 'Answered')
+                : this.t('config.noticeWaiting', 'Not shown yet');
+            return `<li class="config-notice-row">
+                <span class="config-notice-name">${esc(this.t(card.labelKey, card.label))}</span>
+                <span class="config-notice-state">${esc(state)}</span>
+                <button type="button" class="config-btn config-btn--small"
+                        data-notice-card="${esc(card.id)}" ${answered ? '' : 'disabled'}>${esc(this.t('config.noticeShowAgain', 'Show again'))}</button>
+            </li>`;
+        }).join('');
+        return `
+                <p class="config-panel-note">${esc(this.t('config.noticeCardsHint',
+                    'The small cards in the corner of the dashboard. One you answered comes back the next time its moment arrives.'))}</p>
+                <ul class="config-notice-list" data-notice-cards>${rows}</ul>`;
+    }
+
+    async replayNoticeCard(id) {
+        const card = DashboardConfig.NOTICE_CARDS.find((entry) => entry.id === id);
+        if (!card) return;
+        if (card.promo) {
+            window.DiscoverabilityState?.resetSettingPromoSeen?.(card.promo, { persist: false });
+            try {
+                await window.DiscoverabilityState?.persistNow?.();
+            } catch {
+                this.notify(this.t('config.noticeShowAgainError', 'Could not bring that card back.'), 'error');
+                return;
+            }
+        } else {
+            try {
+                card.keys.forEach((key) => localStorage.removeItem(key));
+            } catch { /* a browser refusing storage keeps what it had */ }
+        }
+        this.notify(
+            this.t('config.noticeShowAgainDone', 'The {card} card will appear when its moment comes.')
+                .replace('{card}', this.t(card.labelKey, card.label)),
+            'success',
+        );
+        this.render();
     }
 
     /*
@@ -15817,6 +16038,11 @@ class DashboardConfig {
                 const action = btn.getAttribute('data-behavior-action');
                 if (action === 'reset-onboarding') void this.resetOnboarding();
                 if (action === 'whats-new') void this.openWhatsNew();
+            });
+        });
+        container.querySelectorAll('[data-notice-card]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.replayNoticeCard(btn.getAttribute('data-notice-card'));
             });
         });
         container.querySelectorAll('[data-replay-tour]').forEach((btn) => {
@@ -16754,7 +16980,7 @@ class DashboardConfig {
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
-        ['ambient', ['weather', 'calendar', 'rss']],
+        ['ambient', ['weather', 'calendar', 'rss', 'notes']],
     ];
 
     widgetTypeGroupLabel(group) {
@@ -18151,6 +18377,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" data-page-move="up" data-id="${esc(p.id)}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
                     <button type="button" class="config-btn config-btn--small" data-page-move="down" data-id="${esc(p.id)}" ${i === pages.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
                     ${this.renderStructureRowExtras?.({ pageId: p.id }) || ''}
+                    <button type="button" class="config-btn config-btn--small" data-page-template="${esc(p.id)}" title="${esc(this.t('config.pageTemplateHint', 'Save this page as a file someone else can import'))}">${esc(this.t('config.pageTemplate', 'Template'))}</button>
                     <button type="button" class="config-btn config-btn--small" data-page-duplicate="${esc(p.id)}" title="${esc(this.t('config.pageDuplicateHint', 'Copy this page — with or without its bookmarks'))}">${esc(this.t('config.pageDuplicate', 'Duplicate'))}</button>
                     <button type="button" class="config-btn config-btn--small config-btn--danger" data-page-delete="${esc(p.id)}" ${isFirst ? 'disabled title="' + esc(this.t('config.pageDeleteFirstBlocked', 'The first page cannot be deleted')) + '"' : ''}>${esc(this.t('config.backupDelete', 'Delete'))}</button>
                 </div>
@@ -18164,6 +18391,7 @@ class DashboardConfig {
                 sorts: this.ptNameSorts(this.t('config.sortByManualPages', 'Tab order')),
                 addAttr: 'data-page-add',
                 addLabel: this.t('config.pageAdd', 'Add page'),
+                extra: `<button type="button" class="config-btn config-btn--small" data-page-template-import>${esc(this.t('config.pageTemplateImport', 'Import template'))}</button>`,
             })}
             ${this.renderPtReorderNote('pages')}
             ${this.renderStatSummary([
@@ -18197,6 +18425,10 @@ class DashboardConfig {
         });
         const addBtn = container.querySelector('[data-page-add]');
         if (addBtn) addBtn.addEventListener('click', () => void this.addPage());
+        container.querySelector('[data-page-template-import]')?.addEventListener('click', () => void this.importPageTemplate());
+        container.querySelectorAll('[data-page-template]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.exportPageTemplate(Number(btn.getAttribute('data-page-template'))));
+        });
         container.querySelectorAll('[data-page-duplicate]').forEach((btn) => {
             btn.addEventListener('click', () => void this.duplicatePage(Number(btn.getAttribute('data-page-duplicate'))));
         });
@@ -18263,6 +18495,331 @@ class DashboardConfig {
         pages.push(newPage);
         await this.savePages();
         this.repaintPtBody();
+    }
+
+    /* ── Page templates ────────────────────────────────────────────────────── */
+
+    /**
+     * A dialog with a form in it: resolves with what onOk returns, or null on
+     * Cancel and Escape. onOk may answer undefined to keep the dialog open --
+     * a field that does not validate is marked, not lost.
+     */
+    formDialog({ id, title, bodyHtml, okLabel, onReady, onOk }) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        document.getElementById(id)?.remove();
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="${esc(id)}" class="modal-overlay" aria-hidden="false">
+                <div class="modal config-form-dialog" role="dialog" aria-modal="true" aria-labelledby="${esc(id)}-title">
+                    <div class="modal-header">
+                        <span class="modal-title" id="${esc(id)}-title">${esc(title)}</span>
+                    </div>
+                    <div class="modal-body">${bodyHtml}</div>
+                    <div class="modal-actions">
+                        <button type="button" class="modal-button" data-form-dialog="cancel">
+                            <span class="modal-button-name">${esc(this.t('config.confirmCancel', 'Cancel'))}</span>
+                        </button>
+                        <button type="button" class="modal-button" data-form-dialog="ok">
+                            <span class="modal-button-name">${esc(okLabel)}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>`);
+        const overlay = document.getElementById(id);
+        requestAnimationFrame(() => overlay.classList.add('show'));
+        const previouslyFocused = document.activeElement;
+        const okBtn = overlay.querySelector('[data-form-dialog="ok"]');
+        return new Promise((resolve) => {
+            let done = false;
+            const finish = (result) => {
+                if (done) return;
+                done = true;
+                window.removeEventListener('keydown', onKey, true);
+                window.removeEventListener('pointerdown', onPointer, true);
+                overlay.remove();
+                if (previouslyFocused?.isConnected) previouslyFocused.focus?.();
+                resolve(result);
+            };
+            const onKey = (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finish(null); }
+                else if (e.key === 'Tab') window.FocusTrapUtils?.trapTabKey?.(e, overlay.querySelector('.modal') || overlay);
+            };
+            // On window, capturing: the config view's own Escape handling
+            // listens on document and would otherwise take the key first --
+            // with focus in a field it left the field and the dialog stayed.
+            window.addEventListener('keydown', onKey, true);
+            okBtn.addEventListener('click', async () => {
+                if (okBtn.disabled) return;
+                okBtn.disabled = true;
+                try {
+                    const result = await onOk(overlay);
+                    if (result !== undefined) finish(result);
+                } finally {
+                    if (!done) okBtn.disabled = false;
+                }
+            });
+            overlay.querySelector('[data-form-dialog="cancel"]').addEventListener('click', () => finish(null));
+            // A press anywhere outside the panel closes it, mouse or touch.
+            // Judged by where the press lands, not by e.target === overlay:
+            // Safari's hit-testing under the blurred scrim does not always
+            // name the overlay, and the click then went nowhere.
+            const panel = overlay.querySelector('.modal');
+            const onPointer = (e) => {
+                if (done || !overlay.isConnected) return;
+                const r = panel.getBoundingClientRect();
+                const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+                if (!inside && !panel.contains(e.target)) finish(null);
+            };
+            window.addEventListener('pointerdown', onPointer, true);
+            onReady?.(overlay, okBtn);
+            (overlay.querySelector('input, textarea') || okBtn).focus();
+        });
+    }
+
+    /**
+     * Save a page as a template file.
+     *
+     * The dialog is the list of addresses on the page: a private one is
+     * proposed as a variable the receiver fills in, a public one stays as it
+     * is, and the reader can change either. The server builds the file, so the
+     * same allowlist applies whatever asks for it (page_template.go).
+     */
+    async exportPageTemplate(pageId) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        let data;
+        try {
+            const res = await this.writeFetch(`/api/pages/${encodeURIComponent(pageId)}/template/hosts`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            data = await res.json();
+        } catch {
+            this.notify(this.t('config.pageTemplateExportError', 'Could not build the template'), 'error');
+            return;
+        }
+        const hosts = Array.isArray(data.hosts) ? data.hosts : [];
+        // Two lines a host: the address and its count, then -- while ticked --
+        // the name it becomes. Private addresses first and open; the public
+        // ones stay as they are unless ticked, so they wait folded below.
+        const row = (h, i) => `
+            <li class="config-tpl-host" data-tpl-host="${i}">
+                <label class="config-tpl-host-line">
+                    <input type="checkbox" data-tpl-var ${h.variable ? 'checked' : ''}>
+                    <span class="config-tpl-origin" title="${esc(h.origin)}">${esc(h.origin)}</span>
+                    <span class="config-tpl-count">${esc(this.t('config.pageTemplateLinks', '{count} link(s)').replace('{count}', String(h.count)))}</span>
+                </label>
+                <span class="config-tpl-host-key">
+                    <span>${esc(this.t('config.pageTemplateAs', 'as'))}</span>
+                    <code>{{</code><input type="text" class="config-text" data-tpl-key maxlength="40" value="${esc(h.key)}"
+                        aria-label="${esc(this.t('config.pageTemplateKeyLabel', 'Name for {origin}').replace('{origin}', h.origin))}"><code>}}</code>
+                </span>
+            </li>`;
+        const privateRows = hosts.map((h, i) => (h.private ? row(h, i) : '')).join('');
+        const publicCount = hosts.filter((h) => !h.private).length;
+        const publicRows = hosts.map((h, i) => (h.private ? '' : row(h, i))).join('');
+        const body = `
+            <p class="config-panel-note">${esc(this.t('config.pageTemplateExportIntro',
+                'Ticked addresses become a question for whoever imports the page: they fill in their own address once per service. Usage, health and sign-ins never go into the file.'))}</p>
+            ${privateRows
+                ? `<ul class="config-tpl-hosts">${privateRows}</ul>`
+                : (hosts.length ? `<p class="config-panel-note">${esc(this.t('config.pageTemplateNoPrivate', 'No addresses on your own network: every link goes as it is.'))}</p>` : '')}
+            ${publicCount ? `<details class="config-tpl-public">
+                <summary>${esc(this.t('config.pageTemplatePublicCount', '{count} public address(es) go as they are').replace('{count}', String(publicCount)))}</summary>
+                <ul class="config-tpl-hosts">${publicRows}</ul>
+            </details>` : ''}
+            ${hosts.length ? '' : `<p class="config-panel-empty">${esc(this.t('config.pageTemplateNoHosts', 'This page has no links yet.'))}</p>`}
+            ${data.hasNotes ? `<label class="config-tpl-option"><input type="checkbox" data-tpl-notes> ${esc(this.t('config.pageTemplateNotes', 'Include the text of notes'))}</label>` : ''}`;
+        const keyRE = /^[a-z0-9][a-z0-9-]{0,39}$/;
+        const picked = await this.formDialog({
+            id: 'config-template-export',
+            title: this.t('config.pageTemplateExportTitle', 'Export “{name}” as template').replace('{name}', data.name || ''),
+            bodyHtml: body,
+            okLabel: this.t('config.pageTemplateDownload', 'Download'),
+            onReady: (overlay) => {
+                overlay.querySelectorAll('[data-tpl-host]').forEach((row) => {
+                    const box = row.querySelector('[data-tpl-var]');
+                    const key = row.querySelector('[data-tpl-key]');
+                    const sync = () => { key.closest('.config-tpl-host-key').hidden = !box.checked; };
+                    box.addEventListener('change', sync);
+                    sync();
+                });
+            },
+            onOk: (overlay) => {
+                const seen = new Set();
+                let valid = true;
+                const chosen = hosts.map((h, i) => {
+                    const row = overlay.querySelector(`[data-tpl-host="${i}"]`);
+                    const variable = row.querySelector('[data-tpl-var]').checked;
+                    const input = row.querySelector('[data-tpl-key]');
+                    const key = input.value.trim().toLowerCase();
+                    const bad = variable && (!keyRE.test(key) || seen.has(key));
+                    input.setAttribute('aria-invalid', bad ? 'true' : 'false');
+                    if (bad) valid = false;
+                    if (variable) seen.add(key);
+                    return { origin: h.origin, variable, key, label: h.label };
+                });
+                if (!valid) {
+                    this.notify(this.t('config.pageTemplateKeyInvalid',
+                        'Each name needs lower-case letters, digits or dashes, and must be different.'), 'error');
+                    return undefined;
+                }
+                return { hosts: chosen, includeNotes: Boolean(overlay.querySelector('[data-tpl-notes]')?.checked) };
+            },
+        });
+        if (!picked) return;
+        try {
+            const res = await this.writeFetch(`/api/pages/${encodeURIComponent(pageId)}/template`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(picked),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const disposition = res.headers.get('Content-Disposition') || '';
+            const name = /filename="([^"]+)"/.exec(disposition)?.[1] || 'page.nextdash-page.json';
+            this.triggerDownload(await res.blob(), name);
+            window.nextdashTrack?.('page-template:export', { hosts: picked.hosts.filter((h) => h.variable).length });
+        } catch {
+            this.notify(this.t('config.pageTemplateExportError', 'Could not build the template'), 'error');
+        }
+    }
+
+    /**
+     * Read a template file -- chosen or pasted -- into a new page.
+     *
+     * Every change to the text asks the server what it would make (a dry run),
+     * so the variables to fill in are the ones the server will use, and a file
+     * that is not a template says so before anything is written.
+     */
+    async importPageTemplate({ text: initialText = '', intoPage = 0 } = {}) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const target = intoPage ? (this.dash.pages || []).find((p) => Number(p.id) === Number(intoPage)) : null;
+        let preview = null;
+        const values = {};
+        const body = `
+            <p class="config-panel-note">${esc(target
+                ? this.t('config.pageTemplateFillIntro', 'The template fills this empty page; nothing on your other pages changes.')
+                : this.t('config.pageTemplateImportIntro', 'A template becomes a new page; nothing on your other pages changes.'))}</p>
+            <div class="config-tpl-source">
+                <input type="file" accept=".json,application/json" data-tpl-file
+                    aria-label="${esc(this.t('config.pageTemplateChooseFile', 'Choose a template file'))}">
+                <textarea class="config-text config-tpl-text" rows="5" data-tpl-text spellcheck="false"
+                    placeholder="${esc(this.t('config.pageTemplatePaste', 'Or paste the template here'))}"></textarea>
+            </div>
+            <div class="config-tpl-preview" data-tpl-preview aria-live="polite"></div>`;
+        const renderPreview = (overlay, okBtn) => {
+            const host = overlay.querySelector('[data-tpl-preview]');
+            okBtn.disabled = !preview || Boolean(preview.error);
+            if (!preview) { host.innerHTML = ''; return; }
+            if (preview.error) {
+                host.innerHTML = `<p class="config-tpl-error" role="alert">${esc(preview.error)}</p>`;
+                return;
+            }
+            const vars = (preview.variables || []).map((v) => `
+                <li class="config-tpl-var">
+                    <label>
+                        <span>${esc(v.label || v.key)} <span class="config-tpl-count">${esc(this.t('config.pageTemplateLinks', '{count} link(s)').replace('{count}', String(v.count)))}</span></span>
+                        <input type="text" class="config-text" data-tpl-value="${esc(v.key)}" placeholder="http://192.168.1.10:8096" value="${esc(values[v.key] || '')}">
+                    </label>
+                </li>`).join('');
+            const skipped = preview.skipped || {};
+            const notes = [];
+            if (skipped.widgets?.length) notes.push(this.t('config.pageTemplateSkippedWidgets', 'Widgets this version does not know are left out: {list}').replace('{list}', skipped.widgets.join(', ')));
+            if (skipped.bookmarks) notes.push(this.t('config.pageTemplateSkippedLinks', '{count} link(s) with an address that is not allowed are left out').replace('{count}', String(skipped.bookmarks)));
+            host.innerHTML = `
+                <p class="config-tpl-summary"><strong>${esc(preview.name)}</strong> · ${esc(this.t('config.pageTemplateSummary', '{categories} categories, {widgets} widgets, {bookmarks} links')
+                    .replace('{categories}', String(preview.categories)).replace('{widgets}', String(preview.widgets))
+                    .replace('{bookmarks}', String(preview.bookmarks + (skipped.unfilled || 0))))}</p>
+                ${vars ? `<p class="config-panel-note">${esc(this.t('config.pageTemplateFillIn', 'Your own address for each service. Left empty, its links are skipped.'))}</p><ul class="config-tpl-vars">${vars}</ul>` : ''}
+                ${notes.map((n) => `<p class="config-panel-note">${esc(n)}</p>`).join('')}`;
+            host.querySelectorAll('[data-tpl-value]').forEach((input) => {
+                input.addEventListener('input', () => { values[input.getAttribute('data-tpl-value')] = input.value; });
+            });
+        };
+        let text = String(initialText || '');
+        const dryRun = async (overlay, okBtn) => {
+            const asked = text;
+            if (!asked.trim()) { preview = null; renderPreview(overlay, okBtn); return; }
+            try {
+                const res = await this.writeFetch('/api/pages/template?dryRun=1', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ template: asked, intoPage: target ? Number(target.id) : undefined }),
+                });
+                if (asked !== text) return;
+                const answer = await res.json().catch(() => ({}));
+                preview = res.ok ? answer : { error: answer.error || this.t('config.pageTemplateNotATemplate', 'This is not a page template') };
+            } catch {
+                preview = { error: this.t('config.pageTemplateNotATemplate', 'This is not a page template') };
+            }
+            renderPreview(overlay, okBtn);
+        };
+        const created = await this.formDialog({
+            id: 'config-template-import',
+            title: target
+                ? this.t('config.pageTemplateFillTitle', 'Start “{name}” from a template').replace('{name}', target.name || '')
+                : this.t('config.pageTemplateImportTitle', 'Import template'),
+            bodyHtml: body,
+            okLabel: target ? this.t('config.pageTemplateFill', 'Fill this page') : this.t('config.pageTemplateCreate', 'Create page'),
+            onReady: (overlay, okBtn) => {
+                okBtn.disabled = true;
+                const area = overlay.querySelector('[data-tpl-text]');
+                // A file dropped on the dashboard arrives already read.
+                if (text) {
+                    area.value = text;
+                    void dryRun(overlay, okBtn);
+                }
+                let timer = null;
+                area.addEventListener('input', () => {
+                    text = area.value;
+                    clearTimeout(timer);
+                    timer = setTimeout(() => void dryRun(overlay, okBtn), 300);
+                });
+                overlay.querySelector('[data-tpl-file]').addEventListener('change', async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    area.value = await file.text();
+                    text = area.value;
+                    await dryRun(overlay, okBtn);
+                });
+            },
+            onOk: async () => {
+                if (!preview || preview.error) return undefined;
+                try {
+                    const res = await this.writeFetch('/api/pages/template', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ template: text, values, intoPage: target ? Number(target.id) : undefined }),
+                    });
+                    const answer = await res.json().catch(() => ({}));
+                    if (!res.ok || !answer.pageId) throw new Error(answer.error || `HTTP ${res.status}`);
+                    return answer;
+                } catch {
+                    this.notify(this.t('config.pageTemplateImportError', 'Could not create the page'), 'error');
+                    return undefined;
+                }
+            },
+        });
+        if (!created) return;
+        window.nextdashTrack?.('page-template:import', { bookmarks: created.bookmarks, into: Boolean(target) });
+        if (target) {
+            await this.dash.refreshAfterBookmarkMutation?.({ pageId: Number(target.id), repaintActiveView: true });
+            void this.dash.data?.fetchAndStoreDataRevision?.();
+            return;
+        }
+        try {
+            const res = await fetch('/api/pages');
+            if (res.ok) this.dash.pages = await res.json();
+        } catch { /* the list catches up on the next revision check */ }
+        this.dash.pageNav?.renderPageNavigation?.();
+        this.repaintPtBody();
+        void this.dash.data?.fetchAndStoreDataRevision?.();
+        const skipped = created.skipped?.unfilled || 0;
+        const message = (skipped
+            ? this.t('config.pageTemplateCreatedSkipped', '“{name}” created; {count} link(s) without an address were skipped')
+            : this.t('config.pageTemplateCreated', '“{name}” created'))
+            .replace('{name}', created.name).replace('{count}', String(skipped));
+        this.notify(message, 'success', {
+            duration: 8000,
+            actionLabel: this.t('config.pageTemplateOpen', 'Open'),
+            onAction: () => { void this.dash.pageNav?.requestPageNavigation?.(created.pageId); },
+        });
     }
 
     /**
@@ -19071,7 +19628,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /*
@@ -19411,6 +19968,8 @@ class DashboardConfig {
                   ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
               ] },
         ],
+        // The text is written on the tile itself; the panel has only width to offer.
+        notes: [],
         unraidNotifications: [
             { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
@@ -21329,6 +21888,7 @@ class DashboardConfig {
             weather: 'Current conditions beside a forecast, for the location the header already reads.',
             calendar: 'What is coming up, from the ICS feed set in Appearance → Date & weather.',
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
+            notes: 'A few lines of your own, with checkboxes for the ones that are tasks.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
@@ -26863,6 +27423,8 @@ class DashboardConfig {
 
         try {
             if (action === 'pin') await this.bulkPin(picked);
+            else if (action === 'open') this.dash.openBookmarksInNewTabs?.(picked.filter((b) => b?.url));
+            else if (action === 'copy') await this.bulkCopyLinks(picked);
             else if (action === 'favicons') await this.bulkFavicons(picked);
             else if (action === 'previews') await this.bulkPreviews(picked);
             else if (action === 'export') void this.bulkExportCsv(picked);
@@ -27339,57 +27901,18 @@ class DashboardConfig {
      * server through an endpoint that allows sixty a minute per client --
      * shared with the hover previews, the link checks and the icon prefetch.
      * A refusal is not a failure: the server says how long to wait, and the
-     * row is asked for again.
+     * row is asked for again. The loop is BulkSweep (shared/bulk-sweep.js),
+     * shared with Health's sweeps and the dashboard's selection bar.
      */
     async runSelectionSweep(targets, { title, run, done }) {
-        let ok = 0;
-        let failed = 0;
-        let stopped = false;
-        const total = targets.length;
-        const counted = (n) => this.t('config.bulkSweepProgress', '{done} of {total}')
-            .replace('{done}', String(n)).replace('{total}', String(total));
-        this.showProgressOverlay(title, counted(0), {
-            onCancel: () => { stopped = true; },
-            cancelLabel: this.t('config.bulkSweepStop', 'Stop'),
-            cancellingLabel: this.t('config.bulkSweepStopping', 'Stopping…'),
+        return window.BulkSweep.run(targets, {
+            title,
+            run,
+            done,
+            t: (key, fallback) => this.t(key, fallback),
+            intervalMs: DashboardConfig.SELECTION_SWEEP_INTERVAL_MS,
+            notify: (summary, type) => this.notify(summary, type),
         });
-        window.ProgressOverlay?.update(0, total, counted(0));
-        const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-        for (let i = 0; i < total; i += 1) {
-            if (stopped) break;
-            let result = 'failed';
-            try {
-                result = await run(targets[i]);
-            } catch {
-                result = 'failed';
-            }
-            if (result && result.rateLimited) {
-                window.ProgressOverlay?.update(i, total,
-                    this.t('config.bulkSweepWaiting', 'Rate limit reached — waiting {seconds}s')
-                        .replace('{seconds}', String(result.retryAfter)));
-                await wait((result.retryAfter + 1) * 1000);
-                if (stopped) break;
-                try {
-                    result = await run(targets[i]);
-                } catch {
-                    result = 'failed';
-                }
-                if (result && result.rateLimited) result = 'failed';
-            }
-            if (result === 'ok' || result === true) ok += 1;
-            else if (result !== 'skipped') failed += 1;
-            window.ProgressOverlay?.update(i + 1, total, counted(i + 1));
-            if (i + 1 < total) await wait(DashboardConfig.SELECTION_SWEEP_INTERVAL_MS);
-        }
-        const summary = stopped
-            ? this.t('config.bulkSweepStopped', 'Stopped after {done} of {total}')
-                .replace('{done}', String(ok + failed)).replace('{total}', String(total))
-            : done(ok, failed);
-        // A stopped sweep did not finish: filling the bar would say it had.
-        if (stopped) this.hideProgressOverlay();
-        else this.finishProgressOverlay(summary);
-        this.notify(summary, stopped ? 'info' : (failed && !ok ? 'warning' : 'success'));
-        return { ok, failed, stopped };
     }
 
     /**
@@ -27560,6 +28083,31 @@ class DashboardConfig {
         const id = String(bm?.category || '');
         if (!id) return '';
         return names.get(`${bm.pageId}::${id}`) || id;
+    }
+
+    /** Every ticked row's address, one per line, as the dashboard's bar copies them. */
+    async bulkCopyLinks(picked) {
+        const text = picked.map((b) => String(b?.url || '').trim()).filter(Boolean).join('\n');
+        if (!text) return;
+        let copied = false;
+        try {
+            await navigator.clipboard.writeText(text);
+            copied = true;
+        } catch {
+            // Plain-HTTP LAN installs have no Clipboard API.
+            const area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            try { copied = document.execCommand('copy'); } catch { copied = false; }
+            area.remove();
+        }
+        this.notify(copied
+            ? this.t('dashboard.multiSelectCopied', '{count} link(s) copied').replace('{count}', String(picked.length))
+            : this.t('dashboard.multiSelectCopyFailed', 'Could not copy links to clipboard.'), copied ? 'success' : 'error');
     }
 
     async bulkExportCsv(picked) {

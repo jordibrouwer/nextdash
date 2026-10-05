@@ -145,6 +145,10 @@ func Run(files assetFS) {
 	// ids and widget ids in one list, so a widget can sit between categories.
 	r.HandleFunc("/api/pages/{id:[0-9]+}/blocks", handlers.GetPageBlocksHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/pages/{id:[0-9]+}/blocks", handlers.SavePageBlocksHandler).Methods("PUT", "OPTIONS")
+	// Page templates: one page as a file to share, and back in as a new page.
+	r.HandleFunc("/api/pages/{id:[0-9]+}/template/hosts", handlers.PageTemplateHosts).Methods("GET")
+	r.HandleFunc("/api/pages/{id:[0-9]+}/template", handlers.ExportPageTemplate).Methods("POST")
+	r.HandleFunc("/api/pages/template", handlers.ImportPageTemplate).Methods("POST")
 	r.HandleFunc("/api/data-revision", handlers.GetDataRevision).Methods("GET")
 	r.HandleFunc("/static/bundle/dashboard.js", handlers.ServeAssetBundle).Methods("GET")
 	r.HandleFunc("/static/bundle/dashboard.css", handlers.ServeAssetBundle).Methods("GET")
@@ -204,6 +208,7 @@ func Run(files assetFS) {
 	// page never talks to another host and one fetch serves every reader.
 	r.HandleFunc("/api/site-news", handlers.GetSiteNews).Methods("GET")
 	r.HandleFunc("/api/feeds/poll", handlers.PollFeedsNow).Methods("POST")
+	r.HandleFunc("/api/feeds/retry", handlers.RetryFeed).Methods("POST")
 	r.HandleFunc("/api/health/cache-scan", handlers.CacheScanResult).Methods("POST")
 	r.HandleFunc("/api/health/update-status", handlers.UpdateBookmarkHealthStatus).Methods("POST")
 	r.HandleFunc("/api/health/statuses", handlers.UpdateBookmarkHealthStatuses).Methods("POST")
@@ -252,6 +257,10 @@ func Run(files assetFS) {
 	// The calendar widget's feed: one address for the whole install, read by
 	// widget id so the request never carries the address itself.
 	r.HandleFunc("/api/widgets/calendar", handlers.CalendarWidgetHandler).Methods("GET", "OPTIONS")
+	// The notes widget's parsing and edits, for the default "On the server"
+	// setting. They carry text in and text out and touch no stored data.
+	r.HandleFunc("/api/widgets/notes/render", handlers.NotesRenderHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/notes/command", handlers.NotesCommandHandler).Methods("POST", "OPTIONS")
 	// The RSS tile's feeds, read by widget id for the same reason: the
 	// addresses are stored, never sent with the request.
 	r.HandleFunc("/api/widgets/rss", handlers.RSSWidgetHandler).Methods("GET", "OPTIONS")
@@ -275,6 +284,8 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/health/delete-bookmarks", handlers.DeleteHealthBookmarksBulk).Methods("POST")
 	r.HandleFunc("/api/health/history-export", handlers.ExportHealthHistory).Methods("GET")
 	r.HandleFunc("/api/health/history", handlers.HealthHistoryView).Methods("GET")
+	r.HandleFunc("/badge/uptime.svg", handlers.UptimeBadge).Methods("GET")
+	r.HandleFunc("/api/notify/quiet", handlers.QuietStatus).Methods("GET")
 	r.HandleFunc("/api/health/archive-snapshot", handlers.ArchiveSnapshot).Methods("GET")
 	// Asking the archive to keep a copy, rather than hoping someone already
 	// did. Behind the write token: it spends a shared daily budget.
@@ -386,6 +397,8 @@ func Run(files assetFS) {
 	handlers.StartDockerAutoUpdater(schedulerStop)
 	handlers.StartDockerNotifier(schedulerStop)
 	handlers.StartUnraidWatcher(schedulerStop)
+	// Ends the quiet hours with one summary, and sends the reminders.
+	handlers.StartQuietHoursScheduler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence
@@ -395,6 +408,7 @@ func Run(files assetFS) {
 	// been gone for years rather than only that it broke here on Tuesday.
 	handlers.StartArchiveBackfillScheduler(schedulerStop)
 	handlers.StartUpdateCheckScheduler(schedulerStop)
+	handlers.StartInstallPingScheduler(schedulerStop)
 	handlers.StartIconSetsScheduler(schedulerStop)
 	// Writes the preview cache out periodically. Beside the others rather than
 	// buried in NewHandlers, so it stops when they do.

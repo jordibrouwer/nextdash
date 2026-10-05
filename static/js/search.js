@@ -566,6 +566,60 @@ class SearchComponent {
             .some((bookmark) => String(bookmark?.url || '').trim() === url);
     }
 
+    /** The badge's word for a row that lives in the inbox. */
+    _inboxBadgeLabel() {
+        const key = 'commands.inboxBadge';
+        const translated = this.language?.t?.(key);
+        return translated && translated !== key ? translated : 'inbox';
+    }
+
+    /**
+     * Links waiting in the inbox that match a name search, under their own
+     * header.
+     *
+     * The inbox is not part of any bookmark pool -- a link captured an hour ago
+     * is not on a page yet -- so a name search never saw it. Its own group, last,
+     * because the pages you filed are what you usually mean. Snoozed items stay
+     * out, as they do in the inbox's own list.
+     */
+    _inboxGroupRows(query) {
+        const needle = String(query || '').trim().toLowerCase();
+        const inbox = window.dashboardInstance?.inbox?.instance;
+        if (!needle || !inbox || !Array.isArray(inbox.items)) return [];
+        const hits = inbox.items.filter((item) => {
+            if (!item?.url || (typeof inbox.isSnoozed === 'function' && inbox.isSnoozed(item))) return false;
+            const haystack = [item.previewTitle, item.title, item.domain, item.url, item.note,
+                ...(Array.isArray(item.tags) ? item.tags : [])]
+                .filter(Boolean).join(' ').toLowerCase();
+            return haystack.includes(needle);
+        });
+        if (!hits.length) return [];
+        const id = 'search_inbox';
+        const expanded = !this.emptyStateExpandedGroups.has(id);
+        const rows = [{
+            type: 'command-group-header',
+            groupId: id,
+            label: this.dashboardLabel('searchGroupInbox', 'In the inbox'),
+            count: hits.length,
+            expanded,
+            _emptyStateGroup: id,
+        }];
+        if (!expanded) return rows;
+        const items = hits.map((item) => ({
+            type: 'bookmark',
+            shortcut: '',
+            inbox: true,
+            bookmark: {
+                name: item.previewTitle || item.title || item.domain || item.url,
+                url: item.url,
+                tags: Array.isArray(item.tags) ? item.tags : [],
+                note: item.note || '',
+            },
+            query,
+        }));
+        return rows.concat(this._capGroup(items, id));
+    }
+
     _relativeWhen(timestamp) {
         const when = Number(timestamp) || 0;
         if (!when) return '';
@@ -2600,6 +2654,12 @@ class SearchComponent {
                 // Handle fuzzy search - only if query is not empty
                 const fuzzy = this.fuzzySearchComponent.handleFuzzy(searchQuery).filter((match) => this.matchesAdvancedFilters(match.bookmark, filters));
                 this.searchMatches = this._groupFuzzyMatches(fuzzy, searchQuery);
+                // Not under a filter: an inbox link has no page, category or
+                // status, so tag:, category: and the rest cannot speak for it,
+                // and a filtered search listed every inbox hit regardless.
+                if (!this._hasActiveFilters(filters)) {
+                    this.searchMatches.push(...this._inboxGroupRows(searchQuery));
+                }
             }
 
             // The last real search, for :save. Not overwritten by the empty
@@ -3786,6 +3846,11 @@ class SearchComponent {
                     this._unsortedBadgeLabel())}</span>`
                 : '';
 
+            const inboxBadge = match.inbox === true
+                ? `<span class="search-match-unsorted-badge">${this._escHtml(
+                    this._inboxBadgeLabel())}</span>`
+                : '';
+
             const historyRemoveHtml = match.type === 'history'
                 ? `<button type="button" class="search-history-remove" aria-label="${this._escHtml(this.historyRemoveLabel())}">×</button>`
                 : '';
@@ -3801,6 +3866,7 @@ class SearchComponent {
                 ${finderUseBadge}
                 ${currentValueBadge}
                 ${unsortedBadge}
+                ${inboxBadge}
                 ${whenHtml}
                 ${historyRemoveHtml}
             `;

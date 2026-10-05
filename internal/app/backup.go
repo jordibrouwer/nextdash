@@ -169,6 +169,11 @@ var dataFiles = map[string]dataFilePolicy{
 	"inbox-stats.json":        dataKeep,
 	"site-news.json":          dataKeep,
 	"push-subscriptions.json": dataKeep,
+	// Notices held for the quiet hours, and the outages still being reminded
+	// about: both are of this moment, and a restore must not bring back a night
+	// that is already over.
+	"notify-held.json": dataKeep,
+	"notify-open.json": dataKeep,
 	// Which images are held, and which update was skipped.
 	"docker-updates.json": dataKeep,
 

@@ -184,6 +184,16 @@ class DashboardConfigLoader {
         return this._module?.handleKeyboardNavigation?.(e) ?? false;
     }
 
+    /**
+     * The page-template dialogs, from outside Config: the page switcher, the
+     * command bar, a file dropped on the dashboard, an empty page. With the
+     * views stylesheet, which Config's own opening would otherwise have loaded.
+     */
+    async openPageTemplate(kind, arg) {
+        const [mod] = await Promise.all([this.load(), window.ViewStyles?.ensureViewStyles?.()]);
+        return kind === 'export' ? mod.exportPageTemplate(arg) : mod.importPageTemplate(arg || {});
+    }
+
     /** The real DashboardConfig instance once loaded, else null. */
     get instance() {
         return this._module;

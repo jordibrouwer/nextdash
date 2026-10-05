@@ -401,7 +401,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Bookmarks and pages**
 
-- Pages and categories, each with an icon, a colour and a sort; drag to reorder, spread a category across columns. *[Manual §9](MANUAL.md#9-pages-categories-and-collections)*
+- Pages and categories, each with an icon, a colour and a sort; drag to reorder, spread a category across columns. Share a page as a template file: your own addresses become names the importer fills in. *[Manual §9](MANUAL.md#9-pages-categories-and-collections)*
 - Add a link with one key, the full form, a paste, the extension, the share sheet or a bookmarklet. *[Manual §5](MANUAL.md#5-adding-bookmarks)*
 - Tags, notes, shortcuts and pins, a preview card that says what a page is without opening it, and a QR code (`Shift + J`) to open a bookmark on your phone. *[Manual §6](MANUAL.md#6-opening-and-editing-bookmarks), [§10](MANUAL.md#10-tags)*
 - **Tag suggestions** tag whole groups at once — from your own tags, a shipped list of 463 subjects, and rules you write. Nothing is tagged until you accept. *[Manual §10.4](MANUAL.md#104-tag-suggestions)*
@@ -418,15 +418,15 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Health and monitoring**
 
-- Health lives in the **Bookmarks view**: filters for broken, stale, duplicated, unchecked and changed, a Health tab in the side panel, and Work through to clear a pile — broken, changed, stale, never opened — one bookmark at a time, each with the reason it is there. **Collection health** (Overview, Monitors & trend) covers the whole collection; open one bookmark's own **Health in Large** for its uptime, response time, status codes and every check, with CSV export. *[Health and monitoring](MANUAL.md#11-the-bookmarks-view)*
+- Health lives in the **Bookmarks view**: filters for broken, stale, duplicated, unchecked and changed, a Health tab in the side panel, and Work through to clear a pile — broken, changed, stale, never opened — one bookmark at a time, each with the reason it is there. **Collection health** (Overview, Monitors, Trend) covers the whole collection; open one bookmark's own **Health in Large** for its uptime, response time, status codes and every check, with CSV export. *[Health and monitoring](MANUAL.md#11-the-bookmarks-view)*
 - **Uptime monitoring** with 30 days of history, response times, outages, certificate expiry, expected-response checks and drift detection. *[Manual §13.4](MANUAL.md#118-collection-health)*
-- Alerts to Slack, Discord, Telegram, Gotify, ntfy, Pushover, Apprise (and from there mail, Matrix, Signal and a hundred more), a JSON receiver or your browser, with maintenance windows and per-bookmark muting. *[Manual §13.7](MANUAL.md#124-alerts)*
+- Alerts to Slack, Discord, Telegram, Gotify, ntfy, Pushover, Apprise (and from there mail, Matrix, Signal and a hundred more), a JSON receiver or your browser, with maintenance windows, quiet hours with one summary at the end, reminders for an outage that goes on, and per-bookmark muting. *[Manual §13.7](MANUAL.md#124-alerts)*
 - **Fresh** shows which bookmarked sites published something new. *[Manual §13.9](MANUAL.md#126-fresh)*
 - Keep a copy of a page on your own disk or in the Web Archive. *[Manual §13.10](MANUAL.md#127-keeping-a-copy-of-a-page)*
 
 **Widgets**
 
-- Twenty-nine kinds: health, uptime, certificates, trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, container list, weather, calendar and RSS, and seven that read an **Unraid** server through its API — an overview, the array, parity, shares, VMs, UPS and its notifications — set up once under **Config → Unraid**. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §15](MANUAL.md#15-widgets)*
+- Thirty kinds: health, uptime, certificates, trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, container list, weather, calendar, RSS and **Notes** (Markdown with checkboxes and slash commands), and seven that read an **Unraid** server through its API — an overview, the array, parity, shares, VMs, UPS and its notifications — set up once under **Config → Unraid**. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §15](MANUAL.md#15-widgets)*
 - A widget set to two columns says more rather than the same thing larger: the load behind the processor's percentage, the container failing by name, the expiry date of a certificate, what the weather feels like. One column keeps the important half. *[Manual §11.2](MANUAL.md#152-adding-and-arranging)*
 - A **Custom widget** reads any service that answers with JSON, with 41 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant, Uptime Kuma, Beszel and more — each tested against the service's recorded answer. *[Manual §11.5](MANUAL.md#155-the-custom-widget)*
 

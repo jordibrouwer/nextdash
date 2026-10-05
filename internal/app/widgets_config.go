@@ -53,6 +53,8 @@ const (
 	// sources than this is asking for a feed reader, and every address here
 	// is a request the server makes on every cache miss.
 	widgetMaxFeedsPerWidget = 10
+	// widgetMaxNoteLen bounds a notes widget's text, in characters.
+	widgetMaxNoteLen = 6000
 )
 
 /*
@@ -201,6 +203,11 @@ var widgetFields = map[WidgetType][]widgetField{
 		// already broken -- "of what died, how much did I keep".
 		{Key: "brokenOnly", Kind: "bool"},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
+	WidgetTypeNotes: {
+		// The text itself. A note is the one setting that is prose, so it has
+		// its own cap: long enough for a page of tasks, short of a document.
+		{Key: "text", Kind: "string", MaxLen: widgetMaxNoteLen},
 	},
 	WidgetTypeTrash: {
 		// warnDays is when an entry starts reading as urgent. Bounded well
@@ -549,7 +556,7 @@ func widgetTypeNames() []string {
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker, WidgetTypeContainers,
-		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS,
+		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeNotes,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
 		// Custom stays last: it is the escape hatch for a service with no

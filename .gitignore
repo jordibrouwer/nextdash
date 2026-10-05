@@ -50,3 +50,4 @@ nextDash.code-workspace
 # Working notes: plans and specs stay on disk and out of the repository.
 # They are for whoever is doing the work, not for anyone cloning it.
 docs/
+screenshots/unraid-themes

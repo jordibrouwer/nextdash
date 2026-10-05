@@ -4,6 +4,36 @@
 class DashboardPageNav {
     constructor(dashboard) {
         this.dash = dashboard;
+        this.bindPageTemplateDrop();
+    }
+
+    /**
+     * A page template dropped anywhere on the dashboard opens the import
+     * dialog with it. That is how a file from a forum post arrives: dragged
+     * out of the downloads bar. Only files that say they are a page template
+     * are taken; anything else is left alone, and a drop on a field is the
+     * field's.
+     */
+    bindPageTemplateDrop() {
+        if (typeof document === 'undefined' || document.documentElement.dataset.pageTemplateDrop) return;
+        document.documentElement.dataset.pageTemplateDrop = '1';
+        const carriesFiles = (e) => Array.from(e.dataTransfer?.types || []).includes('Files');
+        const onField = (e) => Boolean(e.target?.closest?.('input, textarea, [contenteditable="true"]'));
+        document.addEventListener('dragover', (e) => {
+            if (!carriesFiles(e) || onField(e) || e.defaultPrevented) return;
+            // Without this the browser opens the file in place of the dashboard.
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        });
+        document.addEventListener('drop', async (e) => {
+            if (!carriesFiles(e) || onField(e) || e.defaultPrevented) return;
+            e.preventDefault();
+            const file = Array.from(e.dataTransfer.files || []).find((f) => /\.json$/i.test(f.name) || f.type === 'application/json');
+            if (!file || file.size > 2 * 1024 * 1024) return;
+            const text = await file.text().catch(() => '');
+            if (!/"nextdash"\s*:\s*"page-template"/.test(text)) return;
+            void this.dash.config?.openPageTemplate?.('import', { text });
+        });
     }
 
     async requestPageNavigation(pageId) {
@@ -341,9 +371,33 @@ class DashboardPageNav {
             inboxBtn?.classList.remove('is-inbox-new');
         }
         this._lastInboxBadgeCount = unread;
+        this.syncKeptCountLabel(inboxBtn);
         this.syncInboxTabHighlight();
     }
 
+
+    /**
+     * The kept pile, on the Inbox icon's tooltip and label.
+     *
+     * Keeping takes a link out of the queue and out of every dashboard pool, so
+     * the pile grows with no figure anywhere. A count in the tooltip costs the
+     * header nothing and is there when you wonder. Only once the kept list has
+     * actually loaded: startup can skip that load, and "0 kept" from a list that
+     * was never read would be a wrong answer.
+     */
+    syncKeptCountLabel(inboxBtn) {
+        const d = this.dash;
+        const base = inboxBtn?.dataset?.inboxName;
+        if (!base) return;
+        const kept = d._unsortedLoaded === true && d.settings?.unsortedEnabled !== false
+            ? (d.unsortedBookmarks || []).length
+            : 0;
+        const text = kept > 0
+            ? `${base} · ${d.formatDashboardLabel?.('inboxKeptCount', { count: kept }, '{count} kept') || `${kept} kept`}`
+            : base;
+        inboxBtn.title = text;
+        inboxBtn.setAttribute('aria-label', text);
+    }
 
     isInboxTabHighlightActive() {
         const d = this.dash;
@@ -888,6 +942,7 @@ class DashboardPageNav {
             inboxBtn.setAttribute('aria-label', inboxName);
             inboxBtn.setAttribute('aria-keyshortcuts', 'Shift+I');
             inboxBtn.title = inboxName;
+            inboxBtn.dataset.inboxName = inboxName;
             inboxBtn.innerHTML = `
                 <svg class="page-tab-icon page-tab-icon--svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                     <path d="M4 14h4l1.5 2.5h5L16 14h4"/>
@@ -1153,6 +1208,29 @@ class DashboardPageNav {
             d.showPageOverlay?.();
         });
         foot.appendChild(allRow);
+
+        // Pages as files: the place a page is thought about is where giving
+        // one away, or taking one in, is found -- not four levels into Config.
+        const templateRow = (cls, labelKey, fallback, run) => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = `page-switcher-item ${cls}`;
+            row.setAttribute('role', 'menuitem');
+            row.innerHTML = `<span class="page-switcher-item-name">${this._escapeSwitcher(
+                d.formatDashboardLabel(labelKey, {}, fallback))}</span>`;
+            row.addEventListener('click', () => {
+                this.closePageSwitcherMenu();
+                void run();
+            });
+            foot.appendChild(row);
+        };
+        const sharedPageId = Number(d.currentPageId);
+        if (d.isBookmarksView() && Number.isFinite(sharedPageId) && sharedPageId > 0 && sharedPageId !== 999999) {
+            templateRow('page-switcher-share', 'pageSwitcherSharePage', 'Share this page…',
+                () => d.config?.openPageTemplate?.('export', sharedPageId));
+        }
+        templateRow('page-switcher-import', 'pageSwitcherImportPage', 'Import a page…',
+            () => d.config?.openPageTemplate?.('import'));
         menu.appendChild(foot);
 
         document.body.appendChild(menu);

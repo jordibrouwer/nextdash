@@ -842,15 +842,23 @@
         }
         const esc = (v) => this.dash.escapeHtml(v);
         const health = Boolean(this.bmHealthBulkRunner?.()?.selected?.size);
-        const btn = (action, label, cls = '') => `<button type="button" class="multi-select-btn${cls}" data-bm-selbar-action="${action}">${esc(label)}</button>`;
+        // The buttons come from the list both selection bars share
+        // (shared/bulk-actions.js); Re-check and Mute only for rows the
+        // health report knows.
+        const BA = global.BulkActions;
+        const t = (key, fallback) => this.t(key, fallback);
+        const allPinned = this.bookmarksFromKeys([...this.bmSelected]).every((b) => b.pinned === true);
+        const buttons = BA.forSurface(BA.BOOKMARKS)
+            .filter((a) => health || (a.id !== 'recheck' && a.id !== 'mute'))
+            .map((a) => {
+                const label = a.id === 'pin' && allPinned
+                    ? BA.label('pin', t, {}, ['dashboard.multiSelectUnpin', 'Unpin'])
+                    : BA.label(a.id, t, { n });
+                return `<button type="button" class="multi-select-btn${a.danger ? ' danger' : ''}" data-bm-selbar-action="${a.id}" data-bulk-action="${a.id}">${esc(label)}</button>`;
+            }).join('');
         bar.innerHTML = `
             <span class="multi-select-count" data-bm-selbar-count>${esc(this.t('config.bmSelectedN', '{n} selected').replace('{n}', String(n)))}</span>
-            ${btn('edit', this.t('config.bmSelEdit', 'Edit…'))}
-            ${health ? btn('recheck', this.t('dashboard.healthBulkRecheck', 'Re-check')) : ''}
-            ${health ? btn('mute', this.t('dashboard.healthBulkMute', 'Mute alerts')) : ''}
-            ${btn('export', this.t('config.bulkExportCsv', 'Export CSV'))}
-            ${btn('delete', this.t('config.bmDeleteN', 'Delete {n}').replace('{n}', String(n)), ' danger')}
-            ${btn('clear', this.t('config.bulkClearSelection', 'Clear selection'))}`;
+            ${buttons}`;
     },
 
     bindBookmarkSelectionBar() {

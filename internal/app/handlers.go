@@ -2438,6 +2438,7 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	// setting is left untouched so it returns when the operator lifts the switch.
 	if telemetryDisabledByEnv() {
 		settings.AnalyticsOptIn = false
+		settings.InstallPingEnabled = false
 	}
 	if updateCheckDisabledByEnv() {
 		settings.UpdateCheckEnabled = false
@@ -2542,6 +2543,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	// it returns unchanged once the operator unsets it.
 	if telemetryDisabledByEnv() {
 		settings.AnalyticsOptIn = h.store.GetSettings().AnalyticsOptIn
+		settings.InstallPingEnabled = h.store.GetSettings().InstallPingEnabled
 	}
 	if updateCheckDisabledByEnv() {
 		settings.UpdateCheckEnabled = h.store.GetSettings().UpdateCheckEnabled
@@ -2606,6 +2608,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.MaintenanceTimeZone = normalizeMaintenanceTimeZone(settings.MaintenanceTimeZone)
+	normalizeQuietSettings(&settings)
 	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
 	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
 	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)

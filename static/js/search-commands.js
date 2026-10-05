@@ -81,7 +81,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'trash', 'export', 'import', 'tour', 'metadata', 'health', 'docker', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
+                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
             },
         ];
         // Which groups are open. None is, until the reader opens one: the
@@ -180,6 +180,7 @@ class SearchCommandsComponent {
             'filter': this.handleFilterCommand.bind(this),
             'export': this.handleExportCommand.bind(this),
             'import': this.handleImportCommand.bind(this),
+            'share': this.handleShareCommand.bind(this),
             'tour': this.handleTourCommand.bind(this),
             'archive': this.handleArchiveCommand.bind(this),
         };
@@ -3227,6 +3228,8 @@ class SearchCommandsComponent {
 
     /** Restoring from a backup lives in config; this is the way in. */
     handleImportCommand() {
+        // The backup first: :import Enter has restored a backup since long
+        // before a page could be a file.
         return [{
             name: this._t('commands.importLabel', 'Restore from a backup (.zip)'),
             shortcut: ':IMPORT',
@@ -3234,7 +3237,38 @@ class SearchCommandsComponent {
             action: () => this._runOverlayAction(() => {
                 window.location.hash = '#config/data/backups';
             }),
+        }, {
+            name: this._t('commands.importPageLabel', 'Import a page from a template file'),
+            shortcut: ':IMPORT',
+            type: 'command',
+            action: () => this._runOverlayAction(() => {
+                void window.dashboardInstance?.config?.openPageTemplate?.('import');
+            }),
         }];
+    }
+
+    /*
+     * The page on screen as a template file, for somebody else to import.
+     * Also the second row of :export, beside the whole-install backup.
+     */
+    _sharePageRow(shortcut) {
+        const dashboard = window.dashboardInstance;
+        const pageId = Number(dashboard?.currentPageId);
+        if (!dashboard || !Number.isFinite(pageId) || pageId <= 0 || pageId === 999999) return null;
+        const page = (dashboard.pages || []).find((p) => Number(p.id) === pageId);
+        return {
+            name: this._t('commands.sharePageLabel', 'Share “{name}” as a template file').replace('{name}', page?.name || ''),
+            shortcut,
+            type: 'command',
+            action: () => this._runOverlayAction(() => {
+                void dashboard.config?.openPageTemplate?.('export', pageId);
+            }),
+        };
+    }
+
+    handleShareCommand() {
+        const row = this._sharePageRow(':SHARE');
+        return row ? [row] : [];
     }
 
     /*
@@ -4858,7 +4892,7 @@ class SearchCommandsComponent {
             shortcut: ':EXPORT',
             type: 'command',
             action: () => this._downloadBackup(),
-        }];
+        }, this._sharePageRow(':EXPORT')].filter(Boolean);
     }
 
     /**

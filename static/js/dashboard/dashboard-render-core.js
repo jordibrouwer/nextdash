@@ -917,6 +917,7 @@ class DashboardRenderCore {
     /** Names in English for the types whose name is not translated yet. */
     static WIDGET_TYPE_NAMES = {
         containers: 'Container list',
+        notes: 'Notes',
         unraid: 'Unraid',
         unraidArray: 'Unraid array',
         unraidParity: 'Parity',
@@ -1093,10 +1094,16 @@ class DashboardRenderCore {
                             ${searchActionHtml}
                             ${commandNewHtml}
                             ${commandTagHtml}
+                            <button class="empty-state-action-btn" id="empty-state-template" type="button">${esc(d.language?.t('dashboard.emptyStateFromTemplate') || 'Start from a template…')}</button>
                         </div>
                         <p class="empty-state-hint">${esc(addHint)}</p>
                     </div>
                 `;
+                // An empty page is the one a template can fill in place:
+                // there is nothing on it to merge with.
+                container.querySelector('#empty-state-template')?.addEventListener('click', () => {
+                    void d.config?.openPageTemplate?.('import', { intoPage: Number(d.currentPageId) });
+                });
                 container.querySelector('#empty-state-new-bookmark')?.addEventListener('click', () => {
                     d.openEmptyStateAdd();
                 });
@@ -1126,6 +1133,7 @@ class DashboardRenderCore {
                             <button class="empty-state-link" id="empty-state-add-modal-fresh" type="button" data-i18n="dashboard.emptyStateAddBookmark">${esc(d.language?.t('dashboard.emptyStateAddBookmark') || 'Add a bookmark')}</button>
                             <a class="empty-state-link" href="/config#bookmarks" data-i18n="dashboard.emptyStateManageBookmarks">${esc(d.language?.t('dashboard.emptyStateManageBookmarks') || 'Manage bookmarks in config')}</a>
                             <a class="empty-state-link" href="/config#backups" data-i18n="config.importDescription">${esc(d.language?.t('config.importDescription') || 'Import your data')}</a>
+                            <button class="empty-state-link" id="empty-state-template-fresh" type="button">${esc(d.language?.t('dashboard.emptyStateFromTemplate') || 'Start from a template…')}</button>
                         </div>
                     </div>
                 `;
@@ -1134,6 +1142,9 @@ class DashboardRenderCore {
                 });
                 container.querySelector('#empty-state-add-modal-fresh')?.addEventListener('click', () => {
                     d.openEmptyStateAdd();
+                });
+                container.querySelector('#empty-state-template-fresh')?.addEventListener('click', () => {
+                    void d.config?.openPageTemplate?.('import', { intoPage: Number(d.currentPageId) });
                 });
                 container.querySelector('#empty-state-search-fresh')?.addEventListener('click', () => {
                     d.searchComponent?.openSearchInterface();

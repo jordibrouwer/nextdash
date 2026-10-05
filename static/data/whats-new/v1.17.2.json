@@ -1,0 +1,85 @@
+{
+  "tag": "v1.17.2",
+  "date": "5 October 2026",
+  "releasedAt": "2026-10-05",
+  "modalLead": "A <strong>Notes</strong> widget, <strong>page templates</strong> to share, <strong>quiet hours</strong> for alerts and a <strong>Trend</strong> tab in Collection health.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A Notes widget.</strong> Write in Markdown, tick checkboxes on the tile, type / for commands such as the date or a table, and open it large with a preview. New installs start with an example."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Retry on a stopped feed.</strong> A feed that gave up has a Retry button in the Feeds widget."
+        }
+      ]
+    },
+    {
+      "title": "Pages",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Share a page as a template file.</strong> Your own addresses become names the importer fills in; nothing about usage or health goes in the file. Import one from the page menu or start an empty page from it."
+        }
+      ]
+    },
+    {
+      "title": "Health and alerts",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Quiet hours.</strong> Alerts that arrive at night are held, and one summary tells you in the morning what is still down and what recovered."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Reminders</strong> for an outage that goes on, every so often and not more than you choose."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Collection health has a Trend tab</strong> and more figures: key numbers, what to fix first, when links were last checked and how often they are opened, and uptime by weekday."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Uptime badges</strong> for a README or a post, off until you switch them on."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Background re-checks are on by default,</strong> so Health stays current without a dashboard open."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Search finds links waiting in the inbox,</strong> and the Inbox icon says how many are kept."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The Bookmarks view shows containers.</strong> A bookmark that is a container's web UI gets a cube after its name — green running, amber paused, grey stopped — and a click opens that container."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Config lists the small cards</strong> in the corner, with Show again, and one of them points at the feature overview on nextdash.cc."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The selection bar on the dashboard can fetch icons and previews,</strong> the same buttons the Bookmarks view already had."
+        }
+      ]
+    },
+    {
+      "title": "Privacy",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A daily install count.</strong> Once a day nextDash sends a random id and its version number so the project can count installs — nothing else. On by default; switch it off under Behavior → Privacy &amp; sync."
+        }
+      ]
+    }
+  ]
+}

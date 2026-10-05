@@ -126,6 +126,9 @@ const (
 	 */
 	WidgetTypeRSS    WidgetType = "rss"
 	WidgetTypeCustom WidgetType = "custom"
+	// WidgetTypeNotes holds a short text of the reader's own, some lines of it
+	// tickable. The text is the widget's config, so it travels with the page.
+	WidgetTypeNotes WidgetType = "notes"
 
 	// The Unraid widgets read the Unraid server set under Config -> Containers
 	// (unraid_settings.go). One connection for all of them: a widget only says
@@ -166,6 +169,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeCalendar:   {},
 	WidgetTypeRSS:        {},
 	WidgetTypeCustom:     {},
+	WidgetTypeNotes:      {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},
@@ -234,7 +238,8 @@ func normalizeWidget(widget Widget) (Widget, error) {
 	}
 
 	widget.ID = strings.TrimSpace(widget.ID)
-	if !isWidgetID(widget.ID) {
+	isNew := !isWidgetID(widget.ID)
+	if isNew {
 		widget.ID = newWidgetID()
 	}
 	if widget.ID == "" {
@@ -247,6 +252,13 @@ func normalizeWidget(widget Widget) (Widget, error) {
 	// Config is the client's, so it is narrowed to what this type declares
 	// before it reaches storage -- see sanitizeWidgetConfig.
 	widget.Config = sanitizeWidgetConfig(widget.Type, widget.Config)
+	// A notes widget being added starts with the example note. Only when new:
+	// an existing one that was emptied must stay empty.
+	if isNew && widget.Type == WidgetTypeNotes {
+		if text, _ := widget.Config["text"].(string); strings.TrimSpace(text) == "" {
+			widget.Config["text"] = notesStarterText
+		}
+	}
 	return widget, nil
 }
 

@@ -1081,6 +1081,31 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     padding-block: var(--space-3, 0.75rem);
 }
 
+/* Share this page / Import a page: small, under New page -- a thing to do now and then. */
+.page-overview-modal-files {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    margin-top: var(--space-2, 0.5rem);
+    /* Never what decides how wide the sheet is: the rows do that. */
+    contain: inline-size;
+}
+.page-overview-modal-file {
+    padding: 2px 4px;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-underline-offset: 3px;
+}
+.page-overview-modal-file:hover,
+.page-overview-modal-file:focus-visible { color: var(--text-primary); }
+
 .page-overview-modal-newhint {
     display: block;
     margin-top: var(--space-2, 0.5rem);

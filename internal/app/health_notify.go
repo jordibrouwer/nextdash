@@ -398,6 +398,15 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 		}
 	}
 
+	// Opened and closed before the quiet hours look at them: an outage held for
+	// the night is still an outage that is being counted for its reminders.
+	h.trackOpenAlerts(noticeSourceMonitor, notifications)
+	// What the quiet hours hold waits for their summary; the rest goes on.
+	notifications = h.quietGate(noticeSourceMonitor, notifications, collapseMonitorNotifications)
+	if len(notifications) == 0 {
+		return
+	}
+
 	// One upstream failing takes every bookmark behind it down in the same
 	// sweep. Collapsed here, at the single point both sinks pass through, so the
 	// webhook and the browser both get the summary rather than one of them

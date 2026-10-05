@@ -812,6 +812,60 @@ func feedCoverage(state FeedStateFile, bookmarks []Bookmark) (checked int, withF
 }
 
 // PollFeedsNow runs a round on demand — the config panel's "check now".
+// resetRetiredFeeds gives retired feeds another life: the failure count goes to
+// zero and the last try is forgotten, so the next poll takes them again. A
+// feed address picks one; empty picks every retired feed. Returns how many.
+func resetRetiredFeeds(feedURL string) int {
+	feedStateMu.Lock()
+	defer feedStateMu.Unlock()
+	state := readFeedStateFile()
+	reset := 0
+	for key, feed := range state.Feeds {
+		if feed.Failures < feedMaxFailures {
+			continue
+		}
+		if feedURL != "" && feed.FeedURL != feedURL {
+			continue
+		}
+		feed.Failures = 0
+		feed.TriedAt = 0
+		state.Feeds[key] = feed
+		reset++
+	}
+	if reset > 0 {
+		_ = writeFeedStateFile(state)
+	}
+	return reset
+}
+
+// RetryFeed answers POST /api/feeds/retry {"feedUrl": "..."}: a stopped feed is
+// tried again now, not when its day is up. Without a feedUrl, every stopped one.
+func (h *Handlers) RetryFeed(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	var body struct {
+		FeedURL string `json:"feedUrl"`
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil && err != io.EOF {
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+	reset := resetRetiredFeeds(strings.TrimSpace(body.FeedURL))
+	if reset > 0 {
+		ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
+		defer cancel()
+		h.PollAllFeeds(ctx)
+	}
+	state := readFeedStateFile()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"reset": reset,
+		"feeds": freshnessForBookmarks(state, h.store.GetAllBookmarks()),
+	})
+}
+
 func (h *Handlers) PollFeedsNow(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return

@@ -21,11 +21,11 @@
 
 /*
  * The shared list-view shell. Header spans both columns; the rail is the same
- * 200px as config's section rail so the views line up on one vertical.
+ * 176px as the bookmarks workbench rail so the views line up on one vertical.
  */
 .lvs {
     display: grid;
-    grid-template-columns: 200px 1fr;
+    grid-template-columns: 176px 1fr;
     grid-template-areas:
         'header header'
         'rail   main';

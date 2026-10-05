@@ -176,6 +176,8 @@
                 { keys: 'Shift + W on widget', cheatKey: 'wgWidth', fallback: 'One column or two, the same key a category uses for its width', print: true, printFallback: 'Widget across two columns' },
                 { keys: 'Delete on widget', cheatKey: 'wgClose', fallback: 'Close the widget — it keeps its settings, and Config → Widgets switches it back on', print: true, printFallback: 'Close widget (Config → Widgets brings it back)' },
                 { keys: 'Long-press widget title', cheatKey: 'wgRenameHold', fallback: 'Rename it with the pointer, as on a category header (double-click does the same)' },
+                { keys: 'Ctrl/Cmd + Enter in a note', cheatKey: 'wgNoteSave', fallback: 'Save the note you are writing in a Notes widget', print: true, printFallback: 'Save a note' },
+                { keys: 'Escape in a note', cheatKey: 'wgNoteCancel', fallback: 'Leave the note without saving the edit' },
             ],
         },
         // A mode of its own rather than more bookmark actions: every row here acts
@@ -445,6 +447,7 @@
             titleFallback: 'Commands — tools',
             rows: [
                 { keys: ':backup / :export', cheatKey: 'ctBackup', fallback: 'Open config backups or download a ZIP backup immediately' },
+                { keys: ':share / :import', cheatKey: 'ctSharePage', fallback: 'Share this page as a template file / import one as a new page', printFallback: 'Share or import a page template' },
                 { keys: ':trash', cheatKey: 'ctTrash', fallback: 'Open the trash — deleted bookmarks, pages and categories wait 30 days', print: true, printFallback: 'Open the trash' },
                 { keys: ':metadata', printOmit: true, cheatKey: 'ctMetadata', fallback: 'Open the Bookmarks view on missing previews, or Config → Bookmarks' },
                 { keys: ':monitor off', printOmit: true, cheatKey: 'ctMonitor', fallback: 'Turn availability checking off for every bookmark at once (asks for confirmation first)' },

@@ -425,6 +425,7 @@ type Settings struct {
 	WeatherSource                   string `json:"weatherSource"`       // manual or browser
 	WeatherLocation                 string `json:"weatherLocation"`     // Manual location query (city)
 	WeatherUnit                     string `json:"weatherUnit"`         // celsius or fahrenheit
+	NotesProcessing                 string `json:"notesProcessing"`     // server (default) or client: where notes are parsed and edited
 	WeatherRefreshMinutes           int    `json:"weatherRefreshMinutes"`
 	ShowConfigButton                bool   `json:"showConfigButton"`
 	ShowPagesButton                 bool   `json:"showPagesButton"`
@@ -747,6 +748,7 @@ type Settings struct {
 	ShowGridKeyLegend         bool   `json:"showGridKeyLegend"`
 	ShortcutOpenMode          string `json:"shortcutOpenMode,omitempty"`
 	RememberScrollPosition    bool   `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
+	UptimeBadges              bool   `json:"uptimeBadges"`           // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
 	DetectSoftNotFound        bool   `json:"detectSoftNotFound"`     // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
 	CertWarnDays              int    `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
@@ -962,6 +964,21 @@ type Settings struct {
 	// an IANA name). A container runs on UTC unless TZ is set, and the windows
 	// were read on that clock: hours off for anyone else. Empty: server time.
 	MaintenanceTimeZone string `json:"maintenanceTimeZone,omitempty"`
+	// QuietHours are recurring periods when notices are held rather than sent,
+	// then summarised in one message when they end (notify_quiet.go). Unlike a
+	// maintenance window the downtime still counts; only the message waits. Read
+	// in MaintenanceTimeZone.
+	QuietHoursEnabled bool                `json:"quietHoursEnabled"`
+	QuietHours        []MaintenanceWindow `json:"quietHours,omitempty"`
+	// QuietHoursAllow lists the kinds of notice that break the quiet hours
+	// (quietKinds). Nil means the default list; an empty list means none. The
+	// field has no omitempty so the two stay apart on disk.
+	QuietHoursAllow []string `json:"quietHoursAllow"`
+	// RemindersEnabled repeats an outage that is still going: after
+	// RemindAfterMinutes, up to RemindMax times. Monitors and containers only.
+	RemindersEnabled   bool `json:"remindersEnabled"`
+	RemindAfterMinutes int  `json:"remindAfterMinutes,omitempty"`
+	RemindMax          int  `json:"remindMax,omitempty"`
 	// The push booleans deliberately omit "omitempty": with it, a false value is
 	// dropped from the JSON entirely and the config checkbox reads `undefined`
 	// instead of unchecked, so turning a toggle off would not survive a reload.
@@ -972,6 +989,7 @@ type Settings struct {
 	PushNotifyContainers bool                  `json:"pushNotifyContainers"`           // Push when a container stops, keeps restarting or turns unhealthy
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
+	InstallPingEnabled   bool                  `json:"installPingEnabled"`             // Daily anonymous install count: random id + version (on by default, separate from analyticsOptIn)
 	DiscoverabilityState *DiscoverabilityState `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
 	SavedSearches        []SavedSearch         `json:"savedSearches,omitempty"`        // Named queries from the search bar
 	SearchPicks          []SearchPick          `json:"searchPicks,omitempty"`          // Which result a query led to, so ranking learns
@@ -1072,6 +1090,11 @@ It carries the same `w_` prefix every widget id has, so isWidgetID reads it as
 one and it cannot collide with a category slug.
 */
 const defaultHealthWidgetID = "w_000000000001"
+
+// defaultNotesWidgetID is the notes widget a fresh install ships with, and the
+// one existing installs get once (migrateNotesWidgetOnFirstPage). Fixed for the
+// same reason as the health widget's.
+const defaultNotesWidgetID = "w_000000000002"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
@@ -1590,6 +1613,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 			 */
 			Widgets: []Widget{
 				{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
+				// Notes after the links it sits beside, with the example note:
+				// it shows what the widget does and is one Edit away from yours.
+				{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
 			},
 			// The widget leads, then the categories in the order above. Without
 			// an explicit order the widget would fall wherever resolveBlockOrder
@@ -1597,6 +1623,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BlockOrder: []string{
 				defaultHealthWidgetID,
 				"development", "media", "social", "search", "utilities",
+				defaultNotesWidgetID,
 			},
 			Bookmarks: []Bookmark{
 				// The project's own site, in the seed rather than only behind the
@@ -1647,6 +1674,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			WeatherSource:             "manual",
 			WeatherLocation:           "",
 			WeatherUnit:               "celsius",
+			NotesProcessing:           "server",
 			WeatherRefreshMinutes:     30,
 			ShowConfigButton:          true,
 			ShowPagesButton:           true,
@@ -1802,7 +1830,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			InboxDeleteAfterPromote:        true,
 			AllowLocalBookmarks:            true,
 			AutoBackupEnabled:              true,
-			HealthAutoRecheckEnabled:       false,
+			HealthAutoRecheckEnabled:       true,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
@@ -1816,6 +1844,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ServerLogRetentionMode: serverLogModeTime,
 			ServerLogMaxEntries:    serverLogDefaultMaxEntries,
 			UpdateCheckEnabled:     true,
+			InstallPingEnabled:     true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
 		writeFileAtomic(fs.settingsFile, data, 0644)
@@ -1856,7 +1885,48 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.migrateConfigButtonDefaultOn()
 	fs.migrateStripBookmarkPreviewImages()
 	fs.migrateCustomPercentToGuess()
+	fs.migrateNotesWidgetOnFirstPage()
 
+}
+
+/*
+ * One-time migration: a notes widget on the first page of an existing install.
+ *
+ * New installs ship with one; this gives everyone else the same, once. It goes
+ * last in the page's order so nothing already arranged moves, and it is skipped
+ * when any page has a notes widget or the page is full. The marker is set in
+ * every one of those cases, and after the write: a reader who deletes the
+ * widget does not get it back on the next start.
+ */
+func (fs *FileStore) migrateNotesWidgetOnFirstPage() {
+	if fs.migrationMarkerSet("notesWidgetSeeded") {
+		return
+	}
+	pages := fs.GetPages()
+	for _, page := range pages {
+		widgets, _ := fs.GetPageBlocks(page.ID)
+		for _, widget := range widgets {
+			if widget.Type == WidgetTypeNotes {
+				fs.setMigrationMarker("notesWidgetSeeded")
+				return
+			}
+		}
+	}
+	for _, page := range pages {
+		if page.Hidden {
+			continue
+		}
+		widgets, order := fs.GetPageBlocks(page.ID)
+		if len(widgets) < widgetMaxPerPage {
+			widgets = append(widgets, Widget{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()})
+			order = append(order, defaultNotesWidgetID)
+			if err := fs.SavePageBlocks(page.ID, widgets, order); err != nil {
+				return // unmarked: the next start tries again
+			}
+		}
+		break
+	}
+	fs.setMigrationMarker("notesWidgetSeeded")
 }
 
 /*
@@ -3494,6 +3564,14 @@ func inboxViewChoice(kind, value string) string {
 	return choices[0]
 }
 
+// clampNotesProcessing keeps the setting to the two values it has. Anything
+// else, including a missing value, means the default: the server.
+func clampNotesProcessing(s *Settings) {
+	if s.NotesProcessing != "client" {
+		s.NotesProcessing = "server"
+	}
+}
+
 func clampInboxViewSettings(s *Settings) {
 	s.InboxViewFilter = inboxViewChoice("filter", s.InboxViewFilter)
 	s.InboxViewSort = inboxViewChoice("sort", s.InboxViewSort)
@@ -3579,6 +3657,7 @@ func clampBookmarkSettings(s *Settings) {
 	}
 	clampBookmarkViewSettings(s)
 	clampInboxViewSettings(s)
+	clampNotesProcessing(s)
 	// 0 stays 0: it means "the built-in default", which is what an install that
 	// never chose an interval has. Anything else is held between daily and
 	// monthly — a backup less often than that is not a safety net, and more
@@ -4091,6 +4170,7 @@ func (fs *FileStore) GetSettings() Settings {
 			WeatherSource:                   "manual",
 			WeatherLocation:                 "",
 			WeatherUnit:                     "celsius",
+			NotesProcessing:                 "server",
 			WeatherRefreshMinutes:           30,
 			ShowConfigButton:                true,
 			ShowPagesButton:                 true,
@@ -4237,7 +4317,7 @@ func (fs *FileStore) GetSettings() Settings {
 			InboxDeleteAfterPromote:         true,
 			AllowLocalBookmarks:             true,
 			AutoBackupEnabled:               true,
-			HealthAutoRecheckEnabled:        false,
+			HealthAutoRecheckEnabled:        true,
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
@@ -4251,9 +4331,11 @@ func (fs *FileStore) GetSettings() Settings {
 			ServerLogRetentionMode: serverLogModeTime,
 			ServerLogMaxEntries:    serverLogDefaultMaxEntries,
 			UpdateCheckEnabled:     true,
+			InstallPingEnabled:     true,
 		}
 		clampBookmarkViewSettings(&settings)
 		clampInboxViewSettings(&settings)
+		clampNotesProcessing(&settings)
 		fs.readCache.settings = settings
 		fs.readCache.settingsOK = true
 		return settings
@@ -4280,6 +4362,8 @@ func (fs *FileStore) GetSettings() Settings {
 			// And two from 17-08 that shipped without an entry here.
 			"rememberScrollPosition": &settings.RememberScrollPosition,
 			"detectSoftNotFound":     &settings.DetectSoftNotFound,
+			// Background re-checks, on since 5 October 2026.
+			"healthAutoRecheckEnabled": &settings.HealthAutoRecheckEnabled,
 		} {
 			if _, ok := rawSettings[key]; !ok {
 				*field = true
@@ -4441,6 +4525,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["updateCheckEnabled"]; !ok {
 			settings.UpdateCheckEnabled = true
+		}
+		if _, ok := rawSettings["installPingEnabled"]; !ok {
+			settings.InstallPingEnabled = true
 		}
 		if _, ok := rawSettings["showAddBookmarkButton"]; !ok {
 			settings.ShowAddBookmarkButton = true
@@ -4900,6 +4987,9 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["weatherUnit"]; !ok || settings.WeatherUnit == "" {
 			settings.WeatherUnit = "celsius"
 		}
+		if _, ok := rawSettings["notesProcessing"]; !ok || settings.NotesProcessing == "" {
+			settings.NotesProcessing = "server"
+		}
 		if _, ok := rawSettings["weatherRefreshMinutes"]; !ok || settings.WeatherRefreshMinutes <= 0 {
 			settings.WeatherRefreshMinutes = 30
 		}
@@ -5044,10 +5134,12 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ArchiveSaveSecret = normalizeMonitorNotifyCredential(settings.ArchiveSaveSecret)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.MaintenanceTimeZone = normalizeMaintenanceTimeZone(settings.MaintenanceTimeZone)
+	normalizeQuietSettings(&settings)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 	// Read as the view reads it: a setting the file never had is its default.
 	clampBookmarkViewSettings(&settings)
 	clampInboxViewSettings(&settings)
+	clampNotesProcessing(&settings)
 
 	fs.readCache.settings = settings
 	fs.readCache.settingsOK = true

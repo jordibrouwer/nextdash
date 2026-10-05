@@ -160,9 +160,10 @@
             const body = document.querySelector('#app-modal.show .modal-body');
             const grid = body?.querySelector('.bm-health-modal-grid');
             if (!body || !grid) return;
-            // The last step leaves out the Monitors card: the Monitors & trend
-            // tab has all of it, so the overview can do without.
-            const TIERS = ['is-snug', 'is-snugger', 'is-smallest', 'is-without-monitors'];
+            // The last two steps leave out what only adds to the picture (the
+            // figures strip and the extra cards), then the Monitors card: the
+            // Monitors tab has all of it, so the overview can do without.
+            const TIERS = ['is-snug', 'is-snugger', 'is-smallest', 'is-lean', 'is-without-monitors'];
             const fits = () => body.scrollHeight <= body.clientHeight + 1;
             grid.classList.remove(...TIERS);
             for (const tier of TIERS) {
@@ -186,26 +187,28 @@
         bmHealthModalTab() {
             try {
                 const tab = global.localStorage?.getItem('nextdash.bm.healthModalTab');
-                return tab === 'monitors' ? 'monitors' : 'overview';
+                return tab === 'monitors' || tab === 'trend' ? tab : 'overview';
             } catch {
                 return 'overview';
             }
         },
 
-        /** Two tabs: the collection at a glance, then its monitors and its course over time. */
+        /** Three tabs: the collection at a glance, its monitors, and its course over time. */
         renderBmHealthModalTabs(tab) {
             const esc = (v) => this.dash.escapeHtml(v);
             const button = (name, label) => `<button type="button" class="config-bm-tab${tab === name ? ' is-active' : ''}" role="tab"
                 aria-selected="${tab === name ? 'true' : 'false'}" tabindex="${tab === name ? 0 : -1}" data-bm-health-modal-tab="${name}">${esc(label)}</button>`;
             return `<div class="config-bm-tabs bm-health-modal-tabs" role="tablist" aria-label="${esc(this.t('config.bmHealthModalTitle', 'Collection health'))}">
                 ${button('overview', this.t('config.bmHealthModalTabOverview', 'Overview'))}
-                ${button('monitors', this.t('config.bmHealthModalTabMonitors', 'Monitors & trend'))}
+                ${button('monitors', this.t('config.bmHealthModalTabMonitors', 'Monitors'))}
+                ${button('trend', this.t('config.bmHealthModalTabTrend', 'Trend'))}
             </div>`;
         },
 
         renderBmHealthModal(health) {
             const tab = this.bmHealthModalTab();
             const cards = [
+                this.renderBmHealthModalKeyFigures(health),
                 this.renderBmHealthModalScoreCard(health),
                 this.renderBmHealthModalStandCard(health),
                 this.renderBmHealthModalKindCard(health),
@@ -214,6 +217,10 @@
                 this.renderBmHealthModalCoverageCard(health),
                 this.renderBmHealthModalMonitorsCard(health),
                 this.renderBmHealthModalCertsCard(health),
+                this.renderBmHealthModalFixFirstCard(health),
+                this.renderBmHealthModalFreshnessCard(health),
+                this.renderBmHealthModalUsageCard(health),
+                this.renderBmHealthModalFailuresCard(health),
             ].filter(Boolean).join('');
             // The tabs share the subtitle's line: a row of their own would
             // cost the overview the room that keeps it on one screen.
@@ -227,16 +234,178 @@
                 <div class="bm-health-modal-pane" role="tabpanel" data-bm-health-modal-pane="monitors"${tab === 'monitors' ? '' : ' hidden'}>
                     ${this.renderBmHealthModalMonitorsPane(health)}
                 </div>
+                <div class="bm-health-modal-pane" role="tabpanel" data-bm-health-modal-pane="trend"${tab === 'trend' ? '' : ' hidden'}>
+                    ${this.renderBmHealthModalTrendPane(health)}
+                </div>
                 ${this.renderBmHealthModalFooter(health)}`;
+        },
+
+        /* ── Overview: figures and extra cards ───────────────────────────── */
+
+        /** The whole collection in one line of figures, across the top of the overview. */
+        renderBmHealthModalKeyFigures(health) {
+            const issues = Array.isArray(health.report?.issues) ? health.report.issues : [];
+            const summary = health.report?.summary || {};
+            const total = Number(summary.totalBookmarks) || issues.length;
+            if (!total) return '';
+            const attention = Math.max(0, total - (Number(summary.healthyCount) || 0) - (Number(summary.ignoredCount) || 0));
+            const scores = issues.map((i) => Number(i.score)).filter((n) => Number.isFinite(n));
+            const avg = scores.length ? Math.round(scores.reduce((a, n) => a + n, 0) / scores.length) : null;
+            const never = issues.filter((i) => !Number(i.openCount)).length;
+            const copies = issues.filter((i) => Number(i.localCopies) > 0).length;
+            const shortcuts = issues.filter((i) => i.shortcut).length;
+            const stats = [
+                [this.t('config.bmHealthModalKeyTotal', 'Bookmarks'), String(total)],
+                [this.t('config.bmHealthModalKeyHealthy', 'Healthy'), `${health.scorePercent()}%`],
+                [this.t('config.bmHealthModalKeyAttention', 'Need attention'), String(attention), attention ? 'warn' : 'good'],
+                [this.t('config.bmHealthModalKeyAvgScore', 'Average score'), avg === null ? '—' : String(avg)],
+                [this.t('config.bmHealthModalKeyNeverOpened', 'Never opened'), String(never)],
+                [this.t('config.bmHealthModalKeyPinned', 'Pinned'), String(Number(summary.pinnedCount) || 0)],
+                [this.t('config.bmHealthModalKeyShortcuts', 'With a shortcut'), String(shortcuts)],
+                [this.t('config.bmHealthModalKeyCopies', 'With a local copy'), String(copies)],
+            ];
+            return `<div class="bm-health-modal-span-all" data-bm-health-modal-extra>${this.bmHealthModalStatRow(stats, 'overview')}</div>`;
+        },
+
+        /** The lowest-scoring bookmarks and what is wrong with each: where to start. */
+        renderBmHealthModalFixFirstCard(health) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const issues = Array.isArray(health.report?.issues) ? health.report.issues : [];
+            const worst = issues.filter((i) => Number(i.score) < 90)
+                .sort((a, b) => (Number(a.score) || 0) - (Number(b.score) || 0)).slice(0, 5);
+            if (!worst.length) return '';
+            const rows = worst.map((i) => {
+                const why = health.reasonEntries?.(i)?.[0]?.label || '';
+                const score = Number(i.score) || 0;
+                return `<li><span title="${esc(i.url || '')}">${esc(i.name || health.formatUrlDisplay(i.url))}${why
+                    ? `<small class="bm-health-modal-fix-why">${esc(why)}</small>` : ''}</span>
+                    <b data-tone="${score < 50 ? 'bad' : 'warn'}">${score}</b></li>`;
+            }).join('');
+            return this.bmHealthModalCard('fix-first', this.t('config.bmHealthModalFixFirstTitle', 'Fix first'),
+                `<ul class="bm-health-modal-fix-list">${rows}</ul>`).replace('<section ', '<section data-bm-health-modal-extra ');
+        },
+
+        /** Bars from a list of [label, count, tone]: one shape for the extra cards. */
+        bmHealthModalCountBars(rows) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const max = Math.max(1, ...rows.map((r) => r[1]));
+            return `<div class="bm-health-modal-bars">${rows.map(([label, count, tone]) => `<div class="bm-health-modal-bar-row is-static">
+                <span class="bm-health-modal-bar-label" title="${esc(label)}">${esc(label)}</span>
+                <span class="bm-health-modal-bar-track"><i${tone ? ` data-tone="${tone}"` : ''} style="width:${Math.round((count / max) * 100)}%"></i></span>
+                <span class="bm-health-modal-bar-count">${count}</span></div>`).join('')}</div>`;
+        },
+
+        /** How long ago each bookmark was last checked. */
+        renderBmHealthModalFreshnessCard(health) {
+            const issues = Array.isArray(health.report?.issues) ? health.report.issues : [];
+            if (!issues.length) return '';
+            const DAY = 86400000;
+            const now = Date.now();
+            const age = (i) => (Number(i.lastChecked) > 0 ? now - Number(i.lastChecked) : Infinity);
+            const bands = [
+                [this.t('config.bmHealthModalFreshToday', 'Last 24 hours'), (a) => a < DAY, 'good'],
+                [this.t('config.bmHealthModalFreshWeek', 'Last 7 days'), (a) => a >= DAY && a < 7 * DAY, 'good'],
+                [this.t('config.bmHealthModalFreshMonth', 'Last 30 days'), (a) => a >= 7 * DAY && a < 30 * DAY, 'warn'],
+                [this.t('config.bmHealthModalFreshOlder', 'Older'), (a) => a >= 30 * DAY && a !== Infinity, 'bad'],
+                [this.t('config.bmHealthModalFreshNever', 'Never checked'), (a) => a === Infinity, ''],
+            ];
+            const rows = bands.map(([label, test, tone]) => [label, issues.filter((i) => test(age(i))).length, tone]);
+            return this.bmHealthModalCard('freshness', this.t('config.bmHealthModalFreshnessTitle', 'When last checked'),
+                this.bmHealthModalCountBars(rows)).replace('<section ', '<section data-bm-health-modal-extra ');
+        },
+
+        /** How recently the bookmarks were opened at all. */
+        renderBmHealthModalUsageCard(health) {
+            const issues = Array.isArray(health.report?.issues) ? health.report.issues : [];
+            if (!issues.length) return '';
+            const DAY = 86400000;
+            const now = Date.now();
+            const age = (i) => (Number(i.lastOpened) > 0 ? now - Number(i.lastOpened) : Infinity);
+            const bands = [
+                [this.t('config.bmHealthModalUsageWeek', 'Opened this week'), (a) => a < 7 * DAY, 'good'],
+                [this.t('config.bmHealthModalUsageMonth', 'This month'), (a) => a >= 7 * DAY && a < 30 * DAY, 'good'],
+                [this.t('config.bmHealthModalUsageQuarter', 'Last 90 days'), (a) => a >= 30 * DAY && a < 90 * DAY, 'warn'],
+                [this.t('config.bmHealthModalUsageOlder', 'Longer ago'), (a) => a >= 90 * DAY && a !== Infinity, 'bad'],
+                [this.t('config.bmHealthModalUsageNever', 'Never opened'), (a) => a === Infinity, ''],
+            ];
+            const rows = bands.map(([label, test, tone]) => [label, issues.filter((i) => test(age(i))).length, tone]);
+            return this.bmHealthModalCard('usage', this.t('config.bmHealthModalUsageTitle', 'How often opened'),
+                this.bmHealthModalCountBars(rows)).replace('<section ', '<section data-bm-health-modal-extra ');
+        },
+
+        /** Why the broken ones fail, grouped by the error they report. */
+        renderBmHealthModalFailuresCard(health) {
+            const issues = Array.isArray(health.report?.issues) ? health.report.issues : [];
+            const counts = new Map();
+            issues.filter((i) => i.lastError && health.matchesFilter(i, 'broken')).forEach((i) => {
+                const key = String(i.lastError).split('\n')[0].trim().slice(0, 40);
+                counts.set(key, (counts.get(key) || 0) + 1);
+            });
+            if (!counts.size) return '';
+            const rows = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([label, n]) => [label, n, 'bad']);
+            return this.bmHealthModalCard('failures', this.t('config.bmHealthModalFailuresTitle', 'Why they fail'),
+                this.bmHealthModalCountBars(rows)).replace('<section ', '<section data-bm-health-modal-extra ');
         },
 
         /* ── Monitors & trend ─────────────────────────────────────────────── */
 
         renderBmHealthModalMonitorsPane(health) {
-            return `<div class="bm-health-modal-wide-grid">
-                ${this.renderBmHealthModalTrendCard(health)}
+            return `${this.renderBmHealthModalFleetStats(health)}<div class="bm-health-modal-wide-grid">
                 ${this.renderBmHealthModalFleetCards(health)}
             </div>`;
+        },
+
+        /** The course: the collection over time, and every monitor per day under it. */
+        renderBmHealthModalTrendPane(health) {
+            const fleet = health.report?.fleet;
+            const days = fleet && Number(fleet.monitors) ? this.renderBmHealthModalFleetDaysCard(health, fleet) : '';
+            return `<div class="bm-health-modal-wide-grid is-trend">
+                ${this.renderBmHealthModalTrendCard(health)}
+                ${days}${days ? this.renderBmHealthModalWeekdayCard(health, fleet) : ''}
+            </div>`;
+        },
+
+        /** A row of small figures: label under value, as many as fit a line. */
+        bmHealthModalStatRow(stats, key) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            return `<div class="bm-health-modal-stats" data-bm-health-modal-stats="${esc(key)}">${stats.map(([label, value, tone]) => `<div class="bm-health-modal-tile">
+                <b${tone ? ` data-tone="${tone}"` : ''}>${esc(value)}</b><span title="${esc(label)}">${esc(label)}</span></div>`).join('')}</div>`;
+        },
+
+        /** A short list, label and value a line: for the side of a chart. */
+        bmHealthModalStatList(stats, key) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            return `<dl class="bm-health-modal-stat-list" data-bm-health-modal-stats="${esc(key)}">${stats.map(([label, value, tone]) => `<div>
+                <dt>${esc(label)}</dt><dd${tone ? ` data-tone="${tone}"` : ''}>${esc(value)}</dd></div>`).join('')}</dl>`;
+        },
+
+        /** Monitors at a glance: now, and what the month's outages add up to. */
+        renderBmHealthModalFleetStats(health) {
+            const fleet = health.report?.fleet;
+            if (!fleet || !Number(fleet.monitors)) return '';
+            const now = Date.now();
+            const incidents = Array.isArray(fleet.incidents) ? fleet.incidents : [];
+            const lasted = (i) => (i.ongoing ? Math.max(0, now - (Number(i.start) || now)) : Number(i.durationMs) || 0);
+            const totals = Array.isArray(fleet.incidentTotals) ? fleet.incidentTotals : [];
+            const outages = Number(fleet.totalIncidents) || incidents.length;
+            const downMs = totals.length ? totals.reduce((a, t) => a + (Number(t.downMs) || 0), 0)
+                : incidents.reduce((a, i) => a + lasted(i), 0);
+            const longest = incidents.reduce((a, i) => Math.max(a, lasted(i)), 0);
+            const topCount = totals.length ? totals.reduce((a, t) => (!a || (Number(t.count) || 0) > (Number(a.count) || 0) ? t : a), null) : null;
+            const noData = health.t('dashboard.healthStatsNoData', 'no data');
+            const down = Number(fleet.downNow) || 0;
+            const avg = Number(fleet.avgResponseMs) || 0;
+            const stats = [
+                [this.t('config.bmHealthModalStatDownNow', 'Down now'), `${down} / ${fleet.monitors}`, down ? 'bad' : 'good'],
+                [this.t('config.bmHealthModalStatAvgResponse', 'Average response, 24 hours'), avg ? `${avg} ms` : noData],
+                [this.t('config.bmHealthModalStatOutages', 'Outages, 30 days'), String(outages), outages ? 'warn' : 'good'],
+                [this.t('config.bmHealthModalStatDowntime', 'Total downtime'), outages ? health.formatDuration(downMs) : '0'],
+                [this.t('config.bmHealthModalStatLongest', 'Longest outage'), longest ? health.formatDuration(longest) : '—'],
+            ];
+            if (topCount && Number(topCount.count) > 1) {
+                stats.push([this.t('config.bmHealthModalStatMostOutages', 'Most outages'), topCount.name || health.formatUrlDisplay(topCount.url)]);
+            }
+            return this.bmHealthModalStatRow(stats, 'fleet');
         },
 
         /**
@@ -291,11 +460,42 @@
                     <text x="${w - pad}" y="${pad + 2}" text-anchor="end" class="is-label">${esc(`${Math.round(max)}${unit}`)}</text>
                 </svg></div>`;
             }
+            let trendStats = '';
+            if (known.length >= 2) {
+                const unit = active.mode === 'percent' ? '%' : '';
+                const round = (v) => Math.round(v * 10) / 10;
+                const signed = (v) => `${v > 0 ? '+' : ''}${round(v)}${unit}`;
+                const steps = known.slice(1).map((v, i) => v - known[i]);
+                const gain = Math.max(0, ...steps);
+                const drop = Math.min(0, ...steps);
+                const up = steps.filter((d) => d > 0).length;
+                const down = steps.filter((d) => d < 0).length;
+                const mean = known.reduce((a, v) => a + v, 0) / known.length;
+                const spread = Math.sqrt(known.reduce((a, v) => a + (v - mean) ** 2, 0) / known.length);
+                // Better is up for a share of healthy, down for a count of faults.
+                const better = (d) => (active.mode === 'percent' ? d > 0 : d < 0);
+                const delta = known[known.length - 1] - known[0];
+                const tone = (d) => (d === 0 ? '' : better(d) ? 'good' : 'bad');
+                trendStats = this.bmHealthModalStatList([
+                    [this.t('config.bmHealthModalStatNow', 'Now'), `${known[known.length - 1]}${unit}`],
+                    [this.t('config.bmHealthModalStatChange', 'Change over the period'), signed(delta), tone(delta)],
+                    [this.t('config.bmHealthModalStatLowest', 'Lowest'), `${Math.min(...known)}${unit}`],
+                    [this.t('config.bmHealthModalStatHighest', 'Highest'), `${Math.max(...known)}${unit}`],
+                    [this.t('config.bmHealthModalStatAverage', 'Average'), `${round(mean)}${unit}`],
+                    [this.t('config.bmHealthModalStatSpread', 'Spread (std. dev.)'), `${round(spread)}${unit}`],
+                    [this.t('config.bmHealthModalStatDaysUpDown', 'Days up / down'), `${up} / ${down}`],
+                    [this.t('config.bmHealthModalStatBiggestGain', 'Biggest rise in a day'), gain ? signed(gain) : '—'],
+                    [this.t('config.bmHealthModalStatBiggestDrop', 'Biggest fall in a day'), drop ? signed(drop) : '—'],
+                ], 'trend');
+            }
             const title = this.t('config.bmHealthModalTrendTitle', 'Over time ({days} days)').replace('{days}', String(points.length || 0));
             return `<section class="bm-health-modal-card is-wide" data-bm-health-modal-card="trend">
                 <h3 class="bm-health-modal-card-title">${esc(title)}</h3>
                 <div class="bm-health-modal-series-row">${pills}</div>
-                ${chart}
+                <div class="bm-health-modal-trend-body${trendStats ? ' has-side' : ''}">
+                    <div class="bm-health-modal-trend-main">${chart}</div>
+                    ${trendStats}
+                </div>
             </section>`;
         },
 
@@ -339,7 +539,7 @@
                     : `<p class="bm-health-modal-empty">${esc(this.t('config.bmHealthModalFleetNoneSlower', 'Nothing has slowed down.'))}</p>`);
 
             const outages = this.renderBmHealthModalOutagesCard(health, fleet);
-            return `${uptime}${least}${slowing}${outages}${this.renderBmHealthModalFleetDaysCard(health, fleet)}`;
+            return `${uptime}${least}${slowing}${outages}`;
         },
 
         /*
@@ -381,12 +581,52 @@
                     data-tone="${tone}" data-tip="${esc(this.bmFleetDayText(d))}"></rect>`;
             }).join('');
             const summary = this.bmFleetDaysSummary(days);
+            const checks = known.reduce((a, d) => a + d.n, 0);
+            const upTotal = known.reduce((a, d) => a + d.ratio * d.n, 0);
+            const timed = known.filter((d) => d.ms);
+            const worstDay = known.reduce((a, d) => (!a || d.ratio < a.ratio ? d : a), null);
+            const slowDay = timed.reduce((a, d) => (!a || d.ms > a.ms ? d : a), null);
+            const quiet = known.filter((d) => d.ratio < 0.999).length;
+            const dayStats = this.bmHealthModalStatRow([
+                [this.t('config.bmHealthModalStatChecks', 'Checks'), checks.toLocaleString()],
+                [this.t('config.bmHealthModalStatDaysUp', 'Days without a miss'), `${known.length - quiet} / ${known.length}`, quiet ? 'warn' : 'good'],
+                [this.t('config.bmHealthModalStatWorstDay', 'Lowest day'), `${Math.round(worstDay.ratio * 1000) / 10}% · ${worstDay.label}`],
+                [this.t('config.bmHealthModalStatSlowestDay', 'Slowest day'), slowDay ? `${slowDay.ms} ms · ${slowDay.label}` : '—'],
+                [this.t('config.bmHealthModalStatDayUptime', 'Uptime, 30 days'), `${Math.round((upTotal / (checks || 1)) * 1000) / 10}%`],
+            ], 'fleet-days');
             return `<section class="bm-health-modal-card is-wide" data-bm-health-modal-card="fleet-days">
                 <h3 class="bm-health-modal-card-title">${esc(title)}</h3>
+                ${dayStats}
                 <div class="bm-health-modal-fleet-days-plot" data-bm-fleet-days-plot>
                     <svg class="bm-health-modal-fleet-days" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(summary)}">${bars}</svg>
                 </div>
             </section>`;
+        },
+
+        /** Uptime by day of the week, over the days the chart beside it shows. */
+        renderBmHealthModalWeekdayCard(health, fleet) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const sums = Array.from({ length: 7 }, () => ({ n: 0, u: 0, p: 0, pn: 0 }));
+            (Array.isArray(fleet.days) ? fleet.days : []).forEach((d) => {
+                const slot = sums[new Date(Number(d.d)).getUTCDay()];
+                slot.n += Number(d.n) || 0;
+                slot.u += Number(d.u) || 0;
+                if (Number(d.p)) { slot.p += Number(d.p); slot.pn += 1; }
+            });
+            if (!sums.some((x) => x.n)) return '';
+            // Monday first, labelled by the locale: 5 Oct 2026 is a Monday.
+            const rows = [1, 2, 3, 4, 5, 6, 0].map((dow) => {
+                const x = sums[dow];
+                const ratio = x.n ? x.u / x.n : null;
+                const label = new Date(Date.UTC(2026, 9, 4 + dow)).toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' });
+                const tone = ratio === null ? '' : ratio >= 0.999 ? 'good' : ratio >= 0.95 ? 'warn' : 'bad';
+                const text = ratio === null ? '—' : `${Math.round(ratio * 1000) / 10}%${x.pn ? ` · ${Math.round(x.p / x.pn)} ms` : ''}`;
+                return `<div class="bm-health-modal-bar-row is-static"><span class="bm-health-modal-bar-label">${esc(label)}</span>
+                    <span class="bm-health-modal-bar-track"><i${tone ? ` data-tone="${tone}"` : ''} style="width:${ratio === null ? 0 : Math.max(2, Math.round(ratio * 100))}%"></i></span>
+                    <span class="bm-health-modal-bar-count">${esc(text)}</span></div>`;
+            }).join('');
+            return this.bmHealthModalCard('weekday', this.t('config.bmHealthModalWeekdayTitle', 'Uptime by weekday'),
+                `<div class="bm-health-modal-bars">${rows}</div>`);
         },
 
         /** A day as the tooltip, the readout and the table say it. */
