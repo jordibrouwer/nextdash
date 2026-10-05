@@ -6237,6 +6237,26 @@ body[data-grid-keys="shown"] .dashboard-legend {
     text-wrap: pretty;
 }
 
+/* The Retry on a stopped feed: a quiet text button at the end of its row. */
+.dashboard-widget-feeds-retry {
+    flex-shrink: 0;
+    margin-left: var(--space-2, 0.55rem);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.dashboard-widget-feeds-retry:hover,
+.dashboard-widget-feeds-retry:focus-visible {
+    color: var(--text-primary);
+}
+
+.dashboard-widget-feeds-retry[disabled] {
 /* The health widget: a figure and what it counts, per row. */
 .dashboard-widget-health {
     display: flex;
