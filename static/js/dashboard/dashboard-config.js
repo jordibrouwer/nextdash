@@ -15872,6 +15872,7 @@ class DashboardConfig {
         { id: 'widgets-layout', promo: 'widgets-layout-try-v1', labelKey: 'config.noticeWidgetsLayout', label: 'Widgets layout' },
         { id: 'theme-browser', promo: 'theme-browser-try-v1', labelKey: 'config.noticeThemeBrowser', label: 'Theme browser' },
         { id: 'fresh', promo: 'fresh-feeds-v1', labelKey: 'config.noticeFresh', label: 'Fresh feeds' },
+        { id: 'features', promo: 'features-overview-v1', labelKey: 'config.noticeFeatures', label: 'Feature overview' },
         { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
           labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },
         { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],

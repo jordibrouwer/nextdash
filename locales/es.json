@@ -3255,7 +3255,12 @@
     "bulkRecheckTitle": "Volviendo a comprobar…",
     "emptyStateFromTemplate": "Empezar desde una plantilla…",
     "pageSwitcherSharePage": "Compartir esta página…",
-    "pageSwitcherImportPage": "Importar una página…"
+    "pageSwitcherImportPage": "Importar una página…",
+    "featuresNoticeTitle": "nextDash es mucho más que esta página",
+    "featuresNoticeBody": "La bandeja de entrada, las comprobaciones de estado, los contenedores, los widgets y la barra de comandos: el resumen de funciones en nextdash.cc lo recorre todo. Se abre en una pestaña nueva.",
+    "featuresNoticeOpen": "Ver todas las funciones",
+    "featuresNoticeNoThanks": "No, gracias",
+    "featuresNoticeDismiss": "Cerrar"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -8305,7 +8310,8 @@
     "pageTemplatePublicCount": "{count} dirección(es) pública(s) van tal cual",
     "pageTemplateSkippedLinks": "Se omiten {count} enlace(s) con una dirección no permitida",
     "pageTemplateSkippedWidgets": "Se omiten los widgets que esta versión no conoce: {list}",
-    "pageTemplateSummary": "{categories} categorías, {widgets} widgets, {bookmarks} enlaces"
+    "pageTemplateSummary": "{categories} categorías, {widgets} widgets, {bookmarks} enlaces",
+    "noticeFeatures": "Resumen de funciones"
   },
   "colors": {
     "title": "personalización del tema",

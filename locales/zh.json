@@ -3255,7 +3255,12 @@
     "bulkRecheckTitle": "正在重新检查…",
     "emptyStateFromTemplate": "从模板开始…",
     "pageSwitcherSharePage": "分享此页面…",
-    "pageSwitcherImportPage": "导入页面…"
+    "pageSwitcherImportPage": "导入页面…",
+    "featuresNoticeTitle": "nextDash 远不止这一页",
+    "featuresNoticeBody": "收件箱、健康检查、容器、小组件和命令栏——nextdash.cc 上的功能概览会逐一介绍。它会在新标签页中打开。",
+    "featuresNoticeOpen": "查看全部功能",
+    "featuresNoticeNoThanks": "不用了",
+    "featuresNoticeDismiss": "关闭"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -8305,7 +8310,8 @@
     "pageTemplatePublicCount": "{count} 个公共地址按原样导出",
     "pageTemplateSkippedLinks": "{count} 个地址不被允许的链接已被省略",
     "pageTemplateSkippedWidgets": "此版本不认识的小组件已被省略：{list}",
-    "pageTemplateSummary": "{categories} 个分类，{widgets} 个小组件，{bookmarks} 个链接"
+    "pageTemplateSummary": "{categories} 个分类，{widgets} 个小组件，{bookmarks} 个链接",
+    "noticeFeatures": "功能概览"
   },
   "colors": {
     "title": "主题自定义",

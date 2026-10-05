@@ -3255,7 +3255,12 @@
     "bulkRecheckTitle": "Re-checking…",
     "emptyStateFromTemplate": "Start from a template…",
     "pageSwitcherSharePage": "Share this page…",
-    "pageSwitcherImportPage": "Import a page…"
+    "pageSwitcherImportPage": "Import a page…",
+    "featuresNoticeTitle": "There is more to nextDash than this page",
+    "featuresNoticeBody": "The inbox, health checks, containers, widgets and the command bar — the feature overview on nextdash.cc walks through all of it. It opens in a new tab.",
+    "featuresNoticeOpen": "See all features",
+    "featuresNoticeNoThanks": "No thanks",
+    "featuresNoticeDismiss": "Dismiss"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -8306,7 +8311,8 @@
     "pageTemplatePublicCount": "{count} public address(es) go as they are",
     "pageTemplateSkippedLinks": "{count} link(s) with an address that is not allowed are left out",
     "pageTemplateSkippedWidgets": "Widgets this version does not know are left out: {list}",
-    "pageTemplateSummary": "{categories} categories, {widgets} widgets, {bookmarks} links"
+    "pageTemplateSummary": "{categories} categories, {widgets} widgets, {bookmarks} links",
+    "noticeFeatures": "Feature overview"
   },
   "colors": {
     "title": "theme customization",

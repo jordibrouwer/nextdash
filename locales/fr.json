@@ -3255,7 +3255,12 @@
     "bulkRecheckTitle": "Nouvelle vérification…",
     "emptyStateFromTemplate": "Partir d’un modèle…",
     "pageSwitcherSharePage": "Partager cette page…",
-    "pageSwitcherImportPage": "Importer une page…"
+    "pageSwitcherImportPage": "Importer une page…",
+    "featuresNoticeTitle": "nextDash ne s’arrête pas à cette page",
+    "featuresNoticeBody": "La boîte de réception, les vérifications d’état, les conteneurs, les widgets et la barre de commandes — l’aperçu des fonctions sur nextdash.cc présente tout. Il s’ouvre dans un nouvel onglet.",
+    "featuresNoticeOpen": "Voir toutes les fonctions",
+    "featuresNoticeNoThanks": "Non merci",
+    "featuresNoticeDismiss": "Fermer"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -8305,7 +8310,8 @@
     "pageTemplatePublicCount": "{count} adresse(s) publique(s) partent telles quelles",
     "pageTemplateSkippedLinks": "{count} lien(s) avec une adresse non autorisée sont omis",
     "pageTemplateSkippedWidgets": "Les widgets inconnus de cette version sont omis : {list}",
-    "pageTemplateSummary": "{categories} catégories, {widgets} widgets, {bookmarks} liens"
+    "pageTemplateSummary": "{categories} catégories, {widgets} widgets, {bookmarks} liens",
+    "noticeFeatures": "Aperçu des fonctions"
   },
   "colors": {
     "title": "personnalisation du thème",

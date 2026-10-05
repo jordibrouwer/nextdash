@@ -3255,7 +3255,12 @@
     "bulkRecheckTitle": "Erneut prüfen…",
     "emptyStateFromTemplate": "Mit einer Vorlage beginnen…",
     "pageSwitcherSharePage": "Diese Seite teilen…",
-    "pageSwitcherImportPage": "Eine Seite importieren…"
+    "pageSwitcherImportPage": "Eine Seite importieren…",
+    "featuresNoticeTitle": "nextDash kann mehr, als diese Seite zeigt",
+    "featuresNoticeBody": "Der Posteingang, Zustandsprüfungen, Container, Widgets und die Befehlsleiste — die Funktionsübersicht auf nextdash.cc zeigt alles. Sie öffnet sich in einem neuen Tab.",
+    "featuresNoticeOpen": "Alle Funktionen ansehen",
+    "featuresNoticeNoThanks": "Nein, danke",
+    "featuresNoticeDismiss": "Schließen"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -8305,7 +8310,8 @@
     "pageTemplatePublicCount": "{count} öffentliche Adresse(n) gehen unverändert mit",
     "pageTemplateSkippedLinks": "{count} Link(s) mit nicht erlaubter Adresse werden weggelassen",
     "pageTemplateSkippedWidgets": "Widgets, die diese Version nicht kennt, werden weggelassen: {list}",
-    "pageTemplateSummary": "{categories} Kategorien, {widgets} Widgets, {bookmarks} Links"
+    "pageTemplateSummary": "{categories} Kategorien, {widgets} Widgets, {bookmarks} Links",
+    "noticeFeatures": "Funktionsübersicht"
   },
   "colors": {
     "title": "themenanpassung",

@@ -3255,7 +3255,12 @@
     "bulkRecheckTitle": "Opnieuw controleren…",
     "emptyStateFromTemplate": "Beginnen vanuit een template…",
     "pageSwitcherSharePage": "Deze pagina delen…",
-    "pageSwitcherImportPage": "Een pagina importeren…"
+    "pageSwitcherImportPage": "Een pagina importeren…",
+    "featuresNoticeTitle": "nextDash kan meer dan deze pagina laat zien",
+    "featuresNoticeBody": "De inbox, health-checks, containers, widgets en de commandobalk — het functie-overzicht op nextdash.cc laat het allemaal zien. Het opent in een nieuw tabblad.",
+    "featuresNoticeOpen": "Alle functies bekijken",
+    "featuresNoticeNoThanks": "Nee, bedankt",
+    "featuresNoticeDismiss": "Sluiten"
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -8305,7 +8310,8 @@
     "pageTemplatePublicCount": "{count} openbare adres(sen) gaan mee zoals ze zijn",
     "pageTemplateSkippedLinks": "{count} link(s) met een niet-toegestaan adres worden weggelaten",
     "pageTemplateSkippedWidgets": "Widgets die deze versie niet kent worden weggelaten: {list}",
-    "pageTemplateSummary": "{categories} categorieën, {widgets} widgets, {bookmarks} links"
+    "pageTemplateSummary": "{categories} categorieën, {widgets} widgets, {bookmarks} links",
+    "noticeFeatures": "Functie-overzicht"
   },
   "colors": {
     "title": "thema-aanpassing",
