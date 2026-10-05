@@ -3346,6 +3346,7 @@ class DashboardConfig {
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
         feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
+        uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
         inboxViewFilter: ['inbox', 'filter', 'unread', 'opens'],
         inboxViewSort: ['inbox', 'sort', 'order', 'newest', 'oldest'],
@@ -14015,6 +14016,9 @@ class DashboardConfig {
                     // why it is a switch rather than always on — and why it sits
                     // beside the timeout rather than among the display options.
                     bool('detectSoftNotFound', 'config.detectSoftNotFoundLabel', 'Spot pages that answer 200 but say "not found"'),
+                    // Anyone who knows a monitored address can read its badge, so
+                    // the switch is here with the checks and off until chosen.
+                    bool('uptimeBadges', 'config.uptimeBadgesLabel', 'Serve uptime badges (/badge/uptime.svg)'),
                     // One number, not three: "warn me a fortnight out" is
                     // something people mean. The two tighter marks follow it in
                     // the same proportion the built-in ladder uses.
