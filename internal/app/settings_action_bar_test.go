@@ -63,6 +63,14 @@ func TestUnknownActionBarPositionFallsBackToTheHeader(t *testing.T) {
 // The bar can be switched off and can slide away after a delay. It was always
 // drawn before the switch existed, and nothing slid.
 
+func TestFreshInstallStartsWithTheActionBarOff(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	if NewStore().GetSettings().ActionBarEnabled {
+		t.Fatalf("fresh install: actionBarEnabled = true, want false")
+	}
+}
+
 func TestExistingInstallKeepsTheActionBarOn(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	t.Chdir(t.TempDir())
