@@ -1,0 +1,17 @@
+{
+  "tag": "v1.17.3",
+  "date": "5 October 2026",
+  "releasedAt": "2026-10-05",
+  "modalLead": "The daily install count now works.",
+  "sections": [
+    {
+      "title": "Privacy",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The install count now counts.</strong> The daily ping from the last release was not being registered. What is sent has not changed: a random id and the version number."
+        }
+      ]
+    }
+  ]
+}
