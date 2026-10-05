@@ -208,6 +208,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/health-review-notice.js":                             "191088edeed7",
 	"js/hypr-mode.js":                                        "bdbd4a754c99",
 	"js/inbox-tutorial.js":                                   "42d4f33b9ceb",
+	"js/install-count-notice.js":                             "57dbad0f50c0",
 	"js/kept-pile-notice.js":                                 "6a4bd42e8449",
 	"js/keyboard-navigation.js":                              "4c968f8a437e",
 	"js/layout-utils.js":                                     "746eab5715f4",
