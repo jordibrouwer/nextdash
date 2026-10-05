@@ -235,7 +235,7 @@ test('Monitors & trend: the course in any series, every monitor together, rememb
   await expect(modal.locator('[data-bm-health-modal-card="score"]')).toBeVisible();
   await expect(modal.locator('[data-bm-health-modal-card="trend"]')).toBeHidden();
 
-  await tab('monitors').click();
+  await tab('trend').click();
   await expect(modal.locator('[data-bm-health-modal-card="score"]')).toBeHidden();
   const trend = modal.locator('[data-bm-health-modal-card="trend"]');
   await expect(trend).toBeVisible();
@@ -244,7 +244,10 @@ test('Monitors & trend: the course in any series, every monitor together, rememb
   await trend.locator('[data-bm-health-trend-series="broken"]').click();
   await expect(modal.locator('[data-bm-health-modal-card="trend"] .nd-chart')).toHaveAttribute('aria-label', /2 → 0/);
   await expect(modal.locator('[data-bm-health-trend-series="broken"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(modal.locator('[data-bm-health-modal-stats="trend"]')).toBeVisible();
 
+  await tab('monitors').click();
+  await expect(modal.locator('[data-bm-health-modal-stats="fleet"]')).toContainText('Outages, 30 days');
   await expect(modal.locator('[data-bm-health-modal-card="fleet-uptime"]')).toContainText('all 2 monitors');
   await expect(modal.locator('[data-bm-health-modal-card="fleet-worst"]')).toContainText('Slow site');
   await expect(modal.locator('[data-bm-health-modal-card="fleet-slower"]')).toContainText('+200%');
@@ -256,7 +259,7 @@ test('Monitors & trend: the course in any series, every monitor together, rememb
   await page.keyboard.press('Escape');
   await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
   await expect(page.locator('#app-modal.show [data-bm-health-modal-tab="monitors"]')).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('#app-modal.show [data-bm-health-modal-card="trend"]')).toBeVisible();
+  await expect(page.locator('#app-modal.show [data-bm-health-modal-card="fleet-uptime"]')).toBeVisible();
 });
 
 /*
@@ -320,7 +323,7 @@ async function openTrend(page) {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
   const modal = page.locator('#app-modal.show');
-  await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+  await modal.locator('[data-bm-health-modal-tab="trend"]').click();
   return modal.locator('[data-bm-health-modal-card="trend"]');
 }
 
@@ -357,7 +360,7 @@ test.describe('the course over time, drawn with uPlot', () => {
     await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
     await page.keyboard.press('h');
     const modal = page.locator('#app-modal.show');
-    await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+    await modal.locator('[data-bm-health-modal-tab="trend"]').click();
     await expect(modal.locator('[data-bm-health-modal-card="trend"] table.nd-chart-table tbody tr')).toHaveCount(60);
     const overrun = await modal.locator('.modal-body').evaluate((body) => {
       const foot = body.querySelector('.bm-health-modal-footer');
@@ -458,7 +461,7 @@ async function openFleetDays(page) {
   await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
   await page.keyboard.press('h');
   const modal = page.locator('#app-modal.show');
-  await modal.locator('[data-bm-health-modal-tab="monitors"]').click();
+  await modal.locator('[data-bm-health-modal-tab="trend"]').click();
   return { modal, card: modal.locator('[data-bm-health-modal-card="fleet-days"]') };
 }
 

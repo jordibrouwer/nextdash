@@ -1463,6 +1463,10 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
    Narrower columns than the third step's would fit more, but the counts and
    the coverage tiles no longer fit inside their cards; below this, the modal
    scrolls. */
+.bm-health-modal-grid.is-lean [data-bm-health-modal-extra] {
+    display: none;
+}
+
 .bm-health-modal-grid.is-without-monitors [data-bm-health-modal-card="monitors"] {
     display: none;
 }
@@ -3120,7 +3124,7 @@ body[data-density-mode="dense"] .config-bm-workbench {
 }
 
 .bm-health-modal-tabs {
-    grid-template-columns: repeat(2, auto);
+    grid-template-columns: repeat(3, auto);
     justify-content: start;
     width: max-content;
 }
@@ -3137,7 +3141,114 @@ body[data-density-mode="dense"] .config-bm-workbench {
     margin-bottom: var(--space-2, 0.5rem);
 }
 
-/* Monitors & trend: the course across the top, the monitors in a row under it. */
+/* The overview's figures run across every column. */
+.bm-health-modal-span-all {
+    column-span: all;
+}
+
+.bm-health-modal-fix-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1, 0.25rem);
+    font-size: var(--text-xs, 0.75rem);
+}
+
+.bm-health-modal-fix-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+.bm-health-modal-fix-list li > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.bm-health-modal-fix-why {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-secondary);
+}
+
+.bm-health-modal-fix-list b[data-tone="bad"] { color: var(--accent-error); }
+.bm-health-modal-fix-list b[data-tone="warn"] { color: var(--accent-warning); }
+
+/* The trend: the chart with its figures beside it, then the per-day chart
+   with a card for the weekdays. */
+.bm-health-modal-wide-grid.is-trend {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.bm-health-modal-wide-grid.is-trend .bm-health-modal-card.is-wide {
+    grid-column: span 3;
+}
+
+.bm-health-modal-wide-grid.is-trend > [data-bm-health-modal-card="trend"] {
+    grid-column: 1 / -1;
+}
+
+.bm-health-modal-trend-body.has-side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 14rem;
+    gap: var(--space-3, 0.75rem);
+    align-items: start;
+}
+
+.bm-health-modal-trend-main {
+    min-width: 0;
+}
+
+.bm-health-modal-stat-list {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    font-size: var(--text-xs, 0.75rem);
+}
+
+.bm-health-modal-stat-list > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    padding-bottom: 2px;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.bm-health-modal-stat-list dt { color: var(--text-secondary); }
+.bm-health-modal-stat-list dd { margin: 0; color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+.bm-health-modal-stat-list dd[data-tone="good"] { color: var(--accent-success); }
+.bm-health-modal-stat-list dd[data-tone="bad"] { color: var(--accent-error); }
+
+@media (max-width: 900px) {
+    .bm-health-modal-wide-grid.is-trend { grid-template-columns: 1fr; }
+    .bm-health-modal-wide-grid.is-trend .bm-health-modal-card.is-wide { grid-column: 1 / -1; }
+    .bm-health-modal-trend-body.has-side { grid-template-columns: 1fr; }
+}
+
+/* A row of figures above a card's chart or a pane's cards. */
+.bm-health-modal-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.bm-health-modal-card .bm-health-modal-stats {
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.bm-health-modal-stats .bm-health-modal-tile b[data-tone="good"] { color: var(--accent-success); }
+.bm-health-modal-stats .bm-health-modal-tile b[data-tone="warn"] { color: var(--accent-warning); }
+.bm-health-modal-stats .bm-health-modal-tile b[data-tone="bad"] { color: var(--accent-error); }
+
+/* Monitors and Trend: each pane a grid of cards that share the width. */
 .bm-health-modal-wide-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
