@@ -111,7 +111,7 @@
             }));
             const hint = document.createElement('p');
             hint.className = 'dashboard-widget-note-hint';
-            hint.textContent = label(dash, 'dashboard.widgetNotesOffline', 'Could not reach the server. Showing plain text.');
+            hint.textContent = label(dash, 'dashboard.widgetNotesOfflinePlain', 'Could not reach the server. Showing plain text.');
             list.appendChild(hint);
         });
     }
@@ -150,7 +150,7 @@
             max: MAX,
             t: (key, fallback) => label(dash, key, fallback),
             onLimit: () => { hint.textContent = label(dash, 'dashboard.widgetNotesFull', 'Note full'); },
-            onError: () => { hint.textContent = label(dash, 'dashboard.widgetNotesOffline', 'Could not reach the server. Showing plain text.'); },
+            onError: () => { hint.textContent = label(dash, 'dashboard.widgetNotesOfflinePlain', 'Could not reach the server. Showing plain text.'); },
         });
 
         let done = false;
