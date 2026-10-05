@@ -1812,7 +1812,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			InboxDeleteAfterPromote:        true,
 			AllowLocalBookmarks:            true,
 			AutoBackupEnabled:              true,
-			HealthAutoRecheckEnabled:       false,
+			HealthAutoRecheckEnabled:       true,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
@@ -4288,7 +4288,7 @@ func (fs *FileStore) GetSettings() Settings {
 			InboxDeleteAfterPromote:         true,
 			AllowLocalBookmarks:             true,
 			AutoBackupEnabled:               true,
-			HealthAutoRecheckEnabled:        false,
+			HealthAutoRecheckEnabled:        true,
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
@@ -4331,6 +4331,8 @@ func (fs *FileStore) GetSettings() Settings {
 			// And two from 17-08 that shipped without an entry here.
 			"rememberScrollPosition": &settings.RememberScrollPosition,
 			"detectSoftNotFound":     &settings.DetectSoftNotFound,
+			// Background re-checks, on since 5 October 2026.
+			"healthAutoRecheckEnabled": &settings.HealthAutoRecheckEnabled,
 		} {
 			if _, ok := rawSettings[key]; !ok {
 				*field = true

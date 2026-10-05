@@ -12567,7 +12567,7 @@ class DashboardConfig {
         inboxViewKeyLegend: { info: ['inboxViewKeyLegendInfoTitle', 'inboxViewKeyLegendInfoMessage'], def: 'below' },
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
-        healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
+        healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: true },
         feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
         feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
@@ -13977,7 +13977,7 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'status',
                 title: t('config.statusServerChecksTitle', 'Checks on the server'),
-                note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. Off by default because it makes outbound requests.'),
+                note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. On by default; it makes outbound requests, so switch it off if you would rather it did not.'),
                 appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
                 controls: [
                     bool('healthAutoRecheckEnabled', 'config.healthRecheckLabel', 'Re-check in the background'),

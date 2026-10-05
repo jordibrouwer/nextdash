@@ -131,3 +131,16 @@ func TestMaybeRunHealthAutoRecheckPingsAndStamps(t *testing.T) {
 		t.Fatalf("expected no re-run within the interval; stamp changed %d → %d", before, after)
 	}
 }
+
+// A settings file written before the switch existed never answered it, and
+// background re-checks are on unless turned off.
+func TestHealthAutoRecheckIsOnUnlessTurnedOff(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{}`)
+	if !h.store.GetSettings().HealthAutoRecheckEnabled {
+		t.Error("an absent healthAutoRecheckEnabled reads as off, want on")
+	}
+	h, _ = healthRecheckTestHandlers(t, `{"healthAutoRecheckEnabled":false}`)
+	if h.store.GetSettings().HealthAutoRecheckEnabled {
+		t.Error("an explicit false was overridden")
+	}
+}

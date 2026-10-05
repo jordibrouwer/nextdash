@@ -5391,7 +5391,7 @@
     "statusBrowserChecksTitle": "Checks in this browser",
     "statusBrowserChecksNote": "How the dashboard tests the bookmarks on screen while you have it open. Applies to bookmarks set to Periodic or Monitor; a bookmark set to Off is never tested.",
     "statusServerChecksTitle": "Checks on the server",
-    "statusServerChecksNote": "Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. Off by default because it makes outbound requests.",
+    "statusServerChecksNote": "Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. On by default; it makes outbound requests, so switch it off if you would rather it did not.",
     "statusAlertsNote": "Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.",
     "statsCoverageTitle": "Coverage",
     "statsActivityVsPrev": "vs previous period",
