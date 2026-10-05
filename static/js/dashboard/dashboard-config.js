@@ -3384,6 +3384,7 @@ class DashboardConfig {
         monitorEmphasis: ['monitor', 'highlight', 'emphasis', 'accent'],
         analyticsOptIn: ['telemetry', 'privacy', 'tracking', 'umami'],
         updateCheckEnabled: ['update', 'github', 'release', 'version'],
+        installPingEnabled: ['count', 'install', 'ping', 'telemetry', 'privacy', 'users'],
         language: ['language', 'locale', 'translation', 'nederlands', 'deutsch', 'français'],
         deviceSpecificSettings: ['device', 'sync', 'local'],
         inboxEnabled: ['inbox', 'triage', 'later'],
@@ -12727,6 +12728,7 @@ class DashboardConfig {
         // Privacy
         analyticsOptIn: { info: ['usageAnalyticsInfoTitle', 'usageAnalyticsInfoMessage'], hint: 'usageAnalyticsHint', def: false },
         updateCheckEnabled: { info: ['updateCheckInfoTitle', 'updateCheckInfoMessage'], hint: 'updateCheckHint', def: true },
+        installPingEnabled: { info: ['installPingInfoTitle', 'installPingInfoMessage'], hint: 'installPingHint', def: true },
         showSiteNews: { info: ['showSiteNewsInfoTitle', 'showSiteNewsInfoMessage'], def: true },
         // Appearance
         autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'], def: false },
@@ -14137,6 +14139,7 @@ class DashboardConfig {
                 tab: 'privacy',
                 title: t('config.generalGroupPrivacy', 'Privacy'),
                 controls: [
+                    { field: 'installPingEnabled', type: 'checkbox', label: t('config.installPingLabel', 'Count this install'), disabled: this.dash.telemetryLockedOff === true },
                     { field: 'analyticsOptIn', type: 'checkbox', label: t('config.usageAnalyticsLabel', 'Share anonymous usage analytics'), disabled: this.dash.telemetryLockedOff === true },
                     { field: 'updateCheckEnabled', type: 'checkbox', label: t('config.updateCheckLabel', 'Check GitHub for new releases'), disabled: !!document.querySelector('meta[name="nextdash-update-check-locked"]') },
                     // Beside the other two outbound requests, because that is

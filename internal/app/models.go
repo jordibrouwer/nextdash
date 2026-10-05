@@ -988,6 +988,7 @@ type Settings struct {
 	PushNotifyContainers bool                  `json:"pushNotifyContainers"`           // Push when a container stops, keeps restarting or turns unhealthy
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
+	InstallPingEnabled   bool                  `json:"installPingEnabled"`             // Daily anonymous install count: random id + version (on by default, separate from analyticsOptIn)
 	DiscoverabilityState *DiscoverabilityState `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
 	SavedSearches        []SavedSearch         `json:"savedSearches,omitempty"`        // Named queries from the search bar
 	SearchPicks          []SearchPick          `json:"searchPicks,omitempty"`          // Which result a query led to, so ranking learns
@@ -1841,6 +1842,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ServerLogRetentionMode: serverLogModeTime,
 			ServerLogMaxEntries:    serverLogDefaultMaxEntries,
 			UpdateCheckEnabled:     true,
+			InstallPingEnabled:     true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
 		writeFileAtomic(fs.settingsFile, data, 0644)
@@ -4317,6 +4319,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ServerLogRetentionMode: serverLogModeTime,
 			ServerLogMaxEntries:    serverLogDefaultMaxEntries,
 			UpdateCheckEnabled:     true,
+			InstallPingEnabled:     true,
 		}
 		clampBookmarkViewSettings(&settings)
 		clampInboxViewSettings(&settings)
@@ -4509,6 +4512,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["updateCheckEnabled"]; !ok {
 			settings.UpdateCheckEnabled = true
+		}
+		if _, ok := rawSettings["installPingEnabled"]; !ok {
+			settings.InstallPingEnabled = true
 		}
 		if _, ok := rawSettings["showAddBookmarkButton"]; !ok {
 			settings.ShowAddBookmarkButton = true

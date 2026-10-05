@@ -250,6 +250,9 @@ class DashboardData {
             if (typeof d.settings.updateCheckEnabled === 'undefined') {
                 d.settings.updateCheckEnabled = true;
             }
+            if (typeof d.settings.installPingEnabled === 'undefined') {
+                d.settings.installPingEnabled = true;
+            }
             if (typeof d.settings.showSiteNews === 'undefined') {
                 d.settings.showSiteNews = true;
             }
