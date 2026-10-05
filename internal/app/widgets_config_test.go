@@ -306,3 +306,20 @@ func TestSanitisingLeavesOutDecimalsNobodyChose(t *testing.T) {
 		t.Errorf("decimals = %v, want the key left out", field["decimals"])
 	}
 }
+
+func TestNotesTextKeepsLineBreaksAndIsCapped(t *testing.T) {
+	text := "[ ] close port 8443\n[x] replace disk\n\nplain line"
+	got := sanitizeWidgetConfig(WidgetTypeNotes, map[string]any{"text": text, "junk": "x"})
+	if got["text"] != text {
+		t.Errorf("text = %q, want it kept as written", got["text"])
+	}
+	if _, ok := got["junk"]; ok {
+		t.Error("a key notes does not declare was kept")
+	}
+
+	long := strings.Repeat("a", widgetMaxNoteLen+50)
+	capped, _ := sanitizeWidgetConfig(WidgetTypeNotes, map[string]any{"text": long})["text"].(string)
+	if len([]rune(capped)) != widgetMaxNoteLen {
+		t.Errorf("capped text has %d characters, want %d", len([]rune(capped)), widgetMaxNoteLen)
+	}
+}

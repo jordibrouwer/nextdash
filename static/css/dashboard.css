@@ -6257,6 +6257,87 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 
 .dashboard-widget-feeds-retry[disabled] {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* The notes widget: text, with tickable lines. */
+.dashboard-widget-note-lines {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.dashboard-widget-note-text {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: var(--font-size-small);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.dashboard-widget-note-gap {
+    min-height: 0.5rem;
+}
+
+.dashboard-widget-note-task {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.55rem);
+    color: var(--text-primary);
+    font-size: var(--font-size-small);
+    line-height: 1.45;
+    cursor: pointer;
+}
+
+.dashboard-widget-note-task span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.dashboard-widget-note-done span {
+    color: var(--text-tertiary);
+    text-decoration: line-through;
+}
+
+.dashboard-widget-note-edit {
+    align-self: flex-start;
+    margin-top: var(--space-2, 0.55rem);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-tertiary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.dashboard-widget-note-edit:hover,
+.dashboard-widget-note-edit:focus-visible {
+    color: var(--text-primary);
+}
+
+.dashboard-widget-note-area {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    padding: var(--space-2, 0.55rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 7px);
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    line-height: 1.45;
+}
+
+.dashboard-widget-note-hint {
+    margin: var(--space-1, 0.25rem) 0 0;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
 /* The health widget: a figure and what it counts, per row. */
 .dashboard-widget-health {
     display: flex;

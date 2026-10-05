@@ -126,6 +126,9 @@ const (
 	 */
 	WidgetTypeRSS    WidgetType = "rss"
 	WidgetTypeCustom WidgetType = "custom"
+	// WidgetTypeNotes holds a short text of the reader's own, some lines of it
+	// tickable. The text is the widget's config, so it travels with the page.
+	WidgetTypeNotes WidgetType = "notes"
 
 	// The Unraid widgets read the Unraid server set under Config -> Containers
 	// (unraid_settings.go). One connection for all of them: a widget only says
@@ -166,6 +169,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeCalendar:   {},
 	WidgetTypeRSS:        {},
 	WidgetTypeCustom:     {},
+	WidgetTypeNotes:      {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

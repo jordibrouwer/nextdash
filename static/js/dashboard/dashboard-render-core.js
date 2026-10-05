@@ -917,6 +917,7 @@ class DashboardRenderCore {
     /** Names in English for the types whose name is not translated yet. */
     static WIDGET_TYPE_NAMES = {
         containers: 'Container list',
+        notes: 'Notes',
         unraid: 'Unraid',
         unraidArray: 'Unraid array',
         unraidParity: 'Parity',

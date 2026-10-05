@@ -1074,6 +1074,11 @@ one and it cannot collide with a category slug.
 */
 const defaultHealthWidgetID = "w_000000000001"
 
+// defaultNotesWidgetID is the notes widget a fresh install ships with, and the
+// one existing installs get once (migrateNotesWidgetOnFirstPage). Fixed for the
+// same reason as the health widget's.
+const defaultNotesWidgetID = "w_000000000002"
+
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
 const defaultThemeID = "matrix-bluepill-dark"
@@ -1591,6 +1596,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 			 */
 			Widgets: []Widget{
 				{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
+				// Notes after the links it sits beside: empty, it is one line and
+				// a way to start writing.
+				{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: map[string]any{}},
 			},
 			// The widget leads, then the categories in the order above. Without
 			// an explicit order the widget would fall wherever resolveBlockOrder
@@ -1598,6 +1606,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BlockOrder: []string{
 				defaultHealthWidgetID,
 				"development", "media", "social", "search", "utilities",
+				defaultNotesWidgetID,
 			},
 			Bookmarks: []Bookmark{
 				// The project's own site, in the seed rather than only behind the
@@ -1857,7 +1866,48 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.migrateConfigButtonDefaultOn()
 	fs.migrateStripBookmarkPreviewImages()
 	fs.migrateCustomPercentToGuess()
+	fs.migrateNotesWidgetOnFirstPage()
 
+}
+
+/*
+ * One-time migration: a notes widget on the first page of an existing install.
+ *
+ * New installs ship with one; this gives everyone else the same, once. It goes
+ * last in the page's order so nothing already arranged moves, and it is skipped
+ * when any page has a notes widget or the page is full. The marker is set in
+ * every one of those cases, and after the write: a reader who deletes the
+ * widget does not get it back on the next start.
+ */
+func (fs *FileStore) migrateNotesWidgetOnFirstPage() {
+	if fs.migrationMarkerSet("notesWidgetSeeded") {
+		return
+	}
+	pages := fs.GetPages()
+	for _, page := range pages {
+		widgets, _ := fs.GetPageBlocks(page.ID)
+		for _, widget := range widgets {
+			if widget.Type == WidgetTypeNotes {
+				fs.setMigrationMarker("notesWidgetSeeded")
+				return
+			}
+		}
+	}
+	for _, page := range pages {
+		if page.Hidden {
+			continue
+		}
+		widgets, order := fs.GetPageBlocks(page.ID)
+		if len(widgets) < widgetMaxPerPage {
+			widgets = append(widgets, Widget{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: map[string]any{}})
+			order = append(order, defaultNotesWidgetID)
+			if err := fs.SavePageBlocks(page.ID, widgets, order); err != nil {
+				return // unmarked: the next start tries again
+			}
+		}
+		break
+	}
+	fs.setMigrationMarker("notesWidgetSeeded")
 }
 
 /*

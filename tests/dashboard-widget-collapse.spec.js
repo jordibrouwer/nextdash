@@ -133,15 +133,18 @@ test.describe('a widget folds away', () => {
      */
     test('a widget still redraws in place', async ({ page }) => {
         await dashboard(page);
-        const before = await page.evaluate(() =>
-            document.querySelector('.dashboard-widget-body')?.textContent?.trim());
+        // The health widget, by its own id: a fresh install ships a notes widget
+        // beside it, and "the first body" is whichever the order puts first.
+        const health = '.dashboard-widget[data-widget-id="w_000000000001"] .dashboard-widget-body';
+        const before = await page.evaluate((sel) =>
+            document.querySelector(sel)?.textContent?.trim(), health);
 
         await page.evaluate(() => window.dashboardInstance.renderCore.refreshWidgets('health'));
 
-        expect(await page.evaluate(() => ({
-            text: document.querySelector('.dashboard-widget-body')?.textContent?.trim(),
+        expect(await page.evaluate((sel) => ({
+            text: document.querySelector(sel)?.textContent?.trim(),
             insideWrapper: !!document.querySelector('.category-body > .dashboard-widget-body'),
-            bodies: document.querySelectorAll('.dashboard-widget-body').length,
-        }))).toEqual({ text: before, insideWrapper: true, bodies: 1 });
+            bodies: document.querySelectorAll(sel).length,
+        }), health)).toEqual({ text: before, insideWrapper: true, bodies: 1 });
     });
 });

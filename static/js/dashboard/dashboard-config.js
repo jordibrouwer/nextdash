@@ -16758,7 +16758,7 @@ class DashboardConfig {
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
-        ['ambient', ['weather', 'calendar', 'rss']],
+        ['ambient', ['weather', 'calendar', 'rss', 'notes']],
     ];
 
     widgetTypeGroupLabel(group) {
@@ -19075,7 +19075,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /*
@@ -19415,6 +19415,8 @@ class DashboardConfig {
                   ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
               ] },
         ],
+        // The text is written on the tile itself; the panel has only width to offer.
+        notes: [],
         unraidNotifications: [
             { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
@@ -21333,6 +21335,7 @@ class DashboardConfig {
             weather: 'Current conditions beside a forecast, for the location the header already reads.',
             calendar: 'What is coming up, from the ICS feed set in Appearance → Date & weather.',
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
+            notes: 'A few lines of your own, with checkboxes for the ones that are tasks.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
