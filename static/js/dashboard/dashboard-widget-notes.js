@@ -3,15 +3,18 @@
  *
  * A homelab page has things to do that are not links -- close a port, swap a
  * disk -- and they ended up in another program beside the dashboard that is
- * already open. One text, stored in the widget itself. A line that starts with
- * `[ ]` or `[x]` is a checkbox; every other line is text. Ticking rewrites that
- * one line, so what is saved is still plain text you can read in the editor.
+ * already open. One text, stored in the widget itself, written in a small
+ * Markdown: a line that starts with `[ ]` or `[x]` is a checkbox, and headings,
+ * lists, quotes, code and tables draw as such. Ticking rewrites that one line,
+ * so what is saved is still plain text you can read in the editor. The text is
+ * worked out through NotesEngine -- on the server, or in the browser when
+ * Config says so -- and this file only draws what comes back.
  */
 (function () {
     'use strict';
 
     const U = () => window.DashboardWidgetUtils;
-    const BOX = /^\s*(?:[-*]\s+)?\[( |x|X)\]\s?(.*)$/;
+    const MAX = 6000;
 
     function label(dash, key, fallback) {
         return U().label(dash, key, fallback);
@@ -43,53 +46,85 @@
         edit.textContent = label(dash, 'dashboard.widgetNotesEdit', 'Edit');
         edit.addEventListener('click', () => startEdit(body, widget, dash));
 
+        const actions = document.createElement('div');
+        actions.className = 'dashboard-widget-note-actions';
+        const expand = document.createElement('button');
+        expand.type = 'button';
+        expand.className = 'dashboard-widget-note-expand';
+        expand.textContent = label(dash, 'dashboard.widgetNotesExpand', 'Open large');
+        expand.addEventListener('click', () => openModal(body, widget, dash));
+        actions.append(edit, expand);
+
         if (!lines.length) {
             const empty = u.say(panel, 'dashboard-widget-empty',
                 label(dash, 'dashboard.widgetNotesEmpty', 'Nothing written yet. Start a line with [ ] for a checkbox.'));
-            empty.after(edit);
+            empty.after(actions);
             return;
         }
 
         const list = document.createElement('div');
         list.className = 'dashboard-widget-note-lines';
-        lines.forEach((line, index) => {
-            const box = BOX.exec(line);
-            if (!box) {
+        panel.appendChild(list);
+        // Only shown two columns wide: the count and the progress are more of
+        // the reading, which a single column has no room for.
+        const stat = document.createElement('span');
+        stat.className = 'dashboard-widget-note-stats dashboard-widget-wide-only';
+        actions.appendChild(stat);
+        panel.appendChild(actions);
+
+        const onTask = async (block, input, row) => {
+            const fresh = currentText(dash, widget).split('\n');
+            // The line as it was drawn: the text may have changed since
+            // (another tab), and by position alone the wrong line was
+            // ticked, or one past the end threw and nothing was saved.
+            const at = fresh[block.index] === block.raw ? block.index : fresh.indexOf(block.raw);
+            if (at < 0) {
+                draw(body, widget, dash);
+                return;
+            }
+            const mark = input.checked ? 'x' : ' ';
+            fresh[at] = fresh[at].replace(/\[( |x|X)\]/, `[${mark}]`);
+            row.classList.toggle('dashboard-widget-note-done', input.checked);
+            if (!await save(dash, widget, fresh.join('\n'))) draw(body, widget, dash);
+        };
+
+        window.NotesEngine.render(dash, text).then(({ blocks, stats }) => {
+            if (!list.isConnected) return;
+            list.replaceChildren(window.NotesMarkdown.render(blocks, { onTask }));
+            const parts = [`${stats.chars.toLocaleString()} / ${MAX.toLocaleString()}`];
+            if (stats.tasksTotal) {
+                parts.push(label(dash, 'dashboard.widgetNotesTasks', '{done} of {total} tasks')
+                    .replace('{done}', String(stats.tasksDone)).replace('{total}', String(stats.tasksTotal)));
+            }
+            stat.textContent = parts.join(' · ');
+        }).catch(() => {
+            // The server could not be asked. Say so and show the words as they
+            // are, rather than quietly working them out here: the setting
+            // says where notes are processed, and that is not here.
+            if (!list.isConnected) return;
+            list.replaceChildren(...lines.map((line) => {
                 const p = document.createElement('p');
                 p.className = 'dashboard-widget-note-text';
                 p.textContent = line;
                 if (line.trim() === '') p.classList.add('dashboard-widget-note-gap');
-                list.appendChild(p);
-                return;
-            }
-            const row = document.createElement('label');
-            row.className = 'dashboard-widget-note-task';
-            const input = document.createElement('input');
-            input.type = 'checkbox';
-            input.checked = box[1] !== ' ';
-            const span = document.createElement('span');
-            span.textContent = box[2];
-            if (input.checked) row.classList.add('dashboard-widget-note-done');
-            input.addEventListener('change', async () => {
-                const fresh = currentText(dash, widget).split('\n');
-                // The line as it was drawn: the text may have changed since
-                // (another tab), and by position alone the wrong line was
-                // ticked, or one past the end threw and nothing was saved.
-                const at = fresh[index] === line ? index : fresh.indexOf(line);
-                if (at < 0) {
-                    draw(body, widget, dash);
-                    return;
-                }
-                const mark = input.checked ? 'x' : ' ';
-                fresh[at] = fresh[at].replace(/\[( |x|X)\]/, `[${mark}]`);
-                row.classList.toggle('dashboard-widget-note-done', input.checked);
-                if (!await save(dash, widget, fresh.join('\n'))) draw(body, widget, dash);
-            });
-            row.append(input, span);
-            list.appendChild(row);
+                return p;
+            }));
+            const hint = document.createElement('p');
+            hint.className = 'dashboard-widget-note-hint';
+            hint.textContent = label(dash, 'dashboard.widgetNotesOffline', 'Could not reach the server. Showing plain text.');
+            list.appendChild(hint);
         });
-        panel.appendChild(list);
-        panel.appendChild(edit);
+    }
+
+    function openModal(body, widget, dash) {
+        window.NotesModal?.open?.({
+            dash,
+            widget,
+            text: currentText(dash, widget),
+            max: MAX,
+            save: (text) => save(dash, widget, text),
+            onClose: () => draw(body, widget, dash),
+        });
     }
 
     function startEdit(body, widget, dash) {
@@ -99,7 +134,7 @@
         area.className = 'dashboard-widget-note-area';
         area.value = currentText(dash, widget);
         area.rows = Math.min(Math.max(area.value.split('\n').length + 1, 4), 14);
-        area.maxLength = 4000;
+        area.maxLength = MAX;
         area.setAttribute('aria-label', label(dash, 'dashboard.widgetNotesEditLabel', 'Note text'));
         panel.appendChild(area);
 
@@ -108,10 +143,21 @@
         hint.textContent = label(dash, 'dashboard.widgetNotesHint', 'Ctrl+Enter saves, Escape cancels.');
         panel.appendChild(hint);
 
+        // Registered before the keys below, in the capture phase: while its
+        // menu is open, Escape and Enter are the menu's, not the editor's.
+        const slash = window.NotesSlash?.attach(area, {
+            dash,
+            max: MAX,
+            t: (key, fallback) => label(dash, key, fallback),
+            onLimit: () => { hint.textContent = label(dash, 'dashboard.widgetNotesFull', 'Note full'); },
+            onError: () => { hint.textContent = label(dash, 'dashboard.widgetNotesOffline', 'Could not reach the server. Showing plain text.'); },
+        });
+
         let done = false;
         const finish = async (keep) => {
             if (done) return;
             done = true;
+            slash?.destroy();
             if (keep && area.value !== currentText(dash, widget)) await save(dash, widget, area.value);
             draw(body, widget, dash);
         };

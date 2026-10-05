@@ -54,7 +54,7 @@ const (
 	// is a request the server makes on every cache miss.
 	widgetMaxFeedsPerWidget = 10
 	// widgetMaxNoteLen bounds a notes widget's text, in characters.
-	widgetMaxNoteLen = 4000
+	widgetMaxNoteLen = 6000
 )
 
 /*

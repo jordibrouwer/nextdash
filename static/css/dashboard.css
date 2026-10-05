@@ -6263,9 +6263,17 @@ body[data-grid-keys="shown"] .dashboard-legend {
 
 /* The notes widget: text, with tickable lines. */
 .dashboard-widget-note-lines {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.25rem);
+    display: block;
+}
+
+/* Block flow rather than a flex column, so two columns can share the text.
+   :not(:last-child) also lifts it over the margin: 0 the rows set below. */
+.dashboard-widget-note-lines > *:not(:last-child) {
+    margin: 0 0 var(--space-1, 0.25rem);
+}
+
+.dashboard-widget-note-lines > * {
+    break-inside: avoid;
 }
 
 .dashboard-widget-note-text {
@@ -6336,6 +6344,57 @@ body[data-grid-keys="shown"] .dashboard-legend {
     margin: var(--space-1, 0.25rem) 0 0;
     color: var(--text-tertiary);
     font-size: var(--font-size-small);
+}
+
+/* Markdown in a note, and what a two-column tile adds. */
+.dashboard-widget-note-heading { font-weight: 600; color: var(--text-primary); break-after: avoid; }
+.dashboard-widget-note-h1 { font-size: var(--font-size-body, 1rem); }
+.dashboard-widget-note-h2, .dashboard-widget-note-h3 { font-size: var(--font-size-small); }
+.dashboard-widget-note-list { padding-left: 1.25rem; font-size: var(--font-size-small); line-height: 1.45; }
+.dashboard-widget-note-quote { padding-left: var(--space-2, 0.55rem); border-left: 2px solid var(--border-primary); color: var(--text-secondary); font-size: var(--font-size-small); }
+.dashboard-widget-note-code { overflow-x: auto; padding: var(--space-2, 0.55rem); border-radius: var(--radius-4, 7px); background: var(--background-secondary); font-size: var(--font-size-small); }
+.dashboard-widget-note-text code, .dashboard-widget-note-task code, .dashboard-widget-note-list code { padding: 0 0.25rem; border-radius: 4px; background: var(--background-secondary); font-size: 0.95em; }
+.dashboard-widget-note-table-wrap { overflow-x: auto; }
+/* Links in a note take the theme's accent, not the browser's blue and purple. */
+.dashboard-widget-note-lines a { color: var(--accent-primary); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent-primary) 40%, transparent); text-underline-offset: 0.15em; }
+.dashboard-widget-note-lines a:visited { color: var(--accent-primary); }
+.dashboard-widget-note-lines a:hover, .dashboard-widget-note-lines a:focus-visible { text-decoration-color: currentColor; }
+.dashboard-widget-note-table { border-collapse: collapse; font-size: var(--font-size-small); }
+.dashboard-widget-note-table th, .dashboard-widget-note-table td { padding: 0.15rem 0.5rem; border: 1px solid var(--border-primary); text-align: left; }
+.dashboard-widget-note-actions { display: flex; align-items: baseline; gap: var(--space-3, 0.75rem); margin-top: var(--space-2, 0.55rem); }
+.dashboard-widget-note-actions .dashboard-widget-note-edit { margin-top: 0; }
+.dashboard-widget-note-expand { padding: 0; border: none; background: none; color: var(--text-tertiary); font: inherit; font-size: var(--font-size-small); cursor: pointer; }
+.dashboard-widget-note-expand:hover, .dashboard-widget-note-expand:focus-visible { color: var(--text-primary); }
+.dashboard-widget-note-stats { margin-left: auto; color: var(--text-tertiary); font-size: var(--font-size-small); white-space: nowrap; }
+@container (min-width: 28rem) {
+    .dashboard-widget-note-lines { column-count: 2; column-gap: 1.5rem; }
+}
+
+/* The slash-command menu in a notes editor. */
+.notes-slash-menu { position: absolute; z-index: 5; min-width: 12rem; max-height: 14rem; overflow-y: auto; padding: 0.25rem; border: 1px solid var(--border-primary); border-radius: var(--radius-4, 7px); background: var(--background-primary); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); font-size: var(--font-size-small); }
+.notes-slash-menu[hidden] { display: none; }
+.notes-slash-item { display: flex; justify-content: space-between; gap: 1rem; padding: 0.3rem 0.5rem; border-radius: 5px; cursor: pointer; color: var(--text-primary); }
+.notes-slash-item[aria-selected="true"] { background: var(--background-secondary); }
+.notes-slash-hint { color: var(--text-tertiary); }
+
+/* The notes widget, large: toolbar, editor and live preview. */
+.notes-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2100; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.5); }
+.notes-modal { display: flex; flex-direction: column; width: min(64rem, calc(100vw - 2rem)); height: min(40rem, calc(100vh - 2rem)); border: 1px solid var(--border-primary); border-radius: var(--radius-8, 12px); background: var(--background-primary); overflow: hidden; }
+.notes-modal-toolbar { display: flex; align-items: center; gap: 0.25rem; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-primary); flex-wrap: wrap; }
+.notes-modal-tool, .notes-modal-close, .notes-modal-tab { min-width: 2rem; padding: 0.25rem 0.5rem; border: none; border-radius: 6px; background: none; color: var(--text-secondary); font: inherit; cursor: pointer; }
+.notes-modal-tool:hover, .notes-modal-close:hover, .notes-modal-tab:hover, .notes-modal-tab.is-active { background: var(--background-secondary); color: var(--text-primary); }
+.notes-modal-count { margin-left: auto; color: var(--text-tertiary); font-size: var(--font-size-small); }
+.notes-modal-tabs { display: none; }
+.notes-modal-body { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+.notes-modal-edit { position: relative; min-height: 0; border-right: 1px solid var(--border-primary); }
+.notes-modal-area { width: 100%; height: 100%; box-sizing: border-box; resize: none; padding: 0.75rem; border: none; background: transparent; color: var(--text-primary); font-family: var(--font-mono, monospace); font-size: var(--font-size-small); line-height: 1.6; }
+.notes-modal-area:focus-visible { outline: none; }
+.notes-modal-preview { padding: 0.75rem; overflow-y: auto; }
+@media (max-width: 43.75rem) {
+    .notes-modal { width: 100vw; height: 100vh; border-radius: 0; }
+    .notes-modal-tabs { display: flex; gap: 0.25rem; padding: 0.25rem 0.75rem; border-bottom: 1px solid var(--border-primary); }
+    .notes-modal-body { grid-template-columns: 1fr; }
+    .notes-modal[data-tab="edit"] .notes-modal-preview, .notes-modal[data-tab="preview"] .notes-modal-edit { display: none; }
 }
 
 /* The health widget: a figure and what it counts, per row. */
