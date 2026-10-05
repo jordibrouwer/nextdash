@@ -238,7 +238,8 @@ func normalizeWidget(widget Widget) (Widget, error) {
 	}
 
 	widget.ID = strings.TrimSpace(widget.ID)
-	if !isWidgetID(widget.ID) {
+	isNew := !isWidgetID(widget.ID)
+	if isNew {
 		widget.ID = newWidgetID()
 	}
 	if widget.ID == "" {
@@ -251,6 +252,13 @@ func normalizeWidget(widget Widget) (Widget, error) {
 	// Config is the client's, so it is narrowed to what this type declares
 	// before it reaches storage -- see sanitizeWidgetConfig.
 	widget.Config = sanitizeWidgetConfig(widget.Type, widget.Config)
+	// A notes widget being added starts with the example note. Only when new:
+	// an existing one that was emptied must stay empty.
+	if isNew && widget.Type == WidgetTypeNotes {
+		if text, _ := widget.Config["text"].(string); strings.TrimSpace(text) == "" {
+			widget.Config["text"] = notesStarterText
+		}
+	}
 	return widget, nil
 }
 

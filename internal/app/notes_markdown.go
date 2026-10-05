@@ -177,3 +177,20 @@ func noteStats(text string) map[string]any {
 	return map[string]any{"chars": utf8.RuneCountInString(text), "tasksDone": done, "tasksTotal": total}
 }
 
+// notesStarterText is what a new notes widget says before anyone writes in it:
+// a short tour of what the note can do, in the note itself. Only a widget that
+// is new gets it (see normalizeWidget); one that was emptied stays empty.
+const notesStarterText = "# Notes\n" +
+	"Write in **Markdown**: *italic*, `code`, lists and tables.\n" +
+	"\n" +
+	"## Checklist\n" +
+	"[x] Add the notes widget\n" +
+	"[ ] Tick a box to mark it done\n" +
+	"[ ] Type / in the editor for commands\n" +
+	"[ ] Open large for a toolbar and a preview\n" +
+	"\n" +
+	"nextDash on [GitHub](https://github.com/jordibrouwer/nextdash)"
+
+func notesStarterConfig() map[string]any {
+	return map[string]any{"text": notesStarterText}
+}

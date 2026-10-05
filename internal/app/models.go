@@ -1613,9 +1613,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 			 */
 			Widgets: []Widget{
 				{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
-				// Notes after the links it sits beside: empty, it is one line and
-				// a way to start writing.
-				{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: map[string]any{}},
+				// Notes after the links it sits beside, with the example note:
+				// it shows what the widget does and is one Edit away from yours.
+				{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
 			},
 			// The widget leads, then the categories in the order above. Without
 			// an explicit order the widget would fall wherever resolveBlockOrder
@@ -1918,7 +1918,7 @@ func (fs *FileStore) migrateNotesWidgetOnFirstPage() {
 		}
 		widgets, order := fs.GetPageBlocks(page.ID)
 		if len(widgets) < widgetMaxPerPage {
-			widgets = append(widgets, Widget{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: map[string]any{}})
+			widgets = append(widgets, Widget{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()})
 			order = append(order, defaultNotesWidgetID)
 			if err := fs.SavePageBlocks(page.ID, widgets, order); err != nil {
 				return // unmarked: the next start tries again
