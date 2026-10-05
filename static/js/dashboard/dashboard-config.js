@@ -3367,6 +3367,7 @@ class DashboardConfig {
         dockerViewEnabled: ['docker', 'containers', 'view'],
         dockerRefreshSeconds: ['docker', 'containers', 'refresh', 'poll'],
         dockerLogLines: ['docker', 'containers', 'logs'],
+        notesProcessing: ['notes', 'widget', 'server', 'browser', 'markdown', 'slash'],
         dockerUpdateInterval: ['docker', 'containers', 'updates', 'registry', 'image'],
         dockerConfirmStopRestart: ['docker', 'containers', 'confirm', 'stop', 'restart'],
         dockerStatsHistory: ['docker', 'containers', 'cpu', 'memory', 'chart', 'history', 'resources'],
@@ -12591,6 +12592,7 @@ class DashboardConfig {
         dockerViewEnabled: { def: true },
         dockerRefreshSeconds: { def: 5 },
         dockerLogLines: { def: 200 },
+        notesProcessing: { def: 'server' },
         dockerUpdateInterval: { def: 'off' },
         dockerConfirmStopRestart: { def: false },
         dockerStatsHistory: { def: true },
@@ -13330,6 +13332,18 @@ class DashboardConfig {
                 note: t('config.generalGroupHyprModeNote', 'For nextDash installed as a Progressive Web App (PWA). Clicking a bookmark opens it in a new browser tab, then closes the PWA window automatically — the behaviour of a traditional app launcher.'),
                 controls: [
                     chrome('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'general',
+                title: t('config.generalGroupNotes', 'Notes widget'),
+                note: t('config.generalGroupNotesNote', 'Where a note\'s formatting and slash commands are worked out. On the server by default; in the browser needs no requests while you type.'),
+                controls: [
+                    { field: 'notesProcessing', type: 'select', label: t('config.notesProcessingLabel', 'Notes are processed'), options: [
+                        opt('server', t('config.notesProcessingServer', 'On the server')),
+                        opt('client', t('config.notesProcessingClient', 'In the browser')),
+                    ] },
                 ],
             },
             {

@@ -145,6 +145,7 @@ class Dashboard {
             weatherSource: 'manual',
             weatherLocation: '',
             weatherUnit: 'celsius',
+            notesProcessing: 'server',
             weatherRefreshMinutes: 30,
             shortcutDisplay: 'always',
             showPinIcon: false,

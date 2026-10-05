@@ -425,6 +425,7 @@ type Settings struct {
 	WeatherSource                   string `json:"weatherSource"`       // manual or browser
 	WeatherLocation                 string `json:"weatherLocation"`     // Manual location query (city)
 	WeatherUnit                     string `json:"weatherUnit"`         // celsius or fahrenheit
+	NotesProcessing                 string `json:"notesProcessing"`     // server (default) or client: where notes are parsed and edited
 	WeatherRefreshMinutes           int    `json:"weatherRefreshMinutes"`
 	ShowConfigButton                bool   `json:"showConfigButton"`
 	ShowPagesButton                 bool   `json:"showPagesButton"`
@@ -1673,6 +1674,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			WeatherSource:             "manual",
 			WeatherLocation:           "",
 			WeatherUnit:               "celsius",
+			NotesProcessing:           "server",
 			WeatherRefreshMinutes:     30,
 			ShowConfigButton:          true,
 			ShowPagesButton:           true,
@@ -3562,6 +3564,14 @@ func inboxViewChoice(kind, value string) string {
 	return choices[0]
 }
 
+// clampNotesProcessing keeps the setting to the two values it has. Anything
+// else, including a missing value, means the default: the server.
+func clampNotesProcessing(s *Settings) {
+	if s.NotesProcessing != "client" {
+		s.NotesProcessing = "server"
+	}
+}
+
 func clampInboxViewSettings(s *Settings) {
 	s.InboxViewFilter = inboxViewChoice("filter", s.InboxViewFilter)
 	s.InboxViewSort = inboxViewChoice("sort", s.InboxViewSort)
@@ -3647,6 +3657,7 @@ func clampBookmarkSettings(s *Settings) {
 	}
 	clampBookmarkViewSettings(s)
 	clampInboxViewSettings(s)
+	clampNotesProcessing(s)
 	// 0 stays 0: it means "the built-in default", which is what an install that
 	// never chose an interval has. Anything else is held between daily and
 	// monthly — a backup less often than that is not a safety net, and more
@@ -4159,6 +4170,7 @@ func (fs *FileStore) GetSettings() Settings {
 			WeatherSource:                   "manual",
 			WeatherLocation:                 "",
 			WeatherUnit:                     "celsius",
+			NotesProcessing:                 "server",
 			WeatherRefreshMinutes:           30,
 			ShowConfigButton:                true,
 			ShowPagesButton:                 true,
@@ -4323,6 +4335,7 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		clampBookmarkViewSettings(&settings)
 		clampInboxViewSettings(&settings)
+		clampNotesProcessing(&settings)
 		fs.readCache.settings = settings
 		fs.readCache.settingsOK = true
 		return settings
@@ -4974,6 +4987,9 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["weatherUnit"]; !ok || settings.WeatherUnit == "" {
 			settings.WeatherUnit = "celsius"
 		}
+		if _, ok := rawSettings["notesProcessing"]; !ok || settings.NotesProcessing == "" {
+			settings.NotesProcessing = "server"
+		}
 		if _, ok := rawSettings["weatherRefreshMinutes"]; !ok || settings.WeatherRefreshMinutes <= 0 {
 			settings.WeatherRefreshMinutes = 30
 		}
@@ -5123,6 +5139,7 @@ func (fs *FileStore) GetSettings() Settings {
 	// Read as the view reads it: a setting the file never had is its default.
 	clampBookmarkViewSettings(&settings)
 	clampInboxViewSettings(&settings)
+	clampNotesProcessing(&settings)
 
 	fs.readCache.settings = settings
 	fs.readCache.settingsOK = true
