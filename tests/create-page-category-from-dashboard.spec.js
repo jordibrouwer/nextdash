@@ -249,7 +249,10 @@ test.describe('dashboard grid — adding a category', () => {
             const host = btn?.closest('.category');
             if (!host) return { ok: false, why: 'no host' };
             const hosts = [...document.querySelectorAll('.category')]
-                .filter((el) => el.getAttribute('data-smart-collection') !== 'true');
+                // A widget is a `.category` to the grid but not somewhere a category
+                // is created, and a tall one (the example note) can end lowest.
+                .filter((el) => el.getAttribute('data-smart-collection') !== 'true'
+                    && !el.classList.contains('dashboard-widget'));
             const hr = host.getBoundingClientRect();
             const lower = hosts.filter((el) => Math.round(el.getBoundingClientRect().bottom) > Math.round(hr.bottom));
             return { ok: lower.length === 0, why: `${lower.length} categories end lower` };

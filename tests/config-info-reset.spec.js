@@ -17,7 +17,7 @@ test.describe('config info + reset affordances', () => {
         await expect(page.locator('[data-info-field="openInNewTab"]')).toBeVisible();
         // Privacy tab: the long analytics hint text is shown inline.
         await page.locator('[data-behavior-tab="privacy"]').click();
-        await expect(page.locator('#config-behavior-body .config-field-hint').filter({ hasText: /Umami|analytics/i }))
+        await expect(page.locator('#config-behavior-body .config-field-hint').filter({ hasText: /Umami/ }))
             .toBeVisible();
         await expect(page.locator('[data-info-field="analyticsOptIn"]')).toBeVisible();
     });
@@ -149,6 +149,9 @@ test.describe('config info + reset affordances', () => {
             'dockerUpdateInterval', 'dockerConfirmStopRestart', 'dockerHostAddress', 'dockerNotify', 'dockerViewCloseOutside', 'dockerViewKeyLegend',
             'dockerUsageAlerts', 'dockerCpuAlertPercent', 'dockerMemAlertPercent', 'dockerUsageAlertMinutes',
             'dockerAutoUpdateFrom', 'dockerAutoUpdateTo',
+            // Behavior → General → Notes widget. One select under a group note
+            // that says where a note is worked out, and what each choice costs.
+            'notesProcessing',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });

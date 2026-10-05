@@ -23,13 +23,21 @@ async function openDashboard(page) {
     await dismissBlockingOverlays(page);
 }
 
+/*
+ * Every round gets ids of its own. A page that was trimmed away is in the
+ * trash, and seeding the same id again (600, 601, ...) is not a new page to the
+ * server, so the second round of a file came back with three pages, not nine.
+ */
+let seedRound = 0;
+
 async function seedPages(page, count) {
-    await page.evaluate(async (n) => {
+    seedRound += 1;
+    await page.evaluate(async ({ n, round }) => {
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const dash = window.dashboardInstance;
         const pages = [...dash.pages];
         for (let i = pages.length; i < n; i += 1) {
-            pages.push({ id: 600 + i, name: `page-${i}` });
+            pages.push({ id: 600 + round * 100 + i, name: `page-${round}-${i}` });
         }
         const saved = await api('/api/pages', {
             method: 'POST',
@@ -39,7 +47,7 @@ async function seedPages(page, count) {
         if (!saved.ok) throw new Error(`seeding pages failed: ${saved.status}`);
         await dash.loadData();
         dash.pageNav?.renderPageNavigation?.();
-    }, count);
+    }, { n: count, round: seedRound });
     await page.waitForTimeout(300);
 }
 

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, WRITE_TOKEN } = require('./e2e-helpers');
 
 /**
  * Glass, and how loud the glow is.
@@ -84,6 +84,14 @@ test('the glow follows the theme out of the box, and both layers read the dial',
  * for soft with no glow.
  */
 test('a fresh install follows the theme, and the theme decides the surfaces', async ({ page }) => {
+    // The test above sets a depth on the page, and a settings save from the page
+    // can carry it to the server before this one starts. Put the three answers
+    // back to the word a fresh install stores, so what is checked is the theme
+    // and not what an earlier test left behind.
+    await page.request.post('/api/settings', {
+        data: { themeDepth: 'follow', glowStrength: 'follow', themeEffects: 'follow' },
+        headers: { 'X-NextDash-Token': WRITE_TOKEN },
+    });
     await openDashboard(page);
 
     const stored = await page.evaluate(async () => {
@@ -100,6 +108,10 @@ test('a fresh install follows the theme, and the theme decides the surfaces', as
 
     // And the page is drawn with the theme's answers, not with the word
     // "follow" — which would match no rule in the stylesheet at all.
+    // The theme's answers land when its stylesheet has loaded, a moment after the
+    // first bookmark is on screen; read them once they are there.
+    await page.waitForFunction(() => document.body.getAttribute('data-depth') === 'soft', null, { timeout: 5_000 })
+        .catch(() => {});
     const drawn = await page.evaluate(() => ({
         depth: document.body.getAttribute('data-depth'),
         glow: document.body.getAttribute('data-glow'),

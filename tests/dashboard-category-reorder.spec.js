@@ -71,8 +71,19 @@ test.describe('dashboard category drag-reorder', () => {
         const storedSel = storedIds
             .map((id) => `${realCategorySel}[data-category-id="${id}"]`)
             .join(', ');
+        /*
+         * In the order the dashboard itself reads the grid, not document order.
+         * In packed columns the two differ, and a widget in the first column
+         * (the example note a fresh install ships with) puts a later category
+         * ahead of the first in the markup while it stays second in the order.
+         */
         const readOrder = async () => (storedSel
-            ? page.locator(storedSel).evaluateAll((els) => els.map((el) => el.getAttribute('data-category-id')))
+            ? page.evaluate((selector) => {
+                const grid = document.getElementById('dashboard-layout');
+                return window.dashboardInstance.renderCore.readCategoryElementsInOrder(grid)
+                    .filter((el) => el.matches(selector))
+                    .map((el) => el.getAttribute('data-category-id'));
+            }, storedSel)
             : []);
 
         const idsBefore = await readOrder();
@@ -84,7 +95,8 @@ test.describe('dashboard category drag-reorder', () => {
         // persist the new order (same path a real drag triggers).
         await page.evaluate((selector) => {
             const grid = document.getElementById('dashboard-layout');
-            const stored = [...grid.querySelectorAll(selector)];
+            const stored = window.dashboardInstance.renderCore.readCategoryElementsInOrder(grid)
+                .filter((el) => el.matches(selector));
             const first = stored[0];
             const last = stored[stored.length - 1];
             last.after(first);
