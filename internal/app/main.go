@@ -404,6 +404,7 @@ func Run(files assetFS) {
 	// been gone for years rather than only that it broke here on Tuesday.
 	handlers.StartArchiveBackfillScheduler(schedulerStop)
 	handlers.StartUpdateCheckScheduler(schedulerStop)
+	handlers.StartInstallPingScheduler(schedulerStop)
 	handlers.StartIconSetsScheduler(schedulerStop)
 	// Writes the preview cache out periodically. Beside the others rather than
 	// buried in NewHandlers, so it stops when they do.

@@ -34,6 +34,7 @@
         // on device-only settings laid its old copy of these over the server.
         'analyticsOptIn',
         'updateCheckEnabled',
+        'installPingEnabled',
         'mcpEnabled',
         'allowLocalBookmarks',
         'backupExcludeSecrets',

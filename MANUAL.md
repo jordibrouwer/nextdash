@@ -2577,15 +2577,18 @@ It starts closed because it answers questions about every bookmark. The `Origin`
 | Weather and calendar providers | For the header and widgets | Appearance → Date & weather |
 | Container image registries and GitHub | Image update checks, when switched on | Config → Containers → Updates |
 | Your own services | Custom widgets, webhooks, alerts | Per widget or receiver |
+| Install count | Once a day: a random install id and the version | Behavior → Privacy & sync → *Count this install*; `DISABLE_TELEMETRY=true` |
 | Analytics | Only when switched on | See below |
 
 ### 23.8 Analytics
 
 nextDash can send **anonymous usage statistics** to a self-hosted [Umami](https://umami.is) instance at `stats.nextdash.cc`. It is **off until you turn it on**. The aim is to learn which features are used and what can be improved.
 
+**Install count** — separate from the analytics below, and **on by default**. Once a day the server sends one request to `stats.nextdash.cc` with a random install id and the release you run, so the project can say how many installs exist. Nothing else: no address, no settings, no bookmarks, no counts. The id lives in the file `install-id` in the data folder; delete it for a new one. Turn it off under **Behavior → Privacy & sync → Count this install**, or for the whole server with `DISABLE_TELEMETRY=true`, which also stops the analytics below.
+
 - **Turning it on or off** — the card on the dashboard (*Turn on*, *What is recorded?*, *No thanks*), **Config → Behavior → Privacy & sync → Privacy-friendly analytics**, or `:telemetry on` / `:telemetry off`. The page reloads, because the tracker script is only added to the page when analytics is on. Closing the card without answering asks again later; an answer is final.
 - **For the whole server** — `DISABLE_TELEMETRY=true` (also `1`, `yes`, `on`) turns it off for everyone and greys out the switch.
-- **When off** — the tracker is not in the page, nothing is downloaded and nothing is sent.
+- **When off** — the tracker is not in the page and nothing is downloaded. The install count above is the only request that remains, until you switch that off too.
 
 **What is recorded** — event names from a fixed list, with a few properties:
 
