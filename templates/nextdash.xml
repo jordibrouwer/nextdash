@@ -49,6 +49,9 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.17.4 (2026-10-05)
+- Privacy: a one-time card explains the daily install count and how to turn it off; on Unraid the count also says Unraid
+
 ### v1.17.3 (2026-10-05)
 - Privacy: the daily install count now registers; it sends only a random id and the version, and has its own switch under Behavior → Privacy &amp; sync
 

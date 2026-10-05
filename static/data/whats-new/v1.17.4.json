@@ -1,0 +1,21 @@
+{
+  "tag": "v1.17.4",
+  "date": "5 October 2026",
+  "releasedAt": "2026-10-05",
+  "modalLead": "The install count is now announced once, and tells Unraid installs apart.",
+  "sections": [
+    {
+      "title": "Privacy",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A card explains the install count</strong> once, with a button to turn it off."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Unraid installs are counted separately.</strong> On Unraid the daily ping also says Unraid; nothing else is added."
+        }
+      ]
+    }
+  ]
+}
