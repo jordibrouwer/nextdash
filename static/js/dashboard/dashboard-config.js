@@ -3347,6 +3347,8 @@ class DashboardConfig {
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
         feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
         uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
+        quietHoursEnabled: ['quiet', 'night', 'sleep', 'hold', 'mute', 'alert', 'notification', 'summary'],
+        remindersEnabled: ['remind', 'reminder', 'escalate', 'escalation', 'repeat', 'still down', 'alert'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
         inboxViewFilter: ['inbox', 'filter', 'unread', 'opens'],
         inboxViewSort: ['inbox', 'sort', 'order', 'newest', 'oldest'],
@@ -14072,6 +14074,43 @@ class DashboardConfig {
             {
                 section: 'behavior',
                 tab: 'status',
+                title: t('config.quietTitle', 'Quiet hours'),
+                note: t('config.quietNote', 'Notices that arrive in these hours are held, and one summary says what still plays and what recovered when they end. Unlike a maintenance window the downtime still counts. Outgoing webhooks always get every event.'),
+                appliesTo: t('config.appliesToAllNotices', 'Monitors, containers, Unraid, backups'),
+                controls: [
+                    bool('quietHoursEnabled', 'config.quietEnabledLabel', 'Hold notices during quiet hours'),
+                    { type: 'maintenanceWindows', windowsField: 'quietHours',
+                      emptyText: t('config.quietEmpty', 'No hours yet. Add a window to start holding notices.') },
+                    { type: 'quietAllow' },
+                    { type: 'quietStatus' },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'status',
+                title: t('config.remindersTitle', 'Reminders'),
+                note: t('config.remindersNote', 'A monitor or container that is still down gets another message after a while, not a second alarm. Not during quiet hours: the summary that ends them says what is still down.'),
+                appliesTo: t('config.appliesToMonitorContainer', 'Monitors, containers'),
+                controls: [
+                    bool('remindersEnabled', 'config.remindersEnabledLabel', 'Remind me about an outage that is still going'),
+                    { field: 'remindAfterMinutes', type: 'select', numeric: true, label: t('config.remindAfterLabel', 'Remind after'), options: [
+                        opt(15, t('config.remindAfterMinutes', '{n} minutes').replace('{n}', '15')),
+                        opt(30, t('config.remindAfterMinutes', '{n} minutes').replace('{n}', '30')),
+                        opt(60, t('config.remindAfterHour', '1 hour')),
+                        opt(120, t('config.remindAfterHours', '{n} hours').replace('{n}', '2')),
+                        opt(240, t('config.remindAfterHours', '{n} hours').replace('{n}', '4')),
+                    ] },
+                    { field: 'remindMax', type: 'select', numeric: true, label: t('config.remindMaxLabel', 'At most'), options: [
+                        opt(1, t('config.remindMaxTimes', '{n} times').replace('{n}', '1')),
+                        opt(2, t('config.remindMaxTimes', '{n} times').replace('{n}', '2')),
+                        opt(3, t('config.remindMaxTimes', '{n} times').replace('{n}', '3')),
+                        opt(5, t('config.remindMaxTimes', '{n} times').replace('{n}', '5')),
+                    ] },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'status',
                 title: t('config.pushNotifyTitle', 'Browser notifications'),
                 note: t('config.pushNotifyNote', 'Sends notifications to this browser, even when nextDash is closed. Requires HTTPS (or localhost) and permission per device.'),
                 controls: [
@@ -14277,8 +14316,10 @@ class DashboardConfig {
                     </div>`;
             }
             if (c.type === 'maintenanceWindows') {
-                return this.renderMaintenanceWindows();
+                return this.renderMaintenanceWindows(c.windowsField || 'maintenanceWindows', c.emptyText || '');
             }
+            if (c.type === 'quietAllow') return this.renderQuietAllow();
+            if (c.type === 'quietStatus') return this.renderQuietStatus();
             // A malformed Discord embed or a wrong Telegram chat ID fails
             // silently today — the server only logs a non-2xx response, the
             // operator never sees it. This surfaces that at setup time rather
@@ -14916,10 +14957,10 @@ class DashboardConfig {
      * every change, since the list is short enough that diffing it would cost
      * more than it saves.
      */
-    renderMaintenanceWindows() {
+    renderMaintenanceWindows(field = 'maintenanceWindows', emptyText = '') {
         const esc = (v) => this.dash.escapeHtml(v);
-        const windows = Array.isArray(this.dash.settings?.maintenanceWindows)
-            ? this.dash.settings.maintenanceWindows
+        const windows = Array.isArray(this.dash.settings?.[field])
+            ? this.dash.settings[field]
             : [];
 
         const dayNames = this.maintenanceDayNames();
@@ -14956,10 +14997,10 @@ class DashboardConfig {
         }).join('');
 
         const empty = windows.length === 0
-            ? `<p class="config-panel-empty">${esc(this.t('config.maintenanceEmpty', 'No windows. Alerts fire whenever a monitored bookmark goes down.'))}</p>`
+            ? `<p class="config-panel-empty">${esc(emptyText || this.t('config.maintenanceEmpty', 'No windows. Alerts fire whenever a monitored bookmark goes down.'))}</p>`
             : '';
 
-        return `<div class="config-maint" data-maint-list>
+        return `<div class="config-maint" data-maint-list data-maint-field="${esc(field)}">
             ${empty}${rows}
             <div class="config-actions">
                 <button type="button" class="config-btn config-btn--small" data-maint-add>${esc(this.t('config.maintenanceAdd', 'Add window'))}</button>
@@ -15003,9 +15044,9 @@ class DashboardConfig {
     }
 
     /** Read the list back off the DOM, so one repaint reflects every edit. */
-    collectMaintenanceWindows(container) {
+    collectMaintenanceWindows(container, field = 'maintenanceWindows') {
         const rows = Array.from(container.querySelectorAll('[data-maint-row]'));
-        const saved = Array.isArray(this.dash.settings?.maintenanceWindows) ? this.dash.settings.maintenanceWindows : [];
+        const saved = Array.isArray(this.dash.settings?.[field]) ? this.dash.settings[field] : [];
         return rows.map((row, i) => {
             let days = Array.from(row.querySelectorAll('[data-maint-day]'))
                 .filter((b) => b.classList.contains('is-on'))
@@ -15030,8 +15071,8 @@ class DashboardConfig {
      * The windows with the zone they were typed in. A container runs on UTC
      * unless TZ is set, and the server read "02:00" on that clock: hours off.
      */
-    setMaintenanceWindows(windows) {
-        this.dash.settings.maintenanceWindows = windows;
+    setMaintenanceWindows(windows, field = 'maintenanceWindows') {
+        this.dash.settings[field] = windows;
         try {
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
             if (tz) this.dash.settings.maintenanceTimeZone = tz;
@@ -15039,11 +15080,15 @@ class DashboardConfig {
     }
 
     bindMaintenanceWindows(container) {
-        const list = container.querySelector('[data-maint-list]');
-        if (!list) return;
+        container.querySelectorAll('[data-maint-list]').forEach((list) => this.bindMaintenanceList(list));
+        this.bindQuietControls(container);
+    }
+
+    bindMaintenanceList(list) {
+        const field = list.getAttribute('data-maint-field') || 'maintenanceWindows';
 
         const commit = ({ repaint = true } = {}) => {
-            this.setMaintenanceWindows(this.collectMaintenanceWindows(list));
+            this.setMaintenanceWindows(this.collectMaintenanceWindows(list, field), field);
             void this.saveSettingsWithFeedback();
             // The hint under a row depends on the times just typed, and adding
             // or removing changes every index below it, so the block is redrawn
@@ -15052,13 +15097,13 @@ class DashboardConfig {
         };
 
         list.querySelector('[data-maint-add]')?.addEventListener('click', () => {
-            const windows = Array.isArray(this.dash.settings.maintenanceWindows)
-                ? [...this.dash.settings.maintenanceWindows]
+            const windows = Array.isArray(this.dash.settings[field])
+                ? [...this.dash.settings[field]]
                 : [];
             // A sensible default rather than an empty row: the overwhelmingly
             // common window is small hours, every day.
             windows.push({ days: [], start: '02:00', end: '03:00', label: '' });
-            this.setMaintenanceWindows(windows);
+            this.setMaintenanceWindows(windows, field);
             void this.saveSettingsWithFeedback();
             this.repaintActiveControlPanels();
         });
@@ -15066,12 +15111,12 @@ class DashboardConfig {
         list.querySelectorAll('[data-maint-remove]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const index = Number(btn.getAttribute('data-maint-remove'));
-                const windows = Array.isArray(this.dash.settings.maintenanceWindows)
-                    ? [...this.dash.settings.maintenanceWindows]
+                const windows = Array.isArray(this.dash.settings[field])
+                    ? [...this.dash.settings[field]]
                     : [];
                 if (!Number.isFinite(index) || index < 0 || index >= windows.length) return;
                 windows.splice(index, 1);
-                this.setMaintenanceWindows(windows);
+                this.setMaintenanceWindows(windows, field);
                 void this.saveSettingsWithFeedback();
                 this.repaintActiveControlPanels();
             });
@@ -15097,6 +15142,69 @@ class DashboardConfig {
         list.querySelectorAll('[data-maint-label]').forEach((input) => {
             input.addEventListener('change', () => commit({ repaint: false }));
         });
+    }
+
+    /** The kinds of notice that break the quiet hours, as checkboxes. */
+    renderQuietAllow() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const labels = {
+            'cert-expired': this.t('config.quietKindCertExpired', 'A certificate that has expired'),
+            'mass-outage': this.t('config.quietKindMassOutage', 'A mass outage (several at once)'),
+            'backup-failed': this.t('config.quietKindBackupFailed', 'A failed backup'),
+            'container-crash': this.t('config.quietKindContainerCrash', 'A container that stops or restarts'),
+        };
+        const chosen = Array.isArray(this.dash.settings?.quietHoursAllow)
+            ? this.dash.settings.quietHoursAllow
+            : ['cert-expired', 'mass-outage', 'backup-failed'];
+        const rows = Object.keys(labels).map((kind) => `
+            <label class="config-toggle config-toggle--inline">
+                <input type="checkbox" data-quiet-allow="${esc(kind)}" ${chosen.includes(kind) ? 'checked' : ''}>
+                <span>${esc(labels[kind])}</span>
+            </label>`).join('');
+        return `<div class="config-field-row config-quiet-allow" data-quiet-allow-list>
+            <span class="config-field-label">${esc(this.t('config.quietAllowLabel', 'Always let through'))}</span>
+            ${rows}
+        </div>`;
+    }
+
+    /** The line that says whether the quiet hours are open right now. */
+    renderQuietStatus() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<div class="config-field-row">
+            <span class="config-field-hint" data-quiet-status>${esc(this.t('config.quietStatusLoading', 'Checking…'))}</span>
+        </div>`;
+    }
+
+    bindQuietControls(container) {
+        container.querySelectorAll('[data-quiet-allow]').forEach((box) => {
+            box.addEventListener('change', () => {
+                const chosen = Array.from(container.querySelectorAll('[data-quiet-allow]'))
+                    .filter((el) => el.checked)
+                    .map((el) => el.getAttribute('data-quiet-allow'));
+                this.dash.settings.quietHoursAllow = chosen;
+                void this.saveSettingsWithFeedback();
+            });
+        });
+        const line = container.querySelector('[data-quiet-status]');
+        if (!line) return;
+        void (async () => {
+            try {
+                const res = await fetch('/api/notify/quiet', { cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const q = await res.json();
+                let text;
+                if (!q.enabled) text = this.t('config.quietStatusOff', 'Quiet hours are off.');
+                else if (q.quiet) {
+                    text = this.t('config.quietStatusOn', 'Quiet now, until {time} ({zone}). {held} held.')
+                        .replace('{time}', q.endsAtLocal || '?').replace('{zone}', q.zone).replace('{held}', String(q.held));
+                } else {
+                    text = this.t('config.quietStatusIdle', 'Not quiet now. Times are read in {zone}.').replace('{zone}', q.zone);
+                }
+                line.textContent = text;
+            } catch {
+                line.textContent = '';
+            }
+        })();
     }
 
     /**

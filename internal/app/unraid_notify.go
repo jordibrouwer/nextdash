@@ -178,6 +178,10 @@ func (h *Handlers) dispatchUnraidNotices(ctx context.Context, notices []monitorN
 	for _, n := range notices {
 		logActivity(activityCategoryMutate, "unraid.notice", map[string]any{"event": n.Event}, n.Title+notifyDetailSuffix(n.Error))
 	}
+	notices = h.quietGate(noticeSourceUnraid, notices, collapseUnraidNotices)
+	if len(notices) == 0 {
+		return
+	}
 	settings := h.store.GetSettings()
 	if settings.PushNotifyEnabled {
 		for _, n := range notices {

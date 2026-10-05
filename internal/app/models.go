@@ -963,6 +963,21 @@ type Settings struct {
 	// an IANA name). A container runs on UTC unless TZ is set, and the windows
 	// were read on that clock: hours off for anyone else. Empty: server time.
 	MaintenanceTimeZone string `json:"maintenanceTimeZone,omitempty"`
+	// QuietHours are recurring periods when notices are held rather than sent,
+	// then summarised in one message when they end (notify_quiet.go). Unlike a
+	// maintenance window the downtime still counts; only the message waits. Read
+	// in MaintenanceTimeZone.
+	QuietHoursEnabled bool                `json:"quietHoursEnabled"`
+	QuietHours        []MaintenanceWindow `json:"quietHours,omitempty"`
+	// QuietHoursAllow lists the kinds of notice that break the quiet hours
+	// (quietKinds). Nil means the default list; an empty list means none. The
+	// field has no omitempty so the two stay apart on disk.
+	QuietHoursAllow []string `json:"quietHoursAllow"`
+	// RemindersEnabled repeats an outage that is still going: after
+	// RemindAfterMinutes, up to RemindMax times. Monitors and containers only.
+	RemindersEnabled   bool `json:"remindersEnabled"`
+	RemindAfterMinutes int  `json:"remindAfterMinutes,omitempty"`
+	RemindMax          int  `json:"remindMax,omitempty"`
 	// The push booleans deliberately omit "omitempty": with it, a false value is
 	// dropped from the JSON entirely and the config checkbox reads `undefined`
 	// instead of unchecked, so turning a toggle off would not survive a reload.
@@ -5097,6 +5112,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ArchiveSaveSecret = normalizeMonitorNotifyCredential(settings.ArchiveSaveSecret)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.MaintenanceTimeZone = normalizeMaintenanceTimeZone(settings.MaintenanceTimeZone)
+	normalizeQuietSettings(&settings)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 	// Read as the view reads it: a setting the file never had is its default.
 	clampBookmarkViewSettings(&settings)

@@ -338,6 +338,11 @@ func (h *Handlers) dispatchContainerNotices(ctx context.Context, notices []monit
 		logActivity(activityCategoryMutate, "docker.notice", map[string]any{"container": n.Name, "event": n.Event},
 			n.Title+notifyDetailSuffix(n.Error))
 	}
+	h.trackOpenAlerts(noticeSourceContainer, notices)
+	notices = h.quietGate(noticeSourceContainer, notices, collapseContainerNotices)
+	if len(notices) == 0 {
+		return
+	}
 	settings := h.store.GetSettings()
 	if settings.PushNotifyEnabled && settings.PushNotifyContainers {
 		for _, n := range notices {

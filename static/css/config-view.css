@@ -7659,6 +7659,8 @@ body.no-animations .config-new-features-panel-star {
  * is a tour nobody has seen yet, which will appear on its own and has nothing
  * to put back.
  */
+/* The kinds that break the quiet hours: the label above, one box to a line. */
+.config-quiet-allow {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-1-5, 0.34rem);
